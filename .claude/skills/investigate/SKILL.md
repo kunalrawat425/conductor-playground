@@ -1,0 +1,1 @@
+/Users/kunalrawat/conductor/repos/conductor-playground/.claude/skills/gstack/investigate/SKILL.md
