@@ -189,6 +189,20 @@
   .b4 .footer-line { position: absolute; bottom: 48px; font-size: 14px; color: #999; z-index: 1; }
   .b4 .footer-line strong { color: #0066cc; }
   .b4 .tc { position: absolute; bottom: 14px; font-size: 9px; color: #ccc; z-index: 1; }
+
+  /* ===== RESPONSIVE SCALING ===== */
+  @media (max-width: 1140px) {
+    body { padding: 80px 16px 32px; gap: 0; }
+  }
+  @media (max-width: 768px) {
+    body { padding: 72px 12px 24px; }
+    .customizer { top: 10px; left: 10px; gap: 6px; }
+    .customizer label { display: none; }
+    .customizer input { width: 160px; font-size: 13px; padding: 8px 12px; }
+    .lang-toggle { top: 10px; right: 10px; }
+    .lang-btn { padding: 7px 14px; font-size: 13px; }
+  }
+  .b1, .b2, .b3, .b4 { transform-origin: top left; }
 </style>
 </head>
 <body>
@@ -636,6 +650,27 @@ function updateSellerName(name) {
   document.querySelectorAll('.sn-target').forEach(function(el){ el.textContent = display; });
   document.querySelectorAll('.sn-slug-target').forEach(function(el){ el.textContent = slug; });
 }
+
+function scaleBanners() {
+  var pad = window.innerWidth < 768 ? 24 : 32;
+  var avail = window.innerWidth - pad;
+  var scale = avail >= 1080 ? 1 : avail / 1080;
+  var banners = document.querySelectorAll('.b1,.b2,.b3,.b4');
+  banners.forEach(function(b) {
+    b.style.transform = scale < 1 ? 'scale(' + scale + ')' : '';
+    var baseH = b.classList.contains('b3') ? 1920 : b.classList.contains('b1') ? 1350 : 1080;
+    var wrapper = b.parentElement;
+    if (wrapper && wrapper !== document.body) {
+      wrapper.style.height = scale < 1 ? Math.round(baseH * scale) + 'px' : '';
+      wrapper.style.overflow = scale < 1 ? 'hidden' : '';
+      wrapper.style.marginBottom = scale < 1 ? '32px' : '';
+    }
+  });
+}
+window.addEventListener('resize', scaleBanners);
+document.addEventListener('DOMContentLoaded', scaleBanners);
+
+scaleBanners();
 </script>
 </body>
 </html>
