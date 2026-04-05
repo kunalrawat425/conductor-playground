@@ -357,7 +357,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
   <script>
     import * as db from "../../lib/supabase";
     import { SPECIES, getSpeciesDisplay } from "../../lib/species";
-    import { getSession } from "../../lib/auth";
+    import { getSession, isBuyerOrderingAllowed } from "../../lib/auth";
 
     const dataEl = document.getElementById("seller-data")!;
     const sellerId = dataEl.dataset.sellerId!;
@@ -482,6 +482,34 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           db.getSellerListings(sellerId),
         ]);
         activeSeller = seller;
+
+        if (seller.is_active === false) {
+          const profileEl = document.getElementById("seller-profile")!;
+          profileEl.innerHTML = `
+            <div class="seller-profile-card">
+              <div class="sp-top">
+                <div class="sp-avatar">🐟</div>
+                <div>
+                  <div class="sp-name">${esc(seller.name)}</div>
+                  <div class="sp-location">📍 ${esc(seller.location_name || seller.location || "")}</div>
+                </div>
+              </div>
+              <p class="text-muted" style="margin:12px 0 0;font-size:14px;line-height:1.5;">
+                This seller is not on the marketplace yet. Check back later or browse other sellers from the home tab.
+              </p>
+            </div>
+          `;
+          profileEl.classList.add("fade-in");
+          document.getElementById("menu-section")!.style.display = "none";
+          document.getElementById("cart-bar")!.style.display = "none";
+          const emptyEl = document.getElementById("empty-menu")!;
+          emptyEl.style.display = "block";
+          emptyEl.querySelector("h3")!.textContent = "Not accepting orders";
+          emptyEl.querySelector("p")!.textContent = "This seller’s shop is not active on the app yet.";
+          document.title = `${seller.name} - ${brandName}`;
+          return;
+        }
+
         const open = isSellerOpen(seller.opens_at, seller.closes_at);
         const isPreorderMode = !open;
 
@@ -702,6 +730,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             return;
           }
 
+          if (!isBuyerOrderingAllowed()) {
+            const t = document.createElement("div");
+            t.textContent = "Your account cannot place orders right now.";
+            t.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--red);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 3000);
+            return;
+          }
+
           window.dispatchEvent(
             new CustomEvent("open-order-address-sheet", {
               detail: {
@@ -720,6 +757,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           window.__pendingOrder = null;
           const session = getSession();
           if (!session) return;
+          if (!isBuyerOrderingAllowed()) {
+            const t = document.createElement("div");
+            t.textContent = "Your account cannot place orders right now.";
+            t.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--red);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 3000);
+            return;
+          }
           const items = Object.values(cart).filter(e => e.qty > 0);
           if (items.length === 0) return;
           const subtotal = entriesSubtotal(items);
@@ -752,6 +797,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
         async function submitOrder(session, items, buyer_addr) {
           const btn = document.getElementById("place-order-btn");
+          if (!isBuyerOrderingAllowed()) {
+            const t = document.createElement("div");
+            t.textContent = "Your account cannot place orders right now.";
+            t.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--red);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 3000);
+            return;
+          }
           btn.textContent = isPreorderMode ? "Placing pre-order..." : "Placing order...";
           btn.disabled = true;
 

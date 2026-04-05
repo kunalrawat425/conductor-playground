@@ -30,6 +30,7 @@ export async function verifyOtp(phone: string, token: string) {
   // Store session in localStorage
   localStorage.setItem("zepto_buyer_id", data.buyer_id);
   localStorage.setItem("zepto_phone", data.phone);
+  localStorage.setItem("zepto_buyer_active", data.is_active === false ? "0" : "1");
 
   return data;
 }
@@ -39,6 +40,11 @@ export function getSession(): { buyer_id: string; phone: string } | null {
   const phone = localStorage.getItem("zepto_phone");
   if (!buyer_id || !phone) return null;
   return { buyer_id, phone };
+}
+
+/** false when buyer `is_active` is false (ordering disabled). */
+export function isBuyerOrderingAllowed(): boolean {
+  return localStorage.getItem("zepto_buyer_active") !== "0";
 }
 
 const ADDRESS_DETAIL_KEY = "zepto_address_detail";
@@ -80,4 +86,5 @@ export function saveBuyerAddressDetailToStorage(detail: BuyerAddressDetail) {
 export function signOut() {
   localStorage.removeItem("zepto_buyer_id");
   localStorage.removeItem("zepto_phone");
+  localStorage.removeItem("zepto_buyer_active");
 }

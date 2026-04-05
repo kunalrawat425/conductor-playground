@@ -1,0 +1,59 @@
+---
+export const prerender = false;
+
+import Header from "../../components/Header.astro";
+import DashboardGate from "../../components/DashboardGate.astro";
+import SellerActiveGate from "../../components/SellerActiveGate.astro";
+import "../../styles/global.css";
+
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0066cc" />
+    <title>{`Pending activation - ${brandName}`}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body class="seller-dash">
+    <DashboardGate />
+    <SellerActiveGate />
+    <Header showDashboardLink={false} />
+
+    <main style="padding:24px 16px;max-width:480px;margin:0 auto;">
+      <div class="card" style="margin-top:24px;">
+        <div class="card-body" style="text-align:center;padding:28px 20px;">
+          <div style="font-size:48px;margin-bottom:12px;">⏳</div>
+          <h1 style="font-size:22px;font-weight:700;margin:0 0 10px;">Seller account pending</h1>
+          <p class="text-muted" style="font-size:15px;line-height:1.5;margin:0 0 20px;">
+            Your account is not active on the marketplace yet. Once our team turns it on, refresh this page or log in
+            again — you will then see orders and your full dashboard.
+          </p>
+          <p class="text-muted" style="font-size:14px;line-height:1.45;margin:0 0 20px;">
+            You can still prepare your menu and listings while you wait.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch;">
+            <a href="/dashboard/listings" class="btn btn-primary tap-target" style="text-align:center;padding:12px 20px;">
+              Manage listings
+            </a>
+            <button type="button" class="btn tap-target" id="pending-signout" style="background:var(--gray-100);color:var(--gray-700);padding:12px 20px;">
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      import { signOut } from "../../lib/seller-auth";
+
+      document.getElementById("pending-signout")?.addEventListener("click", () => {
+        signOut();
+        window.location.href = "/dashboard/login";
+      });
+    </script>
+  </body>
+</html>

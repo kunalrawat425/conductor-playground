@@ -411,6 +411,17 @@ update sellers set total_orders = (
 );
 
 -- ============================================
+-- Buyer / seller active flags (014_buyer_seller_is_active)
+-- ============================================
+
+alter table buyers add column if not exists is_active boolean not null default true;
+
+alter table sellers add column if not exists is_active boolean;
+update sellers set is_active = true where is_active is null;
+alter table sellers alter column is_active set not null;
+alter table sellers alter column is_active set default false;
+
+-- ============================================
 -- DONE! Expected results:
 --   ✅ 6 tables: sellers, fish_listings, orders, species_ranges, price_logs, buyers
 --   ✅ 3 sellers with map locations

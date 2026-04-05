@@ -1,0 +1,31 @@
+---
+/**
+ * After DashboardGate: inactive sellers may only use /dashboard/pending and /dashboard/listings/*.
+ * Active sellers hitting /dashboard/pending are sent to orders.
+ */
+---
+
+<script type="module">
+  import { getSession } from "../lib/seller-auth";
+  import { getSellerById } from "../lib/supabase";
+
+  const path = window.location.pathname;
+  const session = getSession();
+  if (!session) return;
+
+  try {
+    const seller = await getSellerById(session.seller_id);
+    const active = seller.is_active !== false;
+
+    if (!active) {
+      const allowed = path === "/dashboard/pending" || path.startsWith("/dashboard/listings");
+      if (!allowed) {
+        window.location.replace("/dashboard/pending");
+      }
+    } else if (path === "/dashboard/pending") {
+      window.location.replace("/dashboard/orders");
+    }
+  } catch {
+    /* allow page load if profile fetch fails */
+  }
+</script>

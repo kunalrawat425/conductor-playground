@@ -73,6 +73,8 @@ export interface Seller {
   delivery_fee_amount?: number;
   /** Waive delivery fee when subtotal >= this (₹); null = no waiver */
   free_delivery_above?: number | null;
+  /** false = seller not visible to buyers / cannot receive orders until activated */
+  is_active?: boolean;
 }
 
 export interface FishListing {
@@ -135,6 +137,8 @@ export interface Buyer {
   push_subscription: any | null;
   push_enabled: boolean;
   created_at: string;
+  /** false = buyer cannot place orders */
+  is_active?: boolean;
 }
 
 export interface SpeciesRange {
@@ -158,7 +162,9 @@ export function getActiveListings(): Promise<FishListing[]> {
     .order("created_at", { ascending: false })
     .then(({ data, error }) => {
       if (error) throw error;
-      return (data || []) as FishListing[];
+      return ((data || []) as FishListing[]).filter(
+        (l) => l.seller && (l.seller as Seller).is_active !== false
+      );
     })
     .finally(() => {
       activeListingsInflight = null;
@@ -172,6 +178,7 @@ export function getAllSellers(): Promise<Seller[]> {
   allSellersInflight = supabase
     .from("sellers")
     .select("*")
+    .eq("is_active", true)
     .then(({ data, error }) => {
       if (error) throw error;
       return (data || []) as Seller[];
@@ -624,7 +631,7 @@ export function getSpeciesRanges(): Promise<SpeciesRange[]> {
 }
 
 const SPECIES_LISTING_SELLER_SELECT =
-  "id, seller_id, species, price, price_unit, weight_avail, pickup_loc, is_available, created_at, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above)";
+  "id, seller_id, species, price, price_unit, weight_avail, pickup_loc, is_available, created_at, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, is_active)";
 
 /** One query for species page: split active vs past sellers in memory (was two identical table scans). */
 export async function getSellersForSpecies(species: string) {
@@ -635,7 +642,9 @@ export async function getSellersForSpecies(species: string) {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  const all = (rows || []) as FishListing[];
+  const all = ((rows || []) as FishListing[]).filter(
+    (l) => l.seller && (l.seller as Seller).is_active !== false
+  );
 
   const active = all.filter((l) => l.is_available);
   const activeSids = new Set(active.map((l) => l.seller_id));

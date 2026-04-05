@@ -33,7 +33,7 @@ function mergeOrderLines(raw: LineInput[]): { listing_id: string; quantity: numb
 }
 
 const sellerSelect =
-  "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above";
+  "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, is_active";
 
 /**
  * POST /api/orders/create
@@ -64,6 +64,16 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    if (buyer_id) {
+      const { data: buyerRow } = await supabase.from("buyers").select("is_active").eq("id", buyer_id).maybeSingle();
+      if (buyerRow && buyerRow.is_active === false) {
+        return new Response(
+          JSON.stringify({ error: "Your account cannot place orders right now." }),
+          { status: 403 }
+        );
+      }
+    }
 
     // Multi-line cart from seller menu: one request, min order applies to sum of lines
     if (rawLines && Array.isArray(rawLines) && rawLines.length > 0) {
@@ -120,6 +130,10 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       const { data: seller } = await supabase.from("sellers").select(sellerSelect).eq("id", seller_id).single();
+
+      if (seller && (seller as { is_active?: boolean }).is_active === false) {
+        return new Response(JSON.stringify({ error: "This seller is not accepting orders." }), { status: 400 });
+      }
 
       let status = "pending";
       if (seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
@@ -242,6 +256,10 @@ export const POST: APIRoute = async ({ request, url }) => {
     let delivery_fee = 0;
     if (seller_id) {
       const { data: seller } = await supabase.from("sellers").select(sellerSelect).eq("id", seller_id).single();
+
+      if (seller && (seller as { is_active?: boolean }).is_active === false) {
+        return new Response(JSON.stringify({ error: "This seller is not accepting orders." }), { status: 400 });
+      }
 
       if (seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
         if (seller.accepts_preorder === false) {
