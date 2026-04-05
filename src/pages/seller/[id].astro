@@ -47,6 +47,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       <div class="cart-info">
         <span id="cart-count">0 items</span>
         <span id="cart-total">₹0</span>
+          <span id="cart-note" style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.9);line-height:1.25;"></span>
       </div>
       <button class="cart-btn" id="place-order-btn">Place Order</button>
     </div>
@@ -390,9 +391,26 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
       // Cart state: { listingId: { listing, qty } }
       const cart = {};
+      let activeSeller = null;
+      let deliveryForCurrentBuyer = false;
+
+      function computeClientDeliveryFee(subtotal) {
+        if (!deliveryForCurrentBuyer || !activeSeller) return 0;
+        if (!activeSeller.delivery_fee_enabled) return 0;
+        const fee = Math.max(0, Number(activeSeller.delivery_fee_amount) || 0);
+        const freeAboveRaw = activeSeller.free_delivery_above;
+        const freeAbove =
+          freeAboveRaw != null && String(freeAboveRaw).trim() !== "" && Number(freeAboveRaw) > 0
+            ? Number(freeAboveRaw)
+            : null;
+        if (freeAbove != null && subtotal >= freeAbove) return 0;
+        return fee;
+      }
 
       function updateCartBar() {
         const cartBar = document.getElementById("cart-bar");
+        const cartNote = document.getElementById("cart-note");
+        const placeOrderBtn = document.getElementById("place-order-btn");
         const entries = Object.values(cart).filter(e => e.qty > 0);
         if (entries.length === 0) {
           cartBar.style.display = "none";
@@ -400,9 +418,29 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }
         cartBar.style.display = "block";
         const totalItems = entries.reduce((sum, e) => sum + e.qty, 0);
-        const totalPrice = entries.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
+        const subtotal = entries.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
+        const minOrder = Math.max(0, Number(activeSeller?.min_order_amount) || 0);
+        const deliveryFee = computeClientDeliveryFee(subtotal);
+        const totalPrice = subtotal + deliveryFee;
         document.getElementById("cart-count").textContent = `${totalItems} item${totalItems !== 1 ? "s" : ""}`;
         document.getElementById("cart-total").textContent = `₹${totalPrice}`;
+        if (minOrder > 0 && subtotal < minOrder) {
+          cartNote.textContent = `Need ₹${minOrder - subtotal} more to meet minimum order ₹${minOrder}`;
+          placeOrderBtn.disabled = true;
+          placeOrderBtn.style.opacity = "0.65";
+        } else if (deliveryForCurrentBuyer) {
+          if (deliveryFee > 0) {
+            cartNote.textContent = `Includes ₹${deliveryFee} delivery fee`;
+          } else {
+            cartNote.textContent = "Delivery fee: Free";
+          }
+          placeOrderBtn.disabled = false;
+          placeOrderBtn.style.opacity = "1";
+        } else {
+          cartNote.textContent = minOrder > 0 ? `Minimum order: ₹${minOrder} per line` : "Pickup order";
+          placeOrderBtn.disabled = false;
+          placeOrderBtn.style.opacity = "1";
+        }
       }
 
       function renderQtyControls(listingId) {
@@ -441,6 +479,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       try {
         const seller = await db.getSellerById(sellerId);
         const listings = await db.getSellerListings(sellerId);
+        activeSeller = seller;
         const open = isSellerOpen(seller.opens_at, seller.closes_at);
         const isPreorderMode = !open;
 
@@ -452,6 +491,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         const inDeliveryRange = seller.has_delivery && buyerDist !== null && seller.delivery_rad != null
           ? buyerDist <= seller.delivery_rad
           : false;
+        deliveryForCurrentBuyer = inDeliveryRange;
         const sellerRad = seller.delivery_rad || 10;
         const inServiceArea = buyerDist !== null ? buyerDist <= sellerRad : !buyerLoc;
 
@@ -649,6 +689,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         document.getElementById("place-order-btn").addEventListener("click", async () => {
           const items = Object.values(cart).filter(e => e.qty > 0);
           if (items.length === 0) return;
+          const subtotal = entriesSubtotal(items);
+          const pricingDetail = getCheckoutPricingDetail(subtotal);
 
           const session = getSession();
           if (!session) {
@@ -662,6 +704,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             new CustomEvent("open-order-address-sheet", {
               detail: {
                 requireAddressDetail: inDeliveryRange,
+                pricing: pricingDetail,
                 onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
               },
             })
@@ -677,15 +720,33 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           if (!session) return;
           const items = Object.values(cart).filter(e => e.qty > 0);
           if (items.length === 0) return;
+          const subtotal = entriesSubtotal(items);
+          const pricingDetail = getCheckoutPricingDetail(subtotal);
           window.dispatchEvent(
             new CustomEvent("open-order-address-sheet", {
               detail: {
                 requireAddressDetail: inDeliveryRange,
+                pricing: pricingDetail,
                 onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
               },
             })
           );
         });
+
+        function entriesSubtotal(items) {
+          return items.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
+        }
+
+        function getCheckoutPricingDetail(subtotal) {
+          return {
+            orderType: inDeliveryRange ? "delivery" : "pickup",
+            subtotal,
+            minOrderAmount: Number(activeSeller?.min_order_amount) || 0,
+            deliveryFeeEnabled: !!activeSeller?.delivery_fee_enabled,
+            deliveryFeeAmount: Number(activeSeller?.delivery_fee_amount) || 0,
+            freeDeliveryAbove: activeSeller?.free_delivery_above ?? null,
+          };
+        }
 
         async function submitOrder(session, items, buyer_addr) {
           const btn = document.getElementById("place-order-btn");
@@ -717,7 +778,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
               }).then(r => r.json());
             });
 
-            await Promise.all(orderPromises);
+            const orderResults = await Promise.all(orderPromises);
+            const failedOrder = orderResults.find((r) => r?.error);
+            if (failedOrder) {
+              throw new Error(failedOrder.error || "Could not place order");
+            }
 
             // Show success toast then redirect
             const toast = document.createElement("div");

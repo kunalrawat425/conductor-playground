@@ -397,7 +397,7 @@ export async function getSellersForSpecies(species: string) {
   // Get sellers who currently have active listings for this species
   const { data: active, error: activeErr } = await supabase
     .from("fish_listings")
-    .select("id, seller_id, price, price_unit, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)")
+    .select("id, seller_id, price, price_unit, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above)")
     .eq("species", species)
     .eq("is_available", true)
     .gt("expires_at", new Date().toISOString())
@@ -410,7 +410,7 @@ export async function getSellersForSpecies(species: string) {
 
   const { data: past } = await supabase
     .from("fish_listings")
-    .select("seller_id, price, price_unit, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)")
+    .select("seller_id, price, price_unit, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above)")
     .eq("species", species)
     .order("created_at", { ascending: false });
 
