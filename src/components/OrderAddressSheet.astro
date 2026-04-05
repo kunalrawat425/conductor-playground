@@ -13,6 +13,10 @@
     <p class="text-muted" style="font-size:13px;margin-bottom:12px;line-height:1.4;" id="order-address-subtitle">
       Choose a saved address or enter a new one. Your map area is reused when adding details.
     </p>
+    <div
+      id="order-pricing-summary"
+      style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;background:var(--gray-50);font-size:12px;line-height:1.45;color:var(--gray-700);"
+    ></div>
 
     <a
       href="/me#addresses"
@@ -40,14 +44,12 @@
         >
           —
         </div>
-        <button
-          type="button"
-          class="btn tap-target"
-          id="order-address-change-area"
-          style="margin-top:8px;width:100%;background:var(--gray-100);color:var(--blue);font-size:13px;padding:8px 12px;"
+        <div
+          id="order-address-area-locked-note"
+          style="margin-top:8px;width:100%;background:var(--gray-100);color:var(--gray-600);font-size:12px;padding:8px 12px;border-radius:10px;text-align:center;"
         >
-          Change area on map
-        </button>
+          Area is locked for checkout
+        </div>
       </div>
 
       <div class="form-group" style="margin-bottom:12px;">
@@ -63,22 +65,7 @@
         <input type="text" id="order-addr-landmark" placeholder="Near metro, gate no., etc." style="font-size:15px;" />
       </div>
 
-      <div class="form-group" style="margin-bottom:12px;" id="order-address-save-wrap">
-        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
-          <input type="checkbox" id="order-addr-save-book" />
-          Save to my address book
-        </label>
-        <input
-          type="text"
-          id="order-addr-save-label"
-          placeholder="Label (e.g. Home, Mom's)"
-          style="font-size:14px;margin-top:8px;display:none;"
-        />
-        <label style="display:none;margin-top:8px;font-size:14px;cursor:pointer;align-items:center;gap:8px;" id="order-addr-default-wrap">
-          <input type="checkbox" id="order-addr-save-default" />
-          Set as default address
-        </label>
-      </div>
+      <!-- Address book save options intentionally removed for checkout simplicity -->
     </div>
 
     <div id="order-address-saved-preview" style="display:none;margin-bottom:16px;padding:12px;background:var(--gray-50);border-radius:10px;font-size:14px;line-height:1.4;"></div>
@@ -177,19 +164,17 @@
   const flatInput = document.getElementById("order-addr-flat") as HTMLInputElement;
   const buildingInput = document.getElementById("order-addr-building") as HTMLInputElement;
   const landmarkInput = document.getElementById("order-addr-landmark") as HTMLInputElement;
-  const saveBookCb = document.getElementById("order-addr-save-book") as HTMLInputElement;
-  const saveLabelInput = document.getElementById("order-addr-save-label") as HTMLInputElement;
-  const saveDefaultWrap = document.getElementById("order-addr-default-wrap") as HTMLLabelElement;
-  const saveDefaultCb = document.getElementById("order-addr-save-default") as HTMLInputElement;
   const errEl = document.getElementById("order-address-error")!;
   const confirmBtn = document.getElementById("order-address-confirm") as HTMLButtonElement;
   const backBtn = document.getElementById("order-address-back") as HTMLButtonElement;
   const titleEl = document.getElementById("order-address-title")!;
   const subtitleEl = document.getElementById("order-address-subtitle")!;
+  const pricingSummaryEl = document.getElementById("order-pricing-summary")!;
 
   let requireAddressDetail = false;
   let pendingOnConfirm: ((p: { buyer_addr: string | null }) => void | Promise<void>) | null = null;
   let pendingOnCancel: (() => void) | null = null;
+  let currentPricing: any = null;
   let loadedAddresses: BuyerAddressRow[] = [];
   let selectedId: string = "new";
 
@@ -288,11 +273,6 @@
 
   async function openSheet() {
     errEl.style.display = "none";
-    saveBookCb.checked = false;
-    saveLabelInput.style.display = "none";
-    saveLabelInput.value = "";
-    saveDefaultWrap.style.display = "none";
-    saveDefaultCb.checked = false;
     refreshAreaDisplay();
     loadDetailInputs();
 
@@ -326,12 +306,60 @@
     }
   }
 
+  function renderPricingSummary() {
+    if (!currentPricing) {
+      pricingSummaryEl.style.display = "none";
+      pricingSummaryEl.innerHTML = "";
+      return;
+    }
+    const subtotal = Math.max(0, Number(currentPricing.subtotal) || 0);
+    const orderType = currentPricing.orderType === "delivery" ? "delivery" : "pickup";
+    const minOrder = Math.max(0, Number(currentPricing.minOrderAmount) || 0);
+    const feeEnabled = !!currentPricing.deliveryFeeEnabled;
+    const feeAmount = Math.max(0, Number(currentPricing.deliveryFeeAmount) || 0);
+    const freeAboveRaw = currentPricing.freeDeliveryAbove;
+    const freeAbove =
+      freeAboveRaw != null && String(freeAboveRaw).trim() !== "" && Number(freeAboveRaw) > 0
+        ? Number(freeAboveRaw)
+        : null;
+    const minShort = minOrder > 0 && subtotal < minOrder ? minOrder - subtotal : 0;
+    let appliedFee = 0;
+    if (orderType === "delivery" && feeEnabled) {
+      if (!(freeAbove != null && subtotal >= freeAbove)) {
+        appliedFee = feeAmount;
+      }
+    }
+    const total = subtotal + appliedFee;
+    const lines: string[] = [];
+    lines.push(`Order type: ${orderType === "delivery" ? "Delivery" : "Pickup"}`);
+    lines.push(`Subtotal: ₹${subtotal}`);
+    if (minOrder > 0) {
+      lines.push(`Minimum order: ₹${minOrder}${minShort > 0 ? ` (add ₹${minShort} more)` : " (met)"}`);
+    } else {
+      lines.push("Minimum order: None");
+    }
+    if (orderType === "delivery") {
+      if (!feeEnabled) {
+        lines.push("Delivery fee: Free");
+      } else if (freeAbove != null) {
+        lines.push(`Delivery fee: ₹${appliedFee} (${subtotal >= freeAbove ? `waived above ₹${freeAbove}` : `₹${feeAmount}, free above ₹${freeAbove}`})`);
+      } else {
+        lines.push(`Delivery fee: ₹${appliedFee}`);
+      }
+    }
+    lines.push(`Estimated total: ₹${total}`);
+    pricingSummaryEl.innerHTML = lines.map((line) => `• ${line}`).join("<br/>");
+    pricingSummaryEl.style.display = "block";
+  }
+
   window.addEventListener("open-order-address-sheet", ((e: CustomEvent) => {
     const d = e.detail || {};
     requireAddressDetail = !!d.requireAddressDetail;
     pendingOnConfirm = typeof d.onConfirm === "function" ? d.onConfirm : null;
     pendingOnCancel = typeof d.onCancel === "function" ? d.onCancel : null;
+    currentPricing = d.pricing || null;
     applyModeLabels();
+    renderPricingSummary();
     openSheet();
   }) as EventListener);
 
@@ -339,19 +367,7 @@
     if (overlay.classList.contains("open") && selectedId === "new") refreshAreaDisplay();
   });
 
-  document.getElementById("order-address-change-area")?.addEventListener("click", () => {
-    window.dispatchEvent(new CustomEvent("open-location-picker"));
-  });
-
-  saveBookCb.addEventListener("change", () => {
-    const on = saveBookCb.checked;
-    saveLabelInput.style.display = on ? "block" : "none";
-    saveDefaultWrap.style.display = on ? "flex" : "none";
-    if (!on) {
-      saveLabelInput.value = "";
-      saveDefaultCb.checked = false;
-    }
-  });
+  // Area changes from checkout are intentionally disabled.
 
   function validate(): boolean {
     errEl.style.display = "none";
@@ -415,36 +431,7 @@
       });
       localStorage.setItem(LS_SELECTION, "new");
 
-      if (session && saveBookCb.checked) {
-        let loc: { name?: string; lat?: number; lng?: number } | null = null;
-        try {
-          loc = JSON.parse(localStorage.getItem("zepto_location") || "null");
-        } catch {
-          loc = null;
-        }
-        try {
-          const res = await fetch("/api/buyer/addresses", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              buyer_id: session.buyer_id,
-              address: {
-                label: saveLabelInput.value.trim() || "Address",
-                flat: flatInput.value.trim(),
-                building: buildingInput.value.trim(),
-                landmark: landmarkInput.value.trim(),
-                location_name: loc?.name ?? "",
-                lat: typeof loc?.lat === "number" ? loc.lat : null,
-                lng: typeof loc?.lng === "number" ? loc.lng : null,
-                is_default: saveDefaultCb.checked,
-              },
-            }),
-          });
-          if (!res.ok) console.warn("Could not save address to book", await res.text());
-        } catch {
-          console.warn("Could not save address to book");
-        }
-      }
+      // Saving new address to address book is intentionally disabled in checkout flow.
     }
 
     const fn = pendingOnConfirm;

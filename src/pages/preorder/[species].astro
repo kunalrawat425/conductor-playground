@@ -54,9 +54,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         <span id="order-unit" class="text-muted" style="font-size:14px;">kg</span>
       </div>
     </div>
+    <div class="form-group" style="margin-top:-4px;">
+      <label for="order-type-select">Order type</label>
+      <select id="order-type-select" style="font-size:14px;max-width:220px;">
+        <option value="pickup">Pickup</option>
+      </select>
+      <div id="order-type-note" class="text-muted" style="font-size:12px;margin-top:4px;"></div>
+    </div>
     <div id="order-price-info" style="background:var(--gray-50);padding:12px;border-radius:10px;margin-bottom:16px;"></div>
     <button class="btn btn-primary" id="confirm-order-btn" style="width:100%;min-height:48px;font-size:16px;border-radius:12px;">
-      Confirm Order
+      Review address &amp; bill
     </button>
     <!-- Toast notification -->
     <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
@@ -402,17 +409,91 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
       // Order sheet logic
       let currentOrder = null;
+      const sellerLookup = new Map();
+
+      function toNum(v, fallback = 0) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : fallback;
+      }
+
+      function getSellerById(id) {
+        return sellerLookup.get(id) || null;
+      }
+
+      function getDeliveryMetaForSeller(seller) {
+        const dist = getDist(seller);
+        const radius = toNum(seller?.delivery_rad, 0);
+        const canDelivery = !!(seller?.has_delivery && dist !== null && radius > 0 && dist <= radius);
+        return { dist, radius, canDelivery };
+      }
+
+      function getOrderPricing(order, qty) {
+        const subtotal = Math.max(0, qty * toNum(order?.price, 0));
+        const minOrderAmount = Math.max(0, toNum(order?.seller?.min_order_amount, 0));
+        const deliveryFeeEnabled = !!order?.seller?.delivery_fee_enabled;
+        const deliveryFeeAmount = Math.max(0, toNum(order?.seller?.delivery_fee_amount, 0));
+        const freeRaw = order?.seller?.free_delivery_above;
+        const freeDeliveryAbove =
+          freeRaw != null && String(freeRaw).trim() !== "" && toNum(freeRaw, 0) > 0
+            ? toNum(freeRaw, 0)
+            : null;
+        const orderType = order?.orderType === "delivery" ? "delivery" : "pickup";
+        let deliveryFee = 0;
+        if (orderType === "delivery" && deliveryFeeEnabled) {
+          if (!(freeDeliveryAbove != null && subtotal >= freeDeliveryAbove)) {
+            deliveryFee = deliveryFeeAmount;
+          }
+        }
+        const total = subtotal + deliveryFee;
+        const minShort = minOrderAmount > 0 && subtotal < minOrderAmount ? minOrderAmount - subtotal : 0;
+        return {
+          subtotal,
+          total,
+          minOrderAmount,
+          minShort,
+          orderType,
+          deliveryFeeEnabled,
+          deliveryFeeAmount,
+          deliveryFee,
+          freeDeliveryAbove,
+        };
+      }
 
       function openOrderSheet(action, sellerId, sellerName, listingId, price, unit) {
-        currentOrder = { action, sellerId, sellerName, listingId, price: parseFloat(price), unit };
+        const seller = getSellerById(sellerId);
+        const deliveryMeta = seller ? getDeliveryMetaForSeller(seller) : { canDelivery: false, dist: null, radius: 0 };
+        currentOrder = {
+          action,
+          sellerId,
+          sellerName,
+          listingId,
+          price: parseFloat(price),
+          unit,
+          seller,
+          orderType: deliveryMeta.canDelivery ? "delivery" : "pickup",
+        };
         const sheet = document.getElementById("order-sheet");
         const backdrop = document.getElementById("backdrop");
+        const orderTypeSelect = document.getElementById("order-type-select");
+        const orderTypeNote = document.getElementById("order-type-note");
 
         document.getElementById("sheet-title").textContent =
           action === "preorder" ? `Pre-order from ${sellerName}` : `Order from ${sellerName}`;
 
         document.getElementById("order-unit").textContent = unit === "dozen" ? "dz" : unit;
         (document.getElementById("order-qty")).value = "1";
+        if (deliveryMeta.canDelivery) {
+          orderTypeSelect.innerHTML = `<option value="delivery">Delivery</option><option value="pickup">Pickup</option>`;
+          orderTypeSelect.value = "delivery";
+          orderTypeNote.textContent = `Delivery available (${deliveryMeta.dist.toFixed(1)} km from seller)`;
+        } else {
+          orderTypeSelect.innerHTML = `<option value="pickup">Pickup</option>`;
+          orderTypeSelect.value = "pickup";
+          orderTypeNote.textContent = seller?.has_delivery
+            ? "Delivery not available for your current area, pickup only."
+            : "Seller does not offer delivery, pickup only.";
+        }
+        currentOrder.orderType = orderTypeSelect.value;
         updatePriceInfo();
 
         sheet.classList.add("open");
@@ -428,16 +509,33 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       function updatePriceInfo() {
         if (!currentOrder) return;
         const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
-        const total = qty * currentOrder.price;
+        const orderTypeSelect = document.getElementById("order-type-select");
+        currentOrder.orderType = orderTypeSelect.value;
+        const pricing = getOrderPricing(currentOrder, qty);
         const infoEl = document.getElementById("order-price-info");
+        const unitLabelText = currentOrder.unit === "dozen" ? "dz" : currentOrder.unit;
 
         if (currentOrder.action === "preorder") {
           infoEl.innerHTML = `
             <div style="font-size:14px;margin-bottom:4px;">
-              <strong>Max price:</strong> ₹${currentOrder.price}/${currentOrder.unit === "dozen" ? "dz" : currentOrder.unit}
+              <strong>Max price:</strong> ₹${currentOrder.price}/${unitLabelText}
             </div>
+            <div style="font-size:13px;margin-bottom:4px;">Order type: ${pricing.orderType === "delivery" ? "Delivery" : "Pickup"}</div>
+            <div style="font-size:13px;margin-bottom:4px;">Subtotal: ₹${pricing.subtotal.toFixed(0)}</div>
+            ${
+              pricing.orderType === "delivery"
+                ? `<div style="font-size:13px;margin-bottom:4px;">Delivery fee: ₹${pricing.deliveryFee.toFixed(0)}</div>`
+                : ""
+            }
+            ${
+              pricing.minOrderAmount > 0
+                ? `<div style="font-size:13px;margin-bottom:4px;color:${pricing.minShort > 0 ? "var(--red)" : "var(--gray-700)"};">Minimum order: ₹${pricing.minOrderAmount.toFixed(0)}${
+                    pricing.minShort > 0 ? ` (add ₹${pricing.minShort.toFixed(0)} more)` : " (met)"
+                  }</div>`
+                : ""
+            }
             <div style="font-size:18px;font-weight:800;color:var(--orange);">
-              Estimated total: ₹${total.toFixed(0)}
+              Estimated total: ₹${pricing.total.toFixed(0)}
             </div>
             <div style="font-size:12px;color:var(--gray-500);margin-top:4px;">
               Pay max upfront. Refund the difference if actual price is lower.
@@ -446,10 +544,23 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         } else {
           infoEl.innerHTML = `
             <div style="font-size:14px;margin-bottom:4px;">
-              <strong>Price:</strong> ₹${currentOrder.price}/${currentOrder.unit === "dozen" ? "dz" : currentOrder.unit}
+              <strong>Price:</strong> ₹${currentOrder.price}/${unitLabelText}
             </div>
+            <div style="font-size:13px;margin-bottom:4px;">Order type: ${pricing.orderType === "delivery" ? "Delivery" : "Pickup"}</div>
+            ${
+              pricing.orderType === "delivery"
+                ? `<div style="font-size:13px;margin-bottom:4px;">Delivery fee: ₹${pricing.deliveryFee.toFixed(0)}</div>`
+                : ""
+            }
+            ${
+              pricing.minOrderAmount > 0
+                ? `<div style="font-size:13px;margin-bottom:4px;color:${pricing.minShort > 0 ? "var(--red)" : "var(--gray-700)"};">Minimum order: ₹${pricing.minOrderAmount.toFixed(0)}${
+                    pricing.minShort > 0 ? ` (add ₹${pricing.minShort.toFixed(0)} more)` : " (met)"
+                  }</div>`
+                : ""
+            }
             <div style="font-size:18px;font-weight:800;color:var(--green);">
-              Total: ₹${total.toFixed(0)}
+              Total: ₹${pricing.total.toFixed(0)}
             </div>
           `;
         }
@@ -469,6 +580,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         updatePriceInfo();
       });
       document.getElementById("order-qty").addEventListener("input", updatePriceInfo);
+      document.getElementById("order-type-select").addEventListener("change", updatePriceInfo);
 
       // Close sheet
       document.getElementById("backdrop").addEventListener("click", closeOrderSheet);
@@ -484,12 +596,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       // Confirm order
       document.getElementById("confirm-order-btn").addEventListener("click", async () => {
         if (!currentOrder) return;
+        const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
+        const pricing = getOrderPricing(currentOrder, qty);
+        if (pricing.minShort > 0) {
+          showToast(`Minimum order is ₹${pricing.minOrderAmount.toFixed(0)}. Add ₹${pricing.minShort.toFixed(0)} more.`, "error");
+          return;
+        }
 
         const session = getSession();
         if (!session) {
+          const pendingOrder = currentOrder;
           closeOrderSheet();
-          window.__pendingPreorder = currentOrder;
-          window.__pendingPreorderQty = parseFloat((document.getElementById("order-qty")).value) || 1;
+          window.__pendingPreorder = pendingOrder;
+          window.__pendingPreorderQty = qty;
           window.dispatchEvent(new CustomEvent("start-order", { detail: {} }));
           return;
         }
@@ -497,7 +616,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         window.dispatchEvent(
           new CustomEvent("open-order-address-sheet", {
             detail: {
-              requireAddressDetail: false,
+              requireAddressDetail: pricing.orderType === "delivery",
+              pricing: {
+                orderType: pricing.orderType,
+                subtotal: pricing.subtotal,
+                minOrderAmount: pricing.minOrderAmount,
+                deliveryFeeEnabled: pricing.deliveryFeeEnabled,
+                deliveryFeeAmount: pricing.deliveryFeeAmount,
+                freeDeliveryAbove: pricing.freeDeliveryAbove,
+              },
               onConfirm: ({ buyer_addr }) => submitOrder(session, buyer_addr),
             },
           })
@@ -514,10 +641,20 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         window.__pendingPreorderQty = null;
         const session = getSession();
         if (session) {
+          const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
+          const pricing = getOrderPricing(currentOrder, qty);
           window.dispatchEvent(
             new CustomEvent("open-order-address-sheet", {
               detail: {
-                requireAddressDetail: false,
+                requireAddressDetail: pricing.orderType === "delivery",
+                pricing: {
+                  orderType: pricing.orderType,
+                  subtotal: pricing.subtotal,
+                  minOrderAmount: pricing.minOrderAmount,
+                  deliveryFeeEnabled: pricing.deliveryFeeEnabled,
+                  deliveryFeeAmount: pricing.deliveryFeeAmount,
+                  freeDeliveryAbove: pricing.freeDeliveryAbove,
+                },
                 onConfirm: ({ buyer_addr }) => submitOrder(session, buyer_addr),
               },
             })
@@ -546,35 +683,65 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
         const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
         const totalPrice = qty * currentOrder.price;
+        const pricing = getOrderPricing(currentOrder, qty);
 
         try {
-          const res = await fetch("/api/orders/create", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              listing_id: currentOrder.listingId || null,
-              species: speciesId,
-              quantity: qty,
-              quantity_unit: currentOrder.unit,
-              total_price: totalPrice,
-              buyer_phone: session.phone,
-              buyer_id: session.buyer_id,
-              buyer_addr: buyer_addr ?? null,
-              order_type: "pickup",
-            }),
-          });
+          const createOrder = async (payload) => {
+            const res = await fetch("/api/orders/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            return { res, data };
+          };
 
-          const data = await res.json();
+          const basePayload = {
+            listing_id:
+              currentOrder.action === "preorder" ? null : currentOrder.listingId || null,
+            species: speciesId,
+            quantity: qty,
+            quantity_unit: currentOrder.unit,
+            total_price: totalPrice,
+            buyer_phone: session.phone,
+            buyer_id: session.buyer_id,
+            buyer_addr: buyer_addr ?? null,
+            order_type: pricing.orderType,
+            seller_id: currentOrder.sellerId,
+          };
+
+          let { res, data } = await createOrder(basePayload);
+
+          // If listing just expired/sold out, gracefully fallback to species-based pre-order.
+          if (
+            !res.ok &&
+            typeof data?.error === "string" &&
+            data.error.toLowerCase().includes("no longer available")
+          ) {
+            const fallbackPayload = {
+              ...basePayload,
+              listing_id: null,
+            };
+            ({ res, data } = await createOrder(fallbackPayload));
+          }
+
           if (!res.ok) throw new Error(data.error || "Order failed");
 
           showToast("Order placed!");
           window.location.href = "/track";
         } catch (err) {
           showToast(err.message || "Order failed. Please try again.", "error");
-          btn.textContent = "Confirm Order";
+          btn.textContent = "Review address & bill";
           btn.disabled = false;
           btn.style.opacity = "1";
         }
+      }
+
+      for (const item of sellersData.active || []) {
+        if (item?.seller?.id) sellerLookup.set(item.seller.id, item.seller);
+      }
+      for (const item of sellersData.pastSellers || []) {
+        if (item?.seller?.id) sellerLookup.set(item.seller.id, item.seller);
       }
     });
   </script>
