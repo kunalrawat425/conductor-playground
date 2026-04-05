@@ -192,18 +192,10 @@
 
   /* ===== RESPONSIVE SCALING ===== */
   body { overflow-x: hidden; }
-  [data-lang] { width: 100%; max-width: 1080px; overflow: hidden; flex-shrink: 0; }
-  .b1, .b2, .b3, .b4 { transform-origin: top left; flex-shrink: 0; }
-  @media (max-width: 1140px) {
-    body { padding: 80px 8px 32px; gap: 40px; align-items: flex-start; }
-  }
   @media (max-width: 768px) {
-    body { padding: 68px 0 24px; gap: 28px; align-items: flex-start; }
-    .customizer { top: 10px; left: 10px; gap: 6px; }
     .customizer label { display: none; }
-    .customizer input { width: 165px; font-size: 13px; padding: 8px 12px; border-radius: 10px; }
-    .lang-toggle { top: 10px; right: 10px; }
-    .lang-btn { padding: 7px 13px; font-size: 13px; }
+    .customizer input { width: 160px; font-size: 13px; padding: 8px 12px; }
+    .lang-btn { padding: 8px 14px; font-size: 13px; }
   }
 </style>
 </head>
@@ -654,17 +646,9 @@ function updateSellerName(name) {
 }
 
 function scaleBanners() {
-  var vw = window.innerWidth;
-  var scale = vw >= 1080 ? 1 : vw / 1080;
+  var scale = Math.min(window.innerWidth / 1080, 1);
   document.querySelectorAll('.b1,.b2,.b3,.b4').forEach(function(b) {
-    if (scale < 1) {
-      b.style.transform = 'scale(' + scale + ')';
-      var baseH = b.classList.contains('b3') ? 1920 : b.classList.contains('b1') ? 1350 : 1080;
-      b.style.marginBottom = '-' + Math.round(baseH * (1 - scale)) + 'px';
-    } else {
-      b.style.transform = '';
-      b.style.marginBottom = '';
-    }
+    b.style.zoom = scale < 1 ? scale : '';
   });
 }
 window.addEventListener('resize', scaleBanners);
