@@ -5,7 +5,7 @@ import LocationPicker from "../components/LocationPicker.astro";
 import LoginModal from "../components/LoginModal.astro";
 ---
 
-<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home">
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home">
   <script is:inline>
     (function () {
       try {
@@ -362,7 +362,7 @@ import LoginModal from "../components/LoginModal.astro";
   </style>
 
   <script>
-    import { loadBuyerCatalog } from "../lib/supabase";
+    import { getActiveListings, supabase } from "../lib/supabase";
     import { SPECIES, getSpeciesDisplay } from "../lib/species";
     import type { FishListing, Seller } from "../lib/supabase";
 
@@ -470,8 +470,11 @@ import LoginModal from "../components/LoginModal.astro";
       const emptyState = document.getElementById("empty-state")!;
 
       try {
-        // Active listings + all sellers (deduped in lib if multiple callers overlap)
-        const { listings, sellers: allSellersRes } = await loadBuyerCatalog();
+        // Get active listings + all sellers (even without active listings, for pre-order)
+        const [listings, allSellersRes] = await Promise.all([
+          getActiveListings().catch(() => [] as FishListing[]),
+          supabase.from("sellers").select("*").then(r => r.data || []),
+        ]);
 
         // Group listings by seller
         const sellerMap = new Map<string, SellerGroup>();

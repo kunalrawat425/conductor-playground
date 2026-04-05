@@ -5,17 +5,16 @@ export const prerender = false;
 
 /**
  * POST /api/push-notify
- * Body: { buyer_id, status, species, final_price, order_id? }
+ * Body: { buyer_id, status, species, final_price }
  * Manual testing / external callers; order flow uses sendBuyerOrderPush directly.
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { buyer_id, status, species, final_price, order_id } = body;
+    const { buyer_id, status, species, final_price } = body;
 
     const result = await sendBuyerOrderPush({
       buyer_id,
-      order_id: order_id ?? null,
       status,
       species,
       final_price,

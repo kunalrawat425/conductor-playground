@@ -4,7 +4,7 @@ export const prerender = false;
 import Header from "../../components/Header.astro";
 import "../../styles/global.css";
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 ---
 
 <html lang="en">
@@ -24,40 +24,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
 
     <main>
-      <div style="max-width:440px;margin:24px auto 40px;padding:0 16px;">
-        <!-- Seller hook: value they can't easily argue with (time = money, same phone, ready buyers) -->
-        <section
-          class="seller-hook-card"
-          aria-labelledby="seller-hook-title"
-          style="background:linear-gradient(145deg, #e8f4fd 0%, #f0f9ff 100%);border:1px solid rgba(0,102,204,0.15);border-radius:16px;padding:20px 18px;margin-bottom:28px;box-shadow:0 2px 12px rgba(0,102,204,0.08);"
-        >
-          <p
-            id="seller-hook-title"
-            style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--blue);"
-          >
-            Why sellers say yes
-          </p>
-          <h2 style="margin:0 0 12px;font-size:18px;font-weight:800;line-height:1.35;color:var(--gray-900);">
-            You already wake up for the market—{brandName} brings buyers to <em style="font-style:normal;color:var(--blue);">your</em> menu, not someone else’s.
-          </h2>
-          <ul
-            style="margin:0;padding:0 0 0 18px;font-size:14px;line-height:1.55;color:var(--gray-700);list-style:disc;"
-          >
-            <li style="margin-bottom:8px;">
-              <strong>No extra stall, no new habit:</strong> same phone, your prices—orders show up with quantity and (for delivery) address.
-            </li>
-            <li style="margin-bottom:8px;">
-              <strong>Less “rate kya hai?” spam:</strong> serious buyers browse what you listed and pay intent is clearer before they ping you.
-            </li>
-            <li>
-              <strong>You’re not giving anything up:</strong> you still run your shop; this is another lane for the catch you were going to sell anyway.
-            </li>
-          </ul>
-          <p class="text-muted" style="margin:14px 0 0;font-size:12px;line-height:1.4;">
-            Listing takes minutes. If it doesn’t bring you a single extra order, you’ve lost nothing but a few taps—if it does, you’ve gained sales you might have missed on the footpath alone.
-          </p>
-        </section>
-
+      <div style="max-width:400px;margin:40px auto;">
         <h1 style="font-size:24px;font-weight:700;margin-bottom:8px;">Seller Login</h1>
         <p class="text-muted" style="margin-bottom:24px;">Enter your phone number to receive an OTP.</p>
 
@@ -148,8 +115,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
         setButtonLoading(verifyBtn, true, "Verify & Login", "on-dark");
         try {
-          const data = await verifyOtp(phone, token);
-          window.location.href = data?.is_active === false ? "/dashboard/pending" : "/dashboard/orders";
+          await verifyOtp(phone, token);
+          window.location.href = "/dashboard/orders";
         } catch (err: any) {
           showToast(err.message || "Invalid OTP. Try again.", "error");
           setButtonLoading(verifyBtn, false, "Verify & Login", "on-dark");

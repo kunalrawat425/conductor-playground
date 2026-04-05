@@ -7,7 +7,7 @@ import LoginModal from "../../components/LoginModal.astro";
 import OrderAddressSheet from "../../components/OrderAddressSheet.astro";
 
 const { id } = Astro.params;
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 ---
 
 <AppShell title={`Seller Menu - ${brandName}`} description={`Fresh fish menu. Order for pickup or delivery on ${brandName}.`} activeTab="home">
@@ -47,7 +47,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <div class="cart-info">
         <span id="cart-count">0 items</span>
         <span id="cart-total">₹0</span>
-          <span id="cart-note" style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.9);line-height:1.25;"></span>
       </div>
       <button class="cart-btn" id="place-order-btn">Place Order</button>
     </div>
@@ -357,7 +356,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
   <script>
     import * as db from "../../lib/supabase";
     import { SPECIES, getSpeciesDisplay } from "../../lib/species";
-    import { getSession, isBuyerOrderingAllowed } from "../../lib/auth";
+    import { getSession } from "../../lib/auth";
 
     const dataEl = document.getElementById("seller-data")!;
     const sellerId = dataEl.dataset.sellerId!;
@@ -391,26 +390,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       // Cart state: { listingId: { listing, qty } }
       const cart = {};
-      let activeSeller = null;
-      let deliveryForCurrentBuyer = false;
-
-      function computeClientDeliveryFee(subtotal) {
-        if (!deliveryForCurrentBuyer || !activeSeller) return 0;
-        if (!activeSeller.delivery_fee_enabled) return 0;
-        const fee = Math.max(0, Number(activeSeller.delivery_fee_amount) || 0);
-        const freeAboveRaw = activeSeller.free_delivery_above;
-        const freeAbove =
-          freeAboveRaw != null && String(freeAboveRaw).trim() !== "" && Number(freeAboveRaw) > 0
-            ? Number(freeAboveRaw)
-            : null;
-        if (freeAbove != null && subtotal >= freeAbove) return 0;
-        return fee;
-      }
 
       function updateCartBar() {
         const cartBar = document.getElementById("cart-bar");
-        const cartNote = document.getElementById("cart-note");
-        const placeOrderBtn = document.getElementById("place-order-btn");
         const entries = Object.values(cart).filter(e => e.qty > 0);
         if (entries.length === 0) {
           cartBar.style.display = "none";
@@ -418,29 +400,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
         cartBar.style.display = "block";
         const totalItems = entries.reduce((sum, e) => sum + e.qty, 0);
-        const subtotal = entries.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
-        const minOrder = Math.max(0, Number(activeSeller?.min_order_amount) || 0);
-        const deliveryFee = computeClientDeliveryFee(subtotal);
-        const totalPrice = subtotal + deliveryFee;
+        const totalPrice = entries.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
         document.getElementById("cart-count").textContent = `${totalItems} item${totalItems !== 1 ? "s" : ""}`;
         document.getElementById("cart-total").textContent = `₹${totalPrice}`;
-        if (minOrder > 0 && subtotal < minOrder) {
-          cartNote.textContent = `Need ₹${minOrder - subtotal} more to meet minimum order ₹${minOrder}`;
-          placeOrderBtn.disabled = true;
-          placeOrderBtn.style.opacity = "0.65";
-        } else if (deliveryForCurrentBuyer) {
-          if (deliveryFee > 0) {
-            cartNote.textContent = `Includes ₹${deliveryFee} delivery fee`;
-          } else {
-            cartNote.textContent = "Delivery fee: Free";
-          }
-          placeOrderBtn.disabled = false;
-          placeOrderBtn.style.opacity = "1";
-        } else {
-          cartNote.textContent = minOrder > 0 ? `Minimum order: ₹${minOrder} per line` : "Pickup order";
-          placeOrderBtn.disabled = false;
-          placeOrderBtn.style.opacity = "1";
-        }
       }
 
       function renderQtyControls(listingId) {
@@ -477,39 +439,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       }
 
       try {
-        const [seller, listings] = await Promise.all([
-          db.getSellerById(sellerId),
-          db.getSellerListings(sellerId),
-        ]);
-        activeSeller = seller;
-
-        if (seller.is_active === false) {
-          const profileEl = document.getElementById("seller-profile")!;
-          profileEl.innerHTML = `
-            <div class="seller-profile-card">
-              <div class="sp-top">
-                <div class="sp-avatar">🐟</div>
-                <div>
-                  <div class="sp-name">${esc(seller.name)}</div>
-                  <div class="sp-location">📍 ${esc(seller.location_name || seller.location || "")}</div>
-                </div>
-              </div>
-              <p class="text-muted" style="margin:12px 0 0;font-size:14px;line-height:1.5;">
-                This seller is not on the marketplace yet. Check back later or browse other sellers from the home tab.
-              </p>
-            </div>
-          `;
-          profileEl.classList.add("fade-in");
-          document.getElementById("menu-section")!.style.display = "none";
-          document.getElementById("cart-bar")!.style.display = "none";
-          const emptyEl = document.getElementById("empty-menu")!;
-          emptyEl.style.display = "block";
-          emptyEl.querySelector("h3")!.textContent = "Not accepting orders";
-          emptyEl.querySelector("p")!.textContent = "This seller’s shop is not active on the app yet.";
-          document.title = `${seller.name} - ${brandName}`;
-          return;
-        }
-
+        const seller = await db.getSellerById(sellerId);
+        const listings = await db.getSellerListings(sellerId);
         const open = isSellerOpen(seller.opens_at, seller.closes_at);
         const isPreorderMode = !open;
 
@@ -521,7 +452,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const inDeliveryRange = seller.has_delivery && buyerDist !== null && seller.delivery_rad != null
           ? buyerDist <= seller.delivery_rad
           : false;
-        deliveryForCurrentBuyer = inDeliveryRange;
         const sellerRad = seller.delivery_rad || 10;
         const inServiceArea = buyerDist !== null ? buyerDist <= sellerRad : !buyerLoc;
 
@@ -533,11 +463,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         // If closed and seller doesn't accept pre-orders, show empty state
         const acceptsPreorder = seller.accepts_preorder !== false;
 
-        // If open: show only active listings (order mode)
+        // If open: show only active unexpired listings (order mode)
         // If closed + accepts preorder: show all listings they've ever had (their full menu)
         // If closed + no preorder: show nothing
         const activeListings = open
-          ? listings.filter(l => l.is_available)
+          ? listings.filter(l => l.is_available && new Date(l.expires_at) > new Date())
           : acceptsPreorder
             ? listings.filter((l, i, arr) => {
                 // Dedupe by species, keep most recent
@@ -719,8 +649,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         document.getElementById("place-order-btn").addEventListener("click", async () => {
           const items = Object.values(cart).filter(e => e.qty > 0);
           if (items.length === 0) return;
-          const subtotal = entriesSubtotal(items);
-          const pricingDetail = getCheckoutPricingDetail(subtotal);
 
           const session = getSession();
           if (!session) {
@@ -730,20 +658,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             return;
           }
 
-          if (!isBuyerOrderingAllowed()) {
-            const t = document.createElement("div");
-            t.textContent = "Your account cannot place orders right now.";
-            t.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--red);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
-            document.body.appendChild(t);
-            setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 3000);
-            return;
-          }
-
           window.dispatchEvent(
             new CustomEvent("open-order-address-sheet", {
               detail: {
                 requireAddressDetail: inDeliveryRange,
-                pricing: pricingDetail,
                 onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
               },
             })
@@ -757,79 +675,49 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           window.__pendingOrder = null;
           const session = getSession();
           if (!session) return;
-          if (!isBuyerOrderingAllowed()) {
-            const t = document.createElement("div");
-            t.textContent = "Your account cannot place orders right now.";
-            t.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--red);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
-            document.body.appendChild(t);
-            setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 3000);
-            return;
-          }
           const items = Object.values(cart).filter(e => e.qty > 0);
           if (items.length === 0) return;
-          const subtotal = entriesSubtotal(items);
-          const pricingDetail = getCheckoutPricingDetail(subtotal);
           window.dispatchEvent(
             new CustomEvent("open-order-address-sheet", {
               detail: {
                 requireAddressDetail: inDeliveryRange,
-                pricing: pricingDetail,
                 onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
               },
             })
           );
         });
 
-        function entriesSubtotal(items) {
-          return items.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
-        }
-
-        function getCheckoutPricingDetail(subtotal) {
-          return {
-            orderType: inDeliveryRange ? "delivery" : "pickup",
-            subtotal,
-            minOrderAmount: Number(activeSeller?.min_order_amount) || 0,
-            deliveryFeeEnabled: !!activeSeller?.delivery_fee_enabled,
-            deliveryFeeAmount: Number(activeSeller?.delivery_fee_amount) || 0,
-            freeDeliveryAbove: activeSeller?.free_delivery_above ?? null,
-          };
-        }
-
         async function submitOrder(session, items, buyer_addr) {
           const btn = document.getElementById("place-order-btn");
-          if (!isBuyerOrderingAllowed()) {
-            const t = document.createElement("div");
-            t.textContent = "Your account cannot place orders right now.";
-            t.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--red);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
-            document.body.appendChild(t);
-            setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 3000);
-            return;
-          }
           btn.textContent = isPreorderMode ? "Placing pre-order..." : "Placing order...";
           btn.disabled = true;
 
           try {
-            // One request with all lines so min order & delivery fee use cart subtotal (not per line)
+            // Create one order per item (each listing is a separate order)
+            // The API determines pre-order vs order based on seller operating hours
             const addr = buyer_addr ?? null;
-            const res = await fetch("/api/orders/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                buyer_phone: session.phone,
-                buyer_id: session.buyer_id,
-                buyer_addr: addr,
-                order_type: inDeliveryRange ? "delivery" : "pickup",
-                seller_id: sellerId,
-                lines: items.map((e) => ({
-                  listing_id: e.listing.id,
+            const orderPromises = items.map(e => {
+              const l = e.listing;
+              const totalPrice = e.qty * l.price;
+              return fetch("/api/orders/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  listing_id: l.id,
+                  species: l.species,
                   quantity: e.qty,
-                })),
-              }),
+                  quantity_unit: l.price_unit,
+                  total_price: totalPrice,
+                  buyer_phone: session.phone,
+                  buyer_id: session.buyer_id,
+                  buyer_addr: addr,
+                  order_type: inDeliveryRange ? "delivery" : "pickup",
+                  seller_id: sellerId,
+                }),
+              }).then(r => r.json());
             });
-            const payload = await res.json();
-            if (!res.ok) {
-              throw new Error(payload?.error || "Could not place order");
-            }
+
+            await Promise.all(orderPromises);
 
             // Show success toast then redirect
             const toast = document.createElement("div");

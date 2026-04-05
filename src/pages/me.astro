@@ -5,7 +5,7 @@ import LocationPicker from "../components/LocationPicker.astro";
 export const prerender = false;
 ---
 
-<AppShell title={`Profile - ${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
+<AppShell title={`Profile - ${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
   <!-- Toast notification -->
   <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
   <div id="me-container">
@@ -32,14 +32,6 @@ export const prerender = false;
     <div id="me-profile" style="display:none;padding:16px 0;">
       <h2 class="section-title">Profile</h2>
 
-      <div
-        id="me-inactive-banner"
-        style="display:none;margin-bottom:16px;padding:14px 16px;border-radius:12px;background:rgba(220,53,69,0.08);border:1px solid var(--red);color:var(--gray-900);font-size:14px;line-height:1.45;"
-      >
-        <strong>Ordering is disabled</strong> for this account. You can still use your profile and track past orders.
-        If this looks wrong, contact support.
-      </div>
-
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
@@ -51,17 +43,9 @@ export const prerender = false;
           </div>
           <h3 style="font-size:14px;font-weight:700;margin:0 0 10px;color:var(--gray-700);">Contact details</h3>
           <p class="text-muted" style="font-size:12px;margin:-4px 0 12px;line-height:1.35;">
-            Phone is tied to your login and cannot be changed here. You can update your name and email.
+            Phone and email are tied to your login and cannot be changed here.
           </p>
-          <div id="me-contact-readonly" style="display:flex;flex-direction:column;gap:12px;">
-            <div>
-              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">First name</div>
-              <div style="font-size:16px;font-weight:600;margin-top:4px;" id="me-first-name-display">—</div>
-            </div>
-            <div>
-              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Last name</div>
-              <div style="font-size:16px;font-weight:600;margin-top:4px;" id="me-last-name-display">—</div>
-            </div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
             <div>
               <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Phone</div>
               <div style="font-size:16px;font-weight:600;margin-top:4px;" id="me-contact-phone">—</div>
@@ -70,25 +54,6 @@ export const prerender = false;
               <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Email</div>
               <div style="font-size:16px;font-weight:600;margin-top:4px;word-break:break-all;" id="me-contact-email">—</div>
             </div>
-          </div>
-          <div id="me-contact-edit" style="display:none;flex-direction:column;gap:12px;">
-            <div class="form-group" style="margin-bottom:0;">
-              <label for="me-first-name-input">First name</label>
-              <input type="text" id="me-first-name-input" placeholder="First name" autocomplete="given-name" style="font-size:14px;" />
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label for="me-last-name-input">Last name</label>
-              <input type="text" id="me-last-name-input" placeholder="Last name" autocomplete="family-name" style="font-size:14px;" />
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label for="me-email-input">Email</label>
-              <input type="email" id="me-email-input" placeholder="you@example.com" autocomplete="email" style="font-size:14px;" />
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap;">
-            <button type="button" id="me-edit-contact-btn" class="btn btn-primary" style="font-size:14px;padding:8px 14px;">Edit details</button>
-            <button type="button" id="me-save-contact-btn" class="btn" style="display:none;background:var(--gray-100);color:var(--gray-700);font-size:14px;padding:8px 14px;min-width:80px;">Save details</button>
-            <button type="button" id="me-cancel-contact-btn" class="btn" style="display:none;background:var(--gray-100);color:var(--gray-700);font-size:14px;padding:8px 14px;">Cancel</button>
           </div>
         </div>
       </div>
@@ -111,17 +76,7 @@ export const prerender = false;
       <!-- Address book -->
       <div class="card" id="me-addresses-card" style="margin-bottom:16px;">
         <div class="card-body">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-            <div style="font-weight:700;font-size:16px;" id="addresses">Address book</div>
-            <button
-              type="button"
-              class="btn tap-target"
-              id="me-address-add-btn"
-              style="width:auto;background:var(--gray-100);color:var(--blue);font-size:14px;padding:8px 14px;flex-shrink:0;"
-            >
-              + Add address
-            </button>
-          </div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:12px;" id="addresses">Address book</div>
           <p class="text-muted" style="font-size:13px;margin-bottom:12px;line-height:1.4;">
             Saved addresses show up at checkout. They use the same map area as “Location” above when you save.
           </p>
@@ -150,32 +105,35 @@ export const prerender = false;
             <div class="text-muted" id="me-addr-area-hint" style="font-size:13px;margin-bottom:8px;line-height:1.35;">
               Area: not set — use Location above or “Use current map area” below.
             </div>
-            <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-              <button
-                type="button"
-                class="btn tap-target"
-                id="me-addr-use-map"
-                style="width:auto;max-width:100%;background:var(--gray-100);color:var(--blue);font-size:13px;padding:8px 12px;"
-              >
-                Use current map area (header / Location)
-              </button>
-            </div>
-            <label
-              for="me-addr-default"
-              style="display:flex;align-items:flex-start;gap:10px;font-size:14px;font-weight:600;margin-bottom:12px;cursor:pointer;line-height:1.35;"
+            <button
+              type="button"
+              class="btn tap-target"
+              id="me-addr-use-map"
+              style="width:100%;background:var(--gray-100);color:var(--blue);font-size:13px;padding:8px 12px;margin-bottom:12px;"
             >
+              Use current map area (header / Location)
+            </button>
+            <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:12px;cursor:pointer;">
               <input type="checkbox" id="me-addr-default" />
-              <span style="flex:1;min-width:0;padding-top:1px;">Default for checkout</span>
+              Default for checkout
             </label>
-            <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
-              <button type="button" class="btn tap-target" id="me-addr-cancel" style="width:auto;background:var(--gray-100);padding:10px 16px;font-size:14px;">
-                Cancel
-              </button>
-              <button type="button" class="btn btn-primary tap-target" id="me-addr-save" style="width:auto;padding:10px 16px;font-size:14px;">
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn btn-primary tap-target" id="me-addr-save" style="flex:1;padding:10px;font-size:14px;">
                 Save address
+              </button>
+              <button type="button" class="btn tap-target" id="me-addr-cancel" style="flex:1;background:var(--gray-100);padding:10px;font-size:14px;">
+                Cancel
               </button>
             </div>
           </div>
+          <button
+            type="button"
+            class="btn tap-target"
+            id="me-address-add-btn"
+            style="width:100%;margin-top:10px;background:var(--gray-100);color:var(--blue);font-size:14px;padding:10px;"
+          >
+            + Add address
+          </button>
         </div>
       </div>
 
@@ -208,16 +166,14 @@ export const prerender = false;
       <div id="ios-install-hint" class="card" style="margin-bottom:16px;display:none;">
         <div class="card-body" style="background:var(--blue);color:white;">
           <div style="font-weight:600;font-size:14px;margin-bottom:4px;">📱 Add to Home Screen</div>
-          <div style="font-size:13px;opacity:0.9;">Install Relifish for push notifications on iOS. Tap Share → Add to Home Screen.</div>
+          <div style="font-size:13px;opacity:0.9;">Install Zepto for push notifications on iOS. Tap Share → Add to Home Screen.</div>
         </div>
       </div>
 
       <!-- Actions -->
-      <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-        <button class="btn tap-target" id="me-logout" style="width:auto;background:var(--gray-100);color:var(--red);padding:10px 24px;">
-          Log out
-        </button>
-      </div>
+      <button class="btn tap-target" id="me-logout" style="width:100%;background:var(--gray-100);color:var(--red);margin-top:8px;">
+        Log out
+      </button>
     </div>
   </div>
 
@@ -234,7 +190,7 @@ export const prerender = false;
       if (digits.startsWith("91") && digits.length > 10) return `+${digits}`;
       return `+91 ${digits.replace(/^0+/, "")}`;
     }
-    import { formatSavedBuyerAddress, formatAreaPart } from "../lib/buyer-address";
+    import { formatSavedBuyerAddress } from "../lib/buyer-address";
     import type { BuyerAddressRow } from "../lib/buyer-address";
 
     function showToast(message: string, type: "success" | "error" = "success") {
@@ -276,130 +232,43 @@ export const prerender = false;
 
       const avatarEl = document.getElementById("me-avatar")!;
       const displayNameEl = document.getElementById("me-display-name")!;
-      const firstNameDisplay = document.getElementById("me-first-name-display")!;
-      const lastNameDisplay = document.getElementById("me-last-name-display")!;
       const contactPhoneEl = document.getElementById("me-contact-phone")!;
       const contactEmailEl = document.getElementById("me-contact-email")!;
-      const contactReadOnly = document.getElementById("me-contact-readonly") as HTMLDivElement;
-      const contactEdit = document.getElementById("me-contact-edit") as HTMLDivElement;
-      const firstNameInput = document.getElementById("me-first-name-input") as HTMLInputElement;
-      const lastNameInput = document.getElementById("me-last-name-input") as HTMLInputElement;
-      const emailInput = document.getElementById("me-email-input") as HTMLInputElement;
-      const editContactBtn = document.getElementById("me-edit-contact-btn") as HTMLButtonElement;
-      const saveContactBtn = document.getElementById("me-save-contact-btn") as HTMLButtonElement;
-      const cancelContactBtn = document.getElementById("me-cancel-contact-btn") as HTMLButtonElement;
-
-      type BuyerProfileRow = {
-        first_name?: string | null;
-        last_name?: string | null;
-        email?: string | null;
-        phone?: string | null;
-        push_enabled?: boolean;
-        is_active?: boolean | null;
-      };
-      let buyerProfile: BuyerProfileRow | null = null;
-
-      function renderContactFromProfile(b: BuyerProfileRow | null, phoneFallback: string) {
-        const phoneRaw = b?.phone || phoneFallback;
-        const fn = (b?.first_name || "").trim();
-        const ln = (b?.last_name || "").trim();
-        const em = (b?.email || "").trim();
-        firstNameDisplay.textContent = fn || "—";
-        lastNameDisplay.textContent = ln || "—";
-        contactPhoneEl.textContent = formatContactPhone(phoneRaw);
-        contactEmailEl.textContent = em || "—";
-        const fullName = [fn, ln].filter(Boolean).join(" ");
-        displayNameEl.textContent = fullName || "Buyer";
-        if (fn) {
-          avatarEl.textContent = (fn[0] + (ln[0] || "")).toUpperCase();
-        } else {
-          const ph = (phoneRaw || phoneFallback || "").replace(/\D/g, "");
-          avatarEl.textContent = ph.length >= 2 ? ph.slice(-2) : "?";
-        }
-      }
-
-      function fillContactInputs() {
-        firstNameInput.value = (buyerProfile?.first_name || "").trim();
-        lastNameInput.value = (buyerProfile?.last_name || "").trim();
-        emailInput.value = (buyerProfile?.email || "").trim();
-      }
-
-      function setContactEditMode(editing: boolean) {
-        contactReadOnly.style.display = editing ? "none" : "flex";
-        contactEdit.style.display = editing ? "flex" : "none";
-        editContactBtn.style.display = editing ? "none" : "inline-flex";
-        saveContactBtn.style.display = editing ? "inline-flex" : "none";
-        cancelContactBtn.style.display = editing ? "inline-flex" : "none";
-      }
 
       let serverPushEnabled = false;
-      const inactiveBanner = document.getElementById("me-inactive-banner")!;
       try {
         const profileRes = await fetch(`/api/buyer/profile?buyer_id=${session.buyer_id}`);
         if (profileRes.ok) {
           const { buyer } = await profileRes.json();
-          buyerProfile = buyer;
           serverPushEnabled = buyer.push_enabled === true;
-          renderContactFromProfile(buyer, session.phone);
-          if (buyer.is_active === false) {
-            localStorage.setItem("zepto_buyer_active", "0");
-            inactiveBanner.style.display = "block";
+          const phoneRaw = buyer.phone || session.phone;
+          contactPhoneEl.textContent = formatContactPhone(phoneRaw);
+          const em = (buyer.email || "").trim();
+          contactEmailEl.textContent = em || "—";
+          const fn = (buyer.first_name || "").trim();
+          const ln = (buyer.last_name || "").trim();
+          const fullName = [fn, ln].filter(Boolean).join(" ");
+          displayNameEl.textContent = fullName || "Buyer";
+          if (fn) {
+            avatarEl.textContent = (fn[0] + (ln[0] || "")).toUpperCase();
           } else {
-            localStorage.setItem("zepto_buyer_active", "1");
-            inactiveBanner.style.display = "none";
+            const ph = (phoneRaw || session.phone || "").replace(/\D/g, "");
+            avatarEl.textContent = ph.length >= 2 ? ph.slice(-2) : "?";
           }
         } else {
-          buyerProfile = null;
-          renderContactFromProfile(null, session.phone);
+          contactPhoneEl.textContent = formatContactPhone(session.phone);
+          contactEmailEl.textContent = "—";
+          displayNameEl.textContent = "Buyer";
+          const ph = (session.phone || "").replace(/\D/g, "");
+          avatarEl.textContent = ph.length >= 2 ? ph.slice(-2) : "?";
         }
       } catch {
-        buyerProfile = null;
-        renderContactFromProfile(null, session.phone);
+        contactPhoneEl.textContent = formatContactPhone(session.phone);
+        contactEmailEl.textContent = "—";
+        displayNameEl.textContent = "Buyer";
+        const ph = (session.phone || "").replace(/\D/g, "");
+        avatarEl.textContent = ph.length >= 2 ? ph.slice(-2) : "?";
       }
-
-      fillContactInputs();
-      setContactEditMode(false);
-
-      editContactBtn.addEventListener("click", () => {
-        fillContactInputs();
-        setContactEditMode(true);
-      });
-
-      cancelContactBtn.addEventListener("click", () => {
-        setContactEditMode(false);
-      });
-
-      saveContactBtn.addEventListener("click", async () => {
-        const nextFn = firstNameInput.value.trim();
-        const nextLn = lastNameInput.value.trim();
-        const nextEmail = emailInput.value.trim();
-        if (nextEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
-          showToast("Enter a valid email address", "error");
-          return;
-        }
-        setButtonLoading(saveContactBtn, true, "Save details", "on-dark");
-        try {
-          const res = await fetch("/api/buyer/profile", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              buyer_id: session.buyer_id,
-              updates: { first_name: nextFn, last_name: nextLn, email: nextEmail },
-            }),
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data.error || "Failed to save");
-          const b = data.buyer as BuyerProfileRow;
-          buyerProfile = { ...buyerProfile, ...b };
-          renderContactFromProfile(buyerProfile, session.phone);
-          setContactEditMode(false);
-          showToast("Contact details saved!");
-        } catch (e: any) {
-          showToast(e.message || "Failed to save contact details", "error");
-        } finally {
-          setButtonLoading(saveContactBtn, false, "Save details", "on-dark");
-        }
-      });
 
       // This device is subscribed but DB was never updated (e.g. failed save) — re-sync so /api/push-notify works
       if ((await isPushSubscribed()) && !serverPushEnabled) {
@@ -439,9 +308,8 @@ export const prerender = false;
             addrAreaHint.textContent = "Area: not set — set Location above or open the map picker.";
             return;
           }
-          const loc = JSON.parse(raw) as { name?: string; lat?: number; lng?: number };
-          const area = formatAreaPart(loc.name ?? null, loc.lat ?? null, loc.lng ?? null);
-          addrAreaHint.textContent = area ? `Area: ${area}` : "Area: not set";
+          const loc = JSON.parse(raw);
+          addrAreaHint.textContent = `Area: ${loc.name || "Pinned"} (${typeof loc.lat === "number" ? loc.lat.toFixed(4) : "?"}, ${typeof loc.lng === "number" ? loc.lng.toFixed(4) : "?"})`;
         } catch {
           addrAreaHint.textContent = "Area: not set";
         }
@@ -462,8 +330,7 @@ export const prerender = false;
           addrLandmark.value = row.landmark || "";
           addrDefaultCb.checked = !!row.is_default;
           if (row.location_name || row.lat != null) {
-            const area = formatAreaPart(row.location_name, row.lat, row.lng);
-            addrAreaHint.textContent = area ? `Saved area: ${area}` : "Saved area: not set";
+            addrAreaHint.textContent = `Saved area: ${row.location_name || "Map pin"}${row.lat != null ? ` (${Number(row.lat).toFixed(4)}, ${Number(row.lng).toFixed(4)})` : ""}`;
           } else refreshAddrAreaHintFromStorage();
         } else {
           editIdInput.value = "";
@@ -498,7 +365,7 @@ export const prerender = false;
           <div class="me-addr-row" style="padding:12px 0;border-bottom:1px solid var(--gray-100);">
             <div style="font-weight:700;font-size:14px;">${esc(row.label || "Address")} ${row.is_default ? '<span style="font-size:11px;color:var(--blue);font-weight:600;">Default</span>' : ""}</div>
             <div class="text-muted" style="font-size:12px;margin-top:4px;line-height:1.35;">${esc(formatSavedBuyerAddress(row) || "—")}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:flex-end;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
               <button type="button" class="btn tap-target me-addr-edit" data-id="${esc(row.id)}" style="font-size:12px;padding:6px 12px;background:var(--gray-100);color:var(--blue);">Edit</button>
               <button type="button" class="btn tap-target me-addr-del" data-id="${esc(row.id)}" style="font-size:12px;padding:6px 12px;background:var(--gray-100);color:var(--red);">Delete</button>
               ${!row.is_default ? `<button type="button" class="btn tap-target me-addr-def" data-id="${esc(row.id)}" style="font-size:12px;padding:6px 12px;background:var(--gray-100);">Set default</button>` : ""}

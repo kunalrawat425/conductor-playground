@@ -3,11 +3,9 @@ export const prerender = false;
 
 import Header from "../../components/Header.astro";
 import DashboardGate from "../../components/DashboardGate.astro";
-import SellerActiveGate from "../../components/SellerActiveGate.astro";
-import SellerBottomNav from "../../components/SellerBottomNav.astro";
 import "../../styles/global.css";
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 ---
 
 <html lang="en">
@@ -20,9 +18,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
   </head>
-  <body class="seller-dash">
+  <body>
     <DashboardGate />
-    <SellerActiveGate />
     <Header showDashboardLink={false} />
 
     <!-- Toast notification -->
@@ -36,6 +33,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     </div>
 
     <main id="dash-main" style="display:none;">
+      <!-- Nav -->
+      <div class="dash-nav">
+        <a href="/dashboard/orders" class="dash-nav-item">Orders</a>
+        <a href="/dashboard/listings" class="dash-nav-item">Listings</a>
+        <a href="/dashboard/profile" class="dash-nav-item active">Profile</a>
+      </div>
+
       <h1
         id="seller-profile-display-name"
         style="font-size:28px;font-weight:800;line-height:1.15;color:var(--gray-900);margin:0 0 16px;letter-spacing:-0.02em;"
@@ -45,15 +49,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
-          <h3 style="font-size:18px;font-weight:700;margin-bottom:10px;">Contact details</h3>
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">Contact details</h3>
           <p class="text-muted" style="font-size:12px;margin:-4px 0 14px;line-height:1.35;">
-            Phone is tied to your seller account and cannot be changed here.
+            Phone and email are tied to your seller account and cannot be changed here.
           </p>
-          <div id="contact-readonly" style="display:flex;flex-direction:column;gap:12px;">
-            <div>
-              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Business name</div>
-              <div style="font-size:16px;font-weight:600;margin-top:4px;word-break:break-word;" id="seller-business-name">—</div>
-            </div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
             <div>
               <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Phone</div>
               <div style="font-size:16px;font-weight:600;margin-top:4px;" id="seller-contact-phone">—</div>
@@ -62,21 +62,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Email</div>
               <div style="font-size:16px;font-weight:600;margin-top:4px;word-break:break-all;" id="seller-contact-email">—</div>
             </div>
-          </div>
-          <div id="contact-edit" style="display:none;flex-direction:column;gap:12px;">
-            <div>
-              <label for="seller-name-input">Business name</label>
-              <input type="text" id="seller-name-input" placeholder="Business name" />
-            </div>
-            <div>
-              <label for="seller-email-input">Email</label>
-              <input type="email" id="seller-email-input" placeholder="Email address" />
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap;">
-            <button id="edit-contact-btn" class="btn" style="background:var(--gray-100);color:var(--gray-700);font-size:14px;padding:8px 14px;">Edit details</button>
-            <button id="save-contact-btn" class="btn btn-primary" style="display:none;font-size:14px;padding:8px 14px;min-width:80px;">Save details</button>
-            <button id="cancel-contact-btn" class="btn" style="display:none;background:var(--gray-100);color:var(--gray-700);font-size:14px;padding:8px 14px;">Cancel</button>
           </div>
         </div>
       </div>
@@ -98,7 +83,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <!-- Delivery settings -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
-          <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;">Delivery</h3>
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Delivery</h3>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
             <div>
               <div style="font-weight:600;font-size:14px;">Offer delivery</div>
@@ -115,17 +100,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             <input type="number" id="delivery-radius-km" min="1" max="100" step="1" style="font-size:14px;max-width:120px;" />
             <div class="text-muted" style="font-size:12px;margin-top:4px;">Only buyers within this distance can order delivery</div>
           </div>
-          <div id="delivery-settings-preview" style="font-size:12px;color:var(--gray-700);background:var(--gray-50);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.35;"></div>
-          <div style="display:flex;justify-content:flex-end;">
-            <button id="save-delivery-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save delivery settings</button>
-          </div>
+          <button id="save-delivery-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save delivery settings</button>
         </div>
       </div>
 
       <!-- Min order & delivery fees -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
-          <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Minimum order &amp; delivery fees</h3>
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Minimum order &amp; delivery fees</h3>
           <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
             Shown on your public menu. Buyers must meet the minimum per item; delivery fee applies only to delivery orders.
           </p>
@@ -134,15 +116,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             <input type="number" id="min-order-amt" min="0" step="1" style="font-size:14px;max-width:140px;" />
             <div class="text-muted" style="font-size:11px;margin-top:4px;">0 = no minimum</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-bottom:12px;">
-            <input
-              type="checkbox"
-              id="delivery-fee-enabled"
-              style="width:16px;height:16px;min-width:16px;max-width:16px;margin:0;flex:0 0 16px;accent-color:var(--blue);"
-            />
-            <label for="delivery-fee-enabled" style="margin:0;font-weight:600;line-height:1.2;cursor:pointer;">
-              Charge delivery fee
-            </label>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <input type="checkbox" id="delivery-fee-enabled" />
+            <label for="delivery-fee-enabled" style="margin:0;font-weight:600;">Charge delivery fee</label>
           </div>
           <div style="margin-bottom:12px;">
             <label for="delivery-fee-amt">Delivery fee (₹)</label>
@@ -153,23 +129,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             <input type="number" id="free-delivery-above" min="0" step="1" placeholder="Optional" style="font-size:14px;max-width:140px;" />
             <div class="text-muted" style="font-size:11px;margin-top:4px;">Leave empty if you never waive the fee by amount</div>
           </div>
-          <div id="pricing-rules-preview" style="font-size:12px;color:var(--gray-700);background:var(--gray-50);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.35;"></div>
-          <div style="display:flex;justify-content:flex-end;">
-            <button id="save-pricing-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save pricing rules</button>
-          </div>
+          <button id="save-pricing-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save pricing rules</button>
         </div>
       </div>
 
       <!-- Operating Hours -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
-          <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;">Operating Hours</h3>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Operating Hours</h3>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <input type="time" id="opens-at" style="width:auto;padding:8px 10px;font-size:14px;" />
             <span class="text-muted">to</span>
             <input type="time" id="closes-at" style="width:auto;padding:8px 10px;font-size:14px;" />
-          </div>
-          <div style="display:flex;justify-content:flex-end;">
             <button id="save-hours-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save</button>
           </div>
         </div>
@@ -180,7 +151,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         <div class="card-body">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
-              <h3 style="font-size:18px;font-weight:700;margin-bottom:2px;">Accept Pre-orders</h3>
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:2px;">Accept Pre-orders</h3>
               <div class="text-muted" style="font-size:12px;">Buyers can order when you're closed, for next day</div>
             </div>
             <label style="position:relative;display:inline-block;width:48px;height:28px;">
@@ -195,13 +166,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <!-- Map Location -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
-          <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">📍 Map Location</h3>
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">📍 Map Location</h3>
           <div id="location-status" style="font-weight:600;min-height:24px;margin-bottom:8px;">—</div>
-          <div style="display:flex;justify-content:flex-end;">
-            <button id="use-location-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:auto;max-width:100%;">
-              📍 Use My Current Location
-            </button>
-          </div>
+          <button id="use-location-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:200px;">
+            📍 Use My Current Location
+          </button>
         </div>
       </div>
 
@@ -210,7 +179,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         <div class="card-body">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
-              <h3 style="font-size:18px;font-weight:700;margin-bottom:2px;">🔔 Notifications</h3>
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:2px;">🔔 Notifications</h3>
               <div class="text-muted" style="font-size:12px;" id="push-status-text">Get notified when orders come in</div>
             </div>
             <button id="notify-toggle" type="button" class="btn notify-bell-btn" style="background:var(--gray-100);padding:8px 14px;font-size:20px;min-width:48px;min-height:44px;" title="Enable notifications">🔕</button>
@@ -219,11 +188,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       </div>
 
       <!-- Logout -->
-      <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
-        <button id="logout-btn" class="btn" style="width:auto;background:var(--gray-100);color:var(--red);padding:10px 24px;">
-          Log out
-        </button>
-      </div>
+      <button id="logout-btn" class="btn" style="width:100%;background:var(--gray-100);color:var(--red);margin-bottom:32px;">
+        Log out
+      </button>
     </main>
 
     <!-- Service worker registration (needed for push notifications) -->
@@ -289,74 +256,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           session.name?.trim() ||
           "Seller";
         document.getElementById("seller-profile-display-name")!.textContent = displayName;
-        document.getElementById("seller-business-name")!.textContent = displayName;
         document.getElementById("seller-contact-phone")!.textContent = formatContactPhone(seller.phone);
         const se = (seller.email || "").trim();
         document.getElementById("seller-contact-email")!.textContent = se || "—";
-
-        const contactReadOnly = document.getElementById("contact-readonly") as HTMLDivElement;
-        const contactEdit = document.getElementById("contact-edit") as HTMLDivElement;
-        const sellerNameInput = document.getElementById("seller-name-input") as HTMLInputElement;
-        const sellerEmailInput = document.getElementById("seller-email-input") as HTMLInputElement;
-        const editContactBtn = document.getElementById("edit-contact-btn") as HTMLButtonElement;
-        const saveContactBtn = document.getElementById("save-contact-btn") as HTMLButtonElement;
-        const cancelContactBtn = document.getElementById("cancel-contact-btn") as HTMLButtonElement;
-
-        const setContactEditMode = (editing: boolean) => {
-          contactReadOnly.style.display = editing ? "none" : "flex";
-          contactEdit.style.display = editing ? "flex" : "none";
-          editContactBtn.style.display = editing ? "none" : "inline-flex";
-          saveContactBtn.style.display = editing ? "inline-flex" : "none";
-          cancelContactBtn.style.display = editing ? "inline-flex" : "none";
-        };
-
-        const fillContactInputs = () => {
-          sellerNameInput.value = (seller.name || "").trim();
-          sellerEmailInput.value = (seller.email || "").trim();
-        };
-
-        fillContactInputs();
-        setContactEditMode(false);
-
-        editContactBtn.addEventListener("click", () => {
-          fillContactInputs();
-          setContactEditMode(true);
-        });
-
-        cancelContactBtn.addEventListener("click", () => {
-          setContactEditMode(false);
-        });
-
-        saveContactBtn.addEventListener("click", async () => {
-          const nextName = sellerNameInput.value.trim();
-          const nextEmail = sellerEmailInput.value.trim();
-          if (!nextName) {
-            showToast("Business name is required", "error");
-            return;
-          }
-          if (!nextEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
-            showToast("Enter a valid email address", "error");
-            return;
-          }
-          setLoading(saveContactBtn, true, "Save details");
-          try {
-            await updateSellerProfile(seller.id, {
-              name: nextName,
-              email: nextEmail,
-            } as any);
-            seller.name = nextName;
-            seller.email = nextEmail;
-            document.getElementById("seller-profile-display-name")!.textContent = nextName;
-            document.getElementById("seller-business-name")!.textContent = nextName;
-            document.getElementById("seller-contact-email")!.textContent = nextEmail;
-            setContactEditMode(false);
-            showToast("Contact details saved!");
-          } catch (err: any) {
-            showToast(err.message || "Failed to save contact details", "error");
-          } finally {
-            setLoading(saveContactBtn, false, "Save details");
-          }
-        });
 
         // Stats
         document.getElementById("total-orders")!.textContent = String(seller.total_orders);
@@ -368,21 +270,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const deliveryKnob = document.getElementById("delivery-knob")!;
         const deliveryRadiusInput = document.getElementById("delivery-radius-km") as HTMLInputElement;
         const saveDeliveryBtn = document.getElementById("save-delivery-btn") as HTMLButtonElement;
-        const deliverySettingsPreview = document.getElementById("delivery-settings-preview") as HTMLDivElement;
-
-        function renderDeliverySettingsPreview(on: boolean, radiusRaw: string) {
-          const radius = Math.max(1, Number(radiusRaw) || Number(seller.delivery_rad) || 10);
-          deliverySettingsPreview.textContent = on
-            ? `Buyers within ${radius} km can place delivery orders. Buyers outside this range will see pickup only.`
-            : "Delivery is off. Buyers will only be able to place pickup orders.";
-        }
 
         function updateDeliveryUI(on: boolean) {
           deliveryToggle.checked = on;
           deliverySlider.style.background = on ? "var(--green)" : "var(--gray-200)";
           deliveryKnob.style.transform = on ? "translateX(20px)" : "translateX(0)";
           deliveryRadiusInput.disabled = !on;
-          renderDeliverySettingsPreview(on, deliveryRadiusInput.value);
         }
 
         deliveryRadiusInput.value = String(seller.delivery_rad ?? 10);
@@ -414,41 +307,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         deliveryToggle.addEventListener("change", () => {
           updateDeliveryUI(deliveryToggle.checked);
         });
-        deliveryRadiusInput.addEventListener("input", () => {
-          renderDeliverySettingsPreview(deliveryToggle.checked, deliveryRadiusInput.value);
-        });
 
         const minOrderInput = document.getElementById("min-order-amt") as HTMLInputElement;
         const deliveryFeeEnabledCb = document.getElementById("delivery-fee-enabled") as HTMLInputElement;
         const deliveryFeeAmtInput = document.getElementById("delivery-fee-amt") as HTMLInputElement;
         const freeDeliveryAboveInput = document.getElementById("free-delivery-above") as HTMLInputElement;
         const savePricingBtn = document.getElementById("save-pricing-btn") as HTMLButtonElement;
-        const pricingRulesPreview = document.getElementById("pricing-rules-preview") as HTMLDivElement;
-
-        function renderPricingRulesPreview() {
-          const minV = Math.max(0, parseFloat(minOrderInput.value) || 0);
-          const feeOn = deliveryFeeEnabledCb.checked;
-          const feeAmt = Math.max(0, parseFloat(deliveryFeeAmtInput.value) || 0);
-          const freeRaw = freeDeliveryAboveInput.value.trim();
-          const freeAbove = freeRaw === "" ? null : Math.max(0, parseFloat(freeRaw) || 0);
-          const lines: string[] = [];
-          lines.push(minV > 0 ? `Minimum line order: ₹${minV}` : "No minimum line order");
-          if (!feeOn) {
-            lines.push("No delivery fee (delivery, if enabled, is free)");
-          } else if (freeAbove != null && freeAbove > 0) {
-            lines.push(`Delivery fee: ₹${feeAmt} (waived above ₹${freeAbove})`);
-          } else {
-            lines.push(`Delivery fee: ₹${feeAmt}`);
-          }
-          pricingRulesPreview.innerHTML = lines.map((line) => `• ${line}`).join("<br/>");
-        }
-
-        function updatePricingInputState() {
-          const feeOn = deliveryFeeEnabledCb.checked;
-          deliveryFeeAmtInput.disabled = !feeOn;
-          freeDeliveryAboveInput.disabled = !feeOn;
-          renderPricingRulesPreview();
-        }
 
         minOrderInput.value = String(Number(seller.min_order_amount) || 0);
         deliveryFeeEnabledCb.checked = !!seller.delivery_fee_enabled;
@@ -457,12 +321,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           seller.free_delivery_above != null && seller.free_delivery_above !== ""
             ? String(seller.free_delivery_above)
             : "";
-        updatePricingInputState();
-
-        minOrderInput.addEventListener("input", renderPricingRulesPreview);
-        deliveryFeeEnabledCb.addEventListener("change", updatePricingInputState);
-        deliveryFeeAmtInput.addEventListener("input", renderPricingRulesPreview);
-        freeDeliveryAboveInput.addEventListener("input", renderPricingRulesPreview);
 
         savePricingBtn.addEventListener("click", async () => {
           setLoading(savePricingBtn, true, "Save pricing rules");
@@ -472,10 +330,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const feeAmt = Math.max(0, parseFloat(deliveryFeeAmtInput.value) || 0);
             const freeRaw = freeDeliveryAboveInput.value.trim();
             const freeAbove = freeRaw === "" ? null : Math.max(0, parseFloat(freeRaw) || 0);
-            if (feeOn && feeAmt <= 0) {
-              showToast("Enter a delivery fee greater than 0, or turn off delivery fee", "error");
-              return;
-            }
             await updateSellerProfile(seller.id, {
               min_order_amount: minV,
               delivery_fee_enabled: feeOn,
@@ -486,7 +340,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             seller.delivery_fee_enabled = feeOn;
             seller.delivery_fee_amount = feeAmt;
             seller.free_delivery_above = freeAbove;
-            renderPricingRulesPreview();
             showToast("Pricing rules saved!");
           } catch (err: any) {
             showToast(err.message || "Failed to save", "error");
@@ -550,8 +403,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const locationBtn = document.getElementById("use-location-btn") as HTMLButtonElement;
 
         if (seller.lat && seller.lng) {
-          const nm = (seller.location_name || "").trim();
-          locationStatus.textContent = nm ? `✅ ${nm}` : "✅ Location set";
+          locationStatus.textContent = `✅ Set (${seller.lat.toFixed(4)}, ${seller.lng.toFixed(4)})`;
         } else {
           locationStatus.textContent = "❌ Not set";
         }
@@ -568,7 +420,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               const lng = position.coords.longitude;
               try {
                 await updateSellerProfile(seller.id, { lat, lng } as any);
-                locationStatus.textContent = "✅ Location set";
+                locationStatus.textContent = `✅ Set (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
                 showToast("Location updated!");
                 seller.lat = lat;
                 seller.lng = lng;
@@ -642,6 +494,31 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       init();
     </script>
 
-    <SellerBottomNav active="profile" />
+    <style is:global>
+      .dash-nav {
+        display: flex;
+        gap: 0;
+        margin-bottom: 16px;
+        border-bottom: 2px solid var(--gray-200);
+      }
+      .dash-nav-item {
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .dash-nav-item:hover {
+        color: var(--gray-700);
+        text-decoration: none;
+      }
+      .dash-nav-item.active {
+        color: var(--blue);
+        border-bottom-color: var(--blue);
+      }
+    </style>
   </body>
 </html>
