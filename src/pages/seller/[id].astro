@@ -10,12 +10,14 @@ const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 ---
 
-<AppShell
-  title={`Seller Menu - ${brandName}`}
-  description={`Fresh fish menu. Order for pickup or delivery on ${brandName}.`}
-  activeTab="home"
-  showSellerRecruit={true}
->
+<AppShell title={`Seller Menu - ${brandName}`} description={`Fresh fish menu. Order for pickup or delivery on ${brandName}.`} activeTab="home">
+  <aside class="seller-recruit-strip" slot="header-extra" aria-label={`Become a seller on ${brandName}`}>
+    <p>
+      Fish seller? <a href="/dashboard/login">Create your seller account</a> on the dashboard and <strong>join sellers like you</strong> already on {brandName}. Listings, orders, and alerts in one place.
+    </p>
+    <span class="seller-recruit-sub">Free to start · Phone login · Same platform buyers trust</span>
+  </aside>
+
   <!-- Back button -->
   <div style="padding:12px 0 8px;">
     <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">

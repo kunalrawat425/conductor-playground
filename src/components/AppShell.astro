@@ -5,22 +5,13 @@ interface Props {
   ogImage?: string;
   activeTab?: "home" | "orders" | "me";
   showLocationBadge?: boolean;
-  /** Trust + CTA strip for buyers viewing a seller menu (recruit new sellers). */
-  showSellerRecruit?: boolean;
 }
 
 import VercelAnalytics from "./VercelAnalytics.astro";
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 const defaultDescription = "Order fresh fish from local Mumbai sellers. Pre-order tonight, pick up tomorrow morning.";
-const {
-  title = brandName,
-  description = defaultDescription,
-  ogImage = "/og-image.png",
-  activeTab = "home",
-  showLocationBadge = true,
-  showSellerRecruit = false,
-} = Astro.props;
+const { title = brandName, description = defaultDescription, ogImage = "/og-image.png", activeTab = "home", showLocationBadge = true } = Astro.props;
 ---
 
 <html lang="en">
@@ -47,28 +38,18 @@ const {
   </head>
   <body>
     <div class="app-shell">
-      <div class:list={["app-header-stack", showSellerRecruit && "app-header-stack--recruit"]}>
-        <header class="app-header">
+      <!-- Fixed header -->
+      <header class="app-header">
+        <div class="app-header-top">
           <a href="/" class="app-logo">🐟 {brandName}</a>
           {showLocationBadge && (
             <button class="location-badge" id="location-badge" aria-label="Change location">
               <span id="location-text">Set location</span>
             </button>
           )}
-        </header>
-        {showSellerRecruit && (
-          <div class="app-header-recruit" role="region" aria-label="For fish sellers">
-            <p class="app-header-recruit-text">
-              <span class="app-header-recruit-lead">Sellers like this one use {brandName} to list fish and take orders.</span>
-              <span class="app-header-recruit-actions">
-                <a href="/dashboard/login" class="app-header-recruit-link tap-target">Create seller account</a>
-                <span class="app-header-recruit-dot" aria-hidden="true">·</span>
-                <a href="/dashboard" class="app-header-recruit-link tap-target">Seller dashboard</a>
-              </span>
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+        <slot name="header-extra" />
+      </header>
 
       <!-- Scrollable content area -->
       <main class="app-content" id="app-content">
@@ -153,72 +134,57 @@ const {
   }
 
   /* ===== HEADER ===== */
-  .app-header-stack {
+  .app-header {
     position: sticky;
     top: 0;
     z-index: 100;
     background: white;
     border-bottom: 1px solid var(--gray-200);
-  }
-
-  .app-header-stack--recruit .app-header {
-    border-bottom: none;
-  }
-
-  .app-header {
-    height: 48px;
-    min-height: 48px;
     padding: 0 16px;
     padding-top: env(safe-area-inset-top);
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-header-top {
+    display: flex;
     align-items: center;
     justify-content: space-between;
+    min-height: 48px;
+    flex-shrink: 0;
   }
 
-  .app-header-recruit {
-    padding: 10px 16px 12px;
-    background: linear-gradient(180deg, var(--gray-50) 0%, #f0f6ff 100%);
+  .seller-recruit-strip {
+    padding: 0 0 10px;
     border-top: 1px solid var(--gray-100);
+    margin-top: 2px;
   }
 
-  .app-header-recruit-text {
-    margin: 0;
+  .seller-recruit-strip p {
     font-size: 12px;
     line-height: 1.45;
     color: var(--gray-700);
+    margin: 0;
+    padding-top: 8px;
   }
 
-  .app-header-recruit-lead {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-    color: var(--gray-800);
-  }
-
-  .app-header-recruit-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 8px;
-  }
-
-  .app-header-recruit-dot {
-    color: var(--gray-400);
-    user-select: none;
-  }
-
-  .app-header-recruit-link {
-    font-size: 13px;
+  .seller-recruit-strip a {
     font-weight: 700;
     color: var(--blue);
     text-decoration: none;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
   }
 
-  .app-header-recruit-link:hover {
+  .seller-recruit-strip a:hover {
     text-decoration: underline;
+  }
+
+  .seller-recruit-strip .seller-recruit-sub {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gray-500);
+    margin-top: 4px;
   }
 
   .app-logo {
@@ -468,15 +434,10 @@ const {
       padding-bottom: 24px;
     }
 
-    .app-header-stack {
+    .app-header {
       max-width: 832px;
       margin: 0 auto;
-    }
-
-    .app-header {
-      max-width: none;
-      margin: 0;
-      border-bottom: none;
+      border-bottom: 1px solid var(--gray-200);
     }
 
     /* Desktop modal instead of fullscreen */
