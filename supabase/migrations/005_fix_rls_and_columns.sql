@@ -75,10 +75,9 @@ create policy "Sellers can update their orders"
     or is_admin()
   );
 
--- 7. Refresh seed listing expiry (so they show up)
+-- 7. Ensure listings are visible (availability-only model)
 update fish_listings
-  set expires_at = now() + interval '12 hours',
-      is_available = true
+  set is_available = true
   where is_available = true;
 
 -- ============================================
@@ -86,5 +85,5 @@ update fish_listings
 --   ✅ sellers.opens_at / closes_at columns
 --   ✅ sellers.push_subscription / push_enabled columns
 --   ✅ species_ranges RLS infinite recursion
---   ✅ Listing expiry refreshed to 12 hours
+--   ✅ Listing visibility refreshed
 -- ============================================

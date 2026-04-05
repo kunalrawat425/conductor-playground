@@ -112,12 +112,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           .map((l) => {
             const name = getSpeciesDisplay(l.species);
             const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
-            const isExpired = new Date(l.expires_at) < new Date();
             const statusBadge = !l.is_available
               ? '<span class="badge badge-red">Unavailable</span>'
-              : isExpired
-                ? '<span class="badge badge-orange">Expired</span>'
-                : '<span class="badge badge-green">Active</span>';
+              : '<span class="badge badge-green">Active</span>';
 
             return `
               <div class="card listing-dash-card" style="cursor:pointer;">

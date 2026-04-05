@@ -42,7 +42,6 @@ create table if not exists fish_listings (
   photo_url text,
   listed_date date not null default current_date,
   is_available boolean not null default true,
-  expires_at timestamptz not null default (now() + interval '6 hours'),
   pickup_loc text not null default '',
   delivery_avl boolean not null default false,
   created_at timestamptz not null default now()
@@ -122,7 +121,7 @@ end $$;
 -- 3. INDEXES
 -- ============================================
 
-create index if not exists idx_listings_available on fish_listings(is_available, expires_at)
+create index if not exists idx_listings_available on fish_listings(is_available)
   where is_available = true;
 create index if not exists idx_listings_seller on fish_listings(seller_id);
 create index if not exists idx_orders_listing on orders(listing_id);
@@ -297,26 +296,26 @@ begin
   select id into s3 from sellers where phone = '9876543212';
 
   if s1 is not null then
-    insert into fish_listings (seller_id, species, price, price_unit, weight_avail, pickup_loc, delivery_avl, expires_at)
+    insert into fish_listings (seller_id, species, price, price_unit, weight_avail, pickup_loc, delivery_avl)
     values
-      (s1, 'pomfret', 550, 'kg', 8, 'Versova Fish Market, Stall #12', true, now() + interval '6 hours'),
-      (s1, 'surmai', 700, 'kg', 5, 'Versova Fish Market, Stall #12', true, now() + interval '6 hours'),
-      (s1, 'bangda', 150, 'kg', 15, 'Versova Fish Market, Stall #12', true, now() + interval '6 hours');
+      (s1, 'pomfret', 550, 'kg', 8, 'Versova Fish Market, Stall #12', true),
+      (s1, 'surmai', 700, 'kg', 5, 'Versova Fish Market, Stall #12', true),
+      (s1, 'bangda', 150, 'kg', 15, 'Versova Fish Market, Stall #12', true);
   end if;
 
   if s2 is not null then
-    insert into fish_listings (seller_id, species, price, price_unit, weight_avail, pickup_loc, delivery_avl, expires_at)
+    insert into fish_listings (seller_id, species, price, price_unit, weight_avail, pickup_loc, delivery_avl)
     values
-      (s2, 'rawas', 450, 'kg', 10, 'Sassoon Dock Gate 2', true, now() + interval '6 hours'),
-      (s2, 'prawns', 500, 'kg', 6, 'Sassoon Dock Gate 2', true, now() + interval '6 hours');
+      (s2, 'rawas', 450, 'kg', 10, 'Sassoon Dock Gate 2', true),
+      (s2, 'prawns', 500, 'kg', 6, 'Sassoon Dock Gate 2', true);
   end if;
 
   if s3 is not null then
-    insert into fish_listings (seller_id, species, price, price_unit, weight_avail, pickup_loc, delivery_avl, expires_at)
+    insert into fish_listings (seller_id, species, price, price_unit, weight_avail, pickup_loc, delivery_avl)
     values
-      (s3, 'pomfret', 600, 'kg', 4, 'Worli Koliwada Market', false, now() + interval '6 hours'),
-      (s3, 'hilsa', 1200, 'kg', 2, 'Worli Koliwada Market', false, now() + interval '6 hours'),
-      (s3, 'crab', 150, 'piece', 20, 'Worli Koliwada Market', false, now() + interval '6 hours');
+      (s3, 'pomfret', 600, 'kg', 4, 'Worli Koliwada Market', false),
+      (s3, 'hilsa', 1200, 'kg', 2, 'Worli Koliwada Market', false),
+      (s3, 'crab', 150, 'piece', 20, 'Worli Koliwada Market', false);
   end if;
 end $$;
 
@@ -415,7 +414,7 @@ update sellers set total_orders = (
 -- DONE! Expected results:
 --   ✅ 6 tables: sellers, fish_listings, orders, species_ranges, price_logs, buyers
 --   ✅ 3 sellers with map locations
---   ✅ 8 fresh listings (expire in 6 hours)
+--   ✅ 8 fresh listings
 --   ✅ 15 species with price ranges
 --   ✅ 5 mock buyers across Mumbai
 --   ✅ 8 mock orders (pending, confirmed, completed, cancelled, declined, pre_order)

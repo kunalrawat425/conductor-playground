@@ -77,10 +77,9 @@ create policy "Sellers can update their orders"
     or is_admin()
   );
 
--- 7. Refresh seed listing expiry
+-- 7. Ensure listings are visible (availability-only model)
 update fish_listings
-  set expires_at = now() + interval '12 hours',
-      is_available = true
+  set is_available = true
   where is_available = true;
 
 -- =====================
