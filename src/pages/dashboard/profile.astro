@@ -544,7 +544,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         const locationBtn = document.getElementById("use-location-btn") as HTMLButtonElement;
 
         if (seller.lat && seller.lng) {
-          locationStatus.textContent = `✅ Set (${seller.lat.toFixed(4)}, ${seller.lng.toFixed(4)})`;
+          const nm = (seller.location_name || "").trim();
+          locationStatus.textContent = nm ? `✅ ${nm}` : "✅ Location set";
         } else {
           locationStatus.textContent = "❌ Not set";
         }
@@ -561,7 +562,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
               const lng = position.coords.longitude;
               try {
                 await updateSellerProfile(seller.id, { lat, lng } as any);
-                locationStatus.textContent = `✅ Set (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                locationStatus.textContent = "✅ Location set";
                 showToast("Location updated!");
                 seller.lat = lat;
                 seller.lng = lng;
