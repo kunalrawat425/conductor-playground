@@ -7,7 +7,7 @@ interface Props {
   showLocationBadge?: boolean;
 }
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Taazi";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 const defaultDescription = "Order fresh fish from local Mumbai sellers. Pre-order tonight, pick up tomorrow morning.";
 const { title = brandName, description = defaultDescription, ogImage = "/og-image.png", activeTab = "home", showLocationBadge = true } = Astro.props;
 ---
@@ -84,7 +84,7 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
       const locationText = document.getElementById("location-text");
 
       function updateLocationBadge() {
-        const saved = localStorage.getItem("taazi_location");
+        const saved = localStorage.getItem("zepto_location");
         if (saved) {
           try {
             const loc = JSON.parse(saved);

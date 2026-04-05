@@ -5,7 +5,7 @@ import LocationPicker from "../components/LocationPicker.astro";
 import LoginModal from "../components/LoginModal.astro";
 ---
 
-<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Taazi"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home">
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home">
   <!-- Hero search bar -->
   <div class="hero-search">
     <input type="text" id="search-input" placeholder="Search fish or seller..." autocomplete="off" />
@@ -351,7 +351,7 @@ import LoginModal from "../components/LoginModal.astro";
 
     function getBuyerLocation(): { lat: number; lng: number; name: string } | null {
       try {
-        const saved = localStorage.getItem("taazi_location");
+        const saved = localStorage.getItem("zepto_location");
         if (saved) return JSON.parse(saved);
       } catch {}
       return null;
@@ -634,7 +634,7 @@ import LoginModal from "../components/LoginModal.astro";
 
     // Location
     function checkLocation() {
-      const saved = localStorage.getItem("taazi_location");
+      const saved = localStorage.getItem("zepto_location");
       if (!saved) {
         if ("geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition(
@@ -643,11 +643,11 @@ import LoginModal from "../components/LoginModal.astro";
                 const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&zoom=14`);
                 const data = await resp.json();
                 const name = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || "Your location";
-                localStorage.setItem("taazi_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name }));
+                localStorage.setItem("zepto_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name }));
                 window.dispatchEvent(new CustomEvent("location-updated"));
                 renderSellers();
               } catch {
-                localStorage.setItem("taazi_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your location" }));
+                localStorage.setItem("zepto_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your location" }));
                 window.dispatchEvent(new CustomEvent("location-updated"));
               }
             },

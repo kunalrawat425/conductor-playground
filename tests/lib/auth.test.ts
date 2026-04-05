@@ -43,13 +43,13 @@ describe("auth", () => {
     const { verifyOtp } = await import("../../src/lib/auth");
     const data = await verifyOtp("+919876543210", "123456");
     expect(data.buyer_id).toBe("b1");
-    expect(store.taazi_buyer_id).toBe("b1");
-    expect(store.taazi_phone).toBe("9876543210");
+    expect(store.zepto_buyer_id).toBe("b1");
+    expect(store.zepto_phone).toBe("9876543210");
   });
 
   it("getSession returns session from localStorage", async () => {
-    store.taazi_buyer_id = "b1";
-    store.taazi_phone = "9876543210";
+    store.zepto_buyer_id = "b1";
+    store.zepto_phone = "9876543210";
     const { getSession } = await import("../../src/lib/auth");
     const session = getSession();
     expect(session?.buyer_id).toBe("b1");
@@ -62,11 +62,11 @@ describe("auth", () => {
   });
 
   it("signOut clears localStorage", async () => {
-    store.taazi_buyer_id = "b1";
-    store.taazi_phone = "9876543210";
+    store.zepto_buyer_id = "b1";
+    store.zepto_phone = "9876543210";
     const { signOut } = await import("../../src/lib/auth");
     signOut();
-    expect(store.taazi_buyer_id).toBeUndefined();
-    expect(store.taazi_phone).toBeUndefined();
+    expect(store.zepto_buyer_id).toBeUndefined();
+    expect(store.zepto_phone).toBeUndefined();
   });
 });

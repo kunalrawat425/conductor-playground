@@ -11,7 +11,7 @@ const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY || "";
 
 if (vapidPublicKey && vapidPrivateKey) {
   webPush.setVapidDetails(
-    "mailto:hello@taazi.in",
+    "mailto:hello@zepto.in",
     vapidPublicKey,
     vapidPrivateKey
   );
