@@ -3,12 +3,10 @@ export const prerender = false;
 
 import Header from "../../../components/Header.astro";
 import DashboardGate from "../../../components/DashboardGate.astro";
-import SellerActiveGate from "../../../components/SellerActiveGate.astro";
 import ListingForm from "../../../components/ListingForm.astro";
-import SellerBottomNav from "../../../components/SellerBottomNav.astro";
 import "../../../styles/global.css";
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 ---
 
 <html lang="en">
@@ -21,9 +19,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
   </head>
-  <body class="seller-dash">
+  <body>
     <DashboardGate />
-    <SellerActiveGate />
     <Header showDashboardLink={false} />
 
     <main>
@@ -97,6 +94,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               photo_url: photoUrl,
               listed_date: new Date().toISOString().split("T")[0],
               is_available: true,
+              expires_at: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
               pickup_loc: pickupLoc,
             });
 
@@ -123,7 +121,5 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       init();
     </script>
-
-    <SellerBottomNav active="listings" />
   </body>
 </html>

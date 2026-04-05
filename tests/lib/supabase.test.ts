@@ -54,7 +54,7 @@ describe("supabase queries", () => {
     vi.clearAllMocks();
   });
 
-  it("getActiveListings filters by available and active seller", async () => {
+  it("getActiveListings filters by available and non-expired listings", async () => {
     const mockListings = [
       {
         id: "1",
@@ -80,7 +80,9 @@ describe("supabase queries", () => {
 
     expect(mockFrom).toHaveBeenCalledWith("fish_listings");
     expect(chain.eq).toHaveBeenCalledWith("is_available", true);
-    expect(result).toEqual([mockListings[0]]);
+    expect(chain.gt).toHaveBeenCalledWith("expires_at", expect.any(String));
+    expect(chain.order).toHaveBeenCalledWith("created_at", { ascending: false });
+    expect(result).toEqual(mockListings);
   });
 
   it("getSellerById queries sellers table", async () => {
@@ -92,23 +94,6 @@ describe("supabase queries", () => {
 
     expect(mockFrom).toHaveBeenCalledWith("sellers");
     expect(result).toEqual(mockSeller);
-  });
-
-  it("getAllSellers filters is_active true", async () => {
-    const mockSellers = [{ id: "s1", name: "A", is_active: true }];
-    const mockEq = vi.fn().mockReturnValue({
-      then: (cb: (v: { data: unknown; error: null }) => unknown) =>
-        Promise.resolve(cb({ data: mockSellers, error: null })),
-    });
-    mockFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({ eq: mockEq }),
-    });
-
-    const { getAllSellers } = await import("../../src/lib/supabase");
-    const result = await getAllSellers();
-    expect(mockFrom).toHaveBeenCalledWith("sellers");
-    expect(mockEq).toHaveBeenCalledWith("is_active", true);
-    expect(result).toEqual(mockSellers);
   });
 
   it("createListing posts to seller listings API", async () => {

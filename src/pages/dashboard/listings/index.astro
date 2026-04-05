@@ -3,11 +3,9 @@ export const prerender = false;
 
 import Header from "../../../components/Header.astro";
 import DashboardGate from "../../../components/DashboardGate.astro";
-import SellerActiveGate from "../../../components/SellerActiveGate.astro";
-import SellerBottomNav from "../../../components/SellerBottomNav.astro";
 import "../../../styles/global.css";
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 ---
 
 <html lang="en">
@@ -20,9 +18,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
   </head>
-  <body class="seller-dash">
+  <body>
     <DashboardGate />
-    <SellerActiveGate />
     <Header showDashboardLink={false} />
 
     <script is:inline>
@@ -45,6 +42,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     </div>
 
     <main id="dash-main" style="display:none;">
+      <!-- Nav -->
+      <div class="dash-nav">
+        <a href="/dashboard/orders" class="dash-nav-item">Orders</a>
+        <a href="/dashboard/listings" class="dash-nav-item active">Listings</a>
+        <a href="/dashboard/profile" class="dash-nav-item">Profile</a>
+      </div>
+
       <!-- Add listing button -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <h2 id="seller-name" style="font-size:20px;font-weight:700;">My Listings</h2>
@@ -68,12 +72,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
 
         let seller: Seller;
-        let listings: FishListing[];
         try {
-          [seller, listings] = await Promise.all([
-            getSellerById(session.seller_id),
-            getSellerListings(session.seller_id),
-          ]);
+          seller = await getSellerById(session.seller_id);
         } catch (err: any) {
           console.error("Dashboard load error:", err);
           signOut();
@@ -83,6 +83,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
         const displayName = [seller.first_name, seller.last_name].filter(Boolean).join(" ") || seller.name;
         document.getElementById("seller-name")!.textContent = `${displayName}'s Listings`;
+
+        const listings = await getSellerListings(seller.id);
         renderListings(listings);
 
         requestAnimationFrame(() => {
@@ -110,9 +112,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           .map((l) => {
             const name = getSpeciesDisplay(l.species);
             const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
+            const isExpired = new Date(l.expires_at) < new Date();
             const statusBadge = !l.is_available
               ? '<span class="badge badge-red">Unavailable</span>'
-              : '<span class="badge badge-green">Active</span>';
+              : isExpired
+                ? '<span class="badge badge-orange">Expired</span>'
+                : '<span class="badge badge-green">Active</span>';
 
             return `
               <div class="card listing-dash-card" style="cursor:pointer;">
@@ -151,6 +156,31 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       init();
     </script>
 
-    <SellerBottomNav active="listings" />
+    <style is:global>
+      .dash-nav {
+        display: flex;
+        gap: 0;
+        margin-bottom: 16px;
+        border-bottom: 2px solid var(--gray-200);
+      }
+      .dash-nav-item {
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .dash-nav-item:hover {
+        color: var(--gray-700);
+        text-decoration: none;
+      }
+      .dash-nav-item.active {
+        color: var(--blue);
+        border-bottom-color: var(--blue);
+      }
+    </style>
   </body>
 </html>

@@ -37,18 +37,11 @@ describe("buyer-address", () => {
         lng: 72.81,
         is_default: true,
       })
-    ).toBe("4B, X, Gate 2 — Versova");
+    ).toBe("4B, X, Gate 2 — Versova (19.12000, 72.81000)");
   });
 
   it("formatAreaPart handles name only", () => {
     expect(formatAreaPart("Bandra", null, null)).toBe("Bandra");
-  });
-
-  it("formatAreaPart omits coordinates; coords-only becomes map pin label", () => {
-    expect(formatAreaPart("Versova", 19.12, 72.81)).toBe("Versova");
-    expect(formatAreaPart(null, 19.1, 72.8)).toBe("Map pin");
-    expect(formatAreaPart("", 19.1, 72.8)).toBe("Map pin");
-    expect(formatAreaPart(null, null, null)).toBeNull();
   });
 
   it("composeBuyerAddressString", () => {
@@ -65,6 +58,6 @@ describe("buyer-address", () => {
     store.zepto_location = JSON.stringify({ name: "Andheri", lat: 19.1, lng: 72.8 });
     expect(
       formatNewCheckoutAddress({ flat: "2", building: "Y", landmark: "" })
-    ).toBe("2, Y — Andheri");
+    ).toBe("2, Y — Andheri (19.10000, 72.80000)");
   });
 });

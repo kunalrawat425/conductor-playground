@@ -3,8 +3,6 @@
  * Buyer session stored in localStorage (zepto_buyer_id, zepto_phone).
  */
 
-import { formatAreaPart } from "./buyer-address";
-
 export type { BuyerAddressDetail } from "./buyer-address";
 
 export async function sendOtp(phone: string) {
@@ -30,7 +28,6 @@ export async function verifyOtp(phone: string, token: string) {
   // Store session in localStorage
   localStorage.setItem("zepto_buyer_id", data.buyer_id);
   localStorage.setItem("zepto_phone", data.phone);
-  localStorage.setItem("zepto_buyer_active", data.is_active === false ? "0" : "1");
 
   return data;
 }
@@ -42,20 +39,22 @@ export function getSession(): { buyer_id: string; phone: string } | null {
   return { buyer_id, phone };
 }
 
-/** false when buyer `is_active` is false (ordering disabled). */
-export function isBuyerOrderingAllowed(): boolean {
-  return localStorage.getItem("zepto_buyer_active") !== "0";
-}
-
 const ADDRESS_DETAIL_KEY = "zepto_address_detail";
 
-/** Area from LocationPicker (`zepto_location`); coordinates are stored but not shown. */
+/** Area + coordinates from LocationPicker (`zepto_location`). */
 export function getBuyerAddressFromStorage(): string | null {
   try {
     const raw = localStorage.getItem("zepto_location");
     if (!raw) return null;
     const loc = JSON.parse(raw) as { lat?: number; lng?: number; name?: string };
-    return formatAreaPart(loc.name ?? null, loc.lat ?? null, loc.lng ?? null);
+    const name = typeof loc.name === "string" ? loc.name.trim() : "";
+    const lat = typeof loc.lat === "number" ? loc.lat : NaN;
+    const lng = typeof loc.lng === "number" ? loc.lng : NaN;
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+    const coordSuffix = hasCoords ? ` (${lat.toFixed(5)}, ${lng.toFixed(5)})` : "";
+    if (name) return `${name}${coordSuffix}`;
+    if (hasCoords) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    return null;
   } catch {
     return null;
   }
@@ -86,5 +85,4 @@ export function saveBuyerAddressDetailToStorage(detail: BuyerAddressDetail) {
 export function signOut() {
   localStorage.removeItem("zepto_buyer_id");
   localStorage.removeItem("zepto_phone");
-  localStorage.removeItem("zepto_buyer_active");
 }

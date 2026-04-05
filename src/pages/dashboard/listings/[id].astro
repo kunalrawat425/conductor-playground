@@ -3,13 +3,11 @@ export const prerender = false;
 
 import Header from "../../../components/Header.astro";
 import DashboardGate from "../../../components/DashboardGate.astro";
-import SellerActiveGate from "../../../components/SellerActiveGate.astro";
 import ListingForm from "../../../components/ListingForm.astro";
-import SellerBottomNav from "../../../components/SellerBottomNav.astro";
 import "../../../styles/global.css";
 
 const { id } = Astro.params;
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 ---
 
 <html lang="en">
@@ -21,9 +19,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body class="seller-dash">
+  <body>
     <DashboardGate />
-    <SellerActiveGate />
     <Header showDashboardLink={false} />
 
     <main>
@@ -56,10 +53,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
 
         try {
-          const [seller, listing] = await Promise.all([
-            getSellerById(session.seller_id),
-            getListingById(listingId),
-          ]);
+          const seller = await getSellerById(session.seller_id);
+          const listing = await getListingById(listingId);
 
           if (listing.seller_id !== seller.id) {
             document.getElementById("form-container")!.innerHTML = '<p style="color:var(--red);">Not your listing.</p>';
@@ -173,7 +168,5 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
       })();
     </script>
-
-    <SellerBottomNav active="listings" />
   </body>
 </html>
