@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import webPush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -9,17 +8,8 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const vapidPublicKey = import.meta.env.PUBLIC_VAPID_KEY || "";
 const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY || "";
 
-if (vapidPublicKey && vapidPrivateKey) {
-  webPush.setVapidDetails(
-    "mailto:hello@zepto.in",
-    vapidPublicKey,
-    vapidPrivateKey
-  );
-}
-
 /**
  * POST /api/push-notify
- * Called by Supabase Database Webhook when orders.status changes.
  * Body: { buyer_id, status, species, final_price }
  */
 export const POST: APIRoute = async ({ request }) => {
@@ -30,6 +20,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!buyer_id || !status) {
       return new Response(JSON.stringify({ error: "Missing buyer_id or status" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -44,6 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!buyer?.push_enabled || !buyer?.push_subscription) {
       return new Response(JSON.stringify({ skipped: true, reason: "push not enabled" }), {
         status: 200,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -82,6 +74,10 @@ export const POST: APIRoute = async ({ request }) => {
       body: `Your order status: ${status}`,
     };
 
+    // Lazy import web-push to avoid module-level crash on serverless
+    const webPush = await import("web-push");
+    webPush.setVapidDetails("mailto:hello@zepto.in", vapidPublicKey, vapidPrivateKey);
+
     await webPush.sendNotification(
       buyer.push_subscription,
       JSON.stringify({
@@ -91,12 +87,15 @@ export const POST: APIRoute = async ({ request }) => {
       })
     );
 
-    return new Response(JSON.stringify({ sent: true }), { status: 200 });
+    return new Response(JSON.stringify({ sent: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (err: any) {
     console.error("Push notify error:", err);
     return new Response(
       JSON.stringify({ error: err.message || "Internal error" }),
-      { status: 500 }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 };

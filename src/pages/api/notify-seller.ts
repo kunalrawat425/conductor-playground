@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import webPush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -8,14 +7,6 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const vapidPublicKey = import.meta.env.PUBLIC_VAPID_KEY || "";
 const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY || "";
-
-if (vapidPublicKey && vapidPrivateKey) {
-  webPush.setVapidDetails(
-    "mailto:hello@zepto.in",
-    vapidPublicKey,
-    vapidPrivateKey
-  );
-}
 
 /**
  * POST /api/notify-seller
@@ -26,7 +17,10 @@ export const POST: APIRoute = async ({ request }) => {
     const { seller_id, species, quantity, quantity_unit, buyer_phone } = await request.json();
 
     if (!seller_id) {
-      return new Response(JSON.stringify({ error: "Missing seller_id" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Missing seller_id" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -37,13 +31,20 @@ export const POST: APIRoute = async ({ request }) => {
       .single();
 
     if (!seller?.push_enabled || !seller?.push_subscription) {
-      return new Response(JSON.stringify({ skipped: true, reason: "push not enabled" }), { status: 200 });
+      return new Response(JSON.stringify({ skipped: true, reason: "push not enabled" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const unitLabel = quantity_unit === "dozen" ? "dz" : quantity_unit || "kg";
     const body = species
       ? `New order: ${species} ${quantity || ""}${unitLabel} from ${buyer_phone || "a buyer"}`
       : `You have a new order from ${buyer_phone || "a buyer"}`;
+
+    // Lazy import web-push to avoid module-level crash on serverless
+    const webPush = await import("web-push");
+    webPush.setVapidDetails("mailto:hello@zepto.in", vapidPublicKey, vapidPrivateKey);
 
     await webPush.sendNotification(
       seller.push_subscription,
@@ -55,9 +56,15 @@ export const POST: APIRoute = async ({ request }) => {
       })
     );
 
-    return new Response(JSON.stringify({ sent: true }), { status: 200 });
+    return new Response(JSON.stringify({ sent: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (err: any) {
     console.error("Seller notify error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };
