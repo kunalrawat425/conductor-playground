@@ -9,7 +9,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
 const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
 /** mailto: or https: URL required by web-push (see VAPID_CONTACT in .env.example) */
-const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@zepto.in";
+const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@fishkart.app";
 
 export type BuyerPushPayload = {
   buyer_id: string;
@@ -81,8 +81,8 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
   const notification = buyerOrderPushNotification(status, species, final_price);
   /** Unique tag every time — same tag replaces the previous notification in the OS tray. */
   const pushTag = order_id
-    ? `zepto-order-${order_id}-${randomUUID()}`
-    : `zepto-buyer-${buyer_id}-${status}-${randomUUID()}`;
+    ? `fishkart-order-${order_id}-${randomUUID()}`
+    : `fishkart-buyer-${buyer_id}-${status}-${randomUUID()}`;
 
   try {
     const webPush = await loadWebPush();

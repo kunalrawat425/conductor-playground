@@ -1,7 +1,7 @@
-// Zepto Service Worker
+// FishKart Service Worker
 // Handles push notifications and offline app shell caching
 
-const CACHE_NAME = "zepto-v1";
+const CACHE_NAME = "fishkart-v1";
 const SHELL_ASSETS = ["/", "/manifest.json", "/favicon.svg"];
 
 // Install: cache app shell
@@ -53,11 +53,11 @@ self.addEventListener("fetch", (event) => {
 
 // Push notification handler
 function uniqueFallbackTag() {
-  return `zepto-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  return `fishkart-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Zepto", body: "You have an update!", url: "/track" };
+  let data = { title: "FishKart", body: "You have an update!", url: "/track" };
 
   if (event.data) {
     try {
