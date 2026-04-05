@@ -1,0 +1,181 @@
+---
+import AppShell from "../components/AppShell.astro";
+import LoginModal from "../components/LoginModal.astro";
+export const prerender = false;
+---
+
+<AppShell title={`My Orders - ${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"}`} description="Track your fish orders in real-time." activeTab="orders" showLocationBadge={false}>
+  <div id="track-container">
+    <!-- Not logged in state -->
+    <div id="track-login" style="display:none;text-align:center;padding:48px 16px;">
+      <div style="font-size:48px;margin-bottom:16px;">🐟</div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Track your orders</h2>
+      <p class="text-muted" style="margin-bottom:24px;">Log in to see your order history and get live updates</p>
+      <button class="btn btn-primary tap-target" id="track-login-btn" style="min-height:44px;padding:12px 32px;">
+        Log in with phone
+      </button>
+    </div>
+
+    <!-- Loading state -->
+    <div id="track-loading" style="padding:24px 0;">
+      <h2 class="section-title">My Orders</h2>
+      <div class="card" style="margin-bottom:12px;"><div class="card-body"><div class="skeleton" style="height:20px;width:50%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;"></div></div></div>
+      <div class="card"><div class="card-body"><div class="skeleton" style="height:20px;width:50%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;"></div></div></div>
+    </div>
+
+    <!-- Orders list -->
+    <div id="track-orders" style="display:none;padding:16px 0;">
+      <h2 class="section-title">My Orders</h2>
+      <div id="orders-list"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="track-empty" style="display:none;text-align:center;padding:48px 16px;">
+      <div style="font-size:48px;margin-bottom:16px;">📋</div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">No orders yet</h2>
+      <p class="text-muted" style="margin-bottom:24px;">Browse fresh fish and place your first order</p>
+      <a href="/" class="btn btn-primary tap-target" style="padding:12px 32px;">Browse Fish</a>
+    </div>
+  </div>
+
+  <script>
+    import { supabase, getBuyerOrders } from "../lib/supabase";
+    import { getSession } from "../lib/auth";
+    import { getSpeciesDisplay } from "../lib/species";
+
+    // Status display mapping
+    const STATUS_LABELS: Record<string, { label: string; badge: string }> = {
+      pre_order: { label: "Pending confirmation", badge: "badge-orange" },
+      pending: { label: "Placed", badge: "badge-blue" },
+      confirmed: { label: "Confirmed", badge: "badge-green" },
+      paid: { label: "Paid", badge: "badge-green" },
+      picked_up: { label: "Ready for pickup", badge: "badge-green" },
+      completed: { label: "Completed", badge: "badge-green" },
+      declined: { label: "Declined", badge: "badge-red" },
+      cancelled: { label: "Cancelled", badge: "badge-red" },
+      refunded: { label: "Refunded", badge: "badge-orange" },
+    };
+
+    function esc(str: string): string {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function formatDate(dateStr: string): string {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function renderOrder(order: any): string {
+      const status = STATUS_LABELS[order.status] || { label: order.status, badge: "badge-blue" };
+      const species = order.species
+        ? getSpeciesDisplay(order.species)
+        : order.listing?.species
+          ? getSpeciesDisplay(order.listing.species)
+          : "Fish";
+      const sellerName = order.listing?.seller?.name || "Seller";
+      const isPreOrder = order.status === "pre_order" || order.paid_amount != null;
+
+      let priceDisplay = "";
+      if (order.final_price) {
+        priceDisplay = `₹${order.final_price}`;
+        if (order.paid_amount && order.paid_amount > order.final_price) {
+          const refund = order.paid_amount - order.final_price;
+          priceDisplay += ` <span class="text-muted">(₹${refund} refund)</span>`;
+        }
+      } else if (order.total_price) {
+        priceDisplay = `₹${order.total_price}`;
+      } else if (order.paid_amount) {
+        priceDisplay = `Up to ₹${order.paid_amount}`;
+      }
+
+      return `
+        <div class="card tap-target" style="margin-bottom:12px;" data-order-id="${order.id}">
+          <div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+              <div>
+                <h3 style="font-size:16px;font-weight:700;">${esc(species)}</h3>
+                <span class="text-muted">${esc(sellerName)}</span>
+              </div>
+              <span class="badge ${status.badge}">${status.label}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                ${priceDisplay ? `<span style="font-weight:600;">${priceDisplay}</span>` : ""}
+                ${order.quantity ? `<span class="text-muted"> · ${order.quantity} ${order.quantity_unit}</span>` : ""}
+              </div>
+              <span class="text-muted" style="font-size:12px;">${formatDate(order.created_at)}</span>
+            </div>
+            ${isPreOrder && order.status === "pre_order" ? `<p class="text-muted" style="font-size:12px;margin-top:8px;font-style:italic;">Waiting for seller to confirm with morning price</p>` : ""}
+          </div>
+        </div>
+      `;
+    }
+
+    async function initTrack() {
+      const loginEl = document.getElementById("track-login")!;
+      const loadingEl = document.getElementById("track-loading")!;
+      const ordersEl = document.getElementById("track-orders")!;
+      const emptyEl = document.getElementById("track-empty")!;
+      const ordersList = document.getElementById("orders-list")!;
+
+      const session = getSession();
+
+      if (!session) {
+        loadingEl.style.display = "none";
+        loginEl.style.display = "block";
+
+        document.getElementById("track-login-btn")?.addEventListener("click", () => {
+          window.dispatchEvent(new CustomEvent("start-order"));
+        });
+        return;
+      }
+
+      const buyerId = session.buyer_id;
+
+      // Fetch orders
+      const orders = await getBuyerOrders(buyerId);
+
+      loadingEl.style.display = "none";
+
+      if (orders.length === 0) {
+        emptyEl.style.display = "block";
+        return;
+      }
+
+      ordersEl.style.display = "block";
+      ordersList.innerHTML = orders.map(renderOrder).join("");
+
+      // Subscribe to realtime updates
+      supabase
+        .channel("buyer-orders")
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "orders",
+            filter: `buyer_id=eq.${buyerId}`,
+          },
+          (payload: any) => {
+            const updated = payload.new;
+            const card = document.querySelector(`[data-order-id="${updated.id}"]`);
+            if (card) {
+              card.outerHTML = renderOrder(updated);
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    initTrack();
+  </script>
+
+  <LoginModal />
+</AppShell>

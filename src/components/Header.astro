@@ -1,0 +1,41 @@
+---
+interface Props {
+  showDashboardLink?: boolean;
+}
+
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+const { showDashboardLink = true } = Astro.props;
+---
+
+<header class="header">
+  <a href="/" class="logo">🐟 {brandName}</a>
+  <nav>
+    {showDashboardLink && <a href="/dashboard" class="nav-link">Seller Dashboard</a>}
+  </nav>
+</header>
+
+<style>
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--gray-200);
+    margin-bottom: 24px;
+  }
+
+  .logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+
+  .logo:hover {
+    text-decoration: none;
+  }
+
+  .nav-link {
+    font-size: 14px;
+    font-weight: 500;
+  }
+</style>

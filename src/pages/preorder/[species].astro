@@ -1,0 +1,560 @@
+---
+export const prerender = false;
+
+import AppShell from "../../components/AppShell.astro";
+import LoginModal from "../../components/LoginModal.astro";
+
+const { species } = Astro.params;
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+---
+
+<AppShell title={`Pre-order - ${brandName}`} description={`Pre-order fresh fish for tomorrow morning on ${brandName}.`} activeTab="home">
+  <!-- Back -->
+  <div style="padding:8px 0;">
+    <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">← Back</a>
+  </div>
+
+  <!-- Species hero -->
+  <section id="species-hero">
+    <div class="skeleton" style="height:120px;border-radius:16px;margin-bottom:16px;"></div>
+  </section>
+
+  <!-- Sellers with this fish -->
+  <section id="sellers-active" style="display:none;">
+    <h2 class="po-section-title">Available now</h2>
+    <div id="active-list"></div>
+  </section>
+
+  <!-- Past sellers (can pre-order) -->
+  <section id="sellers-preorder" style="display:none;">
+    <h2 class="po-section-title">Pre-order for tomorrow</h2>
+    <p class="text-muted" style="margin-bottom:12px;">These sellers have sold this fish before. Pre-order and they'll source it in the morning.</p>
+    <div id="preorder-list"></div>
+  </section>
+
+  <!-- No sellers -->
+  <div id="no-sellers" style="display:none;text-align:center;padding:32px 20px;">
+    <div style="font-size:48px;margin-bottom:12px;">🔍</div>
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">No sellers found</h3>
+    <p class="text-muted">No sellers currently have this fish. Check back in the morning!</p>
+  </div>
+
+  <!-- Order sheet (bottom sheet) -->
+  <div class="bottom-sheet" id="order-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;" id="sheet-title">Place Order</h3>
+    <div class="form-group">
+      <label for="order-qty">Quantity</label>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="qty-circle" id="qty-minus">−</button>
+        <input type="number" id="order-qty" value="1" min="1" step="0.5" style="width:80px;text-align:center;font-size:18px;font-weight:700;" />
+        <button class="qty-circle" id="qty-plus">+</button>
+        <span id="order-unit" class="text-muted" style="font-size:14px;">kg</span>
+      </div>
+    </div>
+    <div id="order-price-info" style="background:var(--gray-50);padding:12px;border-radius:10px;margin-bottom:16px;"></div>
+    <button class="btn btn-primary" id="confirm-order-btn" style="width:100%;min-height:48px;font-size:16px;border-radius:12px;">
+      Confirm Order
+    </button>
+    <!-- Toast notification -->
+    <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
+  </div>
+
+  <LoginModal />
+
+  <style>
+    .po-section-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--gray-900);
+    }
+
+    /* Species hero card */
+    .species-hero-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .species-emoji {
+      font-size: 48px;
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #e8f4fd, #d1ecf1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .species-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .species-marathi {
+      font-size: 14px;
+      color: var(--gray-500);
+    }
+    .species-range {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--orange);
+      margin-top: 4px;
+    }
+
+    /* Seller listing cards */
+    .po-seller-card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .po-seller-left {
+      flex: 1;
+      min-width: 0;
+    }
+    .po-seller-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 2px;
+    }
+    .po-seller-loc {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-bottom: 4px;
+    }
+    .po-seller-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .po-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 5px;
+    }
+    .po-badge-open { background: #d4edda; color: #155724; }
+    .po-badge-closed { background: #f8d7da; color: #721c24; }
+    .po-badge-delivery { background: #cce5ff; color: #004085; }
+    .po-badge-rating { background: var(--green); color: white; }
+    .po-badge-distance { background: var(--gray-100); color: var(--gray-700); }
+
+    .po-seller-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .po-price {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--green);
+    }
+    .po-price-unit {
+      font-size: 11px;
+      color: var(--gray-500);
+    }
+    .po-order-btn {
+      margin-top: 8px;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 2px solid var(--green);
+      background: white;
+      color: var(--green);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .po-order-btn:hover {
+      background: var(--green);
+      color: white;
+    }
+    .po-preorder-btn {
+      margin-top: 8px;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 2px solid var(--orange);
+      background: white;
+      color: var(--orange);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .po-preorder-btn:hover {
+      background: var(--orange);
+      color: white;
+    }
+
+    /* Quantity circle button */
+    .qty-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--gray-200);
+      background: white;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gray-700);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+    .qty-circle:active {
+      background: var(--gray-100);
+    }
+  </style>
+
+  <script define:vars={{ speciesId: species, brandName }}>
+    import("../../lib/supabase").then(async (db) => {
+      const { SPECIES, getSpeciesDisplay } = await import("../../lib/species");
+      const { getSession } = await import("../../lib/auth");
+
+      const FISH_EMOJI = {
+        pomfret: "🐟", surmai: "🐠", rawas: "🐡", bangda: "🐟", bombil: "🍤",
+        prawns: "🦐", crab: "🦀", squid: "🦑", lobster: "🦞", oyster: "🦪",
+        clam: "🐚", sardine: "🐟", sole: "🐟", hilsa: "🐟", rohu: "🐟", catla: "🐟",
+      };
+
+      function esc(str) {
+        const div = document.createElement("div");
+        div.textContent = str || "";
+        return div.innerHTML;
+      }
+
+      function getBuyerLocation() {
+        try {
+          const saved = localStorage.getItem("zepto_location");
+          if (saved) return JSON.parse(saved);
+        } catch {}
+        return null;
+      }
+
+      function distanceKm(lat1, lng1, lat2, lng2) {
+        const R = 6371;
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLng = ((lng2 - lng1) * Math.PI) / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+
+      function isSellerOpen(opensAt, closesAt) {
+        if (!opensAt || !closesAt) return true;
+        const now = new Date();
+        const current = now.getHours() * 60 + now.getMinutes();
+        const [oh, om] = opensAt.split(":").map(Number);
+        const [ch, cm] = closesAt.split(":").map(Number);
+        const open = oh * 60 + (om || 0);
+        const close = ch * 60 + (cm || 0);
+        if (close > open) return current >= open && current < close;
+        return current >= open || current < close;
+      }
+
+      const sp = SPECIES[speciesId];
+      const emoji = FISH_EMOJI[speciesId] || "🐟";
+      const unitLabel = sp?.defaultUnit === "dozen" ? "dz" : (sp?.defaultUnit || "kg");
+
+      // Fetch data
+      let speciesRange = null;
+      try {
+        const ranges = await db.getSpeciesRanges();
+        speciesRange = ranges.find(r => r.species === speciesId);
+      } catch {}
+
+      let sellersData;
+      try {
+        sellersData = await db.getSellersForSpecies(speciesId);
+      } catch (err) {
+        console.error(err);
+        sellersData = { active: [], pastSellers: [] };
+      }
+
+      const buyerLoc = getBuyerLocation();
+
+      // Render hero
+      const heroEl = document.getElementById("species-hero");
+      heroEl.innerHTML = `
+        <div class="species-hero-card">
+          <div class="species-emoji">${emoji}</div>
+          <div>
+            <div class="species-name">${esc(sp?.english || speciesId)}</div>
+            <div class="species-marathi">${esc(sp?.marathi || "")}</div>
+            ${speciesRange
+              ? `<div class="species-range">₹${speciesRange.min_price} – ${speciesRange.max_price} <span style="font-size:13px;font-weight:400;">per ${unitLabel}</span></div>`
+              : `<div class="species-range" style="color:var(--gray-500);">Price varies</div>`}
+          </div>
+        </div>
+      `;
+
+      document.title = `${sp?.english || speciesId} - ${brandName}`;
+
+      // Helper to build seller badge HTML
+      function sellerBadges(seller, dist) {
+        const open = isSellerOpen(seller.opens_at, seller.closes_at);
+        return `
+          ${seller.rating_avg > 0 ? `<span class="po-badge po-badge-rating">★ ${seller.rating_avg}</span>` : ""}
+          ${open ? `<span class="po-badge po-badge-open">Open</span>` : `<span class="po-badge po-badge-closed">Closed</span>`}
+          ${seller.has_delivery ? `<span class="po-badge po-badge-delivery">Delivery</span>` : ""}
+          ${dist !== null ? `<span class="po-badge po-badge-distance">${dist.toFixed(1)} km</span>` : ""}
+        `;
+      }
+
+      function getDist(seller) {
+        if (buyerLoc && seller.lat != null && seller.lng != null) {
+          return distanceKm(buyerLoc.lat, buyerLoc.lng, Number(seller.lat), Number(seller.lng));
+        }
+        return null;
+      }
+
+      // Render active sellers (have this fish NOW)
+      const activeSection = document.getElementById("sellers-active");
+      const activeList = document.getElementById("active-list");
+
+      if (sellersData.active.length > 0) {
+        activeSection.style.display = "block";
+
+        // Sort by distance
+        const sorted = [...sellersData.active].sort((a, b) => {
+          const da = getDist(a.seller) ?? 999;
+          const db2 = getDist(b.seller) ?? 999;
+          return da - db2;
+        });
+
+        activeList.innerHTML = sorted.map(item => {
+          const s = item.seller;
+          const dist = getDist(s);
+          const pUnit = item.price_unit === "dozen" ? "dz" : item.price_unit;
+          return `
+            <div class="po-seller-card">
+              <div class="po-seller-left">
+                <div class="po-seller-name">${esc(s.name)}</div>
+                <div class="po-seller-loc">📍 ${esc(s.location_name || "")}</div>
+                <div class="po-seller-badges">${sellerBadges(s, dist)}</div>
+              </div>
+              <div class="po-seller-right">
+                <div class="po-price">₹${item.price}</div>
+                <div class="po-price-unit">per ${pUnit} · ${item.weight_avail} avail</div>
+                <button class="po-order-btn" data-action="order" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-listing-id="${item.id || ""}" data-price="${item.price}" data-unit="${item.price_unit}">Order</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // Render past sellers (pre-order)
+      const preorderSection = document.getElementById("sellers-preorder");
+      const preorderList = document.getElementById("preorder-list");
+
+      if (sellersData.pastSellers.length > 0) {
+        preorderSection.style.display = "block";
+
+        const sorted = [...sellersData.pastSellers].sort((a, b) => {
+          const da = getDist(a.seller) ?? 999;
+          const db2 = getDist(b.seller) ?? 999;
+          return da - db2;
+        });
+
+        preorderList.innerHTML = sorted.map(item => {
+          const s = item.seller;
+          const dist = getDist(s);
+          const rangeText = speciesRange
+            ? `₹${speciesRange.min_price}-${speciesRange.max_price}`
+            : "Price TBD";
+          return `
+            <div class="po-seller-card">
+              <div class="po-seller-left">
+                <div class="po-seller-name">${esc(s.name)}</div>
+                <div class="po-seller-loc">📍 ${esc(s.location_name || "")}</div>
+                <div class="po-seller-badges">${sellerBadges(s, dist)}</div>
+              </div>
+              <div class="po-seller-right">
+                <div class="po-price" style="color:var(--orange);">${rangeText}</div>
+                <div class="po-price-unit">per ${unitLabel} · est. range</div>
+                <button class="po-preorder-btn" data-action="preorder" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-price="${speciesRange?.max_price || 0}" data-unit="${sp?.defaultUnit || 'kg'}">Pre-order</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // No sellers at all
+      if (sellersData.active.length === 0 && sellersData.pastSellers.length === 0) {
+        document.getElementById("no-sellers").style.display = "block";
+      }
+
+      // Order sheet logic
+      let currentOrder = null;
+
+      function openOrderSheet(action, sellerId, sellerName, listingId, price, unit) {
+        currentOrder = { action, sellerId, sellerName, listingId, price: parseFloat(price), unit };
+        const sheet = document.getElementById("order-sheet");
+        const backdrop = document.getElementById("backdrop");
+
+        document.getElementById("sheet-title").textContent =
+          action === "preorder" ? `Pre-order from ${sellerName}` : `Order from ${sellerName}`;
+
+        document.getElementById("order-unit").textContent = unit === "dozen" ? "dz" : unit;
+        (document.getElementById("order-qty")).value = "1";
+        updatePriceInfo();
+
+        sheet.classList.add("open");
+        backdrop.classList.add("visible");
+      }
+
+      function closeOrderSheet() {
+        document.getElementById("order-sheet").classList.remove("open");
+        document.getElementById("backdrop").classList.remove("visible");
+        currentOrder = null;
+      }
+
+      function updatePriceInfo() {
+        if (!currentOrder) return;
+        const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
+        const total = qty * currentOrder.price;
+        const infoEl = document.getElementById("order-price-info");
+
+        if (currentOrder.action === "preorder") {
+          infoEl.innerHTML = `
+            <div style="font-size:14px;margin-bottom:4px;">
+              <strong>Max price:</strong> ₹${currentOrder.price}/${currentOrder.unit === "dozen" ? "dz" : currentOrder.unit}
+            </div>
+            <div style="font-size:18px;font-weight:800;color:var(--orange);">
+              Estimated total: ₹${total.toFixed(0)}
+            </div>
+            <div style="font-size:12px;color:var(--gray-500);margin-top:4px;">
+              Pay max upfront. Refund the difference if actual price is lower.
+            </div>
+          `;
+        } else {
+          infoEl.innerHTML = `
+            <div style="font-size:14px;margin-bottom:4px;">
+              <strong>Price:</strong> ₹${currentOrder.price}/${currentOrder.unit === "dozen" ? "dz" : currentOrder.unit}
+            </div>
+            <div style="font-size:18px;font-weight:800;color:var(--green);">
+              Total: ₹${total.toFixed(0)}
+            </div>
+          `;
+        }
+      }
+
+      // Qty controls
+      document.getElementById("qty-minus").addEventListener("click", () => {
+        const input = document.getElementById("order-qty");
+        const val = parseFloat(input.value) || 1;
+        if (val > 0.5) input.value = String(val - 0.5);
+        updatePriceInfo();
+      });
+      document.getElementById("qty-plus").addEventListener("click", () => {
+        const input = document.getElementById("order-qty");
+        const val = parseFloat(input.value) || 1;
+        input.value = String(val + 0.5);
+        updatePriceInfo();
+      });
+      document.getElementById("order-qty").addEventListener("input", updatePriceInfo);
+
+      // Close sheet
+      document.getElementById("backdrop").addEventListener("click", closeOrderSheet);
+
+      // Event delegation for order/preorder buttons
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        const { action, sellerId, sellerName, listingId, price, unit } = btn.dataset;
+        openOrderSheet(action, sellerId, sellerName, listingId, price, unit);
+      });
+
+      // Confirm order
+      document.getElementById("confirm-order-btn").addEventListener("click", async () => {
+        if (!currentOrder) return;
+
+        const session = getSession();
+        if (!session) {
+          closeOrderSheet();
+          window.__pendingPreorder = currentOrder;
+          window.__pendingPreorderQty = parseFloat((document.getElementById("order-qty")).value) || 1;
+          window.dispatchEvent(new CustomEvent("start-order", { detail: {} }));
+          return;
+        }
+
+        await submitOrder(session);
+      });
+
+      // After login, submit pending order
+      window.addEventListener("buyer-logged-in", async () => {
+        const pending = window.__pendingPreorder;
+        if (!pending) return;
+        currentOrder = pending;
+        (document.getElementById("order-qty")).value = String(window.__pendingPreorderQty || 1);
+        window.__pendingPreorder = null;
+        window.__pendingPreorderQty = null;
+        const session = getSession();
+        if (session) await submitOrder(session);
+      });
+
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.style.display = "block";
+        toast.style.opacity = "1";
+        toast.style.background = type === "success" ? "var(--green)" : "var(--red)";
+        toast.style.color = "white";
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          setTimeout(() => { toast.style.display = "none"; }, 300);
+        }, 3000);
+      }
+
+      async function submitOrder(session) {
+        const btn = document.getElementById("confirm-order-btn");
+        btn.textContent = "Placing order...";
+        btn.disabled = true;
+        btn.style.opacity = "0.6";
+
+        const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
+        const totalPrice = qty * currentOrder.price;
+
+        try {
+          const res = await fetch("/api/orders/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              listing_id: currentOrder.listingId || null,
+              species: speciesId,
+              quantity: qty,
+              quantity_unit: currentOrder.unit,
+              total_price: totalPrice,
+              buyer_phone: session.phone,
+              buyer_id: session.buyer_id,
+              order_type: "pickup",
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Order failed");
+
+          showToast("Order placed!");
+          window.location.href = "/track";
+        } catch (err) {
+          showToast(err.message || "Order failed. Please try again.", "error");
+          btn.textContent = "Confirm Order";
+          btn.disabled = false;
+          btn.style.opacity = "1";
+        }
+      }
+    });
+  </script>
+</AppShell>

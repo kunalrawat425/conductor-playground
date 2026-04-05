@@ -1,0 +1,244 @@
+---
+/**
+ * Location picker bottom sheet.
+ * 3-tier fallback: geolocation → map tap → text input (Nominatim).
+ * Saves to localStorage.
+ */
+---
+
+<div class="bottom-sheet" id="location-picker">
+  <div class="bottom-sheet-handle"></div>
+  <h3 style="font-size:18px;font-weight:700;margin-bottom:4px;">Set your location</h3>
+  <p class="text-muted" style="margin-bottom:12px;">We'll show you nearby fish sellers</p>
+
+  <!-- Map tap area -->
+  <div id="location-map" style="width:100%;height:200px;border-radius:var(--radius);overflow:hidden;margin-bottom:12px;background:var(--gray-100);"></div>
+
+  <!-- Text input fallback -->
+  <div class="form-group" style="margin-bottom:12px;">
+    <label for="location-input">Or type your area</label>
+    <input
+      type="text"
+      id="location-input"
+      placeholder="e.g., Versova, Andheri, Bandra"
+      autocomplete="off"
+    />
+    <div id="location-error" style="color:var(--red);font-size:12px;margin-top:4px;display:none;"></div>
+    <div id="location-suggestions" style="margin-top:4px;"></div>
+  </div>
+
+  <!-- Use current location button -->
+  <button class="btn btn-primary tap-target" id="geo-btn" style="width:100%;margin-bottom:8px;">
+    📍 Use my current location
+  </button>
+
+  <button class="btn tap-target" id="location-cancel" style="width:100%;background:var(--gray-100);color:var(--gray-700);">
+    Cancel
+  </button>
+</div>
+
+<script>
+  let pickerMap: any = null;
+  let pickerMarker: any = null;
+
+  function openPicker() {
+    const sheet = document.getElementById("location-picker")!;
+    const backdrop = document.getElementById("backdrop")!;
+    sheet.classList.add("open");
+    backdrop.classList.add("visible");
+    initPickerMap();
+  }
+
+  function closePicker() {
+    const sheet = document.getElementById("location-picker")!;
+    const backdrop = document.getElementById("backdrop")!;
+    sheet.classList.remove("open");
+    backdrop.classList.remove("visible");
+  }
+
+  async function initPickerMap() {
+    if (pickerMap) return;
+
+    const L = await import("leaflet");
+    const mapEl = document.getElementById("location-map")!;
+    mapEl.innerHTML = "";
+
+    const defaultCenter: [number, number] = [19.1334, 72.8167]; // Versova
+    pickerMap = L.map(mapEl).setView(defaultCenter, 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+      maxZoom: 18,
+    }).addTo(pickerMap);
+
+    // Check if we have a saved location
+    const saved = localStorage.getItem("zepto_location");
+    if (saved) {
+      try {
+        const loc = JSON.parse(saved);
+        pickerMap.setView([loc.lat, loc.lng], 14);
+        pickerMarker = L.marker([loc.lat, loc.lng]).addTo(pickerMap);
+      } catch {}
+    }
+
+    // Tap to set location
+    pickerMap.on("click", async (e: any) => {
+      const { lat, lng } = e.latlng;
+
+      if (pickerMarker) {
+        pickerMarker.setLatLng([lat, lng]);
+      } else {
+        pickerMarker = L.marker([lat, lng]).addTo(pickerMap);
+      }
+
+      // Reverse geocode
+      try {
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`
+        );
+        const data = await resp.json();
+        const name =
+          data.address?.suburb ||
+          data.address?.neighbourhood ||
+          data.address?.city_district ||
+          "Selected location";
+
+        saveLocation(lat, lng, name);
+      } catch {
+        saveLocation(lat, lng, "Selected location");
+      }
+    });
+
+    // Fix map size after sheet animation
+    setTimeout(() => pickerMap?.invalidateSize(), 350);
+  }
+
+  function saveLocation(lat: number, lng: number, name: string) {
+    localStorage.setItem(
+      "zepto_location",
+      JSON.stringify({ lat, lng, name })
+    );
+    window.dispatchEvent(new CustomEvent("location-updated"));
+    closePicker();
+  }
+
+  // Geolocation button
+  document.getElementById("geo-btn")?.addEventListener("click", () => {
+    const btn = document.getElementById("geo-btn") as HTMLButtonElement;
+    btn.textContent = "Detecting...";
+    btn.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const resp = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&zoom=14`
+          );
+          const data = await resp.json();
+          const name =
+            data.address?.suburb ||
+            data.address?.neighbourhood ||
+            data.address?.city_district ||
+            "Your location";
+          saveLocation(pos.coords.latitude, pos.coords.longitude, name);
+        } catch {
+          saveLocation(pos.coords.latitude, pos.coords.longitude, "Your location");
+        }
+        btn.textContent = "📍 Use my current location";
+        btn.disabled = false;
+      },
+      () => {
+        btn.textContent = "📍 Use my current location";
+        btn.disabled = false;
+        const errEl = document.getElementById("location-error")!;
+        errEl.textContent = "Couldn't get your location. Tap the map or type your area.";
+        errEl.style.display = "block";
+      },
+      { timeout: 8000 }
+    );
+  });
+
+  // Text input with Nominatim geocoding (debounced)
+  let debounceTimer: any = null;
+  const locationInput = document.getElementById("location-input") as HTMLInputElement;
+  const suggestionsEl = document.getElementById("location-suggestions")!;
+  const errorEl = document.getElementById("location-error")!;
+
+  locationInput?.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    const query = locationInput.value.trim();
+    if (query.length < 3) {
+      suggestionsEl.innerHTML = "";
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        // Bounded to Mumbai metro area
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=3&viewbox=72.7,19.3,73.1,18.85&bounded=1`
+        );
+        const results = await resp.json();
+
+        if (results.length === 0) {
+          errorEl.textContent = "Couldn't find that area. Try tapping the map instead.";
+          errorEl.style.display = "block";
+          suggestionsEl.innerHTML = "";
+          return;
+        }
+
+        errorEl.style.display = "none";
+        suggestionsEl.innerHTML = results
+          .map(
+            (r: any) =>
+              `<button class="location-suggestion tap-target" data-lat="${r.lat}" data-lng="${r.lon}" data-name="${r.display_name.split(",")[0]}">${r.display_name.split(",").slice(0, 2).join(",")}</button>`
+          )
+          .join("");
+
+        // Attach click handlers
+        document.querySelectorAll(".location-suggestion").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const el = btn as HTMLElement;
+            saveLocation(
+              parseFloat(el.dataset.lat!),
+              parseFloat(el.dataset.lng!),
+              el.dataset.name!
+            );
+          });
+        });
+      } catch {
+        errorEl.textContent = "Search failed. Try tapping the map.";
+        errorEl.style.display = "block";
+      }
+    }, 500);
+  });
+
+  // Cancel button
+  document.getElementById("location-cancel")?.addEventListener("click", closePicker);
+
+  // Backdrop click to close
+  document.getElementById("backdrop")?.addEventListener("click", closePicker);
+
+  // Listen for open event
+  window.addEventListener("open-location-picker", openPicker);
+</script>
+
+<style>
+  .location-suggestion {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 13px;
+    color: var(--gray-900);
+    cursor: pointer;
+    margin-bottom: 4px;
+  }
+
+  .location-suggestion:hover {
+    background: var(--gray-50);
+  }
+</style>
