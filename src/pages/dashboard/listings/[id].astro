@@ -4,6 +4,7 @@ export const prerender = false;
 import Header from "../../../components/Header.astro";
 import DashboardGate from "../../../components/DashboardGate.astro";
 import ListingForm from "../../../components/ListingForm.astro";
+import SellerBottomNav from "../../../components/SellerBottomNav.astro";
 import "../../../styles/global.css";
 
 const { id } = Astro.params;
@@ -19,7 +20,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body>
+  <body class="seller-dash">
     <DashboardGate />
     <Header showDashboardLink={false} />
 
@@ -170,5 +171,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }
       })();
     </script>
+
+    <SellerBottomNav active="listings" />
   </body>
 </html>

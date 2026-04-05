@@ -7,6 +7,10 @@
 }
 
 :root {
+  /* Align fixed bottom navs with main card column */
+  --app-content-max-width: 800px;
+  --app-bottom-nav-gutter: 16px;
+
   --blue: #0066cc;
   --green: #28a745;
   --red: #dc3545;
@@ -30,10 +34,151 @@ html {
 }
 
 body {
-  max-width: 800px;
+  max-width: var(--app-content-max-width);
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 var(--app-bottom-nav-gutter);
   background: var(--gray-50);
+}
+
+/**
+ * Bottom nav row: always fills the app column (same width as cards).
+ * Parent `.bottom-nav` / `.seller-bottom-nav` constrains width on wide viewports.
+ */
+.app-bottom-nav-inner {
+  width: 100%;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--app-bottom-nav-gutter);
+  padding-right: var(--app-bottom-nav-gutter);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 56px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ----- Bottom bar: buyer (AppShell) + seller — same geometry & tab styling ----- */
+.bottom-nav,
+.seller-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(100vw, var(--app-content-max-width, 800px));
+  max-width: var(--app-content-max-width, 800px);
+  background: white;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+}
+
+.bottom-nav-item,
+.seller-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-500);
+  text-decoration: none;
+  padding: 6px 16px;
+  min-width: 64px;
+  min-height: 44px;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s;
+}
+
+.bottom-nav-item:hover,
+.seller-bottom-nav-item:hover {
+  text-decoration: none;
+  color: var(--blue);
+}
+
+.bottom-nav-item.active,
+.seller-bottom-nav-item--active {
+  color: var(--blue);
+}
+
+.bottom-nav-item svg,
+.seller-bottom-nav-item svg {
+  width: 22px;
+  height: 22px;
+}
+
+/** Seller dashboard pages: leave room for fixed bottom nav (matches bar min-height + gap). */
+body.seller-dash {
+  padding-bottom: calc(56px + 16px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ----- Top header: seller dashboard (.header) + buyer AppShell (.app-header) ----- */
+.header,
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--gray-200);
+  background: white;
+}
+
+/* Seller dashboard / login */
+.header {
+  padding: 16px 0;
+  margin-bottom: 24px;
+}
+
+/* Buyer app shell — sticky, safe area, same vertical rhythm as seller (16px) */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  padding: 16px var(--app-bottom-nav-gutter, 16px);
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+
+.logo,
+.app-logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-900);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.logo:hover,
+.app-logo:hover {
+  text-decoration: none;
+}
+
+.header .nav-link {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+@media (min-width: 769px) {
+  .app-header {
+    max-width: var(--app-content-max-width, 800px);
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 a {
