@@ -681,10 +681,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
             await Promise.all(orderPromises);
 
-            // Clear cart and redirect to orders
-            window.location.href = "/track";
+            // Show success toast then redirect
+            const toast = document.createElement("div");
+            toast.textContent = "Order placed!";
+            toast.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--green);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
+            document.body.appendChild(toast);
+            setTimeout(() => { window.location.href = "/track"; }, 600);
           } catch (err) {
-            alert("Order failed: " + (err.message || "Please try again"));
+            const toast = document.createElement("div");
+            toast.textContent = "Order failed: " + (err.message || "Please try again");
+            toast.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--red);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); }, 3000);
             btn.textContent = isPreorderMode ? "Place Pre-order" : "Place Order";
             btn.disabled = false;
           }

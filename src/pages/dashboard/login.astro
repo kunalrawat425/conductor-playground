@@ -20,6 +20,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
   <body>
     <Header showDashboardLink={false} />
 
+    <!-- Toast -->
+    <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
+
     <main>
       <div style="max-width:400px;margin:40px auto;">
         <h1 style="font-size:24px;font-weight:700;margin-bottom:8px;">Seller Login</h1>
@@ -45,16 +48,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             <button id="resend-btn" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;">Resend OTP</button>
           </p>
         </div>
-
-        <div id="error-msg" style="display:none;color:var(--red);margin-top:12px;font-size:14px;"></div>
-        <div id="loading-msg" style="display:none;color:var(--gray-500);margin-top:12px;font-size:14px;">Loading...</div>
       </div>
     </main>
 
     <script>
       import { sendOtp, verifyOtp, getSession } from "../../lib/seller-auth";
 
-      // Check if already logged in
       const session = getSession();
       if (session) window.location.href = "/dashboard";
 
@@ -62,26 +61,27 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       const otpStep = document.getElementById("otp-step")!;
       const phoneInput = document.getElementById("phone") as HTMLInputElement;
       const otpInput = document.getElementById("otp") as HTMLInputElement;
-      const sendBtn = document.getElementById("send-otp-btn")!;
-      const verifyBtn = document.getElementById("verify-otp-btn")!;
-      const resendBtn = document.getElementById("resend-btn")!;
-      const errorMsg = document.getElementById("error-msg")!;
-      const loadingMsg = document.getElementById("loading-msg")!;
+      const sendBtn = document.getElementById("send-otp-btn") as HTMLButtonElement;
+      const verifyBtn = document.getElementById("verify-otp-btn") as HTMLButtonElement;
+      const resendBtn = document.getElementById("resend-btn") as HTMLButtonElement;
 
-      function showError(msg: string) {
-        errorMsg.textContent = msg;
-        errorMsg.style.display = "block";
-        loadingMsg.style.display = "none";
+      function showToast(message: string, type: "success" | "error" = "success") {
+        const toast = document.getElementById("toast")!;
+        toast.textContent = message;
+        toast.style.display = "block";
+        toast.style.opacity = "1";
+        toast.style.background = type === "success" ? "var(--green)" : "var(--red)";
+        toast.style.color = "white";
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          setTimeout(() => { toast.style.display = "none"; }, 300);
+        }, 3000);
       }
 
-      function showLoading() {
-        errorMsg.style.display = "none";
-        loadingMsg.style.display = "block";
-      }
-
-      function hideMessages() {
-        errorMsg.style.display = "none";
-        loadingMsg.style.display = "none";
+      function setLoading(btn: HTMLButtonElement, loading: boolean, text: string) {
+        btn.disabled = loading;
+        btn.textContent = loading ? "Loading..." : text;
+        btn.style.opacity = loading ? "0.6" : "1";
       }
 
       function normalizePhone(raw: string): string {
@@ -96,46 +96,50 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       sendBtn.addEventListener("click", async () => {
         phone = normalizePhone(phoneInput.value);
         if (phone.length < 12) {
-          showError("Please enter a valid phone number.");
+          showToast("Please enter a valid phone number.", "error");
           return;
         }
+        setLoading(sendBtn, true, "Send OTP");
         try {
-          showLoading();
           await sendOtp(phone);
           phoneStep.style.display = "none";
           otpStep.style.display = "block";
-          hideMessages();
+          showToast("OTP sent!");
         } catch (err: any) {
-          showError(err.message || "Failed to send OTP.");
+          showToast(err.message || "Failed to send OTP.", "error");
+        } finally {
+          setLoading(sendBtn, false, "Send OTP");
         }
       });
 
       verifyBtn.addEventListener("click", async () => {
         const token = otpInput.value.trim();
         if (token.length !== 6) {
-          showError("Please enter the 6-digit OTP.");
+          showToast("Please enter the 6-digit OTP.", "error");
           return;
         }
+        setLoading(verifyBtn, true, "Verify & Login");
         try {
-          showLoading();
           await verifyOtp(phone, token);
           window.location.href = "/dashboard";
         } catch (err: any) {
-          showError(err.message || "Invalid OTP. Try again.");
+          showToast(err.message || "Invalid OTP. Try again.", "error");
+          setLoading(verifyBtn, false, "Verify & Login");
         }
       });
 
       resendBtn.addEventListener("click", async () => {
+        setLoading(resendBtn, true, "Resend OTP");
         try {
-          showLoading();
           await sendOtp(phone);
-          hideMessages();
+          showToast("OTP resent!");
         } catch (err: any) {
-          showError(err.message || "Failed to resend OTP.");
+          showToast(err.message || "Failed to resend OTP.", "error");
+        } finally {
+          setLoading(resendBtn, false, "Resend OTP");
         }
       });
 
-      // Enter key support
       phoneInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") sendBtn.click();
       });

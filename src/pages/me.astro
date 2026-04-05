@@ -6,6 +6,8 @@ export const prerender = false;
 ---
 
 <AppShell title={`Profile - ${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
+  <!-- Toast notification -->
+  <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
   <div id="me-container">
     <!-- Not logged in -->
     <div id="me-guest" style="display:none;text-align:center;padding:48px 16px;">
@@ -56,7 +58,6 @@ export const prerender = false;
             <input type="email" id="me-email" placeholder="you@example.com" style="font-size:14px;" />
           </div>
           <button class="btn btn-primary tap-target" id="me-save-profile" style="width:100%;padding:10px;font-size:14px;">Save profile</button>
-          <div id="me-save-msg" class="text-muted" style="text-align:center;margin-top:6px;"></div>
         </div>
       </div>
 
@@ -110,6 +111,19 @@ export const prerender = false;
     import { getSession, signOut } from "../lib/auth";
     import { isPushSubscribed } from "../lib/push";
 
+    function showToast(message: string, type: "success" | "error" = "success") {
+      const toast = document.getElementById("toast")!;
+      toast.textContent = message;
+      toast.style.display = "block";
+      toast.style.opacity = "1";
+      toast.style.background = type === "success" ? "var(--green)" : "var(--red)";
+      toast.style.color = "white";
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => { toast.style.display = "none"; }, 300);
+      }, 3000);
+    }
+
     async function initProfile() {
       const guestEl = document.getElementById("me-guest")!;
       const loadingEl = document.getElementById("me-loading")!;
@@ -146,7 +160,7 @@ export const prerender = false;
       const firstNameInput = document.getElementById("me-first-name") as HTMLInputElement;
       const lastNameInput = document.getElementById("me-last-name") as HTMLInputElement;
       const emailInput = document.getElementById("me-email") as HTMLInputElement;
-      const saveMsg = document.getElementById("me-save-msg")!;
+      const saveBtn = document.getElementById("me-save-profile") as HTMLButtonElement;
 
       try {
         const profileRes = await fetch(`/api/buyer/profile?buyer_id=${session.buyer_id}`);
@@ -155,7 +169,6 @@ export const prerender = false;
           if (buyer.first_name) firstNameInput.value = buyer.first_name;
           if (buyer.last_name) lastNameInput.value = buyer.last_name;
           if (buyer.email) emailInput.value = buyer.email;
-          // Update avatar with initials if name exists
           if (buyer.first_name) {
             document.getElementById("me-avatar")!.textContent =
               (buyer.first_name[0] + (buyer.last_name?.[0] || "")).toUpperCase();
@@ -163,9 +176,10 @@ export const prerender = false;
         }
       } catch {}
 
-      document.getElementById("me-save-profile")?.addEventListener("click", async () => {
-        saveMsg.textContent = "Saving...";
-        saveMsg.style.color = "var(--gray-500)";
+      saveBtn?.addEventListener("click", async () => {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+        saveBtn.style.opacity = "0.6";
         try {
           const res = await fetch("/api/buyer/profile", {
             method: "POST",
@@ -180,17 +194,17 @@ export const prerender = false;
             }),
           });
           if (!res.ok) throw new Error("Failed to save");
-          saveMsg.textContent = "Saved!";
-          saveMsg.style.color = "var(--green)";
-          // Update avatar
+          showToast("Profile saved!");
           if (firstNameInput.value.trim()) {
             document.getElementById("me-avatar")!.textContent =
               (firstNameInput.value[0] + (lastNameInput.value?.[0] || "")).toUpperCase();
           }
-          setTimeout(() => { saveMsg.textContent = ""; }, 2000);
         } catch (err: any) {
-          saveMsg.textContent = err.message || "Failed to save";
-          saveMsg.style.color = "var(--red)";
+          showToast(err.message || "Failed to save", "error");
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save profile";
+          saveBtn.style.opacity = "1";
         }
       });
 
@@ -217,13 +231,14 @@ export const prerender = false;
       pushStatus.textContent = subscribed ? "On" : "Off";
 
       pushToggle.addEventListener("change", async () => {
+        pushToggle.disabled = true;
         if (pushToggle.checked) {
           try {
             const reg = await navigator.serviceWorker.ready;
             let sub = await reg.pushManager.getSubscription();
             if (!sub) {
               const vapidKey = (import.meta as any).env?.PUBLIC_VAPID_KEY;
-              if (!vapidKey) { pushToggle.checked = false; pushStatus.textContent = "Failed"; return; }
+              if (!vapidKey) { pushToggle.checked = false; pushStatus.textContent = "Off"; showToast("VAPID key not configured", "error"); pushToggle.disabled = false; return; }
               const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
               const b64 = (vapidKey + padding).replace(/-/g, "+").replace(/_/g, "/");
               const raw = atob(b64);
@@ -231,28 +246,35 @@ export const prerender = false;
               for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
               sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: arr });
             }
-            // Save subscription to buyer record via API
             await fetch("/api/buyer/push-subscribe", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ buyer_id: session.buyer_id, subscription: sub.toJSON() }),
             });
             pushStatus.textContent = "On";
+            showToast("Notifications enabled!");
           } catch {
             pushToggle.checked = false;
-            pushStatus.textContent = "Failed";
+            pushStatus.textContent = "Off";
+            showToast("Could not enable notifications. Please allow permissions.", "error");
           }
         } else {
-          const reg = await navigator.serviceWorker?.ready;
-          const sub = await reg?.pushManager?.getSubscription();
-          if (sub) await sub.unsubscribe();
-          await fetch("/api/buyer/push-subscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ buyer_id: session.buyer_id, subscription: null }),
-          });
-          pushStatus.textContent = "Off";
+          try {
+            const reg = await navigator.serviceWorker?.ready;
+            const sub = await reg?.pushManager?.getSubscription();
+            if (sub) await sub.unsubscribe();
+            await fetch("/api/buyer/push-subscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ buyer_id: session.buyer_id, subscription: null }),
+            });
+            pushStatus.textContent = "Off";
+            showToast("Notifications disabled");
+          } catch {
+            showToast("Failed to update notifications", "error");
+          }
         }
+        pushToggle.disabled = false;
       });
 
       // iOS install hint
