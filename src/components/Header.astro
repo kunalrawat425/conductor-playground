@@ -1,16 +1,36 @@
 ---
 interface Props {
   showDashboardLink?: boolean;
+  /** Hide "Join sellers" on seller login (you are already there). */
+  showJoinSellersCta?: boolean;
+  /** e.g. seller login: link back to buyer storefront. */
+  showBrowseAsBuyerLink?: boolean;
 }
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
-const { showDashboardLink = true } = Astro.props;
+const {
+  showDashboardLink = true,
+  showJoinSellersCta = true,
+  showBrowseAsBuyerLink = false,
+} = Astro.props;
 ---
 
 <header class="header">
   <a href="/" class="logo">🐟 {brandName}</a>
-  <nav>
-    {showDashboardLink && <a href="/dashboard/orders" class="nav-link">Seller Dashboard</a>}
+  <nav class="header-nav">
+    {showJoinSellersCta && (
+      <a
+        href="/dashboard/login"
+        class="nav-cta"
+        title="Create your free seller account. Same phone OTP as buyers. List fish and manage orders in one place."
+      >
+        Join sellers
+      </a>
+    )}
+    {showDashboardLink && <a href="/dashboard/orders" class="nav-link">Seller home</a>}
+    {showBrowseAsBuyerLink && (
+      <a href="/" class="nav-link">Browse as buyer</a>
+    )}
   </nav>
 </header>
 
@@ -32,6 +52,30 @@ const { showDashboardLink = true } = Astro.props;
 
   .logo:hover {
     text-decoration: none;
+  }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .nav-cta {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blue);
+    text-decoration: none;
+    padding: 8px 12px;
+    background: #f0f6ff;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 102, 204, 0.22);
+  }
+
+  .nav-cta:hover {
+    text-decoration: none;
+    background: #e2edfc;
   }
 
   .nav-link {
