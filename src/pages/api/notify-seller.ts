@@ -10,7 +10,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
 const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
 const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
-const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@fishkart.app";
+const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@reslifih.app";
 
 /**
  * POST /api/notify-seller
