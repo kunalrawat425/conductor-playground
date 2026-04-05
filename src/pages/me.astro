@@ -115,10 +115,14 @@ export const prerender = false;
       const loadingEl = document.getElementById("me-loading")!;
       const profileEl = document.getElementById("me-profile")!;
 
+      // Reset all states
+      guestEl.style.display = "none";
+      loadingEl.style.display = "none";
+      profileEl.style.display = "none";
+
       const session = getSession();
 
       if (!session) {
-        loadingEl.style.display = "none";
         guestEl.style.display = "block";
 
         document.getElementById("me-login-btn")?.addEventListener("click", () => {
