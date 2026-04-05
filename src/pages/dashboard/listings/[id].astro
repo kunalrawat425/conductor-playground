@@ -53,8 +53,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }
 
         try {
-          const seller = await getSellerById(session.seller_id);
-          const listing = await getListingById(listingId);
+          const [seller, listing] = await Promise.all([
+            getSellerById(session.seller_id),
+            getListingById(listingId),
+          ]);
 
           if (listing.seller_id !== seller.id) {
             document.getElementById("form-container")!.innerHTML = '<p style="color:var(--red);">Not your listing.</p>';

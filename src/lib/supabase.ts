@@ -2,14 +2,44 @@ import { createClient } from "@supabase/supabase-js";
 import type { PriceUnit } from "./species";
 import {
   BUYER_TRACK_PAGE_SIZE,
-  ordersDateCutoffIso,
+  ordersDateRange,
   SELLER_ORDERS_PAGE_SIZE,
 } from "./seller-orders-pagination";
+import type { OrderDateRange } from "./seller-orders-pagination";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/** One in-flight `fish_listings` id query per seller so parallel list + count calls share a single request. */
+const listingIdsInflight = new Map<string, Promise<string[]>>();
+
+async function getListingIdsForSeller(sellerId: string): Promise<string[]> {
+  const existing = listingIdsInflight.get(sellerId);
+  if (existing) return existing;
+  const p = supabase
+    .from("fish_listings")
+    .select("id")
+    .eq("seller_id", sellerId)
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return (data || []).map((l: { id: string }) => l.id);
+    })
+    .finally(() => {
+      listingIdsInflight.delete(sellerId);
+    });
+  listingIdsInflight.set(sellerId, p);
+  return p;
+}
+
+/** Coalesce concurrent identical reads (home catalog, species page, dashboard). */
+let activeListingsInflight: Promise<FishListing[]> | null = null;
+let allSellersInflight: Promise<Seller[]> | null = null;
+let speciesRangesInflight: Promise<SpeciesRange[]> | null = null;
+const sellerByIdInflight = new Map<string, Promise<Seller>>();
+const sellerListingsInflight = new Map<string, Promise<FishListing[]>>();
+const listingByIdInflight = new Map<string, Promise<FishListing>>();
 
 // --- Types ---
 
@@ -119,37 +149,84 @@ export interface SpeciesRange {
 
 // --- Queries ---
 
-export async function getActiveListings() {
-  const { data, error } = await supabase
+export function getActiveListings(): Promise<FishListing[]> {
+  if (activeListingsInflight) return activeListingsInflight;
+  activeListingsInflight = supabase
     .from("fish_listings")
     .select("*, seller:sellers(*)")
     .eq("is_available", true)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data as FishListing[];
+    .order("created_at", { ascending: false })
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return (data || []) as FishListing[];
+    })
+    .finally(() => {
+      activeListingsInflight = null;
+    });
+  return activeListingsInflight;
 }
 
-export async function getListingById(id: string) {
-  const { data, error } = await supabase
+/** All sellers (buyer home: listings + sellers without listings for pre-order). */
+export function getAllSellers(): Promise<Seller[]> {
+  if (allSellersInflight) return allSellersInflight;
+  allSellersInflight = supabase
+    .from("sellers")
+    .select("*")
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return (data || []) as Seller[];
+    })
+    .finally(() => {
+      allSellersInflight = null;
+    });
+  return allSellersInflight;
+}
+
+/** Home catalog: parallel active listings + all sellers, each deduped if called concurrently. */
+export async function loadBuyerCatalog(): Promise<{ listings: FishListing[]; sellers: Seller[] }> {
+  const [listings, sellers] = await Promise.all([
+    getActiveListings().catch(() => [] as FishListing[]),
+    getAllSellers().catch(() => [] as Seller[]),
+  ]);
+  return { listings, sellers };
+}
+
+export function getListingById(id: string): Promise<FishListing> {
+  const hit = listingByIdInflight.get(id);
+  if (hit) return hit;
+  const p = supabase
     .from("fish_listings")
     .select("*, seller:sellers(*)")
     .eq("id", id)
-    .single();
-
-  if (error) throw error;
-  return data as FishListing;
+    .single()
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return data as FishListing;
+    })
+    .finally(() => {
+      listingByIdInflight.delete(id);
+    });
+  listingByIdInflight.set(id, p);
+  return p;
 }
 
-export async function getSellerById(id: string) {
-  const { data, error } = await supabase
+export function getSellerById(id: string): Promise<Seller> {
+  const hit = sellerByIdInflight.get(id);
+  if (hit) return hit;
+  const p = supabase
     .from("sellers")
     .select("*")
     .eq("id", id)
-    .single();
-
-  if (error) throw error;
-  return data as Seller;
+    .single()
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return data as Seller;
+    })
+    .finally(() => {
+      sellerByIdInflight.delete(id);
+    });
+  sellerByIdInflight.set(id, p);
+  return p;
 }
 
 export async function updateSellerProfile(
@@ -166,15 +243,33 @@ export async function updateSellerProfile(
   return data.seller as Seller;
 }
 
-export async function getSellerListings(sellerId: string) {
-  const { data, error } = await supabase
+export function getSellerListings(sellerId: string): Promise<FishListing[]> {
+  const hit = sellerListingsInflight.get(sellerId);
+  if (hit) return hit;
+  const p = supabase
     .from("fish_listings")
     .select("*")
     .eq("seller_id", sellerId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return (data || []) as FishListing[];
+    })
+    .finally(() => {
+      sellerListingsInflight.delete(sellerId);
+    });
+  sellerListingsInflight.set(sellerId, p);
+  return p;
+}
 
-  if (error) throw error;
-  return data as FishListing[];
+function applyOrderDateRange<T extends { gte: Function; lte: Function }>(
+  q: T,
+  range: OrderDateRange
+): T {
+  let out = q;
+  if (range.startIso) out = out.gte("created_at", range.startIso) as T;
+  if (range.endIso) out = out.lte("created_at", range.endIso) as T;
+  return out;
 }
 
 /** Fresh orders (not pre_order) for this seller’s listings, with server-side pagination. */
@@ -185,18 +280,19 @@ export async function getFreshOrdersForSellerPage(
     pageSize?: number;
     statusFilter: string;
     dateFilter: string;
+    customDateFrom?: string;
+    customDateTo?: string;
   }
 ): Promise<{ orders: Order[]; total: number }> {
   const pageSize = options.pageSize ?? SELLER_ORDERS_PAGE_SIZE;
-  const { data: listings } = await supabase
-    .from("fish_listings")
-    .select("id")
-    .eq("seller_id", sellerId);
-
-  const listingIds = listings?.map((l) => l.id) || [];
+  const listingIds = await getListingIdsForSeller(sellerId);
   if (listingIds.length === 0) return { orders: [], total: 0 };
 
-  const cutoff = ordersDateCutoffIso(options.dateFilter);
+  const range = ordersDateRange(
+    options.dateFilter,
+    options.customDateFrom,
+    options.customDateTo
+  );
   const from = Math.max(0, (options.page - 1) * pageSize);
   const to = from + pageSize - 1;
 
@@ -210,9 +306,7 @@ export async function getFreshOrdersForSellerPage(
   if (options.statusFilter !== "all") {
     q = q.eq("status", options.statusFilter);
   }
-  if (cutoff) {
-    q = q.gte("created_at", cutoff);
-  }
+  q = applyOrderDateRange(q, range);
 
   const { data, error, count } = await q.range(from, to);
   if (error) throw error;
@@ -230,21 +324,22 @@ export async function getPreOrdersForSellerPage(
     pageSize?: number;
     statusFilter: string;
     dateFilter: string;
+    customDateFrom?: string;
+    customDateTo?: string;
   }
 ): Promise<{ orders: Order[]; total: number }> {
   const pageSize = options.pageSize ?? SELLER_ORDERS_PAGE_SIZE;
-  const { data: listings } = await supabase
-    .from("fish_listings")
-    .select("id")
-    .eq("seller_id", sellerId);
-
-  const listingIds = listings?.map((l) => l.id) || [];
+  const listingIds = await getListingIdsForSeller(sellerId);
   const orClause =
     listingIds.length > 0
       ? `listing_id.in.(${listingIds.join(",")}),listing_id.is.null`
       : "listing_id.is.null";
 
-  const cutoff = ordersDateCutoffIso(options.dateFilter);
+  const range = ordersDateRange(
+    options.dateFilter,
+    options.customDateFrom,
+    options.customDateTo
+  );
   const from = Math.max(0, (options.page - 1) * pageSize);
   const to = from + pageSize - 1;
 
@@ -260,13 +355,149 @@ export async function getPreOrdersForSellerPage(
     q = q.eq("status", options.statusFilter);
   }
 
-  if (cutoff) {
-    q = q.gte("created_at", cutoff);
-  }
+  q = applyOrderDateRange(q, range);
 
   const { data, error, count } = await q.range(from, to);
   if (error) throw error;
   return { orders: (data || []) as Order[], total: count ?? 0 };
+}
+
+/** Status counts for seller orders page stats cards (same date rules as lists). */
+export async function getSellerOrdersDashboardStats(
+  sellerId: string,
+  options: {
+    dateFilter: string;
+    customDateFrom?: string;
+    customDateTo?: string;
+  }
+): Promise<{
+  fresh: {
+    pending: number;
+    confirmed: number;
+    paid: number;
+    picked_up: number;
+    completed: number;
+    declined: number;
+    cancelled: number;
+    total: number;
+  };
+  pre: {
+    awaiting: number;
+    confirmed: number;
+    cancelled: number;
+    refunded: number;
+  };
+}> {
+  const range = ordersDateRange(
+    options.dateFilter,
+    options.customDateFrom,
+    options.customDateTo
+  );
+  const listingIds = await getListingIdsForSeller(sellerId);
+  const orClause =
+    listingIds.length > 0
+      ? `listing_id.in.(${listingIds.join(",")}),listing_id.is.null`
+      : "listing_id.is.null";
+
+  const emptyFresh = {
+    pending: 0,
+    confirmed: 0,
+    paid: 0,
+    picked_up: 0,
+    completed: 0,
+    declined: 0,
+    cancelled: 0,
+    total: 0,
+  };
+
+  async function countFresh(status?: string) {
+    if (listingIds.length === 0) return 0;
+    let q = supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .in("listing_id", listingIds)
+      .neq("status", "pre_order");
+    if (status) q = q.eq("status", status);
+    q = applyOrderDateRange(q, range);
+    const { count, error } = await q;
+    return error ? 0 : count ?? 0;
+  }
+
+  async function countPre(status: string) {
+    let q = supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("status", status)
+      .or(orClause);
+    q = applyOrderDateRange(q, range);
+    const { count, error } = await q;
+    return error ? 0 : count ?? 0;
+  }
+
+  if (listingIds.length === 0) {
+    const [awaiting, pConf, pCan, pRef] = await Promise.all([
+      countPre("pre_order"),
+      countPre("confirmed"),
+      countPre("cancelled"),
+      countPre("refunded"),
+    ]);
+    return {
+      fresh: emptyFresh,
+      pre: {
+        awaiting,
+        confirmed: pConf,
+        cancelled: pCan,
+        refunded: pRef,
+      },
+    };
+  }
+
+  const [
+    pending,
+    confirmed,
+    paid,
+    picked_up,
+    completed,
+    declined,
+    cancelled,
+    total,
+    awaiting,
+    pConf,
+    pCan,
+    pRef,
+  ] = await Promise.all([
+    countFresh("pending"),
+    countFresh("confirmed"),
+    countFresh("paid"),
+    countFresh("picked_up"),
+    countFresh("completed"),
+    countFresh("declined"),
+    countFresh("cancelled"),
+    countFresh(),
+    countPre("pre_order"),
+    countPre("confirmed"),
+    countPre("cancelled"),
+    countPre("refunded"),
+  ]);
+
+  return {
+    fresh: {
+      pending,
+      confirmed,
+      paid,
+      picked_up,
+      completed,
+      declined,
+      cancelled,
+      total,
+    },
+    pre: {
+      awaiting,
+      confirmed: pConf,
+      cancelled: pCan,
+      refunded: pRef,
+    },
+  };
 }
 
 /** Tab badges: pending fresh + awaiting pre-orders (not paginated). */
@@ -274,12 +505,7 @@ export async function getSellerOrderTabCounts(sellerId: string): Promise<{
   pendingFresh: number;
   preAwaiting: number;
 }> {
-  const { data: listings } = await supabase
-    .from("fish_listings")
-    .select("id")
-    .eq("seller_id", sellerId);
-
-  const listingIds = listings?.map((l) => l.id) || [];
+  const listingIds = await getListingIdsForSeller(sellerId);
 
   let pendingFresh = 0;
   if (listingIds.length > 0) {
@@ -381,47 +607,49 @@ export async function updateOrderStatus(
   return data as Order;
 }
 
-export async function getSpeciesRanges() {
-  const { data, error } = await supabase
+export function getSpeciesRanges(): Promise<SpeciesRange[]> {
+  if (speciesRangesInflight) return speciesRangesInflight;
+  speciesRangesInflight = supabase
     .from("species_ranges")
     .select("*")
-    .order("species");
-
-  if (error) throw error;
-  return data as SpeciesRange[];
+    .order("species")
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return (data || []) as SpeciesRange[];
+    })
+    .finally(() => {
+      speciesRangesInflight = null;
+    });
+  return speciesRangesInflight;
 }
 
+const SPECIES_LISTING_SELLER_SELECT =
+  "id, seller_id, species, price, price_unit, weight_avail, pickup_loc, is_available, created_at, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above)";
+
+/** One query for species page: split active vs past sellers in memory (was two identical table scans). */
 export async function getSellersForSpecies(species: string) {
-  // Get sellers who currently have active listings for this species
-  const { data: active, error: activeErr } = await supabase
+  const { data: rows, error } = await supabase
     .from("fish_listings")
-    .select("id, seller_id, price, price_unit, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above)")
-    .eq("species", species)
-    .eq("is_available", true)
-    .order("created_at", { ascending: false });
-
-  if (activeErr) throw activeErr;
-
-  // Also get sellers who have EVER listed this species but don't have an active listing
-  const activeSids = new Set((active || []).map(l => l.seller_id));
-
-  const { data: past } = await supabase
-    .from("fish_listings")
-    .select("seller_id, price, price_unit, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above)")
+    .select(SPECIES_LISTING_SELLER_SELECT)
     .eq("species", species)
     .order("created_at", { ascending: false });
 
-  const pastSellers = (past || [])
-    .filter(l => !activeSids.has(l.seller_id))
-    .reduce((acc, l) => {
-      if (!acc.has(l.seller_id)) acc.set(l.seller_id, l);
-      return acc;
-    }, new Map());
+  if (error) throw error;
+  const all = (rows || []) as FishListing[];
 
-  return {
-    active: active || [],
-    pastSellers: Array.from(pastSellers.values()),
-  };
+  const active = all.filter((l) => l.is_available);
+  const activeSids = new Set(active.map((l) => l.seller_id));
+
+  const pastSellers: FishListing[] = [];
+  const seenPast = new Set<string>();
+  for (const l of all) {
+    if (activeSids.has(l.seller_id)) continue;
+    if (seenPast.has(l.seller_id)) continue;
+    seenPast.add(l.seller_id);
+    pastSellers.push(l);
+  }
+
+  return { active, pastSellers };
 }
 
 // --- Buyer Queries ---

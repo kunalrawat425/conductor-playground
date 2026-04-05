@@ -72,8 +72,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }
 
         let seller: Seller;
+        let listings: FishListing[];
         try {
-          seller = await getSellerById(session.seller_id);
+          [seller, listings] = await Promise.all([
+            getSellerById(session.seller_id),
+            getSellerListings(session.seller_id),
+          ]);
         } catch (err: any) {
           console.error("Dashboard load error:", err);
           signOut();
@@ -83,8 +87,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
         const displayName = [seller.first_name, seller.last_name].filter(Boolean).join(" ") || seller.name;
         document.getElementById("seller-name")!.textContent = `${displayName}'s Listings`;
-
-        const listings = await getSellerListings(seller.id);
         renderListings(listings);
 
         requestAnimationFrame(() => {

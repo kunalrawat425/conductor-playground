@@ -47,6 +47,43 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         <a href="/dashboard/profile" class="dash-nav-item">Profile</a>
       </div>
 
+      <div class="dash-toolbar-card">
+        <div class="dash-toolbar-row">
+          <div class="dash-toolbar-title">Date range</div>
+          <label class="stats-toggle-label">
+            <span>Show dashboard stats</span>
+            <span class="stats-toggle-shell">
+              <input type="checkbox" id="seller-stats-toggle" />
+              <span id="stats-toggle-track" class="stats-toggle-track"></span>
+              <span id="stats-toggle-knob" class="stats-toggle-knob"></span>
+            </span>
+          </label>
+        </div>
+        <div class="global-date-row">
+          <select id="global-date-preset" class="filter-select filter-select-wide" aria-label="Date range preset">
+            <option value="all">All time</option>
+            <option value="today">Today</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days (~1 month)</option>
+            <option value="1y">Last year</option>
+            <option value="custom">Custom range</option>
+          </select>
+          <div id="global-date-custom" class="global-date-custom" style="display:none;">
+            <input type="date" id="global-date-from" aria-label="From date" class="date-input" />
+            <span class="text-muted global-date-to-label">to</span>
+            <input type="date" id="global-date-to" aria-label="To date" class="date-input" />
+          </div>
+        </div>
+        <p id="stats-range-hint" class="text-muted stats-range-hint"></p>
+
+        <div id="seller-stats-panel" class="seller-stats-panel" style="display:none;">
+          <h3 class="stats-section-title">Fresh orders</h3>
+          <div id="seller-stats-fresh" class="stats-grid"></div>
+          <h3 class="stats-section-title stats-section-title-pre">Pre-order queue</h3>
+          <div id="seller-stats-pre" class="stats-grid stats-grid-pre"></div>
+        </div>
+      </div>
+
       <!-- Tabs: Fresh / Pre-orders -->
       <div class="tabs">
         <button class="tab active" data-tab="fresh-orders">Fresh Orders <span id="fresh-count" class="tab-count"></span></button>
@@ -55,20 +92,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
       <div id="tab-fresh-orders">
         <div class="order-filters">
-          <select id="fresh-status-filter" class="filter-select">
+          <select id="fresh-status-filter" class="filter-select filter-select-grow">
             <option value="all">All statuses</option>
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
             <option value="paid">Paid</option>
+            <option value="picked_up">Picked up</option>
             <option value="completed">Completed</option>
             <option value="declined">Declined</option>
             <option value="cancelled">Cancelled</option>
-          </select>
-          <select id="fresh-date-filter" class="filter-select">
-            <option value="all">All time</option>
-            <option value="today">Today</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
           </select>
         </div>
         <div id="fresh-orders-list"></div>
@@ -77,18 +109,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
       <div id="tab-pre-orders" style="display:none;">
         <div class="order-filters">
-          <select id="pre-status-filter" class="filter-select">
+          <select id="pre-status-filter" class="filter-select filter-select-grow">
             <option value="all">All statuses</option>
             <option value="pre_order">Awaiting</option>
             <option value="confirmed">Confirmed</option>
             <option value="cancelled">Cancelled</option>
             <option value="refunded">Refunded</option>
-          </select>
-          <select id="pre-date-filter" class="filter-select">
-            <option value="all">All time</option>
-            <option value="today">Today</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
           </select>
         </div>
         <div id="pre-orders-list"></div>
@@ -103,6 +129,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         getFreshOrdersForSellerPage,
         getPreOrdersForSellerPage,
         getSellerOrderTabCounts,
+        getSellerOrdersDashboardStats,
         updateOrderStatus,
       } from "../../../lib/supabase";
       import { SELLER_ORDERS_PAGE_SIZE } from "../../../lib/seller-orders-pagination";
@@ -122,9 +149,108 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }, 3000);
       }
 
+      const STATS_TOGGLE_LS = "da_nang_seller_orders_show_stats";
+
       let freshPage = 1;
       let prePage = 1;
       let _sellerId = "";
+      /** Avoid duplicate fetches when clicking the already-selected tab. */
+      let activeOrdersTab: "fresh-orders" | "pre-orders" = "fresh-orders";
+
+      function getDateFilterPayload(): {
+        dateFilter: string;
+        customDateFrom?: string;
+        customDateTo?: string;
+      } {
+        const preset = (document.getElementById("global-date-preset") as HTMLSelectElement).value;
+        const fromEl = document.getElementById("global-date-from") as HTMLInputElement;
+        const toEl = document.getElementById("global-date-to") as HTMLInputElement;
+        if (preset === "custom") {
+          return {
+            dateFilter: "custom",
+            customDateFrom: fromEl.value || undefined,
+            customDateTo: toEl.value || undefined,
+          };
+        }
+        return { dateFilter: preset };
+      }
+
+      function updateCustomDateVisibility() {
+        const preset = (document.getElementById("global-date-preset") as HTMLSelectElement).value;
+        const row = document.getElementById("global-date-custom")!;
+        row.style.display = preset === "custom" ? "flex" : "none";
+      }
+
+      function updateStatsToggleUI(on: boolean) {
+        const track = document.getElementById("stats-toggle-track")!;
+        const knob = document.getElementById("stats-toggle-knob")!;
+        track.style.background = on ? "var(--green)" : "var(--gray-200)";
+        knob.style.transform = on ? "translateX(18px)" : "translateX(0)";
+      }
+
+      function isStatsVisible(): boolean {
+        return (document.getElementById("seller-stats-toggle") as HTMLInputElement).checked;
+      }
+
+      function formatRangeHint(preset: string, from: string, to: string): string {
+        if (preset === "all") return "Showing all time.";
+        if (preset === "today") return "Showing orders from today (local time).";
+        if (preset === "7d") return "Showing orders from the last 7 days.";
+        if (preset === "30d") return "Showing orders from the last 30 days.";
+        if (preset === "1y") return "Showing orders from the last 365 days.";
+        if (preset === "custom" && (from || to)) {
+          return `Custom: ${from || "…"} → ${to || "…"}`;
+        }
+        if (preset === "custom") return "Pick from/to dates for a custom range.";
+        return "";
+      }
+
+      function statCard(label: string, value: number, tone: "default" | "blue" | "green" | "red" | "orange" = "default") {
+        const toneClass =
+          tone === "blue"
+            ? "stat-card--blue"
+            : tone === "green"
+              ? "stat-card--green"
+              : tone === "red"
+                ? "stat-card--red"
+                : tone === "orange"
+                  ? "stat-card--orange"
+                  : "";
+        return `<div class="stat-card ${toneClass}"><div class="stat-card-value">${value}</div><div class="stat-card-label">${label}</div></div>`;
+      }
+
+      async function renderStats() {
+        if (!_sellerId || !isStatsVisible()) return;
+        const { dateFilter, customDateFrom, customDateTo } = getDateFilterPayload();
+        try {
+          const s = await getSellerOrdersDashboardStats(_sellerId, {
+            dateFilter,
+            customDateFrom,
+            customDateTo,
+          });
+          const f = s.fresh;
+          const fulfilled = f.picked_up + f.completed;
+          document.getElementById("seller-stats-fresh")!.innerHTML = [
+            statCard("Pending", f.pending, "blue"),
+            statCard("Confirmed", f.confirmed, "default"),
+            statCard("Paid", f.paid, "default"),
+            statCard("Fulfilled", fulfilled, "green"),
+            statCard("Declined", f.declined, "red"),
+            statCard("Cancelled", f.cancelled, "orange"),
+            statCard("Total (fresh)", f.total, "default"),
+          ].join("");
+
+          const p = s.pre;
+          document.getElementById("seller-stats-pre")!.innerHTML = [
+            statCard("Awaiting", p.awaiting, "orange"),
+            statCard("Confirmed", p.confirmed, "default"),
+            statCard("Cancelled", p.cancelled, "red"),
+            statCard("Refunded", p.refunded, "default"),
+          ].join("");
+        } catch (e) {
+          console.error("Stats:", e);
+        }
+      }
 
       function renderPaginationControls(containerId: string, total: number, page: number, onPage: (p: number) => void) {
         const el = document.getElementById(containerId)!;
@@ -157,13 +283,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       async function renderFresh() {
         if (!_sellerId) return;
         const statusFilter = (document.getElementById("fresh-status-filter") as HTMLSelectElement).value;
-        const dateFilter = (document.getElementById("fresh-date-filter") as HTMLSelectElement).value;
+        const { dateFilter, customDateFrom, customDateTo } = getDateFilterPayload();
         try {
           const { orders, total } = await getFreshOrdersForSellerPage(_sellerId, {
             page: freshPage,
             pageSize: SELLER_ORDERS_PAGE_SIZE,
             statusFilter,
             dateFilter,
+            customDateFrom,
+            customDateTo,
           });
           renderOrders(orders, "fresh-orders-list", _sellerId);
           renderPaginationControls("fresh-pagination", total, freshPage, (p) => {
@@ -178,13 +306,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       async function renderPre() {
         if (!_sellerId) return;
         const statusFilter = (document.getElementById("pre-status-filter") as HTMLSelectElement).value;
-        const dateFilter = (document.getElementById("pre-date-filter") as HTMLSelectElement).value;
+        const { dateFilter, customDateFrom, customDateTo } = getDateFilterPayload();
         try {
           const { orders, total } = await getPreOrdersForSellerPage(_sellerId, {
             page: prePage,
             pageSize: SELLER_ORDERS_PAGE_SIZE,
             statusFilter,
             dateFilter,
+            customDateFrom,
+            customDateTo,
           });
           renderOrders(orders, "pre-orders-list", _sellerId);
           renderPaginationControls("pre-pagination", total, prePage, (p) => {
@@ -198,7 +328,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
       async function refreshOrders(sellerId: string) {
         _sellerId = sellerId;
-        await Promise.all([renderFresh(), renderPre(), updateTabCounts()]);
+        await Promise.all([renderFresh(), renderPre(), updateTabCounts(), renderStats()]);
       }
 
       async function init() {
@@ -218,35 +348,84 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           return;
         }
 
-        // Tabs
+        // Tabs — refetch only when switching tabs (not on re-clicking the active tab).
+        // Tab badges refresh on load and after order actions (refreshOrders); skipping counts here
+        // avoids 3 extra Supabase calls on every switch (getSellerOrderTabCounts duplicates listing fetch).
         const tabs = document.querySelectorAll(".tab");
         tabs.forEach((tab) => {
           tab.addEventListener("click", () => {
+            const tabName = (tab as HTMLElement).dataset.tab as "fresh-orders" | "pre-orders";
+            if (tabName === activeOrdersTab) return;
+            activeOrdersTab = tabName;
             tabs.forEach((t) => t.classList.remove("active"));
             tab.classList.add("active");
-            const tabName = (tab as HTMLElement).dataset.tab!;
             document.getElementById("tab-fresh-orders")!.style.display = tabName === "fresh-orders" ? "block" : "none";
             document.getElementById("tab-pre-orders")!.style.display = tabName === "pre-orders" ? "block" : "none";
+            if (tabName === "fresh-orders") {
+              void renderFresh();
+            } else {
+              void renderPre();
+            }
           });
         });
 
         _sellerId = seller.id;
-        await Promise.all([renderFresh(), renderPre(), updateTabCounts()]);
+
+        const statsToggle = document.getElementById("seller-stats-toggle") as HTMLInputElement;
+        const statsPanel = document.getElementById("seller-stats-panel")!;
+        const hintEl = document.getElementById("stats-range-hint")!;
+        try {
+          const saved = localStorage.getItem(STATS_TOGGLE_LS);
+          statsToggle.checked = saved === null ? true : saved === "1";
+        } catch {
+          statsToggle.checked = true;
+        }
+        updateStatsToggleUI(statsToggle.checked);
+        statsPanel.style.display = statsToggle.checked ? "block" : "none";
+
+        statsToggle.addEventListener("change", () => {
+          const on = statsToggle.checked;
+          try {
+            localStorage.setItem(STATS_TOGGLE_LS, on ? "1" : "0");
+          } catch {
+            /* ignore */
+          }
+          updateStatsToggleUI(on);
+          statsPanel.style.display = on ? "block" : "none";
+          if (on) void renderStats();
+        });
+
+        function refreshDateHint() {
+          const preset = (document.getElementById("global-date-preset") as HTMLSelectElement).value;
+          const from = (document.getElementById("global-date-from") as HTMLInputElement).value;
+          const to = (document.getElementById("global-date-to") as HTMLInputElement).value;
+          hintEl.textContent = formatRangeHint(preset, from, to);
+        }
+
+        const onGlobalDateChange = () => {
+          updateCustomDateVisibility();
+          refreshDateHint();
+          freshPage = 1;
+          prePage = 1;
+          void Promise.all([renderFresh(), renderPre(), renderStats()]);
+        };
+
+        document.getElementById("global-date-preset")!.addEventListener("change", onGlobalDateChange);
+        document.getElementById("global-date-from")!.addEventListener("change", onGlobalDateChange);
+        document.getElementById("global-date-to")!.addEventListener("change", onGlobalDateChange);
+
+        updateCustomDateVisibility();
+        refreshDateHint();
+
+        // Fresh tab is default; pre-orders load on first switch (tab handler calls renderPre)
+        await Promise.all([renderFresh(), updateTabCounts(), renderStats()]);
 
         // Filters
         document.getElementById("fresh-status-filter")!.addEventListener("change", () => {
           freshPage = 1;
           void renderFresh();
         });
-        document.getElementById("fresh-date-filter")!.addEventListener("change", () => {
-          freshPage = 1;
-          void renderFresh();
-        });
         document.getElementById("pre-status-filter")!.addEventListener("change", () => {
-          prePage = 1;
-          void renderPre();
-        });
-        document.getElementById("pre-date-filter")!.addEventListener("change", () => {
           prePage = 1;
           void renderPre();
         });
@@ -279,6 +458,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
               pending: "badge-blue",
               confirmed: "badge-green",
               paid: "badge-green",
+              picked_up: "badge-green",
               completed: "badge-green",
               declined: "badge-red",
               cancelled: "badge-red",
@@ -446,6 +626,151 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         color: var(--blue);
         border-bottom-color: var(--blue);
       }
+      .dash-toolbar-card {
+        background: var(--gray-50, #fafafa);
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+      }
+      .dash-toolbar-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .dash-toolbar-title {
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--gray-900);
+      }
+      .stats-toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gray-700);
+        cursor: pointer;
+        user-select: none;
+      }
+      .stats-toggle-shell {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 26px;
+        flex-shrink: 0;
+      }
+      .stats-toggle-shell input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+      .stats-toggle-track {
+        position: absolute;
+        inset: 0;
+        background: var(--gray-200);
+        border-radius: 14px;
+        transition: background 0.2s;
+        pointer-events: none;
+      }
+      .stats-toggle-knob {
+        position: absolute;
+        left: 3px;
+        top: 3px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        pointer-events: none;
+      }
+      .global-date-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .global-date-custom {
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .global-date-to-label {
+        font-size: 13px;
+      }
+      .date-input {
+        padding: 6px 10px;
+        font-size: 13px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        background: white;
+        color: var(--gray-800);
+      }
+      .stats-range-hint {
+        font-size: 12px;
+        margin: 10px 0 0;
+        line-height: 1.35;
+      }
+      .seller-stats-panel {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--gray-200);
+      }
+      .stats-section-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 0 0 10px;
+        color: var(--gray-700);
+      }
+      .stats-section-title-pre {
+        margin-top: 14px;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+        gap: 10px;
+      }
+      .stats-grid-pre {
+        grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+      }
+      .stat-card {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 10px;
+        padding: 10px 12px;
+        text-align: center;
+      }
+      .stat-card-value {
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--gray-900);
+        letter-spacing: -0.02em;
+      }
+      .stat-card-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--gray-500);
+        margin-top: 4px;
+        line-height: 1.25;
+      }
+      .stat-card--blue .stat-card-value {
+        color: var(--blue);
+      }
+      .stat-card--green .stat-card-value {
+        color: var(--green, #1a7f37);
+      }
+      .stat-card--red .stat-card-value {
+        color: var(--red, #c0392b);
+      }
+      .stat-card--orange .stat-card-value {
+        color: var(--orange, #e67e22);
+      }
       .order-filters {
         display: flex;
         gap: 8px;
@@ -459,7 +784,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         background: white;
         color: var(--gray-700);
         flex: 1;
-        max-width: 180px;
+        max-width: 220px;
+      }
+      .filter-select-wide {
+        max-width: 260px;
+        flex: 0 1 auto;
+      }
+      .filter-select-grow {
+        max-width: 100%;
       }
       .pagination {
         display: flex;

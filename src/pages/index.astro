@@ -362,7 +362,7 @@ import LoginModal from "../components/LoginModal.astro";
   </style>
 
   <script>
-    import { getActiveListings, supabase } from "../lib/supabase";
+    import { loadBuyerCatalog } from "../lib/supabase";
     import { SPECIES, getSpeciesDisplay } from "../lib/species";
     import type { FishListing, Seller } from "../lib/supabase";
 
@@ -470,11 +470,8 @@ import LoginModal from "../components/LoginModal.astro";
       const emptyState = document.getElementById("empty-state")!;
 
       try {
-        // Get active listings + all sellers (even without active listings, for pre-order)
-        const [listings, allSellersRes] = await Promise.all([
-          getActiveListings().catch(() => [] as FishListing[]),
-          supabase.from("sellers").select("*").then(r => r.data || []),
-        ]);
+        // Active listings + all sellers (deduped in lib if multiple callers overlap)
+        const { listings, sellers: allSellersRes } = await loadBuyerCatalog();
 
         // Group listings by seller
         const sellerMap = new Map<string, SellerGroup>();
