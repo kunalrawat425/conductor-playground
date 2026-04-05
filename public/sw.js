@@ -1,7 +1,7 @@
-// reslifih Service Worker
+// Relifish Service Worker
 // Handles push notifications and offline app shell caching
 
-const CACHE_NAME = "reslifih-v1";
+const CACHE_NAME = "relifish-v1";
 const SHELL_ASSETS = ["/", "/manifest.json", "/favicon.svg"];
 
 // Install: cache app shell
@@ -53,11 +53,11 @@ self.addEventListener("fetch", (event) => {
 
 // Push notification handler
 function uniqueFallbackTag() {
-  return `reslifih-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  return `relifish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 self.addEventListener("push", (event) => {
-  let data = { title: "reslifih", body: "You have an update!", url: "/track" };
+  let data = { title: "Relifish", body: "You have an update!", url: "/track" };
 
   if (event.data) {
     try {
