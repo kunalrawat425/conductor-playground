@@ -29,6 +29,16 @@ export const POST: APIRoute = async ({ request }) => {
       .single();
 
     if (error) {
+      if (error.code === "23505") {
+        const msg = (error.message || "").toLowerCase();
+        const human =
+          msg.includes("email") || msg.includes("sellers_email")
+            ? "That email is already in use. Email is case-sensitive."
+            : msg.includes("phone")
+              ? "That phone number is already registered."
+              : "This value is already in use.";
+        return new Response(JSON.stringify({ error: human }), { status: 409 });
+      }
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 

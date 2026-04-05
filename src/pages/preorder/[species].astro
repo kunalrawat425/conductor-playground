@@ -279,19 +279,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       const emoji = FISH_EMOJI[speciesId] || "🐟";
       const unitLabel = sp?.defaultUnit === "dozen" ? "dz" : (sp?.defaultUnit || "kg");
 
-      // Fetch data
+      // Fetch data — parallel + lib coalesces concurrent duplicate reads
       let speciesRange = null;
+      let sellersData = { active: [], pastSellers: [] };
       try {
-        const ranges = await db.getSpeciesRanges();
-        speciesRange = ranges.find(r => r.species === speciesId);
-      } catch {}
-
-      let sellersData;
-      try {
-        sellersData = await db.getSellersForSpecies(speciesId);
+        const [ranges, sd] = await Promise.all([
+          db.getSpeciesRanges(),
+          db.getSellersForSpecies(speciesId),
+        ]);
+        speciesRange = ranges.find((r) => r.species === speciesId);
+        sellersData = sd;
       } catch (err) {
         console.error(err);
-        sellersData = { active: [], pastSellers: [] };
       }
 
       const buyerLoc = getBuyerLocation();

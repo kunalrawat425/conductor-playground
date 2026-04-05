@@ -477,8 +477,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       }
 
       try {
-        const seller = await db.getSellerById(sellerId);
-        const listings = await db.getSellerListings(sellerId);
+        const [seller, listings] = await Promise.all([
+          db.getSellerById(sellerId),
+          db.getSellerListings(sellerId),
+        ]);
         activeSeller = seller;
         const open = isSellerOpen(seller.opens_at, seller.closes_at);
         const isPreorderMode = !open;
