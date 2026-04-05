@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Header from "../../components/Header.astro";
 import DashboardGate from "../../components/DashboardGate.astro";
+import SellerBottomNav from "../../components/SellerBottomNav.astro";
 import "../../styles/global.css";
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
@@ -18,7 +19,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
   </head>
-  <body>
+  <body class="seller-dash">
     <DashboardGate />
     <Header showDashboardLink={false} />
 
@@ -33,13 +34,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     </div>
 
     <main id="dash-main" style="display:none;">
-      <!-- Nav -->
-      <div class="dash-nav">
-        <a href="/dashboard/orders" class="dash-nav-item">Orders</a>
-        <a href="/dashboard/listings" class="dash-nav-item">Listings</a>
-        <a href="/dashboard/profile" class="dash-nav-item active">Profile</a>
-      </div>
-
       <h1
         id="seller-profile-display-name"
         style="font-size:28px;font-weight:800;line-height:1.15;color:var(--gray-900);margin:0 0 16px;letter-spacing:-0.02em;"
@@ -646,31 +640,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       init();
     </script>
 
-    <style is:global>
-      .dash-nav {
-        display: flex;
-        gap: 0;
-        margin-bottom: 16px;
-        border-bottom: 2px solid var(--gray-200);
-      }
-      .dash-nav-item {
-        padding: 10px 16px;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--gray-500);
-        text-decoration: none;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -2px;
-        transition: color 0.15s, border-color 0.15s;
-      }
-      .dash-nav-item:hover {
-        color: var(--gray-700);
-        text-decoration: none;
-      }
-      .dash-nav-item.active {
-        color: var(--blue);
-        border-bottom-color: var(--blue);
-      }
-    </style>
+    <SellerBottomNav active="profile" />
   </body>
 </html>
