@@ -5,7 +5,7 @@ import LocationPicker from "../components/LocationPicker.astro";
 export const prerender = false;
 ---
 
-<AppShell title={`Profile - ${import.meta.env.PUBLIC_BRAND_NAME || "Taazi"}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
+<AppShell title={`Profile - ${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
   <div id="me-container">
     <!-- Not logged in -->
     <div id="me-guest" style="display:none;text-align:center;padding:48px 16px;">
@@ -95,7 +95,7 @@ export const prerender = false;
       <div id="ios-install-hint" class="card" style="margin-bottom:16px;display:none;">
         <div class="card-body" style="background:var(--blue);color:white;">
           <div style="font-weight:600;font-size:14px;margin-bottom:4px;">📱 Add to Home Screen</div>
-          <div style="font-size:13px;opacity:0.9;">Install Taazi for push notifications on iOS. Tap Share → Add to Home Screen.</div>
+          <div style="font-size:13px;opacity:0.9;">Install Zepto for push notifications on iOS. Tap Share → Add to Home Screen.</div>
         </div>
       </div>
 
@@ -195,7 +195,7 @@ export const prerender = false;
       });
 
       // Location
-      const savedLoc = localStorage.getItem("taazi_location");
+      const savedLoc = localStorage.getItem("zepto_location");
       if (savedLoc) {
         try {
           const loc = JSON.parse(savedLoc);
@@ -276,7 +276,7 @@ export const prerender = false;
 
     // Listen for location updates
     window.addEventListener("location-updated", () => {
-      const savedLoc = localStorage.getItem("taazi_location");
+      const savedLoc = localStorage.getItem("zepto_location");
       if (savedLoc) {
         try {
           const loc = JSON.parse(savedLoc);

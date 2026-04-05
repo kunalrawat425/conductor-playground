@@ -5,7 +5,7 @@ import AppShell from "../../components/AppShell.astro";
 import LoginModal from "../../components/LoginModal.astro";
 
 const { species } = Astro.params;
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Taazi";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 ---
 
 <AppShell title={`Pre-order - ${brandName}`} description={`Pre-order fresh fish for tomorrow morning on ${brandName}.`} activeTab="home">
@@ -237,7 +237,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Taazi";
 
       function getBuyerLocation() {
         try {
-          const saved = localStorage.getItem("taazi_location");
+          const saved = localStorage.getItem("zepto_location");
           if (saved) return JSON.parse(saved);
         } catch {}
         return null;

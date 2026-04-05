@@ -1,6 +1,6 @@
 /**
  * Seller auth — uses same OTP API routes as buyer, with role=seller.
- * Session stored in localStorage (taazi_seller_id, taazi_seller_phone, taazi_seller_name).
+ * Session stored in localStorage (zepto_seller_id, zepto_seller_phone, zepto_seller_name).
  */
 
 export async function sendOtp(phone: string) {
@@ -24,23 +24,23 @@ export async function verifyOtp(phone: string, token: string) {
   if (!res.ok) throw new Error(data.error || "Invalid OTP");
 
   // Store seller session in localStorage
-  localStorage.setItem("taazi_seller_id", data.seller_id);
-  localStorage.setItem("taazi_seller_phone", data.phone);
-  localStorage.setItem("taazi_seller_name", data.name || "");
+  localStorage.setItem("zepto_seller_id", data.seller_id);
+  localStorage.setItem("zepto_seller_phone", data.phone);
+  localStorage.setItem("zepto_seller_name", data.name || "");
 
   return data;
 }
 
 export function getSession(): { seller_id: string; phone: string; name: string } | null {
-  const seller_id = localStorage.getItem("taazi_seller_id");
-  const phone = localStorage.getItem("taazi_seller_phone");
-  const name = localStorage.getItem("taazi_seller_name") || "";
+  const seller_id = localStorage.getItem("zepto_seller_id");
+  const phone = localStorage.getItem("zepto_seller_phone");
+  const name = localStorage.getItem("zepto_seller_name") || "";
   if (!seller_id || !phone) return null;
   return { seller_id, phone, name };
 }
 
 export function signOut() {
-  localStorage.removeItem("taazi_seller_id");
-  localStorage.removeItem("taazi_seller_phone");
-  localStorage.removeItem("taazi_seller_name");
+  localStorage.removeItem("zepto_seller_id");
+  localStorage.removeItem("zepto_seller_phone");
+  localStorage.removeItem("zepto_seller_name");
 }
