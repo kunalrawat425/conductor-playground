@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Header from "../../../components/Header.astro";
 import DashboardGate from "../../../components/DashboardGate.astro";
+import SellerActiveGate from "../../../components/SellerActiveGate.astro";
 import SellerBottomNav from "../../../components/SellerBottomNav.astro";
 import "../../../styles/global.css";
 
@@ -21,6 +22,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
   </head>
   <body class="seller-dash">
     <DashboardGate />
+    <SellerActiveGate />
     <Header showDashboardLink={false} />
 
     <script is:inline>

@@ -233,7 +233,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
   <script define:vars={{ speciesId: species, brandName }}>
     import("../../lib/supabase").then(async (db) => {
       const { SPECIES, getSpeciesDisplay } = await import("../../lib/species");
-      const { getSession } = await import("../../lib/auth");
+      const { getSession, isBuyerOrderingAllowed } = await import("../../lib/auth");
 
       const FISH_EMOJI = {
         pomfret: "🐟", surmai: "🐠", rawas: "🐡", bangda: "🐟", bombil: "🍤",
@@ -676,6 +676,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
       async function submitOrder(session, buyer_addr) {
         const btn = document.getElementById("confirm-order-btn");
+        if (!isBuyerOrderingAllowed()) {
+          showToast("Your account cannot place orders right now.", "error");
+          return;
+        }
         btn.textContent = "Placing order...";
         btn.disabled = true;
         btn.style.opacity = "0.6";

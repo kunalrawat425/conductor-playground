@@ -115,8 +115,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }
         setButtonLoading(verifyBtn, true, "Verify & Login", "on-dark");
         try {
-          await verifyOtp(phone, token);
-          window.location.href = "/dashboard/orders";
+          const data = await verifyOtp(phone, token);
+          window.location.href = data?.is_active === false ? "/dashboard/pending" : "/dashboard/orders";
         } catch (err: any) {
           showToast(err.message || "Invalid OTP. Try again.", "error");
           setButtonLoading(verifyBtn, false, "Verify & Login", "on-dark");

@@ -54,9 +54,24 @@ describe("supabase queries", () => {
     vi.clearAllMocks();
   });
 
-  it("getActiveListings filters by available", async () => {
+  it("getActiveListings filters by available and active seller", async () => {
     const mockListings = [
-      { id: "1", species: "pomfret", price: 500, price_unit: "piece", is_available: true },
+      {
+        id: "1",
+        species: "pomfret",
+        price: 500,
+        price_unit: "piece",
+        is_available: true,
+        seller: { is_active: true },
+      },
+      {
+        id: "2",
+        species: "surmai",
+        price: 400,
+        price_unit: "kg",
+        is_available: true,
+        seller: { is_active: false },
+      },
     ];
     const chain = setupChain(mockListings);
 
@@ -65,7 +80,7 @@ describe("supabase queries", () => {
 
     expect(mockFrom).toHaveBeenCalledWith("fish_listings");
     expect(chain.eq).toHaveBeenCalledWith("is_available", true);
-    expect(result).toEqual(mockListings);
+    expect(result).toEqual([mockListings[0]]);
   });
 
   it("getSellerById queries sellers table", async () => {
@@ -79,7 +94,24 @@ describe("supabase queries", () => {
     expect(result).toEqual(mockSeller);
   });
 
-  it("createListing inserts into fish_listings", async () => {
+  it("getAllSellers filters is_active true", async () => {
+    const mockSellers = [{ id: "s1", name: "A", is_active: true }];
+    const mockEq = vi.fn().mockReturnValue({
+      then: (cb: (v: { data: unknown; error: null }) => unknown) =>
+        Promise.resolve(cb({ data: mockSellers, error: null })),
+    });
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({ eq: mockEq }),
+    });
+
+    const { getAllSellers } = await import("../../src/lib/supabase");
+    const result = await getAllSellers();
+    expect(mockFrom).toHaveBeenCalledWith("sellers");
+    expect(mockEq).toHaveBeenCalledWith("is_active", true);
+    expect(result).toEqual(mockSellers);
+  });
+
+  it("createListing posts to seller listings API", async () => {
     const newListing = {
       seller_id: "s1",
       species: "pomfret",
@@ -91,14 +123,23 @@ describe("supabase queries", () => {
       is_available: true,
       pickup_loc: "Versova",
     };
-    const chain = setupChain({ id: "l1", ...newListing });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ listing: { id: "l1", ...newListing } }),
+    });
+    const prevFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as any;
 
     const { createListing } = await import("../../src/lib/supabase");
     const result = await createListing(newListing);
 
-    expect(mockFrom).toHaveBeenCalledWith("fish_listings");
-    expect(chain.insert).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/seller/listings",
+      expect.objectContaining({ method: "POST" })
+    );
     expect(result.id).toBe("l1");
+
+    globalThis.fetch = prevFetch;
   });
 
   it("updateOrderStatus updates status and optional final price", async () => {

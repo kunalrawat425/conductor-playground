@@ -27,6 +27,7 @@ export async function verifyOtp(phone: string, token: string) {
   localStorage.setItem("zepto_seller_id", data.seller_id);
   localStorage.setItem("zepto_seller_phone", data.phone);
   localStorage.setItem("zepto_seller_name", data.name || "");
+  localStorage.setItem("zepto_seller_is_active", data.is_active === false ? "0" : "1");
 
   return data;
 }
@@ -43,4 +44,5 @@ export function signOut() {
   localStorage.removeItem("zepto_seller_id");
   localStorage.removeItem("zepto_seller_phone");
   localStorage.removeItem("zepto_seller_name");
+  localStorage.removeItem("zepto_seller_is_active");
 }
