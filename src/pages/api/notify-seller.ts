@@ -7,6 +7,7 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const vapidPublicKey = import.meta.env.PUBLIC_VAPID_KEY || "";
 const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY || "";
+const vapidContact = import.meta.env.VAPID_CONTACT || "mailto:hello@zepto.in";
 
 /**
  * POST /api/notify-seller
@@ -44,7 +45,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Lazy import web-push to avoid module-level crash on serverless
     const webPush = await import("web-push");
-    webPush.setVapidDetails("mailto:hello@zepto.in", vapidPublicKey, vapidPrivateKey);
+    webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
 
     await webPush.sendNotification(
       seller.push_subscription,

@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ url }) => {
 
     const { data, error } = await supabase
       .from("buyers")
-      .select("id, phone, first_name, last_name, email, location_name, created_at")
+      .select("id, phone, first_name, last_name, email, location_name, created_at, push_enabled")
       .eq("id", buyer_id)
       .single();
 

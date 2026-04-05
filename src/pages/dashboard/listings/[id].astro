@@ -146,7 +146,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           const toggleBtn = document.getElementById("toggle-btn") as HTMLButtonElement;
           toggleBtn.addEventListener("click", async () => {
             const origText = toggleBtn.textContent!;
-            toggleBtn.disabled = true; toggleBtn.textContent = "..."; toggleBtn.style.opacity = "0.6";
+            toggleBtn.disabled = true; toggleBtn.textContent = "Updating..."; toggleBtn.style.opacity = "0.6";
             try {
               await updateListing(listingId, { is_available: !listing.is_available }, seller.id);
               showToast(listing.is_available ? "Marked unavailable" : "Marked available");

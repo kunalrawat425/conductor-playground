@@ -45,7 +45,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           </div>
           <button id="verify-otp-btn" class="btn btn-primary" style="width:100%;">Verify & Login</button>
           <p class="text-muted" style="margin-top:8px;text-align:center;">
-            <button id="resend-btn" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;">Resend OTP</button>
+            <button type="button" id="resend-btn" class="btn" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;min-height:40px;display:inline-flex;">Resend OTP</button>
           </p>
         </div>
       </div>
@@ -53,6 +53,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
     <script>
       import { sendOtp, verifyOtp, getSession } from "../../lib/seller-auth";
+      import { setButtonLoading } from "../../lib/button-loading";
 
       const session = getSession();
       if (session) window.location.href = "/dashboard";
@@ -78,12 +79,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }, 3000);
       }
 
-      function setLoading(btn: HTMLButtonElement, loading: boolean, text: string) {
-        btn.disabled = loading;
-        btn.textContent = loading ? "Loading..." : text;
-        btn.style.opacity = loading ? "0.6" : "1";
-      }
-
       function normalizePhone(raw: string): string {
         const digits = raw.replace(/\D/g, "");
         if (digits.startsWith("91") && digits.length === 12) return "+" + digits;
@@ -99,7 +94,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           showToast("Please enter a valid phone number.", "error");
           return;
         }
-        setLoading(sendBtn, true, "Send OTP");
+        setButtonLoading(sendBtn, true, "Send OTP", "on-dark");
         try {
           await sendOtp(phone);
           phoneStep.style.display = "none";
@@ -108,7 +103,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         } catch (err: any) {
           showToast(err.message || "Failed to send OTP.", "error");
         } finally {
-          setLoading(sendBtn, false, "Send OTP");
+          setButtonLoading(sendBtn, false, "Send OTP", "on-dark");
         }
       });
 
@@ -118,25 +113,25 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           showToast("Please enter the 6-digit OTP.", "error");
           return;
         }
-        setLoading(verifyBtn, true, "Verify & Login");
+        setButtonLoading(verifyBtn, true, "Verify & Login", "on-dark");
         try {
           await verifyOtp(phone, token);
           window.location.href = "/dashboard";
         } catch (err: any) {
           showToast(err.message || "Invalid OTP. Try again.", "error");
-          setLoading(verifyBtn, false, "Verify & Login");
+          setButtonLoading(verifyBtn, false, "Verify & Login", "on-dark");
         }
       });
 
       resendBtn.addEventListener("click", async () => {
-        setLoading(resendBtn, true, "Resend OTP");
+        setButtonLoading(resendBtn, true, "Resend OTP", "textlink");
         try {
           await sendOtp(phone);
           showToast("OTP resent!");
         } catch (err: any) {
           showToast(err.message || "Failed to resend OTP.", "error");
         } finally {
-          setLoading(resendBtn, false, "Resend OTP");
+          setButtonLoading(resendBtn, false, "Resend OTP", "textlink");
         }
       });
 

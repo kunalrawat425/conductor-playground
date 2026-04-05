@@ -29,7 +29,6 @@
       <button class="btn btn-primary tap-target" id="login-send-otp" style="width:100%;min-height:44px;">
         Send OTP
       </button>
-      <div id="login-phone-error" style="color:var(--red);font-size:13px;margin-top:8px;display:none;"></div>
     </div>
 
     <!-- Step 2: OTP verification -->
@@ -53,8 +52,7 @@
       <button class="btn btn-primary tap-target" id="login-verify-otp" style="width:100%;min-height:44px;">
         Verify
       </button>
-      <div id="login-otp-error" style="color:var(--red);font-size:13px;margin-top:8px;display:none;"></div>
-      <button class="btn tap-target" id="login-resend" style="width:100%;margin-top:8px;background:none;color:var(--blue);font-size:13px;" disabled>
+      <button type="button" class="btn tap-target" id="login-resend" style="width:100%;margin-top:8px;background:none;color:var(--blue);font-size:13px;min-height:40px;" disabled>
         Resend OTP (30s)
       </button>
       <button class="btn tap-target" id="login-back" style="width:100%;margin-top:4px;background:none;color:var(--gray-500);font-size:13px;">
@@ -73,12 +71,22 @@
 
 <script>
   import { sendOtp, verifyOtp, getSession } from "../lib/auth";
+  import { subscribePush } from "../lib/push";
+  import { setButtonLoading } from "../lib/button-loading";
 
   let currentPhone = "";
   let attempts = 0;
   const MAX_ATTEMPTS = 3;
   let pendingListingId: string | null = null;
   let resendTimer: any = null;
+
+  function showToast(message: string, type: "success" | "error" = "success") {
+    let toast = document.getElementById("login-toast");
+    if (!toast) { toast = document.createElement("div"); toast.id = "login-toast"; document.body.appendChild(toast); }
+    toast.textContent = message;
+    toast.style.cssText = `position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;background:${type === "success" ? "var(--green)" : "var(--red)"};`;
+    setTimeout(() => { toast!.style.opacity = "0"; setTimeout(() => { toast!.style.display = "none"; }, 300); }, 3000);
+  }
 
   function showStep(step: "phone" | "otp" | "success") {
     document.getElementById("login-step-phone")!.style.display = step === "phone" ? "block" : "none";
@@ -96,8 +104,6 @@
     attempts = 0;
     (document.getElementById("login-phone") as HTMLInputElement).value = "";
     (document.getElementById("login-otp") as HTMLInputElement).value = "";
-    document.getElementById("login-phone-error")!.style.display = "none";
-    document.getElementById("login-otp-error")!.style.display = "none";
   }
 
   function closeLoginModal() {
@@ -111,23 +117,18 @@
   // Send OTP
   document.getElementById("login-send-otp")?.addEventListener("click", async () => {
     const phoneInput = document.getElementById("login-phone") as HTMLInputElement;
-    const errorEl = document.getElementById("login-phone-error")!;
     const btn = document.getElementById("login-send-otp") as HTMLButtonElement;
 
     let phone = phoneInput.value.trim().replace(/\s/g, "");
-    // Add +91 if not present
     if (phone.startsWith("0")) phone = phone.slice(1);
     if (!phone.startsWith("+")) phone = "+91" + phone;
 
     if (phone.length < 12) {
-      errorEl.textContent = "Please enter a valid phone number.";
-      errorEl.style.display = "block";
+      showToast("Please enter a valid phone number.", "error");
       return;
     }
 
-    btn.textContent = "Sending...";
-    btn.disabled = true;
-    errorEl.style.display = "none";
+    setButtonLoading(btn, true, "Send OTP", "on-dark");
 
     try {
       await sendOtp(phone);
@@ -137,36 +138,29 @@
       startResendTimer();
       (document.getElementById("login-otp") as HTMLInputElement).focus();
     } catch (err: any) {
-      errorEl.textContent = "Couldn't send OTP. Check your number and try again.";
-      errorEl.style.display = "block";
+      showToast("Couldn't send OTP. Check your number and try again.", "error");
     } finally {
-      btn.textContent = "Send OTP";
-      btn.disabled = false;
+      setButtonLoading(btn, false, "Send OTP", "on-dark");
     }
   });
 
   // Verify OTP
   document.getElementById("login-verify-otp")?.addEventListener("click", async () => {
     const otpInput = document.getElementById("login-otp") as HTMLInputElement;
-    const errorEl = document.getElementById("login-otp-error")!;
     const btn = document.getElementById("login-verify-otp") as HTMLButtonElement;
 
     const token = otpInput.value.trim();
     if (token.length !== 6) {
-      errorEl.textContent = "Please enter the 6-digit OTP.";
-      errorEl.style.display = "block";
+      showToast("Please enter the 6-digit OTP.", "error");
       return;
     }
 
     if (attempts >= MAX_ATTEMPTS) {
-      errorEl.textContent = "Too many attempts. Try again in 5 minutes.";
-      errorEl.style.display = "block";
+      showToast("Too many attempts. Try again in 5 minutes.", "error");
       return;
     }
 
-    btn.textContent = "Verifying...";
-    btn.disabled = true;
-    errorEl.style.display = "none";
+    setButtonLoading(btn, true, "Verify", "on-dark");
     attempts++;
 
     try {
@@ -175,7 +169,9 @@
       if (data?.success) {
         showStep("success");
 
-        // Redirect after brief pause
+        // Auto-subscribe to push notifications after login
+        subscribePush().catch(() => {});
+
         setTimeout(() => {
           closeLoginModal();
           window.dispatchEvent(new CustomEvent("buyer-logged-in", { detail: data }));
@@ -184,14 +180,11 @@
     } catch (err: any) {
       const remaining = MAX_ATTEMPTS - attempts;
       if (remaining > 0) {
-        errorEl.textContent = `Incorrect OTP. ${remaining} attempt${remaining > 1 ? "s" : ""} remaining.`;
+        showToast(`Incorrect OTP. ${remaining} attempt${remaining > 1 ? "s" : ""} remaining.`, "error");
       } else {
-        errorEl.textContent = "Too many attempts. Try again in 5 minutes.";
+        showToast("Too many attempts. Try again in 5 minutes.", "error");
       }
-      errorEl.style.display = "block";
-    } finally {
-      btn.textContent = "Verify";
-      btn.disabled = false;
+      setButtonLoading(btn, false, "Verify", "on-dark");
     }
   });
 
@@ -218,16 +211,14 @@
   // Resend OTP
   document.getElementById("login-resend")?.addEventListener("click", async () => {
     const btn = document.getElementById("login-resend") as HTMLButtonElement;
-    btn.disabled = true;
+    setButtonLoading(btn, true, "Resend OTP", "textlink");
     try {
       await sendOtp(currentPhone);
       attempts = 0;
       startResendTimer();
-      document.getElementById("login-otp-error")!.style.display = "none";
     } catch {
-      const errorEl = document.getElementById("login-otp-error")!;
-      errorEl.textContent = "Couldn't resend OTP. Try again.";
-      errorEl.style.display = "block";
+      showToast("Couldn't resend OTP. Try again.", "error");
+      setButtonLoading(btn, false, "Resend OTP", "textlink");
     }
   });
 
