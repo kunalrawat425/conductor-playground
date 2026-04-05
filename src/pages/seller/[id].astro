@@ -503,11 +503,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         // If closed and seller doesn't accept pre-orders, show empty state
         const acceptsPreorder = seller.accepts_preorder !== false;
 
-        // If open: show only active unexpired listings (order mode)
+        // If open: show only active listings (order mode)
         // If closed + accepts preorder: show all listings they've ever had (their full menu)
         // If closed + no preorder: show nothing
         const activeListings = open
-          ? listings.filter(l => l.is_available && new Date(l.expires_at) > new Date())
+          ? listings.filter(l => l.is_available)
           : acceptsPreorder
             ? listings.filter((l, i, arr) => {
                 // Dedupe by species, keep most recent
@@ -754,34 +754,26 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           btn.disabled = true;
 
           try {
-            // Create one order per item (each listing is a separate order)
-            // The API determines pre-order vs order based on seller operating hours
+            // One request with all lines so min order & delivery fee use cart subtotal (not per line)
             const addr = buyer_addr ?? null;
-            const orderPromises = items.map(e => {
-              const l = e.listing;
-              const totalPrice = e.qty * l.price;
-              return fetch("/api/orders/create", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  listing_id: l.id,
-                  species: l.species,
+            const res = await fetch("/api/orders/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                buyer_phone: session.phone,
+                buyer_id: session.buyer_id,
+                buyer_addr: addr,
+                order_type: inDeliveryRange ? "delivery" : "pickup",
+                seller_id: sellerId,
+                lines: items.map((e) => ({
+                  listing_id: e.listing.id,
                   quantity: e.qty,
-                  quantity_unit: l.price_unit,
-                  total_price: totalPrice,
-                  buyer_phone: session.phone,
-                  buyer_id: session.buyer_id,
-                  buyer_addr: addr,
-                  order_type: inDeliveryRange ? "delivery" : "pickup",
-                  seller_id: sellerId,
-                }),
-              }).then(r => r.json());
+                })),
+              }),
             });
-
-            const orderResults = await Promise.all(orderPromises);
-            const failedOrder = orderResults.find((r) => r?.error);
-            if (failedOrder) {
-              throw new Error(failedOrder.error || "Could not place order");
+            const payload = await res.json();
+            if (!res.ok) {
+              throw new Error(payload?.error || "Could not place order");
             }
 
             // Show success toast then redirect

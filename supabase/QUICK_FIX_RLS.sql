@@ -110,8 +110,7 @@ create trigger trg_restore_inventory
   for each row
   execute function restore_listing_inventory();
 
--- Refresh listings so they show up
+-- Ensure listings are visible (availability-only model)
 update fish_listings
-  set expires_at = now() + interval '12 hours',
-      is_available = true
+  set is_available = true
   where is_available = true;

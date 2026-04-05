@@ -54,7 +54,7 @@ describe("supabase queries", () => {
     vi.clearAllMocks();
   });
 
-  it("getActiveListings filters by available and not expired", async () => {
+  it("getActiveListings filters by available", async () => {
     const mockListings = [
       { id: "1", species: "pomfret", price: 500, price_unit: "piece", is_available: true },
     ];
@@ -89,7 +89,6 @@ describe("supabase queries", () => {
       photo_url: null,
       listed_date: "2026-04-05",
       is_available: true,
-      expires_at: new Date().toISOString(),
       pickup_loc: "Versova",
     };
     const chain = setupChain({ id: "l1", ...newListing });
