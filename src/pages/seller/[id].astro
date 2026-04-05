@@ -1,0 +1,700 @@
+---
+export const prerender = false;
+
+import AppShell from "../../components/AppShell.astro";
+import LocationPicker from "../../components/LocationPicker.astro";
+import LoginModal from "../../components/LoginModal.astro";
+
+const { id } = Astro.params;
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Taazi";
+---
+
+<AppShell title={`Seller Menu - ${brandName}`} description={`Fresh fish menu. Order for pickup or delivery on ${brandName}.`} activeTab="home">
+  <!-- Back button -->
+  <div style="padding:8px 0;">
+    <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">
+      ← Back
+    </a>
+  </div>
+
+  <!-- Seller profile skeleton -->
+  <section id="seller-profile">
+    <div class="skeleton" style="height:80px;border-radius:16px;margin-bottom:16px;"></div>
+  </section>
+
+  <!-- Menu section -->
+  <section id="menu-section" style="display:none;">
+    <h2 class="menu-heading">Menu</h2>
+    <div id="menu-container"></div>
+  </section>
+
+  <!-- Empty state -->
+  <div id="empty-menu" style="display:none;text-align:center;padding:40px 20px;">
+    <div style="font-size:48px;margin-bottom:12px;">📋</div>
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">No items available</h3>
+    <p class="text-muted">This seller has no active listings right now.</p>
+  </div>
+
+  <!-- Error state -->
+  <div id="error-state" style="display:none;text-align:center;padding:40px 20px;">
+    <p style="color:var(--red);">Seller not found.</p>
+  </div>
+
+  <!-- Sticky cart bar -->
+  <div class="cart-bar" id="cart-bar" style="display:none;">
+    <div class="cart-bar-inner">
+      <div class="cart-info">
+        <span id="cart-count">0 items</span>
+        <span id="cart-total">₹0</span>
+      </div>
+      <button class="cart-btn" id="place-order-btn">Place Order</button>
+    </div>
+  </div>
+
+  <LocationPicker />
+  <LoginModal />
+
+  <style is:global>
+    .seller-profile-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .sp-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .sp-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #e8f4fd, #d1ecf1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .sp-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .sp-location {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+    .sp-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .sp-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .sp-badge-rating {
+      background: var(--green);
+      color: white;
+    }
+    .sp-badge-open { background: #d4edda; color: #155724; }
+    .sp-badge-closed { background: #f8d7da; color: #721c24; }
+    .sp-badge-delivery { background: #cce5ff; color: #004085; }
+    .sp-badge-orders { background: var(--gray-100); color: var(--gray-700); }
+
+    .sp-hours {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--gray-100);
+    }
+
+    /* Menu heading */
+    .menu-heading {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 12px;
+    }
+
+    /* Delivery banner */
+    .delivery-banner {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .delivery-yes {
+      background: #d4edda;
+      color: #155724;
+    }
+    .delivery-no {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .delivery-neutral {
+      background: var(--gray-100);
+      color: var(--gray-700);
+    }
+
+    .menu-item-grey {
+      opacity: 0.45;
+      filter: grayscale(0.5);
+    }
+
+    /* Menu items */
+    .menu-item {
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      overflow: hidden;
+      margin-bottom: 12px;
+      transition: transform 0.1s;
+    }
+    .menu-item:active { transform: scale(0.98); }
+
+    .menu-item-img {
+      width: 120px;
+      min-height: 120px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+      position: relative;
+    }
+    .menu-item-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .menu-item-info {
+      flex: 1;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+    }
+    .menu-item-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 2px;
+    }
+    .menu-item-marathi {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-bottom: 6px;
+    }
+    .menu-item-price {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+    .menu-item-meta {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-bottom: 10px;
+    }
+
+    /* Add/quantity controls */
+    .add-controls {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .add-btn {
+      padding: 8px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      background: white;
+      color: var(--green);
+      border: 2px solid var(--green);
+      cursor: pointer;
+      transition: all 0.15s;
+      min-height: 38px;
+    }
+    .add-btn:hover {
+      background: var(--green);
+      color: white;
+    }
+    .preorder-btn {
+      background: white;
+      color: var(--orange, #e67e22);
+      border-color: var(--orange, #e67e22);
+      font-size: 12px;
+      padding: 8px 14px;
+    }
+    .preorder-btn:hover {
+      background: var(--orange, #e67e22);
+      color: white;
+    }
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--green);
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 38px;
+    }
+    .qty-btn {
+      width: 36px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+    .qty-btn:active { opacity: 0.7; }
+    .qty-value {
+      min-width: 32px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+    }
+
+    /* Delivery tag on item */
+    .delivery-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #cce5ff;
+      color: #004085;
+      margin-left: 4px;
+    }
+
+    /* Sticky cart bar */
+    .cart-bar {
+      position: fixed;
+      bottom: 56px;
+      left: 0;
+      right: 0;
+      z-index: 90;
+      padding: 0 12px 8px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+    .cart-bar-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--green);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(40,167,69,0.3);
+    }
+    .cart-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    #cart-count {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+    }
+    #cart-total {
+      font-size: 18px;
+      font-weight: 800;
+      color: white;
+    }
+    .cart-btn {
+      background: white;
+      color: var(--green);
+      font-size: 15px;
+      font-weight: 700;
+      padding: 10px 24px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .cart-btn:active { transform: scale(0.95); }
+
+    @media (max-width: 768px) {
+      .menu-item-img { width: 100px; min-height: 100px; }
+      .sp-name { font-size: 20px; }
+    }
+
+    @media (min-width: 769px) {
+      .cart-bar {
+        bottom: 0;
+      }
+    }
+  </style>
+
+  <div id="seller-data" data-seller-id={id} data-brand-name={brandName} style="display:none;"></div>
+
+  <script>
+    import * as db from "../../lib/supabase";
+    import { SPECIES, getSpeciesDisplay } from "../../lib/species";
+    import { getSession } from "../../lib/auth";
+
+    const dataEl = document.getElementById("seller-data")!;
+    const sellerId = dataEl.dataset.sellerId!;
+    const brandName = dataEl.dataset.brandName!;
+
+    (async () => {
+
+      const FISH_EMOJI = {
+        pomfret: "🐟", surmai: "🐠", rawas: "🐡", bangda: "🐟", bombil: "🍤",
+        prawns: "🦐", crab: "🦀", squid: "🦑", lobster: "🦞", oyster: "🦪",
+        clam: "🐚", sardine: "🐟", sole: "🐟", hilsa: "🐟", rohu: "🐟", catla: "🐟",
+      };
+
+      function esc(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      function isSellerOpen(opensAt, closesAt) {
+        if (!opensAt || !closesAt) return true;
+        const now = new Date();
+        const current = now.getHours() * 60 + now.getMinutes();
+        const [oh, om] = opensAt.split(":").map(Number);
+        const [ch, cm] = closesAt.split(":").map(Number);
+        const open = oh * 60 + (om || 0);
+        const close = ch * 60 + (cm || 0);
+        if (close > open) return current >= open && current < close;
+        return current >= open || current < close;
+      }
+
+      // Cart state: { listingId: { listing, qty } }
+      const cart = {};
+
+      function updateCartBar() {
+        const cartBar = document.getElementById("cart-bar");
+        const entries = Object.values(cart).filter(e => e.qty > 0);
+        if (entries.length === 0) {
+          cartBar.style.display = "none";
+          return;
+        }
+        cartBar.style.display = "block";
+        const totalItems = entries.reduce((sum, e) => sum + e.qty, 0);
+        const totalPrice = entries.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
+        document.getElementById("cart-count").textContent = `${totalItems} item${totalItems !== 1 ? "s" : ""}`;
+        document.getElementById("cart-total").textContent = `₹${totalPrice}`;
+      }
+
+      function renderQtyControls(listingId) {
+        const el = document.querySelector(`[data-controls="${listingId}"]`);
+        if (!el) return;
+        const entry = cart[listingId];
+        if (!entry || entry.qty === 0) {
+          el.innerHTML = `<button class="add-btn" data-add="${listingId}">ADD</button>`;
+        } else {
+          el.innerHTML = `
+            <div class="qty-controls">
+              <button class="qty-btn" data-minus="${listingId}">−</button>
+              <span class="qty-value">${entry.qty}</span>
+              <button class="qty-btn" data-plus="${listingId}">+</button>
+            </div>
+          `;
+        }
+        updateCartBar();
+      }
+
+      function distanceKm(lat1, lng1, lat2, lng2) {
+        const R = 6371;
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLng = ((lng2 - lng1) * Math.PI) / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+
+      function getBuyerLocation() {
+        try {
+          const saved = localStorage.getItem("taazi_location");
+          return saved ? JSON.parse(saved) : null;
+        } catch { return null; }
+      }
+
+      try {
+        const seller = await db.getSellerById(sellerId);
+        const listings = await db.getSellerListings(sellerId);
+        const open = isSellerOpen(seller.opens_at, seller.closes_at);
+        const isPreorderMode = !open;
+
+        // Check if buyer is within seller's delivery radius
+        const buyerLoc = getBuyerLocation();
+        const buyerDist = buyerLoc && seller.lat != null && seller.lng != null
+          ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(seller.lat), Number(seller.lng))
+          : null;
+        const inDeliveryRange = seller.has_delivery && buyerDist !== null && seller.delivery_rad != null
+          ? buyerDist <= seller.delivery_rad
+          : false;
+        const sellerRad = seller.delivery_rad || 10;
+        const inServiceArea = buyerDist !== null ? buyerDist <= sellerRad : !buyerLoc;
+
+        // Update cart button text for pre-order mode
+        if (isPreorderMode) {
+          document.getElementById("place-order-btn").textContent = "Place Pre-order";
+        }
+
+        // If closed and seller doesn't accept pre-orders, show empty state
+        const acceptsPreorder = seller.accepts_preorder !== false;
+
+        // If open: show only active unexpired listings (order mode)
+        // If closed + accepts preorder: show all listings they've ever had (their full menu)
+        // If closed + no preorder: show nothing
+        const activeListings = open
+          ? listings.filter(l => l.is_available && new Date(l.expires_at) > new Date())
+          : acceptsPreorder
+            ? listings.filter((l, i, arr) => {
+                // Dedupe by species, keep most recent
+                return arr.findIndex(x => x.species === l.species) === i;
+              })
+            : [];
+
+        // Render seller profile
+        const profileEl = document.getElementById("seller-profile");
+        const opensAt = seller.opens_at ? seller.opens_at.slice(0, 5) : "05:00";
+        const closesAt = seller.closes_at ? seller.closes_at.slice(0, 5) : "14:00";
+
+        // Build all HTML strings first, then apply in one frame
+        const profileHTML = `
+          <div class="seller-profile-card">
+            <div class="sp-top">
+              <div class="sp-avatar">🐟</div>
+              <div>
+                <div class="sp-name">${esc(seller.name)}</div>
+                <div class="sp-location">📍 ${esc(seller.location_name || seller.location || "")}</div>
+              </div>
+            </div>
+            <div class="sp-badges">
+              ${seller.rating_avg > 0 ? `<span class="sp-badge sp-badge-rating">★ ${seller.rating_avg}</span>` : ""}
+              ${open
+                ? `<span class="sp-badge sp-badge-open">Open now</span>`
+                : `<span class="sp-badge sp-badge-closed">Closed</span>`}
+              ${seller.has_delivery
+                ? inDeliveryRange
+                  ? `<span class="sp-badge sp-badge-delivery">🚚 Delivers to you (${buyerDist.toFixed(1)} km)</span>`
+                  : `<span class="sp-badge sp-badge-delivery" style="opacity:0.6;">🚚 Delivers within ${seller.delivery_rad || "?"} km${buyerDist !== null ? ` (you're ${buyerDist.toFixed(1)} km away)` : ""}</span>`
+                : ""}
+              ${seller.total_orders > 0 ? `<span class="sp-badge sp-badge-orders">${seller.total_orders} order${seller.total_orders !== 1 ? 's' : ''}</span>` : ""}
+            </div>
+            <div class="sp-hours">🕐 Open ${opensAt} – ${closesAt}</div>
+          </div>
+        `;
+
+        // Set page title
+        document.title = `${seller.name} - ${brandName}`;
+
+        // Render menu
+        if (activeListings.length === 0) {
+          requestAnimationFrame(() => {
+            profileEl.innerHTML = profileHTML;
+            profileEl.classList.add("fade-in");
+            const emptyEl = document.getElementById("empty-menu");
+            emptyEl.style.display = "block";
+            emptyEl.classList.add("fade-in");
+            if (!open && !acceptsPreorder) {
+              emptyEl.querySelector("h3").textContent = "Seller is closed";
+              emptyEl.querySelector("p").textContent = "This seller doesn't accept pre-orders. Check back during operating hours.";
+            }
+          });
+          return;
+        }
+
+        const menuSection = document.getElementById("menu-section");
+        const menuContainer = document.getElementById("menu-container");
+
+        // Delivery info banner
+        let deliveryBanner = "";
+        if (!inServiceArea && buyerLoc) {
+          deliveryBanner = `<div class="delivery-banner delivery-no">⚠️ This seller is outside your area (${buyerDist !== null ? buyerDist.toFixed(1) + " km away" : ""}). Menu shown for browsing only.</div>`;
+        } else if (seller.has_delivery) {
+          if (inDeliveryRange) {
+            deliveryBanner = `<div class="delivery-banner delivery-yes">🚚 This seller delivers to your area (${buyerDist.toFixed(1)} km away)</div>`;
+          } else if (buyerDist !== null) {
+            deliveryBanner = `<div class="delivery-banner delivery-no">🚚 Delivery within ${seller.delivery_rad} km only — you're ${buyerDist.toFixed(1)} km away. Pickup available.</div>`;
+          } else {
+            deliveryBanner = `<div class="delivery-banner delivery-neutral">🚚 Delivers within ${seller.delivery_rad} km — <a href="#" onclick="window.dispatchEvent(new CustomEvent('open-location-picker'));return false;" style="color:inherit;text-decoration:underline;">set your location</a> to check</div>`;
+          }
+        } else {
+          deliveryBanner = `<div class="delivery-banner delivery-neutral">📦 Pickup only — ${esc(activeListings[0]?.pickup_loc || seller.location_name || "")}</div>`;
+        }
+
+        // Build menu HTML string first
+        const menuHTML = deliveryBanner + activeListings.map(l => {
+          const species = SPECIES[l.species];
+          const name = species?.english || l.species;
+          const marathi = species?.marathi || "";
+          const emoji = FISH_EMOJI[l.species] || "🐟";
+          const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
+
+          return `
+            <div class="menu-item${!inServiceArea ? ' menu-item-grey' : ''}" data-listing="${l.id}">
+              <div class="menu-item-img">
+                ${l.photo_url
+                  ? `<img src="${esc(l.photo_url)}" alt="${esc(name)}" loading="lazy" />`
+                  : emoji}
+              </div>
+              <div class="menu-item-info">
+                <div>
+                  <div class="menu-item-name">${esc(name)}</div>
+                  <div class="menu-item-marathi">${esc(marathi)}</div>
+                  <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
+                  <div class="menu-item-meta">${open ? (l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : 'Out of stock') : 'Pre-order for tomorrow'} · ${esc(l.pickup_loc)}</div>
+                </div>
+                ${inServiceArea
+                  ? `<div class="add-controls" data-controls="${l.id}">
+                      ${open
+                        ? (l.weight_avail > 0
+                          ? `<button class="add-btn" data-add="${l.id}">ADD</button>`
+                          : `<span style="font-size:12px;color:var(--red);font-weight:600;">Sold out</span>`)
+                        : `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`}
+                    </div>`
+                  : ""}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // Apply all DOM updates in a single frame
+        requestAnimationFrame(() => {
+          profileEl.innerHTML = profileHTML;
+          profileEl.classList.add("fade-in");
+          menuContainer.innerHTML = menuHTML;
+          menuSection.style.display = "block";
+          menuSection.classList.add("fade-in");
+        });
+
+        // Initialize cart entries (only for in-stock items)
+        for (const l of activeListings) {
+          if (l.weight_avail > 0) {
+            cart[l.id] = { listing: l, qty: 0 };
+          }
+        }
+
+        // Event delegation for add/plus/minus buttons
+        menuContainer.addEventListener("click", (e) => {
+          const target = e.target;
+
+          const addId = target.dataset?.add;
+          if (addId && cart[addId]) {
+            cart[addId].qty = 1;
+            renderQtyControls(addId);
+            return;
+          }
+
+          const plusId = target.dataset?.plus;
+          if (plusId && cart[plusId]) {
+            const maxQty = Math.floor(cart[plusId].listing.weight_avail);
+            if (cart[plusId].qty < maxQty) {
+              cart[plusId].qty++;
+              renderQtyControls(plusId);
+            }
+            return;
+          }
+
+          const minusId = target.dataset?.minus;
+          if (minusId && cart[minusId]) {
+            cart[minusId].qty--;
+            renderQtyControls(minusId);
+            return;
+          }
+        });
+
+        // Place order
+        document.getElementById("place-order-btn").addEventListener("click", async () => {
+          const items = Object.values(cart).filter(e => e.qty > 0);
+          if (items.length === 0) return;
+
+          const session = getSession();
+          if (!session) {
+            // Store pending order and open login
+            window.__pendingOrder = { sellerId, items: items.map(e => ({ listing_id: e.listing.id, species: e.listing.species, qty: e.qty, price: e.listing.price, price_unit: e.listing.price_unit })) };
+            window.dispatchEvent(new CustomEvent("start-order", { detail: { sellerId } }));
+            return;
+          }
+
+          await submitOrder(session, items);
+        });
+
+        // After login, submit pending order
+        window.addEventListener("buyer-logged-in", async (e) => {
+          const pending = window.__pendingOrder;
+          if (!pending) return;
+          window.__pendingOrder = null;
+          const session = getSession();
+          if (!session) return;
+          const items = Object.values(cart).filter(e => e.qty > 0);
+          if (items.length === 0) return;
+          await submitOrder(session, items);
+        });
+
+        async function submitOrder(session, items) {
+          const btn = document.getElementById("place-order-btn");
+          btn.textContent = isPreorderMode ? "Placing pre-order..." : "Placing order...";
+          btn.disabled = true;
+
+          try {
+            // Create one order per item (each listing is a separate order)
+            // The API determines pre-order vs order based on seller operating hours
+            const orderPromises = items.map(e => {
+              const l = e.listing;
+              const totalPrice = e.qty * l.price;
+              return fetch("/api/orders/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  listing_id: l.id,
+                  species: l.species,
+                  quantity: e.qty,
+                  quantity_unit: l.price_unit,
+                  total_price: totalPrice,
+                  buyer_phone: session.phone,
+                  buyer_id: session.buyer_id,
+                  order_type: inDeliveryRange ? "delivery" : "pickup",
+                  seller_id: sellerId,
+                }),
+              }).then(r => r.json());
+            });
+
+            await Promise.all(orderPromises);
+
+            // Clear cart and redirect to orders
+            window.location.href = "/track";
+          } catch (err) {
+            alert("Order failed: " + (err.message || "Please try again"));
+            btn.textContent = isPreorderMode ? "Place Pre-order" : "Place Order";
+            btn.disabled = false;
+          }
+        }
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("seller-profile").style.display = "none";
+        document.getElementById("error-state").style.display = "block";
+      }
+    })();
+  </script>
+</AppShell>

@@ -1,0 +1,163 @@
+---
+import { getSpeciesDisplay } from "../lib/species";
+import type { Order } from "../lib/supabase";
+
+interface Props {
+  order: Order;
+}
+
+const { order } = Astro.props;
+const speciesName = order.species ? getSpeciesDisplay(order.species) : "Unknown";
+const unitLabel = order.quantity_unit === "dozen" ? "dz" : order.quantity_unit;
+const isPreOrder = order.status === "pre_order";
+const canConfirm = order.status === "pre_order" || order.status === "pending";
+const canDecline = order.status === "pre_order" || order.status === "pending";
+
+const statusColors: Record<string, string> = {
+  pre_order: "badge-orange",
+  pending: "badge-blue",
+  confirmed: "badge-green",
+  paid: "badge-green",
+  picked_up: "badge-green",
+  completed: "badge-green",
+  declined: "badge-red",
+  cancelled: "badge-red",
+  refunded: "badge-orange",
+};
+---
+
+<div class="card order-card" data-order-id={order.id}>
+  <div class="card-body">
+    <div class="order-header">
+      <div>
+        <h4 class="order-species">{speciesName}</h4>
+        <span class="text-muted">
+          {order.quantity} {unitLabel}
+          {isPreOrder ? " (pre-order)" : ""}
+        </span>
+      </div>
+      <span class:list={["badge", statusColors[order.status] || "badge-blue"]}>
+        {order.status.replace("_", " ")}
+      </span>
+    </div>
+
+    <div class="order-details">
+      <div>📱 {order.buyer_phone}</div>
+      {order.buyer_addr && <div>📍 {order.buyer_addr}</div>}
+      <div>🛒 {order.order_type}</div>
+    </div>
+
+    {isPreOrder && order.paid_amount && (
+      <div class="preorder-info">
+        <span>Buyer paid upfront: <strong>₹{order.paid_amount}</strong></span>
+        <span class="text-muted">(max range price)</span>
+      </div>
+    )}
+
+    {canConfirm && (
+      <div class="order-actions">
+        {isPreOrder ? (
+          <div class="confirm-preorder">
+            <div class="form-group">
+              <label for={`final-price-${order.id}`}>Actual Price (₹/{unitLabel})</label>
+              <input
+                type="number"
+                id={`final-price-${order.id}`}
+                class="final-price-input"
+                min="1"
+                step="0.01"
+                placeholder="Enter actual price"
+              />
+            </div>
+            <div class="action-buttons">
+              <button class="btn btn-green confirm-btn" data-order-id={order.id}>
+                Confirm with Price
+              </button>
+              <button class="btn btn-red cancel-btn" data-order-id={order.id}>
+                Cancel (Full Refund)
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div class="action-buttons">
+            <button class="btn btn-green confirm-btn" data-order-id={order.id}>
+              Confirm
+            </button>
+            <button class="btn btn-red decline-btn" data-order-id={order.id}>
+              Decline
+            </button>
+          </div>
+        )}
+      </div>
+    )}
+
+    {order.final_price && (
+      <div class="final-info">
+        Final price: <strong>₹{order.final_price}/{unitLabel}</strong>
+        {order.refund_amt && order.refund_amt > 0 && (
+          <span class="refund-note"> (₹{order.refund_amt} refunded)</span>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  .order-card {
+    margin-bottom: 12px;
+  }
+
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .order-species {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .order-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--gray-700);
+    margin-bottom: 12px;
+  }
+
+  .preorder-info {
+    background: #fff3cd;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .confirm-preorder .form-group {
+    margin-bottom: 8px;
+  }
+
+  .confirm-preorder input {
+    max-width: 200px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  .final-info {
+    font-size: 14px;
+    padding: 8px 12px;
+    background: #d4edda;
+    border-radius: var(--radius);
+  }
+
+  .refund-note {
+    color: var(--orange);
+    font-size: 12px;
+  }
+</style>
