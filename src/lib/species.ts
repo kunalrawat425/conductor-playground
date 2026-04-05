@@ -1,0 +1,51 @@
+/**
+ * English <-> Marathi species map for Mumbai fish market.
+ * Default pricing unit per species (how it's typically sold).
+ */
+
+export type PriceUnit = "kg" | "piece" | "dozen";
+
+export interface Species {
+  english: string;
+  marathi: string;
+  defaultUnit: PriceUnit;
+}
+
+export const SPECIES: Record<string, Species> = {
+  pomfret: { english: "Pomfret", marathi: "पापलेट", defaultUnit: "piece" },
+  surmai: { english: "Surmai (Kingfish)", marathi: "सुरमई", defaultUnit: "kg" },
+  rawas: { english: "Rawas (Indian Salmon)", marathi: "रावस", defaultUnit: "kg" },
+  bangda: { english: "Bangda (Mackerel)", marathi: "बांगडा", defaultUnit: "kg" },
+  bombil: { english: "Bombil (Bombay Duck)", marathi: "बोंबील", defaultUnit: "kg" },
+  prawns: { english: "Prawns", marathi: "कोळंबी", defaultUnit: "kg" },
+  crab: { english: "Crab", marathi: "खेकडा", defaultUnit: "piece" },
+  squid: { english: "Squid", marathi: "मांदेली", defaultUnit: "kg" },
+  lobster: { english: "Lobster", marathi: "शेवंड", defaultUnit: "piece" },
+  oyster: { english: "Oyster", marathi: "कालव", defaultUnit: "dozen" },
+  clam: { english: "Clam", marathi: "शिंपल्या", defaultUnit: "dozen" },
+  sardine: { english: "Sardine", marathi: "तारली", defaultUnit: "kg" },
+  sole: { english: "Sole Fish", marathi: "लेप", defaultUnit: "kg" },
+  hilsa: { english: "Hilsa", marathi: "पालवा", defaultUnit: "piece" },
+  rohu: { english: "Rohu", marathi: "रोहू", defaultUnit: "kg" },
+};
+
+export const SPECIES_LIST = Object.entries(SPECIES).map(([id, s]) => ({
+  id,
+  ...s,
+}));
+
+export function getSpeciesById(id: string): Species | undefined {
+  return SPECIES[id];
+}
+
+export function getSpeciesDisplay(id: string): string {
+  const s = SPECIES[id];
+  if (!s) return id;
+  return `${s.english} (${s.marathi})`;
+}
+
+export const PRICE_UNITS: { value: PriceUnit; label: string }[] = [
+  { value: "kg", label: "per kg" },
+  { value: "piece", label: "per piece" },
+  { value: "dozen", label: "per dozen" },
+];

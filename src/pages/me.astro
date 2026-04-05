@@ -1,0 +1,335 @@
+---
+import AppShell from "../components/AppShell.astro";
+import LoginModal from "../components/LoginModal.astro";
+import LocationPicker from "../components/LocationPicker.astro";
+export const prerender = false;
+---
+
+<AppShell title={`Profile - ${import.meta.env.PUBLIC_BRAND_NAME || "Taazi"}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
+  <div id="me-container">
+    <!-- Not logged in -->
+    <div id="me-guest" style="display:none;text-align:center;padding:48px 16px;">
+      <div style="font-size:48px;margin-bottom:16px;">👤</div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Your profile</h2>
+      <p class="text-muted" style="margin-bottom:24px;">Log in to save your preferences and track orders</p>
+      <button class="btn btn-primary tap-target" id="me-login-btn" style="min-height:44px;padding:12px 32px;">
+        Log in with phone
+      </button>
+
+      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--gray-200);">
+        <a href="/dashboard/login" class="text-muted" style="font-size:13px;">Are you a seller? Log in here →</a>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="me-loading" style="padding:24px 0;">
+      <div class="card"><div class="card-body"><div class="skeleton" style="height:24px;width:40%;margin-bottom:12px;"></div><div class="skeleton" style="height:16px;width:60%;"></div></div></div>
+    </div>
+
+    <!-- Profile -->
+    <div id="me-profile" style="display:none;padding:16px 0;">
+      <h2 class="section-title">Profile</h2>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;" id="me-avatar">?</div>
+            <div>
+              <div style="font-weight:700;font-size:16px;" id="me-phone"></div>
+              <div class="text-muted" id="me-since"></div>
+            </div>
+          </div>
+
+          <!-- Editable profile fields -->
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <div style="flex:1;">
+              <label for="me-first-name">First name</label>
+              <input type="text" id="me-first-name" placeholder="First name" style="font-size:14px;" />
+            </div>
+            <div style="flex:1;">
+              <label for="me-last-name">Last name</label>
+              <input type="text" id="me-last-name" placeholder="Last name" style="font-size:14px;" />
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label for="me-email">Email (optional)</label>
+            <input type="email" id="me-email" placeholder="you@example.com" style="font-size:14px;" />
+          </div>
+          <button class="btn btn-primary tap-target" id="me-save-profile" style="width:100%;padding:10px;font-size:14px;">Save profile</button>
+          <div id="me-save-msg" class="text-muted" style="text-align:center;margin-top:6px;"></div>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">📍 Location</div>
+              <div class="text-muted" id="me-location">Not set</div>
+            </div>
+            <button class="btn tap-target" id="me-change-location" style="background:var(--gray-100);color:var(--blue);font-size:13px;padding:8px 16px;">
+              Change
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">🔔 Notifications</div>
+              <div class="text-muted" id="me-push-status">Off</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="me-push-toggle" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- iOS install banner -->
+      <div id="ios-install-hint" class="card" style="margin-bottom:16px;display:none;">
+        <div class="card-body" style="background:var(--blue);color:white;">
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px;">📱 Add to Home Screen</div>
+          <div style="font-size:13px;opacity:0.9;">Install Taazi for push notifications on iOS. Tap Share → Add to Home Screen.</div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <button class="btn tap-target" id="me-logout" style="width:100%;background:var(--gray-100);color:var(--red);margin-top:8px;">
+        Log out
+      </button>
+    </div>
+  </div>
+
+  <script>
+    import { getSession, signOut } from "../lib/auth";
+    import { isPushSubscribed } from "../lib/push";
+
+    async function initProfile() {
+      const guestEl = document.getElementById("me-guest")!;
+      const loadingEl = document.getElementById("me-loading")!;
+      const profileEl = document.getElementById("me-profile")!;
+
+      const session = getSession();
+
+      if (!session) {
+        loadingEl.style.display = "none";
+        guestEl.style.display = "block";
+
+        document.getElementById("me-login-btn")?.addEventListener("click", () => {
+          window.dispatchEvent(new CustomEvent("start-order"));
+        });
+        return;
+      }
+
+      loadingEl.style.display = "none";
+      profileEl.style.display = "block";
+
+      // Phone
+      const phone = session.phone || "Unknown";
+      document.getElementById("me-phone")!.textContent = `+91 ${phone}`;
+      document.getElementById("me-avatar")!.textContent = phone.slice(-2);
+
+      // Member since
+      document.getElementById("me-since")!.textContent = "";
+
+      // Load profile fields from API
+      const firstNameInput = document.getElementById("me-first-name") as HTMLInputElement;
+      const lastNameInput = document.getElementById("me-last-name") as HTMLInputElement;
+      const emailInput = document.getElementById("me-email") as HTMLInputElement;
+      const saveMsg = document.getElementById("me-save-msg")!;
+
+      try {
+        const profileRes = await fetch(`/api/buyer/profile?buyer_id=${session.buyer_id}`);
+        if (profileRes.ok) {
+          const { buyer } = await profileRes.json();
+          if (buyer.first_name) firstNameInput.value = buyer.first_name;
+          if (buyer.last_name) lastNameInput.value = buyer.last_name;
+          if (buyer.email) emailInput.value = buyer.email;
+          // Update avatar with initials if name exists
+          if (buyer.first_name) {
+            document.getElementById("me-avatar")!.textContent =
+              (buyer.first_name[0] + (buyer.last_name?.[0] || "")).toUpperCase();
+          }
+        }
+      } catch {}
+
+      document.getElementById("me-save-profile")?.addEventListener("click", async () => {
+        saveMsg.textContent = "Saving...";
+        saveMsg.style.color = "var(--gray-500)";
+        try {
+          const res = await fetch("/api/buyer/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buyer_id: session.buyer_id,
+              updates: {
+                first_name: firstNameInput.value.trim(),
+                last_name: lastNameInput.value.trim(),
+                email: emailInput.value.trim(),
+              },
+            }),
+          });
+          if (!res.ok) throw new Error("Failed to save");
+          saveMsg.textContent = "Saved!";
+          saveMsg.style.color = "var(--green)";
+          // Update avatar
+          if (firstNameInput.value.trim()) {
+            document.getElementById("me-avatar")!.textContent =
+              (firstNameInput.value[0] + (lastNameInput.value?.[0] || "")).toUpperCase();
+          }
+          setTimeout(() => { saveMsg.textContent = ""; }, 2000);
+        } catch (err: any) {
+          saveMsg.textContent = err.message || "Failed to save";
+          saveMsg.style.color = "var(--red)";
+        }
+      });
+
+      // Location
+      const savedLoc = localStorage.getItem("taazi_location");
+      if (savedLoc) {
+        try {
+          const loc = JSON.parse(savedLoc);
+          document.getElementById("me-location")!.textContent = loc.name || "Set";
+        } catch {}
+      }
+
+      // Change location
+      document.getElementById("me-change-location")?.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("open-location-picker"));
+      });
+
+      // Push notifications
+      const pushToggle = document.getElementById("me-push-toggle") as HTMLInputElement;
+      const pushStatus = document.getElementById("me-push-status")!;
+
+      const subscribed = await isPushSubscribed();
+      pushToggle.checked = subscribed;
+      pushStatus.textContent = subscribed ? "On" : "Off";
+
+      pushToggle.addEventListener("change", async () => {
+        if (pushToggle.checked) {
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+              const vapidKey = (import.meta as any).env?.PUBLIC_VAPID_KEY;
+              if (!vapidKey) { pushToggle.checked = false; pushStatus.textContent = "Failed"; return; }
+              const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
+              const b64 = (vapidKey + padding).replace(/-/g, "+").replace(/_/g, "/");
+              const raw = atob(b64);
+              const arr = new Uint8Array(raw.length);
+              for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+              sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: arr });
+            }
+            // Save subscription to buyer record via API
+            await fetch("/api/buyer/push-subscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ buyer_id: session.buyer_id, subscription: sub.toJSON() }),
+            });
+            pushStatus.textContent = "On";
+          } catch {
+            pushToggle.checked = false;
+            pushStatus.textContent = "Failed";
+          }
+        } else {
+          const reg = await navigator.serviceWorker?.ready;
+          const sub = await reg?.pushManager?.getSubscription();
+          if (sub) await sub.unsubscribe();
+          await fetch("/api/buyer/push-subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ buyer_id: session.buyer_id, subscription: null }),
+          });
+          pushStatus.textContent = "Off";
+        }
+      });
+
+      // iOS install hint
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+      if (isIos && !isStandalone) {
+        document.getElementById("ios-install-hint")!.style.display = "block";
+      }
+
+      // Logout
+      document.getElementById("me-logout")?.addEventListener("click", async () => {
+        await signOut();
+        window.location.href = "/";
+      });
+    }
+
+    // Re-render profile after login
+    window.addEventListener("buyer-logged-in", () => {
+      initProfile();
+    });
+
+    // Listen for location updates
+    window.addEventListener("location-updated", () => {
+      const savedLoc = localStorage.getItem("taazi_location");
+      if (savedLoc) {
+        try {
+          const loc = JSON.parse(savedLoc);
+          const el = document.getElementById("me-location");
+          if (el) el.textContent = loc.name || "Set";
+        } catch {}
+      }
+    });
+
+    initProfile();
+  </script>
+
+  <LoginModal />
+  <LocationPicker />
+</AppShell>
+
+<style>
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 28px;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--gray-200);
+    border-radius: 28px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle-slider::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 22px;
+    height: 22px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .toggle-switch input:checked + .toggle-slider {
+    background: var(--blue);
+  }
+
+  .toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+  }
+</style>

@@ -1,0 +1,138 @@
+---
+import { SPECIES_LIST, PRICE_UNITS } from "../lib/species";
+import type { FishListing } from "../lib/supabase";
+
+interface Props {
+  listing?: FishListing;
+  sellerId: string;
+}
+
+const { listing, sellerId } = Astro.props;
+const isEdit = !!listing;
+---
+
+<form id="listing-form" class="listing-form" data-seller-id={sellerId} data-listing-id={listing?.id || ""}>
+  <div class="form-group">
+    <label for="species">Species</label>
+    <select id="species" name="species" required>
+      <option value="">Select species</option>
+      {SPECIES_LIST.map((s) => (
+        <option value={s.id} selected={listing?.species === s.id} data-unit={s.defaultUnit}>
+          {s.english} ({s.marathi})
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="price">Price</label>
+      <input
+        type="number"
+        id="price"
+        name="price"
+        min="1"
+        step="0.01"
+        value={listing?.price || ""}
+        required
+        placeholder="e.g. 500"
+      />
+    </div>
+    <div class="form-group">
+      <label for="price_unit">Unit</label>
+      <select id="price_unit" name="price_unit" required>
+        {PRICE_UNITS.map((u) => (
+          <option value={u.value} selected={listing?.price_unit === u.value}>
+            {u.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="weight_avail">Stock (how much you have)</label>
+    <input
+      type="number"
+      id="weight_avail"
+      name="weight_avail"
+      min="0"
+      step="0.1"
+      value={listing?.weight_avail || ""}
+      required
+      placeholder="e.g. 10"
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="photo">Photo</label>
+    <input type="file" id="photo" name="photo" accept="image/*" />
+    {listing?.photo_url && (
+      <img src={listing.photo_url} alt="Current photo" class="current-photo" loading="lazy" />
+    )}
+  </div>
+
+  <div class="form-group">
+    <label for="pickup_loc">Pickup Location</label>
+    <input
+      type="text"
+      id="pickup_loc"
+      name="pickup_loc"
+      value={listing?.pickup_loc || ""}
+      required
+      placeholder="e.g. Versova Fish Market, Stall #12"
+    />
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">
+      {isEdit ? "Update Listing" : "Add Listing"}
+    </button>
+    {isEdit && (
+      <button type="button" class="btn btn-red" id="toggle-availability">
+        {listing.is_available ? "Mark Unavailable" : "Mark Available"}
+      </button>
+    )}
+  </div>
+</form>
+
+<script>
+  // Auto-set price unit when species changes
+  const speciesSelect = document.getElementById("species") as HTMLSelectElement;
+  const unitSelect = document.getElementById("price_unit") as HTMLSelectElement;
+
+  speciesSelect?.addEventListener("change", () => {
+    const option = speciesSelect.selectedOptions[0];
+    const defaultUnit = option?.dataset.unit;
+    if (defaultUnit && unitSelect) {
+      unitSelect.value = defaultUnit;
+    }
+  });
+</script>
+
+<style>
+  .listing-form {
+    max-width: 500px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .current-photo {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    margin-top: 8px;
+  }
+
+</style>

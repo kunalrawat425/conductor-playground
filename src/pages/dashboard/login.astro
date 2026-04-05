@@ -1,0 +1,147 @@
+---
+export const prerender = false;
+
+import Header from "../../components/Header.astro";
+import "../../styles/global.css";
+
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Taazi";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0066cc" />
+    <title>{`Seller Login - ${brandName}`}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+  </head>
+  <body>
+    <Header showDashboardLink={false} />
+
+    <main>
+      <div style="max-width:400px;margin:40px auto;">
+        <h1 style="font-size:24px;font-weight:700;margin-bottom:8px;">Seller Login</h1>
+        <p class="text-muted" style="margin-bottom:24px;">Enter your phone number to receive an OTP.</p>
+
+        <!-- Step 1: Phone -->
+        <div id="phone-step">
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" placeholder="+91 9876543210" required />
+          </div>
+          <button id="send-otp-btn" class="btn btn-primary" style="width:100%;">Send OTP</button>
+        </div>
+
+        <!-- Step 2: OTP -->
+        <div id="otp-step" style="display:none;">
+          <div class="form-group">
+            <label for="otp">Enter OTP</label>
+            <input type="text" id="otp" placeholder="123456" maxlength="6" required />
+          </div>
+          <button id="verify-otp-btn" class="btn btn-primary" style="width:100%;">Verify & Login</button>
+          <p class="text-muted" style="margin-top:8px;text-align:center;">
+            <button id="resend-btn" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;">Resend OTP</button>
+          </p>
+        </div>
+
+        <div id="error-msg" style="display:none;color:var(--red);margin-top:12px;font-size:14px;"></div>
+        <div id="loading-msg" style="display:none;color:var(--gray-500);margin-top:12px;font-size:14px;">Loading...</div>
+      </div>
+    </main>
+
+    <script>
+      import { sendOtp, verifyOtp, getSession } from "../../lib/seller-auth";
+
+      // Check if already logged in
+      const session = getSession();
+      if (session) window.location.href = "/dashboard";
+
+      const phoneStep = document.getElementById("phone-step")!;
+      const otpStep = document.getElementById("otp-step")!;
+      const phoneInput = document.getElementById("phone") as HTMLInputElement;
+      const otpInput = document.getElementById("otp") as HTMLInputElement;
+      const sendBtn = document.getElementById("send-otp-btn")!;
+      const verifyBtn = document.getElementById("verify-otp-btn")!;
+      const resendBtn = document.getElementById("resend-btn")!;
+      const errorMsg = document.getElementById("error-msg")!;
+      const loadingMsg = document.getElementById("loading-msg")!;
+
+      function showError(msg: string) {
+        errorMsg.textContent = msg;
+        errorMsg.style.display = "block";
+        loadingMsg.style.display = "none";
+      }
+
+      function showLoading() {
+        errorMsg.style.display = "none";
+        loadingMsg.style.display = "block";
+      }
+
+      function hideMessages() {
+        errorMsg.style.display = "none";
+        loadingMsg.style.display = "none";
+      }
+
+      function normalizePhone(raw: string): string {
+        const digits = raw.replace(/\D/g, "");
+        if (digits.startsWith("91") && digits.length === 12) return "+" + digits;
+        if (digits.length === 10) return "+91" + digits;
+        return "+" + digits;
+      }
+
+      let phone = "";
+
+      sendBtn.addEventListener("click", async () => {
+        phone = normalizePhone(phoneInput.value);
+        if (phone.length < 12) {
+          showError("Please enter a valid phone number.");
+          return;
+        }
+        try {
+          showLoading();
+          await sendOtp(phone);
+          phoneStep.style.display = "none";
+          otpStep.style.display = "block";
+          hideMessages();
+        } catch (err: any) {
+          showError(err.message || "Failed to send OTP.");
+        }
+      });
+
+      verifyBtn.addEventListener("click", async () => {
+        const token = otpInput.value.trim();
+        if (token.length !== 6) {
+          showError("Please enter the 6-digit OTP.");
+          return;
+        }
+        try {
+          showLoading();
+          await verifyOtp(phone, token);
+          window.location.href = "/dashboard";
+        } catch (err: any) {
+          showError(err.message || "Invalid OTP. Try again.");
+        }
+      });
+
+      resendBtn.addEventListener("click", async () => {
+        try {
+          showLoading();
+          await sendOtp(phone);
+          hideMessages();
+        } catch (err: any) {
+          showError(err.message || "Failed to resend OTP.");
+        }
+      });
+
+      // Enter key support
+      phoneInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendBtn.click();
+      });
+      otpInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") verifyBtn.click();
+      });
+    </script>
+  </body>
+</html>
