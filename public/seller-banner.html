@@ -191,18 +191,20 @@
   .b4 .tc { position: absolute; bottom: 14px; font-size: 9px; color: #ccc; z-index: 1; }
 
   /* ===== RESPONSIVE SCALING ===== */
+  body { overflow-x: hidden; }
+  [data-lang] { width: 100%; max-width: 1080px; overflow: hidden; flex-shrink: 0; }
+  .b1, .b2, .b3, .b4 { transform-origin: top left; flex-shrink: 0; }
   @media (max-width: 1140px) {
-    body { padding: 80px 16px 32px; gap: 0; }
+    body { padding: 80px 8px 32px; gap: 40px; align-items: flex-start; }
   }
   @media (max-width: 768px) {
-    body { padding: 72px 12px 24px; }
+    body { padding: 68px 0 24px; gap: 28px; align-items: flex-start; }
     .customizer { top: 10px; left: 10px; gap: 6px; }
     .customizer label { display: none; }
-    .customizer input { width: 160px; font-size: 13px; padding: 8px 12px; }
+    .customizer input { width: 165px; font-size: 13px; padding: 8px 12px; border-radius: 10px; }
     .lang-toggle { top: 10px; right: 10px; }
-    .lang-btn { padding: 7px 14px; font-size: 13px; }
+    .lang-btn { padding: 7px 13px; font-size: 13px; }
   }
-  .b1, .b2, .b3, .b4 { transform-origin: top left; }
 </style>
 </head>
 <body>
@@ -652,25 +654,22 @@ function updateSellerName(name) {
 }
 
 function scaleBanners() {
-  var pad = window.innerWidth < 768 ? 24 : 32;
-  var avail = window.innerWidth - pad;
-  var scale = avail >= 1080 ? 1 : avail / 1080;
-  var banners = document.querySelectorAll('.b1,.b2,.b3,.b4');
-  banners.forEach(function(b) {
-    b.style.transform = scale < 1 ? 'scale(' + scale + ')' : '';
-    var baseH = b.classList.contains('b3') ? 1920 : b.classList.contains('b1') ? 1350 : 1080;
-    var wrapper = b.parentElement;
-    if (wrapper && wrapper !== document.body) {
-      wrapper.style.height = scale < 1 ? Math.round(baseH * scale) + 'px' : '';
-      wrapper.style.overflow = scale < 1 ? 'hidden' : '';
-      wrapper.style.marginBottom = scale < 1 ? '32px' : '';
+  var vw = window.innerWidth;
+  var scale = vw >= 1080 ? 1 : vw / 1080;
+  document.querySelectorAll('.b1,.b2,.b3,.b4').forEach(function(b) {
+    if (scale < 1) {
+      b.style.transform = 'scale(' + scale + ')';
+      var baseH = b.classList.contains('b3') ? 1920 : b.classList.contains('b1') ? 1350 : 1080;
+      b.style.marginBottom = '-' + Math.round(baseH * (1 - scale)) + 'px';
+    } else {
+      b.style.transform = '';
+      b.style.marginBottom = '';
     }
   });
 }
 window.addEventListener('resize', scaleBanners);
 document.addEventListener('DOMContentLoaded', scaleBanners);
 
-scaleBanners();
 </script>
 </body>
 </html>
