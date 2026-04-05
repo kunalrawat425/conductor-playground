@@ -27,6 +27,7 @@ export const prerender = false;
     <div id="track-orders" style="display:none;padding:16px 0;">
       <h2 class="section-title">My Orders</h2>
       <div id="orders-list"></div>
+      <div id="track-pagination" class="track-pagination" style="display:none;"></div>
     </div>
 
     <!-- Empty state -->
@@ -39,7 +40,8 @@ export const prerender = false;
   </div>
 
   <script>
-    import { supabase, getBuyerOrders } from "../lib/supabase";
+    import { supabase, getBuyerOrdersPage } from "../lib/supabase";
+    import { BUYER_TRACK_PAGE_SIZE } from "../lib/seller-orders-pagination";
     import { getSession } from "../lib/auth";
     import { getSpeciesDisplay } from "../lib/species";
 
@@ -90,7 +92,12 @@ export const prerender = false;
           priceDisplay += ` <span class="text-muted">(₹${refund} refund)</span>`;
         }
       } else if (order.total_price) {
-        priceDisplay = `₹${order.total_price}`;
+        const df = Number(order.delivery_fee) || 0;
+        const sub = order.total_price;
+        priceDisplay =
+          df > 0
+            ? `₹${sub + df} <span class="text-muted" style="font-weight:400;">(₹${sub} + ₹${df} delivery)</span>`
+            : `₹${sub}`;
       } else if (order.paid_amount) {
         priceDisplay = `Up to ₹${order.paid_amount}`;
       }
@@ -118,12 +125,37 @@ export const prerender = false;
       `;
     }
 
+    let trackPage = 1;
+
+    function renderTrackPagination(total: number, page: number, onPage: (p: number) => void) {
+      const el = document.getElementById("track-pagination")!;
+      const totalPages = Math.max(1, Math.ceil(total / BUYER_TRACK_PAGE_SIZE));
+      if (total <= BUYER_TRACK_PAGE_SIZE) {
+        el.innerHTML = "";
+        el.style.display = "none";
+        return;
+      }
+      el.style.display = "flex";
+      el.innerHTML = `
+        <button type="button" class="track-pg-prev" ${page <= 1 ? "disabled" : ""}>← Prev</button>
+        <span class="page-info">${page} / ${totalPages}</span>
+        <button type="button" class="track-pg-next" ${page >= totalPages ? "disabled" : ""}>Next →</button>
+      `;
+      el.querySelector(".track-pg-prev")?.addEventListener("click", () => {
+        if (page > 1) onPage(page - 1);
+      });
+      el.querySelector(".track-pg-next")?.addEventListener("click", () => {
+        if (page < totalPages) onPage(page + 1);
+      });
+    }
+
     async function initTrack() {
       const loginEl = document.getElementById("track-login")!;
       const loadingEl = document.getElementById("track-loading")!;
       const ordersEl = document.getElementById("track-orders")!;
       const emptyEl = document.getElementById("track-empty")!;
       const ordersList = document.getElementById("orders-list")!;
+      const paginationEl = document.getElementById("track-pagination")!;
 
       const session = getSession();
 
@@ -138,21 +170,49 @@ export const prerender = false;
       }
 
       const buyerId = session.buyer_id;
+      trackPage = 1;
 
-      // Fetch orders
-      const orders = await getBuyerOrders(buyerId);
-
-      loadingEl.style.display = "none";
-
-      if (orders.length === 0) {
-        emptyEl.style.display = "block";
-        return;
+      async function loadOrdersPage() {
+        let { orders, total } = await getBuyerOrdersPage(buyerId, {
+          page: trackPage,
+          pageSize: BUYER_TRACK_PAGE_SIZE,
+        });
+        if (orders.length === 0 && total > 0 && trackPage > 1) {
+          trackPage = 1;
+          ({ orders, total } = await getBuyerOrdersPage(buyerId, {
+            page: 1,
+            pageSize: BUYER_TRACK_PAGE_SIZE,
+          }));
+        }
+        return { orders, total };
       }
 
-      ordersEl.style.display = "block";
-      ordersList.innerHTML = orders.map(renderOrder).join("");
+      async function loadAndRender() {
+        try {
+          const { orders, total } = await loadOrdersPage();
+          loadingEl.style.display = "none";
+          if (total === 0) {
+            paginationEl.style.display = "none";
+            paginationEl.innerHTML = "";
+            emptyEl.style.display = "block";
+            ordersEl.style.display = "none";
+            return;
+          }
+          emptyEl.style.display = "none";
+          ordersEl.style.display = "block";
+          ordersList.innerHTML = orders.map(renderOrder).join("");
+          renderTrackPagination(total, trackPage, (p) => {
+            trackPage = p;
+            void loadAndRender();
+          });
+        } catch (e) {
+          console.error("Track orders:", e);
+          loadingEl.style.display = "none";
+        }
+      }
 
-      // Subscribe to realtime updates
+      await loadAndRender();
+
       supabase
         .channel("buyer-orders")
         .on(
@@ -165,7 +225,7 @@ export const prerender = false;
           },
           (payload: any) => {
             const updated = payload.new;
-            const card = document.querySelector(`[data-order-id="${updated.id}"]`);
+            const card = document.querySelector(`#orders-list [data-order-id="${updated.id}"]`);
             if (card) {
               card.outerHTML = renderOrder(updated);
             }
@@ -174,8 +234,35 @@ export const prerender = false;
         .subscribe();
     }
 
-    initTrack();
+    void initTrack();
   </script>
+
+  <style is:global>
+    .track-pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      padding: 8px 0;
+    }
+    .track-pagination button {
+      padding: 6px 14px;
+      font-size: 13px;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+    }
+    .track-pagination button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .track-pagination .page-info {
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+  </style>
 
   <LoginModal />
 </AppShell>

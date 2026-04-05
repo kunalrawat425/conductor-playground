@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { computeDeliveryFee } from "../../../lib/order-pricing";
 
 export const prerender = false;
 
@@ -84,12 +85,15 @@ export const POST: APIRoute = async ({ request, url }) => {
       total_price = (range?.max_price || 0) * quantity;
     }
 
-    // Determine pre-order status based on seller operating hours + accepts_preorder
+    // Determine pre-order status, min order, delivery fee
     let status = "pending";
+    let delivery_fee = 0;
     if (seller_id) {
       const { data: seller } = await supabase
         .from("sellers")
-        .select("opens_at, closes_at, accepts_preorder")
+        .select(
+          "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above"
+        )
         .eq("id", seller_id)
         .single();
 
@@ -102,7 +106,23 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
         status = "pre_order";
       }
+
+      const minAmt = Number(seller?.min_order_amount) || 0;
+      if (minAmt > 0 && total_price < minAmt) {
+        return new Response(
+          JSON.stringify({ error: `Minimum order for this seller is ₹${minAmt}` }),
+          { status: 400 }
+        );
+      }
+
+      if (order_type === "delivery" && !seller?.has_delivery) {
+        return new Response(JSON.stringify({ error: "This seller does not offer delivery" }), { status: 400 });
+      }
+
+      delivery_fee = seller ? computeDeliveryFee(seller, total_price, order_type) : 0;
     }
+
+    const amountDue = total_price + delivery_fee;
 
     // Insert order (inventory decrement handled by DB trigger)
     const { data: order, error } = await supabase
@@ -116,11 +136,12 @@ export const POST: APIRoute = async ({ request, url }) => {
         quantity,
         quantity_unit,
         total_price,
+        delivery_fee,
         platform_fee: 0,
         status,
         order_type,
         payment_type: "cod",
-        paid_amount: status === "pre_order" ? total_price : null,
+        paid_amount: status === "pre_order" ? amountDue : null,
       })
       .select()
       .single();

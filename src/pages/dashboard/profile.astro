@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import Header from "../../components/Header.astro";
+import DashboardGate from "../../components/DashboardGate.astro";
 import "../../styles/global.css";
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
@@ -18,6 +19,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
+    <DashboardGate />
     <Header showDashboardLink={false} />
 
     <!-- Toast notification -->
@@ -33,30 +35,34 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <main id="dash-main" style="display:none;">
       <!-- Nav -->
       <div class="dash-nav">
-        <a href="/dashboard" class="dash-nav-item">Listings</a>
         <a href="/dashboard/orders" class="dash-nav-item">Orders</a>
+        <a href="/dashboard/listings" class="dash-nav-item">Listings</a>
         <a href="/dashboard/profile" class="dash-nav-item active">Profile</a>
       </div>
 
-      <!-- Name & Email -->
+      <h1
+        id="seller-profile-display-name"
+        style="font-size:28px;font-weight:800;line-height:1.15;color:var(--gray-900);margin:0 0 16px;letter-spacing:-0.02em;"
+      >
+        —
+      </h1>
+
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Personal Info</h3>
-          <div style="display:flex;gap:8px;margin-bottom:10px;">
-            <div style="flex:1;">
-              <label for="seller-first-name">First name</label>
-              <input type="text" id="seller-first-name" placeholder="First name" style="font-size:14px;" />
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">Contact details</h3>
+          <p class="text-muted" style="font-size:12px;margin:-4px 0 14px;line-height:1.35;">
+            Phone and email are tied to your seller account and cannot be changed here.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Phone</div>
+              <div style="font-size:16px;font-weight:600;margin-top:4px;" id="seller-contact-phone">—</div>
             </div>
-            <div style="flex:1;">
-              <label for="seller-last-name">Last name</label>
-              <input type="text" id="seller-last-name" placeholder="Last name" style="font-size:14px;" />
+            <div>
+              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Email</div>
+              <div style="font-size:16px;font-weight:600;margin-top:4px;word-break:break-all;" id="seller-contact-email">—</div>
             </div>
           </div>
-          <div style="margin-bottom:10px;">
-            <label for="seller-email">Email (optional)</label>
-            <input type="email" id="seller-email" placeholder="you@example.com" style="font-size:14px;" />
-          </div>
-          <button id="save-profile-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save</button>
         </div>
       </div>
 
@@ -95,6 +101,35 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             <div class="text-muted" style="font-size:12px;margin-top:4px;">Only buyers within this distance can order delivery</div>
           </div>
           <button id="save-delivery-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save delivery settings</button>
+        </div>
+      </div>
+
+      <!-- Min order & delivery fees -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Minimum order &amp; delivery fees</h3>
+          <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
+            Shown on your public menu. Buyers must meet the minimum per item; delivery fee applies only to delivery orders.
+          </p>
+          <div style="margin-bottom:12px;">
+            <label for="min-order-amt">Minimum order (₹ per line)</label>
+            <input type="number" id="min-order-amt" min="0" step="1" style="font-size:14px;max-width:140px;" />
+            <div class="text-muted" style="font-size:11px;margin-top:4px;">0 = no minimum</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <input type="checkbox" id="delivery-fee-enabled" />
+            <label for="delivery-fee-enabled" style="margin:0;font-weight:600;">Charge delivery fee</label>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label for="delivery-fee-amt">Delivery fee (₹)</label>
+            <input type="number" id="delivery-fee-amt" min="0" step="1" style="font-size:14px;max-width:120px;" />
+          </div>
+          <div style="margin-bottom:14px;">
+            <label for="free-delivery-above">Free delivery when order is above (₹)</label>
+            <input type="number" id="free-delivery-above" min="0" step="1" placeholder="Optional" style="font-size:14px;max-width:140px;" />
+            <div class="text-muted" style="font-size:11px;margin-top:4px;">Leave empty if you never waive the fee by amount</div>
+          </div>
+          <button id="save-pricing-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save pricing rules</button>
         </div>
       </div>
 
@@ -189,6 +224,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         setButtonLoading(btn, loading, originalText, "on-dark");
       }
 
+      function formatContactPhone(phone: string | null | undefined): string {
+        const p = (phone || "").trim();
+        if (!p) return "—";
+        if (p.startsWith("+")) return p;
+        const digits = p.replace(/\s/g, "");
+        if (digits.startsWith("91") && digits.length > 10) return `+${digits}`;
+        return `+91 ${digits.replace(/^0+/, "")}`;
+      }
+
       async function init() {
         const session = getSession();
         if (!session) {
@@ -205,6 +249,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           window.location.href = "/dashboard/login";
           return;
         }
+
+        const displayName =
+          (seller.name && seller.name.trim()) ||
+          [seller.first_name, seller.last_name].filter(Boolean).join(" ").trim() ||
+          session.name?.trim() ||
+          "Seller";
+        document.getElementById("seller-profile-display-name")!.textContent = displayName;
+        document.getElementById("seller-contact-phone")!.textContent = formatContactPhone(seller.phone);
+        const se = (seller.email || "").trim();
+        document.getElementById("seller-contact-email")!.textContent = se || "—";
 
         // Stats
         document.getElementById("total-orders")!.textContent = String(seller.total_orders);
@@ -254,29 +308,43 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           updateDeliveryUI(deliveryToggle.checked);
         });
 
-        // Name/email fields
-        const firstNameInput = document.getElementById("seller-first-name") as HTMLInputElement;
-        const lastNameInput = document.getElementById("seller-last-name") as HTMLInputElement;
-        const emailInput = document.getElementById("seller-email") as HTMLInputElement;
-        const saveProfileBtn = document.getElementById("save-profile-btn") as HTMLButtonElement;
+        const minOrderInput = document.getElementById("min-order-amt") as HTMLInputElement;
+        const deliveryFeeEnabledCb = document.getElementById("delivery-fee-enabled") as HTMLInputElement;
+        const deliveryFeeAmtInput = document.getElementById("delivery-fee-amt") as HTMLInputElement;
+        const freeDeliveryAboveInput = document.getElementById("free-delivery-above") as HTMLInputElement;
+        const savePricingBtn = document.getElementById("save-pricing-btn") as HTMLButtonElement;
 
-        firstNameInput.value = seller.first_name || "";
-        lastNameInput.value = seller.last_name || "";
-        emailInput.value = seller.email || "";
+        minOrderInput.value = String(Number(seller.min_order_amount) || 0);
+        deliveryFeeEnabledCb.checked = !!seller.delivery_fee_enabled;
+        deliveryFeeAmtInput.value = String(Number(seller.delivery_fee_amount) || 0);
+        freeDeliveryAboveInput.value =
+          seller.free_delivery_above != null && seller.free_delivery_above !== ""
+            ? String(seller.free_delivery_above)
+            : "";
 
-        saveProfileBtn.addEventListener("click", async () => {
-          setLoading(saveProfileBtn, true, "Save");
+        savePricingBtn.addEventListener("click", async () => {
+          setLoading(savePricingBtn, true, "Save pricing rules");
           try {
+            const minV = Math.max(0, parseFloat(minOrderInput.value) || 0);
+            const feeOn = deliveryFeeEnabledCb.checked;
+            const feeAmt = Math.max(0, parseFloat(deliveryFeeAmtInput.value) || 0);
+            const freeRaw = freeDeliveryAboveInput.value.trim();
+            const freeAbove = freeRaw === "" ? null : Math.max(0, parseFloat(freeRaw) || 0);
             await updateSellerProfile(seller.id, {
-              first_name: firstNameInput.value.trim(),
-              last_name: lastNameInput.value.trim(),
-              email: emailInput.value.trim(),
+              min_order_amount: minV,
+              delivery_fee_enabled: feeOn,
+              delivery_fee_amount: feeAmt,
+              free_delivery_above: freeAbove,
             } as any);
-            showToast("Profile saved!");
+            seller.min_order_amount = minV;
+            seller.delivery_fee_enabled = feeOn;
+            seller.delivery_fee_amount = feeAmt;
+            seller.free_delivery_above = freeAbove;
+            showToast("Pricing rules saved!");
           } catch (err: any) {
-            showToast(err.message || "Failed to save profile", "error");
+            showToast(err.message || "Failed to save", "error");
           } finally {
-            setLoading(saveProfileBtn, false, "Save");
+            setLoading(savePricingBtn, false, "Save pricing rules");
           }
         });
 

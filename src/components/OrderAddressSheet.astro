@@ -1,0 +1,467 @@
+---
+/**
+ * Address book at checkout: pick a saved address or enter a new one (optionally save).
+ * Opens via: window.dispatchEvent(new CustomEvent("open-order-address-sheet", { detail: { requireAddressDetail, onConfirm({ buyer_addr }), onCancel? } }))
+ */
+---
+
+<div class="order-address-overlay" id="order-address-overlay" aria-hidden="true">
+  <div class="order-address-overlay-bg" id="order-address-overlay-bg"></div>
+  <div class="order-address-sheet bottom-sheet" id="order-address-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:4px;" id="order-address-title">Address for this order</h3>
+    <p class="text-muted" style="font-size:13px;margin-bottom:12px;line-height:1.4;" id="order-address-subtitle">
+      Choose a saved address or enter a new one. Your map area is reused when adding details.
+    </p>
+
+    <a
+      href="/me#addresses"
+      class="text-muted"
+      style="font-size:13px;display:inline-block;margin-bottom:14px;color:var(--blue);"
+      id="order-address-manage-link"
+    >
+      Manage address book →
+    </a>
+
+    <div id="order-address-list-wrap" style="display:none;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:8px;">Saved addresses</div>
+      <div id="order-address-list"></div>
+    </div>
+
+    <div id="order-address-new-block">
+      <div style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:6px;" id="order-address-new-heading">
+        New address details
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:6px;">Area (from your saved location)</div>
+        <div
+          id="order-address-area-display"
+          style="font-size:14px;padding:10px 12px;background:var(--gray-50);border-radius:10px;min-height:40px;line-height:1.35;"
+        >
+          —
+        </div>
+        <button
+          type="button"
+          class="btn tap-target"
+          id="order-address-change-area"
+          style="margin-top:8px;width:100%;background:var(--gray-100);color:var(--blue);font-size:13px;padding:8px 12px;"
+        >
+          Change area on map
+        </button>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="order-addr-flat">Flat / house no.</label>
+        <input type="text" id="order-addr-flat" placeholder="e.g. 402, A-wing" autocomplete="street-address" style="font-size:15px;" />
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="order-addr-building">Building / society</label>
+        <input type="text" id="order-addr-building" placeholder="e.g. Sea View Apartments" style="font-size:15px;" />
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="order-addr-landmark">Landmark / directions (optional)</label>
+        <input type="text" id="order-addr-landmark" placeholder="Near metro, gate no., etc." style="font-size:15px;" />
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;" id="order-address-save-wrap">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="order-addr-save-book" />
+          Save to my address book
+        </label>
+        <input
+          type="text"
+          id="order-addr-save-label"
+          placeholder="Label (e.g. Home, Mom's)"
+          style="font-size:14px;margin-top:8px;display:none;"
+        />
+        <label style="display:none;margin-top:8px;font-size:14px;cursor:pointer;align-items:center;gap:8px;" id="order-addr-default-wrap">
+          <input type="checkbox" id="order-addr-save-default" />
+          Set as default address
+        </label>
+      </div>
+    </div>
+
+    <div id="order-address-saved-preview" style="display:none;margin-bottom:16px;padding:12px;background:var(--gray-50);border-radius:10px;font-size:14px;line-height:1.4;"></div>
+
+    <div id="order-address-error" style="display:none;color:var(--red);font-size:13px;margin-bottom:12px;font-weight:600;"></div>
+
+    <button type="button" class="btn btn-primary tap-target" id="order-address-confirm" style="width:100%;min-height:48px;font-size:16px;border-radius:12px;margin-bottom:8px;">
+      Place order
+    </button>
+    <button type="button" class="btn tap-target" id="order-address-back" style="width:100%;background:var(--gray-100);color:var(--gray-700);font-size:14px;padding:10px;">
+      Back
+    </button>
+  </div>
+</div>
+
+<style>
+  .order-address-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 220;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .order-address-overlay.open {
+    pointer-events: auto;
+    visibility: visible;
+  }
+  .order-address-overlay-bg {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .order-address-overlay.open .order-address-overlay-bg {
+    opacity: 1;
+  }
+  .order-address-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 16px 16px 0 0;
+    max-height: 85vh;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    padding: 0 16px 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    z-index: 1;
+  }
+  .order-address-overlay.open .order-address-sheet {
+    transform: translateY(0);
+  }
+  .order-address-choice {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .order-address-choice:has(input:checked) {
+    border-color: var(--blue);
+    background: var(--gray-50);
+  }
+  .order-address-choice input {
+    margin-top: 3px;
+  }
+</style>
+
+<script>
+  import { getSession, getBuyerAddressFromStorage, saveBuyerAddressDetailToStorage, getBuyerAddressDetailFromStorage } from "../lib/auth";
+  import {
+    formatSavedBuyerAddress,
+    formatNewCheckoutAddress,
+    formatAreaPart,
+    hasDeliveryUnitDetail,
+  } from "../lib/buyer-address";
+  import type { BuyerAddressRow } from "../lib/buyer-address";
+
+  const LS_SELECTION = "zepto_checkout_address_selection";
+
+  const overlay = document.getElementById("order-address-overlay")!;
+  const bg = document.getElementById("order-address-overlay-bg")!;
+  const listWrap = document.getElementById("order-address-list-wrap")!;
+  const listEl = document.getElementById("order-address-list")!;
+  const newBlock = document.getElementById("order-address-new-block")!;
+  const newHeading = document.getElementById("order-address-new-heading")!;
+  const savedPreview = document.getElementById("order-address-saved-preview")!;
+  const areaDisplay = document.getElementById("order-address-area-display")!;
+  const flatInput = document.getElementById("order-addr-flat") as HTMLInputElement;
+  const buildingInput = document.getElementById("order-addr-building") as HTMLInputElement;
+  const landmarkInput = document.getElementById("order-addr-landmark") as HTMLInputElement;
+  const saveBookCb = document.getElementById("order-addr-save-book") as HTMLInputElement;
+  const saveLabelInput = document.getElementById("order-addr-save-label") as HTMLInputElement;
+  const saveDefaultWrap = document.getElementById("order-addr-default-wrap") as HTMLLabelElement;
+  const saveDefaultCb = document.getElementById("order-addr-save-default") as HTMLInputElement;
+  const errEl = document.getElementById("order-address-error")!;
+  const confirmBtn = document.getElementById("order-address-confirm") as HTMLButtonElement;
+  const backBtn = document.getElementById("order-address-back") as HTMLButtonElement;
+  const titleEl = document.getElementById("order-address-title")!;
+  const subtitleEl = document.getElementById("order-address-subtitle")!;
+
+  let requireAddressDetail = false;
+  let pendingOnConfirm: ((p: { buyer_addr: string | null }) => void | Promise<void>) | null = null;
+  let pendingOnCancel: (() => void) | null = null;
+  let loadedAddresses: BuyerAddressRow[] = [];
+  let selectedId: string = "new";
+
+  function refreshAreaDisplay() {
+    const area = getBuyerAddressFromStorage();
+    areaDisplay.textContent = area || "Not set — tap below to choose your area on the map.";
+    areaDisplay.style.color = area ? "var(--gray-900)" : "var(--gray-500)";
+  }
+
+  function loadDetailInputs() {
+    const d = getBuyerAddressDetailFromStorage();
+    flatInput.value = d.flat || "";
+    buildingInput.value = d.building || "";
+    landmarkInput.value = d.landmark || "";
+  }
+
+  function esc(s: string) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function pickDefaultSelection(rows: BuyerAddressRow[]): string {
+    const saved = localStorage.getItem(LS_SELECTION);
+    if (saved === "new") return "new";
+    if (saved && rows.some((r) => r.id === saved)) return saved;
+    const def = rows.find((r) => r.is_default);
+    if (def) return def.id;
+    return rows.length ? rows[0].id : "new";
+  }
+
+  function renderList(rows: BuyerAddressRow[]) {
+    loadedAddresses = rows;
+    if (!rows.length) {
+      listWrap.style.display = "none";
+      selectedId = "new";
+      syncUiMode();
+      return;
+    }
+    listWrap.style.display = "block";
+    selectedId = pickDefaultSelection(rows);
+    listEl.innerHTML = rows
+      .map(
+        (row) => `
+      <label class="order-address-choice">
+        <input type="radio" name="order-checkout-addr" value="${esc(row.id)}" ${selectedId === row.id ? "checked" : ""} />
+        <div style="min-width:0;">
+          <div style="font-weight:700;font-size:14px;">${esc(row.label || "Saved address")} ${row.is_default ? '<span style="font-size:11px;color:var(--blue);">Default</span>' : ""}</div>
+          <div class="text-muted" style="font-size:12px;margin-top:4px;line-height:1.35;">${esc(formatSavedBuyerAddress(row) || "—")}</div>
+        </div>
+      </label>
+    `
+      )
+      .join("");
+    listEl.innerHTML += `
+      <label class="order-address-choice">
+        <input type="radio" name="order-checkout-addr" value="new" ${selectedId === "new" ? "checked" : ""} />
+        <div>
+          <div style="font-weight:700;font-size:14px;">Use a new address</div>
+          <div class="text-muted" style="font-size:12px;margin-top:4px;">Enter flat, building, and area below</div>
+        </div>
+      </label>
+    `;
+    listEl.querySelectorAll('input[name="order-checkout-addr"]').forEach((el) => {
+      el.addEventListener("change", () => {
+        const input = el as HTMLInputElement;
+        if (input.checked) {
+          selectedId = input.value;
+          syncUiMode();
+        }
+      });
+    });
+    syncUiMode();
+  }
+
+  function syncUiMode() {
+    const isNew = selectedId === "new";
+    newBlock.style.display = isNew ? "block" : "none";
+    savedPreview.style.display = isNew ? "none" : "block";
+    newHeading.style.display = isNew ? "block" : "none";
+    if (!isNew) {
+      const row = loadedAddresses.find((r) => r.id === selectedId);
+      savedPreview.textContent = row ? formatSavedBuyerAddress(row) || "—" : "";
+    }
+    if (isNew) {
+      refreshAreaDisplay();
+    }
+  }
+
+  async function fetchAddresses(buyer_id: string): Promise<BuyerAddressRow[]> {
+    const res = await fetch(`/api/buyer/addresses?buyer_id=${encodeURIComponent(buyer_id)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.addresses || [];
+  }
+
+  async function openSheet() {
+    errEl.style.display = "none";
+    saveBookCb.checked = false;
+    saveLabelInput.style.display = "none";
+    saveLabelInput.value = "";
+    saveDefaultWrap.style.display = "none";
+    saveDefaultCb.checked = false;
+    refreshAreaDisplay();
+    loadDetailInputs();
+
+    const session = getSession();
+    if (session) {
+      const rows = await fetchAddresses(session.buyer_id);
+      renderList(rows);
+    } else {
+      loadedAddresses = [];
+      listWrap.style.display = "none";
+      selectedId = "new";
+      syncUiMode();
+    }
+
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  function closeSheet() {
+    overlay.classList.remove("open");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  function applyModeLabels() {
+    if (requireAddressDetail) {
+      titleEl.textContent = "Delivery address";
+      subtitleEl.textContent = "Pick a saved address or add a new one. Delivery needs your area plus flat or building.";
+    } else {
+      titleEl.textContent = "Address for this order";
+      subtitleEl.textContent = "Choose a saved address or enter a new one for this order.";
+    }
+  }
+
+  window.addEventListener("open-order-address-sheet", ((e: CustomEvent) => {
+    const d = e.detail || {};
+    requireAddressDetail = !!d.requireAddressDetail;
+    pendingOnConfirm = typeof d.onConfirm === "function" ? d.onConfirm : null;
+    pendingOnCancel = typeof d.onCancel === "function" ? d.onCancel : null;
+    applyModeLabels();
+    openSheet();
+  }) as EventListener);
+
+  window.addEventListener("location-updated", () => {
+    if (overlay.classList.contains("open") && selectedId === "new") refreshAreaDisplay();
+  });
+
+  document.getElementById("order-address-change-area")?.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("open-location-picker"));
+  });
+
+  saveBookCb.addEventListener("change", () => {
+    const on = saveBookCb.checked;
+    saveLabelInput.style.display = on ? "block" : "none";
+    saveDefaultWrap.style.display = on ? "flex" : "none";
+    if (!on) {
+      saveLabelInput.value = "";
+      saveDefaultCb.checked = false;
+    }
+  });
+
+  function validate(): boolean {
+    errEl.style.display = "none";
+    if (selectedId !== "new") {
+      const row = loadedAddresses.find((r) => r.id === selectedId);
+      if (!row) return true;
+      if (requireAddressDetail) {
+        const area = formatAreaPart(row.location_name, row.lat, row.lng);
+        if (!area) {
+          errEl.textContent = "This saved address has no area. Edit it in your address book or pick “new address”.";
+          errEl.style.display = "block";
+          return false;
+        }
+        if (!hasDeliveryUnitDetail(row.flat || "", row.building || "")) {
+          errEl.textContent = "Add flat or building to this address in Me → Address book, or use a new address.";
+          errEl.style.display = "block";
+          return false;
+        }
+      }
+      return true;
+    }
+
+    const area = getBuyerAddressFromStorage();
+    const flat = flatInput.value.trim();
+    const building = buildingInput.value.trim();
+    if (requireAddressDetail) {
+      if (!area) {
+        errEl.textContent = "Set your area on the map first (Change area on map).";
+        errEl.style.display = "block";
+        return false;
+      }
+      if (!hasDeliveryUnitDetail(flat, building)) {
+        errEl.textContent = "Enter at least flat/house no. or building name for delivery.";
+        errEl.style.display = "block";
+        return false;
+      }
+    }
+    return true;
+  }
+
+  confirmBtn.addEventListener("click", async () => {
+    if (!validate()) return;
+
+    const session = getSession();
+    let buyer_addr: string | null = null;
+
+    if (selectedId !== "new") {
+      const row = loadedAddresses.find((r) => r.id === selectedId)!;
+      buyer_addr = formatSavedBuyerAddress(row);
+      localStorage.setItem(LS_SELECTION, selectedId);
+    } else {
+      saveBuyerAddressDetailToStorage({
+        flat: flatInput.value,
+        building: buildingInput.value,
+        landmark: landmarkInput.value,
+      });
+      buyer_addr = formatNewCheckoutAddress({
+        flat: flatInput.value,
+        building: buildingInput.value,
+        landmark: landmarkInput.value,
+      });
+      localStorage.setItem(LS_SELECTION, "new");
+
+      if (session && saveBookCb.checked) {
+        let loc: { name?: string; lat?: number; lng?: number } | null = null;
+        try {
+          loc = JSON.parse(localStorage.getItem("zepto_location") || "null");
+        } catch {
+          loc = null;
+        }
+        try {
+          const res = await fetch("/api/buyer/addresses", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buyer_id: session.buyer_id,
+              address: {
+                label: saveLabelInput.value.trim() || "Address",
+                flat: flatInput.value.trim(),
+                building: buildingInput.value.trim(),
+                landmark: landmarkInput.value.trim(),
+                location_name: loc?.name ?? "",
+                lat: typeof loc?.lat === "number" ? loc.lat : null,
+                lng: typeof loc?.lng === "number" ? loc.lng : null,
+                is_default: saveDefaultCb.checked,
+              },
+            }),
+          });
+          if (!res.ok) console.warn("Could not save address to book", await res.text());
+        } catch {
+          console.warn("Could not save address to book");
+        }
+      }
+    }
+
+    const fn = pendingOnConfirm;
+    pendingOnConfirm = null;
+    pendingOnCancel = null;
+    closeSheet();
+    if (fn) await fn({ buyer_addr });
+  });
+
+  function cancel() {
+    const oc = pendingOnCancel;
+    pendingOnConfirm = null;
+    pendingOnCancel = null;
+    closeSheet();
+    oc?.();
+  }
+
+  backBtn.addEventListener("click", cancel);
+  bg.addEventListener("click", cancel);
+</script>

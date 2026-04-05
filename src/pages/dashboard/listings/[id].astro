@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import Header from "../../../components/Header.astro";
+import DashboardGate from "../../../components/DashboardGate.astro";
 import ListingForm from "../../../components/ListingForm.astro";
 import "../../../styles/global.css";
 
@@ -19,11 +20,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
+    <DashboardGate />
     <Header showDashboardLink={false} />
 
     <main>
       <div style="margin-bottom:16px;">
-        <a href="/dashboard" style="font-size:14px;">← Back to Dashboard</a>
+        <a href="/dashboard/listings" style="font-size:14px;">← Back to Listings</a>
       </div>
       <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;">Edit Listing</h1>
 
@@ -136,7 +138,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
               }, seller.id);
 
               showToast("Listing updated!");
-              setTimeout(() => { window.location.href = "/dashboard"; }, 800);
+              setTimeout(() => { window.location.href = "/dashboard/listings"; }, 800);
             } catch (err) {
               showToast((err as any).message || "Update failed.", "error");
               submitBtn.disabled = false; submitBtn.textContent = "Update Listing"; submitBtn.style.opacity = "1";

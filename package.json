@@ -7,7 +7,9 @@
     "build": "astro build",
     "preview": "astro preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:migrate": "bun run scripts/run-migrations.ts",
+    "deploy": "npx vercel deploy --prod"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -20,7 +22,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@astrojs/node": "^10.0.4",
     "@astrojs/vercel": "^10.0.4",
     "@supabase/supabase-js": "^2.101.1",
     "astro": "^6.1.3",
