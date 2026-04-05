@@ -3,6 +3,8 @@
  * Buyer session stored in localStorage (zepto_buyer_id, zepto_phone).
  */
 
+import { formatAreaPart } from "./buyer-address";
+
 export type { BuyerAddressDetail } from "./buyer-address";
 
 export async function sendOtp(phone: string) {
@@ -41,20 +43,13 @@ export function getSession(): { buyer_id: string; phone: string } | null {
 
 const ADDRESS_DETAIL_KEY = "zepto_address_detail";
 
-/** Area + coordinates from LocationPicker (`zepto_location`). */
+/** Area from LocationPicker (`zepto_location`); coordinates are stored but not shown. */
 export function getBuyerAddressFromStorage(): string | null {
   try {
     const raw = localStorage.getItem("zepto_location");
     if (!raw) return null;
     const loc = JSON.parse(raw) as { lat?: number; lng?: number; name?: string };
-    const name = typeof loc.name === "string" ? loc.name.trim() : "";
-    const lat = typeof loc.lat === "number" ? loc.lat : NaN;
-    const lng = typeof loc.lng === "number" ? loc.lng : NaN;
-    const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
-    const coordSuffix = hasCoords ? ` (${lat.toFixed(5)}, ${lng.toFixed(5)})` : "";
-    if (name) return `${name}${coordSuffix}`;
-    if (hasCoords) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    return null;
+    return formatAreaPart(loc.name ?? null, loc.lat ?? null, loc.lng ?? null);
   } catch {
     return null;
   }

@@ -75,20 +75,20 @@ describe("auth", () => {
     expect(getBuyerAddressFromStorage()).toBeNull();
   });
 
-  it("getBuyerAddressFromStorage formats name and coordinates", async () => {
+  it("getBuyerAddressFromStorage returns area name without coordinates", async () => {
     store.zepto_location = JSON.stringify({
       name: "Andheri West",
       lat: 19.123456789,
       lng: 72.987654321,
     });
     const { getBuyerAddressFromStorage } = await import("../../src/lib/auth");
-    expect(getBuyerAddressFromStorage()).toBe("Andheri West (19.12346, 72.98765)");
+    expect(getBuyerAddressFromStorage()).toBe("Andheri West");
   });
 
-  it("getBuyerAddressFromStorage returns coords only when no name", async () => {
+  it("getBuyerAddressFromStorage uses map pin label when no area name", async () => {
     store.zepto_location = JSON.stringify({ lat: 19.1, lng: 72.8 });
     const { getBuyerAddressFromStorage } = await import("../../src/lib/auth");
-    expect(getBuyerAddressFromStorage()).toBe("19.10000, 72.80000");
+    expect(getBuyerAddressFromStorage()).toBe("Map pin");
   });
 
   it("formatNewCheckoutAddress merges address detail and map area from storage", async () => {
@@ -101,7 +101,7 @@ describe("auth", () => {
     const { getBuyerAddressDetailFromStorage } = await import("../../src/lib/auth");
     const { formatNewCheckoutAddress } = await import("../../src/lib/buyer-address");
     expect(formatNewCheckoutAddress(getBuyerAddressDetailFromStorage())).toBe(
-      "402 A, Ocean View, Near station — Bandra (19.06000, 72.83000)"
+      "402 A, Ocean View, Near station — Bandra"
     );
   });
 

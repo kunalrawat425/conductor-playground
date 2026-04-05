@@ -113,9 +113,12 @@ export const prerender = false;
             >
               Use current map area (header / Location)
             </button>
-            <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:12px;cursor:pointer;">
+            <label
+              for="me-addr-default"
+              style="display:flex;align-items:flex-start;gap:10px;font-size:14px;font-weight:600;margin-bottom:12px;cursor:pointer;line-height:1.35;"
+            >
               <input type="checkbox" id="me-addr-default" />
-              Default for checkout
+              <span style="flex:1;min-width:0;padding-top:1px;">Default for checkout</span>
             </label>
             <div style="display:flex;gap:8px;">
               <button type="button" class="btn btn-primary tap-target" id="me-addr-save" style="flex:1;padding:10px;font-size:14px;">
@@ -190,7 +193,7 @@ export const prerender = false;
       if (digits.startsWith("91") && digits.length > 10) return `+${digits}`;
       return `+91 ${digits.replace(/^0+/, "")}`;
     }
-    import { formatSavedBuyerAddress } from "../lib/buyer-address";
+    import { formatSavedBuyerAddress, formatAreaPart } from "../lib/buyer-address";
     import type { BuyerAddressRow } from "../lib/buyer-address";
 
     function showToast(message: string, type: "success" | "error" = "success") {
@@ -308,8 +311,9 @@ export const prerender = false;
             addrAreaHint.textContent = "Area: not set — set Location above or open the map picker.";
             return;
           }
-          const loc = JSON.parse(raw);
-          addrAreaHint.textContent = `Area: ${loc.name || "Pinned"} (${typeof loc.lat === "number" ? loc.lat.toFixed(4) : "?"}, ${typeof loc.lng === "number" ? loc.lng.toFixed(4) : "?"})`;
+          const loc = JSON.parse(raw) as { name?: string; lat?: number; lng?: number };
+          const area = formatAreaPart(loc.name ?? null, loc.lat ?? null, loc.lng ?? null);
+          addrAreaHint.textContent = area ? `Area: ${area}` : "Area: not set";
         } catch {
           addrAreaHint.textContent = "Area: not set";
         }
@@ -330,7 +334,8 @@ export const prerender = false;
           addrLandmark.value = row.landmark || "";
           addrDefaultCb.checked = !!row.is_default;
           if (row.location_name || row.lat != null) {
-            addrAreaHint.textContent = `Saved area: ${row.location_name || "Map pin"}${row.lat != null ? ` (${Number(row.lat).toFixed(4)}, ${Number(row.lng).toFixed(4)})` : ""}`;
+            const area = formatAreaPart(row.location_name, row.lat, row.lng);
+            addrAreaHint.textContent = area ? `Saved area: ${area}` : "Saved area: not set";
           } else refreshAddrAreaHintFromStorage();
         } else {
           editIdInput.value = "";

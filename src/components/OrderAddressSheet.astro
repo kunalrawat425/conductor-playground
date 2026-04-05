@@ -15,7 +15,8 @@
     </p>
     <div
       id="order-pricing-summary"
-      style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;background:var(--gray-50);font-size:12px;line-height:1.45;color:var(--gray-700);"
+      class="order-pricing-summary"
+      style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;background:var(--gray-50);line-height:1.5;color:var(--gray-900);"
     ></div>
 
     <a
@@ -122,22 +123,39 @@
   .order-address-overlay.open .order-address-sheet {
     transform: translateY(0);
   }
-  .order-address-choice {
+  /* :global — rows are injected via innerHTML, so scoped attrs are missing */
+  :global(.order-address-choice) {
     display: flex;
-    gap: 10px;
+    flex-direction: row;
+    justify-content: flex-start;
     align-items: flex-start;
+    gap: 10px;
     padding: 10px 12px;
     border: 1px solid var(--gray-200);
     border-radius: 10px;
     margin-bottom: 8px;
     cursor: pointer;
+    text-align: left;
   }
-  .order-address-choice:has(input:checked) {
+  :global(.order-address-choice:has(input:checked)) {
     border-color: var(--blue);
     background: var(--gray-50);
   }
-  .order-address-choice input {
+  :global(.order-address-choice input[type="radio"]) {
     margin-top: 3px;
+    flex-shrink: 0;
+    width: auto;
+    min-width: 1.125rem;
+    align-self: flex-start;
+  }
+  :global(.order-address-choice > div) {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+  .order-pricing-summary {
+    font-size: 14px;
+    font-weight: 700;
   }
 </style>
 

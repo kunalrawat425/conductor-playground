@@ -87,7 +87,7 @@ button:hover,
 }
 
 
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
   width: 100%;
@@ -99,12 +99,34 @@ textarea {
   background: white;
 }
 
-input:focus,
+/* Native checkboxes/radios must not use full-width text-field styles */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  min-width: 1.125rem;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  flex-shrink: 0;
+  accent-color: var(--blue);
+  vertical-align: middle;
+}
+
+input:focus:not([type="checkbox"]):not([type="radio"]),
 select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--blue);
   box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 label {
