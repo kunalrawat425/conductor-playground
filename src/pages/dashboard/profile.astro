@@ -1,0 +1,456 @@
+---
+export const prerender = false;
+
+import Header from "../../components/Header.astro";
+import "../../styles/global.css";
+
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0066cc" />
+    <title>{`Profile - ${brandName}`}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+  </head>
+  <body>
+    <Header showDashboardLink={false} />
+
+    <!-- Toast notification -->
+    <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
+
+    <!-- Loading skeleton -->
+    <div id="dash-loading" style="padding:16px;">
+      <div class="skeleton" style="height:32px;width:200px;border-radius:8px;margin-bottom:16px;"></div>
+      <div class="skeleton" style="height:200px;border-radius:8px;margin-bottom:16px;"></div>
+      <div class="skeleton" style="height:120px;border-radius:8px;"></div>
+    </div>
+
+    <main id="dash-main" style="display:none;">
+      <!-- Nav -->
+      <div class="dash-nav">
+        <a href="/dashboard" class="dash-nav-item">Listings</a>
+        <a href="/dashboard/orders" class="dash-nav-item">Orders</a>
+        <a href="/dashboard/profile" class="dash-nav-item active">Profile</a>
+      </div>
+
+      <!-- Name & Email -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Personal Info</h3>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <div style="flex:1;">
+              <label for="seller-first-name">First name</label>
+              <input type="text" id="seller-first-name" placeholder="First name" style="font-size:14px;" />
+            </div>
+            <div style="flex:1;">
+              <label for="seller-last-name">Last name</label>
+              <input type="text" id="seller-last-name" placeholder="Last name" style="font-size:14px;" />
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label for="seller-email">Email (optional)</label>
+            <input type="email" id="seller-email" placeholder="you@example.com" style="font-size:14px;" />
+          </div>
+          <button id="save-profile-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;gap:24px;flex-wrap:wrap;">
+          <div>
+            <span class="text-muted">Total Orders</span>
+            <div id="total-orders" style="font-weight:600;min-height:24px;">—</div>
+          </div>
+          <div>
+            <span class="text-muted">Rating</span>
+            <div id="rating" style="font-weight:600;min-height:24px;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery settings -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Delivery</h3>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">Offer delivery</div>
+              <div class="text-muted" style="font-size:12px;">Buyers in range can choose delivery</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:28px;">
+              <input type="checkbox" id="delivery-toggle" style="opacity:0;width:0;height:0;" />
+              <span id="delivery-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
+              <span id="delivery-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+            </label>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label for="delivery-radius-km">Delivery radius (km)</label>
+            <input type="number" id="delivery-radius-km" min="1" max="100" step="1" style="font-size:14px;max-width:120px;" />
+            <div class="text-muted" style="font-size:12px;margin-top:4px;">Only buyers within this distance can order delivery</div>
+          </div>
+          <button id="save-delivery-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save delivery settings</button>
+        </div>
+      </div>
+
+      <!-- Operating Hours -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Operating Hours</h3>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <input type="time" id="opens-at" style="width:auto;padding:8px 10px;font-size:14px;" />
+            <span class="text-muted">to</span>
+            <input type="time" id="closes-at" style="width:auto;padding:8px 10px;font-size:14px;" />
+            <button id="save-hours-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pre-order Toggle -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:2px;">Accept Pre-orders</h3>
+              <div class="text-muted" style="font-size:12px;">Buyers can order when you're closed, for next day</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:28px;">
+              <input type="checkbox" id="preorder-toggle" style="opacity:0;width:0;height:0;" />
+              <span id="preorder-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
+              <span id="preorder-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Location -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">📍 Map Location</h3>
+          <div id="location-status" style="font-weight:600;min-height:24px;margin-bottom:8px;">—</div>
+          <button id="use-location-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:200px;">
+            📍 Use My Current Location
+          </button>
+        </div>
+      </div>
+
+      <!-- Push Notifications -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:2px;">🔔 Notifications</h3>
+              <div class="text-muted" style="font-size:12px;" id="push-status-text">Get notified when orders come in</div>
+            </div>
+            <button id="notify-toggle" type="button" class="btn notify-bell-btn" style="background:var(--gray-100);padding:8px 14px;font-size:20px;min-width:48px;min-height:44px;" title="Enable notifications">🔕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <button id="logout-btn" class="btn" style="width:100%;background:var(--gray-100);color:var(--red);margin-bottom:32px;">
+        Log out
+      </button>
+    </main>
+
+    <!-- Service worker registration (needed for push notifications) -->
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      }
+    </script>
+
+    <script>
+      import { getSession, signOut } from "../../lib/seller-auth";
+      import { getSellerById, updateSellerProfile } from "../../lib/supabase";
+      import type { Seller } from "../../lib/supabase";
+      import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
+      import { setButtonLoading, setBellLoading } from "../../lib/button-loading";
+
+      function showToast(message: string, type: "success" | "error" = "success") {
+        const toast = document.getElementById("toast")!;
+        toast.textContent = message;
+        toast.style.display = "block";
+        toast.style.opacity = "1";
+        toast.style.background = type === "success" ? "var(--green)" : "var(--red)";
+        toast.style.color = "white";
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          setTimeout(() => { toast.style.display = "none"; }, 300);
+        }, 3000);
+      }
+
+      function setLoading(btn: HTMLButtonElement, loading: boolean, originalText: string) {
+        setButtonLoading(btn, loading, originalText, "on-dark");
+      }
+
+      async function init() {
+        const session = getSession();
+        if (!session) {
+          window.location.href = "/dashboard/login";
+          return;
+        }
+
+        let seller: Seller;
+        try {
+          seller = await getSellerById(session.seller_id);
+        } catch (err: any) {
+          console.error("Profile load error:", err);
+          signOut();
+          window.location.href = "/dashboard/login";
+          return;
+        }
+
+        // Stats
+        document.getElementById("total-orders")!.textContent = String(seller.total_orders);
+        document.getElementById("rating")!.textContent = seller.rating_avg > 0 ? `⭐ ${seller.rating_avg}` : "No ratings";
+
+        // Delivery settings
+        const deliveryToggle = document.getElementById("delivery-toggle") as HTMLInputElement;
+        const deliverySlider = document.getElementById("delivery-slider")!;
+        const deliveryKnob = document.getElementById("delivery-knob")!;
+        const deliveryRadiusInput = document.getElementById("delivery-radius-km") as HTMLInputElement;
+        const saveDeliveryBtn = document.getElementById("save-delivery-btn") as HTMLButtonElement;
+
+        function updateDeliveryUI(on: boolean) {
+          deliveryToggle.checked = on;
+          deliverySlider.style.background = on ? "var(--green)" : "var(--gray-200)";
+          deliveryKnob.style.transform = on ? "translateX(20px)" : "translateX(0)";
+          deliveryRadiusInput.disabled = !on;
+        }
+
+        deliveryRadiusInput.value = String(seller.delivery_rad ?? 10);
+        updateDeliveryUI(!!seller.has_delivery);
+
+        saveDeliveryBtn.addEventListener("click", async () => {
+          const on = deliveryToggle.checked;
+          const raw = parseFloat(deliveryRadiusInput.value, 10);
+          if (on && (!Number.isFinite(raw) || raw < 1 || raw > 100)) {
+            showToast("Enter a radius between 1 and 100 km", "error");
+            return;
+          }
+          setLoading(saveDeliveryBtn, true, "Save delivery settings");
+          try {
+            await updateSellerProfile(seller.id, {
+              has_delivery: on,
+              delivery_rad: on ? raw : seller.delivery_rad,
+            } as any);
+            seller.has_delivery = on;
+            if (on) seller.delivery_rad = raw;
+            showToast("Delivery settings saved!");
+          } catch (err: any) {
+            showToast(err.message || "Failed to save", "error");
+          } finally {
+            setLoading(saveDeliveryBtn, false, "Save delivery settings");
+          }
+        });
+
+        deliveryToggle.addEventListener("change", () => {
+          updateDeliveryUI(deliveryToggle.checked);
+        });
+
+        // Name/email fields
+        const firstNameInput = document.getElementById("seller-first-name") as HTMLInputElement;
+        const lastNameInput = document.getElementById("seller-last-name") as HTMLInputElement;
+        const emailInput = document.getElementById("seller-email") as HTMLInputElement;
+        const saveProfileBtn = document.getElementById("save-profile-btn") as HTMLButtonElement;
+
+        firstNameInput.value = seller.first_name || "";
+        lastNameInput.value = seller.last_name || "";
+        emailInput.value = seller.email || "";
+
+        saveProfileBtn.addEventListener("click", async () => {
+          setLoading(saveProfileBtn, true, "Save");
+          try {
+            await updateSellerProfile(seller.id, {
+              first_name: firstNameInput.value.trim(),
+              last_name: lastNameInput.value.trim(),
+              email: emailInput.value.trim(),
+            } as any);
+            showToast("Profile saved!");
+          } catch (err: any) {
+            showToast(err.message || "Failed to save profile", "error");
+          } finally {
+            setLoading(saveProfileBtn, false, "Save");
+          }
+        });
+
+        // Operating hours
+        const opensInput = document.getElementById("opens-at") as HTMLInputElement;
+        const closesInput = document.getElementById("closes-at") as HTMLInputElement;
+        const saveHoursBtn = document.getElementById("save-hours-btn") as HTMLButtonElement;
+        opensInput.value = seller.opens_at?.slice(0, 5) || "05:00";
+        closesInput.value = seller.closes_at?.slice(0, 5) || "14:00";
+
+        saveHoursBtn.addEventListener("click", async () => {
+          setLoading(saveHoursBtn, true, "Save");
+          try {
+            await updateSellerProfile(seller.id, {
+              opens_at: opensInput.value + ":00",
+              closes_at: closesInput.value + ":00",
+            } as any);
+            showToast("Operating hours saved!");
+          } catch (err: any) {
+            showToast(err.message || "Failed to save hours", "error");
+          } finally {
+            setLoading(saveHoursBtn, false, "Save");
+          }
+        });
+
+        // Pre-order toggle
+        const preorderToggle = document.getElementById("preorder-toggle") as HTMLInputElement;
+        const preorderSlider = document.getElementById("preorder-slider")!;
+        const preorderKnob = document.getElementById("preorder-knob")!;
+
+        function updatePreorderUI(on: boolean) {
+          preorderToggle.checked = on;
+          preorderSlider.style.background = on ? "var(--green)" : "var(--gray-200)";
+          preorderKnob.style.transform = on ? "translateX(20px)" : "translateX(0)";
+        }
+
+        updatePreorderUI(seller.accepts_preorder !== false);
+
+        preorderToggle.addEventListener("change", async () => {
+          const newVal = preorderToggle.checked;
+          preorderToggle.disabled = true;
+          try {
+            await updateSellerProfile(seller.id, { accepts_preorder: newVal } as any);
+            updatePreorderUI(newVal);
+            showToast(newVal ? "Pre-orders enabled" : "Pre-orders disabled");
+          } catch (err: any) {
+            updatePreorderUI(!newVal);
+            showToast(err.message || "Failed to update", "error");
+          } finally {
+            preorderToggle.disabled = false;
+          }
+        });
+
+        // Location
+        const locationStatus = document.getElementById("location-status")!;
+        const locationBtn = document.getElementById("use-location-btn") as HTMLButtonElement;
+
+        if (seller.lat && seller.lng) {
+          locationStatus.textContent = `✅ Set (${seller.lat.toFixed(4)}, ${seller.lng.toFixed(4)})`;
+        } else {
+          locationStatus.textContent = "❌ Not set";
+        }
+
+        locationBtn.addEventListener("click", () => {
+          if (!navigator.geolocation) {
+            showToast("Geolocation not supported by your browser", "error");
+            return;
+          }
+          setButtonLoading(locationBtn, true, "📍 Use My Current Location", "on-dark");
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              try {
+                await updateSellerProfile(seller.id, { lat, lng } as any);
+                locationStatus.textContent = `✅ Set (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                showToast("Location updated!");
+                seller.lat = lat;
+                seller.lng = lng;
+              } catch (err: any) {
+                showToast(`Failed: ${err.message}`, "error");
+              } finally {
+                setLoading(locationBtn, false, "📍 Use My Current Location");
+              }
+            },
+            (err) => {
+              showToast(`Location error: ${err.message}`, "error");
+              setLoading(locationBtn, false, "📍 Use My Current Location");
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
+        });
+
+        // Push notifications
+        const notifyBtn = document.getElementById("notify-toggle") as HTMLButtonElement;
+        const pushStatus = document.getElementById("push-status-text")!;
+        const pushActive = await isSellerPushSubscribed();
+        notifyBtn.textContent = pushActive ? "🔔" : "🔕";
+        pushStatus.textContent = pushActive ? "Notifications are on" : "Get notified when orders come in";
+
+        notifyBtn.addEventListener("click", async () => {
+          const isSubscribed = await isSellerPushSubscribed();
+          const idleBell = isSubscribed ? "🔔" : "🔕";
+          setBellLoading(notifyBtn, true, idleBell);
+          try {
+            if (isSubscribed) {
+              await unsubscribeSellerPush(seller.id);
+              setBellLoading(notifyBtn, false, "🔕");
+              pushStatus.textContent = "Get notified when orders come in";
+              showToast("Notifications disabled");
+            } else {
+              const ok = await subscribeSellerPush(seller.id);
+              if (ok) {
+                setBellLoading(notifyBtn, false, "🔔");
+                pushStatus.textContent = "Notifications are on";
+                showToast("Notifications enabled!");
+              } else {
+                setBellLoading(notifyBtn, false, "🔕");
+                showToast("Could not enable notifications. Please allow permissions.", "error");
+              }
+            }
+          } catch (err: any) {
+            const on = await isSellerPushSubscribed();
+            setBellLoading(notifyBtn, false, on ? "🔔" : "🔕");
+            pushStatus.textContent = on ? "Notifications are on" : "Get notified when orders come in";
+            showToast("Failed to update notifications", "error");
+          }
+        });
+
+        // Logout
+        document.getElementById("logout-btn")!.addEventListener("click", async () => {
+          const btn = document.getElementById("logout-btn") as HTMLButtonElement;
+          setButtonLoading(btn, true, "Log out", "neutral");
+          await signOut();
+          window.location.href = "/dashboard/login";
+        });
+
+        // Show content
+        requestAnimationFrame(() => {
+          document.getElementById("dash-loading")!.style.display = "none";
+          const main = document.getElementById("dash-main")!;
+          main.style.display = "block";
+          main.classList.add("fade-in");
+        });
+      }
+
+      init();
+    </script>
+
+    <style is:global>
+      .dash-nav {
+        display: flex;
+        gap: 0;
+        margin-bottom: 16px;
+        border-bottom: 2px solid var(--gray-200);
+      }
+      .dash-nav-item {
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .dash-nav-item:hover {
+        color: var(--gray-700);
+        text-decoration: none;
+      }
+      .dash-nav-item.active {
+        color: var(--blue);
+        border-bottom-color: var(--blue);
+      }
+    </style>
+  </body>
+</html>

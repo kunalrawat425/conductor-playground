@@ -1,0 +1,252 @@
+---
+/**
+ * Buyer login modal.
+ * Full-screen on mobile, centered modal on desktop.
+ * Phone OTP flow with error handling.
+ */
+---
+
+<div class="fullscreen-modal" id="login-modal">
+  <button class="fullscreen-modal-close" id="login-close" aria-label="Close">&times;</button>
+
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;max-width:360px;margin:0 auto;width:100%;">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:4px;">Log in to order</h2>
+    <p class="text-muted" style="margin-bottom:24px;">Track your order status and get notifications</p>
+
+    <!-- Step 1: Phone number -->
+    <div id="login-step-phone">
+      <div class="form-group">
+        <label for="login-phone">Phone number</label>
+        <input
+          type="tel"
+          id="login-phone"
+          placeholder="+91 9876543210"
+          autocomplete="tel"
+          inputmode="tel"
+          style="font-size:16px;"
+        />
+      </div>
+      <button class="btn btn-primary tap-target" id="login-send-otp" style="width:100%;min-height:44px;">
+        Send OTP
+      </button>
+    </div>
+
+    <!-- Step 2: OTP verification -->
+    <div id="login-step-otp" style="display:none;">
+      <p class="text-muted" style="margin-bottom:16px;">
+        OTP sent to <strong id="login-phone-display"></strong>
+      </p>
+      <div class="form-group">
+        <label for="login-otp">Enter OTP</label>
+        <input
+          type="text"
+          id="login-otp"
+          placeholder="123456"
+          autocomplete="one-time-code"
+          inputmode="numeric"
+          maxlength="6"
+          pattern="[0-9]*"
+          style="font-size:20px;letter-spacing:4px;text-align:center;"
+        />
+      </div>
+      <button class="btn btn-primary tap-target" id="login-verify-otp" style="width:100%;min-height:44px;">
+        Verify
+      </button>
+      <button type="button" class="btn tap-target" id="login-resend" style="width:100%;margin-top:8px;background:none;color:var(--blue);font-size:13px;min-height:40px;" disabled>
+        Resend OTP (30s)
+      </button>
+      <button class="btn tap-target" id="login-back" style="width:100%;margin-top:4px;background:none;color:var(--gray-500);font-size:13px;">
+        Change number
+      </button>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="login-step-success" style="display:none;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">✓</div>
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">You're logged in!</h3>
+      <p class="text-muted">Redirecting...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { sendOtp, verifyOtp, getSession } from "../lib/auth";
+  import { subscribePush } from "../lib/push";
+  import { setButtonLoading } from "../lib/button-loading";
+
+  let currentPhone = "";
+  let attempts = 0;
+  const MAX_ATTEMPTS = 3;
+  let pendingListingId: string | null = null;
+  let resendTimer: any = null;
+
+  function showToast(message: string, type: "success" | "error" = "success") {
+    let toast = document.getElementById("login-toast");
+    if (!toast) { toast = document.createElement("div"); toast.id = "login-toast"; document.body.appendChild(toast); }
+    toast.textContent = message;
+    toast.style.cssText = `position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;background:${type === "success" ? "var(--green)" : "var(--red)"};`;
+    setTimeout(() => { toast!.style.opacity = "0"; setTimeout(() => { toast!.style.display = "none"; }, 300); }, 3000);
+  }
+
+  function showStep(step: "phone" | "otp" | "success") {
+    document.getElementById("login-step-phone")!.style.display = step === "phone" ? "block" : "none";
+    document.getElementById("login-step-otp")!.style.display = step === "otp" ? "block" : "none";
+    document.getElementById("login-step-success")!.style.display = step === "success" ? "block" : "none";
+  }
+
+  function openLoginModal(listingId?: string) {
+    pendingListingId = listingId || null;
+    const modal = document.getElementById("login-modal")!;
+    const backdrop = document.getElementById("backdrop")!;
+    modal.classList.add("open");
+    backdrop.classList.add("visible");
+    showStep("phone");
+    attempts = 0;
+    (document.getElementById("login-phone") as HTMLInputElement).value = "";
+    (document.getElementById("login-otp") as HTMLInputElement).value = "";
+  }
+
+  function closeLoginModal() {
+    const modal = document.getElementById("login-modal")!;
+    const backdrop = document.getElementById("backdrop")!;
+    modal.classList.remove("open");
+    backdrop.classList.remove("visible");
+    clearInterval(resendTimer);
+  }
+
+  // Send OTP
+  document.getElementById("login-send-otp")?.addEventListener("click", async () => {
+    const phoneInput = document.getElementById("login-phone") as HTMLInputElement;
+    const btn = document.getElementById("login-send-otp") as HTMLButtonElement;
+
+    let phone = phoneInput.value.trim().replace(/\s/g, "");
+    if (phone.startsWith("0")) phone = phone.slice(1);
+    if (!phone.startsWith("+")) phone = "+91" + phone;
+
+    if (phone.length < 12) {
+      showToast("Please enter a valid phone number.", "error");
+      return;
+    }
+
+    setButtonLoading(btn, true, "Send OTP", "on-dark");
+
+    try {
+      await sendOtp(phone);
+      currentPhone = phone;
+      document.getElementById("login-phone-display")!.textContent = phone;
+      showStep("otp");
+      startResendTimer();
+      (document.getElementById("login-otp") as HTMLInputElement).focus();
+    } catch (err: any) {
+      showToast("Couldn't send OTP. Check your number and try again.", "error");
+    } finally {
+      setButtonLoading(btn, false, "Send OTP", "on-dark");
+    }
+  });
+
+  // Verify OTP
+  document.getElementById("login-verify-otp")?.addEventListener("click", async () => {
+    const otpInput = document.getElementById("login-otp") as HTMLInputElement;
+    const btn = document.getElementById("login-verify-otp") as HTMLButtonElement;
+
+    const token = otpInput.value.trim();
+    if (token.length !== 6) {
+      showToast("Please enter the 6-digit OTP.", "error");
+      return;
+    }
+
+    if (attempts >= MAX_ATTEMPTS) {
+      showToast("Too many attempts. Try again in 5 minutes.", "error");
+      return;
+    }
+
+    setButtonLoading(btn, true, "Verify", "on-dark");
+    attempts++;
+
+    try {
+      const data = await verifyOtp(currentPhone, token);
+
+      if (data?.success) {
+        showStep("success");
+
+        // Auto-subscribe to push notifications after login
+        subscribePush().catch(() => {});
+
+        setTimeout(() => {
+          closeLoginModal();
+          window.dispatchEvent(new CustomEvent("buyer-logged-in", { detail: data }));
+        }, 1000);
+      }
+    } catch (err: any) {
+      const remaining = MAX_ATTEMPTS - attempts;
+      if (remaining > 0) {
+        showToast(`Incorrect OTP. ${remaining} attempt${remaining > 1 ? "s" : ""} remaining.`, "error");
+      } else {
+        showToast("Too many attempts. Try again in 5 minutes.", "error");
+      }
+      setButtonLoading(btn, false, "Verify", "on-dark");
+    }
+  });
+
+  // Resend timer
+  function startResendTimer() {
+    const resendBtn = document.getElementById("login-resend") as HTMLButtonElement;
+    let seconds = 30;
+    resendBtn.disabled = true;
+    resendBtn.textContent = `Resend OTP (${seconds}s)`;
+
+    clearInterval(resendTimer);
+    resendTimer = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(resendTimer);
+        resendBtn.disabled = false;
+        resendBtn.textContent = "Resend OTP";
+      } else {
+        resendBtn.textContent = `Resend OTP (${seconds}s)`;
+      }
+    }, 1000);
+  }
+
+  // Resend OTP
+  document.getElementById("login-resend")?.addEventListener("click", async () => {
+    const btn = document.getElementById("login-resend") as HTMLButtonElement;
+    setButtonLoading(btn, true, "Resend OTP", "textlink");
+    try {
+      await sendOtp(currentPhone);
+      attempts = 0;
+      startResendTimer();
+    } catch {
+      showToast("Couldn't resend OTP. Try again.", "error");
+      setButtonLoading(btn, false, "Resend OTP", "textlink");
+    }
+  });
+
+  // Back to phone step
+  document.getElementById("login-back")?.addEventListener("click", () => {
+    showStep("phone");
+    clearInterval(resendTimer);
+  });
+
+  // Close
+  document.getElementById("login-close")?.addEventListener("click", closeLoginModal);
+
+  // Listen for order start event (from catalog)
+  window.addEventListener("start-order", async (e: any) => {
+    const session = getSession();
+    if (session) {
+      // Already logged in, go to track
+      window.location.href = "/track";
+    } else {
+      openLoginModal(e.detail?.listingId);
+    }
+  });
+
+  // Enter key handlers
+  document.getElementById("login-phone")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("login-send-otp")?.click();
+  });
+  document.getElementById("login-otp")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("login-verify-otp")?.click();
+  });
+</script>

@@ -1,0 +1,170 @@
+---
+export const prerender = false;
+
+import Header from "../../../components/Header.astro";
+import ListingForm from "../../../components/ListingForm.astro";
+import "../../../styles/global.css";
+
+const { id } = Astro.params;
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0066cc" />
+    <title>{`Edit Listing - ${brandName}`}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <Header showDashboardLink={false} />
+
+    <main>
+      <div style="margin-bottom:16px;">
+        <a href="/dashboard" style="font-size:14px;">← Back to Dashboard</a>
+      </div>
+      <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;">Edit Listing</h1>
+
+      <div id="form-container">
+        <p class="text-muted">Loading listing...</p>
+      </div>
+
+      <div id="error-msg" style="display:none;color:var(--red);margin-top:12px;"></div>
+      <div id="listing-data" data-listing-id={id} style="display:none;"></div>
+    </main>
+
+    <script>
+      import { getSession, signOut } from "../../../lib/seller-auth";
+      import { getSellerById, getListingById, updateListing, uploadFishPhoto } from "../../../lib/supabase";
+      import { getSpeciesDisplay, SPECIES_LIST, PRICE_UNITS } from "../../../lib/species";
+
+      const listingId = document.getElementById("listing-data")!.dataset.listingId!;
+
+      (async () => {
+
+        const session = getSession();
+        if (!session) {
+          window.location.href = "/dashboard/login";
+          return;
+        }
+
+        try {
+          const seller = await getSellerById(session.seller_id);
+          const listing = await getListingById(listingId);
+
+          if (listing.seller_id !== seller.id) {
+            document.getElementById("form-container")!.innerHTML = '<p style="color:var(--red);">Not your listing.</p>';
+            return;
+          }
+
+          const container = document.getElementById("form-container")!;
+          const unitLabel = listing.price_unit;
+
+          container.innerHTML = `
+            <form id="edit-form" style="max-width:500px;">
+              <div class="form-group">
+                <label for="species">Species</label>
+                <select id="species" name="species" required>
+                  ${SPECIES_LIST.map((s) => `<option value="${s.id}" ${listing.species === s.id ? "selected" : ""} data-unit="${s.defaultUnit}">${s.english} (${s.marathi})</option>`).join("")}
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;">
+                <div class="form-group">
+                  <label for="price">Price</label>
+                  <input type="number" id="price" name="price" min="1" step="0.01" value="${listing.price}" required />
+                </div>
+                <div class="form-group">
+                  <label for="price_unit">Unit</label>
+                  <select id="price_unit" name="price_unit" required>
+                    ${PRICE_UNITS.map((u) => `<option value="${u.value}" ${listing.price_unit === u.value ? "selected" : ""}>${u.label}</option>`).join("")}
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="weight_avail">Stock (how much you have)</label>
+                <input type="number" id="weight_avail" name="weight_avail" min="0" step="0.1" value="${listing.weight_avail}" required />
+              </div>
+              <div class="form-group">
+                <label for="photo">Photo</label>
+                <input type="file" id="photo" name="photo" accept="image/*" />
+                ${listing.photo_url ? `<img src="${listing.photo_url}" alt="Current" style="width:120px;height:90px;object-fit:cover;border-radius:8px;margin-top:8px;" loading="lazy" />` : ""}
+              </div>
+              <div class="form-group">
+                <label for="pickup_loc">Pickup Location</label>
+                <input type="text" id="pickup_loc" name="pickup_loc" value="${listing.pickup_loc}" required />
+              </div>
+              <div style="display:flex;gap:12px;margin-top:20px;">
+                <button type="submit" class="btn btn-primary">Update Listing</button>
+                <button type="button" id="toggle-btn" class="btn ${listing.is_available ? "btn-red" : "btn-green"}">
+                  ${listing.is_available ? "Mark Unavailable" : "Mark Available"}
+                </button>
+              </div>
+            </form>
+          `;
+
+          function showToast(message: string, type: "success" | "error" = "success") {
+            let toast = document.getElementById("toast");
+            if (!toast) { toast = document.createElement("div"); toast.id = "toast"; document.body.appendChild(toast); }
+            toast.textContent = message;
+            toast.style.cssText = `position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;background:${type === "success" ? "var(--green)" : "var(--red)"};`;
+            setTimeout(() => { toast!.style.opacity = "0"; setTimeout(() => { toast!.style.display = "none"; }, 300); }, 3000);
+          }
+
+          document.getElementById("edit-form")!.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const form = e.target as HTMLFormElement;
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+            submitBtn.disabled = true; submitBtn.textContent = "Updating..."; submitBtn.style.opacity = "0.6";
+
+            try {
+              const photoFile = formData.get("photo") as File;
+              let photoUrl = listing.photo_url;
+              if (photoFile && photoFile.size > 0) {
+                photoUrl = await uploadFishPhoto(photoFile, seller.id);
+              }
+
+              await updateListing(listingId, {
+                species: formData.get("species") as string,
+                price: parseFloat(formData.get("price") as string),
+                price_unit: formData.get("price_unit") as any,
+                weight_avail: parseFloat(formData.get("weight_avail") as string),
+                photo_url: photoUrl,
+                pickup_loc: formData.get("pickup_loc") as string,
+              }, seller.id);
+
+              showToast("Listing updated!");
+              setTimeout(() => { window.location.href = "/dashboard"; }, 800);
+            } catch (err) {
+              showToast((err as any).message || "Update failed.", "error");
+              submitBtn.disabled = false; submitBtn.textContent = "Update Listing"; submitBtn.style.opacity = "1";
+            }
+          });
+
+          const toggleBtn = document.getElementById("toggle-btn") as HTMLButtonElement;
+          toggleBtn.addEventListener("click", async () => {
+            const origText = toggleBtn.textContent!;
+            toggleBtn.disabled = true; toggleBtn.textContent = "Updating..."; toggleBtn.style.opacity = "0.6";
+            try {
+              await updateListing(listingId, { is_available: !listing.is_available }, seller.id);
+              showToast(listing.is_available ? "Marked unavailable" : "Marked available");
+              setTimeout(() => { window.location.reload(); }, 800);
+            } catch (err) {
+              showToast((err as any).message || "Failed to update.", "error");
+              toggleBtn.disabled = false; toggleBtn.textContent = origText; toggleBtn.style.opacity = "1";
+            }
+          });
+        } catch (err: any) {
+          if (err?.message?.includes("coerce") || err?.code === "PGRST116") {
+            signOut();
+            window.location.href = "/dashboard/login";
+          } else {
+            document.getElementById("form-container")!.innerHTML = '<p style="color:var(--red);">Listing not found.</p>';
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

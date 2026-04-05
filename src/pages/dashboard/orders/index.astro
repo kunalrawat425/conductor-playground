@@ -1,0 +1,488 @@
+---
+export const prerender = false;
+
+import Header from "../../../components/Header.astro";
+import "../../../styles/global.css";
+
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0066cc" />
+    <title>{`Orders - ${brandName}`}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+  </head>
+  <body>
+    <Header showDashboardLink={false} />
+
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      }
+    </script>
+
+    <!-- Toast -->
+    <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
+
+    <!-- Loading skeleton -->
+    <div id="dash-loading" style="padding:16px;">
+      <div class="skeleton" style="height:32px;width:160px;border-radius:8px;margin-bottom:16px;"></div>
+      <div class="skeleton" style="height:40px;border-radius:8px;margin-bottom:16px;"></div>
+      <div class="skeleton" style="height:120px;border-radius:8px;margin-bottom:12px;"></div>
+      <div class="skeleton" style="height:120px;border-radius:8px;"></div>
+    </div>
+
+    <main id="dash-main" style="display:none;">
+      <!-- Nav -->
+      <div class="dash-nav">
+        <a href="/dashboard" class="dash-nav-item">Listings</a>
+        <a href="/dashboard/orders" class="dash-nav-item active">Orders</a>
+        <a href="/dashboard/profile" class="dash-nav-item">Profile</a>
+      </div>
+
+      <!-- Tabs: Fresh / Pre-orders -->
+      <div class="tabs">
+        <button class="tab active" data-tab="fresh-orders">Fresh Orders <span id="fresh-count" class="tab-count"></span></button>
+        <button class="tab" data-tab="pre-orders">Pre-orders <span id="pre-count" class="tab-count"></span></button>
+      </div>
+
+      <div id="tab-fresh-orders">
+        <div class="order-filters">
+          <select id="fresh-status-filter" class="filter-select">
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="paid">Paid</option>
+            <option value="completed">Completed</option>
+            <option value="declined">Declined</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <select id="fresh-date-filter" class="filter-select">
+            <option value="all">All time</option>
+            <option value="today">Today</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+          </select>
+        </div>
+        <div id="fresh-orders-list"></div>
+        <div id="fresh-pagination" class="pagination"></div>
+      </div>
+
+      <div id="tab-pre-orders" style="display:none;">
+        <div class="order-filters">
+          <select id="pre-status-filter" class="filter-select">
+            <option value="all">All statuses</option>
+            <option value="pre_order">Awaiting</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="refunded">Refunded</option>
+          </select>
+          <select id="pre-date-filter" class="filter-select">
+            <option value="all">All time</option>
+            <option value="today">Today</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+          </select>
+        </div>
+        <div id="pre-orders-list"></div>
+        <div id="pre-pagination" class="pagination"></div>
+      </div>
+    </main>
+
+    <script>
+      import { getSession, signOut } from "../../../lib/seller-auth";
+      import {
+        getSellerById,
+        getOrdersForSeller,
+        getPreOrdersForSeller,
+        updateOrderStatus,
+      } from "../../../lib/supabase";
+      import { getSpeciesDisplay } from "../../../lib/species";
+      import type { Seller, Order } from "../../../lib/supabase";
+
+      function showToast(message: string, type: "success" | "error" = "success") {
+        const toast = document.getElementById("toast")!;
+        toast.textContent = message;
+        toast.style.display = "block";
+        toast.style.opacity = "1";
+        toast.style.background = type === "success" ? "var(--green)" : "var(--red)";
+        toast.style.color = "white";
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          setTimeout(() => { toast.style.display = "none"; }, 300);
+        }, 3000);
+      }
+
+      let allFreshOrders: Order[] = [];
+      let allPreOrders: Order[] = [];
+      const PAGE_SIZE = 10;
+      let freshPage = 1;
+      let prePage = 1;
+      let _sellerId = "";
+
+      function getDateCutoff(filter: string): Date | null {
+        if (filter === "today") { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+        if (filter === "7d") return new Date(Date.now() - 7 * 86400000);
+        if (filter === "30d") return new Date(Date.now() - 30 * 86400000);
+        return null;
+      }
+
+      function applyFilters(orders: Order[], statusFilter: string, dateFilter: string): Order[] {
+        let filtered = orders;
+        if (statusFilter !== "all") filtered = filtered.filter(o => o.status === statusFilter);
+        const cutoff = getDateCutoff(dateFilter);
+        if (cutoff) filtered = filtered.filter(o => new Date(o.created_at) >= cutoff);
+        return filtered;
+      }
+
+      function renderPaginationControls(containerId: string, total: number, page: number, onPage: (p: number) => void) {
+        const el = document.getElementById(containerId)!;
+        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (total <= PAGE_SIZE) { el.innerHTML = ""; return; }
+        el.innerHTML = `
+          <button class="pg-prev" ${page <= 1 ? "disabled" : ""}>← Prev</button>
+          <span class="page-info">${page} / ${totalPages}</span>
+          <button class="pg-next" ${page >= totalPages ? "disabled" : ""}>Next →</button>
+        `;
+        el.querySelector(".pg-prev")?.addEventListener("click", () => { if (page > 1) onPage(page - 1); });
+        el.querySelector(".pg-next")?.addEventListener("click", () => { if (page < totalPages) onPage(page + 1); });
+      }
+
+      function updateTabCounts() {
+        const freshActionable = allFreshOrders.filter(o => o.status === "pending").length;
+        const preActionable = allPreOrders.filter(o => o.status === "pre_order").length;
+        const freshEl = document.getElementById("fresh-count")!;
+        const preEl = document.getElementById("pre-count")!;
+        freshEl.textContent = freshActionable > 0 ? String(freshActionable) : "";
+        freshEl.style.display = freshActionable > 0 ? "inline-flex" : "none";
+        preEl.textContent = preActionable > 0 ? String(preActionable) : "";
+        preEl.style.display = preActionable > 0 ? "inline-flex" : "none";
+      }
+
+      function renderFresh() {
+        const statusFilter = (document.getElementById("fresh-status-filter") as HTMLSelectElement).value;
+        const dateFilter = (document.getElementById("fresh-date-filter") as HTMLSelectElement).value;
+        const filtered = applyFilters(allFreshOrders, statusFilter, dateFilter);
+        const paged = filtered.slice((freshPage - 1) * PAGE_SIZE, freshPage * PAGE_SIZE);
+        renderOrders(paged, "fresh-orders-list", _sellerId);
+        renderPaginationControls("fresh-pagination", filtered.length, freshPage, (p) => { freshPage = p; renderFresh(); });
+        updateTabCounts();
+      }
+
+      function renderPre() {
+        const statusFilter = (document.getElementById("pre-status-filter") as HTMLSelectElement).value;
+        const dateFilter = (document.getElementById("pre-date-filter") as HTMLSelectElement).value;
+        const filtered = applyFilters(allPreOrders, statusFilter, dateFilter);
+        const paged = filtered.slice((prePage - 1) * PAGE_SIZE, prePage * PAGE_SIZE);
+        renderOrders(paged, "pre-orders-list", _sellerId);
+        renderPaginationControls("pre-pagination", filtered.length, prePage, (p) => { prePage = p; renderPre(); });
+        updateTabCounts();
+      }
+
+      async function refreshOrders(sellerId: string) {
+        const [orders, preOrders] = await Promise.all([
+          getOrdersForSeller(sellerId),
+          getPreOrdersForSeller(sellerId),
+        ]);
+        allFreshOrders = orders.filter((o: Order) => o.status !== "pre_order");
+        allPreOrders = preOrders;
+        renderFresh();
+        renderPre();
+      }
+
+      async function init() {
+        const session = getSession();
+        if (!session) {
+          window.location.href = "/dashboard/login";
+          return;
+        }
+
+        let seller: Seller;
+        try {
+          seller = await getSellerById(session.seller_id);
+        } catch (err: any) {
+          console.error("Orders load error:", err);
+          signOut();
+          window.location.href = "/dashboard/login";
+          return;
+        }
+
+        // Tabs
+        const tabs = document.querySelectorAll(".tab");
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const tabName = (tab as HTMLElement).dataset.tab!;
+            document.getElementById("tab-fresh-orders")!.style.display = tabName === "fresh-orders" ? "block" : "none";
+            document.getElementById("tab-pre-orders")!.style.display = tabName === "pre-orders" ? "block" : "none";
+          });
+        });
+
+        // Load orders
+        const [orders, preOrders] = await Promise.all([
+          getOrdersForSeller(seller.id),
+          getPreOrdersForSeller(seller.id),
+        ]);
+
+        _sellerId = seller.id;
+        allFreshOrders = orders.filter((o) => o.status !== "pre_order");
+        allPreOrders = preOrders;
+        renderFresh();
+        renderPre();
+
+        // Filters
+        document.getElementById("fresh-status-filter")!.addEventListener("change", () => { freshPage = 1; renderFresh(); });
+        document.getElementById("fresh-date-filter")!.addEventListener("change", () => { freshPage = 1; renderFresh(); });
+        document.getElementById("pre-status-filter")!.addEventListener("change", () => { prePage = 1; renderPre(); });
+        document.getElementById("pre-date-filter")!.addEventListener("change", () => { prePage = 1; renderPre(); });
+
+        // Show content
+        requestAnimationFrame(() => {
+          document.getElementById("dash-loading")!.style.display = "none";
+          const main = document.getElementById("dash-main")!;
+          main.style.display = "block";
+          main.classList.add("fade-in");
+        });
+      }
+
+      function renderOrders(orders: Order[], containerId: string, sellerId?: string) {
+        const el = document.getElementById(containerId)!;
+        if (orders.length === 0) {
+          el.innerHTML = '<p class="text-muted">No orders yet.</p>';
+          return;
+        }
+
+        el.innerHTML = orders
+          .map((o) => {
+            const name = o.species ? getSpeciesDisplay(o.species) : "Unknown";
+            const unitLabel = o.quantity_unit === "dozen" ? "dz" : o.quantity_unit;
+            const isPreOrder = o.status === "pre_order";
+            const canAct = o.status === "pre_order" || o.status === "pending";
+
+            const statusColors: Record<string, string> = {
+              pre_order: "badge-orange",
+              pending: "badge-blue",
+              confirmed: "badge-green",
+              paid: "badge-green",
+              completed: "badge-green",
+              declined: "badge-red",
+              cancelled: "badge-red",
+              refunded: "badge-orange",
+            };
+
+            return `
+              <div class="card" style="margin-bottom:12px;" data-order-id="${o.id}">
+                <div class="card-body">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                    <div>
+                      <h4 style="font-size:16px;font-weight:700;">${name}</h4>
+                      <span class="text-muted">${o.quantity} ${unitLabel}${isPreOrder ? " (pre-order)" : ""}</span>
+                    </div>
+                    <span class="badge ${statusColors[o.status] || "badge-blue"}">${o.status.replace("_", " ")}</span>
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--gray-700);margin-bottom:8px;">
+                    <span>📱 ${o.buyer_phone}</span>
+                    ${o.buyer_addr ? `<span>📍 ${o.buyer_addr}</span>` : ""}
+                    <span>🛒 ${o.order_type}</span>
+                  </div>
+                  ${isPreOrder && o.paid_amount ? `<div style="background:#fff3cd;padding:8px 12px;border-radius:var(--radius);font-size:13px;margin-bottom:8px;">Buyer paid upfront: <strong>₹${o.paid_amount}</strong> <span class="text-muted">(max range)</span></div>` : ""}
+                  ${
+                    canAct
+                      ? isPreOrder
+                        ? `
+                          <div>
+                            <div class="form-group" style="margin-bottom:8px;">
+                              <label>Actual Price (₹/${unitLabel})</label>
+                              <input type="number" class="final-price-input" data-order-id="${o.id}" min="1" step="0.01" placeholder="Enter actual price" style="max-width:200px;" />
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                              <button class="btn btn-green confirm-preorder-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Confirm with Price</button>
+                              <button class="btn btn-red cancel-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Cancel (Full Refund)</button>
+                            </div>
+                          </div>
+                        `
+                        : `
+                          <div style="display:flex;gap:8px;">
+                            <button class="btn btn-green confirm-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Confirm</button>
+                            <button class="btn btn-red decline-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Decline</button>
+                          </div>
+                        `
+                      : ""
+                  }
+                  ${o.final_price ? `<div style="font-size:14px;padding:8px 12px;background:#d4edda;border-radius:var(--radius);margin-top:8px;">Final: <strong>₹${o.final_price}/${unitLabel}</strong>${o.refund_amt && o.refund_amt > 0 ? ` <span style="color:var(--orange);font-size:12px;">(₹${o.refund_amt} refunded)</span>` : ""}</div>` : ""}
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        function setBtnLoading(b: HTMLElement, loading: boolean, text: string) {
+          (b as HTMLButtonElement).disabled = loading;
+          b.textContent = loading ? "Processing..." : text;
+          b.style.opacity = loading ? "0.6" : "1";
+        }
+
+        el.querySelectorAll(".confirm-order-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            setBtnLoading(b, true, "Confirm");
+            try {
+              await updateOrderStatus(orderId, "confirmed", undefined, sellerId);
+              showToast("Order confirmed!");
+              if (sellerId) await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to confirm", "error");
+              setBtnLoading(b, false, "Confirm");
+            }
+          });
+        });
+
+        el.querySelectorAll(".decline-order-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            setBtnLoading(b, true, "Decline");
+            try {
+              await updateOrderStatus(orderId, "declined", undefined, sellerId);
+              showToast("Order declined");
+              if (sellerId) await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to decline", "error");
+              setBtnLoading(b, false, "Decline");
+            }
+          });
+        });
+
+        el.querySelectorAll(".confirm-preorder-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            const input = el.querySelector(`.final-price-input[data-order-id="${orderId}"]`) as HTMLInputElement;
+            const finalPrice = parseFloat(input?.value || "0");
+            if (!finalPrice || finalPrice <= 0) {
+              showToast("Please enter the actual price", "error");
+              return;
+            }
+            setBtnLoading(b, true, "Confirm with Price");
+            try {
+              await updateOrderStatus(orderId, "confirmed", finalPrice, sellerId);
+              showToast("Pre-order confirmed with price!");
+              if (sellerId) await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to confirm", "error");
+              setBtnLoading(b, false, "Confirm with Price");
+            }
+          });
+        });
+
+        el.querySelectorAll(".cancel-order-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            if (confirm("Cancel this pre-order? Buyer will get a full refund.")) {
+              setBtnLoading(b, true, "Cancel (Full Refund)");
+              try {
+                await updateOrderStatus(orderId, "cancelled", undefined, sellerId);
+                showToast("Pre-order cancelled, buyer will be refunded");
+                if (sellerId) await refreshOrders(sellerId);
+              } catch (err: any) {
+                showToast(err.message || "Failed to cancel", "error");
+                setBtnLoading(b, false, "Cancel (Full Refund)");
+              }
+            }
+          });
+        });
+      }
+
+      init();
+    </script>
+
+    <style is:global>
+      .dash-nav {
+        display: flex;
+        gap: 0;
+        margin-bottom: 16px;
+        border-bottom: 2px solid var(--gray-200);
+      }
+      .dash-nav-item {
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .dash-nav-item:hover {
+        color: var(--gray-700);
+        text-decoration: none;
+      }
+      .dash-nav-item.active {
+        color: var(--blue);
+        border-bottom-color: var(--blue);
+      }
+      .order-filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .filter-select {
+        padding: 6px 10px;
+        font-size: 13px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        background: white;
+        color: var(--gray-700);
+        flex: 1;
+        max-width: 180px;
+      }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+        padding: 8px 0;
+      }
+      .pagination button {
+        padding: 6px 14px;
+        font-size: 13px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+      }
+      .pagination button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .pagination .page-info {
+        font-size: 13px;
+        color: var(--gray-500);
+      }
+      .tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+        background: var(--red, #e74c3c);
+        border-radius: 10px;
+        margin-left: 4px;
+        vertical-align: middle;
+      }
+    </style>
+  </body>
+</html>

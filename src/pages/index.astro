@@ -1,0 +1,688 @@
+---
+import AppShell from "../components/AppShell.astro";
+
+import LocationPicker from "../components/LocationPicker.astro";
+import LoginModal from "../components/LoginModal.astro";
+---
+
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home">
+  <!-- Hero search bar -->
+  <div class="hero-search">
+    <input type="text" id="search-input" placeholder="Search fish or seller..." autocomplete="off" />
+  </div>
+
+  <!-- Category chips -->
+  <div class="category-chips" id="category-chips">
+    <button class="chip active" data-filter="all">All</button>
+    <button class="chip" data-filter="open">Open Now</button>
+    <button class="chip" data-filter="delivery">Delivery</button>
+    <button class="chip" data-filter="preorder">Pre-order</button>
+    <button class="chip" data-filter="rating">Top Rated</button>
+  </div>
+
+  <!-- Loading skeleton -->
+  <section id="loading">
+    <div class="seller-cards">
+      <div class="seller-card"><div class="skeleton" style="height:200px;border-radius:16px;"></div></div>
+      <div class="seller-card"><div class="skeleton" style="height:200px;border-radius:16px;"></div></div>
+    </div>
+  </section>
+
+  <!-- Sellers section -->
+  <section id="sellers-section" style="display:none;">
+    <div class="section-header">
+      <h2 class="section-heading">Sellers near you</h2>
+      <span id="seller-count" class="count-badge"></span>
+    </div>
+    <div id="sellers-container" class="seller-cards" style="min-height:200px;"></div>
+  </section>
+
+  <!-- Empty state -->
+  <section id="empty-state" style="display:none;">
+    <div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:64px;margin-bottom:12px;">🐟</div>
+      <h3 id="empty-title" style="font-size:18px;font-weight:700;margin-bottom:8px;">No sellers found</h3>
+      <p id="empty-msg" class="text-muted">Check back early morning (5-8 AM) when sellers open!</p>
+    </div>
+  </section>
+
+  <LocationPicker />
+  <LoginModal />
+
+  <style is:global>
+    .hero-search {
+      margin: 8px 0 12px;
+    }
+    .hero-search input {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 16px;
+      font-size: 15px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .hero-search input:focus {
+      box-shadow: 0 2px 12px rgba(0,102,204,0.15);
+      border: none;
+    }
+
+    .category-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0 12px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .category-chips::-webkit-scrollbar { display: none; }
+    .chip {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      background: white;
+      color: var(--gray-700);
+      border: 1.5px solid var(--gray-200);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip.active {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 20px 0 12px;
+    }
+    .section-heading {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .count-badge {
+      background: var(--blue);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    /* --- Seller cards (Zomato-style) --- */
+    .seller-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .seller-card {
+      position: relative;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      transition: transform 0.1s, box-shadow 0.15s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .seller-card-grey {
+      opacity: 0.5;
+      filter: grayscale(0.6);
+      pointer-events: none;
+    }
+    .seller-out-of-area {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+      z-index: 1;
+    }
+    .seller-open-dot {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 10px;
+      height: 10px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px white, 0 0 6px rgba(34,197,94,0.4);
+      z-index: 1;
+    }
+    .seller-hours-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+      z-index: 1;
+    }
+    .seller-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      text-decoration: none;
+      color: inherit;
+    }
+    .seller-card:active { transform: scale(0.98); }
+
+    .seller-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 16px 10px;
+    }
+    .seller-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #e8f4fd 0%, #d1ecf1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .seller-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .seller-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--gray-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .seller-location {
+      font-size: 12px;
+      color: var(--gray-500);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .seller-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .seller-rating {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--green);
+      color: white;
+    }
+    .seller-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .badge-open { background: #d4edda; color: #155724; }
+    .badge-closed { background: #f8d7da; color: #721c24; }
+    .badge-preorder { background: #fff3cd; color: #856404; }
+    .badge-delivery { background: #cce5ff; color: #004085; }
+    .badge-distance { background: var(--gray-100); color: var(--gray-700); }
+    .badge-orders { background: var(--gray-100); color: var(--gray-700); }
+
+    /* Menu preview strip */
+    .seller-menu-preview {
+      padding: 0 16px 14px;
+    }
+    .menu-items-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px 0;
+    }
+    .menu-items-strip::-webkit-scrollbar { display: none; }
+
+    .menu-preview-item {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 80px;
+      max-width: 90px;
+    }
+    .menu-preview-img {
+      width: 68px;
+      height: 68px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      overflow: hidden;
+    }
+    .menu-preview-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .menu-preview-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-700);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 80px;
+    }
+    .menu-preview-price {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .seller-divider {
+      height: 1px;
+      background: var(--gray-100);
+      margin: 0 16px;
+    }
+
+    .seller-card-footer {
+      padding: 10px 16px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .seller-item-count {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .seller-cta {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    @media (max-width: 768px) {
+      .menu-preview-img { width: 60px; height: 60px; }
+      .menu-preview-item { min-width: 70px; max-width: 80px; }
+    }
+
+    @media (min-width: 769px) {
+      .seller-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+
+  <script>
+    import { getActiveListings, supabase } from "../lib/supabase";
+    import { SPECIES, getSpeciesDisplay } from "../lib/species";
+    import type { FishListing, Seller } from "../lib/supabase";
+
+    function esc(str: string): string {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function getBuyerLocation(): { lat: number; lng: number; name: string } | null {
+      try {
+        const saved = localStorage.getItem("zepto_location");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+      return null;
+    }
+
+    function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function isSellerOpen(opensAt: string | null, closesAt: string | null): boolean {
+      if (!opensAt || !closesAt) return true;
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const current = h * 60 + m;
+      const [oh, om] = opensAt.split(":").map(Number);
+      const [ch, cm] = closesAt.split(":").map(Number);
+      const open = oh * 60 + (om || 0);
+      const close = ch * 60 + (cm || 0);
+      if (close > open) return current >= open && current < close;
+      return current >= open || current < close;
+    }
+
+    const FISH_EMOJI: Record<string, string> = {
+      pomfret: "🐟", surmai: "🐠", rawas: "🐡", bangda: "🐟", bombil: "🍤",
+      prawns: "🦐", crab: "🦀", squid: "🦑", lobster: "🦞", oyster: "🦪",
+      clam: "🐚", sardine: "🐟", sole: "🐟", hilsa: "🐟", rohu: "🐟", catla: "🐟",
+    };
+
+    interface SellerGroup {
+      seller: Seller;
+      listings: FishListing[];
+      distance: number | null;
+      isOpen: boolean;
+      inDeliveryRange: boolean;
+      inServiceArea: boolean;
+    }
+
+    let allGroups: SellerGroup[] = [];
+    let currentFilter = "all";
+
+    async function loadCatalog() {
+      const loadingEl = document.getElementById("loading")!;
+      const sellersSection = document.getElementById("sellers-section")!;
+      const emptyState = document.getElementById("empty-state")!;
+
+      try {
+        // Get active listings + all sellers (even without active listings, for pre-order)
+        const [listings, allSellersRes] = await Promise.all([
+          getActiveListings().catch(() => [] as FishListing[]),
+          supabase.from("sellers").select("*").then(r => r.data || []),
+        ]);
+
+        // Group listings by seller
+        const sellerMap = new Map<string, SellerGroup>();
+        const buyerLoc = getBuyerLocation();
+
+        // First, add all sellers (even without active listings)
+        for (const s of allSellersRes) {
+          const seller = s as Seller;
+          const dist = buyerLoc && seller.lat != null && seller.lng != null
+            ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(seller.lat), Number(seller.lng))
+            : null;
+
+          const inRange = seller.has_delivery && dist !== null && seller.delivery_rad != null
+            ? dist <= seller.delivery_rad
+            : false;
+
+          const rad = seller.delivery_rad || 10;
+          const inArea = dist !== null ? dist <= rad : true; // no location = show all
+
+          sellerMap.set(seller.id, {
+            seller,
+            listings: [],
+            distance: dist,
+            isOpen: isSellerOpen(seller.opens_at, seller.closes_at),
+            inDeliveryRange: inRange,
+            inServiceArea: inArea,
+          });
+        }
+
+        // Then add active listings to their sellers
+        for (const l of listings) {
+          const seller = (l as any).seller as Seller;
+          if (!seller) continue;
+          if (sellerMap.has(seller.id)) {
+            sellerMap.get(seller.id)!.listings.push(l);
+          }
+        }
+
+        allGroups = Array.from(sellerMap.values());
+
+        // Sort: in-service-area first, then open first, then by distance
+        allGroups.sort((a, b) => {
+          if (a.inServiceArea !== b.inServiceArea) return a.inServiceArea ? -1 : 1;
+          if (a.isOpen !== b.isOpen) return a.isOpen ? -1 : 1;
+          if (a.distance !== null && b.distance !== null) return a.distance - b.distance;
+          if (a.distance !== null) return -1;
+          if (b.distance !== null) return 1;
+          return (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0);
+        });
+
+        requestAnimationFrame(() => {
+          loadingEl.style.display = "none";
+          renderSellers();
+          sellersSection.classList.add("fade-in");
+        });
+      } catch (err) {
+        loadingEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red);">Failed to load. Pull to refresh.</div>`;
+        console.error("Catalog error:", err);
+      }
+    }
+
+    function renderSellers() {
+      const sellersSection = document.getElementById("sellers-section")!;
+      const emptyState = document.getElementById("empty-state")!;
+      const container = document.getElementById("sellers-container")!;
+      const countBadge = document.getElementById("seller-count")!;
+      const searchQuery = (document.getElementById("search-input") as HTMLInputElement).value.toLowerCase().trim();
+
+      // Recalculate distance and delivery range with current buyer location
+      const buyerLoc = getBuyerLocation();
+      for (const g of allGroups) {
+        const s = g.seller;
+        g.distance = buyerLoc && s.lat != null && s.lng != null
+          ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
+          : null;
+        g.inDeliveryRange = s.has_delivery && g.distance !== null && s.delivery_rad != null
+          ? g.distance <= s.delivery_rad
+          : false;
+        const rad = s.delivery_rad || 10;
+        g.inServiceArea = g.distance !== null ? g.distance <= rad : !buyerLoc;
+      }
+
+      let filtered = [...allGroups];
+
+      // Search filter — match seller name, location, or any listing species
+      if (searchQuery) {
+        filtered = filtered.filter(g => {
+          const nameMatch = g.seller.name.toLowerCase().includes(searchQuery)
+            || (g.seller.location_name || "").toLowerCase().includes(searchQuery);
+          const speciesMatch = g.listings.some(l => {
+            const display = getSpeciesDisplay(l.species).toLowerCase();
+            const species = SPECIES[l.species as keyof typeof SPECIES];
+            const marathi = species?.marathi?.toLowerCase() || "";
+            return display.includes(searchQuery) || marathi.includes(searchQuery) || l.species.includes(searchQuery);
+          });
+          return nameMatch || speciesMatch;
+        });
+      }
+
+      // Category filter
+      if (currentFilter === "open") {
+        filtered = filtered.filter(g => g.isOpen);
+      } else if (currentFilter === "delivery") {
+        filtered = filtered.filter(g => g.inDeliveryRange);
+      } else if (currentFilter === "preorder") {
+        filtered = filtered.filter(g => !g.isOpen && g.seller.accepts_preorder !== false);
+      } else if (currentFilter === "rating") {
+        filtered = filtered.filter(g => g.seller.rating_avg > 0);
+        filtered.sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
+      }
+
+      if (filtered.length === 0) {
+        sellersSection.style.display = "none";
+        emptyState.style.display = "block";
+        const buyerLoc = getBuyerLocation();
+        const emptyTitle = document.getElementById("empty-title")!;
+        const emptyMsg = document.getElementById("empty-msg")!;
+        if (!buyerLoc) {
+          emptyTitle.textContent = "Set your location";
+          emptyMsg.innerHTML = `We need your location to show nearby sellers. <a href="#" onclick="window.dispatchEvent(new CustomEvent('open-location-picker'));return false;" style="color:var(--primary);text-decoration:underline;">Set location</a>`;
+        } else if (currentFilter !== "all") {
+          emptyTitle.textContent = "No sellers match this filter";
+          emptyMsg.textContent = "Try a different filter or check back later.";
+        } else {
+          emptyTitle.textContent = "No sellers in your area";
+          emptyMsg.innerHTML = `No sellers deliver to your location yet. <a href="#" onclick="window.dispatchEvent(new CustomEvent('open-location-picker'));return false;" style="color:var(--primary);text-decoration:underline;">Change location</a>`;
+        }
+        return;
+      }
+
+      emptyState.style.display = "none";
+      sellersSection.style.display = "block";
+      countBadge.textContent = String(filtered.length);
+
+      // Lock height during innerHTML swap to prevent collapse flicker
+      const prevHeight = container.offsetHeight;
+      if (prevHeight > 0) container.style.minHeight = prevHeight + "px";
+
+      container.innerHTML = filtered.map(g => {
+        const s = g.seller;
+        const itemCount = g.listings.length;
+
+        // Menu preview — show top 5 items
+        const previewItems = g.listings.slice(0, 5).map(l => {
+          const name = SPECIES[l.species as keyof typeof SPECIES]?.english || l.species;
+          const emoji = FISH_EMOJI[l.species] || "🐟";
+          const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
+          return `
+            <div class="menu-preview-item">
+              <div class="menu-preview-img">
+                ${l.photo_url
+                  ? `<img src="${esc(l.photo_url)}" alt="${esc(name)}" loading="lazy" />`
+                  : emoji}
+              </div>
+              <div class="menu-preview-name">${esc(name)}</div>
+              <div class="menu-preview-price">₹${l.price}/${unitLabel}</div>
+            </div>
+          `;
+        }).join("");
+
+        const opensAt = (s.opens_at || "05:00").slice(0, 5);
+        const closesAt = (s.closes_at || "14:00").slice(0, 5);
+
+        return `
+          <a href="/seller/${s.id}" class="seller-card${!g.inServiceArea ? ' seller-card-grey' : ''}">
+            ${!g.inServiceArea ? `<div class="seller-out-of-area">Outside your area</div>` : ""}
+            ${g.isOpen && g.inServiceArea
+              ? `<div class="seller-open-dot" title="Open now"></div>`
+              : !g.inServiceArea ? ""
+              : `<div class="seller-hours-tag">🕐 ${opensAt} – ${closesAt}</div>`}
+            <div class="seller-card-header">
+              <div class="seller-avatar">🐟</div>
+              <div class="seller-info">
+                <div class="seller-name">${esc(s.name)}</div>
+                <div class="seller-location">${esc(s.location_name || s.location || "")}</div>
+                <div class="seller-badges">
+                  ${s.rating_avg > 0 ? `<span class="seller-rating">★ ${s.rating_avg}</span>` : ""}
+                  ${!g.isOpen
+                    ? (s.accepts_preorder !== false
+                      ? `<span class="seller-badge badge-preorder">Pre-order</span>`
+                      : `<span class="seller-badge badge-closed">Closed</span>`)
+                    : ""}
+                  ${g.inDeliveryRange
+                    ? `<span class="seller-badge badge-delivery">🚚 Delivers to you</span>`
+                    : s.has_delivery
+                      ? `<span class="seller-badge badge-delivery" style="opacity:0.5;">🚚 ${s.delivery_rad || "?"}km radius</span>`
+                      : `<span class="seller-badge" style="background:var(--gray-100);color:var(--gray-500);">Pickup only</span>`}
+                  ${g.distance !== null ? `<span class="seller-badge badge-distance">${g.distance.toFixed(1)} km</span>` : ""}
+                </div>
+              </div>
+            </div>
+            ${previewItems
+              ? `<div class="seller-menu-preview"><div class="menu-items-strip">${previewItems}</div></div>`
+              : !g.isOpen ? `<div style="padding:0 16px 12px;"><span style="font-size:12px;color:var(--gray-500);">Opens ${(g.seller.opens_at || "05:00").slice(0,5)} · Order now for tomorrow</span></div>` : ""}
+            <div class="seller-divider"></div>
+            <div class="seller-card-footer">
+              <span class="seller-item-count">${itemCount} item${itemCount !== 1 ? "s" : ""}</span>
+              <span class="seller-cta">View Menu →</span>
+            </div>
+          </a>
+        `;
+      }).join("");
+
+      // Release height lock after new content is painted
+      requestAnimationFrame(() => { container.style.minHeight = ""; });
+    }
+
+    // Search
+    let searchTimeout: any;
+    document.getElementById("search-input")?.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => renderSellers(), 200);
+    });
+
+    // Category chips
+    document.querySelectorAll(".chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        currentFilter = (chip as HTMLElement).dataset.filter || "all";
+        renderSellers();
+      });
+    });
+
+    // Location
+    function checkLocation() {
+      const saved = localStorage.getItem("zepto_location");
+      if (!saved) {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              try {
+                const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&zoom=14`);
+                const data = await resp.json();
+                const name = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || "Your location";
+                localStorage.setItem("zepto_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name }));
+                window.dispatchEvent(new CustomEvent("location-updated"));
+                renderSellers();
+              } catch {
+                localStorage.setItem("zepto_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your location" }));
+                window.dispatchEvent(new CustomEvent("location-updated"));
+              }
+            },
+            () => setTimeout(() => window.dispatchEvent(new CustomEvent("open-location-picker")), 500),
+            { timeout: 5000 }
+          );
+        } else {
+          setTimeout(() => window.dispatchEvent(new CustomEvent("open-location-picker")), 500);
+        }
+      }
+    }
+
+    window.addEventListener("location-updated", () => {
+      // Re-sort by new distances then render
+      allGroups.sort((a, b) => {
+        const buyerLoc = getBuyerLocation();
+        if (buyerLoc) {
+          // Recalc distances for sort
+          for (const g of [a, b]) {
+            const s = g.seller;
+            g.distance = s.lat != null && s.lng != null
+              ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
+              : null;
+          }
+        }
+        if (a.isOpen !== b.isOpen) return a.isOpen ? -1 : 1;
+        if (a.distance !== null && b.distance !== null) return a.distance - b.distance;
+        if (a.distance !== null) return -1;
+        if (b.distance !== null) return 1;
+        return (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0);
+      });
+      renderSellers();
+    });
+
+    loadCatalog();
+    checkLocation();
+  </script>
+</AppShell>

@@ -1,0 +1,319 @@
+---
+import AppShell from "../components/AppShell.astro";
+import LoginModal from "../components/LoginModal.astro";
+import LocationPicker from "../components/LocationPicker.astro";
+export const prerender = false;
+---
+
+<AppShell title={`Profile - ${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
+  <!-- Toast notification -->
+  <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
+  <div id="me-container">
+    <!-- Not logged in -->
+    <div id="me-guest" style="display:none;text-align:center;padding:48px 16px;">
+      <div style="font-size:48px;margin-bottom:16px;">👤</div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Your profile</h2>
+      <p class="text-muted" style="margin-bottom:24px;">Log in to save your preferences and track orders</p>
+      <button class="btn btn-primary tap-target" id="me-login-btn" style="min-height:44px;padding:12px 32px;">
+        Log in with phone
+      </button>
+
+      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--gray-200);">
+        <a href="/dashboard/login" class="text-muted" style="font-size:13px;">Are you a seller? Log in here →</a>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="me-loading" style="padding:24px 0;">
+      <div class="card"><div class="card-body"><div class="skeleton" style="height:24px;width:40%;margin-bottom:12px;"></div><div class="skeleton" style="height:16px;width:60%;"></div></div></div>
+    </div>
+
+    <!-- Profile -->
+    <div id="me-profile" style="display:none;padding:16px 0;">
+      <h2 class="section-title">Profile</h2>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;" id="me-avatar">?</div>
+            <div>
+              <div style="font-weight:700;font-size:16px;" id="me-phone"></div>
+              <div class="text-muted" id="me-since"></div>
+            </div>
+          </div>
+
+          <!-- Editable profile fields -->
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <div style="flex:1;">
+              <label for="me-first-name">First name</label>
+              <input type="text" id="me-first-name" placeholder="First name" style="font-size:14px;" />
+            </div>
+            <div style="flex:1;">
+              <label for="me-last-name">Last name</label>
+              <input type="text" id="me-last-name" placeholder="Last name" style="font-size:14px;" />
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label for="me-email">Email (optional)</label>
+            <input type="email" id="me-email" placeholder="you@example.com" style="font-size:14px;" />
+          </div>
+          <button class="btn btn-primary tap-target" id="me-save-profile" style="width:100%;padding:10px;font-size:14px;">Save profile</button>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">📍 Location</div>
+              <div class="text-muted" id="me-location">Not set</div>
+            </div>
+            <button class="btn tap-target" id="me-change-location" style="background:var(--gray-100);color:var(--blue);font-size:13px;padding:8px 16px;">
+              Change
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buyer order push (not seller new-order alerts — those are in Dashboard → Profile) -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div style="min-width:0;">
+              <div style="font-weight:600;font-size:14px;">🔔 Order updates (buyer)</div>
+              <div class="text-muted" style="font-size:12px;margin-top:4px;line-height:1.35;">
+                Alerts when a seller confirms or changes <strong>your</strong> order. Turn on here — not on the seller dashboard.
+              </div>
+              <div class="text-muted" id="me-push-status" style="font-size:13px;font-weight:600;margin-top:8px;">Off</div>
+            </div>
+            <button
+              type="button"
+              id="me-notify-bell"
+              class="btn tap-target notify-bell-btn"
+              style="background:var(--gray-100);padding:8px 14px;font-size:20px;min-width:48px;min-height:44px;flex-shrink:0;"
+              title="Turn buyer order alerts on or off"
+              aria-label="Buyer order notifications"
+            >
+              🔕
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- iOS install banner -->
+      <div id="ios-install-hint" class="card" style="margin-bottom:16px;display:none;">
+        <div class="card-body" style="background:var(--blue);color:white;">
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px;">📱 Add to Home Screen</div>
+          <div style="font-size:13px;opacity:0.9;">Install Zepto for push notifications on iOS. Tap Share → Add to Home Screen.</div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <button class="btn tap-target" id="me-logout" style="width:100%;background:var(--gray-100);color:var(--red);margin-top:8px;">
+        Log out
+      </button>
+    </div>
+  </div>
+
+  <script>
+    import { getSession, signOut } from "../lib/auth";
+    import { isPushSubscribed, subscribePush, unsubscribePush } from "../lib/push";
+    import { setBellLoading, setButtonLoading } from "../lib/button-loading";
+
+    function showToast(message: string, type: "success" | "error" = "success") {
+      const toast = document.getElementById("toast")!;
+      toast.textContent = message;
+      toast.style.display = "block";
+      toast.style.opacity = "1";
+      toast.style.background = type === "success" ? "var(--green)" : "var(--red)";
+      toast.style.color = "white";
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => { toast.style.display = "none"; }, 300);
+      }, 3000);
+    }
+
+    async function initProfile() {
+      const guestEl = document.getElementById("me-guest")!;
+      const loadingEl = document.getElementById("me-loading")!;
+      const profileEl = document.getElementById("me-profile")!;
+
+      // Reset all states
+      guestEl.style.display = "none";
+      loadingEl.style.display = "none";
+      profileEl.style.display = "none";
+
+      const session = getSession();
+
+      if (!session) {
+        guestEl.style.display = "block";
+
+        document.getElementById("me-login-btn")?.addEventListener("click", () => {
+          window.dispatchEvent(new CustomEvent("start-order"));
+        });
+        return;
+      }
+
+      loadingEl.style.display = "none";
+      profileEl.style.display = "block";
+
+      // Phone
+      const phone = session.phone || "Unknown";
+      document.getElementById("me-phone")!.textContent = `+91 ${phone}`;
+      document.getElementById("me-avatar")!.textContent = phone.slice(-2);
+
+      // Member since
+      document.getElementById("me-since")!.textContent = "";
+
+      // Load profile fields from API
+      const firstNameInput = document.getElementById("me-first-name") as HTMLInputElement;
+      const lastNameInput = document.getElementById("me-last-name") as HTMLInputElement;
+      const emailInput = document.getElementById("me-email") as HTMLInputElement;
+      const saveBtn = document.getElementById("me-save-profile") as HTMLButtonElement;
+
+      let serverPushEnabled = false;
+      try {
+        const profileRes = await fetch(`/api/buyer/profile?buyer_id=${session.buyer_id}`);
+        if (profileRes.ok) {
+          const { buyer } = await profileRes.json();
+          serverPushEnabled = buyer.push_enabled === true;
+          if (buyer.first_name) firstNameInput.value = buyer.first_name;
+          if (buyer.last_name) lastNameInput.value = buyer.last_name;
+          if (buyer.email) emailInput.value = buyer.email;
+          if (buyer.first_name) {
+            document.getElementById("me-avatar")!.textContent =
+              (buyer.first_name[0] + (buyer.last_name?.[0] || "")).toUpperCase();
+          }
+        }
+      } catch {}
+
+      // This device is subscribed but DB was never updated (e.g. failed save) — re-sync so /api/push-notify works
+      if ((await isPushSubscribed()) && !serverPushEnabled) {
+        await subscribePush().catch(() => {});
+      }
+
+      saveBtn?.addEventListener("click", async () => {
+        setButtonLoading(saveBtn, true, "Save profile", "on-dark");
+        try {
+          const res = await fetch("/api/buyer/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buyer_id: session.buyer_id,
+              updates: {
+                first_name: firstNameInput.value.trim(),
+                last_name: lastNameInput.value.trim(),
+                email: emailInput.value.trim(),
+              },
+            }),
+          });
+          if (!res.ok) throw new Error("Failed to save");
+          showToast("Profile saved!");
+          if (firstNameInput.value.trim()) {
+            document.getElementById("me-avatar")!.textContent =
+              (firstNameInput.value[0] + (lastNameInput.value?.[0] || "")).toUpperCase();
+          }
+        } catch (err: any) {
+          showToast(err.message || "Failed to save", "error");
+        } finally {
+          setButtonLoading(saveBtn, false, "Save profile", "on-dark");
+        }
+      });
+
+      // Location
+      const savedLoc = localStorage.getItem("zepto_location");
+      if (savedLoc) {
+        try {
+          const loc = JSON.parse(savedLoc);
+          document.getElementById("me-location")!.textContent = loc.name || "Set";
+        } catch {}
+      }
+
+      // Change location
+      document.getElementById("me-change-location")?.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("open-location-picker"));
+      });
+
+      // Push notifications (bell = loading spinner while working)
+      const notifyBell = document.getElementById("me-notify-bell") as HTMLButtonElement;
+      const pushStatus = document.getElementById("me-push-status")!;
+
+      const subscribedInit = await isPushSubscribed();
+      notifyBell.textContent = subscribedInit ? "🔔" : "🔕";
+      pushStatus.textContent = subscribedInit ? "On for this device" : "Off";
+
+      notifyBell.addEventListener("click", async () => {
+        const wasOn = await isPushSubscribed();
+        const idleIcon = wasOn ? "🔔" : "🔕";
+        setBellLoading(notifyBell, true, idleIcon);
+        try {
+          if (wasOn) {
+            await unsubscribePush();
+            setBellLoading(notifyBell, false, "🔕");
+            pushStatus.textContent = "Off";
+            showToast("Order alerts disabled");
+          } else {
+            const ok = await subscribePush();
+            if (ok) {
+              setBellLoading(notifyBell, false, "🔔");
+              pushStatus.textContent = "On for this device";
+              showToast("Order alerts enabled");
+            } else {
+              setBellLoading(notifyBell, false, "🔕");
+              showToast("Could not enable notifications. Allow permissions or check VAPID setup.", "error");
+            }
+          }
+        } catch {
+          const on = await isPushSubscribed();
+          setBellLoading(notifyBell, false, on ? "🔔" : "🔕");
+          pushStatus.textContent = on ? "On for this device" : "Off";
+          showToast("Failed to update notifications", "error");
+        }
+      });
+
+      // iOS install hint
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+      if (isIos && !isStandalone) {
+        document.getElementById("ios-install-hint")!.style.display = "block";
+      }
+
+      // Logout
+      document.getElementById("me-logout")?.addEventListener("click", async () => {
+        const logoutBtn = document.getElementById("me-logout") as HTMLButtonElement;
+        setButtonLoading(logoutBtn, true, "Log out", "neutral");
+        await signOut();
+        window.location.href = "/";
+      });
+    }
+
+    // Re-render profile after login
+    window.addEventListener("buyer-logged-in", () => {
+      initProfile();
+    });
+
+    // Listen for location updates
+    window.addEventListener("location-updated", () => {
+      const savedLoc = localStorage.getItem("zepto_location");
+      if (savedLoc) {
+        try {
+          const loc = JSON.parse(savedLoc);
+          const el = document.getElementById("me-location");
+          if (el) el.textContent = loc.name || "Set";
+        } catch {}
+      }
+    });
+
+    initProfile();
+  </script>
+
+  <LoginModal />
+  <LocationPicker />
+</AppShell>
+
+<style>
+  .notify-bell-btn {
+    position: relative;
+  }
+</style>
