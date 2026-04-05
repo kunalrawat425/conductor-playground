@@ -104,10 +104,20 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             </form>
           `;
 
+          function showToast(message: string, type: "success" | "error" = "success") {
+            let toast = document.getElementById("toast");
+            if (!toast) { toast = document.createElement("div"); toast.id = "toast"; document.body.appendChild(toast); }
+            toast.textContent = message;
+            toast.style.cssText = `position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;background:${type === "success" ? "var(--green)" : "var(--red)"};`;
+            setTimeout(() => { toast!.style.opacity = "0"; setTimeout(() => { toast!.style.display = "none"; }, 300); }, 3000);
+          }
+
           document.getElementById("edit-form")!.addEventListener("submit", async (e) => {
             e.preventDefault();
             const form = e.target as HTMLFormElement;
             const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+            submitBtn.disabled = true; submitBtn.textContent = "Updating..."; submitBtn.style.opacity = "0.6";
 
             try {
               const photoFile = formData.get("photo") as File;
@@ -125,30 +135,25 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
                 pickup_loc: formData.get("pickup_loc") as string,
               }, seller.id);
 
-              const toast = document.createElement("div");
-              toast.textContent = "Listing updated!";
-              toast.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--green);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
-              document.body.appendChild(toast);
+              showToast("Listing updated!");
               setTimeout(() => { window.location.href = "/dashboard"; }, 800);
             } catch (err) {
-              const errEl = document.getElementById("error-msg")!;
-              errEl.textContent = (err as any).message || "Update failed.";
-              errEl.style.display = "block";
+              showToast((err as any).message || "Update failed.", "error");
+              submitBtn.disabled = false; submitBtn.textContent = "Update Listing"; submitBtn.style.opacity = "1";
             }
           });
 
-          document.getElementById("toggle-btn")!.addEventListener("click", async () => {
+          const toggleBtn = document.getElementById("toggle-btn") as HTMLButtonElement;
+          toggleBtn.addEventListener("click", async () => {
+            const origText = toggleBtn.textContent!;
+            toggleBtn.disabled = true; toggleBtn.textContent = "..."; toggleBtn.style.opacity = "0.6";
             try {
               await updateListing(listingId, { is_available: !listing.is_available }, seller.id);
-              const toast = document.createElement("div");
-              toast.textContent = listing.is_available ? "Marked unavailable" : "Marked available";
-              toast.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--green);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
-              document.body.appendChild(toast);
+              showToast(listing.is_available ? "Marked unavailable" : "Marked available");
               setTimeout(() => { window.location.reload(); }, 800);
             } catch (err) {
-              const errEl = document.getElementById("error-msg")!;
-              errEl.textContent = (err as any).message || "Failed to update.";
-              errEl.style.display = "block";
+              showToast((err as any).message || "Failed to update.", "error");
+              toggleBtn.disabled = false; toggleBtn.textContent = origText; toggleBtn.style.opacity = "1";
             }
           });
         } catch (err: any) {

@@ -74,6 +74,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             return;
           }
 
+          const submitBtn = (form as HTMLFormElement).querySelector('button[type="submit"]') as HTMLButtonElement;
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Creating..."; submitBtn.style.opacity = "0.6"; }
+
           try {
             let photoUrl: string | null = null;
             if (photoFile && photoFile.size > 0) {
@@ -93,22 +96,25 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
               pickup_loc: pickupLoc,
             });
 
-            // Brief success feedback then redirect
-            const toast = document.createElement("div");
-            toast.textContent = "Listing created!";
-            toast.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--green);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
-            document.body.appendChild(toast);
+            showToast("Listing created!", "success");
             setTimeout(() => { window.location.href = "/dashboard"; }, 800);
           } catch (err: any) {
-            showError(err.message || "Failed to create listing.");
+            showToast(err.message || "Failed to create listing.", "error");
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Add Listing"; submitBtn.style.opacity = "1"; }
           }
         });
       }
 
+      function showToast(message: string, type: "success" | "error" = "success") {
+        let toast = document.getElementById("toast");
+        if (!toast) { toast = document.createElement("div"); toast.id = "toast"; document.body.appendChild(toast); }
+        toast.textContent = message;
+        toast.style.cssText = `position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;background:${type === "success" ? "var(--green)" : "var(--red)"};`;
+        setTimeout(() => { toast!.style.opacity = "0"; setTimeout(() => { toast!.style.display = "none"; }, 300); }, 3000);
+      }
+
       function showError(msg: string) {
-        const el = document.getElementById("error-msg")!;
-        el.textContent = msg;
-        el.style.display = "block";
+        showToast(msg, "error");
       }
 
       init();
