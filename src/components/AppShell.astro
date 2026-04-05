@@ -5,13 +5,22 @@ interface Props {
   ogImage?: string;
   activeTab?: "home" | "orders" | "me";
   showLocationBadge?: boolean;
+  /** Trust + CTA strip for buyers viewing a seller menu (recruit new sellers). */
+  showSellerRecruit?: boolean;
 }
 
 import VercelAnalytics from "./VercelAnalytics.astro";
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 const defaultDescription = "Order fresh fish from local Mumbai sellers. Pre-order tonight, pick up tomorrow morning.";
-const { title = brandName, description = defaultDescription, ogImage = "/og-image.png", activeTab = "home", showLocationBadge = true } = Astro.props;
+const {
+  title = brandName,
+  description = defaultDescription,
+  ogImage = "/og-image.png",
+  activeTab = "home",
+  showLocationBadge = true,
+  showSellerRecruit = false,
+} = Astro.props;
 ---
 
 <html lang="en">
@@ -38,25 +47,28 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
   </head>
   <body>
     <div class="app-shell">
-      <!-- Fixed header -->
-      <header class="app-header">
-        <a href="/" class="app-logo">🐟 {brandName}</a>
-        <div class="app-header-actions">
-          <a
-            href="/dashboard/login"
-            class="seller-cta"
-            title="Create your free seller account with phone OTP. Same login buyers use. List fish, pre-orders, and orders in one place."
-          >
-            <span class="seller-cta-main">Join sellers like you</span>
-            <span class="seller-cta-sub">Free account · same app as buyers</span>
-          </a>
+      <div class:list={["app-header-stack", showSellerRecruit && "app-header-stack--recruit"]}>
+        <header class="app-header">
+          <a href="/" class="app-logo">🐟 {brandName}</a>
           {showLocationBadge && (
             <button class="location-badge" id="location-badge" aria-label="Change location">
               <span id="location-text">Set location</span>
             </button>
           )}
-        </div>
-      </header>
+        </header>
+        {showSellerRecruit && (
+          <div class="app-header-recruit" role="region" aria-label="For fish sellers">
+            <p class="app-header-recruit-text">
+              <span class="app-header-recruit-lead">Sellers like this one use {brandName} to list fish and take orders.</span>
+              <span class="app-header-recruit-actions">
+                <a href="/dashboard/login" class="app-header-recruit-link tap-target">Create seller account</a>
+                <span class="app-header-recruit-dot" aria-hidden="true">·</span>
+                <a href="/dashboard" class="app-header-recruit-link tap-target">Seller dashboard</a>
+              </span>
+            </p>
+          </div>
+        )}
+      </div>
 
       <!-- Scrollable content area -->
       <main class="app-content" id="app-content">
@@ -141,61 +153,72 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
   }
 
   /* ===== HEADER ===== */
-  .app-header {
+  .app-header-stack {
     position: sticky;
     top: 0;
-    min-height: 48px;
     z-index: 100;
     background: white;
     border-bottom: 1px solid var(--gray-200);
-    padding: 6px 16px;
-    padding-top: max(6px, env(safe-area-inset-top));
+  }
+
+  .app-header-stack--recruit .app-header {
+    border-bottom: none;
+  }
+
+  .app-header {
+    height: 48px;
+    min-height: 48px;
+    padding: 0 16px;
+    padding-top: env(safe-area-inset-top);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
   }
 
-  .app-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
+  .app-header-recruit {
+    padding: 10px 16px 12px;
+    background: linear-gradient(180deg, var(--gray-50) 0%, #f0f6ff 100%);
+    border-top: 1px solid var(--gray-100);
   }
 
-  .seller-cta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    text-align: right;
-    text-decoration: none;
-    line-height: 1.2;
-    max-width: min(168px, 46vw);
-    padding: 4px 0;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .seller-cta-main {
+  .app-header-recruit-text {
+    margin: 0;
     font-size: 12px;
+    line-height: 1.45;
+    color: var(--gray-700);
+  }
+
+  .app-header-recruit-lead {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: var(--gray-800);
+  }
+
+  .app-header-recruit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+  }
+
+  .app-header-recruit-dot {
+    color: var(--gray-400);
+    user-select: none;
+  }
+
+  .app-header-recruit-link {
+    font-size: 13px;
     font-weight: 700;
     color: var(--blue);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 
-  .seller-cta-sub {
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--gray-500);
-  }
-
-  .seller-cta:hover .seller-cta-main {
+  .app-header-recruit-link:hover {
     text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  @media (max-width: 340px) {
-    .seller-cta-sub {
-      display: none;
-    }
   }
 
   .app-logo {
@@ -445,10 +468,15 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
       padding-bottom: 24px;
     }
 
-    .app-header {
+    .app-header-stack {
       max-width: 832px;
       margin: 0 auto;
-      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .app-header {
+      max-width: none;
+      margin: 0;
+      border-bottom: none;
     }
 
     /* Desktop modal instead of fullscreen */
