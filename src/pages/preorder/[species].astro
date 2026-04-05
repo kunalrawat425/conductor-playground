@@ -56,7 +56,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <button class="btn btn-primary" id="confirm-order-btn" style="width:100%;min-height:48px;font-size:16px;border-radius:12px;">
       Confirm Order
     </button>
-    <div id="order-error" style="color:var(--red);font-size:13px;margin-top:8px;display:none;"></div>
+    <!-- Toast notification -->
+    <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
   </div>
 
   <LoginModal />
@@ -412,7 +413,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
         sheet.classList.add("open");
         backdrop.classList.add("visible");
-        document.getElementById("order-error").style.display = "none";
       }
 
       function closeOrderSheet() {
@@ -505,12 +505,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         if (session) await submitOrder(session);
       });
 
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.style.display = "block";
+        toast.style.opacity = "1";
+        toast.style.background = type === "success" ? "var(--green)" : "var(--red)";
+        toast.style.color = "white";
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          setTimeout(() => { toast.style.display = "none"; }, 300);
+        }, 3000);
+      }
+
       async function submitOrder(session) {
         const btn = document.getElementById("confirm-order-btn");
-        const errEl = document.getElementById("order-error");
         btn.textContent = "Placing order...";
         btn.disabled = true;
-        errEl.style.display = "none";
+        btn.style.opacity = "0.6";
 
         const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
         const totalPrice = qty * currentOrder.price;
@@ -534,12 +546,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Order failed");
 
+          showToast("Order placed!");
           window.location.href = "/track";
         } catch (err) {
-          errEl.textContent = err.message || "Order failed. Please try again.";
-          errEl.style.display = "block";
+          showToast(err.message || "Order failed. Please try again.", "error");
           btn.textContent = "Confirm Order";
           btn.disabled = false;
+          btn.style.opacity = "1";
         }
       }
     });

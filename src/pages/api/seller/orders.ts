@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 
 export const prerender = false;
 
@@ -12,7 +13,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
  * Uses service_role key to bypass RLS
  * Notifies buyer via push when status changes
  */
-export const POST: APIRoute = async ({ request, url }) => {
+export const POST: APIRoute = async ({ request }) => {
   try {
     const { seller_id, order_id, status, final_price } = await request.json();
 
@@ -61,22 +62,18 @@ export const POST: APIRoute = async ({ request, url }) => {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 
-    // Notify buyer via push notification
+    // Notify buyer via push (in-process — avoids serverless self-fetch to /api/push-notify)
     if (order.buyer_id) {
-      try {
-        const origin = url.origin;
-        await fetch(`${origin}/api/push-notify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            buyer_id: order.buyer_id,
-            status,
-            species: order.species || "Fish",
-            final_price: final_price || null,
-          }),
-        });
-      } catch {
-        // Non-blocking — order update still succeeds even if notification fails
+      const pushResult = await sendBuyerOrderPush({
+        buyer_id: order.buyer_id,
+        status,
+        species: order.species || "Fish",
+        final_price: final_price ?? null,
+      });
+      if (!pushResult.ok) {
+        console.error("Buyer push failed:", pushResult.error);
+      } else if (!pushResult.sent) {
+        console.info("Buyer push skipped:", pushResult.reason);
       }
     }
 

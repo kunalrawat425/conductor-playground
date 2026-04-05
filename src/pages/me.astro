@@ -76,18 +76,27 @@ export const prerender = false;
         </div>
       </div>
 
-      <!-- Notifications -->
+      <!-- Buyer order push (not seller new-order alerts — those are in Dashboard → Profile) -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <div style="font-weight:600;font-size:14px;">🔔 Notifications</div>
-              <div class="text-muted" id="me-push-status">Off</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div style="min-width:0;">
+              <div style="font-weight:600;font-size:14px;">🔔 Order updates (buyer)</div>
+              <div class="text-muted" style="font-size:12px;margin-top:4px;line-height:1.35;">
+                Alerts when a seller confirms or changes <strong>your</strong> order. Turn on here — not on the seller dashboard.
+              </div>
+              <div class="text-muted" id="me-push-status" style="font-size:13px;font-weight:600;margin-top:8px;">Off</div>
             </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="me-push-toggle" />
-              <span class="toggle-slider"></span>
-            </label>
+            <button
+              type="button"
+              id="me-notify-bell"
+              class="btn tap-target notify-bell-btn"
+              style="background:var(--gray-100);padding:8px 14px;font-size:20px;min-width:48px;min-height:44px;flex-shrink:0;"
+              title="Turn buyer order alerts on or off"
+              aria-label="Buyer order notifications"
+            >
+              🔕
+            </button>
           </div>
         </div>
       </div>
@@ -109,7 +118,8 @@ export const prerender = false;
 
   <script>
     import { getSession, signOut } from "../lib/auth";
-    import { isPushSubscribed } from "../lib/push";
+    import { isPushSubscribed, subscribePush, unsubscribePush } from "../lib/push";
+    import { setBellLoading, setButtonLoading } from "../lib/button-loading";
 
     function showToast(message: string, type: "success" | "error" = "success") {
       const toast = document.getElementById("toast")!;
@@ -162,10 +172,12 @@ export const prerender = false;
       const emailInput = document.getElementById("me-email") as HTMLInputElement;
       const saveBtn = document.getElementById("me-save-profile") as HTMLButtonElement;
 
+      let serverPushEnabled = false;
       try {
         const profileRes = await fetch(`/api/buyer/profile?buyer_id=${session.buyer_id}`);
         if (profileRes.ok) {
           const { buyer } = await profileRes.json();
+          serverPushEnabled = buyer.push_enabled === true;
           if (buyer.first_name) firstNameInput.value = buyer.first_name;
           if (buyer.last_name) lastNameInput.value = buyer.last_name;
           if (buyer.email) emailInput.value = buyer.email;
@@ -176,10 +188,13 @@ export const prerender = false;
         }
       } catch {}
 
+      // This device is subscribed but DB was never updated (e.g. failed save) — re-sync so /api/push-notify works
+      if ((await isPushSubscribed()) && !serverPushEnabled) {
+        await subscribePush().catch(() => {});
+      }
+
       saveBtn?.addEventListener("click", async () => {
-        saveBtn.disabled = true;
-        saveBtn.textContent = "Saving...";
-        saveBtn.style.opacity = "0.6";
+        setButtonLoading(saveBtn, true, "Save profile", "on-dark");
         try {
           const res = await fetch("/api/buyer/profile", {
             method: "POST",
@@ -202,9 +217,7 @@ export const prerender = false;
         } catch (err: any) {
           showToast(err.message || "Failed to save", "error");
         } finally {
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Save profile";
-          saveBtn.style.opacity = "1";
+          setButtonLoading(saveBtn, false, "Save profile", "on-dark");
         }
       });
 
@@ -222,59 +235,41 @@ export const prerender = false;
         window.dispatchEvent(new CustomEvent("open-location-picker"));
       });
 
-      // Push notifications
-      const pushToggle = document.getElementById("me-push-toggle") as HTMLInputElement;
+      // Push notifications (bell = loading spinner while working)
+      const notifyBell = document.getElementById("me-notify-bell") as HTMLButtonElement;
       const pushStatus = document.getElementById("me-push-status")!;
 
-      const subscribed = await isPushSubscribed();
-      pushToggle.checked = subscribed;
-      pushStatus.textContent = subscribed ? "On" : "Off";
+      const subscribedInit = await isPushSubscribed();
+      notifyBell.textContent = subscribedInit ? "🔔" : "🔕";
+      pushStatus.textContent = subscribedInit ? "On for this device" : "Off";
 
-      pushToggle.addEventListener("change", async () => {
-        pushToggle.disabled = true;
-        if (pushToggle.checked) {
-          try {
-            const reg = await navigator.serviceWorker.ready;
-            let sub = await reg.pushManager.getSubscription();
-            if (!sub) {
-              const vapidKey = (import.meta as any).env?.PUBLIC_VAPID_KEY;
-              if (!vapidKey) { pushToggle.checked = false; pushStatus.textContent = "Off"; showToast("VAPID key not configured", "error"); pushToggle.disabled = false; return; }
-              const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
-              const b64 = (vapidKey + padding).replace(/-/g, "+").replace(/_/g, "/");
-              const raw = atob(b64);
-              const arr = new Uint8Array(raw.length);
-              for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-              sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: arr });
+      notifyBell.addEventListener("click", async () => {
+        const wasOn = await isPushSubscribed();
+        const idleIcon = wasOn ? "🔔" : "🔕";
+        setBellLoading(notifyBell, true, idleIcon);
+        try {
+          if (wasOn) {
+            await unsubscribePush();
+            setBellLoading(notifyBell, false, "🔕");
+            pushStatus.textContent = "Off";
+            showToast("Order alerts disabled");
+          } else {
+            const ok = await subscribePush();
+            if (ok) {
+              setBellLoading(notifyBell, false, "🔔");
+              pushStatus.textContent = "On for this device";
+              showToast("Order alerts enabled");
+            } else {
+              setBellLoading(notifyBell, false, "🔕");
+              showToast("Could not enable notifications. Allow permissions or check VAPID setup.", "error");
             }
-            await fetch("/api/buyer/push-subscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ buyer_id: session.buyer_id, subscription: sub.toJSON() }),
-            });
-            pushStatus.textContent = "On";
-            showToast("Notifications enabled!");
-          } catch {
-            pushToggle.checked = false;
-            pushStatus.textContent = "Off";
-            showToast("Could not enable notifications. Please allow permissions.", "error");
           }
-        } else {
-          try {
-            const reg = await navigator.serviceWorker?.ready;
-            const sub = await reg?.pushManager?.getSubscription();
-            if (sub) await sub.unsubscribe();
-            await fetch("/api/buyer/push-subscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ buyer_id: session.buyer_id, subscription: null }),
-            });
-            pushStatus.textContent = "Off";
-            showToast("Notifications disabled");
-          } catch {
-            showToast("Failed to update notifications", "error");
-          }
+        } catch {
+          const on = await isPushSubscribed();
+          setBellLoading(notifyBell, false, on ? "🔔" : "🔕");
+          pushStatus.textContent = on ? "On for this device" : "Off";
+          showToast("Failed to update notifications", "error");
         }
-        pushToggle.disabled = false;
       });
 
       // iOS install hint
@@ -286,6 +281,8 @@ export const prerender = false;
 
       // Logout
       document.getElementById("me-logout")?.addEventListener("click", async () => {
+        const logoutBtn = document.getElementById("me-logout") as HTMLButtonElement;
+        setButtonLoading(logoutBtn, true, "Log out", "neutral");
         await signOut();
         window.location.href = "/";
       });
@@ -316,46 +313,7 @@ export const prerender = false;
 </AppShell>
 
 <style>
-  .toggle-switch {
+  .notify-bell-btn {
     position: relative;
-    display: inline-block;
-    width: 48px;
-    height: 28px;
-  }
-
-  .toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .toggle-slider {
-    position: absolute;
-    inset: 0;
-    background: var(--gray-200);
-    border-radius: 28px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .toggle-slider::before {
-    content: "";
-    position: absolute;
-    left: 3px;
-    top: 3px;
-    width: 22px;
-    height: 22px;
-    background: white;
-    border-radius: 50%;
-    transition: transform 0.2s;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  }
-
-  .toggle-switch input:checked + .toggle-slider {
-    background: var(--blue);
-  }
-
-  .toggle-switch input:checked + .toggle-slider::before {
-    transform: translateX(20px);
   }
 </style>

@@ -229,3 +229,36 @@ label {
   color: var(--blue);
   border-bottom-color: var(--blue);
 }
+
+/* Loading spinner inside buttons (no separate “Sending…” line outside the form) */
+@keyframes btn-spinner-rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-spinner {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-top-color: var(--gray-700);
+  border-radius: 50%;
+  animation: btn-spinner-rot 0.65s linear infinite;
+  flex-shrink: 0;
+  display: block;
+}
+
+.btn-spinner--on-dark {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+
+.btn-spinner--textlink {
+  border-color: rgba(0, 102, 204, 0.22);
+  border-top-color: var(--blue);
+}
+
+.btn-spinner--bell {
+  border-color: rgba(0, 102, 204, 0.2);
+  border-top-color: var(--blue);
+}

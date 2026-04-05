@@ -324,7 +324,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
         function setBtnLoading(b: HTMLElement, loading: boolean, text: string) {
           (b as HTMLButtonElement).disabled = loading;
-          b.textContent = loading ? "..." : text;
+          b.textContent = loading ? "Processing..." : text;
           b.style.opacity = loading ? "0.6" : "1";
         }
 

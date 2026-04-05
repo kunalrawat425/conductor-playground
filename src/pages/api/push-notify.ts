@@ -1,91 +1,39 @@
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
+import { sendBuyerOrderPush } from "../../lib/server/buyer-push";
 
 export const prerender = false;
-
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
-const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
-const vapidPublicKey = import.meta.env.PUBLIC_VAPID_KEY || "";
-const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY || "";
 
 /**
  * POST /api/push-notify
  * Body: { buyer_id, status, species, final_price }
+ * Manual testing / external callers; order flow uses sendBuyerOrderPush directly.
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const { buyer_id, status, species, final_price } = body;
 
-    if (!buyer_id || !status) {
-      return new Response(JSON.stringify({ error: "Missing buyer_id or status" }), {
-        status: 400,
+    const result = await sendBuyerOrderPush({
+      buyer_id,
+      status,
+      species,
+      final_price,
+    });
+
+    if (!result.ok) {
+      const statusCode = result.error === "VAPID keys not configured" ? 500 : 400;
+      return new Response(JSON.stringify({ error: result.error }), {
+        status: statusCode,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Get buyer's push subscription
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: buyer } = await supabase
-      .from("buyers")
-      .select("push_subscription, push_enabled")
-      .eq("id", buyer_id)
-      .single();
-
-    if (!buyer?.push_enabled || !buyer?.push_subscription) {
-      return new Response(JSON.stringify({ skipped: true, reason: "push not enabled" }), {
+    if (!result.sent) {
+      return new Response(JSON.stringify({ skipped: true, reason: result.reason }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
-
-    // Build notification message
-    const messages: Record<string, { title: string; body: string }> = {
-      confirmed: {
-        title: "Order Confirmed!",
-        body: species
-          ? final_price
-            ? `Your ${species} order confirmed at ₹${final_price}`
-            : `Your ${species} order is confirmed`
-          : "Your order has been confirmed",
-      },
-      picked_up: {
-        title: "Ready for Pickup!",
-        body: species
-          ? `Your ${species} is ready for pickup`
-          : "Your order is ready for pickup",
-      },
-      declined: {
-        title: "Order Update",
-        body: species
-          ? `Sorry, your ${species} order was declined`
-          : "Your order was declined",
-      },
-      cancelled: {
-        title: "Order Cancelled",
-        body: species
-          ? `Your ${species} order was cancelled. Full refund processing.`
-          : "Your order was cancelled. Full refund processing.",
-      },
-    };
-
-    const notification = messages[status] || {
-      title: "Order Update",
-      body: `Your order status: ${status}`,
-    };
-
-    // Lazy import web-push to avoid module-level crash on serverless
-    const webPush = await import("web-push");
-    webPush.setVapidDetails("mailto:hello@zepto.in", vapidPublicKey, vapidPrivateKey);
-
-    await webPush.sendNotification(
-      buyer.push_subscription,
-      JSON.stringify({
-        ...notification,
-        url: "/track",
-        tag: `order-${buyer_id}-${status}`,
-      })
-    );
 
     return new Response(JSON.stringify({ sent: true }), {
       status: 200,
@@ -93,9 +41,9 @@ export const POST: APIRoute = async ({ request }) => {
     });
   } catch (err: any) {
     console.error("Push notify error:", err);
-    return new Response(
-      JSON.stringify({ error: err.message || "Internal error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: err.message || "Internal error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };

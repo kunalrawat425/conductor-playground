@@ -64,14 +64,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body" style="display:flex;gap:24px;flex-wrap:wrap;">
           <div>
-            <span class="text-muted">Delivery</span>
-            <div id="delivery-status" style="font-weight:600;min-height:24px;">—</div>
-          </div>
-          <div>
-            <span class="text-muted">Radius</span>
-            <div id="delivery-radius" style="font-weight:600;min-height:24px;">—</div>
-          </div>
-          <div>
             <span class="text-muted">Total Orders</span>
             <div id="total-orders" style="font-weight:600;min-height:24px;">—</div>
           </div>
@@ -79,6 +71,30 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             <span class="text-muted">Rating</span>
             <div id="rating" style="font-weight:600;min-height:24px;">—</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Delivery settings -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Delivery</h3>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">Offer delivery</div>
+              <div class="text-muted" style="font-size:12px;">Buyers in range can choose delivery</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:28px;">
+              <input type="checkbox" id="delivery-toggle" style="opacity:0;width:0;height:0;" />
+              <span id="delivery-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
+              <span id="delivery-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+            </label>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label for="delivery-radius-km">Delivery radius (km)</label>
+            <input type="number" id="delivery-radius-km" min="1" max="100" step="1" style="font-size:14px;max-width:120px;" />
+            <div class="text-muted" style="font-size:12px;margin-top:4px;">Only buyers within this distance can order delivery</div>
+          </div>
+          <button id="save-delivery-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save delivery settings</button>
         </div>
       </div>
 
@@ -131,7 +147,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
               <h3 style="font-size:15px;font-weight:700;margin-bottom:2px;">🔔 Notifications</h3>
               <div class="text-muted" style="font-size:12px;" id="push-status-text">Get notified when orders come in</div>
             </div>
-            <button id="notify-toggle" class="btn" style="background:var(--gray-100);padding:8px 14px;font-size:20px;" title="Enable notifications">🔕</button>
+            <button id="notify-toggle" type="button" class="btn notify-bell-btn" style="background:var(--gray-100);padding:8px 14px;font-size:20px;min-width:48px;min-height:44px;" title="Enable notifications">🔕</button>
           </div>
         </div>
       </div>
@@ -154,6 +170,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       import { getSellerById, updateSellerProfile } from "../../lib/supabase";
       import type { Seller } from "../../lib/supabase";
       import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
+      import { setButtonLoading, setBellLoading } from "../../lib/button-loading";
 
       function showToast(message: string, type: "success" | "error" = "success") {
         const toast = document.getElementById("toast")!;
@@ -169,9 +186,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       }
 
       function setLoading(btn: HTMLButtonElement, loading: boolean, originalText: string) {
-        btn.disabled = loading;
-        btn.textContent = loading ? "Saving..." : originalText;
-        btn.style.opacity = loading ? "0.6" : "1";
+        setButtonLoading(btn, loading, originalText, "on-dark");
       }
 
       async function init() {
@@ -192,10 +207,52 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }
 
         // Stats
-        document.getElementById("delivery-status")!.textContent = seller.has_delivery ? "✅ Active" : "❌ Off";
-        document.getElementById("delivery-radius")!.textContent = seller.delivery_rad ? `${seller.delivery_rad} km` : "N/A";
         document.getElementById("total-orders")!.textContent = String(seller.total_orders);
         document.getElementById("rating")!.textContent = seller.rating_avg > 0 ? `⭐ ${seller.rating_avg}` : "No ratings";
+
+        // Delivery settings
+        const deliveryToggle = document.getElementById("delivery-toggle") as HTMLInputElement;
+        const deliverySlider = document.getElementById("delivery-slider")!;
+        const deliveryKnob = document.getElementById("delivery-knob")!;
+        const deliveryRadiusInput = document.getElementById("delivery-radius-km") as HTMLInputElement;
+        const saveDeliveryBtn = document.getElementById("save-delivery-btn") as HTMLButtonElement;
+
+        function updateDeliveryUI(on: boolean) {
+          deliveryToggle.checked = on;
+          deliverySlider.style.background = on ? "var(--green)" : "var(--gray-200)";
+          deliveryKnob.style.transform = on ? "translateX(20px)" : "translateX(0)";
+          deliveryRadiusInput.disabled = !on;
+        }
+
+        deliveryRadiusInput.value = String(seller.delivery_rad ?? 10);
+        updateDeliveryUI(!!seller.has_delivery);
+
+        saveDeliveryBtn.addEventListener("click", async () => {
+          const on = deliveryToggle.checked;
+          const raw = parseFloat(deliveryRadiusInput.value, 10);
+          if (on && (!Number.isFinite(raw) || raw < 1 || raw > 100)) {
+            showToast("Enter a radius between 1 and 100 km", "error");
+            return;
+          }
+          setLoading(saveDeliveryBtn, true, "Save delivery settings");
+          try {
+            await updateSellerProfile(seller.id, {
+              has_delivery: on,
+              delivery_rad: on ? raw : seller.delivery_rad,
+            } as any);
+            seller.has_delivery = on;
+            if (on) seller.delivery_rad = raw;
+            showToast("Delivery settings saved!");
+          } catch (err: any) {
+            showToast(err.message || "Failed to save", "error");
+          } finally {
+            setLoading(saveDeliveryBtn, false, "Save delivery settings");
+          }
+        });
+
+        deliveryToggle.addEventListener("change", () => {
+          updateDeliveryUI(deliveryToggle.checked);
+        });
 
         // Name/email fields
         const firstNameInput = document.getElementById("seller-first-name") as HTMLInputElement;
@@ -288,8 +345,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             showToast("Geolocation not supported by your browser", "error");
             return;
           }
-          setLoading(locationBtn, true, "📍 Use My Current Location");
-          locationBtn.textContent = "Detecting...";
+          setButtonLoading(locationBtn, true, "📍 Use My Current Location", "on-dark");
           navigator.geolocation.getCurrentPosition(
             async (position) => {
               const lat = position.coords.latitude;
@@ -322,38 +378,38 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         pushStatus.textContent = pushActive ? "Notifications are on" : "Get notified when orders come in";
 
         notifyBtn.addEventListener("click", async () => {
-          notifyBtn.disabled = true;
-          notifyBtn.style.opacity = "0.6";
           const isSubscribed = await isSellerPushSubscribed();
+          const idleBell = isSubscribed ? "🔔" : "🔕";
+          setBellLoading(notifyBtn, true, idleBell);
           try {
             if (isSubscribed) {
               await unsubscribeSellerPush(seller.id);
-              notifyBtn.textContent = "🔕";
+              setBellLoading(notifyBtn, false, "🔕");
               pushStatus.textContent = "Get notified when orders come in";
               showToast("Notifications disabled");
             } else {
               const ok = await subscribeSellerPush(seller.id);
               if (ok) {
-                notifyBtn.textContent = "🔔";
+                setBellLoading(notifyBtn, false, "🔔");
                 pushStatus.textContent = "Notifications are on";
                 showToast("Notifications enabled!");
               } else {
+                setBellLoading(notifyBtn, false, "🔕");
                 showToast("Could not enable notifications. Please allow permissions.", "error");
               }
             }
           } catch (err: any) {
+            const on = await isSellerPushSubscribed();
+            setBellLoading(notifyBtn, false, on ? "🔔" : "🔕");
+            pushStatus.textContent = on ? "Notifications are on" : "Get notified when orders come in";
             showToast("Failed to update notifications", "error");
-          } finally {
-            notifyBtn.disabled = false;
-            notifyBtn.style.opacity = "1";
           }
         });
 
         // Logout
         document.getElementById("logout-btn")!.addEventListener("click", async () => {
           const btn = document.getElementById("logout-btn") as HTMLButtonElement;
-          btn.disabled = true;
-          btn.textContent = "Logging out...";
+          setButtonLoading(btn, true, "Log out", "neutral");
           await signOut();
           window.location.href = "/dashboard/login";
         });
