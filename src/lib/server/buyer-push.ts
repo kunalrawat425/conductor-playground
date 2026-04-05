@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { loadWebPush } from "./load-web-push";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
@@ -102,7 +103,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
     body: `Your order status: ${status}`,
   };
 
-  const webPush = await import("web-push");
+  const webPush = await loadWebPush();
   webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
 
   try {

@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { loadWebPush } from "../../lib/server/load-web-push";
 
 export const prerender = false;
 
@@ -43,8 +44,7 @@ export const POST: APIRoute = async ({ request }) => {
       ? `New order: ${species} ${quantity || ""}${unitLabel} from ${buyer_phone || "a buyer"}`
       : `You have a new order from ${buyer_phone || "a buyer"}`;
 
-    // Lazy import web-push to avoid module-level crash on serverless
-    const webPush = await import("web-push");
+    const webPush = await loadWebPush();
     webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
 
     await webPush.sendNotification(
