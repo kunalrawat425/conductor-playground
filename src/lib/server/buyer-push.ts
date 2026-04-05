@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { buyerOrderPushNotification } from "./buyer-order-push-copy";
 import { loadWebPush } from "./load-web-push";
@@ -13,6 +14,8 @@ const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailt
 export type BuyerPushPayload = {
   buyer_id: string;
   status: string;
+  /** When set, included in the tag for debugging; each push still gets a unique tag so OS does not replace prior toasts. */
+  order_id?: string | null;
   species?: string | null;
   final_price?: number | null;
 };
@@ -42,7 +45,7 @@ function normalizeSubscription(raw: unknown): PushSubscriptionJSON | null {
  * Shared by /api/push-notify (manual/test) and /api/seller/orders (no HTTP self-call).
  */
 export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<BuyerPushResult> {
-  const { buyer_id, status, species, final_price } = payload;
+  const { buyer_id, status, order_id, species, final_price } = payload;
 
   if (!buyer_id || !status) {
     return { ok: false, error: "Missing buyer_id or status" };
@@ -76,6 +79,10 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
   }
 
   const notification = buyerOrderPushNotification(status, species, final_price);
+  /** Unique tag every time — same tag replaces the previous notification in the OS tray. */
+  const pushTag = order_id
+    ? `zepto-order-${order_id}-${randomUUID()}`
+    : `zepto-buyer-${buyer_id}-${status}-${randomUUID()}`;
 
   try {
     const webPush = await loadWebPush();
@@ -85,7 +92,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
       JSON.stringify({
         ...notification,
         url: "/track",
-        tag: `order-${buyer_id}-${status}`,
+        tag: pushTag,
       })
     );
     return { ok: true, sent: true };

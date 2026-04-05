@@ -52,6 +52,10 @@ self.addEventListener("fetch", (event) => {
 });
 
 // Push notification handler
+function uniqueFallbackTag() {
+  return `zepto-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 self.addEventListener("push", (event) => {
   let data = { title: "Zepto", body: "You have an update!", url: "/track" };
 
@@ -63,12 +67,15 @@ self.addEventListener("push", (event) => {
     }
   }
 
+  // Never reuse a single tag ("default") — that replaces the previous notification in the OS.
+  const tag = typeof data.tag === "string" && data.tag.length > 0 ? data.tag : uniqueFallbackTag();
+
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: "/icon-192.png",
       badge: "/icon-192.png",
-      tag: data.tag || "default",
+      tag,
       data: { url: data.url },
       vibrate: [200, 100, 200],
       actions: [{ action: "open", title: "View" }],

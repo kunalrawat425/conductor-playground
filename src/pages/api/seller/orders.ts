@@ -67,6 +67,7 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         const pushResult = await sendBuyerOrderPush({
           buyer_id: order.buyer_id,
+          order_id,
           status,
           species: order.species || "Fish",
           final_price: final_price ?? null,
