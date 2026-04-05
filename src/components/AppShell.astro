@@ -7,6 +7,8 @@ interface Props {
   showLocationBadge?: boolean;
 }
 
+import VercelAnalytics from "./VercelAnalytics.astro";
+
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 const defaultDescription = "Order fresh fish from local Mumbai sellers. Pre-order tonight, pick up tomorrow morning.";
 const { title = brandName, description = defaultDescription, ogImage = "/og-image.png", activeTab = "home", showLocationBadge = true } = Astro.props;
@@ -107,6 +109,7 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
       // Listen for location changes
       window.addEventListener("location-updated", () => updateLocationBadge());
     </script>
+    <VercelAnalytics />
   </body>
 </html>
 
