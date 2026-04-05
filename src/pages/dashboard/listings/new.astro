@@ -4,6 +4,7 @@ export const prerender = false;
 import Header from "../../../components/Header.astro";
 import DashboardGate from "../../../components/DashboardGate.astro";
 import ListingForm from "../../../components/ListingForm.astro";
+import VercelAnalytics from "../../../components/VercelAnalytics.astro";
 import "../../../styles/global.css";
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
@@ -121,5 +122,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
       init();
     </script>
+    <VercelAnalytics />
   </body>
 </html>

@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Header from "../../../components/Header.astro";
 import DashboardGate from "../../../components/DashboardGate.astro";
+import VercelAnalytics from "../../../components/VercelAnalytics.astro";
 import "../../../styles/global.css";
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
@@ -182,5 +183,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         border-bottom-color: var(--blue);
       }
     </style>
+    <VercelAnalytics />
   </body>
 </html>
