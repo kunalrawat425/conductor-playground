@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import Header from "../../../components/Header.astro";
+import DashboardGate from "../../../components/DashboardGate.astro";
 import ListingForm from "../../../components/ListingForm.astro";
 import "../../../styles/global.css";
 
@@ -19,11 +20,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
+    <DashboardGate />
     <Header showDashboardLink={false} />
 
     <main>
       <div style="margin-bottom:16px;">
-        <a href="/dashboard" style="font-size:14px;">← Back to Dashboard</a>
+        <a href="/dashboard/listings" style="font-size:14px;">← Back to Listings</a>
       </div>
       <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;">Add New Listing</h1>
 
@@ -97,7 +99,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             });
 
             showToast("Listing created!", "success");
-            setTimeout(() => { window.location.href = "/dashboard"; }, 800);
+            setTimeout(() => { window.location.href = "/dashboard/listings"; }, 800);
           } catch (err: any) {
             showToast(err.message || "Failed to create listing.", "error");
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Add Listing"; submitBtn.style.opacity = "1"; }

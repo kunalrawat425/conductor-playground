@@ -4,6 +4,7 @@ export const prerender = false;
 import AppShell from "../../components/AppShell.astro";
 import LocationPicker from "../../components/LocationPicker.astro";
 import LoginModal from "../../components/LoginModal.astro";
+import OrderAddressSheet from "../../components/OrderAddressSheet.astro";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
@@ -52,6 +53,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
   </div>
 
   <LocationPicker />
+  <OrderAddressSheet />
   <LoginModal />
 
   <style is:global>
@@ -478,6 +480,25 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         const opensAt = seller.opens_at ? seller.opens_at.slice(0, 5) : "05:00";
         const closesAt = seller.closes_at ? seller.closes_at.slice(0, 5) : "14:00";
 
+        const minO = Number(seller.min_order_amount) || 0;
+        const dFeeOn = !!seller.delivery_fee_enabled;
+        const dFee = Number(seller.delivery_fee_amount) || 0;
+        const freeAboveRaw = seller.free_delivery_above;
+        const freeAbove =
+          freeAboveRaw != null && String(freeAboveRaw).trim() !== "" && Number(freeAboveRaw) > 0
+            ? Number(freeAboveRaw)
+            : null;
+        const ruleParts: string[] = [];
+        if (minO > 0) ruleParts.push(`Minimum order ₹${minO} per item`);
+        if (dFeeOn) {
+          if (freeAbove != null) ruleParts.push(`Delivery ₹${dFee} · Free delivery on orders above ₹${freeAbove}`);
+          else ruleParts.push(`Delivery fee ₹${dFee}`);
+        }
+        const rulesBlock =
+          ruleParts.length > 0
+            ? `<div class="sp-rules" style="font-size:13px;margin-top:12px;padding-top:10px;border-top:1px solid var(--gray-100);color:var(--gray-700);line-height:1.5;">${ruleParts.map((t) => `<div>• ${esc(t)}</div>`).join("")}</div>`
+            : "";
+
         // Build all HTML strings first, then apply in one frame
         const profileHTML = `
           <div class="seller-profile-card">
@@ -501,6 +522,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
               ${seller.total_orders > 0 ? `<span class="sp-badge sp-badge-orders">${seller.total_orders} order${seller.total_orders !== 1 ? 's' : ''}</span>` : ""}
             </div>
             <div class="sp-hours">🕐 Open ${opensAt} – ${closesAt}</div>
+            ${rulesBlock}
           </div>
         `;
 
@@ -636,7 +658,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             return;
           }
 
-          await submitOrder(session, items);
+          window.dispatchEvent(
+            new CustomEvent("open-order-address-sheet", {
+              detail: {
+                requireAddressDetail: inDeliveryRange,
+                onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
+              },
+            })
+          );
         });
 
         // After login, submit pending order
@@ -648,10 +677,17 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           if (!session) return;
           const items = Object.values(cart).filter(e => e.qty > 0);
           if (items.length === 0) return;
-          await submitOrder(session, items);
+          window.dispatchEvent(
+            new CustomEvent("open-order-address-sheet", {
+              detail: {
+                requireAddressDetail: inDeliveryRange,
+                onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
+              },
+            })
+          );
         });
 
-        async function submitOrder(session, items) {
+        async function submitOrder(session, items, buyer_addr) {
           const btn = document.getElementById("place-order-btn");
           btn.textContent = isPreorderMode ? "Placing pre-order..." : "Placing order...";
           btn.disabled = true;
@@ -659,6 +695,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           try {
             // Create one order per item (each listing is a separate order)
             // The API determines pre-order vs order based on seller operating hours
+            const addr = buyer_addr ?? null;
             const orderPromises = items.map(e => {
               const l = e.listing;
               const totalPrice = e.qty * l.price;
@@ -673,6 +710,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
                   total_price: totalPrice,
                   buyer_phone: session.phone,
                   buyer_id: session.buyer_id,
+                  buyer_addr: addr,
                   order_type: inDeliveryRange ? "delivery" : "pickup",
                   seller_id: sellerId,
                 }),

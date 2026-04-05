@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import type { PriceUnit } from "./species";
+import {
+  BUYER_TRACK_PAGE_SIZE,
+  ordersDateCutoffIso,
+  SELLER_ORDERS_PAGE_SIZE,
+} from "./seller-orders-pagination";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || "";
@@ -32,6 +37,12 @@ export interface Seller {
   closes_at: string;
   accepts_preorder: boolean;
   created_at: string;
+  /** Minimum line subtotal (₹); 0 = none */
+  min_order_amount?: number;
+  delivery_fee_enabled?: boolean;
+  delivery_fee_amount?: number;
+  /** Waive delivery fee when subtotal >= this (₹); null = no waiver */
+  free_delivery_above?: number | null;
 }
 
 export interface FishListing {
@@ -82,6 +93,7 @@ export interface Order {
   buyer_id: string | null;
   species: string | null;
   created_at: string;
+  delivery_fee?: number;
 }
 
 export interface Buyer {
@@ -142,20 +154,6 @@ export async function getSellerById(id: string) {
   return data as Seller;
 }
 
-export async function getSellersWithLocation() {
-  const { data, error } = await supabase
-    .from("sellers")
-    .select("id, name, location_name, lat, lng, has_delivery, delivery_rad, rating_avg")
-    .not("lat", "is", null)
-    .not("lng", "is", null);
-
-  if (error) throw error;
-  return data as Pick<
-    Seller,
-    "id" | "name" | "location_name" | "lat" | "lng" | "has_delivery" | "delivery_rad" | "rating_avg"
-  >[];
-}
-
 export async function updateSellerProfile(
   id: string,
   updates: Partial<Seller>
@@ -170,17 +168,6 @@ export async function updateSellerProfile(
   return data.seller as Seller;
 }
 
-export async function getSellerByAuthId(authId: string) {
-  const { data, error } = await supabase
-    .from("sellers")
-    .select("*")
-    .eq("auth_id", authId)
-    .single();
-
-  if (error) throw error;
-  return data as Seller;
-}
-
 export async function getSellerListings(sellerId: string) {
   const { data, error } = await supabase
     .from("fish_listings")
@@ -192,40 +179,103 @@ export async function getSellerListings(sellerId: string) {
   return data as FishListing[];
 }
 
-export async function getSellerOrders(sellerId: string) {
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*, listing:fish_listings(*)")
-    .eq("fish_listings.seller_id", sellerId)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data as Order[];
-}
-
-export async function getOrdersForSeller(sellerId: string) {
-  // Get all listing IDs for this seller, then get orders for those listings
+/** Fresh orders (not pre_order) for this seller’s listings, with server-side pagination. */
+export async function getFreshOrdersForSellerPage(
+  sellerId: string,
+  options: {
+    page: number;
+    pageSize?: number;
+    statusFilter: string;
+    dateFilter: string;
+  }
+): Promise<{ orders: Order[]; total: number }> {
+  const pageSize = options.pageSize ?? SELLER_ORDERS_PAGE_SIZE;
   const { data: listings } = await supabase
     .from("fish_listings")
     .select("id")
     .eq("seller_id", sellerId);
 
-  if (!listings || listings.length === 0) return [];
+  const listingIds = listings?.map((l) => l.id) || [];
+  if (listingIds.length === 0) return { orders: [], total: 0 };
 
-  const listingIds = listings.map((l) => l.id);
-  const { data, error } = await supabase
+  const cutoff = ordersDateCutoffIso(options.dateFilter);
+  const from = Math.max(0, (options.page - 1) * pageSize);
+  const to = from + pageSize - 1;
+
+  let q = supabase
     .from("orders")
-    .select("*")
+    .select("*", { count: "exact" })
     .in("listing_id", listingIds)
+    .neq("status", "pre_order")
     .order("created_at", { ascending: false });
 
+  if (options.statusFilter !== "all") {
+    q = q.eq("status", options.statusFilter);
+  }
+  if (cutoff) {
+    q = q.gte("created_at", cutoff);
+  }
+
+  const { data, error, count } = await q.range(from, to);
   if (error) throw error;
-  return data as Order[];
+  return { orders: (data || []) as Order[], total: count ?? 0 };
 }
 
-export async function getPreOrdersForSeller(sellerId: string) {
-  // Pre-orders may not have a listing_id yet (matched by species)
-  // Get orders with status "pre_order" that have species matching seller's capabilities
+/**
+ * Pre-order queue: default “all” = status pre_order + listing OR null listing (same as legacy query).
+ * Other statuses filter to that status with the same listing OR clause.
+ */
+export async function getPreOrdersForSellerPage(
+  sellerId: string,
+  options: {
+    page: number;
+    pageSize?: number;
+    statusFilter: string;
+    dateFilter: string;
+  }
+): Promise<{ orders: Order[]; total: number }> {
+  const pageSize = options.pageSize ?? SELLER_ORDERS_PAGE_SIZE;
+  const { data: listings } = await supabase
+    .from("fish_listings")
+    .select("id")
+    .eq("seller_id", sellerId);
+
+  const listingIds = listings?.map((l) => l.id) || [];
+  const orClause =
+    listingIds.length > 0
+      ? `listing_id.in.(${listingIds.join(",")}),listing_id.is.null`
+      : "listing_id.is.null";
+
+  const cutoff = ordersDateCutoffIso(options.dateFilter);
+  const from = Math.max(0, (options.page - 1) * pageSize);
+  const to = from + pageSize - 1;
+
+  let q = supabase
+    .from("orders")
+    .select("*", { count: "exact" })
+    .or(orClause)
+    .order("created_at", { ascending: false });
+
+  if (options.statusFilter === "all") {
+    q = q.eq("status", "pre_order");
+  } else {
+    q = q.eq("status", options.statusFilter);
+  }
+
+  if (cutoff) {
+    q = q.gte("created_at", cutoff);
+  }
+
+  const { data, error, count } = await q.range(from, to);
+  if (error) throw error;
+  return { orders: (data || []) as Order[], total: count ?? 0 };
+}
+
+/** Tab badges: pending fresh + awaiting pre-orders (not paginated). */
+export async function getSellerOrderTabCounts(sellerId: string): Promise<{
+  pendingFresh: number;
+  preAwaiting: number;
+}> {
   const { data: listings } = await supabase
     .from("fish_listings")
     .select("id")
@@ -233,19 +283,31 @@ export async function getPreOrdersForSeller(sellerId: string) {
 
   const listingIds = listings?.map((l) => l.id) || [];
 
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("status", "pre_order")
-    .or(
-      listingIds.length > 0
-        ? `listing_id.in.(${listingIds.join(",")}),listing_id.is.null`
-        : "listing_id.is.null"
-    )
-    .order("created_at", { ascending: false });
+  let pendingFresh = 0;
+  if (listingIds.length > 0) {
+    const { count, error } = await supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .in("listing_id", listingIds)
+      .eq("status", "pending");
+    if (!error && count != null) pendingFresh = count;
+  }
 
-  if (error) throw error;
-  return data as Order[];
+  const orClause =
+    listingIds.length > 0
+      ? `listing_id.in.(${listingIds.join(",")}),listing_id.is.null`
+      : "listing_id.is.null";
+
+  const { count: preCount, error: preErr } = await supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "pre_order")
+    .or(orClause);
+
+  return {
+    pendingFresh,
+    preAwaiting: preErr ? 0 : preCount ?? 0,
+  };
 }
 
 export async function createListing(
@@ -367,26 +429,28 @@ export async function getSellersForSpecies(species: string) {
 
 // --- Buyer Queries ---
 
-export async function getBuyerByAuthId(authId: string) {
-  const { data, error } = await supabase
-    .from("buyers")
-    .select("*")
-    .eq("auth_id", authId)
-    .maybeSingle();
+export type BuyerOrderWithListing = Order & {
+  listing?: FishListing & { seller?: Pick<Seller, "name" | "location_name"> };
+};
 
-  if (error) throw error;
-  return data as Buyer | null;
-}
+/** Paginated buyer orders for `/track` (newest first). */
+export async function getBuyerOrdersPage(
+  buyerId: string,
+  options: { page: number; pageSize?: number }
+): Promise<{ orders: BuyerOrderWithListing[]; total: number }> {
+  const pageSize = options.pageSize ?? BUYER_TRACK_PAGE_SIZE;
+  const from = Math.max(0, (options.page - 1) * pageSize);
+  const to = from + pageSize - 1;
 
-export async function getBuyerOrders(buyerId: string) {
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from("orders")
-    .select("*, listing:fish_listings(*, seller:sellers(name, location_name))")
+    .select("*, listing:fish_listings(*, seller:sellers(name, location_name))", { count: "exact" })
     .eq("buyer_id", buyerId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
   if (error) throw error;
-  return data as (Order & { listing?: FishListing & { seller?: Pick<Seller, "name" | "location_name"> } })[];
+  return { orders: (data || []) as BuyerOrderWithListing[], total: count ?? 0 };
 }
 
 export async function updateBuyerPushSubscription(

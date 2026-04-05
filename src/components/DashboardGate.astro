@@ -1,0 +1,24 @@
+---
+/**
+ * Client-only guard: dashboard routes require seller session (localStorage).
+ * Buyers without a seller session → home. Anonymous → seller login.
+ * Place immediately after <body> on dashboard pages (not on /dashboard/login).
+ */
+---
+
+<script is:inline>
+  (function () {
+    try {
+      var sid = localStorage.getItem("zepto_seller_id");
+      var sphone = localStorage.getItem("zepto_seller_phone");
+      if (sid && sphone) return;
+      if (localStorage.getItem("zepto_buyer_id") && localStorage.getItem("zepto_phone")) {
+        window.location.replace("/");
+        return;
+      }
+      window.location.replace("/dashboard/login");
+    } catch (e) {
+      window.location.replace("/dashboard/login");
+    }
+  })();
+</script>

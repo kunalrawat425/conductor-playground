@@ -69,4 +69,49 @@ describe("auth", () => {
     expect(store.zepto_buyer_id).toBeUndefined();
     expect(store.zepto_phone).toBeUndefined();
   });
+
+  it("getBuyerAddressFromStorage returns null when unset", async () => {
+    const { getBuyerAddressFromStorage } = await import("../../src/lib/auth");
+    expect(getBuyerAddressFromStorage()).toBeNull();
+  });
+
+  it("getBuyerAddressFromStorage formats name and coordinates", async () => {
+    store.zepto_location = JSON.stringify({
+      name: "Andheri West",
+      lat: 19.123456789,
+      lng: 72.987654321,
+    });
+    const { getBuyerAddressFromStorage } = await import("../../src/lib/auth");
+    expect(getBuyerAddressFromStorage()).toBe("Andheri West (19.12346, 72.98765)");
+  });
+
+  it("getBuyerAddressFromStorage returns coords only when no name", async () => {
+    store.zepto_location = JSON.stringify({ lat: 19.1, lng: 72.8 });
+    const { getBuyerAddressFromStorage } = await import("../../src/lib/auth");
+    expect(getBuyerAddressFromStorage()).toBe("19.10000, 72.80000");
+  });
+
+  it("formatNewCheckoutAddress merges address detail and map area from storage", async () => {
+    store.zepto_location = JSON.stringify({ name: "Bandra", lat: 19.06, lng: 72.83 });
+    store.zepto_address_detail = JSON.stringify({
+      flat: "402 A",
+      building: "Ocean View",
+      landmark: "Near station",
+    });
+    const { getBuyerAddressDetailFromStorage } = await import("../../src/lib/auth");
+    const { formatNewCheckoutAddress } = await import("../../src/lib/buyer-address");
+    expect(formatNewCheckoutAddress(getBuyerAddressDetailFromStorage())).toBe(
+      "402 A, Ocean View, Near station — Bandra (19.06000, 72.83000)"
+    );
+  });
+
+  it("saveBuyerAddressDetailToStorage clears when all empty", async () => {
+    store.zepto_address_detail = "{}";
+    const { saveBuyerAddressDetailToStorage, getBuyerAddressDetailFromStorage } = await import(
+      "../../src/lib/auth"
+    );
+    saveBuyerAddressDetailToStorage({ flat: "  ", building: "", landmark: "" });
+    expect(store.zepto_address_detail).toBeUndefined();
+    expect(Object.keys(getBuyerAddressDetailFromStorage()).length).toBe(0);
+  });
 });
