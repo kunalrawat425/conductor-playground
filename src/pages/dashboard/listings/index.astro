@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Header from "../../../components/Header.astro";
 import DashboardGate from "../../../components/DashboardGate.astro";
+import SellerBottomNav from "../../../components/SellerBottomNav.astro";
 import VercelAnalytics from "../../../components/VercelAnalytics.astro";
 import "../../../styles/global.css";
 
@@ -43,12 +44,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     </div>
 
     <main id="dash-main" style="display:none;">
-      <!-- Nav -->
-      <div class="dash-nav">
-        <a href="/dashboard/orders" class="dash-nav-item">Orders</a>
-        <a href="/dashboard/listings" class="dash-nav-item active">Listings</a>
-        <a href="/dashboard/profile" class="dash-nav-item">Profile</a>
-      </div>
 
       <!-- Add listing button -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -183,6 +178,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         border-bottom-color: var(--blue);
       }
     </style>
+    <SellerBottomNav active="listings" />
     <VercelAnalytics />
   </body>
 </html>
