@@ -221,7 +221,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       if (digits.startsWith("91") && digits.length > 10) return `+${digits}`;
       return `+91 ${digits.replace(/^0+/, "")}`;
     }
-    import { formatSavedBuyerAddress } from "../lib/buyer-address";
+    import { formatSavedBuyerAddress, formatDetailLine } from "../lib/buyer-address";
     import type { BuyerAddressRow } from "../lib/buyer-address";
 
     function showToast(message: string, type: "success" | "error" = "success") {
@@ -474,6 +474,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 : (row.label || "").toLowerCase().includes("work") ? "🏢"
                 : (row.label || "").toLowerCase().includes("mom") || (row.label || "").toLowerCase().includes("parent") ? "👨‍👩‍👧"
                 : "📍";
+              const detailLine = formatDetailLine({ flat: row.flat ?? "", building: row.building ?? "", landmark: row.landmark ?? "" });
+              const areaName = (row.location_name || "").trim();
               return `
           <article class="me-addr-card" data-addr-id="${esc(row.id)}">
             <div class="me-addr-card-main">
@@ -482,8 +484,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <span class="me-addr-card-name">${esc(row.label || "Address")}</span>
                 ${row.is_default ? '<span class="me-addr-card-badge">Default</span>' : ""}
               </div>
-              <p class="me-addr-card-lines">${esc(formatSavedBuyerAddress(row) || "—")}</p>
-              ${row.location_name ? `<p class="me-addr-card-area">📍 ${esc(row.location_name)}</p>` : ""}
+              ${detailLine ? `<p class="me-addr-card-lines">${esc(detailLine)}</p>` : ""}
+              ${areaName ? `<p class="me-addr-card-area">${esc(areaName)}</p>` : ""}
             </div>
             <div class="me-addr-card-actions">
               <button type="button" class="btn tap-target me-addr-edit me-addr-card-btn" data-id="${esc(row.id)}">✏️ Edit</button>
@@ -856,15 +858,20 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     border-radius: 999px;
   }
   #me-profile .me-addr-card-lines {
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.45;
-    color: var(--gray-700);
+    color: var(--gray-800);
     margin: 0;
   }
   #me-profile .me-addr-card-area {
-    font-size: 12px;
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--gray-500);
-    margin: 4px 0 0;
+    background: var(--gray-100);
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin: 6px 0 0;
   }
   #me-profile .me-addr-card-actions {
     display: flex;
