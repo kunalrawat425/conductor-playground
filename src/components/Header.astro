@@ -19,9 +19,14 @@ const { showDashboardLink = true } = Astro.props;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     padding: 16px 0;
     border-bottom: 1px solid var(--gray-200);
-    margin-bottom: 24px;
+    width: 100%;
+    max-width: var(--app-max-width);
+    margin: 0 auto 24px;
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   .logo {
