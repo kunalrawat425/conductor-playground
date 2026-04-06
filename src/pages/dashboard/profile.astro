@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Header from "../../components/Header.astro";
 import DashboardGate from "../../components/DashboardGate.astro";
+import SellerBottomNav from "../../components/SellerBottomNav.astro";
 import VercelAnalytics from "../../components/VercelAnalytics.astro";
 import "../../styles/global.css";
 
@@ -34,13 +35,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     </div>
 
     <main id="dash-main" style="display:none;">
-      <!-- Nav -->
-      <div class="dash-nav">
-        <a href="/dashboard/orders" class="dash-nav-item">Orders</a>
-        <a href="/dashboard/listings" class="dash-nav-item">Listings</a>
-        <a href="/dashboard/profile" class="dash-nav-item active">Profile</a>
-      </div>
-
       <h1
         id="seller-profile-display-name"
         style="font-size:28px;font-weight:800;line-height:1.15;color:var(--gray-900);margin:0 0 16px;letter-spacing:-0.02em;"
@@ -82,7 +76,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       </div>
 
       <!-- Delivery settings -->
-      <div class="card" style="margin-bottom:16px;">
+      <div id="profile-section-delivery" class="card" style="margin-bottom:16px;">
         <div class="card-body">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Delivery</h3>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -193,6 +187,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         Log out
       </button>
     </main>
+
+    <!-- Jump to first save action (floating, above bottom nav) -->
+    <button type="button" id="profile-fab-save" class="profile-fab" style="display:none;" aria-label="Jump to save settings">
+      Save
+    </button>
 
     <!-- Service worker registration (needed for push notifications) -->
     <script is:inline>
@@ -475,6 +474,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           }
         });
 
+        document.getElementById("profile-fab-save")?.addEventListener("click", () => {
+          document.getElementById("profile-section-delivery")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          setTimeout(() => document.getElementById("save-delivery-btn")?.focus(), 400);
+        });
+
         // Logout
         document.getElementById("logout-btn")!.addEventListener("click", async () => {
           const btn = document.getElementById("logout-btn") as HTMLButtonElement;
@@ -489,6 +493,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           const main = document.getElementById("dash-main")!;
           main.style.display = "block";
           main.classList.add("fade-in");
+          const fab = document.getElementById("profile-fab-save") as HTMLButtonElement | null;
+          if (fab) fab.style.display = "block";
         });
       }
 
@@ -496,31 +502,33 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     </script>
 
     <style is:global>
-      .dash-nav {
-        display: flex;
-        gap: 0;
-        margin-bottom: 16px;
-        border-bottom: 2px solid var(--gray-200);
+      .profile-fab {
+        position: fixed;
+        right: max(16px, env(safe-area-inset-right));
+        bottom: calc(56px + env(safe-area-inset-bottom) + 12px);
+        z-index: 95;
+        min-width: 56px;
+        min-height: 48px;
+        padding: 0 18px;
+        border: none;
+        border-radius: 999px;
+        font-size: 15px;
+        font-weight: 700;
+        color: white;
+        background: var(--blue);
+        box-shadow: 0 4px 16px rgba(0, 102, 204, 0.35);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 0.12s, box-shadow 0.12s;
       }
-      .dash-nav-item {
-        padding: 10px 16px;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--gray-500);
-        text-decoration: none;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -2px;
-        transition: color 0.15s, border-color 0.15s;
+      .profile-fab:hover {
+        filter: brightness(1.05);
       }
-      .dash-nav-item:hover {
-        color: var(--gray-700);
-        text-decoration: none;
-      }
-      .dash-nav-item.active {
-        color: var(--blue);
-        border-bottom-color: var(--blue);
+      .profile-fab:active {
+        transform: scale(0.97);
       }
     </style>
+    <SellerBottomNav active="profile" />
     <VercelAnalytics />
   </body>
 </html>
