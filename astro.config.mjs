@@ -3,6 +3,9 @@ import vercel from "@astrojs/vercel";
 
 export default defineConfig({
   adapter: vercel(),
+  redirects: {
+    "/seller-banner": "/seller-banner.html",
+  },
   vite: {
     server: {
       host: true,

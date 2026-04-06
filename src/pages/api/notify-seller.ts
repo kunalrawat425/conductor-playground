@@ -1,14 +1,16 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { loadWebPush } from "../../lib/server/load-web-push";
+import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
 
 export const prerender = false;
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
-const vapidPublicKey = import.meta.env.PUBLIC_VAPID_KEY || "";
-const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY || "";
-const vapidContact = import.meta.env.VAPID_CONTACT || "mailto:hello@zepto.in";
+
+const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
+const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
+const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@zepto.in";
 
 /**
  * POST /api/notify-seller
@@ -39,23 +41,38 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error("notify-seller: VAPID keys not configured");
+      return new Response(JSON.stringify({ skipped: true, reason: "vapid not configured" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const unitLabel = quantity_unit === "dozen" ? "dz" : quantity_unit || "kg";
     const body = species
       ? `New order: ${species} ${quantity || ""}${unitLabel} from ${buyer_phone || "a buyer"}`
       : `You have a new order from ${buyer_phone || "a buyer"}`;
 
-    const webPush = await loadWebPush();
-    webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
-
-    await webPush.sendNotification(
-      seller.push_subscription,
-      JSON.stringify({
-        title: "New Order!",
-        body,
-        url: "/dashboard",
-        tag: `seller-order-${Date.now()}`,
-      })
-    );
+    try {
+      const webPush = await loadWebPush();
+      webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+      await webPush.sendNotification(
+        seller.push_subscription,
+        JSON.stringify({
+          title: "New Order!",
+          body,
+          url: "/dashboard/orders",
+          tag: `seller-order-${Date.now()}`,
+        })
+      );
+    } catch (pushErr: any) {
+      console.error("notify-seller push failed:", pushErr?.message || pushErr);
+      return new Response(JSON.stringify({ skipped: true, reason: pushErr?.message || "push failed" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ sent: true }), {
       status: 200,

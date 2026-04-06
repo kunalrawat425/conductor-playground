@@ -1,0 +1,108 @@
+---
+export type SellerNavTab = "orders" | "listings" | "profile";
+
+interface Props {
+  active: SellerNavTab;
+}
+
+const { active } = Astro.props;
+---
+
+<nav class="seller-bottom-nav" aria-label="Seller dashboard">
+  <div class="app-bottom-nav-inner">
+  <a
+    href="/dashboard/orders"
+    class:list={["seller-bottom-nav-item", { "seller-bottom-nav-item--active": active === "orders" }]}
+  >
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <line x1="16" y1="13" x2="8" y2="13"></line>
+      <line x1="16" y1="17" x2="8" y2="17"></line>
+    </svg>
+    <span>Orders</span>
+  </a>
+  <a
+    href="/dashboard/listings"
+    class:list={["seller-bottom-nav-item", { "seller-bottom-nav-item--active": active === "listings" }]}
+  >
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+      <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+      <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+      <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+    </svg>
+    <span>Listings</span>
+  </a>
+  <a
+    href="/dashboard/profile"
+    class:list={["seller-bottom-nav-item", { "seller-bottom-nav-item--active": active === "profile" }]}
+  >
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+    </svg>
+    <span>Profile</span>
+  </a>
+  </div>
+</nav>
+
+<style is:global>
+  .seller-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--app-max-width);
+    min-height: 56px;
+    padding: 0 16px;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
+    background: white;
+    border-top: 1px solid var(--gray-200);
+    z-index: 100;
+    min-width: 0;
+  }
+  .seller-bottom-nav .app-bottom-nav-inner {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    min-height: 56px;
+    min-width: 0;
+  }
+  .seller-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gray-500);
+    text-decoration: none;
+    padding: 6px 16px;
+    min-width: 64px;
+    min-height: 44px;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s;
+  }
+  .seller-bottom-nav-item:hover {
+    text-decoration: none;
+    color: var(--blue);
+  }
+  .seller-bottom-nav-item--active {
+    color: var(--blue);
+  }
+  .seller-bottom-nav-item svg {
+    width: 22px;
+    height: 22px;
+  }
+  body:has(.seller-bottom-nav) main#dash-main,
+  body:has(.seller-bottom-nav) #dash-loading {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+</style>

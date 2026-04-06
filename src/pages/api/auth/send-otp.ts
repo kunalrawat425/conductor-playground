@@ -22,7 +22,9 @@ export const POST: APIRoute = async ({ request }) => {
     const twilioConfigured = accountSid && authToken && serviceSid
       && !accountSid.startsWith("your-") && !authToken.startsWith("your-");
     if (!twilioConfigured) {
-      console.log(`[DEV] OTP for ${phone}: 123456`);
+      if (import.meta.env.DEV) {
+        console.info(`[DEV] OTP for ${phone}: 123456`);
+      }
       return new Response(JSON.stringify({ success: true, status: "pending", dev: true }), { status: 200 });
     }
 

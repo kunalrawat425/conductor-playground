@@ -2,9 +2,10 @@
 export const prerender = false;
 
 import Header from "../../components/Header.astro";
+import VercelAnalytics from "../../components/VercelAnalytics.astro";
 import "../../styles/global.css";
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 
 <html lang="en">
@@ -56,7 +57,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       import { setButtonLoading } from "../../lib/button-loading";
 
       const session = getSession();
-      if (session) window.location.href = "/dashboard";
+      if (session) window.location.href = "/dashboard/orders";
 
       const phoneStep = document.getElementById("phone-step")!;
       const otpStep = document.getElementById("otp-step")!;
@@ -116,7 +117,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         setButtonLoading(verifyBtn, true, "Verify & Login", "on-dark");
         try {
           await verifyOtp(phone, token);
-          window.location.href = "/dashboard";
+          window.location.href = "/dashboard/orders";
         } catch (err: any) {
           showToast(err.message || "Invalid OTP. Try again.", "error");
           setButtonLoading(verifyBtn, false, "Verify & Login", "on-dark");
@@ -142,5 +143,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         if (e.key === "Enter") verifyBtn.click();
       });
     </script>
+    <VercelAnalytics />
   </body>
 </html>
