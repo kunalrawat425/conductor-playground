@@ -48,7 +48,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         <div class="card-body">
           <div class="profile-card-head">
             <h3 style="font-size:15px;font-weight:700;margin:0;">Business &amp; contact</h3>
-            <button type="button" id="edit-identity-btn" class="profile-inline-edit-btn">Edit</button>
           </div>
           <p class="text-muted" style="font-size:12px;margin:8px 0 12px;line-height:1.35;">
             Phone is verified at login. Tap Edit to change shop name, your name, and email.
@@ -75,6 +74,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               <span class="profile-readonly-label">Phone</span>
               <div class="profile-readonly-value" id="seller-contact-phone">—</div>
             </div>
+          </div>
+
+          <div id="identity-edit-footer" class="profile-identity-edit-footer">
+            <button type="button" id="edit-identity-btn" class="profile-inline-edit-btn">Edit</button>
           </div>
 
           <div id="identity-edit" style="display:none;">
@@ -318,7 +321,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         function openIdentityEdit() {
           document.getElementById("identity-view")!.style.display = "none";
           document.getElementById("identity-edit")!.style.display = "block";
-          (document.getElementById("edit-identity-btn") as HTMLButtonElement).style.display = "none";
+          (document.getElementById("identity-edit-footer") as HTMLElement).style.display = "none";
           (document.getElementById("seller-business-name") as HTMLInputElement).value = (seller.name || "").trim();
           (document.getElementById("seller-first-name") as HTMLInputElement).value = (seller.first_name || "").trim();
           (document.getElementById("seller-last-name") as HTMLInputElement).value = (seller.last_name || "").trim();
@@ -328,7 +331,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         function closeIdentityEdit() {
           document.getElementById("identity-view")!.style.display = "block";
           document.getElementById("identity-edit")!.style.display = "none";
-          (document.getElementById("edit-identity-btn") as HTMLButtonElement).style.display = "block";
+          (document.getElementById("identity-edit-footer") as HTMLElement).style.display = "flex";
           syncIdentityView(seller);
         }
 
@@ -612,17 +615,20 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
       }
       #dash-main .profile-card-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
         margin-bottom: 0;
+      }
+      #dash-main .profile-identity-edit-footer {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--gray-100);
       }
       #dash-main .profile-inline-edit-btn {
         flex-shrink: 0;
         font-size: 13px;
         font-weight: 600;
-        padding: 6px 12px;
+        padding: 8px 16px;
         border-radius: 8px;
         border: 1px solid var(--gray-200);
         background: var(--gray-50);

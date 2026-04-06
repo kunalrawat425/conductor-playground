@@ -112,7 +112,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           <p class="text-muted" style="font-size:13px;margin-bottom:12px;line-height:1.4;">
             Saved addresses show up at checkout. They use the same map area as “Location” above when you save.
           </p>
-          <div id="me-address-list"></div>
+          <div id="me-address-list" class="me-addr-list"></div>
           <div
             id="me-address-editor"
             style="display:none;margin-top:12px;padding-top:14px;border-top:1px solid var(--gray-200);"
@@ -160,9 +160,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           </div>
           <button
             type="button"
-            class="btn tap-target"
+            class="btn tap-target me-addr-add-btn"
             id="me-address-add-btn"
-            style="width:100%;margin-top:10px;background:var(--gray-100);color:var(--blue);font-size:14px;padding:10px;"
           >
             + Add address
           </button>
@@ -460,21 +459,31 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       function renderMeAddressList() {
         if (!addressRows.length) {
-          listEl.innerHTML = `<p class="text-muted" style="font-size:13px;">No saved addresses yet.</p>`;
+          listEl.innerHTML = `
+          <div class="me-addr-empty">
+            <div class="me-addr-empty-icon" aria-hidden="true">📍</div>
+            <p class="me-addr-empty-title">No saved addresses yet</p>
+            <p class="me-addr-empty-hint">Add home, work, or family — they appear as cards at checkout.</p>
+          </div>`;
           return;
         }
         listEl.innerHTML = addressRows
           .map(
             (row) => `
-          <div class="me-addr-row" style="padding:12px 0;border-bottom:1px solid var(--gray-100);">
-            <div style="font-weight:700;font-size:14px;">${esc(row.label || "Address")} ${row.is_default ? '<span style="font-size:11px;color:var(--blue);font-weight:600;">Default</span>' : ""}</div>
-            <div class="text-muted" style="font-size:12px;margin-top:4px;line-height:1.35;">${esc(formatSavedBuyerAddress(row) || "—")}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
-              <button type="button" class="btn tap-target me-addr-edit" data-id="${esc(row.id)}" style="font-size:12px;padding:6px 12px;background:var(--gray-100);color:var(--blue);">Edit</button>
-              <button type="button" class="btn tap-target me-addr-del" data-id="${esc(row.id)}" style="font-size:12px;padding:6px 12px;background:var(--gray-100);color:var(--red);">Delete</button>
-              ${!row.is_default ? `<button type="button" class="btn tap-target me-addr-def" data-id="${esc(row.id)}" style="font-size:12px;padding:6px 12px;background:var(--gray-100);">Set default</button>` : ""}
+          <article class="me-addr-card" data-addr-id="${esc(row.id)}">
+            <div class="me-addr-card-main">
+              <div class="me-addr-card-title-row">
+                <span class="me-addr-card-name">${esc(row.label || "Address")}</span>
+                ${row.is_default ? '<span class="me-addr-card-badge">Default</span>' : ""}
+              </div>
+              <p class="me-addr-card-lines">${esc(formatSavedBuyerAddress(row) || "—")}</p>
             </div>
-          </div>
+            <div class="me-addr-card-actions">
+              <button type="button" class="btn tap-target me-addr-edit me-addr-card-btn" data-id="${esc(row.id)}">Edit</button>
+              ${!row.is_default ? `<button type="button" class="btn tap-target me-addr-def me-addr-card-btn me-addr-card-btn--ghost" data-id="${esc(row.id)}">Set default</button>` : ""}
+              <button type="button" class="btn tap-target me-addr-del me-addr-card-btn me-addr-card-btn--danger" data-id="${esc(row.id)}">Remove</button>
+            </div>
+          </article>
         `
           )
           .join("");
@@ -770,5 +779,119 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  #me-profile .me-addr-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #me-profile .me-addr-empty {
+    text-align: center;
+    padding: 20px 12px;
+    border: 2px dashed var(--gray-200);
+    border-radius: 14px;
+    background: var(--gray-50);
+  }
+  #me-profile .me-addr-empty-icon {
+    font-size: 32px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  #me-profile .me-addr-empty-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin: 0 0 6px;
+  }
+  #me-profile .me-addr-empty-hint {
+    font-size: 13px;
+    color: var(--gray-500);
+    line-height: 1.4;
+    margin: 0;
+  }
+  #me-profile .me-addr-card {
+    border: 2px solid var(--gray-200);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  #me-profile .me-addr-card:hover {
+    border-color: var(--gray-300);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  }
+  #me-profile .me-addr-card-main {
+    margin-bottom: 12px;
+  }
+  #me-profile .me-addr-card-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  #me-profile .me-addr-card-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+  #me-profile .me-addr-card-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue);
+    background: rgba(0, 102, 204, 0.1);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  #me-profile .me-addr-card-lines {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--gray-600);
+    margin: 0;
+  }
+  #me-profile .me-addr-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px solid var(--gray-100);
+  }
+  #me-profile .me-addr-card-btn {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 10px;
+    min-height: 40px;
+    background: var(--gray-100);
+    color: var(--blue);
+  }
+  #me-profile .me-addr-card-btn--ghost {
+    color: var(--gray-700);
+  }
+  #me-profile .me-addr-card-btn--danger {
+    color: var(--red);
+    margin-left: auto;
+  }
+  @media (max-width: 380px) {
+    #me-profile .me-addr-card-btn--danger {
+      margin-left: 0;
+    }
+  }
+  #me-profile .me-addr-add-btn {
+    width: 100%;
+    margin-top: 4px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: 2px dashed var(--gray-300);
+    background: #fff;
+    color: var(--blue);
+  }
+  #me-profile .me-addr-add-btn:hover {
+    border-color: var(--blue);
+    background: var(--gray-50);
   }
 </style>

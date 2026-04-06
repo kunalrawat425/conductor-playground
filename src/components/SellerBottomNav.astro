@@ -51,22 +51,28 @@ const { active } = Astro.props;
   .seller-bottom-nav {
     position: fixed;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--app-max-width);
     min-height: 56px;
+    padding: 0 16px;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
     background: white;
     border-top: 1px solid var(--gray-200);
     z-index: 100;
-    padding-bottom: env(safe-area-inset-bottom);
-    box-sizing: content-box;
+    min-width: 0;
   }
   .seller-bottom-nav .app-bottom-nav-inner {
-    max-width: var(--app-max-width);
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
     display: flex;
     justify-content: space-around;
     align-items: center;
     min-height: 56px;
+    min-width: 0;
   }
   .seller-bottom-nav-item {
     display: flex;
