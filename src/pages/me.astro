@@ -469,22 +469,30 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
         listEl.innerHTML = addressRows
           .map(
-            (row) => `
+            (row) => {
+              const icon = (row.label || "").toLowerCase().includes("home") ? "🏠"
+                : (row.label || "").toLowerCase().includes("work") ? "🏢"
+                : (row.label || "").toLowerCase().includes("mom") || (row.label || "").toLowerCase().includes("parent") ? "👨‍👩‍👧"
+                : "📍";
+              return `
           <article class="me-addr-card" data-addr-id="${esc(row.id)}">
             <div class="me-addr-card-main">
               <div class="me-addr-card-title-row">
+                <span class="me-addr-card-icon">${icon}</span>
                 <span class="me-addr-card-name">${esc(row.label || "Address")}</span>
                 ${row.is_default ? '<span class="me-addr-card-badge">Default</span>' : ""}
               </div>
               <p class="me-addr-card-lines">${esc(formatSavedBuyerAddress(row) || "—")}</p>
+              ${row.location_name ? `<p class="me-addr-card-area">📍 ${esc(row.location_name)}</p>` : ""}
             </div>
             <div class="me-addr-card-actions">
-              <button type="button" class="btn tap-target me-addr-edit me-addr-card-btn" data-id="${esc(row.id)}">Edit</button>
-              ${!row.is_default ? `<button type="button" class="btn tap-target me-addr-def me-addr-card-btn me-addr-card-btn--ghost" data-id="${esc(row.id)}">Set default</button>` : ""}
-              <button type="button" class="btn tap-target me-addr-del me-addr-card-btn me-addr-card-btn--danger" data-id="${esc(row.id)}">Remove</button>
+              <button type="button" class="btn tap-target me-addr-edit me-addr-card-btn" data-id="${esc(row.id)}">✏️ Edit</button>
+              ${!row.is_default ? `<button type="button" class="btn tap-target me-addr-def me-addr-card-btn me-addr-card-btn--ghost" data-id="${esc(row.id)}">⭐ Set default</button>` : ""}
+              <button type="button" class="btn tap-target me-addr-del me-addr-card-btn me-addr-card-btn--danger" data-id="${esc(row.id)}">🗑️</button>
             </div>
           </article>
-        `
+        `;
+            }
           )
           .join("");
 
@@ -811,11 +819,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     margin: 0;
   }
   #me-profile .me-addr-card {
-    border: 2px solid var(--gray-200);
-    border-radius: 14px;
-    padding: 14px 14px 12px;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 16px;
+    padding: 16px;
+    background: var(--gray-50);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   #me-profile .me-addr-card:hover {
@@ -829,8 +836,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 6px;
+  }
+  #me-profile .me-addr-card-icon {
+    font-size: 18px;
   }
   #me-profile .me-addr-card-name {
     font-size: 15px;
@@ -838,34 +848,40 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     color: var(--gray-900);
   }
   #me-profile .me-addr-card-badge {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    color: var(--blue);
-    background: rgba(0, 102, 204, 0.1);
+    color: white;
+    background: var(--blue);
     padding: 2px 8px;
     border-radius: 999px;
   }
   #me-profile .me-addr-card-lines {
     font-size: 13px;
     line-height: 1.45;
-    color: var(--gray-600);
+    color: var(--gray-700);
     margin: 0;
+  }
+  #me-profile .me-addr-card-area {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin: 4px 0 0;
   }
   #me-profile .me-addr-card-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding-top: 4px;
-    border-top: 1px solid var(--gray-100);
+    padding-top: 10px;
+    border-top: 1px solid var(--gray-200);
   }
   #me-profile .me-addr-card-btn {
     font-size: 13px;
     font-weight: 600;
-    padding: 8px 14px;
-    border-radius: 10px;
-    min-height: 40px;
-    background: var(--gray-100);
+    padding: 6px 12px;
+    border-radius: 8px;
+    min-height: 36px;
+    background: white;
     color: var(--blue);
+    border: 1px solid var(--gray-200);
   }
   #me-profile .me-addr-card-btn--ghost {
     color: var(--gray-700);
@@ -873,6 +889,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
   #me-profile .me-addr-card-btn--danger {
     color: var(--red);
     margin-left: auto;
+    border-color: transparent;
+    background: transparent;
+    padding: 6px 8px;
   }
   @media (max-width: 380px) {
     #me-profile .me-addr-card-btn--danger {
