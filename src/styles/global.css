@@ -7,6 +7,7 @@
 }
 
 :root {
+  --app-max-width: 800px;
   --blue: #0066cc;
   --green: #28a745;
   --red: #dc3545;
@@ -30,7 +31,7 @@ html {
 }
 
 body {
-  max-width: 800px;
+  max-width: var(--app-max-width);
   margin: 0 auto;
   padding: 0 16px;
   background: var(--gray-50);
@@ -105,6 +106,64 @@ textarea:focus {
   outline: none;
   border-color: var(--blue);
   box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+/* Checkboxes & radios: global `input { width: 100% }` breaks layout — reset */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+  accent-color: var(--blue);
+  cursor: pointer;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+}
+
+input[type="checkbox"]:focus,
+input[type="radio"]:focus {
+  outline: 2px solid rgba(0, 102, 204, 0.35);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* Inline label + checkbox (address book, delivery fee, checkout) */
+label.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-900);
+  line-height: 1.4;
+  margin-bottom: 0;
+}
+
+label.checkbox-row input[type="checkbox"],
+label.checkbox-row input[type="radio"] {
+  margin-top: 2px;
+}
+
+label.checkbox-row span,
+label.checkbox-row .checkbox-row-text {
+  flex: 1;
+  min-width: 0;
 }
 
 label {

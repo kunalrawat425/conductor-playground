@@ -49,42 +49,6 @@
   .customizer input:focus { border-color: #0066cc; }
   .customizer input::placeholder { color: #555; }
 
-  /* Live signup CTA (matches in-app seller storefront header) */
-  .seller-banner-recruit-wrap {
-    width: min(1080px, 100%);
-    margin: 0 auto 4px;
-    position: relative;
-    z-index: 100;
-  }
-  .seller-banner-recruit {
-    background: linear-gradient(135deg, rgba(0,102,204,0.22), rgba(0,102,204,0.06));
-    border: 1px solid rgba(102,179,255,0.28);
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-top: 6px;
-  }
-  .seller-banner-recruit p {
-    font-size: 13px;
-    line-height: 1.5;
-    color: rgba(255,255,255,0.85);
-    margin: 0 0 8px 0;
-    font-weight: 500;
-  }
-  .seller-banner-recruit strong { color: #fff; font-weight: 700; }
-  .seller-banner-recruit a {
-    font-weight: 800;
-    color: #7ec8ff;
-    text-decoration: none;
-  }
-  .seller-banner-recruit a:hover { text-decoration: underline; }
-  .seller-banner-recruit .recruit-sub {
-    display: block;
-    font-size: 11px;
-    color: rgba(255,255,255,0.48);
-    font-weight: 500;
-    line-height: 1.4;
-  }
-
   /* ===== SHARED ===== */
   .seller-brand-strip { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: linear-gradient(90deg, rgba(0,102,204,0.15), rgba(255,107,53,0.1)); border-top: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 2; }
   .seller-brand-strip .seller-name-display { font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.5px; }
@@ -342,15 +306,18 @@
     .b4 .footer-line { font-size: 11px; }
     .seller-brand-strip-white .seller-name-display,
     .seller-brand-strip-white .relifish-text { font-size: 16px; }
-    .seller-banner-recruit { padding: 12px 14px; }
-    .seller-banner-recruit p { font-size: 12px; }
-    .seller-banner-recruit .recruit-sub { font-size: 10px; }
   }
 </style>
+<!-- Vercel Web Analytics: enable in dashboard → Analytics. Production serves /_vercel/insights/* (404 locally unless `vercel dev`). -->
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 </script>
 <script defer src="/_vercel/insights/script.js" data-sdkn="@vercel/analytics" data-sdkv="1.6.1"></script>
+<!-- Vercel Speed Insights: enable in dashboard → Speed Insights. Production serves /_vercel/speed-insights/* -->
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
 <body>
 
@@ -362,25 +329,6 @@
 <div class="customizer">
   <label>Seller Name:</label>
   <input type="text" id="seller-name-input" placeholder="e.g. Ramesh Fish Corner" oninput="updateSellerName(this.value)">
-</div>
-
-<div class="seller-banner-recruit-wrap" aria-label="Become a seller">
-  <div data-lang="mr">
-    <div class="seller-banner-recruit">
-      <p>
-        मासे विकणारे? <a href="/dashboard/login">डॅशबोर्डवर विक्रेता खाते तयार करा</a> आणि Relifish वर <strong>तुमच्यासारख्या विक्रेत्यांसोबत</strong> सामील व्हा. लिस्टिंग, ऑर्डर आणि अलर्ट एकाच ठिकाणी.
-      </p>
-      <span class="recruit-sub">सुरुवात मोफत · फोनने लॉगिन · खरेदीदारांचा विश्वास असलेलंच प्लॅटफॉर्म</span>
-    </div>
-  </div>
-  <div data-lang="en">
-    <div class="seller-banner-recruit">
-      <p>
-        Fish seller? <a href="/dashboard/login">Create your seller account</a> on the dashboard and <strong>join sellers like you</strong> already on Relifish. Listings, orders, and alerts in one place.
-      </p>
-      <span class="recruit-sub">Free to start · Phone login · Same platform buyers trust</span>
-    </div>
-  </div>
 </div>
 
 <svg width="0" height="0" style="position:absolute">

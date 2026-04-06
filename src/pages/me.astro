@@ -3,9 +3,11 @@ import AppShell from "../components/AppShell.astro";
 import LoginModal from "../components/LoginModal.astro";
 import LocationPicker from "../components/LocationPicker.astro";
 export const prerender = false;
+
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 
-<AppShell title={`Profile - ${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
+<AppShell title={`Profile - ${brandName}`} description="Your profile and order history." activeTab="me" showLocationBadge={false}>
   <!-- Toast notification -->
   <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
   <div id="me-container">
@@ -17,10 +19,6 @@ export const prerender = false;
       <button class="btn btn-primary tap-target" id="me-login-btn" style="min-height:44px;padding:12px 32px;">
         Log in with phone
       </button>
-
-      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--gray-200);">
-        <a href="/dashboard/login" class="text-muted" style="font-size:13px;">Are you a seller? Log in here →</a>
-      </div>
     </div>
 
     <!-- Loading -->
@@ -41,18 +39,52 @@ export const prerender = false;
               <div class="text-muted" style="font-size:12px;margin-top:2px;">Your account</div>
             </div>
           </div>
-          <h3 style="font-size:14px;font-weight:700;margin:0 0 10px;color:var(--gray-700);">Contact details</h3>
-          <p class="text-muted" style="font-size:12px;margin:-4px 0 12px;line-height:1.35;">
-            Phone and email are tied to your login and cannot be changed here.
+          <div class="profile-card-head">
+            <h3 style="font-size:14px;font-weight:700;margin:0;color:var(--gray-700);">Your details</h3>
+          </div>
+          <p class="text-muted" style="font-size:12px;margin:8px 0 12px;line-height:1.35;">
+            Phone is verified at login. Tap Edit to change your name and email.
           </p>
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <div>
-              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Phone</div>
-              <div style="font-size:16px;font-weight:600;margin-top:4px;" id="me-contact-phone">—</div>
+
+          <div id="me-identity-view">
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">First name</span>
+              <div class="profile-readonly-value" id="me-view-first">—</div>
             </div>
-            <div>
-              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Email</div>
-              <div style="font-size:16px;font-weight:600;margin-top:4px;word-break:break-all;" id="me-contact-email">—</div>
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">Last name</span>
+              <div class="profile-readonly-value" id="me-view-last">—</div>
+            </div>
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">Email</span>
+              <div class="profile-readonly-value" id="me-view-email">—</div>
+            </div>
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">Phone</span>
+              <div class="profile-readonly-value" id="me-contact-phone">—</div>
+            </div>
+          </div>
+
+          <div id="me-identity-edit-footer" class="profile-identity-edit-footer">
+            <button type="button" id="me-edit-details-btn" class="profile-inline-edit-btn">Edit</button>
+          </div>
+
+          <div id="me-identity-edit" style="display:none;">
+            <div class="form-group">
+              <label for="me-first-name">First name</label>
+              <input type="text" id="me-first-name" class="profile-input" autocomplete="given-name" placeholder="First name" />
+            </div>
+            <div class="form-group">
+              <label for="me-last-name">Last name</label>
+              <input type="text" id="me-last-name" class="profile-input" autocomplete="family-name" placeholder="Last name" />
+            </div>
+            <div class="form-group">
+              <label for="me-email">Email</label>
+              <input type="email" id="me-email" class="profile-input" autocomplete="email" placeholder="you@example.com" />
+            </div>
+            <div class="profile-cta-row profile-cta-row--split">
+              <button type="button" id="me-cancel-profile" class="btn profile-card-cta profile-card-cta--secondary">Cancel</button>
+              <button type="button" id="me-save-profile" class="btn btn-primary profile-card-cta">Save</button>
             </div>
           </div>
         </div>
@@ -113,16 +145,16 @@ export const prerender = false;
             >
               Use current map area (header / Location)
             </button>
-            <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:12px;cursor:pointer;">
+            <label class="checkbox-row" for="me-addr-default" style="margin-bottom:12px;">
               <input type="checkbox" id="me-addr-default" />
-              Default for checkout
+              <span>Default for checkout</span>
             </label>
-            <div style="display:flex;gap:8px;">
-              <button type="button" class="btn btn-primary tap-target" id="me-addr-save" style="flex:1;padding:10px;font-size:14px;">
-                Save address
-              </button>
-              <button type="button" class="btn tap-target" id="me-addr-cancel" style="flex:1;background:var(--gray-100);padding:10px;font-size:14px;">
+            <div class="profile-addr-actions">
+              <button type="button" class="btn tap-target" id="me-addr-cancel" style="background:var(--gray-100);padding:10px 16px;font-size:14px;">
                 Cancel
+              </button>
+              <button type="button" class="btn btn-primary tap-target" id="me-addr-save" style="padding:10px 16px;font-size:14px;">
+                Save address
               </button>
             </div>
           </div>
@@ -166,7 +198,7 @@ export const prerender = false;
       <div id="ios-install-hint" class="card" style="margin-bottom:16px;display:none;">
         <div class="card-body" style="background:var(--blue);color:white;">
           <div style="font-weight:600;font-size:14px;margin-bottom:4px;">📱 Add to Home Screen</div>
-          <div style="font-size:13px;opacity:0.9;">Install Zepto for push notifications on iOS. Tap Share → Add to Home Screen.</div>
+          <div style="font-size:13px;opacity:0.9;">Install {brandName} for push notifications on iOS. Tap Share → Add to Home Screen.</div>
         </div>
       </div>
 
@@ -232,8 +264,49 @@ export const prerender = false;
 
       const avatarEl = document.getElementById("me-avatar")!;
       const displayNameEl = document.getElementById("me-display-name")!;
-      const contactPhoneEl = document.getElementById("me-contact-phone")!;
-      const contactEmailEl = document.getElementById("me-contact-email")!;
+      const firstInput = document.getElementById("me-first-name") as HTMLInputElement;
+      const lastInput = document.getElementById("me-last-name") as HTMLInputElement;
+      const emailInput = document.getElementById("me-email") as HTMLInputElement;
+
+      let buyerPhoneRaw = session.phone || "";
+      let buyerFn = "";
+      let buyerLn = "";
+      let buyerEm = "";
+
+      function applyBuyerDisplay(phoneRaw: string, fn: string, ln: string) {
+        const fullName = [fn, ln].filter(Boolean).join(" ").trim();
+        displayNameEl.textContent = fullName || "Buyer";
+        if (fn) {
+          avatarEl.textContent = (fn[0] + (ln[0] || "")).toUpperCase();
+        } else {
+          const ph = (phoneRaw || session.phone || "").replace(/\D/g, "");
+          avatarEl.textContent = ph.length >= 2 ? ph.slice(-2) : "?";
+        }
+      }
+
+      function syncMeIdentityView() {
+        document.getElementById("me-view-first")!.textContent = buyerFn || "—";
+        document.getElementById("me-view-last")!.textContent = buyerLn || "—";
+        document.getElementById("me-view-email")!.textContent = buyerEm || "—";
+        document.getElementById("me-contact-phone")!.textContent = formatContactPhone(buyerPhoneRaw);
+        applyBuyerDisplay(buyerPhoneRaw, buyerFn, buyerLn);
+      }
+
+      function openMeIdentityEdit() {
+        document.getElementById("me-identity-view")!.style.display = "none";
+        document.getElementById("me-identity-edit")!.style.display = "block";
+        (document.getElementById("me-identity-edit-footer") as HTMLElement).style.display = "none";
+        firstInput.value = buyerFn;
+        lastInput.value = buyerLn;
+        emailInput.value = buyerEm;
+      }
+
+      function closeMeIdentityEdit() {
+        document.getElementById("me-identity-view")!.style.display = "block";
+        document.getElementById("me-identity-edit")!.style.display = "none";
+        (document.getElementById("me-identity-edit-footer") as HTMLElement).style.display = "flex";
+        syncMeIdentityView();
+      }
 
       let serverPushEnabled = false;
       try {
@@ -241,34 +314,65 @@ export const prerender = false;
         if (profileRes.ok) {
           const { buyer } = await profileRes.json();
           serverPushEnabled = buyer.push_enabled === true;
-          const phoneRaw = buyer.phone || session.phone;
-          contactPhoneEl.textContent = formatContactPhone(phoneRaw);
-          const em = (buyer.email || "").trim();
-          contactEmailEl.textContent = em || "—";
-          const fn = (buyer.first_name || "").trim();
-          const ln = (buyer.last_name || "").trim();
-          const fullName = [fn, ln].filter(Boolean).join(" ");
-          displayNameEl.textContent = fullName || "Buyer";
-          if (fn) {
-            avatarEl.textContent = (fn[0] + (ln[0] || "")).toUpperCase();
-          } else {
-            const ph = (phoneRaw || session.phone || "").replace(/\D/g, "");
-            avatarEl.textContent = ph.length >= 2 ? ph.slice(-2) : "?";
-          }
+          buyerPhoneRaw = buyer.phone || session.phone || "";
+          buyerFn = (buyer.first_name || "").trim();
+          buyerLn = (buyer.last_name || "").trim();
+          buyerEm = (buyer.email || "").trim();
+          syncMeIdentityView();
         } else {
-          contactPhoneEl.textContent = formatContactPhone(session.phone);
-          contactEmailEl.textContent = "—";
-          displayNameEl.textContent = "Buyer";
-          const ph = (session.phone || "").replace(/\D/g, "");
-          avatarEl.textContent = ph.length >= 2 ? ph.slice(-2) : "?";
+          buyerPhoneRaw = session.phone || "";
+          buyerFn = "";
+          buyerLn = "";
+          buyerEm = "";
+          syncMeIdentityView();
         }
       } catch {
-        contactPhoneEl.textContent = formatContactPhone(session.phone);
-        contactEmailEl.textContent = "—";
-        displayNameEl.textContent = "Buyer";
-        const ph = (session.phone || "").replace(/\D/g, "");
-        avatarEl.textContent = ph.length >= 2 ? ph.slice(-2) : "?";
+        buyerPhoneRaw = session.phone || "";
+        buyerFn = "";
+        buyerLn = "";
+        buyerEm = "";
+        syncMeIdentityView();
       }
+
+      document.getElementById("me-edit-details-btn")?.addEventListener("click", () => openMeIdentityEdit());
+      document.getElementById("me-cancel-profile")?.addEventListener("click", () => closeMeIdentityEdit());
+
+      document.getElementById("me-save-profile")?.addEventListener("click", async () => {
+        const btn = document.getElementById("me-save-profile") as HTMLButtonElement;
+        setButtonLoading(btn, true, "Save", "on-dark");
+        try {
+          const res = await fetch("/api/buyer/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buyer_id: session.buyer_id,
+              updates: {
+                first_name: firstInput.value,
+                last_name: lastInput.value,
+                email: emailInput.value,
+              },
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showToast((data as { error?: string }).error || "Could not save profile", "error");
+            return;
+          }
+          const buyer = (data as { buyer?: { first_name?: string | null; last_name?: string | null; email?: string | null; phone?: string } }).buyer;
+          if (buyer) {
+            buyerFn = (buyer.first_name || "").trim();
+            buyerLn = (buyer.last_name || "").trim();
+            buyerEm = (buyer.email || "").trim();
+            if (buyer.phone) buyerPhoneRaw = buyer.phone;
+            closeMeIdentityEdit();
+          }
+          showToast("Profile saved");
+        } catch {
+          showToast("Could not save profile", "error");
+        } finally {
+          setButtonLoading(btn, false, "Save", "on-dark");
+        }
+      });
 
       // This device is subscribed but DB was never updated (e.g. failed save) — re-sync so /api/push-notify works
       if ((await isPushSubscribed()) && !serverPushEnabled) {
@@ -309,7 +413,7 @@ export const prerender = false;
             return;
           }
           const loc = JSON.parse(raw);
-          addrAreaHint.textContent = `Area: ${loc.name || "Pinned"} (${typeof loc.lat === "number" ? loc.lat.toFixed(4) : "?"}, ${typeof loc.lng === "number" ? loc.lng.toFixed(4) : "?"})`;
+          addrAreaHint.textContent = `Area: ${loc.name?.trim() || "Selected area"}`;
         } catch {
           addrAreaHint.textContent = "Area: not set";
         }
@@ -330,7 +434,7 @@ export const prerender = false;
           addrLandmark.value = row.landmark || "";
           addrDefaultCb.checked = !!row.is_default;
           if (row.location_name || row.lat != null) {
-            addrAreaHint.textContent = `Saved area: ${row.location_name || "Map pin"}${row.lat != null ? ` (${Number(row.lat).toFixed(4)}, ${Number(row.lng).toFixed(4)})` : ""}`;
+            addrAreaHint.textContent = `Saved area: ${(row.location_name || "").trim() || "Selected area"}`;
           } else refreshAddrAreaHintFromStorage();
         } else {
           editIdInput.value = "";
@@ -578,5 +682,93 @@ export const prerender = false;
 <style>
   .notify-bell-btn {
     position: relative;
+  }
+  #me-profile .profile-input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    background: white;
+  }
+  #me-profile .profile-input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
+  }
+  #me-profile .profile-card-head {
+    margin-bottom: 0;
+  }
+  #me-profile .profile-identity-edit-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gray-100);
+  }
+  #me-profile .profile-inline-edit-btn {
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    color: var(--blue);
+    cursor: pointer;
+  }
+  #me-profile .profile-readonly-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  #me-profile .profile-readonly-row:last-of-type {
+    border-bottom: none;
+  }
+  #me-profile .profile-readonly-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+  }
+  #me-profile .profile-readonly-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-900);
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  #me-profile .profile-cta-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+  #me-profile .profile-cta-row--split {
+    gap: 8px;
+    margin-top: 12px;
+  }
+  #me-profile .profile-card-cta {
+    width: auto;
+    max-width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 13px;
+    padding: 6px 14px;
+    min-height: 36px;
+  }
+  #me-profile .profile-card-cta--secondary {
+    background: var(--gray-100);
+    color: var(--gray-800);
+    font-weight: 600;
+  }
+  #me-profile .profile-addr-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 </style>

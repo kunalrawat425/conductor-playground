@@ -7,17 +7,10 @@ import LoginModal from "../../components/LoginModal.astro";
 import OrderAddressSheet from "../../components/OrderAddressSheet.astro";
 
 const { id } = Astro.params;
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 
 <AppShell title={`Seller Menu - ${brandName}`} description={`Fresh fish menu. Order for pickup or delivery on ${brandName}.`} activeTab="home">
-  <aside class="seller-recruit-strip" slot="header-extra" aria-label={`Become a seller on ${brandName}`}>
-    <p>
-      Fish seller? <a href="/dashboard/login">Create your seller account</a> on the dashboard and <strong>join sellers like you</strong> already on {brandName}. Listings, orders, and alerts in one place.
-    </p>
-    <span class="seller-recruit-sub">Free to start · Phone login · Same platform buyers trust</span>
-  </aside>
-
   <!-- Back button -->
   <div style="padding:12px 0 8px;">
     <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">
@@ -48,14 +41,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <p style="color:var(--red);">Seller not found.</p>
   </div>
 
-  <!-- Sticky cart bar -->
+  <!-- Sticky cart bar: items + total + CTA (billing breakdown is on the address sheet) -->
   <div class="cart-bar" id="cart-bar" style="display:none;">
     <div class="cart-bar-inner">
-      <div class="cart-info">
-        <span id="cart-count">0 items</span>
-        <span id="cart-total">₹0</span>
+      <div class="cart-bar-main">
+        <div class="cart-bar-meta">
+          <span id="cart-count">0 items</span>
+          <span id="cart-total">₹0</span>
+        </div>
+        <button type="button" class="cart-btn" id="place-order-btn">Place Order</button>
       </div>
-      <button class="cart-btn" id="place-order-btn">Place Order</button>
     </div>
   </div>
 
@@ -308,20 +303,26 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     }
     .cart-bar-inner {
-      max-width: 800px;
+      max-width: var(--app-max-width);
       margin: 0 auto;
       background: var(--green);
       border-radius: 14px;
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      padding: 12px 16px;
       box-shadow: 0 4px 20px rgba(40,167,69,0.3);
     }
-    .cart-info {
+    .cart-bar-main {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+    }
+    .cart-bar-meta {
       display: flex;
       flex-direction: column;
       gap: 2px;
+      min-width: 0;
     }
     #cart-count {
       font-size: 13px;
@@ -338,11 +339,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       color: var(--green);
       font-size: 15px;
       font-weight: 700;
-      padding: 10px 24px;
+      padding: 12px 18px;
       border-radius: 10px;
       border: none;
       cursor: pointer;
       transition: transform 0.1s;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
     .cart-btn:active { transform: scale(0.95); }
 
@@ -398,6 +402,42 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       // Cart state: { listingId: { listing, qty } }
       const cart = {};
 
+      /** Set after seller loads; drives delivery line in cart billing. */
+      let pricingForCart = {
+        inDeliveryRange: false,
+        hasDelivery: false,
+        dFeeOn: false,
+        dFee: 0,
+        freeAbove: /** @type {number | null} */ (null),
+      };
+
+      function getCartBillingSnapshot() {
+        const entries = Object.values(cart).filter(e => e.qty > 0);
+        if (entries.length === 0) return null;
+        const totalItems = entries.reduce((sum, e) => sum + e.qty, 0);
+        const subtotal = entries.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
+        const p = pricingForCart;
+        let deliveryFee = 0;
+        let deliveryLabel = "—";
+        if (p.inDeliveryRange && p.hasDelivery && p.dFeeOn) {
+          if (p.freeAbove != null && subtotal >= p.freeAbove) {
+            deliveryLabel = "Free";
+          } else {
+            deliveryFee = p.dFee;
+            deliveryLabel = `₹${deliveryFee}`;
+          }
+        } else if (!p.hasDelivery || !p.inDeliveryRange) {
+          deliveryLabel = "Pickup";
+        }
+        const grandTotal = subtotal + deliveryFee;
+        return {
+          subtotal: Math.round(subtotal),
+          deliveryLabel,
+          grandTotal: Math.round(grandTotal),
+          itemsLine: `${totalItems} item${totalItems !== 1 ? "s" : ""}`,
+        };
+      }
+
       function updateCartBar() {
         const cartBar = document.getElementById("cart-bar");
         const entries = Object.values(cart).filter(e => e.qty > 0);
@@ -406,10 +446,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           return;
         }
         cartBar.style.display = "block";
+        const snap = getCartBillingSnapshot();
         const totalItems = entries.reduce((sum, e) => sum + e.qty, 0);
-        const totalPrice = entries.reduce((sum, e) => sum + e.qty * e.listing.price, 0);
         document.getElementById("cart-count").textContent = `${totalItems} item${totalItems !== 1 ? "s" : ""}`;
-        document.getElementById("cart-total").textContent = `₹${totalPrice}`;
+        document.getElementById("cart-total").textContent = snap ? `₹${snap.grandTotal}` : "₹0";
       }
 
       function renderQtyControls(listingId) {
@@ -495,6 +535,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           freeAboveRaw != null && String(freeAboveRaw).trim() !== "" && Number(freeAboveRaw) > 0
             ? Number(freeAboveRaw)
             : null;
+
+        pricingForCart = {
+          inDeliveryRange,
+          hasDelivery: !!seller.has_delivery,
+          dFeeOn,
+          dFee,
+          freeAbove,
+        };
+
         const ruleParts: string[] = [];
         if (minO > 0) ruleParts.push(`Minimum order ₹${minO} per item`);
         if (dFeeOn) {
@@ -669,6 +718,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             new CustomEvent("open-order-address-sheet", {
               detail: {
                 requireAddressDetail: inDeliveryRange,
+                billing: getCartBillingSnapshot(),
                 onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
               },
             })
@@ -688,6 +738,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             new CustomEvent("open-order-address-sheet", {
               detail: {
                 requireAddressDetail: inDeliveryRange,
+                billing: getCartBillingSnapshot(),
                 onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
               },
             })

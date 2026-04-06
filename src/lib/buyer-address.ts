@@ -26,19 +26,29 @@ export function formatDetailLine(d: BuyerAddressDetail): string | null {
   return parts.length ? parts.join(", ") : null;
 }
 
-/** Area string from stored map fields (same shape as LocationPicker). */
+/** True if we have a named area or a map pin (coords are not shown in UI). */
+export function hasMapArea(
+  location_name: string | null | undefined,
+  lat: number | null | undefined,
+  lng: number | null | undefined
+): boolean {
+  if ((location_name || "").trim()) return true;
+  const la = typeof lat === "number" ? lat : NaN;
+  const ln = typeof lng === "number" ? lng : NaN;
+  return Number.isFinite(la) && Number.isFinite(ln);
+}
+
+/** Area label for display only — never appends lat/lng. */
 export function formatAreaPart(
   location_name: string | null | undefined,
   lat: number | null | undefined,
   lng: number | null | undefined
 ): string | null {
   const name = (location_name || "").trim();
+  if (name) return name;
   const la = typeof lat === "number" ? lat : NaN;
   const ln = typeof lng === "number" ? lng : NaN;
-  const hasCoords = Number.isFinite(la) && Number.isFinite(ln);
-  const coordSuffix = hasCoords ? ` (${la.toFixed(5)}, ${ln.toFixed(5)})` : "";
-  if (name) return `${name}${coordSuffix}`;
-  if (hasCoords) return `${la.toFixed(5)}, ${ln.toFixed(5)}`;
+  if (Number.isFinite(la) && Number.isFinite(ln)) return null;
   return null;
 }
 

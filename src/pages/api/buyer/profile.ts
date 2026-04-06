@@ -11,24 +11,51 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
  * Body: { buyer_id, updates: { first_name, last_name, email, ... } }
  * Uses service_role key to bypass RLS
  */
+const ALLOWED_BUYER_FIELDS = ["first_name", "last_name", "email"] as const;
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { buyer_id, updates } = await request.json();
 
-    if (!buyer_id || !updates) {
+    if (!buyer_id || !updates || typeof updates !== "object") {
       return new Response(JSON.stringify({ error: "buyer_id and updates required" }), { status: 400 });
+    }
+
+    const sanitized: Record<string, string | null> = {};
+    for (const key of ALLOWED_BUYER_FIELDS) {
+      if (updates[key] === undefined) continue;
+      const raw = updates[key];
+      if (key === "email") {
+        const t = typeof raw === "string" ? raw.trim() : "";
+        sanitized.email = t === "" ? null : t;
+      } else {
+        const t = typeof raw === "string" ? raw.trim() : "";
+        sanitized[key] = t === "" ? null : t;
+      }
+    }
+
+    if (Object.keys(sanitized).length === 0) {
+      return new Response(JSON.stringify({ error: "No allowed fields to update" }), { status: 400 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabase
       .from("buyers")
-      .update(updates)
+      .update(sanitized)
       .eq("id", buyer_id)
       .select()
       .single();
 
     if (error) {
+      if (error.code === "23505") {
+        const msg = (error.message || "").toLowerCase();
+        const human =
+          msg.includes("email") || msg.includes("buyers_email")
+            ? "That email is already in use."
+            : "This value is already in use.";
+        return new Response(JSON.stringify({ error: human }), { status: 409 });
+      }
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 

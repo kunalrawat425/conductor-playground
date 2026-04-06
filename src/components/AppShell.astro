@@ -9,7 +9,7 @@ interface Props {
 
 import VercelAnalytics from "./VercelAnalytics.astro";
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 const defaultDescription = "Order fresh fish from local Mumbai sellers. Pre-order tonight, pick up tomorrow morning.";
 const { title = brandName, description = defaultDescription, ogImage = "/og-image.png", activeTab = "home", showLocationBadge = true } = Astro.props;
 ---
@@ -56,20 +56,22 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
         <slot />
       </main>
 
-      <!-- Fixed bottom navigation -->
+      <!-- Fixed bottom navigation (layout matches SellerBottomNav: app-bottom-nav-inner) -->
       <nav class="bottom-nav" aria-label="Main navigation">
-        <a href="/" class={`bottom-nav-item ${activeTab === "home" ? "active" : ""}`}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span>Home</span>
-        </a>
-        <a href="/track" class={`bottom-nav-item ${activeTab === "orders" ? "active" : ""}`}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          <span>Orders</span>
-        </a>
-        <a href="/me" class={`bottom-nav-item ${activeTab === "me" ? "active" : ""}`}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Me</span>
-        </a>
+        <div class="app-bottom-nav-inner">
+          <a href="/" class={`bottom-nav-item ${activeTab === "home" ? "active" : ""}`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Home</span>
+          </a>
+          <a href="/track" class={`bottom-nav-item ${activeTab === "orders" ? "active" : ""}`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>Orders</span>
+          </a>
+          <a href="/me" class={`bottom-nav-item ${activeTab === "me" ? "active" : ""}`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Me</span>
+          </a>
+        </div>
       </nav>
     </div>
 
@@ -155,38 +157,6 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
     flex-shrink: 0;
   }
 
-  .seller-recruit-strip {
-    padding: 0 0 10px;
-    border-top: 1px solid var(--gray-100);
-    margin-top: 2px;
-  }
-
-  .seller-recruit-strip p {
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--gray-700);
-    margin: 0;
-    padding-top: 8px;
-  }
-
-  .seller-recruit-strip a {
-    font-weight: 700;
-    color: var(--blue);
-    text-decoration: none;
-  }
-
-  .seller-recruit-strip a:hover {
-    text-decoration: underline;
-  }
-
-  .seller-recruit-strip .seller-recruit-sub {
-    display: block;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--gray-500);
-    margin-top: 4px;
-  }
-
   .app-logo {
     font-size: 18px;
     font-weight: 700;
@@ -231,7 +201,7 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
     padding: 0 16px calc(80px + env(safe-area-inset-bottom));
   }
 
-  /* ===== BOTTOM NAV ===== */
+  /* ===== BOTTOM NAV (same shell pattern as SellerBottomNav) ===== */
   .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -240,12 +210,18 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
     min-height: 56px;
     background: white;
     border-top: 1px solid var(--gray-200);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
     z-index: 100;
     padding-bottom: env(safe-area-inset-bottom);
     box-sizing: content-box;
+  }
+
+  .bottom-nav .app-bottom-nav-inner {
+    max-width: var(--app-max-width);
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    min-height: 56px;
   }
 
   .bottom-nav-item {
@@ -283,12 +259,14 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
   .bottom-sheet {
     position: fixed;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    right: auto;
+    width: 100%;
+    max-width: var(--app-max-width);
     background: white;
     border-radius: 16px 16px 0 0;
     max-height: 70vh;
-    transform: translateY(100%);
+    transform: translate(-50%, 100%);
     transition: transform 0.3s ease;
     z-index: 200;
     padding: 0 16px 16px;
@@ -298,7 +276,7 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
   }
 
   .bottom-sheet.open {
-    transform: translateY(0);
+    transform: translate(-50%, 0);
   }
 
   .bottom-sheet-handle {
@@ -402,17 +380,21 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
   }
 
   @media (min-width: 769px) {
-    /* Desktop: bottom nav becomes horizontal top nav */
+    /* Desktop: bottom nav becomes horizontal bar under header (same inner pattern as seller) */
     .bottom-nav {
       position: static;
       height: auto;
       border-top: none;
       border-bottom: 1px solid var(--gray-200);
+      padding-bottom: 0;
+      max-width: var(--app-max-width);
+      margin: 0 auto;
+    }
+
+    .bottom-nav .app-bottom-nav-inner {
       justify-content: center;
       gap: 8px;
-      padding-bottom: 0;
-      max-width: 832px;
-      margin: 0 auto;
+      min-height: auto;
     }
 
     .bottom-nav-item {
@@ -429,13 +411,13 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
     }
 
     .app-content {
-      max-width: 800px;
+      max-width: var(--app-max-width);
       margin: 0 auto;
       padding-bottom: 24px;
     }
 
     .app-header {
-      max-width: 832px;
+      max-width: var(--app-max-width);
       margin: 0 auto;
       border-bottom: 1px solid var(--gray-200);
     }

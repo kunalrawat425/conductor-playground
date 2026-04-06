@@ -8,7 +8,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
 const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
 /** mailto: or https: URL required by web-push (see VAPID_CONTACT in .env.example) */
-const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@zepto.in";
+const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@relifish.app";
 
 export type BuyerPushPayload = {
   buyer_id: string;
@@ -80,12 +80,13 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
   try {
     const webPush = await loadWebPush();
     webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+    const uniqueTag = `order-${buyer_id}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     await webPush.sendNotification(
       subscription,
       JSON.stringify({
         ...notification,
         url: "/track",
-        tag: `order-${buyer_id}-${status}`,
+        tag: uniqueTag,
       })
     );
     return { ok: true, sent: true };
