@@ -52,12 +52,106 @@ import LoginModal from "../components/LoginModal.astro";
     <div id="sellers-container" class="seller-cards" style="min-height:200px;"></div>
   </section>
 
-  <!-- Empty state -->
+  <!-- Empty state: no sellers in area -->
   <section id="empty-state" style="display:none;">
-    <div style="text-align:center;padding:40px 20px;">
-      <div style="font-size:64px;margin-bottom:12px;">🐟</div>
-      <h3 id="empty-title" style="font-size:18px;font-weight:700;margin-bottom:8px;">No sellers found</h3>
-      <p id="empty-msg" class="text-muted">Check back early morning (5-8 AM) when sellers open!</p>
+
+    <!-- Hero -->
+    <div class="ns-card ns-hero" id="ns-hero-card">
+      <div class="ns-badge">🚀 Launching in your area soon</div>
+      <h3 id="empty-title">No sellers in your area yet</h3>
+      <p id="empty-msg">We're onboarding trusted fish sellers near you.<br/>Tell us your interest so we launch faster in your area.</p>
+      <div class="ns-urgency" id="ns-area-count"></div>
+    </div>
+
+    <!-- Visual flow -->
+    <div class="ns-card" id="ns-flow-card">
+      <h4 class="ns-section-title">How it works</h4>
+      <div class="ns-flow">
+        <div class="ns-flow-step"><div class="ns-flow-num">1</div><div class="ns-flow-icon">📍</div><div class="ns-flow-label">You tell us<br/>your area</div></div>
+        <div class="ns-flow-arrow">→</div>
+        <div class="ns-flow-step"><div class="ns-flow-num">2</div><div class="ns-flow-icon">🐟</div><div class="ns-flow-label">We bring<br/>sellers to you</div></div>
+        <div class="ns-flow-arrow">→</div>
+        <div class="ns-flow-step"><div class="ns-flow-num">3</div><div class="ns-flow-icon">🔔</div><div class="ns-flow-label">You get<br/>notified</div></div>
+        <div class="ns-flow-arrow">→</div>
+        <div class="ns-flow-step"><div class="ns-flow-num">4</div><div class="ns-flow-icon">🛒</div><div class="ns-flow-label">Browse, order<br/>& enjoy</div></div>
+      </div>
+    </div>
+
+    <!-- 7 Benefits -->
+    <div class="ns-card" id="ns-benefits-card">
+      <h4 class="ns-section-title">What you'll get</h4>
+      <div class="ns-benefits">
+        <div class="ns-ben"><span class="ns-ben-emoji">🐟</span><div><strong>Same-day freshness</strong><span class="ns-ben-sub">Fish sourced today, not sitting on ice for days</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">💰</span><div><strong>Transparent pricing</strong><span class="ns-ben-sub">No hidden charges. See price per kg upfront.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">🎣</span><div><strong>Pre-order option</strong><span class="ns-ben-sub">Book tomorrow's fish today. It's reserved for you.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">📍</span><div><strong>Nearby sellers only</strong><span class="ns-ben-sub">Closer sellers, fresher fish. Always local.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">📱</span><div><strong>All sellers, one app</strong><span class="ns-ben-sub">Compare prices across sellers. No multiple apps.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">💲</span><div><strong>Reasonable rates</strong><span class="ns-ben-sub">Direct from seller. Compare prices easily.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">🔔</span><div><strong>Smart notifications</strong><span class="ns-ben-sub">New seller nearby, fresh stock arrival, price drops</span></div></div>
+      </div>
+    </div>
+
+    <!-- Demand form -->
+    <div class="ns-card ns-query" id="ns-form-card">
+      <h4 class="ns-section-title">👉 Yes, I want this service</h4>
+      <p class="ns-query-sub">Help us launch faster in your area. Takes 30 seconds.</p>
+
+      <form id="quick-waitlist" class="qw-form">
+        <input type="tel" id="qw-phone" placeholder="Your phone number" required />
+        <input type="text" id="qw-area" placeholder="Your area (e.g. Andheri West)" required />
+
+        <div class="qw-group">
+          <label class="qw-label">How often do you buy fish?</label>
+          <div class="qw-chips" data-field="freq">
+            <button type="button" class="qw-chip" data-val="weekly">🗓 Weekly</button>
+            <button type="button" class="qw-chip" data-val="occasionally">🐟 Occasionally</button>
+          </div>
+        </div>
+
+        <div class="qw-group">
+          <label class="qw-label">What do you prefer?</label>
+          <div class="qw-chips" data-field="pref">
+            <button type="button" class="qw-chip" data-val="whole">🐟 Fresh whole fish</button>
+            <button type="button" class="qw-chip" data-val="cleaned">🔪 Cleaned & cut</button>
+            <button type="button" class="qw-chip" data-val="ready">🍳 Ready to cook</button>
+          </div>
+        </div>
+
+        <div class="qw-group">
+          <label class="qw-label">Expected order size?</label>
+          <div class="qw-chips" data-field="budget">
+            <button type="button" class="qw-chip" data-val="300-500">₹300–500</button>
+            <button type="button" class="qw-chip" data-val="500-1000">₹500–1000</button>
+            <button type="button" class="qw-chip" data-val="1000+">₹1000+</button>
+          </div>
+        </div>
+
+        <div class="qw-group">
+          <label class="qw-label">Request specific fish (optional)</label>
+          <input type="text" id="qw-fish" placeholder="e.g. I want Pomfret tomorrow" />
+        </div>
+
+        <button type="submit" class="qw-btn" id="qw-submit">👉 Notify Me When Live</button>
+        <p class="qw-note">We'll SMS you when sellers go live in your area</p>
+      </form>
+
+      <div id="qw-success" style="display:none;">
+        <div class="qw-done-box">
+          <div style="font-size:40px;">🎉</div>
+          <p class="qw-done">You're on the list!</p>
+          <p class="qw-done-sub">We'll notify you when sellers go live near you.<br/>Early supporters get the best launch deals.</p>
+          <div class="qw-done-area" id="qw-done-count"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trust -->
+    <div class="ns-card ns-trust" id="ns-trust-card">
+      <div class="ns-trust-row">
+        <div class="ns-trust-avatars"><div class="ns-av a1">RK</div><div class="ns-av a2">PS</div><div class="ns-av a3">AM</div><div class="ns-av a4">+</div></div>
+        <p>Mumbai buyers are joining every day</p>
+      </div>
+      <div class="ns-contact">Questions? <a href="mailto:relifishstore@gmail.com?subject=Fish%20Query">relifishstore@gmail.com</a></div>
     </div>
   </section>
 
@@ -65,6 +159,65 @@ import LoginModal from "../components/LoginModal.astro";
   <LoginModal />
 
   <style is:global>
+    /* ===== No-seller empty state ===== */
+    .ns-card { background: white; border-radius: 16px; padding: 24px 20px; margin-bottom: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+    .ns-hero { text-align: center; background: linear-gradient(135deg, #f0f6ff 0%, #e8f4fd 100%); border: 1px solid #d4e6f9; }
+    .ns-badge { display: inline-block; background: var(--blue); color: white; font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 50px; margin-bottom: 10px; }
+    .ns-hero h3 { font-size: 20px; font-weight: 700; margin: 0 0 8px; }
+    .ns-hero p { font-size: 14px; color: var(--gray-600); margin: 0; line-height: 1.5; }
+    .ns-urgency { margin-top: 12px; font-size: 13px; font-weight: 700; color: #e65100; background: #fff3e0; padding: 8px 14px; border-radius: 8px; display: none; }
+    .ns-section-title { font-size: 15px; font-weight: 700; margin: 0 0 14px; color: var(--gray-800); }
+
+    /* Flow diagram */
+    .ns-flow { display: flex; align-items: flex-start; justify-content: center; gap: 2px; }
+    .ns-flow-step { text-align: center; flex: 1; min-width: 60px; position: relative; }
+    .ns-flow-num { width: 20px; height: 20px; background: var(--blue); color: white; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; }
+    .ns-flow-icon { font-size: 24px; margin-bottom: 4px; }
+    .ns-flow-label { font-size: 11px; font-weight: 600; color: var(--gray-700); line-height: 1.3; }
+    .ns-flow-arrow { font-size: 16px; color: var(--blue); font-weight: 700; margin-top: 20px; flex-shrink: 0; }
+
+    /* Benefits */
+    .ns-benefits { display: flex; flex-direction: column; gap: 8px; }
+    .ns-ben { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--gray-50); border-radius: 10px; }
+    .ns-ben-emoji { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+    .ns-ben div { display: flex; flex-direction: column; gap: 1px; }
+    .ns-ben strong { font-size: 13px; font-weight: 600; }
+    .ns-ben-sub { font-size: 11px; color: var(--gray-500); line-height: 1.3; }
+
+    /* Query form */
+    .ns-query { border: 2px solid var(--blue); background: linear-gradient(180deg, #f0f6ff 0%, white 40%); }
+    .ns-query-sub { font-size: 13px; color: var(--gray-500); margin: -8px 0 14px; }
+    .qw-form { display: flex; flex-direction: column; gap: 12px; }
+    .qw-form input { padding: 12px 14px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 15px; font-family: inherit; background: white; box-sizing: border-box; width: 100%; }
+    .qw-form input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+    .qw-group { display: flex; flex-direction: column; gap: 6px; }
+    .qw-label { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+    .qw-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .qw-chip { padding: 8px 14px; border: 1.5px solid var(--gray-200); border-radius: 50px; font-size: 13px; font-weight: 600; background: white; color: var(--gray-700); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .qw-chip.selected { background: var(--blue); color: white; border-color: var(--blue); }
+    .qw-btn { padding: 14px; background: var(--blue); color: white; font-size: 16px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; min-height: 50px; margin-top: 4px; }
+    .qw-btn:hover { background: #0052a3; }
+    .qw-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .qw-note { font-size: 12px; color: var(--gray-400); text-align: center; margin: 0; }
+    .qw-done-box { text-align: center; padding: 12px 0; }
+    .qw-done { font-size: 18px; font-weight: 700; color: #00875a; margin: 8px 0 4px; }
+    .qw-done-sub { font-size: 13px; color: var(--gray-500); margin: 0; line-height: 1.6; }
+    .qw-done-area { margin-top: 12px; font-size: 13px; font-weight: 700; color: #e65100; background: #fff3e0; padding: 8px 14px; border-radius: 8px; display: none; }
+
+    /* Trust */
+    .ns-trust { display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; }
+    .ns-trust-row { display: flex; align-items: center; gap: 10px; }
+    .ns-trust-row p { font-size: 13px; color: var(--gray-500); margin: 0; }
+    .ns-trust-avatars { display: flex; }
+    .ns-av { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; margin-left: -6px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; }
+    .ns-av:first-child { margin-left: 0; }
+    .a1 { background: linear-gradient(135deg,#2a5298,#1e3c72); }
+    .a2 { background: linear-gradient(135deg,#f5af19,#f12711); }
+    .a3 { background: linear-gradient(135deg,#11998e,#38ef7d); }
+    .a4 { background: linear-gradient(135deg,#667eea,#764ba2); }
+    .ns-contact { font-size: 12px; color: var(--gray-400); }
+    .ns-contact a { color: var(--blue); font-weight: 600; }
+
     .hero-search {
       margin: 8px 0 12px;
     }
@@ -587,15 +740,23 @@ import LoginModal from "../components/LoginModal.astro";
         const buyerLoc = getBuyerLocation();
         const emptyTitle = document.getElementById("empty-title")!;
         const emptyMsg = document.getElementById("empty-msg")!;
+        const extraCards = ["ns-flow-card","ns-benefits-card","ns-form-card","ns-trust-card"].map(id => document.getElementById(id));
         if (!buyerLoc) {
           emptyTitle.textContent = "Set your location";
           emptyMsg.innerHTML = `We need your location to show nearby sellers. <a href="#" onclick="window.dispatchEvent(new CustomEvent('open-location-picker'));return false;" style="color:var(--primary);text-decoration:underline;">Set location</a>`;
+          extraCards.forEach(c => { if (c) c.style.display = "none"; });
+          const heroCard = document.getElementById("ns-hero-card");
+          if (heroCard) { heroCard.querySelector(".ns-badge")!.textContent = "📍 Location needed"; }
         } else if (hasActiveFilters()) {
           emptyTitle.textContent = "No sellers match these filters";
           emptyMsg.textContent = "Turn off a filter or tap All to see everyone.";
+          extraCards.forEach(c => { if (c) c.style.display = "none"; });
         } else {
-          emptyTitle.textContent = "No sellers in your area";
-          emptyMsg.innerHTML = `No sellers deliver to your location yet. <a href="#" onclick="window.dispatchEvent(new CustomEvent('open-location-picker'));return false;" style="color:var(--primary);text-decoration:underline;">Change location</a>`;
+          emptyTitle.textContent = "No sellers in your area yet";
+          emptyMsg.innerHTML = "We're onboarding trusted fish sellers near you.<br/>Tell us your interest so we launch faster in your area.";
+          extraCards.forEach(c => { if (c) c.style.display = "block"; });
+          const heroCard = document.getElementById("ns-hero-card");
+          if (heroCard) { heroCard.querySelector(".ns-badge")!.textContent = "🚀 Launching in your area soon"; }
         }
         return;
       }
@@ -787,5 +948,60 @@ import LoginModal from "../components/LoginModal.astro";
 
     loadCatalog();
     checkLocation();
+
+    // Chip selection (toggle within group)
+    document.querySelectorAll(".qw-chips").forEach(group => {
+      group.querySelectorAll(".qw-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          group.querySelectorAll(".qw-chip").forEach(c => c.classList.remove("selected"));
+          chip.classList.add("selected");
+        });
+      });
+    });
+
+    // Waitlist form submission
+    const qwFormEl = document.getElementById("quick-waitlist");
+    if (qwFormEl) {
+      qwFormEl.addEventListener("submit", async (e: Event) => {
+        e.preventDefault();
+        const btn = document.getElementById("qw-submit") as HTMLButtonElement;
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
+        const phone = (document.getElementById("qw-phone") as HTMLInputElement).value.trim();
+        const area = (document.getElementById("qw-area") as HTMLInputElement).value.trim();
+        const freq = document.querySelector("[data-field=freq] .qw-chip.selected")?.getAttribute("data-val") || "";
+        const pref = document.querySelector("[data-field=pref] .qw-chip.selected")?.getAttribute("data-val") || "";
+        const budget = document.querySelector("[data-field=budget] .qw-chip.selected")?.getAttribute("data-val") || "";
+        const fishReq = (document.getElementById("qw-fish") as HTMLInputElement).value.trim();
+        try {
+          const res = await fetch("/api/waitlist/join", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buyer_id: localStorage.getItem("zepto_buyer_id") || null,
+              phone, area,
+              fish_wanted: fishReq,
+              frequency: freq, preference: pref, budget: budget,
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            qwFormEl.style.display = "none";
+            document.getElementById("qw-success")!.style.display = "block";
+            const cnt = document.getElementById("qw-done-count");
+            if (cnt && data.area_count > 1) {
+              cnt.textContent = "🔥 " + data.area_count + " people in your area are already waiting";
+              cnt.style.display = "block";
+            }
+          } else {
+            btn.disabled = false;
+            btn.textContent = "👉 Notify Me When Live";
+          }
+        } catch (_) {
+          btn.disabled = false;
+          btn.textContent = "👉 Notify Me When Live";
+        }
+      });
+    }
   </script>
 </AppShell>
