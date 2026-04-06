@@ -1,7 +1,10 @@
 ---
 /**
  * Address book at checkout: pick a saved address or enter a new one (optionally save).
- * Opens via: window.dispatchEvent(new CustomEvent("open-order-address-sheet", { detail: { requireAddressDetail, onConfirm({ buyer_addr }), onCancel? } }))
+ * Opens via: window.dispatchEvent(new CustomEvent("open-order-address-sheet", {
+ *   detail: { requireAddressDetail, billing?, onConfirm({ buyer_addr }), onCancel? }
+ * }))
+ * `billing`: { subtotal, deliveryLabel, grandTotal, itemsLine } — shown at top of sheet when set.
  */
 ---
 
@@ -9,6 +12,7 @@
   <div class="order-address-overlay-bg" id="order-address-overlay-bg"></div>
   <div class="order-address-sheet bottom-sheet" id="order-address-sheet">
     <div class="bottom-sheet-handle"></div>
+    <div id="order-address-billing-wrap" class="order-address-billing-wrap" style="display:none;"></div>
     <h3 style="font-size:18px;font-weight:700;margin-bottom:4px;" id="order-address-title">Address for this order</h3>
     <p class="text-muted" style="font-size:13px;margin-bottom:12px;line-height:1.4;" id="order-address-subtitle">
       Choose a saved address or enter a new one. Your map area is reused when adding details.
@@ -40,14 +44,6 @@
         >
           —
         </div>
-        <button
-          type="button"
-          class="btn tap-target"
-          id="order-address-change-area"
-          style="margin-top:8px;width:100%;background:var(--gray-100);color:var(--blue);font-size:13px;padding:8px 12px;"
-        >
-          Change area on map
-        </button>
       </div>
 
       <div class="form-group" style="margin-bottom:12px;">
@@ -64,19 +60,24 @@
       </div>
 
       <div class="form-group" style="margin-bottom:12px;" id="order-address-save-wrap">
-        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+        <label class="checkbox-row" for="order-addr-save-book" style="margin-bottom:8px;">
           <input type="checkbox" id="order-addr-save-book" />
-          Save to my address book
+          <span>Save to my address book</span>
         </label>
         <input
           type="text"
           id="order-addr-save-label"
           placeholder="Label (e.g. Home, Mom's)"
-          style="font-size:14px;margin-top:8px;display:none;"
+          style="font-size:14px;margin-top:0;display:none;"
         />
-        <label style="display:none;margin-top:8px;font-size:14px;cursor:pointer;align-items:center;gap:8px;" id="order-addr-default-wrap">
+        <label
+          class="checkbox-row"
+          for="order-addr-save-default"
+          id="order-addr-default-wrap"
+          style="display:none;margin-top:8px;"
+        >
           <input type="checkbox" id="order-addr-save-default" />
-          Set as default address
+          <span>Set as default address</span>
         </label>
       </div>
     </div>
@@ -119,12 +120,14 @@
   .order-address-sheet {
     position: absolute;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    right: auto;
+    width: 100%;
+    max-width: var(--app-max-width);
     background: white;
     border-radius: 16px 16px 0 0;
     max-height: 85vh;
-    transform: translateY(100%);
+    transform: translate(-50%, 100%);
     transition: transform 0.3s ease;
     padding: 0 16px 16px;
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
@@ -133,7 +136,7 @@
     z-index: 1;
   }
   .order-address-overlay.open .order-address-sheet {
-    transform: translateY(0);
+    transform: translate(-50%, 0);
   }
   .order-address-choice {
     display: flex;
@@ -149,8 +152,107 @@
     border-color: var(--blue);
     background: var(--gray-50);
   }
-  .order-address-choice input {
-    margin-top: 3px;
+  .order-address-choice-control {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+  }
+  .order-address-choice-control input[type="radio"] {
+    margin: 0;
+    width: 18px !important;
+    height: 18px !important;
+    max-width: 18px !important;
+    min-width: 18px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  .order-address-choice-body {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+</style>
+
+<!-- Billing block is injected via innerHTML — styles must be global to apply -->
+<style is:global>
+  .order-address-billing-wrap {
+    margin-bottom: 16px;
+  }
+  .order-address-billing {
+    background: linear-gradient(180deg, #f8fafc 0%, var(--gray-50) 100%);
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+  .order-address-billing-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin: 0 0 12px 0;
+    letter-spacing: -0.02em;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--blue);
+  }
+  .order-address-billing-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    font-size: 15px;
+    line-height: 1.4;
+    margin: 0 0 10px 0;
+  }
+  .order-address-billing-row:last-child {
+    margin-bottom: 0;
+  }
+  .order-address-billing-label {
+    font-weight: 700;
+    color: var(--gray-800);
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .order-address-billing-value {
+    font-weight: 700;
+    color: var(--gray-900);
+    text-align: right;
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .order-address-billing-total {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gray-200);
+    margin-bottom: 0;
+  }
+  .order-address-billing-total .order-address-billing-label,
+  .order-address-billing-total .order-address-billing-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--gray-900);
+  }
+  .order-address-billing-summary {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--gray-300);
+  }
+  .order-address-billing-summary .order-address-billing-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gray-700);
+  }
+  .order-address-billing-summary .order-address-billing-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--blue);
   }
 </style>
 
@@ -159,8 +261,9 @@
   import {
     formatSavedBuyerAddress,
     formatNewCheckoutAddress,
-    formatAreaPart,
+    hasMapArea,
     hasDeliveryUnitDetail,
+    parseZeptoLocation,
   } from "../lib/buyer-address";
   import type { BuyerAddressRow } from "../lib/buyer-address";
 
@@ -186,6 +289,7 @@
   const backBtn = document.getElementById("order-address-back") as HTMLButtonElement;
   const titleEl = document.getElementById("order-address-title")!;
   const subtitleEl = document.getElementById("order-address-subtitle")!;
+  const billingWrap = document.getElementById("order-address-billing-wrap")!;
 
   let requireAddressDetail = false;
   let pendingOnConfirm: ((p: { buyer_addr: string | null }) => void | Promise<void>) | null = null;
@@ -212,6 +316,38 @@
     return d.innerHTML;
   }
 
+  function renderBillingBlock(
+    b: { subtotal: number; deliveryLabel: string; grandTotal: number; itemsLine: string } | null
+  ) {
+    if (!b || typeof b.subtotal !== "number" || typeof b.grandTotal !== "number") {
+      billingWrap.style.display = "none";
+      billingWrap.innerHTML = "";
+      return;
+    }
+    billingWrap.style.display = "block";
+    billingWrap.innerHTML = `
+      <div class="order-address-billing" role="region" aria-label="Billing summary">
+        <div class="order-address-billing-title">Billing</div>
+        <div class="order-address-billing-row">
+          <span class="order-address-billing-label">Subtotal</span>
+          <span class="order-address-billing-value">₹${b.subtotal}</span>
+        </div>
+        <div class="order-address-billing-row">
+          <span class="order-address-billing-label">Delivery</span>
+          <span class="order-address-billing-value">${esc(b.deliveryLabel)}</span>
+        </div>
+        <div class="order-address-billing-row order-address-billing-total">
+          <span class="order-address-billing-label">Total</span>
+          <span class="order-address-billing-value">₹${b.grandTotal}</span>
+        </div>
+        <div class="order-address-billing-summary">
+          <span class="order-address-billing-label">${esc(b.itemsLine)}</span>
+          <span class="order-address-billing-value">₹${b.grandTotal}</span>
+        </div>
+      </div>
+    `;
+  }
+
   function pickDefaultSelection(rows: BuyerAddressRow[]): string {
     const saved = localStorage.getItem(LS_SELECTION);
     if (saved === "new") return "new";
@@ -235,22 +371,26 @@
       .map(
         (row) => `
       <label class="order-address-choice">
-        <input type="radio" name="order-checkout-addr" value="${esc(row.id)}" ${selectedId === row.id ? "checked" : ""} />
-        <div style="min-width:0;">
-          <div style="font-weight:700;font-size:14px;">${esc(row.label || "Saved address")} ${row.is_default ? '<span style="font-size:11px;color:var(--blue);">Default</span>' : ""}</div>
-          <div class="text-muted" style="font-size:12px;margin-top:4px;line-height:1.35;">${esc(formatSavedBuyerAddress(row) || "—")}</div>
-        </div>
+        <span class="order-address-choice-control">
+          <input type="radio" name="order-checkout-addr" value="${esc(row.id)}" ${selectedId === row.id ? "checked" : ""} />
+        </span>
+        <span class="order-address-choice-body">
+          <span style="font-weight:700;font-size:14px;display:block;">${esc(row.label || "Saved address")} ${row.is_default ? '<span style="font-size:11px;color:var(--blue);">Default</span>' : ""}</span>
+          <span class="text-muted" style="font-size:12px;margin-top:4px;line-height:1.35;display:block;">${esc(formatSavedBuyerAddress(row) || "—")}</span>
+        </span>
       </label>
     `
       )
       .join("");
     listEl.innerHTML += `
       <label class="order-address-choice">
-        <input type="radio" name="order-checkout-addr" value="new" ${selectedId === "new" ? "checked" : ""} />
-        <div>
-          <div style="font-weight:700;font-size:14px;">Use a new address</div>
-          <div class="text-muted" style="font-size:12px;margin-top:4px;">Enter flat, building, and area below</div>
-        </div>
+        <span class="order-address-choice-control">
+          <input type="radio" name="order-checkout-addr" value="new" ${selectedId === "new" ? "checked" : ""} />
+        </span>
+        <span class="order-address-choice-body">
+          <span style="font-weight:700;font-size:14px;display:block;">Use a new address</span>
+          <span class="text-muted" style="font-size:12px;margin-top:4px;display:block;">Enter flat, building, and area below</span>
+        </span>
       </label>
     `;
     listEl.querySelectorAll('input[name="order-checkout-addr"]').forEach((el) => {
@@ -314,6 +454,7 @@
   function closeSheet() {
     overlay.classList.remove("open");
     overlay.setAttribute("aria-hidden", "true");
+    renderBillingBlock(null);
   }
 
   function applyModeLabels() {
@@ -331,16 +472,29 @@
     requireAddressDetail = !!d.requireAddressDetail;
     pendingOnConfirm = typeof d.onConfirm === "function" ? d.onConfirm : null;
     pendingOnCancel = typeof d.onCancel === "function" ? d.onCancel : null;
+    const raw = d.billing;
+    if (
+      raw &&
+      typeof raw.subtotal === "number" &&
+      typeof raw.grandTotal === "number" &&
+      typeof raw.deliveryLabel === "string" &&
+      typeof raw.itemsLine === "string"
+    ) {
+      renderBillingBlock({
+        subtotal: raw.subtotal,
+        deliveryLabel: raw.deliveryLabel,
+        grandTotal: raw.grandTotal,
+        itemsLine: raw.itemsLine,
+      });
+    } else {
+      renderBillingBlock(null);
+    }
     applyModeLabels();
     openSheet();
   }) as EventListener);
 
   window.addEventListener("location-updated", () => {
     if (overlay.classList.contains("open") && selectedId === "new") refreshAreaDisplay();
-  });
-
-  document.getElementById("order-address-change-area")?.addEventListener("click", () => {
-    window.dispatchEvent(new CustomEvent("open-location-picker"));
   });
 
   saveBookCb.addEventListener("change", () => {
@@ -359,8 +513,7 @@
       const row = loadedAddresses.find((r) => r.id === selectedId);
       if (!row) return true;
       if (requireAddressDetail) {
-        const area = formatAreaPart(row.location_name, row.lat, row.lng);
-        if (!area) {
+        if (!hasMapArea(row.location_name, row.lat, row.lng)) {
           errEl.textContent = "This saved address has no area. Edit it in your address book or pick “new address”.";
           errEl.style.display = "block";
           return false;
@@ -374,11 +527,11 @@
       return true;
     }
 
-    const area = getBuyerAddressFromStorage();
     const flat = flatInput.value.trim();
     const building = buildingInput.value.trim();
     if (requireAddressDetail) {
-      if (!area) {
+      const loc = parseZeptoLocation();
+      if (!hasMapArea(loc?.name ?? null, loc?.lat ?? null, loc?.lng ?? null)) {
         errEl.textContent = "Set your area on the map first (Change area on map).";
         errEl.style.display = "block";
         return false;

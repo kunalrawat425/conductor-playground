@@ -7,7 +7,7 @@ import LoginModal from "../../components/LoginModal.astro";
 import OrderAddressSheet from "../../components/OrderAddressSheet.astro";
 
 const { species } = Astro.params;
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 
 <AppShell title={`Pre-order - ${brandName}`} description={`Pre-order fresh fish for tomorrow morning on ${brandName}.`} activeTab="home">
@@ -425,6 +425,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         currentOrder = null;
       }
 
+      function getPreorderBillingSnapshot() {
+        if (!currentOrder) return null;
+        const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
+        const unitLabel = currentOrder.unit === "dozen" ? "dz" : currentOrder.unit;
+        const subtotal = Math.round(qty * currentOrder.price);
+        return {
+          subtotal,
+          deliveryLabel: "Pickup",
+          grandTotal: subtotal,
+          itemsLine: `${qty} ${unitLabel}`,
+        };
+      }
+
       function updatePriceInfo() {
         if (!currentOrder) return;
         const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
@@ -498,6 +511,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           new CustomEvent("open-order-address-sheet", {
             detail: {
               requireAddressDetail: false,
+              billing: getPreorderBillingSnapshot(),
               onConfirm: ({ buyer_addr }) => submitOrder(session, buyer_addr),
             },
           })
@@ -518,6 +532,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             new CustomEvent("open-order-address-sheet", {
               detail: {
                 requireAddressDetail: false,
+                billing: getPreorderBillingSnapshot(),
                 onConfirm: ({ buyer_addr }) => submitOrder(session, buyer_addr),
               },
             })

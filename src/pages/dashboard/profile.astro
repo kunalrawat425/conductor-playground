@@ -7,7 +7,7 @@ import SellerBottomNav from "../../components/SellerBottomNav.astro";
 import VercelAnalytics from "../../components/VercelAnalytics.astro";
 import "../../styles/global.css";
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 
 <html lang="en">
@@ -36,26 +36,68 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
 
     <main id="dash-main" style="display:none;">
       <h1
-        id="seller-profile-display-name"
-        style="font-size:28px;font-weight:800;line-height:1.15;color:var(--gray-900);margin:0 0 16px;letter-spacing:-0.02em;"
+        style="font-size:28px;font-weight:800;line-height:1.15;color:var(--gray-900);margin:0 0 4px;letter-spacing:-0.02em;"
       >
-        —
+        Profile
       </h1>
+      <p id="seller-shop-byline" class="text-muted" style="font-size:15px;font-weight:600;margin:0 0 16px;line-height:1.3;">
+        —
+      </p>
 
-      <div class="card" style="margin-bottom:16px;">
+      <div class="card" id="profile-section-identity" style="margin-bottom:16px;">
         <div class="card-body">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">Contact details</h3>
-          <p class="text-muted" style="font-size:12px;margin:-4px 0 14px;line-height:1.35;">
-            Phone and email are tied to your seller account and cannot be changed here.
+          <div class="profile-card-head">
+            <h3 style="font-size:15px;font-weight:700;margin:0;">Business &amp; contact</h3>
+            <button type="button" id="edit-identity-btn" class="profile-inline-edit-btn">Edit</button>
+          </div>
+          <p class="text-muted" style="font-size:12px;margin:8px 0 12px;line-height:1.35;">
+            Phone is verified at login. Tap Edit to change shop name, your name, and email.
           </p>
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <div>
-              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Phone</div>
-              <div style="font-size:16px;font-weight:600;margin-top:4px;" id="seller-contact-phone">—</div>
+
+          <div id="identity-view">
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">Business / shop name</span>
+              <div class="profile-readonly-value" id="seller-view-business">—</div>
             </div>
-            <div>
-              <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Email</div>
-              <div style="font-size:16px;font-weight:600;margin-top:4px;word-break:break-all;" id="seller-contact-email">—</div>
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">First name</span>
+              <div class="profile-readonly-value" id="seller-view-first">—</div>
+            </div>
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">Last name</span>
+              <div class="profile-readonly-value" id="seller-view-last">—</div>
+            </div>
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">Email</span>
+              <div class="profile-readonly-value" id="seller-view-email">—</div>
+            </div>
+            <div class="profile-readonly-row">
+              <span class="profile-readonly-label">Phone</span>
+              <div class="profile-readonly-value" id="seller-contact-phone">—</div>
+            </div>
+          </div>
+
+          <div id="identity-edit" style="display:none;">
+            <div class="form-group">
+              <label for="seller-business-name">Business / shop name</label>
+              <input type="text" id="seller-business-name" class="profile-input" autocomplete="organization" placeholder="e.g. Ramesh Fish Corner" />
+            </div>
+            <div class="form-group">
+              <label for="seller-first-name">First name</label>
+              <input type="text" id="seller-first-name" class="profile-input" autocomplete="given-name" />
+            </div>
+            <div class="form-group">
+              <label for="seller-last-name">Last name</label>
+              <input type="text" id="seller-last-name" class="profile-input" autocomplete="family-name" />
+            </div>
+            <div class="form-group">
+              <label for="seller-email-input">Email</label>
+              <input type="email" id="seller-email-input" class="profile-input" autocomplete="email" />
+            </div>
+            <p class="text-muted" style="font-size:12px;margin:0 0 8px;">Phone cannot be changed here.</p>
+            <div class="profile-cta-row profile-cta-row--split">
+              <button type="button" id="cancel-identity-btn" class="btn profile-card-cta profile-card-cta--secondary">Cancel</button>
+              <button type="button" id="save-identity-btn" class="btn btn-primary profile-card-cta">Save</button>
             </div>
           </div>
         </div>
@@ -95,7 +137,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             <input type="number" id="delivery-radius-km" min="1" max="100" step="1" style="font-size:14px;max-width:120px;" />
             <div class="text-muted" style="font-size:12px;margin-top:4px;">Only buyers within this distance can order delivery</div>
           </div>
-          <button id="save-delivery-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save delivery settings</button>
+          <div class="profile-cta-row">
+            <button id="save-delivery-btn" type="button" class="btn btn-primary profile-card-cta">Save delivery settings</button>
+          </div>
         </div>
       </div>
 
@@ -111,10 +155,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             <input type="number" id="min-order-amt" min="0" step="1" style="font-size:14px;max-width:140px;" />
             <div class="text-muted" style="font-size:11px;margin-top:4px;">0 = no minimum</div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <label class="checkbox-row" for="delivery-fee-enabled" style="margin-bottom:12px;">
             <input type="checkbox" id="delivery-fee-enabled" />
-            <label for="delivery-fee-enabled" style="margin:0;font-weight:600;">Charge delivery fee</label>
-          </div>
+            <span>Charge delivery fee</span>
+          </label>
           <div style="margin-bottom:12px;">
             <label for="delivery-fee-amt">Delivery fee (₹)</label>
             <input type="number" id="delivery-fee-amt" min="0" step="1" style="font-size:14px;max-width:120px;" />
@@ -124,7 +168,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
             <input type="number" id="free-delivery-above" min="0" step="1" placeholder="Optional" style="font-size:14px;max-width:140px;" />
             <div class="text-muted" style="font-size:11px;margin-top:4px;">Leave empty if you never waive the fee by amount</div>
           </div>
-          <button id="save-pricing-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save pricing rules</button>
+          <div class="profile-cta-row">
+            <button id="save-pricing-btn" type="button" class="btn btn-primary profile-card-cta">Save pricing rules</button>
+          </div>
         </div>
       </div>
 
@@ -132,11 +178,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Operating Hours</h3>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <input type="time" id="opens-at" style="width:auto;padding:8px 10px;font-size:14px;" />
-            <span class="text-muted">to</span>
-            <input type="time" id="closes-at" style="width:auto;padding:8px 10px;font-size:14px;" />
-            <button id="save-hours-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:80px;">Save</button>
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <input type="time" id="opens-at" style="width:auto;padding:8px 10px;font-size:14px;" />
+              <span class="text-muted">to</span>
+              <input type="time" id="closes-at" style="width:auto;padding:8px 10px;font-size:14px;" />
+            </div>
+            <div class="profile-cta-row">
+              <button type="button" id="save-hours-btn" class="btn btn-primary profile-card-cta">Save hours</button>
+            </div>
           </div>
         </div>
       </div>
@@ -163,9 +213,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         <div class="card-body">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">📍 Map Location</h3>
           <div id="location-status" style="font-weight:600;min-height:24px;margin-bottom:8px;">—</div>
-          <button id="use-location-btn" class="btn btn-primary" style="padding:8px 20px;font-size:14px;min-width:200px;">
-            📍 Use My Current Location
-          </button>
+          <div class="profile-cta-row">
+            <button type="button" id="use-location-btn" class="btn btn-primary profile-card-cta">
+              📍 Use My Current Location
+            </button>
+          </div>
         </div>
       </div>
 
@@ -187,11 +239,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         Log out
       </button>
     </main>
-
-    <!-- Jump to first save action (floating, above bottom nav) -->
-    <button type="button" id="profile-fab-save" class="profile-fab" style="display:none;" aria-label="Jump to save settings">
-      Save
-    </button>
 
     <!-- Service worker registration (needed for push notifications) -->
     <script is:inline>
@@ -250,15 +297,69 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           return;
         }
 
-        const displayName =
-          (seller.name && seller.name.trim()) ||
-          [seller.first_name, seller.last_name].filter(Boolean).join(" ").trim() ||
-          session.name?.trim() ||
-          "Seller";
-        document.getElementById("seller-profile-display-name")!.textContent = displayName;
-        document.getElementById("seller-contact-phone")!.textContent = formatContactPhone(seller.phone);
-        const se = (seller.email || "").trim();
-        document.getElementById("seller-contact-email")!.textContent = se || "—";
+        function syncIdentityView(s: Seller) {
+          const businessName = (s.name && s.name.trim()) || "";
+          const fn = (s.first_name || "").trim();
+          const ln = (s.last_name || "").trim();
+          const em = (s.email || "").trim();
+          document.getElementById("seller-view-business")!.textContent = businessName || "—";
+          document.getElementById("seller-view-first")!.textContent = fn || "—";
+          document.getElementById("seller-view-last")!.textContent = ln || "—";
+          document.getElementById("seller-view-email")!.textContent = em || "—";
+          document.getElementById("seller-contact-phone")!.textContent = formatContactPhone(s.phone);
+          const byline =
+            businessName ||
+            [fn, ln].filter(Boolean).join(" ").trim() ||
+            session.name?.trim() ||
+            "Your shop";
+          document.getElementById("seller-shop-byline")!.textContent = byline;
+        }
+
+        function openIdentityEdit() {
+          document.getElementById("identity-view")!.style.display = "none";
+          document.getElementById("identity-edit")!.style.display = "block";
+          (document.getElementById("edit-identity-btn") as HTMLButtonElement).style.display = "none";
+          (document.getElementById("seller-business-name") as HTMLInputElement).value = (seller.name || "").trim();
+          (document.getElementById("seller-first-name") as HTMLInputElement).value = (seller.first_name || "").trim();
+          (document.getElementById("seller-last-name") as HTMLInputElement).value = (seller.last_name || "").trim();
+          (document.getElementById("seller-email-input") as HTMLInputElement).value = (seller.email || "").trim();
+        }
+
+        function closeIdentityEdit() {
+          document.getElementById("identity-view")!.style.display = "block";
+          document.getElementById("identity-edit")!.style.display = "none";
+          (document.getElementById("edit-identity-btn") as HTMLButtonElement).style.display = "block";
+          syncIdentityView(seller);
+        }
+
+        syncIdentityView(seller);
+
+        document.getElementById("edit-identity-btn")!.addEventListener("click", () => openIdentityEdit());
+        document.getElementById("cancel-identity-btn")!.addEventListener("click", () => closeIdentityEdit());
+
+        document.getElementById("save-identity-btn")!.addEventListener("click", async () => {
+          const btn = document.getElementById("save-identity-btn") as HTMLButtonElement;
+          setLoading(btn, true, "Save");
+          try {
+            const nameVal = (document.getElementById("seller-business-name") as HTMLInputElement).value.trim();
+            const firstVal = (document.getElementById("seller-first-name") as HTMLInputElement).value.trim();
+            const lastVal = (document.getElementById("seller-last-name") as HTMLInputElement).value.trim();
+            const emailVal = (document.getElementById("seller-email-input") as HTMLInputElement).value.trim();
+            const updated = await updateSellerProfile(seller.id, {
+              name: nameVal,
+              first_name: firstVal || null,
+              last_name: lastVal || null,
+              email: emailVal || null,
+            } as any);
+            seller = updated;
+            closeIdentityEdit();
+            showToast("Profile saved!");
+          } catch (err: any) {
+            showToast(err.message || "Failed to save profile", "error");
+          } finally {
+            setLoading(btn, false, "Save");
+          }
+        });
 
         // Stats
         document.getElementById("total-orders")!.textContent = String(seller.total_orders);
@@ -356,7 +457,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         closesInput.value = seller.closes_at?.slice(0, 5) || "14:00";
 
         saveHoursBtn.addEventListener("click", async () => {
-          setLoading(saveHoursBtn, true, "Save");
+          setLoading(saveHoursBtn, true, "Save hours");
           try {
             await updateSellerProfile(seller.id, {
               opens_at: opensInput.value + ":00",
@@ -366,7 +467,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           } catch (err: any) {
             showToast(err.message || "Failed to save hours", "error");
           } finally {
-            setLoading(saveHoursBtn, false, "Save");
+            setLoading(saveHoursBtn, false, "Save hours");
           }
         });
 
@@ -474,11 +575,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           }
         });
 
-        document.getElementById("profile-fab-save")?.addEventListener("click", () => {
-          document.getElementById("profile-section-delivery")?.scrollIntoView({ behavior: "smooth", block: "start" });
-          setTimeout(() => document.getElementById("save-delivery-btn")?.focus(), 400);
-        });
-
         // Logout
         document.getElementById("logout-btn")!.addEventListener("click", async () => {
           const btn = document.getElementById("logout-btn") as HTMLButtonElement;
@@ -493,8 +589,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           const main = document.getElementById("dash-main")!;
           main.style.display = "block";
           main.classList.add("fade-in");
-          const fab = document.getElementById("profile-fab-save") as HTMLButtonElement | null;
-          if (fab) fab.style.display = "block";
         });
       }
 
@@ -502,30 +596,87 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     </script>
 
     <style is:global>
-      .profile-fab {
-        position: fixed;
-        right: max(16px, env(safe-area-inset-right));
-        bottom: calc(56px + env(safe-area-inset-bottom) + 12px);
-        z-index: 95;
-        min-width: 56px;
-        min-height: 48px;
-        padding: 0 18px;
-        border: none;
-        border-radius: 999px;
+      #dash-main .profile-input {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
         font-size: 15px;
-        font-weight: 700;
-        color: white;
-        background: var(--blue);
-        box-shadow: 0 4px 16px rgba(0, 102, 204, 0.35);
+        border: 1px solid var(--gray-200);
+        border-radius: 10px;
+        background: white;
+      }
+      #dash-main .profile-input:focus {
+        outline: none;
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
+      }
+      #dash-main .profile-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 0;
+      }
+      #dash-main .profile-inline-edit-btn {
+        flex-shrink: 0;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        color: var(--blue);
         cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: transform 0.12s, box-shadow 0.12s;
       }
-      .profile-fab:hover {
-        filter: brightness(1.05);
+      #dash-main .profile-inline-edit-btn:hover {
+        background: var(--gray-100);
       }
-      .profile-fab:active {
-        transform: scale(0.97);
+      #dash-main .profile-readonly-row {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--gray-100);
+      }
+      #dash-main .profile-readonly-row:last-of-type {
+        border-bottom: none;
+      }
+      #dash-main .profile-readonly-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: var(--gray-500);
+        margin-bottom: 4px;
+      }
+      #dash-main .profile-readonly-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--gray-900);
+        line-height: 1.35;
+        word-break: break-word;
+      }
+      #dash-main .profile-cta-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 4px;
+      }
+      #dash-main .profile-cta-row--split {
+        gap: 8px;
+        margin-top: 12px;
+      }
+      #dash-main .profile-card-cta {
+        width: auto;
+        max-width: 100%;
+        justify-content: center;
+        box-sizing: border-box;
+        font-size: 13px;
+        padding: 6px 14px;
+        min-height: 36px;
+      }
+      #dash-main .profile-card-cta--secondary {
+        background: var(--gray-100);
+        color: var(--gray-800);
+        font-weight: 600;
       }
     </style>
     <SellerBottomNav active="profile" />

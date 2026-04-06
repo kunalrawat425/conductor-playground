@@ -100,6 +100,9 @@ export interface Buyer {
   id: string;
   auth_id: string;
   phone: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
   lat: number | null;
   lng: number | null;
   location_name: string | null;
