@@ -43,6 +43,18 @@ import LoginModal from "../components/LoginModal.astro";
     </div>
   </section>
 
+  <!-- Waitlist promo card (always visible above sellers) -->
+  <div id="promo-card" class="promo-card" style="display:none;">
+    <div class="promo-inner">
+      <div class="promo-left">
+        <strong>🚀 Not in your area yet?</strong>
+        <span>People in your area are already waiting. Be one of them.</span>
+        <span class="promo-perks">Launch discounts, best prices, first access when we go live</span>
+      </div>
+      <a href="/buyer-banner.html#wl-form" class="promo-btn">Join Waitlist</a>
+    </div>
+  </div>
+
   <!-- Sellers section -->
   <section id="sellers-section" style="display:none;">
     <div class="section-header">
@@ -98,6 +110,7 @@ import LoginModal from "../components/LoginModal.astro";
 
       <form id="quick-waitlist" class="qw-form">
         <input type="tel" id="qw-phone" placeholder="Your phone number" required />
+        <input type="email" id="qw-email" placeholder="Your email (optional — for launch updates)" />
         <input type="text" id="qw-area" placeholder="Your area (e.g. Andheri West)" required />
 
         <div class="qw-group">
@@ -132,7 +145,7 @@ import LoginModal from "../components/LoginModal.astro";
         </div>
 
         <button type="submit" class="qw-btn" id="qw-submit">👉 Notify Me When Live</button>
-        <p class="qw-note">We'll SMS you when sellers go live in your area</p>
+        <p class="qw-note">Join now — you'll still be eligible for launch discounts & exclusive offers</p>
       </form>
 
       <div id="qw-success" style="display:none;">
@@ -217,6 +230,16 @@ import LoginModal from "../components/LoginModal.astro";
     .a4 { background: linear-gradient(135deg,#667eea,#764ba2); }
     .ns-contact { font-size: 12px; color: var(--gray-400); }
     .ns-contact a { color: var(--blue); font-weight: 600; }
+
+    /* Promo card */
+    .promo-card { margin-bottom: 12px; }
+    .promo-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: linear-gradient(135deg, #f0f6ff 0%, #e8f4fd 100%); border: 1px solid #d4e6f9; border-radius: 14px; padding: 14px 16px; }
+    .promo-left { display: flex; flex-direction: column; gap: 2px; }
+    .promo-left strong { font-size: 13px; font-weight: 700; }
+    .promo-left span { font-size: 11px; color: var(--gray-500); }
+    .promo-perks { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+    .promo-btn { background: var(--blue); color: white; font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 8px; text-decoration: none; flex-shrink: 0; }
+    .promo-btn:hover { background: #0052a3; text-decoration: none; }
 
     .hero-search {
       margin: 8px 0 12px;
@@ -737,6 +760,8 @@ import LoginModal from "../components/LoginModal.astro";
       if (filtered.length === 0) {
         sellersSection.style.display = "none";
         emptyState.style.display = "block";
+        const promoCard = document.getElementById("promo-card");
+        if (promoCard) promoCard.style.display = "none";
         const buyerLoc = getBuyerLocation();
         const emptyTitle = document.getElementById("empty-title")!;
         const emptyMsg = document.getElementById("empty-msg")!;
@@ -764,6 +789,9 @@ import LoginModal from "../components/LoginModal.astro";
       emptyState.style.display = "none";
       sellersSection.style.display = "block";
       countBadge.textContent = String(filtered.length);
+      // Show promo card above sellers
+      const promoCard = document.getElementById("promo-card");
+      if (promoCard) promoCard.style.display = "block";
 
       // Lock height during innerHTML swap to prevent collapse flicker
       const prevHeight = container.offsetHeight;
@@ -965,10 +993,21 @@ import LoginModal from "../components/LoginModal.astro";
       qwFormEl.addEventListener("submit", async (e: Event) => {
         e.preventDefault();
         const btn = document.getElementById("qw-submit") as HTMLButtonElement;
-        btn.disabled = true;
-        btn.textContent = "Submitting...";
         const phone = (document.getElementById("qw-phone") as HTMLInputElement).value.trim();
         const area = (document.getElementById("qw-area") as HTMLInputElement).value.trim();
+        const toast = document.getElementById("toast");
+        function showT(msg: string, type: string) {
+          if (!toast) return;
+          toast.textContent = msg;
+          toast.style.display = "block";
+          toast.style.background = type === "error" ? "#d32f2f" : "#2e7d32";
+          toast.style.color = "white";
+          setTimeout(() => { toast.style.display = "none"; }, 3000);
+        }
+        if (phone.replace(/\D/g, "").length < 10) { showT("Please enter a valid phone number", "error"); return; }
+        if (area.length < 2) { showT("Please enter your area", "error"); return; }
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
         const freq = document.querySelector("[data-field=freq] .qw-chip.selected")?.getAttribute("data-val") || "";
         const pref = document.querySelector("[data-field=pref] .qw-chip.selected")?.getAttribute("data-val") || "";
         const budget = document.querySelector("[data-field=budget] .qw-chip.selected")?.getAttribute("data-val") || "";
@@ -982,22 +1021,26 @@ import LoginModal from "../components/LoginModal.astro";
               phone, area,
               fish_wanted: fishReq,
               frequency: freq, preference: pref, budget: budget,
+              email: (document.getElementById("qw-email") as HTMLInputElement).value.trim(),
             }),
           });
           const data = await res.json();
           if (data.success) {
             qwFormEl.style.display = "none";
             document.getElementById("qw-success")!.style.display = "block";
+            showT("🎉 You're on the waitlist!", "success");
             const cnt = document.getElementById("qw-done-count");
             if (cnt && data.area_count > 1) {
               cnt.textContent = "🔥 " + data.area_count + " people in your area are already waiting";
               cnt.style.display = "block";
             }
           } else {
+            showT(data.error || "Something went wrong", "error");
             btn.disabled = false;
             btn.textContent = "👉 Notify Me When Live";
           }
         } catch (_) {
+          showT("Network error. Try again.", "error");
           btn.disabled = false;
           btn.textContent = "👉 Notify Me When Live";
         }

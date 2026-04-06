@@ -10,7 +10,7 @@ const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 
-<AppShell title={`Seller Menu - ${brandName}`} description={`Fresh fish menu. Order for pickup or delivery on ${brandName}.`} activeTab="home">
+<AppShell title={`Seller Menu - ${brandName}`} description={`Fresh fish menu. Order for pickup or delivery on ${brandName}.`} activeTab="home" showLocationBadge={false}>
   <!-- Back button -->
   <div style="padding:12px 0 8px;">
     <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">
@@ -148,6 +148,39 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     .delivery-neutral {
       background: var(--gray-100);
       color: var(--gray-700);
+    }
+    .not-in-area-card {
+      background: linear-gradient(135deg, #f0f6ff 0%, #e8f4fd 100%);
+      border: 1.5px solid #d4e6f9;
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .not-in-area-card strong {
+      font-size: 15px;
+      display: block;
+      margin-bottom: 6px;
+    }
+    .not-in-area-card p {
+      font-size: 13px;
+      color: var(--gray-600);
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+    .not-in-area-btn {
+      display: inline-block;
+      background: var(--blue);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+    }
+    .not-in-area-btn:hover {
+      text-decoration: none;
+      background: #0052a3;
     }
 
     .menu-item-grey {
@@ -295,12 +328,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     /* Sticky cart bar */
     .cart-bar {
       position: fixed;
-      bottom: 56px;
+      bottom: calc(56px + env(safe-area-inset-bottom, 0px));
       left: 0;
       right: 0;
-      z-index: 90;
+      z-index: 101;
       padding: 0 12px 8px;
-      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     }
     .cart-bar-inner {
       max-width: var(--app-max-width);
@@ -607,7 +639,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         // Delivery info banner
         let deliveryBanner = "";
         if (!inServiceArea && buyerLoc) {
-          deliveryBanner = `<div class="delivery-banner delivery-no">⚠️ This seller is outside your area (${buyerDist !== null ? buyerDist.toFixed(1) + " km away" : ""}). Menu shown for browsing only.</div>`;
+          deliveryBanner = `<div class="delivery-banner delivery-no">⚠️ This seller is outside your area (${buyerDist !== null ? buyerDist.toFixed(1) + " km away" : ""}). Menu shown for browsing only.</div>
+          <div class="not-in-area-card">
+            <div style="font-size:28px;margin-bottom:8px;">🚀</div>
+            <strong>Want fresh fish in your area?</strong>
+            <p>People in your area are already waiting. Be one of them. Join now for exclusive launch discounts, best prices, and first access.</p>
+            <a href="/buyer-banner.html#wl-form" class="not-in-area-btn">👉 Join Waitlist — Get Offers</a>
+          </div>`;
         } else if (seller.has_delivery) {
           if (inDeliveryRange) {
             deliveryBanner = `<div class="delivery-banner delivery-yes">🚚 This seller delivers to your area (${buyerDist.toFixed(1)} km away)</div>`;
