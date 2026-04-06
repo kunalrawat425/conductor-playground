@@ -62,18 +62,22 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 
-    // Notify buyer via push (in-process — avoids serverless self-fetch to /api/push-notify)
+    // Notify buyer via push — never fail the order update if push throws
     if (order.buyer_id) {
-      const pushResult = await sendBuyerOrderPush({
-        buyer_id: order.buyer_id,
-        status,
-        species: order.species || "Fish",
-        final_price: final_price ?? null,
-      });
-      if (!pushResult.ok) {
-        console.error("Buyer push failed:", pushResult.error);
-      } else if (!pushResult.sent) {
-        console.info("Buyer push skipped:", pushResult.reason);
+      try {
+        const pushResult = await sendBuyerOrderPush({
+          buyer_id: order.buyer_id,
+          status,
+          species: order.species || "Fish",
+          final_price: final_price ?? null,
+        });
+        if (!pushResult.ok) {
+          console.error("Buyer push failed:", pushResult.error);
+        } else if (!pushResult.sent) {
+          console.info("Buyer push skipped:", pushResult.reason);
+        }
+      } catch (pushErr: any) {
+        console.error("Buyer push exception:", pushErr?.message || pushErr);
       }
     }
 

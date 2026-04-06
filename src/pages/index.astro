@@ -5,19 +5,34 @@ import LocationPicker from "../components/LocationPicker.astro";
 import LoginModal from "../components/LoginModal.astro";
 ---
 
-<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Zepto"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home">
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home">
+  <script is:inline>
+    (function () {
+      try {
+        if (localStorage.getItem("zepto_seller_id") && localStorage.getItem("zepto_seller_phone")) {
+          window.location.replace("/dashboard/orders");
+        }
+      } catch (e) {}
+    })();
+  </script>
   <!-- Hero search bar -->
   <div class="hero-search">
     <input type="text" id="search-input" placeholder="Search fish or seller..." autocomplete="off" />
   </div>
 
-  <!-- Category chips -->
+  <!-- Filters: open vs pre-order = one at a time; pickup / delivery / both = one at a time -->
+  <p class="text-muted" style="font-size:12px;margin:0 0 6px;line-height:1.35;">
+    Open now or Pre-order: pick one (tap again to clear). Same for Pickup / Delivery / Pickup &amp; delivery.
+  </p>
   <div class="category-chips" id="category-chips">
-    <button class="chip active" data-filter="all">All</button>
-    <button class="chip" data-filter="open">Open Now</button>
-    <button class="chip" data-filter="delivery">Delivery</button>
-    <button class="chip" data-filter="preorder">Pre-order</button>
-    <button class="chip" data-filter="rating">Top Rated</button>
+    <button type="button" class="chip chip-all active" data-chip="all">All</button>
+    <button type="button" class="chip chip-time" data-chip="open">Open now</button>
+    <button type="button" class="chip chip-time" data-chip="preorder">Pre-order</button>
+    <span class="chip-sep" aria-hidden="true"></span>
+    <button type="button" class="chip chip-fulfill" data-chip="pickup">Pickup</button>
+    <button type="button" class="chip chip-fulfill" data-chip="delivery">Delivery to you</button>
+    <button type="button" class="chip chip-fulfill" data-chip="both">Pickup &amp; delivery</button>
+    <button type="button" class="chip chip-toggle" data-chip="topRated">Top rated</button>
   </div>
 
   <!-- Loading skeleton -->
@@ -76,6 +91,14 @@ import LoginModal from "../components/LoginModal.astro";
       scrollbar-width: none;
     }
     .category-chips::-webkit-scrollbar { display: none; }
+    .chip-sep {
+      flex-shrink: 0;
+      width: 1px;
+      align-self: stretch;
+      min-height: 28px;
+      margin: 2px 4px;
+      background: var(--gray-200);
+    }
     .chip {
       flex-shrink: 0;
       padding: 8px 16px;
@@ -395,7 +418,51 @@ import LoginModal from "../components/LoginModal.astro";
     }
 
     let allGroups: SellerGroup[] = [];
-    let currentFilter = "all";
+
+    type TimeFilter = "none" | "open" | "preorder";
+    type FulfillmentFilter = "none" | "pickup" | "delivery" | "both";
+
+    const filterToggles = {
+      /** Open now vs Pre-order: at most one */
+      timeMode: "none" as TimeFilter,
+      /** Pickup / Delivery / Both: at most one */
+      fulfillment: "none" as FulfillmentFilter,
+      topRated: false,
+    };
+
+    function hasActiveFilters(): boolean {
+      return (
+        filterToggles.timeMode !== "none" ||
+        filterToggles.fulfillment !== "none" ||
+        filterToggles.topRated
+      );
+    }
+
+    function passesCatalogFilters(g: SellerGroup, buyerLoc: ReturnType<typeof getBuyerLocation>): boolean {
+      if (filterToggles.topRated && !(g.seller.rating_avg > 0)) return false;
+
+      if (filterToggles.timeMode === "open" && !g.isOpen) return false;
+      if (
+        filterToggles.timeMode === "preorder" &&
+        (g.isOpen || g.seller.accepts_preorder === false)
+      ) {
+        return false;
+      }
+
+      const mode = filterToggles.fulfillment;
+      if (mode !== "none") {
+        let ok = false;
+        if (mode === "pickup") {
+          ok = !buyerLoc || g.inServiceArea;
+        } else if (mode === "delivery") {
+          ok = g.inDeliveryRange;
+        } else if (mode === "both") {
+          ok = !!g.seller.has_delivery && g.inDeliveryRange && g.inServiceArea;
+        }
+        if (!ok) return false;
+      }
+      return true;
+    }
 
     async function loadCatalog() {
       const loadingEl = document.getElementById("loading")!;
@@ -507,16 +574,11 @@ import LoginModal from "../components/LoginModal.astro";
         });
       }
 
-      // Category filter
-      if (currentFilter === "open") {
-        filtered = filtered.filter(g => g.isOpen);
-      } else if (currentFilter === "delivery") {
-        filtered = filtered.filter(g => g.inDeliveryRange);
-      } else if (currentFilter === "preorder") {
-        filtered = filtered.filter(g => !g.isOpen && g.seller.accepts_preorder !== false);
-      } else if (currentFilter === "rating") {
-        filtered = filtered.filter(g => g.seller.rating_avg > 0);
-        filtered.sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
+      if (hasActiveFilters()) {
+        filtered = filtered.filter(g => passesCatalogFilters(g, buyerLoc));
+        if (filterToggles.topRated) {
+          filtered.sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
+        }
       }
 
       if (filtered.length === 0) {
@@ -528,9 +590,9 @@ import LoginModal from "../components/LoginModal.astro";
         if (!buyerLoc) {
           emptyTitle.textContent = "Set your location";
           emptyMsg.innerHTML = `We need your location to show nearby sellers. <a href="#" onclick="window.dispatchEvent(new CustomEvent('open-location-picker'));return false;" style="color:var(--primary);text-decoration:underline;">Set location</a>`;
-        } else if (currentFilter !== "all") {
-          emptyTitle.textContent = "No sellers match this filter";
-          emptyMsg.textContent = "Try a different filter or check back later.";
+        } else if (hasActiveFilters()) {
+          emptyTitle.textContent = "No sellers match these filters";
+          emptyMsg.textContent = "Turn off a filter or tap All to see everyone.";
         } else {
           emptyTitle.textContent = "No sellers in your area";
           emptyMsg.innerHTML = `No sellers deliver to your location yet. <a href="#" onclick="window.dispatchEvent(new CustomEvent('open-location-picker'));return false;" style="color:var(--primary);text-decoration:underline;">Change location</a>`;
@@ -622,14 +684,55 @@ import LoginModal from "../components/LoginModal.astro";
       searchTimeout = setTimeout(() => renderSellers(), 200);
     });
 
-    // Category chips
-    document.querySelectorAll(".chip").forEach(chip => {
-      chip.addEventListener("click", () => {
-        document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-        chip.classList.add("active");
-        currentFilter = (chip as HTMLElement).dataset.filter || "all";
-        renderSellers();
-      });
+    const timeChips = ["open", "preorder"] as const;
+    const fulfillChips = ["pickup", "delivery", "both"] as const;
+
+    function radioChipGroup(
+      btn: HTMLElement,
+      chip: string,
+      modeKey: "timeMode" | "fulfillment",
+      chipSelector: string
+    ) {
+      const chipAll = document.querySelector("#category-chips .chip-all");
+      chipAll?.classList.remove("active");
+      const next =
+        modeKey === "timeMode" ? (chip as TimeFilter) : (chip as FulfillmentFilter);
+      const already = filterToggles[modeKey] === next;
+      document.querySelectorAll(chipSelector).forEach((c) => c.classList.remove("active"));
+      if (already) {
+        filterToggles[modeKey] = "none";
+      } else {
+        filterToggles[modeKey] = next;
+        btn.classList.add("active");
+      }
+      if (!hasActiveFilters()) chipAll?.classList.add("active");
+    }
+
+    document.getElementById("category-chips")?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest("button[data-chip]");
+      if (!btn) return;
+      const chip = (btn as HTMLButtonElement).dataset.chip;
+      const chipAll = document.querySelector("#category-chips .chip-all");
+
+      if (chip === "all") {
+        filterToggles.timeMode = "none";
+        filterToggles.fulfillment = "none";
+        filterToggles.topRated = false;
+        document.querySelectorAll("#category-chips .chip-time, #category-chips .chip-fulfill, #category-chips .chip-toggle").forEach((c) =>
+          c.classList.remove("active")
+        );
+        chipAll?.classList.add("active");
+      } else if (timeChips.includes(chip as (typeof timeChips)[number])) {
+        radioChipGroup(btn, chip!, "timeMode", "#category-chips .chip-time");
+      } else if (fulfillChips.includes(chip as (typeof fulfillChips)[number])) {
+        radioChipGroup(btn, chip!, "fulfillment", "#category-chips .chip-fulfill");
+      } else if (chip === "topRated") {
+        chipAll?.classList.remove("active");
+        const on = btn.classList.toggle("active");
+        filterToggles.topRated = on;
+        if (!hasActiveFilters()) chipAll?.classList.add("active");
+      }
+      renderSellers();
     });
 
     // Location

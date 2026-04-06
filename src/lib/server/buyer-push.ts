@@ -1,12 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
+import { buyerOrderPushNotification } from "./buyer-order-push-copy";
 import { loadWebPush } from "./load-web-push";
+import { normalizeVapidKeyForWebPush, trimVapidKey } from "./vapid-env";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
-const vapidPublicKey = import.meta.env.PUBLIC_VAPID_KEY || "";
-const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY || "";
+const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
+const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
 /** mailto: or https: URL required by web-push (see VAPID_CONTACT in .env.example) */
-const vapidContact = import.meta.env.VAPID_CONTACT || "mailto:hello@zepto.in";
+const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@relifish.app";
 
 export type BuyerPushPayload = {
   buyer_id: string;
@@ -73,52 +75,25 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
     return { ok: false, error: "VAPID keys not configured" };
   }
 
-  const messages: Record<string, { title: string; body: string }> = {
-    confirmed: {
-      title: "Order Confirmed!",
-      body: species
-        ? final_price
-          ? `Your ${species} order confirmed at ₹${final_price}`
-          : `Your ${species} order is confirmed`
-        : "Your order has been confirmed",
-    },
-    picked_up: {
-      title: "Ready for Pickup!",
-      body: species ? `Your ${species} is ready for pickup` : "Your order is ready for pickup",
-    },
-    declined: {
-      title: "Order Update",
-      body: species ? `Sorry, your ${species} order was declined` : "Your order was declined",
-    },
-    cancelled: {
-      title: "Order Cancelled",
-      body: species
-        ? `Your ${species} order was cancelled. Full refund processing.`
-        : "Your order was cancelled. Full refund processing.",
-    },
-  };
-
-  const notification = messages[status] || {
-    title: "Order Update",
-    body: `Your order status: ${status}`,
-  };
-
-  const webPush = await loadWebPush();
-  webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+  const notification = buyerOrderPushNotification(status, species, final_price);
 
   try {
+    const webPush = await loadWebPush();
+    webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+    const uniqueTag = `order-${buyer_id}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     await webPush.sendNotification(
       subscription,
       JSON.stringify({
         ...notification,
         url: "/track",
-        tag: `order-${buyer_id}-${status}`,
+        tag: uniqueTag,
       })
     );
     return { ok: true, sent: true };
   } catch (err: any) {
-    console.error("buyer-push: sendNotification failed:", err?.message || err);
-    return { ok: false, error: err?.message || "Push send failed" };
+    const msg = err?.message || String(err);
+    console.error("buyer-push: failed:", msg);
+    return { ok: false, error: msg || "Push send failed" };
   }
 }
 

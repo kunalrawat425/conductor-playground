@@ -1,0 +1,808 @@
+---
+/**
+ * Address book at checkout: pick a saved address or enter a new one (optionally save).
+ * Opens via: window.dispatchEvent(new CustomEvent("open-order-address-sheet", {
+ *   detail: { requireAddressDetail, billing?, onConfirm({ buyer_addr }), onCancel? }
+ * }))
+ * `billing`: { subtotal, deliveryLabel, grandTotal, itemsLine } — shown at top of sheet when set.
+ */
+---
+
+<div class="order-address-overlay" id="order-address-overlay" aria-hidden="true">
+  <div class="order-address-overlay-bg" id="order-address-overlay-bg"></div>
+  <div class="order-address-sheet bottom-sheet" id="order-address-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div id="order-address-billing-wrap" class="order-address-billing-wrap" style="display:none;"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:4px;" id="order-address-title">Address for this order</h3>
+    <p class="text-muted" style="font-size:13px;margin-bottom:12px;line-height:1.4;" id="order-address-subtitle">
+      Choose a saved address or enter a new one. Your map area is reused when adding details.
+    </p>
+
+    <a
+      href="/me#addresses"
+      class="text-muted"
+      style="font-size:13px;display:inline-block;margin-bottom:14px;color:var(--blue);"
+      id="order-address-manage-link"
+    >
+      Manage address book →
+    </a>
+
+    <div id="order-address-list-wrap" class="order-address-list-wrap" style="display:none;">
+      <div class="order-address-section-label" id="order-address-saved-label">Saved addresses</div>
+      <p class="order-address-section-hint">Tap a card to select. Your default is pre-selected when possible.</p>
+      <div id="order-address-list" class="order-address-list" role="radiogroup" aria-labelledby="order-address-saved-label"></div>
+    </div>
+
+    <div id="order-address-new-block">
+      <div class="order-address-section-label" id="order-address-new-heading">New address details</div>
+      <p class="order-address-section-hint order-address-new-hint">We’ll use your map area below. Add flat or building for delivery.</p>
+      <div class="form-group order-address-area-group" style="margin-bottom:14px;">
+        <div class="order-address-field-label">Area (from your saved location)</div>
+        <div id="order-address-area-display" class="order-address-area-card">—</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="order-addr-flat">Flat / house no.</label>
+        <input type="text" id="order-addr-flat" placeholder="e.g. 402, A-wing" autocomplete="street-address" style="font-size:15px;" />
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="order-addr-building">Building / society</label>
+        <input type="text" id="order-addr-building" placeholder="e.g. Sea View Apartments" style="font-size:15px;" />
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="order-addr-landmark">Landmark / directions (optional)</label>
+        <input type="text" id="order-addr-landmark" placeholder="Near metro, gate no., etc." style="font-size:15px;" />
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;" id="order-address-save-wrap">
+        <label class="checkbox-row" for="order-addr-save-book" style="margin-bottom:8px;">
+          <input type="checkbox" id="order-addr-save-book" />
+          <span>Save to my address book</span>
+        </label>
+        <input
+          type="text"
+          id="order-addr-save-label"
+          placeholder="Label (e.g. Home, Mom's)"
+          style="font-size:14px;margin-top:0;display:none;"
+        />
+        <label
+          class="checkbox-row"
+          for="order-addr-save-default"
+          id="order-addr-default-wrap"
+          style="display:none;margin-top:8px;"
+        >
+          <input type="checkbox" id="order-addr-save-default" />
+          <span>Set as default address</span>
+        </label>
+      </div>
+    </div>
+
+    <div id="order-address-saved-preview" class="order-address-saved-preview" style="display:none;"></div>
+
+    <div id="order-address-error" style="display:none;color:var(--red);font-size:13px;margin-bottom:12px;font-weight:600;"></div>
+
+    <button type="button" class="btn btn-primary tap-target" id="order-address-confirm" style="width:100%;min-height:48px;font-size:16px;border-radius:12px;margin-bottom:8px;">
+      Place order
+    </button>
+    <button type="button" class="btn tap-target" id="order-address-back" style="width:100%;background:var(--gray-100);color:var(--gray-700);font-size:14px;padding:10px;">
+      Back
+    </button>
+  </div>
+</div>
+
+<style>
+  .order-address-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 220;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .order-address-overlay.open {
+    pointer-events: auto;
+    visibility: visible;
+  }
+  .order-address-overlay-bg {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .order-address-overlay.open .order-address-overlay-bg {
+    opacity: 1;
+  }
+  .order-address-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    right: auto;
+    width: 100%;
+    max-width: var(--app-max-width);
+    background: white;
+    border-radius: 16px 16px 0 0;
+    max-height: 85vh;
+    transform: translate(-50%, 100%);
+    transition: transform 0.3s ease;
+    padding: 0 16px 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    z-index: 1;
+  }
+  .order-address-overlay.open .order-address-sheet {
+    transform: translate(-50%, 0);
+  }
+
+  .order-address-list-wrap {
+    margin-bottom: 16px;
+  }
+  .order-address-section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray-900);
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+  }
+  .order-address-section-hint {
+    font-size: 12px;
+    color: var(--gray-500);
+    line-height: 1.4;
+    margin: 0 0 12px;
+  }
+  .order-address-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .order-address-field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 6px;
+  }
+  .order-address-area-card {
+    font-size: 14px;
+    padding: 12px 14px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    min-height: 44px;
+    line-height: 1.4;
+    color: var(--gray-900);
+  }
+
+  .order-address-saved-preview {
+    margin-bottom: 16px;
+  }
+</style>
+
+<!-- Cards from renderList + preview innerHTML (no Astro scoped attrs) -->
+<style is:global>
+  #order-address-sheet .order-address-choice {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 14px 14px 16px;
+    margin: 0;
+    border: 2px solid var(--gray-200);
+    border-radius: 14px;
+    cursor: pointer;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      background 0.15s ease;
+    position: relative;
+  }
+  #order-address-sheet .order-address-choice:hover {
+    border-color: var(--gray-300);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+  }
+  #order-address-sheet .order-address-choice:focus-within {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.22);
+  }
+  #order-address-sheet .order-address-choice:has(input:checked) {
+    border-color: var(--blue);
+    background: linear-gradient(165deg, #f5f9ff 0%, #fff 55%);
+    box-shadow: 0 2px 14px rgba(0, 102, 204, 0.14);
+  }
+  #order-address-sheet .order-address-choice--new {
+    border-style: dashed;
+    border-color: var(--gray-300);
+    background: var(--gray-50);
+  }
+  #order-address-sheet .order-address-choice--new:hover {
+    border-color: var(--gray-400);
+    background: #fff;
+  }
+  #order-address-sheet .order-address-choice--new:has(input:checked) {
+    border-style: solid;
+    background: linear-gradient(165deg, #f5f9ff 0%, #fff 55%);
+  }
+  #order-address-sheet .order-address-choice-control {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  #order-address-sheet .order-address-choice-control input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  #order-address-sheet .order-address-choice-body {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    padding-right: 4px;
+  }
+  #order-address-sheet .order-address-card-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--gray-900);
+    line-height: 1.25;
+  }
+  #order-address-sheet .order-address-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue);
+    background: rgba(0, 102, 204, 0.1);
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  #order-address-sheet .order-address-card-lines {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--gray-600);
+  }
+  #order-address-sheet .order-address-choice-check {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-300);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+  #order-address-sheet .order-address-choice:has(input:checked) .order-address-choice-check {
+    border-color: var(--blue);
+    background: var(--blue);
+  }
+  #order-address-sheet .order-address-choice-check::before {
+    content: "✓";
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  #order-address-sheet .order-address-choice:has(input:checked) .order-address-choice-check::before {
+    opacity: 1;
+  }
+
+  .order-address-preview-card {
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 102, 204, 0.25);
+    background: linear-gradient(165deg, #f5f9ff 0%, #fff 55%);
+    box-shadow: 0 1px 4px rgba(0, 102, 204, 0.08);
+  }
+  .order-address-preview-kicker {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--blue);
+    margin-bottom: 6px;
+  }
+  .order-address-preview-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+  .order-address-preview-title .order-address-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue);
+    background: rgba(0, 102, 204, 0.1);
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .order-address-preview-lines {
+    margin: 8px 0 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--gray-700);
+  }
+</style>
+
+<!-- Billing block is injected via innerHTML — styles must be global to apply -->
+<style is:global>
+  .order-address-billing-wrap {
+    margin-bottom: 16px;
+  }
+  .order-address-billing {
+    background: linear-gradient(180deg, #f8fafc 0%, var(--gray-50) 100%);
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+  .order-address-billing-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin: 0 0 12px 0;
+    letter-spacing: -0.02em;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--blue);
+  }
+  .order-address-billing-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    font-size: 15px;
+    line-height: 1.4;
+    margin: 0 0 10px 0;
+  }
+  .order-address-billing-row:last-child {
+    margin-bottom: 0;
+  }
+  .order-address-billing-label {
+    font-weight: 700;
+    color: var(--gray-800);
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .order-address-billing-value {
+    font-weight: 700;
+    color: var(--gray-900);
+    text-align: right;
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .order-address-billing-total {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gray-200);
+    margin-bottom: 0;
+  }
+  .order-address-billing-total .order-address-billing-label,
+  .order-address-billing-total .order-address-billing-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--gray-900);
+  }
+  .order-address-billing-summary {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--gray-300);
+  }
+  .order-address-billing-summary .order-address-billing-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gray-700);
+  }
+  .order-address-billing-summary .order-address-billing-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--blue);
+  }
+</style>
+
+<script>
+  import { getSession, getBuyerAddressFromStorage, saveBuyerAddressDetailToStorage, getBuyerAddressDetailFromStorage } from "../lib/auth";
+  import {
+    formatSavedBuyerAddress,
+    formatNewCheckoutAddress,
+    hasMapArea,
+    hasDeliveryUnitDetail,
+    parseZeptoLocation,
+  } from "../lib/buyer-address";
+  import type { BuyerAddressRow } from "../lib/buyer-address";
+
+  const LS_SELECTION = "zepto_checkout_address_selection";
+
+  const overlay = document.getElementById("order-address-overlay")!;
+  const bg = document.getElementById("order-address-overlay-bg")!;
+  const listWrap = document.getElementById("order-address-list-wrap")!;
+  const listEl = document.getElementById("order-address-list")!;
+  const newBlock = document.getElementById("order-address-new-block")!;
+  const savedPreview = document.getElementById("order-address-saved-preview")!;
+  const areaDisplay = document.getElementById("order-address-area-display")!;
+  const flatInput = document.getElementById("order-addr-flat") as HTMLInputElement;
+  const buildingInput = document.getElementById("order-addr-building") as HTMLInputElement;
+  const landmarkInput = document.getElementById("order-addr-landmark") as HTMLInputElement;
+  const saveBookCb = document.getElementById("order-addr-save-book") as HTMLInputElement;
+  const saveLabelInput = document.getElementById("order-addr-save-label") as HTMLInputElement;
+  const saveDefaultWrap = document.getElementById("order-addr-default-wrap") as HTMLLabelElement;
+  const saveDefaultCb = document.getElementById("order-addr-save-default") as HTMLInputElement;
+  const errEl = document.getElementById("order-address-error")!;
+  const confirmBtn = document.getElementById("order-address-confirm") as HTMLButtonElement;
+  const backBtn = document.getElementById("order-address-back") as HTMLButtonElement;
+  const titleEl = document.getElementById("order-address-title")!;
+  const subtitleEl = document.getElementById("order-address-subtitle")!;
+  const billingWrap = document.getElementById("order-address-billing-wrap")!;
+
+  let requireAddressDetail = false;
+  let pendingOnConfirm: ((p: { buyer_addr: string | null }) => void | Promise<void>) | null = null;
+  let pendingOnCancel: (() => void) | null = null;
+  let loadedAddresses: BuyerAddressRow[] = [];
+  let selectedId: string = "new";
+
+  function refreshAreaDisplay() {
+    const area = getBuyerAddressFromStorage();
+    areaDisplay.textContent = area || "Not set — tap below to choose your area on the map.";
+    areaDisplay.style.color = area ? "var(--gray-900)" : "var(--gray-500)";
+  }
+
+  function loadDetailInputs() {
+    const d = getBuyerAddressDetailFromStorage();
+    flatInput.value = d.flat || "";
+    buildingInput.value = d.building || "";
+    landmarkInput.value = d.landmark || "";
+  }
+
+  function esc(s: string) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function renderBillingBlock(
+    b: { subtotal: number; deliveryLabel: string; grandTotal: number; itemsLine: string } | null
+  ) {
+    if (!b || typeof b.subtotal !== "number" || typeof b.grandTotal !== "number") {
+      billingWrap.style.display = "none";
+      billingWrap.innerHTML = "";
+      return;
+    }
+    billingWrap.style.display = "block";
+    billingWrap.innerHTML = `
+      <div class="order-address-billing" role="region" aria-label="Billing summary">
+        <div class="order-address-billing-title">Billing</div>
+        <div class="order-address-billing-row">
+          <span class="order-address-billing-label">Subtotal</span>
+          <span class="order-address-billing-value">₹${b.subtotal}</span>
+        </div>
+        <div class="order-address-billing-row">
+          <span class="order-address-billing-label">Delivery</span>
+          <span class="order-address-billing-value">${esc(b.deliveryLabel)}</span>
+        </div>
+        <div class="order-address-billing-row order-address-billing-total">
+          <span class="order-address-billing-label">Total</span>
+          <span class="order-address-billing-value">₹${b.grandTotal}</span>
+        </div>
+        <div class="order-address-billing-summary">
+          <span class="order-address-billing-label">${esc(b.itemsLine)}</span>
+          <span class="order-address-billing-value">₹${b.grandTotal}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function pickDefaultSelection(rows: BuyerAddressRow[]): string {
+    const saved = localStorage.getItem(LS_SELECTION);
+    if (saved === "new") return "new";
+    if (saved && rows.some((r) => r.id === saved)) return saved;
+    const def = rows.find((r) => r.is_default);
+    if (def) return def.id;
+    return rows.length ? rows[0].id : "new";
+  }
+
+  function renderList(rows: BuyerAddressRow[]) {
+    loadedAddresses = rows;
+    if (!rows.length) {
+      listWrap.style.display = "none";
+      selectedId = "new";
+      syncUiMode();
+      return;
+    }
+    listWrap.style.display = "block";
+    selectedId = pickDefaultSelection(rows);
+    listEl.innerHTML = rows
+      .map(
+        (row) => `
+      <label class="order-address-choice">
+        <span class="order-address-choice-control">
+          <input type="radio" name="order-checkout-addr" value="${esc(row.id)}" ${selectedId === row.id ? "checked" : ""} />
+        </span>
+        <span class="order-address-choice-body">
+          <span class="order-address-card-title">${esc(row.label || "Saved address")}${
+            row.is_default ? '<span class="order-address-badge">Default</span>' : ""
+          }</span>
+          <span class="order-address-card-lines">${esc(formatSavedBuyerAddress(row) || "—")}</span>
+        </span>
+        <span class="order-address-choice-check" aria-hidden="true"></span>
+      </label>
+    `
+      )
+      .join("");
+    listEl.innerHTML += `
+      <label class="order-address-choice order-address-choice--new">
+        <span class="order-address-choice-control">
+          <input type="radio" name="order-checkout-addr" value="new" ${selectedId === "new" ? "checked" : ""} />
+        </span>
+        <span class="order-address-choice-body">
+          <span class="order-address-card-title">Use a new address</span>
+          <span class="order-address-card-lines">Enter flat, building, and landmark below</span>
+        </span>
+        <span class="order-address-choice-check" aria-hidden="true"></span>
+      </label>
+    `;
+    listEl.querySelectorAll('input[name="order-checkout-addr"]').forEach((el) => {
+      el.addEventListener("change", () => {
+        const input = el as HTMLInputElement;
+        if (input.checked) {
+          selectedId = input.value;
+          syncUiMode();
+        }
+      });
+    });
+    syncUiMode();
+  }
+
+  function syncUiMode() {
+    const isNew = selectedId === "new";
+    newBlock.style.display = isNew ? "block" : "none";
+    savedPreview.style.display = isNew ? "none" : "block";
+    if (!isNew) {
+      const row = loadedAddresses.find((r) => r.id === selectedId);
+      if (row) {
+        const addrText = formatSavedBuyerAddress(row) || "—";
+        savedPreview.innerHTML = `
+      <div class="order-address-preview-card">
+        <span class="order-address-preview-kicker">Delivering to</span>
+        <span class="order-address-preview-title">${esc(row.label || "Saved address")}${
+          row.is_default ? '<span class="order-address-badge">Default</span>' : ""
+        }</span>
+        <p class="order-address-preview-lines">${esc(addrText)}</p>
+      </div>`;
+      } else {
+        savedPreview.innerHTML = "";
+      }
+    } else {
+      savedPreview.innerHTML = "";
+      refreshAreaDisplay();
+    }
+  }
+
+  async function fetchAddresses(buyer_id: string): Promise<BuyerAddressRow[]> {
+    const res = await fetch(`/api/buyer/addresses?buyer_id=${encodeURIComponent(buyer_id)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.addresses || [];
+  }
+
+  async function openSheet() {
+    errEl.style.display = "none";
+    saveBookCb.checked = false;
+    saveLabelInput.style.display = "none";
+    saveLabelInput.value = "";
+    saveDefaultWrap.style.display = "none";
+    saveDefaultCb.checked = false;
+    refreshAreaDisplay();
+    loadDetailInputs();
+
+    const session = getSession();
+    if (session) {
+      const rows = await fetchAddresses(session.buyer_id);
+      renderList(rows);
+    } else {
+      loadedAddresses = [];
+      listWrap.style.display = "none";
+      selectedId = "new";
+      syncUiMode();
+    }
+
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  function closeSheet() {
+    overlay.classList.remove("open");
+    overlay.setAttribute("aria-hidden", "true");
+    renderBillingBlock(null);
+  }
+
+  function applyModeLabels() {
+    if (requireAddressDetail) {
+      titleEl.textContent = "Delivery address";
+      subtitleEl.textContent = "Pick a saved address or add a new one. Delivery needs your area plus flat or building.";
+    } else {
+      titleEl.textContent = "Address for this order";
+      subtitleEl.textContent = "Choose a saved address or enter a new one for this order.";
+    }
+  }
+
+  window.addEventListener("open-order-address-sheet", ((e: CustomEvent) => {
+    const d = e.detail || {};
+    requireAddressDetail = !!d.requireAddressDetail;
+    pendingOnConfirm = typeof d.onConfirm === "function" ? d.onConfirm : null;
+    pendingOnCancel = typeof d.onCancel === "function" ? d.onCancel : null;
+    const raw = d.billing;
+    if (
+      raw &&
+      typeof raw.subtotal === "number" &&
+      typeof raw.grandTotal === "number" &&
+      typeof raw.deliveryLabel === "string" &&
+      typeof raw.itemsLine === "string"
+    ) {
+      renderBillingBlock({
+        subtotal: raw.subtotal,
+        deliveryLabel: raw.deliveryLabel,
+        grandTotal: raw.grandTotal,
+        itemsLine: raw.itemsLine,
+      });
+    } else {
+      renderBillingBlock(null);
+    }
+    applyModeLabels();
+    openSheet();
+  }) as EventListener);
+
+  window.addEventListener("location-updated", () => {
+    if (overlay.classList.contains("open") && selectedId === "new") refreshAreaDisplay();
+  });
+
+  saveBookCb.addEventListener("change", () => {
+    const on = saveBookCb.checked;
+    saveLabelInput.style.display = on ? "block" : "none";
+    saveDefaultWrap.style.display = on ? "flex" : "none";
+    if (!on) {
+      saveLabelInput.value = "";
+      saveDefaultCb.checked = false;
+    }
+  });
+
+  function validate(): boolean {
+    errEl.style.display = "none";
+    if (selectedId !== "new") {
+      const row = loadedAddresses.find((r) => r.id === selectedId);
+      if (!row) return true;
+      if (requireAddressDetail) {
+        if (!hasMapArea(row.location_name, row.lat, row.lng)) {
+          errEl.textContent = "This saved address has no area. Edit it in your address book or pick “new address”.";
+          errEl.style.display = "block";
+          return false;
+        }
+        if (!hasDeliveryUnitDetail(row.flat || "", row.building || "")) {
+          errEl.textContent = "Add flat or building to this address in Me → Address book, or use a new address.";
+          errEl.style.display = "block";
+          return false;
+        }
+      }
+      return true;
+    }
+
+    const flat = flatInput.value.trim();
+    const building = buildingInput.value.trim();
+    if (requireAddressDetail) {
+      const loc = parseZeptoLocation();
+      if (!hasMapArea(loc?.name ?? null, loc?.lat ?? null, loc?.lng ?? null)) {
+        errEl.textContent = "Set your area on the map first (Change area on map).";
+        errEl.style.display = "block";
+        return false;
+      }
+      if (!hasDeliveryUnitDetail(flat, building)) {
+        errEl.textContent = "Enter at least flat/house no. or building name for delivery.";
+        errEl.style.display = "block";
+        return false;
+      }
+    }
+    return true;
+  }
+
+  confirmBtn.addEventListener("click", async () => {
+    if (!validate()) return;
+
+    const session = getSession();
+    let buyer_addr: string | null = null;
+
+    if (selectedId !== "new") {
+      const row = loadedAddresses.find((r) => r.id === selectedId)!;
+      buyer_addr = formatSavedBuyerAddress(row);
+      localStorage.setItem(LS_SELECTION, selectedId);
+    } else {
+      saveBuyerAddressDetailToStorage({
+        flat: flatInput.value,
+        building: buildingInput.value,
+        landmark: landmarkInput.value,
+      });
+      buyer_addr = formatNewCheckoutAddress({
+        flat: flatInput.value,
+        building: buildingInput.value,
+        landmark: landmarkInput.value,
+      });
+      localStorage.setItem(LS_SELECTION, "new");
+
+      if (session && saveBookCb.checked) {
+        let loc: { name?: string; lat?: number; lng?: number } | null = null;
+        try {
+          loc = JSON.parse(localStorage.getItem("zepto_location") || "null");
+        } catch {
+          loc = null;
+        }
+        try {
+          const res = await fetch("/api/buyer/addresses", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buyer_id: session.buyer_id,
+              address: {
+                label: saveLabelInput.value.trim() || "Address",
+                flat: flatInput.value.trim(),
+                building: buildingInput.value.trim(),
+                landmark: landmarkInput.value.trim(),
+                location_name: loc?.name ?? "",
+                lat: typeof loc?.lat === "number" ? loc.lat : null,
+                lng: typeof loc?.lng === "number" ? loc.lng : null,
+                is_default: saveDefaultCb.checked,
+              },
+            }),
+          });
+          if (!res.ok) console.warn("Could not save address to book", await res.text());
+        } catch {
+          console.warn("Could not save address to book");
+        }
+      }
+    }
+
+    const fn = pendingOnConfirm;
+    pendingOnConfirm = null;
+    pendingOnCancel = null;
+    closeSheet();
+    if (fn) await fn({ buyer_addr });
+  });
+
+  function cancel() {
+    const oc = pendingOnCancel;
+    pendingOnConfirm = null;
+    pendingOnCancel = null;
+    closeSheet();
+    oc?.();
+  }
+
+  backBtn.addEventListener("click", cancel);
+  bg.addEventListener("click", cancel);
+</script>

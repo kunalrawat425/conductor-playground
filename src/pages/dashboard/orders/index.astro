@@ -2,9 +2,12 @@
 export const prerender = false;
 
 import Header from "../../../components/Header.astro";
+import DashboardGate from "../../../components/DashboardGate.astro";
+import SellerBottomNav from "../../../components/SellerBottomNav.astro";
+import VercelAnalytics from "../../../components/VercelAnalytics.astro";
 import "../../../styles/global.css";
 
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 
 <html lang="en">
@@ -18,6 +21,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
+    <DashboardGate />
     <Header showDashboardLink={false} />
 
     <script is:inline>
@@ -38,12 +42,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
     </div>
 
     <main id="dash-main" style="display:none;">
-      <!-- Nav -->
-      <div class="dash-nav">
-        <a href="/dashboard" class="dash-nav-item">Listings</a>
-        <a href="/dashboard/orders" class="dash-nav-item active">Orders</a>
-        <a href="/dashboard/profile" class="dash-nav-item">Profile</a>
-      </div>
 
       <!-- Tabs: Fresh / Pre-orders -->
       <div class="tabs">
@@ -98,10 +96,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
       import { getSession, signOut } from "../../../lib/seller-auth";
       import {
         getSellerById,
-        getOrdersForSeller,
-        getPreOrdersForSeller,
+        getFreshOrdersForSellerPage,
+        getPreOrdersForSellerPage,
+        getSellerOrderTabCounts,
         updateOrderStatus,
       } from "../../../lib/supabase";
+      import { SELLER_ORDERS_PAGE_SIZE } from "../../../lib/seller-orders-pagination";
       import { getSpeciesDisplay } from "../../../lib/species";
       import type { Seller, Order } from "../../../lib/supabase";
 
@@ -118,32 +118,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         }, 3000);
       }
 
-      let allFreshOrders: Order[] = [];
-      let allPreOrders: Order[] = [];
-      const PAGE_SIZE = 10;
       let freshPage = 1;
       let prePage = 1;
       let _sellerId = "";
 
-      function getDateCutoff(filter: string): Date | null {
-        if (filter === "today") { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
-        if (filter === "7d") return new Date(Date.now() - 7 * 86400000);
-        if (filter === "30d") return new Date(Date.now() - 30 * 86400000);
-        return null;
-      }
-
-      function applyFilters(orders: Order[], statusFilter: string, dateFilter: string): Order[] {
-        let filtered = orders;
-        if (statusFilter !== "all") filtered = filtered.filter(o => o.status === statusFilter);
-        const cutoff = getDateCutoff(dateFilter);
-        if (cutoff) filtered = filtered.filter(o => new Date(o.created_at) >= cutoff);
-        return filtered;
-      }
-
       function renderPaginationControls(containerId: string, total: number, page: number, onPage: (p: number) => void) {
         const el = document.getElementById(containerId)!;
-        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-        if (total <= PAGE_SIZE) { el.innerHTML = ""; return; }
+        const totalPages = Math.max(1, Math.ceil(total / SELLER_ORDERS_PAGE_SIZE));
+        if (total <= SELLER_ORDERS_PAGE_SIZE) { el.innerHTML = ""; return; }
         el.innerHTML = `
           <button class="pg-prev" ${page <= 1 ? "disabled" : ""}>← Prev</button>
           <span class="page-info">${page} / ${totalPages}</span>
@@ -153,46 +135,66 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         el.querySelector(".pg-next")?.addEventListener("click", () => { if (page < totalPages) onPage(page + 1); });
       }
 
-      function updateTabCounts() {
-        const freshActionable = allFreshOrders.filter(o => o.status === "pending").length;
-        const preActionable = allPreOrders.filter(o => o.status === "pre_order").length;
-        const freshEl = document.getElementById("fresh-count")!;
-        const preEl = document.getElementById("pre-count")!;
-        freshEl.textContent = freshActionable > 0 ? String(freshActionable) : "";
-        freshEl.style.display = freshActionable > 0 ? "inline-flex" : "none";
-        preEl.textContent = preActionable > 0 ? String(preActionable) : "";
-        preEl.style.display = preActionable > 0 ? "inline-flex" : "none";
+      async function updateTabCounts() {
+        if (!_sellerId) return;
+        try {
+          const { pendingFresh, preAwaiting } = await getSellerOrderTabCounts(_sellerId);
+          const freshEl = document.getElementById("fresh-count")!;
+          const preEl = document.getElementById("pre-count")!;
+          freshEl.textContent = pendingFresh > 0 ? String(pendingFresh) : "";
+          freshEl.style.display = pendingFresh > 0 ? "inline-flex" : "none";
+          preEl.textContent = preAwaiting > 0 ? String(preAwaiting) : "";
+          preEl.style.display = preAwaiting > 0 ? "inline-flex" : "none";
+        } catch (e) {
+          console.error("Tab counts:", e);
+        }
       }
 
-      function renderFresh() {
+      async function renderFresh() {
+        if (!_sellerId) return;
         const statusFilter = (document.getElementById("fresh-status-filter") as HTMLSelectElement).value;
         const dateFilter = (document.getElementById("fresh-date-filter") as HTMLSelectElement).value;
-        const filtered = applyFilters(allFreshOrders, statusFilter, dateFilter);
-        const paged = filtered.slice((freshPage - 1) * PAGE_SIZE, freshPage * PAGE_SIZE);
-        renderOrders(paged, "fresh-orders-list", _sellerId);
-        renderPaginationControls("fresh-pagination", filtered.length, freshPage, (p) => { freshPage = p; renderFresh(); });
-        updateTabCounts();
+        try {
+          const { orders, total } = await getFreshOrdersForSellerPage(_sellerId, {
+            page: freshPage,
+            pageSize: SELLER_ORDERS_PAGE_SIZE,
+            statusFilter,
+            dateFilter,
+          });
+          renderOrders(orders, "fresh-orders-list", _sellerId);
+          renderPaginationControls("fresh-pagination", total, freshPage, (p) => {
+            freshPage = p;
+            void renderFresh();
+          });
+        } catch (e) {
+          console.error("Fresh orders:", e);
+        }
       }
 
-      function renderPre() {
+      async function renderPre() {
+        if (!_sellerId) return;
         const statusFilter = (document.getElementById("pre-status-filter") as HTMLSelectElement).value;
         const dateFilter = (document.getElementById("pre-date-filter") as HTMLSelectElement).value;
-        const filtered = applyFilters(allPreOrders, statusFilter, dateFilter);
-        const paged = filtered.slice((prePage - 1) * PAGE_SIZE, prePage * PAGE_SIZE);
-        renderOrders(paged, "pre-orders-list", _sellerId);
-        renderPaginationControls("pre-pagination", filtered.length, prePage, (p) => { prePage = p; renderPre(); });
-        updateTabCounts();
+        try {
+          const { orders, total } = await getPreOrdersForSellerPage(_sellerId, {
+            page: prePage,
+            pageSize: SELLER_ORDERS_PAGE_SIZE,
+            statusFilter,
+            dateFilter,
+          });
+          renderOrders(orders, "pre-orders-list", _sellerId);
+          renderPaginationControls("pre-pagination", total, prePage, (p) => {
+            prePage = p;
+            void renderPre();
+          });
+        } catch (e) {
+          console.error("Pre-orders:", e);
+        }
       }
 
       async function refreshOrders(sellerId: string) {
-        const [orders, preOrders] = await Promise.all([
-          getOrdersForSeller(sellerId),
-          getPreOrdersForSeller(sellerId),
-        ]);
-        allFreshOrders = orders.filter((o: Order) => o.status !== "pre_order");
-        allPreOrders = preOrders;
-        renderFresh();
-        renderPre();
+        _sellerId = sellerId;
+        await Promise.all([renderFresh(), renderPre(), updateTabCounts()]);
       }
 
       async function init() {
@@ -224,23 +226,26 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
           });
         });
 
-        // Load orders
-        const [orders, preOrders] = await Promise.all([
-          getOrdersForSeller(seller.id),
-          getPreOrdersForSeller(seller.id),
-        ]);
-
         _sellerId = seller.id;
-        allFreshOrders = orders.filter((o) => o.status !== "pre_order");
-        allPreOrders = preOrders;
-        renderFresh();
-        renderPre();
+        await Promise.all([renderFresh(), renderPre(), updateTabCounts()]);
 
         // Filters
-        document.getElementById("fresh-status-filter")!.addEventListener("change", () => { freshPage = 1; renderFresh(); });
-        document.getElementById("fresh-date-filter")!.addEventListener("change", () => { freshPage = 1; renderFresh(); });
-        document.getElementById("pre-status-filter")!.addEventListener("change", () => { prePage = 1; renderPre(); });
-        document.getElementById("pre-date-filter")!.addEventListener("change", () => { prePage = 1; renderPre(); });
+        document.getElementById("fresh-status-filter")!.addEventListener("change", () => {
+          freshPage = 1;
+          void renderFresh();
+        });
+        document.getElementById("fresh-date-filter")!.addEventListener("change", () => {
+          freshPage = 1;
+          void renderFresh();
+        });
+        document.getElementById("pre-status-filter")!.addEventListener("change", () => {
+          prePage = 1;
+          void renderPre();
+        });
+        document.getElementById("pre-date-filter")!.addEventListener("change", () => {
+          prePage = 1;
+          void renderPre();
+        });
 
         // Show content
         requestAnimationFrame(() => {
@@ -291,6 +296,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
                     ${o.buyer_addr ? `<span>📍 ${o.buyer_addr}</span>` : ""}
                     <span>🛒 ${o.order_type}</span>
                   </div>
+                  ${(() => {
+                    const df = Number(o.delivery_fee) || 0;
+                    const sub = o.total_price;
+                    if (df > 0) {
+                      return `<div style="font-size:14px;margin-bottom:8px;">💰 Items <strong>₹${sub}</strong> + delivery <strong>₹${df}</strong> → <strong>₹${sub + df}</strong></div>`;
+                    }
+                    return `<div style="font-size:14px;margin-bottom:8px;">💰 <strong>₹${sub}</strong></div>`;
+                  })()}
                   ${isPreOrder && o.paid_amount ? `<div style="background:#fff3cd;padding:8px 12px;border-radius:var(--radius);font-size:13px;margin-bottom:8px;">Buyer paid upfront: <strong>₹${o.paid_amount}</strong> <span class="text-muted">(max range)</span></div>` : ""}
                   ${
                     canAct
@@ -401,7 +414,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         });
       }
 
-      init();
+      void init();
     </script>
 
     <style is:global>
@@ -484,5 +497,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Zepto";
         vertical-align: middle;
       }
     </style>
+    <SellerBottomNav active="orders" />
+    <VercelAnalytics />
   </body>
 </html>

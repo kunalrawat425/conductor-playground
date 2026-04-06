@@ -54,9 +54,24 @@ describe("supabase queries", () => {
     vi.clearAllMocks();
   });
 
-  it("getActiveListings filters by available and not expired", async () => {
+  it("getActiveListings filters by available and non-expired listings", async () => {
     const mockListings = [
-      { id: "1", species: "pomfret", price: 500, price_unit: "piece", is_available: true },
+      {
+        id: "1",
+        species: "pomfret",
+        price: 500,
+        price_unit: "piece",
+        is_available: true,
+        seller: { is_active: true },
+      },
+      {
+        id: "2",
+        species: "surmai",
+        price: 400,
+        price_unit: "kg",
+        is_available: true,
+        seller: { is_active: false },
+      },
     ];
     const chain = setupChain(mockListings);
 
@@ -65,6 +80,8 @@ describe("supabase queries", () => {
 
     expect(mockFrom).toHaveBeenCalledWith("fish_listings");
     expect(chain.eq).toHaveBeenCalledWith("is_available", true);
+    expect(chain.gt).toHaveBeenCalledWith("expires_at", expect.any(String));
+    expect(chain.order).toHaveBeenCalledWith("created_at", { ascending: false });
     expect(result).toEqual(mockListings);
   });
 
@@ -79,7 +96,7 @@ describe("supabase queries", () => {
     expect(result).toEqual(mockSeller);
   });
 
-  it("createListing inserts into fish_listings", async () => {
+  it("createListing posts to seller listings API", async () => {
     const newListing = {
       seller_id: "s1",
       species: "pomfret",
@@ -89,17 +106,25 @@ describe("supabase queries", () => {
       photo_url: null,
       listed_date: "2026-04-05",
       is_available: true,
-      expires_at: new Date().toISOString(),
       pickup_loc: "Versova",
     };
-    const chain = setupChain({ id: "l1", ...newListing });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ listing: { id: "l1", ...newListing } }),
+    });
+    const prevFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as any;
 
     const { createListing } = await import("../../src/lib/supabase");
     const result = await createListing(newListing);
 
-    expect(mockFrom).toHaveBeenCalledWith("fish_listings");
-    expect(chain.insert).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/seller/listings",
+      expect.objectContaining({ method: "POST" })
+    );
     expect(result.id).toBe("l1");
+
+    globalThis.fetch = prevFetch;
   });
 
   it("updateOrderStatus updates status and optional final price", async () => {

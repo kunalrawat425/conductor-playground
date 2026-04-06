@@ -1,0 +1,184 @@
+---
+export const prerender = false;
+
+import Header from "../../../components/Header.astro";
+import DashboardGate from "../../../components/DashboardGate.astro";
+import SellerBottomNav from "../../../components/SellerBottomNav.astro";
+import VercelAnalytics from "../../../components/VercelAnalytics.astro";
+import "../../../styles/global.css";
+
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0066cc" />
+    <title>{`Listings - ${brandName}`}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+  </head>
+  <body>
+    <DashboardGate />
+    <Header showDashboardLink={false} />
+
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      }
+    </script>
+
+    <!-- Toast -->
+    <div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;"></div>
+
+    <!-- Loading skeleton -->
+    <div id="dash-loading" style="padding:16px;">
+      <div class="skeleton" style="height:32px;width:200px;border-radius:8px;margin-bottom:16px;"></div>
+      <div class="skeleton" style="height:40px;border-radius:8px;margin-bottom:16px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="skeleton" style="height:120px;border-radius:8px;"></div>
+        <div class="skeleton" style="height:120px;border-radius:8px;"></div>
+      </div>
+    </div>
+
+    <main id="dash-main" style="display:none;">
+
+      <!-- Add listing button -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 id="seller-name" style="font-size:20px;font-weight:700;">My Listings</h2>
+        <a href="/dashboard/listings/new" class="btn btn-primary" style="padding:8px 16px;font-size:14px;">+ Add Listing</a>
+      </div>
+
+      <div id="listings-list" class="grid grid-2"></div>
+    </main>
+
+    <script>
+      import { getSession, signOut } from "../../../lib/seller-auth";
+      import { getSellerById, getSellerListings } from "../../../lib/supabase";
+      import { getSpeciesDisplay } from "../../../lib/species";
+      import type { Seller, FishListing } from "../../../lib/supabase";
+
+      async function init() {
+        const session = getSession();
+        if (!session) {
+          window.location.href = "/dashboard/login";
+          return;
+        }
+
+        let seller: Seller;
+        try {
+          seller = await getSellerById(session.seller_id);
+        } catch (err: any) {
+          console.error("Dashboard load error:", err);
+          signOut();
+          window.location.href = "/dashboard/login";
+          return;
+        }
+
+        const displayName = [seller.first_name, seller.last_name].filter(Boolean).join(" ") || seller.name;
+        document.getElementById("seller-name")!.textContent = `${displayName}'s Listings`;
+
+        const listings = await getSellerListings(seller.id);
+        renderListings(listings);
+
+        requestAnimationFrame(() => {
+          document.getElementById("dash-loading")!.style.display = "none";
+          const main = document.getElementById("dash-main")!;
+          main.style.display = "block";
+          main.classList.add("fade-in");
+        });
+      }
+
+      function esc(s: string) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function renderListings(listings: FishListing[]) {
+        const el = document.getElementById("listings-list")!;
+        if (listings.length === 0) {
+          el.innerHTML = '<p class="text-muted">No listings yet. <a href="/dashboard/listings/new">Add your first listing</a>.</p>';
+          return;
+        }
+
+        el.innerHTML = listings
+          .map((l) => {
+            const name = getSpeciesDisplay(l.species);
+            const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
+            const isExpired = new Date(l.expires_at) < new Date();
+            const statusBadge = !l.is_available
+              ? '<span class="badge badge-red">Unavailable</span>'
+              : isExpired
+                ? '<span class="badge badge-orange">Expired</span>'
+                : '<span class="badge badge-green">Active</span>';
+
+            return `
+              <div class="card listing-dash-card" style="cursor:pointer;">
+                <div class="card-body">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <h3 style="font-size:16px;font-weight:700;">${name}</h3>
+                    ${statusBadge}
+                  </div>
+                  <div style="font-size:18px;font-weight:700;color:var(--green);margin-bottom:4px;">₹${l.price}/${unitLabel}</div>
+                  <div class="text-muted">${l.weight_avail > 0 ? `📦 ${l.weight_avail} ${l.price_unit} in stock` : `❌ Out of stock`}</div>
+                  <div class="listing-pickup-detail" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-200);">
+                    <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Pickup address</div>
+                    <div style="font-size:14px;font-weight:600;margin-top:6px;line-height:1.4;">${esc(l.pickup_loc || "—")}</div>
+                  </div>
+                  <p class="text-muted" style="font-size:12px;margin:10px 0 0;">Tap card to show or hide pickup address</p>
+                  <div class="listing-card-actions" style="margin-top:12px;">
+                    <a href="/dashboard/listings/${l.id}" class="btn btn-primary" style="padding:6px 16px;font-size:13px;">Edit</a>
+                  </div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        el.querySelectorAll(".listing-dash-card").forEach((card) => {
+          card.addEventListener("click", (ev) => {
+            if ((ev.target as HTMLElement).closest("a, .listing-card-actions")) return;
+            const detail = card.querySelector(".listing-pickup-detail") as HTMLElement;
+            if (!detail) return;
+            const open = detail.style.display !== "block";
+            detail.style.display = open ? "block" : "none";
+          });
+        });
+      }
+
+      init();
+    </script>
+
+    <style is:global>
+      .dash-nav {
+        display: flex;
+        gap: 0;
+        margin-bottom: 16px;
+        border-bottom: 2px solid var(--gray-200);
+      }
+      .dash-nav-item {
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .dash-nav-item:hover {
+        color: var(--gray-700);
+        text-decoration: none;
+      }
+      .dash-nav-item.active {
+        color: var(--blue);
+        border-bottom-color: var(--blue);
+      }
+    </style>
+    <SellerBottomNav active="listings" />
+    <VercelAnalytics />
+  </body>
+</html>

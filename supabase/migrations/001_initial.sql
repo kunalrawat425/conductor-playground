@@ -36,7 +36,6 @@ create table fish_listings (
   photo_url text,
   listed_date date not null default current_date,
   is_available boolean not null default true,
-  expires_at timestamptz not null default (now() + interval '6 hours'),
   pickup_loc text not null default '',
   delivery_avl boolean not null default false,
   created_at timestamptz not null default now()
@@ -89,7 +88,7 @@ create table price_logs (
 -- INDEXES
 -- ============================================
 
-create index idx_listings_available on fish_listings(is_available, expires_at)
+create index idx_listings_available on fish_listings(is_available)
   where is_available = true;
 create index idx_listings_seller on fish_listings(seller_id);
 create index idx_orders_listing on orders(listing_id);
