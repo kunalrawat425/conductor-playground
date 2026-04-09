@@ -788,7 +788,8 @@ import LoginModal from "../components/LoginModal.astro";
 
       emptyState.style.display = "none";
       sellersSection.style.display = "block";
-      countBadge.textContent = String(filtered.length);
+      const nearbyCount = filtered.filter(g => g.inServiceArea).length;
+      countBadge.textContent = String(nearbyCount);
       // Show promo card above sellers
       const promoCard = document.getElementById("promo-card");
       if (promoCard) promoCard.style.display = "block";
