@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
+import { getListingOptionById } from "../../../lib/listing-pricing";
 
 export const prerender = false;
 
@@ -30,7 +31,7 @@ function isSellerCurrentlyOpen(opensAt: string | null, closesAt: string | null):
 export const POST: APIRoute = async ({ request, url }) => {
   try {
     const body = await request.json();
-    const {
+    let {
       listing_id,
       species,
       quantity = 1,
@@ -42,6 +43,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       seller_id: clientSellerId,
       scheduled_for,
       schedule_slot_id,
+      pricing_option_id: clientPricingOptionId,
     } = body;
 
     if (!buyer_phone) {
@@ -54,10 +56,15 @@ export const POST: APIRoute = async ({ request, url }) => {
     let total_price = 0;
     let seller_id: string | null = clientSellerId || null;
 
+    let orderPricingOptionId: string | null = null;
+    let orderPricingLabel: string | null = null;
+
     if (listing_id) {
       const { data: listing } = await supabase
         .from("fish_listings")
-        .select("price, price_unit, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold")
+        .select(
+          "price, price_unit, pricing_options, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold"
+        )
         .eq("id", listing_id)
         .single();
 
@@ -65,13 +72,21 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: "Listing not found" }), { status: 404 });
       }
 
+      const chosen = getListingOptionById(listing as { price: number; price_unit: string; pricing_options?: unknown }, clientPricingOptionId);
+      if (!chosen) {
+        return new Response(JSON.stringify({ error: "Invalid price option for this listing" }), { status: 400 });
+      }
+      orderPricingOptionId = chosen.id;
+      orderPricingLabel = chosen.label;
+      quantity_unit = chosen.unit;
+
       const { data: sellerForLimits } = await supabase
         .from("sellers")
         .select("min_order_amount")
         .eq("id", listing.seller_id)
         .single();
       const minOrderAmt = Number(sellerForLimits?.min_order_amount) || 0;
-      const linePrice = Number(listing.price) || 0;
+      const linePrice = chosen.price;
       const minUnitsForMinOrder =
         minOrderAmt > 0 && linePrice > 0 ? Math.max(1, Math.ceil(minOrderAmt / linePrice)) : 1;
 
@@ -80,7 +95,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (cap < minUnitsForMinOrder) {
           return new Response(
             JSON.stringify({
-              error: `Per-buyer daily limit must be at least ${minUnitsForMinOrder} ${listing.price_unit} so buyers can meet your minimum order (₹${minOrderAmt}).`,
+              error: `Per-buyer daily limit must be at least ${minUnitsForMinOrder} ${quantity_unit} so buyers can meet your minimum order (₹${minOrderAmt}).`,
             }),
             { status: 400 }
           );
@@ -104,7 +119,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (usedToday + quantity > cap) {
           return new Response(
             JSON.stringify({
-              error: `Daily limit for this item is ${cap} ${listing.price_unit} per buyer (you already have ${usedToday} today).`,
+              error: `Daily limit for this item is ${cap} ${quantity_unit} per buyer (you already have ${usedToday} today).`,
             }),
             { status: 400 }
           );
@@ -114,7 +129,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       // Out of stock or unavailable → pre-order. "Selling fast" / oos_threshold is buyer UI only.
       if (!listing.is_available || listing.weight_avail <= 0 || listing.weight_avail < quantity) {
         // Always allow as pre-order — no stock deduction, no blocking
-        total_price = listing.price * quantity;
+        total_price = linePrice * quantity;
         seller_id = listing.seller_id;
         const amountDue = total_price;
         const { data: preOrder, error: preErr } = await supabase
@@ -136,6 +151,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             paid_amount: amountDue,
             scheduled_for: scheduled_for || null,
             schedule_slot_id: schedule_slot_id || null,
+            pricing_option_id: orderPricingOptionId,
+            pricing_label: orderPricingLabel,
           })
           .select()
           .single();
@@ -160,7 +177,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ order: preOrder, pre_order_reason }), { status: 201 });
       }
 
-      total_price = listing.price * quantity;
+      total_price = linePrice * quantity;
       seller_id = listing.seller_id;
     } else if (species) {
       const { data: range } = await supabase
@@ -227,6 +244,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       p_order_type: order_type,
       p_scheduled_for: scheduled_for || null,
       p_schedule_slot_id: schedule_slot_id || null,
+      p_pricing_option_id: orderPricingOptionId,
+      p_pricing_label: orderPricingLabel,
     });
 
     if (rpcError) {
@@ -253,6 +272,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             paid_amount: status === "pre_order" ? total_price + delivery_fee : null,
             scheduled_for: scheduled_for || null,
             schedule_slot_id: schedule_slot_id || null,
+            pricing_option_id: orderPricingOptionId,
+            pricing_label: orderPricingLabel,
           })
           .select()
           .single();

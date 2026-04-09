@@ -220,9 +220,17 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <!-- Schedule & Availability -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;">
             <h3 style="font-size:15px;font-weight:700;margin:0;">📅 Schedule & Availability</h3>
-            <button type="button" class="sched-toggle-btn" id="sched-toggle">Show ▼</button>
+            <label
+              class="dash-switch"
+              title="Show or hide schedule settings"
+              style="position:relative;display:inline-block;width:48px;height:28px;flex-shrink:0;"
+            >
+              <input type="checkbox" id="sched-toggle-input" style="opacity:0;width:0;height:0;" aria-label="Show schedule settings" />
+              <span id="sched-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
+              <span id="sched-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+            </label>
           </div>
 
           <div id="sched-panel" style="display:none;">
@@ -657,12 +665,23 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       // ===== Schedule =====
       const schedPanel = document.getElementById("sched-panel")!;
-      const schedToggle = document.getElementById("sched-toggle")!;
-      schedToggle.addEventListener("click", () => {
-        const hidden = schedPanel.style.display === "none";
-        schedPanel.style.display = hidden ? "block" : "none";
-        schedToggle.textContent = hidden ? "Hide ▲" : "Show ▼";
-        if (hidden) loadExistingSchedule();
+      const schedToggleInput = document.getElementById("sched-toggle-input") as HTMLInputElement;
+      const schedSlider = document.getElementById("sched-slider")!;
+      const schedKnob = document.getElementById("sched-knob")!;
+
+      function updateSchedulePanelUI(expanded: boolean) {
+        schedToggleInput.checked = expanded;
+        schedPanel.style.display = expanded ? "block" : "none";
+        schedSlider.style.background = expanded ? "var(--green)" : "var(--gray-200)";
+        schedKnob.style.transform = expanded ? "translateX(20px)" : "translateX(0)";
+      }
+
+      updateSchedulePanelUI(false);
+
+      schedToggleInput.addEventListener("change", () => {
+        const on = schedToggleInput.checked;
+        updateSchedulePanelUI(on);
+        if (on) void loadExistingSchedule();
       });
 
       async function loadExistingSchedule() {
@@ -670,8 +689,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         if (!sellerId) return;
         const { data: config } = await supabase.from("seller_schedule_configs").select("*").eq("seller_id", sellerId).single();
         if (config) {
-          // Calculate days from config
-          const daysDiff = Math.ceil((new Date(config.date_to).getTime() - new Date(config.date_from).getTime()) / 86400000) + 1;
+          // Calculate days from config (legacy date range or new days_ahead)
+          const daysDiff =
+            config.days_ahead != null
+              ? Number(config.days_ahead)
+              : Math.ceil((new Date(config.date_to).getTime() - new Date(config.date_from).getTime()) / 86400000) + 1;
           const daysSelect = document.getElementById("sched-days") as HTMLSelectElement;
           const closest = [3, 7, 14, 30].reduce((a, b) => Math.abs(b - daysDiff) < Math.abs(a - daysDiff) ? b : a);
           daysSelect.value = String(closest);
@@ -679,8 +701,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           (document.getElementById("sched-end") as HTMLInputElement).value = config.end_time?.substring(0, 5);
           (document.getElementById("sched-duration") as HTMLSelectElement).value = String(config.slot_duration_minutes);
         }
-        // Load slots
-        const { data: slots } = await supabase.from("seller_schedule_slots").select("*").eq("seller_id", sellerId).gte("slot_date", new Date().toISOString().split("T")[0]).order("slot_date").order("slot_start");
+        // Load virtual slots
+        const res = await fetch("/api/seller/schedule", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "get_slots", seller_id: sellerId }),
+        });
+        const data = await res.json();
+        const slots = data.slots || [];
         if (slots && slots.length > 0) renderSlotGrid(slots, sellerId);
       }
 
@@ -703,7 +731,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <button type="button" class="sched-date-toggle ${allDisabled ? "off" : "on"}" data-date="${date}" data-disabled="${allDisabled}"></button>
               </div>
               <div class="sched-chips">
-                ${daySlots.map(s => `<button type="button" class="sched-chip ${s.is_enabled && !s.date_disabled ? "on" : "off"}" data-slot-id="${s.id}" data-enabled="${s.is_enabled}">${s.slot_start.substring(0,5)}-${s.slot_end.substring(0,5)}</button>`).join("")}
+                ${daySlots.map(s => `<button type="button" class="sched-chip ${s.is_enabled && !s.date_disabled ? "on" : "off"}" data-slot-date="${s.slot_date}" data-slot-start="${s.slot_start.substring(0,5)}" data-enabled="${s.is_enabled}">${s.slot_start.substring(0,5)}-${s.slot_end.substring(0,5)}</button>`).join("")}
               </div>
             </div>
           `;
@@ -712,15 +740,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         // Chip toggle
         container.querySelectorAll(".sched-chip").forEach(chip => {
           chip.addEventListener("click", async () => {
-            const slotId = chip.getAttribute("data-slot-id")!;
             const wasEnabled = chip.getAttribute("data-enabled") === "true";
             const newEnabled = !wasEnabled;
             chip.setAttribute("data-enabled", String(newEnabled));
             chip.className = `sched-chip ${newEnabled ? "on" : "off"}`;
+            const date = chip.getAttribute("data-slot-date")!;
+            const start = chip.getAttribute("data-slot-start")!;
             await fetch("/api/seller/schedule", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "toggle_slot", seller_id: sellerId, slot_id: slotId, is_enabled: newEnabled }),
+              body: JSON.stringify({ action: "toggle_slot", seller_id: sellerId, slot_date: date, slot_start: start, is_enabled: newEnabled }),
             });
           });
         });
@@ -872,7 +901,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         font-weight: 600;
       }
       /* Schedule */
-      .sched-toggle-btn { font-size: 12px; font-weight: 600; color: var(--blue); background: none; border: none; cursor: pointer; padding: 4px 8px; }
+      .dash-switch { cursor: pointer; }
       .sched-form { display: flex; flex-direction: column; gap: 10px; }
       .sched-row { display: flex; gap: 10px; }
       .sched-row > .sched-field { flex: 1; }

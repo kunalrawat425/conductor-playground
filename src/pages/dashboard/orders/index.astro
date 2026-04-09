@@ -46,9 +46,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <!-- Stats Dashboard -->
       <div class="stats-header">
         <h2 class="stats-title">Dashboard</h2>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button type="button" id="export-csv" class="stats-toggle" style="color:var(--green);">📥 Export</button>
-          <button type="button" class="stats-toggle" id="stats-toggle">Hide ▲</button>
+        <div class="stats-header-actions">
+          <button type="button" id="export-csv" class="stats-export-btn">📥 Export</button>
+          <span class="stats-toggle-label">Stats</span>
+          <label
+            class="dash-switch stats-panel-switch"
+            title="Show or hide dashboard stats"
+            style="position:relative;display:inline-block;width:48px;height:28px;flex-shrink:0;"
+          >
+            <input type="checkbox" id="stats-panel-toggle" checked style="opacity:0;width:0;height:0;" aria-label="Show dashboard stats" />
+            <span id="stats-panel-slider" style="position:absolute;inset:0;background:var(--green);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
+            <span id="stats-panel-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);transform:translateX(20px);"></span>
+          </label>
         </div>
       </div>
       <div id="stats-panel">
@@ -159,11 +168,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       import { getSession, signOut } from "../../../lib/seller-auth";
       import {
         getSellerById,
+        getListingIdsForSeller,
         getFreshOrdersForSellerPage,
         getPreOrdersForSellerPage,
         getScheduledOrdersForSeller,
         getSellerOrderTabCounts,
         updateOrderStatus,
+        supabase,
       } from "../../../lib/supabase";
       import { SELLER_ORDERS_PAGE_SIZE } from "../../../lib/seller-orders-pagination";
       import { getSpeciesDisplay } from "../../../lib/species";
@@ -185,6 +196,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       let freshPage = 1;
       let prePage = 1;
       let _sellerId = "";
+      /** Shared once per page load / refresh — avoids 4× duplicate fish_listings id queries. */
+      let _sellerListingIds: string[] = [];
 
       function renderPaginationControls(containerId: string, total: number, page: number, onPage: (p: number) => void) {
         const el = document.getElementById(containerId)!;
@@ -202,7 +215,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       async function updateTabCounts() {
         if (!_sellerId) return;
         try {
-          const { pendingFresh, preAwaiting, scheduled } = await getSellerOrderTabCounts(_sellerId);
+          const { pendingFresh, preAwaiting, scheduled } = await getSellerOrderTabCounts(_sellerId, {
+            listingIds: _sellerListingIds,
+          });
           const freshEl = document.getElementById("fresh-count")!;
           const preEl = document.getElementById("pre-count")!;
           const schedEl = document.getElementById("sched-count")!;
@@ -221,7 +236,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       async function renderScheduled() {
         if (!_sellerId) return;
         try {
-          const { orders, total } = await getScheduledOrdersForSeller(_sellerId, { page: schedPage });
+          const { orders, total } = await getScheduledOrdersForSeller(_sellerId, {
+            page: schedPage,
+            listingIds: _sellerListingIds,
+          });
           renderOrders(orders, "scheduled-orders-list", _sellerId);
           renderPaginationControls("scheduled-pagination", total, schedPage, (p) => { schedPage = p; void renderScheduled(); });
         } catch (e) {
@@ -230,7 +248,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       }
 
       // ===== Stats Dashboard =====
-      import { supabase } from "../../../lib/supabase";
+      let statsLoadEpoch = 0;
+      let statsDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      function scheduleLoadStats() {
+        if (statsDebounceTimer) clearTimeout(statsDebounceTimer);
+        statsDebounceTimer = setTimeout(() => {
+          statsDebounceTimer = null;
+          void loadStats();
+        }, 280);
+      }
 
       function getStatsDateRange(filter: string): { start: string; end: string } | null {
         const now = new Date();
@@ -248,6 +275,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       async function loadStats() {
         if (!_sellerId) return;
+        const epoch = ++statsLoadEpoch;
         const grid = document.getElementById("stats-grid");
         if (grid) grid.style.opacity = "0.5";
         const filter = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
@@ -256,15 +284,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         if (filter === "custom") {
           const s = (document.getElementById("stats-start") as HTMLInputElement).value;
           const e = (document.getElementById("stats-end") as HTMLInputElement).value;
-          if (!s || !e) return;
+          if (!s || !e) {
+            if (grid) grid.style.opacity = "1";
+            return;
+          }
           range = { start: new Date(s).toISOString(), end: new Date(new Date(e).getTime() + 86400000).toISOString() };
         } else {
           range = getStatsDateRange(filter);
         }
 
-        // Get seller's listing IDs
-        const { data: listings } = await supabase.from("fish_listings").select("id").eq("seller_id", _sellerId);
-        const listingIds = listings?.map((l: any) => l.id) || [];
+        const listingIds =
+          _sellerListingIds.length > 0 ? _sellerListingIds : await getListingIdsForSeller(_sellerId);
+        if (epoch !== statsLoadEpoch) return;
         if (listingIds.length === 0) {
           setStatValues(0, 0, 0, 0, 0, 0, 0);
           return;
@@ -275,6 +306,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           q = q.gte("created_at", range.start).lt("created_at", range.end);
         }
         const { data: orders } = await q;
+        if (epoch !== statsLoadEpoch) return;
         if (!orders) { setStatValues(0, 0, 0, 0, 0, 0, 0); return; }
 
         const total = orders.length;
@@ -299,17 +331,23 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         document.getElementById("stat-cancelled")!.textContent = String(cancelled);
       }
 
-      // Toggle show/hide
-      document.getElementById("stats-toggle")!.addEventListener("click", () => {
-        const panel = document.getElementById("stats-panel")!;
-        const btn = document.getElementById("stats-toggle")!;
-        if (panel.style.display === "none") {
-          panel.style.display = "block";
-          btn.textContent = "Hide ▲";
-        } else {
-          panel.style.display = "none";
-          btn.textContent = "Show ▼";
-        }
+      // Toggle stats panel (switch)
+      const statsPanelEl = document.getElementById("stats-panel")!;
+      const statsPanelToggle = document.getElementById("stats-panel-toggle") as HTMLInputElement;
+      const statsPanelSlider = document.getElementById("stats-panel-slider")!;
+      const statsPanelKnob = document.getElementById("stats-panel-knob")!;
+
+      function updateStatsPanelUI(visible: boolean) {
+        statsPanelToggle.checked = visible;
+        statsPanelEl.style.display = visible ? "block" : "none";
+        statsPanelSlider.style.background = visible ? "var(--green)" : "var(--gray-200)";
+        statsPanelKnob.style.transform = visible ? "translateX(20px)" : "translateX(0)";
+      }
+
+      updateStatsPanelUI(true);
+
+      statsPanelToggle.addEventListener("change", () => {
+        updateStatsPanelUI(statsPanelToggle.checked);
       });
 
       // Export CSV
@@ -323,7 +361,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       document.getElementById("stats-date-filter")!.addEventListener("change", () => {
         const v = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
         document.getElementById("stats-custom-range")!.style.display = v === "custom" ? "flex" : "none";
-        if (v !== "custom") void loadStats();
+        if (v !== "custom") scheduleLoadStats();
       });
 
       // Custom range apply
@@ -345,6 +383,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             pageSize: SELLER_ORDERS_PAGE_SIZE,
             statusFilter,
             dateFilter,
+            listingIds: _sellerListingIds,
           });
           renderOrders(orders, "fresh-orders-list", _sellerId);
           renderPaginationControls("fresh-pagination", total, freshPage, (p) => {
@@ -366,6 +405,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             pageSize: SELLER_ORDERS_PAGE_SIZE,
             statusFilter,
             dateFilter,
+            listingIds: _sellerListingIds,
           });
           renderOrders(orders, "pre-orders-list", _sellerId);
           renderPaginationControls("pre-pagination", total, prePage, (p) => {
@@ -379,6 +419,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       async function refreshOrders(sellerId: string) {
         _sellerId = sellerId;
+        if (_sellerListingIds.length === 0) {
+          _sellerListingIds = await getListingIdsForSeller(sellerId);
+        }
         await Promise.all([renderFresh(), renderPre(), updateTabCounts()]);
       }
 
@@ -414,7 +457,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         });
 
         _sellerId = seller.id;
-        await Promise.all([renderFresh(), renderPre(), updateTabCounts()]);
+        _sellerListingIds = await getListingIdsForSeller(seller.id);
+        await Promise.all([renderFresh(), renderPre(), updateTabCounts(), loadStats()]);
 
         // Filters
         document.getElementById("fresh-status-filter")!.addEventListener("change", () => {
@@ -433,9 +477,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           prePage = 1;
           void renderPre();
         });
-
-        // Load stats
-        void loadStats();
 
         // Show content
         requestAnimationFrame(() => {
@@ -616,9 +657,20 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
     <style is:global>
       /* Stats dashboard */
-      .stats-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .stats-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
       .stats-title { font-size: 18px; font-weight: 700; margin: 0; }
-      .stats-toggle { font-size: 12px; font-weight: 600; color: var(--blue); background: none; border: none; cursor: pointer; padding: 4px 8px; }
+      .stats-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+      .stats-export-btn {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--green);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+      }
+      .stats-toggle-label { font-size: 12px; font-weight: 600; color: var(--gray-600); }
+      .dash-switch { cursor: pointer; }
       .stats-filters { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
       .stats-date-select { font-size: 13px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-200); background: white; font-weight: 600; }
       .stats-custom-range { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

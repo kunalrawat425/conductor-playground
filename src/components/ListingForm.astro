@@ -1,6 +1,7 @@
 ---
 import { SPECIES_LIST, PRICE_UNITS } from "../lib/species";
 import type { FishListing } from "../lib/supabase";
+import { getListingPriceOptions } from "../lib/listing-pricing";
 
 interface Props {
   listing?: FishListing;
@@ -9,6 +10,10 @@ interface Props {
 
 const { listing, sellerId } = Astro.props;
 const isEdit = !!listing;
+
+const defaultRows = listing
+  ? getListingPriceOptions(listing)
+  : [{ id: "default", label: "Per piece", price: 0, unit: "piece" as const }];
 ---
 
 <form id="listing-form" class="listing-form" data-seller-id={sellerId} data-listing-id={listing?.id || ""}>
@@ -40,32 +45,14 @@ const isEdit = !!listing;
     <div class="form-hint" id="stock-info" style="color:var(--blue);font-weight:600;"></div>
   </div>
 
-  <div class="form-row">
-    <div class="form-group">
-      <label for="price_unit">Sell by</label>
-      <select id="price_unit" name="price_unit" required>
-        {PRICE_UNITS.map((u) => (
-          <option value={u.value} selected={listing?.price_unit === u.value}>
-            {u.label}
-          </option>
-        ))}
-      </select>
-      <div class="form-hint">How this fish is sold — per piece or per dozen</div>
-    </div>
-    <div class="form-group">
-      <label for="price" id="price-label">Price</label>
-      <input
-        type="number"
-        id="price"
-        name="price"
-        min="1"
-        step="0.01"
-        value={listing?.price || ""}
-        required
-        placeholder="e.g. 500"
-      />
-      <div class="form-hint" id="price-hint">₹ per unit. Buyer sees this on the menu.</div>
-    </div>
+  <div class="form-group">
+    <label>Pricing options</label>
+    <p class="form-hint" style="margin-bottom:8px;">
+      Add one or more prices. <strong>Label</strong> is what buyers see (e.g. "Large piece", "Per dozen"). <strong>Unit</strong> sets how stock is counted (piece vs dozen).
+    </p>
+    <div id="pricing-rows" class="pricing-rows"></div>
+    <button type="button" class="btn-add-price" id="add-price-row">+ Add another price</button>
+    <input type="hidden" name="pricing_options_json" id="pricing_options_json" value="" />
   </div>
 
   <div class="form-group">
@@ -104,7 +91,7 @@ const isEdit = !!listing;
       placeholder="e.g. 10 pieces/dozens per buyer per day — leave empty for no cap"
     />
     <div class="form-hint">
-      Max total pieces or dozens one phone number can order from this line item per calendar day (resets at midnight). Must be high enough that someone can still meet your shop minimum order at this price, if you set a minimum in profile.
+      Max total units (piece or dozen, matching the option the buyer picks) per phone number per day. Must allow your shop minimum order at the prices you set.
     </div>
   </div>
 
@@ -115,40 +102,43 @@ const isEdit = !!listing;
   </div>
 </form>
 
-<script>
+<script define:vars={{ defaultRows }}>
+  import { setupListingPricingEditor } from "../lib/listing-pricing-setup";
+  import type { ListingPriceOption } from "../lib/listing-pricing";
+
   const speciesSelect = document.getElementById("species") as HTMLSelectElement;
-  const unitSelect = document.getElementById("price_unit") as HTMLSelectElement;
-  const priceLabel = document.getElementById("price-label");
-  const priceHint = document.getElementById("price-hint");
   const stockLabel = document.getElementById("stock-label");
   const stockHint = document.getElementById("stock-hint");
   const stockInfo = document.getElementById("stock-info");
   const stockInput = document.getElementById("weight_avail") as HTMLInputElement;
   const dailyLimitInput = document.getElementById("buyer_daily_qty_limit") as HTMLInputElement;
-  const priceInput = document.getElementById("price") as HTMLInputElement;
+  const pricingRowsEl = document.getElementById("pricing-rows")!;
+  const pricingJsonInput = document.getElementById("pricing_options_json") as HTMLInputElement;
+  const addPriceBtn = document.getElementById("add-price-row")!;
 
-  const unitMap: Record<string, { price: string; priceHint: string; stock: string; stockHint: string; stockPlaceholder: string }> = {
+  const unitMap: Record<string, { stock: string; stockHint: string; stockPlaceholder: string }> = {
     piece: {
-      price: "Price per piece (₹)",
-      priceHint: "How much for 1 piece. Buyer sees: ₹150/piece",
       stock: "Stock (pieces)",
       stockHint: "How many pieces you have. Buyers won't see this.",
       stockPlaceholder: "e.g. 20",
     },
     dozen: {
-      price: "Price per dozen (₹)",
-      priceHint: "How much for 12 units. Buyer sees: ₹300/dozen",
       stock: "Stock (dozens)",
       stockHint: "How many dozens you have. Buyers won't see this.",
       stockPlaceholder: "e.g. 5",
     },
   };
 
-  function updateUnitLabels() {
-    const unit = unitSelect?.value || "piece";
+  const initial = (defaultRows as { id?: string; label: string; price: number; unit: string }[]).map((r, i) => ({
+    ...r,
+    id: r.id || `opt_${i}`,
+    unit: r.unit === "dozen" ? "dozen" : "piece",
+  })) as ListingPriceOption[];
+
+  function syncStockLabelsFromFirstUnit() {
+    const firstUnit = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
+    const unit = firstUnit?.value || "piece";
     const u = unitMap[unit] || unitMap.piece;
-    if (priceLabel) priceLabel.textContent = u.price;
-    if (priceHint) priceHint.textContent = u.priceHint;
     if (stockLabel) stockLabel.textContent = u.stock;
     if (stockHint) stockHint.textContent = u.stockHint;
     if (stockInput) stockInput.placeholder = u.stockPlaceholder;
@@ -159,7 +149,8 @@ const isEdit = !!listing;
     if (!stockInfo || !stockInput) return;
     const stock = parseFloat(stockInput.value) || 0;
     const cap = parseFloat(dailyLimitInput?.value || "0") || 0;
-    const unit = unitSelect?.value || "piece";
+    const firstUnit = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
+    const unit = firstUnit?.value || "piece";
     if (stock > 0 && cap > 0) {
       const orders = Math.floor(stock / cap);
       stockInfo.textContent = `With ${stock} ${unit} and max ${cap}/${unit} per buyer per day → ~${orders} buyers could fully use stock`;
@@ -170,21 +161,31 @@ const isEdit = !!listing;
     }
   }
 
+  const pricingEditor = setupListingPricingEditor({
+    container: pricingRowsEl,
+    hiddenInput: pricingJsonInput,
+    addButton: addPriceBtn,
+    initial,
+    onUnitChange: syncStockLabelsFromFirstUnit,
+  });
+  syncStockLabelsFromFirstUnit();
+
   speciesSelect?.addEventListener("change", () => {
     const option = speciesSelect.selectedOptions[0];
     const defaultUnit = option?.dataset.unit;
-    if (defaultUnit && unitSelect) {
-      unitSelect.value = defaultUnit;
-      updateUnitLabels();
+    const firstSel = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
+    if (defaultUnit && firstSel && (defaultUnit === "piece" || defaultUnit === "dozen")) {
+      firstSel.value = defaultUnit;
+      pricingEditor.sync();
+      syncStockLabelsFromFirstUnit();
     }
   });
 
-  unitSelect?.addEventListener("change", updateUnitLabels);
   stockInput?.addEventListener("input", updateStockInfo);
   dailyLimitInput?.addEventListener("input", updateStockInfo);
-  priceInput?.addEventListener("input", updateStockInfo);
 
-  updateUnitLabels();
+  const form = document.getElementById("listing-form");
+  form?.addEventListener("submit", () => pricingEditor.sync());
 </script>
 
 <style>
@@ -192,10 +193,50 @@ const isEdit = !!listing;
     max-width: 500px;
   }
 
-  .form-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
+  .pricing-rows {
+    display: flex;
+    flex-direction: column;
     gap: 12px;
+  }
+
+  .pricing-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 100px 110px 36px;
+    gap: 8px;
+    align-items: end;
+  }
+
+  @media (max-width: 520px) {
+    .pricing-row-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .pricing-row-grid .btn-remove-price {
+      grid-column: 2;
+      justify-self: end;
+    }
+  }
+
+  .btn-add-price {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px dashed var(--gray-300);
+    background: var(--gray-50);
+    color: var(--blue);
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .btn-remove-price {
+    height: 40px;
+    border: none;
+    background: var(--gray-100);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--gray-600);
   }
 
   .form-actions {
@@ -218,4 +259,12 @@ const isEdit = !!listing;
     margin-top: 8px;
   }
 
+  .listing-form .profile-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+  }
 </style>
