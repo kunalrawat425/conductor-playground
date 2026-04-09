@@ -16,7 +16,7 @@ describe("species", () => {
     for (const [id, s] of Object.entries(SPECIES)) {
       expect(s.english).toBeTruthy();
       expect(s.marathi).toBeTruthy();
-      expect(["kg", "piece", "dozen"]).toContain(s.defaultUnit);
+      expect(["kg", "piece", "dozen", "gram"]).toContain(s.defaultUnit);
     }
   });
 
@@ -46,10 +46,12 @@ describe("species", () => {
     expect(getSpeciesDisplay("unknown_fish")).toBe("unknown_fish");
   });
 
-  it("PRICE_UNITS has piece and dozen", () => {
+  it("PRICE_UNITS has piece, dozen, kg, gram", () => {
     const values = PRICE_UNITS.map((u) => u.value);
     expect(values).toContain("piece");
     expect(values).toContain("dozen");
+    expect(values).toContain("kg");
+    expect(values).toContain("gram");
   });
 
   it("pomfret defaults to piece, prawns to piece, oyster to dozen", () => {

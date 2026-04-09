@@ -19,18 +19,29 @@ export type ListingPricingSource = {
   pricing_options?: ListingPriceOption[] | unknown[] | null;
 };
 
-/** Legacy schema allowed `kg`; inventory + menus use piece/dozen only. */
 function normalizeUnitRaw(raw: string): PriceUnit {
   const u = String(raw || "piece").toLowerCase();
   if (u === "dozen") return "dozen";
-  if (u === "kg") return "piece";
+  if (u === "kg") return "kg";
+  if (u === "gram" || u === "g") return "gram";
   return u === "piece" ? "piece" : "piece";
 }
 
-function normalizeLabelForUnit(label: string, originalUnit: string): string {
+function normalizeLabelForUnit(
+  label: string,
+  _originalUnit: string,
+  unit: PriceUnit
+): string {
+  if (unit === "kg") {
+    const s = String(label ?? "").trim();
+    return s || "Per kg";
+  }
+  if (unit === "gram") {
+    const s = String(label ?? "").trim();
+    return s || "Per gram";
+  }
   let s = String(label ?? "").trim() || "Option";
   if (
-    originalUnit === "kg" ||
     /^per\s*kg$/i.test(s) ||
     /^kg$/i.test(s) ||
     /^per\s*kg\b/i.test(s)
@@ -43,6 +54,45 @@ function normalizeLabelForUnit(label: string, originalUnit: string): string {
     if (!s) s = "Per piece";
   }
   return s;
+}
+
+/** Short suffix for menus and cart (pc, dz, kg, g). */
+export function priceUnitShortLabel(unit: PriceUnit): string {
+  switch (unit) {
+    case "dozen":
+      return "dz";
+    case "kg":
+      return "kg";
+    case "gram":
+      return "g";
+    default:
+      return "pc";
+  }
+}
+
+/** `<input type="number">` step for the single inventory field (`weight_avail`) by pricing unit. */
+export function stockQuantityInputStep(unit: PriceUnit): string {
+  return unit === "kg" ? "0.01" : "1";
+}
+
+/**
+ * Format stored inventory for display (menus, dashboards). Aligns with how sellers enter stock
+ * (whole units for pc/dz/g; decimals for kg).
+ */
+export function formatInventoryAmount(n: number, unit: PriceUnit): string {
+  const v = Number(n);
+  if (!Number.isFinite(v) || v < 0) return "0";
+  if (unit === "kg") return String(Number(v.toFixed(2)));
+  if (unit === "gram") return String(Math.floor(v));
+  return String(Math.floor(v));
+}
+
+/** Max order quantity from available stock (integer counts; kg keeps up to 2 decimal places). */
+export function maxOrderQtyFromStock(weightAvail: number, unit: PriceUnit): number {
+  const w = Number(weightAvail);
+  if (!Number.isFinite(w) || w <= 0) return 0;
+  if (unit === "kg") return Math.round(w * 100) / 100;
+  return Math.floor(w);
 }
 
 /** PostgREST / drivers occasionally return jsonb as a JSON string — normalize for UI + orders. */
@@ -78,7 +128,7 @@ export function canonicalPricingOptionsFromPayload(raw: unknown): ListingPriceOp
     const price = Number(o.price);
     const unitRawIn = String(o.unit ?? "piece");
     const unit = normalizeUnitRaw(unitRawIn);
-    const label = normalizeLabelForUnit(String(o.label ?? "").trim() || "Option", unitRawIn);
+    const label = normalizeLabelForUnit(String(o.label ?? "").trim() || "Option", unitRawIn, unit);
     if (!Number.isFinite(price) || price <= 0) continue;
     const cap = parseCompareAt(o.compare_at_price);
     const row: ListingPriceOption = { id, label, price, unit };
@@ -166,9 +216,9 @@ export function optionDiscountPercentDisplay(o: ListingPriceOption): number | nu
   return Math.max(0, Math.round((1 - o.price / o.compare_at_price) * 100));
 }
 
-/** Short label for menus: ₹200 / pc */
+/** Short label for menus: ₹200 · Label (pc|dz|kg|g) */
 export function formatOptionMenuLabel(opt: ListingPriceOption): string {
-  const u = opt.unit === "dozen" ? "dz" : "pc";
+  const u = priceUnitShortLabel(opt.unit);
   return `₹${opt.price} · ${opt.label} (${u})`;
 }
 
@@ -178,7 +228,7 @@ export function formatListingPriceSummary(listing: ListingPricingSource): string
   if (opts.length === 0) return "—";
   if (opts.length === 1) {
     const o = opts[0];
-    const u = o.unit === "dozen" ? "dz" : "pc";
+    const u = priceUnitShortLabel(o.unit);
     if (optionHasDealDisplay(o) && o.compare_at_price != null) {
       return `₹${o.price}/${u} (was ₹${o.compare_at_price})`;
     }

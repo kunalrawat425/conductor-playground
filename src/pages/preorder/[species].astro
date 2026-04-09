@@ -259,6 +259,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         getListingPriceOptions,
         optionHasDealDisplay,
         optionDiscountPercentDisplay,
+        priceUnitShortLabel,
+        formatInventoryAmount,
       } = await import("../../lib/listing-pricing");
       const { formatFishSizeLabel } = await import("../../lib/fish-size");
 
@@ -304,7 +306,21 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       const sp = SPECIES[speciesId];
       const emoji = FISH_EMOJI[speciesId] || "🐟";
-      const unitLabel = sp?.defaultUnit === "dozen" ? "dz" : "pcs";
+
+      function speciesHeroUnitLabel(du) {
+        if (!du) return "pcs";
+        if (du === "dozen") return "dz";
+        if (du === "kg") return "kg";
+        if (du === "gram") return "g";
+        return "pcs";
+      }
+      const unitLabel = speciesHeroUnitLabel(sp?.defaultUnit);
+
+      function poUnitDisplay(u) {
+        const s = String(u || "piece");
+        if (s === "dozen" || s === "piece" || s === "kg" || s === "gram") return priceUnitShortLabel(s);
+        return s;
+      }
 
       // Fetch data
       let speciesRange = null;
@@ -378,7 +394,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const opts = getListingPriceOptions(item);
           const first = opts[0];
           const baseUnit = first?.unit ?? "piece";
-          const pUnit = baseUnit === "dozen" ? "dz" : baseUnit;
+          const pUnit = poUnitDisplay(baseUnit);
+          const stockAvail = `${formatInventoryAmount(Number(item.weight_avail), baseUnit)} ${pUnit}`;
           const firstDealPct = first ? optionDiscountPercentDisplay(first) : null;
           const strike =
             first && optionHasDealDisplay(first) && first.compare_at_price != null
@@ -391,7 +408,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const priceBlock =
             opts.length <= 1
               ? `<div class="po-price-row">${strike}<span class="po-price-now">₹${first?.price ?? 0}</span> ${pctBadge}</div>
-               <div class="po-price-unit">per ${pUnit} · ${item.weight_avail} avail</div>`
+               <div class="po-price-unit">per ${pUnit} · ${stockAvail} avail</div>`
               : `<div class="po-price" style="font-size:14px;color:var(--gray-700);font-weight:700;margin-bottom:6px;">Choose unit & price</div>
                <select class="po-price-select" data-listing-id="${item.id}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--gray-200);font-size:14px;background:white;margin-bottom:6px;">
                  ${opts.map((o) => {
@@ -404,10 +421,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                              : `was ₹${o.compare_at_price} · `;
                          })()
                        : "";
-                   return `<option value="${o.id}">${deal}₹${o.price} — ${esc(o.label)} (${o.unit === "dozen" ? "dz" : "pc"})</option>`;
+                   return `<option value="${o.id}">${deal}₹${o.price} — ${esc(o.label)} (${poUnitDisplay(o.unit)})</option>`;
                  }).join("")}
                </select>
-               <div class="po-price-unit">· ${item.weight_avail} avail</div>`;
+               <div class="po-price-unit">· ${stockAvail} avail (first price row)</div>`;
           const sizeLine = formatFishSizeLabel(item.fish_size)
             ? `<div class="po-listing-size">${esc(formatFishSizeLabel(item.fish_size))}</div>`
             : "";
@@ -480,7 +497,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         document.getElementById("sheet-title").textContent =
           action === "preorder" ? `Pre-order from ${sellerName}` : `Order from ${sellerName}`;
 
-        document.getElementById("order-unit").textContent = unit === "dozen" ? "dz" : unit;
+        document.getElementById("order-unit").textContent = poUnitDisplay(unit);
         (document.getElementById("order-qty")).value = "1";
         updatePriceInfo();
 
@@ -497,7 +514,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       function getPreorderBillingSnapshot() {
         if (!currentOrder) return null;
         const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
-        const unitLabel = currentOrder.unit === "dozen" ? "dz" : currentOrder.unit;
+        const unitLabel = poUnitDisplay(currentOrder.unit);
         const subtotal = Math.round(qty * currentOrder.price);
         return {
           subtotal,
@@ -516,7 +533,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         if (currentOrder.action === "preorder") {
           infoEl.innerHTML = `
             <div style="font-size:14px;margin-bottom:4px;">
-              <strong>Max price:</strong> ₹${currentOrder.price}/${currentOrder.unit === "dozen" ? "dz" : currentOrder.unit}
+              <strong>Max price:</strong> ₹${currentOrder.price}/${poUnitDisplay(currentOrder.unit)}
             </div>
             <div style="font-size:18px;font-weight:800;color:var(--orange);">
               Estimated total: ₹${total.toFixed(0)}
@@ -528,7 +545,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         } else {
           infoEl.innerHTML = `
             <div style="font-size:14px;margin-bottom:4px;">
-              <strong>Price:</strong> ₹${currentOrder.price}/${currentOrder.unit === "dozen" ? "dz" : currentOrder.unit}
+              <strong>Price:</strong> ₹${currentOrder.price}/${poUnitDisplay(currentOrder.unit)}
             </div>
             <div style="font-size:18px;font-weight:800;color:var(--green);">
               Total: ₹${total.toFixed(0)}

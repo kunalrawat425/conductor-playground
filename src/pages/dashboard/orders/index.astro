@@ -178,6 +178,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       } from "../../../lib/supabase";
       import { SELLER_ORDERS_PAGE_SIZE } from "../../../lib/seller-orders-pagination";
       import { getSpeciesDisplay } from "../../../lib/species";
+      import { priceUnitShortLabel } from "../../../lib/listing-pricing";
       import type { Seller, Order } from "../../../lib/supabase";
 
       function showToast(message: string, type: "success" | "error" = "success") {
@@ -501,7 +502,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         el.innerHTML = orders
           .map((o) => {
             const name = o.species ? getSpeciesDisplay(o.species) : "Unknown";
-            const unitLabel = o.quantity_unit === "dozen" ? "dz" : o.quantity_unit;
+            const unitLabel = priceUnitShortLabel(o.quantity_unit);
             const isPreOrder = o.status === "pre_order";
             const canAct = o.status === "pre_order" || o.status === "pending";
 

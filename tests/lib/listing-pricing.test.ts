@@ -5,9 +5,22 @@ import {
   getListingPriceOptions,
   optionHasDealDisplay,
   optionDiscountPercentDisplay,
+  formatInventoryAmount,
+  maxOrderQtyFromStock,
+  stockQuantityInputStep,
 } from "../../src/lib/listing-pricing";
 
 describe("canonicalPricingOptionsFromPayload", () => {
+  it("normalizes kg and gram units", () => {
+    const out = canonicalPricingOptionsFromPayload([
+      { id: "k", label: "A", price: 400, unit: "kg" },
+      { id: "g", label: "B", price: 2, unit: "g" },
+    ]);
+    expect(out).toHaveLength(2);
+    expect(out![0].unit).toBe("kg");
+    expect(out![1].unit).toBe("gram");
+  });
+
   it("parses valid tiers and drops invalid rows", () => {
     const out = canonicalPricingOptionsFromPayload([
       { id: "a", label: "Large", price: 100, unit: "piece" },
@@ -84,6 +97,24 @@ describe("deal display helpers", () => {
     expect(optionDiscountPercentDisplay({ id: "1", label: "A", price: 80, unit: "piece", compare_at_price: 100 })).toBe(
       20
     );
+  });
+});
+
+describe("inventory helpers", () => {
+  it("formatInventoryAmount rounds kg and floors count units", () => {
+    expect(formatInventoryAmount(10.556, "kg")).toBe("10.56");
+    expect(formatInventoryAmount(20.4, "piece")).toBe("20");
+    expect(formatInventoryAmount(499.9, "gram")).toBe("499");
+  });
+
+  it("maxOrderQtyFromStock respects kg decimals", () => {
+    expect(maxOrderQtyFromStock(10.55, "kg")).toBe(10.55);
+    expect(maxOrderQtyFromStock(10.55, "piece")).toBe(10);
+  });
+
+  it("stockQuantityInputStep", () => {
+    expect(stockQuantityInputStep("kg")).toBe("0.01");
+    expect(stockQuantityInputStep("piece")).toBe("1");
   });
 });
 
