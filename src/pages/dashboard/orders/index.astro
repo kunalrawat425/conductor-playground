@@ -491,6 +491,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                     return `<div style="font-size:14px;margin-bottom:8px;">💰 <strong>₹${sub}</strong></div>`;
                   })()}
                   ${isPreOrder && o.paid_amount ? `<div style="background:#fff3cd;padding:8px 12px;border-radius:var(--radius);font-size:13px;margin-bottom:8px;">Buyer paid upfront: <strong>₹${o.paid_amount}</strong> <span class="text-muted">(max range)</span></div>` : ""}
+                  ${o.cancelled_by ? `<div style="background:#ffebee;padding:8px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:8px;color:#c62828;">Cancelled by <strong>${o.cancelled_by === "buyer" ? "Buyer" : "You"}</strong>${o.cancel_reason ? ` — "${o.cancel_reason}"` : ""}</div>` : ""}
                   ${
                     canAct
                       ? isPreOrder

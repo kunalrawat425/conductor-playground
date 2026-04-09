@@ -136,6 +136,8 @@ export const prerender = false;
               ${sellerLocation ? `<div class="od-row"><span class="od-label">Seller location</span><span class="od-val">${esc(sellerLocation)}</span></div>` : ""}
               ${sellerPhone ? `<div class="od-row"><span class="od-label">Seller contact</span><span class="od-val"><a href="tel:${esc(sellerPhone)}" style="color:var(--blue);font-weight:600;">${esc(sellerPhone)}</a></span></div>` : ""}
               <div class="od-row"><span class="od-label">Payment</span><span class="od-val">${order.payment_type === "cod" ? "Cash on delivery" : order.payment_type}</span></div>
+              ${order.cancelled_by ? `<div class="od-row"><span class="od-label">Cancelled by</span><span class="od-val" style="color:var(--red);">${order.cancelled_by === "buyer" ? "You" : "Seller"}</span></div>` : ""}
+              ${order.cancel_reason ? `<div class="od-row"><span class="od-label">Reason</span><span class="od-val" style="font-style:italic;color:var(--gray-500);">${esc(order.cancel_reason)}</span></div>` : ""}
               ${order.status === "confirmed" && order.final_price && isPreOrder ? `
                 <div class="price-confirm-box">
                   <p style="font-size:13px;margin:0 0 8px;">Seller proposed: <strong>₹${order.final_price}</strong>${order.paid_amount ? ` (you paid ₹${order.paid_amount} upfront)` : ""}</p>
@@ -238,16 +240,17 @@ export const prerender = false;
           // Cancel order handlers
           ordersList.querySelectorAll(".btn-cancel-order").forEach((btn: any) => {
             btn.addEventListener("click", async () => {
-              if (!confirm("Cancel this order?")) return;
+              const reason = prompt("Why are you cancelling? (optional)");
+              if (reason === null) return; // user pressed Cancel on prompt
               btn.disabled = true; btn.textContent = "Cancelling...";
               try {
                 const res = await fetch("/api/orders/cancel", {
                   method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "cancel" }),
+                  body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "cancel", cancel_reason: reason || "" }),
                 });
                 const d = await res.json();
                 if (d.success) { void loadAndRender(); } else { alert(d.error || "Failed"); btn.disabled = false; btn.textContent = "Cancel Order"; }
-              } catch { btn.disabled = false; btn.textContent = "Cancel Order"; }
+              } catch (_) { btn.disabled = false; btn.textContent = "Cancel Order"; }
             });
           });
 

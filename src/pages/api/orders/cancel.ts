@@ -9,7 +9,7 @@ const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { order_id, buyer_id, action } = await request.json();
+    const { order_id, buyer_id, action, cancel_reason } = await request.json();
     if (!order_id || !buyer_id) {
       return new Response(JSON.stringify({ error: "order_id and buyer_id required" }), { status: 400 });
     }
@@ -32,7 +32,7 @@ export const POST: APIRoute = async ({ request }) => {
         await sb.rpc("restore_order_stock", { p_listing_id: order.listing_id, p_quantity: order.quantity });
       }
 
-      await sb.from("orders").update({ status: "cancelled" }).eq("id", order_id);
+      await sb.from("orders").update({ status: "cancelled", cancelled_by: "buyer", cancel_reason: cancel_reason || null }).eq("id", order_id);
 
       return new Response(JSON.stringify({ success: true, status: "cancelled" }), { status: 200 });
     }
@@ -56,7 +56,7 @@ export const POST: APIRoute = async ({ request }) => {
         await sb.rpc("restore_order_stock", { p_listing_id: order.listing_id, p_quantity: order.quantity });
       }
 
-      await sb.from("orders").update({ status: "cancelled", refund_amt: order.paid_amount }).eq("id", order_id);
+      await sb.from("orders").update({ status: "cancelled", refund_amt: order.paid_amount, cancelled_by: "buyer", cancel_reason: "Price rejected by buyer" }).eq("id", order_id);
 
       return new Response(JSON.stringify({ success: true, status: "cancelled" }), { status: 200 });
     }
