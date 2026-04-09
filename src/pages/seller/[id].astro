@@ -543,11 +543,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         if (!entry || entry.qty === 0) {
           // Restore correct button based on item state
           if (entry && isPreorderItem(listingId)) {
-            el.innerHTML = `<button class="add-btn preorder-btn" data-add="${listingId}">PRE-ORDER</button>`;
-          } else if (entry && entry.listing.weight_avail > 0 && open) {
-            el.innerHTML = `<button class="add-btn" data-add="${listingId}">ADD</button>`;
+            el.innerHTML = `<button class="add-btn preorder-btn">PRE-ORDER</button>`;
+            el.querySelector(".preorder-btn")?.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              cart[listingId].qty = 1;
+              renderQtyControls(listingId);
+            });
+          } else if (entry && !isPreorderItem(listingId) && entry.listing.weight_avail > 0 && open) {
+            el.innerHTML = `<button class="add-btn">ADD</button>`;
+            el.querySelector(".add-btn")?.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              cart[listingId].qty = 1;
+              renderQtyControls(listingId);
+            });
           } else {
-            el.innerHTML = `<span style="font-size:12px;color:var(--red);font-weight:600;">${entry?.listing.weight_avail <= 0 ? "Sold out" : "Closed"}</span>`;
+            const l = entry?.listing;
+            const threshold = l?.oos_threshold ?? Math.max(1, Math.floor((l?.weight_avail || 0) * 0.1));
+            const isOOS = !l || l.weight_avail <= threshold;
+            el.innerHTML = `<span style="font-size:12px;color:var(--red);font-weight:600;">${isOOS ? "Sold out" : "Closed"}</span>`;
           }
         } else {
           const preLabel = isPreorderItem(listingId) ? `<div class="qty-preorder-label">PRE-ORDER</div>` : "";
@@ -779,6 +792,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           menuContainer.innerHTML = menuHTML;
           menuSection.style.display = "block";
           menuSection.classList.add("fade-in");
+
+          // Bind initial ADD/PRE-ORDER buttons directly
+          menuContainer.querySelectorAll("[data-add]").forEach(btn => {
+            const lid = (btn as HTMLElement).dataset.add!;
+            btn.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              if (cart[lid]) { cart[lid].qty = 1; renderQtyControls(lid); }
+            });
+          });
         });
 
         // Load schedule slots for this seller
