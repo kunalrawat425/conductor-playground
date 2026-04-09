@@ -30,6 +30,21 @@ export function setupListingPricingEditor(opts: {
     wrap.style.display = basis.value === "weight" ? "block" : "none";
   }
 
+  function updateRemoveButtons() {
+    const rows = container.querySelectorAll(".pricing-row");
+    const n = rows.length;
+    rows.forEach((row) => {
+      const btn = row.querySelector(".btn-remove-price") as HTMLButtonElement | null;
+      if (!btn) return;
+      const only = n <= 1;
+      btn.disabled = only;
+      btn.setAttribute("aria-disabled", only ? "true" : "false");
+      btn.title = only ? "At least one price tier is required" : "Remove this price tier";
+      btn.style.opacity = only ? "0.45" : "1";
+      btn.style.cursor = only ? "not-allowed" : "pointer";
+    });
+  }
+
   function syncHidden() {
     const unit = resolvedUnit();
     const rows = container.querySelectorAll(".pricing-row");
@@ -53,6 +68,7 @@ export function setupListingPricingEditor(opts: {
       out.push(rowOut);
     });
     hiddenInput.value = JSON.stringify(out);
+    updateRemoveButtons();
     onUnitChange?.();
   }
 
@@ -102,7 +118,7 @@ export function setupListingPricingEditor(opts: {
           <label style="font-size:12px;">Selling ₹</label>
           <input type="number" inputmode="decimal" class="price-inp" min="1" step="0.01" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${opt.price > 0 ? opt.price : ""}" required />
         </div>
-        <button type="button" class="btn-remove-price" style="height:40px;border:none;background:var(--gray-100);border-radius:8px;cursor:pointer;">✕</button>
+        <button type="button" class="btn-remove-price" aria-label="Remove this price tier" style="height:40px;border:none;background:var(--gray-100);border-radius:8px;cursor:pointer;">✕</button>
       </div>
       <div class="pricing-row-deal" style="margin-top:8px;padding:10px 12px;background:var(--gray-50, #f9fafb);border-radius:8px;border:1px dashed var(--gray-300, #e5e7eb);">
         <div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--gray-600, #4b5563);">Deal (optional)</div>

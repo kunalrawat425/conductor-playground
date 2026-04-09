@@ -275,6 +275,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       color: var(--green);
       margin-bottom: 4px;
     }
+    .menu-price-card-preview {
+      margin-top: 8px;
+    }
     .menu-item-meta {
       font-size: 11px;
       color: var(--gray-500);
@@ -602,27 +605,35 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         return `₹${o.price} — ${esc(o.label)} (${ul})`;
       }
 
+      /** Big price row for menu card (single tier or live preview for selected tier). */
+      function menuTierPriceBlockHtml(o) {
+        if (!o) return "";
+        const ul = unitLbl(o.unit);
+        const strike =
+          optionHasDealDisplay(o) && o.compare_at_price != null
+            ? `<span class="menu-price-was">₹${o.compare_at_price}</span>`
+            : "";
+        const pct = optionDiscountPercentDisplay(o);
+        const badge =
+          pct != null && pct > 0 ? `<span class="menu-price-off">${pct}% off</span>` : "";
+        return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span> ${badge}<span style="font-size:12px;color:var(--gray-500);display:block;margin-top:4px;">${esc(o.label)} (${ul})</span></div>`;
+      }
+
       function priceOptionsHtml(l) {
         const opts = getListingPriceOptions(l);
-        if (opts.length === 1) {
-          const o = opts[0];
-          const ul = unitLbl(o.unit);
-          const strike =
-            optionHasDealDisplay(o) && o.compare_at_price != null
-              ? `<span class="menu-price-was">₹${o.compare_at_price}</span>`
-              : "";
-          const pct = optionDiscountPercentDisplay(o);
-          const badge =
-            pct != null && pct > 0
-              ? `<span class="menu-price-off">${pct}% off</span>`
-              : "";
-          return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span> ${badge}<span style="font-size:12px;color:var(--gray-500);display:block;margin-top:4px;">${esc(o.label)} (${ul})</span></div>`;
+        if (opts.length === 0) {
+          return `<p class="text-muted" style="font-size:13px;">No prices configured.</p>`;
         }
+        if (opts.length === 1) {
+          return menuTierPriceBlockHtml(opts[0]);
+        }
+        const first = opts[0];
         return `<div class="menu-item-price-wrap">
           <label class="menu-price-label" for="po-${l.id}">Choose price</label>
           <select id="po-${l.id}" class="menu-price-opt" data-listing="${l.id}">
-            ${opts.map((o) => `<option value="${o.id}">${tierOptionLabel(o)}</option>`).join("")}
+            ${opts.map((o, i) => `<option value="${o.id}"${i === 0 ? " selected" : ""}>${tierOptionLabel(o)}</option>`).join("")}
           </select>
+          <div class="menu-price-card-preview" id="menu-price-preview-${l.id}" aria-live="polite">${menuTierPriceBlockHtml(first)}</div>
         </div>`;
       }
 
@@ -1012,6 +1023,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
         const listingsById = Object.fromEntries(activeListings.map((x) => [x.id, x]));
 
+        function updateMenuPricePreview(listingId) {
+          const l = listingsById[listingId];
+          const el = document.getElementById(`menu-price-preview-${listingId}`);
+          const sel = document.getElementById(`po-${listingId}`) as HTMLSelectElement | null;
+          if (!l || !el || !sel) return;
+          const opt = getListingOptionById(l, sel.value) || getListingPriceOptions(l)[0];
+          if (!opt) return;
+          el.innerHTML = menuTierPriceBlockHtml(opt);
+        }
+
         function variantBodyInner(l) {
           const opts = getListingPriceOptions(l);
           const u0 = opts[0];
@@ -1141,7 +1162,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               ev.stopPropagation();
               if (cart[lid]) {
                 syncOptionFromDom(lid);
-                cart[lid].qty = 1;
+                cart[lid].qty = firstCartQty(lid);
                 renderQtyControls(lid);
               }
             });
@@ -1172,7 +1193,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               if (cart[listingId]) {
                 const fo = getListingPriceOptions(l)[0];
                 cart[listingId].optionId = fo?.id ?? "default";
+                const po = document.getElementById(`po-${listingId}`) as HTMLSelectElement | null;
+                if (po && fo?.id) po.value = fo.id;
                 syncOptionFromDom(listingId);
+                updateMenuPricePreview(listingId);
               }
               panel.querySelectorAll("[data-add]").forEach((btn) => {
                 const lid = (btn as HTMLElement).dataset.add!;
@@ -1180,7 +1204,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   ev.stopPropagation();
                   if (cart[lid]) {
                     syncOptionFromDom(lid);
-                    cart[lid].qty = 1;
+                    cart[lid].qty = firstCartQty(lid);
                     renderQtyControls(lid);
                   }
                 });
@@ -1269,10 +1293,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const sel = (e.target as HTMLElement)?.closest?.(".menu-price-opt");
           if (!sel) return;
           const lid = sel.dataset.listing;
-          if (lid && cart[lid]) {
-            cart[lid].optionId = sel.value;
-            updateCartBar();
-          }
+          if (!lid) return;
+          if (cart[lid]) cart[lid].optionId = sel.value;
+          updateMenuPricePreview(lid);
+          if (cart[lid]) updateCartBar();
         });
 
         // Event delegation for add/plus/minus buttons
