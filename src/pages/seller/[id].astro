@@ -280,6 +280,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       color: var(--gray-500);
       margin-bottom: 4px;
     }
+    .menu-item-stock {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 6px;
+    }
     .menu-tag {
       display: inline-block;
       font-size: 10px;
@@ -499,6 +505,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       formatListingPriceSummary,
       optionHasDealDisplay,
       optionDiscountPercentDisplay,
+      priceUnitShortLabel,
+      formatInventoryAmount,
+      maxOrderQtyFromStock,
     } from "../../lib/listing-pricing";
     import { formatFishSizeLabel, formatFishSizeSuffix } from "../../lib/fish-size";
 
@@ -531,9 +540,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       }
 
       function unitLbl(u) {
-        if (u === "dozen") return "dz";
-        if (u === "piece") return "pc";
-        if (u === "kg") return "pc";
+        if (u === "dozen" || u === "piece" || u === "kg" || u === "gram") return priceUnitShortLabel(u);
         return String(u);
       }
 
@@ -706,10 +713,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           });
           el.querySelector(".qty-plus-btn")?.addEventListener("click", (ev) => {
             ev.stopPropagation();
+            syncOptionFromDom(listingId);
             const isPreorder = isPreorderItem(listingId);
             const listing = cart[listingId].listing;
-            let maxQty = isPreorder ? 50 : Math.floor(listing.weight_avail);
-            if (listing.buyer_daily_qty_limit && listing.buyer_daily_qty_limit < maxQty) maxQty = listing.buyer_daily_qty_limit;
+            const opt = getListingOptionById(listing, cart[listingId].optionId);
+            const u = opt?.unit || getListingPriceOptions(listing)[0]?.unit || "piece";
+            let maxQty = isPreorder ? 50 : maxOrderQtyFromStock(Number(listing.weight_avail), u);
+            if (listing.buyer_daily_qty_limit != null && listing.buyer_daily_qty_limit < maxQty) {
+              maxQty = Number(listing.buyer_daily_qty_limit);
+            }
             if (cart[listingId].qty < maxQty) { cart[listingId].qty++; renderQtyControls(listingId); }
           });
         }
@@ -873,6 +885,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
         const listingsById = Object.fromEntries(activeListings.map((x) => [x.id, x]));
 
+        function stockAvailLine(l) {
+          const opts = getListingPriceOptions(l);
+          const u0 = opts[0]?.unit || "piece";
+          if (l.weight_avail <= 0) return "";
+          const amt = formatInventoryAmount(Number(l.weight_avail), u0);
+          const ul = unitLbl(u0);
+          return `<div class="menu-item-stock">📦 ${amt} ${ul} available</div>`;
+        }
+
         function variantBodyInner(l) {
           const opts = getListingPriceOptions(l);
           const u0 = opts[0];
@@ -888,6 +909,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <div>
                   ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l)}
+                  ${stockAvailLine(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
                   ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
@@ -927,6 +949,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l)}
+                  ${stockAvailLine(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
                   ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
@@ -1139,11 +1162,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
           const plusId = target.dataset?.plus;
           if (plusId && cart[plusId]) {
+            syncOptionFromDom(plusId);
             const isPreorder = isPreorderItem(plusId);
             const listing = cart[plusId].listing;
-            let maxQty = isPreorder ? 50 : Math.floor(listing.weight_avail);
-            if (listing.buyer_daily_qty_limit && listing.buyer_daily_qty_limit < maxQty) {
-              maxQty = listing.buyer_daily_qty_limit;
+            const opt = getListingOptionById(listing, cart[plusId].optionId);
+            const u = opt?.unit || getListingPriceOptions(listing)[0]?.unit || "piece";
+            let maxQty = isPreorder ? 50 : maxOrderQtyFromStock(Number(listing.weight_avail), u);
+            if (listing.buyer_daily_qty_limit != null && listing.buyer_daily_qty_limit < maxQty) {
+              maxQty = Number(listing.buyer_daily_qty_limit);
             }
             if (cart[plusId].qty < maxQty) {
               cart[plusId].qty++;

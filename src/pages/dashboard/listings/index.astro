@@ -68,7 +68,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       import { getSellerById, getSellerListings, updateListing } from "../../../lib/supabase";
       import { getSpeciesDisplay } from "../../../lib/species";
       import type { Seller, FishListing } from "../../../lib/supabase";
-      import { formatListingPriceSummary, getListingPriceOptions } from "../../../lib/listing-pricing";
+      import {
+        formatListingPriceSummary,
+        getListingPriceOptions,
+        priceUnitShortLabel,
+      } from "../../../lib/listing-pricing";
       import { formatFishSizeSuffix } from "../../../lib/fish-size";
 
       let _sellerId = "";
@@ -164,6 +168,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const name = getSpeciesDisplay(l.species) + formatFishSizeSuffix(l.fish_size);
             const priceOpts = getListingPriceOptions(l);
             const stockUnit = priceOpts[0]?.unit ?? "piece";
+            const stockUnitShort = priceUnitShortLabel(stockUnit);
             const statusBadge = !l.is_available
               ? '<span class="badge badge-orange">Paused</span>'
               : l.weight_avail <= 0
@@ -171,7 +176,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 : '<span class="badge badge-green">Active</span>';
             const lowStock = l.is_available && l.weight_avail > 0 && l.weight_avail <= LOW_STOCK;
             const stockText = l.weight_avail > 0
-              ? (lowStock ? `⚠️ Low stock: ${l.weight_avail} ${stockUnit}` : `📦 ${l.weight_avail} ${stockUnit} in stock`)
+              ? (lowStock ? `⚠️ Low stock: ${l.weight_avail} ${stockUnitShort}` : `📦 ${l.weight_avail} ${stockUnitShort} in stock`)
               : `❌ Out of stock`;
             const stockClass = lowStock ? "badge-orange" : l.weight_avail > 0 ? "" : "text-muted";
 
@@ -190,7 +195,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                     priceOpts.length > 1
                       ? `<div class="text-muted" style="font-size:12px;line-height:1.35;margin-bottom:6px;">
                           ${priceOpts
-                            .map((o) => `₹${o.price}/${o.unit === "dozen" ? "dz" : "pc"} · ${esc(o.label)}`)
+                            .map((o) => `₹${o.price}/${priceUnitShortLabel(o.unit)} · ${esc(o.label)}`)
                             .join("<br/>")}
                         </div>`
                       : ""

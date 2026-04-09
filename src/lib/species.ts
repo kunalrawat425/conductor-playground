@@ -3,7 +3,7 @@
  * Default pricing unit per species (how it's typically sold).
  */
 
-export type PriceUnit = "piece" | "dozen";
+export type PriceUnit = "piece" | "dozen" | "kg" | "gram";
 
 export interface Species {
   english: string;
@@ -47,4 +47,6 @@ export function getSpeciesDisplay(id: string): string {
 export const PRICE_UNITS: { value: PriceUnit; label: string }[] = [
   { value: "piece", label: "per piece" },
   { value: "dozen", label: "per dozen" },
+  { value: "kg", label: "per kg" },
+  { value: "gram", label: "per gram" },
 ];

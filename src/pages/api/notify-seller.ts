@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { priceUnitShortLabel } from "../../lib/listing-pricing";
+import type { PriceUnit } from "../../lib/species";
 import { loadWebPush } from "../../lib/server/load-web-push";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
 
@@ -49,7 +51,11 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const unitLabel = quantity_unit === "dozen" ? "dz" : "pcs";
+    const u = String(quantity_unit || "piece");
+    const unitLabel =
+      u === "dozen" || u === "piece" || u === "kg" || u === "gram"
+        ? priceUnitShortLabel(u as PriceUnit)
+        : u;
     const schedLabel = scheduled_for ? ` (Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })})` : "";
     const body = species
       ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel} from ${buyer_phone || "a buyer"}${schedLabel}`
