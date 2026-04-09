@@ -91,7 +91,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       // Out of stock, below threshold, or unavailable → allow as pre-order if seller accepts
-      const oosThreshold = listing.oos_threshold ?? Math.max(1, Math.floor(listing.weight_avail * 0.1));
+      const oosThreshold = listing.oos_threshold ?? 2;
       const effectivelyOOS = listing.weight_avail <= oosThreshold;
       if (!listing.is_available || effectivelyOOS || listing.weight_avail < quantity) {
         // Always allow as pre-order — no stock deduction, no blocking
