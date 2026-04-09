@@ -807,10 +807,29 @@
     }
 
     const fn = pendingOnConfirm;
-    pendingOnConfirm = null;
-    pendingOnCancel = null;
-    closeSheet();
-    if (fn) await fn({ buyer_addr });
+    if (fn) {
+      // Show loading state on confirm button while order submits
+      const origText = confirmBtn.textContent;
+      confirmBtn.textContent = "Placing order...";
+      confirmBtn.disabled = true;
+      try {
+        await fn({ buyer_addr });
+        // Success — close sheet (submitOrder handles redirect)
+        pendingOnConfirm = null;
+        pendingOnCancel = null;
+        closeSheet();
+      } catch (err: any) {
+        // Error — keep sheet open, show error
+        confirmBtn.textContent = origText;
+        confirmBtn.disabled = false;
+        errEl.textContent = err.message || "Order failed. Try again.";
+        errEl.style.display = "block";
+      }
+    } else {
+      pendingOnConfirm = null;
+      pendingOnCancel = null;
+      closeSheet();
+    }
   });
 
   function cancel() {

@@ -863,63 +863,47 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         });
 
         async function submitOrder(session, items, buyer_addr) {
-          const btn = document.getElementById("place-order-btn");
-          btn.textContent = isPreorderMode ? "Placing pre-order..." : "Placing order...";
-          btn.disabled = true;
+          // Order submits from checkout sheet — button state handled there
+          const addr = buyer_addr ?? null;
+          const slotId = document.getElementById("selected-slot-id")?.value || null;
+          const scheduledFor = document.getElementById("selected-scheduled-for")?.value || null;
+          const orderPromises = items.map(e => {
+            const l = e.listing;
+            const totalPrice = e.qty * l.price;
+            return fetch("/api/orders/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                listing_id: l.id,
+                species: l.species,
+                quantity: e.qty,
+                quantity_unit: l.price_unit,
+                total_price: totalPrice,
+                buyer_phone: session.phone,
+                buyer_id: session.buyer_id,
+                buyer_addr: addr,
+                order_type: inDeliveryRange ? "delivery" : "pickup",
+                seller_id: sellerId,
+                scheduled_for: scheduledFor || undefined,
+                schedule_slot_id: slotId || undefined,
+              }),
+            }).then(r => r.json());
+          });
 
-          try {
-            // Create one order per item (each listing is a separate order)
-            // The API determines pre-order vs order based on seller operating hours
-            const addr = buyer_addr ?? null;
-            const slotId = document.getElementById("selected-slot-id")?.value || null;
-            const scheduledFor = document.getElementById("selected-scheduled-for")?.value || null;
-            const orderPromises = items.map(e => {
-              const l = e.listing;
-              const totalPrice = e.qty * l.price;
-              return fetch("/api/orders/create", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  listing_id: l.id,
-                  species: l.species,
-                  quantity: e.qty,
-                  quantity_unit: l.price_unit,
-                  total_price: totalPrice,
-                  buyer_phone: session.phone,
-                  buyer_id: session.buyer_id,
-                  buyer_addr: addr,
-                  order_type: inDeliveryRange ? "delivery" : "pickup",
-                  seller_id: sellerId,
-                  scheduled_for: scheduledFor || undefined,
-                  schedule_slot_id: slotId || undefined,
-                }),
-              }).then(r => r.json());
-            });
+          const results = await Promise.all(orderPromises);
+          const failed = results.filter(r => r.error);
+          if (failed.length > 0) throw new Error(failed[0].error);
 
-            const results = await Promise.all(orderPromises);
-            const failed = results.filter(r => r.error);
-            if (failed.length > 0) throw new Error(failed[0].error);
+          // Clear cart
+          for (const key of Object.keys(cart)) { cart[key].qty = 0; }
+          updateCartBar();
 
-            // Clear cart
-            for (const key of Object.keys(cart)) { cart[key].qty = 0; }
-            updateCartBar();
-
-            // Show success toast then redirect
-            const toast = document.createElement("div");
-            toast.textContent = scheduledFor ? "Order scheduled! 🗓️" : isPreorderMode ? "Pre-order placed!" : "Order placed!";
-            toast.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--green);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
-            document.body.appendChild(toast);
-            setTimeout(() => { window.location.href = "/track"; }, 600);
-          } catch (err) {
-            const msg = err.message || "Something went wrong. Please try again.";
-            const toast = document.createElement("div");
-            toast.textContent = msg;
-            toast.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--red);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-width:90%;text-align:center;";
-            document.body.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); }, 4000);
-            btn.textContent = isPreorderMode ? "Place Pre-order" : "Place Order";
-            btn.disabled = false;
-          }
+          // Show success toast then redirect
+          const toast = document.createElement("div");
+          toast.textContent = scheduledFor ? "Order scheduled! 🗓️" : isPreorderMode ? "Pre-order placed!" : "Order placed!";
+          toast.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;background:var(--green);color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);";
+          document.body.appendChild(toast);
+          setTimeout(() => { window.location.href = "/track"; }, 600);
         }
 
       } catch (err) {
