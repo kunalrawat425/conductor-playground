@@ -66,13 +66,18 @@ export const POST: APIRoute = async ({ request }) => {
         ...rest
       } = listing as Record<string, unknown>;
 
+      const insertRow: Record<string, unknown> = {
+        ...rest,
+        seller_id,
+        pricing_options: tiers,
+      };
+      if (insertRow.weight_avail != null) {
+        insertRow.weight_avail = Number(insertRow.weight_avail);
+      }
+
       const { data, error } = await supabase
         .from("fish_listings")
-        .insert({
-          ...rest,
-          seller_id,
-          pricing_options: tiers,
-        })
+        .insert(insertRow)
         .select()
         .single();
 
@@ -123,6 +128,10 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
         patch = { ...patch, pricing_options: tiers };
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, "weight_avail") && patch.weight_avail != null) {
+        patch = { ...patch, weight_avail: Number(patch.weight_avail) };
       }
 
       const { data, error } = await supabase
