@@ -161,7 +161,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         el.innerHTML = listings
           .map((l) => {
             const name = getSpeciesDisplay(l.species);
-            const stockUnit = getListingPriceOptions(l)[0]?.unit ?? l.price_unit;
+            const priceOpts = getListingPriceOptions(l);
+            const stockUnit = priceOpts[0]?.unit ?? l.price_unit;
             const statusBadge = !l.is_available
               ? '<span class="badge badge-orange">Paused</span>'
               : l.weight_avail <= 0
@@ -184,6 +185,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                     ${statusBadge}
                   </div>
                   <div style="font-size:18px;font-weight:700;color:var(--green);margin-bottom:4px;">${esc(formatListingPriceSummary(l))}</div>
+                  ${
+                    priceOpts.length > 1
+                      ? `<div class="text-muted" style="font-size:12px;line-height:1.35;margin-bottom:6px;">
+                          ${priceOpts
+                            .map((o) => `₹${o.price}/${o.unit === "dozen" ? "dz" : "pc"} · ${esc(o.label)}`)
+                            .join("<br/>")}
+                        </div>`
+                      : ""
+                  }
                   <div class="${stockClass}" style="font-size:13px;${lowStock ? "color:#e65100;font-weight:600;" : ""}">${stockText}</div>
                   <div class="listing-card-actions" style="margin-top:10px;display:flex;gap:8px;align-items:center;">
                     <a href="/dashboard/listings/${l.id}" class="btn btn-primary" style="padding:6px 16px;font-size:13px;">Edit</a>

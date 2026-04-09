@@ -88,6 +88,21 @@
       Back
     </button>
   </div>
+
+  <!-- Full-screen loading while order API runs (replaces closing the sheet before redirect) -->
+  <div
+    class="order-address-loading"
+    id="order-address-loading"
+    aria-hidden="true"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="order-address-loading-inner">
+      <div class="order-address-loading-spinner" aria-hidden="true"></div>
+      <p class="order-address-loading-title">Placing your order…</p>
+      <p class="order-address-loading-sub">Hang tight — this usually takes a moment.</p>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -132,6 +147,58 @@
   }
   .order-address-overlay.open .order-address-sheet {
     transform: translate(-50%, 0);
+  }
+
+  .order-address-loading {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .order-address-loading.open {
+    display: flex;
+  }
+  .order-address-loading-inner {
+    width: 100%;
+    max-width: 320px;
+    padding: 28px 24px 24px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    text-align: center;
+  }
+  .order-address-loading-spinner {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 16px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: order-address-spin 0.75s linear infinite;
+  }
+  @keyframes order-address-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .order-address-loading-title {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--gray-900);
+    letter-spacing: -0.02em;
+  }
+  .order-address-loading-sub {
+    margin: 0;
+    font-size: 13px;
+    color: var(--gray-500);
+    line-height: 1.4;
   }
 
   .order-address-list-wrap {
@@ -456,6 +523,7 @@
 
   const overlay = document.getElementById("order-address-overlay")!;
   const bg = document.getElementById("order-address-overlay-bg")!;
+  const loadingEl = document.getElementById("order-address-loading")!;
   const listWrap = document.getElementById("order-address-list-wrap")!;
   const listEl = document.getElementById("order-address-list")!;
   const newBlock = document.getElementById("order-address-new-block")!;
@@ -480,6 +548,14 @@
   let pendingOnCancel: (() => void) | null = null;
   let loadedAddresses: BuyerAddressRow[] = [];
   let selectedId: string = "new";
+  let orderPlacing = false;
+
+  function setOrderPlacing(on: boolean) {
+    orderPlacing = on;
+    loadingEl.classList.toggle("open", on);
+    loadingEl.setAttribute("aria-hidden", on ? "false" : "true");
+    overlay.setAttribute("aria-busy", on ? "true" : "false");
+  }
 
   function refreshAreaDisplay() {
     const area = getBuyerAddressFromStorage();
@@ -633,6 +709,7 @@
   }
 
   async function openSheet() {
+    setOrderPlacing(false);
     errEl.style.display = "none";
     saveBookCb.checked = false;
     saveLabelInput.style.display = "none";
@@ -658,8 +735,10 @@
   }
 
   function closeSheet() {
+    setOrderPlacing(false);
     overlay.classList.remove("open");
     overlay.setAttribute("aria-hidden", "true");
+    overlay.removeAttribute("aria-busy");
     renderBillingBlock(null);
   }
 
@@ -808,20 +887,20 @@
 
     const fn = pendingOnConfirm;
     if (fn) {
-      // Show loading state on confirm button while order submits
       const origText = confirmBtn.textContent;
-      confirmBtn.textContent = "Placing order...";
       confirmBtn.disabled = true;
+      backBtn.disabled = true;
+      setOrderPlacing(true);
       try {
         await fn({ buyer_addr });
-        // Success — close sheet (submitOrder handles redirect)
+        // Success — keep loading visible until redirect (submitOrder); do not close sheet first
         pendingOnConfirm = null;
         pendingOnCancel = null;
-        closeSheet();
       } catch (err: any) {
-        // Error — keep sheet open, show error
-        confirmBtn.textContent = origText;
+        setOrderPlacing(false);
+        confirmBtn.textContent = origText ?? "Place order";
         confirmBtn.disabled = false;
+        backBtn.disabled = false;
         errEl.textContent = err.message || "Order failed. Try again.";
         errEl.style.display = "block";
       }
@@ -833,6 +912,7 @@
   });
 
   function cancel() {
+    if (orderPlacing) return;
     const oc = pendingOnCancel;
     pendingOnConfirm = null;
     pendingOnCancel = null;
