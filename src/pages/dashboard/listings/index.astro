@@ -243,15 +243,23 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       .bulk-bar {
         position: fixed;
         bottom: calc(56px + env(safe-area-inset-bottom, 0px));
-        left: 0; right: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: var(--app-max-width);
         z-index: 101;
-        padding: 10px 16px;
+        padding: 12px 16px;
         background: white;
         border-top: 1px solid var(--gray-200);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+        border-radius: 16px 16px 0 0;
+      }
+      /* Extra bottom padding when bulk bar is visible */
+      body:has(.bulk-bar[style*="flex"]) #listings-list {
+        padding-bottom: 60px;
       }
 
       .dash-nav {
