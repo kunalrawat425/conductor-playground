@@ -62,6 +62,7 @@ const isEdit = !!listing;
       required
       placeholder="e.g. 10"
     />
+    <div class="form-hint">Buyers won't see this number. Used to track inventory and trigger "Out of stock" label.</div>
   </div>
 
   <div class="form-group">
@@ -95,7 +96,7 @@ const isEdit = !!listing;
       value={listing?.max_qty_per_order || ""}
       placeholder="e.g. 5 — leave empty for no limit"
     />
-    <div class="form-hint">Limits how much a single buyer can order at once</div>
+    <div class="form-hint">Buyer sees: "Max 5/kg per order". Prevents one buyer from buying all your stock.</div>
   </div>
 
   <div class="form-group">
@@ -109,7 +110,7 @@ const isEdit = !!listing;
       value={listing?.oos_threshold || ""}
       placeholder="Default: 10% of stock — or set a number"
     />
-    <div class="form-hint">When stock drops below this number, buyers see "Out of stock" and can pre-order instead</div>
+    <div class="form-hint">Buyer sees: "📦 Out of stock" + PRE-ORDER button. Orders still come in as pre-orders. Default: 10% of stock.</div>
   </div>
 
   <div class="form-group">
@@ -123,7 +124,7 @@ const isEdit = !!listing;
       value={listing?.max_orders_per_day || ""}
       placeholder="e.g. 20 — leave empty for no limit"
     />
-    <div class="form-hint">Auto-stops orders when daily limit is reached</div>
+    <div class="form-hint">Buyer sees: error message when daily limit reached. Protects you from being overwhelmed. Resets at midnight.</div>
   </div>
 
   <div class="form-actions">
