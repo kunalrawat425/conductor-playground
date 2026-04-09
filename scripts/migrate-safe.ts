@@ -4,7 +4,8 @@
  */
 import postgres from "postgres";
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const url = process.env.DATABASE_URL?.trim();
 if (!url) {
@@ -12,7 +13,8 @@ if (!url) {
   process.exit(0);
 }
 
-const migrationsDir = join(import.meta.dirname, "..", "supabase", "migrations");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const migrationsDir = join(__dirname, "..", "supabase", "migrations");
 const useSsl = !/localhost|127\.0\.0\.1/.test(url);
 const sql = postgres(url, { max: 1, ssl: useSsl ? "require" : false });
 
