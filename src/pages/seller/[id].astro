@@ -532,6 +532,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       priceUnitShortLabel,
       formatInventoryAmount,
       maxOrderQtyFromStock,
+      optionBundleAmount,
+      isPerBaseUnitPricing,
+      maxBundlesFromStock,
     } from "../../lib/listing-pricing";
     import { formatFishSizeLabel, formatFishSizeSuffix } from "../../lib/fish-size";
 
@@ -597,18 +600,30 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       function tierOptionLabel(o) {
         const ul = unitLbl(o.unit);
+        const amt = optionBundleAmount(o);
+        const packHint = !isPerBaseUnitPricing(o)
+          ? o.unit === "kg"
+            ? ` · ${amt} kg/pack`
+            : ` · ${amt} ${ul}/pack`
+          : "";
         if (optionHasDealDisplay(o) && o.compare_at_price != null) {
           const pct = optionDiscountPercentDisplay(o);
           const deal = pct != null && pct > 0 ? `was ₹${o.compare_at_price} · ${pct}% off · ` : `was ₹${o.compare_at_price} · `;
-          return `${deal}₹${o.price} — ${esc(o.label)} (${ul})`;
+          return `${deal}₹${o.price} — ${esc(o.label)} (${ul})${packHint}`;
         }
-        return `₹${o.price} — ${esc(o.label)} (${ul})`;
+        return `₹${o.price} — ${esc(o.label)} (${ul})${packHint}`;
       }
 
       /** Big price row for menu card (single tier or live preview for selected tier). */
       function menuTierPriceBlockHtml(o) {
         if (!o) return "";
         const ul = unitLbl(o.unit);
+        const amt = optionBundleAmount(o);
+        const packLine = !isPerBaseUnitPricing(o)
+          ? o.unit === "kg"
+            ? `<span style="font-size:11px;color:var(--gray-500);display:block;margin-top:2px;">Pack of ${amt} kg</span>`
+            : `<span style="font-size:11px;color:var(--gray-500);display:block;margin-top:2px;">Pack of ${amt} ${ul}</span>`
+          : "";
         const strike =
           optionHasDealDisplay(o) && o.compare_at_price != null
             ? `<span class="menu-price-was">₹${o.compare_at_price}</span>`
@@ -616,7 +631,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const pct = optionDiscountPercentDisplay(o);
         const badge =
           pct != null && pct > 0 ? `<span class="menu-price-off">${pct}% off</span>` : "";
-        return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span> ${badge}<span style="font-size:12px;color:var(--gray-500);display:block;margin-top:4px;">${esc(o.label)} (${ul})</span></div>`;
+        return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span> ${badge}<span style="font-size:12px;color:var(--gray-500);display:block;margin-top:4px;">${esc(o.label)} (${ul})</span>${packLine}</div>`;
       }
 
       function priceOptionsHtml(l) {
@@ -628,8 +643,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           return menuTierPriceBlockHtml(opts[0]);
         }
         const first = opts[0];
+        const anyPack = opts.some((o) => !isPerBaseUnitPricing(o));
         return `<div class="menu-item-price-wrap">
-          <label class="menu-price-label" for="po-${l.id}">Choose price</label>
+          <label class="menu-price-label" for="po-${l.id}">${anyPack ? "Choose pack" : "Choose price"}</label>
           <select id="po-${l.id}" class="menu-price-opt" data-listing="${l.id}">
             ${opts.map((o, i) => `<option value="${o.id}"${i === 0 ? " selected" : ""}>${tierOptionLabel(o)}</option>`).join("")}
           </select>
@@ -709,6 +725,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const name = meta?.english || e.listing.species;
             const opt = getListingOptionById(e.listing, e.optionId);
             const u = opt?.unit || getListingPriceOptions(e.listing)[0]?.unit || "piece";
+            if (!isPerBaseUnitPricing(opt)) {
+              const packs = Math.floor(Number(e.qty)) || 0;
+              const amt = optionBundleAmount(opt);
+              const ul = priceUnitShortLabel(u);
+              const amtLabel = u === "kg" ? `${amt} kg` : `${amt} ${ul}`;
+              return `${packs} pack × ${name} (${amtLabel})`;
+            }
             const { num, unit: ul } = orderQtyNumAndUnit(e.qty, u);
             return `${num} ${ul} × ${name}`;
           })
@@ -771,21 +794,33 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       function maxQtyForCartLine(listingId) {
         const entry = cart[listingId];
-        if (!entry) return { maxQty: 0, unit: "piece" };
+        if (!entry) return { maxQty: 0, unit: "piece", isBundle: false };
         const listing = entry.listing;
         const opt = getListingOptionById(listing, entry.optionId);
         const u = opt?.unit || getListingPriceOptions(listing)[0]?.unit || "piece";
+        const amt = optionBundleAmount(opt);
+        const isBundle = !isPerBaseUnitPricing(opt);
         const isPreorder = isPreorderItem(listingId);
-        let maxQty = isPreorder ? 50 : maxOrderQtyFromStock(listingStockNum(listing), u);
-        if (listing.buyer_daily_qty_limit != null && Number(listing.buyer_daily_qty_limit) < maxQty) {
+        let maxQty = isPreorder
+          ? 50
+          : isBundle
+            ? maxBundlesFromStock(listingStockNum(listing), u, amt)
+            : maxOrderQtyFromStock(listingStockNum(listing), u);
+        if (!isBundle && listing.buyer_daily_qty_limit != null && Number(listing.buyer_daily_qty_limit) < maxQty) {
           maxQty = Number(listing.buyer_daily_qty_limit);
         }
-        return { maxQty, unit: u };
+        if (isBundle && listing.buyer_daily_qty_limit != null) {
+          const cap = Number(listing.buyer_daily_qty_limit);
+          const maxPacksFromDaily = Math.floor(cap / amt);
+          if (maxPacksFromDaily < maxQty) maxQty = maxPacksFromDaily;
+        }
+        return { maxQty, unit: u, isBundle };
       }
 
       function firstCartQty(listingId) {
-        const { maxQty, unit: u } = maxQtyForCartLine(listingId);
+        const { maxQty, unit: u, isBundle } = maxQtyForCartLine(listingId);
         if (maxQty <= 0) return 0;
+        if (isBundle) return Math.min(maxQty, 1);
         const step = cartDeltaStep(u, maxQty);
         if (u === "kg") return Math.min(maxQty, roundCartQty(Math.min(step, maxQty), u));
         return Math.min(maxQty, Math.floor(Math.min(step, maxQty)));
@@ -795,21 +830,23 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const entry = cart[listingId];
         if (!entry) return;
         syncOptionFromDom(listingId);
-        const { maxQty, unit: u } = maxQtyForCartLine(listingId);
-        const step = cartDeltaStep(u, maxQty);
-        let q = roundCartQty(entry.qty, u);
+        const { maxQty, unit: u, isBundle } = maxQtyForCartLine(listingId);
+        const step = isBundle ? 1 : cartDeltaStep(u, maxQty);
+        let q = isBundle ? Math.floor(Number(entry.qty) || 0) : roundCartQty(entry.qty, u);
         if (direction > 0) {
-          if (u === "kg") {
+          if (isBundle) {
+            q = Math.min(maxQty, q + step);
+          } else if (u === "kg") {
             q = Math.min(maxQty, roundCartQty(q + step, u));
           } else {
             q = Math.min(maxQty, Math.floor(q + step));
           }
+        } else if (isBundle) {
+          q = Math.max(0, q - step);
+        } else if (u === "kg") {
+          q = Math.max(0, roundCartQty(q - step, u));
         } else {
-          if (u === "kg") {
-            q = Math.max(0, roundCartQty(q - step, u));
-          } else {
-            q = Math.max(0, Math.floor(q - step));
-          }
+          q = Math.max(0, Math.floor(q - step));
         }
         entry.qty = q;
         renderQtyControls(listingId);
@@ -841,12 +878,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           syncOptionFromDom(listingId);
           const opt = getListingOptionById(entry.listing, entry.optionId);
           const u = opt?.unit || getListingPriceOptions(entry.listing)[0]?.unit || "piece";
-          const { num, unit: ul } = orderQtyNumAndUnit(entry.qty, u);
+          const packs = Math.floor(Number(entry.qty) || 0);
+          const ul = !isPerBaseUnitPricing(opt) ? "pack" : orderQtyNumAndUnit(entry.qty, u).unit;
+          const num = !isPerBaseUnitPricing(opt) ? String(packs) : orderQtyNumAndUnit(entry.qty, u).num;
+          const ariaQty = !isPerBaseUnitPricing(opt) ? `${packs} packs` : `Quantity ${num} ${ul}`;
           el.innerHTML = `
             ${preLabel}
             <div class="qty-controls">
               <button class="qty-btn qty-minus-btn">−</button>
-              <span class="qty-value" aria-label="Quantity ${num} ${ul}"><span class="qty-num">${num}</span><span class="qty-unit-suffix">${ul}</span></span>
+              <span class="qty-value" aria-label="${ariaQty}"><span class="qty-num">${num}</span><span class="qty-unit-suffix">${ul}</span></span>
               <button class="qty-btn qty-plus-btn">+</button>
             </div>
           `;
@@ -1294,7 +1334,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           if (!sel) return;
           const lid = sel.dataset.listing;
           if (!lid) return;
-          if (cart[lid]) cart[lid].optionId = sel.value;
+          if (cart[lid]) {
+            const hadQty = cart[lid].qty > 0;
+            cart[lid].optionId = sel.value;
+            if (hadQty) cart[lid].qty = firstCartQty(lid);
+            renderQtyControls(lid);
+          }
           updateMenuPricePreview(lid);
           if (cart[lid]) updateCartBar();
         });
@@ -1386,14 +1431,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const l = e.listing;
             const unit = lineQtyUnit(l, e.optionId);
             const line = lineUnitPrice(l, e.optionId);
-            const totalPrice = e.qty * line;
+            const opt = getListingOptionById(l, e.optionId);
+            const amt = optionBundleAmount(opt);
+            const packMode = !isPerBaseUnitPricing(opt);
+            const packs = packMode ? Math.floor(Number(e.qty) || 0) : 0;
+            const quantityForApi = packMode ? packs * amt : e.qty;
+            const totalPrice = packMode ? packs * line : e.qty * line;
             return fetch("/api/orders/create", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 listing_id: l.id,
                 species: l.species,
-                quantity: e.qty,
+                quantity: quantityForApi,
                 quantity_unit: unit,
                 total_price: totalPrice,
                 pricing_option_id: e.optionId,

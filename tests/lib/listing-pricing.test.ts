@@ -7,6 +7,11 @@ import {
   optionDiscountPercentDisplay,
   formatInventoryAmount,
   maxOrderQtyFromStock,
+  maxBundlesFromStock,
+  optionBundleSize,
+  optionBundleAmount,
+  isPerBaseUnitPricing,
+  minimumRequiredBuyerDailyCap,
   stockQuantityInputStep,
   pricingOptionsUniformUnit,
 } from "../../src/lib/listing-pricing";
@@ -35,6 +40,7 @@ describe("canonicalPricingOptionsFromPayload", () => {
     expect(out).toHaveLength(1);
     expect(out![0].id).toBe("a");
     expect(out![0].price).toBe(100);
+    expect(out![0].bundle_size).toBe(1);
   });
 
   it("returns null for empty or invalid", () => {
@@ -43,11 +49,58 @@ describe("canonicalPricingOptionsFromPayload", () => {
     expect(canonicalPricingOptionsFromPayload([{ price: 0 }])).toBeNull();
   });
 
+  it("parses bundle_size for piece tiers", () => {
+    const out = canonicalPricingOptionsFromPayload([
+      { id: "a", label: "3-pack", price: 300, unit: "piece", bundle_size: 3 },
+    ]);
+    expect(out![0].bundle_size).toBe(3);
+    expect(optionBundleSize(out![0])).toBe(3);
+  });
+
+  it("stores kg bundle_size (defaults to 1)", () => {
+    const out = canonicalPricingOptionsFromPayload([{ id: "a", label: "A", price: 400, unit: "kg" }]);
+    expect(out![0].bundle_size).toBe(1);
+    expect(isPerBaseUnitPricing(out![0])).toBe(true);
+  });
+
+  it("kg half-kg pack is not per-base pricing", () => {
+    const o = { id: "a", label: "Half", price: 200, unit: "kg" as const, bundle_size: 0.5 };
+    expect(isPerBaseUnitPricing(o)).toBe(false);
+    expect(optionBundleAmount(o)).toBe(0.5);
+  });
+
+  it("gram tiers default bundle_size to 1", () => {
+    const out = canonicalPricingOptionsFromPayload([{ id: "g", label: "G", price: 2, unit: "g" }]);
+    expect(out![0].bundle_size).toBe(1);
+  });
+
+  it("minimumRequiredBuyerDailyCap uses smallest pack and seller min ₹", () => {
+    const opts = canonicalPricingOptionsFromPayload([
+      { id: "a", label: "3pc", price: 100, unit: "piece", bundle_size: 3 },
+      { id: "b", label: "1pc", price: 50, unit: "piece", bundle_size: 1 },
+    ])!;
+    expect(minimumRequiredBuyerDailyCap(opts, 0)).toBe(3);
+    expect(minimumRequiredBuyerDailyCap(opts, 100)).toBe(3);
+    expect(minimumRequiredBuyerDailyCap(opts, 200)).toBe(4);
+  });
+
+  it("maxBundlesFromStock counts full packs only", () => {
+    expect(maxBundlesFromStock(10, "piece", 3)).toBe(3);
+    expect(maxBundlesFromStock(2, "piece", 3)).toBe(0);
+  });
+
+  it("defaults piece bundle_size to 1 when omitted", () => {
+    const out = canonicalPricingOptionsFromPayload([{ id: "a", label: "A", price: 50, unit: "piece" }]);
+    expect(out![0].bundle_size).toBe(1);
+    expect(optionBundleSize(out![0])).toBe(1);
+  });
+
   it("stores compare_at_price when higher than selling price", () => {
     const out = canonicalPricingOptionsFromPayload([
       { id: "a", label: "Deal", price: 80, unit: "piece", compare_at_price: 100 },
     ]);
     expect(out![0].compare_at_price).toBe(100);
+    expect(out![0].bundle_size).toBe(1);
   });
 
   it("drops compare_at when not higher than price", () => {

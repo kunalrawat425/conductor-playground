@@ -115,6 +115,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             pricingOptionsJson: (formData.get("pricing_options_json") as string) ?? "[]",
             buyerDailyStr: formData.get("buyer_daily_qty_limit")?.toString() ?? "",
             oosThresholdStr: formData.get("oos_threshold")?.toString() ?? "",
+            sellerMinOrderAmount: Number(seller.min_order_amount) || 0,
           });
           if (!validated.ok) {
             showError(validated.message);
