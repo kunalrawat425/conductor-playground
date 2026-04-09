@@ -278,6 +278,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     .menu-price-card-preview {
       margin-top: 8px;
     }
+    .menu-price-teaser {
+      padding: 2px 0 4px;
+    }
+    .menu-price-teaser-from {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--green);
+      line-height: 1.2;
+    }
+    .menu-price-teaser-hint {
+      font-size: 12px;
+      color: var(--gray-600);
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+    .menu-price-tier-panel[hidden] {
+      display: none !important;
+    }
     .menu-item-meta {
       font-size: 11px;
       color: var(--gray-500);
@@ -626,7 +644,21 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span> ${badge}<span style="font-size:13px;color:var(--gray-700);display:block;margin-top:6px;font-weight:600;">${esc(lead)}</span><span style="font-size:12px;color:var(--gray-500);display:block;margin-top:2px;">${esc(o.label)} (${ul})</span></div>`;
       }
 
-      function priceOptionsHtml(l) {
+      /** Multi-tier: show “From ₹…” until buyer taps ADD/PRE-ORDER, then reveal the tier dropdown. */
+      function multiTierMenuTeaserHtml(l, hintVerb = "ADD") {
+        const opts = getListingPriceOptions(l);
+        if (opts.length <= 1) return "";
+        const minP = Math.min(...opts.map((o) => o.price));
+        const n = opts.length;
+        const anyPack = opts.some((o) => !isPerBaseUnitPricing(o));
+        const v = esc(hintVerb);
+        return `<div class="menu-price-teaser" id="menu-price-collapsed-${l.id}">
+          <div class="menu-price-teaser-from">From ₹${minP}</div>
+          <div class="menu-price-teaser-hint">${n} ${anyPack ? "pack" : "price"} options — tap <strong>${v}</strong> to choose</div>
+        </div>`;
+      }
+
+      function priceOptionsHtml(l, ctx) {
         const opts = getListingPriceOptions(l);
         if (opts.length === 0) {
           return `<p class="text-muted" style="font-size:13px;">No prices configured.</p>`;
@@ -636,12 +668,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
         const first = opts[0];
         const anyPack = opts.some((o) => !isPerBaseUnitPricing(o));
-        return `<div class="menu-item-price-wrap">
-          <label class="menu-price-label" for="po-${l.id}">${anyPack ? "Choose pack" : "Choose price"}</label>
-          <select id="po-${l.id}" class="menu-price-opt" data-listing="${l.id}">
-            ${opts.map((o, i) => `<option value="${o.id}"${i === 0 ? " selected" : ""}>${tierOptionLabel(o)}</option>`).join("")}
-          </select>
-          <div class="menu-price-card-preview" id="menu-price-preview-${l.id}" aria-live="polite">${menuTierPriceBlockHtml(first)}</div>
+        const hintVerb = ctx?.hintVerb ?? "ADD";
+        return `<div class="menu-item-price-wrap" data-multi-tier-wrap="${l.id}">
+          <div id="menu-price-tier-panel-${l.id}" class="menu-price-tier-panel" hidden>
+            <label class="menu-price-label" for="po-${l.id}">${anyPack ? "Choose pack" : "Choose price"}</label>
+            <select id="po-${l.id}" class="menu-price-opt" data-listing="${l.id}">
+              ${opts.map((o, i) => `<option value="${o.id}"${i === 0 ? " selected" : ""}>${tierOptionLabel(o)}</option>`).join("")}
+            </select>
+            <div class="menu-price-card-preview" id="menu-price-preview-${l.id}" aria-live="polite">${menuTierPriceBlockHtml(first)}</div>
+          </div>
+          ${multiTierMenuTeaserHtml(l, hintVerb)}
         </div>`;
       }
 
@@ -665,6 +701,23 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       /** Populated when menu renders — used to refresh stock lines after cart / orders. */
       let listingsById = /** @type {Record<string, any>} */ ({});
+
+      function updateTierPanelVisibility(listingId) {
+        const l = listingsById[listingId];
+        if (!l || getListingPriceOptions(l).length <= 1) return;
+        const entry = cart[listingId];
+        const qty = entry?.qty ?? 0;
+        const tierPanel = document.getElementById(`menu-price-tier-panel-${listingId}`);
+        const collapsed = document.getElementById(`menu-price-collapsed-${listingId}`);
+        if (!tierPanel) return;
+        if (qty > 0) {
+          tierPanel.hidden = false;
+          if (collapsed) collapsed.hidden = true;
+        } else {
+          tierPanel.hidden = true;
+          if (collapsed) collapsed.hidden = false;
+        }
+      }
 
       function refreshMenuStockDisplays() {
         for (const id of Object.keys(listingsById)) {
@@ -927,6 +980,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             bumpCartQty(listingId, 1);
           });
         }
+        updateTierPanelVisibility(listingId);
         updateCartBar();
       }
 
@@ -1112,10 +1166,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const metaLimit = l.buyer_daily_qty_limit
             ? `Max ${l.buyer_daily_qty_limit} ${capUnit}/buyer/day`
             : "";
+          const hintVerb = !isZero && open ? "ADD" : "PRE-ORDER";
           return `
                 <div>
                   ${sizeLineHtml(l)}
-                  ${priceOptionsHtml(l)}
+                  ${priceOptionsHtml(l, { hintVerb })}
                   ${inventoryLineHtml(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
@@ -1146,6 +1201,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const metaLimit = l.buyer_daily_qty_limit
             ? `Max ${l.buyer_daily_qty_limit} ${capUnit}/buyer/day`
             : "";
+          const hintVerbSingle = !isZero && open ? "ADD" : "PRE-ORDER";
           return `
             <div class="menu-item${!inServiceArea ? " menu-item-grey" : ""}" data-listing="${l.id}">
               <div class="menu-item-img">
@@ -1156,7 +1212,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-name">${esc(name)}</div>
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   ${sizeLineHtml(l)}
-                  ${priceOptionsHtml(l)}
+                  ${priceOptionsHtml(l, { hintVerb: hintVerbSingle })}
                   ${inventoryLineHtml(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
@@ -1276,6 +1332,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   }
                 });
               });
+              updateTierPanelVisibility(listingId);
               updateCartBar();
             };
 
