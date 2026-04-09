@@ -69,6 +69,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       import { getSpeciesDisplay } from "../../../lib/species";
       import type { Seller, FishListing } from "../../../lib/supabase";
       import { formatListingPriceSummary, getListingPriceOptions } from "../../../lib/listing-pricing";
+      import { formatFishSizeSuffix } from "../../../lib/fish-size";
 
       let _sellerId = "";
 
@@ -160,7 +161,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
         el.innerHTML = listings
           .map((l) => {
-            const name = getSpeciesDisplay(l.species);
+            const name = getSpeciesDisplay(l.species) + formatFishSizeSuffix(l.fish_size);
             const priceOpts = getListingPriceOptions(l);
             const stockUnit = priceOpts[0]?.unit ?? l.price_unit;
             const statusBadge = !l.is_available

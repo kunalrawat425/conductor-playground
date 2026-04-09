@@ -19,9 +19,23 @@ function isPriceUnit(u: string): u is PriceUnit {
   return u === "piece" || u === "dozen";
 }
 
+/** PostgREST / drivers occasionally return jsonb as a JSON string — normalize for UI + orders. */
+function normalizePricingOptionsRaw(raw: unknown): unknown {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+  return raw;
+}
+
 /** Normalize DB json or legacy single price into a non-empty option list */
 export function getListingPriceOptions(listing: ListingPricingSource): ListingPriceOption[] {
-  const raw = listing.pricing_options as unknown;
+  const raw = normalizePricingOptionsRaw(listing.pricing_options as unknown);
   if (raw != null && Array.isArray(raw) && raw.length > 0) {
     const out: ListingPriceOption[] = [];
     for (let i = 0; i < raw.length; i++) {

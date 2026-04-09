@@ -228,6 +228,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       const { SPECIES, getSpeciesDisplay } = await import("../../lib/species");
       const { getSession } = await import("../../lib/auth");
       const { getListingOptionById, getListingPriceOptions } = await import("../../lib/listing-pricing");
+      const { formatFishSizeLabel } = await import("../../lib/fish-size");
 
       const FISH_EMOJI = {
         pomfret: "🐟", surmai: "🐠", rawas: "🐡", bangda: "🐟", bombil: "🍤",
@@ -354,6 +355,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                  ${opts.map((o) => `<option value="${o.id}">₹${o.price} — ${esc(o.label)} (${o.unit === "dozen" ? "dz" : "pc"})</option>`).join("")}
                </select>
                <div class="po-price-unit">· ${item.weight_avail} avail</div>`;
+          const sizeLine = formatFishSizeLabel(item.fish_size)
+            ? `<div class="po-listing-size">${esc(formatFishSizeLabel(item.fish_size))}</div>`
+            : "";
           return `
             <div class="po-seller-card">
               <div class="po-seller-left">
@@ -362,6 +366,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <div class="po-seller-badges">${sellerBadges(s, dist)}</div>
               </div>
               <div class="po-seller-right">
+                ${sizeLine}
                 ${priceBlock}
                 <button class="po-order-btn" data-action="order" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-listing-id="${item.id || ""}">Order</button>
               </div>

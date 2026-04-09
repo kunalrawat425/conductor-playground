@@ -94,6 +94,11 @@ if (id && supabaseUrl && supabaseAnonKey) {
           const formData = new FormData(form);
 
           const species = formData.get("species") as string;
+          const fishSizeRaw = (formData.get("fish_size") as string)?.trim() || "";
+          const fish_size =
+            fishSizeRaw === "small" || fishSizeRaw === "medium" || fishSizeRaw === "large"
+              ? fishSizeRaw
+              : null;
           const weightAvail = parseFloat(formData.get("weight_avail") as string);
           const photoFile = formData.get("photo") as File;
           const buyerDaily = formData.get("buyer_daily_qty_limit")?.toString().trim()
@@ -149,6 +154,7 @@ if (id && supabaseUrl && supabaseAnonKey) {
               listingId,
               {
                 species,
+                fish_size,
                 price,
                 price_unit: priceUnit,
                 pricing_options: pricingOptions,

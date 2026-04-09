@@ -67,6 +67,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const formData = new FormData(form as HTMLFormElement);
 
           const species = formData.get("species") as string;
+          const fishSizeRaw = (formData.get("fish_size") as string)?.trim() || "";
+          const fish_size =
+            fishSizeRaw === "small" || fishSizeRaw === "medium" || fishSizeRaw === "large"
+              ? fishSizeRaw
+              : null;
           const weightAvail = parseFloat(formData.get("weight_avail") as string);
           const photoFile = formData.get("photo") as File;
           const buyerDaily =
@@ -112,6 +117,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             await createListing({
               seller_id: seller.id,
               species,
+              fish_size,
               price,
               price_unit: priceUnit,
               pricing_options: pricingOptions,

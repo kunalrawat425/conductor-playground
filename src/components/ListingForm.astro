@@ -1,5 +1,5 @@
 ---
-import { SPECIES_LIST, PRICE_UNITS } from "../lib/species";
+import { SPECIES_LIST } from "../lib/species";
 import type { FishListing } from "../lib/supabase";
 import { getListingPriceOptions } from "../lib/listing-pricing";
 
@@ -11,9 +11,10 @@ interface Props {
 const { listing, sellerId } = Astro.props;
 const isEdit = !!listing;
 
-const defaultRows = listing
-  ? getListingPriceOptions(listing)
-  : [{ id: "default", label: "Per piece", price: 0, unit: "piece" as const }];
+/** JSON string so define:vars always ships a serializable payload to the client bundle. */
+const initialPricingJson = JSON.stringify(
+  listing ? getListingPriceOptions(listing) : [{ id: "default", label: "Per piece", price: 0, unit: "piece" as const }]
+);
 ---
 
 <form id="listing-form" class="listing-form" data-seller-id={sellerId} data-listing-id={listing?.id || ""}>
@@ -27,6 +28,17 @@ const defaultRows = listing
         </option>
       ))}
     </select>
+  </div>
+
+  <div class="form-group">
+    <label for="fish_size">Size</label>
+    <select id="fish_size" name="fish_size">
+      <option value="" selected={!listing?.fish_size}>Not specified</option>
+      <option value="small" selected={listing?.fish_size === "small"}>Small</option>
+      <option value="medium" selected={listing?.fish_size === "medium"}>Medium</option>
+      <option value="large" selected={listing?.fish_size === "large"}>Large</option>
+    </select>
+    <div class="form-hint">Shown to buyers on the menu (optional).</div>
   </div>
 
   <div class="form-group">
@@ -102,90 +114,113 @@ const defaultRows = listing
   </div>
 </form>
 
-<script define:vars={{ defaultRows }}>
+<script define:vars={{ initialPricingJson }}>
   import { setupListingPricingEditor } from "../lib/listing-pricing-setup";
   import type { ListingPriceOption } from "../lib/listing-pricing";
 
-  const speciesSelect = document.getElementById("species") as HTMLSelectElement;
-  const stockLabel = document.getElementById("stock-label");
-  const stockHint = document.getElementById("stock-hint");
-  const stockInfo = document.getElementById("stock-info");
-  const stockInput = document.getElementById("weight_avail") as HTMLInputElement;
-  const dailyLimitInput = document.getElementById("buyer_daily_qty_limit") as HTMLInputElement;
-  const pricingRowsEl = document.getElementById("pricing-rows")!;
-  const pricingJsonInput = document.getElementById("pricing_options_json") as HTMLInputElement;
-  const addPriceBtn = document.getElementById("add-price-row")!;
-
-  const unitMap: Record<string, { stock: string; stockHint: string; stockPlaceholder: string }> = {
-    piece: {
-      stock: "Stock (pieces)",
-      stockHint: "How many pieces you have. Buyers won't see this.",
-      stockPlaceholder: "e.g. 20",
-    },
-    dozen: {
-      stock: "Stock (dozens)",
-      stockHint: "How many dozens you have. Buyers won't see this.",
-      stockPlaceholder: "e.g. 5",
-    },
-  };
-
-  const initial = (defaultRows as { id?: string; label: string; price: number; unit: string }[]).map((r, i) => ({
-    ...r,
-    id: r.id || `opt_${i}`,
-    unit: r.unit === "dozen" ? "dozen" : "piece",
-  })) as ListingPriceOption[];
-
-  function syncStockLabelsFromFirstUnit() {
-    const firstUnit = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
-    const unit = firstUnit?.value || "piece";
-    const u = unitMap[unit] || unitMap.piece;
-    if (stockLabel) stockLabel.textContent = u.stock;
-    if (stockHint) stockHint.textContent = u.stockHint;
-    if (stockInput) stockInput.placeholder = u.stockPlaceholder;
-    updateStockInfo();
-  }
-
-  function updateStockInfo() {
-    if (!stockInfo || !stockInput) return;
-    const stock = parseFloat(stockInput.value) || 0;
-    const cap = parseFloat(dailyLimitInput?.value || "0") || 0;
-    const firstUnit = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
-    const unit = firstUnit?.value || "piece";
-    if (stock > 0 && cap > 0) {
-      const orders = Math.floor(stock / cap);
-      stockInfo.textContent = `With ${stock} ${unit} and max ${cap}/${unit} per buyer per day → ~${orders} buyers could fully use stock`;
-    } else if (stock > 0) {
-      stockInfo.textContent = `${stock} ${unit} available for orders`;
+  function runWhenDomReady(fn: () => void) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
     } else {
-      stockInfo.textContent = "";
+      fn();
     }
   }
 
-  const pricingEditor = setupListingPricingEditor({
-    container: pricingRowsEl,
-    hiddenInput: pricingJsonInput,
-    addButton: addPriceBtn,
-    initial,
-    onUnitChange: syncStockLabelsFromFirstUnit,
-  });
-  syncStockLabelsFromFirstUnit();
+  runWhenDomReady(() => {
+    const speciesSelect = document.getElementById("species") as HTMLSelectElement | null;
+    const stockLabel = document.getElementById("stock-label");
+    const stockHint = document.getElementById("stock-hint");
+    const stockInfo = document.getElementById("stock-info");
+    const stockInput = document.getElementById("weight_avail") as HTMLInputElement | null;
+    const dailyLimitInput = document.getElementById("buyer_daily_qty_limit") as HTMLInputElement | null;
+    const pricingRowsEl = document.getElementById("pricing-rows");
+    const pricingJsonInput = document.getElementById("pricing_options_json") as HTMLInputElement | null;
+    const addPriceBtn = document.getElementById("add-price-row");
+    const form = document.getElementById("listing-form");
 
-  speciesSelect?.addEventListener("change", () => {
-    const option = speciesSelect.selectedOptions[0];
-    const defaultUnit = option?.dataset.unit;
-    const firstSel = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
-    if (defaultUnit && firstSel && (defaultUnit === "piece" || defaultUnit === "dozen")) {
-      firstSel.value = defaultUnit;
-      pricingEditor.sync();
-      syncStockLabelsFromFirstUnit();
+    if (!pricingRowsEl || !pricingJsonInput || !addPriceBtn || !form) return;
+
+    const unitMap: Record<string, { stock: string; stockHint: string; stockPlaceholder: string }> = {
+      piece: {
+        stock: "Stock (pieces)",
+        stockHint: "How many pieces you have. Buyers won't see this.",
+        stockPlaceholder: "e.g. 20",
+      },
+      dozen: {
+        stock: "Stock (dozens)",
+        stockHint: "How many dozens you have. Buyers won't see this.",
+        stockPlaceholder: "e.g. 5",
+      },
+    };
+
+    let parsed: { id?: string; label: string; price: number; unit: string }[] = [];
+    try {
+      parsed = JSON.parse(initialPricingJson) as typeof parsed;
+      if (!Array.isArray(parsed)) parsed = [];
+    } catch {
+      parsed = [];
     }
+    if (parsed.length === 0) {
+      parsed = [{ id: "default", label: "Per piece", price: 0, unit: "piece" }];
+    }
+
+    const initial = parsed.map((r, i) => ({
+      ...r,
+      id: r.id || `opt_${i}`,
+      unit: r.unit === "dozen" ? "dozen" : "piece",
+    })) as ListingPriceOption[];
+
+    function syncStockLabelsFromFirstUnit() {
+      const firstUnit = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
+      const unit = firstUnit?.value || "piece";
+      const u = unitMap[unit] || unitMap.piece;
+      if (stockLabel) stockLabel.textContent = u.stock;
+      if (stockHint) stockHint.textContent = u.stockHint;
+      if (stockInput) stockInput.placeholder = u.stockPlaceholder;
+      updateStockInfo();
+    }
+
+    function updateStockInfo() {
+      if (!stockInfo || !stockInput) return;
+      const stock = parseFloat(stockInput.value) || 0;
+      const cap = parseFloat(dailyLimitInput?.value || "0") || 0;
+      const firstUnit = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
+      const unit = firstUnit?.value || "piece";
+      if (stock > 0 && cap > 0) {
+        const orders = Math.floor(stock / cap);
+        stockInfo.textContent = `With ${stock} ${unit} and max ${cap}/${unit} per buyer per day → ~${orders} buyers could fully use stock`;
+      } else if (stock > 0) {
+        stockInfo.textContent = `${stock} ${unit} available for orders`;
+      } else {
+        stockInfo.textContent = "";
+      }
+    }
+
+    const pricingEditor = setupListingPricingEditor({
+      container: pricingRowsEl,
+      hiddenInput: pricingJsonInput,
+      addButton: addPriceBtn,
+      initial,
+      onUnitChange: syncStockLabelsFromFirstUnit,
+    });
+    syncStockLabelsFromFirstUnit();
+
+    speciesSelect?.addEventListener("change", () => {
+      const option = speciesSelect.selectedOptions[0];
+      const defaultUnit = option?.dataset.unit;
+      const firstSel = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
+      if (defaultUnit && firstSel && (defaultUnit === "piece" || defaultUnit === "dozen")) {
+        firstSel.value = defaultUnit;
+        pricingEditor.sync();
+        syncStockLabelsFromFirstUnit();
+      }
+    });
+
+    stockInput?.addEventListener("input", updateStockInfo);
+    dailyLimitInput?.addEventListener("input", updateStockInfo);
+
+    form.addEventListener("submit", () => pricingEditor.sync());
   });
-
-  stockInput?.addEventListener("input", updateStockInfo);
-  dailyLimitInput?.addEventListener("input", updateStockInfo);
-
-  const form = document.getElementById("listing-form");
-  form?.addEventListener("submit", () => pricingEditor.sync());
 </script>
 
 <style>
