@@ -63,7 +63,7 @@ const initialPricingJson = JSON.stringify(
       Add one or more prices. <strong>Label</strong> is what buyers see (e.g. &quot;Large&quot;, &quot;Per dozen&quot;). <strong>Unit</strong> is <strong>per piece</strong> or <strong>per dozen</strong> only (how stock is counted). Each row needs a <strong>positive ₹</strong> — empty rows are skipped. Use <strong>+ Add another price</strong> for multiple tiers; buyers get a dropdown when there are two or more valid rows.
     </p>
     <div id="pricing-rows" class="pricing-rows"></div>
-    <button type="button" class="btn-add-price" id="add-price-row">+ Add another price</button>
+    <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>
     <input type="hidden" name="pricing_options_json" id="pricing_options_json" value="" />
   </div>
 
@@ -126,19 +126,22 @@ const initialPricingJson = JSON.stringify(
     }
   }
 
-  runWhenDomReady(() => {
-    const speciesSelect = document.getElementById("species") as HTMLSelectElement | null;
-    const stockLabel = document.getElementById("stock-label");
-    const stockHint = document.getElementById("stock-hint");
-    const stockInfo = document.getElementById("stock-info");
-    const stockInput = document.getElementById("weight_avail") as HTMLInputElement | null;
-    const dailyLimitInput = document.getElementById("buyer_daily_qty_limit") as HTMLInputElement | null;
-    const pricingRowsEl = document.getElementById("pricing-rows");
-    const pricingJsonInput = document.getElementById("pricing_options_json") as HTMLInputElement | null;
-    const addPriceBtn = document.getElementById("add-price-row");
+  /** Defer one tick so Astro-injected DOM is fully present before querySelector runs. */
+  function initListingPricing() {
     const form = document.getElementById("listing-form");
+    if (!form) return;
 
-    if (!pricingRowsEl || !pricingJsonInput || !addPriceBtn || !form) return;
+    const speciesSelect = form.querySelector("#species") as HTMLSelectElement | null;
+    const stockLabel = form.querySelector("#stock-label");
+    const stockHint = form.querySelector("#stock-hint");
+    const stockInfo = form.querySelector("#stock-info");
+    const stockInput = form.querySelector("#weight_avail") as HTMLInputElement | null;
+    const dailyLimitInput = form.querySelector("#buyer_daily_qty_limit") as HTMLInputElement | null;
+    const pricingRowsEl = form.querySelector("#pricing-rows");
+    const pricingJsonInput = form.querySelector("#pricing_options_json") as HTMLInputElement | null;
+    const addPriceBtn = form.querySelector(".listing-add-price-btn") as HTMLButtonElement | null;
+
+    if (!pricingRowsEl || !pricingJsonInput || !addPriceBtn) return;
 
     const unitMap: Record<string, { stock: string; stockHint: string; stockPlaceholder: string }> = {
       piece: {
@@ -220,6 +223,10 @@ const initialPricingJson = JSON.stringify(
     dailyLimitInput?.addEventListener("input", updateStockInfo);
 
     form.addEventListener("submit", () => pricingEditor.sync());
+  }
+
+  runWhenDomReady(() => {
+    setTimeout(initListingPricing, 0);
   });
 </script>
 
