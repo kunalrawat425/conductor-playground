@@ -209,16 +209,21 @@
   }
 
   // Resend OTP
+  let isResending = false;
   document.getElementById("login-resend")?.addEventListener("click", async () => {
+    if (isResending) return;
+    isResending = true;
     const btn = document.getElementById("login-resend") as HTMLButtonElement;
     setButtonLoading(btn, true, "Resend OTP", "textlink");
     try {
       await sendOtp(currentPhone);
       attempts = 0;
       startResendTimer();
-    } catch {
+    } catch (_) {
       showToast("Couldn't resend OTP. Try again.", "error");
       setButtonLoading(btn, false, "Resend OTP", "textlink");
+    } finally {
+      isResending = false;
     }
   });
 

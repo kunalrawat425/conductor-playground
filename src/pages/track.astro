@@ -238,10 +238,20 @@ export const prerender = false;
           });
 
           // Cancel order handlers
+          function trackToast(msg: string, type: string = "success") {
+            const t = document.getElementById("toast");
+            if (!t) return;
+            t.textContent = msg;
+            t.style.display = "block";
+            t.style.background = type === "error" ? "var(--red)" : "var(--green)";
+            t.style.color = "white";
+            setTimeout(() => { t.style.display = "none"; }, 3000);
+          }
+
           ordersList.querySelectorAll(".btn-cancel-order").forEach((btn: any) => {
             btn.addEventListener("click", async () => {
               const reason = prompt("Why are you cancelling? (optional)");
-              if (reason === null) return; // user pressed Cancel on prompt
+              if (reason === null) return;
               btn.disabled = true; btn.textContent = "Cancelling...";
               try {
                 const res = await fetch("/api/orders/cancel", {
@@ -249,35 +259,40 @@ export const prerender = false;
                   body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "cancel", cancel_reason: reason || "" }),
                 });
                 const d = await res.json();
-                if (d.success) { void loadAndRender(); } else { alert(d.error || "Failed"); btn.disabled = false; btn.textContent = "Cancel Order"; }
-              } catch (_) { btn.disabled = false; btn.textContent = "Cancel Order"; }
+                if (d.success) { trackToast("Order cancelled"); void loadAndRender(); }
+                else { trackToast(d.error || "Failed to cancel", "error"); btn.disabled = false; btn.textContent = "Cancel Order"; }
+              } catch (_) { trackToast("Network error. Try again.", "error"); btn.disabled = false; btn.textContent = "Cancel Order"; }
             });
           });
 
-          // Accept price handlers
           ordersList.querySelectorAll(".btn-accept-price").forEach((btn: any) => {
             btn.addEventListener("click", async () => {
               btn.disabled = true; btn.textContent = "Accepting...";
-              const res = await fetch("/api/orders/cancel", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "accept_price" }),
-              });
-              const d = await res.json();
-              if (d.success) void loadAndRender(); else { alert(d.error); btn.disabled = false; }
+              try {
+                const res = await fetch("/api/orders/cancel", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "accept_price" }),
+                });
+                const d = await res.json();
+                if (d.success) { trackToast("Price accepted!"); void loadAndRender(); }
+                else { trackToast(d.error || "Failed", "error"); btn.disabled = false; btn.textContent = "✅ Accept"; }
+              } catch (_) { trackToast("Network error", "error"); btn.disabled = false; btn.textContent = "✅ Accept"; }
             });
           });
 
-          // Reject price handlers
           ordersList.querySelectorAll(".btn-reject-price").forEach((btn: any) => {
             btn.addEventListener("click", async () => {
               if (!confirm("Reject this price and cancel the order?")) return;
               btn.disabled = true; btn.textContent = "Rejecting...";
-              const res = await fetch("/api/orders/cancel", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "reject_price" }),
-              });
-              const d = await res.json();
-              if (d.success) void loadAndRender(); else { alert(d.error); btn.disabled = false; }
+              try {
+                const res = await fetch("/api/orders/cancel", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "reject_price" }),
+                });
+                const d = await res.json();
+                if (d.success) { trackToast("Price rejected, order cancelled"); void loadAndRender(); }
+                else { trackToast(d.error || "Failed", "error"); btn.disabled = false; btn.textContent = "❌ Reject & Cancel"; }
+              } catch (_) { trackToast("Network error", "error"); btn.disabled = false; btn.textContent = "❌ Reject & Cancel"; }
             });
           });
         } catch (e) {
