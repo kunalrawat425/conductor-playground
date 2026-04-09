@@ -34,7 +34,7 @@ export function validateSellerListingForm(input: {
   if (wStr === "") {
     return { ok: false, message: "Enter stock quantity.", focusId: "weight_avail" };
   }
-  const weightAvail = parseFloat(wStr);
+  let weightAvail = parseFloat(wStr);
   if (!Number.isFinite(weightAvail)) {
     return { ok: false, message: "Stock must be a valid number.", focusId: "weight_avail" };
   }
@@ -45,6 +45,12 @@ export function validateSellerListingForm(input: {
   const stockErr = validateStockMatchesUnit(weightAvail, firstUnit);
   if (stockErr) {
     return { ok: false, message: stockErr, focusId: "weight_avail" };
+  }
+
+  if (firstUnit === "piece" || firstUnit === "gram") {
+    weightAvail = Math.round(weightAvail);
+  } else if (firstUnit === "kg") {
+    weightAvail = Math.round(weightAvail * 100) / 100;
   }
 
   const dailyRaw = String(input.buyerDailyStr ?? "").trim();
@@ -98,9 +104,10 @@ function validateStockMatchesUnit(stock: number, unit: PriceUnit): string | null
     return null;
   }
   if (unit === "piece" || unit === "gram") {
-    if (!Number.isInteger(stock)) {
+    const r = Math.round(stock);
+    if (!Number.isFinite(stock) || Math.abs(stock - r) > 1e-4) {
       if (unit === "gram") {
-        return "Stock in grams must be a whole number.";
+        return "Stock in grams must be a whole number (no decimals).";
       }
       return "Stock must be a whole number when selling by piece.";
     }
