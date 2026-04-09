@@ -161,6 +161,20 @@ describe("validateListingPricingJson", () => {
     );
     expect(r.ok).toBe(true);
   });
+
+  it("accepts multiple piece tiers with different bundle_size (multi-pack)", () => {
+    const r = validateListingPricingJson(
+      JSON.stringify([
+        { id: "a", label: "Single", price: 50, unit: "piece", bundle_size: 1 },
+        { id: "b", label: "6-pack", price: 280, unit: "piece", bundle_size: 6 },
+      ])
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.options[0].bundle_size).toBe(1);
+      expect(r.options[1].bundle_size).toBe(6);
+    }
+  });
 });
 
 describe("pricingOptionsUniformUnit", () => {

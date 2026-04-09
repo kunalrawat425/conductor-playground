@@ -105,11 +105,19 @@ export const POST: APIRoute = async ({ request }) => {
     const sb = createClient(supabaseUrl, supabaseServiceKey);
 
     if (action === "get_slots") {
+      const { data: sellerRow } = await sb
+        .from("sellers")
+        .select("schedule_pickup_slots")
+        .eq("id", seller_id)
+        .maybeSingle();
+      if (!sellerRow?.schedule_pickup_slots) {
+        return new Response(JSON.stringify({ slots: [] }), { status: 200 });
+      }
       const { data: config, error } = await sb
         .from("seller_schedule_configs")
         .select("*")
         .eq("seller_id", seller_id)
-        .single();
+        .maybeSingle();
       if (error || !config) {
         return new Response(JSON.stringify({ slots: [] }), { status: 200 });
       }
@@ -148,6 +156,8 @@ export const POST: APIRoute = async ({ request }) => {
         days_ahead: n,
       }, { onConflict: "seller_id" });
 
+      await sb.from("sellers").update({ schedule_pickup_slots: true }).eq("id", seller_id);
+
       const slots_created = buildVirtualSlots({
         seller_id,
         date_from,
@@ -185,6 +195,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     if (action === "delete_config") {
+      await sb.from("sellers").update({ schedule_pickup_slots: false }).eq("id", seller_id);
       const { error } = await sb.from("seller_schedule_configs").delete().eq("seller_id", seller_id);
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       return new Response(JSON.stringify({ success: true }), { status: 200 });

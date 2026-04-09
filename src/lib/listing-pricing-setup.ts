@@ -52,8 +52,10 @@ export function setupListingPricingEditor(opts: {
         inp.required = true;
         inp.min = "1";
         inp.step = "1";
+        inp.inputMode = "numeric";
         inp.removeAttribute("placeholder");
-        if (!String(inp.value ?? "").trim()) inp.value = "1";
+        // Do not overwrite inp.value when empty — sync runs on every keystroke; clearing to re-type
+        // "12" was being reset to "1" and felt like the field "would not accept" the value.
         hint.innerHTML =
           "Required: how many pieces this ₹ applies to. <strong>1</strong> = price per piece. <strong>3</strong>, <strong>5</strong>… = fixed packs on the menu.";
       } else if (ru === "gram") {
@@ -61,8 +63,8 @@ export function setupListingPricingEditor(opts: {
         inp.required = true;
         inp.min = "1";
         inp.step = "1";
+        inp.inputMode = "numeric";
         inp.removeAttribute("placeholder");
-        if (!String(inp.value ?? "").trim()) inp.value = "1";
         hint.innerHTML =
           "Required: how many grams this ₹ applies to. <strong>1</strong> = ₹ per gram. <strong>250</strong>, <strong>500</strong>… = fixed gram packs.";
       } else if (ru === "kg") {
@@ -70,8 +72,8 @@ export function setupListingPricingEditor(opts: {
         inp.required = true;
         inp.min = "0.01";
         inp.step = "0.01";
+        inp.inputMode = "decimal";
         inp.removeAttribute("placeholder");
-        if (!String(inp.value ?? "").trim()) inp.value = "1";
         hint.innerHTML =
           "Required: how many kg this ₹ applies to. <strong>1</strong> = ₹ per kg. <strong>0.5</strong> = per half-kg pack, etc.";
       }
@@ -111,18 +113,18 @@ export function setupListingPricingEditor(opts: {
         unit,
       };
       if (unit === "piece") {
-        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim();
-        let bs = parseInt(bsRaw || "1", 10);
+        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim() ?? "";
+        let bs = parseInt(bsRaw, 10);
         if (!Number.isFinite(bs) || bs < 1) bs = 1;
         rowOut.bundle_size = Math.floor(bs);
       } else if (unit === "gram") {
-        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim();
-        let bs = parseInt(bsRaw || "1", 10);
+        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim() ?? "";
+        let bs = parseInt(bsRaw, 10);
         if (!Number.isFinite(bs) || bs < 1) bs = 1;
         rowOut.bundle_size = Math.floor(bs);
       } else if (unit === "kg") {
-        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim();
-        let bs = parseFloat(bsRaw || "1");
+        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim() ?? "";
+        let bs = parseFloat(bsRaw);
         if (!Number.isFinite(bs) || bs < 0.01) bs = 1;
         rowOut.bundle_size = Math.round(bs * 100) / 100;
       }
@@ -178,15 +180,18 @@ export function setupListingPricingEditor(opts: {
     let bundleInputValue = "1";
     if (ru === "piece") {
       bundleInputValue =
-        opt.bundle_size != null && opt.bundle_size >= 1 ? String(Math.floor(opt.bundle_size)) : "1";
+        opt.bundle_size != null && opt.bundle_size >= 1 ? String(Math.floor(Number(opt.bundle_size))) : "1";
     } else if (ru === "gram") {
       bundleInputValue =
-        opt.bundle_size != null && opt.bundle_size >= 1 ? String(Math.floor(opt.bundle_size)) : "1";
+        opt.bundle_size != null && opt.bundle_size >= 1 ? String(Math.floor(Number(opt.bundle_size))) : "1";
     } else if (ru === "kg") {
       const rawKg = opt.bundle_size != null ? Number(opt.bundle_size) : 1;
       const nk = Number.isFinite(rawKg) && rawKg >= 0.01 ? Math.round(rawKg * 100) / 100 : 1;
       bundleInputValue = String(nk);
     }
+    const bundleMin = ru === "kg" ? "0.01" : "1";
+    const bundleStep = ru === "kg" ? "0.01" : "1";
+    const bundleInputMode = ru === "kg" ? "decimal" : "numeric";
     wrap.innerHTML = `
       <div class="pricing-row-grid" style="display:grid;grid-template-columns:1fr 100px 36px;gap:8px;align-items:end;margin-bottom:8px;">
         <div class="form-group" style="margin:0;">
@@ -201,7 +206,7 @@ export function setupListingPricingEditor(opts: {
       </div>
       <div class="listing-bundle-wrap form-group" style="margin:0 0 8px;display:none;">
         <label class="bundle-label-host" style="font-size:12px;"></label>
-        <input type="number" inputmode="numeric" class="bundle-size-inp" min="1" step="1" style="width:100%;max-width:120px;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${bundleInputValue}" />
+        <input type="number" inputmode="${bundleInputMode}" class="bundle-size-inp" min="${bundleMin}" step="${bundleStep}" style="width:100%;max-width:120px;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${bundleInputValue}" />
         <p class="bundle-hint" style="font-size:11px;color:var(--gray-500);margin:6px 0 0;line-height:1.35;"></p>
       </div>
       <div class="pricing-row-deal" style="margin-top:8px;padding:10px 12px;background:var(--gray-50, #f9fafb);border-radius:8px;border:1px dashed var(--gray-300, #e5e7eb);">
