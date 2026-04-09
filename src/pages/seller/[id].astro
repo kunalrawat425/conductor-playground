@@ -505,7 +505,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       }
 
       function unitLbl(u) {
-        return u === "dozen" ? "dz" : u === "piece" ? "pc" : String(u);
+        if (u === "dozen") return "dz";
+        if (u === "piece") return "pc";
+        if (u === "kg") return "pc";
+        return String(u);
       }
 
       function sizeLineHtml(l) {
