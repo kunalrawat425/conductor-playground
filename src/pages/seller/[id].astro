@@ -513,6 +513,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const totalItems = entries.reduce((sum, e) => sum + e.qty, 0);
         document.getElementById("cart-count").textContent = `${totalItems} item${totalItems !== 1 ? "s" : ""}`;
         document.getElementById("cart-total").textContent = snap ? `₹${snap.grandTotal}` : "₹0";
+        // Update button text based on cart contents
+        const allPreorder = entries.every(e => isPreorderItem(e.listing.id));
+        const btn = document.getElementById("place-order-btn");
+        btn.textContent = allPreorder ? "Place Pre-order" : "Place Order";
+      }
+
+      function isPreorderItem(listingId) {
+        const entry = cart[listingId];
+        if (!entry) return false;
+        return (!open || entry.listing.weight_avail <= 0) && acceptsPreorder;
       }
 
       function renderQtyControls(listingId) {
@@ -520,7 +530,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         if (!el) return;
         const entry = cart[listingId];
         if (!entry || entry.qty === 0) {
-          el.innerHTML = `<button class="add-btn" data-add="${listingId}">ADD</button>`;
+          // Restore correct button based on item state
+          if (entry && isPreorderItem(listingId)) {
+            el.innerHTML = `<button class="add-btn preorder-btn" data-add="${listingId}">PRE-ORDER</button>`;
+          } else if (entry && entry.listing.weight_avail > 0 && open) {
+            el.innerHTML = `<button class="add-btn" data-add="${listingId}">ADD</button>`;
+          } else {
+            el.innerHTML = `<span style="font-size:12px;color:var(--red);font-weight:600;">${entry?.listing.weight_avail <= 0 ? "Sold out" : "Closed"}</span>`;
+          }
         } else {
           el.innerHTML = `
             <div class="qty-controls">
@@ -797,7 +814,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
           const plusId = target.dataset?.plus;
           if (plusId && cart[plusId]) {
-            const maxQty = Math.floor(cart[plusId].listing.weight_avail);
+            const isPreorder = isPreorderItem(plusId);
+            const maxQty = isPreorder ? 50 : Math.floor(cart[plusId].listing.weight_avail);
             if (cart[plusId].qty < maxQty) {
               cart[plusId].qty++;
               renderQtyControls(plusId);
@@ -807,8 +825,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
           const minusId = target.dataset?.minus;
           if (minusId && cart[minusId]) {
-            cart[minusId].qty--;
-            renderQtyControls(minusId);
+            if (cart[minusId].qty > 0) {
+              cart[minusId].qty--;
+              renderQtyControls(minusId);
+            }
             return;
           }
         });
