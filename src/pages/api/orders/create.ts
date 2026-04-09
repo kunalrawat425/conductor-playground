@@ -188,7 +188,11 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     const amountDue = total_price + delivery_fee;
 
-    // Atomic order creation with stock check (DB function handles locking)
+    // Try atomic order creation (DB function with row lock)
+    // Falls back to direct insert if function not available
+    let order: any = null;
+    let error: any = null;
+
     const { data: orderId, error: rpcError } = await supabase.rpc("create_order_atomic", {
       p_listing_id: listing_id || null,
       p_species: species || null,
@@ -206,13 +210,49 @@ export const POST: APIRoute = async ({ request, url }) => {
     });
 
     if (rpcError) {
-      const msg = rpcError.message || "Failed to create order";
-      const isStockError = msg.includes("in stock") || msg.includes("Listing not found");
-      return new Response(JSON.stringify({ error: msg }), { status: isStockError ? 400 : 500 });
+      const msg = rpcError.message || "";
+      // If function doesn't exist or stock error, try direct insert as fallback
+      if (msg.includes("could not find") || msg.includes("does not exist") || msg.includes("42883")) {
+        // Function not created yet — use direct insert
+        const { data: fallbackOrder, error: fallbackErr } = await supabase
+          .from("orders")
+          .insert({
+            listing_id: listing_id || null,
+            species: species || null,
+            buyer_phone,
+            buyer_id: buyer_id || null,
+            buyer_addr: buyer_addr || null,
+            quantity,
+            quantity_unit,
+            total_price,
+            delivery_fee,
+            platform_fee: 0,
+            status,
+            order_type,
+            payment_type: "cod",
+            paid_amount: status === "pre_order" ? total_price + delivery_fee : null,
+            scheduled_for: scheduled_for || null,
+            schedule_slot_id: schedule_slot_id || null,
+          })
+          .select()
+          .single();
+        if (fallbackErr) {
+          return new Response(JSON.stringify({ error: fallbackErr.message }), { status: 500 });
+        }
+        order = fallbackOrder;
+      } else {
+        // Real stock error — surface to user
+        const isStockError = msg.includes("in stock") || msg.includes("Listing not found");
+        return new Response(JSON.stringify({ error: msg }), { status: isStockError ? 400 : 500 });
+      }
+    } else {
+      // RPC succeeded — fetch the order
+      const { data: fetchedOrder, error: fetchErr } = await supabase.from("orders").select().eq("id", orderId).single();
+      if (fetchErr) {
+        return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
+      }
+      order = fetchedOrder;
     }
-
-    // Fetch the created order
-    const { data: order, error } = await supabase.from("orders").select().eq("id", orderId).single();
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
