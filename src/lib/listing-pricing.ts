@@ -11,12 +11,39 @@ export interface ListingPriceOption {
 /** Minimal listing fields for pricing helpers (avoids circular import with supabase.ts). */
 export type ListingPricingSource = {
   price: number;
-  price_unit: PriceUnit;
+  /** DB may still have legacy `kg` until migrated — treat as piece for display/orders. */
+  price_unit: PriceUnit | "kg" | string;
   pricing_options?: ListingPriceOption[] | unknown[] | null;
 };
 
 function isPriceUnit(u: string): u is PriceUnit {
   return u === "piece" || u === "dozen";
+}
+
+/** Legacy schema allowed `kg`; inventory + menus use piece/dozen only. */
+function normalizeUnitRaw(raw: string): PriceUnit {
+  const u = String(raw || "piece").toLowerCase();
+  if (u === "dozen") return "dozen";
+  if (u === "kg") return "piece";
+  return u === "piece" ? "piece" : "piece";
+}
+
+function normalizeLabelForUnit(label: string, originalUnit: string): string {
+  let s = String(label ?? "").trim() || "Option";
+  if (
+    originalUnit === "kg" ||
+    /^per\s*kg$/i.test(s) ||
+    /^kg$/i.test(s) ||
+    /^per\s*kg\b/i.test(s)
+  ) {
+    s = "Per piece";
+  } else if (/\bper\s*kg\b/i.test(s) || /^per\s*kg\s*\)/i.test(s)) {
+    s = s.replace(/\bper\s*kg\b/gi, "Per piece").replace(/\s+/g, " ").trim() || "Per piece";
+  } else if (/\bkg\b/i.test(s)) {
+    s = s.replace(/\bper\s*kg\b/gi, "Per piece").replace(/\bkg\b/gi, "piece").replace(/\s+/g, " ").trim();
+    if (!s) s = "Per piece";
+  }
+  return s;
 }
 
 /** PostgREST / drivers occasionally return jsonb as a JSON string — normalize for UI + orders. */
@@ -41,21 +68,22 @@ export function getListingPriceOptions(listing: ListingPricingSource): ListingPr
     for (let i = 0; i < raw.length; i++) {
       const o = raw[i] as Record<string, unknown>;
       const id = String(o.id ?? `opt_${i}`);
-      const label = String(o.label ?? "").trim() || "Option";
       const price = Number(o.price);
-      const unitRaw = String(o.unit ?? "piece");
-      const unit = isPriceUnit(unitRaw) ? unitRaw : "piece";
+      const unitRawIn = String(o.unit ?? "piece");
+      const unit = normalizeUnitRaw(unitRawIn);
+      const label = normalizeLabelForUnit(String(o.label ?? "").trim() || "Option", unitRawIn);
       if (!Number.isFinite(price) || price <= 0) continue;
       out.push({ id, label, price, unit });
     }
     if (out.length > 0) return out;
   }
-  const pu = listing.price_unit;
-  const unit: PriceUnit = pu === "dozen" || pu === "piece" ? pu : "piece";
+  const pu = String(listing.price_unit ?? "piece");
+  const unit: PriceUnit = normalizeUnitRaw(pu);
+  const label = unit === "dozen" ? "Per dozen" : "Per piece";
   return [
     {
       id: "default",
-      label: unit === "dozen" ? "Per dozen" : "Per piece",
+      label,
       price: Number(listing.price) || 0,
       unit,
     },
