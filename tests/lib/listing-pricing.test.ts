@@ -14,6 +14,8 @@ import {
   minimumRequiredBuyerDailyCap,
   stockQuantityInputStep,
   pricingOptionsUniformUnit,
+  formatBundleSizeLead,
+  formatPriceOptionDropdownLabel,
 } from "../../src/lib/listing-pricing";
 
 describe("canonicalPricingOptionsFromPayload", () => {
@@ -228,6 +230,28 @@ describe("inventory helpers", () => {
   it("stockQuantityInputStep", () => {
     expect(stockQuantityInputStep("kg")).toBe("0.01");
     expect(stockQuantityInputStep("piece")).toBe("1");
+  });
+});
+
+describe("menu bundle labels", () => {
+  it("formatBundleSizeLead matches pack vs per-base", () => {
+    expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "piece", bundle_size: 3 })).toBe("3 pieces");
+    expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "piece", bundle_size: 1 })).toBe("Per piece");
+    expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "gram", bundle_size: 500 })).toBe("500 g");
+    expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "kg", bundle_size: 0.5 })).toBe("0.5 kg");
+  });
+
+  it("formatPriceOptionDropdownLabel includes lead and label", () => {
+    const s = formatPriceOptionDropdownLabel({
+      id: "a",
+      label: "Large",
+      price: 150,
+      unit: "piece",
+      bundle_size: 3,
+    });
+    expect(s).toContain("3 pieces");
+    expect(s).toContain("₹150");
+    expect(s).toContain("Large");
   });
 });
 
