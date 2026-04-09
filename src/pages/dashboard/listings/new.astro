@@ -40,8 +40,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     <script>
       import { getSession, signOut } from "../../../lib/seller-auth";
       import { getSellerById, createListing, uploadFishPhoto, invalidateSellerListingIdsCache } from "../../../lib/supabase";
-      import type { PriceUnit } from "../../../lib/species";
-      import type { ListingPriceOption } from "../../../lib/listing-pricing";
+      import { validateListingPricingJson } from "../../../lib/listing-pricing";
 
       async function init() {
         const session = getSession();
@@ -80,22 +79,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               : null;
           const oosThreshold = formData.get("oos_threshold") ? parseFloat(formData.get("oos_threshold") as string) : null;
 
-          let pricingOptions: ListingPriceOption[] = [];
-          try {
-            const raw = formData.get("pricing_options_json") as string;
-            pricingOptions = JSON.parse(raw || "[]");
-          } catch {
-            showError("Invalid pricing options.");
+          const rawPricing = formData.get("pricing_options_json") as string;
+          const pricingCheck = validateListingPricingJson(rawPricing);
+          if (!pricingCheck.ok) {
+            showError(pricingCheck.message);
             return;
           }
-          if (!Array.isArray(pricingOptions) || pricingOptions.length === 0) {
-            showError("Add at least one valid price (₹).");
-            return;
-          }
-          const first = pricingOptions[0];
-          const price = Number(first.price);
-          const priceUnit = (first.unit === "dozen" ? "dozen" : "piece") as PriceUnit;
-          if (!species || !Number.isFinite(price) || price <= 0) {
+          const pricingOptions = pricingCheck.options;
+          if (!species) {
             showError("Please fill in all required fields.");
             return;
           }
@@ -118,8 +109,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               seller_id: seller.id,
               species,
               fish_size,
-              price,
-              price_unit: priceUnit,
               pricing_options: pricingOptions,
               weight_avail: weightAvail,
               photo_url: photoUrl,

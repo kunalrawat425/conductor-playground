@@ -62,9 +62,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (listing_id) {
       const { data: listing } = await supabase
         .from("fish_listings")
-        .select(
-          "price, price_unit, pricing_options, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold"
-        )
+        .select("pricing_options, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold")
         .eq("id", listing_id)
         .single();
 
@@ -72,7 +70,10 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: "Listing not found" }), { status: 404 });
       }
 
-      const chosen = getListingOptionById(listing as { price: number; price_unit: string; pricing_options?: unknown }, clientPricingOptionId);
+      const chosen = getListingOptionById(
+        listing as { pricing_options?: unknown },
+        clientPricingOptionId
+      );
       if (!chosen) {
         return new Response(JSON.stringify({ error: "Invalid price option for this listing" }), { status: 400 });
       }

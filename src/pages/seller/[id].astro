@@ -245,6 +245,30 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       color: var(--gray-500);
       margin-bottom: 6px;
     }
+    .menu-price-was {
+      text-decoration: line-through;
+      opacity: 0.65;
+      font-size: 0.95em;
+      margin-right: 8px;
+      color: var(--gray-500);
+    }
+    .menu-price-sale {
+      font-weight: 800;
+      color: var(--green);
+    }
+    .menu-price-off {
+      font-size: 11px;
+      font-weight: 700;
+      color: #c62828;
+      background: #ffebee;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .menu-item-price--deal {
+      line-height: 1.35;
+    }
     .menu-item-price {
       font-size: 20px;
       font-weight: 800;
@@ -473,6 +497,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       getListingPriceOptions,
       getListingOptionById,
       formatListingPriceSummary,
+      optionHasDealDisplay,
+      optionDiscountPercentDisplay,
     } from "../../lib/listing-pricing";
     import { formatFishSizeLabel, formatFishSizeSuffix } from "../../lib/fish-size";
 
@@ -496,12 +522,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       function lineUnitPrice(listing, optionId) {
         const o = getListingOptionById(listing, optionId);
-        return o?.price ?? listing.price;
+        return o?.price ?? 0;
       }
 
       function lineQtyUnit(listing, optionId) {
         const o = getListingOptionById(listing, optionId);
-        return o?.unit ?? listing.price_unit;
+        return o?.unit ?? "piece";
       }
 
       function unitLbl(u) {
@@ -517,17 +543,36 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         return `<div class="menu-item-size"><span class="menu-size-pill">${esc(lab)}</span></div>`;
       }
 
+      function tierOptionLabel(o) {
+        const ul = unitLbl(o.unit);
+        if (optionHasDealDisplay(o) && o.compare_at_price != null) {
+          const pct = optionDiscountPercentDisplay(o);
+          const deal = pct != null && pct > 0 ? `was ₹${o.compare_at_price} · ${pct}% off · ` : `was ₹${o.compare_at_price} · `;
+          return `${deal}₹${o.price} — ${esc(o.label)} (${ul})`;
+        }
+        return `₹${o.price} — ${esc(o.label)} (${ul})`;
+      }
+
       function priceOptionsHtml(l) {
         const opts = getListingPriceOptions(l);
         if (opts.length === 1) {
           const o = opts[0];
           const ul = unitLbl(o.unit);
-          return `<div class="menu-item-price">₹${o.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${ul}</span> <span style="font-size:12px;color:var(--gray-500);">(${esc(o.label)})</span></div>`;
+          const strike =
+            optionHasDealDisplay(o) && o.compare_at_price != null
+              ? `<span class="menu-price-was">₹${o.compare_at_price}</span>`
+              : "";
+          const pct = optionDiscountPercentDisplay(o);
+          const badge =
+            pct != null && pct > 0
+              ? `<span class="menu-price-off">${pct}% off</span>`
+              : "";
+          return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span><span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${ul}</span> ${badge}<span style="font-size:12px;color:var(--gray-500);display:block;margin-top:4px;">(${esc(o.label)})</span></div>`;
         }
         return `<div class="menu-item-price-wrap">
           <label class="menu-price-label" for="po-${l.id}">Choose price</label>
           <select id="po-${l.id}" class="menu-price-opt" data-listing="${l.id}">
-            ${opts.map((o) => `<option value="${o.id}">₹${o.price} — ${esc(o.label)} (${unitLbl(o.unit)})</option>`).join("")}
+            ${opts.map((o) => `<option value="${o.id}">${tierOptionLabel(o)}</option>`).join("")}
           </select>
         </div>`;
       }

@@ -59,16 +59,14 @@ describe("supabase queries", () => {
       {
         id: "1",
         species: "pomfret",
-        price: 500,
-        price_unit: "piece",
+        pricing_options: [{ id: "d", label: "Per piece", price: 500, unit: "piece" }],
         is_available: true,
         seller: { is_active: true },
       },
       {
         id: "2",
         species: "surmai",
-        price: 400,
-        price_unit: "kg",
+        pricing_options: [{ id: "d", label: "Per piece", price: 400, unit: "piece" }],
         is_available: true,
         seller: { is_active: false },
       },
@@ -99,8 +97,7 @@ describe("supabase queries", () => {
     const newListing = {
       seller_id: "s1",
       species: "pomfret",
-      price: 500,
-      price_unit: "piece" as const,
+      pricing_options: [{ id: "default", label: "Per piece", price: 500, unit: "piece" as const }],
       weight_avail: 10,
       photo_url: null,
       listed_date: "2026-04-05",

@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { canonicalPricingOptionsFromPayload } from "../../../lib/listing-pricing";
 
 export const prerender = false;
 
@@ -39,9 +40,30 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: "listing data required" }), { status: 400 });
       }
 
+      const tiers = canonicalPricingOptionsFromPayload(listing.pricing_options);
+      if (!tiers || tiers.some((t) => t.price < 1)) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "pricing_options must include at least one valid tier with price at least ₹1 per tier.",
+          }),
+          { status: 400 }
+        );
+      }
+      const {
+        pricing_options: _raw,
+        price: _legacyPrice,
+        price_unit: _legacyUnit,
+        ...rest
+      } = listing as Record<string, unknown>;
+
       const { data, error } = await supabase
         .from("fish_listings")
-        .insert({ ...listing, seller_id })
+        .insert({
+          ...rest,
+          seller_id,
+          pricing_options: tiers,
+        })
         .select()
         .single();
 
@@ -68,9 +90,26 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: "Not your listing" }), { status: 403 });
       }
 
+      let patch = { ...updates } as Record<string, unknown>;
+      delete patch.price;
+      delete patch.price_unit;
+      if (Object.prototype.hasOwnProperty.call(patch, "pricing_options")) {
+        const tiers = canonicalPricingOptionsFromPayload(patch.pricing_options);
+        if (!tiers || tiers.some((t) => t.price < 1)) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "pricing_options must include at least one valid tier with price at least ₹1 per tier.",
+            }),
+            { status: 400 }
+          );
+        }
+        patch = { ...patch, pricing_options: tiers };
+      }
+
       const { data, error } = await supabase
         .from("fish_listings")
-        .update(updates)
+        .update(patch)
         .eq("id", listing_id)
         .select()
         .single();

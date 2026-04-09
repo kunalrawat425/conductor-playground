@@ -1,5 +1,5 @@
 -- Test listings for Raju fish HUB (all listing states)
--- Run in Supabase SQL Editor
+-- Run in Supabase SQL Editor after migrations (pricing_options only; no legacy price columns).
 -- This creates listings covering every case for buyer menu testing
 
 do $$
@@ -18,36 +18,36 @@ begin
   delete from fish_listings where seller_id = raju_id;
 
   -- Case 1: In stock, available (normal ADD button)
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date)
-  values (raju_id, 'surmai', 800, 'kg', 10, true, 'Versova Fish Market, Stall #5', now()::date);
+  insert into fish_listings (seller_id, species, pricing_options, weight_avail, is_available, pickup_loc, listed_date)
+  values (raju_id, 'surmai', '[{"id":"default","label":"Per piece","price":800,"unit":"piece"}]'::jsonb, 10, true, 'Versova Fish Market, Stall #5', now()::date);
 
   -- Case 2: In stock, available, low stock (shows ⚠️ Low stock)
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date)
-  values (raju_id, 'rawas', 600, 'kg', 1.5, true, 'Versova Fish Market, Stall #5', now()::date);
+  insert into fish_listings (seller_id, species, pricing_options, weight_avail, is_available, pickup_loc, listed_date)
+  values (raju_id, 'rawas', '[{"id":"default","label":"Per piece","price":600,"unit":"piece"}]'::jsonb, 1.5, true, 'Versova Fish Market, Stall #5', now()::date);
 
   -- Case 3: Out of stock (weight_avail = 0, shows PRE-ORDER if accepts_preorder)
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date)
-  values (raju_id, 'pomfret', 1200, 'piece', 0, true, 'Versova Fish Market, Stall #5', now()::date);
+  insert into fish_listings (seller_id, species, pricing_options, weight_avail, is_available, pickup_loc, listed_date)
+  values (raju_id, 'pomfret', '[{"id":"default","label":"Per piece","price":1200,"unit":"piece"}]'::jsonb, 0, true, 'Versova Fish Market, Stall #5', now()::date);
 
   -- Case 4: In stock with per-buyer daily quantity cap
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
-  values (raju_id, 'bangda', 250, 'kg', 20, true, 'Versova Fish Market, Stall #5', now()::date, 5);
+  insert into fish_listings (seller_id, species, pricing_options, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
+  values (raju_id, 'bangda', '[{"id":"default","label":"Per piece","price":250,"unit":"piece"}]'::jsonb, 20, true, 'Versova Fish Market, Stall #5', now()::date, 5);
 
   -- Case 5: In stock with daily cap (same column)
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
-  values (raju_id, 'prawns', 500, 'kg', 8, true, 'Versova Fish Market, Stall #5', now()::date, 10);
+  insert into fish_listings (seller_id, species, pricing_options, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
+  values (raju_id, 'prawns', '[{"id":"default","label":"Per piece","price":500,"unit":"piece"}]'::jsonb, 8, true, 'Versova Fish Market, Stall #5', now()::date, 10);
 
   -- Case 6: Out of stock + daily cap (PRE-ORDER with limit)
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
-  values (raju_id, 'crab', 150, 'piece', 0, true, 'Versova Fish Market, Stall #5', now()::date, 3);
+  insert into fish_listings (seller_id, species, pricing_options, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
+  values (raju_id, 'crab', '[{"id":"default","label":"Per piece","price":150,"unit":"piece"}]'::jsonb, 0, true, 'Versova Fish Market, Stall #5', now()::date, 3);
 
   -- Case 7: Unavailable (seller paused — hidden from buyer menu)
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date)
-  values (raju_id, 'hilsa', 1500, 'kg', 5, false, 'Versova Fish Market, Stall #5', now()::date);
+  insert into fish_listings (seller_id, species, pricing_options, weight_avail, is_available, pickup_loc, listed_date)
+  values (raju_id, 'hilsa', '[{"id":"default","label":"Per piece","price":1500,"unit":"piece"}]'::jsonb, 5, false, 'Versova Fish Market, Stall #5', now()::date);
 
   -- Case 8: In stock, high stock, no limits (simple case)
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date)
-  values (raju_id, 'squid', 400, 'kg', 15, true, 'Versova Fish Market, Stall #5', now()::date);
+  insert into fish_listings (seller_id, species, pricing_options, weight_avail, is_available, pickup_loc, listed_date)
+  values (raju_id, 'squid', '[{"id":"default","label":"Per piece","price":400,"unit":"piece"}]'::jsonb, 15, true, 'Versova Fish Market, Stall #5', now()::date);
 
   -- Make sure Raju accepts pre-orders
   update sellers set accepts_preorder = true where id = raju_id;

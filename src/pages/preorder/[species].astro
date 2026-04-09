@@ -160,6 +160,33 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       text-align: right;
       flex-shrink: 0;
     }
+    .po-price-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+    .po-price-was {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-decoration: line-through;
+      opacity: 0.85;
+    }
+    .po-price-now {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--green);
+    }
+    .po-off-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #c62828;
+      background: #ffebee;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
     .po-price {
       font-size: 18px;
       font-weight: 800;
@@ -227,7 +254,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     import("../../lib/supabase").then(async (db) => {
       const { SPECIES, getSpeciesDisplay } = await import("../../lib/species");
       const { getSession } = await import("../../lib/auth");
-      const { getListingOptionById, getListingPriceOptions } = await import("../../lib/listing-pricing");
+      const {
+        getListingOptionById,
+        getListingPriceOptions,
+        optionHasDealDisplay,
+        optionDiscountPercentDisplay,
+      } = await import("../../lib/listing-pricing");
       const { formatFishSizeLabel } = await import("../../lib/fish-size");
 
       const FISH_EMOJI = {
@@ -345,14 +377,35 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const dist = getDist(s);
           const opts = getListingPriceOptions(item);
           const first = opts[0];
-          const baseUnit = first?.unit || item.price_unit;
+          const baseUnit = first?.unit ?? "piece";
           const pUnit = baseUnit === "dozen" ? "dz" : baseUnit;
-          const priceBlock = opts.length <= 1
-            ? `<div class="po-price">₹${first?.price ?? item.price}</div>
+          const firstDealPct = first ? optionDiscountPercentDisplay(first) : null;
+          const strike =
+            first && optionHasDealDisplay(first) && first.compare_at_price != null
+              ? `<span class="po-price-was">₹${first.compare_at_price}</span> `
+              : "";
+          const pctBadge =
+            firstDealPct != null && firstDealPct > 0
+              ? `<span class="po-off-badge">${firstDealPct}% off</span>`
+              : "";
+          const priceBlock =
+            opts.length <= 1
+              ? `<div class="po-price-row">${strike}<span class="po-price-now">₹${first?.price ?? 0}</span> ${pctBadge}</div>
                <div class="po-price-unit">per ${pUnit} · ${item.weight_avail} avail</div>`
-            : `<div class="po-price" style="font-size:14px;color:var(--gray-700);font-weight:700;margin-bottom:6px;">Choose unit & price</div>
+              : `<div class="po-price" style="font-size:14px;color:var(--gray-700);font-weight:700;margin-bottom:6px;">Choose unit & price</div>
                <select class="po-price-select" data-listing-id="${item.id}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--gray-200);font-size:14px;background:white;margin-bottom:6px;">
-                 ${opts.map((o) => `<option value="${o.id}">₹${o.price} — ${esc(o.label)} (${o.unit === "dozen" ? "dz" : "pc"})</option>`).join("")}
+                 ${opts.map((o) => {
+                   const deal =
+                     optionHasDealDisplay(o) && o.compare_at_price != null
+                       ? (() => {
+                           const p = optionDiscountPercentDisplay(o);
+                           return p != null && p > 0
+                             ? `was ₹${o.compare_at_price} · ${p}% off · `
+                             : `was ₹${o.compare_at_price} · `;
+                         })()
+                       : "";
+                   return `<option value="${o.id}">${deal}₹${o.price} — ${esc(o.label)} (${o.unit === "dozen" ? "dz" : "pc"})</option>`;
+                 }).join("")}
                </select>
                <div class="po-price-unit">· ${item.weight_avail} avail</div>`;
           const sizeLine = formatFishSizeLabel(item.fish_size)
@@ -517,8 +570,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             sellerId,
             sellerName,
             listingId,
-            String(chosen?.price ?? listing?.price ?? 0),
-            String(chosen?.unit ?? listing?.price_unit ?? "piece"),
+            String(chosen?.price ?? 0),
+            String(chosen?.unit ?? "piece"),
             chosen?.id ?? null
           );
           return;
