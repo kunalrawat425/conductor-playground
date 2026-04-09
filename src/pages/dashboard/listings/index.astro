@@ -162,7 +162,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const name = getSpeciesDisplay(l.species);
             const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
             const statusBadge = !l.is_available
-              ? '<span class="badge badge-red">Unavailable</span>'
+              ? '<span class="badge badge-orange">Paused</span>'
               : l.weight_avail <= 0
                 ? '<span class="badge badge-orange">Out of stock</span>'
                 : '<span class="badge badge-green">Active</span>';
