@@ -542,6 +542,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         preorderToggle.addEventListener("change", async () => {
           const newVal = preorderToggle.checked;
           preorderToggle.disabled = true;
+          preorderSlider.style.opacity = "0.5";
           try {
             await updateSellerProfile(seller.id, { accepts_preorder: newVal } as any);
             updatePreorderUI(newVal);
@@ -551,6 +552,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             showToast(err.message || "Failed to update", "error");
           } finally {
             preorderToggle.disabled = false;
+            preorderSlider.style.opacity = "1";
           }
         });
 
