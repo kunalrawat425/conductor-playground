@@ -254,8 +254,20 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     .menu-item-meta {
       font-size: 11px;
       color: var(--gray-500);
-      margin-bottom: 10px;
+      margin-bottom: 4px;
     }
+    .menu-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-right: 4px;
+      margin-bottom: 6px;
+    }
+    .menu-tag--closed { background: #fff3e0; color: #e65100; }
+    .menu-tag--oos { background: #ffebee; color: #c62828; }
+    .menu-tag--preorder { background: #e3f2fd; color: #1565c0; }
 
     /* Add/quantity controls */
     .add-controls {
@@ -697,7 +709,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-name">${esc(name)}</div>
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
-                  <div class="menu-item-meta">${open ? (l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : (acceptsPreorder ? 'Sold out — pre-order available' : 'Out of stock')) : 'Pre-order for tomorrow'} · ${esc(l.pickup_loc)}</div>
+                  <div class="menu-item-meta">${l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : ""} · ${esc(l.pickup_loc)}</div>
+                  ${!open ? '<span class="menu-tag menu-tag--closed">🕐 Shop closed</span>' : ""}
+                  ${open && l.weight_avail <= 0 ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
+                  ${!open && l.weight_avail <= 0 ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
+                  ${(!open || l.weight_avail <= 0) && acceptsPreorder ? '<span class="menu-tag menu-tag--preorder">🎣 Pre-order available</span>' : ""}
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">
@@ -707,7 +723,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                           : (acceptsPreorder
                             ? `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`
                             : `<span style="font-size:12px;color:var(--red);font-weight:600;">Sold out</span>`))
-                        : `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`}
+                        : (acceptsPreorder
+                            ? `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`
+                            : `<span style="font-size:12px;color:var(--gray-400);font-weight:600;">Closed</span>`)}
                     </div>`
                   : ""}
               </div>
