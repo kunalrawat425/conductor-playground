@@ -533,9 +533,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const entry = cart[listingId];
         if (!entry) return false;
         const l = entry.listing;
-        const threshold = l.oos_threshold ?? 2;
-        const effectivelyOOS = l.weight_avail <= 0 || l.weight_avail <= threshold;
-        return !open || effectivelyOOS;
+        return !open || l.weight_avail <= 0;
       }
 
       function renderQtyControls(listingId) {
@@ -747,11 +745,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const marathi = species?.marathi || "";
           const emoji = FISH_EMOJI[l.species] || "🐟";
           const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
-          // OOS threshold: absolute number (default 2). Shows "selling fast" when stock <= threshold, "out of stock" when = 0
+          // Tags are visual only — don't affect ADD/PRE-ORDER logic
           const threshold = l.oos_threshold ?? 2;
           const isZero = l.weight_avail <= 0;
-          const sellingFast = !isZero && l.weight_avail <= threshold;
-          const effectivelyOOS = isZero || sellingFast;
+          const sellingFast = !isZero && l.weight_avail <= threshold; // visual tag only
 
           return `
             <div class="menu-item${!inServiceArea ? ' menu-item-grey' : ''}" data-listing="${l.id}">
@@ -771,7 +768,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">
-                      ${!effectivelyOOS && open
+                      ${!isZero && open
                         ? `<button class="add-btn" data-add="${l.id}">ADD</button>`
                         : `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`}
                     </div>`

@@ -90,10 +90,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
       }
 
-      // Out of stock, below threshold, or unavailable → allow as pre-order if seller accepts
-      const oosThreshold = listing.oos_threshold ?? 2;
-      const effectivelyOOS = listing.weight_avail <= oosThreshold;
-      if (!listing.is_available || effectivelyOOS || listing.weight_avail < quantity) {
+      // Out of stock or unavailable → pre-order. OOS threshold is visual only, doesn't affect order logic.
+      if (!listing.is_available || listing.weight_avail <= 0 || listing.weight_avail < quantity) {
         // Always allow as pre-order — no stock deduction, no blocking
         total_price = listing.price * quantity;
         seller_id = listing.seller_id;
