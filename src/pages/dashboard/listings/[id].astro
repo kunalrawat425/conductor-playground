@@ -95,10 +95,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 ${listing.photo_url ? `<img src="${listing.photo_url}" alt="Current" style="width:120px;height:90px;object-fit:cover;border-radius:8px;margin-top:8px;" loading="lazy" />` : ""}
               </div>
               <div class="form-group">
-                <label for="pickup_loc">Pickup Location</label>
-                <input type="text" id="pickup_loc" name="pickup_loc" value="${listing.pickup_loc}" required />
-              </div>
-              <div class="form-group">
                 <label for="max_qty_per_order">Max quantity per order (optional)</label>
                 <input type="number" id="max_qty_per_order" name="max_qty_per_order" min="0.5" step="0.5" value="${listing.max_qty_per_order || ""}" placeholder="e.g. 5 — leave empty for no limit" />
                 <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Buyer sees: "Max 5/kg per order". Prevents one buyer from buying all your stock.</div>
@@ -155,7 +151,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 price_unit: formData.get("price_unit") as any,
                 weight_avail: parseFloat(formData.get("weight_avail") as string),
                 photo_url: photoUrl,
-                pickup_loc: formData.get("pickup_loc") as string,
                 max_qty_per_order: maxQtyVal ? parseFloat(maxQtyVal) : null,
                 max_orders_per_day: maxOrdersVal ? parseInt(maxOrdersVal) : null,
                 oos_threshold: oosVal ? parseFloat(oosVal) : null,
