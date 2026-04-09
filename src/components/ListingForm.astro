@@ -99,6 +99,20 @@ const isEdit = !!listing;
   </div>
 
   <div class="form-group">
+    <label for="oos_threshold">Show "Out of stock" when stock falls below (optional)</label>
+    <input
+      type="number"
+      id="oos_threshold"
+      name="oos_threshold"
+      min="0"
+      step="0.5"
+      value={listing?.oos_threshold || ""}
+      placeholder="Default: 10% of stock — or set a number"
+    />
+    <div class="form-hint">When stock drops below this number, buyers see "Out of stock" and can pre-order instead</div>
+  </div>
+
+  <div class="form-group">
     <label for="max_orders_per_day">Max orders per day (optional)</label>
     <input
       type="number"

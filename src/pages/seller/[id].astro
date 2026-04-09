@@ -530,7 +530,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       function isPreorderItem(listingId) {
         const entry = cart[listingId];
         if (!entry) return false;
-        return (!open || entry.listing.weight_avail <= 0) && acceptsPreorder;
+        const l = entry.listing;
+        const threshold = l.oos_threshold ?? Math.max(1, Math.floor(l.weight_avail * 0.1));
+        const effectivelyOOS = l.weight_avail <= threshold;
+        return (!open || effectivelyOOS) && acceptsPreorder;
       }
 
       function renderQtyControls(listingId) {
@@ -736,6 +739,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const marathi = species?.marathi || "";
           const emoji = FISH_EMOJI[l.species] || "🐟";
           const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
+          // Out of stock: below threshold (default 10% of stock) or zero
+          const threshold = l.oos_threshold ?? Math.max(1, Math.floor(l.weight_avail * 0.1));
+          const effectivelyOOS = l.weight_avail <= threshold;
 
           return `
             <div class="menu-item${!inServiceArea ? ' menu-item-grey' : ''}" data-listing="${l.id}">
@@ -749,12 +755,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-name">${esc(name)}</div>
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
-                  <div class="menu-item-meta">${l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : ""}${l.max_qty_per_order ? ` · Max ${l.max_qty_per_order}/${l.price_unit} per order` : ""} · ${esc(l.pickup_loc)}</div>
-                  ${l.weight_avail <= 0 ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
+                  <div class="menu-item-meta">${l.max_qty_per_order ? `Max ${l.max_qty_per_order}/${l.price_unit} per order · ` : ""}${esc(l.pickup_loc)}</div>
+                  ${effectivelyOOS ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">
-                      ${l.weight_avail > 0 && open
+                      ${!effectivelyOOS && open
                         ? `<button class="add-btn" data-add="${l.id}">ADD</button>`
                         : acceptsPreorder
                           ? `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`
