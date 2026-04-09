@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Relifish — Product SOP & Case Matrix</title>
+<title>Relifish — Complete Product SOP, Workflow & Pitch</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,10 +11,11 @@
   .container { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
   h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; } h1 span { color: #0066cc; }
   .subtitle { font-size: 14px; color: #666; margin-bottom: 32px; }
-  h2 { font-size: 20px; font-weight: 700; margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e0e0e0; }
+  h2 { font-size: 20px; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e0e0e0; }
+  h2 .emoji { margin-right: 6px; }
   h3 { font-size: 16px; font-weight: 700; margin: 20px 0 10px; }
   table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); font-size: 13px; }
-  th { background: #f0f6ff; color: #0066cc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 10px; text-align: left; white-space: nowrap; }
+  th { background: #f0f6ff; color: #0066cc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px; text-align: left; white-space: nowrap; }
   td { padding: 10px; border-top: 1px solid #f0f0f0; vertical-align: top; }
   tr:hover td { background: #fafafa; }
   .b { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
@@ -22,8 +23,11 @@
   .b-orange { background: #fff3e0; color: #e65100; } .b-red { background: #ffebee; color: #c62828; }
   .b-purple { background: #f3e5f5; color: #6a1b9a; } .b-gray { background: #f5f5f5; color: #616161; }
   .card { background: white; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .card-accent { border-left: 4px solid #0066cc; }
+  .card-seller { border-left: 4px solid #ff6b35; }
+  .card-buyer { border-left: 4px solid #2e7d32; }
   .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
-  .fn { text-align: center; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: 600; min-width: 80px; max-width: 120px; }
+  .fn { text-align: center; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: 600; min-width: 80px; max-width: 130px; }
   .fa { font-size: 16px; color: #999; padding: 0 4px; }
   .fn-b { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
   .fn-g { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
@@ -32,225 +36,333 @@
   .fn-p { background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; }
   .yes { color: #2e7d32; font-weight: 700; } .no { color: #c62828; font-weight: 700; }
   ul { padding-left: 20px; margin: 8px 0; } li { margin: 4px 0; font-size: 13px; }
-  @media (max-width: 600px) { table { font-size: 11px; } th, td { padding: 8px 6px; } .fn { min-width: 60px; font-size: 10px; } }
+  .pain { display: flex; gap: 0; margin: 8px 0; border-radius: 10px; overflow: hidden; }
+  .pain-l { flex: 1; padding: 12px; background: #fff3e0; font-size: 13px; color: #bf360c; text-decoration: line-through; text-decoration-color: rgba(191,54,12,0.4); }
+  .pain-r { flex: 1; padding: 12px; background: #e8f5e9; font-size: 13px; color: #1b5e20; font-weight: 600; border-left: 2px solid #66bb6a; }
+  .pitch-card { background: linear-gradient(135deg, #0a0f1a, #1a2744); color: white; border-radius: 16px; padding: 24px; margin: 12px 0; }
+  .pitch-card h3 { color: #66b3ff; margin-top: 0; }
+  .pitch-card p { color: rgba(255,255,255,0.7); font-size: 14px; }
+  .pitch-card .highlight { color: white; font-weight: 700; }
+  .pitch-card ul { color: rgba(255,255,255,0.8); }
+  .section-divider { text-align: center; margin: 48px 0 16px; font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 3px; }
+  @media (max-width: 600px) { table { font-size: 11px; } th, td { padding: 8px 6px; } .fn { min-width: 60px; font-size: 10px; } .pain { flex-direction: column; } }
 </style>
 </head>
 <body>
 <div class="container">
 
-<h1>🐟 Relifish <span>SOP — All Cases</span></h1>
-<p class="subtitle">Complete case matrix for every buyer and seller scenario. What happens, what shows, what triggers.</p>
+<h1>🐟 Relifish <span>Complete Product SOP</span></h1>
+<p class="subtitle">How Relifish works, what problems it solves, the complete workflow, and how to pitch it to onboard buyers and sellers.</p>
 
-<!-- ============================================ -->
-<h2>1. Menu Item — What Button Shows (Buyer View)</h2>
+<!-- ============================================================ -->
+<div class="section-divider">Part 1 — What Relifish Is</div>
+<!-- ============================================================ -->
 
-<table>
-  <tr>
-    <th>Stock</th><th>Shop</th><th>Accepts Preorder</th><th>In Service Area</th><th>Button</th><th>Tag</th><th>Order Status</th>
-  </tr>
-  <tr><td class="yes">✅ In stock</td><td class="yes">🟢 Open</td><td>—</td><td class="yes">✅</td><td><span class="b b-green">ADD</span></td><td>—</td><td><span class="b b-blue">pending</span></td></tr>
-  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="yes">✅ Yes</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td>—</td><td><span class="b b-orange">pre_order</span></td></tr>
-  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="no">❌ No</td><td class="yes">✅</td><td><span class="b b-gray">Closed</span></td><td>—</td><td>blocked</td></tr>
-  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="yes">✅ Yes</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
-  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="no">❌ No</td><td class="yes">✅</td><td><span class="b b-red">Sold out</span></td><td><span class="b b-red">📦 Out of stock</span></td><td>blocked</td></tr>
-  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="yes">✅ Yes</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
-  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="no">❌ No</td><td class="yes">✅</td><td><span class="b b-red">Sold out</span></td><td><span class="b b-red">📦 Out of stock</span></td><td>blocked</td></tr>
-  <tr><td>Any</td><td>Any</td><td>Any</td><td class="no">❌ Outside area</td><td>—</td><td><span class="b b-gray">Outside your area</span></td><td>blocked (card grayed)</td></tr>
-</table>
+<h2><span class="emoji">🎯</span> What is Relifish?</h2>
 
-<div class="card">
-  <h3>Decision Logic (code: seller/[id].astro line 717)</h3>
-  <pre style="font-size:12px;background:#f5f5f5;padding:12px;border-radius:8px;overflow-x:auto;">
-if (in_stock AND open)        → ADD        → status: pending
-else if (accepts_preorder)    → PRE-ORDER  → status: pre_order
-else if (out_of_stock)        → "Sold out"
-else                          → "Closed"
-  </pre>
+<div class="card card-accent">
+  <p style="font-size:16px;font-weight:600;margin-bottom:8px;">Relifish is Mumbai's fish marketplace — connecting local fish sellers directly with buyers.</p>
+  <p style="font-size:14px;color:#666;">No middlemen. No Swiggy/Zomato markup. Buyers browse real menus from real sellers, compare prices, order fresh catch, pre-order tomorrow's fish, and schedule pickups. Sellers get a free dashboard to manage orders, listings, and operations.</p>
 </div>
 
-<!-- ============================================ -->
-<h2>2. Order Status — Full Lifecycle</h2>
+<h2><span class="emoji">😤</span> The Problem — Why Fish Buying is Broken</h2>
 
-<table>
-  <tr><th>Status</th><th>Set By</th><th>Trigger</th><th>Buyer Sees</th><th>Seller Sees</th><th>Stock</th><th>Push</th><th>Email</th></tr>
-  <tr><td><span class="b b-blue">pending</span></td><td>System</td><td>Buyer places order (in stock + open)</td><td>"Placed"</td><td>Fresh Orders tab</td><td>Deducted (atomic)</td><td>Both</td><td>Both</td></tr>
-  <tr><td><span class="b b-orange">pre_order</span></td><td>System</td><td>Shop closed OR out of stock</td><td>"Pending confirmation"</td><td>Pre-orders tab</td><td>Not deducted</td><td>Both</td><td>Both</td></tr>
-  <tr><td><span class="b b-purple">scheduled</span></td><td>Buyer</td><td>Buyer picks a time slot</td><td>"Scheduled 🗓️"</td><td>Scheduled tab</td><td>Deducted</td><td>Both</td><td>Both</td></tr>
-  <tr><td><span class="b b-green">confirmed</span></td><td>Seller</td><td>Seller accepts order</td><td>"Confirmed"</td><td>—</td><td>—</td><td>Buyer</td><td>Both</td></tr>
-  <tr><td><span class="b b-green">paid</span></td><td>Seller</td><td>Payment recorded</td><td>"Paid"</td><td>—</td><td>—</td><td>Buyer</td><td>Both</td></tr>
-  <tr><td><span class="b b-green">picked_up</span></td><td>Seller</td><td>Order ready</td><td>"Ready for Pickup"</td><td>—</td><td>—</td><td>Buyer</td><td>Both</td></tr>
-  <tr><td><span class="b b-green">completed</span></td><td>Seller</td><td>Order fulfilled</td><td>"Completed"</td><td>—</td><td>—</td><td>Buyer</td><td>Both</td></tr>
-  <tr><td><span class="b b-red">declined</span></td><td>Seller</td><td>Seller rejects</td><td>"Declined"</td><td>cancelled_by: seller</td><td>Restored</td><td>Buyer</td><td>Both</td></tr>
-  <tr><td><span class="b b-red">cancelled</span></td><td>Buyer or Seller</td><td>Cancel with reason</td><td>"Cancelled" + reason</td><td>cancelled_by + reason</td><td>Restored</td><td>Both</td><td>Both</td></tr>
-</table>
+<h3>For Buyers</h3>
+<div class="pain"><div class="pain-l">😤 Supermarket fish is 2-3 days old, sitting on ice</div><div class="pain-r">✅ Same-day catch from local fishermen</div></div>
+<div class="pain"><div class="pain-l">💸 Swiggy/Zomato charges 25-30% markup on fish</div><div class="pain-r">✅ Buy direct from seller — fair price, no middlemen</div></div>
+<div class="pain"><div class="pain-l">❓ No idea where your fish comes from or who caught it</div><div class="pain-r">✅ See seller name, location, ratings, stock</div></div>
+<div class="pain"><div class="pain-l">🏪 Local shop has 3-4 options, same thing every week</div><div class="pain-r">✅ Browse dozens of sellers — Surmai, Rawas, Pomfret, Prawns</div></div>
+<div class="pain"><div class="pain-l">⏰ Shop closed or sold out? No fish for dinner</div><div class="pain-r">✅ Pre-order anytime — seller confirms with morning price</div></div>
+<div class="pain"><div class="pain-l">📱 Ordering on WhatsApp — missed messages, no tracking</div><div class="pain-r">✅ One app — order, track, get push notifications</div></div>
 
-<!-- ============================================ -->
-<h2>3. Pre-Order — All Cases</h2>
+<h3>For Sellers</h3>
+<div class="pain"><div class="pain-l">😤 Only foot traffic — customers who walk past your stall</div><div class="pain-r">✅ Online discovery — buyers find you from anywhere nearby</div></div>
+<div class="pain"><div class="pain-l">📱 Managing orders via WhatsApp — messy, miss messages</div><div class="pain-r">✅ One dashboard — orders, listings, stock in one place</div></div>
+<div class="pain"><div class="pain-l">📦 No idea how much to catch — guess demand daily</div><div class="pain-r">✅ Pre-orders capture tomorrow's demand today</div></div>
+<div class="pain"><div class="pain-l">💰 Pay Swiggy/Zomato 25-30% commission per order</div><div class="pain-r">✅ Minimal commission — keep your margins</div></div>
+<div class="pain"><div class="pain-l">🔔 Missed orders because you were busy cutting fish</div><div class="pain-r">✅ Push notification + email on every new order</div></div>
+<div class="pain"><div class="pain-l">📊 No data on your business — no reports, no trends</div><div class="pain-r">✅ Dashboard stats + CSV export + date filters</div></div>
 
-<table>
-  <tr><th>Trigger</th><th>Stock Deducted?</th><th>paid_amount Set?</th><th>What Seller Does</th><th>What Buyer Does</th></tr>
-  <tr><td>Shop closed + in stock</td><td class="no">❌ No</td><td class="yes">✅ Yes (max estimate)</td><td>Next morning: confirm with final_price</td><td>Accept or reject price</td></tr>
-  <tr><td>Shop open + out of stock</td><td class="no">❌ No</td><td class="yes">✅ Yes (max estimate)</td><td>Next catch: confirm with final_price</td><td>Accept or reject price</td></tr>
-  <tr><td>Shop closed + out of stock</td><td class="no">❌ No</td><td class="yes">✅ Yes (max estimate)</td><td>Next morning: confirm with final_price</td><td>Accept or reject price</td></tr>
-</table>
+<!-- ============================================================ -->
+<div class="section-divider">Part 2 — Complete Workflow</div>
+<!-- ============================================================ -->
+
+<h2><span class="emoji">🛒</span> Buyer Workflow</h2>
 
 <div class="card">
-  <h3>Pre-Order Flow</h3>
+  <h3>Step 1: Discover Sellers</h3>
   <div class="flow">
-    <div class="fn fn-o">Buyer taps<br>PRE-ORDER</div><div class="fa">→</div>
-    <div class="fn fn-o">Order created<br>status: pre_order</div><div class="fa">→</div>
-    <div class="fn fn-b">Seller sees in<br>Pre-orders tab</div><div class="fa">→</div>
-    <div class="fn fn-g">Seller confirms<br>with final_price</div><div class="fa">→</div>
-    <div class="fn fn-b">Buyer sees<br>"Seller proposed ₹X"</div><div class="fa">→</div>
-    <div class="fn fn-g">Accept → confirmed<br>Reject → cancelled</div>
+    <div class="fn fn-b">Visit<br>relifish.store</div><div class="fa">→</div>
+    <div class="fn fn-b">Set<br>location</div><div class="fa">→</div>
+    <div class="fn fn-g">See sellers<br>near you</div><div class="fa">→</div>
+    <div class="fn fn-g">Browse<br>menu</div>
+  </div>
+  <p style="font-size:12px;color:#666;margin-top:8px;">If no sellers in area → waitlist card with benefits + preference form → admin notified by email</p>
+</div>
+
+<div class="card">
+  <h3>Step 2: Order</h3>
+  <div class="flow">
+    <div class="fn fn-g">Add items<br>to cart</div><div class="fa">→</div>
+    <div class="fn fn-b">OTP login<br>(if not logged in)</div><div class="fa">→</div>
+    <div class="fn fn-b">Checkout<br>confirm address</div><div class="fa">→</div>
+    <div class="fn fn-g">"Placing<br>order..."</div><div class="fa">→</div>
+    <div class="fn fn-g">Order<br>placed! ✅</div>
   </div>
 </div>
 
-<!-- ============================================ -->
-<h2>4. Cancel — All Cases</h2>
-
-<table>
-  <tr><th>Who</th><th>When Allowed</th><th>Stock Restored?</th><th>Refund?</th><th>Reason Required?</th><th>cancelled_by</th></tr>
-  <tr><td>Buyer</td><td>pending, pre_order, scheduled</td><td class="yes">✅ Yes</td><td>Yes (if pre_order)</td><td>Optional (prompt)</td><td>"buyer"</td></tr>
-  <tr><td>Buyer (reject price)</td><td>confirmed + final_price on pre_order</td><td class="yes">✅ Yes</td><td>Full refund (paid_amount)</td><td>Auto: "Price rejected"</td><td>"buyer"</td></tr>
-  <tr><td>Seller (decline)</td><td>pending</td><td class="yes">✅ Yes</td><td>—</td><td>—</td><td>"seller"</td></tr>
-  <tr><td>Seller (cancel pre-order)</td><td>pre_order</td><td>— (wasn't deducted)</td><td>Full refund</td><td>—</td><td>"seller"</td></tr>
-  <tr><td>Neither</td><td>confirmed, paid, picked_up, completed</td><td colspan="4">Cannot cancel — order is in progress or complete</td></tr>
-</table>
-
-<!-- ============================================ -->
-<h2>5. Scheduled Order — All Cases</h2>
-
-<table>
-  <tr><th>Condition</th><th>What Happens</th><th>Status</th></tr>
-  <tr><td>Seller has schedule slots + buyer picks one</td><td>Order created with scheduled_for timestamp</td><td><span class="b b-purple">scheduled</span></td></tr>
-  <tr><td>Seller has no schedule slots</td><td>Slot picker hidden, normal order flow</td><td><span class="b b-blue">pending</span> or <span class="b b-orange">pre_order</span></td></tr>
-  <tr><td>Buyer cancels scheduled order</td><td>Stock restored, status → cancelled</td><td><span class="b b-red">cancelled</span></td></tr>
-</table>
-
-<!-- ============================================ -->
-<h2>6. Homepage — What Buyer Sees</h2>
-
-<table>
-  <tr><th>Condition</th><th>What Shows</th><th>Action</th></tr>
-  <tr><td>Location not set</td><td>Hero card: "Set your location"</td><td>Opens location picker</td></tr>
-  <tr><td>Location set + sellers nearby</td><td>Promo card + seller list</td><td>Browse & order</td></tr>
-  <tr><td>Location set + no sellers</td><td>5-card waitlist: hero, flow, benefits, form, trust</td><td>Fill waitlist form</td></tr>
-  <tr><td>Filters active + no match</td><td>Hero card: "No sellers match these filters"</td><td>Clear filters</td></tr>
-  <tr><td>Seller outside area</td><td>Grayed card + "Outside your area" badge</td><td>View menu (no ordering)</td></tr>
-</table>
-
 <div class="card">
-  <h3>Count Badge Logic</h3>
-  <p style="font-size:13px;">"Sellers near you <strong>[N]</strong>" — N counts only sellers where <code>inServiceArea = true</code>. Grayed-out sellers excluded from count.</p>
+  <h3>Step 3: Track</h3>
+  <div class="flow">
+    <div class="fn fn-b">Track page<br>/track</div><div class="fa">→</div>
+    <div class="fn fn-g">Real-time<br>status updates</div><div class="fa">→</div>
+    <div class="fn fn-g">Push + email<br>on changes</div><div class="fa">→</div>
+    <div class="fn fn-g">Details: ID,<br>seller contact</div>
+  </div>
+  <p style="font-size:12px;color:#666;margin-top:8px;">Cancel button available for pending/pre_order/scheduled. Reason prompt on cancel.</p>
 </div>
 
-<!-- ============================================ -->
-<h2>7. Seller Dashboard — 3 Tabs</h2>
-
-<table>
-  <tr><th>Tab</th><th>Shows Orders Where</th><th>Badge Count</th><th>Seller Actions</th></tr>
-  <tr><td><strong>Fresh Orders</strong></td><td>status ≠ pre_order, ≠ scheduled</td><td>Pending count</td><td>Confirm / Decline + status & date filters</td></tr>
-  <tr><td><strong>Pre-orders</strong></td><td>status = pre_order</td><td>Awaiting count</td><td>Confirm with final_price / Cancel</td></tr>
-  <tr><td><strong>Scheduled</strong></td><td>status = scheduled</td><td>Scheduled count</td><td>View time, confirm when slot arrives</td></tr>
-</table>
-
-<!-- ============================================ -->
-<h2>8. Seller Listing — All States</h2>
-
-<table>
-  <tr><th>is_available</th><th>weight_avail</th><th>Dashboard Badge</th><th>Shown to Buyer?</th></tr>
-  <tr><td class="yes">✅ true</td><td>> 0</td><td><span class="b b-green">Active</span></td><td class="yes">✅ Yes</td></tr>
-  <tr><td class="yes">✅ true</td><td>≤ 2 (low)</td><td><span class="b b-green">Active</span> + ⚠️ Low stock</td><td class="yes">✅ Yes</td></tr>
-  <tr><td class="yes">✅ true</td><td>= 0</td><td><span class="b b-orange">Out of stock</span></td><td class="yes">✅ Yes (with PRE-ORDER if accepted)</td></tr>
-  <tr><td class="no">❌ false</td><td>Any</td><td><span class="b b-red">Unavailable</span></td><td class="no">❌ Hidden from buyer menu</td></tr>
-</table>
+<h2><span class="emoji">🏪</span> Seller Workflow</h2>
 
 <div class="card">
-  <h3>Listing Actions</h3>
-  <ul>
-    <li><strong>Per-listing:</strong> Pause (set unavailable) / Resume (set available)</li>
-    <li><strong>Bulk:</strong> Select multiple → Pause All / Resume All</li>
-    <li><strong>Dashboard shows all</strong> (4 items). <strong>Buyer menu shows only available</strong> (e.g. 3 items if 1 is paused).</li>
-  </ul>
+  <h3>Step 1: Onboard</h3>
+  <div class="flow">
+    <div class="fn fn-b">OTP login<br>/dashboard/login</div><div class="fa">→</div>
+    <div class="fn fn-b">Set profile<br>name, hours, location</div><div class="fa">→</div>
+    <div class="fn fn-g">Add listings<br>species, price, stock</div><div class="fa">→</div>
+    <div class="fn fn-g">Go live!<br>buyers find you</div>
+  </div>
 </div>
-
-<!-- ============================================ -->
-<h2>9. Delivery vs Pickup</h2>
-
-<table>
-  <tr><th>Condition</th><th>Order Type</th><th>Address Required?</th><th>Delivery Fee?</th></tr>
-  <tr><td>Buyer within seller delivery radius</td><td><span class="b b-blue">delivery</span></td><td class="yes">✅ Flat + building required</td><td>Yes (seller-configured)</td></tr>
-  <tr><td>Buyer outside radius OR seller has no delivery</td><td><span class="b b-green">pickup</span></td><td class="no">❌ No</td><td>No</td></tr>
-  <tr><td>Delivery + order above free_delivery_above</td><td><span class="b b-blue">delivery</span></td><td class="yes">✅</td><td>Waived (₹0)</td></tr>
-</table>
-
-<!-- ============================================ -->
-<h2>10. Waitlist — Demand Capture</h2>
-
-<table>
-  <tr><th>Entry Point</th><th>What Shows</th><th>Data Collected</th></tr>
-  <tr><td>Homepage (no sellers in area)</td><td>5-card layout: hero, flow, benefits, form, trust</td><td>Phone, email, area, frequency, preference, budget, fish request</td></tr>
-  <tr><td>Seller page (outside area)</td><td>Compact card → links to /buyer-banner.html#wl-form</td><td>Same (via banner page form)</td></tr>
-  <tr><td>/buyer-banner.html</td><td>Full landing page with pain points + waitlist</td><td>Same</td></tr>
-  <tr><td>Homepage promo card (above sellers)</td><td>"Not in your area yet?" → links to banner</td><td>Same</td></tr>
-</table>
 
 <div class="card">
-  <h3>On Submission</h3>
-  <ul>
-    <li>Saved to <code>buyer_waitlist</code> table (upsert on phone+area)</li>
-    <li>Email to <code>relifishstore@gmail.com</code> with all details</li>
-    <li>Welcome email to buyer (if email provided)</li>
-    <li>Shows "🔥 X people in your area already waiting" (social proof)</li>
-  </ul>
+  <h3>Step 2: Daily Operations</h3>
+  <div class="flow">
+    <div class="fn fn-o">🔔 Order<br>notification</div><div class="fa">→</div>
+    <div class="fn fn-b">View in<br>dashboard</div><div class="fa">→</div>
+    <div class="fn fn-g">Confirm<br>or decline</div><div class="fa">→</div>
+    <div class="fn fn-g">Buyer<br>picks up</div><div class="fa">→</div>
+    <div class="fn fn-g">Mark<br>completed</div>
+  </div>
 </div>
 
-<!-- ============================================ -->
-<h2>11. Notification Matrix</h2>
+<div class="card">
+  <h3>Step 3: Pre-orders (next morning)</h3>
+  <div class="flow">
+    <div class="fn fn-o">Pre-order<br>comes in overnight</div><div class="fa">→</div>
+    <div class="fn fn-b">Morning: check<br>Pre-orders tab</div><div class="fa">→</div>
+    <div class="fn fn-g">Confirm with<br>actual price</div><div class="fa">→</div>
+    <div class="fn fn-b">Buyer accepts<br>or rejects</div><div class="fa">→</div>
+    <div class="fn fn-g">Fulfill<br>order</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-divider">Part 3 — All Cases & Decision Trees</div>
+<!-- ============================================================ -->
+
+<h2><span class="emoji">🐟</span> Menu Item — What Button Shows</h2>
+
+<table>
+  <tr><th>Stock</th><th>Shop</th><th>Accepts Preorder</th><th>In Area</th><th>Button</th><th>Tag</th><th>Status Created</th></tr>
+  <tr><td class="yes">✅ In stock</td><td class="yes">🟢 Open</td><td>—</td><td class="yes">✅</td><td><span class="b b-green">ADD</span></td><td>—</td><td><span class="b b-blue">pending</span></td></tr>
+  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="yes">✅</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td>—</td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="no">❌</td><td class="yes">✅</td><td><span class="b b-gray">Closed</span></td><td>—</td><td>blocked</td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="yes">✅</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="no">❌</td><td class="yes">✅</td><td><span class="b b-red">Sold out</span></td><td><span class="b b-red">📦 Out of stock</span></td><td>blocked</td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="yes">✅</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="no">❌</td><td class="yes">✅</td><td><span class="b b-red">Sold out</span></td><td><span class="b b-red">📦 Out of stock</span></td><td>blocked</td></tr>
+  <tr><td>Any</td><td>Any</td><td>Any</td><td class="no">❌</td><td>—</td><td><span class="b b-gray">Outside area</span></td><td>blocked</td></tr>
+</table>
+
+<h2><span class="emoji">📋</span> Order Status Lifecycle</h2>
+
+<table>
+  <tr><th>Status</th><th>Set By</th><th>Trigger</th><th>Buyer Sees</th><th>Stock</th><th>Can Cancel?</th></tr>
+  <tr><td><span class="b b-blue">pending</span></td><td>System</td><td>In stock + open</td><td>"Placed"</td><td>Deducted (atomic lock)</td><td class="yes">✅ Buyer</td></tr>
+  <tr><td><span class="b b-orange">pre_order</span></td><td>System</td><td>Closed OR out of stock</td><td>"Pending confirmation"</td><td>Not deducted</td><td class="yes">✅ Buyer</td></tr>
+  <tr><td><span class="b b-purple">scheduled</span></td><td>Buyer</td><td>Picks time slot</td><td>"Scheduled 🗓️"</td><td>Deducted</td><td class="yes">✅ Buyer</td></tr>
+  <tr><td><span class="b b-green">confirmed</span></td><td>Seller</td><td>Accepts order</td><td>"Confirmed"</td><td>—</td><td class="no">❌</td></tr>
+  <tr><td><span class="b b-green">paid</span></td><td>Seller</td><td>Payment recorded</td><td>"Paid"</td><td>—</td><td class="no">❌</td></tr>
+  <tr><td><span class="b b-green">picked_up</span></td><td>Seller</td><td>Ready for collection</td><td>"Ready for Pickup"</td><td>—</td><td class="no">❌</td></tr>
+  <tr><td><span class="b b-green">completed</span></td><td>Seller</td><td>Fulfilled</td><td>"Completed"</td><td>—</td><td class="no">❌</td></tr>
+  <tr><td><span class="b b-red">declined</span></td><td>Seller</td><td>Rejects order</td><td>"Declined"</td><td>Restored</td><td>—</td></tr>
+  <tr><td><span class="b b-red">cancelled</span></td><td>Buyer or Seller</td><td>Cancel + reason</td><td>"Cancelled" + who + why</td><td>Restored</td><td>—</td></tr>
+</table>
+
+<h2><span class="emoji">🎣</span> Pre-Order — Detailed Cases</h2>
+
+<table>
+  <tr><th>Why Pre-Order?</th><th>Stock Deducted?</th><th>Seller Action</th><th>Buyer Action</th></tr>
+  <tr><td>Shop closed + has stock</td><td class="no">❌</td><td>Next morning: confirm with final_price</td><td>Accept or reject new price</td></tr>
+  <tr><td>In stock = 0 (sold out today)</td><td class="no">❌</td><td>Next catch: confirm with final_price</td><td>Accept or reject new price</td></tr>
+  <tr><td>Shop closed + out of stock</td><td class="no">❌</td><td>Next morning: confirm with final_price</td><td>Accept or reject new price</td></tr>
+</table>
+
+<h2><span class="emoji">❌</span> Cancel — All Cases</h2>
+
+<table>
+  <tr><th>Who</th><th>When</th><th>Stock Restored?</th><th>Refund?</th><th>Reason</th></tr>
+  <tr><td>Buyer</td><td>pending / pre_order / scheduled</td><td class="yes">✅</td><td>If pre_order (paid_amount)</td><td>Optional prompt</td></tr>
+  <tr><td>Buyer (reject price)</td><td>confirmed + final_price</td><td class="yes">✅</td><td>Full (paid_amount)</td><td>Auto: "Price rejected"</td></tr>
+  <tr><td>Seller (decline)</td><td>pending</td><td class="yes">✅</td><td>—</td><td>—</td></tr>
+  <tr><td>Seller (cancel pre-order)</td><td>pre_order</td><td>—</td><td>Full</td><td>—</td></tr>
+  <tr><td>Nobody</td><td>confirmed / paid / picked_up / completed</td><td colspan="3">Cannot cancel</td></tr>
+</table>
+
+<h2><span class="emoji">🏠</span> Homepage — What Shows</h2>
+
+<table>
+  <tr><th>Condition</th><th>What Shows</th></tr>
+  <tr><td>No location set</td><td>"Set your location" card</td></tr>
+  <tr><td>Location + sellers nearby</td><td>Promo card ("Join waitlist") + seller list (count = nearby only)</td></tr>
+  <tr><td>Location + no sellers</td><td>5-card waitlist: hero, flow diagram, 7 benefits, preference form, trust bar</td></tr>
+  <tr><td>Filters active + no match</td><td>"No sellers match these filters"</td></tr>
+  <tr><td>Seller outside area</td><td>Grayed card + "Outside your area" + waitlist CTA</td></tr>
+</table>
+
+<h2><span class="emoji">📊</span> Seller Dashboard</h2>
+
+<table>
+  <tr><th>Feature</th><th>Details</th></tr>
+  <tr><td><strong>3 Order Tabs</strong></td><td>Fresh Orders (pending/confirmed/etc) | Pre-orders (awaiting price) | Scheduled (future slots)</td></tr>
+  <tr><td><strong>Stats</strong></td><td>Total, Revenue, Pending, Completed, Scheduled, Cancelled — with date filters + custom range</td></tr>
+  <tr><td><strong>CSV Export</strong></td><td>Download orders as CSV with date filter</td></tr>
+  <tr><td><strong>Listings</strong></td><td>Add/edit, per-item Pause/Resume, bulk select + Pause All/Resume All, low stock alert (≤2)</td></tr>
+  <tr><td><strong>Profile</strong></td><td>Hours, delivery settings, pre-order toggle, schedule & slots, GPS location</td></tr>
+  <tr><td><strong>Notifications</strong></td><td>Push + email on every new order</td></tr>
+</table>
+
+<h2><span class="emoji">🔔</span> Notification Matrix</h2>
 
 <table>
   <tr><th>Event</th><th>Buyer Push</th><th>Buyer Email</th><th>Seller Push</th><th>Seller Email</th></tr>
-  <tr><td>Order placed (pending)</td><td>✅ "Order received"</td><td>✅</td><td>✅ "New Order!"</td><td>✅</td></tr>
-  <tr><td>Pre-order placed</td><td>✅ "Pre-order update"</td><td>✅</td><td>✅ "New Order!"</td><td>✅</td></tr>
-  <tr><td>Scheduled order</td><td>✅ "Scheduled 🗓️"</td><td>✅ with time</td><td>✅ "New Scheduled 🗓️"</td><td>✅ with time</td></tr>
-  <tr><td>Confirmed</td><td>✅ "Confirmed!"</td><td>✅</td><td>—</td><td>✅</td></tr>
-  <tr><td>Ready for pickup</td><td>✅ "Ready!"</td><td>✅</td><td>—</td><td>—</td></tr>
-  <tr><td>Completed</td><td>✅ "Complete"</td><td>✅</td><td>—</td><td>✅</td></tr>
-  <tr><td>Declined</td><td>✅ "Declined"</td><td>✅</td><td>—</td><td>—</td></tr>
-  <tr><td>Cancelled</td><td>✅ "Cancelled"</td><td>✅</td><td>—</td><td>✅</td></tr>
+  <tr><td>Order placed</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Pre-order placed</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Scheduled order</td><td>✅ with time</td><td>✅ with time</td><td>✅ with time</td><td>✅ with time</td></tr>
+  <tr><td>Confirmed</td><td>✅</td><td>✅</td><td>—</td><td>✅</td></tr>
+  <tr><td>Ready for pickup</td><td>✅</td><td>✅</td><td>—</td><td>—</td></tr>
+  <tr><td>Completed</td><td>✅</td><td>✅</td><td>—</td><td>✅</td></tr>
+  <tr><td>Declined / Cancelled</td><td>✅</td><td>✅</td><td>—</td><td>✅</td></tr>
   <tr><td>Waitlist signup</td><td>—</td><td>✅ Welcome</td><td>—</td><td>✅ Admin alert</td></tr>
 </table>
 
-<!-- ============================================ -->
-<h2>12. Security & Technical</h2>
+<!-- ============================================================ -->
+<div class="section-divider">Part 4 — Pitch to Onboard</div>
+<!-- ============================================================ -->
+
+<h2><span class="emoji">🎣</span> Seller Onboarding Pitch</h2>
+
+<div class="pitch-card">
+  <h3>Why Join Relifish? (Tell Sellers This)</h3>
+  <ul>
+    <li><span class="highlight">FREE setup</span> — no cost to join, no tech skills needed. We set up your store in 5 minutes.</li>
+    <li><span class="highlight">Minimal commission</span> — Swiggy takes 25-30%. We charge almost nothing.</li>
+    <li><span class="highlight">Orders even when you're closed</span> — pre-orders come in overnight. You see demand before you go to the dock.</li>
+    <li><span class="highlight">Orders even when sold out</span> — buyers pre-order for tomorrow's catch. No lost sales.</li>
+    <li><span class="highlight">One dashboard</span> — orders, stock, delivery settings, stats, CSV export. No spreadsheets.</li>
+    <li><span class="highlight">Push + email</span> — instant notification on every new order. Never miss one.</li>
+    <li><span class="highlight">Online discovery</span> — buyers find you by location. No footfall needed.</li>
+    <li><span class="highlight">Schedule your availability</span> — set date ranges + time slots. Buyers book when you're ready.</li>
+    <li><span class="highlight">Pause anytime</span> — bulk pause/resume listings. Going to the dock? Pause. Back? Resume.</li>
+    <li><span class="highlight">You set the price</span> — pre-orders? You confirm with morning price. Full control.</li>
+  </ul>
+</div>
+
+<div class="card card-seller">
+  <h3>60-Second Seller Pitch (Marathi)</h3>
+  <p style="font-size:14px;line-height:1.7;">
+    "नमस्कार! मी Relifish बनवलंय — fish sellers साठी FREE online दुकान.<br><br>
+    तुमचा problem: WhatsApp वर orders manage करणं, messages miss होणं, दुकान बंद असताना sales गमावणं.<br><br>
+    Relifish मध्ये: तुमचं online menu, orders dashboard, pre-orders — दुकान बंद असलं तरी orders येतात. Stock संपला तरी buyers pre-order करतात. Commission जवळजवळ शून्य.<br><br>
+    FREE आहे. 5 मिनिटात setup. दाखवू?"
+  </p>
+</div>
+
+<div class="card card-seller">
+  <h3>Seller Objection Handling</h3>
+  <table>
+    <tr><th>They Say</th><th>You Say</th></tr>
+    <tr><td>"मला technology कळत नाही"</td><td>"मी सगळं करतो, तुम्ही फक्त phone number द्या. 5 मिनिट."</td></tr>
+    <tr><td>"माझे customers WhatsApp वर आहेत"</td><td>"तुम्ही त्यांना Relifish link WhatsApp वर पाठवा — ते तिथूनच order करतील."</td></tr>
+    <tr><td>"Commission किती?"</td><td>"Swiggy 25% घेतो. आमचा minimal. पहिल्या 50 sellers ला FREE."</td></tr>
+    <tr><td>"Online कोण मासा विकत घेतो?"</td><td>"The Fishy Mart ला 21K followers आहेत. सगळे orders online."</td></tr>
+    <tr><td>"मला वेळ नाही"</td><td>"5 मिनिट. आत्ता करू? मी सगळं add करतो."</td></tr>
+    <tr><td>"विचार करतो"</td><td>Phone number घ्या, WhatsApp वर banner link पाठवा, 2 दिवसांनी follow up.</td></tr>
+  </table>
+</div>
+
+<h2><span class="emoji">🛒</span> Buyer Onboarding Pitch</h2>
+
+<div class="pitch-card">
+  <h3>Why Use Relifish? (Tell Buyers This)</h3>
+  <ul>
+    <li><span class="highlight">Freshest fish in Mumbai</span> — same-day catch from local fishermen. Not 2-3 day old supermarket fish.</li>
+    <li><span class="highlight">No markup</span> — direct from seller. No Swiggy/Zomato 25-30% added to the price.</li>
+    <li><span class="highlight">See what you're buying</span> — real menus, real prices per kg, seller ratings and location.</li>
+    <li><span class="highlight">Compare across sellers</span> — same fish, different prices. Find the best deal without walking to 5 stalls.</li>
+    <li><span class="highlight">Shop closed? Sold out? No problem</span> — pre-order for tomorrow. Seller confirms with morning price.</li>
+    <li><span class="highlight">Schedule your order</span> — pick a time slot. Seller prepares it when you need it.</li>
+    <li><span class="highlight">Track everything</span> — real-time status, push notifications, seller contact. One tap to call.</li>
+    <li><span class="highlight">Cancel anytime</span> — pending orders can be cancelled with one tap + optional reason.</li>
+    <li><span class="highlight">Save addresses</span> — Zomato-style address book. Pick from saved or add new at checkout.</li>
+    <li><span class="highlight">Works like an app</span> — install on phone, works fast, push notifications. No app store.</li>
+  </ul>
+</div>
+
+<div class="card card-buyer">
+  <h3>Buyer WhatsApp/Society Group Message</h3>
+  <p style="font-size:14px;line-height:1.7;">
+    "Fresh fish from local sellers — direct, no middlemen 🐟<br><br>
+    Browse menus, compare prices, order or pre-order for tomorrow.<br>
+    Track your order + get notified when ready.<br><br>
+    Try it: <strong>relifish.store</strong><br><br>
+    First 1000 buyers get exclusive launch deals!"
+  </p>
+</div>
+
+<div class="card card-buyer">
+  <h3>Buyer Instagram/DM Message</h3>
+  <p style="font-size:14px;line-height:1.7;">
+    "Tired of stale supermarket fish? 🐟<br><br>
+    Relifish connects you to local fish sellers in Mumbai. Same-day catch, fair prices, no markup.<br><br>
+    Surmai, Rawas, Pomfret, Prawns — browse, compare, order.<br>
+    Shop closed? Pre-order for tomorrow.<br><br>
+    👉 relifish.store/buyer-banner.html"
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-divider">Part 5 — Technical Reference</div>
+<!-- ============================================================ -->
+
+<h2><span class="emoji">🔒</span> Security & Technical</h2>
 
 <table>
-  <tr><th>Safeguard</th><th>How</th><th>Where</th></tr>
-  <tr><td>Atomic stock check</td><td>DB function with FOR UPDATE lock</td><td>create_order_atomic()</td></tr>
-  <tr><td>Stock restore on cancel</td><td>DB function</td><td>restore_order_stock()</td></tr>
-  <tr><td>OTP rate limit</td><td>5 per 15min, 30min block</td><td>otp_attempts table</td></tr>
-  <tr><td>Order ownership</td><td>buyer_id match for cancel</td><td>/api/orders/cancel</td></tr>
-  <tr><td>Listing ownership</td><td>seller_id verified via listing</td><td>/api/seller/orders</td></tr>
-  <tr><td>Auto-migration</td><td>Run on every deploy if DATABASE_URL set</td><td>scripts/migrate-safe.ts</td></tr>
+  <tr><th>Safeguard</th><th>How</th></tr>
+  <tr><td>Atomic stock check</td><td>DB function with FOR UPDATE row lock — no race conditions</td></tr>
+  <tr><td>Stock restore on cancel</td><td>restore_order_stock() DB function</td></tr>
+  <tr><td>OTP rate limit</td><td>5 per 15 min, 30 min block after exceeding</td></tr>
+  <tr><td>Order ownership</td><td>buyer_id verified before cancel</td></tr>
+  <tr><td>Listing ownership</td><td>seller_id verified via listing before status change</td></tr>
+  <tr><td>Auto-migration</td><td>Runs on every Vercel deploy (if DATABASE_URL set)</td></tr>
+  <tr><td>Email</td><td>Resend API — order status + waitlist + welcome emails</td></tr>
 </table>
 
-<!-- ============================================ -->
-<h2>13. All Pages</h2>
+<h2><span class="emoji">🗺️</span> All Pages</h2>
 
 <table>
-  <tr><th>URL</th><th>For</th><th>Key Features</th></tr>
-  <tr><td><code>/</code></td><td>Buyer</td><td>Seller catalog, filters, search, waitlist card, promo card</td></tr>
-  <tr><td><code>/seller/[id]</code></td><td>Buyer</td><td>Menu, ADD/PRE-ORDER, schedule slots, cart, checkout</td></tr>
+  <tr><th>URL</th><th>For</th><th>Purpose</th></tr>
+  <tr><td><code>/</code></td><td>Buyer</td><td>Homepage — seller catalog, filters, waitlist card</td></tr>
+  <tr><td><code>/seller/[id]</code></td><td>Buyer</td><td>Menu — ADD/PRE-ORDER, schedule slots, cart, checkout</td></tr>
   <tr><td><code>/preorder/[species]</code></td><td>Buyer</td><td>Pre-order by species across sellers</td></tr>
-  <tr><td><code>/track</code></td><td>Buyer</td><td>Order list, details, cancel, accept/reject price, realtime</td></tr>
-  <tr><td><code>/me</code></td><td>Buyer</td><td>Profile, address book, location, push notifications</td></tr>
-  <tr><td><code>/buyer-banner.html</code></td><td>Buyer</td><td>Landing page, pain points, features, waitlist form</td></tr>
-  <tr><td><code>/seller-banner.html</code></td><td>Seller</td><td>Outreach banners, 4 designs, MR/EN toggle</td></tr>
+  <tr><td><code>/track</code></td><td>Buyer</td><td>Order tracking — details, cancel, accept/reject price</td></tr>
+  <tr><td><code>/me</code></td><td>Buyer</td><td>Profile — address book, location, push</td></tr>
+  <tr><td><code>/buyer-banner.html</code></td><td>Buyer</td><td>Landing page — pain points, features, waitlist</td></tr>
+  <tr><td><code>/seller-banner.html</code></td><td>Seller</td><td>Outreach — 4 banners, MR/EN</td></tr>
   <tr><td><code>/dashboard/login</code></td><td>Seller</td><td>OTP login</td></tr>
-  <tr><td><code>/dashboard/orders</code></td><td>Seller</td><td>3 tabs, stats, date filters, CSV export</td></tr>
-  <tr><td><code>/dashboard/listings</code></td><td>Seller</td><td>CRUD, bulk toggle, low stock, pause/resume</td></tr>
-  <tr><td><code>/dashboard/profile</code></td><td>Seller</td><td>Hours, delivery, pre-order, schedule, location</td></tr>
+  <tr><td><code>/dashboard/orders</code></td><td>Seller</td><td>3 tabs + stats + export</td></tr>
+  <tr><td><code>/dashboard/listings</code></td><td>Seller</td><td>CRUD + bulk toggle + low stock</td></tr>
+  <tr><td><code>/dashboard/profile</code></td><td>Seller</td><td>Hours, delivery, schedule, location</td></tr>
   <tr><td><code>/sop.html</code></td><td>Internal</td><td>This page</td></tr>
 </table>
 
