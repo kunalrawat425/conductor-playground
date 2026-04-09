@@ -100,9 +100,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               </div>
               <div style="display:flex;gap:12px;margin-top:20px;">
                 <button type="submit" class="btn btn-primary">Update Listing</button>
-                <button type="button" id="toggle-btn" class="btn ${listing.is_available ? "btn-red" : "btn-green"}">
-                  ${listing.is_available ? "Mark Unavailable" : "Mark Available"}
-                </button>
               </div>
             </form>
           `;
@@ -146,19 +143,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             }
           });
 
-          const toggleBtn = document.getElementById("toggle-btn") as HTMLButtonElement;
-          toggleBtn.addEventListener("click", async () => {
-            const origText = toggleBtn.textContent!;
-            toggleBtn.disabled = true; toggleBtn.textContent = "Updating..."; toggleBtn.style.opacity = "0.6";
-            try {
-              await updateListing(listingId, { is_available: !listing.is_available }, seller.id);
-              showToast(listing.is_available ? "Marked unavailable" : "Marked available");
-              setTimeout(() => { window.location.reload(); }, 800);
-            } catch (err) {
-              showToast((err as any).message || "Failed to update.", "error");
-              toggleBtn.disabled = false; toggleBtn.textContent = origText; toggleBtn.style.opacity = "1";
-            }
-          });
         } catch (err: any) {
           if (err?.message?.includes("coerce") || err?.code === "PGRST116") {
             signOut();
