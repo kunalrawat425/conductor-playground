@@ -103,8 +103,14 @@ export const prerender = false;
         priceDisplay = `Up to ₹${order.paid_amount}`;
       }
 
+      const sellerPhone = order.listing?.seller?.phone || "";
+      const sellerLocation = order.listing?.seller?.location_name || "";
+      const orderAddr = order.buyer_addr || "";
+      const orderType = order.order_type === "delivery" ? "🚚 Delivery" : "📦 Pickup";
+      const orderId = order.id.substring(0, 8).toUpperCase();
+
       return `
-        <div class="card tap-target" style="margin-bottom:12px;" data-order-id="${order.id}">
+        <div class="card" style="margin-bottom:12px;" data-order-id="${order.id}">
           <div class="card-body">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
               <div>
@@ -122,6 +128,15 @@ export const prerender = false;
             </div>
             ${isPreOrder && order.status === "pre_order" ? `<p class="text-muted" style="font-size:12px;margin-top:8px;font-style:italic;">Waiting for seller to confirm with morning price</p>` : ""}
             ${order.scheduled_for ? `<p style="font-size:12px;font-weight:600;color:var(--blue);margin-top:6px;">🗓️ Scheduled: ${new Date(order.scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${new Date(order.scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>` : ""}
+            <button type="button" class="order-detail-toggle" onclick="this.parentElement.querySelector('.order-details').classList.toggle('open');this.textContent=this.textContent.includes('▼')?'Less ▲':'Details ▼'">Details ▼</button>
+            <div class="order-details">
+              <div class="od-row"><span class="od-label">Order ID</span><span class="od-val">#${orderId}</span></div>
+              <div class="od-row"><span class="od-label">Type</span><span class="od-val">${orderType}</span></div>
+              ${orderAddr ? `<div class="od-row"><span class="od-label">Address</span><span class="od-val">${esc(orderAddr)}</span></div>` : ""}
+              ${sellerLocation ? `<div class="od-row"><span class="od-label">Seller location</span><span class="od-val">${esc(sellerLocation)}</span></div>` : ""}
+              ${sellerPhone ? `<div class="od-row"><span class="od-label">Seller contact</span><span class="od-val"><a href="tel:${esc(sellerPhone)}" style="color:var(--blue);font-weight:600;">${esc(sellerPhone)}</a></span></div>` : ""}
+              <div class="od-row"><span class="od-label">Payment</span><span class="od-val">${order.payment_type === "cod" ? "Cash on delivery" : order.payment_type}</span></div>
+            </div>
           </div>
         </div>
       `;
@@ -240,6 +255,35 @@ export const prerender = false;
   </script>
 
   <style is:global>
+    .order-detail-toggle {
+      display: block;
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--blue);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 0;
+      font-family: inherit;
+    }
+    .order-details {
+      display: none;
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px solid var(--gray-100);
+    }
+    .order-details.open { display: block; }
+    .od-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+    .od-label { color: var(--gray-500); font-weight: 500; }
+    .od-val { color: var(--gray-800); font-weight: 600; text-align: right; max-width: 60%; }
+
     .track-pagination {
       display: flex;
       justify-content: center;
