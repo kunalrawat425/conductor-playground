@@ -813,7 +813,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
         // Event delegation for add/plus/minus buttons
         menuContainer.addEventListener("click", (e) => {
-          const target = e.target;
+          const target = (e.target as HTMLElement).closest("[data-add],[data-plus],[data-minus]") || e.target;
 
           const addId = target.dataset?.add;
           if (addId && cart[addId]) {
