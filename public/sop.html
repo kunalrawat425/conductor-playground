@@ -162,17 +162,27 @@
 
 <h2><span class="emoji">🐟</span> Menu Item — What Button Shows</h2>
 
+<p style="font-size:13px;color:#333;margin-bottom:8px;"><strong>Rule: Orders are NEVER blocked.</strong> In stock + open = regular order. Everything else = pre-order. Buyers can always place an order.</p>
 <table>
-  <tr><th>Stock</th><th>Shop</th><th>Accepts Preorder</th><th>In Area</th><th>Button</th><th>Tag</th><th>Status Created</th></tr>
-  <tr><td class="yes">✅ In stock</td><td class="yes">🟢 Open</td><td>—</td><td class="yes">✅</td><td><span class="b b-green">ADD</span></td><td>—</td><td><span class="b b-blue">pending</span></td></tr>
-  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="yes">✅</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td>—</td><td><span class="b b-orange">pre_order</span></td></tr>
-  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="no">❌</td><td class="yes">✅</td><td><span class="b b-gray">Closed</span></td><td>—</td><td>blocked</td></tr>
-  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="yes">✅</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
-  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="no">❌</td><td class="yes">✅</td><td><span class="b b-red">Sold out</span></td><td><span class="b b-red">📦 Out of stock</span></td><td>blocked</td></tr>
-  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="yes">✅</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
-  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="no">❌</td><td class="yes">✅</td><td><span class="b b-red">Sold out</span></td><td><span class="b b-red">📦 Out of stock</span></td><td>blocked</td></tr>
-  <tr><td>Any</td><td>Any</td><td>Any</td><td class="no">❌</td><td>—</td><td><span class="b b-gray">Outside area</span></td><td>blocked</td></tr>
+  <tr><th>Stock</th><th>Shop</th><th>In Area</th><th>Button</th><th>Tag</th><th>Status Created</th></tr>
+  <tr><td class="yes">✅ In stock</td><td class="yes">🟢 Open</td><td class="yes">✅</td><td><span class="b b-green">ADD</span></td><td>—</td><td><span class="b b-blue">pending</span></td></tr>
+  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td>—</td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td>Any</td><td>Any</td><td class="no">❌</td><td>—</td><td><span class="b b-gray">Outside area</span></td><td>browse only</td></tr>
 </table>
+<div class="card card-accent">
+  <h3 style="margin-top:0;">Listing Settings — What Buyers See</h3>
+  <table>
+    <tr><th>Setting</th><th>What Seller Sets</th><th>What Buyer Sees</th></tr>
+    <tr><td><strong>Stock</strong></td><td>e.g. 10 kg</td><td>Nothing — stock quantity is hidden from buyers</td></tr>
+    <tr><td><strong>OOS Threshold</strong></td><td>e.g. 2 kg (or default 10%)</td><td>"📦 Out of stock" tag + PRE-ORDER button when stock falls below this</td></tr>
+    <tr><td><strong>Max Qty/Order</strong></td><td>e.g. 5 kg</td><td>"Max 5/kg per order" in item meta. Can't add more than 5 to cart.</td></tr>
+    <tr><td><strong>Max Orders/Day</strong></td><td>e.g. 20</td><td>Error: "Daily order limit reached" when 20th order placed. Resets midnight.</td></tr>
+    <tr><td><strong>Price</strong></td><td>₹800/kg</td><td>Shown on menu item. Pre-order price = estimate, seller confirms final.</td></tr>
+    <tr><td><strong>Pickup Location</strong></td><td>Versova Market, Stall #5</td><td>Shown under each item + on order details</td></tr>
+  </table>
+</div>
 
 <h2><span class="emoji">📋</span> Order Status Lifecycle</h2>
 

@@ -94,64 +94,50 @@ export const POST: APIRoute = async ({ request, url }) => {
       const oosThreshold = listing.oos_threshold ?? Math.max(1, Math.floor(listing.weight_avail * 0.1));
       const effectivelyOOS = listing.weight_avail <= oosThreshold;
       if (!listing.is_available || effectivelyOOS || listing.weight_avail < quantity) {
-        // Check if seller accepts pre-orders
-        const { data: sellerCheck } = await supabase
-          .from("sellers")
-          .select("accepts_preorder")
-          .eq("id", listing.seller_id)
+        // Always allow as pre-order — no stock deduction, no blocking
+        total_price = listing.price * quantity;
+        seller_id = listing.seller_id;
+        const amountDue = total_price;
+        const { data: preOrder, error: preErr } = await supabase
+          .from("orders")
+          .insert({
+            listing_id: listing_id || null,
+            species: species || null,
+            buyer_phone,
+            buyer_id: buyer_id || null,
+            buyer_addr: buyer_addr || null,
+            quantity,
+            quantity_unit,
+            total_price,
+            delivery_fee: 0,
+            platform_fee: 0,
+            status: "pre_order",
+            order_type,
+            payment_type: "cod",
+            paid_amount: amountDue,
+            scheduled_for: scheduled_for || null,
+            schedule_slot_id: schedule_slot_id || null,
+          })
+          .select()
           .single();
 
-        if (sellerCheck?.accepts_preorder !== false) {
-          // Allow as pre-order — no stock deduction
-          total_price = listing.price * quantity;
-          seller_id = listing.seller_id;
-          // Skip the atomic stock check below — mark as out-of-stock pre-order
-          const amountDue = total_price;
-          const { data: preOrder, error: preErr } = await supabase
-            .from("orders")
-            .insert({
-              listing_id: listing_id || null,
-              species: species || null,
-              buyer_phone,
-              buyer_id: buyer_id || null,
-              buyer_addr: buyer_addr || null,
-              quantity,
-              quantity_unit,
-              total_price,
-              delivery_fee: 0,
-              platform_fee: 0,
-              status: "pre_order",
-              order_type,
-              payment_type: "cod",
-              paid_amount: amountDue,
-              scheduled_for: scheduled_for || null,
-              schedule_slot_id: schedule_slot_id || null,
-            })
-            .select()
-            .single();
-
-          if (preErr) {
-            return new Response(JSON.stringify({ error: preErr.message }), { status: 500 });
-          }
-
-          // Notify seller
-          if (seller_id) {
-            try {
-              const origin = url.origin;
-              await fetch(`${origin}/api/notify-seller`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, buyer_phone, scheduled_for: scheduled_for || null }),
-              });
-            } catch {}
-          }
-
-          return new Response(JSON.stringify({ order: preOrder, pre_order_reason: !listing.is_available ? "unavailable" : "out_of_stock" }), { status: 201 });
+        if (preErr) {
+          return new Response(JSON.stringify({ error: preErr.message }), { status: 500 });
         }
 
-        // Seller doesn't accept pre-orders — block
-        const reason = !listing.is_available ? "This item is no longer available" : `Only ${listing.weight_avail} ${listing.price_unit} in stock`;
-        return new Response(JSON.stringify({ error: reason }), { status: 400 });
+        // Notify seller
+        if (seller_id) {
+          try {
+            const origin = url.origin;
+            await fetch(`${origin}/api/notify-seller`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, buyer_phone, scheduled_for: scheduled_for || null }),
+            });
+          } catch {}
+        }
+
+        return new Response(JSON.stringify({ order: preOrder, pre_order_reason: effectivelyOOS ? "out_of_stock" : "unavailable" }), { status: 201 });
       }
 
       total_price = listing.price * quantity;
@@ -182,12 +168,6 @@ export const POST: APIRoute = async ({ request, url }) => {
         .single();
 
       if (!scheduled_for && seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
-        if (seller.accepts_preorder === false) {
-          return new Response(
-            JSON.stringify({ error: "This seller is closed and does not accept pre-orders" }),
-            { status: 400 }
-          );
-        }
         status = "pre_order";
       }
 

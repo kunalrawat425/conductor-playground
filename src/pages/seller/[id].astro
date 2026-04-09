@@ -533,7 +533,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const l = entry.listing;
         const threshold = l.oos_threshold ?? Math.max(1, Math.floor(l.weight_avail * 0.1));
         const effectivelyOOS = l.weight_avail <= threshold;
-        return (!open || effectivelyOOS) && acceptsPreorder;
+        return !open || effectivelyOOS;
       }
 
       function renderQtyControls(listingId) {
@@ -549,18 +549,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               cart[listingId].qty = 1;
               renderQtyControls(listingId);
             });
-          } else if (entry && !isPreorderItem(listingId) && entry.listing.weight_avail > 0 && open) {
+          } else if (entry) {
             el.innerHTML = `<button class="add-btn">ADD</button>`;
             el.querySelector(".add-btn")?.addEventListener("click", (ev) => {
               ev.stopPropagation();
               cart[listingId].qty = 1;
               renderQtyControls(listingId);
             });
-          } else {
-            const l = entry?.listing;
-            const threshold = l?.oos_threshold ?? Math.max(1, Math.floor((l?.weight_avail || 0) * 0.1));
-            const isOOS = !l || l.weight_avail <= threshold;
-            el.innerHTML = `<span style="font-size:12px;color:var(--red);font-weight:600;">${isOOS ? "Sold out" : "Closed"}</span>`;
           }
         } else {
           const preLabel = isPreorderItem(listingId) ? `<div class="qty-preorder-label">PRE-ORDER</div>` : "";
@@ -775,9 +770,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   ? `<div class="add-controls" data-controls="${l.id}">
                       ${!effectivelyOOS && open
                         ? `<button class="add-btn" data-add="${l.id}">ADD</button>`
-                        : acceptsPreorder
-                          ? `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`
-                          : `<span style="font-size:12px;color:var(--red);font-weight:600;">${l.weight_avail <= 0 ? "Sold out" : "Closed"}</span>`}
+                        : `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`}
                     </div>`
                   : ""}
               </div>
