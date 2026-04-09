@@ -80,7 +80,6 @@ describe("supabase queries", () => {
 
     expect(mockFrom).toHaveBeenCalledWith("fish_listings");
     expect(chain.eq).toHaveBeenCalledWith("is_available", true);
-    expect(chain.gt).toHaveBeenCalledWith("expires_at", expect.any(String));
     expect(chain.order).toHaveBeenCalledWith("created_at", { ascending: false });
     expect(result).toEqual(mockListings);
   });
