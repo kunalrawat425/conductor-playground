@@ -494,6 +494,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           return;
         }
 
+        function escAttr(s: string) {
+          return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+        }
+
         el.innerHTML = orders
           .map((o) => {
             const name = o.species ? getSpeciesDisplay(o.species) : "Unknown";
@@ -528,29 +532,28 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
                       <span class="badge ${statusColors[o.status] || "badge-blue"}">${o.status.replace("_", " ")}</span>
-                      ${
-                        canAct
-                          ? `
                       <details class="order-actions-menu">
                         <summary class="order-actions-trigger" title="Actions" aria-label="Order actions">⋮</summary>
                         <div class="order-actions-panel">
                           ${
-                            isPreOrder
-                              ? `
+                            canAct
+                              ? isPreOrder
+                                ? `
                             <button type="button" class="order-actions-item confirm-preorder-btn" data-order-id="${o.id}">Approve — confirm with price</button>
                             <button type="button" class="order-actions-item order-actions-item--danger cancel-order-btn" data-order-id="${o.id}">Cancel order (full refund)</button>
                           `
-                              : `
+                                : `
                             <button type="button" class="order-actions-item confirm-order-btn" data-order-id="${o.id}">Approve</button>
                             <button type="button" class="order-actions-item decline-order-btn" data-order-id="${o.id}">Reject</button>
                             <button type="button" class="order-actions-item order-actions-item--danger seller-cancel-pending-btn" data-order-id="${o.id}">Cancel order</button>
                           `
+                              : ""
                           }
+                          <div class="order-actions-subhead">Quick actions</div>
+                          <button type="button" class="order-actions-item copy-order-id-btn" data-order-id="${o.id}">Copy order ID</button>
+                          <button type="button" class="order-actions-item copy-buyer-phone-btn" data-phone="${escAttr(o.buyer_phone || "")}">Copy buyer phone</button>
                         </div>
                       </details>
-                      `
-                          : ""
-                      }
                     </div>
                   </div>
                   <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--gray-700);margin-bottom:8px;">
@@ -688,6 +691,34 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             }
           });
         });
+
+        el.querySelectorAll(".copy-order-id-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            closeOrderMenu(b);
+            try {
+              await navigator.clipboard.writeText(orderId);
+              showToast("Order ID copied");
+            } catch {
+              showToast("Could not copy", "error");
+            }
+          });
+        });
+
+        el.querySelectorAll(".copy-buyer-phone-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const phone = b.dataset.phone || "";
+            closeOrderMenu(b);
+            try {
+              await navigator.clipboard.writeText(phone);
+              showToast("Phone copied");
+            } catch {
+              showToast("Could not copy", "error");
+            }
+          });
+        });
       }
 
       void init();
@@ -759,6 +790,21 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         background: var(--gray-100);
         border-color: var(--gray-300);
       }
+      .order-actions-subhead {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 10px 12px 4px;
+        margin: 0;
+        border-top: 1px solid var(--gray-100);
+      }
+      .order-actions-panel .order-actions-subhead:first-child {
+        border-top: none;
+        padding-top: 4px;
+      }
+
       .order-actions-panel {
         position: absolute;
         right: 0;
