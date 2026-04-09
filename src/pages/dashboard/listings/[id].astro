@@ -131,6 +131,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 photoUrl = await uploadFishPhoto(photoFile, seller.id);
               }
 
+              const maxQtyVal = formData.get("max_qty_per_order") as string;
+              const maxOrdersVal = formData.get("max_orders_per_day") as string;
               await updateListing(listingId, {
                 species: formData.get("species") as string,
                 price: parseFloat(formData.get("price") as string),
@@ -138,6 +140,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 weight_avail: parseFloat(formData.get("weight_avail") as string),
                 photo_url: photoUrl,
                 pickup_loc: formData.get("pickup_loc") as string,
+                max_qty_per_order: maxQtyVal ? parseFloat(maxQtyVal) : null,
+                max_orders_per_day: maxOrdersVal ? parseInt(maxOrdersVal) : null,
               }, seller.id);
 
               showToast("Listing updated!");

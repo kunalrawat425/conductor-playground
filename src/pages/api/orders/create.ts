@@ -57,12 +57,37 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (listing_id) {
       const { data: listing } = await supabase
         .from("fish_listings")
-        .select("price, price_unit, seller_id, weight_avail, is_available")
+        .select("price, price_unit, seller_id, weight_avail, is_available, max_qty_per_order, max_orders_per_day")
         .eq("id", listing_id)
         .single();
 
       if (!listing) {
         return new Response(JSON.stringify({ error: "Listing not found" }), { status: 404 });
+      }
+
+      // Check max quantity per order
+      if (listing.max_qty_per_order && quantity > listing.max_qty_per_order) {
+        return new Response(
+          JSON.stringify({ error: `Max ${listing.max_qty_per_order} ${listing.price_unit} per order for this item` }),
+          { status: 400 }
+        );
+      }
+
+      // Check max orders per day for this listing
+      if (listing.max_orders_per_day) {
+        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+        const { count } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("listing_id", listing_id)
+          .gte("created_at", todayStart.toISOString())
+          .not("status", "in", '("cancelled","declined")');
+        if (count && count >= listing.max_orders_per_day) {
+          return new Response(
+            JSON.stringify({ error: `This item has reached its daily order limit (${listing.max_orders_per_day} orders/day)` }),
+            { status: 400 }
+          );
+        }
       }
 
       // Out of stock or unavailable → allow as pre-order if seller accepts
