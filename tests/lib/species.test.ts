@@ -46,16 +46,15 @@ describe("species", () => {
     expect(getSpeciesDisplay("unknown_fish")).toBe("unknown_fish");
   });
 
-  it("PRICE_UNITS has all three units", () => {
+  it("PRICE_UNITS has piece and dozen", () => {
     const values = PRICE_UNITS.map((u) => u.value);
-    expect(values).toContain("kg");
     expect(values).toContain("piece");
     expect(values).toContain("dozen");
   });
 
-  it("pomfret defaults to piece, prawns to kg, oyster to dozen", () => {
+  it("pomfret defaults to piece, prawns to piece, oyster to dozen", () => {
     expect(SPECIES.pomfret?.defaultUnit).toBe("piece");
-    expect(SPECIES.prawns?.defaultUnit).toBe("kg");
+    expect(SPECIES.prawns?.defaultUnit).toBe("piece");
     expect(SPECIES.oyster?.defaultUnit).toBe("dozen");
   });
 });

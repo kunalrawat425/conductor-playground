@@ -49,7 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const unitLabel = quantity_unit === "dozen" ? "dz" : quantity_unit || "kg";
+    const unitLabel = quantity_unit === "dozen" ? "dz" : "pcs";
     const schedLabel = scheduled_for ? ` (Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })})` : "";
     const body = species
       ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel} from ${buyer_phone || "a buyer"}${schedLabel}`
