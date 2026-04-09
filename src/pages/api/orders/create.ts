@@ -7,6 +7,7 @@ import {
   optionBundleAmount,
   isPerBaseUnitPricing,
   minimumRequiredBuyerDailyCap,
+  type ListingPricingSource,
 } from "../../../lib/listing-pricing";
 
 export const prerender = false;
@@ -82,7 +83,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       const chosen = getListingOptionById(
-        listing as { pricing_options?: unknown },
+        listing as ListingPricingSource,
         clientPricingOptionId
       );
       if (!chosen) {
