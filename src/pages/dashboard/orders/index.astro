@@ -43,6 +43,56 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
     <main id="dash-main" style="display:none;">
 
+      <!-- Stats Dashboard -->
+      <div class="stats-header">
+        <h2 class="stats-title">Dashboard</h2>
+        <button type="button" class="stats-toggle" id="stats-toggle">Hide ▲</button>
+      </div>
+      <div id="stats-panel">
+        <div class="stats-filters">
+          <select id="stats-date-filter" class="filter-select stats-date-select">
+            <option value="today" selected>Today</option>
+            <option value="7d">Last 7 days</option>
+            <option value="month">This month</option>
+            <option value="30d">Last 30 days</option>
+            <option value="year">This year</option>
+            <option value="custom">Custom range</option>
+          </select>
+          <div id="stats-custom-range" class="stats-custom-range" style="display:none;">
+            <input type="date" id="stats-start" class="stats-date-input" />
+            <span class="stats-date-sep">to</span>
+            <input type="date" id="stats-end" class="stats-date-input" />
+            <button type="button" class="stats-apply-btn" id="stats-apply">Apply</button>
+          </div>
+        </div>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-total-orders">—</div>
+            <div class="stat-label">Total Orders</div>
+          </div>
+          <div class="stat-card stat-card--green">
+            <div class="stat-value" id="stat-revenue">—</div>
+            <div class="stat-label">Revenue</div>
+          </div>
+          <div class="stat-card stat-card--orange">
+            <div class="stat-value" id="stat-pending">—</div>
+            <div class="stat-label">Pending</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-value" id="stat-completed">—</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-avg-order">—</div>
+            <div class="stat-label">Avg Order</div>
+          </div>
+          <div class="stat-card stat-card--red">
+            <div class="stat-value" id="stat-cancelled">—</div>
+            <div class="stat-label">Cancelled</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Tabs: Fresh / Pre-orders -->
       <div class="tabs">
         <button class="tab active" data-tab="fresh-orders">Fresh Orders <span id="fresh-count" class="tab-count"></span></button>
@@ -150,6 +200,93 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
       }
 
+      // ===== Stats Dashboard =====
+      import { supabase } from "../../../lib/supabase";
+
+      function getStatsDateRange(filter: string): { start: string; end: string } | null {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+        switch (filter) {
+          case "today": return { start: todayStart, end: todayEnd };
+          case "7d": { const d = new Date(now); d.setDate(d.getDate() - 7); return { start: d.toISOString(), end: todayEnd }; }
+          case "month": { const d = new Date(now.getFullYear(), now.getMonth(), 1); return { start: d.toISOString(), end: todayEnd }; }
+          case "30d": { const d = new Date(now); d.setDate(d.getDate() - 30); return { start: d.toISOString(), end: todayEnd }; }
+          case "year": { const d = new Date(now.getFullYear(), 0, 1); return { start: d.toISOString(), end: todayEnd }; }
+          default: return null;
+        }
+      }
+
+      async function loadStats() {
+        if (!_sellerId) return;
+        const filter = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
+
+        let range: { start: string; end: string } | null;
+        if (filter === "custom") {
+          const s = (document.getElementById("stats-start") as HTMLInputElement).value;
+          const e = (document.getElementById("stats-end") as HTMLInputElement).value;
+          if (!s || !e) return;
+          range = { start: new Date(s).toISOString(), end: new Date(new Date(e).getTime() + 86400000).toISOString() };
+        } else {
+          range = getStatsDateRange(filter);
+        }
+
+        // Get seller's listing IDs
+        const { data: listings } = await supabase.from("fish_listings").select("id").eq("seller_id", _sellerId);
+        const listingIds = listings?.map((l: any) => l.id) || [];
+        if (listingIds.length === 0) {
+          setStatValues(0, 0, 0, 0, 0, 0);
+          return;
+        }
+
+        let q = supabase.from("orders").select("total_price, status, final_price").in("listing_id", listingIds);
+        if (range) {
+          q = q.gte("created_at", range.start).lt("created_at", range.end);
+        }
+        const { data: orders } = await q;
+        if (!orders) { setStatValues(0, 0, 0, 0, 0, 0); return; }
+
+        const total = orders.length;
+        const revenue = orders.filter((o: any) => ["confirmed", "paid", "completed"].includes(o.status)).reduce((s: number, o: any) => s + (o.final_price || o.total_price || 0), 0);
+        const pending = orders.filter((o: any) => o.status === "pending" || o.status === "pre_order").length;
+        const completed = orders.filter((o: any) => o.status === "completed").length;
+        const cancelled = orders.filter((o: any) => o.status === "cancelled" || o.status === "declined").length;
+        const avg = total > 0 ? Math.round(revenue / Math.max(1, orders.filter((o: any) => ["confirmed", "paid", "completed"].includes(o.status)).length)) : 0;
+        setStatValues(total, revenue, pending, completed, avg, cancelled);
+      }
+
+      function setStatValues(total: number, revenue: number, pending: number, completed: number, avg: number, cancelled: number) {
+        document.getElementById("stat-total-orders")!.textContent = String(total);
+        document.getElementById("stat-revenue")!.textContent = "₹" + revenue.toLocaleString("en-IN");
+        document.getElementById("stat-pending")!.textContent = String(pending);
+        document.getElementById("stat-completed")!.textContent = String(completed);
+        document.getElementById("stat-avg-order")!.textContent = avg > 0 ? "₹" + avg.toLocaleString("en-IN") : "—";
+        document.getElementById("stat-cancelled")!.textContent = String(cancelled);
+      }
+
+      // Toggle show/hide
+      document.getElementById("stats-toggle")!.addEventListener("click", () => {
+        const panel = document.getElementById("stats-panel")!;
+        const btn = document.getElementById("stats-toggle")!;
+        if (panel.style.display === "none") {
+          panel.style.display = "block";
+          btn.textContent = "Hide ▲";
+        } else {
+          panel.style.display = "none";
+          btn.textContent = "Show ▼";
+        }
+      });
+
+      // Date filter change
+      document.getElementById("stats-date-filter")!.addEventListener("change", () => {
+        const v = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
+        document.getElementById("stats-custom-range")!.style.display = v === "custom" ? "flex" : "none";
+        if (v !== "custom") void loadStats();
+      });
+
+      // Custom range apply
+      document.getElementById("stats-apply")!.addEventListener("click", () => { void loadStats(); });
+
       async function renderFresh() {
         if (!_sellerId) return;
         const statusFilter = (document.getElementById("fresh-status-filter") as HTMLSelectElement).value;
@@ -246,6 +383,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           prePage = 1;
           void renderPre();
         });
+
+        // Load stats
+        void loadStats();
 
         // Show content
         requestAnimationFrame(() => {
@@ -418,6 +558,30 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     </script>
 
     <style is:global>
+      /* Stats dashboard */
+      .stats-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .stats-title { font-size: 18px; font-weight: 700; margin: 0; }
+      .stats-toggle { font-size: 12px; font-weight: 600; color: var(--blue); background: none; border: none; cursor: pointer; padding: 4px 8px; }
+      .stats-filters { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+      .stats-date-select { font-size: 13px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-200); background: white; font-weight: 600; }
+      .stats-custom-range { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .stats-date-input { font-size: 13px; padding: 6px 10px; border: 1px solid var(--gray-200); border-radius: 8px; font-family: inherit; }
+      .stats-date-sep { font-size: 12px; color: var(--gray-400); }
+      .stats-apply-btn { font-size: 12px; font-weight: 700; padding: 6px 14px; background: var(--blue); color: white; border: none; border-radius: 8px; cursor: pointer; }
+      .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+      .stat-card { background: var(--gray-50); border: 1px solid var(--gray-100); border-radius: 12px; padding: 14px 12px; text-align: center; }
+      .stat-card--green { background: #e8f5e9; border-color: #c8e6c9; }
+      .stat-card--orange { background: #fff3e0; border-color: #ffe0b2; }
+      .stat-card--blue { background: #e3f2fd; border-color: #bbdefb; }
+      .stat-card--red { background: #ffebee; border-color: #ffcdd2; }
+      .stat-value { font-size: 20px; font-weight: 800; color: var(--gray-900); margin-bottom: 2px; }
+      .stat-card--green .stat-value { color: #2e7d32; }
+      .stat-card--orange .stat-value { color: #e65100; }
+      .stat-card--blue .stat-value { color: #1565c0; }
+      .stat-card--red .stat-value { color: #c62828; }
+      .stat-label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
+      @media (max-width: 380px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+
       .dash-nav {
         display: flex;
         gap: 0;
