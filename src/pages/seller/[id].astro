@@ -267,6 +267,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     }
     .menu-tag--closed { background: #fff3e0; color: #e65100; }
     .menu-tag--oos { background: #fff3e0; color: #e65100; }
+    .menu-tag--zero { background: #ffebee; color: #c62828; }
     .menu-tag--preorder { background: #e3f2fd; color: #1565c0; }
 
     /* Add/quantity controls */
@@ -532,8 +533,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const entry = cart[listingId];
         if (!entry) return false;
         const l = entry.listing;
-        const threshold = l.oos_threshold ?? Math.max(1, Math.floor(l.weight_avail * 0.1));
-        const effectivelyOOS = l.weight_avail <= threshold;
+        const threshold = l.oos_threshold ?? 2;
+        const effectivelyOOS = l.weight_avail <= 0 || l.weight_avail <= threshold;
         return !open || effectivelyOOS;
       }
 
@@ -746,9 +747,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const marathi = species?.marathi || "";
           const emoji = FISH_EMOJI[l.species] || "🐟";
           const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
-          // Out of stock: below threshold (default 10% of stock) or zero
-          const threshold = l.oos_threshold ?? Math.max(1, Math.floor(l.weight_avail * 0.1));
-          const effectivelyOOS = l.weight_avail <= threshold;
+          // OOS threshold: absolute number (default 2). Shows "selling fast" when stock <= threshold, "out of stock" when = 0
+          const threshold = l.oos_threshold ?? 2;
+          const isZero = l.weight_avail <= 0;
+          const sellingFast = !isZero && l.weight_avail <= threshold;
+          const effectivelyOOS = isZero || sellingFast;
 
           return `
             <div class="menu-item${!inServiceArea ? ' menu-item-grey' : ''}" data-listing="${l.id}">
@@ -763,7 +766,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
                   <div class="menu-item-meta">${l.max_qty_per_order ? `Max ${l.max_qty_per_order} ${l.price_unit === "dozen" ? "dz" : "pcs"} per user` : ""}</div>
-                  ${effectivelyOOS ? '<span class="menu-tag menu-tag--oos">🔥 Selling fast — pre-order for next batch</span>' : ""}
+                  ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
+                  ${sellingFast ? '<span class="menu-tag menu-tag--oos">🔥 Selling fast — pre-order to secure yours</span>' : ""}
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">

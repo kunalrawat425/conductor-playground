@@ -86,9 +86,9 @@ const isEdit = !!listing;
       min="0"
       step="1"
       value={listing?.oos_threshold || ""}
-      placeholder="Default: 10% of stock"
+      placeholder="Default: 2"
     />
-    <div class="form-hint">When stock falls below this → buyer sees "🔥 Selling fast — pre-order for next batch". Orders still accepted as pre-orders.</div>
+    <div class="form-hint">When stock ≤ this → "🔥 Selling fast". Stock = 0 → "📦 Out of stock". Both show PRE-ORDER. Default: 2.</div>
   </div>
 
   <div class="form-group">
