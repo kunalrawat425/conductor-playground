@@ -226,15 +226,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
             <!-- Config form -->
             <div class="sched-form">
-              <div class="sched-row">
-                <div class="sched-field">
-                  <label>Available from</label>
-                  <input type="date" id="sched-from" />
-                </div>
-                <div class="sched-field">
-                  <label>Until</label>
-                  <input type="date" id="sched-to" />
-                </div>
+              <div class="sched-field">
+                <label>How many days should slots be available?</label>
+                <select id="sched-days" style="font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+                  <option value="3">3 days</option>
+                  <option value="7" selected>7 days (1 week)</option>
+                  <option value="14">14 days (2 weeks)</option>
+                  <option value="30">30 days (1 month)</option>
+                </select>
+                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Starting from today. Buyers can book slots within this range.</div>
               </div>
               <div class="sched-row">
                 <div class="sched-field">
@@ -664,8 +664,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         if (!sellerId) return;
         const { data: config } = await supabase.from("seller_schedule_configs").select("*").eq("seller_id", sellerId).single();
         if (config) {
-          (document.getElementById("sched-from") as HTMLInputElement).value = config.date_from;
-          (document.getElementById("sched-to") as HTMLInputElement).value = config.date_to;
+          // Calculate days from config
+          const daysDiff = Math.ceil((new Date(config.date_to).getTime() - new Date(config.date_from).getTime()) / 86400000) + 1;
+          const daysSelect = document.getElementById("sched-days") as HTMLSelectElement;
+          const closest = [3, 7, 14, 30].reduce((a, b) => Math.abs(b - daysDiff) < Math.abs(a - daysDiff) ? b : a);
+          daysSelect.value = String(closest);
           (document.getElementById("sched-start") as HTMLInputElement).value = config.start_time?.substring(0, 5);
           (document.getElementById("sched-end") as HTMLInputElement).value = config.end_time?.substring(0, 5);
           (document.getElementById("sched-duration") as HTMLSelectElement).value = String(config.slot_duration_minutes);
@@ -753,8 +756,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             body: JSON.stringify({
               action: "save_config",
               seller_id: sellerId,
-              date_from: (document.getElementById("sched-from") as HTMLInputElement).value,
-              date_to: (document.getElementById("sched-to") as HTMLInputElement).value,
+              date_from: new Date().toISOString().split("T")[0],
+              date_to: new Date(Date.now() + parseInt((document.getElementById("sched-days") as HTMLSelectElement).value) * 86400000).toISOString().split("T")[0],
               start_time: (document.getElementById("sched-start") as HTMLInputElement).value,
               end_time: (document.getElementById("sched-end") as HTMLInputElement).value,
               slot_duration_minutes: parseInt((document.getElementById("sched-duration") as HTMLSelectElement).value),
@@ -774,12 +777,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         btn.textContent = "Generate Schedule";
       });
 
-      // Set default dates
-      const today = new Date().toISOString().split("T")[0];
-      const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-      (document.getElementById("sched-from") as HTMLInputElement).value = today;
-      (document.getElementById("sched-from") as HTMLInputElement).min = today;
-      (document.getElementById("sched-to") as HTMLInputElement).value = nextWeek;
+      // Days dropdown defaults to 7 (already set in HTML)
       (document.getElementById("sched-to") as HTMLInputElement).min = today;
 
       init();
