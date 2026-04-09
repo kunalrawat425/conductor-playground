@@ -270,9 +270,19 @@
   #order-address-sheet .order-address-card-lines {
     display: block;
     margin-top: 6px;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.45;
-    color: var(--gray-600);
+    color: var(--gray-800);
+  }
+  #order-address-sheet .order-address-card-area {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    background: var(--gray-100);
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin-top: 6px;
   }
   #order-address-sheet .order-address-choice-check {
     flex-shrink: 0;
@@ -439,6 +449,7 @@
     hasDeliveryUnitDetail,
     parseZeptoLocation,
   } from "../lib/buyer-address";
+  import { formatDetailLine } from "../lib/buyer-address";
   import type { BuyerAddressRow } from "../lib/buyer-address";
 
   const LS_SELECTION = "zepto_checkout_address_selection";
@@ -542,20 +553,27 @@
     selectedId = pickDefaultSelection(rows);
     listEl.innerHTML = rows
       .map(
-        (row) => `
+        (row) => {
+          const icon = (row.label || "").toLowerCase().includes("home") ? "🏠"
+            : (row.label || "").toLowerCase().includes("work") ? "🏢" : "📍";
+          const detail = formatDetailLine({ flat: row.flat ?? "", building: row.building ?? "", landmark: row.landmark ?? "" });
+          const areaName = (row.location_name || "").trim();
+          return `
       <label class="order-address-choice">
         <span class="order-address-choice-control">
           <input type="radio" name="order-checkout-addr" value="${esc(row.id)}" ${selectedId === row.id ? "checked" : ""} />
         </span>
         <span class="order-address-choice-body">
-          <span class="order-address-card-title">${esc(row.label || "Saved address")}${
+          <span class="order-address-card-title">${icon} ${esc(row.label || "Saved address")}${
             row.is_default ? '<span class="order-address-badge">Default</span>' : ""
           }</span>
-          <span class="order-address-card-lines">${esc(formatSavedBuyerAddress(row) || "—")}</span>
+          ${detail ? `<span class="order-address-card-lines">${esc(detail)}</span>` : ""}
+          ${areaName ? `<span class="order-address-card-area">${esc(areaName)}</span>` : ""}
         </span>
         <span class="order-address-choice-check" aria-hidden="true"></span>
       </label>
-    `
+    `;
+        }
       )
       .join("");
     listEl.innerHTML += `
