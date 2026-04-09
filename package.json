@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "bun run db:migrate:safe && astro build",
+    "build:only": "astro build",
     "preview": "astro preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "bun run scripts/run-migrations.ts",
+    "db:migrate:safe": "bun run scripts/migrate-safe.ts",
     "deploy": "npx vercel deploy --prod"
   },
   "devDependencies": {
