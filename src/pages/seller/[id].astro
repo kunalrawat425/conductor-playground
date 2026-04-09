@@ -697,14 +697,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-name">${esc(name)}</div>
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
-                  <div class="menu-item-meta">${open ? (l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : 'Out of stock') : 'Pre-order for tomorrow'} · ${esc(l.pickup_loc)}</div>
+                  <div class="menu-item-meta">${open ? (l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : (acceptsPreorder ? 'Sold out — pre-order available' : 'Out of stock')) : 'Pre-order for tomorrow'} · ${esc(l.pickup_loc)}</div>
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">
                       ${open
                         ? (l.weight_avail > 0
                           ? `<button class="add-btn" data-add="${l.id}">ADD</button>`
-                          : `<span style="font-size:12px;color:var(--red);font-weight:600;">Sold out</span>`)
+                          : (acceptsPreorder
+                            ? `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`
+                            : `<span style="font-size:12px;color:var(--red);font-weight:600;">Sold out</span>`))
                         : `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`}
                     </div>`
                   : ""}
@@ -764,9 +766,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           }
         })();
 
-        // Initialize cart entries (only for in-stock items)
+        // Initialize cart entries (in-stock + pre-orderable out-of-stock)
         for (const l of activeListings) {
-          if (l.weight_avail > 0) {
+          if (l.weight_avail > 0 || acceptsPreorder) {
             cart[l.id] = { listing: l, qty: 0 };
           }
         }
