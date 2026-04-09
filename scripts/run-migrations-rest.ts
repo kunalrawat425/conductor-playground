@@ -41,13 +41,16 @@ if (only?.length) {
 console.error(`Found ${files.length} migration file(s)`);
 
 // Ensure tracking table exists
-await sb.rpc("exec_sql", { query: TRACKING_TABLE }).catch(() => {
+try {
+  await sb.rpc("exec_sql", { query: TRACKING_TABLE });
+} catch {
   // If exec_sql doesn't exist, we'll check another way
-});
+}
 
 // Check which migrations already ran
-const { data: applied } = await sb.from("_migrations").select("name").catch(() => ({ data: null })) as any;
-const appliedSet = new Set((applied || []).map((r: any) => r.name));
+const migRes = await sb.from("_migrations").select("name");
+const applied = migRes.error ? null : migRes.data;
+const appliedSet = new Set((applied || []).map((r: { name: string }) => r.name));
 
 let ran = 0;
 for (const name of files) {
@@ -95,7 +98,10 @@ for (const name of files) {
 
   if (!failed) {
     // Record as applied
-    await sb.from("_migrations").insert({ name }).catch(() => {});
+    const { error: trackErr } = await sb.from("_migrations").insert({ name });
+    if (trackErr) {
+      // duplicate or missing table — migration may still have run
+    }
     console.error("ok");
     ran++;
   }
