@@ -56,6 +56,7 @@ export const prerender = false;
       declined: { label: "Declined", badge: "badge-red" },
       cancelled: { label: "Cancelled", badge: "badge-red" },
       refunded: { label: "Refunded", badge: "badge-orange" },
+      scheduled: { label: "Scheduled", badge: "badge-purple" },
     };
 
     function esc(str: string): string {
@@ -120,6 +121,7 @@ export const prerender = false;
               <span class="text-muted" style="font-size:12px;">${formatDate(order.created_at)}</span>
             </div>
             ${isPreOrder && order.status === "pre_order" ? `<p class="text-muted" style="font-size:12px;margin-top:8px;font-style:italic;">Waiting for seller to confirm with morning price</p>` : ""}
+            ${order.scheduled_for ? `<p style="font-size:12px;font-weight:600;color:var(--blue);margin-top:6px;">🗓️ Scheduled: ${new Date(order.scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${new Date(order.scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>` : ""}
           </div>
         </div>
       `;

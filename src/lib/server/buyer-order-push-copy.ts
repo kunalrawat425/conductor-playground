@@ -53,6 +53,10 @@ export function buyerOrderPushNotification(
       title: "Order received",
       body: species ? `Your ${species} order is pending seller action` : "Your order is pending seller action",
     },
+    scheduled: {
+      title: "Order Scheduled! 🗓️",
+      body: species ? `Your ${species} order is scheduled. We'll notify you when it's time.` : "Your order is scheduled. We'll remind you!",
+    },
   };
 
   return (

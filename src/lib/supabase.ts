@@ -71,6 +71,7 @@ export type OrderStatus =
   | "completed"
   | "declined"
   | "cancelled"
+  | "scheduled"
   | "refunded";
 
 export type OrderType = "pickup" | "delivery";
@@ -94,6 +95,8 @@ export interface Order {
   species: string | null;
   created_at: string;
   delivery_fee?: number;
+  scheduled_for?: string | null;
+  schedule_slot_id?: string | null;
 }
 
 export interface Buyer {
@@ -274,10 +277,11 @@ export async function getPreOrdersForSellerPage(
   return { orders: (data || []) as Order[], total: count ?? 0 };
 }
 
-/** Tab badges: pending fresh + awaiting pre-orders (not paginated). */
+/** Tab badges: pending fresh + awaiting pre-orders + scheduled (not paginated). */
 export async function getSellerOrderTabCounts(sellerId: string): Promise<{
   pendingFresh: number;
   preAwaiting: number;
+  scheduled: number;
 }> {
   const { data: listings } = await supabase
     .from("fish_listings")
@@ -287,6 +291,7 @@ export async function getSellerOrderTabCounts(sellerId: string): Promise<{
   const listingIds = listings?.map((l) => l.id) || [];
 
   let pendingFresh = 0;
+  let scheduledCount = 0;
   if (listingIds.length > 0) {
     const { count, error } = await supabase
       .from("orders")
@@ -294,6 +299,13 @@ export async function getSellerOrderTabCounts(sellerId: string): Promise<{
       .in("listing_id", listingIds)
       .eq("status", "pending");
     if (!error && count != null) pendingFresh = count;
+
+    const { count: schedCount, error: schedErr } = await supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .in("listing_id", listingIds)
+      .eq("status", "scheduled");
+    if (!schedErr && schedCount != null) scheduledCount = schedCount;
   }
 
   const orClause =
@@ -310,7 +322,37 @@ export async function getSellerOrderTabCounts(sellerId: string): Promise<{
   return {
     pendingFresh,
     preAwaiting: preErr ? 0 : preCount ?? 0,
+    scheduled: scheduledCount,
   };
+}
+
+/** Scheduled orders for seller, ordered by scheduled_for descending. */
+export async function getScheduledOrdersForSeller(
+  sellerId: string,
+  options: { page: number; pageSize?: number }
+): Promise<{ orders: Order[]; total: number }> {
+  const pageSize = options.pageSize ?? SELLER_ORDERS_PAGE_SIZE;
+  const { data: listings } = await supabase
+    .from("fish_listings")
+    .select("id")
+    .eq("seller_id", sellerId);
+
+  const listingIds = listings?.map((l) => l.id) || [];
+  if (listingIds.length === 0) return { orders: [], total: 0 };
+
+  const from = Math.max(0, (options.page - 1) * pageSize);
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabase
+    .from("orders")
+    .select("*", { count: "exact" })
+    .in("listing_id", listingIds)
+    .eq("status", "scheduled")
+    .order("scheduled_for", { ascending: true })
+    .range(from, to);
+
+  if (error) throw error;
+  return { orders: (data || []) as Order[], total: count ?? 0 };
 }
 
 export async function createListing(

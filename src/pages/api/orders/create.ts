@@ -39,6 +39,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       buyer_addr,
       order_type = "pickup",
       seller_id: clientSellerId,
+      scheduled_for,
+      schedule_slot_id,
     } = body;
 
     if (!buyer_phone) {
@@ -85,9 +87,12 @@ export const POST: APIRoute = async ({ request, url }) => {
       total_price = (range?.max_price || 0) * quantity;
     }
 
-    // Determine pre-order status, min order, delivery fee
+    // Determine order status: scheduled > pre_order > pending
     let status = "pending";
     let delivery_fee = 0;
+    if (scheduled_for) {
+      status = "scheduled";
+    }
     if (seller_id) {
       const { data: seller } = await supabase
         .from("sellers")
@@ -97,7 +102,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         .eq("id", seller_id)
         .single();
 
-      if (seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
+      if (!scheduled_for && seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
         if (seller.accepts_preorder === false) {
           return new Response(
             JSON.stringify({ error: "This seller is closed and does not accept pre-orders" }),
@@ -142,6 +147,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         order_type,
         payment_type: "cod",
         paid_amount: status === "pre_order" ? amountDue : null,
+        scheduled_for: scheduled_for || null,
+        schedule_slot_id: schedule_slot_id || null,
       })
       .select()
       .single();
@@ -163,6 +170,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity,
             quantity_unit,
             buyer_phone,
+            scheduled_for: scheduled_for || null,
           }),
         });
       } catch {
