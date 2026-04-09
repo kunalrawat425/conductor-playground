@@ -55,7 +55,6 @@ export interface FishListing {
   photo_url: string | null;
   listed_date: string;
   is_available: boolean;
-  expires_at: string;
   pickup_loc: string;
   created_at: string;
   // joined
@@ -131,7 +130,6 @@ export async function getActiveListings() {
     .from("fish_listings")
     .select("*, seller:sellers(*)")
     .eq("is_available", true)
-    .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -445,7 +443,6 @@ export async function getSellersForSpecies(species: string) {
     .select("id, seller_id, price, price_unit, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)")
     .eq("species", species)
     .eq("is_available", true)
-    .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false });
 
   if (activeErr) throw activeErr;

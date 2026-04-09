@@ -573,11 +573,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         // If closed and seller doesn't accept pre-orders, show empty state
         const acceptsPreorder = seller.accepts_preorder !== false;
 
-        // If open: show only active unexpired listings (order mode)
-        // If closed + accepts preorder: show all listings they've ever had (their full menu)
+        // If open: show only active listings (order mode)
+        // If closed + accepts preorder: show all listings (their full menu for pre-order)
         // If closed + no preorder: show nothing
         const activeListings = open
-          ? listings.filter(l => l.is_available && new Date(l.expires_at) > new Date())
+          ? listings.filter(l => l.is_available)
           : acceptsPreorder
             ? listings.filter((l, i, arr) => {
                 // Dedupe by species, keep most recent
@@ -710,9 +710,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
                   <div class="menu-item-meta">${l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : ""} · ${esc(l.pickup_loc)}</div>
-                  ${!open ? '<span class="menu-tag menu-tag--closed">🕐 Shop closed</span>' : ""}
-                  ${open && l.weight_avail <= 0 ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
-                  ${!open && l.weight_avail <= 0 ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
+                  ${l.weight_avail <= 0 ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
                   ${(!open || l.weight_avail <= 0) && acceptsPreorder ? '<span class="menu-tag menu-tag--preorder">🎣 Pre-order available</span>' : ""}
                 </div>
                 ${inServiceArea
