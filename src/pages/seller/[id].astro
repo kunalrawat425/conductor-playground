@@ -459,6 +459,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       font-size: 13px;
       font-weight: 600;
       color: rgba(255,255,255,0.85);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: min(68vw, 260px);
     }
     #cart-total {
       font-size: 18px;
@@ -540,7 +544,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       }
 
       function unitLbl(u) {
-        if (u === "dozen" || u === "piece" || u === "kg" || u === "gram") return priceUnitShortLabel(u);
+        if (u === "piece" || u === "kg" || u === "gram") return priceUnitShortLabel(u);
         return String(u);
       }
 
@@ -574,7 +578,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             pct != null && pct > 0
               ? `<span class="menu-price-off">${pct}% off</span>`
               : "";
-          return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span><span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${ul}</span> ${badge}<span style="font-size:12px;color:var(--gray-500);display:block;margin-top:4px;">(${esc(o.label)})</span></div>`;
+          return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span> ${badge}<span style="font-size:12px;color:var(--gray-500);display:block;margin-top:4px;">${esc(o.label)} (${ul})</span></div>`;
         }
         return `<div class="menu-item-price-wrap">
           <label class="menu-price-label" for="po-${l.id}">Choose price</label>
@@ -620,6 +624,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         freeAbove: /** @type {number | null} */ (null),
       };
 
+      function formatCartQtyBySpecies(entries) {
+        return entries
+          .map((e) => {
+            const meta = SPECIES[e.listing.species];
+            const name = meta?.english || e.listing.species;
+            return `${e.qty}× ${name}`;
+          })
+          .join(" · ");
+      }
+
       function getCartBillingSnapshot() {
         const entries = Object.values(cart).filter(e => e.qty > 0);
         if (entries.length === 0) return null;
@@ -642,11 +656,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           deliveryLabel = "Pickup";
         }
         const grandTotal = subtotal + deliveryFee;
+        const bySpecies = formatCartQtyBySpecies(entries);
         return {
           subtotal: Math.round(subtotal),
           deliveryLabel,
           grandTotal: Math.round(grandTotal),
-          itemsLine: `${totalItems} item${totalItems !== 1 ? "s" : ""}`,
+          itemsLine: `${bySpecies} (${totalItems} ${totalItems !== 1 ? "units" : "unit"})`,
         };
       }
 
@@ -659,8 +674,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
         cartBar.style.display = "block";
         const snap = getCartBillingSnapshot();
-        const totalItems = entries.reduce((sum, e) => sum + e.qty, 0);
-        document.getElementById("cart-count").textContent = `${totalItems} item${totalItems !== 1 ? "s" : ""}`;
+        document.getElementById("cart-count").textContent = formatCartQtyBySpecies(entries);
         document.getElementById("cart-total").textContent = snap ? `₹${snap.grandTotal}` : "₹0";
         // Update button text based on cart contents
         const allPreorder = entries.every(e => isPreorderItem(e.listing.id));
@@ -672,7 +686,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const entry = cart[listingId];
         if (!entry) return false;
         const l = entry.listing;
-        return !sellerIsOpen || l.weight_avail <= 0;
+        return !sellerIsOpen || Number(l.weight_avail) <= 0;
       }
 
       function renderQtyControls(listingId) {
@@ -885,15 +899,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
         const listingsById = Object.fromEntries(activeListings.map((x) => [x.id, x]));
 
-        function stockAvailLine(l) {
-          const opts = getListingPriceOptions(l);
-          const u0 = opts[0]?.unit || "piece";
-          if (l.weight_avail <= 0) return "";
-          const amt = formatInventoryAmount(Number(l.weight_avail), u0);
-          const ul = unitLbl(u0);
-          return `<div class="menu-item-stock">📦 ${amt} ${ul} available</div>`;
-        }
-
         function variantBodyInner(l) {
           const opts = getListingPriceOptions(l);
           const u0 = opts[0];
@@ -909,7 +914,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <div>
                   ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l)}
-                  ${stockAvailLine(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
                   ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
@@ -949,7 +953,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l)}
-                  ${stockAvailLine(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
                   ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}

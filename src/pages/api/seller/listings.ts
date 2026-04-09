@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import { canonicalPricingOptionsFromPayload } from "../../../lib/listing-pricing";
+import { canonicalPricingOptionsFromPayload, pricingOptionsUniformUnit } from "../../../lib/listing-pricing";
 
 export const prerender = false;
 
@@ -46,6 +46,15 @@ export const POST: APIRoute = async ({ request }) => {
           JSON.stringify({
             error:
               "pricing_options must include at least one valid tier with price at least ₹1 per tier.",
+          }),
+          { status: 400 }
+        );
+      }
+      if (!pricingOptionsUniformUnit(tiers)) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "All pricing tiers must use the same unit (piece, kg, or gram) so inventory matches orders.",
           }),
           { status: 400 }
         );
@@ -100,6 +109,15 @@ export const POST: APIRoute = async ({ request }) => {
             JSON.stringify({
               error:
                 "pricing_options must include at least one valid tier with price at least ₹1 per tier.",
+            }),
+            { status: 400 }
+          );
+        }
+        if (!pricingOptionsUniformUnit(tiers)) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "All pricing tiers must use the same unit (piece, kg, or gram) so inventory matches orders.",
             }),
             { status: 400 }
           );

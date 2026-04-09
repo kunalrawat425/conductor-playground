@@ -1,8 +1,9 @@
 import type { ListingPriceOption } from "./listing-pricing";
+import type { PriceUnit } from "./species";
 
 /**
- * Shared UI for seller listing forms: multiple price rows with label + ₹ + unit,
- * optional compare-at (list) price and quick % / ₹-off helpers.
+ * Shared UI for seller listing forms: choose **count (piece)** vs **weight (kg or gram)**,
+ * then multiple price rows (label + ₹ + optional compare-at). All rows share one unit.
  */
 export function setupListingPricingEditor(opts: {
   container: HTMLElement;
@@ -13,22 +14,30 @@ export function setupListingPricingEditor(opts: {
 }): { sync: () => void; addRow: () => void } {
   const { container, hiddenInput, addButton, initial, onUnitChange } = opts;
 
+  function resolvedUnit(): PriceUnit {
+    const basis = container.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
+    const w = container.querySelector(".listing-weight-unit-select") as HTMLSelectElement | null;
+    if (basis?.value === "weight" && w) {
+      return w.value === "gram" ? "gram" : "kg";
+    }
+    return "piece";
+  }
+
+  function updateWeightWrapVisibility() {
+    const basis = container.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
+    const wrap = container.querySelector(".listing-pricing-weight-unit-wrap") as HTMLElement | null;
+    if (!basis || !wrap) return;
+    wrap.style.display = basis.value === "weight" ? "block" : "none";
+  }
+
   function syncHidden() {
+    const unit = resolvedUnit();
     const rows = container.querySelectorAll(".pricing-row");
     const out: ListingPriceOption[] = [];
     rows.forEach((row, i) => {
       const id = (row as HTMLElement).dataset.optId || `opt_${i}`;
       const label = (row.querySelector(".price-label-inp") as HTMLInputElement)?.value?.trim() || "Option";
       const price = parseFloat((row.querySelector(".price-inp") as HTMLInputElement)?.value || "0");
-      const unitRaw = (row.querySelector(".price-unit-select") as HTMLSelectElement)?.value || "piece";
-      const unit: ListingPriceOption["unit"] =
-        unitRaw === "dozen"
-          ? "dozen"
-          : unitRaw === "kg"
-            ? "kg"
-            : unitRaw === "gram"
-              ? "gram"
-              : "piece";
       const compareRaw = (row.querySelector(".price-compare-inp") as HTMLInputElement)?.value?.trim();
       const compareParsed = compareRaw ? parseFloat(compareRaw) : NaN;
       if (!Number.isFinite(price) || price <= 0) return;
@@ -84,23 +93,14 @@ export function setupListingPricingEditor(opts: {
     const labelEsc = String(opt.label).replace(/</g, "").replace(/"/g, "'");
     const cap = opt.compare_at_price != null && opt.compare_at_price > 0 ? opt.compare_at_price : "";
     wrap.innerHTML = `
-      <div class="pricing-row-grid" style="display:grid;grid-template-columns:1fr 100px minmax(112px,1fr) 36px;gap:8px;align-items:end;margin-bottom:8px;">
+      <div class="pricing-row-grid" style="display:grid;grid-template-columns:1fr 100px 36px;gap:8px;align-items:end;margin-bottom:8px;">
         <div class="form-group" style="margin:0;">
           <label style="font-size:12px;">Label</label>
-          <input type="text" class="price-label-inp" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${labelEsc}" placeholder="Per piece, Large…" />
+          <input type="text" class="price-label-inp" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${labelEsc}" placeholder="e.g. Large, 500g pack…" />
         </div>
         <div class="form-group" style="margin:0;">
           <label style="font-size:12px;">Selling ₹</label>
           <input type="number" inputmode="decimal" class="price-inp" min="1" step="0.01" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${opt.price > 0 ? opt.price : ""}" required />
-        </div>
-        <div class="form-group" style="margin:0;">
-          <label style="font-size:12px;">Unit</label>
-          <select class="price-unit-select" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--gray-200);">
-            <option value="piece" ${opt.unit === "piece" ? "selected" : ""}>per piece</option>
-            <option value="dozen" ${opt.unit === "dozen" ? "selected" : ""}>per dozen</option>
-            <option value="kg" ${opt.unit === "kg" ? "selected" : ""}>per kg</option>
-            <option value="gram" ${opt.unit === "gram" ? "selected" : ""}>per g</option>
-          </select>
         </div>
         <button type="button" class="btn-remove-price" style="height:40px;border:none;background:var(--gray-100);border-radius:8px;cursor:pointer;">✕</button>
       </div>
@@ -132,7 +132,7 @@ export function setupListingPricingEditor(opts: {
       wrap.remove();
       syncHidden();
     });
-    wrap.querySelectorAll("input, select").forEach((el) => {
+    wrap.querySelectorAll("input").forEach((el) => {
       el.addEventListener("input", syncHidden);
       el.addEventListener("change", syncHidden);
     });
@@ -140,11 +140,48 @@ export function setupListingPricingEditor(opts: {
     container.appendChild(wrap);
   }
 
+  const modeEl = document.createElement("div");
+  modeEl.className = "listing-pricing-mode";
+  const u0 = initial[0]?.unit ?? "piece";
+  const isWeight = u0 === "kg" || u0 === "gram";
+  modeEl.innerHTML = `
+    <div style="display:grid;gap:10px;margin-bottom:14px;padding:12px;background:var(--gray-50,#f9fafb);border-radius:10px;border:1px solid var(--gray-200,#e5e7eb);">
+      <div class="form-group" style="margin:0;">
+        <label for="listing-pricing-basis" style="font-size:12px;font-weight:600;">Sell by</label>
+        <select id="listing-pricing-basis" class="listing-pricing-basis" style="width:100%;max-width:100%;padding:8px;border-radius:8px;border:1px solid var(--gray-200);font-size:14px;">
+          <option value="count" ${!isWeight ? "selected" : ""}>Count — per piece</option>
+          <option value="weight" ${isWeight ? "selected" : ""}>Weight — per kg or per gram</option>
+        </select>
+      </div>
+      <div class="listing-pricing-weight-unit-wrap form-group" style="margin:0;display:${isWeight ? "block" : "none"};">
+        <label for="listing-weight-unit-select" style="font-size:12px;font-weight:600;">Weight unit</label>
+        <select id="listing-weight-unit-select" class="listing-weight-unit-select" style="width:100%;max-width:100%;padding:8px;border-radius:8px;border:1px solid var(--gray-200);font-size:14px;">
+          <option value="kg" ${u0 === "kg" ? "selected" : ""}>per kg</option>
+          <option value="gram" ${u0 === "gram" ? "selected" : ""}>per gram</option>
+        </select>
+      </div>
+    </div>
+  `;
+  container.prepend(modeEl);
+
+  const basisSel = modeEl.querySelector(".listing-pricing-basis") as HTMLSelectElement;
+  const weightSel = modeEl.querySelector(".listing-weight-unit-select") as HTMLSelectElement;
+  basisSel.addEventListener("change", () => {
+    updateWeightWrapVisibility();
+    syncHidden();
+    onUnitChange?.();
+  });
+  weightSel.addEventListener("change", () => {
+    syncHidden();
+    onUnitChange?.();
+  });
+  updateWeightWrapVisibility();
+
   initial.forEach((o) => renderRow(o));
   syncHidden();
 
   function addRow() {
-    renderRow({ id: `opt_${Date.now()}`, label: "", price: 0, unit: "piece" });
+    renderRow({ id: `opt_${Date.now()}`, label: "", price: 0, unit: resolvedUnit() });
     syncHidden();
   }
 

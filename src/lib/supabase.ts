@@ -72,7 +72,7 @@ export interface FishListing {
   id: string;
   seller_id: string;
   species: string;
-  /** Multi-tier prices (labels + ₹ + piece|dozen). Only source for listing prices. */
+  /** Multi-tier prices (labels + ₹ + piece|kg|gram). Only source for listing prices. */
   pricing_options: ListingPriceOption[] | null;
   /** Buyer-visible grade: small / medium / large (optional). */
   fish_size?: "small" | "medium" | "large" | null;
@@ -82,7 +82,7 @@ export interface FishListing {
   is_available: boolean;
   pickup_loc: string;
   created_at: string;
-  /** Max units (piece/dozen) one buyer may order per calendar day for this listing; optional */
+  /** Max units (same as listing unit) one buyer may order per calendar day for this listing; optional */
   buyer_daily_qty_limit?: number | null;
   oos_threshold?: number | null;
   // joined

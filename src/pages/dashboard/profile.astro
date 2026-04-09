@@ -224,16 +224,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             <h3 style="font-size:15px;font-weight:700;margin:0;">📅 Schedule & Availability</h3>
             <label
               class="dash-switch"
-              title="Show or hide schedule settings"
+              title="When off, buyers no longer see pickup slots (saved schedule is cleared)"
               style="position:relative;display:inline-block;width:48px;height:28px;flex-shrink:0;"
             >
-              <input type="checkbox" id="sched-toggle-input" style="opacity:0;width:0;height:0;" aria-label="Show schedule settings" />
+              <input type="checkbox" id="sched-toggle-input" style="opacity:0;width:0;height:0;" aria-label="Offer pickup time slots to buyers" />
               <span id="sched-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
               <span id="sched-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
             </label>
           </div>
 
           <div id="sched-panel" style="display:none;">
+            <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
+              Settings are stored in <code>seller_schedule_configs</code> (one row per seller). Buyers see slots computed from that row (virtual slots, not a separate slot table). Turn the switch off above to delete your config and remove all slots from the menu.
+            </p>
             <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
               Pick how many calendar days ahead buyers can book, then set the pickup time window and slot length. The schedule is generated from today forward — you do not set a manual start/end calendar date.
             </p>
@@ -678,29 +681,48 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       updateSchedulePanelUI(false);
 
-      schedToggleInput.addEventListener("change", () => {
+      schedToggleInput.addEventListener("change", async () => {
         const on = schedToggleInput.checked;
         updateSchedulePanelUI(on);
-        if (on) void loadExistingSchedule();
+        if (on) {
+          void loadExistingSchedule();
+          return;
+        }
+        document.getElementById("sched-slots")!.innerHTML = "";
+        const sellerId = localStorage.getItem("zepto_seller_id");
+        if (!sellerId) return;
+        try {
+          const res = await fetch("/api/seller/schedule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "delete_config", seller_id: sellerId }),
+          });
+          const data = await res.json();
+          if (!data.success) showToast(data.error || "Could not clear schedule", "error");
+        } catch (e: any) {
+          showToast(e.message || "Could not clear schedule", "error");
+        }
       });
 
       async function loadExistingSchedule() {
         const sellerId = localStorage.getItem("zepto_seller_id");
         if (!sellerId) return;
+        const slotsContainer = document.getElementById("sched-slots")!;
         const { data: config } = await supabase.from("seller_schedule_configs").select("*").eq("seller_id", sellerId).single();
-        if (config) {
-          // Calculate days from config (legacy date range or new days_ahead)
-          const daysDiff =
-            config.days_ahead != null
-              ? Number(config.days_ahead)
-              : Math.ceil((new Date(config.date_to).getTime() - new Date(config.date_from).getTime()) / 86400000) + 1;
-          const daysSelect = document.getElementById("sched-days") as HTMLSelectElement;
-          const closest = [3, 7, 14, 30].reduce((a, b) => Math.abs(b - daysDiff) < Math.abs(a - daysDiff) ? b : a);
-          daysSelect.value = String(closest);
-          (document.getElementById("sched-start") as HTMLInputElement).value = config.start_time?.substring(0, 5);
-          (document.getElementById("sched-end") as HTMLInputElement).value = config.end_time?.substring(0, 5);
-          (document.getElementById("sched-duration") as HTMLSelectElement).value = String(config.slot_duration_minutes);
+        if (!config) {
+          slotsContainer.innerHTML = "";
+          return;
         }
+        const daysDiff =
+          config.days_ahead != null
+            ? Number(config.days_ahead)
+            : Math.ceil((new Date(config.date_to).getTime() - new Date(config.date_from).getTime()) / 86400000) + 1;
+        const daysSelect = document.getElementById("sched-days") as HTMLSelectElement;
+        const closest = [3, 7, 14, 30].reduce((a, b) => Math.abs(b - daysDiff) < Math.abs(a - daysDiff) ? b : a);
+        daysSelect.value = String(closest);
+        (document.getElementById("sched-start") as HTMLInputElement).value = config.start_time?.substring(0, 5);
+        (document.getElementById("sched-end") as HTMLInputElement).value = config.end_time?.substring(0, 5);
+        (document.getElementById("sched-duration") as HTMLSelectElement).value = String(config.slot_duration_minutes);
         // Load virtual slots
         const res = await fetch("/api/seller/schedule", {
           method: "POST",
@@ -709,7 +731,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         });
         const data = await res.json();
         const slots = data.slots || [];
-        if (slots && slots.length > 0) renderSlotGrid(slots, sellerId);
+        if (slots.length > 0) renderSlotGrid(slots, sellerId);
+        else slotsContainer.innerHTML = "";
       }
 
       function renderSlotGrid(slots: any[], sellerId: string) {

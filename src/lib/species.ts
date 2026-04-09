@@ -3,7 +3,8 @@
  * Default pricing unit per species (how it's typically sold).
  */
 
-export type PriceUnit = "piece" | "dozen" | "kg" | "gram";
+/** Count = piece; weight = kg or gram (never mix on one listing). */
+export type PriceUnit = "piece" | "kg" | "gram";
 
 export interface Species {
   english: string;
@@ -21,8 +22,8 @@ export const SPECIES: Record<string, Species> = {
   crab: { english: "Crab", marathi: "खेकडा", defaultUnit: "piece" },
   squid: { english: "Squid", marathi: "मांदेली", defaultUnit: "piece" },
   lobster: { english: "Lobster", marathi: "शेवंड", defaultUnit: "piece" },
-  oyster: { english: "Oyster", marathi: "कालव", defaultUnit: "dozen" },
-  clam: { english: "Clam", marathi: "शिंपल्या", defaultUnit: "dozen" },
+  oyster: { english: "Oyster", marathi: "कालव", defaultUnit: "piece" },
+  clam: { english: "Clam", marathi: "शिंपल्या", defaultUnit: "piece" },
   sardine: { english: "Sardine", marathi: "तारली", defaultUnit: "piece" },
   sole: { english: "Sole Fish", marathi: "लेप", defaultUnit: "piece" },
   hilsa: { english: "Hilsa", marathi: "पालवा", defaultUnit: "piece" },
@@ -44,9 +45,17 @@ export function getSpeciesDisplay(id: string): string {
   return `${s.english} (${s.marathi})`;
 }
 
-export const PRICE_UNITS: { value: PriceUnit; label: string }[] = [
-  { value: "piece", label: "per piece" },
-  { value: "dozen", label: "per dozen" },
+/** Count-based selling (one inventory pool in pieces). */
+export const PRICE_UNITS_COUNT: { value: "piece"; label: string }[] = [{ value: "piece", label: "per piece" }];
+
+/** Weight-based selling (choose kg or gram for the whole listing). */
+export const PRICE_UNITS_WEIGHT: { value: "kg" | "gram"; label: string }[] = [
   { value: "kg", label: "per kg" },
   { value: "gram", label: "per gram" },
+];
+
+/** All allowed units (for validation / dropdowns). */
+export const PRICE_UNITS: { value: PriceUnit; label: string }[] = [
+  ...PRICE_UNITS_COUNT,
+  ...PRICE_UNITS_WEIGHT,
 ];
