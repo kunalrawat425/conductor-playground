@@ -190,7 +190,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               const l = _listings.find(x => x.id === id);
               if (l) l.is_available = !currentlyAvailable;
               renderListings(_listings);
-            } catch { btn.disabled = false; }
+            } catch (_) { btn.disabled = false; }
           });
         });
 
@@ -215,17 +215,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         } else {
           bar.style.display = "none";
         }
-      }
-
-        el.querySelectorAll(".listing-dash-card").forEach((card) => {
-          card.addEventListener("click", (ev) => {
-            if ((ev.target as HTMLElement).closest("a, .listing-card-actions")) return;
-            const detail = card.querySelector(".listing-pickup-detail") as HTMLElement;
-            if (!detail) return;
-            const open = detail.style.display !== "block";
-            detail.style.display = open ? "block" : "none";
-          });
-        });
       }
 
       init();
