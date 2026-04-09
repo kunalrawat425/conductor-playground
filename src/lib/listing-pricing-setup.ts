@@ -2,7 +2,7 @@ import type { ListingPriceOption } from "./listing-pricing";
 import type { PriceUnit } from "./species";
 
 /**
- * Shared UI for seller listing forms: choose **count (piece)** vs **weight (kg or gram)**,
+ * Shared UI for seller listing forms: choose **count (piece)** vs **weight (kg)**,
  * then multiple price rows (label + ₹ + optional compare-at). All rows share one unit.
  */
 export function setupListingPricingEditor(opts: {
@@ -16,18 +16,8 @@ export function setupListingPricingEditor(opts: {
 
   function resolvedUnit(): PriceUnit {
     const basis = container.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
-    const w = container.querySelector(".listing-weight-unit-select") as HTMLSelectElement | null;
-    if (basis?.value === "weight" && w) {
-      return w.value === "gram" ? "gram" : "kg";
-    }
+    if (basis?.value === "weight") return "kg";
     return "piece";
-  }
-
-  function updateWeightWrapVisibility() {
-    const basis = container.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
-    const wrap = container.querySelector(".listing-pricing-weight-unit-wrap") as HTMLElement | null;
-    if (!basis || !wrap) return;
-    wrap.style.display = basis.value === "weight" ? "block" : "none";
   }
 
   function updateBundleFieldVisibility() {
@@ -38,10 +28,10 @@ export function setupListingPricingEditor(opts: {
     });
   }
 
-  /** Piece / gram: integer ≥ 1. Kg: decimal ≥ 0.01. Labels ask for a concrete count/weight, then ₹. */
+  /** Piece: integer ≥ 1. Kg: decimal ≥ 0.01. Labels ask for a concrete count/weight, then ₹. */
   function updateBundleFieldCopy() {
     const ru = resolvedUnit();
-    const unitWord = ru === "piece" ? "pieces" : ru === "gram" ? "g" : "kg";
+    const unitWord = ru === "piece" ? "pieces" : "kg";
     container.querySelectorAll(".pricing-row").forEach((row) => {
       const wrap = row.querySelector(".listing-bundle-wrap") as HTMLElement | null;
       const lab = wrap?.querySelector(".bundle-label-host") as HTMLElement | null;
@@ -60,16 +50,6 @@ export function setupListingPricingEditor(opts: {
         inp.removeAttribute("placeholder");
         hint.innerHTML =
           "Type the count, then selling ₹ → e.g. <strong>3</strong> pieces at <strong>₹150</strong>. Use <strong>1</strong> for price per single piece.";
-      } else if (ru === "gram") {
-        lab.innerHTML = `How many grams? <span class="listing-req" aria-hidden="true">*</span>`;
-        inp.required = true;
-        inp.min = "1";
-        inp.step = "1";
-        inp.inputMode = "numeric";
-        inp.setAttribute("aria-label", "Grams for this price");
-        inp.removeAttribute("placeholder");
-        hint.innerHTML =
-          "Type grams, then ₹ → e.g. <strong>500</strong> g at <strong>₹200</strong>. Use <strong>1</strong> for ₹ per gram.";
       } else if (ru === "kg") {
         lab.innerHTML = `How many kg? <span class="listing-req" aria-hidden="true">*</span>`;
         inp.required = true;
@@ -121,11 +101,6 @@ export function setupListingPricingEditor(opts: {
         let bs = parseInt(bsRaw, 10);
         if (!Number.isFinite(bs) || bs < 1) bs = 1;
         rowOut.bundle_size = Math.floor(bs);
-      } else if (unit === "gram") {
-        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim() ?? "";
-        let bs = parseInt(bsRaw, 10);
-        if (!Number.isFinite(bs) || bs < 1) bs = 1;
-        rowOut.bundle_size = Math.floor(bs);
       } else if (unit === "kg") {
         const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim() ?? "";
         let bs = parseFloat(bsRaw);
@@ -144,33 +119,92 @@ export function setupListingPricingEditor(opts: {
     onUnitChange?.();
   }
 
-  function wireDealButtons(wrap: HTMLElement) {
+  function dealIsAmtMode(wrap: HTMLElement): boolean {
+    const checked = wrap.querySelector("input.deal-mode-radio:checked") as HTMLInputElement | null;
+    return checked?.value === "amt";
+  }
+
+  function computeDealPreview(wrap: HTMLElement): {
+    selling: number;
+    list: number;
+    save: number;
+    pctOff: number;
+  } | null {
     const compareInp = wrap.querySelector(".price-compare-inp") as HTMLInputElement | null;
+    const list = parseFloat(compareInp?.value || "");
+    if (!Number.isFinite(list) || list < 1) return null;
+    const isAmt = dealIsAmtMode(wrap);
+    if (isAmt) {
+      const amtInp = wrap.querySelector(".discount-amt-inp") as HTMLInputElement | null;
+      const amt = parseFloat(amtInp?.value || "");
+      if (!Number.isFinite(amt) || amt <= 0) return null;
+      const selling = Math.max(1, Math.round((list - amt) * 100) / 100);
+      if (selling >= list) return null;
+      const save = Math.round((list - selling) * 100) / 100;
+      const pctOff = Math.max(0, Math.round((1 - selling / list) * 100));
+      return { selling, list, save, pctOff };
+    }
+    const pctInp = wrap.querySelector(".discount-pct-inp") as HTMLInputElement | null;
+    const pct = parseFloat(pctInp?.value || "");
+    if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return null;
+    const selling = Math.max(1, Math.round((list * (100 - pct)) / 100));
+    if (selling >= list) return null;
+    const save = Math.round((list - selling) * 100) / 100;
+    const pctOff = Math.round((1 - selling / list) * 100);
+    return { selling, list, save, pctOff };
+  }
+
+  function refreshDealPreviewLine(wrap: HTMLElement) {
+    const el = wrap.querySelector(".deal-preview-line") as HTMLElement | null;
+    if (!el) return;
+    const res = computeDealPreview(wrap);
+    const compareInp = wrap.querySelector(".price-compare-inp") as HTMLInputElement | null;
+    const listRaw = parseFloat(compareInp?.value || "");
+    if (!Number.isFinite(listRaw) || listRaw < 1) {
+      el.innerHTML = `<span style="color:var(--gray-500);font-size:11px;">Enter <strong>list ₹</strong> and a discount to preview savings and final price.</span>`;
+      return;
+    }
+    if (!res) {
+      el.innerHTML = `<span style="color:var(--gray-500);font-size:11px;">Enter <strong>% off</strong> or <strong>₹ off</strong> (one mode at a time).</span>`;
+      return;
+    }
+    el.innerHTML = `<span style="color:var(--gray-800);">Selling <strong style="color:var(--green);font-size:1.05em;">₹${res.selling}</strong> · Save ₹${res.save} <span style="color:var(--gray-600);">(${res.pctOff}% off list)</span></span>`;
+  }
+
+  function wireDealButtons(wrap: HTMLElement) {
     const priceInp = wrap.querySelector(".price-inp") as HTMLInputElement | null;
+    const compareInp = wrap.querySelector(".price-compare-inp") as HTMLInputElement | null;
     const pctInp = wrap.querySelector(".discount-pct-inp") as HTMLInputElement | null;
     const amtInp = wrap.querySelector(".discount-amt-inp") as HTMLInputElement | null;
 
-    wrap.querySelector(".btn-apply-pct")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      const list = parseFloat(compareInp?.value || "");
-      const pct = parseFloat(pctInp?.value || "");
-      if (!priceInp || !Number.isFinite(list) || list < 1) return;
-      if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return;
-      const selling = Math.max(1, Math.round((list * (100 - pct)) / 100));
-      priceInp.value = String(selling);
-      syncHidden();
+    function toggleDiscountModeRows() {
+      const isAmt = dealIsAmtMode(wrap);
+      const rPct = wrap.querySelector(".deal-discount-pct-row") as HTMLElement | null;
+      const rAmt = wrap.querySelector(".deal-discount-amt-row") as HTMLElement | null;
+      if (rPct) rPct.style.display = isAmt ? "none" : "flex";
+      if (rAmt) rAmt.style.display = isAmt ? "flex" : "none";
+      refreshDealPreviewLine(wrap);
+    }
+
+    wrap.querySelectorAll("input.deal-mode-radio").forEach((radio) => {
+      radio.addEventListener("change", toggleDiscountModeRows);
     });
 
-    wrap.querySelector(".btn-apply-amt")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      const list = parseFloat(compareInp?.value || "");
-      const amt = parseFloat(amtInp?.value || "");
-      if (!priceInp || !Number.isFinite(list) || list < 1) return;
-      if (!Number.isFinite(amt) || amt <= 0) return;
-      const selling = Math.max(1, Math.round((list - amt) * 100) / 100);
-      priceInp.value = String(selling);
-      syncHidden();
+    [compareInp, pctInp, amtInp].forEach((inp) => {
+      inp?.addEventListener("input", () => refreshDealPreviewLine(wrap));
+      inp?.addEventListener("change", () => refreshDealPreviewLine(wrap));
     });
+
+    wrap.querySelector(".btn-apply-deal")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const res = computeDealPreview(wrap);
+      if (!res || !priceInp) return;
+      priceInp.value = String(res.selling);
+      syncHidden();
+      refreshDealPreviewLine(wrap);
+    });
+
+    toggleDiscountModeRows();
   }
 
   function renderRow(opt: ListingPriceOption) {
@@ -185,9 +219,6 @@ export function setupListingPricingEditor(opts: {
     if (ru === "piece") {
       bundleInputValue =
         opt.bundle_size != null && opt.bundle_size >= 1 ? String(Math.floor(Number(opt.bundle_size))) : "1";
-    } else if (ru === "gram") {
-      bundleInputValue =
-        opt.bundle_size != null && opt.bundle_size >= 1 ? String(Math.floor(Number(opt.bundle_size))) : "1";
     } else if (ru === "kg") {
       const rawKg = opt.bundle_size != null ? Number(opt.bundle_size) : 1;
       const nk = Number.isFinite(rawKg) && rawKg >= 0.01 ? Math.round(rawKg * 100) / 100 : 1;
@@ -196,7 +227,7 @@ export function setupListingPricingEditor(opts: {
     const bundleMin = ru === "kg" ? "0.01" : "1";
     const bundleStep = ru === "kg" ? "0.01" : "1";
     const bundleInputMode = ru === "kg" ? "decimal" : "numeric";
-    const unitSuffix = ru === "piece" ? "pieces" : ru === "gram" ? "g" : "kg";
+    const unitSuffix = ru === "piece" ? "pieces" : "kg";
     wrap.innerHTML = `
       <div class="pricing-row-grid" style="display:grid;grid-template-columns:minmax(72px,1fr) auto minmax(92px,1fr) 36px;gap:6px 8px;align-items:end;margin-bottom:8px;">
         <div class="form-group listing-bundle-wrap" style="margin:0;display:none;">
@@ -215,27 +246,35 @@ export function setupListingPricingEditor(opts: {
         <label style="font-size:12px;">Name on menu <span style="font-weight:400;color:var(--gray-500);">(optional)</span></label>
         <input type="text" class="price-label-inp" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${labelEsc}" placeholder="e.g. Large, 6‑pc pack, 500g tray…" />
       </div>
-      <div class="pricing-row-deal" style="margin-top:8px;padding:10px 12px;background:var(--gray-50, #f9fafb);border-radius:8px;border:1px dashed var(--gray-300, #e5e7eb);">
-        <div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--gray-600, #4b5563);">Deal (optional)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end;">
-          <div class="form-group" style="margin:0;">
-            <label style="font-size:11px;">List / compare-at ₹</label>
-            <input type="number" inputmode="decimal" class="price-compare-inp" min="1" step="0.01" placeholder="Was / MRP" value="${cap !== "" ? cap : ""}" />
-          </div>
-          <div class="form-group" style="margin:0;">
-            <label style="font-size:11px;">Quick: % off list</label>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-              <input type="number" inputmode="numeric" class="discount-pct-inp" min="1" max="99" step="1" placeholder="%" style="width:52px;padding:6px;border-radius:6px;border:1px solid var(--gray-200);" />
-              <button type="button" class="btn-apply-pct" style="font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid var(--blue, #0066cc);background:white;color:var(--blue, #0066cc);cursor:pointer;font-weight:600;">Apply</button>
-            </div>
-          </div>
+      <div class="pricing-row-deal" style="margin-top:8px;padding:12px 14px;background:var(--gray-50, #f9fafb);border-radius:10px;border:1px solid var(--gray-200, #e5e7eb);">
+        <div style="font-size:12px;font-weight:700;margin-bottom:4px;color:var(--gray-800);">Deal (optional)</div>
+        <p style="font-size:11px;color:var(--gray-600);margin:0 0 12px;line-height:1.45;">Choose <strong>one</strong> discount type. Preview updates as you type; one tap fills <strong>Selling ₹</strong> above.</p>
+        <div class="form-group" style="margin:0 0 12px;">
+          <label style="font-size:12px;">List / compare-at ₹ <span style="font-weight:400;color:var(--gray-500);">(was / MRP on menu)</span></label>
+          <input type="number" inputmode="decimal" class="price-compare-inp" min="1" step="0.01" placeholder="e.g. 600" value="${cap !== "" ? cap : ""}" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;margin-top:4px;" />
         </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
-          <span style="font-size:11px;color:var(--gray-500);">₹ off from list:</span>
-          <input type="number" inputmode="decimal" class="discount-amt-inp" min="1" step="1" placeholder="Amount" style="width:80px;padding:6px;border-radius:6px;border:1px solid var(--gray-200);" />
-          <button type="button" class="btn-apply-amt" style="font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid var(--blue, #0066cc);background:white;color:var(--blue, #0066cc);cursor:pointer;font-weight:600;">Apply</button>
+        <div style="font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:8px;">Discount type</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:13px;">
+          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+            <input type="radio" class="deal-mode-radio" name="deal-mode-${id}" value="pct" checked />
+            <span>% off list</span>
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+            <input type="radio" class="deal-mode-radio" name="deal-mode-${id}" value="amt" />
+            <span>Fixed ₹ off list</span>
+          </label>
         </div>
-        <p style="font-size:10px;color:var(--gray-500);margin:10px 0 0;line-height:1.35;">Set <strong>compare-at</strong> above the selling price to show strikethrough and “% off” on the menu. Use <strong>Quick</strong> after entering list ₹.</p>
+        <div class="deal-discount-pct-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+          <input type="number" inputmode="numeric" class="discount-pct-inp" min="1" max="99" step="1" placeholder="10" style="width:72px;padding:8px;border-radius:8px;border:1px solid var(--gray-200);box-sizing:border-box;" />
+          <span style="font-size:12px;color:var(--gray-600);">% taken off the list price</span>
+        </div>
+        <div class="deal-discount-amt-row" style="display:none;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:600;">₹</span>
+          <input type="number" inputmode="decimal" class="discount-amt-inp" min="0.01" step="0.01" placeholder="60" style="width:88px;padding:8px;border-radius:8px;border:1px solid var(--gray-200);box-sizing:border-box;" />
+          <span style="font-size:12px;color:var(--gray-600);">off the list price</span>
+        </div>
+        <div class="deal-preview-line" style="min-height:36px;margin-bottom:10px;padding:10px 12px;background:white;border-radius:8px;border:1px solid var(--gray-200);line-height:1.4;"></div>
+        <button type="button" class="btn-apply-deal" style="width:100%;padding:11px 14px;border-radius:10px;border:none;background:var(--green);color:white;font-weight:700;cursor:pointer;font-size:13px;">Apply discount → Selling ₹</button>
       </div>
     `;
     wrap.querySelector(".btn-remove-price")?.addEventListener("click", () => {
@@ -255,43 +294,30 @@ export function setupListingPricingEditor(opts: {
   const modeEl = document.createElement("div");
   modeEl.className = "listing-pricing-mode";
   const u0 = initial[0]?.unit ?? "piece";
-  const isWeight = u0 === "kg" || u0 === "gram";
+  const isWeight = u0 === "kg";
   modeEl.innerHTML = `
     <div style="display:grid;gap:10px;margin-bottom:14px;padding:12px;background:var(--gray-50,#f9fafb);border-radius:10px;border:1px solid var(--gray-200,#e5e7eb);">
       <div class="form-group" style="margin:0;">
         <label for="listing-pricing-basis" style="font-size:12px;font-weight:600;">Sell by</label>
         <select id="listing-pricing-basis" class="listing-pricing-basis" style="width:100%;max-width:100%;padding:8px;border-radius:8px;border:1px solid var(--gray-200);font-size:14px;">
           <option value="count" ${!isWeight ? "selected" : ""}>Count — per piece</option>
-          <option value="weight" ${isWeight ? "selected" : ""}>Weight — per kg or per gram</option>
+          <option value="weight" ${isWeight ? "selected" : ""}>Weight — per kg</option>
         </select>
       </div>
-      <div class="listing-pricing-weight-unit-wrap form-group" style="margin:0;display:${isWeight ? "block" : "none"};">
-        <label for="listing-weight-unit-select" style="font-size:12px;font-weight:600;">Weight unit</label>
-        <select id="listing-weight-unit-select" class="listing-weight-unit-select" style="width:100%;max-width:100%;padding:8px;border-radius:8px;border:1px solid var(--gray-200);font-size:14px;">
-          <option value="kg" ${u0 === "kg" ? "selected" : ""}>per kg</option>
-          <option value="gram" ${u0 === "gram" ? "selected" : ""}>per gram</option>
-        </select>
-      </div>
+      <p class="listing-pricing-kg-hint" style="margin:0;font-size:11px;color:var(--gray-600);line-height:1.4;display:${isWeight ? "block" : "none"};">Use decimals for less than 1 kg (e.g. <strong>0.5</strong> for half kg). Legacy gram listings load as kg.</p>
     </div>
   `;
   container.prepend(modeEl);
 
   const basisSel = modeEl.querySelector(".listing-pricing-basis") as HTMLSelectElement;
-  const weightSel = modeEl.querySelector(".listing-weight-unit-select") as HTMLSelectElement;
+  const kgHint = modeEl.querySelector(".listing-pricing-kg-hint") as HTMLElement | null;
   basisSel.addEventListener("change", () => {
-    updateWeightWrapVisibility();
+    if (kgHint) kgHint.style.display = basisSel.value === "weight" ? "block" : "none";
     syncHidden();
     updateBundleFieldVisibility();
     updateBundleFieldCopy();
     onUnitChange?.();
   });
-  weightSel.addEventListener("change", () => {
-    syncHidden();
-    updateBundleFieldVisibility();
-    updateBundleFieldCopy();
-    onUnitChange?.();
-  });
-  updateWeightWrapVisibility();
   updateBundleFieldVisibility();
   updateBundleFieldCopy();
 

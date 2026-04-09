@@ -93,7 +93,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       orderPricingLabel = chosen.label;
       quantity_unit = chosen.unit;
 
-      // Whole units for piece/gram; 2 decimals for kg — matches inventory decrement in create_order_atomic
+      // Whole units for piece; 2 decimals for kg — matches inventory decrement in create_order_atomic
       if (quantity_unit === "kg") {
         quantity = Math.round(Number(quantity) * 100) / 100;
       } else {

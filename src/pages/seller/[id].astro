@@ -301,12 +301,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       color: var(--gray-500);
       margin-bottom: 4px;
     }
-    .menu-item-stock {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--gray-700);
-      margin-bottom: 6px;
-    }
     .menu-tag {
       display: inline-block;
       font-size: 10px;
@@ -402,14 +396,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       font-size: 12px;
       font-weight: 700;
       opacity: 0.92;
-    }
-    .menu-item-stock .menu-stock-count {
-      font-weight: 700;
-      color: var(--gray-800);
-    }
-    .menu-item-stock .menu-stock-unit {
-      font-weight: 600;
-      color: var(--gray-600);
     }
 
     /* Delivery tag on item */
@@ -550,7 +536,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       optionHasDealDisplay,
       optionDiscountPercentDisplay,
       priceUnitShortLabel,
-      formatInventoryAmount,
       maxOrderQtyFromStock,
       optionBundleAmount,
       isPerBaseUnitPricing,
@@ -587,7 +572,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       }
 
       function unitLbl(u) {
-        if (u === "piece" || u === "kg" || u === "gram") return priceUnitShortLabel(u);
+        if (u === "piece" || u === "kg") return priceUnitShortLabel(u);
         return String(u);
       }
 
@@ -599,24 +584,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         if (!Number.isFinite(n) || n <= 0) return { num: "0", unit: ul };
         if (u === "kg") return { num: String(Math.round(n * 100) / 100), unit: ul };
         return { num: String(Math.floor(n)), unit: ul };
-      }
-
-      /** One stock pool (`weight_avail`); cart reserves base units until checkout. */
-      function inventoryLineHtml(l) {
-        const opts = getListingPriceOptions(l);
-        const u = opts[0]?.unit ?? "piece";
-        const base = listingStockNum(l);
-        if (!Number.isFinite(base) || base <= 0) return "";
-        const inCart = baseUnitsInCartForListing(l.id);
-        const eff = Math.max(0, base - inCart);
-        const amt = formatInventoryAmount(eff, u);
-        const short = priceUnitShortLabel(u);
-        const cartAmt = inCart > 0 ? formatInventoryAmount(inCart, u) : "";
-        const cartHint =
-          inCart > 0
-            ? ` <span class="menu-stock-cart-hint" style="font-size:11px;color:var(--gray-500);">(${cartAmt} ${short} in cart)</span>`
-            : "";
-        return `<div class="menu-item-stock" data-menu-stock="${l.id}" aria-label="Available quantity">📦 <span class="menu-stock-count">${amt}</span> <span class="menu-stock-unit">${short}</span> left${cartHint}</div>`;
       }
 
       function sizeLineHtml(l) {
@@ -719,37 +686,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
       }
 
-      function refreshMenuStockDisplays() {
-        for (const id of Object.keys(listingsById)) {
-          const el = document.querySelector(`[data-menu-stock="${id}"]`);
-          const l = listingsById[id];
-          if (!el || !l) continue;
-          const html = inventoryLineHtml(l);
-          if (!html) {
-            el.remove();
-            continue;
-          }
-          const wrap = document.createElement("div");
-          wrap.innerHTML = html;
-          const next = wrap.firstElementChild;
-          if (next) el.replaceWith(next);
-        }
-      }
-
-      /** Base units (pc / g / kg) in cart for this listing — same basis as API `quantity`. */
-      function baseUnitsInCartForListing(listingId) {
-        const entry = cart[listingId];
-        if (!entry || entry.qty <= 0) return 0;
-        const opt = getListingOptionById(entry.listing, entry.optionId);
-        if (!opt) return 0;
-        const amt = optionBundleAmount(opt);
-        if (!isPerBaseUnitPricing(opt)) {
-          return Math.floor(Number(entry.qty) || 0) * amt;
-        }
-        const q = Number(entry.qty);
-        return Number.isFinite(q) ? q : 0;
-      }
-
       /** `weight_avail` from PostgREST may be string; normalize for stock UI + max qty. */
       function listingStockNum(l) {
         const raw = l?.weight_avail;
@@ -771,11 +707,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const u = unit || "piece";
         const m = Number(maxQty) || 0;
         if (u === "kg") return Math.min(0.25, Math.max(0.01, m));
-        if (u === "gram") {
-          if (m <= 25) return 1;
-          if (m <= 500) return 25;
-          return 50;
-        }
         return 1;
       }
 
@@ -862,7 +793,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const allPreorder = entries.every(e => isPreorderItem(e.listing.id));
         const btn = document.getElementById("place-order-btn");
         btn.textContent = allPreorder ? "Place Pre-order" : "Place Order";
-        refreshMenuStockDisplays();
       }
 
       function isPreorderItem(listingId) {
@@ -1171,7 +1101,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <div>
                   ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l, { hintVerb })}
-                  ${inventoryLineHtml(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
                   ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
@@ -1213,7 +1142,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l, { hintVerb: hintVerbSingle })}
-                  ${inventoryLineHtml(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
                   ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
