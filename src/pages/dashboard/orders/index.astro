@@ -248,6 +248,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       async function loadStats() {
         if (!_sellerId) return;
+        const grid = document.getElementById("stats-grid");
+        if (grid) grid.style.opacity = "0.5";
         const filter = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
 
         let range: { start: string; end: string } | null;
@@ -286,6 +288,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       }
 
       function setStatValues(total: number, revenue: number, pending: number, completed: number, scheduled: number, avg: number, cancelled: number) {
+        const grid = document.getElementById("stats-grid");
+        if (grid) grid.style.opacity = "1";
         document.getElementById("stat-total-orders")!.textContent = String(total);
         document.getElementById("stat-revenue")!.textContent = "₹" + revenue.toLocaleString("en-IN");
         document.getElementById("stat-pending")!.textContent = String(pending);
@@ -323,7 +327,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       });
 
       // Custom range apply
-      document.getElementById("stats-apply")!.addEventListener("click", () => { void loadStats(); });
+      document.getElementById("stats-apply")!.addEventListener("click", () => {
+        const s = (document.getElementById("stats-start") as HTMLInputElement).value;
+        const e = (document.getElementById("stats-end") as HTMLInputElement).value;
+        if (!s || !e) { showToast("Select both start and end date", "error"); return; }
+        if (new Date(s) > new Date(e)) { showToast("Start date must be before end date", "error"); return; }
+        void loadStats();
+      });
 
       async function renderFresh() {
         if (!_sellerId) return;

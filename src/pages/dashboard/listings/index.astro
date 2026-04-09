@@ -92,18 +92,38 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const displayName = [seller.first_name, seller.last_name].filter(Boolean).join(" ") || seller.name;
         document.getElementById("seller-name")!.textContent = `${displayName}'s Listings`;
 
+        function listToast(msg: string, type: string = "success") {
+          let t = document.getElementById("toast");
+          if (!t) { t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+          t.textContent = msg;
+          t.style.cssText = `display:block;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:white;background:${type === "error" ? "var(--red)" : "var(--green)"};box-shadow:0 4px 20px rgba(0,0,0,0.15);`;
+          setTimeout(() => { t!.style.display = "none"; }, 3000);
+        }
+
         // Bulk action handlers
         document.getElementById("bulk-pause")!.addEventListener("click", async () => {
           const ids = getSelectedIds();
-          for (const id of ids) { await updateListing(id, { is_available: false } as any, _sellerId); }
-          const listings = await getSellerListings(_sellerId);
-          renderListings(listings);
+          const btn = document.getElementById("bulk-pause") as HTMLButtonElement;
+          btn.disabled = true; btn.textContent = "Pausing...";
+          try {
+            for (const id of ids) { await updateListing(id, { is_available: false } as any, _sellerId); }
+            listToast(`${ids.length} listing(s) paused`);
+            const listings = await getSellerListings(_sellerId);
+            renderListings(listings);
+          } catch (_) { listToast("Failed to pause some listings", "error"); }
+          btn.disabled = false; btn.textContent = "Pause All";
         });
         document.getElementById("bulk-resume")!.addEventListener("click", async () => {
           const ids = getSelectedIds();
-          for (const id of ids) { await updateListing(id, { is_available: true } as any, _sellerId); }
-          const listings = await getSellerListings(_sellerId);
-          renderListings(listings);
+          const btn = document.getElementById("bulk-resume") as HTMLButtonElement;
+          btn.disabled = true; btn.textContent = "Resuming...";
+          try {
+            for (const id of ids) { await updateListing(id, { is_available: true } as any, _sellerId); }
+            listToast(`${ids.length} listing(s) resumed`);
+            const listings = await getSellerListings(_sellerId);
+            renderListings(listings);
+          } catch (_) { listToast("Failed to resume some listings", "error"); }
+          btn.disabled = false; btn.textContent = "Resume All";
         });
 
         const listings = await getSellerListings(seller.id);
@@ -189,7 +209,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               const l = _listings.find(x => x.id === id);
               if (l) l.is_available = !currentlyAvailable;
               renderListings(_listings);
-            } catch (_) { btn.disabled = false; }
+            } catch (_) { listToast("Failed to update", "error"); btn.disabled = false; btn.textContent = currentlyAvailable ? "Pause" : "Resume"; }
           });
         });
 

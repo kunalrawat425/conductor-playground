@@ -123,6 +123,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               const photoFile = formData.get("photo") as File;
               let photoUrl = listing.photo_url;
               if (photoFile && photoFile.size > 0) {
+                if (photoFile.size > 5 * 1024 * 1024) {
+                  showToast("Photo must be under 5MB", "error");
+                  submitBtn.disabled = false; submitBtn.textContent = "Update Listing"; submitBtn.style.opacity = "1";
+                  return;
+                }
                 photoUrl = await uploadFishPhoto(photoFile, seller.id);
               }
 
