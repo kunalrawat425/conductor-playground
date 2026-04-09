@@ -211,6 +211,58 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         </div>
       </div>
 
+      <!-- Schedule & Availability -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h3 style="font-size:15px;font-weight:700;margin:0;">📅 Schedule & Availability</h3>
+            <button type="button" class="sched-toggle-btn" id="sched-toggle">Show ▼</button>
+          </div>
+
+          <div id="sched-panel" style="display:none;">
+            <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
+              Set your available dates and time slots. Buyers will see these when ordering.
+            </p>
+
+            <!-- Config form -->
+            <div class="sched-form">
+              <div class="sched-row">
+                <div class="sched-field">
+                  <label>Available from</label>
+                  <input type="date" id="sched-from" />
+                </div>
+                <div class="sched-field">
+                  <label>Until</label>
+                  <input type="date" id="sched-to" />
+                </div>
+              </div>
+              <div class="sched-row">
+                <div class="sched-field">
+                  <label>Daily start</label>
+                  <input type="time" id="sched-start" />
+                </div>
+                <div class="sched-field">
+                  <label>Daily end</label>
+                  <input type="time" id="sched-end" />
+                </div>
+              </div>
+              <div class="sched-field">
+                <label>Slot duration</label>
+                <select id="sched-duration" style="font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+                  <option value="30">30 minutes</option>
+                  <option value="60" selected>1 hour</option>
+                  <option value="120">2 hours</option>
+                </select>
+              </div>
+              <button type="button" id="sched-generate" class="btn btn-primary" style="width:100%;margin-top:8px;">Generate Schedule</button>
+            </div>
+
+            <!-- Generated slots grid -->
+            <div id="sched-slots" style="margin-top:16px;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Map Location -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
@@ -595,6 +647,139 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         });
       }
 
+      // ===== Schedule =====
+      const schedPanel = document.getElementById("sched-panel")!;
+      const schedToggle = document.getElementById("sched-toggle")!;
+      schedToggle.addEventListener("click", () => {
+        const hidden = schedPanel.style.display === "none";
+        schedPanel.style.display = hidden ? "block" : "none";
+        schedToggle.textContent = hidden ? "Hide ▲" : "Show ▼";
+        if (hidden) loadExistingSchedule();
+      });
+
+      async function loadExistingSchedule() {
+        const sellerId = localStorage.getItem("zepto_seller_id");
+        if (!sellerId) return;
+        const { data: config } = await supabase.from("seller_schedule_configs").select("*").eq("seller_id", sellerId).single();
+        if (config) {
+          (document.getElementById("sched-from") as HTMLInputElement).value = config.date_from;
+          (document.getElementById("sched-to") as HTMLInputElement).value = config.date_to;
+          (document.getElementById("sched-start") as HTMLInputElement).value = config.start_time?.substring(0, 5);
+          (document.getElementById("sched-end") as HTMLInputElement).value = config.end_time?.substring(0, 5);
+          (document.getElementById("sched-duration") as HTMLSelectElement).value = String(config.slot_duration_minutes);
+        }
+        // Load slots
+        const { data: slots } = await supabase.from("seller_schedule_slots").select("*").eq("seller_id", sellerId).gte("slot_date", new Date().toISOString().split("T")[0]).order("slot_date").order("slot_start");
+        if (slots && slots.length > 0) renderSlotGrid(slots, sellerId);
+      }
+
+      function renderSlotGrid(slots: any[], sellerId: string) {
+        const container = document.getElementById("sched-slots")!;
+        const grouped: Record<string, any[]> = {};
+        for (const s of slots) {
+          (grouped[s.slot_date] ||= []).push(s);
+        }
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        container.innerHTML = Object.entries(grouped).map(([date, daySlots]) => {
+          const d = new Date(date + "T00:00:00");
+          const dayName = days[d.getDay()];
+          const dateLabel = `${dayName}, ${d.getDate()}/${d.getMonth() + 1}`;
+          const allDisabled = daySlots[0]?.date_disabled;
+          return `
+            <div class="sched-date-group">
+              <div class="sched-date-header">
+                <span class="sched-date-label">${dateLabel}</span>
+                <button type="button" class="sched-date-toggle ${allDisabled ? "off" : "on"}" data-date="${date}" data-disabled="${allDisabled}"></button>
+              </div>
+              <div class="sched-chips">
+                ${daySlots.map(s => `<button type="button" class="sched-chip ${s.is_enabled && !s.date_disabled ? "on" : "off"}" data-slot-id="${s.id}" data-enabled="${s.is_enabled}">${s.slot_start.substring(0,5)}-${s.slot_end.substring(0,5)}</button>`).join("")}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // Chip toggle
+        container.querySelectorAll(".sched-chip").forEach(chip => {
+          chip.addEventListener("click", async () => {
+            const slotId = chip.getAttribute("data-slot-id")!;
+            const wasEnabled = chip.getAttribute("data-enabled") === "true";
+            const newEnabled = !wasEnabled;
+            chip.setAttribute("data-enabled", String(newEnabled));
+            chip.className = `sched-chip ${newEnabled ? "on" : "off"}`;
+            await fetch("/api/seller/schedule", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "toggle_slot", seller_id: sellerId, slot_id: slotId, is_enabled: newEnabled }),
+            });
+          });
+        });
+
+        // Date toggle
+        container.querySelectorAll(".sched-date-toggle").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const date = btn.getAttribute("data-date")!;
+            const wasDisabled = btn.getAttribute("data-disabled") === "true";
+            const newDisabled = !wasDisabled;
+            btn.setAttribute("data-disabled", String(newDisabled));
+            btn.className = `sched-date-toggle ${newDisabled ? "off" : "on"}`;
+            // Update all chips in this date group
+            const group = btn.closest(".sched-date-group")!;
+            group.querySelectorAll(".sched-chip").forEach(c => {
+              c.className = `sched-chip ${newDisabled ? "off" : "on"}`;
+              c.setAttribute("data-enabled", String(!newDisabled));
+            });
+            await fetch("/api/seller/schedule", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "toggle_date", seller_id: sellerId, slot_date: date, date_disabled: newDisabled }),
+            });
+          });
+        });
+      }
+
+      // Generate schedule
+      document.getElementById("sched-generate")!.addEventListener("click", async () => {
+        const sellerId = localStorage.getItem("zepto_seller_id");
+        if (!sellerId) return;
+        const btn = document.getElementById("sched-generate") as HTMLButtonElement;
+        btn.disabled = true;
+        btn.textContent = "Generating...";
+        try {
+          const res = await fetch("/api/seller/schedule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "save_config",
+              seller_id: sellerId,
+              date_from: (document.getElementById("sched-from") as HTMLInputElement).value,
+              date_to: (document.getElementById("sched-to") as HTMLInputElement).value,
+              start_time: (document.getElementById("sched-start") as HTMLInputElement).value,
+              end_time: (document.getElementById("sched-end") as HTMLInputElement).value,
+              slot_duration_minutes: parseInt((document.getElementById("sched-duration") as HTMLSelectElement).value),
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Schedule created: ${data.slots_created} slots`);
+            await loadExistingSchedule();
+          } else {
+            showToast(data.error || "Failed", "error");
+          }
+        } catch (err: any) {
+          showToast(err.message, "error");
+        }
+        btn.disabled = false;
+        btn.textContent = "Generate Schedule";
+      });
+
+      // Set default dates
+      const today = new Date().toISOString().split("T")[0];
+      const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+      (document.getElementById("sched-from") as HTMLInputElement).value = today;
+      (document.getElementById("sched-from") as HTMLInputElement).min = today;
+      (document.getElementById("sched-to") as HTMLInputElement).value = nextWeek;
+      (document.getElementById("sched-to") as HTMLInputElement).min = today;
+
       init();
     </script>
 
@@ -684,6 +869,26 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         color: var(--gray-800);
         font-weight: 600;
       }
+      /* Schedule */
+      .sched-toggle-btn { font-size: 12px; font-weight: 600; color: var(--blue); background: none; border: none; cursor: pointer; padding: 4px 8px; }
+      .sched-form { display: flex; flex-direction: column; gap: 10px; }
+      .sched-row { display: flex; gap: 10px; }
+      .sched-row > .sched-field { flex: 1; }
+      .sched-field { display: flex; flex-direction: column; gap: 4px; }
+      .sched-field label { font-size: 12px; font-weight: 600; color: var(--gray-600); }
+      .sched-field input, .sched-field select { font-size: 14px; padding: 8px 10px; border: 1px solid var(--gray-200); border-radius: 8px; font-family: inherit; }
+      .sched-date-group { margin-bottom: 12px; }
+      .sched-date-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+      .sched-date-label { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+      .sched-date-toggle { width: 40px; height: 24px; border-radius: 24px; border: none; cursor: pointer; position: relative; transition: background 0.2s; }
+      .sched-date-toggle.on { background: var(--green); }
+      .sched-date-toggle.off { background: var(--gray-300); }
+      .sched-date-toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+      .sched-date-toggle.on::after { transform: translateX(16px); }
+      .sched-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; }
+      .sched-chip { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--gray-200); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+      .sched-chip.on { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+      .sched-chip.off { background: var(--gray-100); color: var(--gray-400); text-decoration: line-through; }
     </style>
     <SellerBottomNav active="profile" />
     <VercelAnalytics />
