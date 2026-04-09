@@ -726,7 +726,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-name">${esc(name)}</div>
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
-                  <div class="menu-item-meta">${l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : ""} · ${esc(l.pickup_loc)}</div>
+                  <div class="menu-item-meta">${l.weight_avail > 0 ? `${l.weight_avail} ${l.price_unit} left` : ""}${l.max_qty_per_order ? ` · Max ${l.max_qty_per_order}/${l.price_unit} per order` : ""} · ${esc(l.pickup_loc)}</div>
                   ${l.weight_avail <= 0 ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
                 </div>
                 ${inServiceArea
@@ -815,7 +815,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const plusId = target.dataset?.plus;
           if (plusId && cart[plusId]) {
             const isPreorder = isPreorderItem(plusId);
-            const maxQty = isPreorder ? 50 : Math.floor(cart[plusId].listing.weight_avail);
+            const listing = cart[plusId].listing;
+            let maxQty = isPreorder ? 50 : Math.floor(listing.weight_avail);
+            if (listing.max_qty_per_order && listing.max_qty_per_order < maxQty) {
+              maxQty = listing.max_qty_per_order;
+            }
             if (cart[plusId].qty < maxQty) {
               cart[plusId].qty++;
               renderQtyControls(plusId);

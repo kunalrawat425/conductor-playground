@@ -71,6 +71,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const weightAvail = parseFloat(formData.get("weight_avail") as string);
           const pickupLoc = formData.get("pickup_loc") as string;
           const photoFile = formData.get("photo") as File;
+          const maxQty = formData.get("max_qty_per_order") ? parseFloat(formData.get("max_qty_per_order") as string) : null;
+          const maxOrders = formData.get("max_orders_per_day") ? parseInt(formData.get("max_orders_per_day") as string) : null;
 
           if (!species || !price || !pickupLoc) {
             showError("Please fill in all required fields.");
@@ -101,7 +103,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               listed_date: new Date().toISOString().split("T")[0],
               is_available: true,
               pickup_loc: pickupLoc,
-            });
+              max_qty_per_order: maxQty,
+              max_orders_per_day: maxOrders,
+            } as any);
 
             showToast("Listing created!", "success");
             setTimeout(() => { window.location.href = "/dashboard/listings"; }, 800);
