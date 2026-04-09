@@ -59,6 +59,7 @@ export interface FishListing {
   created_at: string;
   max_qty_per_order?: number | null;
   max_orders_per_day?: number | null;
+  oos_threshold?: number | null;
   // joined
   seller?: Seller;
 }
