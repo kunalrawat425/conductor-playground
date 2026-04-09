@@ -227,6 +227,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     import("../../lib/supabase").then(async (db) => {
       const { SPECIES, getSpeciesDisplay } = await import("../../lib/species");
       const { getSession } = await import("../../lib/auth");
+      const { getListingOptionById, getListingPriceOptions } = await import("../../lib/listing-pricing");
 
       const FISH_EMOJI = {
         pomfret: "🐟", surmai: "🐠", rawas: "🐡", bangda: "🐟", bombil: "🍤",
@@ -341,7 +342,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         activeList.innerHTML = sorted.map(item => {
           const s = item.seller;
           const dist = getDist(s);
-          const pUnit = item.price_unit === "dozen" ? "dz" : item.price_unit;
+          const opts = getListingPriceOptions(item);
+          const first = opts[0];
+          const baseUnit = first?.unit || item.price_unit;
+          const pUnit = baseUnit === "dozen" ? "dz" : baseUnit;
+          const priceBlock = opts.length <= 1
+            ? `<div class="po-price">₹${first?.price ?? item.price}</div>
+               <div class="po-price-unit">per ${pUnit} · ${item.weight_avail} avail</div>`
+            : `<div class="po-price" style="font-size:14px;color:var(--gray-700);font-weight:700;margin-bottom:6px;">Choose unit & price</div>
+               <select class="po-price-select" data-listing-id="${item.id}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--gray-200);font-size:14px;background:white;margin-bottom:6px;">
+                 ${opts.map((o) => `<option value="${o.id}">₹${o.price} — ${esc(o.label)} (${o.unit === "dozen" ? "dz" : "pc"})</option>`).join("")}
+               </select>
+               <div class="po-price-unit">· ${item.weight_avail} avail</div>`;
           return `
             <div class="po-seller-card">
               <div class="po-seller-left">
@@ -350,9 +362,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <div class="po-seller-badges">${sellerBadges(s, dist)}</div>
               </div>
               <div class="po-seller-right">
-                <div class="po-price">₹${item.price}</div>
-                <div class="po-price-unit">per ${pUnit} · ${item.weight_avail} avail</div>
-                <button class="po-order-btn" data-action="order" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-listing-id="${item.id || ""}" data-price="${item.price}" data-unit="${item.price_unit}">Order</button>
+                ${priceBlock}
+                <button class="po-order-btn" data-action="order" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-listing-id="${item.id || ""}">Order</button>
               </div>
             </div>
           `;
@@ -403,8 +414,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       // Order sheet logic
       let currentOrder = null;
 
-      function openOrderSheet(action, sellerId, sellerName, listingId, price, unit) {
-        currentOrder = { action, sellerId, sellerName, listingId, price: parseFloat(price), unit };
+      function openOrderSheet(action, sellerId, sellerName, listingId, price, unit, pricingOptionId = null) {
+        currentOrder = { action, sellerId, sellerName, listingId, price: parseFloat(price), unit, pricingOptionId };
         const sheet = document.getElementById("order-sheet");
         const backdrop = document.getElementById("backdrop");
 
@@ -491,6 +502,22 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const btn = e.target.closest("[data-action]");
         if (!btn) return;
         const { action, sellerId, sellerName, listingId, price, unit } = btn.dataset;
+        if (action === "order" && listingId) {
+          const listing = sellersData.active.find((x) => x.id === listingId);
+          const sel = document.querySelector(`.po-price-select[data-listing-id="${listingId}"]`);
+          const chosenOptId = sel ? (sel as HTMLSelectElement).value : null;
+          const chosen = listing ? getListingOptionById(listing, chosenOptId) : null;
+          openOrderSheet(
+            action,
+            sellerId,
+            sellerName,
+            listingId,
+            String(chosen?.price ?? listing?.price ?? 0),
+            String(chosen?.unit ?? listing?.price_unit ?? "piece"),
+            chosen?.id ?? null
+          );
+          return;
+        }
         openOrderSheet(action, sellerId, sellerName, listingId, price, unit);
       });
 
@@ -572,6 +599,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               quantity: qty,
               quantity_unit: currentOrder.unit,
               total_price: totalPrice,
+              pricing_option_id: currentOrder.pricingOptionId || undefined,
               buyer_phone: session.phone,
               buyer_id: session.buyer_id,
               buyer_addr: buyer_addr ?? null,
@@ -584,11 +612,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
           showToast("Order placed!");
           window.location.href = "/track";
-        } catch (err) {
+        } catch (err: any) {
           showToast(err.message || "Order failed. Please try again.", "error");
           btn.textContent = "Confirm Order";
           btn.disabled = false;
           btn.style.opacity = "1";
+          throw err;
         }
       }
     });

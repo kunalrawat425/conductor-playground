@@ -521,12 +521,37 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               <div class="card" style="margin-bottom:12px;" data-order-id="${o.id}">
                 <div class="card-body">
                   ${schedInfo}
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-                    <div>
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
+                    <div style="min-width:0;flex:1;">
                       <h4 style="font-size:16px;font-weight:700;">${name}</h4>
                       <span class="text-muted">${o.quantity} ${unitLabel}${isPreOrder ? " (pre-order)" : ""}</span>
                     </div>
-                    <span class="badge ${statusColors[o.status] || "badge-blue"}">${o.status.replace("_", " ")}</span>
+                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                      <span class="badge ${statusColors[o.status] || "badge-blue"}">${o.status.replace("_", " ")}</span>
+                      ${
+                        canAct
+                          ? `
+                      <details class="order-actions-menu">
+                        <summary class="order-actions-trigger" title="Actions" aria-label="Order actions">⋮</summary>
+                        <div class="order-actions-panel">
+                          ${
+                            isPreOrder
+                              ? `
+                            <button type="button" class="order-actions-item confirm-preorder-btn" data-order-id="${o.id}">Approve — confirm with price</button>
+                            <button type="button" class="order-actions-item order-actions-item--danger cancel-order-btn" data-order-id="${o.id}">Cancel order (full refund)</button>
+                          `
+                              : `
+                            <button type="button" class="order-actions-item confirm-order-btn" data-order-id="${o.id}">Approve</button>
+                            <button type="button" class="order-actions-item decline-order-btn" data-order-id="${o.id}">Reject</button>
+                            <button type="button" class="order-actions-item order-actions-item--danger seller-cancel-pending-btn" data-order-id="${o.id}">Cancel order</button>
+                          `
+                          }
+                        </div>
+                      </details>
+                      `
+                          : ""
+                      }
+                    </div>
                   </div>
                   <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--gray-700);margin-bottom:8px;">
                     <span>📱 ${o.buyer_phone}</span>
@@ -544,24 +569,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   ${isPreOrder && o.paid_amount ? `<div style="background:#fff3cd;padding:8px 12px;border-radius:var(--radius);font-size:13px;margin-bottom:8px;">Buyer paid upfront: <strong>₹${o.paid_amount}</strong> <span class="text-muted">(max range)</span></div>` : ""}
                   ${o.cancelled_by ? `<div style="background:#ffebee;padding:8px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:8px;color:#c62828;">Cancelled by <strong>${o.cancelled_by === "buyer" ? "Buyer" : "You"}</strong>${o.cancel_reason ? ` — "${o.cancel_reason}"` : ""}</div>` : ""}
                   ${
-                    canAct
-                      ? isPreOrder
-                        ? `
-                          <div>
-                            <div class="form-group" style="margin-bottom:8px;">
-                              <label>Actual Price (₹/${unitLabel})</label>
-                              <input type="number" class="final-price-input" data-order-id="${o.id}" min="1" step="0.01" placeholder="Enter actual price" style="max-width:200px;" />
-                            </div>
-                            <div style="display:flex;gap:8px;">
-                              <button class="btn btn-green confirm-preorder-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Confirm with Price</button>
-                              <button class="btn btn-red cancel-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Cancel (Full Refund)</button>
-                            </div>
-                          </div>
-                        `
-                        : `
-                          <div style="display:flex;gap:8px;">
-                            <button class="btn btn-green confirm-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Confirm</button>
-                            <button class="btn btn-red decline-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Decline</button>
+                    canAct && isPreOrder
+                      ? `
+                          <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:12px;font-weight:600;color:var(--gray-600);">Actual price (₹/${unitLabel}) — required to approve</label>
+                            <input type="number" class="final-price-input" data-order-id="${o.id}" min="1" step="0.01" placeholder="Enter price, then use ⋮ → Approve" style="max-width:100%;margin-top:4px;" />
                           </div>
                         `
                       : ""
@@ -579,18 +591,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           b.style.opacity = loading ? "0.6" : "1";
         }
 
+        function closeOrderMenu(btn: HTMLElement) {
+          const d = btn.closest("details.order-actions-menu");
+          if (d) d.removeAttribute("open");
+        }
+
         el.querySelectorAll(".confirm-order-btn").forEach((btn) => {
           btn.addEventListener("click", async (e) => {
             const b = e.target as HTMLElement;
             const orderId = b.dataset.orderId!;
-            setBtnLoading(b, true, "Confirm");
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Approve");
             try {
               await updateOrderStatus(orderId, "confirmed", undefined, sellerId);
               showToast("Order confirmed!");
               if (sellerId) await refreshOrders(sellerId);
             } catch (err: any) {
               showToast(err.message || "Failed to confirm", "error");
-              setBtnLoading(b, false, "Confirm");
+              setBtnLoading(b, false, "Approve");
             }
           });
         });
@@ -599,14 +617,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           btn.addEventListener("click", async (e) => {
             const b = e.target as HTMLElement;
             const orderId = b.dataset.orderId!;
-            setBtnLoading(b, true, "Decline");
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Reject");
             try {
               await updateOrderStatus(orderId, "declined", undefined, sellerId);
               showToast("Order declined");
               if (sellerId) await refreshOrders(sellerId);
             } catch (err: any) {
               showToast(err.message || "Failed to decline", "error");
-              setBtnLoading(b, false, "Decline");
+              setBtnLoading(b, false, "Reject");
             }
           });
         });
@@ -618,17 +637,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const input = el.querySelector(`.final-price-input[data-order-id="${orderId}"]`) as HTMLInputElement;
             const finalPrice = parseFloat(input?.value || "0");
             if (!finalPrice || finalPrice <= 0) {
-              showToast("Please enter the actual price", "error");
+              showToast("Enter the actual price above, then approve.", "error");
               return;
             }
-            setBtnLoading(b, true, "Confirm with Price");
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Approve");
             try {
               await updateOrderStatus(orderId, "confirmed", finalPrice, sellerId);
               showToast("Pre-order confirmed with price!");
               if (sellerId) await refreshOrders(sellerId);
             } catch (err: any) {
               showToast(err.message || "Failed to confirm", "error");
-              setBtnLoading(b, false, "Confirm with Price");
+              setBtnLoading(b, false, "Approve — confirm with price");
             }
           });
         });
@@ -637,16 +657,34 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           btn.addEventListener("click", async (e) => {
             const b = e.target as HTMLElement;
             const orderId = b.dataset.orderId!;
-            if (confirm("Cancel this pre-order? Buyer will get a full refund.")) {
-              setBtnLoading(b, true, "Cancel (Full Refund)");
-              try {
-                await updateOrderStatus(orderId, "cancelled", undefined, sellerId);
-                showToast("Pre-order cancelled, buyer will be refunded");
-                if (sellerId) await refreshOrders(sellerId);
-              } catch (err: any) {
-                showToast(err.message || "Failed to cancel", "error");
-                setBtnLoading(b, false, "Cancel (Full Refund)");
-              }
+            if (!confirm("Cancel this pre-order? Buyer will get a full refund.")) return;
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Cancel…");
+            try {
+              await updateOrderStatus(orderId, "cancelled", undefined, sellerId);
+              showToast("Pre-order cancelled, buyer will be refunded");
+              if (sellerId) await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to cancel", "error");
+              setBtnLoading(b, false, "Cancel order (full refund)");
+            }
+          });
+        });
+
+        el.querySelectorAll(".seller-cancel-pending-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            if (!confirm("Cancel this order? The buyer will be notified.")) return;
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Cancel…");
+            try {
+              await updateOrderStatus(orderId, "cancelled", undefined, sellerId);
+              showToast("Order cancelled");
+              if (sellerId) await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to cancel", "error");
+              setBtnLoading(b, false, "Cancel order");
             }
           });
         });
@@ -692,6 +730,71 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       .stat-card--red .stat-value { color: #c62828; }
       .stat-label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
       @media (max-width: 380px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+
+      /* Order card ⋮ menu */
+      .order-actions-menu {
+        position: relative;
+      }
+      .order-actions-menu summary.order-actions-trigger {
+        list-style: none;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--gray-700);
+        cursor: pointer;
+        line-height: 1;
+        user-select: none;
+      }
+      .order-actions-menu summary.order-actions-trigger::-webkit-details-marker {
+        display: none;
+      }
+      .order-actions-menu summary.order-actions-trigger:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+      }
+      .order-actions-panel {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 4px);
+        min-width: 220px;
+        max-width: min(280px, 92vw);
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        padding: 6px;
+        z-index: 20;
+      }
+      .order-actions-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 8px;
+        background: none;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-900);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .order-actions-item:hover {
+        background: var(--gray-50);
+      }
+      .order-actions-item--danger {
+        color: #c62828;
+      }
+      .order-actions-item--danger:hover {
+        background: #ffebee;
+      }
 
       .dash-nav {
         display: flex;
