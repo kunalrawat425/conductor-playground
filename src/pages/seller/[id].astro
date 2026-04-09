@@ -266,7 +266,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       margin-bottom: 6px;
     }
     .menu-tag--closed { background: #fff3e0; color: #e65100; }
-    .menu-tag--oos { background: #fff3e0; color: #e65100; }
+    .menu-tag--oos { background: #e8f5e9; color: #2e7d32; }
     .menu-tag--zero { background: #ffebee; color: #c62828; }
     .menu-tag--preorder { background: #e3f2fd; color: #1565c0; }
 
@@ -366,6 +366,20 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     .slot-time-chip { padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--gray-200); cursor: pointer; background: white; color: var(--gray-700); font-family: inherit; }
     .slot-time-chip.active { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
     .slot-time-chip.off { opacity: 0.4; pointer-events: none; text-decoration: line-through; }
+
+    .menu-variant-select {
+      width: 100%;
+      margin: 8px 0 4px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 10px;
+      border: 1.5px solid var(--gray-200);
+      background: var(--gray-50);
+      color: var(--gray-900);
+      box-sizing: border-box;
+    }
+    .menu-variant-panel { margin-top: 4px; }
 
     .cart-bar {
       position: fixed;
@@ -577,7 +591,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const isPreorder = isPreorderItem(listingId);
             const listing = cart[listingId].listing;
             let maxQty = isPreorder ? 50 : Math.floor(listing.weight_avail);
-            if (listing.max_qty_per_order && listing.max_qty_per_order < maxQty) maxQty = listing.max_qty_per_order;
+            if (listing.buyer_daily_qty_limit && listing.buyer_daily_qty_limit < maxQty) maxQty = listing.buyer_daily_qty_limit;
             if (cart[listingId].qty < maxQty) { cart[listingId].qty++; renderQtyControls(listingId); }
           });
         }
@@ -738,33 +752,63 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           deliveryBanner = `<div class="delivery-banner delivery-neutral">📦 Pickup only — ${esc(activeListings[0]?.pickup_loc || seller.location_name || "")}</div>`;
         }
 
-        // Build menu HTML string first
-        const menuHTML = deliveryBanner + activeListings.map(l => {
+        const listingsById = Object.fromEntries(activeListings.map((x) => [x.id, x]));
+
+        function unitLbl(u) {
+          return u === "dozen" ? "dz" : u === "piece" ? "pc" : String(u);
+        }
+
+        function variantBodyInner(l) {
+          const unitLabel = unitLbl(l.price_unit);
+          const th = l.oos_threshold;
+          const isZero = l.weight_avail <= 0;
+          const hasTh = th != null && th !== "" && !Number.isNaN(Number(th));
+          const clearingSoon = !isZero && hasTh && l.weight_avail <= Number(th);
+          const metaLimit = l.buyer_daily_qty_limit
+            ? `Max ${l.buyer_daily_qty_limit} ${unitLabel}/buyer/day`
+            : "";
+          return `
+                <div>
+                  <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
+                  <div class="menu-item-meta">${metaLimit}</div>
+                  ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
+                  ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
+                </div>
+                ${inServiceArea
+                  ? `<div class="add-controls" data-controls="${l.id}">
+                      ${!isZero && open
+                        ? `<button class="add-btn" data-add="${l.id}">ADD</button>`
+                        : `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`}
+                    </div>`
+                  : ""}`;
+        }
+
+        function singleListingCard(l) {
           const species = SPECIES[l.species];
           const name = species?.english || l.species;
           const marathi = species?.marathi || "";
           const emoji = FISH_EMOJI[l.species] || "🐟";
-          const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
-          // Tags are visual only — don't affect ADD/PRE-ORDER logic
-          const threshold = l.oos_threshold ?? 2;
+          const unitLabel = unitLbl(l.price_unit);
+          const th = l.oos_threshold;
           const isZero = l.weight_avail <= 0;
-          const sellingFast = !isZero && l.weight_avail <= threshold; // visual tag only
-
+          const hasTh = th != null && th !== "" && !Number.isNaN(Number(th));
+          const clearingSoon = !isZero && hasTh && l.weight_avail <= Number(th);
+          const metaLimit = l.buyer_daily_qty_limit
+            ? `Max ${l.buyer_daily_qty_limit} ${unitLabel}/buyer/day`
+            : "";
           return `
-            <div class="menu-item${!inServiceArea ? ' menu-item-grey' : ''}" data-listing="${l.id}">
+            <div class="menu-item${!inServiceArea ? " menu-item-grey" : ""}" data-listing="${l.id}">
               <div class="menu-item-img">
-                ${l.photo_url
-                  ? `<img src="${esc(l.photo_url)}" alt="${esc(name)}" loading="lazy" />`
-                  : emoji}
+                ${l.photo_url ? `<img src="${esc(l.photo_url)}" alt="${esc(name)}" loading="lazy" />` : emoji}
               </div>
               <div class="menu-item-info">
                 <div>
                   <div class="menu-item-name">${esc(name)}</div>
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
-                  <div class="menu-item-meta">${l.max_qty_per_order ? `Max ${l.max_qty_per_order} ${l.price_unit === "dozen" ? "dz" : "pcs"} per user` : ""}</div>
+                  <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
-                  ${sellingFast ? '<span class="menu-tag menu-tag--oos">🔥 Selling fast — pre-order to secure yours</span>' : ""}
+                  ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">
@@ -774,9 +818,47 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                     </div>`
                   : ""}
               </div>
-            </div>
-          `;
-        }).join("");
+            </div>`;
+        }
+
+        const bySpecies = {};
+        for (const l of activeListings) {
+          (bySpecies[l.species] ||= []).push(l);
+        }
+        const speciesOrder = [...new Set(activeListings.map((l) => l.species))];
+
+        const menuHTML =
+          deliveryBanner +
+          speciesOrder
+            .map((sp) => {
+              const group = bySpecies[sp];
+              if (group.length === 1) return singleListingCard(group[0]);
+              const species = SPECIES[sp];
+              const name = species?.english || sp;
+              const marathi = species?.marathi || "";
+              const first = group[0];
+              const emoji = FISH_EMOJI[sp] || "🐟";
+              const imgHtml = first.photo_url
+                ? `<img src="${esc(first.photo_url)}" alt="${esc(name)}" loading="lazy" />`
+                : emoji;
+              const options = group
+                .map((l) => `<option value="${l.id}">₹${l.price} / ${unitLbl(l.price_unit)}</option>`)
+                .join("");
+              return `
+            <div class="menu-item menu-item--variants${!inServiceArea ? " menu-item-grey" : ""}" data-species-row="${esc(sp)}">
+              <div class="menu-item-img" data-variant-img="${esc(sp)}">${imgHtml}</div>
+              <div class="menu-item-info">
+                <div class="menu-item-name">${esc(name)}</div>
+                <div class="menu-item-marathi">${esc(marathi)}</div>
+                <select class="menu-variant-select" data-variant-species="${esc(sp)}" aria-label="Choose unit and price">
+                  <option value="">Choose unit & price…</option>
+                  ${options}
+                </select>
+                <div class="menu-variant-panel" data-variant-panel="${esc(sp)}" style="display:none;"></div>
+              </div>
+            </div>`;
+            })
+            .join("");
 
         // Apply all DOM updates in a single frame
         requestAnimationFrame(() => {
@@ -786,14 +868,62 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           menuSection.style.display = "block";
           menuSection.classList.add("fade-in");
 
-          // Bind initial ADD/PRE-ORDER buttons directly
-          menuContainer.querySelectorAll("[data-add]").forEach(btn => {
+          menuContainer.querySelectorAll("[data-add]").forEach((btn) => {
             const lid = (btn as HTMLElement).dataset.add!;
             btn.addEventListener("click", (ev) => {
               ev.stopPropagation();
-              if (cart[lid]) { cart[lid].qty = 1; renderQtyControls(lid); }
+              if (cart[lid]) {
+                cart[lid].qty = 1;
+                renderQtyControls(lid);
+              }
             });
           });
+
+          for (const sp of speciesOrder) {
+            const group = bySpecies[sp];
+            if (group.length <= 1) continue;
+            const sel = menuContainer.querySelector(`select[data-variant-species="${esc(sp)}"]`);
+            const panel = menuContainer.querySelector(`[data-variant-panel="${esc(sp)}"]`);
+            const imgWrap = menuContainer.querySelector(`[data-variant-img="${esc(sp)}"]`);
+            if (!sel || !panel || !imgWrap) continue;
+
+            const showListing = (listingId) => {
+              const l = listingsById[listingId];
+              if (!l) return;
+              for (const ol of group) {
+                if (cart[ol.id] && ol.id !== listingId) cart[ol.id].qty = 0;
+              }
+              const sMeta = SPECIES[l.species];
+              const nm = sMeta?.english || l.species;
+              const em = FISH_EMOJI[l.species] || "🐟";
+              imgWrap.innerHTML = l.photo_url
+                ? `<img src="${esc(l.photo_url)}" alt="${esc(nm)}" loading="lazy" />`
+                : em;
+              panel.innerHTML = variantBodyInner(l);
+              panel.style.display = "block";
+              panel.querySelectorAll("[data-add]").forEach((btn) => {
+                const lid = (btn as HTMLElement).dataset.add!;
+                btn.addEventListener("click", (ev) => {
+                  ev.stopPropagation();
+                  if (cart[lid]) {
+                    cart[lid].qty = 1;
+                    renderQtyControls(lid);
+                  }
+                });
+              });
+              updateCartBar();
+            };
+
+            sel.addEventListener("change", () => {
+              const id = sel.value;
+              if (!id) {
+                panel.style.display = "none";
+                panel.innerHTML = "";
+                return;
+              }
+              showListing(id);
+            });
+          }
         });
 
         // Load schedule slots for this seller
@@ -861,8 +991,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const isPreorder = isPreorderItem(plusId);
             const listing = cart[plusId].listing;
             let maxQty = isPreorder ? 50 : Math.floor(listing.weight_avail);
-            if (listing.max_qty_per_order && listing.max_qty_per_order < maxQty) {
-              maxQty = listing.max_qty_per_order;
+            if (listing.buyer_daily_qty_limit && listing.buyer_daily_qty_limit < maxQty) {
+              maxQty = listing.buyer_daily_qty_limit;
             }
             if (cart[plusId].qty < maxQty) {
               cart[plusId].qty++;

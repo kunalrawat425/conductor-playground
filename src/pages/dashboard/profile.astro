@@ -124,6 +124,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <div id="profile-section-delivery" class="card" style="margin-bottom:16px;">
         <div class="card-body">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Delivery</h3>
+          <p class="text-muted" style="font-size:12px;margin:-4px 0 14px;line-height:1.4;">
+            Controls whether buyers see delivery on your public menu and how far you will travel. Pickup-only sellers can leave delivery off.
+          </p>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
             <div>
               <div style="font-weight:600;font-size:14px;">Offer delivery</div>
@@ -181,6 +184,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Operating Hours</h3>
+          <p class="text-muted" style="font-size:12px;margin:0 0 12px;line-height:1.4;">
+            When your shop counts as “open” on the buyer app. Outside these times, buyers may still pre-order if you allow pre-orders below.
+          </p>
           <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <input type="time" id="opens-at" style="width:auto;padding:8px 10px;font-size:14px;" />
@@ -200,7 +206,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
               <h3 style="font-size:15px;font-weight:700;margin-bottom:2px;">Accept Pre-orders</h3>
-              <div class="text-muted" style="font-size:12px;">Buyers can order when you're closed, for next day</div>
+              <div class="text-muted" style="font-size:12px;">When off, buyers cannot place orders while you are closed. When on, they can pre-order for pickup or delivery later.</div>
             </div>
             <label style="position:relative;display:inline-block;width:48px;height:28px;">
               <input type="checkbox" id="preorder-toggle" style="opacity:0;width:0;height:0;" />
@@ -221,28 +227,28 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
           <div id="sched-panel" style="display:none;">
             <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
-              Set your available dates and time slots. Buyers will see these when ordering.
+              Pick how many calendar days ahead buyers can book, then set the pickup time window and slot length. The schedule is generated from today forward — you do not set a manual start/end calendar date.
             </p>
 
             <!-- Config form -->
             <div class="sched-form">
               <div class="sched-field">
-                <label>How many days should slots be available?</label>
+                <label>Booking window (days ahead)</label>
                 <select id="sched-days" style="font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
                   <option value="3">3 days</option>
                   <option value="7" selected>7 days (1 week)</option>
                   <option value="14">14 days (2 weeks)</option>
                   <option value="30">30 days (1 month)</option>
                 </select>
-                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Starting from today. Buyers can book slots within this range.</div>
+                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Number of consecutive days (from today) that get time slots.</div>
               </div>
               <div class="sched-row">
                 <div class="sched-field">
-                  <label>Daily start</label>
+                  <label>First slot starts</label>
                   <input type="time" id="sched-start" />
                 </div>
                 <div class="sched-field">
-                  <label>Daily end</label>
+                  <label>Last slot ends by</label>
                   <input type="time" id="sched-end" />
                 </div>
               </div>
@@ -756,11 +762,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             body: JSON.stringify({
               action: "save_config",
               seller_id: sellerId,
-              date_from: new Date().toISOString().split("T")[0],
-              date_to: new Date(Date.now() + parseInt((document.getElementById("sched-days") as HTMLSelectElement).value) * 86400000).toISOString().split("T")[0],
+              days_ahead: parseInt((document.getElementById("sched-days") as HTMLSelectElement).value, 10),
               start_time: (document.getElementById("sched-start") as HTMLInputElement).value,
               end_time: (document.getElementById("sched-end") as HTMLInputElement).value,
-              slot_duration_minutes: parseInt((document.getElementById("sched-duration") as HTMLSelectElement).value),
+              slot_duration_minutes: parseInt((document.getElementById("sched-duration") as HTMLSelectElement).value, 10),
             }),
           });
           const data = await res.json();

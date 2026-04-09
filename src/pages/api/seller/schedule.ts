@@ -18,15 +18,26 @@ export const POST: APIRoute = async ({ request }) => {
     const sb = createClient(supabaseUrl, supabaseServiceKey);
 
     if (action === "save_config") {
-      const { date_from, date_to, start_time, end_time, slot_duration_minutes } = body;
+      let { date_from, date_to, start_time, end_time, slot_duration_minutes, days_ahead } = body;
+      const todayStr = new Date().toISOString().split("T")[0];
+
+      if (days_ahead != null && Number(days_ahead) > 0) {
+        const n = Math.min(60, Math.max(1, parseInt(String(days_ahead), 10)));
+        date_from = date_from || todayStr;
+        const fromD = new Date(date_from + "T12:00:00");
+        const toD = new Date(fromD);
+        toD.setDate(toD.getDate() + n - 1);
+        date_to = toD.toISOString().split("T")[0];
+      }
+
       if (!date_from || !date_to || !start_time || !end_time) {
         return new Response(JSON.stringify({ error: "All schedule fields required" }), { status: 400 });
       }
 
       const duration = slot_duration_minutes || 60;
       const maxDays = 60;
-      const from = new Date(date_from);
-      const to = new Date(date_to);
+      const from = new Date(date_from + "T12:00:00");
+      const to = new Date(date_to + "T12:00:00");
       const diffDays = Math.ceil((to.getTime() - from.getTime()) / 86400000) + 1;
       if (diffDays > maxDays || diffDays < 1) {
         return new Response(JSON.stringify({ error: `Date range must be 1-${maxDays} days` }), { status: 400 });
