@@ -183,6 +183,19 @@ export const POST: APIRoute = async ({ request, url }) => {
       const weightAvail = Number(listing.weight_avail);
       const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
       if (!listing.is_available || availOk <= 0 || availOk < quantity) {
+        if (scheduled_for) {
+          const { data: schedSeller } = await supabase
+            .from("sellers")
+            .select("schedule_pickup_slots")
+            .eq("id", listing.seller_id)
+            .single();
+          if (!schedSeller?.schedule_pickup_slots) {
+            return new Response(
+              JSON.stringify({ error: "Pickup scheduling is not available for this seller." }),
+              { status: 400 }
+            );
+          }
+        }
         // Always allow as pre-order — no stock deduction, no blocking
         total_price = linePrice * bundleCount;
         seller_id = listing.seller_id;
@@ -258,19 +271,27 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Determine order status: scheduled > pre_order > pending
     let status = "pending";
     let delivery_fee = 0;
-    if (scheduled_for) {
-      status = "scheduled";
+    if (scheduled_for && !seller_id) {
+      return new Response(JSON.stringify({ error: "Scheduled orders require a seller." }), { status: 400 });
     }
     if (seller_id) {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above"
+          "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots"
         )
         .eq("id", seller_id)
         .single();
 
-      if (!scheduled_for && seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
+      if (scheduled_for) {
+        if (!seller?.schedule_pickup_slots) {
+          return new Response(
+            JSON.stringify({ error: "Pickup scheduling is not available for this seller." }),
+            { status: 400 }
+          );
+        }
+        status = "scheduled";
+      } else if (seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
         status = "pre_order";
       }
 

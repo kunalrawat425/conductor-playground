@@ -649,19 +649,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           }
         });
 
-        // Schedule: mirror DB — if a config row exists, buyers see virtual slots; toggle must show ON.
-        try {
-          const { data: schedRow } = await supabase
-            .from("seller_schedule_configs")
-            .select("seller_id")
-            .eq("seller_id", seller.id)
-            .maybeSingle();
-          if (schedRow) {
-            updateSchedulePanelUI(true);
-            await loadExistingSchedule();
-          }
-        } catch {
-          /* non-fatal */
+        // Schedule: `schedule_pickup_slots` is the buyer-facing switch; config row holds the template.
+        if (seller.schedule_pickup_slots) {
+          updateSchedulePanelUI(true);
+          await loadExistingSchedule();
         }
 
         // Logout

@@ -59,6 +59,8 @@ export interface Seller {
   opens_at: string;
   closes_at: string;
   accepts_preorder: boolean;
+  /** When true, buyer menu may show pickup slots (see seller_schedule_configs). */
+  schedule_pickup_slots?: boolean;
   created_at: string;
   /** Minimum line subtotal (₹); 0 = none */
   min_order_amount?: number;

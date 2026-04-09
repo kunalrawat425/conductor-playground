@@ -58,7 +58,7 @@ const initialPricingJson = JSON.stringify(
   <section class="listing-card listing-card--pricing" id="listing-section-pricing" aria-labelledby="listing-h-pricing">
     <h2 class="listing-section-title" id="listing-h-pricing">Pricing</h2>
     <p class="listing-section-intro">
-      Pick <strong>Sell by</strong>, then add tiers (label + <strong>Selling ₹</strong> each). Each row must state the <strong>amount that ₹ covers</strong>: <strong>Pieces per price</strong> (count), <strong>Kg per price</strong> (weight per kg), or <strong>Grams per price</strong> (per gram). Use <strong>1</strong> for simple per-unit pricing; other values define fixed packs. <strong>Stock quantity</strong> is entered under <strong>Inventory</strong> only. Optional compare-at ₹ and <strong>Quick</strong> for deals.
+      Pick <strong>Sell by</strong>, then add one row per <strong>price tier</strong> (label + <strong>Selling ₹</strong> + <strong>amount per price</strong>). Use <strong>+ Add another price</strong> for multiple bundles (e.g. 1 pc vs 6 pc pack) — each row can have its own pieces/kg/grams per ₹. Use <strong>1</strong> for simple per-unit pricing. <strong>Stock quantity</strong> is only under <strong>Inventory</strong>. Optional compare-at ₹ and <strong>Quick</strong> for deals.
     </p>
     <div id="pricing-rows" class="pricing-rows"></div>
     <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>

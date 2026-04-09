@@ -1264,7 +1264,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           }
         });
 
-        // Load virtual schedule slots for this seller (only if seller has saved schedule + enabled slots)
+        // Load virtual schedule slots only when seller has scheduling ON (`schedule_pickup_slots` + config).
         (async () => {
           const picker = document.getElementById("slot-picker");
           const datesEl = document.getElementById("slot-dates");
@@ -1277,11 +1277,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           timesEl.innerHTML = "";
           if (hiddenSched) hiddenSched.value = "";
           if (hiddenSlotId) hiddenSlotId.value = "";
+          if (!seller.schedule_pickup_slots) return;
           try {
             const res = await fetch("/api/seller/schedule", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ action: "get_slots", seller_id: sellerId }),
+              cache: "no-store",
             });
             const data = await res.json();
             const slots = data.slots || [];
