@@ -11,13 +11,19 @@ interface Props {
 const { listing, sellerId } = Astro.props;
 const isEdit = !!listing;
 
-/** JSON string so define:vars always ships a serializable payload to the client bundle. */
+/** JSON for client script — on `data-initial-pricing` (do not use define:vars on scripts with imports; Astro inlines those without type=module). */
 const initialPricingJson = JSON.stringify(
   listing ? getListingPriceOptions(listing) : [{ id: "default", label: "Per piece", price: 0, unit: "piece" as const }]
 );
 ---
 
-<form id="listing-form" class="listing-form" data-seller-id={sellerId} data-listing-id={listing?.id || ""}>
+<form
+  id="listing-form"
+  class="listing-form"
+  data-seller-id={sellerId}
+  data-listing-id={listing?.id || ""}
+  data-initial-pricing={initialPricingJson}
+>
   <div class="form-group">
     <label for="species">Species</label>
     <select id="species" name="species" required>
@@ -60,11 +66,12 @@ const initialPricingJson = JSON.stringify(
   <div class="form-group">
     <label>Pricing options</label>
     <p class="form-hint" style="margin-bottom:8px;">
-      Add one or more prices. <strong>Label</strong> is what buyers see (e.g. &quot;Large&quot;, &quot;Per dozen&quot;). <strong>Unit</strong> is <strong>per piece</strong> or <strong>per dozen</strong> only (how stock is counted). Each row needs a <strong>positive ₹</strong> — empty rows are skipped. Use <strong>+ Add another price</strong> for multiple tiers; buyers get a dropdown when there are two or more valid rows.
+      Add one or more prices. <strong>Selling ₹</strong> is what buyers pay. Optional <strong>list / compare-at ₹</strong> (higher than selling) shows a strikethrough and &quot;% off&quot; on the menu — use <strong>Quick</strong> to apply a percent or rupee discount from that list price. <strong>Unit</strong> is per piece or per dozen (stock count). Minimum <strong>₹1</strong> per tier. Use <strong>+ Add another price</strong> for multiple tiers.
     </p>
     <div id="pricing-rows" class="pricing-rows"></div>
     <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>
     <input type="hidden" name="pricing_options_json" id="pricing_options_json" value="" />
+    <p id="listing-pricing-error" class="form-hint" style="display:none;color:var(--red);margin-top:8px;"></p>
   </div>
 
   <div class="form-group">
@@ -114,8 +121,9 @@ const initialPricingJson = JSON.stringify(
   </div>
 </form>
 
-<script define:vars={{ initialPricingJson }}>
+<script>
   import { setupListingPricingEditor } from "../lib/listing-pricing-setup";
+  import { validateListingPricingJson } from "../lib/listing-pricing";
   import type { ListingPriceOption } from "../lib/listing-pricing";
 
   function runWhenDomReady(fn: () => void) {
@@ -130,6 +138,8 @@ const initialPricingJson = JSON.stringify(
   function initListingPricing() {
     const form = document.getElementById("listing-form");
     if (!form) return;
+
+    const initialPricingJson = form.dataset.initialPricing ?? "[]";
 
     const speciesSelect = form.querySelector("#species") as HTMLSelectElement | null;
     const stockLabel = form.querySelector("#stock-label");
@@ -222,7 +232,25 @@ const initialPricingJson = JSON.stringify(
     stockInput?.addEventListener("input", updateStockInfo);
     dailyLimitInput?.addEventListener("input", updateStockInfo);
 
-    form.addEventListener("submit", () => pricingEditor.sync());
+    const pricingErrEl = document.getElementById("listing-pricing-error");
+    form.addEventListener(
+      "submit",
+      (ev) => {
+        pricingEditor.sync();
+        const checked = validateListingPricingJson(pricingJsonInput.value);
+        if (!checked.ok) {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          if (pricingErrEl) {
+            pricingErrEl.textContent = checked.message;
+            pricingErrEl.style.display = "block";
+          }
+          return;
+        }
+        if (pricingErrEl) pricingErrEl.style.display = "none";
+      },
+      true
+    );
   }
 
   runWhenDomReady(() => {

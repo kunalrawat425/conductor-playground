@@ -72,10 +72,8 @@ export interface FishListing {
   id: string;
   seller_id: string;
   species: string;
-  price: number;
-  price_unit: PriceUnit;
-  /** Multiple tiers: custom labels + price + unit (piece|dozen). Synced legacy price/price_unit to first row on save. */
-  pricing_options?: ListingPriceOption[] | null;
+  /** Multi-tier prices (labels + ₹ + piece|dozen). Only source for listing prices. */
+  pricing_options: ListingPriceOption[] | null;
   /** Buyer-visible grade: small / medium / large (optional). */
   fish_size?: "small" | "medium" | "large" | null;
   weight_avail: number;
@@ -489,7 +487,7 @@ export async function getSellersForSpecies(species: string) {
   const { data: active, error: activeErr } = await supabase
     .from("fish_listings")
     .select(
-      "id, seller_id, price, price_unit, pricing_options, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)"
+      "id, seller_id, pricing_options, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)"
     )
     .eq("species", species)
     .eq("is_available", true)
@@ -503,7 +501,7 @@ export async function getSellersForSpecies(species: string) {
   const { data: past } = await supabase
     .from("fish_listings")
     .select(
-      "seller_id, price, price_unit, pricing_options, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)"
+      "seller_id, pricing_options, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)"
     )
     .eq("species", species)
     .order("created_at", { ascending: false });
