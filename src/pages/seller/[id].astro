@@ -624,17 +624,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         // If closed and seller doesn't accept pre-orders, show empty state
         const acceptsPreorder = seller.accepts_preorder !== false;
 
-        // If open: show only active listings (order mode)
-        // If closed + accepts preorder: show all listings (their full menu for pre-order)
-        // If closed + no preorder: show nothing
+        // Show only available (not paused) listings
+        // Open: show available items for ordering
+        // Closed: show available items for pre-ordering (dedupe by species)
+        const availableListings = listings.filter(l => l.is_available);
         const activeListings = open
-          ? listings.filter(l => l.is_available)
-          : acceptsPreorder
-            ? listings.filter((l, i, arr) => {
-                // Dedupe by species, keep most recent
-                return arr.findIndex(x => x.species === l.species) === i;
-              })
-            : [];
+          ? availableListings
+          : availableListings.filter((l, i, arr) => {
+              return arr.findIndex(x => x.species === l.species) === i;
+            });
 
         // Render seller profile
         const profileEl = document.getElementById("seller-profile");
