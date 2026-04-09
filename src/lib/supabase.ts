@@ -475,7 +475,7 @@ export async function getSellersForSpecies(species: string) {
 // --- Buyer Queries ---
 
 export type BuyerOrderWithListing = Order & {
-  listing?: FishListing & { seller?: Pick<Seller, "name" | "location_name"> };
+  listing?: FishListing & { seller?: Pick<Seller, "name" | "location_name" | "phone"> };
 };
 
 /** Paginated buyer orders for `/track` (newest first). */
@@ -489,7 +489,7 @@ export async function getBuyerOrdersPage(
 
   const { data, error, count } = await supabase
     .from("orders")
-    .select("*, listing:fish_listings(*, seller:sellers(name, location_name))", { count: "exact" })
+    .select("*, listing:fish_listings(*, seller:sellers(name, location_name, phone))", { count: "exact" })
     .eq("buyer_id", buyerId)
     .order("created_at", { ascending: false })
     .range(from, to);
