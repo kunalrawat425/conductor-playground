@@ -26,7 +26,18 @@ const isEdit = !!listing;
 
   <div class="form-row">
     <div class="form-group">
-      <label for="price">Price</label>
+      <label for="price_unit">Sell by</label>
+      <select id="price_unit" name="price_unit" required>
+        {PRICE_UNITS.map((u) => (
+          <option value={u.value} selected={listing?.price_unit === u.value}>
+            {u.label}
+          </option>
+        ))}
+      </select>
+      <div class="form-hint">How this fish is sold — per kg, per piece, or per dozen</div>
+    </div>
+    <div class="form-group">
+      <label for="price" id="price-label">Price</label>
       <input
         type="number"
         id="price"
@@ -37,21 +48,12 @@ const isEdit = !!listing;
         required
         placeholder="e.g. 500"
       />
-    </div>
-    <div class="form-group">
-      <label for="price_unit">Unit</label>
-      <select id="price_unit" name="price_unit" required>
-        {PRICE_UNITS.map((u) => (
-          <option value={u.value} selected={listing?.price_unit === u.value}>
-            {u.label}
-          </option>
-        ))}
-      </select>
+      <div class="form-hint" id="price-hint">₹ per unit. Buyer sees this on the menu.</div>
     </div>
   </div>
 
   <div class="form-group">
-    <label for="weight_avail">Stock (how much you have)</label>
+    <label for="weight_avail" id="stock-label">Stock available</label>
     <input
       type="number"
       id="weight_avail"
@@ -62,7 +64,8 @@ const isEdit = !!listing;
       required
       placeholder="e.g. 10"
     />
-    <div class="form-hint">Buyers won't see this number. Used to track inventory and trigger "Out of stock" label.</div>
+    <div class="form-hint" id="stock-hint">Buyers won't see this number. Used to track inventory and trigger "Out of stock".</div>
+    <div class="form-hint" id="stock-info" style="color:var(--blue);font-weight:600;"></div>
   </div>
 
   <div class="form-group">
@@ -75,7 +78,7 @@ const isEdit = !!listing;
 
 
   <div class="form-group">
-    <label for="max_qty_per_order">Max quantity per order (optional)</label>
+    <label for="max_qty_per_order">Max quantity per user (optional)</label>
     <input
       type="number"
       id="max_qty_per_order"
@@ -85,7 +88,7 @@ const isEdit = !!listing;
       value={listing?.max_qty_per_order || ""}
       placeholder="e.g. 5 — leave empty for no limit"
     />
-    <div class="form-hint">Buyer sees: "Max 5/kg per order". Prevents one buyer from buying all your stock.</div>
+    <div class="form-hint">Limits how much one buyer can order. Buyer sees: "Max 5 per order".</div>
   </div>
 
   <div class="form-group">
@@ -124,17 +127,63 @@ const isEdit = !!listing;
 </form>
 
 <script>
-  // Auto-set price unit when species changes
   const speciesSelect = document.getElementById("species") as HTMLSelectElement;
   const unitSelect = document.getElementById("price_unit") as HTMLSelectElement;
+  const priceLabel = document.getElementById("price-label");
+  const priceHint = document.getElementById("price-hint");
+  const stockLabel = document.getElementById("stock-label");
+  const stockHint = document.getElementById("stock-hint");
+  const stockInfo = document.getElementById("stock-info");
+  const stockInput = document.getElementById("weight_avail") as HTMLInputElement;
+  const maxQtyInput = document.getElementById("max_qty_per_order") as HTMLInputElement;
 
+  function updateUnitLabels() {
+    const unit = unitSelect?.value || "kg";
+    const unitMap: Record<string, { price: string; priceHint: string; stock: string; stockHint: string; stockPlaceholder: string }> = {
+      kg: { price: "Price per kg (₹)", priceHint: "How much for 1 kg. Buyer sees: ₹500/kg", stock: "Stock (kg)", stockHint: "How many kg you have today. Buyers won't see this.", stockPlaceholder: "e.g. 10" },
+      piece: { price: "Price per piece (₹)", priceHint: "How much for 1 piece. Buyer sees: ₹150/piece", stock: "Stock (pieces)", stockHint: "How many pieces you have. Buyers won't see this.", stockPlaceholder: "e.g. 20" },
+      dozen: { price: "Price per dozen (₹)", priceHint: "How much for 12 units. Buyer sees: ₹300/dozen", stock: "Stock (dozens)", stockHint: "How many dozens you have. Buyers won't see this.", stockPlaceholder: "e.g. 5" },
+    };
+    const u = unitMap[unit] || unitMap.kg;
+    if (priceLabel) priceLabel.textContent = u.price;
+    if (priceHint) priceHint.textContent = u.priceHint;
+    if (stockLabel) stockLabel.textContent = u.stock;
+    if (stockHint) stockHint.textContent = u.stockHint;
+    if (stockInput) stockInput.placeholder = u.stockPlaceholder;
+    updateStockInfo();
+  }
+
+  function updateStockInfo() {
+    if (!stockInfo || !stockInput) return;
+    const stock = parseFloat(stockInput.value) || 0;
+    const maxQty = parseFloat(maxQtyInput?.value || "0") || 0;
+    const unit = unitSelect?.value || "kg";
+    if (stock > 0 && maxQty > 0) {
+      const orders = Math.floor(stock / maxQty);
+      stockInfo.textContent = `With ${stock} ${unit} and max ${maxQty}/${unit} per user → ~${orders} orders possible`;
+    } else if (stock > 0) {
+      stockInfo.textContent = `${stock} ${unit} available for orders`;
+    } else {
+      stockInfo.textContent = "";
+    }
+  }
+
+  // Auto-set price unit when species changes
   speciesSelect?.addEventListener("change", () => {
     const option = speciesSelect.selectedOptions[0];
     const defaultUnit = option?.dataset.unit;
     if (defaultUnit && unitSelect) {
       unitSelect.value = defaultUnit;
+      updateUnitLabels();
     }
   });
+
+  unitSelect?.addEventListener("change", updateUnitLabels);
+  stockInput?.addEventListener("input", updateStockInfo);
+  maxQtyInput?.addEventListener("input", updateStockInfo);
+
+  // Initial update
+  updateUnitLabels();
 </script>
 
 <style>
