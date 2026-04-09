@@ -714,13 +714,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">
-                      ${l.weight_avail > 0
-                        ? (open
-                          ? `<button class="add-btn" data-add="${l.id}">ADD</button>`
-                          : (acceptsPreorder
-                            ? `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`
-                            : `<span style="font-size:12px;color:var(--gray-400);font-weight:600;">Closed</span>`))
-                        : `<span style="font-size:12px;color:var(--red);font-weight:600;">Sold out</span>`}
+                      ${l.weight_avail > 0 && open
+                        ? `<button class="add-btn" data-add="${l.id}">ADD</button>`
+                        : acceptsPreorder
+                          ? `<button class="add-btn preorder-btn" data-add="${l.id}">PRE-ORDER</button>`
+                          : `<span style="font-size:12px;color:var(--red);font-weight:600;">${l.weight_avail <= 0 ? "Sold out" : "Closed"}</span>`}
                     </div>`
                   : ""}
               </div>
