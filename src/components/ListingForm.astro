@@ -59,7 +59,7 @@ const isEdit = !!listing;
       id="weight_avail"
       name="weight_avail"
       min="0"
-      step="0.1"
+      step="1"
       value={listing?.weight_avail || ""}
       required
       placeholder="e.g. 10"
@@ -140,7 +140,6 @@ const isEdit = !!listing;
   function updateUnitLabels() {
     const unit = unitSelect?.value || "kg";
     const unitMap: Record<string, { price: string; priceHint: string; stock: string; stockHint: string; stockPlaceholder: string }> = {
-      kg: { price: "Price per kg (₹)", priceHint: "How much for 1 kg. Buyer sees: ₹500/kg", stock: "Stock (kg)", stockHint: "How many kg you have today. Buyers won't see this.", stockPlaceholder: "e.g. 10" },
       piece: { price: "Price per piece (₹)", priceHint: "How much for 1 piece. Buyer sees: ₹150/piece", stock: "Stock (pieces)", stockHint: "How many pieces you have. Buyers won't see this.", stockPlaceholder: "e.g. 20" },
       dozen: { price: "Price per dozen (₹)", priceHint: "How much for 12 units. Buyer sees: ₹300/dozen", stock: "Stock (dozens)", stockHint: "How many dozens you have. Buyers won't see this.", stockPlaceholder: "e.g. 5" },
     };

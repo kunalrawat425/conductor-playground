@@ -34,7 +34,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       listing_id,
       species,
       quantity = 1,
-      quantity_unit = "kg",
+      quantity_unit = "piece",
       buyer_phone,
       buyer_id,
       buyer_addr,
