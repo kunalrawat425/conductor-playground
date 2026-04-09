@@ -3,474 +3,258 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Relifish — Product SOP & Flow Diagrams</title>
+<title>Relifish — Product SOP & Case Matrix</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #1a1a1a; line-height: 1.6; }
-  .container { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
-  h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
-  h1 span { color: #0066cc; }
-  .subtitle { font-size: 15px; color: #666; margin-bottom: 32px; }
-  h2 { font-size: 20px; font-weight: 700; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e0e0e0; }
-  h3 { font-size: 16px; font-weight: 700; margin: 20px 0 10px; color: #333; }
-
-  /* Flow diagram */
-  .flow { background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow-x: auto; }
-  .flow-title { font-size: 14px; font-weight: 700; color: #0066cc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
-  .flow-row { display: flex; align-items: stretch; gap: 0; flex-wrap: nowrap; min-width: fit-content; }
-  .flow-node { text-align: center; padding: 12px 14px; border-radius: 12px; font-size: 12px; font-weight: 600; min-width: 100px; max-width: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-  .flow-node .icon { font-size: 22px; }
-  .flow-node .label { font-size: 11px; line-height: 1.3; }
-  .node-blue { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
-  .node-green { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-  .node-orange { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
-  .node-red { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-  .node-purple { background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; }
-  .node-gray { background: #f5f5f5; color: #616161; border: 1px solid #e0e0e0; }
-  .flow-arrow { display: flex; align-items: center; font-size: 18px; color: #999; padding: 0 4px; font-weight: 700; flex-shrink: 0; }
-  .flow-arrow.down { writing-mode: vertical-lr; padding: 4px 0; justify-content: center; }
-
-  /* Decision diamond */
-  .decision-box { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .decision { display: flex; flex-direction: column; gap: 8px; }
-  .decision-q { font-size: 14px; font-weight: 700; color: #333; background: #fff8e1; padding: 10px 14px; border-radius: 10px; border-left: 4px solid #ffa000; }
-  .decision-branches { display: flex; gap: 12px; margin-top: 4px; }
-  .branch { flex: 1; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.4; }
-  .branch-yes { background: #e8f5e9; border: 1px solid #c8e6c9; }
-  .branch-no { background: #ffebee; border: 1px solid #ffcdd2; }
-  .branch-label { font-weight: 700; display: block; margin-bottom: 4px; font-size: 13px; }
-
-  /* Status table */
-  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  th { background: #f0f6ff; color: #0066cc; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; text-align: left; }
-  td { padding: 10px 12px; font-size: 13px; border-top: 1px solid #f0f0f0; }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; } h1 span { color: #0066cc; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 32px; }
+  h2 { font-size: 20px; font-weight: 700; margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e0e0e0; }
+  h3 { font-size: 16px; font-weight: 700; margin: 20px 0 10px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); font-size: 13px; }
+  th { background: #f0f6ff; color: #0066cc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 10px; text-align: left; white-space: nowrap; }
+  td { padding: 10px; border-top: 1px solid #f0f0f0; vertical-align: top; }
   tr:hover td { background: #fafafa; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-  .b-green { background: #e8f5e9; color: #2e7d32; }
-  .b-blue { background: #e3f2fd; color: #1565c0; }
-  .b-orange { background: #fff3e0; color: #e65100; }
-  .b-red { background: #ffebee; color: #c62828; }
-  .b-purple { background: #f3e5f5; color: #6a1b9a; }
-
-  /* Section card */
-  .section-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .section-card h3 { margin-top: 0; }
-  .checklist { list-style: none; padding: 0; }
-  .checklist li { padding: 6px 0; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
-  .checklist li::before { content: "✅"; flex-shrink: 0; }
-
-  /* Vertical flow */
-  .vflow { display: flex; flex-direction: column; align-items: center; gap: 0; }
-  .vflow-arrow { font-size: 20px; color: #999; padding: 2px 0; }
-  .vflow-node { text-align: center; padding: 10px 20px; border-radius: 10px; font-size: 12px; font-weight: 600; min-width: 200px; }
-
-  @media (max-width: 600px) {
-    .flow-row { flex-direction: column; align-items: center; }
-    .flow-arrow { writing-mode: horizontal-tb; transform: rotate(90deg); padding: 2px 0; }
-    .flow-node { min-width: 80%; max-width: 100%; }
-    .decision-branches { flex-direction: column; }
-    h1 { font-size: 22px; }
-  }
+  .b { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .b-green { background: #e8f5e9; color: #2e7d32; } .b-blue { background: #e3f2fd; color: #1565c0; }
+  .b-orange { background: #fff3e0; color: #e65100; } .b-red { background: #ffebee; color: #c62828; }
+  .b-purple { background: #f3e5f5; color: #6a1b9a; } .b-gray { background: #f5f5f5; color: #616161; }
+  .card { background: white; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
+  .fn { text-align: center; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: 600; min-width: 80px; max-width: 120px; }
+  .fa { font-size: 16px; color: #999; padding: 0 4px; }
+  .fn-b { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+  .fn-g { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+  .fn-o { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+  .fn-r { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+  .fn-p { background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; }
+  .yes { color: #2e7d32; font-weight: 700; } .no { color: #c62828; font-weight: 700; }
+  ul { padding-left: 20px; margin: 8px 0; } li { margin: 4px 0; font-size: 13px; }
+  @media (max-width: 600px) { table { font-size: 11px; } th, td { padding: 8px 6px; } .fn { min-width: 60px; font-size: 10px; } }
 </style>
 </head>
 <body>
 <div class="container">
 
-<h1>🐟 Relifish <span>Product SOP</span></h1>
-<p class="subtitle">Complete flow diagrams for buyers, sellers, orders, pre-orders, scheduled orders, and waitlist.</p>
+<h1>🐟 Relifish <span>SOP — All Cases</span></h1>
+<p class="subtitle">Complete case matrix for every buyer and seller scenario. What happens, what shows, what triggers.</p>
 
-<!-- ==================== BUYER FLOW ==================== -->
-<h2>1. Buyer Journey</h2>
-
-<div class="flow">
-  <div class="flow-title">Buyer Discovery → Order</div>
-  <div class="flow-row">
-    <div class="flow-node node-blue"><div class="icon">🌐</div><div class="label">Visit<br>relifish.store</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-blue"><div class="icon">📍</div><div class="label">Set<br>Location</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">🐟</div><div class="label">Browse<br>Sellers</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">📋</div><div class="label">View<br>Menu</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">🛒</div><div class="label">Add to<br>Cart</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-orange"><div class="icon">📱</div><div class="label">OTP<br>Login</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">✅</div><div class="label">Order<br>Placed</div></div>
-  </div>
-</div>
-
-<div class="decision-box">
-  <div class="decision">
-    <div class="decision-q">❓ Are there sellers in the buyer's area?</div>
-    <div class="decision-branches">
-      <div class="branch branch-yes">
-        <span class="branch-label">✅ YES — Sellers found</span>
-        Show seller cards sorted by distance. Buyer can browse menus, add items, order/pre-order.
-      </div>
-      <div class="branch branch-no">
-        <span class="branch-label">❌ NO — No sellers nearby</span>
-        Show waitlist card → benefits, flow diagram, preference form (phone, area, frequency, fish type, budget) → submits to waitlist → email notification to admin.
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="decision-box">
-  <div class="decision">
-    <div class="decision-q">❓ Seller is open or closed?</div>
-    <div class="decision-branches">
-      <div class="branch branch-yes">
-        <span class="branch-label">🟢 OPEN</span>
-        Items show "ADD" button. Order status = <span class="badge b-blue">pending</span>. Seller gets push notification immediately.
-      </div>
-      <div class="branch branch-no">
-        <span class="branch-label">🔴 CLOSED</span>
-        If seller accepts pre-orders → items show "PRE-ORDER" button + 🕐 Shop closed tag.<br>
-        If seller doesn't accept → items show "Closed" (no action).
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="decision-box">
-  <div class="decision">
-    <div class="decision-q">❓ Item in stock or sold out?</div>
-    <div class="decision-branches">
-      <div class="branch branch-yes">
-        <span class="branch-label">📦 IN STOCK</span>
-        "ADD" button. Stock decremented atomically (DB lock). Order = <span class="badge b-blue">pending</span>.
-      </div>
-      <div class="branch branch-no">
-        <span class="branch-label">📦 SOLD OUT</span>
-        If seller accepts pre-orders → "PRE-ORDER" button + 📦 Out of stock + 🎣 Pre-order available tags.<br>
-        No stock deducted. Order = <span class="badge b-orange">pre_order</span>. Seller confirms with morning price.
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="decision-box">
-  <div class="decision">
-    <div class="decision-q">❓ Seller has schedule slots available?</div>
-    <div class="decision-branches">
-      <div class="branch branch-yes">
-        <span class="branch-label">🗓️ YES — Slots exist</span>
-        Show date/time picker above cart. Buyer picks a slot → order = <span class="badge b-purple">scheduled</span> with scheduled_for timestamp.
-      </div>
-      <div class="branch branch-no">
-        <span class="branch-label">➖ NO — No schedule</span>
-        Normal order flow (no slot picker shown). Order = <span class="badge b-blue">pending</span> or <span class="badge b-orange">pre_order</span>.
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="decision-box">
-  <div class="decision">
-    <div class="decision-q">❓ Delivery or Pickup?</div>
-    <div class="decision-branches">
-      <div class="branch branch-yes">
-        <span class="branch-label">🚚 DELIVERY</span>
-        Buyer must be within seller's delivery radius. Address required (flat + building). Delivery fee applied. Address validated before order.
-      </div>
-      <div class="branch branch-no">
-        <span class="branch-label">📦 PICKUP</span>
-        No distance restriction. Seller's pickup location shown. No delivery fee.
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== ORDER STATUS FLOW ==================== -->
-<h2>2. Order Status Flow</h2>
-
-<div class="flow">
-  <div class="flow-title">Order Lifecycle</div>
-  <div class="flow-row">
-    <div class="flow-node node-blue"><div class="icon">🛒</div><div class="label">Pending</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">✅</div><div class="label">Confirmed</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">💰</div><div class="label">Paid</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">📦</div><div class="label">Ready<br>for Pickup</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">🎉</div><div class="label">Completed</div></div>
-  </div>
-</div>
-
-<div class="flow">
-  <div class="flow-title">Pre-Order Lifecycle</div>
-  <div class="flow-row">
-    <div class="flow-node node-orange"><div class="icon">🎣</div><div class="label">Pre-order<br>Placed</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-orange"><div class="icon">💰</div><div class="label">Seller sets<br>final price</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-blue"><div class="icon">👤</div><div class="label">Buyer<br>accepts/rejects</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">✅</div><div class="label">Confirmed<br>→ normal flow</div></div>
-  </div>
-</div>
-
-<div class="flow">
-  <div class="flow-title">Scheduled Order Lifecycle</div>
-  <div class="flow-row">
-    <div class="flow-node node-purple"><div class="icon">🗓️</div><div class="label">Scheduled<br>(future slot)</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-blue"><div class="icon">⏰</div><div class="label">Slot time<br>arrives</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-blue"><div class="icon">🔔</div><div class="label">Seller<br>notified</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">✅</div><div class="label">Confirmed<br>→ normal flow</div></div>
-  </div>
-</div>
-
-<div class="flow">
-  <div class="flow-title">Cancel / Reject Paths</div>
-  <div class="flow-row">
-    <div class="flow-node node-blue"><div class="icon">🛒</div><div class="label">Any active<br>order</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-red"><div class="icon">❌</div><div class="label">Buyer<br>cancels</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-gray"><div class="icon">📦</div><div class="label">Stock<br>restored</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-red"><div class="icon">🚫</div><div class="label">Cancelled</div></div>
-  </div>
-</div>
+<!-- ============================================ -->
+<h2>1. Menu Item — What Button Shows (Buyer View)</h2>
 
 <table>
-  <tr><th>Status</th><th>Who Triggers</th><th>What Happens</th><th>Buyer Sees</th><th>Notifications</th></tr>
-  <tr><td><span class="badge b-blue">pending</span></td><td>System (on order)</td><td>Stock locked atomically</td><td>"Placed"</td><td>Push + email to seller</td></tr>
-  <tr><td><span class="badge b-orange">pre_order</span></td><td>System (closed/OOS)</td><td>No stock deducted</td><td>"Pending confirmation"</td><td>Push + email to seller</td></tr>
-  <tr><td><span class="badge b-purple">scheduled</span></td><td>Buyer (picks slot)</td><td>Slot reserved</td><td>"Scheduled 🗓️"</td><td>Push + email to both</td></tr>
-  <tr><td><span class="badge b-green">confirmed</span></td><td>Seller</td><td>Order accepted</td><td>"Confirmed"</td><td>Push + email to buyer</td></tr>
-  <tr><td><span class="badge b-green">paid</span></td><td>Seller</td><td>Payment recorded</td><td>"Paid"</td><td>Push + email to buyer</td></tr>
-  <tr><td><span class="badge b-green">picked_up</span></td><td>Seller</td><td>Ready for collection</td><td>"Ready for Pickup"</td><td>Push + email to buyer</td></tr>
-  <tr><td><span class="badge b-green">completed</span></td><td>Seller</td><td>Order fulfilled</td><td>"Completed"</td><td>Push + email to buyer</td></tr>
-  <tr><td><span class="badge b-red">declined</span></td><td>Seller</td><td>Stock restored</td><td>"Declined"</td><td>Push + email to buyer</td></tr>
-  <tr><td><span class="badge b-red">cancelled</span></td><td>Buyer or seller</td><td>Stock restored, refund if pre-order</td><td>"Cancelled"</td><td>Push + email to both</td></tr>
+  <tr>
+    <th>Stock</th><th>Shop</th><th>Accepts Preorder</th><th>In Service Area</th><th>Button</th><th>Tag</th><th>Order Status</th>
+  </tr>
+  <tr><td class="yes">✅ In stock</td><td class="yes">🟢 Open</td><td>—</td><td class="yes">✅</td><td><span class="b b-green">ADD</span></td><td>—</td><td><span class="b b-blue">pending</span></td></tr>
+  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="yes">✅ Yes</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td>—</td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td class="yes">✅ In stock</td><td class="no">🔴 Closed</td><td class="no">❌ No</td><td class="yes">✅</td><td><span class="b b-gray">Closed</span></td><td>—</td><td>blocked</td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="yes">✅ Yes</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="yes">🟢 Open</td><td class="no">❌ No</td><td class="yes">✅</td><td><span class="b b-red">Sold out</span></td><td><span class="b b-red">📦 Out of stock</span></td><td>blocked</td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="yes">✅ Yes</td><td class="yes">✅</td><td><span class="b b-orange">PRE-ORDER</span></td><td><span class="b b-red">📦 Out of stock</span></td><td><span class="b b-orange">pre_order</span></td></tr>
+  <tr><td class="no">❌ Out of stock</td><td class="no">🔴 Closed</td><td class="no">❌ No</td><td class="yes">✅</td><td><span class="b b-red">Sold out</span></td><td><span class="b b-red">📦 Out of stock</span></td><td>blocked</td></tr>
+  <tr><td>Any</td><td>Any</td><td>Any</td><td class="no">❌ Outside area</td><td>—</td><td><span class="b b-gray">Outside your area</span></td><td>blocked (card grayed)</td></tr>
 </table>
 
-<!-- ==================== SELLER FLOW ==================== -->
-<h2>3. Seller Journey</h2>
+<div class="card">
+  <h3>Decision Logic (code: seller/[id].astro line 717)</h3>
+  <pre style="font-size:12px;background:#f5f5f5;padding:12px;border-radius:8px;overflow-x:auto;">
+if (in_stock AND open)        → ADD        → status: pending
+else if (accepts_preorder)    → PRE-ORDER  → status: pre_order
+else if (out_of_stock)        → "Sold out"
+else                          → "Closed"
+  </pre>
+</div>
 
-<div class="flow">
-  <div class="flow-title">Seller Onboarding → Daily Operations</div>
-  <div class="flow-row">
-    <div class="flow-node node-blue"><div class="icon">📱</div><div class="label">OTP<br>Login</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-blue"><div class="icon">👤</div><div class="label">Setup<br>Profile</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">🐟</div><div class="label">Add<br>Listings</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">⏰</div><div class="label">Set Hours<br>& Schedule</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">🔔</div><div class="label">Receive<br>Orders</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-node node-green"><div class="icon">✅</div><div class="label">Confirm<br>& Fulfill</div></div>
+<!-- ============================================ -->
+<h2>2. Order Status — Full Lifecycle</h2>
+
+<table>
+  <tr><th>Status</th><th>Set By</th><th>Trigger</th><th>Buyer Sees</th><th>Seller Sees</th><th>Stock</th><th>Push</th><th>Email</th></tr>
+  <tr><td><span class="b b-blue">pending</span></td><td>System</td><td>Buyer places order (in stock + open)</td><td>"Placed"</td><td>Fresh Orders tab</td><td>Deducted (atomic)</td><td>Both</td><td>Both</td></tr>
+  <tr><td><span class="b b-orange">pre_order</span></td><td>System</td><td>Shop closed OR out of stock</td><td>"Pending confirmation"</td><td>Pre-orders tab</td><td>Not deducted</td><td>Both</td><td>Both</td></tr>
+  <tr><td><span class="b b-purple">scheduled</span></td><td>Buyer</td><td>Buyer picks a time slot</td><td>"Scheduled 🗓️"</td><td>Scheduled tab</td><td>Deducted</td><td>Both</td><td>Both</td></tr>
+  <tr><td><span class="b b-green">confirmed</span></td><td>Seller</td><td>Seller accepts order</td><td>"Confirmed"</td><td>—</td><td>—</td><td>Buyer</td><td>Both</td></tr>
+  <tr><td><span class="b b-green">paid</span></td><td>Seller</td><td>Payment recorded</td><td>"Paid"</td><td>—</td><td>—</td><td>Buyer</td><td>Both</td></tr>
+  <tr><td><span class="b b-green">picked_up</span></td><td>Seller</td><td>Order ready</td><td>"Ready for Pickup"</td><td>—</td><td>—</td><td>Buyer</td><td>Both</td></tr>
+  <tr><td><span class="b b-green">completed</span></td><td>Seller</td><td>Order fulfilled</td><td>"Completed"</td><td>—</td><td>—</td><td>Buyer</td><td>Both</td></tr>
+  <tr><td><span class="b b-red">declined</span></td><td>Seller</td><td>Seller rejects</td><td>"Declined"</td><td>cancelled_by: seller</td><td>Restored</td><td>Buyer</td><td>Both</td></tr>
+  <tr><td><span class="b b-red">cancelled</span></td><td>Buyer or Seller</td><td>Cancel with reason</td><td>"Cancelled" + reason</td><td>cancelled_by + reason</td><td>Restored</td><td>Both</td><td>Both</td></tr>
+</table>
+
+<!-- ============================================ -->
+<h2>3. Pre-Order — All Cases</h2>
+
+<table>
+  <tr><th>Trigger</th><th>Stock Deducted?</th><th>paid_amount Set?</th><th>What Seller Does</th><th>What Buyer Does</th></tr>
+  <tr><td>Shop closed + in stock</td><td class="no">❌ No</td><td class="yes">✅ Yes (max estimate)</td><td>Next morning: confirm with final_price</td><td>Accept or reject price</td></tr>
+  <tr><td>Shop open + out of stock</td><td class="no">❌ No</td><td class="yes">✅ Yes (max estimate)</td><td>Next catch: confirm with final_price</td><td>Accept or reject price</td></tr>
+  <tr><td>Shop closed + out of stock</td><td class="no">❌ No</td><td class="yes">✅ Yes (max estimate)</td><td>Next morning: confirm with final_price</td><td>Accept or reject price</td></tr>
+</table>
+
+<div class="card">
+  <h3>Pre-Order Flow</h3>
+  <div class="flow">
+    <div class="fn fn-o">Buyer taps<br>PRE-ORDER</div><div class="fa">→</div>
+    <div class="fn fn-o">Order created<br>status: pre_order</div><div class="fa">→</div>
+    <div class="fn fn-b">Seller sees in<br>Pre-orders tab</div><div class="fa">→</div>
+    <div class="fn fn-g">Seller confirms<br>with final_price</div><div class="fa">→</div>
+    <div class="fn fn-b">Buyer sees<br>"Seller proposed ₹X"</div><div class="fa">→</div>
+    <div class="fn fn-g">Accept → confirmed<br>Reject → cancelled</div>
   </div>
 </div>
 
-<div class="section-card">
-  <h3>Seller Profile Setup</h3>
-  <ul class="checklist">
-    <li>Name, phone, email, location</li>
-    <li>Operating hours (opens_at / closes_at)</li>
-    <li>Accept pre-orders toggle (on/off)</li>
-    <li>Delivery toggle + radius (km)</li>
-    <li>Minimum order amount + delivery fee</li>
-    <li>Map location (GPS pin)</li>
-    <li>Schedule & availability (date range + time slots)</li>
-    <li>Push notification subscription</li>
+<!-- ============================================ -->
+<h2>4. Cancel — All Cases</h2>
+
+<table>
+  <tr><th>Who</th><th>When Allowed</th><th>Stock Restored?</th><th>Refund?</th><th>Reason Required?</th><th>cancelled_by</th></tr>
+  <tr><td>Buyer</td><td>pending, pre_order, scheduled</td><td class="yes">✅ Yes</td><td>Yes (if pre_order)</td><td>Optional (prompt)</td><td>"buyer"</td></tr>
+  <tr><td>Buyer (reject price)</td><td>confirmed + final_price on pre_order</td><td class="yes">✅ Yes</td><td>Full refund (paid_amount)</td><td>Auto: "Price rejected"</td><td>"buyer"</td></tr>
+  <tr><td>Seller (decline)</td><td>pending</td><td class="yes">✅ Yes</td><td>—</td><td>—</td><td>"seller"</td></tr>
+  <tr><td>Seller (cancel pre-order)</td><td>pre_order</td><td>— (wasn't deducted)</td><td>Full refund</td><td>—</td><td>"seller"</td></tr>
+  <tr><td>Neither</td><td>confirmed, paid, picked_up, completed</td><td colspan="4">Cannot cancel — order is in progress or complete</td></tr>
+</table>
+
+<!-- ============================================ -->
+<h2>5. Scheduled Order — All Cases</h2>
+
+<table>
+  <tr><th>Condition</th><th>What Happens</th><th>Status</th></tr>
+  <tr><td>Seller has schedule slots + buyer picks one</td><td>Order created with scheduled_for timestamp</td><td><span class="b b-purple">scheduled</span></td></tr>
+  <tr><td>Seller has no schedule slots</td><td>Slot picker hidden, normal order flow</td><td><span class="b b-blue">pending</span> or <span class="b b-orange">pre_order</span></td></tr>
+  <tr><td>Buyer cancels scheduled order</td><td>Stock restored, status → cancelled</td><td><span class="b b-red">cancelled</span></td></tr>
+</table>
+
+<!-- ============================================ -->
+<h2>6. Homepage — What Buyer Sees</h2>
+
+<table>
+  <tr><th>Condition</th><th>What Shows</th><th>Action</th></tr>
+  <tr><td>Location not set</td><td>Hero card: "Set your location"</td><td>Opens location picker</td></tr>
+  <tr><td>Location set + sellers nearby</td><td>Promo card + seller list</td><td>Browse & order</td></tr>
+  <tr><td>Location set + no sellers</td><td>5-card waitlist: hero, flow, benefits, form, trust</td><td>Fill waitlist form</td></tr>
+  <tr><td>Filters active + no match</td><td>Hero card: "No sellers match these filters"</td><td>Clear filters</td></tr>
+  <tr><td>Seller outside area</td><td>Grayed card + "Outside your area" badge</td><td>View menu (no ordering)</td></tr>
+</table>
+
+<div class="card">
+  <h3>Count Badge Logic</h3>
+  <p style="font-size:13px;">"Sellers near you <strong>[N]</strong>" — N counts only sellers where <code>inServiceArea = true</code>. Grayed-out sellers excluded from count.</p>
+</div>
+
+<!-- ============================================ -->
+<h2>7. Seller Dashboard — 3 Tabs</h2>
+
+<table>
+  <tr><th>Tab</th><th>Shows Orders Where</th><th>Badge Count</th><th>Seller Actions</th></tr>
+  <tr><td><strong>Fresh Orders</strong></td><td>status ≠ pre_order, ≠ scheduled</td><td>Pending count</td><td>Confirm / Decline + status & date filters</td></tr>
+  <tr><td><strong>Pre-orders</strong></td><td>status = pre_order</td><td>Awaiting count</td><td>Confirm with final_price / Cancel</td></tr>
+  <tr><td><strong>Scheduled</strong></td><td>status = scheduled</td><td>Scheduled count</td><td>View time, confirm when slot arrives</td></tr>
+</table>
+
+<!-- ============================================ -->
+<h2>8. Seller Listing — All States</h2>
+
+<table>
+  <tr><th>is_available</th><th>weight_avail</th><th>Dashboard Badge</th><th>Shown to Buyer?</th></tr>
+  <tr><td class="yes">✅ true</td><td>> 0</td><td><span class="b b-green">Active</span></td><td class="yes">✅ Yes</td></tr>
+  <tr><td class="yes">✅ true</td><td>≤ 2 (low)</td><td><span class="b b-green">Active</span> + ⚠️ Low stock</td><td class="yes">✅ Yes</td></tr>
+  <tr><td class="yes">✅ true</td><td>= 0</td><td><span class="b b-orange">Out of stock</span></td><td class="yes">✅ Yes (with PRE-ORDER if accepted)</td></tr>
+  <tr><td class="no">❌ false</td><td>Any</td><td><span class="b b-red">Unavailable</span></td><td class="no">❌ Hidden from buyer menu</td></tr>
+</table>
+
+<div class="card">
+  <h3>Listing Actions</h3>
+  <ul>
+    <li><strong>Per-listing:</strong> Pause (set unavailable) / Resume (set available)</li>
+    <li><strong>Bulk:</strong> Select multiple → Pause All / Resume All</li>
+    <li><strong>Dashboard shows all</strong> (4 items). <strong>Buyer menu shows only available</strong> (e.g. 3 items if 1 is paused).</li>
   </ul>
 </div>
 
-<div class="section-card">
-  <h3>Seller Dashboard — 3 Tabs</h3>
-  <table>
-    <tr><th>Tab</th><th>Shows</th><th>Actions</th></tr>
-    <tr><td><strong>Fresh Orders</strong></td><td>status ≠ pre_order, ≠ scheduled</td><td>Confirm / Decline + status filters + date filters</td></tr>
-    <tr><td><strong>Pre-orders</strong></td><td>status = pre_order</td><td>Confirm with final price / Cancel (full refund)</td></tr>
-    <tr><td><strong>Scheduled</strong></td><td>status = scheduled</td><td>View scheduled time, confirm when slot arrives</td></tr>
-  </table>
-</div>
+<!-- ============================================ -->
+<h2>9. Delivery vs Pickup</h2>
 
-<div class="section-card">
-  <h3>Seller Stats Dashboard</h3>
-  <ul class="checklist">
-    <li>Total Orders, Revenue, Pending, Completed, Scheduled, Cancelled</li>
-    <li>Date filters: Today, 7 days, This month, 30 days, Year, Custom range</li>
-    <li>Toggle show/hide</li>
-    <li>CSV export with date filter</li>
+<table>
+  <tr><th>Condition</th><th>Order Type</th><th>Address Required?</th><th>Delivery Fee?</th></tr>
+  <tr><td>Buyer within seller delivery radius</td><td><span class="b b-blue">delivery</span></td><td class="yes">✅ Flat + building required</td><td>Yes (seller-configured)</td></tr>
+  <tr><td>Buyer outside radius OR seller has no delivery</td><td><span class="b b-green">pickup</span></td><td class="no">❌ No</td><td>No</td></tr>
+  <tr><td>Delivery + order above free_delivery_above</td><td><span class="b b-blue">delivery</span></td><td class="yes">✅</td><td>Waived (₹0)</td></tr>
+</table>
+
+<!-- ============================================ -->
+<h2>10. Waitlist — Demand Capture</h2>
+
+<table>
+  <tr><th>Entry Point</th><th>What Shows</th><th>Data Collected</th></tr>
+  <tr><td>Homepage (no sellers in area)</td><td>5-card layout: hero, flow, benefits, form, trust</td><td>Phone, email, area, frequency, preference, budget, fish request</td></tr>
+  <tr><td>Seller page (outside area)</td><td>Compact card → links to /buyer-banner.html#wl-form</td><td>Same (via banner page form)</td></tr>
+  <tr><td>/buyer-banner.html</td><td>Full landing page with pain points + waitlist</td><td>Same</td></tr>
+  <tr><td>Homepage promo card (above sellers)</td><td>"Not in your area yet?" → links to banner</td><td>Same</td></tr>
+</table>
+
+<div class="card">
+  <h3>On Submission</h3>
+  <ul>
+    <li>Saved to <code>buyer_waitlist</code> table (upsert on phone+area)</li>
+    <li>Email to <code>relifishstore@gmail.com</code> with all details</li>
+    <li>Welcome email to buyer (if email provided)</li>
+    <li>Shows "🔥 X people in your area already waiting" (social proof)</li>
   </ul>
 </div>
 
-<div class="section-card">
-  <h3>Listing Management</h3>
-  <ul class="checklist">
-    <li>Add/Edit listings (species, price, unit, stock, pickup location)</li>
-    <li>Per-listing Pause/Resume toggle</li>
-    <li>Bulk select → Pause All / Resume All</li>
-    <li>Low stock alert (⚠️ when ≤ 2 units)</li>
-    <li>Status badges: Active / Unavailable / Expired</li>
-  </ul>
-</div>
-
-<!-- ==================== PRE-ORDER DETAIL ==================== -->
-<h2>4. Pre-Order Flow (Detailed)</h2>
-
-<div class="flow">
-  <div class="flow-title">Pre-Order: Closed Shop</div>
-  <div class="vflow">
-    <div class="vflow-node node-orange">Buyer visits seller page → shop is CLOSED</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-blue">Items show 🕐 Shop closed + 🎣 Pre-order available tags</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-blue">Buyer taps PRE-ORDER → adds to cart → places order</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-orange">Order created as pre_order (paid_amount = max estimate)</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-green">Next morning: seller opens, sees pre-orders tab</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-green">Seller confirms with actual morning price (final_price)</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-blue">Buyer sees "Seller proposed ₹X" → Accept or Reject</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-green">Accept → confirmed → normal order flow</div>
-  </div>
-</div>
-
-<div class="flow">
-  <div class="flow-title">Pre-Order: Sold Out</div>
-  <div class="vflow">
-    <div class="vflow-node node-red">Item weight_avail = 0 (sold out today)</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-blue">Items show 📦 Out of stock + 🎣 Pre-order available</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-blue">Buyer taps PRE-ORDER (no stock deducted)</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-orange">Order = pre_order. Seller fulfills from next catch.</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-green">Same confirm → accept/reject flow as above</div>
-  </div>
-</div>
-
-<!-- ==================== WAITLIST ==================== -->
-<h2>5. Waitlist & Demand Capture</h2>
-
-<div class="flow">
-  <div class="flow-title">No Sellers in Area → Waitlist</div>
-  <div class="vflow">
-    <div class="vflow-node node-blue">Buyer sets location → no sellers found</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-orange">Show: "Launching in your area soon" hero card</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-blue">Show: flow diagram + 7 benefits + preference form</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-green">Buyer fills: phone, area, frequency, fish type, budget</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-green">Saved to buyer_waitlist → email to relifishstore@gmail.com</div>
-    <div class="vflow-arrow">↓</div>
-    <div class="vflow-node node-purple">Show: "🔥 X people in your area already waiting"</div>
-  </div>
-</div>
-
-<div class="decision-box">
-  <div class="decision">
-    <div class="decision-q">❓ Where does waitlist trigger?</div>
-    <div class="decision-branches">
-      <div class="branch branch-yes">
-        <span class="branch-label">Homepage (empty state)</span>
-        Full 5-card layout: hero, flow diagram, benefits, form, trust bar
-      </div>
-      <div class="branch branch-yes">
-        <span class="branch-label">Seller page (out of area)</span>
-        Compact card: "Want fresh fish?" + "Join Waitlist" button → links to buyer-banner.html#wl-form
-      </div>
-      <div class="branch branch-yes">
-        <span class="branch-label">Buyer banner page</span>
-        Full landing page with pain points, features, waitlist form, launch offers
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== NOTIFICATIONS ==================== -->
-<h2>6. Notification Matrix</h2>
+<!-- ============================================ -->
+<h2>11. Notification Matrix</h2>
 
 <table>
   <tr><th>Event</th><th>Buyer Push</th><th>Buyer Email</th><th>Seller Push</th><th>Seller Email</th></tr>
-  <tr><td>Order placed</td><td>✅ "Order received"</td><td>✅ Order details</td><td>✅ "New Order!"</td><td>✅ Order details</td></tr>
+  <tr><td>Order placed (pending)</td><td>✅ "Order received"</td><td>✅</td><td>✅ "New Order!"</td><td>✅</td></tr>
   <tr><td>Pre-order placed</td><td>✅ "Pre-order update"</td><td>✅</td><td>✅ "New Order!"</td><td>✅</td></tr>
-  <tr><td>Scheduled order</td><td>✅ "Order Scheduled 🗓️"</td><td>✅ With time</td><td>✅ "New Scheduled Order 🗓️"</td><td>✅ With time</td></tr>
-  <tr><td>Confirmed</td><td>✅ "Order Confirmed!"</td><td>✅</td><td>—</td><td>✅</td></tr>
-  <tr><td>Ready for pickup</td><td>✅ "Ready for Pickup!"</td><td>✅</td><td>—</td><td>—</td></tr>
-  <tr><td>Completed</td><td>✅ "Order completed"</td><td>✅</td><td>—</td><td>✅</td></tr>
-  <tr><td>Declined</td><td>✅ "Order declined"</td><td>✅</td><td>—</td><td>—</td></tr>
-  <tr><td>Cancelled</td><td>✅ "Order cancelled"</td><td>✅</td><td>—</td><td>✅</td></tr>
+  <tr><td>Scheduled order</td><td>✅ "Scheduled 🗓️"</td><td>✅ with time</td><td>✅ "New Scheduled 🗓️"</td><td>✅ with time</td></tr>
+  <tr><td>Confirmed</td><td>✅ "Confirmed!"</td><td>✅</td><td>—</td><td>✅</td></tr>
+  <tr><td>Ready for pickup</td><td>✅ "Ready!"</td><td>✅</td><td>—</td><td>—</td></tr>
+  <tr><td>Completed</td><td>✅ "Complete"</td><td>✅</td><td>—</td><td>✅</td></tr>
+  <tr><td>Declined</td><td>✅ "Declined"</td><td>✅</td><td>—</td><td>—</td></tr>
+  <tr><td>Cancelled</td><td>✅ "Cancelled"</td><td>✅</td><td>—</td><td>✅</td></tr>
+  <tr><td>Waitlist signup</td><td>—</td><td>✅ Welcome</td><td>—</td><td>✅ Admin alert</td></tr>
 </table>
 
-<!-- ==================== TECHNICAL SAFEGUARDS ==================== -->
-<h2>7. Technical Safeguards</h2>
-
-<div class="section-card">
-  <h3>Stock Management</h3>
-  <ul class="checklist">
-    <li><strong>Atomic stock check:</strong> create_order_atomic() DB function with FOR UPDATE row lock — no race conditions</li>
-    <li><strong>Stock restore on cancel:</strong> restore_order_stock() returns quantity to listing</li>
-    <li><strong>Pre-order:</strong> no stock deducted (seller fulfills from next catch)</li>
-    <li><strong>Low stock alert:</strong> ⚠️ shown when ≤ 2 units remaining</li>
-  </ul>
-</div>
-
-<div class="section-card">
-  <h3>Security</h3>
-  <ul class="checklist">
-    <li><strong>OTP rate limiting:</strong> max 5 attempts per 15 minutes, 30-min block after exceeding</li>
-    <li><strong>Service role key:</strong> all writes go through API routes with Supabase service key (bypasses RLS)</li>
-    <li><strong>Buyer cancel validation:</strong> only owner (buyer_id match) can cancel their own orders</li>
-    <li><strong>Seller order validation:</strong> listing ownership verified before status changes</li>
-  </ul>
-</div>
-
-<div class="section-card">
-  <h3>Email (Resend)</h3>
-  <ul class="checklist">
-    <li>Order creation → email to buyer + seller</li>
-    <li>Status changes → email to buyer + seller</li>
-    <li>Waitlist submission → email to admin (relifishstore@gmail.com)</li>
-    <li>Welcome email to buyer if they provide email</li>
-    <li>Free tier: sends from onboarding@resend.dev (verify relifish.store domain for custom sender)</li>
-  </ul>
-</div>
-
-<!-- ==================== PAGES MAP ==================== -->
-<h2>8. Pages & URLs</h2>
+<!-- ============================================ -->
+<h2>12. Security & Technical</h2>
 
 <table>
-  <tr><th>URL</th><th>For</th><th>Description</th></tr>
-  <tr><td><code>/</code></td><td>Buyer</td><td>Homepage — seller catalog, filters, search, waitlist card</td></tr>
-  <tr><td><code>/seller/[id]</code></td><td>Buyer</td><td>Seller menu — browse items, add to cart, order/pre-order/schedule</td></tr>
-  <tr><td><code>/preorder/[species]</code></td><td>Buyer</td><td>Pre-order by species across sellers</td></tr>
-  <tr><td><code>/track</code></td><td>Buyer</td><td>Order tracking — status, details, cancel, accept/reject price</td></tr>
-  <tr><td><code>/me</code></td><td>Buyer</td><td>Profile — name, location, address book, push notifications</td></tr>
-  <tr><td><code>/waitlist</code></td><td>Buyer</td><td>Standalone waitlist page with OTP login</td></tr>
-  <tr><td><code>/buyer-banner.html</code></td><td>Buyer</td><td>Landing page — pain points, features, waitlist form</td></tr>
-  <tr><td><code>/seller-banner.html</code></td><td>Seller</td><td>Seller outreach — 4 banners, MR/EN toggle</td></tr>
-  <tr><td><code>/dashboard/login</code></td><td>Seller</td><td>Seller OTP login</td></tr>
-  <tr><td><code>/dashboard/orders</code></td><td>Seller</td><td>Orders — Fresh/Pre-orders/Scheduled tabs, stats, export</td></tr>
-  <tr><td><code>/dashboard/listings</code></td><td>Seller</td><td>Listings — add/edit, bulk toggle, low stock alerts</td></tr>
-  <tr><td><code>/dashboard/profile</code></td><td>Seller</td><td>Profile — hours, delivery, schedule, location, pre-order toggle</td></tr>
-  <tr><td><code>/sop.html</code></td><td>Internal</td><td>This page — product SOP</td></tr>
+  <tr><th>Safeguard</th><th>How</th><th>Where</th></tr>
+  <tr><td>Atomic stock check</td><td>DB function with FOR UPDATE lock</td><td>create_order_atomic()</td></tr>
+  <tr><td>Stock restore on cancel</td><td>DB function</td><td>restore_order_stock()</td></tr>
+  <tr><td>OTP rate limit</td><td>5 per 15min, 30min block</td><td>otp_attempts table</td></tr>
+  <tr><td>Order ownership</td><td>buyer_id match for cancel</td><td>/api/orders/cancel</td></tr>
+  <tr><td>Listing ownership</td><td>seller_id verified via listing</td><td>/api/seller/orders</td></tr>
+  <tr><td>Auto-migration</td><td>Run on every deploy if DATABASE_URL set</td><td>scripts/migrate-safe.ts</td></tr>
 </table>
 
-<p style="text-align:center;color:#999;font-size:12px;margin-top:32px;">
-  Relifish SOP — Last updated April 2026. Internal use only.
-</p>
+<!-- ============================================ -->
+<h2>13. All Pages</h2>
 
+<table>
+  <tr><th>URL</th><th>For</th><th>Key Features</th></tr>
+  <tr><td><code>/</code></td><td>Buyer</td><td>Seller catalog, filters, search, waitlist card, promo card</td></tr>
+  <tr><td><code>/seller/[id]</code></td><td>Buyer</td><td>Menu, ADD/PRE-ORDER, schedule slots, cart, checkout</td></tr>
+  <tr><td><code>/preorder/[species]</code></td><td>Buyer</td><td>Pre-order by species across sellers</td></tr>
+  <tr><td><code>/track</code></td><td>Buyer</td><td>Order list, details, cancel, accept/reject price, realtime</td></tr>
+  <tr><td><code>/me</code></td><td>Buyer</td><td>Profile, address book, location, push notifications</td></tr>
+  <tr><td><code>/buyer-banner.html</code></td><td>Buyer</td><td>Landing page, pain points, features, waitlist form</td></tr>
+  <tr><td><code>/seller-banner.html</code></td><td>Seller</td><td>Outreach banners, 4 designs, MR/EN toggle</td></tr>
+  <tr><td><code>/dashboard/login</code></td><td>Seller</td><td>OTP login</td></tr>
+  <tr><td><code>/dashboard/orders</code></td><td>Seller</td><td>3 tabs, stats, date filters, CSV export</td></tr>
+  <tr><td><code>/dashboard/listings</code></td><td>Seller</td><td>CRUD, bulk toggle, low stock, pause/resume</td></tr>
+  <tr><td><code>/dashboard/profile</code></td><td>Seller</td><td>Hours, delivery, pre-order, schedule, location</td></tr>
+  <tr><td><code>/sop.html</code></td><td>Internal</td><td>This page</td></tr>
+</table>
+
+<p style="text-align:center;color:#999;font-size:12px;margin-top:32px;">Relifish SOP — April 2026. Internal use only.</p>
 </div>
 </body>
 </html>
