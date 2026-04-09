@@ -367,11 +367,28 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     }
     .qty-btn:active { opacity: 0.7; }
     .qty-value {
-      min-width: 32px;
+      min-width: 44px;
       text-align: center;
       font-size: 15px;
       font-weight: 700;
       color: white;
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 2px;
+    }
+    .qty-unit-suffix {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.92;
+    }
+    .menu-item-stock .menu-stock-count {
+      font-weight: 700;
+      color: var(--gray-800);
+    }
+    .menu-item-stock .menu-stock-unit {
+      font-weight: 600;
+      color: var(--gray-600);
     }
 
     /* Delivery tag on item */
@@ -548,6 +565,27 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         return String(u);
       }
 
+      /** Cart / qty stepper: show numeric count + unit (matches listing sell-by). */
+      function orderQtyNumAndUnit(qty, unit) {
+        const u = unit || "piece";
+        const n = Number(qty);
+        const ul = priceUnitShortLabel(u);
+        if (!Number.isFinite(n) || n <= 0) return { num: "0", unit: ul };
+        if (u === "kg") return { num: String(Math.round(n * 100) / 100), unit: ul };
+        return { num: String(Math.floor(n)), unit: ul };
+      }
+
+      /** Mirrors seller Inventory: `fish_listings.weight_avail` in the listing’s sell-by unit (pc / kg / g). Orders deduct only this field. */
+      function inventoryLineHtml(l) {
+        const opts = getListingPriceOptions(l);
+        const u = opts[0]?.unit ?? "piece";
+        const w = Number(l.weight_avail);
+        if (!Number.isFinite(w) || w <= 0) return "";
+        const amt = formatInventoryAmount(w, u);
+        const short = priceUnitShortLabel(u);
+        return `<div class="menu-item-stock" aria-label="Available quantity">📦 <span class="menu-stock-count">${amt}</span> <span class="menu-stock-unit">${short}</span> in stock</div>`;
+      }
+
       function sizeLineHtml(l) {
         const lab = formatFishSizeLabel(l.fish_size);
         if (!lab) return "";
@@ -629,7 +667,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           .map((e) => {
             const meta = SPECIES[e.listing.species];
             const name = meta?.english || e.listing.species;
-            return `${e.qty}× ${name}`;
+            const opt = getListingOptionById(e.listing, e.optionId);
+            const u = opt?.unit || getListingPriceOptions(e.listing)[0]?.unit || "piece";
+            const { num, unit: ul } = orderQtyNumAndUnit(e.qty, u);
+            return `${num} ${ul} × ${name}`;
           })
           .join(" · ");
       }
@@ -637,7 +678,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       function getCartBillingSnapshot() {
         const entries = Object.values(cart).filter(e => e.qty > 0);
         if (entries.length === 0) return null;
-        const totalItems = entries.reduce((sum, e) => sum + e.qty, 0);
         const subtotal = entries.reduce(
           (sum, e) => sum + e.qty * lineUnitPrice(e.listing, e.optionId),
           0
@@ -661,7 +701,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           subtotal: Math.round(subtotal),
           deliveryLabel,
           grandTotal: Math.round(grandTotal),
-          itemsLine: `${bySpecies} (${totalItems} ${totalItems !== 1 ? "units" : "unit"})`,
+          itemsLine: bySpecies,
         };
       }
 
@@ -712,11 +752,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           }
         } else {
           const preLabel = isPreorderItem(listingId) ? `<div class="qty-preorder-label">PRE-ORDER</div>` : "";
+          syncOptionFromDom(listingId);
+          const opt = getListingOptionById(entry.listing, entry.optionId);
+          const u = opt?.unit || getListingPriceOptions(entry.listing)[0]?.unit || "piece";
+          const { num, unit: ul } = orderQtyNumAndUnit(entry.qty, u);
           el.innerHTML = `
             ${preLabel}
             <div class="qty-controls">
               <button class="qty-btn qty-minus-btn">−</button>
-              <span class="qty-value">${entry.qty}</span>
+              <span class="qty-value" aria-label="Quantity ${num} ${ul}"><span class="qty-num">${num}</span><span class="qty-unit-suffix">${ul}</span></span>
               <button class="qty-btn qty-plus-btn">+</button>
             </div>
           `;
@@ -914,6 +958,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <div>
                   ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l)}
+                  ${inventoryLineHtml(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
                   ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
@@ -953,6 +998,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l)}
+                  ${inventoryLineHtml(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
                   ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
@@ -1083,8 +1129,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           }
         });
 
-        // Load virtual schedule slots for this seller
+        // Load virtual schedule slots for this seller (only if seller has saved schedule + enabled slots)
         (async () => {
+          const picker = document.getElementById("slot-picker");
+          const datesEl = document.getElementById("slot-dates");
+          const timesEl = document.getElementById("slot-times");
+          const hiddenSched = document.getElementById("selected-scheduled-for");
+          const hiddenSlotId = document.getElementById("selected-slot-id");
+          if (!picker || !datesEl || !timesEl) return;
+          picker.style.display = "none";
+          datesEl.innerHTML = "";
+          timesEl.innerHTML = "";
+          if (hiddenSched) hiddenSched.value = "";
+          if (hiddenSlotId) hiddenSlotId.value = "";
           try {
             const res = await fetch("/api/seller/schedule", {
               method: "POST",
@@ -1093,43 +1150,39 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             });
             const data = await res.json();
             const slots = data.slots || [];
-            if (slots && slots.length > 0) {
-              const picker = document.getElementById("slot-picker");
-              picker.style.display = "block";
-              const grouped = {};
-              for (const s of slots) {
-                if (!s.is_enabled || s.date_disabled) continue;
-                (grouped[s.slot_date] ||= []).push(s);
-              }
-              const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-              const dates = Object.keys(grouped);
-              if (dates.length === 0) return;
-              const datesEl = document.getElementById("slot-dates");
-              const timesEl = document.getElementById("slot-times");
-              datesEl.innerHTML = dates.map((d,i) => {
-                const dt = new Date(d + "T00:00:00");
-                return `<button type="button" class="slot-date-chip${i===0?" active":""}" data-date="${d}">${days[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1}</button>`;
-              }).join("");
-              function showSlots(date) {
-                const daySlots = grouped[date] || [];
-                timesEl.innerHTML = daySlots.map(s => `<button type="button" class="slot-time-chip" data-date="${s.slot_date}" data-start="${s.slot_start}">${s.slot_start.substring(0,5)}-${s.slot_end.substring(0,5)}</button>`).join("");
-                timesEl.querySelectorAll(".slot-time-chip").forEach(chip => {
-                  chip.addEventListener("click", () => {
-                    timesEl.querySelectorAll(".slot-time-chip").forEach(c => c.classList.remove("active"));
-                    chip.classList.add("active");
-                    document.getElementById("selected-scheduled-for").value = `${chip.dataset.date}T${chip.dataset.start}`;
-                  });
-                });
-              }
-              showSlots(dates[0]);
-              datesEl.querySelectorAll(".slot-date-chip").forEach(chip => {
+            if (slots.length === 0) return;
+            const grouped = {};
+            for (const s of slots) {
+              if (!s.is_enabled || s.date_disabled) continue;
+              (grouped[s.slot_date] ||= []).push(s);
+            }
+            const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+            const dates = Object.keys(grouped).sort();
+            if (dates.length === 0) return;
+            picker.style.display = "block";
+            datesEl.innerHTML = dates.map((d,i) => {
+              const dt = new Date(d + "T00:00:00");
+              return `<button type="button" class="slot-date-chip${i===0?" active":""}" data-date="${d}">${days[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1}</button>`;
+            }).join("");
+            function showSlots(date) {
+              const daySlots = grouped[date] || [];
+              timesEl.innerHTML = daySlots.map(s => `<button type="button" class="slot-time-chip" data-date="${s.slot_date}" data-start="${s.slot_start}">${s.slot_start.substring(0,5)}-${s.slot_end.substring(0,5)}</button>`).join("");
+              timesEl.querySelectorAll(".slot-time-chip").forEach(chip => {
                 chip.addEventListener("click", () => {
-                  datesEl.querySelectorAll(".slot-date-chip").forEach(c => c.classList.remove("active"));
+                  timesEl.querySelectorAll(".slot-time-chip").forEach(c => c.classList.remove("active"));
                   chip.classList.add("active");
-                  showSlots(chip.dataset.date);
+                  document.getElementById("selected-scheduled-for").value = `${chip.dataset.date}T${chip.dataset.start}`;
                 });
               });
             }
+            showSlots(dates[0]);
+            datesEl.querySelectorAll(".slot-date-chip").forEach(chip => {
+              chip.addEventListener("click", () => {
+                datesEl.querySelectorAll(".slot-date-chip").forEach(c => c.classList.remove("active"));
+                chip.classList.add("active");
+                showSlots(chip.dataset.date);
+              });
+            });
           } catch {}
         })();
 
