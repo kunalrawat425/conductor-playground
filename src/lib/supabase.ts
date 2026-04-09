@@ -74,7 +74,7 @@ export interface FishListing {
   id: string;
   seller_id: string;
   species: string;
-  /** Multi-tier prices (labels + ₹ + piece|kg|gram). Only source for listing prices. */
+  /** Multi-tier prices (labels + ₹ + piece|kg). Only source for listing prices. */
   pricing_options: ListingPriceOption[] | null;
   /** Buyer-visible grade: small / medium / large (optional). */
   fish_size?: "small" | "medium" | "large" | null;

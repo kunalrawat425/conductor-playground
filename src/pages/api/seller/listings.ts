@@ -54,7 +54,7 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(
           JSON.stringify({
             error:
-              "All pricing tiers must use the same unit (piece, kg, or gram) so inventory matches orders.",
+              "All pricing tiers must use the same unit (piece or kg) so inventory matches orders.",
           }),
           { status: 400 }
         );
@@ -122,7 +122,7 @@ export const POST: APIRoute = async ({ request }) => {
           return new Response(
             JSON.stringify({
               error:
-                "All pricing tiers must use the same unit (piece, kg, or gram) so inventory matches orders.",
+                "All pricing tiers must use the same unit (piece or kg) so inventory matches orders.",
             }),
             { status: 400 }
           );

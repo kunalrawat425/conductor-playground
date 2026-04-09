@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const u = String(quantity_unit || "piece");
     const unitLabel =
-      u === "piece" || u === "kg" || u === "gram"
+      u === "piece" || u === "kg"
         ? priceUnitShortLabel(u as PriceUnit)
         : u;
     const schedLabel = scheduled_for ? ` (Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })})` : "";

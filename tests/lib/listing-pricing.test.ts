@@ -25,13 +25,15 @@ describe("canonicalPricingOptionsFromPayload", () => {
     ).toBe("piece");
   });
 
-  it("normalizes kg and g to gram", () => {
+  it("normalizes kg and legacy g/gram to kg", () => {
     expect(
       canonicalPricingOptionsFromPayload([{ id: "k", label: "A", price: 400, unit: "kg" }])![0].unit
     ).toBe("kg");
-    expect(
-      canonicalPricingOptionsFromPayload([{ id: "g", label: "B", price: 2, unit: "g" }])![0].unit
-    ).toBe("gram");
+    const legacy = canonicalPricingOptionsFromPayload([
+      { id: "g", label: "B", price: 200, unit: "g", bundle_size: 500 },
+    ])![0];
+    expect(legacy.unit).toBe("kg");
+    expect(legacy.bundle_size).toBe(0.5);
   });
 
   it("parses valid tiers and drops invalid rows", () => {
@@ -71,9 +73,10 @@ describe("canonicalPricingOptionsFromPayload", () => {
     expect(optionBundleAmount(o)).toBe(0.5);
   });
 
-  it("gram tiers default bundle_size to 1", () => {
+  it("legacy per-gram (1 g) becomes kg clamped to minimum 0.01 kg", () => {
     const out = canonicalPricingOptionsFromPayload([{ id: "g", label: "G", price: 2, unit: "g" }]);
-    expect(out![0].bundle_size).toBe(1);
+    expect(out![0].unit).toBe("kg");
+    expect(out![0].bundle_size).toBe(0.01);
   });
 
   it("minimumRequiredBuyerDailyCap uses smallest pack and seller min ₹", () => {
@@ -191,8 +194,8 @@ describe("pricingOptionsUniformUnit", () => {
   it("returns true when all match", () => {
     expect(
       pricingOptionsUniformUnit([
-        { id: "1", label: "A", price: 1, unit: "gram" },
-        { id: "2", label: "B", price: 2, unit: "gram" },
+        { id: "1", label: "A", price: 1, unit: "kg" },
+        { id: "2", label: "B", price: 2, unit: "kg" },
       ])
     ).toBe(true);
   });
@@ -219,7 +222,6 @@ describe("inventory helpers", () => {
   it("formatInventoryAmount rounds kg and floors count units", () => {
     expect(formatInventoryAmount(10.556, "kg")).toBe("10.56");
     expect(formatInventoryAmount(20.4, "piece")).toBe("20");
-    expect(formatInventoryAmount(499.9, "gram")).toBe("499");
   });
 
   it("maxOrderQtyFromStock respects kg decimals", () => {
@@ -237,7 +239,6 @@ describe("menu bundle labels", () => {
   it("formatBundleSizeLead matches pack vs per-base", () => {
     expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "piece", bundle_size: 3 })).toBe("3 pieces");
     expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "piece", bundle_size: 1 })).toBe("Per piece");
-    expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "gram", bundle_size: 500 })).toBe("500 g");
     expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "kg", bundle_size: 0.5 })).toBe("0.5 kg");
   });
 

@@ -3,8 +3,8 @@
  * Default pricing unit per species (how it's typically sold).
  */
 
-/** Count = piece; weight = kg or gram (never mix on one listing). */
-export type PriceUnit = "piece" | "kg" | "gram";
+/** Count = piece; weight = kg only (use decimals e.g. 0.5 kg for half kg). */
+export type PriceUnit = "piece" | "kg";
 
 export interface Species {
   english: string;
@@ -48,11 +48,8 @@ export function getSpeciesDisplay(id: string): string {
 /** Count-based selling (one inventory pool in pieces). */
 export const PRICE_UNITS_COUNT: { value: "piece"; label: string }[] = [{ value: "piece", label: "per piece" }];
 
-/** Weight-based selling (choose kg or gram for the whole listing). */
-export const PRICE_UNITS_WEIGHT: { value: "kg" | "gram"; label: string }[] = [
-  { value: "kg", label: "per kg" },
-  { value: "gram", label: "per gram" },
-];
+/** Weight-based selling (kg only; sub-kg amounts use decimals on the same field). */
+export const PRICE_UNITS_WEIGHT: { value: "kg"; label: string }[] = [{ value: "kg", label: "per kg" }];
 
 /** All allowed units (for validation / dropdowns). */
 export const PRICE_UNITS: { value: PriceUnit; label: string }[] = [

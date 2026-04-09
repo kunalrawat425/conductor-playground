@@ -9,8 +9,8 @@ export interface ListingPriceOption {
   unit: PriceUnit;
   /**
    * Amount of inventory this ₹ line covers, in the tier’s unit:
-   * **piece / gram**: whole units (≥ 1). **1** = per piece or per gram; **2+** = fixed pack size.
-   * **kg**: kilograms per price (≥ 0.01, typically 2 decimals). **1** = ₹ per kg; **0.5** = per half-kg pack, etc.
+   * **piece**: whole units (≥ 1). **1** = per piece; **2+** = fixed pack size.
+   * **kg**: kilograms per price (≥ 0.01). **1** = ₹ per kg; **0.5** = half-kg pack, etc.
    */
   bundle_size?: number;
   /**
@@ -29,7 +29,8 @@ function normalizeUnitRaw(raw: string): PriceUnit {
   const u = String(raw || "piece").toLowerCase();
   if (u === "dozen") return "piece";
   if (u === "kg") return "kg";
-  if (u === "gram" || u === "g") return "gram";
+  /** Legacy JSON may still say gram — canonical output is always kg for weight. */
+  if (u === "gram" || u === "g") return "kg";
   return "piece";
 }
 
@@ -41,10 +42,6 @@ function normalizeLabelForUnit(
   if (unit === "kg") {
     const s = String(label ?? "").trim();
     return s || "Per kg";
-  }
-  if (unit === "gram") {
-    const s = String(label ?? "").trim();
-    return s || "Per gram";
   }
   let s = String(label ?? "").trim() || "Option";
   if (
@@ -67,8 +64,6 @@ export function priceUnitShortLabel(unit: PriceUnit): string {
   switch (unit) {
     case "kg":
       return "kg";
-    case "gram":
-      return "g";
     default:
       return "pc";
   }
@@ -87,7 +82,6 @@ export function formatInventoryAmount(n: number, unit: PriceUnit): string {
   const v = Number(n);
   if (!Number.isFinite(v) || v < 0) return "0";
   if (unit === "kg") return String(Number(v.toFixed(2)));
-  if (unit === "gram") return String(Math.floor(v));
   return String(Math.floor(v));
 }
 
@@ -117,7 +111,7 @@ export function maxBundlesFromStock(weightAvail: number, unit: PriceUnit, bundle
 
 /**
  * Inventory amount covered by one price line (divisor for order quantity → line total).
- * Piece/gram: integer ≥ 1. Kg: rounded to 2 decimals, ≥ 0.01 (default 1).
+ * Piece: integer ≥ 1. Kg: rounded to 2 decimals, ≥ 0.01 (default 1).
  */
 export function optionBundleAmount(o: ListingPriceOption | undefined): number {
   if (!o) return 1;
@@ -126,7 +120,7 @@ export function optionBundleAmount(o: ListingPriceOption | undefined): number {
     if (!Number.isFinite(raw) || raw < 0.01) return 1;
     return Math.round(raw * 100) / 100;
   }
-  if (o.unit === "piece" || o.unit === "gram") {
+  if (o.unit === "piece") {
     if (!Number.isFinite(raw) || raw < 1) return 1;
     return Math.max(1, Math.floor(raw));
   }
@@ -134,7 +128,7 @@ export function optionBundleAmount(o: ListingPriceOption | undefined): number {
 }
 
 /**
- * True when `price` is billed per single base unit (1 pc, 1 g, or 1.00 kg) — loose qty, not fixed packs.
+ * True when `price` is billed per single base unit (1 pc or 1.00 kg) — loose qty, not fixed packs.
  */
 export function isPerBaseUnitPricing(o: ListingPriceOption | undefined): boolean {
   if (!o) return true;
@@ -152,7 +146,7 @@ export function optionBundleSize(o: ListingPriceOption | undefined): number {
 
 /**
  * Smallest base-unit quantity for a single line item: minimum pack size among pack tiers,
- * or 1 base unit when every tier is per-piece / per-gram / per-kg.
+ * or 1 base unit when every tier is per-piece or per-kg.
  */
 export function minimumSingleOrderBaseUnits(options: ListingPriceOption[]): number {
   if (options.length === 0) return 1;
@@ -226,6 +220,8 @@ export function canonicalPricingOptionsFromPayload(raw: unknown): ListingPriceOp
     const id = String(o.id ?? `opt_${i}`);
     const price = Number(o.price);
     const unitRawIn = String(o.unit ?? "piece");
+    const unitRawLower = unitRawIn.toLowerCase();
+    const legacyGram = unitRawLower === "gram" || unitRawLower === "g";
     const unit = normalizeUnitRaw(unitRawIn);
     const label = normalizeLabelForUnit(String(o.label ?? "").trim() || "Option", unitRawIn, unit);
     if (!Number.isFinite(price) || price <= 0) continue;
@@ -236,15 +232,16 @@ export function canonicalPricingOptionsFromPayload(raw: unknown): ListingPriceOp
       const bs = bsRaw == null || bsRaw === "" ? 1 : Number(bsRaw);
       const n = Number.isFinite(bs) && bs >= 1 ? Math.floor(bs) : 1;
       row.bundle_size = n;
-    } else if (unit === "gram") {
-      const bsRaw = o.bundle_size;
-      const bs = bsRaw == null || bsRaw === "" ? 1 : Number(bsRaw);
-      const n = Number.isFinite(bs) && bs >= 1 ? Math.floor(bs) : 1;
-      row.bundle_size = n;
     } else if (unit === "kg") {
       const bsRaw = o.bundle_size;
       const bs = bsRaw == null || bsRaw === "" ? 1 : Number(bsRaw);
-      const n = Number.isFinite(bs) && bs >= 0.01 ? Math.round(bs * 100) / 100 : 1;
+      let n: number;
+      if (legacyGram) {
+        const g = Number.isFinite(bs) && bs >= 1 ? bs : 1;
+        n = Math.max(0.01, Math.round((g / 1000) * 1000) / 1000);
+      } else {
+        n = Number.isFinite(bs) && bs >= 0.01 ? Math.round(bs * 100) / 100 : 1;
+      }
       row.bundle_size = n;
     }
     if (cap != null && cap > price) row.compare_at_price = cap;
@@ -295,12 +292,6 @@ export function validateListingPricingJson(json: string): PricingJsonValidation 
         message: "Each price row must include how many pieces that ₹ applies to (at least 1).",
       };
     }
-    if (o.unit === "gram" && (o.bundle_size == null || !Number.isFinite(o.bundle_size) || o.bundle_size < 1)) {
-      return {
-        ok: false,
-        message: "Each price row must include how many grams that ₹ applies to (at least 1 g).",
-      };
-    }
     if (
       o.unit === "kg" &&
       (o.bundle_size == null || !Number.isFinite(o.bundle_size) || o.bundle_size < 0.01)
@@ -312,17 +303,13 @@ export function validateListingPricingJson(json: string): PricingJsonValidation 
     }
     if (
       o.bundle_size != null &&
-      (o.unit === "piece" || o.unit === "gram") &&
+      o.unit === "piece" &&
       (!Number.isFinite(o.bundle_size) || o.bundle_size < 1)
     ) {
-      return { ok: false, message: "Piece and gram amounts must be a whole number of at least 1." };
+      return { ok: false, message: "Piece amounts must be a whole number of at least 1." };
     }
-    if (
-      o.bundle_size != null &&
-      (o.unit === "piece" || o.unit === "gram") &&
-      Math.floor(o.bundle_size) !== o.bundle_size
-    ) {
-      return { ok: false, message: "Piece and gram amounts must be whole numbers." };
+    if (o.bundle_size != null && o.unit === "piece" && Math.floor(o.bundle_size) !== o.bundle_size) {
+      return { ok: false, message: "Piece amounts must be whole numbers." };
     }
     if (o.compare_at_price != null) {
       if (o.compare_at_price <= o.price) {
@@ -343,7 +330,7 @@ export function validateListingPricingJson(json: string): PricingJsonValidation 
       return {
         ok: false,
         message:
-          "Every price row must use the same unit (all per piece, all per kg, or all per gram) so one stock number matches every order.",
+          "Every price row must use the same unit (all per piece or all per kg) so one stock number matches every order.",
       };
     }
   }
@@ -392,8 +379,8 @@ export function formatOptionMenuLabel(opt: ListingPriceOption): string {
 }
 
 /**
- * Human-readable bundle size for buyer menus (matches seller “How many pieces/grams/kg?”).
- * Per-base pricing → “Per piece” / “Per g” / “Per kg”. Fixed packs → “3 pieces”, “500 g”, “0.5 kg”.
+ * Human-readable bundle size for buyer menus (matches seller “How many pieces/kg?”).
+ * Per-base pricing → “Per piece” / “Per kg”. Fixed packs → “3 pieces”, “0.5 kg”.
  */
 export function formatBundleSizeLead(o: ListingPriceOption): string {
   const perBase = isPerBaseUnitPricing(o);
@@ -401,10 +388,6 @@ export function formatBundleSizeLead(o: ListingPriceOption): string {
   if (o.unit === "piece") {
     if (perBase) return "Per piece";
     return `${Math.floor(amt)} pieces`;
-  }
-  if (o.unit === "gram") {
-    if (perBase) return "Per g";
-    return `${Math.floor(amt)} g`;
   }
   if (perBase) return "Per kg";
   const r = Math.round(amt * 100) / 100;

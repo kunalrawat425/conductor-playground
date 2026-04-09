@@ -27,7 +27,7 @@ const initialPricingJson = JSON.stringify(
   novalidate
 >
   <p class="listing-lead">
-    Choose <strong>count</strong> (per piece) <em>or</em> <strong>weight</strong> (per kg or per gram) — not both. All price tiers share that basis so one stock number matches every order. Set pricing first, then enter stock in that unit.
+    Choose <strong>count</strong> (per piece) <em>or</em> <strong>weight</strong> (per kg — use decimals like 0.5 for half kg) — not both. All price tiers share that basis so one stock number matches every order. Set pricing first, then enter stock in that unit.
   </p>
 
   <section class="listing-card" id="listing-section-details" aria-labelledby="listing-h-details">
@@ -58,7 +58,7 @@ const initialPricingJson = JSON.stringify(
   <section class="listing-card listing-card--pricing" id="listing-section-pricing" aria-labelledby="listing-h-pricing">
     <h2 class="listing-section-title" id="listing-h-pricing">Pricing</h2>
     <p class="listing-section-intro">
-      Choose <strong>Sell by</strong> (pieces, kg, or grams). For each tier, type the <strong>amount</strong> first (e.g. <strong>3</strong> pieces, <strong>4</strong> kg, <strong>500</strong> g), then <strong>Selling ₹</strong> for that amount. Add more tiers with <strong>+ Add another price</strong>. Optional <strong>Name on menu</strong> labels the option in the dropdown. Stock is only under <strong>Inventory</strong>. Deals use compare-at ₹ below.
+      Choose <strong>Sell by</strong> (pieces or kg). For each tier, type the <strong>amount</strong> first (e.g. <strong>3</strong> pieces, <strong>1</strong> kg or <strong>0.5</strong> kg), then <strong>Selling ₹</strong> for that amount. Add more tiers with <strong>+ Add another price</strong>. Optional <strong>Name on menu</strong> labels the option in the dropdown. Stock is only under <strong>Inventory</strong>. <strong>Deals</strong>: enter list ₹, choose <strong>% off</strong> <em>or</em> <strong>fixed ₹ off</strong> (one at a time), check the preview, then <strong>Apply discount → Selling ₹</strong>.
     </p>
     <div id="pricing-rows" class="pricing-rows"></div>
     <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>
@@ -88,7 +88,7 @@ const initialPricingJson = JSON.stringify(
         placeholder="e.g. 20"
       />
       <p class="form-hint" id="stock-hint">
-        Same unit as <strong>Sell by</strong> in pricing (pieces, kg, or grams). Drives cart limits and out-of-stock on your menu.
+        Same unit as <strong>Sell by</strong> in pricing (pieces or kg). Drives cart limits and out-of-stock on your menu.
       </p>
       <p class="listing-stock-info" id="stock-info" aria-live="polite"></p>
     </div>
@@ -189,13 +189,8 @@ const initialPricingJson = JSON.stringify(
       },
       kg: {
         stock: "Stock (kg)",
-        stockHint: "How many kilograms you have. Buyers won't see this.",
-        stockPlaceholder: "e.g. 10",
-      },
-      gram: {
-        stock: "Stock (grams)",
-        stockHint: "How many grams you have. Buyers won't see this.",
-        stockPlaceholder: "e.g. 500",
+        stockHint: "How many kilograms you have (decimals ok). Buyers won't see this.",
+        stockPlaceholder: "e.g. 10 or 0.5",
       },
     };
 
@@ -212,27 +207,25 @@ const initialPricingJson = JSON.stringify(
 
     const initial = parsed.map((r, i) => {
       const u = String(r.unit || "piece").toLowerCase();
-      const unit: ListingPriceOption["unit"] =
-        u === "dozen" || u === "piece"
-          ? "piece"
-          : u === "kg"
-            ? "kg"
-            : u === "gram" || u === "g"
-              ? "gram"
-              : "piece";
+      let unit: ListingPriceOption["unit"] = "piece";
+      let bundle_size = r.bundle_size as number | undefined;
+      if (u === "kg") unit = "kg";
+      else if (u === "gram" || u === "g") {
+        unit = "kg";
+        const g = bundle_size != null && Number(bundle_size) >= 1 ? Number(bundle_size) : 1;
+        bundle_size = Math.max(0.01, Math.round((g / 1000) * 1000) / 1000);
+      } else if (u === "dozen" || u === "piece") unit = "piece";
       return {
         ...r,
         id: r.id || `opt_${i}`,
         unit,
+        bundle_size,
       };
     }) as ListingPriceOption[];
 
     function currentResolvedUnit(): ListingPriceOption["unit"] {
       const basis = pricingRowsEl.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
-      const wSel = pricingRowsEl.querySelector(".listing-weight-unit-select") as HTMLSelectElement | null;
-      if (basis?.value === "weight" && wSel) {
-        return wSel.value === "gram" ? "gram" : "kg";
-      }
+      if (basis?.value === "weight") return "kg";
       return "piece";
     }
 
@@ -242,8 +235,8 @@ const initialPricingJson = JSON.stringify(
       if (stockLabel) stockLabel.textContent = u.stock;
       if (stockHint) {
         stockHint.innerHTML =
-          unit === "kg" || unit === "gram"
-            ? "Enter total <strong>weight</strong> in stock (kg or grams — match <strong>Weight unit</strong> above)."
+          unit === "kg"
+            ? "Enter total <strong>weight</strong> in stock in <strong>kg</strong> (decimals ok, e.g. 0.5)."
             : "Enter a <strong>whole number</strong> of pieces.";
       }
       if (stockInput) {
@@ -260,7 +253,7 @@ const initialPricingJson = JSON.stringify(
       const stock = parseFloat(stockInput.value) || 0;
       const cap = parseFloat(dailyLimitInput?.value || "0") || 0;
       const unit = currentResolvedUnit();
-      const unitWord = unit === "gram" ? "g" : unit;
+      const unitWord = unit === "kg" ? "kg" : "pieces";
       stockInfo.className = "listing-stock-info";
       if (stock > 0 && cap > 0) {
         const orders = Math.floor(stock / cap);
@@ -285,18 +278,15 @@ const initialPricingJson = JSON.stringify(
       const option = speciesSelect.selectedOptions[0];
       const defaultUnit = option?.dataset.unit;
       const basis = pricingRowsEl.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
-      const wSel = pricingRowsEl.querySelector(".listing-weight-unit-select") as HTMLSelectElement | null;
-      const wrap = pricingRowsEl.querySelector(".listing-pricing-weight-unit-wrap") as HTMLElement | null;
-      if (!defaultUnit || !basis || !wSel) return;
+      if (!defaultUnit || !basis) return;
       const du = defaultUnit === "dozen" ? "piece" : defaultUnit;
-      if (du === "kg" || du === "gram") {
+      if (du === "kg") {
         basis.value = "weight";
-        wSel.value = du;
-        if (wrap) wrap.style.display = "block";
       } else {
         basis.value = "count";
-        if (wrap) wrap.style.display = "none";
       }
+      const kgHint = pricingRowsEl.querySelector(".listing-pricing-kg-hint") as HTMLElement | null;
+      if (kgHint) kgHint.style.display = basis.value === "weight" ? "block" : "none";
       pricingEditor.sync();
       syncStockLabelsFromFirstUnit();
     });

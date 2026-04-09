@@ -49,7 +49,7 @@ export function validateSellerListingForm(input: {
     return { ok: false, message: stockErr, focusId: "weight_avail" };
   }
 
-  if (firstUnit === "piece" || firstUnit === "gram") {
+  if (firstUnit === "piece") {
     weightAvail = Math.round(weightAvail);
   } else if (firstUnit === "kg") {
     weightAvail = Math.round(weightAvail * 100) / 100;
@@ -110,15 +110,12 @@ export function validateSellerListingForm(input: {
 
 function validateStockMatchesUnit(stock: number, unit: PriceUnit): string | null {
   if (unit === "kg") {
-    if (stock > 1_000_000) return "Stock amount looks too large. Check kg vs grams.";
+    if (stock > 1_000_000) return "Stock amount looks too large. Check pieces vs kg.";
     return null;
   }
-  if (unit === "piece" || unit === "gram") {
+  if (unit === "piece") {
     const r = Math.round(stock);
     if (!Number.isFinite(stock) || Math.abs(stock - r) > 1e-4) {
-      if (unit === "gram") {
-        return "Stock in grams must be a whole number (no decimals).";
-      }
       return "Stock must be a whole number when selling by piece.";
     }
   }
