@@ -24,6 +24,22 @@ const isEdit = !!listing;
     </select>
   </div>
 
+  <div class="form-group">
+    <label for="weight_avail" id="stock-label">Stock available</label>
+    <input
+      type="number"
+      id="weight_avail"
+      name="weight_avail"
+      min="0"
+      step="1"
+      value={listing?.weight_avail || ""}
+      required
+      placeholder="e.g. 10"
+    />
+    <div class="form-hint" id="stock-hint">Buyers won't see this number. It only drives inventory and the "Out of stock" label when it reaches zero.</div>
+    <div class="form-hint" id="stock-info" style="color:var(--blue);font-weight:600;"></div>
+  </div>
+
   <div class="form-row">
     <div class="form-group">
       <label for="price_unit">Sell by</label>
@@ -34,7 +50,7 @@ const isEdit = !!listing;
           </option>
         ))}
       </select>
-      <div class="form-hint">How this fish is sold — per kg, per piece, or per dozen</div>
+      <div class="form-hint">How this fish is sold — per piece or per dozen</div>
     </div>
     <div class="form-group">
       <label for="price" id="price-label">Price</label>
@@ -53,22 +69,6 @@ const isEdit = !!listing;
   </div>
 
   <div class="form-group">
-    <label for="weight_avail" id="stock-label">Stock available</label>
-    <input
-      type="number"
-      id="weight_avail"
-      name="weight_avail"
-      min="0"
-      step="1"
-      value={listing?.weight_avail || ""}
-      required
-      placeholder="e.g. 10"
-    />
-    <div class="form-hint" id="stock-hint">Buyers won't see this number. Used to track inventory and trigger "Out of stock".</div>
-    <div class="form-hint" id="stock-info" style="color:var(--blue);font-weight:600;"></div>
-  </div>
-
-  <div class="form-group">
     <label for="photo">Photo</label>
     <input type="file" id="photo" name="photo" accept="image/*" />
     {listing?.photo_url && (
@@ -76,9 +76,8 @@ const isEdit = !!listing;
     )}
   </div>
 
-
   <div class="form-group">
-    <label for="oos_threshold">"Selling fast" threshold (optional)</label>
+    <label for="oos_threshold">"Stock clearing soon" threshold (optional)</label>
     <input
       type="number"
       id="oos_threshold"
@@ -86,37 +85,27 @@ const isEdit = !!listing;
       min="0"
       step="1"
       value={listing?.oos_threshold || ""}
-      placeholder="Default: 2"
+      placeholder="e.g. 3 — leave empty for no tag"
     />
-    <div class="form-hint">When stock ≤ this → "🔥 Selling fast". Stock = 0 → "📦 Out of stock". Both show PRE-ORDER. Default: 2.</div>
+    <div class="form-hint">
+      Cosmetic only: when stock is above zero but at or below this number, buyers see "Stock clearing soon". It does not change add, pre-order, or stock rules.
+    </div>
   </div>
 
   <div class="form-group">
-    <label for="max_qty_per_order">Order limit per user (optional)</label>
+    <label for="buyer_daily_qty_limit">Per-buyer daily limit (optional)</label>
     <input
       type="number"
-      id="max_qty_per_order"
-      name="max_qty_per_order"
+      id="buyer_daily_qty_limit"
+      name="buyer_daily_qty_limit"
       min="1"
       step="1"
-      value={listing?.max_qty_per_order || ""}
-      placeholder="e.g. 5 — leave empty for no limit"
+      value={listing?.buyer_daily_qty_limit || ""}
+      placeholder="e.g. 10 pieces/dozens per buyer per day — leave empty for no cap"
     />
-    <div class="form-hint">Max pieces/dozens one buyer can order. Prevents one person from buying everything. Buyer sees: "Max 5 per user".</div>
-  </div>
-
-  <div class="form-group">
-    <label for="max_orders_per_day">Daily order limit (optional)</label>
-    <input
-      type="number"
-      id="max_orders_per_day"
-      name="max_orders_per_day"
-      min="1"
-      step="1"
-      value={listing?.max_orders_per_day || ""}
-      placeholder="e.g. 20 — leave empty for no limit"
-    />
-    <div class="form-hint">Total orders allowed per day across all buyers. Rejects new orders after limit hit. Resets at midnight.</div>
+    <div class="form-hint">
+      Max total pieces or dozens one phone number can order from this line item per calendar day (resets at midnight). Must be high enough that someone can still meet your shop minimum order at this price, if you set a minimum in profile.
+    </div>
   </div>
 
   <div class="form-actions">
@@ -135,15 +124,29 @@ const isEdit = !!listing;
   const stockHint = document.getElementById("stock-hint");
   const stockInfo = document.getElementById("stock-info");
   const stockInput = document.getElementById("weight_avail") as HTMLInputElement;
-  const maxQtyInput = document.getElementById("max_qty_per_order") as HTMLInputElement;
+  const dailyLimitInput = document.getElementById("buyer_daily_qty_limit") as HTMLInputElement;
+  const priceInput = document.getElementById("price") as HTMLInputElement;
+
+  const unitMap: Record<string, { price: string; priceHint: string; stock: string; stockHint: string; stockPlaceholder: string }> = {
+    piece: {
+      price: "Price per piece (₹)",
+      priceHint: "How much for 1 piece. Buyer sees: ₹150/piece",
+      stock: "Stock (pieces)",
+      stockHint: "How many pieces you have. Buyers won't see this.",
+      stockPlaceholder: "e.g. 20",
+    },
+    dozen: {
+      price: "Price per dozen (₹)",
+      priceHint: "How much for 12 units. Buyer sees: ₹300/dozen",
+      stock: "Stock (dozens)",
+      stockHint: "How many dozens you have. Buyers won't see this.",
+      stockPlaceholder: "e.g. 5",
+    },
+  };
 
   function updateUnitLabels() {
-    const unit = unitSelect?.value || "kg";
-    const unitMap: Record<string, { price: string; priceHint: string; stock: string; stockHint: string; stockPlaceholder: string }> = {
-      piece: { price: "Price per piece (₹)", priceHint: "How much for 1 piece. Buyer sees: ₹150/piece", stock: "Stock (pieces)", stockHint: "How many pieces you have. Buyers won't see this.", stockPlaceholder: "e.g. 20" },
-      dozen: { price: "Price per dozen (₹)", priceHint: "How much for 12 units. Buyer sees: ₹300/dozen", stock: "Stock (dozens)", stockHint: "How many dozens you have. Buyers won't see this.", stockPlaceholder: "e.g. 5" },
-    };
-    const u = unitMap[unit] || unitMap.kg;
+    const unit = unitSelect?.value || "piece";
+    const u = unitMap[unit] || unitMap.piece;
     if (priceLabel) priceLabel.textContent = u.price;
     if (priceHint) priceHint.textContent = u.priceHint;
     if (stockLabel) stockLabel.textContent = u.stock;
@@ -155,11 +158,11 @@ const isEdit = !!listing;
   function updateStockInfo() {
     if (!stockInfo || !stockInput) return;
     const stock = parseFloat(stockInput.value) || 0;
-    const maxQty = parseFloat(maxQtyInput?.value || "0") || 0;
-    const unit = unitSelect?.value || "kg";
-    if (stock > 0 && maxQty > 0) {
-      const orders = Math.floor(stock / maxQty);
-      stockInfo.textContent = `With ${stock} ${unit} and max ${maxQty}/${unit} per user → ~${orders} orders possible`;
+    const cap = parseFloat(dailyLimitInput?.value || "0") || 0;
+    const unit = unitSelect?.value || "piece";
+    if (stock > 0 && cap > 0) {
+      const orders = Math.floor(stock / cap);
+      stockInfo.textContent = `With ${stock} ${unit} and max ${cap}/${unit} per buyer per day → ~${orders} buyers could fully use stock`;
     } else if (stock > 0) {
       stockInfo.textContent = `${stock} ${unit} available for orders`;
     } else {
@@ -167,7 +170,6 @@ const isEdit = !!listing;
     }
   }
 
-  // Auto-set price unit when species changes
   speciesSelect?.addEventListener("change", () => {
     const option = speciesSelect.selectedOptions[0];
     const defaultUnit = option?.dataset.unit;
@@ -179,9 +181,9 @@ const isEdit = !!listing;
 
   unitSelect?.addEventListener("change", updateUnitLabels);
   stockInput?.addEventListener("input", updateStockInfo);
-  maxQtyInput?.addEventListener("input", updateStockInfo);
+  dailyLimitInput?.addEventListener("input", updateStockInfo);
+  priceInput?.addEventListener("input", updateStockInfo);
 
-  // Initial update
   updateUnitLabels();
 </script>
 

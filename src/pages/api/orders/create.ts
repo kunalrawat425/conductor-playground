@@ -57,7 +57,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (listing_id) {
       const { data: listing } = await supabase
         .from("fish_listings")
-        .select("price, price_unit, seller_id, weight_avail, is_available, max_qty_per_order, max_orders_per_day, oos_threshold")
+        .select("price, price_unit, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold")
         .eq("id", listing_id)
         .single();
 
@@ -65,32 +65,53 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: "Listing not found" }), { status: 404 });
       }
 
-      // Check max quantity per order
-      if (listing.max_qty_per_order && quantity > listing.max_qty_per_order) {
-        return new Response(
-          JSON.stringify({ error: `Max ${listing.max_qty_per_order} ${listing.price_unit} per order for this item` }),
-          { status: 400 }
-        );
-      }
+      const { data: sellerForLimits } = await supabase
+        .from("sellers")
+        .select("min_order_amount")
+        .eq("id", listing.seller_id)
+        .single();
+      const minOrderAmt = Number(sellerForLimits?.min_order_amount) || 0;
+      const linePrice = Number(listing.price) || 0;
+      const minUnitsForMinOrder =
+        minOrderAmt > 0 && linePrice > 0 ? Math.max(1, Math.ceil(minOrderAmt / linePrice)) : 1;
 
-      // Check max orders per day for this listing
-      if (listing.max_orders_per_day) {
-        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-        const { count } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .eq("listing_id", listing_id)
-          .gte("created_at", todayStart.toISOString())
-          .not("status", "in", '("cancelled","declined")');
-        if (count && count >= listing.max_orders_per_day) {
+      if (listing.buyer_daily_qty_limit != null && Number(listing.buyer_daily_qty_limit) > 0) {
+        const cap = Number(listing.buyer_daily_qty_limit);
+        if (cap < minUnitsForMinOrder) {
           return new Response(
-            JSON.stringify({ error: `This item has reached its daily order limit (${listing.max_orders_per_day} orders/day)` }),
+            JSON.stringify({
+              error: `Per-buyer daily limit must be at least ${minUnitsForMinOrder} ${listing.price_unit} so buyers can meet your minimum order (₹${minOrderAmt}).`,
+            }),
+            { status: 400 }
+          );
+        }
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const { data: dayOrders } = await supabase
+          .from("orders")
+          .select("quantity, buyer_phone, buyer_id, status")
+          .eq("listing_id", listing_id)
+          .gte("created_at", todayStart.toISOString());
+
+        let usedToday = 0;
+        for (const o of dayOrders || []) {
+          if (o.status === "cancelled" || o.status === "declined") continue;
+          const match = buyer_id
+            ? o.buyer_id === buyer_id || o.buyer_phone === buyer_phone
+            : o.buyer_phone === buyer_phone;
+          if (match) usedToday += Number(o.quantity);
+        }
+        if (usedToday + quantity > cap) {
+          return new Response(
+            JSON.stringify({
+              error: `Daily limit for this item is ${cap} ${listing.price_unit} per buyer (you already have ${usedToday} today).`,
+            }),
             { status: 400 }
           );
         }
       }
 
-      // Out of stock or unavailable → pre-order. OOS threshold is visual only, doesn't affect order logic.
+      // Out of stock or unavailable → pre-order. "Selling fast" / oos_threshold is buyer UI only.
       if (!listing.is_available || listing.weight_avail <= 0 || listing.weight_avail < quantity) {
         // Always allow as pre-order — no stock deduction, no blocking
         total_price = listing.price * quantity;
@@ -135,7 +156,8 @@ export const POST: APIRoute = async ({ request, url }) => {
           } catch {}
         }
 
-        return new Response(JSON.stringify({ order: preOrder, pre_order_reason: effectivelyOOS ? "out_of_stock" : "unavailable" }), { status: 201 });
+        const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
+        return new Response(JSON.stringify({ order: preOrder, pre_order_reason }), { status: 201 });
       }
 
       total_price = listing.price * quantity;

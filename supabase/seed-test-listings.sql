@@ -29,16 +29,16 @@ begin
   insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date)
   values (raju_id, 'pomfret', 1200, 'piece', 0, true, 'Versova Fish Market, Stall #5', now()::date);
 
-  -- Case 4: In stock with max_qty_per_order limit
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, max_qty_per_order)
+  -- Case 4: In stock with per-buyer daily quantity cap
+  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
   values (raju_id, 'bangda', 250, 'kg', 20, true, 'Versova Fish Market, Stall #5', now()::date, 5);
 
-  -- Case 5: In stock with max_orders_per_day limit
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, max_orders_per_day)
+  -- Case 5: In stock with daily cap (same column)
+  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
   values (raju_id, 'prawns', 500, 'kg', 8, true, 'Versova Fish Market, Stall #5', now()::date, 10);
 
-  -- Case 6: Out of stock + max_qty limit (PRE-ORDER with limit)
-  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, max_qty_per_order)
+  -- Case 6: Out of stock + daily cap (PRE-ORDER with limit)
+  insert into fish_listings (seller_id, species, price, price_unit, weight_avail, is_available, pickup_loc, listed_date, buyer_daily_qty_limit)
   values (raju_id, 'crab', 150, 'piece', 0, true, 'Versova Fish Market, Stall #5', now()::date, 3);
 
   -- Case 7: Unavailable (seller paused — hidden from buyer menu)

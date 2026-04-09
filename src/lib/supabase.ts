@@ -57,8 +57,8 @@ export interface FishListing {
   is_available: boolean;
   pickup_loc: string;
   created_at: string;
-  max_qty_per_order?: number | null;
-  max_orders_per_day?: number | null;
+  /** Max units (piece/dozen) one buyer may order per calendar day for this listing; optional */
+  buyer_daily_qty_limit?: number | null;
   oos_threshold?: number | null;
   // joined
   seller?: Seller;

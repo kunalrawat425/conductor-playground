@@ -73,6 +73,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   ${SPECIES_LIST.map((s) => `<option value="${s.id}" ${listing.species === s.id ? "selected" : ""} data-unit="${s.defaultUnit}">${s.english} (${s.marathi})</option>`).join("")}
                 </select>
               </div>
+              <div class="form-group">
+                <label for="weight_avail">Stock (how much you have)</label>
+                <input type="number" id="weight_avail" name="weight_avail" min="0" step="0.1" value="${listing.weight_avail}" required />
+                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Drives inventory. Buyers only see "Out of stock" when this hits zero.</div>
+              </div>
               <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;">
                 <div class="form-group">
                   <label for="price">Price</label>
@@ -86,28 +91,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 </div>
               </div>
               <div class="form-group">
-                <label for="weight_avail">Stock (how much you have)</label>
-                <input type="number" id="weight_avail" name="weight_avail" min="0" step="0.1" value="${listing.weight_avail}" required />
-              </div>
-              <div class="form-group">
                 <label for="photo">Photo</label>
                 <input type="file" id="photo" name="photo" accept="image/*" />
                 ${listing.photo_url ? `<img src="${listing.photo_url}" alt="Current" style="width:120px;height:90px;object-fit:cover;border-radius:8px;margin-top:8px;" loading="lazy" />` : ""}
               </div>
               <div class="form-group">
-                <label for="oos_threshold">"Selling fast" threshold (optional)</label>
-                <input type="number" id="oos_threshold" name="oos_threshold" min="0" step="1" value="${listing.oos_threshold || ""}" placeholder="Default: 10% of stock" />
-                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">When stock falls below this → buyer sees "🔥 Selling fast — pre-order for next batch"</div>
+                <label for="oos_threshold">"Stock clearing soon" threshold (optional)</label>
+                <input type="number" id="oos_threshold" name="oos_threshold" min="0" step="1" value="${listing.oos_threshold || ""}" placeholder="e.g. 3 — leave empty for no tag" />
+                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Cosmetic tag for buyers only; does not change ordering rules.</div>
               </div>
               <div class="form-group">
-                <label for="max_qty_per_order">Order limit per user (optional)</label>
-                <input type="number" id="max_qty_per_order" name="max_qty_per_order" min="1" step="1" value="${listing.max_qty_per_order || ""}" placeholder="e.g. 5 — leave empty for no limit" />
-                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Max pieces/dozens one buyer can order. Buyer sees: "Max 5 per user"</div>
-              </div>
-              <div class="form-group">
-                <label for="max_orders_per_day">Daily order limit (optional)</label>
-                <input type="number" id="max_orders_per_day" name="max_orders_per_day" min="1" step="1" value="${listing.max_orders_per_day || ""}" placeholder="e.g. 20 — leave empty for no limit" />
-                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Total orders per day across all buyers. Resets at midnight.</div>
+                <label for="buyer_daily_qty_limit">Per-buyer daily limit (optional)</label>
+                <input type="number" id="buyer_daily_qty_limit" name="buyer_daily_qty_limit" min="1" step="1" value="${listing.buyer_daily_qty_limit || ""}" placeholder="Max units per buyer per day" />
+                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Replaces the old "per order" and "orders per day" fields: one cap per buyer per day. Must allow your profile minimum order at this price.</div>
               </div>
               <div style="display:flex;gap:12px;margin-top:20px;">
                 <button type="submit" class="btn btn-primary">Update Listing</button>
@@ -142,8 +138,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 photoUrl = await uploadFishPhoto(photoFile, seller.id);
               }
 
-              const maxQtyVal = formData.get("max_qty_per_order") as string;
-              const maxOrdersVal = formData.get("max_orders_per_day") as string;
+              const dailyVal = (formData.get("buyer_daily_qty_limit") as string)?.trim();
               const oosVal = formData.get("oos_threshold") as string;
               await updateListing(listingId, {
                 species: formData.get("species") as string,
@@ -151,8 +146,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 price_unit: formData.get("price_unit") as any,
                 weight_avail: parseFloat(formData.get("weight_avail") as string),
                 photo_url: photoUrl,
-                max_qty_per_order: maxQtyVal ? parseFloat(maxQtyVal) : null,
-                max_orders_per_day: maxOrdersVal ? parseInt(maxOrdersVal) : null,
+                buyer_daily_qty_limit: dailyVal ? parseFloat(dailyVal) : null,
                 oos_threshold: oosVal ? parseFloat(oosVal) : null,
               }, seller.id);
 

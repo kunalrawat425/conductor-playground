@@ -70,8 +70,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const priceUnit = formData.get("price_unit") as PriceUnit;
           const weightAvail = parseFloat(formData.get("weight_avail") as string);
           const photoFile = formData.get("photo") as File;
-          const maxQty = formData.get("max_qty_per_order") ? parseFloat(formData.get("max_qty_per_order") as string) : null;
-          const maxOrders = formData.get("max_orders_per_day") ? parseInt(formData.get("max_orders_per_day") as string) : null;
+          const buyerDaily =
+            formData.get("buyer_daily_qty_limit")?.toString().trim()
+              ? parseFloat(formData.get("buyer_daily_qty_limit") as string)
+              : null;
           const oosThreshold = formData.get("oos_threshold") ? parseFloat(formData.get("oos_threshold") as string) : null;
 
           if (!species || !price) {
@@ -103,8 +105,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               listed_date: new Date().toISOString().split("T")[0],
               is_available: true,
               pickup_loc: "",
-              max_qty_per_order: maxQty,
-              max_orders_per_day: maxOrders,
+              buyer_daily_qty_limit: buyerDaily,
               oos_threshold: oosThreshold,
             } as any);
 
