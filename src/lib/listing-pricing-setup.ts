@@ -9,7 +9,7 @@ export function setupListingPricingEditor(opts: {
   addButton: HTMLElement;
   initial: ListingPriceOption[];
   onUnitChange?: () => void;
-}): { sync: () => void } {
+}): { sync: () => void; addRow: () => void } {
   const { container, hiddenInput, addButton, initial, onUnitChange } = opts;
 
   function syncHidden() {
@@ -73,10 +73,19 @@ export function setupListingPricingEditor(opts: {
   initial.forEach((o) => renderRow(o));
   syncHidden();
 
-  addButton.addEventListener("click", () => {
+  function addRow() {
     renderRow({ id: `opt_${Date.now()}`, label: "", price: 0, unit: "piece" });
     syncHidden();
-  });
+  }
 
-  return { sync: syncHidden };
+  addButton.addEventListener(
+    "click",
+    (e) => {
+      e.preventDefault();
+      addRow();
+    },
+    { capture: true }
+  );
+
+  return { sync: syncHidden, addRow };
 }
