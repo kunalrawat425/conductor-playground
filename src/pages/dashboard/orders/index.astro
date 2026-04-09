@@ -46,7 +46,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <!-- Stats Dashboard -->
       <div class="stats-header">
         <h2 class="stats-title">Dashboard</h2>
-        <button type="button" class="stats-toggle" id="stats-toggle">Hide ▲</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button type="button" id="export-csv" class="stats-toggle" style="color:var(--green);">📥 Export</button>
+          <button type="button" class="stats-toggle" id="stats-toggle">Hide ▲</button>
+        </div>
       </div>
       <div id="stats-panel">
         <div class="stats-filters">
@@ -303,6 +306,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           panel.style.display = "none";
           btn.textContent = "Show ▼";
         }
+      });
+
+      // Export CSV
+      document.getElementById("export-csv")!.addEventListener("click", () => {
+        if (!_sellerId) return;
+        const dateFilter = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
+        window.open(`/api/seller/orders-export?seller_id=${_sellerId}&date_filter=${dateFilter}`, "_blank");
       });
 
       // Date filter change
