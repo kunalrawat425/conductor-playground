@@ -68,6 +68,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       import { getSellerById, getSellerListings, updateListing } from "../../../lib/supabase";
       import { getSpeciesDisplay } from "../../../lib/species";
       import type { Seller, FishListing } from "../../../lib/supabase";
+      import { formatListingPriceSummary, getListingPriceOptions } from "../../../lib/listing-pricing";
 
       let _sellerId = "";
 
@@ -160,7 +161,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         el.innerHTML = listings
           .map((l) => {
             const name = getSpeciesDisplay(l.species);
-            const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
+            const stockUnit = getListingPriceOptions(l)[0]?.unit ?? l.price_unit;
             const statusBadge = !l.is_available
               ? '<span class="badge badge-orange">Paused</span>'
               : l.weight_avail <= 0
@@ -168,7 +169,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 : '<span class="badge badge-green">Active</span>';
             const lowStock = l.is_available && l.weight_avail > 0 && l.weight_avail <= LOW_STOCK;
             const stockText = l.weight_avail > 0
-              ? (lowStock ? `⚠️ Low stock: ${l.weight_avail} ${l.price_unit}` : `📦 ${l.weight_avail} ${l.price_unit} in stock`)
+              ? (lowStock ? `⚠️ Low stock: ${l.weight_avail} ${stockUnit}` : `📦 ${l.weight_avail} ${stockUnit} in stock`)
               : `❌ Out of stock`;
             const stockClass = lowStock ? "badge-orange" : l.weight_avail > 0 ? "" : "text-muted";
 
@@ -182,7 +183,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                     </div>
                     ${statusBadge}
                   </div>
-                  <div style="font-size:18px;font-weight:700;color:var(--green);margin-bottom:4px;">₹${l.price}/${unitLabel}</div>
+                  <div style="font-size:18px;font-weight:700;color:var(--green);margin-bottom:4px;">${esc(formatListingPriceSummary(l))}</div>
                   <div class="${stockClass}" style="font-size:13px;${lowStock ? "color:#e65100;font-weight:600;" : ""}">${stockText}</div>
                   <div class="listing-card-actions" style="margin-top:10px;display:flex;gap:8px;align-items:center;">
                     <a href="/dashboard/listings/${l.id}" class="btn btn-primary" style="padding:6px 16px;font-size:13px;">Edit</a>

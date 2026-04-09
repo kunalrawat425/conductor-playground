@@ -5,11 +5,34 @@ import {
   ordersDateCutoffIso,
   SELLER_ORDERS_PAGE_SIZE,
 } from "./seller-orders-pagination";
+import type { ListingPriceOption } from "./listing-pricing";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/** Avoid repeating identical `fish_listings` id fetches (e.g. dashboard orders loads 4×). */
+const listingIdsCache = new Map<string, { ids: string[]; at: number }>();
+const LISTING_IDS_CACHE_MS = 60_000;
+
+/** Listing UUIDs for a seller (cached ~60s). */
+export async function getListingIdsForSeller(sellerId: string): Promise<string[]> {
+  const hit = listingIdsCache.get(sellerId);
+  if (hit && Date.now() - hit.at < LISTING_IDS_CACHE_MS) return hit.ids;
+  const { data, error } = await supabase
+    .from("fish_listings")
+    .select("id")
+    .eq("seller_id", sellerId);
+  if (error) throw error;
+  const ids = (data || []).map((r: { id: string }) => r.id);
+  listingIdsCache.set(sellerId, { ids, at: Date.now() });
+  return ids;
+}
+
+export function invalidateSellerListingIdsCache(sellerId: string) {
+  listingIdsCache.delete(sellerId);
+}
 
 // --- Types ---
 
@@ -51,6 +74,8 @@ export interface FishListing {
   species: string;
   price: number;
   price_unit: PriceUnit;
+  /** Multiple tiers: custom labels + price + unit (piece|dozen). Synced legacy price/price_unit to first row on save. */
+  pricing_options?: ListingPriceOption[] | null;
   weight_avail: number;
   photo_url: string | null;
   listed_date: string;
@@ -85,6 +110,8 @@ export interface Order {
   buyer_addr: string | null;
   quantity: number;
   quantity_unit: PriceUnit;
+  pricing_option_id?: string | null;
+  pricing_label?: string | null;
   total_price: number;
   platform_fee: number;
   status: OrderStatus;
@@ -196,15 +223,19 @@ export async function getFreshOrdersForSellerPage(
     pageSize?: number;
     statusFilter: string;
     dateFilter: string;
+    /** When set (e.g. from getListingIdsForSeller), skips a duplicate fish_listings query. */
+    listingIds?: string[];
   }
 ): Promise<{ orders: Order[]; total: number }> {
   const pageSize = options.pageSize ?? SELLER_ORDERS_PAGE_SIZE;
-  const { data: listings } = await supabase
-    .from("fish_listings")
-    .select("id")
-    .eq("seller_id", sellerId);
-
-  const listingIds = listings?.map((l) => l.id) || [];
+  let listingIds = options.listingIds;
+  if (!listingIds) {
+    const { data: listings } = await supabase
+      .from("fish_listings")
+      .select("id")
+      .eq("seller_id", sellerId);
+    listingIds = listings?.map((l) => l.id) || [];
+  }
   if (listingIds.length === 0) return { orders: [], total: 0 };
 
   const cutoff = ordersDateCutoffIso(options.dateFilter);
@@ -241,15 +272,18 @@ export async function getPreOrdersForSellerPage(
     pageSize?: number;
     statusFilter: string;
     dateFilter: string;
+    listingIds?: string[];
   }
 ): Promise<{ orders: Order[]; total: number }> {
   const pageSize = options.pageSize ?? SELLER_ORDERS_PAGE_SIZE;
-  const { data: listings } = await supabase
-    .from("fish_listings")
-    .select("id")
-    .eq("seller_id", sellerId);
-
-  const listingIds = listings?.map((l) => l.id) || [];
+  let listingIds = options.listingIds;
+  if (!listingIds) {
+    const { data: listings } = await supabase
+      .from("fish_listings")
+      .select("id")
+      .eq("seller_id", sellerId);
+    listingIds = listings?.map((l) => l.id) || [];
+  }
   const orClause =
     listingIds.length > 0
       ? `listing_id.in.(${listingIds.join(",")}),listing_id.is.null`
@@ -281,17 +315,22 @@ export async function getPreOrdersForSellerPage(
 }
 
 /** Tab badges: pending fresh + awaiting pre-orders + scheduled (not paginated). */
-export async function getSellerOrderTabCounts(sellerId: string): Promise<{
+export async function getSellerOrderTabCounts(
+  sellerId: string,
+  opts?: { listingIds?: string[] }
+): Promise<{
   pendingFresh: number;
   preAwaiting: number;
   scheduled: number;
 }> {
-  const { data: listings } = await supabase
-    .from("fish_listings")
-    .select("id")
-    .eq("seller_id", sellerId);
-
-  const listingIds = listings?.map((l) => l.id) || [];
+  let listingIds = opts?.listingIds;
+  if (!listingIds) {
+    const { data: listings } = await supabase
+      .from("fish_listings")
+      .select("id")
+      .eq("seller_id", sellerId);
+    listingIds = listings?.map((l) => l.id) || [];
+  }
 
   let pendingFresh = 0;
   let scheduledCount = 0;
@@ -332,15 +371,17 @@ export async function getSellerOrderTabCounts(sellerId: string): Promise<{
 /** Scheduled orders for seller, ordered by scheduled_for descending. */
 export async function getScheduledOrdersForSeller(
   sellerId: string,
-  options: { page: number; pageSize?: number }
+  options: { page: number; pageSize?: number; listingIds?: string[] }
 ): Promise<{ orders: Order[]; total: number }> {
   const pageSize = options.pageSize ?? SELLER_ORDERS_PAGE_SIZE;
-  const { data: listings } = await supabase
-    .from("fish_listings")
-    .select("id")
-    .eq("seller_id", sellerId);
-
-  const listingIds = listings?.map((l) => l.id) || [];
+  let listingIds = options.listingIds;
+  if (!listingIds) {
+    const { data: listings } = await supabase
+      .from("fish_listings")
+      .select("id")
+      .eq("seller_id", sellerId);
+    listingIds = listings?.map((l) => l.id) || [];
+  }
   if (listingIds.length === 0) return { orders: [], total: 0 };
 
   const from = Math.max(0, (options.page - 1) * pageSize);
