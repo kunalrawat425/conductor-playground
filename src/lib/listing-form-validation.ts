@@ -1,5 +1,5 @@
 import type { ListingPriceOption } from "./listing-pricing";
-import { validateListingPricingJson } from "./listing-pricing";
+import { validateListingPricingJson, minimumRequiredBuyerDailyCap } from "./listing-pricing";
 import type { PriceUnit } from "./species";
 
 export type ValidatedListingForm = {
@@ -18,6 +18,8 @@ export function validateSellerListingForm(input: {
   pricingOptionsJson: string;
   buyerDailyStr: string;
   oosThresholdStr: string;
+  /** Seller profile minimum order ₹ — used to validate daily cap vs smallest valid order. */
+  sellerMinOrderAmount?: number;
 }): { ok: true; data: ValidatedListingForm } | { ok: false; message: string; focusId?: string } {
   const species = String(input.species ?? "").trim();
   if (!species) {
@@ -62,6 +64,14 @@ export function validateSellerListingForm(input: {
     }
     if (!Number.isInteger(d)) {
       return { ok: false, message: "Daily limit must be a whole number.", focusId: "buyer_daily_qty_limit" };
+    }
+    const minCap = minimumRequiredBuyerDailyCap(pricing.options, Number(input.sellerMinOrderAmount) || 0);
+    if (d < minCap) {
+      return {
+        ok: false,
+        message: `Per-buyer daily limit must be at least ${minCap} (same unit as stock) so buyers can complete at least one valid order. Raise the limit or adjust prices / packs.`,
+        focusId: "buyer_daily_qty_limit",
+      };
     }
     buyerDaily = d;
   }

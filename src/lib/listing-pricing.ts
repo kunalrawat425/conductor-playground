@@ -8,6 +8,12 @@ export interface ListingPriceOption {
   price: number;
   unit: PriceUnit;
   /**
+   * Amount of inventory this ₹ line covers, in the tier’s unit:
+   * **piece / gram**: whole units (≥ 1). **1** = per piece or per gram; **2+** = fixed pack size.
+   * **kg**: kilograms per price (≥ 0.01, typically 2 decimals). **1** = ₹ per kg; **0.5** = per half-kg pack, etc.
+   */
+  bundle_size?: number;
+  /**
    * Optional higher "was / list" price for display (strikethrough + % off).
    * When set, must be greater than `price`.
    */
@@ -93,6 +99,101 @@ export function maxOrderQtyFromStock(weightAvail: number, unit: PriceUnit): numb
   return Math.floor(w);
 }
 
+/**
+ * How many **packs** fit in stock when each pack uses `bundleAmount` base units.
+ * Call only when `!isPerBaseUnitPricing` for that option (multi-pack / fixed-weight lines).
+ */
+export function maxBundlesFromStock(weightAvail: number, unit: PriceUnit, bundleAmount: number): number {
+  const a = Number(bundleAmount);
+  if (!Number.isFinite(a) || a <= 0) return 0;
+  const maxBase = maxOrderQtyFromStock(weightAvail, unit);
+  if (unit === "kg") {
+    return Math.floor(maxBase / a + 1e-9);
+  }
+  const bi = Math.floor(a);
+  if (!Number.isFinite(bi) || bi < 2) return maxOrderQtyFromStock(weightAvail, unit);
+  return Math.floor(maxBase / bi);
+}
+
+/**
+ * Inventory amount covered by one price line (divisor for order quantity → line total).
+ * Piece/gram: integer ≥ 1. Kg: rounded to 2 decimals, ≥ 0.01 (default 1).
+ */
+export function optionBundleAmount(o: ListingPriceOption | undefined): number {
+  if (!o) return 1;
+  const raw = o.bundle_size != null ? Number(o.bundle_size) : NaN;
+  if (o.unit === "kg") {
+    if (!Number.isFinite(raw) || raw < 0.01) return 1;
+    return Math.round(raw * 100) / 100;
+  }
+  if (o.unit === "piece" || o.unit === "gram") {
+    if (!Number.isFinite(raw) || raw < 1) return 1;
+    return Math.max(1, Math.floor(raw));
+  }
+  return 1;
+}
+
+/**
+ * True when `price` is billed per single base unit (1 pc, 1 g, or 1.00 kg) — loose qty, not fixed packs.
+ */
+export function isPerBaseUnitPricing(o: ListingPriceOption | undefined): boolean {
+  if (!o) return true;
+  const a = optionBundleAmount(o);
+  if (o.unit === "kg") {
+    return Math.abs(a - 1) < 0.0001;
+  }
+  return a === 1;
+}
+
+/** @deprecated Prefer optionBundleAmount + isPerBaseUnitPricing */
+export function optionBundleSize(o: ListingPriceOption | undefined): number {
+  return optionBundleAmount(o);
+}
+
+/**
+ * Smallest base-unit quantity for a single line item: minimum pack size among pack tiers,
+ * or 1 base unit when every tier is per-piece / per-gram / per-kg.
+ */
+export function minimumSingleOrderBaseUnits(options: ListingPriceOption[]): number {
+  if (options.length === 0) return 1;
+  const packSizes = options.filter((o) => !isPerBaseUnitPricing(o)).map((o) => optionBundleAmount(o));
+  if (packSizes.length === 0) return 1;
+  return Math.min(...packSizes);
+}
+
+/**
+ * Base units needed on the **cheapest** price tier to reach the seller minimum order ₹ (when set).
+ * Uses the lowest ₹ price so this is the worst case (most units) for hitting the minimum.
+ */
+export function minBaseUnitsForSellerMinOrder(options: ListingPriceOption[], sellerMinOrderAmt: number): number {
+  const m = Number(sellerMinOrderAmt);
+  if (!options.length || !Number.isFinite(m) || m <= 0) return 1;
+  let cheapest: ListingPriceOption | undefined;
+  let minP = Infinity;
+  for (const o of options) {
+    if (o.price > 0 && o.price < minP) {
+      minP = o.price;
+      cheapest = o;
+    }
+  }
+  if (!cheapest) return 1;
+  const ba = optionBundleAmount(cheapest);
+  const perBase = isPerBaseUnitPricing(cheapest);
+  const packsNeeded = Math.ceil(m / cheapest.price);
+  return Math.max(1, packsNeeded * (perBase ? 1 : ba));
+}
+
+/**
+ * Minimum `buyer_daily_qty_limit` (in listing inventory units) so a buyer can place at least
+ * one valid order: enough for the smallest pack, and enough to satisfy seller min ₹ on the cheapest tier.
+ */
+export function minimumRequiredBuyerDailyCap(options: ListingPriceOption[], sellerMinOrderAmt: number): number {
+  return Math.max(
+    minBaseUnitsForSellerMinOrder(options, sellerMinOrderAmt),
+    minimumSingleOrderBaseUnits(options)
+  );
+}
+
 /** PostgREST / drivers occasionally return jsonb as a JSON string — normalize for UI + orders. */
 function normalizePricingOptionsRaw(raw: unknown): unknown {
   if (raw == null) return null;
@@ -130,6 +231,22 @@ export function canonicalPricingOptionsFromPayload(raw: unknown): ListingPriceOp
     if (!Number.isFinite(price) || price <= 0) continue;
     const cap = parseCompareAt(o.compare_at_price);
     const row: ListingPriceOption = { id, label, price, unit };
+    if (unit === "piece") {
+      const bsRaw = o.bundle_size;
+      const bs = bsRaw == null || bsRaw === "" ? 1 : Number(bsRaw);
+      const n = Number.isFinite(bs) && bs >= 1 ? Math.floor(bs) : 1;
+      row.bundle_size = n;
+    } else if (unit === "gram") {
+      const bsRaw = o.bundle_size;
+      const bs = bsRaw == null || bsRaw === "" ? 1 : Number(bsRaw);
+      const n = Number.isFinite(bs) && bs >= 1 ? Math.floor(bs) : 1;
+      row.bundle_size = n;
+    } else if (unit === "kg") {
+      const bsRaw = o.bundle_size;
+      const bs = bsRaw == null || bsRaw === "" ? 1 : Number(bsRaw);
+      const n = Number.isFinite(bs) && bs >= 0.01 ? Math.round(bs * 100) / 100 : 1;
+      row.bundle_size = n;
+    }
     if (cap != null && cap > price) row.compare_at_price = cap;
     out.push(row);
   }
@@ -171,6 +288,41 @@ export function validateListingPricingJson(json: string): PricingJsonValidation 
   for (const o of opts) {
     if (o.price < 1) {
       return { ok: false, message: "Each price must be at least ₹1." };
+    }
+    if (o.unit === "piece" && (o.bundle_size == null || !Number.isFinite(o.bundle_size) || o.bundle_size < 1)) {
+      return {
+        ok: false,
+        message: "Each price row must include how many pieces that ₹ applies to (at least 1).",
+      };
+    }
+    if (o.unit === "gram" && (o.bundle_size == null || !Number.isFinite(o.bundle_size) || o.bundle_size < 1)) {
+      return {
+        ok: false,
+        message: "Each price row must include how many grams that ₹ applies to (at least 1 g).",
+      };
+    }
+    if (
+      o.unit === "kg" &&
+      (o.bundle_size == null || !Number.isFinite(o.bundle_size) || o.bundle_size < 0.01)
+    ) {
+      return {
+        ok: false,
+        message: "Each price row must include how many kg that ₹ applies to (at least 0.01 kg).",
+      };
+    }
+    if (
+      o.bundle_size != null &&
+      (o.unit === "piece" || o.unit === "gram") &&
+      (!Number.isFinite(o.bundle_size) || o.bundle_size < 1)
+    ) {
+      return { ok: false, message: "Piece and gram amounts must be a whole number of at least 1." };
+    }
+    if (
+      o.bundle_size != null &&
+      (o.unit === "piece" || o.unit === "gram") &&
+      Math.floor(o.bundle_size) !== o.bundle_size
+    ) {
+      return { ok: false, message: "Piece and gram amounts must be whole numbers." };
     }
     if (o.compare_at_price != null) {
       if (o.compare_at_price <= o.price) {

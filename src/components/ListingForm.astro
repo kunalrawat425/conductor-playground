@@ -12,7 +12,9 @@ const { listing, sellerId } = Astro.props;
 const isEdit = !!listing;
 
 const initialPricingJson = JSON.stringify(
-  listing ? getListingPriceOptions(listing) : [{ id: "default", label: "Per piece", price: 0, unit: "piece" as const }]
+  listing
+    ? getListingPriceOptions(listing)
+    : [{ id: "default", label: "Per piece", price: 0, unit: "piece" as const, bundle_size: 1 }]
 );
 ---
 
@@ -56,7 +58,7 @@ const initialPricingJson = JSON.stringify(
   <section class="listing-card listing-card--pricing" id="listing-section-pricing" aria-labelledby="listing-h-pricing">
     <h2 class="listing-section-title" id="listing-h-pricing">Pricing</h2>
     <p class="listing-section-intro">
-      Pick <strong>Sell by</strong>, then add tiers (label + <strong>Selling ₹</strong> each). <strong>How many pieces or how much weight you have</strong> is not entered here — use <strong>Inventory</strong> below; one stock number applies to all tiers. Optional compare-at ₹ and <strong>Quick</strong> for deals.
+      Pick <strong>Sell by</strong>, then add tiers (label + <strong>Selling ₹</strong> each). Each row must state the <strong>amount that ₹ covers</strong>: <strong>Pieces per price</strong> (count), <strong>Kg per price</strong> (weight per kg), or <strong>Grams per price</strong> (per gram). Use <strong>1</strong> for simple per-unit pricing; other values define fixed packs. <strong>Stock quantity</strong> is entered under <strong>Inventory</strong> only. Optional compare-at ₹ and <strong>Quick</strong> for deals.
     </p>
     <div id="pricing-rows" class="pricing-rows"></div>
     <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>
@@ -137,7 +139,7 @@ const initialPricingJson = JSON.stringify(
         value={listing?.buyer_daily_qty_limit || ""}
         placeholder="e.g. 10"
       />
-      <p class="form-hint">Max units per phone per day (same unit the buyer selects). Leave empty for no cap.</p>
+      <p class="form-hint">Max units per phone per day (same unit as stock). Must be at least enough for one smallest pack and your seller minimum order ₹ (if any). Leave empty for no cap.</p>
     </div>
   </section>
 

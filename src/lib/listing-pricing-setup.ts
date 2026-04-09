@@ -30,6 +30,54 @@ export function setupListingPricingEditor(opts: {
     wrap.style.display = basis.value === "weight" ? "block" : "none";
   }
 
+  function updateBundleFieldVisibility() {
+    const basis = container.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
+    const show = basis?.value === "count" || basis?.value === "weight";
+    container.querySelectorAll(".listing-bundle-wrap").forEach((el) => {
+      (el as HTMLElement).style.display = show ? "block" : "none";
+    });
+  }
+
+  /** Piece / gram: integer ≥ 1. Kg: decimal ≥ 0.01 (typically per kg or per pack). */
+  function updateBundleFieldCopy() {
+    const ru = resolvedUnit();
+    container.querySelectorAll(".pricing-row").forEach((row) => {
+      const wrap = row.querySelector(".listing-bundle-wrap") as HTMLElement | null;
+      const lab = wrap?.querySelector(".bundle-label-host") as HTMLElement | null;
+      const inp = wrap?.querySelector(".bundle-size-inp") as HTMLInputElement | null;
+      const hint = wrap?.querySelector(".bundle-hint") as HTMLElement | null;
+      if (!wrap || !lab || !inp || !hint) return;
+      if (ru === "piece") {
+        lab.innerHTML = `Pieces per price <span class="listing-req" aria-hidden="true">*</span>`;
+        inp.required = true;
+        inp.min = "1";
+        inp.step = "1";
+        inp.removeAttribute("placeholder");
+        if (!String(inp.value ?? "").trim()) inp.value = "1";
+        hint.innerHTML =
+          "Required: how many pieces this ₹ applies to. <strong>1</strong> = price per piece. <strong>3</strong>, <strong>5</strong>… = fixed packs on the menu.";
+      } else if (ru === "gram") {
+        lab.innerHTML = `Grams per price <span class="listing-req" aria-hidden="true">*</span>`;
+        inp.required = true;
+        inp.min = "1";
+        inp.step = "1";
+        inp.removeAttribute("placeholder");
+        if (!String(inp.value ?? "").trim()) inp.value = "1";
+        hint.innerHTML =
+          "Required: how many grams this ₹ applies to. <strong>1</strong> = ₹ per gram. <strong>250</strong>, <strong>500</strong>… = fixed gram packs.";
+      } else if (ru === "kg") {
+        lab.innerHTML = `Kg per price <span class="listing-req" aria-hidden="true">*</span>`;
+        inp.required = true;
+        inp.min = "0.01";
+        inp.step = "0.01";
+        inp.removeAttribute("placeholder");
+        if (!String(inp.value ?? "").trim()) inp.value = "1";
+        hint.innerHTML =
+          "Required: how many kg this ₹ applies to. <strong>1</strong> = ₹ per kg. <strong>0.5</strong> = per half-kg pack, etc.";
+      }
+    });
+  }
+
   function updateRemoveButtons() {
     const rows = container.querySelectorAll(".pricing-row");
     const n = rows.length;
@@ -62,6 +110,22 @@ export function setupListingPricingEditor(opts: {
         price,
         unit,
       };
+      if (unit === "piece") {
+        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim();
+        let bs = parseInt(bsRaw || "1", 10);
+        if (!Number.isFinite(bs) || bs < 1) bs = 1;
+        rowOut.bundle_size = Math.floor(bs);
+      } else if (unit === "gram") {
+        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim();
+        let bs = parseInt(bsRaw || "1", 10);
+        if (!Number.isFinite(bs) || bs < 1) bs = 1;
+        rowOut.bundle_size = Math.floor(bs);
+      } else if (unit === "kg") {
+        const bsRaw = (row.querySelector(".bundle-size-inp") as HTMLInputElement)?.value?.trim();
+        let bs = parseFloat(bsRaw || "1");
+        if (!Number.isFinite(bs) || bs < 0.01) bs = 1;
+        rowOut.bundle_size = Math.round(bs * 100) / 100;
+      }
       if (Number.isFinite(compareParsed) && compareParsed >= 1 && compareParsed > price) {
         rowOut.compare_at_price = compareParsed;
       }
@@ -69,6 +133,8 @@ export function setupListingPricingEditor(opts: {
     });
     hiddenInput.value = JSON.stringify(out);
     updateRemoveButtons();
+    updateBundleFieldVisibility();
+    updateBundleFieldCopy();
     onUnitChange?.();
   }
 
@@ -108,6 +174,19 @@ export function setupListingPricingEditor(opts: {
     wrap.dataset.optId = id;
     const labelEsc = String(opt.label).replace(/</g, "").replace(/"/g, "'");
     const cap = opt.compare_at_price != null && opt.compare_at_price > 0 ? opt.compare_at_price : "";
+    const ru = resolvedUnit();
+    let bundleInputValue = "1";
+    if (ru === "piece") {
+      bundleInputValue =
+        opt.bundle_size != null && opt.bundle_size >= 1 ? String(Math.floor(opt.bundle_size)) : "1";
+    } else if (ru === "gram") {
+      bundleInputValue =
+        opt.bundle_size != null && opt.bundle_size >= 1 ? String(Math.floor(opt.bundle_size)) : "1";
+    } else if (ru === "kg") {
+      const rawKg = opt.bundle_size != null ? Number(opt.bundle_size) : 1;
+      const nk = Number.isFinite(rawKg) && rawKg >= 0.01 ? Math.round(rawKg * 100) / 100 : 1;
+      bundleInputValue = String(nk);
+    }
     wrap.innerHTML = `
       <div class="pricing-row-grid" style="display:grid;grid-template-columns:1fr 100px 36px;gap:8px;align-items:end;margin-bottom:8px;">
         <div class="form-group" style="margin:0;">
@@ -119,6 +198,11 @@ export function setupListingPricingEditor(opts: {
           <input type="number" inputmode="decimal" class="price-inp" min="1" step="0.01" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${opt.price > 0 ? opt.price : ""}" required />
         </div>
         <button type="button" class="btn-remove-price" aria-label="Remove this price tier" style="height:40px;border:none;background:var(--gray-100);border-radius:8px;cursor:pointer;">✕</button>
+      </div>
+      <div class="listing-bundle-wrap form-group" style="margin:0 0 8px;display:none;">
+        <label class="bundle-label-host" style="font-size:12px;"></label>
+        <input type="number" inputmode="numeric" class="bundle-size-inp" min="1" step="1" style="width:100%;max-width:120px;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${bundleInputValue}" />
+        <p class="bundle-hint" style="font-size:11px;color:var(--gray-500);margin:6px 0 0;line-height:1.35;"></p>
       </div>
       <div class="pricing-row-deal" style="margin-top:8px;padding:10px 12px;background:var(--gray-50, #f9fafb);border-radius:8px;border:1px dashed var(--gray-300, #e5e7eb);">
         <div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--gray-600, #4b5563);">Deal (optional)</div>
@@ -154,6 +238,7 @@ export function setupListingPricingEditor(opts: {
     });
     wireDealButtons(wrap);
     container.appendChild(wrap);
+    updateBundleFieldCopy();
   }
 
   const modeEl = document.createElement("div");
@@ -185,13 +270,19 @@ export function setupListingPricingEditor(opts: {
   basisSel.addEventListener("change", () => {
     updateWeightWrapVisibility();
     syncHidden();
+    updateBundleFieldVisibility();
+    updateBundleFieldCopy();
     onUnitChange?.();
   });
   weightSel.addEventListener("change", () => {
     syncHidden();
+    updateBundleFieldVisibility();
+    updateBundleFieldCopy();
     onUnitChange?.();
   });
   updateWeightWrapVisibility();
+  updateBundleFieldVisibility();
+  updateBundleFieldCopy();
 
   initial.forEach((o) => renderRow(o));
   syncHidden();

@@ -1,7 +1,13 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
-import { getListingOptionById } from "../../../lib/listing-pricing";
+import {
+  getListingOptionById,
+  getListingPriceOptions,
+  optionBundleAmount,
+  isPerBaseUnitPricing,
+  minimumRequiredBuyerDailyCap,
+} from "../../../lib/listing-pricing";
 
 export const prerender = false;
 
@@ -96,22 +102,52 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
       }
 
+      const linePrice = chosen.price;
+      const bundleAmount = optionBundleAmount(chosen);
+      const perBase = isPerBaseUnitPricing(chosen);
+
+      if (!perBase) {
+        if (quantity_unit === "kg") {
+          const qCent = Math.round(quantity * 100);
+          const bCent = Math.round(bundleAmount * 100);
+          if (bCent < 1 || qCent % bCent !== 0) {
+            return new Response(
+              JSON.stringify({
+                error: `Quantity must be a multiple of ${bundleAmount} kg for this price line (e.g. ${bundleAmount}, ${bundleAmount * 2}, …).`,
+              }),
+              { status: 400 }
+            );
+          }
+        } else if (quantity % bundleAmount !== 0) {
+          return new Response(
+            JSON.stringify({
+              error: `Quantity must be a multiple of ${bundleAmount} ${quantity_unit} for this pack (e.g. ${bundleAmount}, ${bundleAmount * 2}, …).`,
+            }),
+            { status: 400 }
+          );
+        }
+      }
+
+      const bundleCount = quantity / bundleAmount;
+      if (!Number.isFinite(bundleCount) || bundleCount <= 0) {
+        return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
+      }
+
       const { data: sellerForLimits } = await supabase
         .from("sellers")
         .select("min_order_amount")
         .eq("id", listing.seller_id)
         .single();
       const minOrderAmt = Number(sellerForLimits?.min_order_amount) || 0;
-      const linePrice = chosen.price;
-      const minUnitsForMinOrder =
-        minOrderAmt > 0 && linePrice > 0 ? Math.max(1, Math.ceil(minOrderAmt / linePrice)) : 1;
+      const pricingOpts = getListingPriceOptions(listing);
+      const dailyCapFloor = minimumRequiredBuyerDailyCap(pricingOpts, minOrderAmt);
 
       if (listing.buyer_daily_qty_limit != null && Number(listing.buyer_daily_qty_limit) > 0) {
         const cap = Number(listing.buyer_daily_qty_limit);
-        if (cap < minUnitsForMinOrder) {
+        if (cap < dailyCapFloor) {
           return new Response(
             JSON.stringify({
-              error: `Per-buyer daily limit must be at least ${minUnitsForMinOrder} ${quantity_unit} so buyers can meet your minimum order (₹${minOrderAmt}).`,
+              error: `Per-buyer daily limit must be at least ${dailyCapFloor} ${quantity_unit} (covers at least one smallest pack and your seller minimum order ₹${minOrderAmt || 0}). Raise the limit on the listing or adjust pricing.`,
             }),
             { status: 400 }
           );
@@ -147,7 +183,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
       if (!listing.is_available || availOk <= 0 || availOk < quantity) {
         // Always allow as pre-order — no stock deduction, no blocking
-        total_price = linePrice * quantity;
+        total_price = linePrice * bundleCount;
         seller_id = listing.seller_id;
         const amountDue = total_price;
         const { data: preOrder, error: preErr } = await supabase
@@ -195,7 +231,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ order: preOrder, pre_order_reason }), { status: 201 });
       }
 
-      total_price = linePrice * quantity;
+      total_price = linePrice * bundleCount;
       seller_id = listing.seller_id;
     } else if (species) {
       const { data: range } = await supabase
