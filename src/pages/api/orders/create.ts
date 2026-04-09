@@ -57,7 +57,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (listing_id) {
       const { data: listing } = await supabase
         .from("fish_listings")
-        .select("price, price_unit, seller_id, weight_avail, is_available, max_qty_per_order, max_orders_per_day")
+        .select("price, price_unit, seller_id, weight_avail, is_available, max_qty_per_order, max_orders_per_day, oos_threshold")
         .eq("id", listing_id)
         .single();
 
@@ -90,8 +90,10 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
       }
 
-      // Out of stock or unavailable → allow as pre-order if seller accepts
-      if (!listing.is_available || listing.weight_avail < quantity) {
+      // Out of stock, below threshold, or unavailable → allow as pre-order if seller accepts
+      const oosThreshold = listing.oos_threshold ?? Math.max(1, Math.floor(listing.weight_avail * 0.1));
+      const effectivelyOOS = listing.weight_avail <= oosThreshold;
+      if (!listing.is_available || effectivelyOOS || listing.weight_avail < quantity) {
         // Check if seller accepts pre-orders
         const { data: sellerCheck } = await supabase
           .from("sellers")
