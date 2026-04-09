@@ -38,44 +38,48 @@ export function setupListingPricingEditor(opts: {
     });
   }
 
-  /** Piece / gram: integer ≥ 1. Kg: decimal ≥ 0.01 (typically per kg or per pack). */
+  /** Piece / gram: integer ≥ 1. Kg: decimal ≥ 0.01. Labels ask for a concrete count/weight, then ₹. */
   function updateBundleFieldCopy() {
     const ru = resolvedUnit();
+    const unitWord = ru === "piece" ? "pieces" : ru === "gram" ? "g" : "kg";
     container.querySelectorAll(".pricing-row").forEach((row) => {
       const wrap = row.querySelector(".listing-bundle-wrap") as HTMLElement | null;
       const lab = wrap?.querySelector(".bundle-label-host") as HTMLElement | null;
       const inp = wrap?.querySelector(".bundle-size-inp") as HTMLInputElement | null;
-      const hint = wrap?.querySelector(".bundle-hint") as HTMLElement | null;
+      const hint = row.querySelector(".bundle-hint") as HTMLElement | null;
+      const suffix = row.querySelector(".bundle-unit-suffix") as HTMLElement | null;
+      if (suffix) suffix.textContent = unitWord;
       if (!wrap || !lab || !inp || !hint) return;
       if (ru === "piece") {
-        lab.innerHTML = `Pieces per price <span class="listing-req" aria-hidden="true">*</span>`;
+        lab.innerHTML = `How many pieces? <span class="listing-req" aria-hidden="true">*</span>`;
         inp.required = true;
         inp.min = "1";
         inp.step = "1";
         inp.inputMode = "numeric";
+        inp.setAttribute("aria-label", "Number of pieces for this price");
         inp.removeAttribute("placeholder");
-        // Do not overwrite inp.value when empty — sync runs on every keystroke; clearing to re-type
-        // "12" was being reset to "1" and felt like the field "would not accept" the value.
         hint.innerHTML =
-          "Required: how many pieces this ₹ applies to. <strong>1</strong> = price per piece. <strong>3</strong>, <strong>5</strong>… = fixed packs on the menu.";
+          "Type the count, then selling ₹ → e.g. <strong>3</strong> pieces at <strong>₹150</strong>. Use <strong>1</strong> for price per single piece.";
       } else if (ru === "gram") {
-        lab.innerHTML = `Grams per price <span class="listing-req" aria-hidden="true">*</span>`;
+        lab.innerHTML = `How many grams? <span class="listing-req" aria-hidden="true">*</span>`;
         inp.required = true;
         inp.min = "1";
         inp.step = "1";
         inp.inputMode = "numeric";
+        inp.setAttribute("aria-label", "Grams for this price");
         inp.removeAttribute("placeholder");
         hint.innerHTML =
-          "Required: how many grams this ₹ applies to. <strong>1</strong> = ₹ per gram. <strong>250</strong>, <strong>500</strong>… = fixed gram packs.";
+          "Type grams, then ₹ → e.g. <strong>500</strong> g at <strong>₹200</strong>. Use <strong>1</strong> for ₹ per gram.";
       } else if (ru === "kg") {
-        lab.innerHTML = `Kg per price <span class="listing-req" aria-hidden="true">*</span>`;
+        lab.innerHTML = `How many kg? <span class="listing-req" aria-hidden="true">*</span>`;
         inp.required = true;
         inp.min = "0.01";
         inp.step = "0.01";
         inp.inputMode = "decimal";
+        inp.setAttribute("aria-label", "Kilograms for this price");
         inp.removeAttribute("placeholder");
         hint.innerHTML =
-          "Required: how many kg this ₹ applies to. <strong>1</strong> = ₹ per kg. <strong>0.5</strong> = per half-kg pack, etc.";
+          "Type kg, then ₹ → e.g. <strong>1</strong> kg at <strong>₹400</strong>, or <strong>0.5</strong> kg (half kg) at <strong>₹220</strong>.";
       }
     });
   }
@@ -192,22 +196,24 @@ export function setupListingPricingEditor(opts: {
     const bundleMin = ru === "kg" ? "0.01" : "1";
     const bundleStep = ru === "kg" ? "0.01" : "1";
     const bundleInputMode = ru === "kg" ? "decimal" : "numeric";
+    const unitSuffix = ru === "piece" ? "pieces" : ru === "gram" ? "g" : "kg";
     wrap.innerHTML = `
-      <div class="pricing-row-grid" style="display:grid;grid-template-columns:1fr 100px 36px;gap:8px;align-items:end;margin-bottom:8px;">
-        <div class="form-group" style="margin:0;">
-          <label style="font-size:12px;">Label</label>
-          <input type="text" class="price-label-inp" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${labelEsc}" placeholder="e.g. Large, 500g pack…" />
+      <div class="pricing-row-grid" style="display:grid;grid-template-columns:minmax(72px,1fr) auto minmax(92px,1fr) 36px;gap:6px 8px;align-items:end;margin-bottom:8px;">
+        <div class="form-group listing-bundle-wrap" style="margin:0;display:none;">
+          <label class="bundle-label-host" style="font-size:12px;line-height:1.25;"></label>
+          <input type="number" inputmode="${bundleInputMode}" class="bundle-size-inp" min="${bundleMin}" step="${bundleStep}" style="width:100%;min-width:0;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${bundleInputValue}" />
         </div>
+        <span class="bundle-unit-suffix" style="font-size:13px;font-weight:700;color:var(--gray-800);padding-bottom:10px;white-space:nowrap;align-self:end;">${unitSuffix}</span>
         <div class="form-group" style="margin:0;">
-          <label style="font-size:12px;">Selling ₹</label>
-          <input type="number" inputmode="decimal" class="price-inp" min="1" step="0.01" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${opt.price > 0 ? opt.price : ""}" required />
+          <label style="font-size:12px;">Selling ₹ <span class="listing-req" aria-hidden="true">*</span></label>
+          <input type="number" inputmode="decimal" class="price-inp" min="1" step="0.01" style="width:100%;min-width:0;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${opt.price > 0 ? opt.price : ""}" required />
         </div>
-        <button type="button" class="btn-remove-price" aria-label="Remove this price tier" style="height:40px;border:none;background:var(--gray-100);border-radius:8px;cursor:pointer;">✕</button>
+        <button type="button" class="btn-remove-price" aria-label="Remove this price tier" style="height:40px;border:none;background:var(--gray-100);border-radius:8px;cursor:pointer;align-self:end;">✕</button>
       </div>
-      <div class="listing-bundle-wrap form-group" style="margin:0 0 8px;display:none;">
-        <label class="bundle-label-host" style="font-size:12px;"></label>
-        <input type="number" inputmode="${bundleInputMode}" class="bundle-size-inp" min="${bundleMin}" step="${bundleStep}" style="width:100%;max-width:120px;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${bundleInputValue}" />
-        <p class="bundle-hint" style="font-size:11px;color:var(--gray-500);margin:6px 0 0;line-height:1.35;"></p>
+      <p class="bundle-hint" style="font-size:11px;color:var(--gray-500);margin:0 0 10px;line-height:1.4;"></p>
+      <div class="form-group" style="margin:0 0 8px;">
+        <label style="font-size:12px;">Name on menu <span style="font-weight:400;color:var(--gray-500);">(optional)</span></label>
+        <input type="text" class="price-label-inp" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${labelEsc}" placeholder="e.g. Large, 6‑pc pack, 500g tray…" />
       </div>
       <div class="pricing-row-deal" style="margin-top:8px;padding:10px 12px;background:var(--gray-50, #f9fafb);border-radius:8px;border:1px dashed var(--gray-300, #e5e7eb);">
         <div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--gray-600, #4b5563);">Deal (optional)</div>

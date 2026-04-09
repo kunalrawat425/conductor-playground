@@ -391,6 +391,46 @@ export function formatOptionMenuLabel(opt: ListingPriceOption): string {
   return `₹${opt.price} · ${opt.label} (${u})`;
 }
 
+/**
+ * Human-readable bundle size for buyer menus (matches seller “How many pieces/grams/kg?”).
+ * Per-base pricing → “Per piece” / “Per g” / “Per kg”. Fixed packs → “3 pieces”, “500 g”, “0.5 kg”.
+ */
+export function formatBundleSizeLead(o: ListingPriceOption): string {
+  const perBase = isPerBaseUnitPricing(o);
+  const amt = optionBundleAmount(o);
+  if (o.unit === "piece") {
+    if (perBase) return "Per piece";
+    return `${Math.floor(amt)} pieces`;
+  }
+  if (o.unit === "gram") {
+    if (perBase) return "Per g";
+    return `${Math.floor(amt)} g`;
+  }
+  if (perBase) return "Per kg";
+  const r = Math.round(amt * 100) / 100;
+  return `${r} kg`;
+}
+
+/**
+ * One line for `<select>` options: optional deal prefix + bundle lead + ₹ + label + unit.
+ * Caller must escape for HTML (e.g. wrap with `esc()` in Astro inline scripts).
+ */
+export function formatPriceOptionDropdownLabel(o: ListingPriceOption): string {
+  const lead = formatBundleSizeLead(o);
+  const u = priceUnitShortLabel(o.unit);
+  let s = "";
+  if (optionHasDealDisplay(o) && o.compare_at_price != null) {
+    const pct = optionDiscountPercentDisplay(o);
+    const deal =
+      pct != null && pct > 0
+        ? `was ₹${o.compare_at_price} · ${pct}% off · `
+        : `was ₹${o.compare_at_price} · `;
+    s += deal;
+  }
+  s += `${lead} · ₹${o.price} — ${o.label} (${u})`;
+  return s;
+}
+
 /** Dashboard / home preview */
 export function formatListingPriceSummary(listing: ListingPricingSource): string {
   const opts = getListingPriceOptions(listing);
@@ -398,11 +438,12 @@ export function formatListingPriceSummary(listing: ListingPricingSource): string
   if (opts.length === 1) {
     const o = opts[0];
     const u = priceUnitShortLabel(o.unit);
+    const lead = formatBundleSizeLead(o);
     if (optionHasDealDisplay(o) && o.compare_at_price != null) {
-      return `₹${o.price}/${u} (was ₹${o.compare_at_price})`;
+      return `${lead} · ₹${o.price}/${u} (was ₹${o.compare_at_price})`;
     }
-    return `₹${o.price}/${u}`;
+    return `${lead} · ₹${o.price}/${u}`;
   }
   const minP = Math.min(...opts.map((o) => o.price));
-  return `From ₹${minP}`;
+  return `From ₹${minP} (${opts.length} options)`;
 }
