@@ -381,6 +381,20 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     }
     .menu-variant-panel { margin-top: 4px; }
 
+    .menu-item-size {
+      margin-bottom: 6px;
+    }
+    .menu-size-pill {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-700);
+      background: var(--gray-100);
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+    }
+
     .cart-bar {
       position: fixed;
       bottom: calc(56px + env(safe-area-inset-bottom, 0px));
@@ -460,6 +474,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       getListingOptionById,
       formatListingPriceSummary,
     } from "../../lib/listing-pricing";
+    import { formatFishSizeLabel, formatFishSizeSuffix } from "../../lib/fish-size";
 
     const dataEl = document.getElementById("seller-data")!;
     const sellerId = dataEl.dataset.sellerId!;
@@ -491,6 +506,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       function unitLbl(u) {
         return u === "dozen" ? "dz" : u === "piece" ? "pc" : String(u);
+      }
+
+      function sizeLineHtml(l) {
+        const lab = formatFishSizeLabel(l.fish_size);
+        if (!lab) return "";
+        return `<div class="menu-item-size"><span class="menu-size-pill">${esc(lab)}</span></div>`;
       }
 
       function priceOptionsHtml(l) {
@@ -817,6 +838,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             : "";
           return `
                 <div>
+                  ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
@@ -855,6 +877,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <div>
                   <div class="menu-item-name">${esc(name)}</div>
                   <div class="menu-item-marathi">${esc(marathi)}</div>
+                  ${sizeLineHtml(l)}
                   ${priceOptionsHtml(l)}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
@@ -894,7 +917,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               const options = group
                 .map(
                   (l) =>
-                    `<option value="${l.id}">${esc(formatListingPriceSummary(l))}</option>`
+                    `<option value="${l.id}">${esc(formatListingPriceSummary(l) + formatFishSizeSuffix(l.fish_size))}</option>`
                 )
                 .join("");
               return `

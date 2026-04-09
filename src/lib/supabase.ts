@@ -76,6 +76,8 @@ export interface FishListing {
   price_unit: PriceUnit;
   /** Multiple tiers: custom labels + price + unit (piece|dozen). Synced legacy price/price_unit to first row on save. */
   pricing_options?: ListingPriceOption[] | null;
+  /** Buyer-visible grade: small / medium / large (optional). */
+  fish_size?: "small" | "medium" | "large" | null;
   weight_avail: number;
   photo_url: string | null;
   listed_date: string;
