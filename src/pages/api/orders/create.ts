@@ -130,29 +130,31 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     const amountDue = total_price + delivery_fee;
 
-    // Insert order (inventory decrement handled by DB trigger)
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        listing_id: listing_id || null,
-        species: species || null,
-        buyer_phone,
-        buyer_id: buyer_id || null,
-        buyer_addr: buyer_addr || null,
-        quantity,
-        quantity_unit,
-        total_price,
-        delivery_fee,
-        platform_fee: 0,
-        status,
-        order_type,
-        payment_type: "cod",
-        paid_amount: status === "pre_order" ? amountDue : null,
-        scheduled_for: scheduled_for || null,
-        schedule_slot_id: schedule_slot_id || null,
-      })
-      .select()
-      .single();
+    // Atomic order creation with stock check (DB function handles locking)
+    const { data: orderId, error: rpcError } = await supabase.rpc("create_order_atomic", {
+      p_listing_id: listing_id || null,
+      p_species: species || null,
+      p_quantity: quantity,
+      p_quantity_unit: quantity_unit,
+      p_buyer_phone: buyer_phone,
+      p_buyer_id: buyer_id || null,
+      p_buyer_addr: buyer_addr || null,
+      p_total_price: total_price,
+      p_delivery_fee: delivery_fee,
+      p_status: status,
+      p_order_type: order_type,
+      p_scheduled_for: scheduled_for || null,
+      p_schedule_slot_id: schedule_slot_id || null,
+    });
+
+    if (rpcError) {
+      const msg = rpcError.message || "Failed to create order";
+      const isStockError = msg.includes("in stock") || msg.includes("Listing not found");
+      return new Response(JSON.stringify({ error: msg }), { status: isStockError ? 400 : 500 });
+    }
+
+    // Fetch the created order
+    const { data: order, error } = await supabase.from("orders").select().eq("id", orderId).single();
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });

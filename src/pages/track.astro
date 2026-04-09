@@ -137,6 +137,18 @@ export const prerender = false;
               ${sellerPhone ? `<div class="od-row"><span class="od-label">Seller contact</span><span class="od-val"><a href="tel:${esc(sellerPhone)}" style="color:var(--blue);font-weight:600;">${esc(sellerPhone)}</a></span></div>` : ""}
               <div class="od-row"><span class="od-label">Payment</span><span class="od-val">${order.payment_type === "cod" ? "Cash on delivery" : order.payment_type}</span></div>
             </div>
+            ${order.status === "confirmed" && order.final_price && isPreOrder ? `
+              <div class="price-confirm-box">
+                <p style="font-size:13px;margin:0 0 8px;">Seller proposed: <strong>₹${order.final_price}</strong>${order.paid_amount ? ` (you paid ₹${order.paid_amount} upfront)` : ""}</p>
+                <div style="display:flex;gap:8px;">
+                  <button type="button" class="btn-accept-price" data-order-id="${order.id}">✅ Accept</button>
+                  <button type="button" class="btn-reject-price" data-order-id="${order.id}">❌ Reject & Cancel</button>
+                </div>
+              </div>
+            ` : ""}
+            ${["pending", "pre_order", "scheduled"].includes(order.status) ? `
+              <button type="button" class="btn-cancel-order" data-order-id="${order.id}">Cancel Order</button>
+            ` : ""}
           </div>
         </div>
       `;
@@ -222,6 +234,49 @@ export const prerender = false;
             trackPage = p;
             void loadAndRender();
           });
+
+          // Cancel order handlers
+          ordersList.querySelectorAll(".btn-cancel-order").forEach((btn: any) => {
+            btn.addEventListener("click", async () => {
+              if (!confirm("Cancel this order?")) return;
+              btn.disabled = true; btn.textContent = "Cancelling...";
+              try {
+                const res = await fetch("/api/orders/cancel", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "cancel" }),
+                });
+                const d = await res.json();
+                if (d.success) { void loadAndRender(); } else { alert(d.error || "Failed"); btn.disabled = false; btn.textContent = "Cancel Order"; }
+              } catch { btn.disabled = false; btn.textContent = "Cancel Order"; }
+            });
+          });
+
+          // Accept price handlers
+          ordersList.querySelectorAll(".btn-accept-price").forEach((btn: any) => {
+            btn.addEventListener("click", async () => {
+              btn.disabled = true; btn.textContent = "Accepting...";
+              const res = await fetch("/api/orders/cancel", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "accept_price" }),
+              });
+              const d = await res.json();
+              if (d.success) void loadAndRender(); else { alert(d.error); btn.disabled = false; }
+            });
+          });
+
+          // Reject price handlers
+          ordersList.querySelectorAll(".btn-reject-price").forEach((btn: any) => {
+            btn.addEventListener("click", async () => {
+              if (!confirm("Reject this price and cancel the order?")) return;
+              btn.disabled = true; btn.textContent = "Rejecting...";
+              const res = await fetch("/api/orders/cancel", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order_id: btn.dataset.orderId, buyer_id: buyerId, action: "reject_price" }),
+              });
+              const d = await res.json();
+              if (d.success) void loadAndRender(); else { alert(d.error); btn.disabled = false; }
+            });
+          });
         } catch (e) {
           console.error("Track orders:", e);
           loadingEl.style.display = "none";
@@ -283,6 +338,40 @@ export const prerender = false;
     }
     .od-label { color: var(--gray-500); font-weight: 500; }
     .od-val { color: var(--gray-800); font-weight: 600; text-align: right; max-width: 60%; }
+
+    .btn-cancel-order {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--red);
+      background: #fff5f5;
+      border: 1px solid #ffcdd2;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .price-confirm-box {
+      margin-top: 10px;
+      padding: 12px;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 10px;
+    }
+    .btn-accept-price, .btn-reject-price {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      border: none;
+    }
+    .btn-accept-price { background: #e8f5e9; color: #2e7d32; }
+    .btn-reject-price { background: #ffebee; color: #c62828; }
 
     .track-pagination {
       display: flex;
