@@ -551,11 +551,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           el.innerHTML = `
             ${preLabel}
             <div class="qty-controls">
-              <button class="qty-btn" data-minus="${listingId}">−</button>
+              <button class="qty-btn qty-minus-btn">−</button>
               <span class="qty-value">${entry.qty}</span>
-              <button class="qty-btn" data-plus="${listingId}">+</button>
+              <button class="qty-btn qty-plus-btn">+</button>
             </div>
           `;
+          // Bind directly to avoid event delegation issues
+          el.querySelector(".qty-minus-btn")?.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            if (cart[listingId].qty > 0) { cart[listingId].qty--; renderQtyControls(listingId); }
+          });
+          el.querySelector(".qty-plus-btn")?.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            const isPreorder = isPreorderItem(listingId);
+            const listing = cart[listingId].listing;
+            let maxQty = isPreorder ? 50 : Math.floor(listing.weight_avail);
+            if (listing.max_qty_per_order && listing.max_qty_per_order < maxQty) maxQty = listing.max_qty_per_order;
+            if (cart[listingId].qty < maxQty) { cart[listingId].qty++; renderQtyControls(listingId); }
+          });
         }
         updateCartBar();
       }
