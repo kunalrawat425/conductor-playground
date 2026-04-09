@@ -142,7 +142,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
       }
 
-      // Out of stock or unavailable → pre-order. "Selling fast" / oos_threshold is buyer UI only.
+      // Single inventory number for the listing (`fish_listings.weight_avail`), in the chosen tier’s unit (pc / kg / g). DB `create_order_atomic` subtracts `quantity` from this field only — no per-tier stock.
       const weightAvail = Number(listing.weight_avail);
       const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
       if (!listing.is_available || availOk <= 0 || availOk < quantity) {

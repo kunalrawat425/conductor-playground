@@ -492,7 +492,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             dateFilter,
             listingIds: _sellerListingIds,
           });
-          renderOrders(orders, "fresh-orders-list", _sellerId);
+          renderOrders(orders, "fresh-orders-list", _sellerId, "menu");
           renderPaginationControls("fresh-pagination", total, freshPage, (p) => {
             freshPage = p;
             void renderFresh();

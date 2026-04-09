@@ -699,6 +699,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           });
           const data = await res.json();
           if (!data.success) showToast(data.error || "Could not clear schedule", "error");
+          else showToast("Schedule cleared. Buyers will not see slots after they refresh your menu.", "success");
         } catch (e: any) {
           showToast(e.message || "Could not clear schedule", "error");
         }

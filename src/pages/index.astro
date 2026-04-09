@@ -206,7 +206,8 @@ import LoginModal from "../components/LoginModal.astro";
     .qw-group { display: flex; flex-direction: column; gap: 6px; }
     .qw-label { font-size: 13px; font-weight: 600; color: var(--gray-700); }
     .qw-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-    .qw-chip { padding: 8px 14px; border: 1.5px solid var(--gray-200); border-radius: 50px; font-size: 13px; font-weight: 600; background: white; color: var(--gray-700); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .qw-chip { padding: 8px 14px; border: 1.5px solid var(--gray-200); border-radius: 50px; font-size: 13px; font-weight: 600; background: white; color: var(--gray-700); cursor: pointer; font-family: inherit; transition: all 0.15s; text-transform: capitalize; }
+    [data-field="budget"] .qw-chip { text-transform: none; }
     .qw-chip.selected { background: var(--blue); color: white; border-color: var(--blue); }
     .qw-btn { padding: 14px; background: var(--blue); color: white; font-size: 16px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; min-height: 50px; margin-top: 4px; }
     .qw-btn:hover { background: #0052a3; }
@@ -286,6 +287,7 @@ import LoginModal from "../components/LoginModal.astro";
       border: 1.5px solid var(--gray-200);
       cursor: pointer;
       transition: all 0.15s;
+      text-transform: capitalize;
     }
     .chip.active {
       background: var(--blue);
