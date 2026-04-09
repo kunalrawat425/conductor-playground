@@ -78,35 +78,35 @@ const isEdit = !!listing;
 
 
   <div class="form-group">
-    <label for="max_qty_per_order">Max quantity per user (optional)</label>
-    <input
-      type="number"
-      id="max_qty_per_order"
-      name="max_qty_per_order"
-      min="0.5"
-      step="0.5"
-      value={listing?.max_qty_per_order || ""}
-      placeholder="e.g. 5 — leave empty for no limit"
-    />
-    <div class="form-hint">Limits how much one buyer can order. Buyer sees: "Max 5 per order".</div>
-  </div>
-
-  <div class="form-group">
-    <label for="oos_threshold">Show "Out of stock" when stock falls below (optional)</label>
+    <label for="oos_threshold">"Selling fast" threshold (optional)</label>
     <input
       type="number"
       id="oos_threshold"
       name="oos_threshold"
       min="0"
-      step="0.5"
+      step="1"
       value={listing?.oos_threshold || ""}
-      placeholder="Default: 10% of stock — or set a number"
+      placeholder="Default: 10% of stock"
     />
-    <div class="form-hint">Buyer sees: "📦 Out of stock" + PRE-ORDER button. Orders still come in as pre-orders. Default: 10% of stock.</div>
+    <div class="form-hint">When stock falls below this → buyer sees "🔥 Selling fast — pre-order for next batch". Orders still accepted as pre-orders.</div>
   </div>
 
   <div class="form-group">
-    <label for="max_orders_per_day">Max orders per day (optional)</label>
+    <label for="max_qty_per_order">Order limit per user (optional)</label>
+    <input
+      type="number"
+      id="max_qty_per_order"
+      name="max_qty_per_order"
+      min="1"
+      step="1"
+      value={listing?.max_qty_per_order || ""}
+      placeholder="e.g. 5 — leave empty for no limit"
+    />
+    <div class="form-hint">Max pieces/dozens one buyer can order. Prevents one person from buying everything. Buyer sees: "Max 5 per user".</div>
+  </div>
+
+  <div class="form-group">
+    <label for="max_orders_per_day">Daily order limit (optional)</label>
     <input
       type="number"
       id="max_orders_per_day"
@@ -116,7 +116,7 @@ const isEdit = !!listing;
       value={listing?.max_orders_per_day || ""}
       placeholder="e.g. 20 — leave empty for no limit"
     />
-    <div class="form-hint">Buyer sees: error message when daily limit reached. Protects you from being overwhelmed. Resets at midnight.</div>
+    <div class="form-hint">Total orders allowed per day across all buyers. Rejects new orders after limit hit. Resets at midnight.</div>
   </div>
 
   <div class="form-actions">
