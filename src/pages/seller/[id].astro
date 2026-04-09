@@ -266,7 +266,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       margin-bottom: 6px;
     }
     .menu-tag--closed { background: #fff3e0; color: #e65100; }
-    .menu-tag--oos { background: #ffebee; color: #c62828; }
+    .menu-tag--oos { background: #fff3e0; color: #e65100; }
     .menu-tag--preorder { background: #e3f2fd; color: #1565c0; }
 
     /* Add/quantity controls */
@@ -763,7 +763,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   <div class="menu-item-marathi">${esc(marathi)}</div>
                   <div class="menu-item-price">₹${l.price}<span style="font-size:13px;font-weight:400;color:var(--gray-500);">/${unitLabel}</span></div>
                   <div class="menu-item-meta">${l.max_qty_per_order ? `Max ${l.max_qty_per_order} ${l.price_unit === "dozen" ? "dz" : "pcs"} per user` : ""}</div>
-                  ${effectivelyOOS ? '<span class="menu-tag menu-tag--oos">📦 Out of stock</span>' : ""}
+                  ${effectivelyOOS ? '<span class="menu-tag menu-tag--oos">🔥 Selling fast — pre-order for next batch</span>' : ""}
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">
