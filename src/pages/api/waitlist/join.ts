@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { normalizeIndianMobile } from "../../../lib/indian-phone";
 
 export const prerender = false;
 
@@ -18,6 +19,12 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    const phoneNorm = normalizeIndianMobile(String(phone));
+    if (!phoneNorm.ok) {
+      return new Response(JSON.stringify({ error: phoneNorm.message }), { status: 400 });
+    }
+    const phoneE164 = `+91${phoneNorm.digits10}`;
+
     const sb = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await sb
@@ -25,7 +32,7 @@ export const POST: APIRoute = async ({ request }) => {
       .upsert(
         {
           buyer_id: buyer_id || null,
-          phone,
+          phone: phoneE164,
           area,
           fish_wanted: fish_wanted || null,
           frequency: frequency || null,
@@ -65,11 +72,11 @@ export const POST: APIRoute = async ({ request }) => {
           body: JSON.stringify({
             from: "Relifish Waitlist <onboarding@resend.dev>",
             to: "relifishstore@gmail.com",
-            subject: `New Waitlist: ${area} — ${phone}`,
+            subject: `New Waitlist: ${area} — ${phoneE164}`,
             html: `
               <h2>New Buyer Waitlist Entry</h2>
               <table style="border-collapse:collapse;font-family:sans-serif;">
-                <tr><td style="padding:8px;font-weight:bold;">Phone</td><td style="padding:8px;">${phone}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Phone</td><td style="padding:8px;">${phoneE164}</td></tr>
                 <tr><td style="padding:8px;font-weight:bold;">Area</td><td style="padding:8px;">${area}</td></tr>
                 <tr><td style="padding:8px;font-weight:bold;">Fish wanted</td><td style="padding:8px;">${fish_wanted || "—"}</td></tr>
                 <tr><td style="padding:8px;font-weight:bold;">Frequency</td><td style="padding:8px;">${frequency || "—"}</td></tr>

@@ -2,7 +2,7 @@
 <html lang="mr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Relifish — तुमचा मासा ऑनलाइन विका | Sell Fish Online Mumbai</title>
 <meta name="description" content="Relifish वर तुमचं दुकान FREE सेटअप करा. Orders, delivery, inventory — सगळं एका dashboard मधून. Mumbai fish sellers, sell online today.">
 <meta name="keywords" content="sell fish online, fish delivery Mumbai, fish marketplace, मासा विक्री, Relifish, fish seller app, seafood delivery">
@@ -30,11 +30,12 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #111; display: flex; flex-direction: column; align-items: center; font-family: 'Inter', -apple-system, system-ui, sans-serif; padding: clamp(60px,9vw,100px) clamp(12px,3.7vw,40px) 40px; gap: clamp(32px,5.6vw,60px); overflow-x: hidden; }
+  body { background: #111; display: flex; flex-direction: column; align-items: center; font-family: 'Inter', -apple-system, system-ui, sans-serif; padding: max(12px, env(safe-area-inset-top)) clamp(12px,3.7vw,40px) max(24px, env(safe-area-inset-bottom)); gap: clamp(24px,5vw,56px); overflow-x: hidden; box-sizing: border-box; width: 100%; }
   h2 { color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
 
-  .lang-toggle { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; background: #222; border-radius: 50px; padding: 4px; border: 1px solid #444; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-  .lang-btn { padding: 10px 24px; border-radius: 50px; border: none; cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit; transition: all 0.2s ease; background: transparent; color: #888; }
+  .banner-controls { position: sticky; top: 0; z-index: 10000; align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin: 0 0 8px 0; background: rgba(17,17,17,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07); max-width: 1080px; width: 100%; box-sizing: border-box; }
+  .lang-toggle { position: static; display: flex; background: #222; border-radius: 50px; padding: 4px; border: 1px solid #444; box-shadow: 0 2px 12px rgba(0,0,0,0.35); flex-shrink: 0; }
+  .lang-btn { padding: 10px 20px; border-radius: 50px; border: none; cursor: pointer; font-size: 14px; font-weight: 700; font-family: inherit; transition: all 0.2s ease; background: transparent; color: #888; min-height: 44px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .lang-btn.active { background: #0066cc; color: white; }
   .lang-btn:hover:not(.active) { color: #ccc; }
 
@@ -43,9 +44,9 @@
   body.lang-en [data-lang="en"] { display: block; }
   body.lang-en [data-lang="mr"] { display: none; }
 
-  .customizer { position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; gap: 12px; align-items: center; }
-  .customizer label { color: #888; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-  .customizer input { background: #222; border: 1px solid #444; color: white; padding: 10px 16px; border-radius: 12px; font-size: 16px; font-weight: 700; font-family: inherit; width: 240px; outline: none; transition: border-color 0.2s; }
+  .customizer { position: static; display: flex; gap: 10px; align-items: center; flex: 1; min-width: 160px; justify-content: flex-end; }
+  .customizer label { color: #888; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .customizer input { background: #222; border: 1px solid #444; color: white; padding: 10px 14px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: inherit; width: 100%; max-width: 280px; min-height: 44px; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
   .customizer input:focus { border-color: #0066cc; }
   .customizer input::placeholder { color: #555; }
 
@@ -216,9 +217,12 @@
 
   /* ===== RESPONSIVE ===== */
   @media (max-width: 768px) {
-    .customizer label { display: none; }
-    .customizer input { width: 155px; font-size: 13px; padding: 8px 12px; }
-    .lang-btn { padding: 7px 13px; font-size: 13px; }
+    .banner-controls { flex-direction: column; align-items: stretch; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+    .customizer { flex-direction: column; align-items: stretch; min-width: 0; justify-content: flex-start; }
+    .customizer label { display: block; }
+    .customizer input { max-width: none; font-size: 16px; }
+    .lang-toggle { justify-content: center; width: 100%; }
+    .lang-btn { flex: 1; justify-content: center; }
 
     /* B1 mobile */
     .b1 .content { padding: 24px 18px 18px; }
@@ -321,14 +325,15 @@
 </head>
 <body>
 
-<div class="lang-toggle">
-  <button class="lang-btn active" id="btn-mr" onclick="setLang('mr')">मराठी</button>
-  <button class="lang-btn" id="btn-en" onclick="setLang('en')">English</button>
-</div>
-
-<div class="customizer">
-  <label>Seller Name:</label>
-  <input type="text" id="seller-name-input" placeholder="e.g. Ramesh Fish Corner" oninput="updateSellerName(this.value)">
+<div class="banner-controls">
+  <div class="customizer">
+    <label for="seller-name-input">Shop name</label>
+    <input type="text" id="seller-name-input" placeholder="e.g. Ramesh Fish Corner" oninput="updateSellerName(this.value)" autocomplete="organization" />
+  </div>
+  <div class="lang-toggle">
+    <button type="button" class="lang-btn active" id="btn-mr" onclick="setLang('mr')">मराठी</button>
+    <button type="button" class="lang-btn" id="btn-en" onclick="setLang('en')">English</button>
+  </div>
 </div>
 
 <svg width="0" height="0" style="position:absolute">
@@ -354,7 +359,7 @@
       <div class="b1-hero">
         <div class="b1-now-on">आता Relifish वर</div>
         <div class="b1-brand sn-target">तुमचं दुकान नाव</div>
-        <div class="b1-url">relifish.in/<span class="sn-slug-target">your-shop</span></div>
+        <div class="b1-url">www.relifish.store/<span class="sn-slug-target">your-shop</span></div>
       </div>
       <div class="b1-sep"></div>
       <div class="b1-section-label">तुमचे problems — आमचे solutions</div>
@@ -395,12 +400,13 @@
         <div class="b1-growth-pills">
           <div class="b1-gpill blue">&#x1F4F1; तुमचा Brand — तुमचं Online दुकान</div>
           <div class="b1-gpill orange">&#x1F4CB; Pre-orders — demand आधीच capture</div>
-          <div class="b1-gpill blue">&#x1F5D3;&#xFE0F; Schedule — तुमच्या वेळेनुसार orders</div>
           <div class="b1-gpill orange">&#x1F4CA; Stats + Reports — CSV download</div>
           <div class="b1-gpill blue">&#x23F8;&#xFE0F; Pause/Resume — तुम्ही ठरवा कधी विकायचं</div>
           <div class="b1-gpill orange">&#x1F512; Order Limits — per item, per day control</div>
           <div class="b1-gpill blue">&#x1F4E7; Push + Email — प्रत्येक order चं notification</div>
           <div class="b1-gpill orange">&#x2B50; Ratings — trust वाढतो, orders वाढतात</div>
+          <div class="b1-gpill blue">&#x1F5D3;&#xFE0F; Pickup slots — वेळ + तारीख निवड</div>
+          <div class="b1-gpill orange">&#x1F9EE; Kg व piece — अनेक price tiers एका listing मध्ये</div>
         </div>
       </div>
       <div class="b1-trust">
@@ -412,7 +418,7 @@
       <a class="b1-cta" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM करा — Free setup</a>
       <div class="b1-slots">पहिले 10 sellers only<br>सगळं आम्ही करतो</div>
     </div>
-    <div class="tc">*Standard terms apply. Commission applicable after introductory period. relifish.in/terms</div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
   </div>
 </div>
 
@@ -429,7 +435,7 @@
       <div class="b1-hero">
         <div class="b1-now-on">Now on Relifish</div>
         <div class="b1-brand sn-target">Your Brand Name</div>
-        <div class="b1-url">relifish.in/<span class="sn-slug-target">your-shop</span></div>
+        <div class="b1-url">www.relifish.store/<span class="sn-slug-target">your-shop</span></div>
       </div>
       <div class="b1-sep"></div>
       <div class="b1-section-label">Your problems — our solutions</div>
@@ -470,12 +476,13 @@
         <div class="b1-growth-pills">
           <div class="b1-gpill blue">&#x1F4F1; Your Brand — your own online store</div>
           <div class="b1-gpill orange">&#x1F4CB; Pre-orders — capture demand in advance</div>
-          <div class="b1-gpill blue">&#x1F5D3;&#xFE0F; Schedule — orders on your time</div>
           <div class="b1-gpill orange">&#x1F4CA; Stats + Reports — CSV export</div>
           <div class="b1-gpill blue">&#x23F8;&#xFE0F; Pause/Resume — you decide when to sell</div>
           <div class="b1-gpill orange">&#x1F512; Order Limits — per item, per day control</div>
           <div class="b1-gpill blue">&#x1F4E7; Push + Email — notified on every order</div>
           <div class="b1-gpill orange">&#x2B50; Ratings — trust grows, orders grow</div>
+          <div class="b1-gpill blue">&#x1F5D3;&#xFE0F; Pickup slots — date + time windows buyers book</div>
+          <div class="b1-gpill orange">&#x1F9EE; Kg &amp; piece pricing — multi-tier menus, deals</div>
         </div>
       </div>
       <div class="b1-trust">
@@ -487,7 +494,7 @@
       <a class="b1-cta" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM us — Free setup</a>
       <div class="b1-slots">First 10 sellers only<br>We handle everything</div>
     </div>
-    <div class="tc">*Standard terms apply. Commission applicable after introductory period. relifish.in/terms</div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
   </div>
 </div>
 
@@ -516,7 +523,7 @@
         </div>
         <div class="ops-row" style="margin-top:0">
           <div class="ops-card"><div class="ops-icon">&#x1F69A;</div><div class="ops-title">Delivery Rules</div><div class="ops-desc">Fee, radius, minimum — upfront, handover ला arguments नाहीत</div></div>
-          <div class="ops-card"><div class="ops-icon">&#x1F4E6;</div><div class="ops-title">Inventory</div><div class="ops-desc">Stock signals, low stock alerts, per-item order limits</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4E6;</div><div class="ops-title">Inventory</div><div class="ops-desc">Stock kg किंवा pieces; प्रति-ग्राहक daily limit; listing pause</div></div>
           <div class="ops-card"><div class="ops-icon">&#x1F514;</div><div class="ops-title">Notifications</div><div class="ops-desc">Push + Email — प्रत्येक order वर instant alert</div></div>
         </div>
         <div class="ops-row" style="margin-top:0">
@@ -532,7 +539,7 @@
           <img class="qr-img" src="data:image/png;base64,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" alt="QR Code">
           <div class="qr-text">
             <div class="qr-label">Scan to join</div>
-            <div class="qr-url">relifish.in</div>
+            <div class="qr-url">www.relifish.store</div>
             <div class="qr-email"><strong>relifishstore@gmail.com</strong></div>
           </div>
         </div>
@@ -544,9 +551,9 @@
     </div>
     <div class="seller-brand-strip-warm">
       <div class="seller-name-display sn-target">तुमचं दुकान</div>
-      <div class="on-relifish"><div class="dot"></div>relifish.in/<span class="sn-slug-target">tumcha-dukaan</span></div>
+      <div class="on-relifish"><div class="dot"></div>www.relifish.store/<span class="sn-slug-target">tumcha-dukaan</span></div>
     </div>
-    <div class="tc">*Standard terms apply. Commission applicable after introductory period. relifish.in/terms</div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
   </div>
 </div>
 
@@ -575,7 +582,7 @@
         </div>
         <div class="ops-row" style="margin-top:0">
           <div class="ops-card"><div class="ops-icon">&#x1F69A;</div><div class="ops-title">Delivery Rules</div><div class="ops-desc">Fee, radius, minimum — upfront, no handover arguments</div></div>
-          <div class="ops-card"><div class="ops-icon">&#x1F4E6;</div><div class="ops-title">Inventory</div><div class="ops-desc">Stock signals, low stock alerts, per-item order limits</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4E6;</div><div class="ops-title">Inventory</div><div class="ops-desc">Stock in kg or pieces; per-buyer daily caps; listing pause</div></div>
           <div class="ops-card"><div class="ops-icon">&#x1F514;</div><div class="ops-title">Notifications</div><div class="ops-desc">Push + Email on every order — instant alerts</div></div>
         </div>
         <div class="ops-row" style="margin-top:0">
@@ -591,7 +598,7 @@
           <img class="qr-img" src="data:image/png;base64,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" alt="QR Code">
           <div class="qr-text">
             <div class="qr-label">Scan to join</div>
-            <div class="qr-url">relifish.in</div>
+            <div class="qr-url">www.relifish.store</div>
             <div class="qr-email"><strong>relifishstore@gmail.com</strong></div>
           </div>
         </div>
@@ -603,9 +610,9 @@
     </div>
     <div class="seller-brand-strip-warm">
       <div class="seller-name-display sn-target">Your Shop Name</div>
-      <div class="on-relifish"><div class="dot"></div>relifish.in/<span class="sn-slug-target">your-shop</span></div>
+      <div class="on-relifish"><div class="dot"></div>www.relifish.store/<span class="sn-slug-target">your-shop</span></div>
     </div>
-    <div class="tc">*Standard terms apply. Commission applicable after introductory period. relifish.in/terms</div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
   </div>
 </div>
 
@@ -650,7 +657,7 @@
       <a class="btn" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM करा — 1 hr FREE setup</a>
       <div class="note">पहिले 10 sellers — सगळं आम्ही करतो</div>
     </div>
-    <div class="tc">*Standard terms apply. Commission applicable after introductory period. relifish.in/terms</div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
   </div>
 </div>
 
@@ -695,7 +702,7 @@
       <a class="btn" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM us — 1 hr FREE setup</a>
       <div class="note">First 10 sellers — we handle everything</div>
     </div>
-    <div class="tc">*Standard terms apply. Commission applicable after introductory period. relifish.in/terms</div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
   </div>
 </div>
 
@@ -728,7 +735,7 @@
       <div class="label">Mumbai fish sellers चा विश्वास</div>
     </div>
     <a class="footer-line" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">पहिले 10 sellers — <strong>1 hr FREE setup, DM करा</strong></a>
-    <div class="tc">*Standard terms apply. Commission applicable after introductory period. relifish.in/terms</div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
   </div>
 </div>
 
@@ -761,7 +768,7 @@
       <div class="label">Trusted by Mumbai fish sellers</div>
     </div>
     <a class="footer-line" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">First 10 sellers — <strong>1 hr FREE setup, DM us</strong></a>
-    <div class="tc">*Standard terms apply. Commission applicable after introductory period. relifish.in/terms</div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
   </div>
 </div>
 
