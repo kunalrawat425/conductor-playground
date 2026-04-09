@@ -311,7 +311,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       margin-bottom: 6px;
     }
     .menu-tag--closed { background: #fff3e0; color: #e65100; }
-    .menu-tag--oos { background: #e8f5e9; color: #2e7d32; }
     .menu-tag--zero { background: #ffebee; color: #c62828; }
     .menu-tag--preorder { background: #e3f2fd; color: #1565c0; }
 
@@ -1088,11 +1087,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const opts = getListingPriceOptions(l);
           const u0 = opts[0];
           const capUnit = unitLbl(u0?.unit || "piece");
-          const th = l.oos_threshold;
           const stockN = listingStockNum(l);
           const isZero = stockN <= 0;
-          const hasTh = th != null && th !== "" && !Number.isNaN(Number(th));
-          const clearingSoon = !isZero && hasTh && stockN <= Number(th);
           const metaLimit = l.buyer_daily_qty_limit
             ? `Max ${l.buyer_daily_qty_limit} ${capUnit}/buyer/day`
             : "";
@@ -1103,7 +1099,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   ${priceOptionsHtml(l, { hintVerb })}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
-                  ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">
@@ -1122,11 +1117,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const opts = getListingPriceOptions(l);
           const u0 = opts[0];
           const capUnit = unitLbl(u0?.unit || "piece");
-          const th = l.oos_threshold;
           const stockN = listingStockNum(l);
           const isZero = stockN <= 0;
-          const hasTh = th != null && th !== "" && !Number.isNaN(Number(th));
-          const clearingSoon = !isZero && hasTh && stockN <= Number(th);
           const metaLimit = l.buyer_daily_qty_limit
             ? `Max ${l.buyer_daily_qty_limit} ${capUnit}/buyer/day`
             : "";
@@ -1144,7 +1136,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   ${priceOptionsHtml(l, { hintVerb: hintVerbSingle })}
                   <div class="menu-item-meta">${metaLimit}</div>
                   ${isZero ? '<span class="menu-tag menu-tag--zero">📦 Out of stock — pre-order for next batch</span>' : ""}
-                  ${clearingSoon ? '<span class="menu-tag menu-tag--oos">🍃 Stock clearing soon</span>' : ""}
                 </div>
                 ${inServiceArea
                   ? `<div class="add-controls" data-controls="${l.id}">

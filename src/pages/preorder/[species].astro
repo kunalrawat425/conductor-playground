@@ -260,7 +260,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         optionHasDealDisplay,
         optionDiscountPercentDisplay,
         priceUnitShortLabel,
-        formatInventoryAmount,
         optionBundleAmount,
         isPerBaseUnitPricing,
         formatPriceOptionDropdownLabel,
@@ -397,7 +396,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const first = opts[0];
           const baseUnit = first?.unit ?? "piece";
           const pUnit = poUnitDisplay(baseUnit);
-          const stockAvail = `${formatInventoryAmount(Number(item.weight_avail), baseUnit)} ${pUnit}`;
           const firstDealPct = first ? optionDiscountPercentDisplay(first) : null;
           const strike =
             first && optionHasDealDisplay(first) && first.compare_at_price != null
@@ -412,14 +410,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           const priceBlock =
             opts.length <= 1
               ? `${bundleLead}<div class="po-price-row">${strike}<span class="po-price-now">₹${first?.price ?? 0}</span> ${pctBadge}</div>
-               <div class="po-price-unit">${pUnit} · ${stockAvail} in stock</div>`
+               <div class="po-price-unit">${pUnit}</div>`
               : `<div class="po-price" style="font-size:14px;color:var(--gray-700);font-weight:700;margin-bottom:6px;">Choose pack & price</div>
                <select class="po-price-select" data-listing-id="${item.id}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--gray-200);font-size:14px;background:white;margin-bottom:6px;">
                  ${opts.map((o) => {
                    return `<option value="${o.id}">${esc(formatPriceOptionDropdownLabel(o))}</option>`;
                  }).join("")}
-               </select>
-               <div class="po-price-unit">· ${stockAvail} total in stock (shared across options)</div>`;
+               </select>`;
           const sizeLine = formatFishSizeLabel(item.fish_size)
             ? `<div class="po-listing-size">${esc(formatFishSizeLabel(item.fish_size))}</div>`
             : "";
