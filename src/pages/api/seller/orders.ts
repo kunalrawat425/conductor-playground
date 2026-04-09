@@ -75,6 +75,9 @@ export const POST: APIRoute = async ({ request }) => {
     if (final_price !== undefined) {
       updates.final_price = final_price;
     }
+    if (status === "declined" || status === "cancelled") {
+      updates.cancelled_by = "seller";
+    }
 
     const { data, error } = await supabase
       .from("orders")

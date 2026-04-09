@@ -96,6 +96,8 @@ export interface Order {
   delivery_fee?: number;
   scheduled_for?: string | null;
   schedule_slot_id?: string | null;
+  cancelled_by?: string | null;
+  cancel_reason?: string | null;
 }
 
 export interface Buyer {
