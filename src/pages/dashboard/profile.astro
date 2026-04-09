@@ -649,6 +649,21 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           }
         });
 
+        // Schedule: mirror DB — if a config row exists, buyers see virtual slots; toggle must show ON.
+        try {
+          const { data: schedRow } = await supabase
+            .from("seller_schedule_configs")
+            .select("seller_id")
+            .eq("seller_id", seller.id)
+            .maybeSingle();
+          if (schedRow) {
+            updateSchedulePanelUI(true);
+            await loadExistingSchedule();
+          }
+        } catch {
+          /* non-fatal */
+        }
+
         // Logout
         document.getElementById("logout-btn")!.addEventListener("click", async () => {
           const btn = document.getElementById("logout-btn") as HTMLButtonElement;
@@ -679,7 +694,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         schedKnob.style.transform = expanded ? "translateX(20px)" : "translateX(0)";
       }
 
-      updateSchedulePanelUI(false);
+      // Default: toggle off + panel hidden (HTML). Do not call updateSchedulePanelUI(false) here —
+      // that made the UI always look "off" while seller_schedule_configs still existed, so buyers
+      // kept seeing slots until the seller toggled on then off again.
 
       schedToggleInput.addEventListener("change", async () => {
         const on = schedToggleInput.checked;
@@ -696,6 +713,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "delete_config", seller_id: sellerId }),
+            cache: "no-store",
           });
           const data = await res.json();
           if (!data.success) showToast(data.error || "Could not clear schedule", "error");
@@ -709,7 +727,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const sellerId = localStorage.getItem("zepto_seller_id");
         if (!sellerId) return;
         const slotsContainer = document.getElementById("sched-slots")!;
-        const { data: config } = await supabase.from("seller_schedule_configs").select("*").eq("seller_id", sellerId).single();
+        const { data: config } = await supabase
+          .from("seller_schedule_configs")
+          .select("*")
+          .eq("seller_id", sellerId)
+          .maybeSingle();
         if (!config) {
           slotsContainer.innerHTML = "";
           return;
