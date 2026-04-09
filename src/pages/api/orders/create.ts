@@ -34,7 +34,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     let {
       listing_id,
       species,
-      quantity = 1,
+      quantity: rawQuantity = 1,
       quantity_unit = "piece",
       buyer_phone,
       buyer_id,
@@ -45,6 +45,11 @@ export const POST: APIRoute = async ({ request, url }) => {
       schedule_slot_id,
       pricing_option_id: clientPricingOptionId,
     } = body;
+
+    let quantity = typeof rawQuantity === "number" ? rawQuantity : parseFloat(String(rawQuantity));
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
+    }
 
     if (!buyer_phone) {
       return new Response(JSON.stringify({ error: "Phone number required" }), { status: 400 });
@@ -80,6 +85,16 @@ export const POST: APIRoute = async ({ request, url }) => {
       orderPricingOptionId = chosen.id;
       orderPricingLabel = chosen.label;
       quantity_unit = chosen.unit;
+
+      // Whole units for piece/gram; 2 decimals for kg — matches inventory decrement in create_order_atomic
+      if (quantity_unit === "kg") {
+        quantity = Math.round(Number(quantity) * 100) / 100;
+      } else {
+        quantity = Math.floor(Number(quantity));
+      }
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
+      }
 
       const { data: sellerForLimits } = await supabase
         .from("sellers")
@@ -128,7 +143,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       // Out of stock or unavailable → pre-order. "Selling fast" / oos_threshold is buyer UI only.
-      if (!listing.is_available || listing.weight_avail <= 0 || listing.weight_avail < quantity) {
+      const weightAvail = Number(listing.weight_avail);
+      const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
+      if (!listing.is_available || availOk <= 0 || availOk < quantity) {
         // Always allow as pre-order — no stock deduction, no blocking
         total_price = linePrice * quantity;
         seller_id = listing.seller_id;
@@ -188,6 +205,17 @@ export const POST: APIRoute = async ({ request, url }) => {
         .single();
 
       total_price = (range?.max_price || 0) * quantity;
+    }
+
+    if (!listing_id) {
+      if (quantity_unit === "kg") {
+        quantity = Math.round(Number(quantity) * 100) / 100;
+      } else {
+        quantity = Math.floor(Number(quantity));
+      }
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
+      }
     }
 
     // Determine order status: scheduled > pre_order > pending

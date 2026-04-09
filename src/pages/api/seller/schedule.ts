@@ -184,6 +184,12 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     }
 
+    if (action === "delete_config") {
+      const { error } = await sb.from("seller_schedule_configs").delete().eq("seller_id", seller_id);
+      if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      return new Response(JSON.stringify({ success: true }), { status: 200 });
+    }
+
     if (action === "toggle_date") {
       const { slot_date, date_disabled } = body;
       if (!slot_date) return new Response(JSON.stringify({ error: "slot_date required" }), { status: 400 });

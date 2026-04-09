@@ -8,17 +8,23 @@ import {
   formatInventoryAmount,
   maxOrderQtyFromStock,
   stockQuantityInputStep,
+  pricingOptionsUniformUnit,
 } from "../../src/lib/listing-pricing";
 
 describe("canonicalPricingOptionsFromPayload", () => {
-  it("normalizes kg and gram units", () => {
-    const out = canonicalPricingOptionsFromPayload([
-      { id: "k", label: "A", price: 400, unit: "kg" },
-      { id: "g", label: "B", price: 2, unit: "g" },
-    ]);
-    expect(out).toHaveLength(2);
-    expect(out![0].unit).toBe("kg");
-    expect(out![1].unit).toBe("gram");
+  it("maps legacy dozen to piece", () => {
+    expect(
+      canonicalPricingOptionsFromPayload([{ id: "k", label: "Per dozen", price: 300, unit: "dozen" }])![0].unit
+    ).toBe("piece");
+  });
+
+  it("normalizes kg and g to gram", () => {
+    expect(
+      canonicalPricingOptionsFromPayload([{ id: "k", label: "A", price: 400, unit: "kg" }])![0].unit
+    ).toBe("kg");
+    expect(
+      canonicalPricingOptionsFromPayload([{ id: "g", label: "B", price: 2, unit: "g" }])![0].unit
+    ).toBe("gram");
   });
 
   it("parses valid tiers and drops invalid rows", () => {
@@ -80,6 +86,46 @@ describe("validateListingPricingJson", () => {
       ])
     );
     expect(r.ok).toBe(false);
+  });
+
+  it("rejects tiers with different units (inventory must be one pool)", () => {
+    const r = validateListingPricingJson(
+      JSON.stringify([
+        { id: "a", label: "A", price: 100, unit: "piece" },
+        { id: "b", label: "B", price: 200, unit: "kg" },
+      ])
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/same unit/i);
+  });
+
+  it("accepts multiple tiers when units match", () => {
+    const r = validateListingPricingJson(
+      JSON.stringify([
+        { id: "a", label: "Large", price: 120, unit: "piece" },
+        { id: "b", label: "Small", price: 80, unit: "piece" },
+      ])
+    );
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe("pricingOptionsUniformUnit", () => {
+  it("returns false when units differ", () => {
+    expect(
+      pricingOptionsUniformUnit([
+        { id: "1", label: "A", price: 1, unit: "piece" },
+        { id: "2", label: "B", price: 2, unit: "kg" },
+      ])
+    ).toBe(false);
+  });
+  it("returns true when all match", () => {
+    expect(
+      pricingOptionsUniformUnit([
+        { id: "1", label: "A", price: 1, unit: "gram" },
+        { id: "2", label: "B", price: 2, unit: "gram" },
+      ])
+    ).toBe(true);
   });
 });
 

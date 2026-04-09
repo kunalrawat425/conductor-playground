@@ -97,12 +97,12 @@ function validateStockMatchesUnit(stock: number, unit: PriceUnit): string | null
     if (stock > 1_000_000) return "Stock amount looks too large. Check kg vs grams.";
     return null;
   }
-  if (unit === "piece" || unit === "dozen" || unit === "gram") {
+  if (unit === "piece" || unit === "gram") {
     if (!Number.isInteger(stock)) {
       if (unit === "gram") {
         return "Stock in grams must be a whole number.";
       }
-      return "Stock must be a whole number when selling by piece or dozen.";
+      return "Stock must be a whole number when selling by piece.";
     }
   }
   return null;

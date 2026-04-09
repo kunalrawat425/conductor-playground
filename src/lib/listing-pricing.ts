@@ -2,7 +2,7 @@ import type { PriceUnit } from "./species";
 
 export interface ListingPriceOption {
   id: string;
-  /** Seller-defined label, e.g. "Large piece", "Per dozen" */
+  /** Seller-defined label, e.g. "Large piece", "Per kg" */
   label: string;
   /** Amount charged at checkout (single source of truth for orders). */
   price: number;
@@ -21,10 +21,10 @@ export type ListingPricingSource = {
 
 function normalizeUnitRaw(raw: string): PriceUnit {
   const u = String(raw || "piece").toLowerCase();
-  if (u === "dozen") return "dozen";
+  if (u === "dozen") return "piece";
   if (u === "kg") return "kg";
   if (u === "gram" || u === "g") return "gram";
-  return u === "piece" ? "piece" : "piece";
+  return "piece";
 }
 
 function normalizeLabelForUnit(
@@ -59,8 +59,6 @@ function normalizeLabelForUnit(
 /** Short suffix for menus and cart (pc, dz, kg, g). */
 export function priceUnitShortLabel(unit: PriceUnit): string {
   switch (unit) {
-    case "dozen":
-      return "dz";
     case "kg":
       return "kg";
     case "gram":
@@ -77,7 +75,7 @@ export function stockQuantityInputStep(unit: PriceUnit): string {
 
 /**
  * Format stored inventory for display (menus, dashboards). Aligns with how sellers enter stock
- * (whole units for pc/dz/g; decimals for kg).
+ * (whole units for pc/g; decimals for kg).
  */
 export function formatInventoryAmount(n: number, unit: PriceUnit): string {
   const v = Number(n);
@@ -186,7 +184,26 @@ export function validateListingPricingJson(json: string): PricingJsonValidation 
       }
     }
   }
+
+  const u0 = opts[0].unit;
+  for (let i = 1; i < opts.length; i++) {
+    if (opts[i].unit !== u0) {
+      return {
+        ok: false,
+        message:
+          "Every price row must use the same unit (all per piece, all per kg, or all per gram) so one stock number matches every order.",
+      };
+    }
+  }
+
   return { ok: true, options: opts };
+}
+
+/** True when all tiers share one unit — required for `weight_avail` ↔ order quantity. */
+export function pricingOptionsUniformUnit(options: ListingPriceOption[]): boolean {
+  if (options.length === 0) return false;
+  const u = options[0].unit;
+  return options.every((o) => o.unit === u);
 }
 
 /** Display / checkout — reads `pricing_options` only. */
@@ -216,7 +233,7 @@ export function optionDiscountPercentDisplay(o: ListingPriceOption): number | nu
   return Math.max(0, Math.round((1 - o.price / o.compare_at_price) * 100));
 }
 
-/** Short label for menus: ₹200 · Label (pc|dz|kg|g) */
+/** Short label for menus: ₹200 · Label (pc|kg|g) */
 export function formatOptionMenuLabel(opt: ListingPriceOption): string {
   const u = priceUnitShortLabel(opt.unit);
   return `₹${opt.price} · ${opt.label} (${u})`;

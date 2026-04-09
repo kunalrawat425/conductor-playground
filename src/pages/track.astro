@@ -111,7 +111,6 @@ export const prerender = false;
       const orderType = order.order_type === "delivery" ? "🚚 Delivery" : "📦 Pickup";
       const orderId = order.id.substring(0, 8).toUpperCase();
       const qtyUnit =
-        order.quantity_unit === "dozen" ||
         order.quantity_unit === "piece" ||
         order.quantity_unit === "kg" ||
         order.quantity_unit === "gram"

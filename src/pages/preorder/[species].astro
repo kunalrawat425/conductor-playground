@@ -309,7 +309,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       function speciesHeroUnitLabel(du) {
         if (!du) return "pcs";
-        if (du === "dozen") return "dz";
         if (du === "kg") return "kg";
         if (du === "gram") return "g";
         return "pcs";
@@ -318,7 +317,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       function poUnitDisplay(u) {
         const s = String(u || "piece");
-        if (s === "dozen" || s === "piece" || s === "kg" || s === "gram") return priceUnitShortLabel(s);
+        if (s === "piece" || s === "kg" || s === "gram") return priceUnitShortLabel(s);
         return s;
       }
 

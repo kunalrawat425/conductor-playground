@@ -25,7 +25,7 @@ const initialPricingJson = JSON.stringify(
   novalidate
 >
   <p class="listing-lead">
-    Set <strong>pricing first</strong>, then <strong>stock</strong> in the same unit as your <strong>first price row</strong> (pieces, dozens, kg, or grams).
+    Choose <strong>count</strong> (per piece) <em>or</em> <strong>weight</strong> (per kg or per gram) — not both. All price tiers share that basis so one stock number matches every order. Set pricing first, then enter stock in that unit.
   </p>
 
   <section class="listing-card" id="listing-section-details" aria-labelledby="listing-h-details">
@@ -56,13 +56,12 @@ const initialPricingJson = JSON.stringify(
   <section class="listing-card listing-card--pricing" id="listing-section-pricing" aria-labelledby="listing-h-pricing">
     <h2 class="listing-section-title" id="listing-h-pricing">Pricing</h2>
     <p class="listing-section-intro">
-      Add one or more tiers. <strong>Selling ₹</strong> is the checkout price. Optional <strong>List / compare-at ₹</strong> (above selling) shows deals on the menu — use <strong>Quick</strong> to apply % or ₹ off.
+      Pick <strong>Sell by</strong> below (count vs weight), then add tiers (e.g. sizes). <strong>Selling ₹</strong> is checkout. Optional <strong>List / compare-at ₹</strong> shows deals — use <strong>Quick</strong> for % or ₹ off.
     </p>
     <div id="pricing-rows" class="pricing-rows"></div>
     <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>
     <input type="hidden" name="pricing_options_json" id="pricing_options_json" value="" />
     <p id="listing-pricing-error" class="listing-inline-error" role="alert" style="display:none;"></p>
-    <p id="pricing-stock-warning" class="listing-inline-warn" style="display:none;"></p>
   </section>
 
   <section class="listing-card" id="stock-section" aria-labelledby="listing-h-stock">
@@ -86,7 +85,7 @@ const initialPricingJson = JSON.stringify(
         placeholder="e.g. 20"
       />
       <p class="form-hint" id="stock-hint">
-        Same unit as the <strong>first price row</strong>. Drives cart limits and out-of-stock on your menu.
+        Same unit as <strong>Sell by</strong> in pricing (pieces, kg, or grams). Drives cart limits and out-of-stock on your menu.
       </p>
       <p class="listing-stock-info" id="stock-info" aria-live="polite"></p>
     </div>
@@ -185,11 +184,6 @@ const initialPricingJson = JSON.stringify(
         stockHint: "How many pieces you have. Buyers won't see this.",
         stockPlaceholder: "e.g. 20",
       },
-      dozen: {
-        stock: "Stock (dozens)",
-        stockHint: "How many dozens you have. Buyers won't see this.",
-        stockPlaceholder: "e.g. 5",
-      },
       kg: {
         stock: "Stock (kg)",
         stockHint: "How many kilograms you have. Buyers won't see this.",
@@ -216,8 +210,8 @@ const initialPricingJson = JSON.stringify(
     const initial = parsed.map((r, i) => {
       const u = String(r.unit || "piece").toLowerCase();
       const unit: ListingPriceOption["unit"] =
-        u === "dozen"
-          ? "dozen"
+        u === "dozen" || u === "piece"
+          ? "piece"
           : u === "kg"
             ? "kg"
             : u === "gram" || u === "g"
@@ -230,37 +224,24 @@ const initialPricingJson = JSON.stringify(
       };
     }) as ListingPriceOption[];
 
-    const stockWarnEl = document.getElementById("pricing-stock-warning");
-
-    function updateMixedPricingWarning() {
-      const selects = pricingRowsEl.querySelectorAll(".price-unit-select") as NodeListOf<HTMLSelectElement>;
-      const vals = Array.from(selects).map((s) => s.value);
-      const isCount = (v: string) => v === "piece" || v === "dozen";
-      const isWeight = (v: string) => v === "kg" || v === "gram";
-      const bases = vals.map((v) => (isCount(v) ? "c" : isWeight(v) ? "w" : "?"));
-      const mix = new Set(bases);
-      if (stockWarnEl) {
-        if (vals.length > 1 && mix.size > 1) {
-          stockWarnEl.style.display = "block";
-          stockWarnEl.textContent =
-            "Rows mix count-based (piece/dozen) and weight-based (kg/g) units. Stock and checkout use one number — keep tiers in the same basis, or put the unit you sell most in the first row.";
-        } else {
-          stockWarnEl.style.display = "none";
-          stockWarnEl.textContent = "";
-        }
+    function currentResolvedUnit(): ListingPriceOption["unit"] {
+      const basis = pricingRowsEl.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
+      const wSel = pricingRowsEl.querySelector(".listing-weight-unit-select") as HTMLSelectElement | null;
+      if (basis?.value === "weight" && wSel) {
+        return wSel.value === "gram" ? "gram" : "kg";
       }
+      return "piece";
     }
 
     function syncStockLabelsFromFirstUnit() {
-      const firstUnit = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
-      const unit = firstUnit?.value || "piece";
+      const unit = currentResolvedUnit();
       const u = unitMap[unit] ?? unitMap.piece;
       if (stockLabel) stockLabel.textContent = u.stock;
       if (stockHint) {
         stockHint.innerHTML =
           unit === "kg" || unit === "gram"
-            ? "Enter total <strong>weight</strong> in stock (same unit as the first row: kg or grams)."
-            : "Enter a <strong>whole number</strong> of pieces or dozens (matching the first row).";
+            ? "Enter total <strong>weight</strong> in stock (kg or grams — match <strong>Weight unit</strong> above)."
+            : "Enter a <strong>whole number</strong> of pieces.";
       }
       if (stockInput) {
         stockInput.placeholder = u.stockPlaceholder;
@@ -268,7 +249,6 @@ const initialPricingJson = JSON.stringify(
         stockInput.step = stockQuantityInputStep(pu);
         stockInput.inputMode = unit === "kg" ? "decimal" : "numeric";
       }
-      updateMixedPricingWarning();
       updateStockInfo();
     }
 
@@ -276,8 +256,7 @@ const initialPricingJson = JSON.stringify(
       if (!stockInfo || !stockInput) return;
       const stock = parseFloat(stockInput.value) || 0;
       const cap = parseFloat(dailyLimitInput?.value || "0") || 0;
-      const firstUnit = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
-      const unit = firstUnit?.value || "piece";
+      const unit = currentResolvedUnit();
       const unitWord = unit === "gram" ? "g" : unit;
       stockInfo.className = "listing-stock-info";
       if (stock > 0 && cap > 0) {
@@ -302,19 +281,21 @@ const initialPricingJson = JSON.stringify(
     speciesSelect?.addEventListener("change", () => {
       const option = speciesSelect.selectedOptions[0];
       const defaultUnit = option?.dataset.unit;
-      const firstSel = pricingRowsEl.querySelector(".price-unit-select") as HTMLSelectElement | null;
-      if (
-        defaultUnit &&
-        firstSel &&
-        (defaultUnit === "piece" ||
-          defaultUnit === "dozen" ||
-          defaultUnit === "kg" ||
-          defaultUnit === "gram")
-      ) {
-        firstSel.value = defaultUnit;
-        pricingEditor.sync();
-        syncStockLabelsFromFirstUnit();
+      const basis = pricingRowsEl.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
+      const wSel = pricingRowsEl.querySelector(".listing-weight-unit-select") as HTMLSelectElement | null;
+      const wrap = pricingRowsEl.querySelector(".listing-pricing-weight-unit-wrap") as HTMLElement | null;
+      if (!defaultUnit || !basis || !wSel) return;
+      const du = defaultUnit === "dozen" ? "piece" : defaultUnit;
+      if (du === "kg" || du === "gram") {
+        basis.value = "weight";
+        wSel.value = du;
+        if (wrap) wrap.style.display = "block";
+      } else {
+        basis.value = "count";
+        if (wrap) wrap.style.display = "none";
       }
+      pricingEditor.sync();
+      syncStockLabelsFromFirstUnit();
     });
 
     stockInput?.addEventListener("input", updateStockInfo);
@@ -452,14 +433,6 @@ const initialPricingJson = JSON.stringify(
     color: var(--red);
     font-weight: 600;
     margin-top: 10px;
-  }
-
-  .listing-inline-warn {
-    font-size: 12px;
-    color: var(--orange);
-    font-weight: 600;
-    margin-top: 10px;
-    line-height: 1.35;
   }
 
   .listing-stock-info {
