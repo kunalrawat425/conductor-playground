@@ -304,7 +304,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
     <script>
       import { getSession, signOut } from "../../lib/seller-auth";
-      import { getSellerById, updateSellerProfile } from "../../lib/supabase";
+      import { supabase, getSellerById, updateSellerProfile } from "../../lib/supabase";
       import type { Seller } from "../../lib/supabase";
       import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
       import { setButtonLoading, setBellLoading } from "../../lib/button-loading";
