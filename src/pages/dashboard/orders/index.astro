@@ -86,6 +86,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             <div class="stat-value" id="stat-avg-order">—</div>
             <div class="stat-label">Avg Order</div>
           </div>
+          <div class="stat-card stat-card--purple">
+            <div class="stat-value" id="stat-scheduled">—</div>
+            <div class="stat-label">Scheduled</div>
+          </div>
           <div class="stat-card stat-card--red">
             <div class="stat-value" id="stat-cancelled">—</div>
             <div class="stat-label">Cancelled</div>
@@ -93,10 +97,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         </div>
       </div>
 
-      <!-- Tabs: Fresh / Pre-orders -->
+      <!-- Tabs: Fresh / Pre-orders / Scheduled -->
       <div class="tabs">
-        <button class="tab active" data-tab="fresh-orders">Fresh Orders <span id="fresh-count" class="tab-count"></span></button>
+        <button class="tab active" data-tab="fresh-orders">Fresh <span id="fresh-count" class="tab-count"></span></button>
         <button class="tab" data-tab="pre-orders">Pre-orders <span id="pre-count" class="tab-count"></span></button>
+        <button class="tab" data-tab="scheduled-orders">Scheduled <span id="sched-count" class="tab-count"></span></button>
       </div>
 
       <div id="tab-fresh-orders">
@@ -140,6 +145,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         <div id="pre-orders-list"></div>
         <div id="pre-pagination" class="pagination"></div>
       </div>
+
+      <div id="tab-scheduled-orders" style="display:none;">
+        <div id="scheduled-orders-list"></div>
+        <div id="scheduled-pagination" class="pagination"></div>
+      </div>
     </main>
 
     <script>
@@ -148,6 +158,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         getSellerById,
         getFreshOrdersForSellerPage,
         getPreOrdersForSellerPage,
+        getScheduledOrdersForSeller,
         getSellerOrderTabCounts,
         updateOrderStatus,
       } from "../../../lib/supabase";
@@ -188,15 +199,30 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       async function updateTabCounts() {
         if (!_sellerId) return;
         try {
-          const { pendingFresh, preAwaiting } = await getSellerOrderTabCounts(_sellerId);
+          const { pendingFresh, preAwaiting, scheduled } = await getSellerOrderTabCounts(_sellerId);
           const freshEl = document.getElementById("fresh-count")!;
           const preEl = document.getElementById("pre-count")!;
+          const schedEl = document.getElementById("sched-count")!;
           freshEl.textContent = pendingFresh > 0 ? String(pendingFresh) : "";
           freshEl.style.display = pendingFresh > 0 ? "inline-flex" : "none";
           preEl.textContent = preAwaiting > 0 ? String(preAwaiting) : "";
           preEl.style.display = preAwaiting > 0 ? "inline-flex" : "none";
+          schedEl.textContent = scheduled > 0 ? String(scheduled) : "";
+          schedEl.style.display = scheduled > 0 ? "inline-flex" : "none";
         } catch (e) {
           console.error("Tab counts:", e);
+        }
+      }
+
+      let schedPage = 1;
+      async function renderScheduled() {
+        if (!_sellerId) return;
+        try {
+          const { orders, total } = await getScheduledOrdersForSeller(_sellerId, { page: schedPage });
+          renderOrders(orders, "scheduled-orders-list", _sellerId);
+          renderPaginationControls("scheduled-pagination", total, schedPage, (p) => { schedPage = p; void renderScheduled(); });
+        } catch (e) {
+          console.error("Scheduled orders:", e);
         }
       }
 
@@ -235,7 +261,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const { data: listings } = await supabase.from("fish_listings").select("id").eq("seller_id", _sellerId);
         const listingIds = listings?.map((l: any) => l.id) || [];
         if (listingIds.length === 0) {
-          setStatValues(0, 0, 0, 0, 0, 0);
+          setStatValues(0, 0, 0, 0, 0, 0, 0);
           return;
         }
 
@@ -244,22 +270,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           q = q.gte("created_at", range.start).lt("created_at", range.end);
         }
         const { data: orders } = await q;
-        if (!orders) { setStatValues(0, 0, 0, 0, 0, 0); return; }
+        if (!orders) { setStatValues(0, 0, 0, 0, 0, 0, 0); return; }
 
         const total = orders.length;
         const revenue = orders.filter((o: any) => ["confirmed", "paid", "completed"].includes(o.status)).reduce((s: number, o: any) => s + (o.final_price || o.total_price || 0), 0);
         const pending = orders.filter((o: any) => o.status === "pending" || o.status === "pre_order").length;
         const completed = orders.filter((o: any) => o.status === "completed").length;
+        const scheduled = orders.filter((o: any) => o.status === "scheduled").length;
         const cancelled = orders.filter((o: any) => o.status === "cancelled" || o.status === "declined").length;
         const avg = total > 0 ? Math.round(revenue / Math.max(1, orders.filter((o: any) => ["confirmed", "paid", "completed"].includes(o.status)).length)) : 0;
-        setStatValues(total, revenue, pending, completed, avg, cancelled);
+        setStatValues(total, revenue, pending, completed, scheduled, avg, cancelled);
       }
 
-      function setStatValues(total: number, revenue: number, pending: number, completed: number, avg: number, cancelled: number) {
+      function setStatValues(total: number, revenue: number, pending: number, completed: number, scheduled: number, avg: number, cancelled: number) {
         document.getElementById("stat-total-orders")!.textContent = String(total);
         document.getElementById("stat-revenue")!.textContent = "₹" + revenue.toLocaleString("en-IN");
         document.getElementById("stat-pending")!.textContent = String(pending);
         document.getElementById("stat-completed")!.textContent = String(completed);
+        document.getElementById("stat-scheduled")!.textContent = String(scheduled);
         document.getElementById("stat-avg-order")!.textContent = avg > 0 ? "₹" + avg.toLocaleString("en-IN") : "—";
         document.getElementById("stat-cancelled")!.textContent = String(cancelled);
       }
@@ -360,6 +388,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const tabName = (tab as HTMLElement).dataset.tab!;
             document.getElementById("tab-fresh-orders")!.style.display = tabName === "fresh-orders" ? "block" : "none";
             document.getElementById("tab-pre-orders")!.style.display = tabName === "pre-orders" ? "block" : "none";
+            document.getElementById("tab-scheduled-orders")!.style.display = tabName === "scheduled-orders" ? "block" : "none";
+            if (tabName === "scheduled-orders") void renderScheduled();
           });
         });
 
@@ -419,11 +449,17 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               declined: "badge-red",
               cancelled: "badge-red",
               refunded: "badge-orange",
+              scheduled: "badge-purple",
             };
+
+            const schedInfo = o.scheduled_for
+              ? `<div style="font-size:12px;color:var(--blue);font-weight:600;margin-top:4px;">🗓️ Scheduled: ${new Date(o.scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} ${new Date(o.scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>`
+              : "";
 
             return `
               <div class="card" style="margin-bottom:12px;" data-order-id="${o.id}">
                 <div class="card-body">
+                  ${schedInfo}
                   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
                     <div>
                       <h4 style="font-size:16px;font-weight:700;">${name}</h4>
@@ -573,6 +609,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       .stat-card--green { background: #e8f5e9; border-color: #c8e6c9; }
       .stat-card--orange { background: #fff3e0; border-color: #ffe0b2; }
       .stat-card--blue { background: #e3f2fd; border-color: #bbdefb; }
+      .stat-card--purple { background: #f3e5f5; border-color: #e1bee7; }
+      .stat-card--purple .stat-value { color: #6a1b9a; }
       .stat-card--red { background: #ffebee; border-color: #ffcdd2; }
       .stat-value { font-size: 20px; font-weight: 800; color: var(--gray-900); margin-bottom: 2px; }
       .stat-card--green .stat-value { color: #2e7d32; }

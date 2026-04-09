@@ -41,6 +41,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     <p style="color:var(--red);">Seller not found.</p>
   </div>
 
+  <!-- Slot picker for scheduled orders -->
+  <div id="slot-picker" style="display:none;" class="slot-picker-section">
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">🗓️ Schedule your order</h3>
+    <div id="slot-dates" class="slot-dates"></div>
+    <div id="slot-times" class="slot-times"></div>
+    <input type="hidden" id="selected-slot-id" value="" />
+    <input type="hidden" id="selected-scheduled-for" value="" />
+  </div>
+
   <!-- Sticky cart bar: items + total + CTA (billing breakdown is on the address sheet) -->
   <div class="cart-bar" id="cart-bar" style="display:none;">
     <div class="cart-bar-inner">
@@ -326,6 +335,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     }
 
     /* Sticky cart bar */
+    .slot-picker-section { padding: 12px 0; margin-bottom: 8px; }
+    .slot-dates { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+    .slot-dates::-webkit-scrollbar { display: none; }
+    .slot-date-chip { padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--gray-200); cursor: pointer; background: white; color: var(--gray-700); flex-shrink: 0; font-family: inherit; }
+    .slot-date-chip.active { background: var(--blue); color: white; border-color: var(--blue); }
+    .slot-times { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .slot-time-chip { padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--gray-200); cursor: pointer; background: white; color: var(--gray-700); font-family: inherit; }
+    .slot-time-chip.active { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+    .slot-time-chip.off { opacity: 0.4; pointer-events: none; text-decoration: line-through; }
+
     .cart-bar {
       position: fixed;
       bottom: calc(56px + env(safe-area-inset-bottom, 0px));
@@ -703,6 +722,48 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           menuSection.classList.add("fade-in");
         });
 
+        // Load schedule slots for this seller
+        (async () => {
+          const today = new Date().toISOString().split("T")[0];
+          const { data: slots } = await supabase.from("seller_schedule_slots").select("*")
+            .eq("seller_id", sellerId).eq("is_enabled", true).eq("date_disabled", false)
+            .gte("slot_date", today).order("slot_date").order("slot_start");
+          if (slots && slots.length > 0) {
+            const picker = document.getElementById("slot-picker");
+            picker.style.display = "block";
+            const grouped = {};
+            for (const s of slots) { (grouped[s.slot_date] ||= []).push(s); }
+            const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+            const dates = Object.keys(grouped);
+            const datesEl = document.getElementById("slot-dates");
+            const timesEl = document.getElementById("slot-times");
+            datesEl.innerHTML = dates.map((d,i) => {
+              const dt = new Date(d + "T00:00:00");
+              return `<button type="button" class="slot-date-chip${i===0?" active":""}" data-date="${d}">${days[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1}</button>`;
+            }).join("");
+            function showSlots(date) {
+              const daySlots = grouped[date] || [];
+              timesEl.innerHTML = daySlots.map(s => `<button type="button" class="slot-time-chip" data-slot-id="${s.id}" data-date="${s.slot_date}" data-start="${s.slot_start}">${s.slot_start.substring(0,5)}-${s.slot_end.substring(0,5)}</button>`).join("");
+              timesEl.querySelectorAll(".slot-time-chip").forEach(chip => {
+                chip.addEventListener("click", () => {
+                  timesEl.querySelectorAll(".slot-time-chip").forEach(c => c.classList.remove("active"));
+                  chip.classList.add("active");
+                  document.getElementById("selected-slot-id").value = chip.dataset.slotId;
+                  document.getElementById("selected-scheduled-for").value = `${chip.dataset.date}T${chip.dataset.start}`;
+                });
+              });
+            }
+            showSlots(dates[0]);
+            datesEl.querySelectorAll(".slot-date-chip").forEach(chip => {
+              chip.addEventListener("click", () => {
+                datesEl.querySelectorAll(".slot-date-chip").forEach(c => c.classList.remove("active"));
+                chip.classList.add("active");
+                showSlots(chip.dataset.date);
+              });
+            });
+          }
+        })();
+
         // Initialize cart entries (only for in-stock items)
         for (const l of activeListings) {
           if (l.weight_avail > 0) {
@@ -795,6 +856,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const orderPromises = items.map(e => {
               const l = e.listing;
               const totalPrice = e.qty * l.price;
+              const slotId = document.getElementById("selected-slot-id")?.value || null;
+              const scheduledFor = document.getElementById("selected-scheduled-for")?.value || null;
               return fetch("/api/orders/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -809,6 +872,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                   buyer_addr: addr,
                   order_type: inDeliveryRange ? "delivery" : "pickup",
                   seller_id: sellerId,
+                  scheduled_for: scheduledFor || undefined,
+                  schedule_slot_id: slotId || undefined,
                 }),
               }).then(r => r.json());
             });

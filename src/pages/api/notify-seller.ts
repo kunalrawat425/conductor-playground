@@ -18,7 +18,7 @@ const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailt
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { seller_id, species, quantity, quantity_unit, buyer_phone } = await request.json();
+    const { seller_id, species, quantity, quantity_unit, buyer_phone, scheduled_for } = await request.json();
 
     if (!seller_id) {
       return new Response(JSON.stringify({ error: "Missing seller_id" }), {
@@ -50,9 +50,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const unitLabel = quantity_unit === "dozen" ? "dz" : quantity_unit || "kg";
+    const schedLabel = scheduled_for ? ` (Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })})` : "";
     const body = species
-      ? `New order: ${species} ${quantity || ""}${unitLabel} from ${buyer_phone || "a buyer"}`
-      : `You have a new order from ${buyer_phone || "a buyer"}`;
+      ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel} from ${buyer_phone || "a buyer"}${schedLabel}`
+      : `You have a new${scheduled_for ? " scheduled" : ""} order from ${buyer_phone || "a buyer"}${schedLabel}`;
 
     try {
       const webPush = await loadWebPush();
@@ -60,7 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
       await webPush.sendNotification(
         seller.push_subscription,
         JSON.stringify({
-          title: "New Order!",
+          title: scheduled_for ? "New Scheduled Order! 🗓️" : "New Order!",
           body,
           url: "/dashboard/orders",
           tag: `seller-order-${Date.now()}`,
