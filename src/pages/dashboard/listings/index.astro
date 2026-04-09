@@ -95,7 +95,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }
 
         _sellerId = seller.id;
-        const displayName = [seller.first_name, seller.last_name].filter(Boolean).join(" ") || seller.name;
+        const shopName = (seller.name || "").trim();
+        const displayName =
+          shopName || [seller.first_name, seller.last_name].filter(Boolean).join(" ").trim() || "My shop";
         document.getElementById("seller-name")!.textContent = `${displayName}'s Listings`;
 
         function listToast(msg: string, type: string = "success") {
