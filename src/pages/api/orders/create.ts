@@ -250,8 +250,13 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     if (rpcError) {
       const msg = rpcError.message || "";
-      // If function doesn't exist or stock error, try direct insert as fallback
-      if (msg.includes("could not find") || msg.includes("does not exist") || msg.includes("42883")) {
+      // If function doesn't exist, overload is ambiguous (apply migration 025), or stock error, try direct insert as fallback
+      if (
+        msg.includes("could not find") ||
+        msg.includes("does not exist") ||
+        msg.includes("42883") ||
+        msg.includes("Could not choose the best candidate function")
+      ) {
         // Function not created yet — use direct insert
         const { data: fallbackOrder, error: fallbackErr } = await supabase
           .from("orders")
