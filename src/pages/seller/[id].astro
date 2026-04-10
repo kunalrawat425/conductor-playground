@@ -60,6 +60,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         </div>
         <button type="button" class="cart-btn" id="place-order-btn">Place Order</button>
       </div>
+      <div id="cart-min-hint" class="cart-min-hint" style="display:none;font-size:12px;color:var(--red);margin-top:8px;line-height:1.35;"></div>
     </div>
   </div>
 
@@ -598,7 +599,6 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       /** Big price row for menu card (single tier or live preview for selected tier). */
       function menuTierPriceBlockHtml(o) {
         if (!o) return "";
-        const ul = unitLbl(o.unit);
         const lead = formatBundleSizeLead(o);
         const strike =
           optionHasDealDisplay(o) && o.compare_at_price != null
@@ -607,7 +607,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const pct = optionDiscountPercentDisplay(o);
         const badge =
           pct != null && pct > 0 ? `<span class="menu-price-off">${pct}% off</span>` : "";
-        return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span> ${badge}<span style="font-size:13px;color:var(--gray-700);display:block;margin-top:6px;font-weight:600;">${esc(lead)}</span><span style="font-size:12px;color:var(--gray-500);display:block;margin-top:2px;">${esc(o.label)} (${ul})</span></div>`;
+        return `<div class="menu-item-price menu-item-price--deal">${strike}<span class="menu-price-sale">₹${o.price}</span> ${badge}<span style="font-size:13px;color:var(--gray-700);display:block;margin-top:6px;font-weight:600;">${esc(lead)}</span><span style="font-size:12px;color:var(--gray-500);display:block;margin-top:2px;">${esc(o.label)}</span></div>`;
       }
 
       /** Multi-tier: show “From ₹…” until buyer taps ADD/PRE-ORDER, then reveal the tier dropdown. */
@@ -725,7 +725,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         dFeeOn: false,
         dFee: 0,
         freeAbove: /** @type {number | null} */ (null),
+        /** Seller minimum order ₹; 0 = none. Applies to whole cart subtotal. */
+        minOrder: 0,
       };
+
+      /** Matches checkout API line total (pack vs per-kg/per-piece). */
+      function lineSubtotalForCart(e) {
+        const l = e.listing;
+        const opt = getListingOptionById(l, e.optionId);
+        const line = lineUnitPrice(l, e.optionId);
+        const packMode = !isPerBaseUnitPricing(opt);
+        const packs = packMode ? Math.floor(Number(e.qty) || 0) : 0;
+        return packMode ? packs * line : Number(e.qty) * line;
+      }
 
       function formatCartQtyBySpecies(entries) {
         return entries
@@ -750,10 +762,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       function getCartBillingSnapshot() {
         const entries = Object.values(cart).filter(e => e.qty > 0);
         if (entries.length === 0) return null;
-        const subtotal = entries.reduce(
-          (sum, e) => sum + e.qty * lineUnitPrice(e.listing, e.optionId),
-          0
-        );
+        const subtotal = entries.reduce((sum, e) => sum + lineSubtotalForCart(e), 0);
         const p = pricingForCart;
         let deliveryFee = 0;
         let deliveryLabel = "—";
@@ -782,6 +791,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const entries = Object.values(cart).filter(e => e.qty > 0);
         if (entries.length === 0) {
           cartBar.style.display = "none";
+          const minHintEl = document.getElementById("cart-min-hint");
+          if (minHintEl) {
+            minHintEl.style.display = "none";
+            minHintEl.textContent = "";
+          }
+          const btnReset = document.getElementById("place-order-btn");
+          if (btnReset) {
+            btnReset.disabled = false;
+            btnReset.style.opacity = "1";
+          }
           return;
         }
         cartBar.style.display = "block";
@@ -792,6 +811,22 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const allPreorder = entries.every(e => isPreorderItem(e.listing.id));
         const btn = document.getElementById("place-order-btn");
         btn.textContent = allPreorder ? "Place Pre-order" : "Place Order";
+        const minH = pricingForCart.minOrder || 0;
+        const minHintEl = document.getElementById("cart-min-hint");
+        if (minHintEl && snap) {
+          if (minH > 0 && snap.subtotal < minH) {
+            const need = Math.max(0, Math.ceil(minH - snap.subtotal));
+            minHintEl.style.display = "block";
+            minHintEl.textContent = `Minimum order is ₹${minH} (add ₹${need} more to your cart).`;
+            btn.disabled = true;
+            btn.style.opacity = "0.55";
+          } else {
+            minHintEl.style.display = "none";
+            minHintEl.textContent = "";
+            btn.disabled = false;
+            btn.style.opacity = "1";
+          }
+        }
       }
 
       function isPreorderItem(listingId) {
@@ -987,10 +1022,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           dFeeOn,
           dFee,
           freeAbove,
+          minOrder: minO,
         };
 
         const ruleParts: string[] = [];
-        if (minO > 0) ruleParts.push(`Minimum order ₹${minO} per item`);
+        if (minO > 0) ruleParts.push(`Minimum order ₹${minO} for your whole cart`);
         if (dFeeOn) {
           if (freeAbove != null) ruleParts.push(`Delivery ₹${dFee} · Free delivery on orders above ₹${freeAbove}`);
           else ruleParts.push(`Delivery fee ₹${dFee}`);
@@ -1432,40 +1468,38 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           // Order submits from checkout sheet — button state handled there
           const addr = buyer_addr ?? null;
           const scheduledFor = document.getElementById("selected-scheduled-for")?.value || null;
-          const orderPromises = items.map((e) => {
+          const lines = items.map((e) => {
             const l = e.listing;
             const unit = lineQtyUnit(l, e.optionId);
-            const line = lineUnitPrice(l, e.optionId);
             const opt = getListingOptionById(l, e.optionId);
             const amt = optionBundleAmount(opt);
             const packMode = !isPerBaseUnitPricing(opt);
             const packs = packMode ? Math.floor(Number(e.qty) || 0) : 0;
             const quantityForApi = packMode ? packs * amt : e.qty;
-            const totalPrice = packMode ? packs * line : e.qty * line;
-            return fetch("/api/orders/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                listing_id: l.id,
-                species: l.species,
-                quantity: quantityForApi,
-                quantity_unit: unit,
-                total_price: totalPrice,
-                pricing_option_id: e.optionId,
-                buyer_phone: session.phone,
-                buyer_id: session.buyer_id,
-                buyer_addr: addr,
-                order_type: inDeliveryRange ? "delivery" : "pickup",
-                seller_id: sellerId,
-                scheduled_for: scheduledFor || undefined,
-                // schedule_slot_id intentionally omitted — slots are virtual (generated) now
-              }),
-            }).then((r) => r.json());
+            return {
+              listing_id: l.id,
+              species: l.species,
+              quantity: quantityForApi,
+              quantity_unit: unit,
+              pricing_option_id: e.optionId,
+            };
           });
 
-          const results = await Promise.all(orderPromises);
-          const failed = results.filter(r => r.error);
-          if (failed.length > 0) throw new Error(failed[0].error);
+          const res = await fetch("/api/orders/create-seller-cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              lines,
+              buyer_phone: session.phone,
+              buyer_id: session.buyer_id,
+              buyer_addr: addr,
+              order_type: inDeliveryRange ? "delivery" : "pickup",
+              seller_id: sellerId,
+              scheduled_for: scheduledFor || undefined,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Order failed");
 
           // Match server inventory: subtract ordered base units from in-memory listings
           for (const e of items) {
