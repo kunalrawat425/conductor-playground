@@ -372,10 +372,9 @@ export function optionDiscountPercentDisplay(o: ListingPriceOption): number | nu
   return Math.max(0, Math.round((1 - o.price / o.compare_at_price) * 100));
 }
 
-/** Short label for menus: ₹200 · Label (pc|kg|g) */
+/** Short label for menus: ₹200 · Label */
 export function formatOptionMenuLabel(opt: ListingPriceOption): string {
-  const u = priceUnitShortLabel(opt.unit);
-  return `₹${opt.price} · ${opt.label} (${u})`;
+  return `₹${opt.price} · ${opt.label}`;
 }
 
 /**
@@ -395,23 +394,13 @@ export function formatBundleSizeLead(o: ListingPriceOption): string {
 }
 
 /**
- * One line for `<select>` options: optional deal prefix + bundle lead + ₹ + label + unit.
+ * One line for `<select>` options: bundle lead + ₹ + label (no redundant unit suffix).
+ * Omits list/was price — the menu card below shows strikethrough and % off.
  * Caller must escape for HTML (e.g. wrap with `esc()` in Astro inline scripts).
  */
 export function formatPriceOptionDropdownLabel(o: ListingPriceOption): string {
   const lead = formatBundleSizeLead(o);
-  const u = priceUnitShortLabel(o.unit);
-  let s = "";
-  if (optionHasDealDisplay(o) && o.compare_at_price != null) {
-    const pct = optionDiscountPercentDisplay(o);
-    const deal =
-      pct != null && pct > 0
-        ? `was ₹${o.compare_at_price} · ${pct}% off · `
-        : `was ₹${o.compare_at_price} · `;
-    s += deal;
-  }
-  s += `${lead} · ₹${o.price} — ${o.label} (${u})`;
-  return s;
+  return `${lead} · ₹${o.price} — ${o.label}`;
 }
 
 /** Dashboard / home preview */
@@ -420,13 +409,12 @@ export function formatListingPriceSummary(listing: ListingPricingSource): string
   if (opts.length === 0) return "—";
   if (opts.length === 1) {
     const o = opts[0];
-    const u = priceUnitShortLabel(o.unit);
     const lead = formatBundleSizeLead(o);
     if (optionHasDealDisplay(o) && o.compare_at_price != null) {
-      return `${lead} · ₹${o.price}/${u} (was ₹${o.compare_at_price})`;
+      return `${lead} · ₹${o.price} — was ₹${o.compare_at_price}`;
     }
-    return `${lead} · ₹${o.price}/${u}`;
+    return `${lead} · ₹${o.price}`;
   }
   const minP = Math.min(...opts.map((o) => o.price));
-  return `From ₹${minP} (${opts.length} options)`;
+  return `From ₹${minP} · ${opts.length} options`;
 }
