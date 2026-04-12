@@ -236,7 +236,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             await fetch(`${origin}/api/notify-seller`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, buyer_phone, scheduled_for: scheduled_for || null }),
+              body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, scheduled_for: scheduled_for || null }),
             });
           } catch {}
         }
@@ -448,7 +448,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <onboarding@resend.dev>", to: sellerData.email, subject: `New Order: ${species || "Fish"} — ${buyer_phone}`, html: sellerEmail }),
+              body: JSON.stringify({ from: "Relifish <onboarding@resend.dev>", to: sellerData.email, subject: `New Order: ${species || "Fish"}`, html: sellerEmail }),
             });
           }
         }
