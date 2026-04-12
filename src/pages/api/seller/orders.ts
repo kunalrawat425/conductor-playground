@@ -74,6 +74,15 @@ export const POST: APIRoute = async ({ request }) => {
     const updates: any = { status };
     if (final_price !== undefined) {
       updates.final_price = final_price;
+      // When seller sets final_price on a pre-order, keep as pre_order
+      // Buyer must accept before it becomes confirmed
+      if (status === "confirmed") {
+        // Check if this was a pre-order — if so, keep status as pre_order
+        const { data: currentOrder } = await supabase.from("orders").select("status").eq("id", order_id).single();
+        if (currentOrder?.status === "pre_order") {
+          updates.status = "pre_order"; // Stay as pre_order until buyer accepts
+        }
+      }
     }
     if (status === "declined" || status === "cancelled") {
       updates.cancelled_by = "seller";

@@ -37,12 +37,12 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ success: true, status: "cancelled" }), { status: 200 });
     }
 
-    // Accept pre-order final price
+    // Accept pre-order final price — buyer accepts, now move to confirmed
     if (action === "accept_price") {
-      if (order.status !== "confirmed" || !order.final_price) {
+      if (order.status !== "pre_order" || !order.final_price) {
         return new Response(JSON.stringify({ error: "No price to accept" }), { status: 400 });
       }
-      // Already confirmed by seller, buyer accepts — no status change needed
+      await sb.from("orders").update({ status: "confirmed" }).eq("id", order_id);
       return new Response(JSON.stringify({ success: true, status: "confirmed" }), { status: 200 });
     }
 
