@@ -132,7 +132,7 @@ export const prerender = false;
               </div>
               <span class="text-muted" style="font-size:12px;">${formatDate(order.created_at)}</span>
             </div>
-            ${isPreOrder && order.status === "pre_order" ? `<p class="text-muted" style="font-size:12px;margin-top:8px;font-style:italic;">Waiting for seller to confirm with morning price</p>` : ""}
+            ${isPreOrder && order.status === "pre_order" && !order.final_price ? `<p class="text-muted" style="font-size:12px;margin-top:8px;font-style:italic;">Waiting for seller to confirm with morning price</p>` : ""}
             ${order.scheduled_for ? `<p style="font-size:12px;font-weight:600;color:var(--blue);margin-top:6px;">🗓️ Scheduled: ${new Date(order.scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${new Date(order.scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>` : ""}
             <button type="button" class="order-detail-toggle" onclick="this.parentElement.querySelector('.order-details').classList.toggle('open');this.textContent=this.textContent.includes('▼')?'Less ▲':'Details ▼'">Details ▼</button>
             <div class="order-details">
