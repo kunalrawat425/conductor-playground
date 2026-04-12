@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="mr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -19,6 +19,13 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #0a0f1a; font-family: 'Inter', -apple-system, sans-serif; color: white; }
   .page { max-width: 640px; margin: 0 auto; padding: 0 20px; }
+
+  /* Lang toggle */
+  .lang-bar { display: flex; justify-content: flex-end; padding: 16px 0 0; gap: 4px; }
+  .lang-btn { padding: 6px 14px; border-radius: 50px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; background: transparent; color: rgba(255,255,255,0.4); }
+  .lang-btn.active { background: var(--blue); color: white; }
+  [data-mr] { display: block; } [data-en] { display: none; }
+  body.lang-en [data-en] { display: block; } body.lang-en [data-mr] { display: none; }
 
   /* QR Block */
   .qr-top { text-align: center; padding: 32px 20px 20px; }
@@ -82,6 +89,7 @@
   @media print {
     body { background: white; color: #1a1a1a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .page { max-width: 100%; padding: 0 12mm; }
+    .lang-bar { display: none; }
     .qr-top { padding-top: 8mm; }
     .qr-top p { color: #666; }
     .hero h1 { color: #1a1a1a; } .hero h1 span { color: #0066cc; }
@@ -102,33 +110,49 @@
 <body>
 <div class="page">
 
+  <!-- Language toggle -->
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="document.body.classList.remove('lang-en');document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">मराठी</button>
+    <button class="lang-btn" onclick="document.body.classList.add('lang-en');document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">English</button>
+  </div>
+
   <!-- QR Code -->
   <div class="qr-top">
     <img src="/qr-buyer.png" alt="Scan to visit Relifish" />
-    <p>Scan to open Relifish</p>
+    <p data-mr>Scan करा — Relifish उघडा</p>
+    <p data-en>Scan to open Relifish</p>
   </div>
 
   <!-- Hero -->
   <div class="hero">
-    <h1>Fresh fish from<br/><span>trusted local sellers.</span></h1>
-    <p class="hero-sub">Save time. Compare nearby sellers. Get early access in your area.</p>
+    <h1>
+      <span data-mr>ताजा मासा,<br/><span>local sellers कडून.</span></span>
+      <span data-en>Fresh fish from<br/><span>trusted local sellers.</span></span>
+    </h1>
+    <p class="hero-sub">
+      <span data-mr>वेळ वाचवा. जवळचे sellers बघा. तुमच्या area मध्ये early access मिळवा.</span>
+      <span data-en>Save time. Compare nearby sellers. Get early access in your area.</span>
+    </p>
   </div>
 
   <!-- Pain → Solution -->
   <div class="pain-section">
-    <div class="pain-title">Why Relifish?</div>
+    <div class="pain-title">
+      <span data-mr>Relifish का?</span>
+      <span data-en>Why Relifish?</span>
+    </div>
     <div class="pain-grid">
       <div class="pain-row">
-        <div class="pain-bad">😤 Supermarket fish sits on ice for days</div>
-        <div class="pain-good">✅ Browse local sellers with fresh catch</div>
+        <div class="pain-bad"><span data-mr>😤 Supermarket चा मासा 2-3 दिवस जुना</span><span data-en>😤 Supermarket fish sits on ice for days</span></div>
+        <div class="pain-good"><span data-mr>✅ Local sellers कडून ताजा मासा</span><span data-en>✅ Browse local sellers with fresh catch</span></div>
       </div>
       <div class="pain-row">
-        <div class="pain-bad">💸 Apps charge 25-30% markup on fish</div>
-        <div class="pain-good">✅ Order direct from sellers — fair prices</div>
+        <div class="pain-bad"><span data-mr>💸 Apps 25-30% markup लावतात</span><span data-en>💸 Apps charge 25-30% markup on fish</span></div>
+        <div class="pain-good"><span data-mr>✅ Direct order — योग्य किंमत</span><span data-en>✅ Order direct from sellers — fair prices</span></div>
       </div>
       <div class="pain-row">
-        <div class="pain-bad">⏰ Shop closed? Sold out? No options.</div>
-        <div class="pain-good">✅ Pre-order for next morning's catch</div>
+        <div class="pain-bad"><span data-mr>⏰ दुकान बंद? Stock संपला? काही नाही.</span><span data-en>⏰ Shop closed? Sold out? No options.</span></div>
+        <div class="pain-good"><span data-mr>✅ उद्यासाठी pre-order करा</span><span data-en>✅ Pre-order for next morning's catch</span></div>
       </div>
     </div>
   </div>
@@ -141,23 +165,44 @@
       <div class="trust-av ta3">AM</div>
       <div class="trust-av ta4">+</div>
     </div>
-    <p class="trust-text"><strong>Mumbai buyers</strong> are joining every day</p>
+    <p class="trust-text">
+      <span data-mr><strong>Mumbai buyers</strong> रोज join करत आहेत</span>
+      <span data-en><strong>Mumbai buyers</strong> are joining every day</span>
+    </p>
     <div class="trust-count" id="trust-count"></div>
   </div>
 
   <!-- Waitlist Form -->
   <div class="form-card">
-    <h2>Join the Waitlist</h2>
-    <p class="form-sub">Be first to order when we launch in your area</p>
+    <h2>
+      <span data-mr>Waitlist मध्ये join करा</span>
+      <span data-en>Join the Waitlist</span>
+    </h2>
+    <p class="form-sub">
+      <span data-mr>तुमच्या area मध्ये launch झालं की पहिले order करा</span>
+      <span data-en>Be first to order when we launch in your area</span>
+    </p>
     <form id="wl-form" class="form-fields">
-      <input type="tel" id="wl-phone" placeholder="Your phone number" required />
-      <input type="text" id="wl-area" placeholder="Your area (e.g. Andheri West)" required />
-      <button type="submit" class="form-btn" id="wl-submit">Join Waitlist — Get Early Access</button>
+      <input type="tel" id="wl-phone" placeholder="तुमचा phone number" required />
+      <input type="text" id="wl-area" placeholder="तुमचा area (e.g. Andheri West)" required />
+      <button type="submit" class="form-btn" id="wl-submit">
+        <span data-mr>Waitlist Join करा — Early Access</span>
+        <span data-en>Join Waitlist — Get Early Access</span>
+      </button>
     </form>
-    <p class="form-micro">Free. No payment needed. We'll notify you when sellers go live near you.</p>
+    <p class="form-micro">
+      <span data-mr>Free. Payment नाही. Sellers live झाले की notify करू.</span>
+      <span data-en>Free. No payment needed. We'll notify you when sellers go live near you.</span>
+    </p>
     <div class="form-done" id="wl-done">
-      <h3>You're in! 🎉</h3>
-      <p>We'll notify you when fresh fish is available in your area.</p>
+      <h3>
+        <span data-mr>तुम्ही list मध्ये आहात! 🎉</span>
+        <span data-en>You're in! 🎉</span>
+      </h3>
+      <p>
+        <span data-mr>तुमच्या area मध्ये मासा available झाला की notify करू.</span>
+        <span data-en>We'll notify you when fresh fish is available in your area.</span>
+      </p>
     </div>
   </div>
 
