@@ -245,7 +245,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               <td>${escCell(when)}</td>
               <td>${escCell(name)}</td>
               <td>${escCell(String(o.quantity))} ${escCell(unitLabel)}</td>
-              <td>${escCell(o.buyer_phone || "")}</td>
+              <td>Buyer #${escCell(o.id.substring(0, 6).toUpperCase())}</td>
               <td>${escCell(o.order_type || "")}</td>
               <td>${escCell(amt)}</td>
               <td class="sched-actions-cell">
@@ -688,7 +688,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                     </div>
                   </div>
                   <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--gray-700);margin-bottom:8px;">
-                    <span>📱 ${o.buyer_phone}</span>
+                    <span>👤 Buyer #${o.id.substring(0, 6).toUpperCase()}</span>
                     ${o.buyer_addr ? `<span>📍 ${o.buyer_addr}</span>` : ""}
                     <span>🛒 ${o.order_type}</span>
                   </div>

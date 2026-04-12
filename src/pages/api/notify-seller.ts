@@ -58,8 +58,8 @@ export const POST: APIRoute = async ({ request }) => {
         : u;
     const schedLabel = scheduled_for ? ` (Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })})` : "";
     const body = species
-      ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel} from ${buyer_phone || "a buyer"}${schedLabel}`
-      : `You have a new${scheduled_for ? " scheduled" : ""} order from ${buyer_phone || "a buyer"}${schedLabel}`;
+      ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel}${schedLabel}`
+      : `You have a new${scheduled_for ? " scheduled" : ""} order${schedLabel}`;
 
     try {
       const webPush = await loadWebPush();

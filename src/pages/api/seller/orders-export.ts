@@ -35,11 +35,11 @@ export const GET: APIRoute = async ({ url }) => {
 
     const { data: orders } = await q;
 
-    const header = "Order ID,Species,Quantity,Unit,Price,Delivery Fee,Status,Type,Buyer Phone,Scheduled For,Date\n";
+    const header = "Order ID,Species,Quantity,Unit,Price,Delivery Fee,Status,Type,Scheduled For,Date\n";
     const rows = (orders || []).map((o: any) => {
       const date = new Date(o.created_at).toLocaleDateString("en-IN");
       const sched = o.scheduled_for ? new Date(o.scheduled_for).toLocaleDateString("en-IN") : "";
-      return `${o.id.substring(0, 8)},${o.species || ""},${o.quantity},${o.quantity_unit},${o.total_price},${o.delivery_fee || 0},${o.status},${o.order_type},${o.buyer_phone},${sched},${date}`;
+      return `${o.id.substring(0, 8)},${o.species || ""},${o.quantity},${o.quantity_unit},${o.total_price},${o.delivery_fee || 0},${o.status},${o.order_type},${sched},${date}`;
     }).join("\n");
 
     return new Response(header + rows, {
