@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — Scan QR</title>
+<meta name="robots" content="noindex">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: white; color: #1a1a1a; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .card { text-align: center; padding: 40px; max-width: 600px; }
+  .logo { font-size: 48px; font-weight: 900; margin-bottom: 16px; color: #0066cc; }
+  .qr { margin: 20px auto; }
+  .qr img { width: 200px; height: 200px; border: 4px solid #1a1a1a; border-radius: 16px; padding: 8px; background: white; }
+  .headline { font-size: 36px; font-weight: 900; line-height: 1.15; margin-bottom: 12px; letter-spacing: -1px; }
+  .headline span { color: #0066cc; }
+  .sub { font-size: 18px; color: #666; margin-bottom: 20px; font-weight: 600; }
+  .scan-text { font-size: 22px; font-weight: 800; color: #ff6b35; margin-top: 16px; }
+  .free-badge { display: inline-block; background: #2e7d32; color: white; font-size: 16px; font-weight: 700; padding: 8px 24px; border-radius: 50px; margin-top: 12px; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page { size: A4 landscape; margin: 15mm; }
+    .card { padding: 20px; }
+    .qr img { width: 180px; height: 180px; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🐟 Relifish</div>
+  <div class="headline">ताजा मासा,<br/><span>local sellers कडून.</span></div>
+  <div class="sub">Fresh fish from trusted local sellers</div>
+  <div class="qr">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://wa.me/919870619974?text=Hi%2520%25F0%259F%2590%259F%2520I%2520want%2520fresh%2520fish%2520in%2520my%2520area&format=png" alt="Scan QR" />
+  </div>
+  <div class="scan-text">👆 Scan करा — WhatsApp वर details मिळवा</div>
+  <div class="free-badge">FREE waitlist join करा — Early Access</div>
+</div>
+</body>
+</html>
