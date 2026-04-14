@@ -18,8 +18,8 @@
       Choose a saved address or enter a new one. Your map area is reused when adding details.
     </p>
 
-    <div id="order-method-picker" class="order-method-picker" style="display:none;">
-      <div class="order-method-card" id="order-method-pickup">
+    <div id="order-method-picker" class="order-method-picker" style="display:none;" role="radiogroup" aria-label="Delivery method">
+      <div class="order-method-card" id="order-method-pickup" role="radio" aria-checked="true" tabindex="0">
         <span class="order-method-icon">🏪</span>
         <div class="order-method-body">
           <div class="order-method-title">Pickup</div>
@@ -27,7 +27,7 @@
         </div>
         <div class="order-method-check" aria-hidden="true"></div>
       </div>
-      <div class="order-method-card" id="order-method-delivery">
+      <div class="order-method-card" id="order-method-delivery" role="radio" aria-checked="false" tabindex="0">
         <span class="order-method-icon">🛵</span>
         <div class="order-method-body">
           <div class="order-method-title">Delivery</div>
@@ -623,7 +623,9 @@
   let requireAddressDetail = false;
   let pickupMode = false;
   let methodPickerMode = false;
+  let fromMethodPicker = false; // was in method picker before switching to delivery
   let chosenMethod: "pickup" | "delivery" = "pickup";
+  let storedRawBilling: { subtotal: number; deliveryLabel: string; grandTotal: number; itemsLine: string } | null = null;
   let pendingOnConfirm: ((p: { buyer_addr: string | null; orderType: "pickup" | "delivery" }) => void | Promise<void>) | null = null;
   let pendingOnCancel: (() => void) | null = null;
   let loadedAddresses: BuyerAddressRow[] = [];
@@ -757,7 +759,7 @@
   }
 
   function syncUiMode() {
-    if (pickupMode) return;
+    if (pickupMode || methodPickerMode) return;
     const isNew = selectedId === "new";
     newBlock.style.display = isNew ? "block" : "none";
     savedPreview.style.display = isNew ? "none" : "block";
@@ -828,15 +830,18 @@
   const addressManageLink = document.getElementById("order-address-manage-link") as HTMLAnchorElement;
 
   function updateMethodCards() {
-    methodPickupCard.classList.toggle("selected", chosenMethod === "pickup");
-    methodDeliveryCard.classList.toggle("selected", chosenMethod === "delivery");
-    confirmBtn.textContent = chosenMethod === "pickup" ? "Place order" : "Continue to address";
+    const isPickup = chosenMethod === "pickup";
+    methodPickupCard.classList.toggle("selected", isPickup);
+    methodDeliveryCard.classList.toggle("selected", !isPickup);
+    methodPickupCard.setAttribute("aria-checked", isPickup ? "true" : "false");
+    methodDeliveryCard.setAttribute("aria-checked", isPickup ? "false" : "true");
+    confirmBtn.textContent = isPickup ? "Place order" : "Continue";
   }
 
   function applyModeLabels() {
     if (methodPickerMode) {
-      titleEl.textContent = "How would you like to receive your order?";
-      subtitleEl.textContent = "";
+      titleEl.textContent = "How to receive your order?";
+      subtitleEl.style.display = "none";
       addressManageLink.style.display = "none";
       listWrap.style.display = "none";
       newBlock.style.display = "none";
@@ -845,6 +850,7 @@
       updateMethodCards();
     } else if (pickupMode) {
       titleEl.textContent = "Confirm your order";
+      subtitleEl.style.display = "";
       subtitleEl.textContent = "Review your order and tap Place order to confirm.";
       addressManageLink.style.display = "none";
       listWrap.style.display = "none";
@@ -856,6 +862,7 @@
       addressManageLink.style.display = "";
       newBlock.style.display = "";
       methodPickerEl.style.display = "none";
+      subtitleEl.style.display = "";
       confirmBtn.textContent = "Place order";
       if (requireAddressDetail) {
         titleEl.textContent = "Delivery address";
@@ -867,14 +874,15 @@
     }
   }
 
-  methodPickupCard.addEventListener("click", () => {
-    chosenMethod = "pickup";
-    updateMethodCards();
-  });
-  methodDeliveryCard.addEventListener("click", () => {
-    chosenMethod = "delivery";
-    updateMethodCards();
-  });
+  function handleMethodCardKey(e: KeyboardEvent, method: "pickup" | "delivery") {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); chosenMethod = method; updateMethodCards(); }
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); chosenMethod = "delivery"; updateMethodCards(); methodDeliveryCard.focus(); }
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); chosenMethod = "pickup"; updateMethodCards(); methodPickupCard.focus(); }
+  }
+  methodPickupCard.addEventListener("click", () => { chosenMethod = "pickup"; updateMethodCards(); });
+  methodPickupCard.addEventListener("keydown", (e) => handleMethodCardKey(e, "pickup"));
+  methodDeliveryCard.addEventListener("click", () => { chosenMethod = "delivery"; updateMethodCards(); });
+  methodDeliveryCard.addEventListener("keydown", (e) => handleMethodCardKey(e, "delivery"));
 
   window.addEventListener("open-order-address-sheet", ((e: CustomEvent) => {
     const d = e.detail || {};
@@ -885,9 +893,11 @@
       chosenMethod = "pickup";
       requireAddressDetail = true; // delivery will require it
     }
+    fromMethodPicker = false;
     pendingOnConfirm = typeof d.onConfirm === "function" ? d.onConfirm : null;
     pendingOnCancel = typeof d.onCancel === "function" ? d.onCancel : null;
     const raw = d.billing;
+    storedRawBilling = null;
     if (
       raw &&
       typeof raw.subtotal === "number" &&
@@ -895,12 +905,13 @@
       typeof raw.deliveryLabel === "string" &&
       typeof raw.itemsLine === "string"
     ) {
-      renderBillingBlock({
-        subtotal: raw.subtotal,
-        deliveryLabel: raw.deliveryLabel,
-        grandTotal: raw.grandTotal,
-        itemsLine: raw.itemsLine,
-      });
+      storedRawBilling = { subtotal: raw.subtotal, deliveryLabel: raw.deliveryLabel, grandTotal: raw.grandTotal, itemsLine: raw.itemsLine };
+      if (methodPickerMode) {
+        // Before user picks method, don't commit to delivery fee — show subtotal only
+        renderBillingBlock({ subtotal: raw.subtotal, deliveryLabel: "—", grandTotal: raw.subtotal, itemsLine: raw.itemsLine });
+      } else {
+        renderBillingBlock(storedRawBilling);
+      }
     } else {
       renderBillingBlock(null);
     }
@@ -963,14 +974,21 @@
   confirmBtn.addEventListener("click", async () => {
     if (methodPickerMode) {
       if (chosenMethod === "pickup") {
-        // Switch to pickup confirm mode
+        // Switch to pickup confirm mode — update billing to show no delivery fee
         methodPickerMode = false;
         pickupMode = true;
+        if (storedRawBilling) {
+          renderBillingBlock({ ...storedRawBilling, deliveryLabel: "Pickup", grandTotal: storedRawBilling.subtotal });
+        }
         applyModeLabels();
       } else {
-        // Switch to delivery address mode
+        // Switch to delivery address mode — show real delivery fee
         methodPickerMode = false;
         pickupMode = false;
+        fromMethodPicker = true;
+        if (storedRawBilling) {
+          renderBillingBlock(storedRawBilling);
+        }
         applyModeLabels();
         // Load saved addresses
         const session = getSession();
@@ -1077,6 +1095,17 @@
 
   function cancel() {
     if (orderPlacing) return;
+    // If we got here from the method picker, go back to it instead of closing
+    if (fromMethodPicker) {
+      fromMethodPicker = false;
+      methodPickerMode = true;
+      pickupMode = false;
+      if (storedRawBilling) {
+        renderBillingBlock({ ...storedRawBilling, deliveryLabel: "—", grandTotal: storedRawBilling.subtotal });
+      }
+      applyModeLabels();
+      return;
+    }
     const oc = pendingOnCancel;
     pendingOnConfirm = null;
     pendingOnCancel = null;

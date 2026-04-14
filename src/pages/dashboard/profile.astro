@@ -472,7 +472,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
         saveDeliveryBtn.addEventListener("click", async () => {
           const on = deliveryToggle.checked;
-          const raw = parseFloat(deliveryRadiusInput.value, 10);
+          const raw = parseFloat(deliveryRadiusInput.value);
           if (on && (!Number.isFinite(raw) || raw < 1 || raw > 100)) {
             showToast("Enter a radius between 1 and 100 km", "error");
             return;
@@ -506,10 +506,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         minOrderInput.value = String(Number(seller.min_order_amount) || 0);
         deliveryFeeEnabledCb.checked = !!seller.delivery_fee_enabled;
         deliveryFeeAmtInput.value = String(Number(seller.delivery_fee_amount) || 0);
+        deliveryFeeAmtInput.style.opacity = deliveryFeeEnabledCb.checked ? "1" : "0.4";
+        deliveryFeeEnabledCb.addEventListener("change", () => {
+          deliveryFeeAmtInput.style.opacity = deliveryFeeEnabledCb.checked ? "1" : "0.4";
+          freeDeliveryAboveInput.style.opacity = deliveryFeeEnabledCb.checked ? "1" : "0.4";
+        });
         freeDeliveryAboveInput.value =
           seller.free_delivery_above != null && seller.free_delivery_above !== ""
             ? String(seller.free_delivery_above)
             : "";
+        freeDeliveryAboveInput.style.opacity = deliveryFeeEnabledCb.checked ? "1" : "0.4";
 
         savePricingBtn.addEventListener("click", async () => {
           setLoading(savePricingBtn, true, "Save pricing rules");
