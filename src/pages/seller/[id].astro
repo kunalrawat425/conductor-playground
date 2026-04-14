@@ -95,9 +95,9 @@ const jsonLd = {
   <style is:global>
     .seller-profile-card {
       background: white;
-      border-radius: 16px;
+      border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       margin-bottom: 20px;
     }
     .sp-top {
@@ -109,7 +109,7 @@ const jsonLd = {
     .sp-avatar {
       width: 56px;
       height: 56px;
-      border-radius: 16px;
+      border-radius: 8px;
       background: linear-gradient(135deg, #e8f4fd, #d1ecf1);
       display: flex;
       align-items: center;
@@ -186,7 +186,7 @@ const jsonLd = {
     .not-in-area-card {
       background: linear-gradient(135deg, #f0f6ff 0%, #e8f4fd 100%);
       border: 1.5px solid #d4e6f9;
-      border-radius: 14px;
+      border-radius: 8px;
       padding: 20px;
       text-align: center;
       margin-bottom: 16px;
@@ -225,8 +225,8 @@ const jsonLd = {
     /* Menu items */
     .menu-item {
       background: white;
-      border-radius: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       display: flex;
       overflow: hidden;
       margin-bottom: 12px;
@@ -485,9 +485,9 @@ const jsonLd = {
       max-width: var(--app-max-width);
       margin: 0 auto;
       background: var(--green);
-      border-radius: 14px;
+      border-radius: 8px;
       padding: 12px 16px;
-      box-shadow: 0 4px 20px rgba(40,167,69,0.3);
+      box-shadow: 0 2px 8px rgba(40,167,69,0.2);
     }
     .cart-bar-main {
       display: flex;
@@ -1458,23 +1458,24 @@ const jsonLd = {
           }
 
           if (inDeliveryRange) {
+            // Both pickup and delivery available — let user choose
             window.dispatchEvent(
               new CustomEvent("open-order-address-sheet", {
                 detail: {
-                  requireAddressDetail: true,
+                  showMethodPicker: true,
                   billing: getCartBillingSnapshot(),
-                  onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
+                  onConfirm: ({ buyer_addr, orderType }) => submitOrder(session, items, buyer_addr, orderType),
                 },
               })
             );
           } else {
-            // Pickup — show confirmation sheet (billing + Place order, no address fields)
+            // Pickup only — show confirmation sheet (billing + Place order, no address fields)
             window.dispatchEvent(
               new CustomEvent("open-order-address-sheet", {
                 detail: {
                   pickupMode: true,
                   billing: getCartBillingSnapshot(),
-                  onConfirm: () => submitOrder(session, items, null),
+                  onConfirm: ({ orderType }) => submitOrder(session, items, null, orderType ?? "pickup"),
                 },
               })
             );
@@ -1494,9 +1495,9 @@ const jsonLd = {
             window.dispatchEvent(
               new CustomEvent("open-order-address-sheet", {
                 detail: {
-                  requireAddressDetail: true,
+                  showMethodPicker: true,
                   billing: getCartBillingSnapshot(),
-                  onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
+                  onConfirm: ({ buyer_addr, orderType }) => submitOrder(session, items, buyer_addr, orderType),
                 },
               })
             );
@@ -1506,16 +1507,17 @@ const jsonLd = {
                 detail: {
                   pickupMode: true,
                   billing: getCartBillingSnapshot(),
-                  onConfirm: () => submitOrder(session, items, null),
+                  onConfirm: ({ orderType }) => submitOrder(session, items, null, orderType ?? "pickup"),
                 },
               })
             );
           }
         });
 
-        async function submitOrder(session, items, buyer_addr) {
+        async function submitOrder(session, items, buyer_addr, orderType?: "pickup" | "delivery") {
           // Order submits from checkout sheet — button state handled there
           const addr = buyer_addr ?? null;
+          const resolvedOrderType = orderType ?? (inDeliveryRange ? "delivery" : "pickup");
           const scheduledFor = document.getElementById("selected-scheduled-for")?.value || null;
           const lines = items.map((e) => {
             const l = e.listing;
@@ -1542,7 +1544,7 @@ const jsonLd = {
               buyer_phone: session.phone,
               buyer_id: session.buyer_id,
               buyer_addr: addr,
-              order_type: inDeliveryRange ? "delivery" : "pickup",
+              order_type: resolvedOrderType,
               seller_id: sellerId,
               scheduled_for: scheduledFor || undefined,
             }),
