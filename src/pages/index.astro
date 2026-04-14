@@ -5,7 +5,7 @@ import LocationPicker from "../components/LocationPicker.astro";
 import LoginModal from "../components/LoginModal.astro";
 ---
 
-<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home">
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home" needsMap={true}>
   <script is:inline>
     (function () {
       try {
@@ -15,6 +15,7 @@ import LoginModal from "../components/LoginModal.astro";
       } catch (e) {}
     })();
   </script>
+  <h1 class="sr-only">Fresh Fish from Local Mumbai Sellers</h1>
   <!-- Hero search bar -->
   <div class="hero-search">
     <input type="text" id="search-input" placeholder="Search fish or seller..." autocomplete="off" />
@@ -816,7 +817,7 @@ import LoginModal from "../components/LoginModal.astro";
             <div class="menu-preview-item">
               <div class="menu-preview-img">
                 ${l.photo_url
-                  ? `<img src="${esc(l.photo_url)}" alt="${esc(name)}" loading="lazy" />`
+                  ? `<img src="${esc(l.photo_url)}" alt="Fresh ${esc(name)} from ${esc(g.name)}" loading="lazy" />`
                   : emoji}
               </div>
               <div class="menu-preview-name">${nameLine}</div>

@@ -5,12 +5,36 @@ import AppShell from "../../components/AppShell.astro";
 import LocationPicker from "../../components/LocationPicker.astro";
 import LoginModal from "../../components/LoginModal.astro";
 import OrderAddressSheet from "../../components/OrderAddressSheet.astro";
+import { getSellerById } from "../../lib/supabase";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+
+let sellerName = "Seller";
+let sellerLocation = "";
+try {
+  const seller = await getSellerById(id!);
+  if (seller) {
+    sellerName = seller.name;
+    sellerLocation = seller.location_name || "";
+  }
+} catch {}
+
+const pageTitle = `${sellerName} - Fresh Fish Menu | ${brandName}`;
+const pageDesc = sellerLocation
+  ? `Order fresh fish from ${sellerName} in ${sellerLocation}. Pickup or delivery on ${brandName}.`
+  : `Order fresh fish from ${sellerName}. Pickup or delivery on ${brandName}.`;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": sellerName,
+  ...(sellerLocation ? { "address": { "@type": "PostalAddress", "addressLocality": sellerLocation } } : {}),
+  "url": `https://www.relifish.store/seller/${id}`,
+};
 ---
 
-<AppShell title={`Seller Menu - ${brandName}`} description={`Fresh fish menu. Order for pickup or delivery on ${brandName}.`} activeTab="home" showLocationBadge={false}>
+<AppShell title={pageTitle} description={pageDesc} activeTab="home" showLocationBadge={false} needsMap={true} jsonLd={jsonLd}>
   <!-- Back button -->
   <div style="padding:12px 0 8px;">
     <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">

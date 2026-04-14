@@ -8,9 +8,12 @@ import OrderAddressSheet from "../../components/OrderAddressSheet.astro";
 
 const { species } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const speciesDisplay = species ? species.charAt(0).toUpperCase() + species.slice(1).replace(/-/g, " ") : "Fish";
+const pageTitle = `Pre-order ${speciesDisplay} - Fresh Tomorrow Morning | ${brandName}`;
+const pageDesc = `Pre-order fresh ${speciesDisplay.toLowerCase()} for tomorrow morning from local Mumbai sellers on ${brandName}. Best prices, same-day catch.`;
 ---
 
-<AppShell title={`Pre-order - ${brandName}`} description={`Pre-order fresh fish for tomorrow morning on ${brandName}.`} activeTab="home" showLocationBadge={false}>
+<AppShell title={pageTitle} description={pageDesc} activeTab="home" showLocationBadge={false} needsMap={true}>
   <!-- Back -->
   <div style="padding:8px 0;">
     <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">← Back</a>
