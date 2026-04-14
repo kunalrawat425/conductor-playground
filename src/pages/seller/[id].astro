@@ -1468,8 +1468,16 @@ const jsonLd = {
               })
             );
           } else {
-            // Pickup only — skip address sheet, submit directly
-            submitOrder(session, items, null);
+            // Pickup — show confirmation sheet (billing + Place order, no address fields)
+            window.dispatchEvent(
+              new CustomEvent("open-order-address-sheet", {
+                detail: {
+                  pickupMode: true,
+                  billing: getCartBillingSnapshot(),
+                  onConfirm: () => submitOrder(session, items, null),
+                },
+              })
+            );
           }
         });
 
@@ -1493,7 +1501,15 @@ const jsonLd = {
               })
             );
           } else {
-            submitOrder(session, items, null);
+            window.dispatchEvent(
+              new CustomEvent("open-order-address-sheet", {
+                detail: {
+                  pickupMode: true,
+                  billing: getCartBillingSnapshot(),
+                  onConfirm: () => submitOrder(session, items, null),
+                },
+              })
+            );
           }
         });
 

@@ -544,6 +544,7 @@
   const billingWrap = document.getElementById("order-address-billing-wrap")!;
 
   let requireAddressDetail = false;
+  let pickupMode = false;
   let pendingOnConfirm: ((p: { buyer_addr: string | null }) => void | Promise<void>) | null = null;
   let pendingOnCancel: (() => void) | null = null;
   let loadedAddresses: BuyerAddressRow[] = [];
@@ -677,6 +678,7 @@
   }
 
   function syncUiMode() {
+    if (pickupMode) return;
     const isNew = selectedId === "new";
     newBlock.style.display = isNew ? "block" : "none";
     savedPreview.style.display = isNew ? "none" : "block";
@@ -719,15 +721,17 @@
     refreshAreaDisplay();
     loadDetailInputs();
 
-    const session = getSession();
-    if (session) {
-      const rows = await fetchAddresses(session.buyer_id);
-      renderList(rows);
-    } else {
-      loadedAddresses = [];
-      listWrap.style.display = "none";
-      selectedId = "new";
-      syncUiMode();
+    if (!pickupMode) {
+      const session = getSession();
+      if (session) {
+        const rows = await fetchAddresses(session.buyer_id);
+        renderList(rows);
+      } else {
+        loadedAddresses = [];
+        listWrap.style.display = "none";
+        selectedId = "new";
+        syncUiMode();
+      }
     }
 
     overlay.classList.add("open");
@@ -742,19 +746,33 @@
     renderBillingBlock(null);
   }
 
+  const addressManageLink = document.getElementById("order-address-manage-link") as HTMLAnchorElement;
+
   function applyModeLabels() {
-    if (requireAddressDetail) {
-      titleEl.textContent = "Delivery address";
-      subtitleEl.textContent = "Pick a saved address or add a new one. Delivery needs your area plus flat or building.";
+    if (pickupMode) {
+      titleEl.textContent = "Confirm your order";
+      subtitleEl.textContent = "Review your order and tap Place order to confirm.";
+      addressManageLink.style.display = "none";
+      listWrap.style.display = "none";
+      newBlock.style.display = "none";
+      savedPreview.style.display = "none";
     } else {
-      titleEl.textContent = "Address for this order";
-      subtitleEl.textContent = "Choose a saved address or enter a new one for this order.";
+      addressManageLink.style.display = "";
+      newBlock.style.display = "";
+      if (requireAddressDetail) {
+        titleEl.textContent = "Delivery address";
+        subtitleEl.textContent = "Pick a saved address or add a new one. Delivery needs your area plus flat or building.";
+      } else {
+        titleEl.textContent = "Address for this order";
+        subtitleEl.textContent = "Choose a saved address or enter a new one for this order.";
+      }
     }
   }
 
   window.addEventListener("open-order-address-sheet", ((e: CustomEvent) => {
     const d = e.detail || {};
     requireAddressDetail = !!d.requireAddressDetail;
+    pickupMode = !!d.pickupMode;
     pendingOnConfirm = typeof d.onConfirm === "function" ? d.onConfirm : null;
     pendingOnCancel = typeof d.onCancel === "function" ? d.onCancel : null;
     const raw = d.billing;
@@ -831,6 +849,15 @@
   }
 
   confirmBtn.addEventListener("click", async () => {
+    if (pickupMode) {
+      const fn = pendingOnConfirm;
+      if (fn) {
+        setOrderPlacing(true);
+        try { await fn({ buyer_addr: null }); } catch { setOrderPlacing(false); }
+      }
+      return;
+    }
+
     if (!validate()) return;
 
     const session = getSession();
