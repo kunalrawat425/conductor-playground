@@ -18,6 +18,25 @@
       Choose a saved address or enter a new one. Your map area is reused when adding details.
     </p>
 
+    <div id="order-method-picker" class="order-method-picker" style="display:none;">
+      <div class="order-method-card" id="order-method-pickup">
+        <span class="order-method-icon">🏪</span>
+        <div class="order-method-body">
+          <div class="order-method-title">Pickup</div>
+          <div class="order-method-sub">Collect from the seller</div>
+        </div>
+        <div class="order-method-check" aria-hidden="true"></div>
+      </div>
+      <div class="order-method-card" id="order-method-delivery">
+        <span class="order-method-icon">🛵</span>
+        <div class="order-method-body">
+          <div class="order-method-title">Delivery</div>
+          <div class="order-method-sub">Delivered to your address</div>
+        </div>
+        <div class="order-method-check" aria-hidden="true"></div>
+      </div>
+    </div>
+
     <a
       href="/me#addresses"
       class="text-muted"
@@ -169,8 +188,8 @@
     max-width: 320px;
     padding: 28px 24px 24px;
     background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
     text-align: center;
   }
   .order-address-loading-spinner {
@@ -255,7 +274,7 @@
     padding: 14px 14px 14px 16px;
     margin: 0;
     border: 2px solid var(--gray-200);
-    border-radius: 14px;
+    border-radius: 8px;
     cursor: pointer;
     background: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -384,7 +403,7 @@
 
   .order-address-preview-card {
     padding: 14px 16px;
-    border-radius: 14px;
+    border-radius: 8px;
     border: 1px solid rgba(0, 102, 204, 0.25);
     background: linear-gradient(165deg, #f5f9ff 0%, #fff 55%);
     box-shadow: 0 1px 4px rgba(0, 102, 204, 0.08);
@@ -432,10 +451,10 @@
   }
   .order-address-billing {
     background: linear-gradient(180deg, #f8fafc 0%, var(--gray-50) 100%);
-    border-radius: 14px;
+    border-radius: 8px;
     padding: 16px 16px 14px;
     border: 1px solid var(--gray-200);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
   .order-address-billing-title {
     font-size: 16px;
@@ -505,6 +524,60 @@
     font-weight: 800;
     color: var(--blue);
   }
+
+  /* Method picker */
+  .order-method-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .order-method-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 2px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 14px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .order-method-card.selected {
+    border-color: #111;
+    background: #f9f9f9;
+  }
+  .order-method-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+  }
+  .order-method-body {
+    flex: 1;
+  }
+  .order-method-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+  }
+  .order-method-sub {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+  }
+  .order-method-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .order-method-card.selected .order-method-check {
+    border-color: #111;
+    background: #111;
+  }
 </style>
 
 <script>
@@ -543,9 +616,15 @@
   const subtitleEl = document.getElementById("order-address-subtitle")!;
   const billingWrap = document.getElementById("order-address-billing-wrap")!;
 
+  const methodPickerEl = document.getElementById("order-method-picker")!;
+  const methodPickupCard = document.getElementById("order-method-pickup")!;
+  const methodDeliveryCard = document.getElementById("order-method-delivery")!;
+
   let requireAddressDetail = false;
   let pickupMode = false;
-  let pendingOnConfirm: ((p: { buyer_addr: string | null }) => void | Promise<void>) | null = null;
+  let methodPickerMode = false;
+  let chosenMethod: "pickup" | "delivery" = "pickup";
+  let pendingOnConfirm: ((p: { buyer_addr: string | null; orderType: "pickup" | "delivery" }) => void | Promise<void>) | null = null;
   let pendingOnCancel: (() => void) | null = null;
   let loadedAddresses: BuyerAddressRow[] = [];
   let selectedId: string = "new";
@@ -721,7 +800,7 @@
     refreshAreaDisplay();
     loadDetailInputs();
 
-    if (!pickupMode) {
+    if (!pickupMode && !methodPickerMode) {
       const session = getSession();
       if (session) {
         const rows = await fetchAddresses(session.buyer_id);
@@ -748,17 +827,36 @@
 
   const addressManageLink = document.getElementById("order-address-manage-link") as HTMLAnchorElement;
 
+  function updateMethodCards() {
+    methodPickupCard.classList.toggle("selected", chosenMethod === "pickup");
+    methodDeliveryCard.classList.toggle("selected", chosenMethod === "delivery");
+    confirmBtn.textContent = chosenMethod === "pickup" ? "Place order" : "Continue to address";
+  }
+
   function applyModeLabels() {
-    if (pickupMode) {
+    if (methodPickerMode) {
+      titleEl.textContent = "How would you like to receive your order?";
+      subtitleEl.textContent = "";
+      addressManageLink.style.display = "none";
+      listWrap.style.display = "none";
+      newBlock.style.display = "none";
+      savedPreview.style.display = "none";
+      methodPickerEl.style.display = "flex";
+      updateMethodCards();
+    } else if (pickupMode) {
       titleEl.textContent = "Confirm your order";
       subtitleEl.textContent = "Review your order and tap Place order to confirm.";
       addressManageLink.style.display = "none";
       listWrap.style.display = "none";
       newBlock.style.display = "none";
       savedPreview.style.display = "none";
+      methodPickerEl.style.display = "none";
+      confirmBtn.textContent = "Place order";
     } else {
       addressManageLink.style.display = "";
       newBlock.style.display = "";
+      methodPickerEl.style.display = "none";
+      confirmBtn.textContent = "Place order";
       if (requireAddressDetail) {
         titleEl.textContent = "Delivery address";
         subtitleEl.textContent = "Pick a saved address or add a new one. Delivery needs your area plus flat or building.";
@@ -769,10 +867,24 @@
     }
   }
 
+  methodPickupCard.addEventListener("click", () => {
+    chosenMethod = "pickup";
+    updateMethodCards();
+  });
+  methodDeliveryCard.addEventListener("click", () => {
+    chosenMethod = "delivery";
+    updateMethodCards();
+  });
+
   window.addEventListener("open-order-address-sheet", ((e: CustomEvent) => {
     const d = e.detail || {};
     requireAddressDetail = !!d.requireAddressDetail;
     pickupMode = !!d.pickupMode;
+    methodPickerMode = !!d.showMethodPicker;
+    if (methodPickerMode) {
+      chosenMethod = "pickup";
+      requireAddressDetail = true; // delivery will require it
+    }
     pendingOnConfirm = typeof d.onConfirm === "function" ? d.onConfirm : null;
     pendingOnCancel = typeof d.onCancel === "function" ? d.onCancel : null;
     const raw = d.billing;
@@ -849,11 +961,36 @@
   }
 
   confirmBtn.addEventListener("click", async () => {
+    if (methodPickerMode) {
+      if (chosenMethod === "pickup") {
+        // Switch to pickup confirm mode
+        methodPickerMode = false;
+        pickupMode = true;
+        applyModeLabels();
+      } else {
+        // Switch to delivery address mode
+        methodPickerMode = false;
+        pickupMode = false;
+        applyModeLabels();
+        // Load saved addresses
+        const session = getSession();
+        if (session) {
+          const rows = await fetchAddresses(session.buyer_id);
+          renderList(rows);
+        } else {
+          listWrap.style.display = "none";
+          selectedId = "new";
+          syncUiMode();
+        }
+      }
+      return;
+    }
+
     if (pickupMode) {
       const fn = pendingOnConfirm;
       if (fn) {
         setOrderPlacing(true);
-        try { await fn({ buyer_addr: null }); } catch { setOrderPlacing(false); }
+        try { await fn({ buyer_addr: null, orderType: "pickup" }); } catch { setOrderPlacing(false); }
       }
       return;
     }
@@ -919,7 +1056,7 @@
       backBtn.disabled = true;
       setOrderPlacing(true);
       try {
-        await fn({ buyer_addr });
+        await fn({ buyer_addr, orderType: "delivery" });
         // Success — keep loading visible until redirect (submitOrder); do not close sheet first
         pendingOnConfirm = null;
         pendingOnCancel = null;
