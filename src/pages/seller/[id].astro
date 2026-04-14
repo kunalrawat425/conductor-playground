@@ -1457,15 +1457,20 @@ const jsonLd = {
             return;
           }
 
-          window.dispatchEvent(
-            new CustomEvent("open-order-address-sheet", {
-              detail: {
-                requireAddressDetail: inDeliveryRange,
-                billing: getCartBillingSnapshot(),
-                onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
-              },
-            })
-          );
+          if (inDeliveryRange) {
+            window.dispatchEvent(
+              new CustomEvent("open-order-address-sheet", {
+                detail: {
+                  requireAddressDetail: true,
+                  billing: getCartBillingSnapshot(),
+                  onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
+                },
+              })
+            );
+          } else {
+            // Pickup only — skip address sheet, submit directly
+            submitOrder(session, items, null);
+          }
         });
 
         // After login, submit pending order
@@ -1477,15 +1482,19 @@ const jsonLd = {
           if (!session) return;
           const items = Object.values(cart).filter(e => e.qty > 0);
           if (items.length === 0) return;
-          window.dispatchEvent(
-            new CustomEvent("open-order-address-sheet", {
-              detail: {
-                requireAddressDetail: inDeliveryRange,
-                billing: getCartBillingSnapshot(),
-                onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
-              },
-            })
-          );
+          if (inDeliveryRange) {
+            window.dispatchEvent(
+              new CustomEvent("open-order-address-sheet", {
+                detail: {
+                  requireAddressDetail: true,
+                  billing: getCartBillingSnapshot(),
+                  onConfirm: ({ buyer_addr }) => submitOrder(session, items, buyer_addr),
+                },
+              })
+            );
+          } else {
+            submitOrder(session, items, null);
+          }
         });
 
         async function submitOrder(session, items, buyer_addr) {
