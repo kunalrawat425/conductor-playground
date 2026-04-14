@@ -650,15 +650,8 @@ const pageDesc = `Pre-order fresh ${speciesDisplay.toLowerCase()} for tomorrow m
           return;
         }
 
-        window.dispatchEvent(
-          new CustomEvent("open-order-address-sheet", {
-            detail: {
-              requireAddressDetail: false,
-              billing: getPreorderBillingSnapshot(),
-              onConfirm: ({ buyer_addr }) => submitOrder(session, buyer_addr),
-            },
-          })
-        );
+        // Pre-orders are pickup only — skip address sheet, submit directly
+        submitOrder(session, null);
       });
 
       // After login, submit pending order
@@ -671,15 +664,7 @@ const pageDesc = `Pre-order fresh ${speciesDisplay.toLowerCase()} for tomorrow m
         window.__pendingPreorderQty = null;
         const session = getSession();
         if (session) {
-          window.dispatchEvent(
-            new CustomEvent("open-order-address-sheet", {
-              detail: {
-                requireAddressDetail: false,
-                billing: getPreorderBillingSnapshot(),
-                onConfirm: ({ buyer_addr }) => submitOrder(session, buyer_addr),
-              },
-            })
-          );
+          submitOrder(session, null);
         }
       });
 
