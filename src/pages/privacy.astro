@@ -1,0 +1,61 @@
+---
+import AppShell from "../components/AppShell.astro";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+---
+
+<AppShell title={`Privacy Policy | ${brandName}`} description="Privacy policy for Relifish — how we handle your data." activeTab="home">
+  <div style="padding:16px 0 60px;">
+    <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">← Back</a>
+
+    <h1 style="font-size:22px;font-weight:800;margin:16px 0 8px;">Privacy Policy</h1>
+    <p style="font-size:13px;color:var(--gray-400);margin-bottom:24px;">Last updated: April 2026</p>
+
+    <div class="pp-content">
+      <h2>What we collect</h2>
+      <p>When you use {brandName}, we may collect:</p>
+      <ul>
+        <li><strong>Phone number</strong> — for login (OTP) and order communication</li>
+        <li><strong>Location</strong> — to show sellers near you (browser geolocation or manual input)</li>
+        <li><strong>Email</strong> — optional, for waitlist and launch updates</li>
+        <li><strong>Order data</strong> — items, amounts, delivery address for order fulfillment</li>
+        <li><strong>Device info</strong> — basic analytics (page views, device type) via Vercel Analytics</li>
+      </ul>
+
+      <h2>How we use it</h2>
+      <ul>
+        <li>Connect you with nearby fish sellers</li>
+        <li>Process and track your orders</li>
+        <li>Send order updates via WhatsApp or push notifications</li>
+        <li>Improve the service based on usage patterns</li>
+        <li>Notify you when we launch in your area (waitlist only)</li>
+      </ul>
+
+      <h2>What we don't do</h2>
+      <ul>
+        <li>We do not sell your personal data to third parties</li>
+        <li>We do not share your phone number with other buyers</li>
+        <li>We do not store payment card information (pay on pickup/delivery)</li>
+      </ul>
+
+      <h2>Data storage</h2>
+      <p>Your data is stored on <strong>Supabase</strong> (PostgreSQL, hosted in AWS). The application is deployed on <strong>Vercel</strong>. Both services maintain industry-standard security practices.</p>
+
+      <h2>Your rights</h2>
+      <p>You can request deletion of your account and data at any time by emailing <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a>.</p>
+
+      <h2>Cookies</h2>
+      <p>We use essential cookies (localStorage) to remember your login session and location preference. We use Vercel Analytics for anonymous page view tracking. No third-party advertising cookies are used.</p>
+
+      <h2>Contact</h2>
+      <p>For privacy questions: <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
+    </div>
+  </div>
+
+  <style>
+    .pp-content h2 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; color: var(--gray-800); }
+    .pp-content p { font-size: 14px; line-height: 1.6; color: var(--gray-600); margin: 0 0 8px; }
+    .pp-content ul { padding-left: 20px; margin: 0 0 12px; }
+    .pp-content li { font-size: 14px; line-height: 1.6; color: var(--gray-600); margin-bottom: 4px; }
+    .pp-content a { color: var(--blue); }
+  </style>
+</AppShell>

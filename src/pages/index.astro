@@ -5,7 +5,39 @@ import LocationPicker from "../components/LocationPicker.astro";
 import LoginModal from "../components/LoginModal.astro";
 ---
 
-<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Browse fresh catch from local Mumbai fish sellers. Order for pickup or pre-order for tomorrow morning." activeTab="home" needsMap={true}>
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Fresh fish from local Goa sellers — order now for pickup or pre-order tonight for tomorrow's morning catch. Prices per kg, no surprises." activeTab="home" needsMap={true} jsonLd={{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "Relifish",
+      "url": "https://www.relifish.store",
+      "description": "Hyperlocal fresh fish marketplace connecting Goa's fish sellers with buyers",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.relifish.store/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "LocalBusiness",
+      "name": "Relifish",
+      "url": "https://www.relifish.store",
+      "description": "Fresh fish marketplace — order from local Goa fish sellers for pickup or delivery",
+      "address": {
+        "@type": "PostalAddress",
+        "addressRegion": "Goa",
+        "addressCountry": "IN"
+      },
+      "areaServed": {
+        "@type": "State",
+        "name": "Goa"
+      },
+      "email": "relifishstore@gmail.com",
+      "priceRange": "₹₹"
+    }
+  ]
+}}>
   <script is:inline>
     (function () {
       try {
@@ -15,7 +47,8 @@ import LoginModal from "../components/LoginModal.astro";
       } catch (e) {}
     })();
   </script>
-  <h1 class="sr-only">Fresh Fish from Local Mumbai Sellers</h1>
+  <h1 class="page-hero-heading">Today's catch from Goa's trusted fish sellers</h1>
+  <p class="page-hero-sub">Pre-order tonight. Pick up tomorrow morning. Always fresh, never frozen.</p>
   <!-- Hero search bar -->
   <div class="hero-search">
     <input type="text" id="search-input" placeholder="Search fish or seller..." autocomplete="off" />
@@ -110,6 +143,9 @@ import LoginModal from "../components/LoginModal.astro";
       <p class="ns-query-sub">Help us launch faster in your area. Takes 30 seconds.</p>
 
       <form id="quick-waitlist" class="qw-form">
+        <input type="hidden" id="qw-utm-source" name="utm_source" />
+        <input type="hidden" id="qw-utm-medium" name="utm_medium" />
+        <input type="hidden" id="qw-utm-campaign" name="utm_campaign" />
         <input type="tel" id="qw-phone" placeholder="Your phone number" required />
         <input type="email" id="qw-email" placeholder="Your email (optional — for launch updates)" />
         <input type="text" id="qw-area" placeholder="Your area (e.g. Andheri West)" required />
@@ -161,11 +197,8 @@ import LoginModal from "../components/LoginModal.astro";
 
     <!-- Trust -->
     <div class="ns-card ns-trust" id="ns-trust-card">
-      <div class="ns-trust-row">
-        <div class="ns-trust-avatars"><div class="ns-av a1">RK</div><div class="ns-av a2">PS</div><div class="ns-av a3">AM</div><div class="ns-av a4">+</div></div>
-        <p>Mumbai buyers are joining every day</p>
-      </div>
       <div class="ns-contact">Questions? <a href="mailto:relifishstore@gmail.com?subject=Fish%20Query">relifishstore@gmail.com</a></div>
+      <div class="ns-contact"><a href="/privacy" style="color:var(--gray-400);font-size:11px;">Privacy Policy</a></div>
     </div>
   </section>
 
@@ -242,6 +275,20 @@ import LoginModal from "../components/LoginModal.astro";
     .promo-perks { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
     .promo-btn { background: var(--blue); color: white; font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 8px; text-decoration: none; flex-shrink: 0; }
     .promo-btn:hover { background: #0052a3; text-decoration: none; }
+
+    .page-hero-heading {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin: 12px 0 4px;
+      line-height: 1.2;
+    }
+    .page-hero-sub {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin: 0 0 4px;
+      line-height: 1.4;
+    }
 
     .hero-search {
       margin: 8px 0 12px;
@@ -547,6 +594,18 @@ import LoginModal from "../components/LoginModal.astro";
     import { formatListingPriceSummary } from "../lib/listing-pricing";
     import { formatFishSizeSuffix } from "../lib/fish-size";
     import { normalizeIndianMobile } from "../lib/indian-phone";
+
+    // Capture UTM params from URL into hidden form fields
+    (function captureUTMs() {
+      const params = new URLSearchParams(window.location.search);
+      ["utm_source", "utm_medium", "utm_campaign"].forEach(key => {
+        const val = params.get(key);
+        if (val) {
+          const el = document.getElementById("qw-" + key.replace("_", "-")) as HTMLInputElement | null;
+          if (el) el.value = val;
+        }
+      });
+    })();
 
     function esc(str: string): string {
       const div = document.createElement("div");
@@ -1030,6 +1089,9 @@ import LoginModal from "../components/LoginModal.astro";
               fish_wanted: fishReq,
               frequency: freq, preference: pref, budget: budget,
               email: (document.getElementById("qw-email") as HTMLInputElement).value.trim(),
+              utm_source: (document.getElementById("qw-utm-source") as HTMLInputElement).value,
+              utm_medium: (document.getElementById("qw-utm-medium") as HTMLInputElement).value,
+              utm_campaign: (document.getElementById("qw-utm-campaign") as HTMLInputElement).value,
             }),
           });
           const data = await res.json();
