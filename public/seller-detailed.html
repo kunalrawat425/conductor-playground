@@ -39,10 +39,10 @@
   .lang-btn.active { background: #0066cc; color: white; }
   .lang-btn:hover:not(.active) { color: #ccc; }
 
-  [data-lang="mr"] { display: block; }
-  [data-lang="en"] { display: none; }
-  body.lang-en [data-lang="en"] { display: block; }
-  body.lang-en [data-lang="mr"] { display: none; }
+  [data-lang="mr"] { display: none; }
+  [data-lang="en"] { display: block; }
+  body.lang-mr [data-lang="mr"] { display: block; }
+  body.lang-mr [data-lang="en"] { display: none; }
 
   .customizer { position: static; display: flex; gap: 10px; align-items: center; flex: 1; min-width: 160px; justify-content: flex-end; }
   .customizer label { color: #888; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
@@ -331,8 +331,8 @@
     <input type="text" id="seller-name-input" placeholder="e.g. Ramesh Fish Corner" oninput="updateSellerName(this.value)" autocomplete="organization" />
   </div>
   <div class="lang-toggle">
-    <button type="button" class="lang-btn active" id="btn-mr" onclick="setLang('mr')">मराठी</button>
-    <button type="button" class="lang-btn" id="btn-en" onclick="setLang('en')">English</button>
+    <button type="button" class="lang-btn" id="btn-mr" onclick="setLang('mr')">मराठी</button>
+    <button type="button" class="lang-btn active" id="btn-en" onclick="setLang('en')">English</button>
   </div>
 </div>
 
@@ -774,19 +774,39 @@
 
 <script>
 function setLang(lang) {
-  document.body.className = lang === 'en' ? 'lang-en' : '';
+  document.body.className = lang === 'mr' ? 'lang-mr' : '';
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
   document.getElementById('btn-mr').classList.toggle('active', lang === 'mr');
 }
 function toSlug(n) { return n.toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,'-').substring(0,20)||'your-shop'; }
 function updateSellerName(name) {
-  var display = name || (document.body.classList.contains('lang-en') ? 'Your Shop Name' : 'तुमचं दुकान');
+  var display = name || (document.body.classList.contains('lang-mr') ? 'तुमचं दुकान' : 'Your Shop Name');
   var slug = name ? toSlug(name) : 'your-shop';
   document.querySelectorAll('.sn-target').forEach(function(el){ el.textContent = display; });
   document.querySelectorAll('.sn-slug-target').forEach(function(el){ el.textContent = slug; });
 }
 
+// Read ?store= query param and ?lang= param on load
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var storeName = params.get('store') || params.get('name') || params.get('shop') || '';
+  var lang = params.get('lang');
 
+  // Default English unless ?lang=mr
+  if (lang === 'mr') {
+    setLang('mr');
+  } else {
+    setLang('en');
+  }
+
+  // Set store name from URL
+  if (storeName) {
+    storeName = decodeURIComponent(storeName);
+    var input = document.querySelector('.customizer input');
+    if (input) { input.value = storeName; }
+    updateSellerName(storeName);
+  }
+})();
 </script>
 </body>
 </html>
