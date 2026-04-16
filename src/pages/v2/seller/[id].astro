@@ -215,7 +215,7 @@ const tags = [
                      <span class="v2-item-count">${inCart}</span>
                      <button class="v2-item-inc" aria-label="Increase">+</button>
                    </div>`
-                : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" aria-label="Add ${escape(name)}">+</button>`}
+                : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
             </div>`;
           })()
         : (() => {
@@ -232,12 +232,18 @@ const tags = [
                   <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
                   <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
                   ${tierQty > 0
-                    ? `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
+                    ? (() => {
+                        const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
+                        const packs = bs > 1 ? Math.round(tierQty / bs) : tierQty;
+                        const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
+                        return `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
                          <button class="v2-item-dec" aria-label="Decrease">−</button>
-                         <span class="v2-item-count">${tierQty}</span>
+                         <span class="v2-item-count">${packLabel}</span>
                          <button class="v2-item-inc" aria-label="Increase">+</button>
-                       </div>`
-                    : `<button class="v2-item-add v2-item-add-sm" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${optId}" data-opt-label="${escape(label)}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                       </div>`;
+                      })()
+                    `
+                    : `<button class="v2-item-add v2-item-add-sm" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
                 </div>`;
               }).join("")}
             </div>`;
@@ -558,8 +564,9 @@ const tags = [
       }
     });
 
-    function add(id, price, name, unit, optId, optLabel) {
+    function add(id, price, name, unit, optId, optLabel, bundleSize) {
       const c = Cart(); if (!c) return;
+      const bs = parseInt(bundleSize) || 1;
       c.addItem({
         listing_id: id,
         seller_id: sellerId,
@@ -569,17 +576,43 @@ const tags = [
         price,
         pricing_option_id: optId || "default",
         pricing_label: optLabel || unit,
+        qty: bs, // add one pack (= bundle_size base units)
       });
       render();
     }
-    function dec(id) { const c = Cart(); if (!c) return; c.decQty(id); render(); }
-    function inc(id) { const c = Cart(); if (!c) return; c.incQty(id); render(); }
+    // Inc/dec by bundle_size so qty stays a valid multiple
+    function dec(id) {
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const key = Object.keys(cart).find(k => k === id || k.startsWith(id + ":") || cart[k]?.listing_id === id);
+      if (!key || !cart[key]) return;
+      // Determine bundle step from the item's pricing option
+      const item = cart[key];
+      const listing = listings.find(l => l.id === item.listing_id);
+      const opt = (listing?.pricing_options || []).find(o => o.id === item.pricing_option_id);
+      const step = (opt?.bundle_size && opt.bundle_size > 1) ? opt.bundle_size : 1;
+      const newQty = item.qty - step;
+      c.setQty(key, newQty);
+      render();
+    }
+    function inc(id) {
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const key = Object.keys(cart).find(k => k === id || k.startsWith(id + ":") || cart[k]?.listing_id === id);
+      if (!key || !cart[key]) return;
+      const item = cart[key];
+      const listing = listings.find(l => l.id === item.listing_id);
+      const opt = (listing?.pricing_options || []).find(o => o.id === item.pricing_option_id);
+      const step = (opt?.bundle_size && opt.bundle_size > 1) ? opt.bundle_size : 1;
+      c.setQty(key, item.qty + step);
+      render();
+    }
 
     grid.addEventListener("click", (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
       if (t.classList.contains("v2-item-add")) {
-        add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit, t.dataset.optId, t.dataset.optLabel);
+        add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit, t.dataset.optId, t.dataset.optLabel, t.dataset.bundleSize);
       } else if (t.classList.contains("v2-item-inc")) {
         inc(t.closest(".v2-item-counter")?.dataset.id);
       } else if (t.classList.contains("v2-item-dec")) {
