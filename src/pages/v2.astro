@@ -31,22 +31,26 @@ const categories = [
 >
   <Toast />
   <LocationPickerSheet />
-  <PreorderBanner variant="inline" />
 
-  <div style="margin-top: 16px;">
-    <CategoryStrip items={categories} />
-  </div>
+  <!-- Sticky filter cluster — stays in view when scrolling cards -->
+  <div class="v2-sticky-cluster">
+    <PreorderBanner variant="inline" />
 
-  <!-- Filter chips: timing × fulfillment × top-rated -->
-  <div class="v2-filter-chips" id="v2-filter-chips" role="tablist" aria-label="Filter sellers">
-    <button type="button" class="v2-fchip v2-fchip-active" data-filter="all" data-group="all">All</button>
-    <button type="button" class="v2-fchip" data-filter="open" data-group="time">Open now</button>
-    <button type="button" class="v2-fchip" data-filter="preorder" data-group="time">Pre-order</button>
-    <span class="v2-fchip-sep" aria-hidden="true"></span>
-    <button type="button" class="v2-fchip" data-filter="pickup" data-group="fulfill">Pickup</button>
-    <button type="button" class="v2-fchip" data-filter="delivery" data-group="fulfill">Delivery</button>
-    <span class="v2-fchip-sep" aria-hidden="true"></span>
-    <button type="button" class="v2-fchip" data-filter="topRated" data-group="toggle">Top rated ★</button>
+    <div style="margin-top: 12px;">
+      <CategoryStrip items={categories} />
+    </div>
+
+    <!-- Filter chips: timing × fulfillment × top-rated -->
+    <div class="v2-filter-chips" id="v2-filter-chips" role="tablist" aria-label="Filter sellers">
+      <button type="button" class="v2-fchip v2-fchip-active" data-filter="all" data-group="all">All</button>
+      <button type="button" class="v2-fchip" data-filter="open" data-group="time">Open now</button>
+      <button type="button" class="v2-fchip" data-filter="preorder" data-group="time">Pre-order</button>
+      <span class="v2-fchip-sep" aria-hidden="true"></span>
+      <button type="button" class="v2-fchip" data-filter="pickup" data-group="fulfill">Pickup</button>
+      <button type="button" class="v2-fchip" data-filter="delivery" data-group="fulfill">Delivery</button>
+      <span class="v2-fchip-sep" aria-hidden="true"></span>
+      <button type="button" class="v2-fchip" data-filter="topRated" data-group="toggle">Top rated ★</button>
+    </div>
   </div>
 
   <div class="v2-section-head">
@@ -101,6 +105,20 @@ const categories = [
     .v2-cards-grid { grid-template-columns: 1fr 1fr; }
   }
   .v2-skel-card { border-radius: 12px; overflow: hidden; }
+
+  /* Sticky filter cluster — pin nav controls below header */
+  .v2-sticky-cluster {
+    position: sticky;
+    top: 56px; /* below the brand header (sticky 56px tall) */
+    z-index: 30;
+    background: var(--v2-bg-2);
+    padding: 16px 0 8px;
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-bottom: 1px solid var(--v2-border);
+  }
+  .v2-sticky-cluster .v2-pb-inline { margin: 0 0 12px; }
 
   /* Filter chips */
   .v2-filter-chips {

@@ -133,6 +133,13 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
           localStorage.setItem("zepto_phone", currentPhone);
         }
       } catch {}
+      // Push any guest cart items to server before redirect (buyer only)
+      if (role === "buyer") {
+        try {
+          const mod = await import("../../../lib/cart");
+          await mod.pushLocalToServer();
+        } catch {}
+      }
       window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
       setTimeout(() => { window.location.href = redirectTo; }, 600);
     } catch (err) {
