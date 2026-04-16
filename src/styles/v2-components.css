@@ -134,12 +134,12 @@
 .v2-header-tall { padding-bottom: 24px; }
 .v2-header-preorder { background: var(--v2-indigo); }
 
-/* Grid layout — guarantees no overlap. auto-1fr-auto pattern */
+/* Grid layout — auto-1fr-auto-auto for logo / location / theme / profile */
 .v2-header-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   max-width: var(--app-max-width);
   margin: 0 auto;
   width: 100%;
@@ -1256,4 +1256,16 @@ body.v2-has-cart { padding-bottom: calc(64px + 60px + env(safe-area-inset-bottom
 .v2-pg-info {
   font: 500 12px Inter;
   color: var(--v2-ink-3);
+}
+
+/* Header icons — 32px (smaller than profile sheet 36px) so 4-col grid fits */
+.v2-header .v2-icon-btn { width: 32px; height: 32px; font-size: 14px; }
+.v2-theme-sun, .v2-theme-moon { line-height: 1; }
+.v2-theme-sun { display: inline; }
+.v2-theme-moon { display: none; }
+[data-theme="dark"] .v2-theme-sun { display: none; }
+[data-theme="dark"] .v2-theme-moon { display: inline; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .v2-theme-sun { display: none; }
+  :root:not([data-theme="light"]) .v2-theme-moon { display: inline; }
 }
