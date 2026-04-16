@@ -36,7 +36,11 @@ const isOpen = (() => {
   const cur = now.getHours() * 60 + now.getMinutes();
   const [oh, om] = seller.opens_at.split(":").map(Number);
   const [ch, cm] = seller.closes_at.split(":").map(Number);
-  return cur >= (oh * 60 + om) && cur <= (ch * 60 + cm);
+  const openMin = oh * 60 + om;
+  const closeMin = ch * 60 + cm;
+  // Handle cross-midnight ranges (e.g. 17:00 → 01:58)
+  if (openMin <= closeMin) return cur >= openMin && cur <= closeMin;
+  return cur >= openMin || cur <= closeMin;
 })();
 const status: "open" | "closed" = isOpen ? "open" : "closed";
 const tags = [
