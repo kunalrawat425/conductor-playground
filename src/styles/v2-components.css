@@ -123,28 +123,40 @@
 .v2-header {
   position: sticky; top: 0; z-index: var(--v2-z-header);
   background: var(--v2-brand);
-  padding: 12px max(16px, env(safe-area-inset-left, 0)) 8px;
-  overflow: hidden;
+  padding: 12px 16px 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0));
+  padding-right: max(16px, env(safe-area-inset-right, 0));
 }
 .v2-header-tall { padding-bottom: 24px; }
 .v2-header-preorder { background: var(--v2-indigo); }
+
+/* Grid layout — guarantees no overlap. auto-1fr-auto pattern */
 .v2-header-row {
-  display: flex; align-items: center; gap: 12px;
-  max-width: var(--app-max-width); margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  max-width: var(--app-max-width);
+  margin: 0 auto;
   width: 100%;
 }
-.v2-header-row > .v2-logo {
-  flex: 0 0 auto;
-  white-space: nowrap;
-  padding-right: 4px;
-}
-.v2-header-row > .v2-back { flex: 0 0 auto; }
 .v2-header-row > .v2-loc-wrap {
-  flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
+  cursor: pointer;
 }
-.v2-header-row > .v2-icon-btn { flex: 0 0 auto; }
+.v2-loc-main {
+  font-family: var(--v2-font); font-weight: 700; font-size: 14px;
+  color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; gap: 4px;
+}
+.v2-loc-arrow { font-size: 10px; line-height: 1; }
+.v2-loc-sub {
+  font-family: var(--v2-font); font-weight: 400; font-size: 11px;
+  color: rgba(255, 255, 255, .75);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .v2-logo {
   font-family: var(--v2-font); font-weight: 800; font-size: 18px;
   color: #fff; letter-spacing: -.02em; text-decoration: none;
@@ -153,19 +165,6 @@
 .v2-back {
   font-size: 22px; color: #fff; text-decoration: none;
   width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-}
-.v2-loc-wrap { flex: 1; min-width: 0; cursor: pointer; }
-.v2-loc-main {
-  font-family: var(--v2-font); font-weight: 700; font-size: 14px;
-  color: #fff;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: flex; align-items: center; gap: 4px;
-}
-.v2-loc-arrow { font-size: 10px; }
-.v2-loc-sub {
-  font-family: var(--v2-font); font-weight: 400; font-size: 11px;
-  color: rgba(255, 255, 255, .75);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .v2-icon-btn {
   width: 36px; height: 36px; border-radius: 50%;
@@ -245,7 +244,8 @@
   padding: 0 4px;
 }
 
-body.v2-has-bottom-nav { padding-bottom: 64px; }
+body.v2-has-bottom-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0)); }
+body.v2-has-cart.v2-has-bottom-nav { padding-bottom: calc(64px + 60px + env(safe-area-inset-bottom, 0)); }
 
 /* === Buttons === */
 .v2-btn {
