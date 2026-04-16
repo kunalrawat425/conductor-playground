@@ -5,6 +5,8 @@ import PreorderBanner from "../components/v2/molecules/PreorderBanner.astro";
 import CategoryStrip from "../components/v2/molecules/CategoryStrip.astro";
 import EmptyState from "../components/v2/molecules/EmptyState.astro";
 import Skeleton from "../components/v2/atoms/Skeleton.astro";
+import Toast from "../components/v2/atoms/Toast.astro";
+import LocationPickerSheet from "../components/v2/organisms/LocationPickerSheet.astro";
 
 const categories = [
   { id: "all", name: "All Fish", emoji: "🐟", active: true },
@@ -27,6 +29,8 @@ const categories = [
   }}
   nav={{ active: "home" }}
 >
+  <Toast />
+  <LocationPickerSheet />
   <PreorderBanner variant="inline" />
 
   <div style="margin-top: 16px;">
@@ -296,17 +300,39 @@ const categories = [
     time: null as null | "open" | "preorder",
     fulfill: null as null | "pickup" | "delivery",
     topRated: false,
+    category: "all" as string, // category strip species filter
+    maxKm: 25, // distance cap (km) when buyer location available
+  };
+
+  // Map category id → list of species substrings to match
+  const categorySpecies: Record<string, string[]> = {
+    all: [],
+    prawns: ["prawn"],
+    crab: ["crab"],
+    squid: ["squid", "octopus", "cuttlefish"],
+    shellfish: ["clam", "mussel", "oyster"],
   };
 
   function applyFilters(groups: any[]) {
     return groups.filter(g => {
       const s = g.seller;
+      // Time
       if (filterState.time === "open" && !g.open) return false;
       if (filterState.time === "preorder" && !s.accepts_preorder) return false;
-      if (filterState.fulfill === "pickup" && s.has_delivery === true && (!s.delivery_rad || s.delivery_rad <= 0)) {
-        // pickup means the seller offers pickup. All sellers do by default.
-      }
+      // Fulfill (delivery filter is the only meaningful one)
       if (filterState.fulfill === "delivery" && !s.has_delivery) return false;
+      // Distance — when buyer location set, hide far-away sellers
+      if (g.dist != null && g.dist > filterState.maxKm) return false;
+      // Category — filter by species substrings in seller's listings
+      const cat = filterState.category;
+      if (cat && cat !== "all") {
+        const subs = categorySpecies[cat] || [];
+        const hasMatch = (g.listings || []).some((l: any) => {
+          const sp = (l.species || "").toLowerCase();
+          return subs.some(needle => sp.includes(needle));
+        });
+        if (!hasMatch) return false;
+      }
       return true;
     });
   }
@@ -381,10 +407,26 @@ const categories = [
         const distStr = g.dist != null ? `${g.dist.toFixed(1)} km` : "";
         const subParts = [s.location_name || s.location || "", distStr].filter(Boolean).join(" · ");
 
-        const offerLabel = g.open && g.listings.length > 0 ? "Same-day catch" : (s.accepts_preorder ? "Pre-order today" : "");
-        const offerColor = offerLabel === "Same-day catch" ? "v2-badge-brand" : "v2-badge-indigo";
-        const offerBadge = offerLabel
-          ? `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>` : "";
+        // Offer badge logic — never show "Pre-order today" on a closed seller (confusing)
+        // Open + has items = Same-day catch (brand)
+        // Open + no items + accepts pre-order = Pre-order only (indigo)
+        // Closed + accepts pre-order = Pre-order tomorrow (indigo)
+        // Closed + no preorder = Closed (red)
+        let offerLabel = "", offerColor = "v2-badge-brand";
+        if (g.open && g.listings.length > 0) {
+          offerLabel = "Same-day catch";
+          offerColor = "v2-badge-brand";
+        } else if (g.open && s.accepts_preorder) {
+          offerLabel = "Pre-order only";
+          offerColor = "v2-badge-indigo";
+        } else if (!g.open && s.accepts_preorder) {
+          offerLabel = "Pre-order tomorrow";
+          offerColor = "v2-badge-indigo";
+        } else {
+          offerLabel = "Closed today";
+          offerColor = "v2-badge-red";
+        }
+        const offerBadge = `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
 
         const deliveryBar = s.has_delivery
           ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
@@ -449,10 +491,52 @@ const categories = [
     });
   });
 
+  // Wire category strip
+  document.querySelectorAll<HTMLAnchorElement>(".v2-cat-item").forEach((cat) => {
+    cat.addEventListener("click", (e) => {
+      e.preventDefault();
+      const url = new URL(cat.href, window.location.origin);
+      const catId = url.searchParams.get("cat") || "all";
+      filterState.category = catId;
+      // Visual: toggle active class
+      document.querySelectorAll(".v2-cat-item").forEach(c => c.classList.remove("v2-cat-active"));
+      cat.classList.add("v2-cat-active");
+      renderFiltered();
+    });
+  });
+
   loadSellers();
 
-  // Open location picker bridge (legacy modal)
+  // After buyer accepts location (or after page paint), ask for notification permission
+  function maybeAskNotifications() {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "default") return; // user already chose
+    let asked = false;
+    try { asked = sessionStorage.getItem("v2_notif_asked") === "1"; } catch {}
+    if (asked) return;
+    try { sessionStorage.setItem("v2_notif_asked", "1"); } catch {}
+    // Wait 5s after page settled — don't be pushy
+    setTimeout(async () => {
+      try {
+        const result = await Notification.requestPermission();
+        if (result === "granted") {
+          (window as any).v2Toast?.("success", "Notifications on", "We'll only ping for orders");
+        }
+      } catch {}
+    }, 5000);
+  }
+
+  // After location set or skipped, prompt notifications
+  document.addEventListener("v2-location-confirmed", () => {
+    setTimeout(maybeAskNotifications, 2000);
+  });
+  // Also if user already has location, ask after page load
+  if (getBuyerLocation()) {
+    maybeAskNotifications();
+  }
+
+  // Open location picker bridge — V2 native sheet
   document.addEventListener("relifish:open-location-picker", () => {
-    window.dispatchEvent(new CustomEvent("open-location-picker"));
+    (window as any).v2OpenSheet?.("v2-loc-picker");
   });
 </script>

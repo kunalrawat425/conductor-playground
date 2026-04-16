@@ -13,7 +13,7 @@ const {
   <a href={href} class="v2-pb-hero">
     <h3 class="v2-pb-hero-title">{title}</h3>
     <p class="v2-pb-hero-desc">{description}</p>
-    <span class="v2-pb-hero-btn">{ctaText} →</span>
+    {ctaText && <span class="v2-pb-hero-btn">{ctaText} →</span>}
   </a>
 ) : variant === "empty" ? (
   <div class="v2-pb-empty">
