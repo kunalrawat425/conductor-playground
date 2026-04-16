@@ -711,10 +711,17 @@ import LoginModal from "../components/LoginModal.astro";
       const emptyState = document.getElementById("empty-state")!;
 
       try {
-        // Get active listings + all sellers (even without active listings, for pre-order)
+        // Get active listings + active sellers only.
+        // Filter: is_active=true AND name not the legacy placeholder.
+        // This prevents unfinished onboardings from appearing in the buyer list.
         const [listings, allSellersRes] = await Promise.all([
           getActiveListings().catch(() => [] as FishListing[]),
-          supabase.from("sellers").select("*").then(r => r.data || []),
+          supabase
+            .from("sellers")
+            .select("*")
+            .eq("is_active", true)
+            .neq("name", "New Seller")
+            .then(r => r.data || []),
         ]);
 
         // Group listings by seller
@@ -755,6 +762,13 @@ import LoginModal from "../components/LoginModal.astro";
         }
 
         allGroups = Array.from(sellerMap.values());
+
+        // Hide sellers that have 0 listings AND don't accept pre-orders.
+        // These are unfinished onboardings or temporarily empty stores —
+        // showing them creates a bad first impression for buyers.
+        allGroups = allGroups.filter(
+          g => g.listings.length > 0 || g.seller.accepts_preorder === true
+        );
 
         // Sort: in-service-area first, then open first, then by distance
         allGroups.sort((a, b) => {
