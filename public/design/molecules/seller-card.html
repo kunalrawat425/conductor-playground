@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Molecule — Seller Card</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .seller-card{width:320px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .sc-img{height:110px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-start;padding:10px;position:relative;overflow:hidden}
+  .sc-img .fish-emoji{font-size:56px;position:absolute;right:16px;bottom:12px;opacity:.35}
+  .sc-img .offer-badge{background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px}
+  .sc-body{padding:14px 16px}
+  .sc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .sc-name{font:700 15px Inter;color:var(--ink)}
+  .sc-loc{font:400 11px Inter;color:var(--ink3);margin-top:2px}
+  .sc-rating{display:flex;align-items:center;gap:3px;background:var(--green);color:#fff;font:700 11px Inter;padding:3px 7px;border-radius:5px}
+  .sc-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .sc-tag{font:500 10px Inter;padding:3px 9px;border-radius:20px;background:var(--bg3);color:var(--ink3)}
+  .sc-tag.green{background:var(--green-l);color:var(--green)}
+  .sc-tag.brand{background:var(--brand-l);color:var(--brand)}
+  .sc-menu{display:flex;gap:8px;padding:10px 16px 12px;overflow-x:auto;border-top:1px solid var(--border)}
+  .sc-menu::-webkit-scrollbar{display:none}
+  .sc-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);flex-shrink:0}
+  .sc-chip .m-e{font-size:18px}
+  .sc-chip .m-n{font:600 11px Inter;color:var(--ink)}
+  .sc-chip .m-p{font:700 11px Inter;color:var(--green)}
+  .sc-delivery{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--green-l);font:500 11px Inter;color:var(--green)}
+  .sc-delivery.orange{background:var(--orange-l);color:var(--orange)}
+  .sc-closed{opacity:.6;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Seller Card</h1>
+  <p class="sub">The homepage primary card. Zomato + Blinkit hybrid pattern.</p>
+
+  <div class="component" data-name="SellerCard · Default">
+    <div class="component-variants">
+      <div class="seller-card">
+        <div class="sc-img"><span class="offer-badge">Same-day catch</span><span class="fish-emoji">🐟</span></div>
+        <div class="sc-body">
+          <div class="sc-top">
+            <div><div class="sc-name">Kamla Tai Fish Stall</div><div class="sc-loc">Sassoon Dock · 1.2 km · 45 min</div></div>
+            <div class="sc-rating">4.8 ★</div>
+          </div>
+          <div class="sc-tags">
+            <span class="sc-tag green">Open now</span>
+            <span class="sc-tag brand">Pre-order</span>
+            <span class="sc-tag">Cleaned & cut</span>
+          </div>
+        </div>
+        <div class="sc-menu">
+          <div class="sc-chip"><span class="m-e">🐟</span><div><div class="m-n">Surmai</div><div class="m-p">₹650/kg</div></div></div>
+          <div class="sc-chip"><span class="m-e">🐟</span><div><div class="m-n">Rawas</div><div class="m-p">₹800/kg</div></div></div>
+          <div class="sc-chip"><span class="m-e">🦐</span><div><div class="m-n">Prawns</div><div class="m-p">₹500/kg</div></div></div>
+          <div class="sc-chip"><span class="m-e">🐟</span><div><div class="m-n">Pomfret</div><div class="m-p">₹900</div></div></div>
+        </div>
+        <div class="sc-delivery">🚲 Delivery available · Free above ₹1,000</div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Width:</b> 320px (mobile) · <b>Image zone:</b> 110px · <b>Gradient bg:</b> sky blue<br>
+      <b>Offer badge:</b> top-left, brand bg · <b>Rating:</b> top-right body, green bg<br>
+      <b>Menu strip:</b> horizontal scroll · 4+ items overflow
+    </div>
+  </div>
+
+  <div class="component" data-name="SellerCard · Pre-order Only">
+    <div class="component-variants">
+      <div class="seller-card">
+        <div class="sc-img" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF)">
+          <span class="offer-badge" style="background:#4F46E5">Tomorrow's catch</span>
+          <span class="fish-emoji">🌙</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-top">
+            <div><div class="sc-name">Rafiq Bhai Fish</div><div class="sc-loc">Versova Beach · 0.8 km · Pre-order by 10pm</div></div>
+            <div class="sc-rating">4.6 ★</div>
+          </div>
+          <div class="sc-tags">
+            <span class="sc-tag brand">Pre-order only</span>
+            <span class="sc-tag">Pickup only</span>
+          </div>
+        </div>
+        <div class="sc-delivery" style="background:#EEF2FF;color:#4338CA">🌙 Reserve tonight · Ready at 7am tomorrow</div>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-order variant:</b> indigo gradient image · different CTA · emphasizes reservation</div>
+  </div>
+
+  <div class="component" data-name="SellerCard · Closed">
+    <div class="component-variants">
+      <div class="seller-card sc-closed">
+        <div class="sc-img" style="background:linear-gradient(135deg,#F1F5F9,#E2E8F0)">
+          <span class="offer-badge" style="background:var(--ink3)">Closed</span>
+          <span class="fish-emoji">🐟</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-top">
+            <div><div class="sc-name">Hassan Fish Market</div><div class="sc-loc">Crawford Market · 2.1 km · Opens 5am</div></div>
+            <div class="sc-rating" style="background:var(--ink3)">4.4 ★</div>
+          </div>
+          <div class="sc-tags">
+            <span class="sc-tag" style="background:var(--red-l);color:var(--red)">Closed</span>
+            <span class="sc-tag brand">Pre-order available</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Closed state:</b> opacity 0.6 · gray image · still allow pre-order CTA</div>
+  </div>
+
+  <div class="component" data-name="SellerCard · Loading Skeleton">
+    <div class="component-variants">
+      <div class="seller-card">
+        <div class="sc-img" style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite"></div>
+        <div class="sc-body">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <div style="flex:1">
+              <div style="height:14px;background:#E2E8F0;border-radius:4px;margin-bottom:6px;width:70%"></div>
+              <div style="height:10px;background:#F1F5F9;border-radius:4px;width:50%"></div>
+            </div>
+            <div style="width:40px;height:20px;background:#E2E8F0;border-radius:5px"></div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <div style="height:18px;width:60px;background:#F1F5F9;border-radius:20px"></div>
+            <div style="height:18px;width:50px;background:#F1F5F9;border-radius:20px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Shimmer animation</b> · 1.5s infinite · background-position animation</div>
+  </div>
+
+  <style>@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}</style>
+</div>
+</body>
+</html>

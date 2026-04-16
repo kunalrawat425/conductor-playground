@@ -1,0 +1,55 @@
+/* Relifish V2 Design System — Shared Tokens */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  /* Ink / Neutrals */
+  --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+  --bg:#FFFFFF;--bg2:#F8FAFC;--bg3:#F1F5F9;
+
+  /* Brand */
+  --brand:#0066FF;--brand-d:#0052CC;--brand-l:#E6F0FF;--brand-m:#CCE0FF;
+
+  /* Status */
+  --green:#059669;--green-l:#ECFDF5;--green-bg:#D1FAE5;
+  --orange:#EA580C;--orange-l:#FFF7ED;
+  --red:#DC2626;--red-l:#FEF2F2;
+
+  /* Borders + Shadows */
+  --border:#E2E8F0;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+
+  /* Radius scale */
+  --radius-xs:4px;--radius-sm:8px;--radius:12px;--radius-lg:16px;--radius-xl:20px;--radius-full:9999px;
+
+  /* Spacing scale (4pt grid) */
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;--s-8:32px;--s-10:40px;--s-12:48px;
+}
+
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg2);color:var(--ink);line-height:1.5;padding:32px}
+
+/* Figma-export-friendly container */
+.figma-page{max-width:1440px;margin:0 auto}
+.figma-page h1{font-size:24px;font-weight:800;margin-bottom:8px}
+.figma-page .sub{font-size:14px;color:var(--ink3);margin-bottom:32px}
+
+/* Component section — each exportable separately */
+.component{background:#fff;border:1px dashed var(--border);border-radius:var(--radius);padding:32px;margin-bottom:24px;position:relative}
+.component::before{content:attr(data-name);position:absolute;top:-10px;left:16px;background:var(--brand);color:#fff;font:700 10px Inter;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:4px}
+
+.component-variants{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.variant{display:flex;flex-direction:column;gap:8px}
+.variant-label{font:500 11px Inter;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em}
+
+.spec{margin-top:16px;padding:12px 16px;background:var(--bg3);border-radius:var(--radius-sm);font:400 12px/1.6 'SF Mono',Menlo,monospace;color:var(--ink2)}
+.spec b{color:var(--ink);font-weight:700}
+
+/* Phone frame (for screens) */
+.phone{width:360px;height:720px;border-radius:36px;border:8px solid #1E293B;background:#fff;overflow:hidden;position:relative;box-shadow:var(--shadow-lg);margin:0 auto}
+.phone-status{height:44px;background:#fff;display:flex;align-items:center;justify-content:center;font:600 13px Inter}
+.phone-body{height:calc(100% - 44px);overflow-y:auto;overflow-x:hidden}
+.phone-body::-webkit-scrollbar{display:none}

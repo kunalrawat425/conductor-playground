@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Atom — Icons</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .icon-tile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;width:72px}
+  .icon-tile .tile{width:56px;height:56px;border-radius:var(--radius);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px}
+  .icon-tile .label{font:500 11px Inter;color:var(--ink2)}
+  .icon-row{display:flex;gap:12px;flex-wrap:wrap}
+  .nav-icons{display:flex;gap:24px;background:#fff;padding:12px 20px;border-radius:var(--radius);border:1px solid var(--border)}
+  .nav-icons .i{display:flex;flex-direction:column;align-items:center;gap:2px;font:500 10px Inter;color:var(--ink4)}
+  .nav-icons .i .g{font-size:22px}
+  .nav-icons .i.active{color:var(--brand)}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Icons</h1>
+  <p class="sub">Emoji-based icon system (V2 phase 1). Replace with SVG line icons (Lucide) in V2 phase 2.</p>
+
+  <div class="component" data-name="CategoryIcon">
+    <div class="icon-row">
+      <div class="icon-tile"><div class="tile">🐟</div><div class="label">All Fish</div></div>
+      <div class="icon-tile"><div class="tile">🦐</div><div class="label">Prawns</div></div>
+      <div class="icon-tile"><div class="tile">🦀</div><div class="label">Crab</div></div>
+      <div class="icon-tile"><div class="tile">🦑</div><div class="label">Squid</div></div>
+      <div class="icon-tile"><div class="tile">🐚</div><div class="label">Shellfish</div></div>
+      <div class="icon-tile"><div class="tile">🍤</div><div class="label">Seafood</div></div>
+      <div class="icon-tile"><div class="tile">🐠</div><div class="label">Exotic</div></div>
+    </div>
+    <div class="spec"><b>Tile:</b> 56x56 · radius 12px · bg bg-3 · <b>Emoji:</b> 28px · <b>Label:</b> 500 / 11px</div>
+  </div>
+
+  <div class="component" data-name="CategoryIcon · Colored Tiles">
+    <div class="icon-row">
+      <div class="icon-tile"><div class="tile" style="background:#E0F2FE">🐟</div><div class="label">Fresh catch</div></div>
+      <div class="icon-tile"><div class="tile" style="background:#ECFDF5">🌊</div><div class="label">Sea fish</div></div>
+      <div class="icon-tile"><div class="tile" style="background:#FFF7ED">🔥</div><div class="label">Trending</div></div>
+      <div class="icon-tile"><div class="tile" style="background:#FEF2F2">❤️</div><div class="label">Favorites</div></div>
+      <div class="icon-tile"><div class="tile" style="background:#F3E8FF">🌙</div><div class="label">Pre-order</div></div>
+    </div>
+    <div class="spec"><b>Colored tile bgs</b> · differentiate featured categories · use sparingly</div>
+  </div>
+
+  <div class="component" data-name="NavIcon (Bottom Nav)">
+    <div class="nav-icons">
+      <div class="i active"><div class="g">🏠</div>Home</div>
+      <div class="i"><div class="g">🔍</div>Search</div>
+      <div class="i"><div class="g">🌙</div>Pre-order</div>
+      <div class="i"><div class="g">📋</div>Orders</div>
+      <div class="i"><div class="g">👤</div>Account</div>
+    </div>
+    <div class="spec"><b>5-tab pattern.</b> Pre-order has unique moon icon (our differentiator). Icon 22px · label 500/10px</div>
+  </div>
+
+  <div class="component" data-name="StatusIcon (Trust Signals)">
+    <div class="icon-row">
+      <div class="icon-tile"><div class="tile" style="background:var(--green-l);color:var(--green)">✓</div><div class="label">Verified</div></div>
+      <div class="icon-tile"><div class="tile" style="background:var(--brand-l);color:var(--brand)">⭐</div><div class="label">Top rated</div></div>
+      <div class="icon-tile"><div class="tile" style="background:var(--orange-l);color:var(--orange)">⚡</div><div class="label">Fast</div></div>
+      <div class="icon-tile"><div class="tile" style="background:var(--green-l);color:var(--green)">🛡️</div><div class="label">Quality</div></div>
+    </div>
+    <div class="spec"><b>Trust signals</b> · seller profile badges · 56x56 tiles with status colors</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Atom — Inputs</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .input{width:280px;padding:12px 14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);font:400 14px Inter;color:var(--ink)}
+  .input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)}
+  .input.error{border-color:var(--red)}
+  .input-label{display:block;font:600 12px Inter;color:var(--ink2);margin-bottom:6px}
+  .helper{font:400 11px Inter;color:var(--ink4);margin-top:4px}
+  .helper.error{color:var(--red)}
+  .search-floating{width:320px;padding:14px 16px;background:#fff;border-radius:var(--radius);font:400 13px Inter;color:var(--ink4);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px}
+  .search-floating .icon{font-size:14px;color:var(--ink4)}
+  .otp{display:flex;gap:8px}
+  .otp input{width:44px;height:52px;text-align:center;font:700 20px Inter;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff}
+  .otp input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)}
+  .phone-input{display:flex;align-items:center;width:280px;padding:10px 14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);gap:8px}
+  .phone-input .prefix{font:600 14px Inter;color:var(--ink2);border-right:1px solid var(--border);padding-right:10px}
+  .phone-input input{flex:1;border:none;font:400 14px Inter;outline:none}
+  .slot-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:320px}
+  .slot{padding:10px;border:1.5px solid var(--border);background:#fff;border-radius:var(--radius-sm);text-align:center;cursor:pointer;transition:all .15s}
+  .slot:hover{border-color:var(--brand-m)}
+  .slot.selected{border-color:var(--brand);background:var(--brand-l)}
+  .slot .time{font:700 13px Inter;color:var(--ink)}
+  .slot .label{font:500 10px Inter;color:var(--ink3);margin-top:2px}
+  .slot.selected .time{color:var(--brand)}
+  .textarea{width:320px;min-height:80px;padding:12px 14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);font:400 14px Inter;resize:vertical;font-family:'Inter'}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Inputs</h1>
+  <p class="sub">All form inputs. Optimized for mobile tap targets.</p>
+
+  <div class="component" data-name="TextInput">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">default</span>
+        <label class="input-label">Full name</label>
+        <input class="input" placeholder="Priya Desai">
+      </div>
+      <div class="variant">
+        <span class="variant-label">focused</span>
+        <label class="input-label">Full name</label>
+        <input class="input" value="Priya Desai" style="border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)">
+      </div>
+      <div class="variant">
+        <span class="variant-label">error</span>
+        <label class="input-label">Full name</label>
+        <input class="input error" value="P">
+        <div class="helper error">Name must be at least 2 characters</div>
+      </div>
+    </div>
+    <div class="spec"><b>height:</b> 44px (touch) · <b>radius:</b> 8px · <b>focus:</b> brand border + 3px ring</div>
+  </div>
+
+  <div class="component" data-name="SearchBar (Floating)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span><div class="search-floating"><span class="icon">🔍</span>Search "Surmai", "Pomfret", sellers...</div></div>
+      <div class="variant"><span class="variant-label">with-value</span><div class="search-floating" style="color:var(--ink)"><span class="icon">🔍</span>Surmai<span style="margin-left:auto;color:var(--ink4);font-size:16px">×</span></div></div>
+    </div>
+    <div class="spec"><b>Zepto-style floating search.</b> Overlaps header by 14px negative margin. <b>shadow:</b> shadow-md · <b>radius:</b> 12px</div>
+  </div>
+
+  <div class="component" data-name="PhoneInput">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">default</span>
+        <label class="input-label">Phone number</label>
+        <div class="phone-input"><span class="prefix">+91</span><input placeholder="98706 19974"></div>
+      </div>
+    </div>
+    <div class="spec"><b>Fixed +91 prefix</b> with divider. India-only launch.</div>
+  </div>
+
+  <div class="component" data-name="OTPInput">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">empty</span>
+        <div class="otp"><input><input><input><input><input><input></div>
+      </div>
+      <div class="variant">
+        <span class="variant-label">partial</span>
+        <div class="otp"><input value="9"><input value="8"><input value="7"><input><input><input></div>
+      </div>
+    </div>
+    <div class="spec"><b>6 digits</b> · auto-advance on keystroke · auto-paste from SMS · 44x52 per box</div>
+  </div>
+
+  <div class="component" data-name="SlotPicker (Time Slots)">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">pickup-slots</span>
+        <div class="slot-picker">
+          <div class="slot"><div class="time">5-7am</div><div class="label">Dawn</div></div>
+          <div class="slot selected"><div class="time">7-9am</div><div class="label">Morning</div></div>
+          <div class="slot"><div class="time">9-11am</div><div class="label">Late morning</div></div>
+          <div class="slot" style="opacity:.4;cursor:not-allowed"><div class="time">11am-1pm</div><div class="label">Sold out</div></div>
+          <div class="slot"><div class="time">4-6pm</div><div class="label">Evening</div></div>
+          <div class="slot"><div class="time">6-8pm</div><div class="label">Night</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>3-col grid</b> · selected: brand border + brand-l bg · disabled: opacity 0.4</div>
+  </div>
+
+  <div class="component" data-name="Textarea">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">default</span>
+        <label class="input-label">Special request</label>
+        <textarea class="textarea" placeholder="Clean and cut medium sized pieces..."></textarea>
+      </div>
+    </div>
+    <div class="spec"><b>min-height:</b> 80px · resize: vertical only</div>
+  </div>
+</div>
+</body>
+</html>
