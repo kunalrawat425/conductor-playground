@@ -200,9 +200,8 @@ const tags = [
       const c = Cart(); if (!c) return;
       const cart = c.getCart();
       const totalQty = c.totalQty(cart);
-      const sellers = c.sellerCount(cart);
 
-      // Current seller's own subtotal (what the cart bar shows — not the global total)
+      // Single-seller cart: all items belong to one seller.
       const sellerItems = Object.values(getSellerItems());
       const sellerQty = sellerItems.reduce((s, i) => s + i.qty, 0);
       const sellerSubtotal = sellerItems.reduce((s, i) => s + i.qty * i.price, 0);
@@ -210,24 +209,16 @@ const tags = [
       if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
       document.body.classList.add("v2-has-cart");
 
-      const otherCarts = sellers - (sellerQty > 0 ? 1 : 0);
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
       const freeHit = deliveryFreeAbove && sellerSubtotal >= deliveryFreeAbove;
       const variant = belowMin ? "warning" : freeHit ? "success" : "default";
 
-      let leftLine;
-      if (sellerQty === 0) {
-        // No items for THIS seller, but other carts exist — show a discover hint.
-        leftLine = `${otherCarts} other cart${otherCarts !== 1 ? "s" : ""} · nothing here yet`;
-      } else if (belowMin) {
-        leftLine = `Add ₹${minOrder - sellerSubtotal} more for min order`;
-      } else if (freeHit) {
-        leftLine = "🎉 Free delivery unlocked";
-      } else {
-        leftLine = `${sellerQty} item${sellerQty !== 1 ? "s" : ""}${otherCarts > 0 ? ` · +${otherCarts} other cart${otherCarts !== 1 ? "s" : ""}` : ""}`;
-      }
-      const displayTotal = sellerQty > 0 ? sellerSubtotal : 0;
-      const ctaText = otherCarts > 0 || sellerQty === 0 ? "View carts →" : "Checkout →";
+      const leftLine = belowMin
+        ? `Add ₹${minOrder - sellerSubtotal} more for min order`
+        : freeHit ? "🎉 Free delivery unlocked"
+        : `${sellerQty} item${sellerQty !== 1 ? "s" : ""}`;
+      const displayTotal = sellerSubtotal;
+      const ctaText = belowMin ? "Keep shopping" : "Checkout →";
       const variantClass = variant === "warning" ? "v2-cart-warning" : variant === "success" ? "v2-cart-success" : "";
       const ctaColorStyle = variant === "warning" ? "color:var(--v2-orange);" : variant === "success" ? "color:var(--v2-green);" : "";
 
@@ -242,24 +233,14 @@ const tags = [
       document.getElementById("v2-checkout-btn")?.addEventListener("click", onCartBarTap);
     }
 
-    // If multiple sellers have carts → open CartStackSheet (Zomato pattern).
-    // If only this seller has items → go straight to CheckoutSheet.
+    // Single-seller cart: always go straight to checkout for this seller.
     function onCartBarTap() {
-      const c = Cart(); if (!c) return;
-      const sellers = c.sellerCount();
-      const sellerItems = Object.values(getSellerItems());
-      if (sellers > 1 || sellerItems.length === 0) {
-        window.v2OpenSheet?.("seller-cart-stack");
-      } else {
-        openCheckout(sellerId);
-      }
+      openCheckout(sellerId);
     }
 
-    // CartStackSheet → Checkout handoff
-    document.addEventListener("v2-cs-checkout", (e) => {
-      const sid = e.detail?.sellerId;
-      if (!sid) return;
-      openCheckout(sid);
+    // Toast when cart switches seller (user added item from different seller page)
+    window.addEventListener("v2-cart-seller-switched", () => {
+      window.v2Toast?.("success", "Cart updated", "Previous seller's items cleared");
     });
 
     // Single-seller checkout. `targetSellerId` is the seller whose cart we're placing.
@@ -462,18 +443,11 @@ const tags = [
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed");
 
-        // Success: clear ONLY this seller's cart, then decide next step
+        // Success: clear cart, navigate to track.
         c.clearCart({ sellerId: activeCheckoutSellerId });
         render();
         window.v2Toast?.("success", "Order placed!", `${group.items.length} item${group.items.length !== 1 ? "s" : ""} confirmed`);
-        // If other seller carts remain, go back to CartStackSheet; otherwise → track.
-        const remaining = c.sellerCount();
-        if (remaining > 0) {
-          window.v2CloseSheet?.("seller-checkout");
-          setTimeout(() => { window.v2OpenSheet?.("seller-cart-stack"); }, 500);
-        } else {
-          setTimeout(() => { window.location.href = "/v2/track"; }, 1200);
-        }
+        setTimeout(() => { window.location.href = "/v2/track"; }, 1200);
       } catch (err) {
         window.v2Toast?.("error", "Failed", err.message || "Try again");
         btn.disabled = false;

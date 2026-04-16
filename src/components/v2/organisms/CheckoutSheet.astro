@@ -6,11 +6,10 @@ interface Props {
 const { id = "v2-checkout" } = Astro.props;
 ---
 <BottomSheet id={id} title="Checkout" showClose={true}>
-  <!-- Step indicator -->
+  <!-- Step indicator (2 steps: cart review → delivery + place order) -->
   <div class="v2-co-steps">
     <div class="v2-co-step v2-co-active" data-step="1"></div>
     <div class="v2-co-step" data-step="2"></div>
-    <div class="v2-co-step" data-step="3"></div>
   </div>
 
   <!-- Step 1: Cart review -->
@@ -60,48 +59,42 @@ const { id = "v2-checkout" } = Astro.props;
       </button>
     </div>
 
+    <div class="v2-co-rows" style="margin-top:12px;">
+      <div class="v2-co-row v2-co-total-row"><span>Total (pay at pickup)</span><span id={`${id}-total-final`}>₹0</span></div>
+    </div>
+
     <div style="display:flex;gap:8px;margin-top:16px;">
       <button class="v2-btn v2-btn-ghost v2-btn-md" style="flex:1;" data-co-back="1">← Back</button>
-      <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" data-co-next="3">Next: Payment →</button>
+      <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" id={`${id}-place-order`}>Place order</button>
+    </div>
+    <div style="font:400 10px Inter;color:var(--v2-ink-4);text-align:center;margin-top:8px;">
+      🔒 100% refund if seller cancels · Cash on delivery
     </div>
   </div>
 
-  <!-- Step 3: Payment -->
-  <div id={`${id}-step3`} class="v2-co-step-content" style="display:none;">
+  <!-- Step 3: Payment (commented out — COD only for now)
+  <div id={id + "-step3"} class="v2-co-step-content" style="display:none;">
     <h4 class="v2-co-step-title">Payment method</h4>
     <div class="v2-co-pay-options">
       <label class="v2-co-pay">
-        <input type="radio" name={`${id}-payment`} value="upi" checked />
+        <input type="radio" name={id + "-payment"} value="upi" checked />
         <div class="v2-co-pay-icon">📱</div>
         <div style="flex:1;">
           <div class="v2-co-pay-name">UPI</div>
           <div class="v2-co-pay-desc">PhonePe, GPay, Paytm</div>
         </div>
-        <div class="v2-co-pay-radio"></div>
       </label>
       <label class="v2-co-pay">
-        <input type="radio" name={`${id}-payment`} value="cod" />
+        <input type="radio" name={id + "-payment"} value="cod" />
         <div class="v2-co-pay-icon">💵</div>
         <div style="flex:1;">
           <div class="v2-co-pay-name">Cash on delivery</div>
           <div class="v2-co-pay-desc">Pay seller at pickup</div>
         </div>
-        <div class="v2-co-pay-radio"></div>
       </label>
     </div>
-
-    <div class="v2-co-rows" style="margin-top:16px;">
-      <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total-final`}>₹0</span></div>
-    </div>
-
-    <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="v2-btn v2-btn-ghost v2-btn-md" style="flex:1;" data-co-back="2">← Back</button>
-      <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" id={`${id}-place-order`}>Place order</button>
-    </div>
-    <div style="font:400 10px Inter;color:var(--v2-ink-4);text-align:center;margin-top:8px;">
-      🔒 100% refund if seller cancels
-    </div>
   </div>
+  END payment step comment -->
 </BottomSheet>
 
 <script define:vars={{ id }}>
@@ -109,8 +102,10 @@ const { id = "v2-checkout" } = Astro.props;
 
   function showStep(n) {
     currentStep = n;
-    [1, 2, 3].forEach(i => {
-      document.getElementById(`${id}-step${i}`).style.display = i === n ? "block" : "none";
+    // 2-step flow: cart review → delivery/address + place order (payment commented out)
+    [1, 2].forEach(i => {
+      const el = document.getElementById(`${id}-step${i}`);
+      if (el) el.style.display = i === n ? "block" : "none";
       const step = document.querySelector(`.v2-co-step[data-step="${i}"]`);
       if (step) {
         step.classList.toggle("v2-co-active", i === n);

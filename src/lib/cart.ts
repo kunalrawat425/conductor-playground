@@ -105,7 +105,18 @@ async function syncMutation(action: "upsert" | "remove" | "clear", payload?: any
 }
 
 export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: number }): CartItem {
-  const cart = getCart();
+  let cart = getCart();
+
+  // Single-seller cart: if the new item belongs to a different seller than what's
+  // already in the cart, clear the old seller's items first. One seller per checkout.
+  const existingSellers = new Set(Object.values(cart).map((i) => i.seller_id));
+  if (existingSellers.size > 0 && !existingSellers.has(item.seller_id)) {
+    // Wipe the entire cart — new seller replaces old.
+    cart = {};
+    syncMutation("clear");
+    try { window.dispatchEvent(new CustomEvent("v2-cart-seller-switched", { detail: { newSellerId: item.seller_id } })); } catch {}
+  }
+
   const existing = cart[item.listing_id];
   const next: CartItem = existing
     ? { ...existing, qty: existing.qty + (item.qty ?? 1) }
