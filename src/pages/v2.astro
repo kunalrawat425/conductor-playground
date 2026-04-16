@@ -313,12 +313,16 @@ const categories = [
     }
   }
 
-  // Filter state
+  // Filter state — seeded from URL params so deep-links and CTAs (e.g. EmptyState's
+  // "Pre-order tomorrow", search trending cards `?species=prawns`) actually filter.
+  const initialParams = new URLSearchParams(window.location.search);
+  const initialMode = initialParams.get("mode");
+  const initialCat = initialParams.get("species") || initialParams.get("cat");
   const filterState = {
-    time: null as null | "open" | "preorder",
+    time: (initialMode === "preorder" || initialMode === "open" ? initialMode : null) as null | "open" | "preorder",
     fulfill: null as null | "pickup" | "delivery",
     topRated: false,
-    category: "all" as string, // category strip species filter
+    category: (initialCat || "all") as string, // category strip species filter
     maxKm: 25, // distance cap (km) when buyer location available
   };
 
@@ -522,6 +526,29 @@ const categories = [
       renderFiltered();
     });
   });
+
+  // Sync visual state with URL-seeded filterState on first paint
+  function syncInitialChipState() {
+    const noFilters = !filterState.time && !filterState.fulfill && !filterState.topRated;
+    document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((b) => {
+      const f = b.dataset.filter!;
+      const g = b.dataset.group!;
+      let active = false;
+      if (f === "all") active = noFilters;
+      else if (g === "time") active = filterState.time === f;
+      else if (g === "fulfill") active = filterState.fulfill === f;
+      else if (g === "toggle") active = filterState.topRated;
+      b.classList.toggle("v2-fchip-active", active);
+    });
+    if (filterState.category && filterState.category !== "all") {
+      document.querySelectorAll<HTMLAnchorElement>(".v2-cat-item").forEach((cat) => {
+        const url = new URL(cat.href, window.location.origin);
+        const catId = url.searchParams.get("cat") || "all";
+        cat.classList.toggle("v2-cat-active", catId === filterState.category);
+      });
+    }
+  }
+  syncInitialChipState();
 
   loadSellers();
 

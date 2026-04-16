@@ -85,6 +85,15 @@ const species = [
     return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
   }
 
+  function formatOpensAt(t: string | null | undefined): string {
+    if (!t) return "next morning";
+    const [h, m] = String(t).split(":").map(Number);
+    if (Number.isNaN(h)) return "next morning";
+    const period = h >= 12 ? "pm" : "am";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")}${period}` : `${h12}${period}`;
+  }
+
   async function loadSellers() {
     const loading = document.getElementById("v2-preorder-loading")!;
     const list = document.getElementById("v2-preorder-sellers")!;
@@ -121,7 +130,7 @@ const species = [
               ${rating ? `<span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">${rating} ★</span>` : ''}
             </div>
             <div class="v2-sc-tags">
-              <span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md">Reserves at 5am</span>
+              <span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md">Ready ${escape(formatOpensAt(s.opens_at))}</span>
               ${s.has_delivery ? '<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md">Delivery available</span>' : '<span class="v2-badge v2-badge-tag v2-badge-size-md">Pickup only</span>'}
             </div>
           </div>
