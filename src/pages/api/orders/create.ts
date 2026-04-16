@@ -51,6 +51,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       scheduled_for,
       schedule_slot_id,
       pricing_option_id: clientPricingOptionId,
+      buyer_notes,
+      cut_style,
     } = body;
 
     let quantity = typeof rawQuantity === "number" ? rawQuantity : parseFloat(String(rawQuantity));
@@ -221,6 +223,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
+            ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
+            ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
           .select()
           .single();
@@ -366,6 +370,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
+            ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
+            ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
           .select()
           .single();
