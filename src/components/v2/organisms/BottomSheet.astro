@@ -1,0 +1,73 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  ctaText?: string;
+  ctaAction?: string; // global function name to call on CTA tap
+  showHandle?: boolean;
+  showClose?: boolean;
+  open?: boolean;
+}
+const {
+  id,
+  title,
+  ctaText,
+  ctaAction,
+  showHandle = true,
+  showClose = true,
+  open = false,
+} = Astro.props;
+---
+<div
+  class:list={["v2-sheet-backdrop", open && "v2-sheet-open"]}
+  id={`${id}-backdrop`}
+  data-sheet-backdrop={id}
+  aria-hidden={!open}
+>
+  <div class="v2-sheet" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`}>
+    {showHandle && <div class="v2-sheet-handle" aria-hidden="true"></div>}
+    <div class="v2-sheet-head">
+      <h3 id={`${id}-title`} class="v2-sheet-title">{title}</h3>
+      {showClose && (
+        <button class="v2-sheet-close" data-sheet-close={id} aria-label="Close">&times;</button>
+      )}
+    </div>
+    <div class="v2-sheet-body">
+      <slot />
+    </div>
+    {ctaText && (
+      <div class="v2-sheet-cta">
+        <button
+          class="v2-btn v2-btn-primary v2-btn-md v2-btn-full"
+          data-sheet-cta={id}
+          data-sheet-action={ctaAction}
+        >{ctaText}</button>
+      </div>
+    )}
+  </div>
+</div>
+
+<script>
+  // Sheet open/close handlers
+  document.querySelectorAll<HTMLElement>("[data-sheet-close]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.sheetClose!;
+      document.getElementById(`${id}-backdrop`)?.classList.remove("v2-sheet-open");
+    });
+  });
+  document.querySelectorAll<HTMLElement>("[data-sheet-backdrop]").forEach((bd) => {
+    bd.addEventListener("click", (e) => {
+      if (e.target === bd) {
+        bd.classList.remove("v2-sheet-open");
+      }
+    });
+  });
+
+  // Helper: window.v2OpenSheet(id)
+  (window as any).v2OpenSheet = (id: string) => {
+    document.getElementById(`${id}-backdrop`)?.classList.add("v2-sheet-open");
+  };
+  (window as any).v2CloseSheet = (id: string) => {
+    document.getElementById(`${id}-backdrop`)?.classList.remove("v2-sheet-open");
+  };
+</script>

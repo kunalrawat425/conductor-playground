@@ -1,0 +1,51 @@
+---
+interface Props {
+  orderId: string;
+  buyerName?: string;
+  buyerPhone?: string;
+  pickupTime?: string;
+  itemSummary: string;
+  total: number;
+  paymentStatus?: "paid" | "cod";
+  status: "pending" | "confirmed" | "paid" | "ready" | "completed" | "cancelled" | "scheduled" | "pre_order";
+  isPreorder?: boolean;
+  isUrgent?: boolean;
+}
+const {
+  orderId,
+  buyerName = "Customer",
+  buyerPhone,
+  pickupTime,
+  itemSummary,
+  total,
+  paymentStatus = "cod",
+  status,
+  isPreorder = false,
+  isUrgent = false,
+} = Astro.props;
+const idShort = orderId.slice(0, 6).toUpperCase();
+const badgeText = isPreorder ? "Pre-order" : isUrgent ? "Urgent" : "New";
+const badgeClass = isPreorder ? "v2-oc-badge-preorder" : isUrgent ? "v2-oc-badge-urgent" : "v2-oc-badge-new";
+const cardClass = isUrgent ? "v2-order-urgent" : "";
+const acceptColor = isPreorder ? "#7C3AED" : "var(--v2-green)";
+---
+<div class:list={["v2-seller-order", cardClass]} data-order-id={orderId}>
+  <div class="v2-oc-top">
+    <div>
+      <div class="v2-oc-id">
+        {isPreorder && "🌙 "}
+        #{idShort} · {buyerName}
+      </div>
+      <div class="v2-oc-time">{pickupTime || "—"}</div>
+    </div>
+    <span class:list={["v2-oc-badge", badgeClass]}>{badgeText}</span>
+  </div>
+  <div class="v2-oc-items">{itemSummary}</div>
+  <div class="v2-oc-total">₹{total.toLocaleString("en-IN")} · {paymentStatus === "paid" ? "UPI paid" : "Pay at pickup"}</div>
+  <div class="v2-oc-actions">
+    <button class="v2-btn v2-btn-ghost v2-btn-sm" style="flex:1;color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline" data-order-id={orderId}>Decline</button>
+    <button class="v2-btn v2-btn-sm" style={`flex:1;background:${acceptColor};color:#fff;`} data-action="accept" data-order-id={orderId}>
+      ✓ {isPreorder ? "Confirm" : "Accept"}
+    </button>
+  </div>
+</div>
