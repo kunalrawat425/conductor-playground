@@ -22,12 +22,12 @@ const isPage = variant === "page";
       <a href="/v2" class="v2-logo">{isPreorder ? "🌙 Relifish" : "🐟 Relifish"}</a>
     )}
 
-    <div class="v2-loc-wrap" id="v2-location-trigger">
+    <div class:list={["v2-loc-wrap", !isPage && "v2-loc-tappable"]} id={isPage ? undefined : "v2-location-trigger"}>
       <div class="v2-loc-main">
         {isPage && title ? title : locationLabel}
         {!isPage && <span class="v2-loc-arrow">▼</span>}
       </div>
-      {locationSub && <div class="v2-loc-sub">{locationSub}</div>}
+      {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
     </div>
 
     {showCart ? (

@@ -223,22 +223,79 @@ const tags = [
           </div>`).join("");
       }
       document.getElementById("seller-checkout-subtotal").textContent = `₹${totalPrice.toLocaleString("en-IN")}`;
-      const platformFee = 5;
-      const total = totalPrice + platformFee;
-      document.getElementById("seller-checkout-total").textContent = `₹${total.toLocaleString("en-IN")}`;
-      document.getElementById("seller-checkout-total-final").textContent = `₹${total.toLocaleString("en-IN")}`;
+      // No platform fee — total = subtotal (delivery fee added at place-order time if applicable)
+      document.getElementById("seller-checkout-total").textContent = `₹${totalPrice.toLocaleString("en-IN")}`;
+      document.getElementById("seller-checkout-total-final").textContent = `₹${totalPrice.toLocaleString("en-IN")}`;
+
+      // Toggle delivery option visibility based on seller's has_delivery
+      const delivOpt = document.getElementById("seller-checkout-delivery-opt");
+      const noDelivNote = document.getElementById("seller-checkout-no-delivery-note");
+      if (hasDelivery) {
+        if (delivOpt) delivOpt.style.display = "flex";
+        if (noDelivNote) noDelivNote.style.display = "none";
+      } else {
+        if (delivOpt) delivOpt.style.display = "none";
+        if (noDelivNote) noDelivNote.style.display = "block";
+        // Force pickup
+        const pickupRadio = document.querySelector('input[name="seller-checkout-method"][value="pickup"]') as HTMLInputElement;
+        if (pickupRadio) pickupRadio.checked = true;
+      }
+
+      // Auto-load default address when sheet opens
+      preloadAddress();
 
       window.v2OpenSheet?.("seller-checkout");
     }
 
+    async function preloadAddress() {
+      let buyerId = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      if (!buyerId) return;
+      try {
+        const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+        const data = await res.json();
+        const addrs = data.addresses || [];
+        const def = addrs.find((a: any) => a.is_default) || addrs[0];
+        if (def) {
+          selectedAddressId = def.id;
+          const labelEl = document.getElementById("seller-checkout-addr-label");
+          const textEl = document.getElementById("seller-checkout-addr-text");
+          if (labelEl) labelEl.textContent = (def.label || "Address") + (def.is_default ? " · Default" : "");
+          if (textEl) {
+            const text = [def.flat, def.building, def.landmark, def.location_name].filter(Boolean).join(", ");
+            textEl.textContent = text || "Saved address";
+          }
+        }
+      } catch {}
+    }
+
     // Listen for address picker selection
-    document.addEventListener("v2-address-confirmed", (e) => {
+    document.addEventListener("v2-address-confirmed", async (e: any) => {
       selectedAddressId = e.detail?.addressId;
+      // Refresh address card UI from API
+      let buyerId = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      if (buyerId && selectedAddressId) {
+        try {
+          const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+          const data = await res.json();
+          const addr = (data.addresses || []).find((a: any) => a.id === selectedAddressId);
+          if (addr) {
+            const labelEl = document.getElementById("seller-checkout-addr-label");
+            const textEl = document.getElementById("seller-checkout-addr-text");
+            if (labelEl) labelEl.textContent = addr.label || "Address";
+            if (textEl) {
+              const text = [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ");
+              textEl.textContent = text || "Saved address";
+            }
+          }
+        } catch {}
+      }
       window.v2Toast?.("success", "Address selected", "Continue to payment");
     });
 
-    // Open address sheet when "Change address" tapped
-    document.getElementById("seller-checkout-pick-address")?.addEventListener("click", () => {
+    // Address card itself is the trigger (clickable)
+    document.getElementById("seller-checkout-current-address")?.addEventListener("click", () => {
       window.v2OpenSheet?.("seller-addr-sheet");
     });
 
