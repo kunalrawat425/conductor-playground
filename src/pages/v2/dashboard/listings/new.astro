@@ -20,6 +20,18 @@ import Toast from "../../../../components/v2/atoms/Toast.astro";
     </div>
   </div>
 
+  <!-- SSR can't see localStorage, so hydrate data-seller-id from the browser before submit. -->
+  <script>
+    try {
+      const sid = localStorage.getItem("zepto_seller_id");
+      if (sid) {
+        document.getElementById("listing-form")?.setAttribute("data-seller-id", sid);
+      } else {
+        location.href = "/v2/dashboard/login";
+      }
+    } catch {}
+  </script>
+
   <style is:global>
     /* Force V1 form to use V2 token-based styling */
     #v2-form-mount label,
