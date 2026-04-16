@@ -2,6 +2,7 @@
 export const prerender = false;
 import AppShellV2 from "../../components/v2/AppShellV2.astro";
 import EmptyState from "../../components/v2/molecules/EmptyState.astro";
+import ThemeToggle from "../../components/v2/atoms/ThemeToggle.astro";
 ---
 <AppShellV2
   title="Account | Relifish"
@@ -45,6 +46,12 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
 
     <!-- Settings list -->
     <div class="v2-me-section-head">Preferences</div>
+
+    <!-- Theme toggle -->
+    <div style="margin: 0 16px 16px;">
+      <ThemeToggle variant="button" />
+    </div>
+
     <a href="/v2/me" class="v2-me-list-item">
       <div class="v2-me-li-icon">🔔</div>
       <div class="v2-me-li-name">Push notifications</div>
