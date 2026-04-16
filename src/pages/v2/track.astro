@@ -201,10 +201,12 @@ import Toast from "../../components/v2/atoms/Toast.astro";
       const activeOrders = orders.filter(o => isActive(o.status));
       const pastOrders = orders.filter(o => !isActive(o.status));
 
-      // Active: render top one as stepper card
+      // Active: render top one as stepper card (clickable → detail page)
       if (activeOrders.length > 0) {
         const o = activeOrders[0];
         const seller = o.listing?.seller?.name || "Seller";
+        active.style.cursor = "pointer";
+        active.addEventListener("click", () => { window.location.href = `/v2/track/${o.id}`; });
         // Simplified 4-step flow (most orders are COD — no separate Paid step needed for buyer view)
         // Map: pending → step 0, confirmed/paid → step 1, ready_for_pickup → step 2, picked_up/completed → step 3
         const statusToStep: Record<string, number> = {
@@ -248,7 +250,7 @@ import Toast from "../../components/v2/atoms/Toast.astro";
               const seller = o.listing?.seller?.name || "Seller";
               const sp = o.listing?.species || "";
               return `
-                <a href="/v2/track" class="v2-order-row">
+                <a href="/v2/track/${o.id}" class="v2-order-row">
                   <div class="v2-or-top">
                     <div>
                       <div class="v2-or-seller">${escapeHtml(seller)}</div>
@@ -258,7 +260,7 @@ import Toast from "../../components/v2/atoms/Toast.astro";
                   </div>
                   <div class="v2-or-bot">
                     <div class="v2-or-total">₹${(o.total_price || o.final_price || 0).toLocaleString("en-IN")}</div>
-                    <button class="v2-or-reorder" data-listing="${o.listing_id}">Reorder</button>
+                    <span class="v2-or-reorder">View →</span>
                   </div>
                 </a>`;
             }).join("")}
@@ -295,4 +297,9 @@ import Toast from "../../components/v2/atoms/Toast.astro";
   }
 
   load();
+  // Real-time polling: refresh every 20s if any active orders
+  setInterval(() => {
+    const activeEl = document.getElementById("v2-track-active");
+    if (activeEl && activeEl.children.length > 0) load();
+  }, 20000);
 </script>

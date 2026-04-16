@@ -1,0 +1,312 @@
+---
+export const prerender = false;
+import AppShellV2 from "../../../components/v2/AppShellV2.astro";
+import Toast from "../../../components/v2/atoms/Toast.astro";
+import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
+
+const { id } = Astro.params;
+---
+<AppShellV2
+  title="Order details | Relifish"
+  description="View order details, status, and seller contact."
+  header={{
+    variant: "page",
+    title: "Order details",
+    backHref: "/v2/track",
+  }}
+  nav={{ active: "orders" }}
+>
+  <Toast />
+
+  <div id="v2-od-loading" style="padding:24px;text-align:center;">
+    <span class="v2-spinner v2-spinner-md"></span>
+  </div>
+
+  <div id="v2-od-not-found" style="display:none;padding:24px 16px;">
+    <EmptyState
+      variant="server-error"
+      title="Order not found"
+      description="This order doesn't exist or you don't have access."
+      ctaText="See all orders"
+      ctaHref="/v2/track"
+    />
+  </div>
+
+  <div id="v2-od-content" style="display:none;padding:0 16px 24px;">
+    <!-- Status hero -->
+    <div class="v2-od-hero">
+      <div class="v2-od-status" id="v2-od-status">—</div>
+      <div class="v2-od-id">Order <span id="v2-od-shortid">—</span></div>
+      <div class="v2-od-time" id="v2-od-time">—</div>
+    </div>
+
+    <!-- Stepper -->
+    <div class="v2-od-section">
+      <div class="v2-od-stepper" id="v2-od-stepper"></div>
+      <div class="v2-od-steplabels">
+        <span>Placed</span><span>Confirmed</span><span>Ready</span><span>Done</span>
+      </div>
+    </div>
+
+    <!-- Seller -->
+    <div class="v2-od-section">
+      <div class="v2-od-section-h">From</div>
+      <div class="v2-od-row">
+        <div>
+          <div class="v2-od-seller" id="v2-od-seller">—</div>
+          <div class="v2-od-sub" id="v2-od-seller-loc">—</div>
+        </div>
+        <a id="v2-od-call" class="v2-od-call" style="display:none;">📞 Call</a>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="v2-od-section">
+      <div class="v2-od-section-h">Items</div>
+      <div id="v2-od-items"></div>
+    </div>
+
+    <!-- Delivery / Pickup -->
+    <div class="v2-od-section" id="v2-od-fulfill"></div>
+
+    <!-- Bill -->
+    <div class="v2-od-section">
+      <div class="v2-od-section-h">Bill summary</div>
+      <div class="v2-od-bill" id="v2-od-bill"></div>
+    </div>
+
+    <!-- Actions -->
+    <div id="v2-od-actions" style="margin-top:16px;"></div>
+  </div>
+</AppShellV2>
+
+<style is:global>
+  .v2-od-hero {
+    background: linear-gradient(135deg, var(--v2-brand), #3B82F6);
+    color: #fff;
+    padding: 20px 16px;
+    margin: 16px 0;
+    border-radius: var(--v2-radius-lg);
+    text-align: center;
+  }
+  .v2-od-status { font: 800 18px Inter; }
+  .v2-od-id { font: 600 12px Inter; opacity: .9; margin-top: 4px; }
+  .v2-od-time { font: 400 11px Inter; opacity: .8; margin-top: 2px; }
+  .v2-od-section {
+    background: var(--v2-bg);
+    border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .v2-od-section-h { font: 700 11px Inter; color: var(--v2-ink-3); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+  .v2-od-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .v2-od-seller { font: 700 14px Inter; color: var(--v2-ink); }
+  .v2-od-sub { font: 400 12px Inter; color: var(--v2-ink-2); margin-top: 2px; }
+  .v2-od-call {
+    background: var(--v2-green);
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 9999px;
+    font: 700 12px Inter;
+    flex-shrink: 0;
+  }
+  .v2-od-item-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--v2-border);
+    font: 500 13px Inter;
+  }
+  .v2-od-item-row:last-child { border-bottom: none; }
+  .v2-od-item-name { color: var(--v2-ink); font-weight: 600; }
+  .v2-od-item-qty { color: var(--v2-ink-3); font-size: 11px; margin-top: 2px; }
+  .v2-od-bill div { display: flex; justify-content: space-between; padding: 4px 0; font: 500 13px Inter; color: var(--v2-ink-2); }
+  .v2-od-bill .total { font: 800 15px Inter; color: var(--v2-ink); padding-top: 8px; border-top: 1px solid var(--v2-border); margin-top: 4px; }
+  .v2-od-stepper {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 6px;
+  }
+  .v2-od-stepper .dot {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--v2-ink-4); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font: 700 11px Inter; flex-shrink: 0;
+  }
+  .v2-od-stepper .dot.done { background: var(--v2-green); }
+  .v2-od-stepper .line { flex: 1; height: 2px; background: var(--v2-bg-3); }
+  .v2-od-stepper .line.done { background: var(--v2-green); }
+  .v2-od-steplabels {
+    display: flex; justify-content: space-between;
+    font: 500 9px Inter; color: var(--v2-ink-3);
+  }
+  .v2-od-cancel {
+    width: 100%;
+    background: var(--v2-bg);
+    color: var(--v2-red);
+    border: 1px solid var(--v2-red-l);
+    padding: 14px;
+    border-radius: var(--v2-radius);
+    font: 700 13px Inter;
+    cursor: pointer;
+  }
+</style>
+
+<script define:vars={{ orderId: id }}>
+  function escape(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function statusLabel(s) {
+    return ({
+      pending: "Awaiting confirmation",
+      pre_order: "Pre-order placed",
+      scheduled: "Scheduled pickup",
+      confirmed: "Confirmed",
+      paid: "Paid",
+      ready_for_pickup: "Ready for pickup",
+      picked_up: "Picked up",
+      completed: "Completed",
+      declined: "Declined by seller",
+      cancelled: "Cancelled",
+      refunded: "Refunded",
+    })[s] || s;
+  }
+  function statusToStep(s) {
+    return ({ pending:0, pre_order:0, scheduled:0, confirmed:1, paid:1, ready_for_pickup:2, picked_up:3, completed:3 })[s] ?? 0;
+  }
+  function isCancellable(s) {
+    return s === "pending" || s === "pre_order";
+  }
+
+  let pollTimer = null;
+
+  async function load() {
+    const phone = (() => { try { return localStorage.getItem("zepto_phone") || ""; } catch { return ""; } })();
+    const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+    if (!phone || !buyerId) {
+      window.location.href = "/v2/track";
+      return;
+    }
+    try {
+      const res = await fetch(`/api/orders/detail?id=${encodeURIComponent(orderId)}&buyer_id=${encodeURIComponent(buyerId)}`);
+      if (res.status === 404 || res.status === 403) {
+        document.getElementById("v2-od-loading").style.display = "none";
+        document.getElementById("v2-od-not-found").style.display = "block";
+        return;
+      }
+      if (!res.ok) throw new Error("Load failed");
+      const { order } = await res.json();
+      render(order);
+    } catch (err) {
+      document.getElementById("v2-od-loading").style.display = "none";
+      document.getElementById("v2-od-not-found").style.display = "block";
+    }
+  }
+
+  function render(o) {
+    document.getElementById("v2-od-loading").style.display = "none";
+    document.getElementById("v2-od-content").style.display = "block";
+
+    document.getElementById("v2-od-status").textContent = statusLabel(o.status);
+    document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,8).toUpperCase();
+    document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN");
+
+    // Stepper
+    const step = statusToStep(o.status);
+    const stepper = document.getElementById("v2-od-stepper");
+    stepper.innerHTML = [0,1,2,3].map(i =>
+      `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
+      (i < 3 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
+    ).join("");
+
+    // Seller
+    const seller = o.seller || {};
+    document.getElementById("v2-od-seller").textContent = seller.name || "Seller";
+    document.getElementById("v2-od-seller-loc").textContent = seller.location_name || seller.location || "";
+    if (seller.phone) {
+      const callBtn = document.getElementById("v2-od-call");
+      callBtn.href = "tel:" + seller.phone;
+      callBtn.style.display = "inline-block";
+    }
+
+    // Items
+    const items = (o.items && o.items.length > 0) ? o.items : [{
+      species: o.listing?.species || o.species,
+      quantity: o.quantity,
+      quantity_unit: o.quantity_unit,
+      total_price: o.total_price,
+    }];
+    document.getElementById("v2-od-items").innerHTML = items.map(it => `
+      <div class="v2-od-item-row">
+        <div>
+          <div class="v2-od-item-name">${escape(it.species || "Fish")}</div>
+          <div class="v2-od-item-qty">${escape(it.quantity)} ${escape(it.quantity_unit || 'kg')}</div>
+        </div>
+        <div style="font-weight:700;">₹${(it.total_price || 0).toLocaleString("en-IN")}</div>
+      </div>`).join("");
+
+    // Fulfillment
+    const fulfillEl = document.getElementById("v2-od-fulfill");
+    if (o.order_type === "delivery" && o.address) {
+      const a = o.address;
+      const text = [a.flat, a.building, a.landmark, a.location_name].filter(Boolean).map(escape).join(", ");
+      fulfillEl.innerHTML = `
+        <div class="v2-od-section-h">Deliver to</div>
+        <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(a.label || "Address")}</div>
+        <div class="v2-od-sub">${text || "Saved address"}</div>`;
+    } else {
+      fulfillEl.innerHTML = `
+        <div class="v2-od-section-h">Pickup at</div>
+        <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(seller.location_name || seller.location || "Seller location")}</div>
+        ${o.scheduled_for ? `<div class="v2-od-sub">Scheduled: ${new Date(o.scheduled_for).toLocaleString("en-IN")}</div>` : ''}`;
+    }
+
+    // Bill
+    const subtotal = o.total_price || 0;
+    const delivery = o.delivery_fee || 0;
+    const grand = subtotal + delivery;
+    document.getElementById("v2-od-bill").innerHTML = `
+      <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
+      ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}
+      <div class="total"><span>Total</span><span>₹${grand.toLocaleString("en-IN")}</span></div>
+      <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;">${o.paid_amount ? "Paid via UPI" : "Pay at pickup / on delivery"}</div>`;
+
+    // Actions
+    const actions = document.getElementById("v2-od-actions");
+    if (isCancellable(o.status)) {
+      actions.innerHTML = `<button class="v2-od-cancel" id="v2-od-cancel-btn">Cancel order</button>`;
+      document.getElementById("v2-od-cancel-btn").addEventListener("click", async () => {
+        if (!confirm("Cancel this order? This cannot be undone.")) return;
+        try {
+          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const res = await fetch("/api/orders/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Cancel failed");
+          window.v2Toast?.("success", "Order cancelled");
+          setTimeout(() => load(), 600);
+        } catch (err) {
+          window.v2Toast?.("error", "Failed", err.message);
+        }
+      });
+    } else {
+      actions.innerHTML = "";
+    }
+  }
+
+  load();
+  // Real-time polling every 15s while order is active
+  pollTimer = setInterval(() => {
+    const statusEl = document.getElementById("v2-od-status");
+    const text = statusEl?.textContent || "";
+    if (text.includes("Picked up") || text.includes("Cancelled") || text.includes("Declined") || text.includes("Completed")) {
+      clearInterval(pollTimer);
+      return;
+    }
+    load();
+  }, 15000);
+</script>
