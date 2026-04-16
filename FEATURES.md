@@ -285,12 +285,31 @@ Last updated: 2026-04-17
 |---------|---------------|--------|
 | Atomic stock decrement | `create_order_atomic` RPC with `FOR UPDATE` lock | ✅ |
 | Stock check before order | `IF v_avail < p_quantity THEN RAISE EXCEPTION` | ✅ |
-| Multiple pricing tiers per listing | `pricing_options` JSONB array | ✅ |
+| Multiple pricing tiers per listing | `pricing_options` JSONB array, per-tier +/counter in menu | ✅ |
 | Uniform unit enforcement | All tiers must be same unit (piece OR kg) | ✅ |
-| Bundle size support | `bundle_size` field in pricing tier (e.g. 0.5 = 500g pack) | ✅ |
+| Bundle size support | `bundle_size` field — cart adds qty in bundle units (e.g. 4pc pack = qty 4) | ✅ |
+| Bundle qty validation | API requires qty multiple of bundle_size, +/- step by bundle_size | ✅ |
+| Compare-at-price (discount) | Strikethrough ~~₹was~~ ₹now + -X% red badge on card | ✅ |
+| Fish size display | S/M/L badge next to species name on buyer menu | ✅ |
+| Low stock warning | "⚡ Stock clearing soon" when stock ≤ oos_threshold | ✅ |
+| Daily qty limit hint | "Max X per buyer/day" shown on menu card | ✅ |
+| Photo support | Real image renders when seller uploaded photo_url | ✅ |
+| Composite cart key | `listing_id:pricing_option_id` — different tiers = separate cart lines | ✅ |
+| Pack counter display | Shows `1×4` notation for bundle packs in cart counter | ✅ |
 | Pricing option tracked through cart → order | `pricing_option_id` in CartItem + order lines | ✅ |
 | Cart sync (polling on page load) | `hydrateFromServer()` + `pushLocalToServer()` | ✅ |
 | Single-seller cart | Adding from different seller clears old cart | ✅ |
+| Pre-order notes + cut style | `buyer_notes` + `cut_style` saved to orders table (migration 036) | ✅ |
+| Conditional pickup slots | Only renders when seller has `schedule_pickup_slots=true` | ✅ |
+
+## SELLER CARD UX (HOME PAGE)
+
+| Seller State | Card Appearance | Badge |
+|---|---|---|
+| Open + has items | Normal card | "Open now" (green) + "Pre-order" if accepts |
+| Open + no items + accepts preorder | Normal card | "Pre-order only" (indigo) |
+| Closed + accepts preorder | **Normal card (NOT greyed)** | "🌙 Pre-order open" (indigo) |
+| Closed + no preorder | Grey card | "Closed" (red) |
 
 ---
 
