@@ -1,0 +1,209 @@
+---
+export const prerender = false;
+import AppShellV2 from "../../components/v2/AppShellV2.astro";
+import Toast from "../../components/v2/atoms/Toast.astro";
+import EmptyState from "../../components/v2/molecules/EmptyState.astro";
+---
+<AppShellV2
+  title="Search · Relifish"
+  description="Search fish, sellers, and species"
+  hideHeader={true}
+  nav={{ active: "search" }}
+>
+  <Toast />
+  <div class="v2-search-bar">
+    <a href="/" class="v2-search-back" aria-label="Back">←</a>
+    <input
+      id="v2-search-q"
+      type="search"
+      placeholder='Search "Surmai", "Pomfret", sellers...'
+      autofocus
+      autocomplete="off"
+      class="v2-search-input"
+    />
+    <button id="v2-search-clear" class="v2-search-clear" style="display:none;" aria-label="Clear">×</button>
+  </div>
+
+  <div id="v2-search-trending" style="padding:16px;">
+    <div class="v2-search-section-head">Trending near you</div>
+    <div class="v2-trend-grid">
+      <a href="/?species=surmai" class="v2-trend"><div class="v2-trend-e">🐟</div><div class="v2-trend-n">Surmai</div></a>
+      <a href="/?species=pomfret" class="v2-trend"><div class="v2-trend-e">🐟</div><div class="v2-trend-n">Pomfret</div></a>
+      <a href="/?species=prawn" class="v2-trend"><div class="v2-trend-e">🦐</div><div class="v2-trend-n">Prawns</div></a>
+      <a href="/?species=crab" class="v2-trend"><div class="v2-trend-e">🦀</div><div class="v2-trend-n">Crab</div></a>
+      <a href="/?species=rawas" class="v2-trend"><div class="v2-trend-e">🐟</div><div class="v2-trend-n">Rawas</div></a>
+      <a href="/?species=bangda" class="v2-trend"><div class="v2-trend-e">🐟</div><div class="v2-trend-n">Bangda</div></a>
+    </div>
+  </div>
+
+  <div id="v2-search-results" style="display:none;"></div>
+
+  <div id="v2-search-empty" style="display:none;padding:0 16px;">
+    <EmptyState variant="no-results" />
+  </div>
+</AppShellV2>
+
+<style is:global>
+  .v2-search-bar {
+    position: sticky; top: 0; z-index: var(--v2-z-header);
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--v2-border);
+  }
+  .v2-search-back {
+    font-size: 24px;
+    color: var(--v2-ink);
+    text-decoration: none;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .v2-search-input {
+    flex: 1;
+    padding: 12px 14px;
+    background: var(--v2-bg-3);
+    border: none;
+    border-radius: 10px;
+    font: 400 14px Inter;
+    color: var(--v2-ink);
+    outline: none;
+    min-height: 44px;
+  }
+  .v2-search-clear {
+    background: none; border: none;
+    font: 400 24px Inter;
+    color: var(--v2-ink-3);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .v2-search-section-head {
+    font: 700 12px Inter;
+    color: var(--v2-ink-3);
+    text-transform: uppercase; letter-spacing: .05em;
+    margin-bottom: 12px;
+  }
+  .v2-trend-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .v2-trend {
+    background: #fff;
+    border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius);
+    padding: 12px 8px;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+  }
+  .v2-trend-e { font-size: 28px; }
+  .v2-trend-n { font: 600 11px Inter; color: var(--v2-ink); margin-top: 4px; }
+  .v2-search-result {
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #F1F5F9;
+    display: flex; gap: 12px; align-items: center;
+    text-decoration: none;
+    color: inherit;
+  }
+  .v2-search-result .emoji {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: var(--v2-brand-l);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .v2-search-result .body { flex: 1; min-width: 0; }
+  .v2-search-result .n { font: 700 14px Inter; color: var(--v2-ink); }
+  .v2-search-result .sub { font: 400 11px Inter; color: var(--v2-ink-3); margin-top: 1px; }
+  .v2-search-result .price { font: 800 13px Inter; color: var(--v2-ink); text-align: right; }
+</style>
+
+<script>
+  const input = document.getElementById("v2-search-q") as HTMLInputElement;
+  const clear = document.getElementById("v2-search-clear")!;
+  const trending = document.getElementById("v2-search-trending")!;
+  const results = document.getElementById("v2-search-results")!;
+  const empty = document.getElementById("v2-search-empty")!;
+  let timer: any;
+
+  function escape(s: string) {
+    return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
+  }
+
+  function speciesEmoji(s: string) {
+    const x = (s || "").toLowerCase();
+    if (x.includes("prawn")) return "🦐";
+    if (x.includes("crab")) return "🦀";
+    if (x.includes("squid") || x.includes("octopus")) return "🦑";
+    return "🐟";
+  }
+
+  async function search(q: string) {
+    if (!q.trim()) {
+      trending.style.display = "block";
+      results.style.display = "none";
+      empty.style.display = "none";
+      return;
+    }
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const lst = data.listings || [];
+      const sel = data.sellers || [];
+      trending.style.display = "none";
+      if (lst.length === 0 && sel.length === 0) {
+        results.style.display = "none";
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+      results.style.display = "block";
+
+      const listingsHtml = lst.map((l: any) => {
+        const opt = (l.pricing_options || [])[0] || {};
+        const price = opt.price || 0;
+        const unit = opt.unit_label || "kg";
+        return `<a href="/v2/seller/${l.seller?.id}" class="v2-search-result">
+          <div class="emoji">${speciesEmoji(l.species)}</div>
+          <div class="body">
+            <div class="n">${escape(l.species)}</div>
+            <div class="sub">${escape(l.seller?.name || "")} · ${escape(l.seller?.location_name || "")}</div>
+          </div>
+          <div class="price">₹${price}/${escape(unit)}</div>
+        </a>`;
+      }).join("");
+
+      const sellersHtml = sel.map((s: any) => {
+        return `<a href="/v2/seller/${s.id}" class="v2-search-result">
+          <div class="emoji" style="background:var(--v2-green-l);">🐟</div>
+          <div class="body">
+            <div class="n">${escape(s.name)}</div>
+            <div class="sub">${escape(s.location_name || "")} · ${s.rating_avg ? Number(s.rating_avg).toFixed(1) + " ★" : "New seller"}</div>
+          </div>
+          <div class="price" style="color:var(--v2-brand);font-size:11px;">View →</div>
+        </a>`;
+      }).join("");
+
+      results.innerHTML = `
+        ${lst.length ? `<div class="v2-search-section-head" style="padding:12px 16px 4px;">Items (${lst.length})</div>${listingsHtml}` : ""}
+        ${sel.length ? `<div class="v2-search-section-head" style="padding:12px 16px 4px;">Sellers (${sel.length})</div>${sellersHtml}` : ""}
+      `;
+    } catch (err) {
+      console.error("search failed", err);
+      (window as any).v2Toast?.("error", "Search failed", "Try again");
+    }
+  }
+
+  input?.addEventListener("input", () => {
+    clear.style.display = input.value ? "block" : "none";
+    clearTimeout(timer);
+    timer = setTimeout(() => search(input.value), 300);
+  });
+  clear?.addEventListener("click", () => {
+    input.value = "";
+    clear.style.display = "none";
+    search("");
+  });
+</script>
