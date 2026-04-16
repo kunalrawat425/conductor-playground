@@ -1,0 +1,84 @@
+---
+import BottomSheet from "./BottomSheet.astro";
+interface Props {
+  id?: string;
+  title?: string;
+}
+const { id = "v2-address-picker", title = "Deliver to" } = Astro.props;
+---
+<BottomSheet id={id} title={title} ctaText="Deliver here →" ctaAction="v2ConfirmAddress">
+  <div id={`${id}-list`}>
+    <div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 12px Inter;">
+      <span class="v2-spinner v2-spinner-md" style="border-top-color:var(--v2-brand);"></span>
+      <div style="margin-top:8px;">Loading addresses...</div>
+    </div>
+  </div>
+  <a href="/v2/me" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" style="margin-top:8px;">+ Add new address</a>
+</BottomSheet>
+
+<script define:vars={{ id }}>
+  const list = document.getElementById(`${id}-list`);
+
+  async function load() {
+    if (!list) return;
+    let buyerId = null;
+    try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+    if (!buyerId) {
+      list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 13px Inter;">Sign in to manage addresses</div>';
+      return;
+    }
+    try {
+      const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+      const data = await res.json();
+      const addrs = data.addresses || [];
+      if (addrs.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 13px Inter;">No saved addresses yet</div>';
+        return;
+      }
+      function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+      const selectedId = sessionStorage.getItem(`${id}-selected`);
+      list.innerHTML = addrs.map(a => {
+        const text = [a.flat, a.building, a.landmark, a.location_name].filter(Boolean).join(", ");
+        const icon = a.label === "office" ? "🏢" : a.label === "home" ? "🏠" : "📍";
+        const sel = (selectedId || (a.is_default ? a.id : null)) === a.id;
+        return `<div class="v2-addr-card${sel ? " v2-addr-selected" : ""}" data-addr-id="${a.id}">
+          <div class="v2-addr-icon">${icon}</div>
+          <div class="v2-addr-body">
+            <div class="v2-addr-top">
+              <span class="v2-addr-label">${escape(a.label || "Address")}</span>
+              ${a.is_default ? '<span class="v2-addr-default">Default</span>' : ''}
+            </div>
+            <div class="v2-addr-text">${escape(text)}</div>
+          </div>
+          <div class="v2-addr-radio"></div>
+        </div>`;
+      }).join("");
+      list.querySelectorAll(".v2-addr-card").forEach(card => {
+        card.addEventListener("click", () => {
+          list.querySelectorAll(".v2-addr-card").forEach(c => c.classList.remove("v2-addr-selected"));
+          card.classList.add("v2-addr-selected");
+          sessionStorage.setItem(`${id}-selected`, card.dataset.addrId);
+        });
+      });
+    } catch (err) {
+      list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-red);font:500 13px Inter;">Failed to load addresses</div>';
+    }
+  }
+
+  // Auto-load on first open
+  document.addEventListener("v2-sheet-opened", (e) => {
+    if (e.detail?.id === id) load();
+  });
+
+  // Initial load if visible at mount
+  if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) {
+    load();
+  }
+
+  window.v2ConfirmAddress = function() {
+    const selectedId = sessionStorage.getItem(`${id}-selected`);
+    if (!selectedId) return;
+    document.dispatchEvent(new CustomEvent("v2-address-confirmed", { detail: { addressId: selectedId } }));
+    window.v2CloseSheet?.(id);
+  };
+</script>
