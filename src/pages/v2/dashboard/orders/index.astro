@@ -37,7 +37,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       <button class="v2-dash-tab" data-tab="completed">Completed</button>
     </div>
 
-    <!-- Date filter -->
+    <!-- Date filter + export -->
     <div class="v2-dash-filterbar">
       <label class="v2-dash-filter-lbl">Range:</label>
       <select id="v2-dash-range" class="v2-dash-select">
@@ -46,6 +46,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         <option value="30d" selected>Last 30 days</option>
         <option value="all">All time</option>
       </select>
+      <a id="v2-dash-export" href="#" class="v2-dash-export-link" title="Download orders as CSV">⬇ CSV</a>
       <span style="flex:1;"></span>
       <span id="v2-orders-count" class="v2-dash-filter-lbl"></span>
     </div>
@@ -158,6 +159,16 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
     border-radius: var(--v2-radius-sm);
     cursor: pointer;
   }
+  .v2-dash-export-link {
+    font: 600 12px Inter;
+    color: var(--v2-brand);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: var(--v2-radius-sm);
+    border: 1px solid var(--v2-border);
+    background: var(--v2-bg-2);
+  }
+  .v2-dash-export-link:hover { background: var(--v2-brand-l); }
   .v2-pagination {
     display: flex; justify-content: space-between; align-items: center;
     padding: 16px;
@@ -336,7 +347,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
 
       // Wire actions
       list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
-        btn.addEventListener("click", () => updateStatus(btn.dataset.orderId!, btn.dataset.action!));
+        btn.addEventListener("click", () => updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn));
       });
     } catch (err: any) {
       console.error("loadOrders failed", err);
@@ -344,9 +355,14 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
     }
   }
 
-  async function updateStatus(orderId: string, action: string) {
+  async function updateStatus(orderId: string, action: string, btn?: HTMLButtonElement) {
     if (!sellerId) return;
     const newStatus = action === "accept" ? "confirmed" : "declined";
+    const originalText = btn?.textContent || "";
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = action === "accept" ? "Confirming…" : "Declining…";
+    }
     try {
       const res = await fetch("/api/seller/orders", {
         method: "POST",
@@ -359,6 +375,11 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       await loadOrders(false);
     } catch (err: any) {
       (window as any).v2Toast?.("error", "Failed", err.message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     }
   }
 
@@ -378,6 +399,50 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
     currentRange = (e.target as HTMLSelectElement).value;
     currentPage = 1;
     loadOrders();
+  });
+
+  // CSV export — respects current range
+  document.getElementById("v2-dash-export")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (!sellerId) return;
+    const url = `/api/seller/orders-export?seller_id=${encodeURIComponent(sellerId)}&date_filter=${encodeURIComponent(currentRange === "all" ? "30d" : currentRange)}`;
+    window.location.href = url;
+  });
+
+  // Mark all visible pending orders as confirmed (Promise.all fan-out)
+  document.getElementById("v2-mark-ready")?.addEventListener("click", async () => {
+    if (!sellerId) return;
+    const list = document.getElementById("v2-orders-list");
+    const cards = Array.from(list?.querySelectorAll<HTMLDivElement>("[data-order-id]") || []);
+    const ids = cards.map((c) => c.dataset.orderId!).filter(Boolean);
+    if (ids.length === 0) {
+      (window as any).v2Toast?.("error", "Nothing to confirm", "No pending orders in view");
+      return;
+    }
+    if (!confirm(`Confirm all ${ids.length} pending order${ids.length !== 1 ? "s" : ""} now?`)) return;
+    const btn = document.getElementById("v2-mark-ready") as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = `Confirming ${ids.length}…`;
+    const results = await Promise.all(ids.map(async (id) => {
+      try {
+        const res = await fetch("/api/seller/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ seller_id: sellerId, order_id: id, status: "confirmed" }),
+        });
+        return res.ok;
+      } catch { return false; }
+    }));
+    const ok = results.filter(Boolean).length;
+    const fail = results.length - ok;
+    if (fail === 0) {
+      (window as any).v2Toast?.("success", `${ok} confirmed`, "All pending orders accepted");
+    } else {
+      (window as any).v2Toast?.("error", `${ok} confirmed, ${fail} failed`, "Retry the failed ones individually");
+    }
+    btn.disabled = false;
+    btn.textContent = "✓ Mark all ready";
+    await loadOrders(false);
   });
 
   init();

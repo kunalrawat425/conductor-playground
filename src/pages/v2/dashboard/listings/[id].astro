@@ -24,7 +24,29 @@ const speciesName = listing?.species || "Listing";
     <div id="v2-form-mount">
       <ListingForm sellerId={listing?.seller_id || ""} listing={listing} />
     </div>
+    <div id="v2-edit-denied" style="display:none;padding:16px 0;">
+      <div style="background:var(--v2-red-l);border:1px solid var(--v2-red);border-radius:var(--v2-radius);padding:16px;text-align:center;">
+        <div style="font:800 15px Inter;color:var(--v2-red);">You don't own this listing</div>
+        <div style="font:500 12px Inter;color:var(--v2-ink-2);margin-top:6px;">Sign in as the owner, or go back to your listings.</div>
+        <a href="/v2/dashboard/listings" class="v2-btn v2-btn-primary v2-btn-sm" style="margin-top:12px;display:inline-block;">Back to my listings</a>
+      </div>
+    </div>
   </div>
+
+  <!-- Client-side ownership gate — the API also enforces (403) but we don't want the form to even render. -->
+  <script define:vars={{ ownerId: listing?.seller_id || "" }}>
+    try {
+      const me = localStorage.getItem("zepto_seller_id");
+      const form = document.getElementById("listing-form");
+      const denied = document.getElementById("v2-edit-denied");
+      if (!me) {
+        location.href = "/v2/dashboard/login";
+      } else if (ownerId && me !== ownerId) {
+        if (form) form.style.display = "none";
+        if (denied) denied.style.display = "block";
+      }
+    } catch {}
+  </script>
 
   <style is:global>
     /* same V2 form overrides as new.astro */

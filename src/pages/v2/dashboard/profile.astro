@@ -21,6 +21,13 @@ import Input from "../../../components/v2/atoms/Input.astro";
     <Input id="p-name" name="name" label="Business name" required={true} />
     <Input id="p-location" name="location_name" label="Area / Neighborhood" />
 
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Owner contact</h3>
+    <div style="display:flex;gap:12px;">
+      <div style="flex:1;"><Input id="p-first-name" name="first_name" label="First name" /></div>
+      <div style="flex:1;"><Input id="p-last-name" name="last_name" label="Last name" /></div>
+    </div>
+    <Input id="p-email" name="email" label="Email (for order notifications)" type="email" />
+
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Operating hours</h3>
     <div style="display:flex;gap:12px;">
       <div style="flex:1;"><Input id="p-opens" name="opens_at" label="Opens" type="time" /></div>
@@ -70,6 +77,9 @@ import Input from "../../../components/v2/atoms/Input.astro";
       form.style.display = "block";
       (document.getElementById("p-name") as HTMLInputElement).value = seller?.name || "";
       (document.getElementById("p-location") as HTMLInputElement).value = seller?.location_name || "";
+      (document.getElementById("p-first-name") as HTMLInputElement).value = seller?.first_name || "";
+      (document.getElementById("p-last-name") as HTMLInputElement).value = seller?.last_name || "";
+      (document.getElementById("p-email") as HTMLInputElement).value = seller?.email || "";
       (document.getElementById("p-opens") as HTMLInputElement).value = seller?.opens_at || "05:00";
       (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
       (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
@@ -87,8 +97,11 @@ import Input from "../../../components/v2/atoms/Input.astro";
     btn.disabled = true;
     btn.textContent = "Saving...";
     const updates: any = {
-      name: (document.getElementById("p-name") as HTMLInputElement).value,
-      location_name: (document.getElementById("p-location") as HTMLInputElement).value,
+      name: (document.getElementById("p-name") as HTMLInputElement).value.trim(),
+      location_name: (document.getElementById("p-location") as HTMLInputElement).value.trim(),
+      first_name: (document.getElementById("p-first-name") as HTMLInputElement).value.trim(),
+      last_name: (document.getElementById("p-last-name") as HTMLInputElement).value.trim(),
+      email: (document.getElementById("p-email") as HTMLInputElement).value.trim(),
       opens_at: (document.getElementById("p-opens") as HTMLInputElement).value,
       closes_at: (document.getElementById("p-closes") as HTMLInputElement).value,
       min_order_amount: parseInt((document.getElementById("p-min-order") as HTMLInputElement).value) || 0,
@@ -97,13 +110,21 @@ import Input from "../../../components/v2/atoms/Input.astro";
       delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
     };
 
-    // Validation
-    if (updates.opens_at >= updates.closes_at) {
+    // Validation — minute-based time compare so "HH:MM:SS" suffix can't break us.
+    function timeToMin(t: string): number {
+      const [h, m] = String(t || "").split(":").map(Number);
+      return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+    }
+    if (timeToMin(updates.opens_at) >= timeToMin(updates.closes_at)) {
       (window as any).v2Toast?.("error", "Invalid hours", "Open time must be before close time");
       btn.disabled = false; btn.textContent = "Save changes"; return;
     }
     if (!updates.name) {
       (window as any).v2Toast?.("error", "Name required", "Business name is required");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+    if (updates.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.email)) {
+      (window as any).v2Toast?.("error", "Invalid email", "Use a valid email address");
       btn.disabled = false; btn.textContent = "Save changes"; return;
     }
 

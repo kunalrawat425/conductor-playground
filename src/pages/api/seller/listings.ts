@@ -147,6 +147,32 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ listing: data }), { status: 200 });
     }
 
+    if (action === "delete") {
+      const { listing_id } = body;
+      if (!listing_id) {
+        return new Response(JSON.stringify({ error: "listing_id required" }), { status: 400 });
+      }
+      // Verify listing belongs to seller
+      const { data: existing } = await supabase
+        .from("fish_listings")
+        .select("seller_id")
+        .eq("id", listing_id)
+        .single();
+      if (!existing || existing.seller_id !== seller_id) {
+        return new Response(JSON.stringify({ error: "Not your listing" }), { status: 403 });
+      }
+      // Soft-delete: stamp deleted_at + flip is_available off, so existing orders keep
+      // their FK reference intact while the listing disappears from buyer + seller views.
+      const { error } = await supabase
+        .from("fish_listings")
+        .update({ is_available: false, weight_avail: 0, deleted_at: new Date().toISOString() })
+        .eq("id", listing_id);
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      }
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+
     return new Response(JSON.stringify({ error: "Invalid action" }), { status: 400 });
   } catch (err: any) {
     console.error("Seller listings error:", err);
