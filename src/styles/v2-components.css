@@ -1114,11 +1114,13 @@ body.v2-has-cart { padding-bottom: calc(64px + 60px + env(safe-area-inset-bottom
 /* === BottomSheet === */
 .v2-sheet-backdrop {
   position: fixed; inset: 0;
-  background: rgba(15, 23, 42, .5);
+  background: rgba(15, 23, 42, .7);
   z-index: var(--v2-z-modal);
   display: none;
   align-items: flex-end; justify-content: center;
   animation: v2-fade-in 200ms var(--v2-ease-out);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 .v2-sheet-open { display: flex; }
 .v2-sheet {

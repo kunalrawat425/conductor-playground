@@ -54,12 +54,20 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
     }
 
     try {
-      const { data: listings, error } = await supabase
-        .from("fish_listings")
-        .select("*")
-        .eq("seller_id", sellerId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
+      // Defensive: try with deleted_at filter first, fallback without if column doesn't exist yet
+      let listings: any[] = [];
+      let error: any = null;
+      const baseQ = () => supabase.from("fish_listings").select("*").eq("seller_id", sellerId).order("created_at", { ascending: false });
+      const r1 = await baseQ().is("deleted_at", null);
+      if (r1.error && r1.error.message?.includes("deleted_at")) {
+        // Column doesn't exist yet (migration 035 not applied) — query without filter
+        const r2 = await baseQ();
+        listings = r2.data || [];
+        error = r2.error;
+      } else {
+        listings = r1.data || [];
+        error = r1.error;
+      }
 
       loading.style.display = "none";
       if (error) throw error;
