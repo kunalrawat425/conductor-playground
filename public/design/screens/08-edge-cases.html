@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen 08 — Edge Cases (Composite)</title>
+<link rel="stylesheet" href="../_shared.css">
+<link rel="stylesheet" href="_screen-shared.css">
+<style>
+  .pad{padding:24px}
+  .empty{padding:60px 24px;text-align:center}
+  .empty .icon{font-size:64px;margin-bottom:16px}
+  .empty h3{font:800 17px Inter;color:#0F172A;margin-bottom:6px}
+  .empty p{font:400 13px Inter;color:#64748B;margin-bottom:20px}
+  .empty .cta{background:#0066FF;color:#fff;border:none;padding:12px 28px;border-radius:8px;font:700 13px Inter}
+  .empty .cta-ghost{background:transparent;color:#0066FF;border:none;font:600 13px Inter;display:block;margin:8px auto;padding:8px}
+
+  .toast{position:absolute;top:60px;left:16px;right:16px;background:#0F172A;color:#fff;padding:12px 14px;border-radius:10px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 25px rgba(0,0,0,.3);z-index:50}
+  .toast.error{background:#DC2626}
+  .toast.success{background:#059669}
+  .toast .icon{font-size:18px}
+  .toast .body{flex:1}
+  .toast .title{font:600 13px Inter}
+  .toast .desc{font:400 11px Inter;opacity:.9;margin-top:1px}
+
+  .grid-screens{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+</style>
+</head>
+<body>
+<div class="figma-page" style="max-width:840px">
+  <h1>Edge Case Screens</h1>
+  <p class="sub">Composite screens showing real-world states.</p>
+
+  <div class="grid-screens">
+
+    <!-- AREA NOT COVERED -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Area Not Covered</h3>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body with-nav">
+          <div class="app-header">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap">
+              <div class="loc-main">Powai ▼</div>
+              <div class="loc-sub" style="color:#FCA5A5">No sellers in your area</div>
+            </div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="empty">
+            <div class="icon">📍</div>
+            <h3>We're not in Powai yet</h3>
+            <p>Be the first to know when sellers go live here.</p>
+            <button class="cta">Join waitlist</button>
+            <button class="cta-ghost">Try a different area →</button>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item active"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETS CLOSED -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">All Sellers Closed</h3>
+      <div class="phone">
+        <div class="phone-status">2:30 PM</div>
+        <div class="phone-body with-nav">
+          <div class="app-header">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap">
+              <div class="loc-main">Bandra West ▼</div>
+              <div class="loc-sub">Markets closed · 5am opening</div>
+            </div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="empty" style="background:linear-gradient(180deg,#EEF2FF,#fff);padding:50px 24px">
+            <div class="icon">🌙</div>
+            <h3>Fish markets closed</h3>
+            <p>Open 5am–11am daily. Pre-order now for tomorrow morning.</p>
+            <button class="cta" style="background:#4F46E5">Pre-order tomorrow</button>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item active"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ERROR TOAST -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Payment Failed Toast</h3>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body with-nav">
+          <div class="app-header">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap"><div class="loc-main">Bandra West ▼</div><div class="loc-sub">Deliver in 45 min</div></div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="toast error">
+            <span class="icon">✕</span>
+            <div class="body">
+              <div class="title">Payment failed</div>
+              <div class="desc">UPI declined · try cash on delivery</div>
+            </div>
+            <button style="background:transparent;border:none;color:rgba(255,255,255,.7);font:400 18px Inter">×</button>
+          </div>
+          <div style="padding:80px 24px 24px;text-align:center;color:#94A3B8;font:500 13px Inter">Cart preserved · ₹905 (2 items)</div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item active"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS TOAST -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Pre-order Confirmed Toast</h3>
+      <div class="phone">
+        <div class="phone-status">10:15 PM</div>
+        <div class="phone-body with-nav">
+          <div class="app-header" style="background:#4F46E5">
+            <span class="logo">🌙 relifish</span>
+            <div class="loc-wrap"><div class="loc-main">Pre-order mode</div><div class="loc-sub">Tomorrow 7am</div></div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="toast success">
+            <span class="icon">✓</span>
+            <div class="body">
+              <div class="title">Pre-order confirmed</div>
+              <div class="desc">Kamla Tai will reserve at 5am · ₹1,450</div>
+            </div>
+          </div>
+          <div style="padding:100px 24px 24px;text-align:center">
+            <div style="font-size:48px;margin-bottom:12px">🎉</div>
+            <div style="font:700 16px Inter;color:#0F172A;margin-bottom:4px">All set for tomorrow</div>
+            <div style="font:400 13px Inter;color:#64748B">We'll notify you at 5am with confirmation</div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item active"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOADING / SKELETON -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Loading State (Skeleton)</h3>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body with-nav">
+          <div class="app-header">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap"><div class="loc-main">Loading...</div></div>
+            <div class="profile">👤</div>
+          </div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
+            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
+            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item active"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OFFLINE -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Offline State</h3>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body with-nav">
+          <div class="app-header" style="background:#64748B">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap"><div class="loc-main">📡 Offline</div><div class="loc-sub">Connection lost</div></div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="empty" style="padding:80px 24px">
+            <div class="icon">📡</div>
+            <h3>You're offline</h3>
+            <p>Check connection. Past orders still viewable.</p>
+            <button class="cta">Retry</button>
+            <button class="cta-ghost">View past orders →</button>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<style>@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}</style>
+</body>
+</html>

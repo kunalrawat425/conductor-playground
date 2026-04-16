@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Molecule — Permission Prompts</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .prompt{width:340px;background:#fff;border-radius:var(--radius-lg);padding:24px;text-align:center;box-shadow:var(--shadow-md);border:1px solid var(--border)}
+  .prompt .icon-circle{width:72px;height:72px;border-radius:50%;background:var(--brand-l);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px}
+  .prompt h3{font:800 17px Inter;color:var(--ink);margin-bottom:6px}
+  .prompt p{font:400 13px Inter;color:var(--ink2);margin-bottom:20px;line-height:1.5}
+  .prompt-benefits{text-align:left;margin-bottom:20px}
+  .prompt-benefits li{font:500 12px Inter;color:var(--ink2);padding:6px 0;display:flex;gap:8px;align-items:flex-start}
+  .prompt-benefits li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+  .prompt-actions{display:flex;flex-direction:column;gap:8px}
+  .prompt-actions button{padding:12px;border-radius:var(--radius-sm);font:700 13px Inter;border:none;cursor:pointer}
+  .btn-allow{background:var(--brand);color:#fff}
+  .btn-skip{background:transparent;color:var(--ink3)}
+
+  .denial{width:340px;background:var(--orange-l);border:1px solid #FED7AA;border-radius:var(--radius);padding:16px;display:flex;gap:12px}
+  .denial .icon{font-size:24px;flex-shrink:0}
+  .denial h4{font:700 13px Inter;color:#9A3412}
+  .denial p{font:400 12px Inter;color:#9A3412;margin-top:3px;line-height:1.45}
+  .denial button{font:700 12px Inter;color:var(--orange);background:none;border:none;cursor:pointer;margin-top:6px;padding:0}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Permission Prompts</h1>
+  <p class="sub">Pre-prompts before native dialogs. Recovery flows for denials.</p>
+
+  <div class="component" data-name="Permission · Location (Pre-prompt)">
+    <div class="prompt">
+      <div class="icon-circle">📍</div>
+      <h3>Find sellers near you</h3>
+      <p>Allow location to see fresh fish from sellers in your area.</p>
+      <ul class="prompt-benefits">
+        <li>Show sellers within 5 km</li>
+        <li>Auto-fill delivery address</li>
+        <li>Get accurate delivery time</li>
+      </ul>
+      <div class="prompt-actions">
+        <button class="btn-allow">Allow location</button>
+        <button class="btn-skip">Enter manually</button>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-prompt before native dialog</b> · 3 benefit bullets · always offer manual fallback</div>
+  </div>
+
+  <div class="component" data-name="Permission · Push Notifications">
+    <div class="prompt">
+      <div class="icon-circle" style="background:#FFF7ED;color:var(--orange)">🔔</div>
+      <h3>Get notified about your fish</h3>
+      <p>We'll only ping you for things that matter.</p>
+      <ul class="prompt-benefits">
+        <li>Order confirmation by seller</li>
+        <li>Pre-order ready alerts (5am)</li>
+        <li>Price drops on favorite species</li>
+      </ul>
+      <div class="prompt-actions">
+        <button class="btn-allow" style="background:var(--orange)">Enable notifications</button>
+        <button class="btn-skip">Maybe later</button>
+      </div>
+    </div>
+    <div class="spec"><b>Time it right:</b> after first successful order, not on first launch · specific value props, not vague "stay updated"</div>
+  </div>
+
+  <div class="component" data-name="Permission · Location Denied (Recovery)">
+    <div class="denial">
+      <div class="icon">📍</div>
+      <div>
+        <h4>Location turned off</h4>
+        <p>We need location to show sellers near you. You can enter your area manually instead.</p>
+        <button>Enable in settings →</button>
+      </div>
+    </div>
+    <div class="spec"><b>Persistent banner</b> after denial · deep-link to settings · always provide manual alternative</div>
+  </div>
+
+  <div class="component" data-name="Permission · Notification Denied (Recovery)">
+    <div class="denial" style="background:var(--brand-l);border-color:var(--brand-m)">
+      <div class="icon">🔔</div>
+      <div>
+        <h4 style="color:#1E40AF">Notifications off</h4>
+        <p style="color:#1E40AF">You won't be alerted when sellers confirm or your pre-order is ready.</p>
+        <button style="color:var(--brand)">Turn on in settings →</button>
+      </div>
+    </div>
+    <div class="spec"><b>Inline at top of orders page</b> · only show if user has active orders</div>
+  </div>
+</div>
+</body>
+</html>
