@@ -206,8 +206,9 @@ const tags = [
             const optId = firstOpt.id || "default";
             const key = ck(l.id, optId);
             const inCart = sellerItems[key]?.qty || 0;
+            const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
             return `<div class="v2-item-bottom">
-              <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+              <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
               ${inCart > 0
                 ? `<div class="v2-item-counter" data-id="${key}">
                      <button class="v2-item-dec" aria-label="Decrease">−</button>
@@ -226,9 +227,10 @@ const tags = [
                 const key = ck(l.id, optId);
                 const tierQty = sellerItems[key]?.qty || 0;
                 const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
+                const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
                 return `<div class="v2-item-tier">
                   <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
-                  <span class="v2-item-tier-price">₹${o.price}</span>
+                  <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
                   ${tierQty > 0
                     ? `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
                          <button class="v2-item-dec" aria-label="Decrease">−</button>
@@ -241,14 +243,38 @@ const tags = [
             </div>`;
           })();
 
+      // Fish size badge
+      const sizeMap = { small: "S", medium: "M", large: "L" };
+      const sizeBadge = l.fish_size && sizeMap[l.fish_size] ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;">${sizeMap[l.fish_size]}</span>` : '';
+
+      // Low stock warning (oos_threshold)
+      const stockWarn = l.oos_threshold && l.weight_avail > 0 && l.weight_avail <= l.oos_threshold
+        ? `<div style="font:600 10px Inter;color:var(--v2-orange);margin-top:2px;">⚡ Stock clearing soon</div>` : '';
+
+      // Daily limit hint
+      const limitHint = l.buyer_daily_qty_limit
+        ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:1px;">Max ${l.buyer_daily_qty_limit} per buyer/day</div>` : '';
+
+      // Compare-at-price (discount) from first pricing option
+      const hasDiscount = firstOpt.compare_at_price && firstOpt.compare_at_price > firstOpt.price;
+      const discountBadge = hasDiscount
+        ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-red);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
+
+      // Image: use photo if available, else emoji
+      const imgContent = l.photo_url
+        ? `<img src="${escape(l.photo_url)}" alt="${escape(name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />`
+        : `<span class="v2-item-emoji">${emoji}</span>`;
+
       return `
         <div class="v2-item-card${totalInCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
-          <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};">
-            <span class="v2-item-emoji">${emoji}</span>
+          <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};position:relative;overflow:hidden;">
+            ${imgContent}
             ${isPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
+            ${discountBadge}
           </div>
           <div class="v2-item-body">
-            <div class="v2-item-name">${escape(name)}</div>
+            <div class="v2-item-name">${escape(name)}${sizeBadge}</div>
+            ${stockWarn}${limitHint}
             ${pricingHtml}
           </div>
         </div>`;
