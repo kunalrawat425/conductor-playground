@@ -112,13 +112,24 @@ const tags = [
 </style>
 
 <script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFreeAbove: seller?.delivery_free_above, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder }}>
+  import * as Cart from "../../../lib/cart";
+
   const grid = document.getElementById("v2-menu-grid");
   const cartMount = document.getElementById("v2-cart-bar-mount");
   if (grid && listings) {
-    const CART_KEY = `v2_cart_${sellerId}`;
-    function loadCart() { try { return JSON.parse(localStorage.getItem(CART_KEY) || "{}"); } catch { return {}; } }
-    function saveCart(c) { try { localStorage.setItem(CART_KEY, JSON.stringify(c)); } catch {} }
-    let cart = loadCart();
+    // One-time migration of old per-seller carts into the new global cart
+    Cart.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
+    // Hydrate from server if signed in
+    Cart.hydrateFromServer().then(() => render());
+
+    function getSellerItems() {
+      const cart = Cart.getCart();
+      const out = {};
+      for (const lid of Object.keys(cart)) {
+        if (cart[lid].seller_id === sellerId) out[lid] = cart[lid];
+      }
+      return out;
+    }
 
     function speciesEmoji(sp) {
       if (!sp) return "🐟";
@@ -136,7 +147,8 @@ const tags = [
       const price = opt.price || 0;
       const unit = opt.unit_label || "kg";
       const name = getName(l.species);
-      const inCart = cart[l.id]?.qty || 0;
+      const sellerItems = getSellerItems();
+      const inCart = sellerItems[l.id]?.qty || 0;
       const emoji = speciesEmoji(l.species);
       const isPreorder = l.weight_avail === 0 && acceptsPreorder;
       return `
@@ -170,18 +182,22 @@ const tags = [
     let selectedAddressId = null;
 
     function renderCart() {
-      const items = Object.values(cart);
-      const totalQty = items.reduce((s, i) => s + i.qty, 0);
-      const totalPrice = items.reduce((s, i) => s + i.qty * i.price, 0);
+      const cart = Cart.getCart();
+      const totalQty = Cart.totalQty(cart);
+      const totalPrice = Cart.totalPrice(cart);
+      const sellers = Cart.sellerCount(cart);
       if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
       document.body.classList.add("v2-has-cart");
-      const belowMin = minOrder && totalPrice < minOrder;
-      const freeHit = deliveryFreeAbove && totalPrice >= deliveryFreeAbove;
+      // Min-order check uses THIS seller's subtotal (each seller's min applies to its own order)
+      const sellerSubtotal = Object.values(getSellerItems()).reduce((s, i) => s + i.qty * i.price, 0);
+      const belowMin = minOrder && sellerSubtotal > 0 && sellerSubtotal < minOrder;
+      const freeHit = deliveryFreeAbove && sellerSubtotal >= deliveryFreeAbove;
       const variant = belowMin ? "warning" : freeHit ? "success" : "default";
+      const sellerSuffix = sellers > 1 ? ` · ${sellers} sellers` : "";
       const leftLine = belowMin
-        ? `Add ₹${minOrder - totalPrice} more for min order`
-        : freeHit ? "🎉 Free delivery unlocked" : `${totalQty} item${totalQty !== 1 ? "s" : ""}`;
-      const ctaText = belowMin ? "Keep shopping" : "View cart →";
+        ? `Add ₹${minOrder - sellerSubtotal} more for min order`
+        : freeHit ? "🎉 Free delivery unlocked" : `${totalQty} item${totalQty !== 1 ? "s" : ""}${sellerSuffix}`;
+      const ctaText = belowMin ? "Keep shopping" : sellers > 1 ? "View cart →" : "View cart →";
       const variantClass = variant === "warning" ? "v2-cart-warning" : variant === "success" ? "v2-cart-success" : "";
       const ctaColorStyle = variant === "warning" ? "color:var(--v2-orange);" : variant === "success" ? "color:var(--v2-green);" : "";
 
@@ -197,9 +213,11 @@ const tags = [
     }
 
     function openCheckout() {
+      const cart = Cart.getCart();
+      const groups = Cart.groupBySeller(cart);
       const items = Object.values(cart);
-      const totalQty = items.reduce((s, i) => s + i.qty, 0);
-      const totalPrice = items.reduce((s, i) => s + i.qty * i.price, 0);
+      const totalQty = Cart.totalQty(cart);
+      const totalPrice = Cart.totalPrice(cart);
       if (totalQty === 0) return;
 
       // Pre-flight: must be signed in
@@ -210,16 +228,20 @@ const tags = [
         return;
       }
 
-      // Populate cart items in CheckoutSheet step 1
+      // Populate cart items in CheckoutSheet step 1 — grouped by seller
       const cartItemsEl = document.getElementById("seller-checkout-cart-items");
       if (cartItemsEl) {
-        cartItemsEl.innerHTML = items.map(i => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--v2-border);font:500 13px Inter;">
-            <div>
-              <div style="color:var(--v2-ink);font-weight:600;">${escape(i.name)}</div>
-              <div style="color:var(--v2-ink-3);font-size:11px;">${i.qty} ${escape(i.unit)}</div>
-            </div>
-            <div style="font-weight:700;color:var(--v2-ink);">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
+        cartItemsEl.innerHTML = groups.map(g => `
+          <div style="margin-bottom:12px;">
+            ${groups.length > 1 ? `<div style="font:700 12px Inter;color:var(--v2-ink-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">From ${escape(g.seller_name || "Seller")}</div>` : ""}
+            ${g.items.map(i => `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--v2-border);font:500 13px Inter;">
+                <div>
+                  <div style="color:var(--v2-ink);font-weight:600;">${escape(i.name)}</div>
+                  <div style="color:var(--v2-ink-3);font-size:11px;">${i.qty} ${escape(i.qty_unit)}</div>
+                </div>
+                <div style="font-weight:700;color:var(--v2-ink);">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
+              </div>`).join("")}
           </div>`).join("");
       }
       document.getElementById("seller-checkout-subtotal").textContent = `₹${totalPrice.toLocaleString("en-IN")}`;
@@ -299,9 +321,11 @@ const tags = [
       window.v2OpenSheet?.("seller-addr-sheet");
     });
 
-    // Place order
+    // Place order — one POST per seller group
     document.addEventListener("v2-checkout-place-order", async () => {
-      const items = Object.values(cart);
+      const groups = Cart.groupBySeller();
+      if (groups.length === 0) return;
+
       let buyerId = null, buyerPhone = null;
       try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
       if (!buyerId || !buyerPhone) { window.v2OpenSheet?.("seller-login-sheet"); return; }
@@ -315,53 +339,71 @@ const tags = [
 
       const btn = document.getElementById("seller-checkout-place-order");
       btn.disabled = true;
-      btn.textContent = "Placing order...";
+      btn.textContent = groups.length > 1 ? `Placing ${groups.length} orders...` : "Placing order...";
 
-      try {
-        // Use seller-cart endpoint for multi-line order
-        const lines = items.map(i => ({
-          listing_id: i.id,
-          quantity: i.qty,
-          quantity_unit: i.unit,
-        }));
-        const res = await fetch("/api/orders/create-seller-cart", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            seller_id: sellerId,
-            lines,
-            buyer_phone: buyerPhone,
-            buyer_id: buyerId,
-            buyer_addr: selectedAddressId,
-            order_type: orderType,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed");
+      // Fan-out: one order per seller group, in parallel
+      const results = await Promise.all(groups.map(async (g) => {
+        try {
+          const lines = g.items.map(i => ({
+            listing_id: i.listing_id,
+            quantity: i.qty,
+            quantity_unit: i.qty_unit,
+          }));
+          const res = await fetch("/api/orders/create-seller-cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              seller_id: g.seller_id,
+              lines,
+              buyer_phone: buyerPhone,
+              buyer_id: buyerId,
+              buyer_addr: selectedAddressId,
+              order_type: orderType,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed");
+          return { ok: true, seller_id: g.seller_id, seller_name: g.seller_name };
+        } catch (err) {
+          return { ok: false, seller_id: g.seller_id, seller_name: g.seller_name, error: err.message };
+        }
+      }));
 
-        // Success: clear cart, toast, navigate
-        cart = {};
-        saveCart(cart);
-        window.v2Toast?.("success", "Order placed!", `${items.length} item${items.length !== 1 ? "s" : ""} confirmed`);
+      const succeeded = results.filter(r => r.ok);
+      const failed = results.filter(r => !r.ok);
+
+      // Clear successfully placed sellers from cart (failed ones stay so user can retry)
+      succeeded.forEach(r => Cart.clearCart({ sellerId: r.seller_id }));
+      render();
+
+      if (failed.length === 0) {
+        const msg = succeeded.length > 1 ? `${succeeded.length} orders placed` : "Order confirmed";
+        window.v2Toast?.("success", "Order placed!", msg);
         setTimeout(() => { window.location.href = "/v2/track"; }, 1200);
-      } catch (err) {
-        window.v2Toast?.("error", "Failed", err.message || "Try again");
+      } else if (succeeded.length > 0) {
+        window.v2Toast?.("error", `${succeeded.length} placed, ${failed.length} failed`, `Retry: ${failed.map(f => f.seller_name).join(", ")}`);
+        btn.disabled = false;
+        btn.textContent = "Retry failed";
+      } else {
+        window.v2Toast?.("error", "Failed", failed[0]?.error || "Try again");
         btn.disabled = false;
         btn.textContent = "Place order";
       }
     });
 
     function add(id, price, name, unit) {
-      cart[id] = { id, qty: (cart[id]?.qty || 0) + 1, price, name, unit };
-      saveCart(cart); render();
+      Cart.addItem({
+        listing_id: id,
+        seller_id: sellerId,
+        seller_name: sellerName,
+        name,
+        qty_unit: unit,
+        price,
+      });
+      render();
     }
-    function dec(id) {
-      if (!cart[id]) return;
-      cart[id].qty -= 1;
-      if (cart[id].qty <= 0) delete cart[id];
-      saveCart(cart); render();
-    }
-    function inc(id) { if (!cart[id]) return; cart[id].qty += 1; saveCart(cart); render(); }
+    function dec(id) { Cart.decQty(id); render(); }
+    function inc(id) { Cart.incQty(id); render(); }
 
     grid.addEventListener("click", (e) => {
       const t = e.target;
@@ -373,6 +415,12 @@ const tags = [
       } else if (t.classList.contains("v2-item-dec")) {
         dec(t.closest(".v2-item-counter")?.dataset.id);
       }
+    });
+
+    // Re-render if cart changes from another tab/window or hydration completes
+    window.addEventListener("v2-cart-changed", () => render());
+    window.addEventListener("storage", (e) => {
+      if (e.key === "v2_cart_global") render();
     });
 
     render();
