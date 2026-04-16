@@ -1,0 +1,169 @@
+---
+import BottomSheet from "./BottomSheet.astro";
+interface Props {
+  id?: string;
+}
+const { id = "v2-cart-stack" } = Astro.props;
+---
+<!--
+  Zomato-style cart stack. Shows one card per seller with items in the global cart.
+  Each card: seller name · item count · subtotal · [Checkout] [🗑 Remove].
+  The parent page (e.g. /v2/seller/[id]) wires the Checkout click to openCheckout(sellerId).
+-->
+<BottomSheet id={id} title="Your carts" showClose={true}>
+  <div id={`${id}-body`}>
+    <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
+      <span class="v2-spinner v2-spinner-md"></span>
+      <div style="margin-top:8px;">Loading carts…</div>
+    </div>
+  </div>
+  <div style="font:400 11px Inter;color:var(--v2-ink-3);text-align:center;margin-top:8px;line-height:1.5;">
+    One checkout per seller. Delivery fee + min order apply per seller.
+  </div>
+</BottomSheet>
+
+<style is:global>
+  .v2-cs-card {
+    background: var(--v2-bg);
+    border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .v2-cs-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .v2-cs-seller { font: 800 15px Inter; color: var(--v2-ink); }
+  .v2-cs-meta { font: 500 12px Inter; color: var(--v2-ink-3); margin-top: 2px; }
+  .v2-cs-total { font: 800 16px Inter; color: var(--v2-ink); white-space: nowrap; }
+  .v2-cs-items-list {
+    background: var(--v2-bg-2);
+    border-radius: var(--v2-radius-sm);
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .v2-cs-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font: 500 12px Inter;
+    color: var(--v2-ink-2);
+  }
+  .v2-cs-warn {
+    font: 600 11px Inter;
+    color: var(--v2-orange);
+    margin-bottom: 8px;
+  }
+  .v2-cs-actions { display: flex; gap: 8px; }
+  .v2-cs-checkout {
+    flex: 1;
+    background: var(--v2-brand);
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: var(--v2-radius-sm);
+    font: 700 13px Inter;
+    cursor: pointer;
+  }
+  .v2-cs-checkout:disabled { background: var(--v2-ink-4); cursor: not-allowed; }
+  .v2-cs-remove {
+    flex: 0 0 44px;
+    background: var(--v2-bg);
+    color: var(--v2-red);
+    border: 1.5px solid var(--v2-red-l);
+    padding: 10px;
+    border-radius: var(--v2-radius-sm);
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .v2-cs-empty {
+    text-align: center;
+    padding: 24px;
+    color: var(--v2-ink-3);
+    font: 500 13px Inter;
+  }
+</style>
+
+<script define:vars={{ id }}>
+  function escape(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function render() {
+    const body = document.getElementById(`${id}-body`);
+    if (!body) return;
+    const Cart = window.RelifishCart;
+    if (!Cart) {
+      body.innerHTML = `<div class="v2-cs-empty">Cart not ready — try again.</div>`;
+      return;
+    }
+    const groups = Cart.groupBySeller();
+    if (groups.length === 0) {
+      body.innerHTML = `<div class="v2-cs-empty">Your cart is empty.</div>`;
+      return;
+    }
+    body.innerHTML = groups.map((g) => {
+      // We don't have seller.min_order_amount in the cart item; page that opens this
+      // sheet should annotate groups with `minOrder` via a global hint if needed.
+      // For now, show the checkout button; seller-page checkout will block below-min.
+      const minOrder = (window.__relifishMinOrders || {})[g.seller_id] || 0;
+      const belowMin = minOrder > 0 && g.subtotal < minOrder;
+      const itemsPreview = g.items.slice(0, 3).map((i) =>
+        `<div class="v2-cs-item"><span>${escape(i.name)} × ${i.qty}${escape(i.qty_unit || 'kg')}</span><span>₹${(i.qty * i.price).toLocaleString("en-IN")}</span></div>`
+      ).join("") + (g.items.length > 3 ? `<div class="v2-cs-item" style="color:var(--v2-ink-3);">+ ${g.items.length - 3} more item${g.items.length - 3 !== 1 ? "s" : ""}</div>` : "");
+      return `<div class="v2-cs-card" data-seller-id="${escape(g.seller_id)}">
+        <div class="v2-cs-top">
+          <div style="flex:1;min-width:0;">
+            <div class="v2-cs-seller">${escape(g.seller_name || "Seller")}</div>
+            <div class="v2-cs-meta">${g.total_qty} item${g.total_qty !== 1 ? "s" : ""}</div>
+          </div>
+          <div class="v2-cs-total">₹${g.subtotal.toLocaleString("en-IN")}</div>
+        </div>
+        <div class="v2-cs-items-list">${itemsPreview}</div>
+        ${belowMin ? `<div class="v2-cs-warn">Add ₹${minOrder - g.subtotal} more for min order</div>` : ""}
+        <div class="v2-cs-actions">
+          <button class="v2-cs-checkout" data-cs-checkout="${escape(g.seller_id)}" ${belowMin ? "disabled" : ""}>
+            ${belowMin ? "Below min order" : `Checkout ₹${g.subtotal.toLocaleString("en-IN")} →`}
+          </button>
+          <button class="v2-cs-remove" data-cs-remove="${escape(g.seller_id)}" aria-label="Remove this cart" title="Remove this cart">🗑</button>
+        </div>
+      </div>`;
+    }).join("");
+
+    body.querySelectorAll("[data-cs-checkout]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const sellerId = b.getAttribute("data-cs-checkout");
+        window.v2CloseSheet?.(id);
+        document.dispatchEvent(new CustomEvent("v2-cs-checkout", { detail: { sellerId } }));
+      });
+    });
+    body.querySelectorAll("[data-cs-remove]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const sellerId = b.getAttribute("data-cs-remove");
+        if (!confirm("Remove this cart? Items will be cleared.")) return;
+        window.RelifishCart?.clearCart({ sellerId });
+        render();
+        window.v2Toast?.("success", "Cart removed");
+      });
+    });
+  }
+
+  // Re-render when cart changes (e.g. user added an item elsewhere)
+  window.addEventListener("v2-cart-changed", () => {
+    if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) render();
+  });
+
+  // Render when sheet opens
+  document.addEventListener("v2-sheet-opened", (e) => {
+    if (e.detail?.id === id) render();
+  });
+
+  // Initial render if visible at mount (rare)
+  if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) render();
+</script>
