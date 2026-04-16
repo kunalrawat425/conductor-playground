@@ -1,0 +1,70 @@
+---
+export const prerender = false;
+import AppShellV2 from "../../../../components/v2/AppShellV2.astro";
+import ListingForm from "../../../../components/ListingForm.astro";
+import Toast from "../../../../components/v2/atoms/Toast.astro";
+---
+<AppShellV2
+  title="Add Listing · Seller Dashboard"
+  description="Add a new fish listing"
+  header={{ variant: "page", title: "Add listing", backHref: "/v2/dashboard/listings" }}
+  nav={{ active: "listings" as any, mode: "seller" }}
+>
+  <Toast />
+  <div style="padding:16px;">
+    <p style="font:400 13px Inter;color:var(--v2-ink-3);margin:0 0 16px;line-height:1.5;">
+      Set pricing tiers, then enter stock in the same unit as your first price row. Buyers see the cheapest tier as the headline price.
+    </p>
+    <div id="v2-form-mount">
+      <ListingForm sellerId="" />
+    </div>
+  </div>
+
+  <style is:global>
+    /* Force V1 form to use V2 token-based styling */
+    #v2-form-mount label,
+    #v2-form-mount .form-label {
+      font-family: var(--v2-font) !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      color: var(--v2-ink-2) !important;
+    }
+    #v2-form-mount input[type="text"],
+    #v2-form-mount input[type="number"],
+    #v2-form-mount input[type="email"],
+    #v2-form-mount select,
+    #v2-form-mount textarea {
+      font-family: var(--v2-font) !important;
+      font-size: 14px !important;
+      padding: 12px 14px !important;
+      border: 1.5px solid var(--v2-border) !important;
+      border-radius: var(--v2-radius-sm) !important;
+      background: #fff !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      min-height: 44px !important;
+    }
+    #v2-form-mount input:focus,
+    #v2-form-mount select:focus,
+    #v2-form-mount textarea:focus {
+      outline: none !important;
+      border-color: var(--v2-brand) !important;
+      box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1) !important;
+    }
+    #v2-form-mount button.btn,
+    #v2-form-mount button[type="submit"] {
+      font-family: var(--v2-font) !important;
+      font-weight: 700 !important;
+      font-size: 14px !important;
+      padding: 12px 24px !important;
+      border-radius: var(--v2-radius-sm) !important;
+      min-height: 44px !important;
+      background: var(--v2-brand) !important;
+      color: #fff !important;
+      border: none !important;
+      cursor: pointer !important;
+    }
+    #v2-form-mount .btn-green { background: var(--v2-green) !important; }
+    #v2-form-mount .btn-red { background: var(--v2-red) !important; }
+  </style>
+</AppShellV2>

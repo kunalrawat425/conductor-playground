@@ -79,7 +79,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
             <div class="v2-lc-name">${escape(l.species)}</div>
             <div class="v2-lc-meta">₹${price}/${escape(unit)} · ${stock}${escape(unit)} available</div>
             <div style="margin-top:8px;display:flex;gap:6px;">
-              <a href="/v2/dashboard/listings/${l.id}" class="v2-btn v2-btn-secondary v2-btn-sm" style="flex:1;">Edit</a>
+              <a href="/v2/dashboard/listings/${l.id}" class="v2-btn v2-btn-secondary v2-btn-sm" style="flex:1;text-decoration:none;">Edit</a>
               <button class="v2-btn v2-btn-sm" style="flex:1;background:${l.is_available ? 'var(--v2-orange-l)' : 'var(--v2-green-l)'};color:${l.is_available ? 'var(--v2-orange)' : 'var(--v2-green)'};" data-toggle-id="${l.id}" data-toggle-state="${l.is_available}">${l.is_available ? '⏸ Pause' : '▶ Resume'}</button>
             </div>
           </div>
