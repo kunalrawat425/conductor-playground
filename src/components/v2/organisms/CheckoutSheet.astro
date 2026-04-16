@@ -19,8 +19,7 @@ const { id = "v2-checkout" } = Astro.props;
     <div id={`${id}-cart-items`}></div>
     <div class="v2-co-rows">
       <div class="v2-co-row"><span>Subtotal</span><span id={`${id}-subtotal`}>₹0</span></div>
-      <div class="v2-co-row"><span>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
-      <div class="v2-co-row"><span>Platform fee</span><span>₹5</span></div>
+      <div class="v2-co-row" id={`${id}-delivery-row`} style="display:none;"><span>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
       <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total`}>₹0</span></div>
     </div>
     <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" data-co-next="2">Next: Delivery →</button>
@@ -37,7 +36,7 @@ const { id = "v2-checkout" } = Astro.props;
           <div class="v2-co-m-desc">Collect from seller · No delivery fee</div>
         </div>
       </label>
-      <label class="v2-co-method-opt">
+      <label class="v2-co-method-opt" id={`${id}-delivery-opt`} style="display:none;">
         <input type="radio" name={`${id}-method`} value="delivery" />
         <div>
           <div class="v2-co-m-name">🚲 Delivery</div>
@@ -45,18 +44,19 @@ const { id = "v2-checkout" } = Astro.props;
         </div>
       </label>
     </div>
+    <div id={`${id}-no-delivery-note`} style="display:none;margin-top:8px;font:400 11px Inter;color:var(--v2-ink-3);text-align:center;">
+      This seller offers pickup only.
+    </div>
 
     <div id={`${id}-address-section`} style="display:none;margin-top:16px;">
       <h4 class="v2-co-step-title">Deliver to</h4>
-      <div id={`${id}-current-address`} class="v2-addr-card">
+      <button id={`${id}-current-address`} type="button" class="v2-addr-card" style="width:100%;text-align:left;border:1.5px solid var(--v2-border);background:var(--v2-bg);cursor:pointer;">
         <div class="v2-addr-icon">📍</div>
         <div class="v2-addr-body">
-          <div class="v2-addr-label">No address selected</div>
-          <div class="v2-addr-text">Tap to add</div>
+          <div class="v2-addr-label" id={`${id}-addr-label`}>No address selected</div>
+          <div class="v2-addr-text" id={`${id}-addr-text`}>Tap to add</div>
         </div>
-      </div>
-      <button class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-pick-address`} style="margin-top:8px;">
-        Change address
+        <div style="color:var(--v2-ink-4);align-self:center;">›</div>
       </button>
     </div>
 
