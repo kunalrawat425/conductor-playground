@@ -5,10 +5,9 @@ const { active, ordersCount = 0, mode = "buyer" } = Astro.props;
 
 const buyerItems = [
   { id: "home", label: "Home", icon: "🏠", href: "/" },
-  { id: "search", label: "Search", icon: "🔍", href: "/search" },
-  { id: "preorder", label: "Pre-order", icon: "🌙", href: "/preorder" },
-  { id: "orders", label: "Orders", icon: "📋", href: "/track" },
-  { id: "account", label: "Account", icon: "👤", href: "/me" },
+  { id: "preorder", label: "Pre-order", icon: "🌙", href: "/v2/preorder" },
+  { id: "orders", label: "Orders", icon: "📋", href: "/v2/track" },
+  { id: "account", label: "Account", icon: "👤", href: "/v2/me" },
 ];
 
 const sellerItems = [
