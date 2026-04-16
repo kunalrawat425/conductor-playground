@@ -50,7 +50,19 @@ import Input from "../../../components/v2/atoms/Input.astro";
         <div style="font:400 11px Inter;color:var(--v2-ink-3);">In addition to pickup</div>
       </div>
     </label>
-    <Input id="p-delivery-rad" name="delivery_rad" label="Delivery radius (km)" type="number" />
+
+    <div id="p-delivery-settings" style="display:none;margin-left:16px;padding-left:12px;border-left:2px solid var(--v2-border);">
+      <Input id="p-delivery-rad" name="delivery_rad" label="Delivery radius (km)" type="number" />
+      <Input id="p-delivery-fee" name="delivery_fee_amount" label="Delivery fee (₹)" type="number" />
+      <Input id="p-free-above" name="free_delivery_above" label="Free delivery above (₹)" type="number" />
+      <div style="font:400 11px Inter;color:var(--v2-ink-3);margin:-8px 0 12px;">Leave 0 for no free delivery threshold</div>
+    </div>
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Your phone</h3>
+    <div style="background:var(--v2-bg-2);padding:14px;border-radius:var(--v2-radius-sm);font:600 14px Inter;color:var(--v2-ink);margin-bottom:12px;">
+      <span id="p-phone">—</span>
+      <span style="font:400 11px Inter;color:var(--v2-ink-3);margin-left:8px;">(set at signup)</span>
+    </div>
 
     <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id="p-save" style="margin-top:16px;">
       Save changes
@@ -86,6 +98,11 @@ import Input from "../../../components/v2/atoms/Input.astro";
       (document.getElementById("p-preorder") as HTMLInputElement).checked = !!seller?.accepts_preorder;
       (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
       (document.getElementById("p-delivery-rad") as HTMLInputElement).value = String(seller?.delivery_rad || 5);
+      (document.getElementById("p-delivery-fee") as HTMLInputElement).value = String(seller?.delivery_fee_amount || 0);
+      (document.getElementById("p-free-above") as HTMLInputElement).value = String(seller?.free_delivery_above || 0);
+      document.getElementById("p-phone")!.textContent = seller?.phone || "—";
+      // Show delivery sub-settings if delivery enabled
+      document.getElementById("p-delivery-settings")!.style.display = seller?.has_delivery ? "block" : "none";
     } catch (err: any) {
       loading.innerHTML = `<div style="color:var(--v2-red);">Failed: ${err.message}</div>`;
     }
@@ -108,15 +125,18 @@ import Input from "../../../components/v2/atoms/Input.astro";
       accepts_preorder: (document.getElementById("p-preorder") as HTMLInputElement).checked,
       has_delivery: (document.getElementById("p-delivery") as HTMLInputElement).checked,
       delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
+      delivery_fee_amount: parseFloat((document.getElementById("p-delivery-fee") as HTMLInputElement).value) || 0,
+      free_delivery_above: parseFloat((document.getElementById("p-free-above") as HTMLInputElement).value) || 0,
     };
 
-    // Validation — minute-based time compare so "HH:MM:SS" suffix can't break us.
+    // Validation — allow cross-midnight hours (e.g. 17:00 → 01:58 is valid for fish markets).
+    // Only reject if both are exactly the same.
     function timeToMin(t: string): number {
       const [h, m] = String(t || "").split(":").map(Number);
       return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
     }
-    if (timeToMin(updates.opens_at) >= timeToMin(updates.closes_at)) {
-      (window as any).v2Toast?.("error", "Invalid hours", "Open time must be before close time");
+    if (timeToMin(updates.opens_at) === timeToMin(updates.closes_at)) {
+      (window as any).v2Toast?.("error", "Invalid hours", "Open and close time can't be the same");
       btn.disabled = false; btn.textContent = "Save changes"; return;
     }
     if (!updates.name) {
@@ -142,6 +162,12 @@ import Input from "../../../components/v2/atoms/Input.astro";
       (window as any).v2Toast?.("error", "Save failed", err.message);
       btn.disabled = false; btn.textContent = "Save changes";
     }
+  });
+
+  // Toggle delivery sub-settings visibility when checkbox changes
+  document.getElementById("p-delivery")?.addEventListener("change", (e) => {
+    const on = (e.target as HTMLInputElement).checked;
+    document.getElementById("p-delivery-settings")!.style.display = on ? "block" : "none";
   });
 
   load();
