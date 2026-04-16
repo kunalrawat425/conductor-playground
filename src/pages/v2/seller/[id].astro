@@ -111,6 +111,38 @@ const tags = [
     .v2-menu-grid { grid-template-columns: repeat(3, 1fr); }
   }
   body.v2-has-cart .v2-main { padding-bottom: 144px; }
+
+  /* Multi-tier pricing rows inside item cards */
+  .v2-item-tiers {
+    margin-top: 6px;
+  }
+  .v2-item-tier {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+  .v2-item-tier-label {
+    flex: 1;
+    font: 500 11px Inter;
+    color: var(--v2-ink-2);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .v2-item-tier-price {
+    font: 800 12px Inter;
+    color: var(--v2-ink);
+    white-space: nowrap;
+  }
+  .v2-item-add-sm {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px;
+    font-size: 14px !important;
+    padding: 0 !important;
+  }
 </style>
 
 <script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFreeAbove: seller?.delivery_free_above, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder }}>
@@ -147,14 +179,55 @@ const tags = [
     function getName(sp) { try { return getSpeciesDisplay(sp) || sp; } catch { return sp; } }
 
     function renderItem(l) {
-      const opt = (l.pricing_options || [])[0] || {};
-      const price = opt.price || 0;
-      const unit = opt.unit_label || "kg";
+      const opts = l.pricing_options || [];
+      const firstOpt = opts[0] || {};
       const name = getName(l.species);
       const sellerItems = getSellerItems();
-      const inCart = sellerItems[l.id]?.qty || 0;
+      const cartItem = sellerItems[l.id];
+      const inCart = cartItem?.qty || 0;
       const emoji = speciesEmoji(l.species);
       const isPreorder = l.weight_avail === 0 && acceptsPreorder;
+
+      // Show all pricing tiers as individual add buttons so buyer picks the right pack/unit.
+      const pricingHtml = opts.length <= 1
+        ? (() => {
+            const price = firstOpt.price || 0;
+            const unit = firstOpt.unit_label || firstOpt.label || "kg";
+            const optId = firstOpt.id || "default";
+            return `<div class="v2-item-bottom">
+              <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+              ${inCart > 0
+                ? `<div class="v2-item-counter" data-id="${l.id}">
+                     <button class="v2-item-dec" aria-label="Decrease">−</button>
+                     <span class="v2-item-count">${inCart}</span>
+                     <button class="v2-item-inc" aria-label="Increase">+</button>
+                   </div>`
+                : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" aria-label="Add ${escape(name)}">+</button>`}
+            </div>`;
+          })()
+        : (() => {
+            // Multiple tiers — show each as a row with its own add button.
+            return `<div class="v2-item-tiers">
+              ${opts.map((o) => {
+                const label = o.label || o.unit_label || o.unit || "unit";
+                const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
+                return `<div class="v2-item-tier">
+                  <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
+                  <span class="v2-item-tier-price">₹${o.price}</span>
+                  <button class="v2-item-add v2-item-add-sm" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${o.id || 'default'}" data-opt-label="${escape(label)}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>
+                </div>`;
+              }).join("")}
+              ${inCart > 0 ? `<div class="v2-item-tier" style="border-top:1px solid var(--v2-border);padding-top:6px;margin-top:4px;">
+                <span class="v2-item-tier-label" style="font-weight:700;">In cart</span>
+                <div class="v2-item-counter" data-id="${l.id}">
+                  <button class="v2-item-dec" aria-label="Decrease">−</button>
+                  <span class="v2-item-count">${inCart}</span>
+                  <button class="v2-item-inc" aria-label="Increase">+</button>
+                </div>
+              </div>` : ''}
+            </div>`;
+          })();
+
       return `
         <div class="v2-item-card${inCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
           <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};">
@@ -163,17 +236,7 @@ const tags = [
           </div>
           <div class="v2-item-body">
             <div class="v2-item-name">${escape(name)}</div>
-            <div class="v2-item-desc">Per ${escape(unit)}</div>
-            <div class="v2-item-bottom">
-              <div class="v2-item-price">₹${price}</div>
-              ${inCart > 0
-                ? `<div class="v2-item-counter" data-id="${l.id}">
-                     <button class="v2-item-dec" aria-label="Decrease">−</button>
-                     <span class="v2-item-count">${inCart}</span>
-                     <button class="v2-item-inc" aria-label="Increase">+</button>
-                   </div>`
-                : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" aria-label="Add ${escape(name)}">+</button>`}
-            </div>
+            ${pricingHtml}
           </div>
         </div>`;
     }
@@ -282,7 +345,7 @@ const tags = [
             <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--v2-border);font:500 13px Inter;">
               <div>
                 <div style="color:var(--v2-ink);font-weight:600;">${escape(i.name)}</div>
-                <div style="color:var(--v2-ink-3);font-size:11px;">${i.qty} ${escape(i.qty_unit)}</div>
+                <div style="color:var(--v2-ink-3);font-size:11px;">${i.qty} × ${escape(i.pricing_label || i.qty_unit)}</div>
               </div>
               <div style="font-weight:700;color:var(--v2-ink);">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
             </div>`).join("")}`;
@@ -427,6 +490,7 @@ const tags = [
           listing_id: i.listing_id,
           quantity: i.qty,
           quantity_unit: i.qty_unit,
+          pricing_option_id: i.pricing_option_id || null,
         }));
         const res = await fetch("/api/orders/create-seller-cart", {
           method: "POST",
@@ -455,7 +519,7 @@ const tags = [
       }
     });
 
-    function add(id, price, name, unit) {
+    function add(id, price, name, unit, optId, optLabel) {
       const c = Cart(); if (!c) return;
       c.addItem({
         listing_id: id,
@@ -464,6 +528,8 @@ const tags = [
         name,
         qty_unit: unit,
         price,
+        pricing_option_id: optId || "default",
+        pricing_label: optLabel || unit,
       });
       render();
     }
@@ -474,7 +540,7 @@ const tags = [
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
       if (t.classList.contains("v2-item-add")) {
-        add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit);
+        add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit, t.dataset.optId, t.dataset.optLabel);
       } else if (t.classList.contains("v2-item-inc")) {
         inc(t.closest(".v2-item-counter")?.dataset.id);
       } else if (t.classList.contains("v2-item-dec")) {
