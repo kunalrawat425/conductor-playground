@@ -108,7 +108,7 @@ try {
     <!-- Step 3: slot picker -->
     <section id="po-step3" class="po-content" style="display:none;">
       <h2 class="po-h">Step 3 · Pickup time</h2>
-      <p class="po-sub">Pick a morning slot. Seller reserves at the dock by 5am.</p>
+      <p class="po-sub">Pick a morning slot. Seller confirms in the morning.</p>
 
       <h4 class="v2-slot-group-title" style="margin-top:16px;">Tomorrow morning</h4>
       <div class="v2-slot-grid" id="po-slots">
@@ -140,7 +140,7 @@ try {
       </div>
 
       <p style="font:400 11px Inter;color:var(--v2-ink-3);text-align:center;margin-bottom:16px;line-height:1.5;">
-        Seller confirms exact price by 5am.<br/>Cancel anytime before then.
+        Seller will confirm in the morning.<br/>Cancel anytime before then.
       </p>
 
       <div class="po-actions">
@@ -299,7 +299,7 @@ try {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      window.v2Toast?.("success", "Pre-order placed", `${state.sellerName} will confirm by 5am`);
+      window.v2Toast?.("success", "Pre-order placed", `${state.sellerName} will confirm in the morning`);
       setTimeout(() => { window.location.href = "/v2/track"; }, 1200);
     } catch (err) {
       window.v2Toast?.("error", "Failed", err.message);
