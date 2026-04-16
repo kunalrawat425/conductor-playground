@@ -29,6 +29,26 @@ try {
     .neq("name", "New Seller");
   sellers = data || [];
 } catch {}
+
+// Build a per-seller estimated price map from each seller's most recent matching listing,
+// so step 4's estimate reflects reality (instead of a hardcoded ₹650).
+let estimatePriceBySeller: Record<string, number> = {};
+try {
+  if (sellers.length > 0 && species) {
+    const sellerIds = sellers.map((s) => s.id);
+    const { data: listings } = await supabase
+      .from("fish_listings")
+      .select("seller_id, species, pricing_options, created_at")
+      .in("seller_id", sellerIds)
+      .ilike("species", `%${species}%`)
+      .order("created_at", { ascending: false });
+    for (const l of (listings || [])) {
+      if (estimatePriceBySeller[l.seller_id]) continue; // first wins (most recent)
+      const opt = (l.pricing_options || [])[0];
+      if (opt && opt.price) estimatePriceBySeller[l.seller_id] = Number(opt.price);
+    }
+  }
+} catch {}
 ---
 <AppShellV2
   title={`Pre-order ${sp.en} · Relifish`}
@@ -58,7 +78,15 @@ try {
       ) : (
         <div id="po-seller-list">
           {sellers.map((s) => (
-            <button class="po-seller" data-seller-id={s.id} data-seller-name={s.name} data-min-order={s.min_order_amount || 0} type="button">
+            <button
+              class="po-seller"
+              data-seller-id={s.id}
+              data-seller-name={s.name}
+              data-min-order={s.min_order_amount || 0}
+              data-opens-at={s.opens_at || "06:00"}
+              data-closes-at={s.closes_at || "11:00"}
+              data-est-price={estimatePriceBySeller[s.id] || 0}
+              type="button">
               <div class="po-s-avatar">🐟</div>
               <div class="po-s-body">
                 <div class="po-s-name">{s.name}</div>
@@ -110,11 +138,9 @@ try {
       <h2 class="po-h">Step 3 · Pickup time</h2>
       <p class="po-sub">Pick a morning slot. Seller confirms in the morning.</p>
 
-      <h4 class="v2-slot-group-title" style="margin-top:16px;">Tomorrow morning</h4>
+      <h4 class="v2-slot-group-title" id="po-slot-group-title" style="margin-top:16px;">Tomorrow morning</h4>
       <div class="v2-slot-grid" id="po-slots">
-        <button type="button" class="v2-slot" data-slot="5-7am" data-fee="0"><div class="v2-slot-time">5-7am</div><div class="v2-slot-label">Dawn</div><div class="v2-slot-fee">No fee</div></button>
-        <button type="button" class="v2-slot v2-slot-selected" data-slot="7-9am" data-fee="0"><div class="v2-slot-time">7-9am</div><div class="v2-slot-label">Morning</div><div class="v2-slot-fee">No fee</div></button>
-        <button type="button" class="v2-slot" data-slot="9-11am" data-fee="20"><div class="v2-slot-time">9-11am</div><div class="v2-slot-label">Late</div><div class="v2-slot-fee">+₹20</div></button>
+        <!-- Slots are rendered dynamically from the chosen seller's opens_at → closes_at window. -->
       </div>
 
       <div class="po-actions">
@@ -183,12 +209,16 @@ try {
     sellerId: null,
     sellerName: null,
     minOrder: 0,
+    opensAt: "06:00",
+    closesAt: "11:00",
+    estPrice: 0, // per kg/piece — comes from seller's most recent matching listing
     qty: 1,
     cut: "whole",
     notes: "",
-    slot: "7-9am",
+    slot: null,
+    slotLabel: null,
     slotFee: 0,
-    estimate: 650,
+    estimate: 0,
   };
 
   function getEl(id) { return document.getElementById(id); }
@@ -204,13 +234,78 @@ try {
     window.scrollTo(0, 0);
   }
 
-  // Step 1 → 2: seller pick
+  function fmt12h(h, m) {
+    const period = h >= 12 ? "pm" : "am";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")}${period}` : `${h12}${period}`;
+  }
+  function parseTime(t) {
+    const [h, m] = String(t || "").split(":").map(Number);
+    if (Number.isNaN(h)) return { h: 6, m: 0 };
+    return { h, m: m || 0 };
+  }
+  function buildSlots(opensAt, closesAt) {
+    // Generate 2-hour slots between opens_at and closes_at. First slot is "no fee", rest +₹20.
+    const o = parseTime(opensAt);
+    const c = parseTime(closesAt);
+    const startMin = o.h * 60 + o.m;
+    const endMin = c.h * 60 + c.m;
+    const slots = [];
+    let s = startMin;
+    let i = 0;
+    while (s < endMin && i < 4) {
+      const e = Math.min(s + 120, endMin);
+      const sLabel = fmt12h(Math.floor(s / 60), s % 60);
+      const eLabel = fmt12h(Math.floor(e / 60), e % 60);
+      const range = `${sLabel}-${eLabel}`;
+      const lateFee = i === 0 ? 0 : i === 1 ? 0 : 20;
+      const tag = i === 0 ? "Dawn" : i === 1 ? "Morning" : "Late";
+      slots.push({ range, label: tag, fee: lateFee });
+      s = e;
+      i++;
+    }
+    return slots;
+  }
+  function renderSlots() {
+    const grid = getEl("po-slots");
+    if (!grid) return;
+    const slots = buildSlots(state.opensAt, state.closesAt);
+    if (slots.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--v2-ink-3);font:500 12px Inter;">Seller hours not configured.</div>`;
+      return;
+    }
+    grid.innerHTML = slots.map((s, i) => `
+      <button type="button" class="v2-slot${i === 0 ? ' v2-slot-selected' : ''}" data-slot="${s.range}" data-label="${s.label}" data-fee="${s.fee}">
+        <div class="v2-slot-time">${s.range}</div>
+        <div class="v2-slot-label">${s.label}</div>
+        <div class="v2-slot-fee">${s.fee > 0 ? `+₹${s.fee}` : 'No fee'}</div>
+      </button>`).join("");
+    // Default first slot
+    state.slot = slots[0].range;
+    state.slotLabel = slots[0].label;
+    state.slotFee = slots[0].fee;
+    grid.querySelectorAll(".v2-slot").forEach((b) => {
+      b.addEventListener("click", () => {
+        grid.querySelectorAll(".v2-slot").forEach((s) => s.classList.remove("v2-slot-selected"));
+        b.classList.add("v2-slot-selected");
+        state.slot = b.dataset.slot;
+        state.slotLabel = b.dataset.label;
+        state.slotFee = parseInt(b.dataset.fee) || 0;
+      });
+    });
+  }
+
+  // Step 1 → 2: seller pick — capture hours + estimate price for downstream steps
   document.querySelectorAll(".po-seller").forEach(btn => {
     btn.addEventListener("click", () => {
       state.sellerId = btn.dataset.sellerId;
       state.sellerName = btn.dataset.sellerName;
       state.minOrder = parseInt(btn.dataset.minOrder) || 0;
+      state.opensAt = btn.dataset.opensAt || "06:00";
+      state.closesAt = btn.dataset.closesAt || "11:00";
+      state.estPrice = parseFloat(btn.dataset.estPrice) || 0;
       getEl("po-selected-seller").textContent = state.sellerName;
+      renderSlots();
       showStep(2);
     });
   });
@@ -240,29 +335,27 @@ try {
   });
   getEl("po-notes")?.addEventListener("input", e => state.notes = e.target.value);
 
-  // Step 3: slot pick
-  document.querySelectorAll("#po-slots .v2-slot").forEach(b => {
-    b.addEventListener("click", () => {
-      document.querySelectorAll("#po-slots .v2-slot").forEach(s => s.classList.remove("v2-slot-selected"));
-      b.classList.add("v2-slot-selected");
-      state.slot = b.dataset.slot;
-      state.slotFee = parseInt(b.dataset.fee) || 0;
-    });
-  });
+  // (Slot click wiring is set up inside renderSlots() once seller is chosen.)
 
   // Next/back
   document.querySelectorAll("[data-next]").forEach(b => {
     b.addEventListener("click", () => {
       const n = parseInt(b.dataset.next);
       if (n === 4) {
-        // Update review
+        // Update review — estimate uses seller's actual matching listing price when known.
         getEl("po-rev-seller").textContent = state.sellerName;
         getEl("po-rev-qty").textContent = `${state.qty} kg`;
         getEl("po-rev-cut").textContent = state.cut.charAt(0).toUpperCase() + state.cut.slice(1);
         getEl("po-rev-slot").textContent = `Tomorrow ${state.slot}`;
-        const est = Math.round(650 * state.qty + state.slotFee); // rough estimate, seller confirms
-        state.estimate = est;
-        getEl("po-rev-est").textContent = `~₹${est}`;
+        const perUnit = state.estPrice > 0 ? state.estPrice : 0;
+        if (perUnit > 0) {
+          const est = Math.round(perUnit * state.qty + state.slotFee);
+          state.estimate = est;
+          getEl("po-rev-est").textContent = `~₹${est}`;
+        } else {
+          state.estimate = 0;
+          getEl("po-rev-est").textContent = "Seller confirms in morning";
+        }
       }
       showStep(n);
     });
