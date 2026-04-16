@@ -106,6 +106,13 @@ async function syncMutation(action: "upsert" | "remove" | "clear", payload?: any
   }
 }
 
+/** Cart key = listing_id:pricing_option_id so different bundles of the same listing are separate lines. */
+function cartKey(listingId: string, pricingOptionId?: string): string {
+  return pricingOptionId && pricingOptionId !== "default"
+    ? `${listingId}:${pricingOptionId}`
+    : listingId;
+}
+
 export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: number }): CartItem {
   let cart = getCart();
 
@@ -113,17 +120,17 @@ export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: numbe
   // already in the cart, clear the old seller's items first. One seller per checkout.
   const existingSellers = new Set(Object.values(cart).map((i) => i.seller_id));
   if (existingSellers.size > 0 && !existingSellers.has(item.seller_id)) {
-    // Wipe the entire cart — new seller replaces old.
     cart = {};
     syncMutation("clear");
     try { window.dispatchEvent(new CustomEvent("v2-cart-seller-switched", { detail: { newSellerId: item.seller_id } })); } catch {}
   }
 
-  const existing = cart[item.listing_id];
+  const key = cartKey(item.listing_id, item.pricing_option_id);
+  const existing = cart[key];
   const next: CartItem = existing
     ? { ...existing, qty: existing.qty + (item.qty ?? 1) }
     : { ...item, qty: item.qty ?? 1, added_at: Date.now() };
-  cart[item.listing_id] = next;
+  cart[key] = next;
   saveCart(cart);
   syncMutation("upsert", {
     listing_id: next.listing_id,
@@ -134,43 +141,60 @@ export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: numbe
   return next;
 }
 
-export function setQty(listingId: string, qty: number): void {
+/** setQty/incQty/decQty/removeItem accept either a plain listing_id (backward compat)
+ *  or a composite key "listing_id:pricing_option_id". They find the matching cart entry. */
+function findCartKey(cart: CartMap, id: string): string | null {
+  if (cart[id]) return id;
+  // Legacy: try as listing_id (matches first entry for that listing)
+  for (const k of Object.keys(cart)) {
+    if (k === id || k.startsWith(id + ":") || cart[k].listing_id === id) return k;
+  }
+  return null;
+}
+
+export function setQty(id: string, qty: number): void {
   const cart = getCart();
-  if (!cart[listingId]) return;
+  const key = findCartKey(cart, id);
+  if (!key) return;
   if (qty <= 0) {
-    delete cart[listingId];
+    const item = cart[key];
+    delete cart[key];
     saveCart(cart);
-    syncMutation("remove", { listing_id: listingId });
+    syncMutation("remove", { listing_id: item.listing_id });
     return;
   }
-  cart[listingId].qty = qty;
+  cart[key].qty = qty;
   saveCart(cart);
   syncMutation("upsert", {
-    listing_id: listingId,
+    listing_id: cart[key].listing_id,
     qty,
-    qty_unit: cart[listingId].qty_unit,
-    price_snapshot: cart[listingId].price,
+    qty_unit: cart[key].qty_unit,
+    price_snapshot: cart[key].price,
   });
 }
 
-export function incQty(listingId: string): void {
+export function incQty(id: string): void {
   const cart = getCart();
-  if (!cart[listingId]) return;
-  setQty(listingId, cart[listingId].qty + 1);
+  const key = findCartKey(cart, id);
+  if (!key) return;
+  setQty(key, cart[key].qty + 1);
 }
 
-export function decQty(listingId: string): void {
+export function decQty(id: string): void {
   const cart = getCart();
-  if (!cart[listingId]) return;
-  setQty(listingId, cart[listingId].qty - 1);
+  const key = findCartKey(cart, id);
+  if (!key) return;
+  setQty(key, cart[key].qty - 1);
 }
 
-export function removeItem(listingId: string): void {
+export function removeItem(id: string): void {
   const cart = getCart();
-  if (!cart[listingId]) return;
-  delete cart[listingId];
+  const key = findCartKey(cart, id);
+  if (!key) return;
+  const item = cart[key];
+  delete cart[key];
   saveCart(cart);
-  syncMutation("remove", { listing_id: listingId });
+  syncMutation("remove", { listing_id: item.listing_id });
 }
 
 export function clearCart(opts?: { sellerId?: string }): void {

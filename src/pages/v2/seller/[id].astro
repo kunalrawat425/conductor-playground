@@ -182,15 +182,21 @@ const tags = [
     function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
     function getName(sp) { try { return getSpeciesDisplay(sp) || sp; } catch { return sp; } }
 
+    // Build composite cart key matching cart.ts logic
+    function ck(listingId, optId) {
+      return optId && optId !== "default" ? listingId + ":" + optId : listingId;
+    }
+
     function renderItem(l) {
       const opts = l.pricing_options || [];
       const firstOpt = opts[0] || {};
       const name = getName(l.species);
       const sellerItems = getSellerItems();
-      const cartItem = sellerItems[l.id];
-      const inCart = cartItem?.qty || 0;
       const emoji = speciesEmoji(l.species);
       const isPreorder = l.weight_avail === 0 && acceptsPreorder;
+
+      // Total qty across all tiers for this listing (for incart highlight)
+      const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
 
       // Show all pricing tiers as individual add buttons so buyer picks the right pack/unit.
       const pricingHtml = opts.length <= 1
@@ -198,10 +204,12 @@ const tags = [
             const price = firstOpt.price || 0;
             const unit = firstOpt.unit_label || firstOpt.label || "kg";
             const optId = firstOpt.id || "default";
+            const key = ck(l.id, optId);
+            const inCart = sellerItems[key]?.qty || 0;
             return `<div class="v2-item-bottom">
               <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
               ${inCart > 0
-                ? `<div class="v2-item-counter" data-id="${l.id}">
+                ? `<div class="v2-item-counter" data-id="${key}">
                      <button class="v2-item-dec" aria-label="Decrease">−</button>
                      <span class="v2-item-count">${inCart}</span>
                      <button class="v2-item-inc" aria-label="Increase">+</button>
@@ -210,30 +218,31 @@ const tags = [
             </div>`;
           })()
         : (() => {
-            // Multiple tiers — show each as a row with its own add button.
+            // Multiple tiers — each tier gets its own add/counter using composite key.
             return `<div class="v2-item-tiers">
               ${opts.map((o) => {
                 const label = o.label || o.unit_label || o.unit || "unit";
+                const optId = o.id || "default";
+                const key = ck(l.id, optId);
+                const tierQty = sellerItems[key]?.qty || 0;
                 const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
                 return `<div class="v2-item-tier">
                   <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
                   <span class="v2-item-tier-price">₹${o.price}</span>
-                  <button class="v2-item-add v2-item-add-sm" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${o.id || 'default'}" data-opt-label="${escape(label)}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>
+                  ${tierQty > 0
+                    ? `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
+                         <button class="v2-item-dec" aria-label="Decrease">−</button>
+                         <span class="v2-item-count">${tierQty}</span>
+                         <button class="v2-item-inc" aria-label="Increase">+</button>
+                       </div>`
+                    : `<button class="v2-item-add v2-item-add-sm" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${optId}" data-opt-label="${escape(label)}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
                 </div>`;
               }).join("")}
-              ${inCart > 0 ? `<div class="v2-item-tier" style="border-top:1px solid var(--v2-border);padding-top:6px;margin-top:4px;">
-                <span class="v2-item-tier-label" style="font-weight:700;">In cart</span>
-                <div class="v2-item-counter" data-id="${l.id}">
-                  <button class="v2-item-dec" aria-label="Decrease">−</button>
-                  <span class="v2-item-count">${inCart}</span>
-                  <button class="v2-item-inc" aria-label="Increase">+</button>
-                </div>
-              </div>` : ''}
             </div>`;
           })();
 
       return `
-        <div class="v2-item-card${inCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
+        <div class="v2-item-card${totalInCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
           <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};">
             <span class="v2-item-emoji">${emoji}</span>
             ${isPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
