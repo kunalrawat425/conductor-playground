@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Molecule — Cart Bar</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .cart-bar{width:336px;background:var(--brand);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg)}
+  .cb-left{color:#fff}
+  .cb-items{font:600 12px Inter;opacity:.9}
+  .cb-total{font:800 16px Inter}
+  .cb-btn{background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer}
+  .cb-warning{background:var(--orange)}
+  .cb-success{background:var(--green)}
+  .cb-empty{background:var(--ink3);opacity:.7}
+  .cb-progress{width:336px;background:var(--brand);border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow-lg);color:#fff}
+  .cb-progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .cb-progress-text{font:600 11px Inter}
+  .cb-progress-amt{font:800 14px Inter}
+  .cb-progress-bar{height:4px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+  .cb-progress-bar .fill{height:100%;background:#fff;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Cart Bar</h1>
+  <p class="sub">Floating cart pill. Blinkit signature pattern.</p>
+
+  <div class="component" data-name="CartBar · Default">
+    <div class="component-variants">
+      <div class="cart-bar">
+        <div class="cb-left">
+          <div class="cb-items">2 items</div>
+          <div class="cb-total">₹1,450</div>
+        </div>
+        <button class="cb-btn">View Cart →</button>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Placement:</b> fixed bottom · 12px from edges · above bottom nav (if present)<br>
+      <b>bg:</b> #0066FF · <b>radius:</b> 12px · <b>shadow:</b> shadow-lg<br>
+      <b>Appears:</b> slide-up animation on first item add
+    </div>
+  </div>
+
+  <div class="component" data-name="CartBar · Below Min Order">
+    <div class="component-variants">
+      <div class="cart-bar cb-warning">
+        <div class="cb-left">
+          <div class="cb-items">Add ₹150 more for min order</div>
+          <div class="cb-total">₹850</div>
+        </div>
+        <button class="cb-btn" style="color:var(--orange)">Keep shopping</button>
+      </div>
+    </div>
+    <div class="spec"><b>Warning state:</b> orange bg · shows how much more needed · CTA reverts to "Keep shopping"</div>
+  </div>
+
+  <div class="component" data-name="CartBar · Free Delivery Hit">
+    <div class="component-variants">
+      <div class="cart-bar cb-success">
+        <div class="cb-left">
+          <div class="cb-items">🎉 Free delivery unlocked</div>
+          <div class="cb-total">₹1,120</div>
+        </div>
+        <button class="cb-btn" style="color:var(--green)">Checkout →</button>
+      </div>
+    </div>
+    <div class="spec"><b>Success state:</b> green bg · celebrates milestone · pushes to checkout</div>
+  </div>
+
+  <div class="component" data-name="CartBar · With Progress Bar">
+    <div class="component-variants">
+      <div class="cb-progress">
+        <div class="cb-progress-top">
+          <div class="cb-progress-text">Add ₹280 more for free delivery</div>
+          <div class="cb-progress-amt">₹720</div>
+        </div>
+        <div class="cb-progress-bar"><div class="fill" style="width:72%"></div></div>
+      </div>
+    </div>
+    <div class="spec"><b>Progress variant:</b> AOV pusher · shows ₹ needed to unlock free delivery · Swiggy pattern</div>
+  </div>
+
+  <div class="component" data-name="CartBar · Pre-order Mode">
+    <div class="component-variants">
+      <div class="cart-bar" style="background:#4F46E5">
+        <div class="cb-left">
+          <div class="cb-items">🌙 Pre-order for tomorrow 7am</div>
+          <div class="cb-total">₹1,450</div>
+        </div>
+        <button class="cb-btn" style="color:#4F46E5">Review →</button>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-order variant:</b> indigo bg · differentiates from same-day order flow</div>
+  </div>
+</div>
+</body>
+</html>

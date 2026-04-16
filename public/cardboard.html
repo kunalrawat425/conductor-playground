@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — Scan QR</title>
+<meta name="robots" content="noindex">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #ff6b35; color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+  .card { text-align: center; padding: 32px 24px; width: 100%; max-width: 700px; }
+
+  /* Top fish emoji - massive attention grabber */
+  .fish-big { font-size: 80px; margin-bottom: 8px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: bounce 2s infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  /* Headline - readable from 10+ feet */
+  .headline { font-size: 52px; font-weight: 900; line-height: 1.05; letter-spacing: -2px; margin-bottom: 8px; text-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+  /* Subhead */
+  .sub { font-size: 22px; font-weight: 700; opacity: 0.9; margin-bottom: 20px; }
+
+  /* QR - big, white background, impossible to miss */
+  .qr-wrap { background: white; border-radius: 24px; display: inline-block; padding: 16px; margin-bottom: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .qr-wrap img { width: 220px; height: 220px; display: block; }
+
+  /* Scan instruction - pulsing arrow */
+  .scan-text { font-size: 28px; font-weight: 900; margin-bottom: 12px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+  /* Free badge */
+  .free-pill { display: inline-block; background: white; color: #ff6b35; font-size: 20px; font-weight: 900; padding: 12px 32px; border-radius: 50px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+
+  /* Bottom brand */
+  .brand { margin-top: 16px; font-size: 14px; opacity: 0.6; font-weight: 700; }
+
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page { size: A4; margin: 10mm; }
+    .fish-big { animation: none; }
+    .scan-text { animation: none; }
+  }
+  @media (max-width: 480px) {
+    .headline { font-size: 36px; }
+    .sub { font-size: 18px; }
+    .qr-wrap img { width: 160px; height: 160px; }
+    .scan-text { font-size: 22px; }
+    .free-pill { font-size: 16px; padding: 10px 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="fish-big">🐟</div>
+  <div class="headline">ताजा मासा<br/>Fair Price</div>
+  <div class="sub">Supermarket नाही. Direct from seller.</div>
+  <div class="qr-wrap">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://wa.me/919870619974?text=Hi%2520%25F0%259F%2590%259F%2520I%2520want%2520fresh%2520fish%2520in%2520my%2520area&format=png" alt="Scan QR" />
+  </div>
+  <div class="scan-text">👆 SCAN करा</div>
+  <div class="free-pill">FREE — Early Access मिळवा</div>
+  <div class="brand">relifish.store</div>
+</div>
+</body>
+</html>

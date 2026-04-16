@@ -1,0 +1,127 @@
+---
+export const prerender = false;
+import AppShellV2 from "../../../components/v2/AppShellV2.astro";
+import Toast from "../../../components/v2/atoms/Toast.astro";
+import Input from "../../../components/v2/atoms/Input.astro";
+---
+<AppShellV2
+  title="Profile · Seller Dashboard"
+  description="Edit your seller profile"
+  header={{ variant: "page", title: "My profile", backHref: "/v2/dashboard/orders" }}
+  nav={{ active: "account", mode: "seller" }}
+>
+  <Toast />
+
+  <div id="v2-profile-loading" style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 12px Inter;">
+    <span class="v2-spinner v2-spinner-md"></span>
+    <div style="margin-top:8px;">Loading profile...</div>
+  </div>
+
+  <form id="v2-profile-form" style="display:none;padding:16px;">
+    <Input id="p-name" name="name" label="Business name" required={true} />
+    <Input id="p-location" name="location_name" label="Area / Neighborhood" />
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Operating hours</h3>
+    <div style="display:flex;gap:12px;">
+      <div style="flex:1;"><Input id="p-opens" name="opens_at" label="Opens" type="time" /></div>
+      <div style="flex:1;"><Input id="p-closes" name="closes_at" label="Closes" type="time" /></div>
+    </div>
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Order settings</h3>
+    <Input id="p-min-order" name="min_order_amount" label="Minimum order (₹)" type="number" />
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:#fff;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+      <input type="checkbox" id="p-preorder" />
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Accept pre-orders 🌙</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyers can reserve tomorrow's catch tonight</div>
+      </div>
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:#fff;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+      <input type="checkbox" id="p-delivery" />
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Offer delivery 🚲</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">In addition to pickup</div>
+      </div>
+    </label>
+    <Input id="p-delivery-rad" name="delivery_rad" label="Delivery radius (km)" type="number" />
+
+    <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id="p-save" style="margin-top:16px;">
+      Save changes
+    </button>
+  </form>
+</AppShellV2>
+
+<script>
+  import { supabase } from "../../../lib/supabase";
+
+  function getSellerId() { try { return localStorage.getItem("zepto_seller_id"); } catch { return null; } }
+  const sellerId = getSellerId();
+  if (!sellerId) {
+    location.href = "/v2/dashboard/login";
+  }
+
+  async function load() {
+    if (!sellerId) return;
+    const loading = document.getElementById("v2-profile-loading")!;
+    const form = document.getElementById("v2-profile-form") as HTMLFormElement;
+    try {
+      const { data: seller } = await supabase.from("sellers").select("*").eq("id", sellerId).single();
+      loading.style.display = "none";
+      form.style.display = "block";
+      (document.getElementById("p-name") as HTMLInputElement).value = seller?.name || "";
+      (document.getElementById("p-location") as HTMLInputElement).value = seller?.location_name || "";
+      (document.getElementById("p-opens") as HTMLInputElement).value = seller?.opens_at || "05:00";
+      (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
+      (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
+      (document.getElementById("p-preorder") as HTMLInputElement).checked = !!seller?.accepts_preorder;
+      (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
+      (document.getElementById("p-delivery-rad") as HTMLInputElement).value = String(seller?.delivery_rad || 5);
+    } catch (err: any) {
+      loading.innerHTML = `<div style="color:var(--v2-red);">Failed: ${err.message}</div>`;
+    }
+  }
+
+  document.getElementById("v2-profile-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("p-save") as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    const updates: any = {
+      name: (document.getElementById("p-name") as HTMLInputElement).value,
+      location_name: (document.getElementById("p-location") as HTMLInputElement).value,
+      opens_at: (document.getElementById("p-opens") as HTMLInputElement).value,
+      closes_at: (document.getElementById("p-closes") as HTMLInputElement).value,
+      min_order_amount: parseInt((document.getElementById("p-min-order") as HTMLInputElement).value) || 0,
+      accepts_preorder: (document.getElementById("p-preorder") as HTMLInputElement).checked,
+      has_delivery: (document.getElementById("p-delivery") as HTMLInputElement).checked,
+      delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
+    };
+
+    // Validation
+    if (updates.opens_at >= updates.closes_at) {
+      (window as any).v2Toast?.("error", "Invalid hours", "Open time must be before close time");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+    if (!updates.name) {
+      (window as any).v2Toast?.("error", "Name required", "Business name is required");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+
+    try {
+      const res = await fetch("/api/seller/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seller_id: sellerId, updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      (window as any).v2Toast?.("success", "Profile saved", "Buyers see updated info");
+      btn.disabled = false; btn.textContent = "Save changes";
+    } catch (err: any) {
+      (window as any).v2Toast?.("error", "Save failed", err.message);
+      btn.disabled = false; btn.textContent = "Save changes";
+    }
+  });
+
+  load();
+</script>

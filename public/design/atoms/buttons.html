@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Atom — Buttons</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .btn-primary{background:var(--brand);color:#fff;border:none;font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
+  .btn-primary:hover{background:var(--brand-d)}
+  .btn-secondary{background:#fff;color:var(--brand);border:1.5px solid var(--brand);font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
+  .btn-ghost{background:transparent;color:var(--ink);border:none;font:600 13px Inter;padding:8px 12px;cursor:pointer}
+  .btn-danger{background:var(--red);color:#fff;border:none;font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
+  .btn-cta-lg{background:var(--brand);color:#fff;border:none;font:800 16px Inter;padding:14px 32px;border-radius:var(--radius);cursor:pointer;box-shadow:var(--shadow-md)}
+
+  .add-btn{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;border:none;font:700 18px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .add-btn-lg{width:36px;height:36px;border-radius:10px;background:var(--brand);color:#fff;border:none;font:700 22px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .add-counter{display:flex;align-items:center;background:var(--brand);border-radius:8px;overflow:hidden;height:28px}
+  .add-counter button{background:transparent;color:#fff;border:none;width:28px;height:28px;font:700 14px Inter;cursor:pointer}
+  .add-counter span{color:#fff;font:700 12px Inter;padding:0 8px;min-width:24px;text-align:center}
+
+  .cart-bar{background:var(--brand);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg);width:320px}
+  .cart-bar .c-left{color:#fff}
+  .cart-bar .c-items{font:600 12px Inter;opacity:.9}
+  .cart-bar .c-total{font:800 15px Inter}
+  .cart-bar .c-btn{background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:var(--radius-sm);border:none}
+
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;font:500 10px Inter;color:var(--ink4);padding:8px;position:relative}
+  .nav-item.active{color:var(--brand)}
+  .nav-item.active::before{content:'';position:absolute;top:0;width:24px;height:2px;background:var(--brand);border-radius:0 0 2px 2px}
+  .nav-item .icon{font-size:20px}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Buttons</h1>
+  <p class="sub">All button primitives for V2. Each variant maps 1:1 to a Figma component.</p>
+
+  <div class="component" data-name="Button / Primary">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span><button class="btn-primary">Place Order</button></div>
+      <div class="variant"><span class="variant-label">large</span><button class="btn-cta-lg">Place Order</button></div>
+      <div class="variant"><span class="variant-label">loading</span><button class="btn-primary" disabled style="opacity:.6">Placing...</button></div>
+      <div class="variant"><span class="variant-label">disabled</span><button class="btn-primary" disabled style="opacity:.4;cursor:not-allowed">Place Order</button></div>
+    </div>
+    <div class="spec">
+      <b>bg:</b> #0066FF &nbsp; <b>text:</b> #FFFFFF &nbsp; <b>font:</b> 700 / 14px &nbsp; <b>padding:</b> 12px 24px &nbsp; <b>radius:</b> 8px<br>
+      <b>hover:</b> bg #0052CC &nbsp; <b>disabled:</b> opacity 0.4
+    </div>
+  </div>
+
+  <div class="component" data-name="Button / Secondary">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span><button class="btn-secondary">Cancel</button></div>
+      <div class="variant"><span class="variant-label">ghost</span><button class="btn-ghost">Skip</button></div>
+    </div>
+    <div class="spec">
+      <b>Secondary:</b> bg white, border 1.5px #0066FF, text #0066FF<br>
+      <b>Ghost:</b> transparent bg, text #0F172A, no border
+    </div>
+  </div>
+
+  <div class="component" data-name="Button / Danger">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span><button class="btn-danger">Delete</button></div>
+    </div>
+    <div class="spec">
+      <b>bg:</b> #DC2626 &nbsp; <b>text:</b> #FFFFFF &nbsp; used for destructive actions only
+    </div>
+  </div>
+
+  <div class="component" data-name="AddButton (Menu Item)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">add · sm</span><button class="add-btn">+</button></div>
+      <div class="variant"><span class="variant-label">add · lg</span><button class="add-btn-lg">+</button></div>
+      <div class="variant"><span class="variant-label">counter · sm</span>
+        <div class="add-counter"><button>−</button><span>2</span><button>+</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">counter · lg</span>
+        <div class="add-counter" style="height:36px"><button style="width:36px;height:36px">−</button><span style="font-size:14px">2</span><button style="width:36px;height:36px">+</button></div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Blinkit pattern.</b> Single "+" → expands to "− count +" after first tap.<br>
+      <b>Size sm:</b> 28x28px · radius 8px · font 18px &nbsp; <b>Size lg:</b> 36x36px · radius 10px · font 22px
+    </div>
+  </div>
+
+  <div class="component" data-name="CartBar (Floating)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span>
+        <div class="cart-bar"><div class="c-left"><div class="c-items">2 items</div><div class="c-total">₹1,450</div></div><button class="c-btn">View Cart →</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">min-order-warning</span>
+        <div class="cart-bar" style="background:var(--orange)"><div class="c-left"><div class="c-items">Add ₹150 more</div><div class="c-total">₹850</div></div><button class="c-btn" style="color:var(--orange)">Min order ₹1,000</button></div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Placement:</b> fixed bottom, 12px from edges, above nav<br>
+      <b>bg:</b> #0066FF &nbsp; <b>radius:</b> 12px &nbsp; <b>shadow:</b> shadow-lg<br>
+      <b>Warning state:</b> orange bg when below min order threshold
+    </div>
+  </div>
+
+  <div class="component" data-name="NavItem (Bottom Nav)">
+    <div class="component-variants" style="background:#fff;padding:16px 24px;border-radius:8px;border-top:1px solid var(--border)">
+      <div class="nav-item active"><span class="icon">🏠</span>Home</div>
+      <div class="nav-item"><span class="icon">🔍</span>Search</div>
+      <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="nav-item"><span class="icon">📋</span>Orders</div>
+      <div class="nav-item"><span class="icon">👤</span>Account</div>
+    </div>
+    <div class="spec">
+      <b>Active:</b> color #0066FF + 2px top indicator bar<br>
+      <b>Inactive:</b> color #94A3B8 &nbsp; <b>icon:</b> 20px &nbsp; <b>label:</b> 500/10px
+    </div>
+  </div>
+</div>
+</body>
+</html>

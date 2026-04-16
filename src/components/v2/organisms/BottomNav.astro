@@ -1,0 +1,39 @@
+---
+import type { BottomNavProps } from "../../../types/v2-components";
+interface Props extends BottomNavProps {}
+const { active, ordersCount = 0, mode = "buyer" } = Astro.props;
+
+const buyerItems = [
+  { id: "home", label: "Home", icon: "🏠", href: "/" },
+  { id: "search", label: "Search", icon: "🔍", href: "/search" },
+  { id: "preorder", label: "Pre-order", icon: "🌙", href: "/preorder" },
+  { id: "orders", label: "Orders", icon: "📋", href: "/track" },
+  { id: "account", label: "Account", icon: "👤", href: "/me" },
+];
+
+const sellerItems = [
+  { id: "orders", label: "Orders", icon: "📋", href: "/dashboard/orders" },
+  { id: "listings", label: "Listings", icon: "🐟", href: "/dashboard/listings" },
+  { id: "stats", label: "Stats", icon: "📊", href: "/dashboard/stats" },
+  { id: "account", label: "Profile", icon: "👤", href: "/dashboard/profile" },
+];
+
+const items = mode === "seller" ? sellerItems : buyerItems;
+---
+<nav class="v2-bottom-nav" role="navigation" aria-label="Main navigation">
+  {items.map((item) => (
+    <a
+      href={item.href}
+      class:list={["v2-nav-item", active === item.id && "v2-nav-active"]}
+      aria-current={active === item.id ? "page" : undefined}
+    >
+      <span class="v2-nav-icon" aria-hidden="true">{item.icon}</span>
+      <span class="v2-nav-label">{item.label}</span>
+      {item.id === "orders" && ordersCount > 0 && (
+        <span class="v2-nav-badge">{ordersCount}</span>
+      )}
+    </a>
+  ))}
+</nav>
+
+<!-- All styles in src/styles/v2-components.css -->

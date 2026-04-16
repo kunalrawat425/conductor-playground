@@ -1,0 +1,1134 @@
+---
+import AppShell from "../components/AppShell.astro";
+
+import LocationPicker from "../components/LocationPicker.astro";
+import LoginModal from "../components/LoginModal.astro";
+---
+
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Fresh fish from local Goa sellers — order now for pickup or pre-order tonight for tomorrow's morning catch. Prices per kg, no surprises." activeTab="home" needsMap={true} jsonLd={{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "Relifish",
+      "url": "https://www.relifish.store",
+      "description": "Hyperlocal fresh fish marketplace connecting Goa's fish sellers with buyers",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.relifish.store/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "LocalBusiness",
+      "name": "Relifish",
+      "url": "https://www.relifish.store",
+      "description": "Fresh fish marketplace — order from local Goa fish sellers for pickup or delivery",
+      "address": {
+        "@type": "PostalAddress",
+        "addressRegion": "Goa",
+        "addressCountry": "IN"
+      },
+      "areaServed": {
+        "@type": "State",
+        "name": "Goa"
+      },
+      "email": "relifishstore@gmail.com",
+      "priceRange": "₹₹"
+    }
+  ]
+}}>
+  <script is:inline>
+    (function () {
+      try {
+        if (localStorage.getItem("zepto_seller_id") && localStorage.getItem("zepto_seller_phone")) {
+          window.location.replace("/dashboard/orders");
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <h1 class="page-hero-heading">Today's catch from trusted local fish sellers</h1>
+  <p class="page-hero-sub">Pre-order tonight. Pick up tomorrow morning. Always fresh, never frozen.</p>
+  <!-- Hero search bar -->
+  <div class="hero-search">
+    <input type="text" id="search-input" placeholder="Search fish or seller..." autocomplete="off" />
+  </div>
+
+  <!-- Filters: open vs pre-order = one at a time; pickup / delivery / both = one at a time -->
+  <p class="text-muted" style="font-size:12px;margin:0 0 6px;line-height:1.35;">
+    Open now or Pre-order: pick one (tap again to clear). Same for Pickup / Delivery / Pickup &amp; delivery.
+  </p>
+  <div class="category-chips" id="category-chips">
+    <button type="button" class="chip chip-all active" data-chip="all">All</button>
+    <button type="button" class="chip chip-time" data-chip="open">Open now</button>
+    <button type="button" class="chip chip-time" data-chip="preorder">Pre-order</button>
+    <span class="chip-sep" aria-hidden="true"></span>
+    <button type="button" class="chip chip-fulfill" data-chip="pickup">Pickup</button>
+    <button type="button" class="chip chip-fulfill" data-chip="delivery">Delivery to you</button>
+    <button type="button" class="chip chip-fulfill" data-chip="both">Pickup &amp; delivery</button>
+    <button type="button" class="chip chip-toggle" data-chip="topRated">Top rated</button>
+  </div>
+
+  <!-- Loading skeleton -->
+  <section id="loading">
+    <div class="seller-cards">
+      <div class="seller-card"><div class="skeleton" style="height:200px;border-radius:16px;"></div></div>
+      <div class="seller-card"><div class="skeleton" style="height:200px;border-radius:16px;"></div></div>
+    </div>
+  </section>
+
+  <!-- Waitlist promo card (always visible above sellers) -->
+  <div id="promo-card" class="promo-card" style="display:none;">
+    <div class="promo-inner">
+      <div class="promo-left">
+        <strong>🚀 Not in your area yet?</strong>
+        <span>People in your area are already waiting. Be one of them.</span>
+        <span class="promo-perks">Launch discounts, best prices, first access when we go live</span>
+      </div>
+      <a href="/buyer-banner.html#wl-form" class="promo-btn">Join Waitlist</a>
+    </div>
+  </div>
+
+  <!-- Sellers section -->
+  <section id="sellers-section" style="display:none;">
+    <div class="section-header">
+      <h2 class="section-heading">Sellers near you</h2>
+      <span id="seller-count" class="count-badge"></span>
+    </div>
+    <div id="sellers-container" class="seller-cards" style="min-height:200px;"></div>
+  </section>
+
+  <!-- Empty state: no sellers in area -->
+  <section id="empty-state" style="display:none;">
+
+    <!-- Hero -->
+    <div class="ns-card ns-hero" id="ns-hero-card">
+      <div class="ns-badge">🚀 Launching in your area soon</div>
+      <h3 id="empty-title">No sellers in your area yet</h3>
+      <p id="empty-msg">We're onboarding trusted fish sellers near you.<br/>Tell us your interest so we launch faster in your area.</p>
+      <div class="ns-urgency" id="ns-area-count"></div>
+    </div>
+
+    <!-- Visual flow -->
+    <div class="ns-card" id="ns-flow-card">
+      <h4 class="ns-section-title">How it works</h4>
+      <div class="ns-flow">
+        <div class="ns-flow-step"><div class="ns-flow-num">1</div><div class="ns-flow-icon">📍</div><div class="ns-flow-label">You tell us<br/>your area</div></div>
+        <div class="ns-flow-arrow">→</div>
+        <div class="ns-flow-step"><div class="ns-flow-num">2</div><div class="ns-flow-icon">🐟</div><div class="ns-flow-label">We bring<br/>sellers to you</div></div>
+        <div class="ns-flow-arrow">→</div>
+        <div class="ns-flow-step"><div class="ns-flow-num">3</div><div class="ns-flow-icon">🔔</div><div class="ns-flow-label">You get<br/>notified</div></div>
+        <div class="ns-flow-arrow">→</div>
+        <div class="ns-flow-step"><div class="ns-flow-num">4</div><div class="ns-flow-icon">🛒</div><div class="ns-flow-label">Browse, order<br/>& enjoy</div></div>
+      </div>
+    </div>
+
+    <!-- 7 Benefits -->
+    <div class="ns-card" id="ns-benefits-card">
+      <h4 class="ns-section-title">What you'll get</h4>
+      <div class="ns-benefits">
+        <div class="ns-ben"><span class="ns-ben-emoji">🐟</span><div><strong>Same-day freshness</strong><span class="ns-ben-sub">Fish sourced today, not sitting on ice for days</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">💰</span><div><strong>Transparent pricing</strong><span class="ns-ben-sub">No hidden charges. See price per kg upfront.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">🎣</span><div><strong>Pre-order option</strong><span class="ns-ben-sub">Book tomorrow's fish today. It's reserved for you.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">📍</span><div><strong>Nearby sellers only</strong><span class="ns-ben-sub">Closer sellers, fresher fish. Always local.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">📱</span><div><strong>All sellers, one app</strong><span class="ns-ben-sub">Compare prices across sellers. No multiple apps.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">💲</span><div><strong>Reasonable rates</strong><span class="ns-ben-sub">Direct from seller. Compare prices easily.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">🔔</span><div><strong>Smart notifications</strong><span class="ns-ben-sub">New seller nearby, fresh stock arrival, price drops</span></div></div>
+      </div>
+    </div>
+
+    <!-- Demand form -->
+    <div class="ns-card ns-query" id="ns-form-card">
+      <h4 class="ns-section-title">👉 Yes, I want this service</h4>
+      <p class="ns-query-sub">Help us launch faster in your area. Takes 30 seconds.</p>
+
+      <form id="quick-waitlist" class="qw-form">
+        <input type="hidden" id="qw-utm-source" name="utm_source" />
+        <input type="hidden" id="qw-utm-medium" name="utm_medium" />
+        <input type="hidden" id="qw-utm-campaign" name="utm_campaign" />
+        <input type="tel" id="qw-phone" placeholder="Your phone number" required />
+        <input type="email" id="qw-email" placeholder="Your email (optional — for launch updates)" />
+        <input type="text" id="qw-area" placeholder="Your area (e.g. Andheri West)" required />
+
+        <div class="qw-group">
+          <label class="qw-label">How often do you buy fish?</label>
+          <div class="qw-chips" data-field="freq">
+            <button type="button" class="qw-chip" data-val="weekly">🗓 Weekly</button>
+            <button type="button" class="qw-chip" data-val="occasionally">🐟 Occasionally</button>
+          </div>
+        </div>
+
+        <div class="qw-group">
+          <label class="qw-label">What do you prefer?</label>
+          <div class="qw-chips" data-field="pref">
+            <button type="button" class="qw-chip" data-val="whole">🐟 Fresh whole fish</button>
+            <button type="button" class="qw-chip" data-val="cleaned">🔪 Cleaned & cut</button>
+            <button type="button" class="qw-chip" data-val="ready">🍳 Ready to cook</button>
+          </div>
+        </div>
+
+        <div class="qw-group">
+          <label class="qw-label">Expected order size?</label>
+          <div class="qw-chips" data-field="budget">
+            <button type="button" class="qw-chip" data-val="300-500">₹300–500</button>
+            <button type="button" class="qw-chip" data-val="500-1000">₹500–1000</button>
+            <button type="button" class="qw-chip" data-val="1000+">₹1000+</button>
+          </div>
+        </div>
+
+        <div class="qw-group">
+          <label class="qw-label">Request specific fish (optional)</label>
+          <input type="text" id="qw-fish" placeholder="e.g. I want Pomfret tomorrow" />
+        </div>
+
+        <button type="submit" class="qw-btn" id="qw-submit">👉 Notify Me When Live</button>
+        <p class="qw-note">Join now — you'll still be eligible for launch discounts & exclusive offers</p>
+      </form>
+
+      <div id="qw-success" style="display:none;">
+        <div class="qw-done-box">
+          <div style="font-size:40px;">🎉</div>
+          <p class="qw-done">You're on the list!</p>
+          <p class="qw-done-sub">We'll notify you when sellers go live near you.<br/>Early supporters get the best launch deals.</p>
+          <div class="qw-done-area" id="qw-done-count"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trust -->
+    <div class="ns-card ns-trust" id="ns-trust-card">
+      <div class="ns-contact">Questions? <a href="mailto:relifishstore@gmail.com?subject=Fish%20Query">relifishstore@gmail.com</a></div>
+      <div class="ns-contact"><a href="/privacy" style="color:var(--gray-400);font-size:11px;">Privacy Policy</a></div>
+    </div>
+  </section>
+
+  <LocationPicker />
+  <LoginModal />
+
+  <style is:global>
+    /* ===== No-seller empty state ===== */
+    .ns-card { background: white; border-radius: 8px; padding: 24px 20px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .ns-hero { text-align: center; background: linear-gradient(135deg, #f0f6ff 0%, #e8f4fd 100%); border: 1px solid #d4e6f9; }
+    .ns-badge { display: inline-block; background: var(--blue); color: white; font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 50px; margin-bottom: 10px; }
+    .ns-hero h3 { font-size: 20px; font-weight: 700; margin: 0 0 8px; }
+    .ns-hero p { font-size: 14px; color: var(--gray-600); margin: 0; line-height: 1.5; }
+    .ns-urgency { margin-top: 12px; font-size: 13px; font-weight: 700; color: #e65100; background: #fff3e0; padding: 8px 14px; border-radius: 8px; display: none; }
+    .ns-section-title { font-size: 15px; font-weight: 700; margin: 0 0 14px; color: var(--gray-800); }
+
+    /* Flow diagram */
+    .ns-flow { display: flex; align-items: flex-start; justify-content: center; gap: 2px; }
+    .ns-flow-step { text-align: center; flex: 1; min-width: 60px; position: relative; }
+    .ns-flow-num { width: 20px; height: 20px; background: var(--blue); color: white; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; }
+    .ns-flow-icon { font-size: 24px; margin-bottom: 4px; }
+    .ns-flow-label { font-size: 11px; font-weight: 600; color: var(--gray-700); line-height: 1.3; }
+    .ns-flow-arrow { font-size: 16px; color: var(--blue); font-weight: 700; margin-top: 20px; flex-shrink: 0; }
+
+    /* Benefits */
+    .ns-benefits { display: flex; flex-direction: column; gap: 8px; }
+    .ns-ben { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--gray-50); border-radius: 10px; }
+    .ns-ben-emoji { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+    .ns-ben div { display: flex; flex-direction: column; gap: 1px; }
+    .ns-ben strong { font-size: 13px; font-weight: 600; }
+    .ns-ben-sub { font-size: 11px; color: var(--gray-500); line-height: 1.3; }
+
+    /* Query form */
+    .ns-query { border: 2px solid var(--blue); background: linear-gradient(180deg, #f0f6ff 0%, white 40%); }
+    .ns-query-sub { font-size: 13px; color: var(--gray-500); margin: -8px 0 14px; }
+    .qw-form { display: flex; flex-direction: column; gap: 12px; }
+    .qw-form input { padding: 12px 14px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 15px; font-family: inherit; background: white; box-sizing: border-box; width: 100%; }
+    .qw-form input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+    .qw-group { display: flex; flex-direction: column; gap: 6px; }
+    .qw-label { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+    .qw-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .qw-chip { padding: 8px 14px; border: 1.5px solid var(--gray-200); border-radius: 50px; font-size: 13px; font-weight: 600; background: white; color: var(--gray-700); cursor: pointer; font-family: inherit; transition: all 0.15s; text-transform: capitalize; }
+    [data-field="budget"] .qw-chip { text-transform: none; }
+    .qw-chip.selected { background: var(--blue); color: white; border-color: var(--blue); }
+    .qw-btn { padding: 14px; background: var(--blue); color: white; font-size: 16px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; min-height: 50px; margin-top: 4px; }
+    .qw-btn:hover { background: #0052a3; }
+    .qw-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .qw-note { font-size: 12px; color: var(--gray-400); text-align: center; margin: 0; }
+    .qw-done-box { text-align: center; padding: 12px 0; }
+    .qw-done { font-size: 18px; font-weight: 700; color: #00875a; margin: 8px 0 4px; }
+    .qw-done-sub { font-size: 13px; color: var(--gray-500); margin: 0; line-height: 1.6; }
+    .qw-done-area { margin-top: 12px; font-size: 13px; font-weight: 700; color: #e65100; background: #fff3e0; padding: 8px 14px; border-radius: 8px; display: none; }
+
+    /* Trust */
+    .ns-trust { display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; }
+    .ns-trust-row { display: flex; align-items: center; gap: 10px; }
+    .ns-trust-row p { font-size: 13px; color: var(--gray-500); margin: 0; }
+    .ns-trust-avatars { display: flex; }
+    .ns-av { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; margin-left: -6px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; }
+    .ns-av:first-child { margin-left: 0; }
+    .a1 { background: linear-gradient(135deg,#2a5298,#1e3c72); }
+    .a2 { background: linear-gradient(135deg,#f5af19,#f12711); }
+    .a3 { background: linear-gradient(135deg,#11998e,#38ef7d); }
+    .a4 { background: linear-gradient(135deg,#667eea,#764ba2); }
+    .ns-contact { font-size: 12px; color: var(--gray-400); }
+    .ns-contact a { color: var(--blue); font-weight: 600; }
+
+    /* Promo card */
+    .promo-card { margin-bottom: 12px; }
+    .promo-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: linear-gradient(135deg, #f0f6ff 0%, #e8f4fd 100%); border: 1px solid #d4e6f9; border-radius: 8px; padding: 14px 16px; }
+    .promo-left { display: flex; flex-direction: column; gap: 2px; }
+    .promo-left strong { font-size: 13px; font-weight: 700; }
+    .promo-left span { font-size: 11px; color: var(--gray-500); }
+    .promo-perks { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+    .promo-btn { background: var(--blue); color: white; font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 8px; text-decoration: none; flex-shrink: 0; }
+    .promo-btn:hover { background: #0052a3; text-decoration: none; }
+
+    .page-hero-heading {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin: 12px 0 4px;
+      line-height: 1.2;
+    }
+    .page-hero-sub {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin: 0 0 4px;
+      line-height: 1.4;
+    }
+
+    .hero-search {
+      margin: 8px 0 12px;
+    }
+    .hero-search input {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .hero-search input:focus {
+      box-shadow: 0 2px 12px rgba(0,102,204,0.15);
+      border: none;
+    }
+
+    .category-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0 12px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .category-chips::-webkit-scrollbar { display: none; }
+    .chip-sep {
+      flex-shrink: 0;
+      width: 1px;
+      align-self: stretch;
+      min-height: 28px;
+      margin: 2px 4px;
+      background: var(--gray-200);
+    }
+    .chip {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      background: white;
+      color: var(--gray-700);
+      border: 1.5px solid var(--gray-200);
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: capitalize;
+    }
+    .chip.active {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 20px 0 12px;
+    }
+    .section-heading {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .count-badge {
+      background: var(--blue);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    /* --- Seller cards (Zomato-style) --- */
+    .seller-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .seller-card {
+      position: relative;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      transition: transform 0.1s, box-shadow 0.15s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .seller-card-grey {
+      opacity: 0.5;
+      filter: grayscale(0.6);
+      pointer-events: none;
+    }
+    .seller-out-of-area {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+      z-index: 1;
+    }
+    .seller-open-dot {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 10px;
+      height: 10px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px white, 0 0 6px rgba(34,197,94,0.4);
+      z-index: 1;
+    }
+    .seller-hours-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+      z-index: 1;
+    }
+    .seller-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      text-decoration: none;
+      color: inherit;
+    }
+    .seller-card:active { transform: scale(0.98); }
+
+    .seller-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 16px 10px;
+    }
+    .seller-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #e8f4fd 0%, #d1ecf1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .seller-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .seller-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--gray-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .seller-location {
+      font-size: 12px;
+      color: var(--gray-500);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .seller-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .seller-rating {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--green);
+      color: white;
+    }
+    .seller-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .badge-open { background: #d4edda; color: #155724; }
+    .badge-closed { background: #f8d7da; color: #721c24; }
+    .badge-preorder { background: #fff3cd; color: #856404; }
+    .badge-delivery { background: #cce5ff; color: #004085; }
+    .badge-distance { background: var(--gray-100); color: var(--gray-700); }
+    .badge-orders { background: var(--gray-100); color: var(--gray-700); }
+
+    /* Menu preview strip */
+    .seller-menu-preview {
+      padding: 0 16px 14px;
+    }
+    .menu-items-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px 0;
+    }
+    .menu-items-strip::-webkit-scrollbar { display: none; }
+
+    .menu-preview-item {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 80px;
+      max-width: 90px;
+    }
+    .menu-preview-img {
+      width: 68px;
+      height: 68px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      overflow: hidden;
+    }
+    .menu-preview-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .menu-preview-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-700);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 80px;
+    }
+    .menu-preview-price {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .seller-divider {
+      height: 1px;
+      background: var(--gray-100);
+      margin: 0 16px;
+    }
+
+    .seller-card-footer {
+      padding: 10px 16px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .seller-item-count {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .seller-cta {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    @media (max-width: 768px) {
+      .menu-preview-img { width: 60px; height: 60px; }
+      .menu-preview-item { min-width: 70px; max-width: 80px; }
+    }
+
+    @media (min-width: 769px) {
+      .seller-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+
+  <script>
+    import { getActiveListings, supabase } from "../lib/supabase";
+    import { SPECIES, getSpeciesDisplay } from "../lib/species";
+    import type { FishListing, Seller } from "../lib/supabase";
+    import { formatListingPriceSummary } from "../lib/listing-pricing";
+    import { formatFishSizeSuffix } from "../lib/fish-size";
+    import { normalizeIndianMobile } from "../lib/indian-phone";
+
+    // Capture UTM params from URL into hidden form fields
+    (function captureUTMs() {
+      const params = new URLSearchParams(window.location.search);
+      ["utm_source", "utm_medium", "utm_campaign"].forEach(key => {
+        const val = params.get(key);
+        if (val) {
+          const el = document.getElementById("qw-" + key.replace("_", "-")) as HTMLInputElement | null;
+          if (el) el.value = val;
+        }
+      });
+    })();
+
+    function esc(str: string): string {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function getBuyerLocation(): { lat: number; lng: number; name: string } | null {
+      try {
+        const saved = localStorage.getItem("zepto_location");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+      return null;
+    }
+
+    function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function isSellerOpen(opensAt: string | null, closesAt: string | null): boolean {
+      if (!opensAt || !closesAt) return true;
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const current = h * 60 + m;
+      const [oh, om] = opensAt.split(":").map(Number);
+      const [ch, cm] = closesAt.split(":").map(Number);
+      const open = oh * 60 + (om || 0);
+      const close = ch * 60 + (cm || 0);
+      if (close > open) return current >= open && current < close;
+      return current >= open || current < close;
+    }
+
+    const FISH_EMOJI: Record<string, string> = {
+      pomfret: "🐟", surmai: "🐠", rawas: "🐡", bangda: "🐟", bombil: "🍤",
+      prawns: "🦐", crab: "🦀", squid: "🦑", lobster: "🦞", oyster: "🦪",
+      clam: "🐚", sardine: "🐟", sole: "🐟", hilsa: "🐟", rohu: "🐟", catla: "🐟",
+    };
+
+    interface SellerGroup {
+      seller: Seller;
+      listings: FishListing[];
+      distance: number | null;
+      isOpen: boolean;
+      inDeliveryRange: boolean;
+      inServiceArea: boolean;
+    }
+
+    let allGroups: SellerGroup[] = [];
+
+    type TimeFilter = "none" | "open" | "preorder";
+    type FulfillmentFilter = "none" | "pickup" | "delivery" | "both";
+
+    const filterToggles = {
+      /** Open now vs Pre-order: at most one */
+      timeMode: "none" as TimeFilter,
+      /** Pickup / Delivery / Both: at most one */
+      fulfillment: "none" as FulfillmentFilter,
+      topRated: false,
+    };
+
+    function hasActiveFilters(): boolean {
+      return (
+        filterToggles.timeMode !== "none" ||
+        filterToggles.fulfillment !== "none" ||
+        filterToggles.topRated
+      );
+    }
+
+    function passesCatalogFilters(g: SellerGroup, buyerLoc: ReturnType<typeof getBuyerLocation>): boolean {
+      if (filterToggles.topRated && !(g.seller.rating_avg > 0)) return false;
+
+      if (filterToggles.timeMode === "open" && !g.isOpen) return false;
+      if (
+        filterToggles.timeMode === "preorder" &&
+        (g.isOpen || g.seller.accepts_preorder === false)
+      ) {
+        return false;
+      }
+
+      const mode = filterToggles.fulfillment;
+      if (mode !== "none") {
+        let ok = false;
+        if (mode === "pickup") {
+          ok = !buyerLoc || g.inServiceArea;
+        } else if (mode === "delivery") {
+          ok = g.inDeliveryRange;
+        } else if (mode === "both") {
+          ok = !!g.seller.has_delivery && g.inDeliveryRange && g.inServiceArea;
+        }
+        if (!ok) return false;
+      }
+      return true;
+    }
+
+    async function loadCatalog() {
+      const loadingEl = document.getElementById("loading")!;
+      const sellersSection = document.getElementById("sellers-section")!;
+      const emptyState = document.getElementById("empty-state")!;
+
+      try {
+        // Get active listings + active sellers only.
+        // Filter: is_active=true AND name not the legacy placeholder.
+        // This prevents unfinished onboardings from appearing in the buyer list.
+        const [listings, allSellersRes] = await Promise.all([
+          getActiveListings().catch(() => [] as FishListing[]),
+          supabase
+            .from("sellers")
+            .select("*")
+            .eq("is_active", true)
+            .neq("name", "New Seller")
+            .then(r => r.data || []),
+        ]);
+
+        // Group listings by seller
+        const sellerMap = new Map<string, SellerGroup>();
+        const buyerLoc = getBuyerLocation();
+
+        // First, add all sellers (even without active listings)
+        for (const s of allSellersRes) {
+          const seller = s as Seller;
+          const dist = buyerLoc && seller.lat != null && seller.lng != null
+            ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(seller.lat), Number(seller.lng))
+            : null;
+
+          const inRange = seller.has_delivery && dist !== null && seller.delivery_rad != null
+            ? dist <= seller.delivery_rad
+            : false;
+
+          const rad = seller.delivery_rad || 10;
+          const inArea = dist !== null ? dist <= rad : true; // no location = show all
+
+          sellerMap.set(seller.id, {
+            seller,
+            listings: [],
+            distance: dist,
+            isOpen: isSellerOpen(seller.opens_at, seller.closes_at),
+            inDeliveryRange: inRange,
+            inServiceArea: inArea,
+          });
+        }
+
+        // Then add active listings to their sellers
+        for (const l of listings) {
+          const seller = (l as any).seller as Seller;
+          if (!seller) continue;
+          if (sellerMap.has(seller.id)) {
+            sellerMap.get(seller.id)!.listings.push(l);
+          }
+        }
+
+        allGroups = Array.from(sellerMap.values());
+
+        // Hide sellers that have 0 listings AND don't accept pre-orders.
+        // These are unfinished onboardings or temporarily empty stores —
+        // showing them creates a bad first impression for buyers.
+        allGroups = allGroups.filter(
+          g => g.listings.length > 0 || g.seller.accepts_preorder === true
+        );
+
+        // Sort: in-service-area first, then open first, then by distance
+        allGroups.sort((a, b) => {
+          if (a.inServiceArea !== b.inServiceArea) return a.inServiceArea ? -1 : 1;
+          if (a.isOpen !== b.isOpen) return a.isOpen ? -1 : 1;
+          if (a.distance !== null && b.distance !== null) return a.distance - b.distance;
+          if (a.distance !== null) return -1;
+          if (b.distance !== null) return 1;
+          return (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0);
+        });
+
+        requestAnimationFrame(() => {
+          loadingEl.style.display = "none";
+          renderSellers();
+          sellersSection.classList.add("fade-in");
+        });
+      } catch (err) {
+        loadingEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red);">Failed to load. Pull to refresh.</div>`;
+        console.error("Catalog error:", err);
+      }
+    }
+
+    function renderSellers() {
+      const sellersSection = document.getElementById("sellers-section")!;
+      const emptyState = document.getElementById("empty-state")!;
+      const container = document.getElementById("sellers-container")!;
+      const countBadge = document.getElementById("seller-count")!;
+      const searchQuery = (document.getElementById("search-input") as HTMLInputElement).value.toLowerCase().trim();
+
+      // Recalculate distance and delivery range with current buyer location
+      const buyerLoc = getBuyerLocation();
+      for (const g of allGroups) {
+        const s = g.seller;
+        g.distance = buyerLoc && s.lat != null && s.lng != null
+          ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
+          : null;
+        g.inDeliveryRange = s.has_delivery && g.distance !== null && s.delivery_rad != null
+          ? g.distance <= s.delivery_rad
+          : false;
+        const rad = s.delivery_rad || 10;
+        g.inServiceArea = g.distance !== null ? g.distance <= rad : !buyerLoc;
+      }
+
+      let filtered = [...allGroups];
+
+      // Search filter — match seller name, location, or any listing species
+      if (searchQuery) {
+        filtered = filtered.filter(g => {
+          const nameMatch = g.seller.name.toLowerCase().includes(searchQuery)
+            || (g.seller.location_name || "").toLowerCase().includes(searchQuery);
+          const speciesMatch = g.listings.some(l => {
+            const display = getSpeciesDisplay(l.species).toLowerCase();
+            const species = SPECIES[l.species as keyof typeof SPECIES];
+            const marathi = species?.marathi?.toLowerCase() || "";
+            return display.includes(searchQuery) || marathi.includes(searchQuery) || l.species.includes(searchQuery);
+          });
+          return nameMatch || speciesMatch;
+        });
+      }
+
+      if (hasActiveFilters()) {
+        filtered = filtered.filter(g => passesCatalogFilters(g, buyerLoc));
+        if (filterToggles.topRated) {
+          filtered.sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
+        }
+      }
+
+      if (filtered.length === 0) {
+        sellersSection.style.display = "none";
+        emptyState.style.display = "block";
+        const promoCard = document.getElementById("promo-card");
+        if (promoCard) promoCard.style.display = "none";
+        const buyerLoc = getBuyerLocation();
+        const emptyTitle = document.getElementById("empty-title")!;
+        const emptyMsg = document.getElementById("empty-msg")!;
+        const extraCards = ["ns-flow-card","ns-benefits-card","ns-form-card","ns-trust-card"].map(id => document.getElementById(id));
+        if (!buyerLoc) {
+          emptyTitle.textContent = "Set your location";
+          emptyMsg.innerHTML = `We need your location to show nearby sellers. <a href="#" onclick="window.dispatchEvent(new CustomEvent('open-location-picker'));return false;" style="color:var(--primary);text-decoration:underline;">Set location</a>`;
+          extraCards.forEach(c => { if (c) c.style.display = "none"; });
+          const heroCard = document.getElementById("ns-hero-card");
+          if (heroCard) { heroCard.querySelector(".ns-badge")!.textContent = "📍 Location needed"; }
+        } else if (hasActiveFilters()) {
+          emptyTitle.textContent = "No sellers match these filters";
+          emptyMsg.textContent = "Turn off a filter or tap All to see everyone.";
+          extraCards.forEach(c => { if (c) c.style.display = "none"; });
+        } else {
+          emptyTitle.textContent = "No sellers in your area yet";
+          emptyMsg.innerHTML = "We're onboarding trusted fish sellers near you.<br/>Tell us your interest so we launch faster in your area.";
+          extraCards.forEach(c => { if (c) c.style.display = "block"; });
+          const heroCard = document.getElementById("ns-hero-card");
+          if (heroCard) { heroCard.querySelector(".ns-badge")!.textContent = "🚀 Launching in your area soon"; }
+        }
+        return;
+      }
+
+      emptyState.style.display = "none";
+      sellersSection.style.display = "block";
+      const nearbyCount = filtered.filter(g => g.inServiceArea).length;
+      countBadge.textContent = String(nearbyCount);
+      // Show promo card above sellers
+      const promoCard = document.getElementById("promo-card");
+      if (promoCard) promoCard.style.display = "block";
+
+      // Lock height during innerHTML swap to prevent collapse flicker
+      const prevHeight = container.offsetHeight;
+      if (prevHeight > 0) container.style.minHeight = prevHeight + "px";
+
+      container.innerHTML = filtered.map(g => {
+        const s = g.seller;
+        const itemCount = g.listings.length;
+
+        // Menu preview — show top 5 items
+        const previewItems = g.listings.slice(0, 5).map(l => {
+          const name = SPECIES[l.species as keyof typeof SPECIES]?.english || l.species;
+          const emoji = FISH_EMOJI[l.species] || "🐟";
+          const nameLine = esc(name + formatFishSizeSuffix(l.fish_size));
+          return `
+            <div class="menu-preview-item">
+              <div class="menu-preview-img">
+                ${l.photo_url
+                  ? `<img src="${esc(l.photo_url)}" alt="Fresh ${esc(name)} from ${esc(g.name)}" loading="lazy" />`
+                  : emoji}
+              </div>
+              <div class="menu-preview-name">${nameLine}</div>
+              <div class="menu-preview-price">${esc(formatListingPriceSummary(l))}</div>
+            </div>
+          `;
+        }).join("");
+
+        const opensAt = (s.opens_at || "05:00").slice(0, 5);
+        const closesAt = (s.closes_at || "14:00").slice(0, 5);
+
+        return `
+          <a href="/seller/${s.id}" class="seller-card${!g.inServiceArea ? ' seller-card-grey' : ''}">
+            ${!g.inServiceArea ? `<div class="seller-out-of-area">Outside your area</div>` : ""}
+            ${g.isOpen && g.inServiceArea
+              ? `<div class="seller-open-dot" title="Open now"></div>`
+              : !g.inServiceArea ? ""
+              : `<div class="seller-hours-tag">🕐 ${opensAt} – ${closesAt}</div>`}
+            <div class="seller-card-header">
+              <div class="seller-avatar">🐟</div>
+              <div class="seller-info">
+                <div class="seller-name">${esc(s.name)}</div>
+                <div class="seller-location">${esc(s.location_name || s.location || "")}</div>
+                <div class="seller-badges">
+                  ${s.rating_avg > 0 ? `<span class="seller-rating">★ ${s.rating_avg}</span>` : ""}
+                  ${!g.isOpen
+                    ? (s.accepts_preorder !== false
+                      ? `<span class="seller-badge badge-preorder">Pre-order</span>`
+                      : `<span class="seller-badge badge-closed">Closed</span>`)
+                    : ""}
+                  ${g.inDeliveryRange
+                    ? `<span class="seller-badge badge-delivery">🚚 Delivers to you</span>`
+                    : s.has_delivery
+                      ? `<span class="seller-badge badge-delivery" style="opacity:0.5;">🚚 ${s.delivery_rad || "?"}km radius</span>`
+                      : `<span class="seller-badge" style="background:var(--gray-100);color:var(--gray-500);">Pickup only</span>`}
+                  ${g.distance !== null ? `<span class="seller-badge badge-distance">${g.distance.toFixed(1)} km</span>` : ""}
+                </div>
+              </div>
+            </div>
+            ${previewItems
+              ? `<div class="seller-menu-preview"><div class="menu-items-strip">${previewItems}</div></div>`
+              : !g.isOpen ? `<div style="padding:0 16px 12px;"><span style="font-size:12px;color:var(--gray-500);">Opens ${(g.seller.opens_at || "05:00").slice(0,5)} · Order now for tomorrow</span></div>` : ""}
+            <div class="seller-divider"></div>
+            <div class="seller-card-footer">
+              <span class="seller-item-count">${itemCount} item${itemCount !== 1 ? "s" : ""}</span>
+              <span class="seller-cta">View Menu →</span>
+            </div>
+          </a>
+        `;
+      }).join("");
+
+      // Release height lock after new content is painted
+      requestAnimationFrame(() => { container.style.minHeight = ""; });
+    }
+
+    // Search
+    let searchTimeout: any;
+    document.getElementById("search-input")?.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => renderSellers(), 200);
+    });
+
+    const timeChips = ["open", "preorder"] as const;
+    const fulfillChips = ["pickup", "delivery", "both"] as const;
+
+    function radioChipGroup(
+      btn: HTMLElement,
+      chip: string,
+      modeKey: "timeMode" | "fulfillment",
+      chipSelector: string
+    ) {
+      const chipAll = document.querySelector("#category-chips .chip-all");
+      chipAll?.classList.remove("active");
+      const next =
+        modeKey === "timeMode" ? (chip as TimeFilter) : (chip as FulfillmentFilter);
+      const already = filterToggles[modeKey] === next;
+      document.querySelectorAll(chipSelector).forEach((c) => c.classList.remove("active"));
+      if (already) {
+        filterToggles[modeKey] = "none";
+      } else {
+        filterToggles[modeKey] = next;
+        btn.classList.add("active");
+      }
+      if (!hasActiveFilters()) chipAll?.classList.add("active");
+    }
+
+    document.getElementById("category-chips")?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest("button[data-chip]");
+      if (!btn) return;
+      const chip = (btn as HTMLButtonElement).dataset.chip;
+      const chipAll = document.querySelector("#category-chips .chip-all");
+
+      if (chip === "all") {
+        filterToggles.timeMode = "none";
+        filterToggles.fulfillment = "none";
+        filterToggles.topRated = false;
+        document.querySelectorAll("#category-chips .chip-time, #category-chips .chip-fulfill, #category-chips .chip-toggle").forEach((c) =>
+          c.classList.remove("active")
+        );
+        chipAll?.classList.add("active");
+      } else if (timeChips.includes(chip as (typeof timeChips)[number])) {
+        radioChipGroup(btn, chip!, "timeMode", "#category-chips .chip-time");
+      } else if (fulfillChips.includes(chip as (typeof fulfillChips)[number])) {
+        radioChipGroup(btn, chip!, "fulfillment", "#category-chips .chip-fulfill");
+      } else if (chip === "topRated") {
+        chipAll?.classList.remove("active");
+        const on = btn.classList.toggle("active");
+        filterToggles.topRated = on;
+        if (!hasActiveFilters()) chipAll?.classList.add("active");
+      }
+      renderSellers();
+    });
+
+    // Location
+    function checkLocation() {
+      const saved = localStorage.getItem("zepto_location");
+      if (!saved) {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              try {
+                const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&zoom=14`);
+                const data = await resp.json();
+                const name = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || "Your location";
+                localStorage.setItem("zepto_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name }));
+                window.dispatchEvent(new CustomEvent("location-updated"));
+                renderSellers();
+              } catch {
+                localStorage.setItem("zepto_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your location" }));
+                window.dispatchEvent(new CustomEvent("location-updated"));
+              }
+            },
+            () => setTimeout(() => window.dispatchEvent(new CustomEvent("open-location-picker")), 500),
+            { timeout: 5000 }
+          );
+        } else {
+          setTimeout(() => window.dispatchEvent(new CustomEvent("open-location-picker")), 500);
+        }
+      }
+    }
+
+    window.addEventListener("location-updated", () => {
+      // Re-sort by new distances then render
+      allGroups.sort((a, b) => {
+        const buyerLoc = getBuyerLocation();
+        if (buyerLoc) {
+          // Recalc distances for sort
+          for (const g of [a, b]) {
+            const s = g.seller;
+            g.distance = s.lat != null && s.lng != null
+              ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
+              : null;
+          }
+        }
+        if (a.isOpen !== b.isOpen) return a.isOpen ? -1 : 1;
+        if (a.distance !== null && b.distance !== null) return a.distance - b.distance;
+        if (a.distance !== null) return -1;
+        if (b.distance !== null) return 1;
+        return (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0);
+      });
+      renderSellers();
+    });
+
+    loadCatalog();
+    checkLocation();
+
+    // Chip selection (toggle within group)
+    document.querySelectorAll(".qw-chips").forEach(group => {
+      group.querySelectorAll(".qw-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          group.querySelectorAll(".qw-chip").forEach(c => c.classList.remove("selected"));
+          chip.classList.add("selected");
+        });
+      });
+    });
+
+    // Waitlist form submission
+    const qwFormEl = document.getElementById("quick-waitlist");
+    if (qwFormEl) {
+      qwFormEl.addEventListener("submit", async (e: Event) => {
+        e.preventDefault();
+        const btn = document.getElementById("qw-submit") as HTMLButtonElement;
+        const phone = (document.getElementById("qw-phone") as HTMLInputElement).value.trim();
+        const area = (document.getElementById("qw-area") as HTMLInputElement).value.trim();
+        const toast = document.getElementById("toast");
+        function showT(msg: string, type: string) {
+          if (!toast) return;
+          toast.textContent = msg;
+          toast.style.display = "block";
+          toast.style.background = type === "error" ? "#d32f2f" : "#2e7d32";
+          toast.style.color = "white";
+          setTimeout(() => { toast.style.display = "none"; }, 3000);
+        }
+        const phoneCheck = normalizeIndianMobile(phone);
+        if (!phoneCheck.ok) { showT(phoneCheck.message, "error"); return; }
+        if (area.length < 2) { showT("Please enter your area", "error"); return; }
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
+        const freq = document.querySelector("[data-field=freq] .qw-chip.selected")?.getAttribute("data-val") || "";
+        const pref = document.querySelector("[data-field=pref] .qw-chip.selected")?.getAttribute("data-val") || "";
+        const budget = document.querySelector("[data-field=budget] .qw-chip.selected")?.getAttribute("data-val") || "";
+        const fishReq = (document.getElementById("qw-fish") as HTMLInputElement).value.trim();
+        try {
+          const res = await fetch("/api/waitlist/join", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buyer_id: localStorage.getItem("zepto_buyer_id") || null,
+              phone, area,
+              fish_wanted: fishReq,
+              frequency: freq, preference: pref, budget: budget,
+              email: (document.getElementById("qw-email") as HTMLInputElement).value.trim(),
+              utm_source: (document.getElementById("qw-utm-source") as HTMLInputElement).value,
+              utm_medium: (document.getElementById("qw-utm-medium") as HTMLInputElement).value,
+              utm_campaign: (document.getElementById("qw-utm-campaign") as HTMLInputElement).value,
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            qwFormEl.style.display = "none";
+            document.getElementById("qw-success")!.style.display = "block";
+            showT("🎉 You're on the waitlist!", "success");
+            const cnt = document.getElementById("qw-done-count");
+            if (cnt && data.area_count > 1) {
+              cnt.textContent = "🔥 " + data.area_count + " people in your area are already waiting";
+              cnt.style.display = "block";
+            }
+          } else {
+            showT(data.error || "Something went wrong", "error");
+            btn.disabled = false;
+            btn.textContent = "👉 Notify Me When Live";
+          }
+        } catch (_) {
+          showT("Network error. Try again.", "error");
+          btn.disabled = false;
+          btn.textContent = "👉 Notify Me When Live";
+        }
+      });
+    }
+  </script>
+</AppShell>

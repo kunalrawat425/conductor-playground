@@ -1,0 +1,33 @@
+---
+export const prerender = false;
+import AppShellV2 from "../../../components/v2/AppShellV2.astro";
+import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
+---
+<AppShellV2
+  title="Account pending · Seller Dashboard"
+  hideNav={true}
+  hideHeader={true}
+>
+  <div style="padding:48px 16px;">
+    <EmptyState
+      variant="server-error"
+      title="Account awaiting activation"
+      description="Your seller account is being reviewed. We'll notify you within 24 hours when activated."
+      ctaText="Refresh status"
+      ghostCtaText="Sign out"
+    />
+  </div>
+  <script>
+    document.querySelectorAll("button").forEach(b => {
+      if (b.textContent?.includes("Refresh")) {
+        b.addEventListener("click", () => location.reload());
+      }
+      if (b.textContent?.includes("Sign out")) {
+        b.addEventListener("click", () => {
+          try { localStorage.removeItem("zepto_seller_id"); localStorage.removeItem("zepto_seller_phone"); } catch {}
+          location.href = "/v2/dashboard/login";
+        });
+      }
+    });
+  </script>
+</AppShellV2>

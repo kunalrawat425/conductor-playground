@@ -1,0 +1,1 @@
+/Users/kunalrawat/conductor/workspaces/conductor-playground/da-nang/.claude/skills/gstack/pair-agent/SKILL.md

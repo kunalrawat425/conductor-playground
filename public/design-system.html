@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish Design System — V1 & V2 Complete Component Library</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  /* ========== DESIGN TOKENS ========== */
+  :root{
+    /* V1 Tokens */
+    --v1-blue:#0066cc;--v1-green:#28a745;--v1-red:#dc3545;--v1-orange:#fd7e14;
+    --v1-gray-50:#f8f9fa;--v1-gray-100:#e9ecef;--v1-gray-200:#dee2e6;--v1-gray-500:#6c757d;--v1-gray-700:#495057;--v1-gray-900:#212529;
+    --v1-radius:8px;--v1-shadow:0 1px 3px rgba(0,0,0,0.1);--v1-font:system-ui,-apple-system,sans-serif;
+
+    /* V2 Tokens */
+    --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+    --bg:#FFFFFF;--bg2:#F8FAFC;--bg3:#F1F5F9;
+    --brand:#0066FF;--brand-d:#0052CC;--brand-l:#E6F0FF;--brand-m:#CCE0FF;
+    --green:#059669;--green-l:#ECFDF5;--green-bg:#D1FAE5;
+    --orange:#EA580C;--orange-l:#FFF7ED;
+    --red:#DC2626;--red-l:#FEF2F2;
+    --indigo:#4F46E5;--indigo-l:#EEF2FF;--indigo-m:#E0E7FF;--indigo-d:#3730A3;
+    --border:#E2E8F0;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+    --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+    --radius:12px;--radius-sm:8px;--radius-lg:16px;--radius-xl:20px;
+  }
+
+  body{font-family:'Inter',system-ui,sans-serif;background:#F1F5F9;color:var(--ink);line-height:1.5}
+
+  /* ========== PAGE CHROME ========== */
+  .topnav{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .topnav h1{font-size:18px;font-weight:800;color:var(--brand)}
+  .topnav a{font-size:12px;font-weight:600;color:var(--ink3);text-decoration:none;padding:6px 0;border-bottom:2px solid transparent}
+  .topnav a.active,.topnav a:hover{color:var(--brand);border-color:var(--brand)}
+  .page{max-width:1600px;margin:0 auto;padding:32px 24px}
+
+  .section{margin-bottom:56px}
+  .section-label{font:700 11px/1 Inter;text-transform:uppercase;letter-spacing:.12em;color:var(--brand);margin-bottom:6px}
+  .section-title{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:4px}
+  .section-sub{font-size:14px;color:var(--ink3);margin-bottom:20px}
+
+  /* Component showcase */
+  .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+  .comp-card{background:#fff;border-radius:var(--radius-lg);padding:20px;border:1px solid var(--border)}
+  .comp-card.v1{border-color:#FED7AA;background:#FFFBF5}
+  .comp-card.v2{border-color:var(--brand-m);background:#FAFCFF}
+  .comp-label{font:700 10px Inter;text-transform:uppercase;letter-spacing:.1em;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:10px}
+  .comp-label.v1-l{background:#FED7AA;color:#92400E}
+  .comp-label.v2-l{background:var(--brand-l);color:var(--brand)}
+  .comp-name{font:700 15px Inter;color:var(--ink);margin-bottom:4px}
+  .comp-desc{font:400 12px Inter;color:var(--ink3);margin-bottom:12px}
+  .comp-preview{border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;background:#fff;margin-bottom:8px}
+  .comp-spec{font:400 11px Inter;color:var(--ink4);line-height:1.6}
+  .comp-spec b{color:var(--ink2);font-weight:600}
+
+  /* Token display */
+  .token-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:20px}
+  .token{background:#fff;border-radius:var(--radius-sm);padding:12px;border:1px solid var(--border)}
+  .token .swatch{width:100%;height:28px;border-radius:6px;margin-bottom:6px}
+  .token .t-label{font:600 9px Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:3px}
+  .token .t-value{font:700 13px Inter;color:var(--ink)}
+  .token .t-detail{font:400 10px Inter;color:var(--ink3);margin-top:2px}
+
+  /* Phone frame */
+  .phone{width:320px;height:640px;border-radius:32px;border:3px solid #1E293B;background:#fff;overflow:hidden;position:relative;margin:0 auto;box-shadow:var(--shadow-lg);flex-shrink:0}
+  .phone-status{height:44px;display:flex;align-items:center;justify-content:center;font:600 12px Inter;color:var(--ink)}
+  .phone-body{height:calc(100% - 44px - 64px);overflow-y:auto;overflow-x:hidden}
+  .phone-body::-webkit-scrollbar{display:none}
+
+  /* Screen gallery */
+  .screen-row{display:flex;gap:32px;overflow-x:auto;padding:8px 0 16px;scroll-snap-type:x mandatory}
+  .screen-col{flex-shrink:0;scroll-snap-align:start;text-align:center}
+  .screen-col .label{font:700 12px Inter;margin-top:10px;color:var(--ink)}
+  .screen-col .sublabel{font:400 11px Inter;color:var(--ink3)}
+
+  /* Spec table */
+  .spec-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px}
+  .spec-table th{text-align:left;padding:8px 10px;font:600 10px Inter;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);border-bottom:2px solid var(--border);background:var(--bg2)}
+  .spec-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  .spec-table .comp{font:600 12px Inter;color:var(--ink)}
+
+  h3.sub-heading{font-size:16px;font-weight:700;margin:24px 0 12px;color:var(--ink)}
+
+  @media(max-width:900px){.comp-grid{grid-template-columns:1fr}.page{padding:16px 12px}}
+
+  /* ===== V1 COMPONENT STYLES ===== */
+  .v1-header{padding:12px 16px;background:#fff;border-bottom:1px solid #dee2e6;display:flex;align-items:center;gap:8px}
+  .v1-header .logo{font-size:16px;font-weight:700;color:#0066cc}
+  .v1-header .loc{font-size:11px;color:#6c757d;background:#f8f9fa;padding:3px 8px;border-radius:4px}
+  .v1-search{margin:12px 16px;padding:8px 12px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;font:14px system-ui;color:#6c757d}
+  .v1-chips{display:flex;gap:6px;padding:0 16px;margin-bottom:12px;flex-wrap:wrap}
+  .v1-chip{padding:5px 12px;font:600 12px system-ui;border:1px solid #dee2e6;border-radius:16px;color:#495057;background:#fff}
+  .v1-chip.active{background:#0066cc;color:#fff;border-color:#0066cc}
+  .v1-card{margin:0 16px 12px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.04);padding:12px}
+  .v1-card-header{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+  .v1-avatar{width:40px;height:40px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .v1-name{font:600 14px system-ui;color:#212529}
+  .v1-loc{font:400 11px system-ui;color:#6c757d}
+  .v1-badges{display:flex;gap:4px;margin-top:4px}
+  .v1-badge{font:600 10px system-ui;padding:1px 6px;border-radius:8px}
+  .v1-badge-green{background:#d4edda;color:#155724}
+  .v1-badge-blue{background:#cce5ff;color:#004085}
+  .v1-badge-orange{background:#fff3cd;color:#856404}
+  .v1-badge-red{background:#f8d7da;color:#721c24}
+  .v1-badge-purple{background:#e8daef;color:#6c3483}
+  .v1-menu-row{display:flex;gap:8px;overflow:hidden;margin-top:8px}
+  .v1-menu-item{width:64px;flex-shrink:0;text-align:center}
+  .v1-menu-img{width:64px;height:52px;background:#f0f0f0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .v1-menu-name{font:500 10px system-ui;color:#495057;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v1-menu-price{font:700 10px system-ui;color:#212529}
+  .v1-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border:none;border-radius:8px;font:600 14px system-ui;cursor:pointer}
+  .v1-btn-primary{background:#0066cc;color:#fff}
+  .v1-btn-green{background:#28a745;color:#fff}
+  .v1-btn-red{background:#dc3545;color:#fff}
+  .v1-btn-outline{background:#fff;color:#0066cc;border:1px solid #0066cc}
+  .v1-input{width:100%;padding:10px 12px;border:1px solid #dee2e6;border-radius:8px;font:14px system-ui;background:#fff}
+  .v1-label{display:block;font:600 13px system-ui;color:#495057;margin-bottom:4px}
+  .v1-tabs{display:flex;gap:0;border-bottom:2px solid #dee2e6;margin-bottom:12px}
+  .v1-tab{padding:10px 20px;font:600 14px system-ui;color:#6c757d;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none}
+  .v1-tab.active{color:#0066cc;border-bottom-color:#0066cc}
+  .v1-nav{height:64px;background:#fff;border-top:1px solid #dee2e6;display:flex;position:absolute;bottom:0;left:0;right:0}
+  .v1-nav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px system-ui;color:#6c757d}
+  .v1-nav .nav-item.active{color:#0066cc}
+  .v1-nav .nav-item .icon{font-size:18px}
+  .v1-section-title{font:700 20px system-ui;margin:24px 16px 12px;color:#212529}
+  .v1-text-muted{color:#6c757d;font:400 13px system-ui}
+  .v1-form-group{margin-bottom:16px;padding:0 16px}
+  .v1-skeleton{background:linear-gradient(90deg,#e9ecef 25%,#dee2e6 50%,#e9ecef 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .v1-stat-card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);text-align:center}
+  .v1-stat-val{font:700 20px system-ui;color:#212529}
+  .v1-stat-label{font:400 11px system-ui;color:#6c757d;margin-top:2px}
+
+  /* ===== V2 COMPONENT STYLES ===== */
+  .v2-header{padding:10px 16px 8px;background:var(--brand);display:flex;align-items:center;gap:10px}
+  .v2-header .logo{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.02em}
+  .v2-header .loc{display:flex;flex-direction:column;flex:1}
+  .v2-header .loc-main{font:700 13px Inter;color:#fff;display:flex;align-items:center;gap:4px}
+  .v2-header .loc-sub{font:400 10px Inter;color:rgba(255,255,255,.7)}
+  .v2-header .loc-arrow{font-size:10px}
+  .v2-header .profile-icon{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+  .v2-search{margin:0 16px;transform:translateY(-14px);padding:10px 14px;background:#fff;border-radius:var(--radius);font:400 13px Inter;color:var(--ink4);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px}
+  .v2-search .s-icon{color:var(--ink4);font-size:14px}
+  .v2-banner{margin:0 16px 12px;background:linear-gradient(135deg,#FFF7ED,#FEF3C7);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px}
+  .v2-banner .b-icon{font-size:28px}
+  .v2-banner .b-text{font:600 12px Inter;color:#92400E;line-height:1.4}
+  .v2-banner .b-sub{font:400 10px Inter;color:#B45309;margin-top:2px}
+  .v2-preorder{margin:0 16px 12px;background:linear-gradient(135deg,var(--indigo-l),var(--indigo-m));border:1px solid #C7D2FE;border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px}
+  .v2-preorder .po-icon{font-size:32px}
+  .v2-preorder .po-text h4{font:700 13px Inter;color:var(--indigo-d)}
+  .v2-preorder .po-text p{font:400 11px Inter;color:#4338CA;margin-top:2px}
+  .v2-preorder .po-btn{background:var(--indigo);color:#fff;font:700 11px Inter;padding:6px 14px;border-radius:var(--radius-sm);border:none;flex-shrink:0;cursor:pointer}
+  .v2-cats{display:flex;gap:10px;padding:0 16px;margin-bottom:14px;overflow:hidden}
+  .v2-cat{text-align:center;flex-shrink:0;width:56px}
+  .v2-cat .c-icon{width:48px;height:48px;border-radius:var(--radius);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px}
+  .v2-cat .c-name{font:500 9px Inter;color:var(--ink2);margin-top:4px}
+  .v2-section-head{padding:0 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .v2-section-head h3{font:700 15px Inter;color:var(--ink)}
+  .v2-section-head .see-all{font:600 12px Inter;color:var(--brand);text-decoration:none}
+  .v2-card{margin:0 16px 12px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .v2-card-img{height:100px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-end;padding:8px;position:relative}
+  .v2-card-img .fish-emoji{font-size:40px;position:absolute;right:12px;bottom:8px;opacity:.3}
+  .v2-card-img .offer-badge{background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px}
+  .v2-card-body{padding:12px 14px}
+  .v2-card-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .v2-seller-name{font:700 14px Inter;color:var(--ink)}
+  .v2-seller-loc{font:400 11px Inter;color:var(--ink3);margin-top:1px}
+  .v2-rating{display:flex;align-items:center;gap:3px;background:var(--green);color:#fff;font:700 11px Inter;padding:2px 6px;border-radius:5px;height:20px}
+  .v2-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .v2-tag{font:500 10px Inter;padding:2px 8px;border-radius:20px;background:var(--bg3);color:var(--ink3)}
+  .v2-tag-green{background:var(--green-l);color:var(--green)}
+  .v2-tag-brand{background:var(--brand-l);color:var(--brand)}
+  .v2-tag-orange{background:var(--orange-l);color:var(--orange)}
+  .v2-tag-red{background:var(--red-l);color:var(--red)}
+  .v2-menu-strip{display:flex;gap:8px;padding:10px 14px 12px;overflow:hidden;border-top:1px solid var(--border)}
+  .v2-menu-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);flex-shrink:0}
+  .v2-menu-chip .m-emoji{font-size:18px}
+  .v2-menu-chip .m-info{display:flex;flex-direction:column}
+  .v2-menu-chip .m-name{font:600 11px Inter;color:var(--ink)}
+  .v2-menu-chip .m-price{font:700 11px Inter;color:var(--green)}
+  .v2-delivery-bar{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--green-l);border-radius:0 0 var(--radius) var(--radius);font:500 11px Inter;color:var(--green)}
+  .v2-delivery-bar .d-icon{font-size:14px}
+  .v2-nav{height:64px;background:#fff;border-top:1px solid var(--border);display:flex;position:absolute;bottom:0;left:0;right:0}
+  .v2-nav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4);position:relative}
+  .v2-nav .nav-item.active{color:var(--brand)}
+  .v2-nav .nav-item.active::before{content:'';position:absolute;top:-1px;width:24px;height:2px;background:var(--brand);border-radius:0 0 2px 2px}
+  .v2-nav .nav-item .icon{font-size:18px}
+
+  /* V2 Seller hero */
+  .v2-seller-hero{padding:16px;background:linear-gradient(180deg,#E0F2FE 0%,#fff 100%)}
+  .v2-seller-top{display:flex;gap:12px;align-items:flex-start}
+  .v2-seller-avatar{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#0066FF,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:var(--shadow)}
+  .v2-seller-info{flex:1}
+  .v2-seller-info h2{font:800 17px Inter;color:var(--ink)}
+  .v2-seller-info .sub{font:400 11px Inter;color:var(--ink3);margin-top:1px}
+  .v2-seller-stats{display:flex;gap:12px;margin-top:10px}
+  .v2-seller-stat{text-align:center}
+  .v2-seller-stat .val{font:800 14px Inter;color:var(--ink)}
+  .v2-seller-stat .lbl{font:400 9px Inter;color:var(--ink4)}
+  .v2-menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+  .v2-item-card{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+  .v2-item-img{height:80px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:32px;position:relative}
+  .v2-item-img .cut-badge{position:absolute;top:6px;left:6px;background:var(--brand-l);color:var(--brand);font:600 8px Inter;padding:2px 6px;border-radius:4px}
+  .v2-item-body{padding:8px 10px}
+  .v2-item-name{font:600 12px Inter;color:var(--ink)}
+  .v2-item-weight{font:400 10px Inter;color:var(--ink4);margin-top:1px}
+  .v2-item-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .v2-item-price{font:800 13px Inter;color:var(--ink)}
+  .v2-add-btn{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;border:none;font:700 16px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .v2-cart-bar{position:absolute;bottom:64px;left:12px;right:12px;background:var(--brand);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg)}
+  .v2-cart-bar .c-left{color:#fff}
+  .v2-cart-bar .c-items{font:600 12px Inter}
+  .v2-cart-bar .c-total{font:800 15px Inter}
+  .v2-cart-bar .c-btn{background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer}
+
+  /* V2 inputs */
+  .v2-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font:400 14px Inter;background:#fff;color:var(--ink);transition:border-color .15s}
+  .v2-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)}
+  .v2-label{display:block;font:600 12px Inter;color:var(--ink2);margin-bottom:4px}
+  .v2-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font:600 14px Inter;cursor:pointer;transition:all .15s}
+  .v2-btn-primary{background:var(--brand);color:#fff}
+  .v2-btn-primary:hover{background:var(--brand-d)}
+  .v2-btn-green{background:var(--green);color:#fff}
+  .v2-btn-red{background:var(--red);color:#fff}
+  .v2-btn-outline{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}
+  .v2-btn-ghost{background:transparent;color:var(--brand);padding:10px 12px}
+  .v2-btn-sm{padding:6px 14px;font-size:12px}
+  .v2-btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--radius)}
+
+  /* V2 tabs */
+  .v2-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px}
+  .v2-tab{padding:10px 20px;font:600 13px Inter;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;transition:color .15s}
+  .v2-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+
+  /* V2 stat card */
+  .v2-stat-card{background:#fff;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);border:1px solid var(--border)}
+  .v2-stat-val{font:800 22px Inter;color:var(--ink)}
+  .v2-stat-label{font:500 11px Inter;color:var(--ink3);margin-top:2px}
+  .v2-stat-change{font:600 11px Inter;margin-top:4px}
+  .v2-stat-up{color:var(--green)}
+  .v2-stat-down{color:var(--red)}
+
+  /* V2 order card */
+  .v2-order-card{background:#fff;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);border:1px solid var(--border);margin-bottom:10px}
+  .v2-order-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+  .v2-order-id{font:700 13px Inter;color:var(--ink)}
+  .v2-order-time{font:400 11px Inter;color:var(--ink4)}
+  .v2-order-items{font:400 12px Inter;color:var(--ink2);margin-bottom:6px}
+  .v2-order-bottom{display:flex;justify-content:space-between;align-items:center}
+  .v2-order-total{font:700 14px Inter;color:var(--ink)}
+
+  /* V2 address card */
+  .v2-address-card{background:#fff;border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+  .v2-address-icon{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .v2-address-info{flex:1}
+  .v2-address-label{font:600 12px Inter;color:var(--ink)}
+  .v2-address-text{font:400 11px Inter;color:var(--ink3);margin-top:1px}
+
+  /* V2 empty state */
+  .v2-empty{text-align:center;padding:40px 24px}
+  .v2-empty .emoji{font-size:48px;margin-bottom:12px}
+  .v2-empty h3{font:700 17px Inter;color:var(--ink);margin-bottom:4px}
+  .v2-empty p{font:400 13px Inter;color:var(--ink3);margin-bottom:16px}
+
+  /* V2 progress stepper */
+  .v2-stepper{display:flex;align-items:center;gap:0;padding:12px 16px}
+  .v2-step{display:flex;align-items:center;gap:6px;font:500 11px Inter;color:var(--ink4)}
+  .v2-step.done{color:var(--green)}
+  .v2-step.active{color:var(--brand);font-weight:700}
+  .v2-step-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px}
+  .v2-step.done .v2-step-dot{background:var(--green);border-color:var(--green);color:#fff}
+  .v2-step.active .v2-step-dot{background:var(--brand);border-color:var(--brand);color:#fff}
+  .v2-step-line{width:20px;height:2px;background:var(--border);margin:0 4px}
+  .v2-step-line.done{background:var(--green)}
+
+  /* V2 notification toggle */
+  .v2-toggle-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+  .v2-toggle-label{font:500 13px Inter;color:var(--ink)}
+  .v2-toggle-sub{font:400 11px Inter;color:var(--ink3);margin-top:1px}
+  .v2-toggle{width:44px;height:24px;border-radius:12px;background:var(--border);position:relative;cursor:pointer;transition:background .2s}
+  .v2-toggle.on{background:var(--brand)}
+  .v2-toggle::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .2s;box-shadow:var(--shadow-sm)}
+  .v2-toggle.on::after{transform:translateX(20px)}
+
+  /* V2 listing form */
+  .v2-form-group{margin-bottom:14px}
+  .v2-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .v2-select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font:400 14px Inter;background:#fff;color:var(--ink);appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2364748B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+  /* V2 seller dashboard */
+  .v2-dash-header{padding:14px 16px;background:var(--brand);color:#fff}
+  .v2-dash-header h2{font:800 17px Inter}
+  .v2-dash-header .sub{font:400 11px Inter;color:rgba(255,255,255,.7);margin-top:2px}
+  .v2-dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;margin-top:-8px}
+  .v2-dash-stat{background:#fff;border-radius:var(--radius-sm);padding:10px;text-align:center;box-shadow:var(--shadow-sm)}
+  .v2-dash-stat .val{font:800 18px Inter;color:var(--ink)}
+  .v2-dash-stat .lbl{font:400 9px Inter;color:var(--ink4)}
+
+  /* V2 seller order card (dashboard) */
+  .v2-seller-order{background:#fff;border-radius:var(--radius);padding:12px 14px;border-left:3px solid var(--brand);margin:0 16px 8px;box-shadow:var(--shadow-sm)}
+  .v2-seller-order.pending{border-left-color:var(--orange)}
+  .v2-seller-order.ready{border-left-color:var(--green)}
+  .v2-seller-order.cancelled{border-left-color:var(--red)}
+  .v2-so-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .v2-so-id{font:700 12px Inter;color:var(--ink)}
+  .v2-so-time{font:400 10px Inter;color:var(--ink4)}
+  .v2-so-buyer{font:500 11px Inter;color:var(--ink2);margin-bottom:4px}
+  .v2-so-items{font:400 11px Inter;color:var(--ink3);margin-bottom:8px}
+  .v2-so-actions{display:flex;gap:6px}
+
+  /* V2 listing card (dashboard) */
+  .v2-listing-card{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);margin:0 16px 8px;display:flex;gap:12px;padding:10px 12px;align-items:center}
+  .v2-lc-img{width:52px;height:52px;border-radius:var(--radius-sm);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .v2-lc-info{flex:1}
+  .v2-lc-name{font:600 13px Inter;color:var(--ink)}
+  .v2-lc-detail{font:400 10px Inter;color:var(--ink3);margin-top:1px}
+  .v2-lc-price{font:700 13px Inter;color:var(--ink);margin-top:2px}
+
+  /* V2 login */
+  .v2-login-hero{text-align:center;padding:40px 24px 24px;background:linear-gradient(180deg,var(--brand-l) 0%,#fff 100%)}
+  .v2-login-hero .emoji{font-size:56px;margin-bottom:12px}
+  .v2-login-hero h2{font:800 22px Inter;color:var(--ink)}
+  .v2-login-hero p{font:400 13px Inter;color:var(--ink3);margin-top:4px}
+  .v2-otp-row{display:flex;gap:8px;justify-content:center;margin:16px 0}
+  .v2-otp-box{width:44px;height:48px;border:2px solid var(--border);border-radius:var(--radius-sm);text-align:center;font:700 20px Inter;color:var(--ink)}
+  .v2-otp-box:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)}
+
+  /* V2 checkout sheet */
+  .v2-sheet{background:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:20px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+  .v2-sheet-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+  .v2-bill-row{display:flex;justify-content:space-between;padding:6px 0;font:400 13px Inter;color:var(--ink2)}
+  .v2-bill-row.total{font-weight:700;color:var(--ink);border-top:1px dashed var(--border);padding-top:10px;margin-top:4px}
+  .v2-bill-row .free{color:var(--green);font-weight:600}
+  .v2-trust-badges{display:flex;gap:8px;justify-content:center;margin-top:14px}
+  .v2-trust-badge{font:500 10px Inter;color:var(--ink3);display:flex;align-items:center;gap:4px}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <h1>Relifish Design System</h1>
+  <a href="#tokens" class="active">Tokens</a>
+  <a href="#atoms">Atoms</a>
+  <a href="#molecules">Molecules</a>
+  <a href="#organisms">Organisms</a>
+  <a href="#screens-buyer">Buyer Screens</a>
+  <a href="#screens-seller">Seller Screens</a>
+</div>
+
+<div class="page">
+
+<!-- ================================================================ -->
+<!-- SECTION: DESIGN TOKENS -->
+<!-- ================================================================ -->
+<div class="section" id="tokens">
+  <div class="section-label">Foundation</div>
+  <div class="section-title">Design Tokens</div>
+  <div class="section-sub">V1 uses system fonts + basic palette. V2 uses Inter + refined Blinkit/Zepto-inspired tokens.</div>
+
+  <h3 class="sub-heading">Colors — V1</h3>
+  <div class="token-grid">
+    <div class="token"><div class="swatch" style="background:#0066cc"></div><div class="t-label">Primary</div><div class="t-value">#0066cc</div><div class="t-detail">Links, buttons, active states</div></div>
+    <div class="token"><div class="swatch" style="background:#28a745"></div><div class="t-label">Success</div><div class="t-value">#28a745</div><div class="t-detail">Open badge, confirm</div></div>
+    <div class="token"><div class="swatch" style="background:#dc3545"></div><div class="t-label">Error</div><div class="t-value">#dc3545</div><div class="t-detail">Cancel, sold out</div></div>
+    <div class="token"><div class="swatch" style="background:#fd7e14"></div><div class="t-label">Warning</div><div class="t-value">#fd7e14</div><div class="t-detail">Pending, pre-order</div></div>
+    <div class="token"><div class="swatch" style="background:#212529"></div><div class="t-label">Text</div><div class="t-value">#212529</div><div class="t-detail">Headings, prices</div></div>
+    <div class="token"><div class="swatch" style="background:#6c757d"></div><div class="t-label">Muted</div><div class="t-value">#6c757d</div><div class="t-detail">Secondary text</div></div>
+    <div class="token"><div class="swatch" style="background:#f8f9fa"></div><div class="t-label">Background</div><div class="t-value">#f8f9fa</div><div class="t-detail">Page bg, inputs</div></div>
+    <div class="token"><div class="swatch" style="background:#dee2e6"></div><div class="t-label">Border</div><div class="t-value">#dee2e6</div><div class="t-detail">Cards, dividers</div></div>
+  </div>
+
+  <h3 class="sub-heading">Colors — V2</h3>
+  <div class="token-grid">
+    <div class="token"><div class="swatch" style="background:#0066FF"></div><div class="t-label">Brand</div><div class="t-value">#0066FF</div><div class="t-detail">Header bg, CTAs, active</div></div>
+    <div class="token"><div class="swatch" style="background:#0052CC"></div><div class="t-label">Brand Dark</div><div class="t-value">#0052CC</div><div class="t-detail">Hover, pressed</div></div>
+    <div class="token"><div class="swatch" style="background:#E6F0FF"></div><div class="t-label">Brand Light</div><div class="t-value">#E6F0FF</div><div class="t-detail">Tags, selected bg</div></div>
+    <div class="token"><div class="swatch" style="background:#059669"></div><div class="t-label">Success</div><div class="t-value">#059669</div><div class="t-detail">Ratings, open, prices</div></div>
+    <div class="token"><div class="swatch" style="background:#ECFDF5"></div><div class="t-label">Success Light</div><div class="t-value">#ECFDF5</div><div class="t-detail">Delivery bar bg</div></div>
+    <div class="token"><div class="swatch" style="background:#EA580C"></div><div class="t-label">Warning</div><div class="t-value">#EA580C</div><div class="t-detail">Low stock, closing</div></div>
+    <div class="token"><div class="swatch" style="background:#DC2626"></div><div class="t-label">Error</div><div class="t-value">#DC2626</div><div class="t-detail">Cancel, errors</div></div>
+    <div class="token"><div class="swatch" style="background:#4F46E5"></div><div class="t-label">Indigo</div><div class="t-value">#4F46E5</div><div class="t-detail">Pre-order feature</div></div>
+    <div class="token"><div class="swatch" style="background:#0F172A"></div><div class="t-label">Ink</div><div class="t-value">#0F172A</div><div class="t-detail">Headings, prices</div></div>
+    <div class="token"><div class="swatch" style="background:#334155"></div><div class="t-label">Ink 2</div><div class="t-value">#334155</div><div class="t-detail">Body text</div></div>
+    <div class="token"><div class="swatch" style="background:#64748B"></div><div class="t-label">Ink 3</div><div class="t-value">#64748B</div><div class="t-detail">Secondary text</div></div>
+    <div class="token"><div class="swatch" style="background:#94A3B8"></div><div class="t-label">Ink 4</div><div class="t-value">#94A3B8</div><div class="t-detail">Placeholders</div></div>
+    <div class="token"><div class="swatch" style="background:#F8FAFC"></div><div class="t-label">BG 2</div><div class="t-value">#F8FAFC</div><div class="t-detail">Page background</div></div>
+    <div class="token"><div class="swatch" style="background:#F1F5F9"></div><div class="t-label">BG 3</div><div class="t-value">#F1F5F9</div><div class="t-detail">Section bg, icons</div></div>
+    <div class="token"><div class="swatch" style="background:#E2E8F0"></div><div class="t-label">Border</div><div class="t-value">#E2E8F0</div><div class="t-detail">Cards, dividers</div></div>
+  </div>
+
+  <h3 class="sub-heading">Typography</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1</span>
+      <div class="comp-spec">
+        <b>Font:</b> system-ui, -apple-system, sans-serif<br>
+        <b>Page title:</b> 700 / 20px<br>
+        <b>Card title:</b> 600 / 14px<br>
+        <b>Body:</b> 400 / 14px<br>
+        <b>Caption:</b> 600 / 12px<br>
+        <b>Price:</b> 700 / 14px<br>
+        <b>Badge:</b> 600 / 10px
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2</span>
+      <div class="comp-spec">
+        <b>Font:</b> Inter (weights 300–900)<br>
+        <b>Page title:</b> 800 / 17px<br>
+        <b>Card title:</b> 700 / 14px<br>
+        <b>Body:</b> 400 / 13px<br>
+        <b>Caption:</b> 500 / 10-11px<br>
+        <b>Price:</b> 800 / 13-15px<br>
+        <b>Badge:</b> 700 / 10px
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub-heading">Spacing & Radius</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1</span>
+      <div class="comp-spec">
+        <b>Radius:</b> 8px everywhere<br>
+        <b>Card padding:</b> 16px<br>
+        <b>Section gap:</b> 12-16px<br>
+        <b>Shadow:</b> 0 1px 3px rgba(0,0,0,.1)<br>
+        <b>Max width:</b> 800px
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2</span>
+      <div class="comp-spec">
+        <b>Radius:</b> 8px buttons / 12px cards / 16px containers / 20px chips<br>
+        <b>Card padding:</b> 12-14px (tighter)<br>
+        <b>Section gap:</b> 12px consistent<br>
+        <b>Shadows:</b> sm, default, md, lg (4 levels)<br>
+        <b>Max width:</b> 800px
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- SECTION: ATOMS -->
+<!-- ================================================================ -->
+<div class="section" id="atoms">
+  <div class="section-label">Atoms</div>
+  <div class="section-title">Base Components</div>
+  <div class="section-sub">Smallest building blocks: buttons, inputs, badges, tags.</div>
+
+  <!-- Buttons -->
+  <h3 class="sub-heading">Buttons</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Buttons</span>
+      <div class="comp-preview" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="v1-btn v1-btn-primary">Primary</button>
+        <button class="v1-btn v1-btn-green">Confirm</button>
+        <button class="v1-btn v1-btn-red">Cancel</button>
+        <button class="v1-btn v1-btn-outline">Outline</button>
+      </div>
+      <div class="comp-spec"><b>Padding:</b> 10px 20px · <b>Radius:</b> 8px · <b>Font:</b> 600 14px system-ui · <b>Hover:</b> opacity 0.9</div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Buttons</span>
+      <div class="comp-preview" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="v2-btn v2-btn-primary">Primary</button>
+        <button class="v2-btn v2-btn-green">Confirm</button>
+        <button class="v2-btn v2-btn-red">Cancel</button>
+        <button class="v2-btn v2-btn-outline">Outline</button>
+        <button class="v2-btn v2-btn-ghost">Ghost</button>
+        <button class="v2-btn v2-btn-primary v2-btn-sm">Small</button>
+        <button class="v2-btn v2-btn-primary v2-btn-lg">Large</button>
+      </div>
+      <div class="comp-spec"><b>Padding:</b> 10px 20px (sm: 6px 14px, lg: 14px 28px) · <b>Radius:</b> 8px (lg: 12px) · <b>Font:</b> 600 14px Inter · <b>Hover:</b> bg darkens · <b>New:</b> ghost + size variants</div>
+    </div>
+  </div>
+
+  <!-- Badges -->
+  <h3 class="sub-heading">Badges</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Badges</span>
+      <div class="comp-preview" style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="v1-badge v1-badge-green">Open</span>
+        <span class="v1-badge v1-badge-blue">4.8 ★</span>
+        <span class="v1-badge v1-badge-orange">Pending</span>
+        <span class="v1-badge v1-badge-red">Sold out</span>
+        <span class="v1-badge v1-badge-purple">Pre-order</span>
+      </div>
+      <div class="comp-spec"><b>Padding:</b> 1px 6px · <b>Radius:</b> 8px · <b>Font:</b> 600 10px · <b>Colors:</b> green, blue, orange, red, purple</div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Tags & Rating</span>
+      <div class="comp-preview" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <span class="v2-tag v2-tag-green">Open now</span>
+        <span class="v2-tag v2-tag-brand">Pre-order</span>
+        <span class="v2-tag v2-tag-orange">Low stock</span>
+        <span class="v2-tag v2-tag-red">Sold out</span>
+        <span class="v2-tag">Cleaned & cut</span>
+        <span class="v2-rating">4.8 ★</span>
+      </div>
+      <div class="comp-spec"><b>Tags:</b> 2px 8px, radius 20px, 10px 500wt · <b>Rating:</b> separate component, green pill, 11px 700wt · <b>Change:</b> more rounded, semantic colors, rating isolated</div>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <h3 class="sub-heading">Inputs</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Inputs</span>
+      <div class="comp-preview">
+        <label class="v1-label">Phone number</label>
+        <input class="v1-input" type="text" placeholder="+91 98765 43210" style="margin-bottom:10px">
+        <label class="v1-label">Fish species</label>
+        <input class="v1-input" type="text" placeholder="e.g. Surmai, Rawas">
+      </div>
+      <div class="comp-spec"><b>Padding:</b> 10px 12px · <b>Border:</b> 1px #dee2e6 · <b>Radius:</b> 8px · <b>Focus:</b> blue border + box-shadow</div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Inputs</span>
+      <div class="comp-preview">
+        <label class="v2-label">Phone number</label>
+        <input class="v2-input" type="text" placeholder="+91 98765 43210" style="margin-bottom:10px">
+        <label class="v2-label">Fish species</label>
+        <select class="v2-select"><option>Surmai (King Fish)</option></select>
+      </div>
+      <div class="comp-spec"><b>Padding:</b> 10px 14px · <b>Border:</b> 1px #E2E8F0 · <b>Radius:</b> 8px · <b>Focus:</b> brand border + 3px glow · <b>New:</b> custom select with chevron</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <h3 class="sub-heading">Tabs</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Tabs</span>
+      <div class="comp-preview">
+        <div class="v1-tabs">
+          <button class="v1-tab active">Today</button>
+          <button class="v1-tab">This Week</button>
+          <button class="v1-tab">All Time</button>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Tabs</span>
+      <div class="comp-preview">
+        <div class="v2-tabs">
+          <button class="v2-tab active">Today</button>
+          <button class="v2-tab">This Week</button>
+          <button class="v2-tab">All Time</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading / Skeleton -->
+  <h3 class="sub-heading">Loading States</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Skeleton</span>
+      <div class="comp-preview">
+        <div class="v1-skeleton" style="height:16px;width:60%;margin-bottom:8px"></div>
+        <div class="v1-skeleton" style="height:12px;width:40%;margin-bottom:12px"></div>
+        <div class="v1-skeleton" style="height:80px;width:100%"></div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Skeleton</span>
+      <div class="comp-preview" style="background:var(--bg2)">
+        <div class="v1-skeleton" style="height:16px;width:60%;margin-bottom:8px;border-radius:6px"></div>
+        <div class="v1-skeleton" style="height:12px;width:40%;margin-bottom:12px;border-radius:6px"></div>
+        <div class="v1-skeleton" style="height:80px;width:100%;border-radius:12px"></div>
+      </div>
+      <div class="comp-spec">Same shimmer, larger radius to match V2 cards</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- SECTION: MOLECULES -->
+<!-- ================================================================ -->
+<div class="section" id="molecules">
+  <div class="section-label">Molecules</div>
+  <div class="section-title">Composite Components</div>
+  <div class="section-sub">Combinations of atoms: cards, bars, modals, sheets.</div>
+
+  <!-- Search Bar -->
+  <h3 class="sub-heading">Search Bar</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Search</span>
+      <div class="comp-preview" style="background:#fff;padding:0">
+        <div class="v1-search" style="margin:0">Search sellers, fish, or area...</div>
+      </div>
+      <div class="comp-spec">Flat input inside content flow. No visual hierarchy.</div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Search</span>
+      <div class="comp-preview" style="background:var(--brand);padding:16px 16px 28px;position:relative">
+        <div style="margin:0 0 0 0;transform:translateY(0);padding:10px 14px;background:#fff;border-radius:12px;font:400 13px Inter;color:var(--ink4);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px;position:relative;top:10px">
+          <span>🔍</span> Search "Surmai", "Pomfret", sellers...
+        </div>
+      </div>
+      <div class="comp-spec">Floating white card, overlaps branded header by 14px. Shadow-md creates depth. Zepto pattern.</div>
+    </div>
+  </div>
+
+  <!-- Filter Chips / Category Strip -->
+  <h3 class="sub-heading">Category / Filter Strip</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Filter Chips</span>
+      <div class="comp-preview">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="v1-chip active">Open now</span>
+          <span class="v1-chip">Pre-order</span>
+          <span class="v1-chip">Pickup</span>
+          <span class="v1-chip">Delivery</span>
+          <span class="v1-chip">Top rated</span>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Category Strip</span>
+      <div class="comp-preview">
+        <div style="display:flex;gap:10px">
+          <div style="text-align:center;width:56px"><div style="width:48px;height:48px;border-radius:12px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px">🐟</div><div style="font:500 9px Inter;color:var(--ink2);margin-top:4px">All Fish</div></div>
+          <div style="text-align:center;width:56px"><div style="width:48px;height:48px;border-radius:12px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px">🦐</div><div style="font:500 9px Inter;color:var(--ink2);margin-top:4px">Prawns</div></div>
+          <div style="text-align:center;width:56px"><div style="width:48px;height:48px;border-radius:12px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px">🦀</div><div style="font:500 9px Inter;color:var(--ink2);margin-top:4px">Crab</div></div>
+          <div style="text-align:center;width:56px"><div style="width:48px;height:48px;border-radius:12px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px">🦑</div><div style="font:500 9px Inter;color:var(--ink2);margin-top:4px">Squid</div></div>
+        </div>
+      </div>
+      <div class="comp-spec">Icon-first, horizontal scroll. 48px icon circles. Drives browse behavior (Instamart pattern).</div>
+    </div>
+  </div>
+
+  <!-- Seller Card -->
+  <h3 class="sub-heading">Seller Card</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Seller Card</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="background:#fff;border-radius:8px;padding:12px">
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+            <div class="v1-avatar">🐟</div>
+            <div>
+              <div class="v1-name">Kamla Tai Fish Stall</div>
+              <div class="v1-loc">Sassoon Dock, Colaba</div>
+              <div class="v1-badges"><span class="v1-badge v1-badge-green">Open</span><span class="v1-badge v1-badge-blue">4.8 ★</span></div>
+            </div>
+          </div>
+          <div class="v1-menu-row">
+            <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Surmai</div><div class="v1-menu-price">₹650/kg</div></div>
+            <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Rawas</div><div class="v1-menu-price">₹800/kg</div></div>
+            <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Pomfret</div><div class="v1-menu-price">₹900/kg</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Seller Card</span>
+      <div class="comp-preview" style="padding:0;background:var(--bg2)">
+        <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden">
+          <div style="height:80px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-end;padding:8px;position:relative">
+            <span style="background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px">Same-day catch</span>
+            <span style="font-size:32px;position:absolute;right:10px;bottom:6px;opacity:.3">🐟</span>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font:700 14px Inter;color:var(--ink)">Kamla Tai Fish Stall</div>
+                <div style="font:400 11px Inter;color:var(--ink3);margin-top:1px">Sassoon Dock · 1.2 km · 45 min</div>
+              </div>
+              <span class="v2-rating">4.8 ★</span>
+            </div>
+            <div style="display:flex;gap:5px;margin-top:8px">
+              <span class="v2-tag v2-tag-green">Open now</span>
+              <span class="v2-tag v2-tag-brand">Pre-order</span>
+              <span class="v2-tag">Cleaned & cut</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;padding:10px 14px 12px;border-top:1px solid var(--border)">
+            <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹650/kg</span></div></div>
+            <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Rawas</span><span class="m-price">₹800/kg</span></div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--green-l);font:500 11px Inter;color:var(--green)">🚲 Delivery available · Free above ₹1,000</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Item Card -->
+  <h3 class="sub-heading">Menu Item Card</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Menu Item</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="display:flex;gap:10px;align-items:center;padding:12px;background:#fff;border-radius:8px">
+          <div class="v1-menu-img" style="width:56px;height:56px;flex-shrink:0">🐟</div>
+          <div style="flex:1">
+            <div style="font:600 14px system-ui;color:#212529">Surmai (King Fish)</div>
+            <div style="font:400 11px system-ui;color:#6c757d">Fresh · Per kg · Whole</div>
+            <div style="font:700 14px system-ui;color:#212529;margin-top:2px">₹650/kg</div>
+          </div>
+          <button class="v1-btn v1-btn-primary" style="padding:6px 14px;font-size:12px">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Menu Item</span>
+      <div class="comp-preview" style="padding:8px;background:var(--bg2)">
+        <div style="display:inline-block;width:140px">
+          <div class="v2-item-card">
+            <div class="v2-item-img">🐟<span class="cut-badge">Whole / Cut</span></div>
+            <div class="v2-item-body">
+              <div class="v2-item-name">Surmai</div>
+              <div class="v2-item-weight">King Fish · Per kg</div>
+              <div class="v2-item-bottom">
+                <div class="v2-item-price">₹650</div>
+                <button class="v2-add-btn">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="comp-spec">2-column grid layout. Image 80px with badge. Circle "+" add button (Blinkit). Counter appears on tap.</div>
+    </div>
+  </div>
+
+  <!-- Pre-order Banner -->
+  <h3 class="sub-heading">Pre-order Banner</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 — Hidden in chips</span>
+      <div class="comp-preview">
+        <div style="display:flex;gap:6px">
+          <span class="v1-chip">Open now</span>
+          <span class="v1-chip active">Pre-order</span>
+        </div>
+      </div>
+      <div class="comp-spec">Pre-order buried as filter chip. Easy to miss. Key differentiator invisible.</div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Pre-order Banner</span>
+      <div class="comp-preview" style="padding:0;background:var(--bg2)">
+        <div class="v2-preorder" style="margin:12px">
+          <div class="po-icon">🌙</div>
+          <div class="po-text">
+            <h4>Pre-order tomorrow's catch</h4>
+            <p>Order tonight, reserved at dock by 5am</p>
+          </div>
+          <button class="po-btn">Browse</button>
+        </div>
+      </div>
+      <div class="comp-spec">Gradient card, prominent CTA. This is Relifish's moat — must be unmissable.</div>
+    </div>
+  </div>
+
+  <!-- Cart Bar -->
+  <h3 class="sub-heading">Cart Bar</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Cart Bar</span>
+      <div class="comp-preview">
+        <div style="background:#0066cc;color:#fff;padding:12px 16px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font:600 12px system-ui">2 items · ₹1,450</div></div>
+          <button style="background:#fff;color:#0066cc;border:none;padding:8px 16px;border-radius:6px;font:600 12px system-ui;cursor:pointer">Checkout</button>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Cart Bar</span>
+      <div class="comp-preview" style="background:var(--bg2)">
+        <div style="background:var(--brand);border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg)">
+          <div style="color:#fff"><div style="font:600 12px Inter">2 items</div><div style="font:800 15px Inter">₹1,450</div></div>
+          <button style="background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:8px;border:none;cursor:pointer">View Cart →</button>
+        </div>
+      </div>
+      <div class="comp-spec">Floating pill, 12px from edges, above bottom nav. Shadow-lg. Items count + total separated. Blinkit cart pill.</div>
+    </div>
+  </div>
+
+  <!-- Order Card -->
+  <h3 class="sub-heading">Order Card</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Order Card</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.1)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font:600 14px system-ui;color:#212529">#ORD-1234</span>
+            <span class="v1-badge v1-badge-green">Confirmed</span>
+          </div>
+          <div style="font:400 12px system-ui;color:#6c757d;margin-bottom:4px">Kamla Tai Fish Stall</div>
+          <div style="font:400 12px system-ui;color:#495057;margin-bottom:6px">Surmai 1kg, Rawas 500g</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font:700 14px system-ui;color:#212529">₹1,450</span>
+            <span style="font:400 11px system-ui;color:#6c757d">Today, 8:30 AM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Order Card</span>
+      <div class="comp-preview" style="padding:0;background:var(--bg2)">
+        <div class="v2-order-card" style="margin:8px">
+          <div class="v2-order-top">
+            <div><span class="v2-order-id">#ORD-1234</span> <span class="v2-tag v2-tag-green" style="margin-left:6px">Confirmed</span></div>
+            <span class="v2-order-time">Today, 8:30 AM</span>
+          </div>
+          <div style="font:500 12px Inter;color:var(--ink2);margin-bottom:4px">Kamla Tai Fish Stall</div>
+          <div class="v2-order-items">Surmai 1kg, Rawas 500g</div>
+          <div class="v2-order-bottom">
+            <span class="v2-order-total">₹1,450</span>
+            <button class="v2-btn v2-btn-outline v2-btn-sm">Reorder</button>
+          </div>
+        </div>
+      </div>
+      <div class="comp-spec">Reorder button = repeat purchase driver. Status tag inline with order ID.</div>
+    </div>
+  </div>
+
+  <!-- Address Card -->
+  <h3 class="sub-heading">Address Card</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Address</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="background:#fff;border-radius:8px;padding:12px;border:1px solid #dee2e6;margin:8px">
+          <div style="font:600 13px system-ui;color:#212529">Home</div>
+          <div style="font:400 12px system-ui;color:#6c757d;margin-top:2px">301, Sea Breeze Apts, Bandra West, Mumbai 400050</div>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Address Card</span>
+      <div class="comp-preview" style="padding:0;background:var(--bg2)">
+        <div class="v2-address-card" style="margin:8px">
+          <div class="v2-address-icon">🏠</div>
+          <div class="v2-address-info">
+            <div class="v2-address-label">Home</div>
+            <div class="v2-address-text">301, Sea Breeze Apts, Bandra West, Mumbai 400050</div>
+          </div>
+          <span style="font-size:14px;color:var(--ink4);cursor:pointer">✏️</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Stepper -->
+  <h3 class="sub-heading">Order Progress Stepper</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 — Status badge only</span>
+      <div class="comp-preview">
+        <span class="v1-badge v1-badge-green">Confirmed</span>
+        <div class="comp-spec" style="margin-top:8px">V1 shows single status badge. No step visualization.</div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Stepper</span>
+      <div class="comp-preview">
+        <div style="display:flex;align-items:center;gap:0">
+          <div class="v2-step done"><div class="v2-step-dot">✓</div><span>Placed</span></div>
+          <div class="v2-step-line done"></div>
+          <div class="v2-step done"><div class="v2-step-dot">✓</div><span>Confirmed</span></div>
+          <div class="v2-step-line done"></div>
+          <div class="v2-step active"><div class="v2-step-dot">3</div><span>Ready</span></div>
+          <div class="v2-step-line"></div>
+          <div class="v2-step"><div class="v2-step-dot">4</div><span>Picked up</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Sheet -->
+  <h3 class="sub-heading">Checkout / Bill Summary</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Checkout</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="background:#fff;padding:16px;border-radius:8px">
+          <div style="font:700 16px system-ui;color:#212529;margin-bottom:10px">Order Summary</div>
+          <div style="display:flex;justify-content:space-between;font:400 13px system-ui;color:#495057;padding:4px 0">Surmai 1kg<span>₹650</span></div>
+          <div style="display:flex;justify-content:space-between;font:400 13px system-ui;color:#495057;padding:4px 0">Rawas 1kg<span>₹800</span></div>
+          <div style="display:flex;justify-content:space-between;font:400 13px system-ui;color:#495057;padding:4px 0;border-top:1px solid #dee2e6;margin-top:6px;padding-top:8px">Delivery<span>₹50</span></div>
+          <div style="display:flex;justify-content:space-between;font:700 14px system-ui;color:#212529;border-top:1px solid #dee2e6;margin-top:6px;padding-top:8px">Total<span>₹1,500</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Checkout Sheet</span>
+      <div class="comp-preview" style="padding:0;background:var(--bg3)">
+        <div class="v2-sheet" style="margin:8px">
+          <div class="v2-sheet-handle"></div>
+          <div style="font:700 15px Inter;color:var(--ink);margin-bottom:10px">Order Summary</div>
+          <div class="v2-bill-row">Surmai 1kg <span>₹650</span></div>
+          <div class="v2-bill-row">Rawas 1kg <span>₹800</span></div>
+          <div class="v2-bill-row">Delivery <span class="free">FREE ✓</span></div>
+          <div class="v2-bill-row total">Total <span>₹1,450</span></div>
+          <div class="v2-trust-badges">
+            <span class="v2-trust-badge">🔒 Secure</span>
+            <span class="v2-trust-badge">🐟 Same-day catch</span>
+            <span class="v2-trust-badge">💳 UPI / Cash</span>
+          </div>
+          <button class="v2-btn v2-btn-primary v2-btn-lg" style="width:100%;margin-top:14px">Place Order · ₹1,450</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <h3 class="sub-heading">Empty State</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Empty</span>
+      <div class="comp-preview" style="text-align:center;padding:24px">
+        <div style="font:400 14px system-ui;color:#6c757d">No orders yet</div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Empty State</span>
+      <div class="comp-preview">
+        <div class="v2-empty" style="padding:24px 16px">
+          <div class="emoji">🐟</div>
+          <h3>No orders yet</h3>
+          <p>Browse fresh fish from Mumbai's best sellers</p>
+          <button class="v2-btn v2-btn-primary">Explore sellers</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle / Settings -->
+  <h3 class="sub-heading">Toggle & Settings Row</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 — Checkbox</span>
+      <div class="comp-preview">
+        <label style="display:flex;align-items:center;gap:10px;font:600 14px system-ui;color:#212529;cursor:pointer">
+          <input type="checkbox" checked style="width:20px;height:20px;accent-color:#0066cc"> Push notifications
+        </label>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Toggle Row</span>
+      <div class="comp-preview">
+        <div class="v2-toggle-row" style="border:none">
+          <div>
+            <div class="v2-toggle-label">Push notifications</div>
+            <div class="v2-toggle-sub">Get alerts when your order is ready</div>
+          </div>
+          <div class="v2-toggle on"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- SECTION: ORGANISMS / NAVIGATION -->
+<!-- ================================================================ -->
+<div class="section" id="organisms">
+  <div class="section-label">Organisms</div>
+  <div class="section-title">Navigation & Layout Components</div>
+  <div class="section-sub">Headers, bottom navs, dashboard layouts.</div>
+
+  <!-- App Header -->
+  <h3 class="sub-heading">App Header</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Header</span>
+      <div class="comp-preview" style="padding:0">
+        <div class="v1-header">
+          <span class="logo">Relifish</span>
+          <span class="v1-loc">Bandra West</span>
+        </div>
+      </div>
+      <div class="comp-spec">White bg. Text logo blue 16px 700wt. Location chip gray bg.</div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Header</span>
+      <div class="comp-preview" style="padding:0">
+        <div class="v2-header">
+          <span class="logo">relifish</span>
+          <div class="loc">
+            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
+            <div class="loc-sub">Deliver in 45 min · 3 sellers nearby</div>
+          </div>
+          <div class="profile-icon">👤</div>
+        </div>
+      </div>
+      <div class="comp-spec">Brand bg (#0066FF). Logo white 16px 800wt. Location with ETA + seller count. Profile circle right. Blinkit green → our blue.</div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <h3 class="sub-heading">Bottom Navigation</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Bottom Nav — 3 tabs</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="height:64px;background:#fff;border-top:1px solid #dee2e6;display:flex">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px system-ui;color:#0066cc"><span style="font-size:18px">🏠</span>Home</div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px system-ui;color:#6c757d"><span style="font-size:18px">📋</span>Orders</div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px system-ui;color:#6c757d"><span style="font-size:18px">👤</span>Me</div>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Bottom Nav — 5 tabs</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="height:64px;background:#fff;border-top:1px solid var(--border);display:flex">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--brand);position:relative"><span style="position:absolute;top:-1px;width:24px;height:2px;background:var(--brand);border-radius:0 0 2px 2px"></span><span style="font-size:18px">🏠</span>Home</div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4)"><span style="font-size:18px">🔍</span>Search</div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4)"><span style="font-size:18px">🌙</span>Pre-order</div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4)"><span style="font-size:18px">📋</span>Orders</div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4)"><span style="font-size:18px">👤</span>Account</div>
+        </div>
+      </div>
+      <div class="comp-spec">5 tabs (was 3). Pre-order gets own tab = moat visibility. Active indicator bar on top. Blinkit 5-tab pattern.</div>
+    </div>
+  </div>
+
+  <!-- Seller Dashboard Header -->
+  <h3 class="sub-heading">Seller Dashboard Header + Stats</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Dashboard</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="padding:16px;background:#fff;border-bottom:1px solid #dee2e6">
+          <div style="font:700 20px system-ui;color:#212529;margin-bottom:12px">Dashboard</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div class="v1-stat-card"><div class="v1-stat-val">12</div><div class="v1-stat-label">Orders</div></div>
+            <div class="v1-stat-card"><div class="v1-stat-val">₹8,400</div><div class="v1-stat-label">Revenue</div></div>
+            <div class="v1-stat-card"><div class="v1-stat-val">3</div><div class="v1-stat-label">Pending</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Dashboard</span>
+      <div class="comp-preview" style="padding:0">
+        <div class="v2-dash-header">
+          <h2>Good morning, Kamla Tai</h2>
+          <div class="sub">Wed 16 Apr · Sassoon Dock</div>
+        </div>
+        <div class="v2-dash-stats" style="margin-top:0;padding-top:12px;background:var(--bg2)">
+          <div class="v2-dash-stat"><div class="val">12</div><div class="lbl">Today's Orders</div></div>
+          <div class="v2-dash-stat"><div class="val">₹8,400</div><div class="lbl">Revenue</div></div>
+          <div class="v2-dash-stat"><div class="val" style="color:var(--orange)">3</div><div class="lbl">Pending</div></div>
+        </div>
+      </div>
+      <div class="comp-spec">Personalized greeting. Brand header bg. Stats overlap header. Pending highlighted orange.</div>
+    </div>
+  </div>
+
+  <!-- Seller Order Card -->
+  <h3 class="sub-heading">Seller Order Card (Dashboard)</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Order Row</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="background:#fff;padding:12px;border-radius:8px;margin:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font:600 13px system-ui;color:#212529">#1234 · Priya M.</span>
+            <span class="v1-badge v1-badge-orange">Pending</span>
+          </div>
+          <div style="font:400 12px system-ui;color:#495057;margin-bottom:8px">Surmai 1kg, Rawas 500g · ₹1,100</div>
+          <div style="display:flex;gap:6px">
+            <button class="v1-btn v1-btn-green" style="padding:6px 12px;font-size:12px;flex:1">Accept</button>
+            <button class="v1-btn v1-btn-red" style="padding:6px 12px;font-size:12px;flex:1">Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Order Card</span>
+      <div class="comp-preview" style="padding:0;background:var(--bg2)">
+        <div class="v2-seller-order pending" style="margin:8px">
+          <div class="v2-so-top">
+            <span class="v2-so-id">#1234 <span class="v2-tag v2-tag-orange" style="margin-left:4px">Pending</span></span>
+            <span class="v2-so-time">8:30 AM</span>
+          </div>
+          <div class="v2-so-buyer">Priya M. · Bandra West</div>
+          <div class="v2-so-items">Surmai 1kg, Rawas 500g · ₹1,100</div>
+          <div class="v2-so-actions">
+            <button class="v2-btn v2-btn-green v2-btn-sm" style="flex:1">Accept</button>
+            <button class="v2-btn v2-btn-red v2-btn-sm" style="flex:1">Reject</button>
+          </div>
+        </div>
+      </div>
+      <div class="comp-spec">Left border color = status. Orange = pending, green = ready, red = cancelled. Swipe-to-accept on mobile.</div>
+    </div>
+  </div>
+
+  <!-- Listing Card (Dashboard) -->
+  <h3 class="sub-heading">Listing Card (Seller Dashboard)</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Listing</span>
+      <div class="comp-preview" style="padding:0">
+        <div style="background:#fff;padding:12px;border-radius:8px;margin:8px;display:flex;gap:10px;align-items:center">
+          <div class="v1-menu-img" style="width:48px;height:48px;flex-shrink:0">🐟</div>
+          <div style="flex:1">
+            <div style="font:600 13px system-ui;color:#212529">Surmai (King Fish)</div>
+            <div style="font:400 11px system-ui;color:#6c757d">₹650/kg · Whole</div>
+          </div>
+          <button class="v1-btn v1-btn-outline" style="padding:6px 12px;font-size:11px">Edit</button>
+        </div>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Listing Card</span>
+      <div class="comp-preview" style="padding:0;background:var(--bg2)">
+        <div class="v2-listing-card" style="margin:8px">
+          <div class="v2-lc-img">🐟</div>
+          <div class="v2-lc-info">
+            <div class="v2-lc-name">Surmai (King Fish)</div>
+            <div class="v2-lc-detail">Per kg · Whole / Cut · In stock</div>
+            <div class="v2-lc-price">₹650/kg</div>
+          </div>
+          <div class="v2-toggle on" style="flex-shrink:0"></div>
+        </div>
+      </div>
+      <div class="comp-spec">Toggle on/off replaces Edit button for quick availability control. Tap card to edit details.</div>
+    </div>
+  </div>
+
+  <!-- Login / OTP -->
+  <h3 class="sub-heading">Login / OTP</h3>
+  <div class="comp-grid">
+    <div class="comp-card v1">
+      <span class="comp-label v1-l">V1 Login Modal</span>
+      <div class="comp-preview" style="padding:16px;background:#fff;border-radius:8px">
+        <div style="font:700 16px system-ui;color:#212529;margin-bottom:12px">Login</div>
+        <label class="v1-label">Phone number</label>
+        <input class="v1-input" placeholder="+91 98765 43210" style="margin-bottom:12px">
+        <button class="v1-btn v1-btn-primary" style="width:100%">Send OTP</button>
+      </div>
+    </div>
+    <div class="comp-card v2">
+      <span class="comp-label v2-l">V2 Login</span>
+      <div class="comp-preview" style="padding:0">
+        <div class="v2-login-hero" style="border-radius:12px 12px 0 0">
+          <div class="emoji">🐟</div>
+          <h2>Welcome to Relifish</h2>
+          <p>Mumbai's freshest fish, direct from local sellers</p>
+        </div>
+        <div style="padding:16px;background:#fff;border-radius:0 0 12px 12px">
+          <label class="v2-label">Phone number</label>
+          <input class="v2-input" placeholder="+91 98765 43210" style="margin-bottom:12px">
+          <button class="v2-btn v2-btn-primary v2-btn-lg" style="width:100%">Continue</button>
+          <div style="text-align:center;margin-top:10px;font:400 11px Inter;color:var(--ink4)">We'll send a 4-digit OTP via SMS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- SECTION: BUYER SCREENS -->
+<!-- ================================================================ -->
+<div class="section" id="screens-buyer">
+  <div class="section-label">Buyer Screens</div>
+  <div class="section-title">All Buyer Pages — V1 vs V2</div>
+  <div class="section-sub">Side-by-side phone mockups for every buyer-facing screen.</div>
+
+  <!-- Screen 1: Homepage -->
+  <h3 class="sub-heading">1. Homepage — Seller Browse</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body">
+          <div class="v1-header"><span class="logo">Relifish</span><span class="v1-loc">Bandra West</span></div>
+          <div class="v1-search">Search sellers, fish, or area...</div>
+          <div class="v1-chips"><span class="v1-chip active">Open now</span><span class="v1-chip">Pre-order</span><span class="v1-chip">Pickup</span><span class="v1-chip">Delivery</span></div>
+          <div class="v1-card">
+            <div class="v1-card-header"><div class="v1-avatar">🐟</div><div><div class="v1-name">Kamla Tai Fish Stall</div><div class="v1-loc">Sassoon Dock, Colaba</div><div class="v1-badges"><span class="v1-badge v1-badge-green">Open</span><span class="v1-badge v1-badge-blue">4.8 ★</span></div></div></div>
+            <div class="v1-menu-row"><div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Surmai</div><div class="v1-menu-price">₹650/kg</div></div><div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Rawas</div><div class="v1-menu-price">₹800/kg</div></div><div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Pomfret</div><div class="v1-menu-price">₹900/kg</div></div></div>
+          </div>
+          <div class="v1-card">
+            <div class="v1-card-header"><div class="v1-avatar">🐟</div><div><div class="v1-name">Rafiq Bhai Fish</div><div class="v1-loc">Versova Beach</div><div class="v1-badges"><span class="v1-badge v1-badge-green">Open</span><span class="v1-badge v1-badge-blue">4.6 ★</span></div></div></div>
+            <div class="v1-menu-row"><div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Surmai</div><div class="v1-menu-price">₹620/kg</div></div><div class="v1-menu-item"><div class="v1-menu-img">🦐</div><div class="v1-menu-name">Prawns</div><div class="v1-menu-price">₹500/kg</div></div></div>
+          </div>
+          <div class="v1-card">
+            <div class="v1-card-header"><div class="v1-avatar">🐟</div><div><div class="v1-name">Meena's Fresh Catch</div><div class="v1-loc">Mahim Beach</div><div class="v1-badges"><span class="v1-badge v1-badge-orange">Closes 11am</span><span class="v1-badge v1-badge-blue">4.5 ★</span></div></div></div>
+            <div class="v1-menu-row"><div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Bangda</div><div class="v1-menu-price">₹250/kg</div></div><div class="v1-menu-item"><div class="v1-menu-img">🦐</div><div class="v1-menu-name">Prawns</div><div class="v1-menu-price">₹450/kg</div></div></div>
+          </div>
+        </div>
+        <div class="v1-nav"><div class="nav-item active"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Me</div></div>
+      </div>
+      <div class="label">V1 Homepage</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div class="v2-header"><span class="logo">relifish</span><div class="loc"><div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div><div class="loc-sub">Deliver in 45 min · 3 sellers nearby</div></div><div class="profile-icon">👤</div></div>
+          <div class="v2-search"><span class="s-icon">🔍</span> Search "Surmai", "Pomfret", sellers...</div>
+          <div class="v2-preorder"><div class="po-icon">🌙</div><div class="po-text"><h4>Pre-order tomorrow's catch</h4><p>Order tonight, reserved at dock by 5am</p></div><button class="po-btn">Browse</button></div>
+          <div class="v2-cats"><div class="v2-cat"><div class="c-icon">🐟</div><div class="c-name">All Fish</div></div><div class="v2-cat"><div class="c-icon">🦐</div><div class="c-name">Prawns</div></div><div class="v2-cat"><div class="c-icon">🦀</div><div class="c-name">Crab</div></div><div class="v2-cat"><div class="c-icon">🦑</div><div class="c-name">Squid</div></div><div class="v2-cat"><div class="c-icon">🐚</div><div class="c-name">Shellfish</div></div></div>
+          <div class="v2-section-head"><h3>Near you</h3><a class="see-all" href="#">See all →</a></div>
+          <div class="v2-card"><div class="v2-card-img"><span class="offer-badge">Same-day catch</span><span class="fish-emoji">🐟</span></div><div class="v2-card-body"><div class="v2-card-top"><div><div class="v2-seller-name">Kamla Tai Fish Stall</div><div class="v2-seller-loc">Sassoon Dock · 1.2 km · 45 min</div></div><div class="v2-rating">4.8 ★</div></div><div class="v2-tags"><span class="v2-tag v2-tag-green">Open now</span><span class="v2-tag v2-tag-brand">Pre-order</span><span class="v2-tag">Cleaned & cut</span></div></div><div class="v2-menu-strip"><div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹650/kg</span></div></div><div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Rawas</span><span class="m-price">₹800/kg</span></div></div></div><div class="v2-delivery-bar"><span class="d-icon">🚲</span> Delivery available · Free above ₹1,000</div></div>
+          <div class="v2-card"><div class="v2-card-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)"><span class="offer-badge" style="background:var(--green)">Fresh today</span><span class="fish-emoji">🦐</span></div><div class="v2-card-body"><div class="v2-card-top"><div><div class="v2-seller-name">Rafiq Bhai Fish</div><div class="v2-seller-loc">Versova · 0.8 km · 30 min</div></div><div class="v2-rating">4.6 ★</div></div><div class="v2-tags"><span class="v2-tag v2-tag-green">Open now</span><span class="v2-tag">Pickup only</span></div></div><div class="v2-menu-strip"><div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹620/kg</span></div></div><div class="v2-menu-chip"><span class="m-emoji">🦐</span><div class="m-info"><span class="m-name">Prawns</span><span class="m-price">₹480/kg</span></div></div></div></div>
+        </div>
+        <div class="v2-nav"><div class="nav-item active"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">🔍</span>Search</div><div class="nav-item"><span class="icon">🌙</span>Pre-order</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Account</div></div>
+      </div>
+      <div class="label">V2 Homepage</div>
+    </div>
+  </div>
+
+  <!-- Screen 2: Seller Menu -->
+  <h3 class="sub-heading">2. Seller Menu — Ordering</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body">
+          <div class="v1-header"><span class="logo" style="font-size:14px">← Back</span></div>
+          <div style="padding:16px">
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><div class="v1-avatar" style="width:48px;height:48px">🐟</div><div><div class="v1-name">Kamla Tai Fish Stall</div><div class="v1-loc">Sassoon Dock, Colaba · 1.2 km</div><div class="v1-badges"><span class="v1-badge v1-badge-green">Open</span><span class="v1-badge v1-badge-blue">4.8 ★</span></div></div></div>
+            <div style="border-top:1px solid #dee2e6;padding-top:12px"><div style="font:700 16px system-ui;color:#212529;margin-bottom:12px">Menu</div>
+              <div class="v1-card" style="margin:0 0 8px;display:flex;gap:10px;align-items:center"><div class="v1-menu-img" style="width:56px;height:56px;flex-shrink:0">🐟</div><div style="flex:1"><div style="font:600 14px system-ui;color:#212529">Surmai (King Fish)</div><div style="font:400 11px system-ui;color:#6c757d">Fresh · Per kg · Whole</div><div style="font:700 14px system-ui;color:#212529;margin-top:2px">₹650/kg</div></div><button style="background:#0066cc;color:#fff;border:none;padding:6px 14px;border-radius:6px;font:600 12px system-ui">Add</button></div>
+              <div class="v1-card" style="margin:0 0 8px;display:flex;gap:10px;align-items:center"><div class="v1-menu-img" style="width:56px;height:56px;flex-shrink:0">🐟</div><div style="flex:1"><div style="font:600 14px system-ui;color:#212529">Rawas (Indian Salmon)</div><div style="font:400 11px system-ui;color:#6c757d">Fresh · Per kg · Whole</div><div style="font:700 14px system-ui;color:#212529;margin-top:2px">₹800/kg</div></div><button style="background:#0066cc;color:#fff;border:none;padding:6px 14px;border-radius:6px;font:600 12px system-ui">Add</button></div>
+              <div class="v1-card" style="margin:0 0 8px;display:flex;gap:10px;align-items:center"><div class="v1-menu-img" style="width:56px;height:56px;flex-shrink:0">🐟</div><div style="flex:1"><div style="font:600 14px system-ui;color:#212529">Pomfret (White)</div><div style="font:400 11px system-ui;color:#6c757d">Fresh · Per piece · Medium</div><div style="font:700 14px system-ui;color:#212529;margin-top:2px">₹900/pc</div></div><button style="background:#0066cc;color:#fff;border:none;padding:6px 14px;border-radius:6px;font:600 12px system-ui">Add</button></div>
+              <div class="v1-card" style="margin:0 0 8px;display:flex;gap:10px;align-items:center"><div class="v1-menu-img" style="width:56px;height:56px;flex-shrink:0">🦐</div><div style="flex:1"><div style="font:600 14px system-ui;color:#212529">Prawns (Medium)</div><div style="font:400 11px system-ui;color:#6c757d">Fresh · Per kg</div><div style="font:700 14px system-ui;color:#212529;margin-top:2px">₹500/kg</div></div><button style="background:#0066cc;color:#fff;border:none;padding:6px 14px;border-radius:6px;font:600 12px system-ui">Add</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="v1-nav"><div class="nav-item active"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Me</div></div>
+      </div>
+      <div class="label">V1 Seller Menu</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:#E0F2FE;color:var(--ink)">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div class="v2-seller-hero">
+            <div style="font:500 12px Inter;color:var(--ink3);margin-bottom:8px">← Back</div>
+            <div class="v2-seller-top"><div class="v2-seller-avatar">🐟</div><div class="v2-seller-info"><h2>Kamla Tai Fish Stall</h2><div class="sub">Sassoon Dock · 1.2 km · 45 min</div></div><div class="v2-rating" style="margin-top:4px">4.8 ★</div></div>
+            <div class="v2-seller-stats"><div class="v2-seller-stat"><div class="val">200+</div><div class="lbl">Orders</div></div><div class="v2-seller-stat"><div class="val">12</div><div class="lbl">Items</div></div><div class="v2-seller-stat"><div class="val">5:30am</div><div class="lbl">Catch time</div></div><div class="v2-seller-stat"><div class="val">🟢</div><div class="lbl">Open now</div></div></div>
+          </div>
+          <div style="padding:4px 16px 8px"><div style="font:700 15px Inter;color:var(--ink)">Today's Menu</div></div>
+          <div class="v2-menu-grid">
+            <div class="v2-item-card"><div class="v2-item-img">🐟<span class="cut-badge">Whole / Cut</span></div><div class="v2-item-body"><div class="v2-item-name">Surmai</div><div class="v2-item-weight">King Fish · Per kg</div><div class="v2-item-bottom"><div class="v2-item-price">₹650</div><button class="v2-add-btn">+</button></div></div></div>
+            <div class="v2-item-card"><div class="v2-item-img" style="background:#ECFDF5">🐟<span class="cut-badge" style="background:#D1FAE5;color:#059669">Fresh today</span></div><div class="v2-item-body"><div class="v2-item-name">Rawas</div><div class="v2-item-weight">Indian Salmon · Per kg</div><div class="v2-item-bottom"><div class="v2-item-price">₹800</div><button class="v2-add-btn">+</button></div></div></div>
+            <div class="v2-item-card"><div class="v2-item-img" style="background:#FFF7ED">🐟</div><div class="v2-item-body"><div class="v2-item-name">Pomfret</div><div class="v2-item-weight">White · Per piece</div><div class="v2-item-bottom"><div class="v2-item-price">₹900</div><button class="v2-add-btn">+</button></div></div></div>
+            <div class="v2-item-card"><div class="v2-item-img" style="background:#EFF6FF">🦐</div><div class="v2-item-body"><div class="v2-item-name">Prawns</div><div class="v2-item-weight">Medium · Per kg</div><div class="v2-item-bottom"><div class="v2-item-price">₹500</div><button class="v2-add-btn">+</button></div></div></div>
+          </div>
+        </div>
+        <div class="v2-cart-bar"><div class="c-left"><div class="c-items">2 items</div><div class="c-total">₹1,450</div></div><button class="c-btn">View Cart →</button></div>
+        <div class="v2-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">🔍</span>Search</div><div class="nav-item"><span class="icon">🌙</span>Pre-order</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Account</div></div>
+      </div>
+      <div class="label">V2 Seller Menu</div>
+    </div>
+  </div>
+
+  <!-- Screen 3: Order Tracking -->
+  <h3 class="sub-heading">3. Order Tracking</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="padding:16px">
+          <div style="font:700 20px system-ui;color:#212529;margin-bottom:16px">My Orders</div>
+          <div class="v1-card" style="margin:0 0 10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font:600 14px system-ui;color:#212529">#ORD-1234</span><span class="v1-badge v1-badge-green">Confirmed</span></div>
+            <div style="font:400 12px system-ui;color:#6c757d;margin-bottom:4px">Kamla Tai Fish Stall</div>
+            <div style="font:400 12px system-ui;color:#495057;margin-bottom:6px">Surmai 1kg, Rawas 500g</div>
+            <div style="display:flex;justify-content:space-between"><span style="font:700 14px system-ui;color:#212529">₹1,450</span><span style="font:400 11px system-ui;color:#6c757d">Today, 8:30 AM</span></div>
+          </div>
+          <div class="v1-card" style="margin:0 0 10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font:600 14px system-ui;color:#212529">#ORD-1230</span><span class="v1-badge v1-badge-blue">Picked up</span></div>
+            <div style="font:400 12px system-ui;color:#6c757d;margin-bottom:4px">Rafiq Bhai Fish</div>
+            <div style="font:400 12px system-ui;color:#495057;margin-bottom:6px">Prawns 500g</div>
+            <div style="display:flex;justify-content:space-between"><span style="font:700 14px system-ui;color:#212529">₹250</span><span style="font:400 11px system-ui;color:#6c757d">Yesterday</span></div>
+          </div>
+        </div>
+        <div class="v1-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item active"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Me</div></div>
+      </div>
+      <div class="label">V1 Orders</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="padding:16px 16px 8px"><div style="font:800 17px Inter;color:var(--ink)">My Orders</div></div>
+          <!-- Active order -->
+          <div style="margin:0 16px 12px;background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;border:2px solid var(--brand)">
+            <div style="padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font:700 13px Inter;color:var(--ink)">#ORD-1234</span><span class="v2-tag v2-tag-green">Confirmed</span></div>
+              <div style="font:500 12px Inter;color:var(--ink2)">Kamla Tai Fish Stall</div>
+            </div>
+            <div style="padding:0 14px 12px">
+              <div style="display:flex;align-items:center;gap:0">
+                <div class="v2-step done"><div class="v2-step-dot" style="width:16px;height:16px;font-size:8px">✓</div></div>
+                <div class="v2-step-line done" style="width:30px"></div>
+                <div class="v2-step done"><div class="v2-step-dot" style="width:16px;height:16px;font-size:8px">✓</div></div>
+                <div class="v2-step-line" style="width:30px"></div>
+                <div class="v2-step active"><div class="v2-step-dot" style="width:16px;height:16px;font-size:8px">3</div></div>
+                <div class="v2-step-line" style="width:30px"></div>
+                <div class="v2-step"><div class="v2-step-dot" style="width:16px;height:16px;font-size:8px">4</div></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font:400 8px Inter;color:var(--ink4);margin-top:4px;padding:0 2px"><span>Placed</span><span>Confirmed</span><span>Ready</span><span>Picked up</span></div>
+            </div>
+            <div style="padding:8px 14px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <span style="font:700 14px Inter;color:var(--ink)">₹1,450</span>
+              <span style="font:400 11px Inter;color:var(--ink4)">Surmai 1kg, Rawas 500g</span>
+            </div>
+          </div>
+          <!-- Past order -->
+          <div style="padding:4px 16px 6px"><div style="font:600 12px Inter;color:var(--ink3)">Previous orders</div></div>
+          <div class="v2-order-card" style="margin:0 16px 8px">
+            <div class="v2-order-top"><div><span class="v2-order-id">#ORD-1230</span><span class="v2-tag" style="margin-left:6px">Completed</span></div><span class="v2-order-time">Yesterday</span></div>
+            <div style="font:500 12px Inter;color:var(--ink2);margin-bottom:4px">Rafiq Bhai Fish</div>
+            <div class="v2-order-items">Prawns 500g</div>
+            <div class="v2-order-bottom"><span class="v2-order-total">₹250</span><button class="v2-btn v2-btn-outline v2-btn-sm">Reorder</button></div>
+          </div>
+        </div>
+        <div class="v2-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">🔍</span>Search</div><div class="nav-item"><span class="icon">🌙</span>Pre-order</div><div class="nav-item active"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Account</div></div>
+      </div>
+      <div class="label">V2 Orders</div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Profile -->
+  <h3 class="sub-heading">4. Profile / Account</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="padding:16px">
+          <div style="font:700 20px system-ui;color:#212529;margin-bottom:16px">My Profile</div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Name</label><input class="v1-input" value="Priya Mehta"></div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Phone</label><input class="v1-input" value="+91 98765 43210" disabled style="background:#f8f9fa"></div>
+          <div style="font:700 16px system-ui;color:#212529;margin:16px 0 8px">Addresses</div>
+          <div style="background:#fff;border-radius:8px;padding:12px;border:1px solid #dee2e6;margin-bottom:8px"><div style="font:600 13px system-ui;color:#212529">Home</div><div style="font:400 12px system-ui;color:#6c757d;margin-top:2px">301, Sea Breeze, Bandra W</div></div>
+          <label style="display:flex;align-items:center;gap:10px;font:600 14px system-ui;color:#212529;cursor:pointer;margin-top:16px"><input type="checkbox" checked style="width:20px;height:20px;accent-color:#0066cc"> Push notifications</label>
+        </div>
+        <div class="v1-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item active"><span class="icon">👤</span>Me</div></div>
+      </div>
+      <div class="label">V1 Profile</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="padding:16px 16px 8px"><div style="font:800 17px Inter;color:var(--ink)">Account</div></div>
+          <!-- Profile card -->
+          <div style="margin:0 16px 16px;background:#fff;border-radius:12px;padding:16px;box-shadow:var(--shadow-sm);display:flex;gap:12px;align-items:center">
+            <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--brand-l),var(--brand-m));display:flex;align-items:center;justify-content:center;font:700 18px Inter;color:var(--brand)">PM</div>
+            <div><div style="font:700 15px Inter;color:var(--ink)">Priya Mehta</div><div style="font:400 12px Inter;color:var(--ink3)">+91 98765 43210</div></div>
+          </div>
+          <!-- Quick actions -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px;margin-bottom:16px">
+            <div style="background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:var(--shadow-sm)"><div style="font-size:20px;margin-bottom:4px">📍</div><div style="font:600 11px Inter;color:var(--ink)">Addresses</div></div>
+            <div style="background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:var(--shadow-sm)"><div style="font-size:20px;margin-bottom:4px">🔔</div><div style="font:600 11px Inter;color:var(--ink)">Notifications</div></div>
+            <div style="background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:var(--shadow-sm)"><div style="font-size:20px;margin-bottom:4px">❓</div><div style="font:600 11px Inter;color:var(--ink)">Help</div></div>
+            <div style="background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:var(--shadow-sm)"><div style="font-size:20px;margin-bottom:4px">ℹ️</div><div style="font:600 11px Inter;color:var(--ink)">About</div></div>
+          </div>
+          <!-- Addresses -->
+          <div style="padding:0 16px"><div style="font:700 14px Inter;color:var(--ink);margin-bottom:8px">Saved Addresses</div></div>
+          <div class="v2-address-card" style="margin:0 16px 8px"><div class="v2-address-icon">🏠</div><div class="v2-address-info"><div class="v2-address-label">Home</div><div class="v2-address-text">301, Sea Breeze, Bandra W</div></div><span style="font-size:14px;color:var(--ink4)">✏️</span></div>
+          <div style="margin:0 16px"><button class="v2-btn v2-btn-outline v2-btn-sm" style="width:100%">+ Add address</button></div>
+        </div>
+        <div class="v2-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">🔍</span>Search</div><div class="nav-item"><span class="icon">🌙</span>Pre-order</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item active"><span class="icon">👤</span>Account</div></div>
+      </div>
+      <div class="label">V2 Account</div>
+    </div>
+  </div>
+
+  <!-- Screen 5: Pre-order -->
+  <h3 class="sub-heading">5. Pre-order Flow</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="padding:16px">
+          <div style="font:700 20px system-ui;color:#212529;margin-bottom:4px">Pre-order Surmai</div>
+          <div style="font:400 13px system-ui;color:#6c757d;margin-bottom:16px">Order tonight, pick up fresh tomorrow</div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Quantity</label><input class="v1-input" placeholder="e.g. 1 kg"></div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Cut preference</label><input class="v1-input" placeholder="Whole / Steaks / Fillets"></div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Select seller</label><input class="v1-input" placeholder="Choose seller..."></div>
+          <button class="v1-btn v1-btn-primary" style="width:100%">Pre-order</button>
+        </div>
+        <div class="v1-nav"><div class="nav-item active"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Me</div></div>
+      </div>
+      <div class="label">V1 Pre-order</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:var(--indigo);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="padding:16px;background:linear-gradient(180deg,var(--indigo-l) 0%,#fff 100%)">
+            <div style="font:500 12px Inter;color:var(--ink3);margin-bottom:8px">← Back</div>
+            <div style="font:800 20px Inter;color:var(--ink);margin-bottom:2px">🐟 Pre-order Surmai</div>
+            <div style="font:400 12px Inter;color:var(--ink3)">Order tonight, reserved at dock by 5am</div>
+          </div>
+          <!-- Step indicator -->
+          <div style="display:flex;align-items:center;gap:0;padding:12px 16px">
+            <div class="v2-step done"><div class="v2-step-dot" style="width:24px;height:24px;font-size:10px;background:var(--indigo);border-color:var(--indigo)">✓</div></div>
+            <div class="v2-step-line done" style="background:var(--indigo);flex:1"></div>
+            <div class="v2-step active"><div class="v2-step-dot" style="width:24px;height:24px;font-size:10px;background:var(--indigo);border-color:var(--indigo)">2</div></div>
+            <div class="v2-step-line" style="flex:1"></div>
+            <div class="v2-step"><div class="v2-step-dot" style="width:24px;height:24px;font-size:10px">3</div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font:500 9px Inter;color:var(--ink4);padding:0 24px 12px"><span>Seller</span><span>Quantity</span><span>Confirm</span></div>
+          <!-- Step 2 content -->
+          <div style="padding:0 16px">
+            <div class="v2-form-group"><label class="v2-label">Quantity</label>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;padding:10px;border:2px solid var(--brand);border-radius:8px;text-align:center;font:600 13px Inter;color:var(--brand);background:var(--brand-l)">500g</div>
+                <div style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;text-align:center;font:500 13px Inter;color:var(--ink2)">1 kg</div>
+                <div style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;text-align:center;font:500 13px Inter;color:var(--ink2)">2 kg</div>
+              </div>
+            </div>
+            <div class="v2-form-group"><label class="v2-label">Cut preference</label>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;padding:10px;border:2px solid var(--brand);border-radius:8px;text-align:center;font:600 13px Inter;color:var(--brand);background:var(--brand-l)">Steaks</div>
+                <div style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;text-align:center;font:500 13px Inter;color:var(--ink2)">Whole</div>
+                <div style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;text-align:center;font:500 13px Inter;color:var(--ink2)">Fillets</div>
+              </div>
+            </div>
+            <div style="background:var(--green-l);border-radius:12px;padding:12px;margin-top:16px;display:flex;align-items:center;gap:10px"><span style="font-size:20px">⏰</span><div><div style="font:600 12px Inter;color:var(--green)">Morning pickup: 6:30 – 8:00 AM</div><div style="font:400 10px Inter;color:#059669;margin-top:2px">Kamla Tai confirms price by 5:30 AM</div></div></div>
+          </div>
+          <div style="position:absolute;bottom:64px;left:0;right:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border)">
+            <button class="v2-btn v2-btn-primary v2-btn-lg" style="width:100%;background:var(--indigo)">Continue to confirm →</button>
+          </div>
+          <div class="v2-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">🔍</span>Search</div><div class="nav-item active"><span class="icon">🌙</span>Pre-order</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Account</div></div>
+        </div>
+      </div>
+      <div class="label">V2 Pre-order (Step 2)</div>
+    </div>
+  </div>
+
+  <!-- Screen 6: Search (V2 new) -->
+  <h3 class="sub-heading">6. Search (V2 — New Screen)</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="padding:40px 24px;text-align:center">
+          <div style="font:400 14px system-ui;color:#6c757d">No dedicated search in V1.<br>Search is inline on homepage.</div>
+        </div>
+        <div class="v1-nav"><div class="nav-item active"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Me</div></div>
+      </div>
+      <div class="label">V1 — No Search Page</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:#fff;color:var(--ink)">9:41</div>
+        <div class="phone-body" style="background:#fff">
+          <div style="padding:12px 16px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)">
+            <span style="font:500 14px Inter;color:var(--ink3)">←</span>
+            <div style="flex:1;padding:8px 12px;background:var(--bg3);border-radius:8px;font:400 13px Inter;color:var(--ink)">Surmai<span style="color:var(--ink4)">|</span></div>
+            <span style="font:600 13px Inter;color:var(--brand)">Cancel</span>
+          </div>
+          <div style="padding:12px 16px"><div style="font:600 12px Inter;color:var(--ink3);margin-bottom:8px">Trending in Mumbai</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"><span class="v2-tag" style="padding:6px 12px;font-size:12px">🐟 Surmai</span><span class="v2-tag" style="padding:6px 12px;font-size:12px">🐟 Pomfret</span><span class="v2-tag" style="padding:6px 12px;font-size:12px">🦐 Prawns</span><span class="v2-tag" style="padding:6px 12px;font-size:12px">🐟 Rawas</span><span class="v2-tag" style="padding:6px 12px;font-size:12px">🐟 Bangda</span></div>
+            <div style="font:600 12px Inter;color:var(--ink3);margin-bottom:8px">Results for "Surmai"</div>
+            <div class="v2-listing-card" style="margin:0 0 8px"><div class="v2-lc-img">🐟</div><div class="v2-lc-info"><div class="v2-lc-name">Surmai (King Fish)</div><div class="v2-lc-detail">Kamla Tai · Sassoon Dock · ₹650/kg</div></div><button class="v2-add-btn">+</button></div>
+            <div class="v2-listing-card" style="margin:0 0 8px"><div class="v2-lc-img">🐟</div><div class="v2-lc-info"><div class="v2-lc-name">Surmai (King Fish)</div><div class="v2-lc-detail">Rafiq Bhai · Versova · ₹620/kg</div></div><button class="v2-add-btn">+</button></div>
+            <div class="v2-listing-card" style="margin:0 0 8px"><div class="v2-lc-img">🐟</div><div class="v2-lc-info"><div class="v2-lc-name">Surmai (King Fish)</div><div class="v2-lc-detail">Meena's · Mahim · ₹680/kg</div></div><button class="v2-add-btn">+</button></div>
+          </div>
+        </div>
+        <div class="v2-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item active"><span class="icon">🔍</span>Search</div><div class="nav-item"><span class="icon">🌙</span>Pre-order</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Account</div></div>
+      </div>
+      <div class="label">V2 Search</div>
+    </div>
+  </div>
+
+  <!-- Screen 7: Checkout -->
+  <h3 class="sub-heading">7. Checkout Sheet</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="background:rgba(0,0,0,.3);display:flex;align-items:flex-end">
+          <div style="background:#fff;border-radius:12px 12px 0 0;width:100%;padding:16px">
+            <div style="font:700 16px system-ui;color:#212529;margin-bottom:12px">Order Summary</div>
+            <div style="display:flex;justify-content:space-between;font:400 13px system-ui;color:#495057;padding:4px 0">Surmai 1kg<span>₹650</span></div>
+            <div style="display:flex;justify-content:space-between;font:400 13px system-ui;color:#495057;padding:4px 0">Rawas 1kg<span>₹800</span></div>
+            <div style="display:flex;justify-content:space-between;font:400 13px system-ui;color:#495057;padding:4px 0;border-top:1px solid #dee2e6;margin-top:6px;padding-top:8px">Delivery<span>₹50</span></div>
+            <div style="display:flex;justify-content:space-between;font:700 14px system-ui;color:#212529;border-top:1px solid #dee2e6;margin-top:6px;padding-top:8px">Total<span>₹1,500</span></div>
+            <button class="v1-btn v1-btn-primary" style="width:100%;margin-top:12px">Place Order</button>
+          </div>
+        </div>
+        <div class="v1-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Me</div></div>
+      </div>
+      <div class="label">V1 Checkout</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="background:rgba(0,0,0,.3);display:flex;align-items:flex-end">
+          <div class="v2-sheet" style="width:100%">
+            <div class="v2-sheet-handle"></div>
+            <div style="font:700 15px Inter;color:var(--ink);margin-bottom:12px">Order Summary</div>
+            <div class="v2-bill-row">Surmai 1kg <span>₹650</span></div>
+            <div class="v2-bill-row">Rawas 1kg <span>₹800</span></div>
+            <div class="v2-bill-row">Delivery <span class="free">FREE ✓</span></div>
+            <div class="v2-bill-row total">Total <span>₹1,450</span></div>
+            <div class="v2-trust-badges">
+              <span class="v2-trust-badge">🔒 Secure</span>
+              <span class="v2-trust-badge">🐟 Same-day</span>
+              <span class="v2-trust-badge">💳 UPI / Cash</span>
+            </div>
+            <button class="v2-btn v2-btn-primary v2-btn-lg" style="width:100%;margin-top:14px">Place Order · ₹1,450</button>
+          </div>
+        </div>
+        <div class="v2-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">🔍</span>Search</div><div class="nav-item"><span class="icon">🌙</span>Pre-order</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Account</div></div>
+      </div>
+      <div class="label">V2 Checkout</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- SECTION: SELLER SCREENS -->
+<!-- ================================================================ -->
+<div class="section" id="screens-seller">
+  <div class="section-label">Seller Screens</div>
+  <div class="section-title">Seller Dashboard — V1 vs V2</div>
+  <div class="section-sub">All seller-facing screens.</div>
+
+  <!-- Seller Screen 1: Login -->
+  <h3 class="sub-heading">1. Seller Login</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="padding:24px 16px;text-align:center">
+          <div style="font:700 20px system-ui;color:#212529;margin-bottom:4px">Seller Login</div>
+          <div style="font:400 13px system-ui;color:#6c757d;margin-bottom:20px">Enter your phone number</div>
+          <div style="text-align:left"><label class="v1-label">Phone</label><input class="v1-input" placeholder="+91 98765 43210" style="margin-bottom:16px"></div>
+          <button class="v1-btn v1-btn-primary" style="width:100%">Send OTP</button>
+        </div>
+      </div>
+      <div class="label">V1 Seller Login</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body">
+          <div class="v2-login-hero">
+            <div class="emoji">🐟</div>
+            <h2>Seller Dashboard</h2>
+            <p>Manage your listings and orders</p>
+          </div>
+          <div style="padding:20px 16px">
+            <label class="v2-label">Phone number</label>
+            <input class="v2-input" placeholder="+91 98765 43210" style="margin-bottom:16px">
+            <button class="v2-btn v2-btn-primary v2-btn-lg" style="width:100%">Continue</button>
+            <div style="text-align:center;margin-top:10px;font:400 11px Inter;color:var(--ink4)">OTP will be sent via SMS</div>
+          </div>
+        </div>
+      </div>
+      <div class="label">V2 Seller Login</div>
+    </div>
+  </div>
+
+  <!-- Seller Screen 2: Orders Dashboard -->
+  <h3 class="sub-heading">2. Orders Dashboard</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body">
+          <div style="padding:16px;background:#fff;border-bottom:1px solid #dee2e6">
+            <div style="font:700 20px system-ui;color:#212529;margin-bottom:12px">Dashboard</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <div class="v1-stat-card"><div class="v1-stat-val">12</div><div class="v1-stat-label">Orders</div></div>
+              <div class="v1-stat-card"><div class="v1-stat-val">₹8.4k</div><div class="v1-stat-label">Revenue</div></div>
+              <div class="v1-stat-card"><div class="v1-stat-val">3</div><div class="v1-stat-label">Pending</div></div>
+            </div>
+          </div>
+          <div class="v1-tabs" style="padding:0 16px"><button class="v1-tab active">Pending (3)</button><button class="v1-tab">All</button></div>
+          <div style="padding:0">
+            <div style="background:#fff;padding:12px;margin:0 16px 8px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font:600 13px system-ui;color:#212529">#1234 · Priya M.</span><span class="v1-badge v1-badge-orange">Pending</span></div><div style="font:400 12px system-ui;color:#495057;margin-bottom:8px">Surmai 1kg, Rawas 500g · ₹1,100</div><div style="display:flex;gap:6px"><button class="v1-btn v1-btn-green" style="padding:6px 12px;font-size:12px;flex:1">Accept</button><button class="v1-btn v1-btn-red" style="padding:6px 12px;font-size:12px;flex:1">Reject</button></div></div>
+            <div style="background:#fff;padding:12px;margin:0 16px 8px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font:600 13px system-ui;color:#212529">#1233 · Rahul K.</span><span class="v1-badge v1-badge-orange">Pending</span></div><div style="font:400 12px system-ui;color:#495057;margin-bottom:8px">Pomfret x2 · ₹1,800</div><div style="display:flex;gap:6px"><button class="v1-btn v1-btn-green" style="padding:6px 12px;font-size:12px;flex:1">Accept</button><button class="v1-btn v1-btn-red" style="padding:6px 12px;font-size:12px;flex:1">Reject</button></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">V1 Seller Dashboard</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div class="v2-dash-header"><h2>Good morning, Kamla Tai</h2><div class="sub">Wed 16 Apr · Sassoon Dock</div></div>
+          <div class="v2-dash-stats"><div class="v2-dash-stat"><div class="val">12</div><div class="lbl">Orders</div></div><div class="v2-dash-stat"><div class="val">₹8.4k</div><div class="lbl">Revenue</div></div><div class="v2-dash-stat"><div class="val" style="color:var(--orange)">3</div><div class="lbl">Pending</div></div></div>
+          <div class="v2-tabs" style="margin:12px 16px"><button class="v2-tab active">Pending (3)</button><button class="v2-tab">Ready</button><button class="v2-tab">All</button></div>
+          <div class="v2-seller-order pending"><div class="v2-so-top"><span class="v2-so-id">#1234 <span class="v2-tag v2-tag-orange" style="margin-left:4px">New</span></span><span class="v2-so-time">8:30 AM</span></div><div class="v2-so-buyer">Priya M. · Bandra West</div><div class="v2-so-items">Surmai 1kg, Rawas 500g · ₹1,100</div><div class="v2-so-actions"><button class="v2-btn v2-btn-green v2-btn-sm" style="flex:1">Accept</button><button class="v2-btn v2-btn-red v2-btn-sm" style="flex:1">Reject</button></div></div>
+          <div class="v2-seller-order pending"><div class="v2-so-top"><span class="v2-so-id">#1233</span><span class="v2-so-time">8:15 AM</span></div><div class="v2-so-buyer">Rahul K. · Andheri West</div><div class="v2-so-items">Pomfret x2 · ₹1,800</div><div class="v2-so-actions"><button class="v2-btn v2-btn-green v2-btn-sm" style="flex:1">Accept</button><button class="v2-btn v2-btn-red v2-btn-sm" style="flex:1">Reject</button></div></div>
+        </div>
+      </div>
+      <div class="label">V2 Seller Dashboard</div>
+    </div>
+  </div>
+
+  <!-- Seller Screen 3: Listings -->
+  <h3 class="sub-heading">3. Manage Listings</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font:700 20px system-ui;color:#212529">My Listings</div><button class="v1-btn v1-btn-primary" style="padding:6px 14px;font-size:12px">+ Add</button></div>
+          <div style="background:#fff;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.1)"><div class="v1-menu-img" style="width:48px;height:48px;flex-shrink:0">🐟</div><div style="flex:1"><div style="font:600 13px system-ui;color:#212529">Surmai</div><div style="font:400 11px system-ui;color:#6c757d">₹650/kg · In stock</div></div><button class="v1-btn v1-btn-outline" style="padding:5px 10px;font-size:11px">Edit</button></div>
+          <div style="background:#fff;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.1)"><div class="v1-menu-img" style="width:48px;height:48px;flex-shrink:0">🐟</div><div style="flex:1"><div style="font:600 13px system-ui;color:#212529">Rawas</div><div style="font:400 11px system-ui;color:#6c757d">₹800/kg · In stock</div></div><button class="v1-btn v1-btn-outline" style="padding:5px 10px;font-size:11px">Edit</button></div>
+          <div style="background:#fff;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.1)"><div class="v1-menu-img" style="width:48px;height:48px;flex-shrink:0">🐟</div><div style="flex:1"><div style="font:600 13px system-ui;color:#212529">Pomfret</div><div style="font:400 11px system-ui;color:#6c757d">₹900/pc · In stock</div></div><button class="v1-btn v1-btn-outline" style="padding:5px 10px;font-size:11px">Edit</button></div>
+          <div style="background:#fff;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.1);opacity:.5"><div class="v1-menu-img" style="width:48px;height:48px;flex-shrink:0">🦐</div><div style="flex:1"><div style="font:600 13px system-ui;color:#212529">Prawns</div><div style="font:400 11px system-ui;color:#6c757d">₹500/kg · <span style="color:#dc3545">Sold out</span></div></div><button class="v1-btn v1-btn-outline" style="padding:5px 10px;font-size:11px">Edit</button></div>
+        </div>
+      </div>
+      <div class="label">V1 Listings</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="padding:16px;display:flex;justify-content:space-between;align-items:center"><div style="font:800 17px Inter;color:var(--ink)">My Listings</div><button class="v2-btn v2-btn-primary v2-btn-sm">+ Add new</button></div>
+          <div class="v2-listing-card"><div class="v2-lc-img">🐟</div><div class="v2-lc-info"><div class="v2-lc-name">Surmai (King Fish)</div><div class="v2-lc-detail">Per kg · Whole / Cut</div><div class="v2-lc-price">₹650/kg</div></div><div class="v2-toggle on"></div></div>
+          <div class="v2-listing-card"><div class="v2-lc-img">🐟</div><div class="v2-lc-info"><div class="v2-lc-name">Rawas (Indian Salmon)</div><div class="v2-lc-detail">Per kg · Steaks</div><div class="v2-lc-price">₹800/kg</div></div><div class="v2-toggle on"></div></div>
+          <div class="v2-listing-card"><div class="v2-lc-img">🐟</div><div class="v2-lc-info"><div class="v2-lc-name">Pomfret (White)</div><div class="v2-lc-detail">Per piece · Medium</div><div class="v2-lc-price">₹900/pc</div></div><div class="v2-toggle on"></div></div>
+          <div class="v2-listing-card" style="opacity:.6"><div class="v2-lc-img">🦐</div><div class="v2-lc-info"><div class="v2-lc-name">Prawns (Medium)</div><div class="v2-lc-detail">Per kg · <span style="color:var(--red)">Sold out</span></div><div class="v2-lc-price">₹500/kg</div></div><div class="v2-toggle"></div></div>
+        </div>
+      </div>
+      <div class="label">V2 Listings</div>
+    </div>
+  </div>
+
+  <!-- Seller Screen 4: New Listing -->
+  <h3 class="sub-heading">4. Add / Edit Listing</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="padding:16px">
+          <div style="font:700 20px system-ui;color:#212529;margin-bottom:16px">New Listing</div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Fish species</label><input class="v1-input" placeholder="e.g. Surmai"></div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Price per kg</label><input class="v1-input" placeholder="₹"></div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Unit</label><input class="v1-input" placeholder="kg / piece"></div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Photo</label><div style="border:2px dashed #dee2e6;border-radius:8px;padding:20px;text-align:center;font:400 13px system-ui;color:#6c757d">Tap to upload photo</div></div>
+          <button class="v1-btn v1-btn-green" style="width:100%">Save Listing</button>
+        </div>
+      </div>
+      <div class="label">V1 New Listing</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="padding:16px"><div style="font:500 12px Inter;color:var(--ink3);margin-bottom:8px">← Back</div><div style="font:800 17px Inter;color:var(--ink)">New Listing</div></div>
+          <div style="padding:0 16px">
+            <div class="v2-form-group"><label class="v2-label">Fish species</label><select class="v2-select"><option value="">Select species...</option><option>Surmai (King Fish)</option><option>Rawas (Indian Salmon)</option><option>Pomfret (White)</option></select></div>
+            <div class="v2-form-row" style="margin-bottom:14px">
+              <div><label class="v2-label">Price</label><input class="v2-input" placeholder="₹ per unit"></div>
+              <div><label class="v2-label">Unit</label><select class="v2-select"><option>Per kg</option><option>Per piece</option></select></div>
+            </div>
+            <div class="v2-form-group"><label class="v2-label">Cut options</label>
+              <div style="display:flex;gap:6px"><span class="v2-tag v2-tag-brand" style="padding:6px 12px;cursor:pointer">Whole</span><span class="v2-tag" style="padding:6px 12px;cursor:pointer">Steaks</span><span class="v2-tag" style="padding:6px 12px;cursor:pointer">Fillets</span></div>
+            </div>
+            <div class="v2-form-group"><label class="v2-label">Photo</label><div style="border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center"><div style="font-size:24px;margin-bottom:4px">📷</div><div style="font:500 12px Inter;color:var(--ink3)">Tap to add photo</div></div></div>
+            <button class="v2-btn v2-btn-green v2-btn-lg" style="width:100%;margin-top:8px">Save Listing</button>
+          </div>
+        </div>
+      </div>
+      <div class="label">V2 New Listing</div>
+    </div>
+  </div>
+
+  <!-- Seller Screen 5: Seller Profile -->
+  <h3 class="sub-heading">5. Seller Profile / Settings</h3>
+  <div class="screen-row">
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="padding:16px">
+          <div style="font:700 20px system-ui;color:#212529;margin-bottom:16px">My Profile</div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Stall name</label><input class="v1-input" value="Kamla Tai Fish Stall"></div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Location</label><input class="v1-input" value="Sassoon Dock, Colaba"></div>
+          <div class="v1-form-group" style="padding:0"><label class="v1-label">Open hours</label><input class="v1-input" value="6:00 AM – 11:00 AM"></div>
+          <label style="display:flex;align-items:center;gap:10px;font:600 14px system-ui;color:#212529;cursor:pointer;margin-top:12px"><input type="checkbox" checked style="width:20px;height:20px;accent-color:#0066cc"> Push notifications</label>
+          <button class="v1-btn v1-btn-primary" style="width:100%;margin-top:16px">Save</button>
+        </div>
+      </div>
+      <div class="label">V1 Seller Profile</div>
+    </div>
+    <div class="screen-col">
+      <div class="phone">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="padding:16px"><div style="font:800 17px Inter;color:var(--ink)">Settings</div></div>
+          <div style="margin:0 16px 16px;background:#fff;border-radius:12px;padding:16px;box-shadow:var(--shadow-sm);display:flex;gap:12px;align-items:center">
+            <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#0066FF,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:24px">🐟</div>
+            <div><div style="font:700 15px Inter;color:var(--ink)">Kamla Tai Fish Stall</div><div style="font:400 12px Inter;color:var(--ink3)">Sassoon Dock, Colaba</div></div>
+          </div>
+          <div style="padding:0 16px">
+            <div class="v2-form-group"><label class="v2-label">Open hours</label><div style="display:flex;gap:8px"><input class="v2-input" value="6:00 AM" style="flex:1"><span style="font:400 14px Inter;color:var(--ink3);padding:10px 0">to</span><input class="v2-input" value="11:00 AM" style="flex:1"></div></div>
+            <div class="v2-toggle-row"><div><div class="v2-toggle-label">Push notifications</div><div class="v2-toggle-sub">Get alerted for new orders</div></div><div class="v2-toggle on"></div></div>
+            <div class="v2-toggle-row"><div><div class="v2-toggle-label">Accept pre-orders</div><div class="v2-toggle-sub">Let buyers order tomorrow's catch</div></div><div class="v2-toggle on"></div></div>
+            <div class="v2-toggle-row"><div><div class="v2-toggle-label">Available for delivery</div><div class="v2-toggle-sub">Via Relifish delivery partners</div></div><div class="v2-toggle"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">V2 Seller Settings</div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="text-align:center;padding:40px 0;color:var(--ink4);font:400 12px Inter">
+  Relifish Design System v2.0 · Mumbai · Built for Figma export via html.to.design
+</div>
+
+</div>
+</body>
+</html>

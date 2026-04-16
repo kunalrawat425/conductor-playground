@@ -1,0 +1,70 @@
+---
+import type { InputProps } from "../../../types/v2-components";
+interface Props extends InputProps {
+  id?: string;
+  name?: string;
+  value?: string;
+  placeholder?: string;
+  autocomplete?: string;
+  inputmode?: string;
+  pattern?: string;
+  maxlength?: number;
+  disabled?: boolean;
+}
+const {
+  id,
+  name,
+  type = "text",
+  label,
+  helper,
+  error,
+  success,
+  required = false,
+  prefix,
+  value = "",
+  placeholder,
+  autocomplete,
+  inputmode,
+  pattern,
+  maxlength,
+  disabled = false,
+} = Astro.props;
+const stateClass = error ? "v2-input-error" : success ? "v2-input-success" : "";
+---
+<div class="v2-field">
+  {label && (
+    <label for={id} class="v2-field-label">
+      {label}
+      {required && <span class="v2-field-req" aria-label="required">*</span>}
+    </label>
+  )}
+  <div class:list={["v2-input-wrap", prefix && "v2-input-with-prefix", stateClass]}>
+    {prefix && <span class="v2-input-prefix">{prefix}</span>}
+    <input
+      id={id}
+      name={name}
+      type={type}
+      value={value}
+      placeholder={placeholder}
+      autocomplete={autocomplete}
+      inputmode={inputmode as any}
+      pattern={pattern}
+      maxlength={maxlength}
+      disabled={disabled}
+      required={required}
+      class="v2-input"
+      aria-invalid={!!error}
+      aria-describedby={error || helper || success ? `${id}-help` : undefined}
+    />
+  </div>
+  {(error || helper || success) && (
+    <div
+      id={`${id}-help`}
+      class:list={["v2-field-helper", error && "v2-helper-error", success && "v2-helper-success"]}
+    >
+      {error || success || helper}
+    </div>
+  )}
+</div>
+
+<!-- styles in src/styles/v2-components.css -->

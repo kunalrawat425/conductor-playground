@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen 07 — Seller Dashboard</title>
+<link rel="stylesheet" href="../_shared.css">
+<link rel="stylesheet" href="_screen-shared.css">
+<style>
+  .dash-header{background:linear-gradient(135deg,#059669,#10B981);padding:16px;color:#fff}
+  .dash-greet{font:400 12px Inter;opacity:.9}
+  .dash-name{font:800 20px Inter;margin-top:2px}
+  .today-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+  .ts{background:rgba(255,255,255,.15);border-radius:10px;padding:10px;text-align:center;backdrop-filter:blur(10px)}
+  .ts .v{font:800 18px Inter;color:#fff}
+  .ts .l{font:500 10px Inter;color:rgba(255,255,255,.9);margin-top:1px}
+
+  .action-row{display:flex;gap:8px;padding:16px;background:#fff;border-bottom:1px solid #E2E8F0}
+  .action{flex:1;padding:10px;background:#F1F5F9;border:none;border-radius:10px;font:700 12px Inter;color:#0F172A;display:flex;align-items:center;justify-content:center;gap:6px}
+  .action.primary{background:#0066FF;color:#fff}
+
+  .tabs{display:flex;background:#fff;border-bottom:1px solid #E2E8F0}
+  .tab{flex:1;padding:12px;font:600 12px Inter;color:#64748B;text-align:center;position:relative}
+  .tab.active{color:#0066FF}
+  .tab.active::after{content:'';position:absolute;bottom:0;left:16px;right:16px;height:2px;background:#0066FF}
+  .tab .count{font-size:10px;margin-left:4px;background:#DC2626;color:#fff;padding:1px 6px;border-radius:9999px}
+
+  .order-card{margin:12px 16px 0;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px;position:relative}
+  .order-card.urgent{border-color:#EA580C;background:#FFF7ED}
+  .oc-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .oc-id{font:700 13px Inter;color:#0F172A}
+  .oc-time{font:400 11px Inter;color:#64748B;margin-top:1px}
+  .oc-badge{font:700 10px Inter;padding:3px 8px;border-radius:20px;background:#E6F0FF;color:#0066FF;text-transform:uppercase}
+  .oc-badge.urgent{background:#FED7AA;color:#EA580C}
+  .oc-items{font:400 12px Inter;color:#334155;margin-top:8px;padding:8px 10px;background:#F8FAFC;border-radius:8px}
+  .oc-bot{display:flex;gap:8px;margin-top:10px}
+  .oc-btn{flex:1;padding:10px;font:700 12px Inter;border-radius:8px;border:none;cursor:pointer}
+  .oc-btn.accept{background:#059669;color:#fff}
+  .oc-btn.reject{background:#fff;color:#DC2626;border:1.5px solid #FEE2E2}
+  .oc-total{font:800 14px Inter;color:#0F172A;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Screen 07 — Seller Dashboard</h1>
+  <p class="sub">Seller-facing ops. Swipe-to-accept. Today summary.</p>
+
+  <div class="phone">
+    <div class="phone-status" style="background:#059669;color:#fff">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="dash-header">
+        <div class="dash-greet">Good morning, Kamla Tai</div>
+        <div class="dash-name">Today's pipeline</div>
+        <div class="today-summary">
+          <div class="ts"><div class="v">5</div><div class="l">New orders</div></div>
+          <div class="ts"><div class="v">₹4,280</div><div class="l">Today's GMV</div></div>
+          <div class="ts"><div class="v">12</div><div class="l">Pre-orders</div></div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="action primary">✓ Mark all ready</button>
+        <button class="action">📤 Export</button>
+        <button class="action">➕ Listing</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Pending <span class="count">5</span></div>
+        <div class="tab">Accepted</div>
+        <div class="tab">Completed</div>
+      </div>
+
+      <div class="order-card urgent">
+        <div class="oc-top">
+          <div><div class="oc-id">#RF238 · Priya D.</div><div class="oc-time">7:00am pickup · in 25 min</div></div>
+          <span class="oc-badge urgent">Urgent</span>
+        </div>
+        <div class="oc-items">🐟 Surmai (1kg, whole) · 🦐 Prawns (500g, medium)</div>
+        <div class="oc-total">₹905 · UPI paid</div>
+        <div class="oc-bot">
+          <button class="oc-btn reject">Decline</button>
+          <button class="oc-btn accept">✓ Accept</button>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <div class="oc-top">
+          <div><div class="oc-id">#RF239 · Rahul M.</div><div class="oc-time">8:30am pickup</div></div>
+          <span class="oc-badge">New</span>
+        </div>
+        <div class="oc-items">🐟 Rawas (1kg, cleaned)</div>
+        <div class="oc-total">₹820 · UPI paid</div>
+        <div class="oc-bot">
+          <button class="oc-btn reject">Decline</button>
+          <button class="oc-btn accept">✓ Accept</button>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <div class="oc-top">
+          <div><div class="oc-id">🌙 #RF241 · Amit S. (Pre-order)</div><div class="oc-time">Tomorrow 7am</div></div>
+          <span class="oc-badge" style="background:#F3E8FF;color:#7C3AED">Pre-order</span>
+        </div>
+        <div class="oc-items">🐟 Ghol (2kg, whole) · 🐟 Surmai (1kg, cut)</div>
+        <div class="oc-total">₹1,550 · Pay at pickup</div>
+        <div class="oc-bot">
+          <button class="oc-btn reject">Decline</button>
+          <button class="oc-btn accept" style="background:#7C3AED">✓ Confirm</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item active"><span class="icon">📋</span>Orders</div>
+      <div class="n-item"><span class="icon">🐟</span>Listings</div>
+      <div class="n-item"><span class="icon">📊</span>Stats</div>
+      <div class="n-item"><span class="icon">👤</span>Profile</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+---
+import type { AddressCardProps } from "../../../types/v2-components";
+interface Props extends AddressCardProps {
+  id?: string;
+  onEditHref?: string;
+  showActions?: boolean;
+}
+const {
+  id,
+  label,
+  type,
+  text,
+  isDefault = false,
+  isSelected = false,
+  selectable = false,
+  onEditHref,
+  showActions = true,
+} = Astro.props;
+const icon = type === "home" ? "🏠" : type === "office" ? "🏢" : "📍";
+---
+<div
+  class:list={["v2-addr-card", isSelected && "v2-addr-selected"]}
+  data-address-id={id}
+>
+  <div class="v2-addr-icon">{icon}</div>
+  <div class="v2-addr-body">
+    <div class="v2-addr-top">
+      <span class="v2-addr-label">{label}</span>
+      {isDefault && <span class="v2-addr-default">Default</span>}
+    </div>
+    <div class="v2-addr-text">{text}</div>
+    {showActions && !selectable && (
+      <div class="v2-addr-actions">
+        {onEditHref && <a href={onEditHref} class="v2-addr-edit">Edit</a>}
+        <button class="v2-addr-delete" data-delete-id={id} type="button">Delete</button>
+      </div>
+    )}
+  </div>
+  {selectable && (
+    <div class="v2-addr-radio" aria-hidden="true"></div>
+  )}
+</div>

@@ -43,10 +43,77 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
     <main id="dash-main" style="display:none;">
 
-      <!-- Tabs: Fresh / Pre-orders -->
+      <!-- Stats Dashboard -->
+      <div class="stats-header">
+        <h2 class="stats-title">Dashboard</h2>
+        <div class="stats-header-actions">
+          <button type="button" id="export-csv" class="stats-export-btn">📥 Export</button>
+          <span class="stats-toggle-label">Stats</span>
+          <label
+            class="dash-switch stats-panel-switch"
+            title="Show or hide dashboard stats"
+            style="position:relative;display:inline-block;width:48px;height:28px;flex-shrink:0;"
+          >
+            <input type="checkbox" id="stats-panel-toggle" checked style="opacity:0;width:0;height:0;" aria-label="Show dashboard stats" />
+            <span id="stats-panel-slider" style="position:absolute;inset:0;background:var(--green);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
+            <span id="stats-panel-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);transform:translateX(20px);"></span>
+          </label>
+        </div>
+      </div>
+      <div id="stats-panel">
+        <div class="stats-filters">
+          <select id="stats-date-filter" class="filter-select stats-date-select">
+            <option value="today" selected>Today</option>
+            <option value="7d">Last 7 days</option>
+            <option value="month">This month</option>
+            <option value="30d">Last 30 days</option>
+            <option value="year">This year</option>
+            <option value="custom">Custom range</option>
+          </select>
+          <div id="stats-custom-range" class="stats-custom-range" style="display:none;">
+            <input type="date" id="stats-start" class="stats-date-input" />
+            <span class="stats-date-sep">to</span>
+            <input type="date" id="stats-end" class="stats-date-input" />
+            <button type="button" class="stats-apply-btn" id="stats-apply">Apply</button>
+          </div>
+        </div>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-total-orders">—</div>
+            <div class="stat-label">Total Orders</div>
+          </div>
+          <div class="stat-card stat-card--green">
+            <div class="stat-value" id="stat-revenue">—</div>
+            <div class="stat-label">Revenue</div>
+          </div>
+          <div class="stat-card stat-card--orange">
+            <div class="stat-value" id="stat-pending">—</div>
+            <div class="stat-label">Pending</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-value" id="stat-completed">—</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-avg-order">—</div>
+            <div class="stat-label">Avg Order</div>
+          </div>
+          <div class="stat-card stat-card--purple">
+            <div class="stat-value" id="stat-scheduled">—</div>
+            <div class="stat-label">Scheduled</div>
+          </div>
+          <div class="stat-card stat-card--red">
+            <div class="stat-value" id="stat-cancelled">—</div>
+            <div class="stat-label">Cancelled</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs: Fresh / Pre-orders / Scheduled -->
       <div class="tabs">
-        <button class="tab active" data-tab="fresh-orders">Fresh Orders <span id="fresh-count" class="tab-count"></span></button>
+        <button class="tab active" data-tab="fresh-orders">Fresh <span id="fresh-count" class="tab-count"></span></button>
         <button class="tab" data-tab="pre-orders">Pre-orders <span id="pre-count" class="tab-count"></span></button>
+        <button class="tab" data-tab="scheduled-orders">Scheduled <span id="sched-count" class="tab-count"></span></button>
       </div>
 
       <div id="tab-fresh-orders">
@@ -90,19 +157,31 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         <div id="pre-orders-list"></div>
         <div id="pre-pagination" class="pagination"></div>
       </div>
+
+      <div id="tab-scheduled-orders" style="display:none;">
+        <p class="text-muted" style="font-size:13px;margin:0 0 12px;line-height:1.4;">
+          Rows are sorted by pickup slot (<code>orders.scheduled_for</code>). Same data as buyer checkout: listing, quantity, buyer contact, and totals.
+        </p>
+        <div id="scheduled-orders-list"></div>
+        <div id="scheduled-pagination" class="pagination"></div>
+      </div>
     </main>
 
     <script>
       import { getSession, signOut } from "../../../lib/seller-auth";
       import {
         getSellerById,
+        getListingIdsForSeller,
         getFreshOrdersForSellerPage,
         getPreOrdersForSellerPage,
+        getScheduledOrdersForSeller,
         getSellerOrderTabCounts,
         updateOrderStatus,
+        supabase,
       } from "../../../lib/supabase";
       import { SELLER_ORDERS_PAGE_SIZE } from "../../../lib/seller-orders-pagination";
       import { getSpeciesDisplay } from "../../../lib/species";
+      import { priceUnitShortLabel } from "../../../lib/listing-pricing";
       import type { Seller, Order } from "../../../lib/supabase";
 
       function showToast(message: string, type: "success" | "error" = "success") {
@@ -118,9 +197,13 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         }, 3000);
       }
 
+      function esc(s: string) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
       let freshPage = 1;
       let prePage = 1;
       let _sellerId = "";
+      /** Shared once per page load / refresh — avoids 4× duplicate fish_listings id queries. */
+      let _sellerListingIds: string[] = [];
 
       function renderPaginationControls(containerId: string, total: number, page: number, onPage: (p: number) => void) {
         const el = document.getElementById(containerId)!;
@@ -135,20 +218,269 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         el.querySelector(".pg-next")?.addEventListener("click", () => { if (page < totalPages) onPage(page + 1); });
       }
 
+      function renderScheduledOrdersTable(orders: Order[], sellerId: string) {
+        const el = document.getElementById("scheduled-orders-list")!;
+        if (orders.length === 0) {
+          el.innerHTML = '<p class="text-muted">No scheduled orders yet.</p>';
+          return;
+        }
+        function escCell(s: string) {
+          return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+        }
+        const rows = orders
+          .map((o) => {
+            const name = o.species ? getSpeciesDisplay(o.species) : "Unknown";
+            const unitLabel = priceUnitShortLabel(o.quantity_unit);
+            const when = o.scheduled_for
+              ? new Date(o.scheduled_for).toLocaleString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "—";
+            const df = Number(o.delivery_fee) || 0;
+            const sub = Number(o.total_price) || 0;
+            const amt = df > 0 ? `₹${sub} + ₹${df} delivery` : `₹${sub}`;
+            return `<tr>
+              <td>${escCell(when)}</td>
+              <td>${escCell(name)}</td>
+              <td>${escCell(String(o.quantity))} ${escCell(unitLabel)}</td>
+              <td>Buyer #${escCell(o.id.substring(0, 6).toUpperCase())}</td>
+              <td>${escCell(o.order_type || "")}</td>
+              <td>${escCell(amt)}</td>
+              <td class="sched-actions-cell">
+                <details class="order-actions-menu order-actions-menu--table">
+                  <summary class="order-actions-trigger" title="Actions" aria-label="Order actions">⋮</summary>
+                  <div class="order-actions-panel">
+                    <button type="button" class="order-actions-item scheduled-accept-btn" data-order-id="${o.id}">Accept</button>
+                    <button type="button" class="order-actions-item order-actions-item--danger scheduled-cancel-btn" data-order-id="${o.id}">Cancel order</button>
+                  </div>
+                </details>
+              </td>
+            </tr>`;
+          })
+          .join("");
+        el.innerHTML = `
+          <div class="scheduled-table-wrap">
+            <table class="scheduled-orders-table">
+              <thead>
+                <tr>
+                  <th>Pickup slot</th>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Buyer</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th class="sched-actions-th"> </th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+
+        function closeSchedMenu(btn: HTMLElement) {
+          const d = btn.closest("details.order-actions-menu");
+          if (d) d.removeAttribute("open");
+        }
+
+        el.querySelectorAll(".scheduled-accept-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            closeSchedMenu(b);
+            (b as HTMLButtonElement).disabled = true;
+            try {
+              await updateOrderStatus(orderId, "confirmed", undefined, sellerId);
+              showToast("Scheduled order accepted");
+              await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to accept", "error");
+              (b as HTMLButtonElement).disabled = false;
+            }
+          });
+        });
+
+        el.querySelectorAll(".scheduled-cancel-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            if (!confirm("Cancel this scheduled order? The buyer will be notified.")) return;
+            closeSchedMenu(b);
+            (b as HTMLButtonElement).disabled = true;
+            try {
+              await updateOrderStatus(orderId, "cancelled", undefined, sellerId);
+              showToast("Order cancelled");
+              await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to cancel", "error");
+              (b as HTMLButtonElement).disabled = false;
+            }
+          });
+        });
+      }
+
       async function updateTabCounts() {
         if (!_sellerId) return;
         try {
-          const { pendingFresh, preAwaiting } = await getSellerOrderTabCounts(_sellerId);
+          const { pendingFresh, preAwaiting, scheduled } = await getSellerOrderTabCounts(_sellerId, {
+            listingIds: _sellerListingIds,
+          });
           const freshEl = document.getElementById("fresh-count")!;
           const preEl = document.getElementById("pre-count")!;
+          const schedEl = document.getElementById("sched-count")!;
           freshEl.textContent = pendingFresh > 0 ? String(pendingFresh) : "";
           freshEl.style.display = pendingFresh > 0 ? "inline-flex" : "none";
           preEl.textContent = preAwaiting > 0 ? String(preAwaiting) : "";
           preEl.style.display = preAwaiting > 0 ? "inline-flex" : "none";
+          schedEl.textContent = scheduled > 0 ? String(scheduled) : "";
+          schedEl.style.display = scheduled > 0 ? "inline-flex" : "none";
         } catch (e) {
           console.error("Tab counts:", e);
         }
       }
+
+      let schedPage = 1;
+      async function renderScheduled() {
+        if (!_sellerId) return;
+        try {
+          const { orders, total } = await getScheduledOrdersForSeller(_sellerId, {
+            page: schedPage,
+            listingIds: _sellerListingIds,
+          });
+          renderScheduledOrdersTable(orders, _sellerId);
+          renderPaginationControls("scheduled-pagination", total, schedPage, (p) => { schedPage = p; void renderScheduled(); });
+        } catch (e) {
+          console.error("Scheduled orders:", e);
+        }
+      }
+
+      // ===== Stats Dashboard =====
+      let statsLoadEpoch = 0;
+      let statsDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      function scheduleLoadStats() {
+        if (statsDebounceTimer) clearTimeout(statsDebounceTimer);
+        statsDebounceTimer = setTimeout(() => {
+          statsDebounceTimer = null;
+          void loadStats();
+        }, 280);
+      }
+
+      function getStatsDateRange(filter: string): { start: string; end: string } | null {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+        switch (filter) {
+          case "today": return { start: todayStart, end: todayEnd };
+          case "7d": { const d = new Date(now); d.setDate(d.getDate() - 7); return { start: d.toISOString(), end: todayEnd }; }
+          case "month": { const d = new Date(now.getFullYear(), now.getMonth(), 1); return { start: d.toISOString(), end: todayEnd }; }
+          case "30d": { const d = new Date(now); d.setDate(d.getDate() - 30); return { start: d.toISOString(), end: todayEnd }; }
+          case "year": { const d = new Date(now.getFullYear(), 0, 1); return { start: d.toISOString(), end: todayEnd }; }
+          default: return null;
+        }
+      }
+
+      async function loadStats() {
+        if (!_sellerId) return;
+        const epoch = ++statsLoadEpoch;
+        const grid = document.getElementById("stats-grid");
+        if (grid) grid.style.opacity = "0.5";
+        const filter = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
+
+        let range: { start: string; end: string } | null;
+        if (filter === "custom") {
+          const s = (document.getElementById("stats-start") as HTMLInputElement).value;
+          const e = (document.getElementById("stats-end") as HTMLInputElement).value;
+          if (!s || !e) {
+            if (grid) grid.style.opacity = "1";
+            return;
+          }
+          range = { start: new Date(s).toISOString(), end: new Date(new Date(e).getTime() + 86400000).toISOString() };
+        } else {
+          range = getStatsDateRange(filter);
+        }
+
+        const listingIds =
+          _sellerListingIds.length > 0 ? _sellerListingIds : await getListingIdsForSeller(_sellerId);
+        if (epoch !== statsLoadEpoch) return;
+        if (listingIds.length === 0) {
+          setStatValues(0, 0, 0, 0, 0, 0, 0);
+          return;
+        }
+
+        let q = supabase.from("orders").select("total_price, status, final_price").in("listing_id", listingIds);
+        if (range) {
+          q = q.gte("created_at", range.start).lt("created_at", range.end);
+        }
+        const { data: orders } = await q;
+        if (epoch !== statsLoadEpoch) return;
+        if (!orders) { setStatValues(0, 0, 0, 0, 0, 0, 0); return; }
+
+        const total = orders.length;
+        const revenue = orders.filter((o: any) => ["confirmed", "paid", "completed"].includes(o.status)).reduce((s: number, o: any) => s + (o.final_price || o.total_price || 0), 0);
+        const pending = orders.filter((o: any) => o.status === "pending" || o.status === "pre_order").length;
+        const completed = orders.filter((o: any) => o.status === "completed").length;
+        const scheduled = orders.filter((o: any) => o.status === "scheduled").length;
+        const cancelled = orders.filter((o: any) => o.status === "cancelled" || o.status === "declined").length;
+        const avg = total > 0 ? Math.round(revenue / Math.max(1, orders.filter((o: any) => ["confirmed", "paid", "completed"].includes(o.status)).length)) : 0;
+        setStatValues(total, revenue, pending, completed, scheduled, avg, cancelled);
+      }
+
+      function setStatValues(total: number, revenue: number, pending: number, completed: number, scheduled: number, avg: number, cancelled: number) {
+        const grid = document.getElementById("stats-grid");
+        if (grid) grid.style.opacity = "1";
+        document.getElementById("stat-total-orders")!.textContent = String(total);
+        document.getElementById("stat-revenue")!.textContent = "₹" + revenue.toLocaleString("en-IN");
+        document.getElementById("stat-pending")!.textContent = String(pending);
+        document.getElementById("stat-completed")!.textContent = String(completed);
+        document.getElementById("stat-scheduled")!.textContent = String(scheduled);
+        document.getElementById("stat-avg-order")!.textContent = avg > 0 ? "₹" + avg.toLocaleString("en-IN") : "—";
+        document.getElementById("stat-cancelled")!.textContent = String(cancelled);
+      }
+
+      // Toggle stats panel (switch)
+      const statsPanelEl = document.getElementById("stats-panel")!;
+      const statsPanelToggle = document.getElementById("stats-panel-toggle") as HTMLInputElement;
+      const statsPanelSlider = document.getElementById("stats-panel-slider")!;
+      const statsPanelKnob = document.getElementById("stats-panel-knob")!;
+
+      function updateStatsPanelUI(visible: boolean) {
+        statsPanelToggle.checked = visible;
+        statsPanelEl.style.display = visible ? "block" : "none";
+        statsPanelSlider.style.background = visible ? "var(--green)" : "var(--gray-200)";
+        statsPanelKnob.style.transform = visible ? "translateX(20px)" : "translateX(0)";
+      }
+
+      updateStatsPanelUI(true);
+
+      statsPanelToggle.addEventListener("change", () => {
+        updateStatsPanelUI(statsPanelToggle.checked);
+      });
+
+      // Export CSV
+      document.getElementById("export-csv")!.addEventListener("click", () => {
+        if (!_sellerId) return;
+        const dateFilter = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
+        window.open(`/api/seller/orders-export?seller_id=${_sellerId}&date_filter=${dateFilter}`, "_blank");
+      });
+
+      // Date filter change
+      document.getElementById("stats-date-filter")!.addEventListener("change", () => {
+        const v = (document.getElementById("stats-date-filter") as HTMLSelectElement).value;
+        document.getElementById("stats-custom-range")!.style.display = v === "custom" ? "flex" : "none";
+        if (v !== "custom") scheduleLoadStats();
+      });
+
+      // Custom range apply
+      document.getElementById("stats-apply")!.addEventListener("click", () => {
+        const s = (document.getElementById("stats-start") as HTMLInputElement).value;
+        const e = (document.getElementById("stats-end") as HTMLInputElement).value;
+        if (!s || !e) { showToast("Select both start and end date", "error"); return; }
+        if (new Date(s) > new Date(e)) { showToast("Start date must be before end date", "error"); return; }
+        void loadStats();
+      });
 
       async function renderFresh() {
         if (!_sellerId) return;
@@ -160,8 +492,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             pageSize: SELLER_ORDERS_PAGE_SIZE,
             statusFilter,
             dateFilter,
+            listingIds: _sellerListingIds,
           });
-          renderOrders(orders, "fresh-orders-list", _sellerId);
+          renderOrders(orders, "fresh-orders-list", _sellerId, "menu");
           renderPaginationControls("fresh-pagination", total, freshPage, (p) => {
             freshPage = p;
             void renderFresh();
@@ -181,8 +514,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             pageSize: SELLER_ORDERS_PAGE_SIZE,
             statusFilter,
             dateFilter,
+            listingIds: _sellerListingIds,
           });
-          renderOrders(orders, "pre-orders-list", _sellerId);
+          renderOrders(orders, "pre-orders-list", _sellerId, "menu");
           renderPaginationControls("pre-pagination", total, prePage, (p) => {
             prePage = p;
             void renderPre();
@@ -194,7 +528,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       async function refreshOrders(sellerId: string) {
         _sellerId = sellerId;
-        await Promise.all([renderFresh(), renderPre(), updateTabCounts()]);
+        if (_sellerListingIds.length === 0) {
+          _sellerListingIds = await getListingIdsForSeller(sellerId);
+        }
+        await Promise.all([renderFresh(), renderPre(), renderScheduled(), updateTabCounts()]);
       }
 
       async function init() {
@@ -223,11 +560,14 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const tabName = (tab as HTMLElement).dataset.tab!;
             document.getElementById("tab-fresh-orders")!.style.display = tabName === "fresh-orders" ? "block" : "none";
             document.getElementById("tab-pre-orders")!.style.display = tabName === "pre-orders" ? "block" : "none";
+            document.getElementById("tab-scheduled-orders")!.style.display = tabName === "scheduled-orders" ? "block" : "none";
+            if (tabName === "scheduled-orders") void renderScheduled();
           });
         });
 
         _sellerId = seller.id;
-        await Promise.all([renderFresh(), renderPre(), updateTabCounts()]);
+        _sellerListingIds = await getListingIdsForSeller(seller.id);
+        await Promise.all([renderFresh(), renderPre(), updateTabCounts(), loadStats()]);
 
         // Filters
         document.getElementById("fresh-status-filter")!.addEventListener("change", () => {
@@ -256,17 +596,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         });
       }
 
-      function renderOrders(orders: Order[], containerId: string, sellerId?: string) {
+      function renderOrders(
+        orders: Order[],
+        containerId: string,
+        sellerId?: string,
+        actionsLayout: "inline" | "menu" = "inline"
+      ) {
         const el = document.getElementById(containerId)!;
         if (orders.length === 0) {
           el.innerHTML = '<p class="text-muted">No orders yet.</p>';
           return;
         }
 
+        const useMenu = actionsLayout === "menu";
+
         el.innerHTML = orders
           .map((o) => {
             const name = o.species ? getSpeciesDisplay(o.species) : "Unknown";
-            const unitLabel = o.quantity_unit === "dozen" ? "dz" : o.quantity_unit;
+            const unitLabel = priceUnitShortLabel(o.quantity_unit);
             const isPreOrder = o.status === "pre_order";
             const canAct = o.status === "pre_order" || o.status === "pending";
 
@@ -279,20 +626,71 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               declined: "badge-red",
               cancelled: "badge-red",
               refunded: "badge-orange",
+              scheduled: "badge-purple",
             };
+
+            const schedInfo = o.scheduled_for
+              ? `<div style="font-size:12px;color:var(--blue);font-weight:600;margin-top:4px;">🗓️ Scheduled: ${new Date(o.scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} ${new Date(o.scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>`
+              : "";
+
+            const actionsMenuBlock =
+              useMenu && canAct
+                ? isPreOrder
+                  ? `
+                      <details class="order-actions-menu">
+                        <summary class="order-actions-trigger" title="Actions" aria-label="Order actions">⋮</summary>
+                        <div class="order-actions-panel">
+                          <button type="button" class="order-actions-item confirm-preorder-btn" data-order-id="${o.id}">Approve — confirm with price</button>
+                          <button type="button" class="order-actions-item order-actions-item--danger cancel-order-btn" data-order-id="${o.id}">Cancel order (full refund)</button>
+                        </div>
+                      </details>`
+                  : `
+                      <details class="order-actions-menu">
+                        <summary class="order-actions-trigger" title="Actions" aria-label="Order actions">⋮</summary>
+                        <div class="order-actions-panel">
+                          <button type="button" class="order-actions-item confirm-order-btn" data-order-id="${o.id}">Approve</button>
+                          <button type="button" class="order-actions-item decline-order-btn" data-order-id="${o.id}">Reject</button>
+                          <button type="button" class="order-actions-item order-actions-item--danger seller-cancel-pending-btn" data-order-id="${o.id}">Cancel order</button>
+                        </div>
+                      </details>`
+                : "";
+
+            const inlineActionsBlock =
+              !useMenu && canAct
+                ? isPreOrder
+                  ? `
+                  <div class="order-inline-actions">
+                    <button type="button" class="order-inline-btn confirm-preorder-btn" data-order-id="${o.id}">Approve — confirm with price</button>
+                    <button type="button" class="order-inline-btn order-inline-btn--danger cancel-order-btn" data-order-id="${o.id}">Cancel order (full refund)</button>
+                  </div>`
+                  : `
+                  <div class="order-inline-actions">
+                    <button type="button" class="order-inline-btn confirm-order-btn" data-order-id="${o.id}">Approve</button>
+                    <button type="button" class="order-inline-btn decline-order-btn" data-order-id="${o.id}">Reject</button>
+                    <button type="button" class="order-inline-btn order-inline-btn--danger seller-cancel-pending-btn" data-order-id="${o.id}">Cancel order</button>
+                  </div>`
+                : "";
+
+            const prePricePlaceholder = useMenu
+              ? "Enter actual price, then ⋮ → Approve"
+              : "Enter actual price, then tap Approve";
 
             return `
               <div class="card" style="margin-bottom:12px;" data-order-id="${o.id}">
                 <div class="card-body">
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-                    <div>
+                  ${schedInfo}
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
+                    <div style="min-width:0;flex:1;">
                       <h4 style="font-size:16px;font-weight:700;">${name}</h4>
                       <span class="text-muted">${o.quantity} ${unitLabel}${isPreOrder ? " (pre-order)" : ""}</span>
                     </div>
-                    <span class="badge ${statusColors[o.status] || "badge-blue"}">${o.status.replace("_", " ")}</span>
+                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                      <span class="badge ${statusColors[o.status] || "badge-blue"}">${o.status.replace("_", " ")}</span>
+                      ${actionsMenuBlock}
+                    </div>
                   </div>
                   <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--gray-700);margin-bottom:8px;">
-                    <span>📱 ${o.buyer_phone}</span>
+                    <span>👤 Buyer #${o.id.substring(0, 6).toUpperCase()}</span>
                     ${o.buyer_addr ? `<span>📍 ${o.buyer_addr}</span>` : ""}
                     <span>🛒 ${o.order_type}</span>
                   </div>
@@ -305,35 +703,29 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                     return `<div style="font-size:14px;margin-bottom:8px;">💰 <strong>₹${sub}</strong></div>`;
                   })()}
                   ${isPreOrder && o.paid_amount ? `<div style="background:#fff3cd;padding:8px 12px;border-radius:var(--radius);font-size:13px;margin-bottom:8px;">Buyer paid upfront: <strong>₹${o.paid_amount}</strong> <span class="text-muted">(max range)</span></div>` : ""}
+                  ${o.cancelled_by ? `<div style="background:#ffebee;padding:8px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:8px;color:#c62828;">Cancelled by <strong>${o.cancelled_by === "buyer" ? "Buyer" : "You"}</strong>${o.cancel_reason ? ` — "${esc(o.cancel_reason)}"` : ""}</div>` : ""}
                   ${
-                    canAct
-                      ? isPreOrder
-                        ? `
-                          <div>
-                            <div class="form-group" style="margin-bottom:8px;">
-                              <label>Actual Price (₹/${unitLabel})</label>
-                              <input type="number" class="final-price-input" data-order-id="${o.id}" min="1" step="0.01" placeholder="Enter actual price" style="max-width:200px;" />
-                            </div>
-                            <div style="display:flex;gap:8px;">
-                              <button class="btn btn-green confirm-preorder-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Confirm with Price</button>
-                              <button class="btn btn-red cancel-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Cancel (Full Refund)</button>
-                            </div>
-                          </div>
-                        `
-                        : `
-                          <div style="display:flex;gap:8px;">
-                            <button class="btn btn-green confirm-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Confirm</button>
-                            <button class="btn btn-red decline-order-btn" data-order-id="${o.id}" style="padding:6px 16px;font-size:13px;">Decline</button>
+                    canAct && isPreOrder
+                      ? `
+                          <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:12px;font-weight:600;color:var(--gray-600);">Actual price (₹/${unitLabel}) — required to approve</label>
+                            <input type="number" class="final-price-input" data-order-id="${o.id}" min="1" step="0.01" placeholder="${prePricePlaceholder}" style="max-width:100%;margin-top:4px;" />
                           </div>
                         `
                       : ""
                   }
                   ${o.final_price ? `<div style="font-size:14px;padding:8px 12px;background:#d4edda;border-radius:var(--radius);margin-top:8px;">Final: <strong>₹${o.final_price}/${unitLabel}</strong>${o.refund_amt && o.refund_amt > 0 ? ` <span style="color:var(--orange);font-size:12px;">(₹${o.refund_amt} refunded)</span>` : ""}</div>` : ""}
+                  ${inlineActionsBlock}
                 </div>
               </div>
             `;
           })
           .join("");
+
+        function closeOrderMenu(btn: HTMLElement) {
+          const d = btn.closest("details.order-actions-menu");
+          if (d) d.removeAttribute("open");
+        }
 
         function setBtnLoading(b: HTMLElement, loading: boolean, text: string) {
           (b as HTMLButtonElement).disabled = loading;
@@ -345,14 +737,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           btn.addEventListener("click", async (e) => {
             const b = e.target as HTMLElement;
             const orderId = b.dataset.orderId!;
-            setBtnLoading(b, true, "Confirm");
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Approve");
             try {
               await updateOrderStatus(orderId, "confirmed", undefined, sellerId);
               showToast("Order confirmed!");
               if (sellerId) await refreshOrders(sellerId);
             } catch (err: any) {
               showToast(err.message || "Failed to confirm", "error");
-              setBtnLoading(b, false, "Confirm");
+              setBtnLoading(b, false, "Approve");
             }
           });
         });
@@ -361,14 +754,15 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           btn.addEventListener("click", async (e) => {
             const b = e.target as HTMLElement;
             const orderId = b.dataset.orderId!;
-            setBtnLoading(b, true, "Decline");
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Reject");
             try {
               await updateOrderStatus(orderId, "declined", undefined, sellerId);
               showToast("Order declined");
               if (sellerId) await refreshOrders(sellerId);
             } catch (err: any) {
               showToast(err.message || "Failed to decline", "error");
-              setBtnLoading(b, false, "Decline");
+              setBtnLoading(b, false, "Reject");
             }
           });
         });
@@ -380,17 +774,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             const input = el.querySelector(`.final-price-input[data-order-id="${orderId}"]`) as HTMLInputElement;
             const finalPrice = parseFloat(input?.value || "0");
             if (!finalPrice || finalPrice <= 0) {
-              showToast("Please enter the actual price", "error");
+              showToast("Enter the actual price above, then approve.", "error");
               return;
             }
-            setBtnLoading(b, true, "Confirm with Price");
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Approve");
             try {
               await updateOrderStatus(orderId, "confirmed", finalPrice, sellerId);
               showToast("Pre-order confirmed with price!");
               if (sellerId) await refreshOrders(sellerId);
             } catch (err: any) {
               showToast(err.message || "Failed to confirm", "error");
-              setBtnLoading(b, false, "Confirm with Price");
+              setBtnLoading(b, false, "Approve — confirm with price");
             }
           });
         });
@@ -399,25 +794,218 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           btn.addEventListener("click", async (e) => {
             const b = e.target as HTMLElement;
             const orderId = b.dataset.orderId!;
-            if (confirm("Cancel this pre-order? Buyer will get a full refund.")) {
-              setBtnLoading(b, true, "Cancel (Full Refund)");
-              try {
-                await updateOrderStatus(orderId, "cancelled", undefined, sellerId);
-                showToast("Pre-order cancelled, buyer will be refunded");
-                if (sellerId) await refreshOrders(sellerId);
-              } catch (err: any) {
-                showToast(err.message || "Failed to cancel", "error");
-                setBtnLoading(b, false, "Cancel (Full Refund)");
-              }
+            if (!confirm("Cancel this pre-order? Buyer will get a full refund.")) return;
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Cancel…");
+            try {
+              await updateOrderStatus(orderId, "cancelled", undefined, sellerId);
+              showToast("Pre-order cancelled, buyer will be refunded");
+              if (sellerId) await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to cancel", "error");
+              setBtnLoading(b, false, "Cancel order (full refund)");
             }
           });
         });
+
+        el.querySelectorAll(".seller-cancel-pending-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const b = e.target as HTMLElement;
+            const orderId = b.dataset.orderId!;
+            if (!confirm("Cancel this order? The buyer will be notified.")) return;
+            closeOrderMenu(b);
+            setBtnLoading(b, true, "Cancel…");
+            try {
+              await updateOrderStatus(orderId, "cancelled", undefined, sellerId);
+              showToast("Order cancelled");
+              if (sellerId) await refreshOrders(sellerId);
+            } catch (err: any) {
+              showToast(err.message || "Failed to cancel", "error");
+              setBtnLoading(b, false, "Cancel order");
+            }
+          });
+        });
+
       }
 
       void init();
     </script>
 
     <style is:global>
+      /* Stats dashboard */
+      .stats-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+      .stats-title { font-size: 18px; font-weight: 700; margin: 0; }
+      .stats-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+      .stats-export-btn {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--green);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+      }
+      .stats-toggle-label { font-size: 12px; font-weight: 600; color: var(--gray-600); }
+      .dash-switch { cursor: pointer; }
+      .stats-filters { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+      .stats-date-select { font-size: 13px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-200); background: white; font-weight: 600; }
+      .stats-custom-range { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .stats-date-input { font-size: 13px; padding: 6px 10px; border: 1px solid var(--gray-200); border-radius: 8px; font-family: inherit; }
+      .stats-date-sep { font-size: 12px; color: var(--gray-400); }
+      .stats-apply-btn { font-size: 12px; font-weight: 700; padding: 6px 14px; background: var(--blue); color: white; border: none; border-radius: 8px; cursor: pointer; }
+      .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+      .stat-card { background: var(--gray-50); border: 1px solid var(--gray-100); border-radius: 12px; padding: 14px 12px; text-align: center; }
+      .stat-card--green { background: #e8f5e9; border-color: #c8e6c9; }
+      .stat-card--orange { background: #fff3e0; border-color: #ffe0b2; }
+      .stat-card--blue { background: #e3f2fd; border-color: #bbdefb; }
+      .stat-card--purple { background: #f3e5f5; border-color: #e1bee7; }
+      .stat-card--purple .stat-value { color: #6a1b9a; }
+      .stat-card--red { background: #ffebee; border-color: #ffcdd2; }
+      .stat-value { font-size: 20px; font-weight: 800; color: var(--gray-900); margin-bottom: 2px; }
+      .stat-card--green .stat-value { color: #2e7d32; }
+      .stat-card--orange .stat-value { color: #e65100; }
+      .stat-card--blue .stat-value { color: #1565c0; }
+      .stat-card--red .stat-value { color: #c62828; }
+      .stat-label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
+      @media (max-width: 380px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+
+      /* ⋮ actions menu (pre-orders tab + scheduled table) */
+      .order-actions-menu {
+        position: relative;
+      }
+      .order-actions-menu summary.order-actions-trigger {
+        list-style: none;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--gray-700);
+        cursor: pointer;
+        line-height: 1;
+        user-select: none;
+      }
+      .order-actions-menu summary.order-actions-trigger::-webkit-details-marker {
+        display: none;
+      }
+      .order-actions-menu summary.order-actions-trigger:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+      }
+      .order-actions-panel {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 4px);
+        min-width: 220px;
+        max-width: min(280px, 92vw);
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        padding: 6px;
+        z-index: 25;
+      }
+      .order-actions-menu--table .order-actions-panel {
+        top: auto;
+        bottom: calc(100% + 4px);
+      }
+      .order-actions-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 8px;
+        background: none;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-900);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .order-actions-item:hover {
+        background: var(--gray-50);
+      }
+      .order-actions-item--danger {
+        color: #c62828;
+      }
+      .order-actions-item--danger:hover {
+        background: #ffebee;
+      }
+      .sched-actions-th {
+        width: 44px;
+      }
+      .sched-actions-cell {
+        vertical-align: middle;
+        text-align: right;
+        width: 44px;
+      }
+
+      .order-inline-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--gray-100);
+      }
+      .order-inline-btn {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        color: var(--gray-900);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .order-inline-btn:hover {
+        background: var(--gray-100);
+      }
+      .order-inline-btn--danger {
+        color: #c62828;
+        border-color: #ffcdd2;
+        background: #fff8f8;
+      }
+      .order-inline-btn--danger:hover {
+        background: #ffebee;
+      }
+
+      .scheduled-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        background: white;
+      }
+      .scheduled-orders-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .scheduled-orders-table th,
+      .scheduled-orders-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--gray-100);
+      }
+      .scheduled-orders-table th {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--gray-500);
+        background: var(--gray-50);
+      }
+      .scheduled-orders-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
       .dash-nav {
         display: flex;
         gap: 0;

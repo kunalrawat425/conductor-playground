@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Organism — Bottom Nav</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .nav{width:360px;height:64px;background:#fff;border-top:1px solid var(--border);display:flex;box-shadow:0 -2px 4px rgba(0,0,0,.04)}
+  .n-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4);position:relative;cursor:pointer}
+  .n-item.active{color:var(--brand)}
+  .n-item.active::before{content:'';position:absolute;top:0;width:24px;height:2px;background:var(--brand);border-radius:0 0 2px 2px}
+  .n-item .icon{font-size:22px}
+  .n-item .badge{position:absolute;top:10px;right:28%;background:var(--red);color:#fff;font:700 9px Inter;min-width:16px;height:16px;border-radius:9999px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Bottom Nav</h1>
+  <p class="sub">5-tab navigation. Pre-order gets dedicated tab (moat).</p>
+
+  <div class="component" data-name="BottomNav · Home Active">
+    <div class="component-variants">
+      <div class="nav">
+        <div class="n-item active"><span class="icon">🏠</span>Home</div>
+        <div class="n-item"><span class="icon">🔍</span>Search</div>
+        <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+        <div class="n-item"><span class="icon">📋</span>Orders</div>
+        <div class="n-item"><span class="icon">👤</span>Account</div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Height:</b> 64px · <b>Items:</b> 5 (equal flex) · <b>Active:</b> brand color + 2px top indicator<br>
+      <b>Icon:</b> 22px emoji · <b>Label:</b> 500/10px
+    </div>
+  </div>
+
+  <div class="component" data-name="BottomNav · With Badges">
+    <div class="component-variants">
+      <div class="nav">
+        <div class="n-item"><span class="icon">🏠</span>Home</div>
+        <div class="n-item"><span class="icon">🔍</span>Search</div>
+        <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+        <div class="n-item active"><span class="icon">📋</span>Orders<span class="badge">2</span></div>
+        <div class="n-item"><span class="icon">👤</span>Account</div>
+      </div>
+    </div>
+    <div class="spec"><b>Badge:</b> red dot with count · used for unread orders, notifications</div>
+  </div>
+
+  <div class="component" data-name="BottomNav · Seller Dashboard">
+    <div class="component-variants">
+      <div class="nav">
+        <div class="n-item active"><span class="icon">📋</span>Orders<span class="badge">5</span></div>
+        <div class="n-item"><span class="icon">🐟</span>Listings</div>
+        <div class="n-item"><span class="icon">📊</span>Stats</div>
+        <div class="n-item"><span class="icon">👤</span>Profile</div>
+      </div>
+    </div>
+    <div class="spec"><b>Seller mode:</b> 4 tabs · Orders / Listings / Stats / Profile · different from buyer nav</div>
+  </div>
+</div>
+</body>
+</html>

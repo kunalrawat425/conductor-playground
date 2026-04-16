@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Relifish — Design System Index</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-decoration:none;color:inherit;transition:all .2s}
+  .card:hover{border-color:var(--brand);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+  .card .cat{font:700 10px Inter;text-transform:uppercase;letter-spacing:.1em;color:var(--brand);margin-bottom:4px}
+  .card h3{font-size:16px;font-weight:700;margin-bottom:4px}
+  .card p{font-size:12px;color:var(--ink3)}
+  section{margin-bottom:40px}
+  section h2{font-size:20px;font-weight:800;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Relifish Design System V2</h1>
+  <p class="sub">Industry-standard atomic design. Import via html.to.design Figma plugin.</p>
+
+  <section>
+    <h2>Foundations</h2>
+    <div class="grid">
+      <a class="card" href="foundations.html"><div class="cat">Tokens</div><h3>Foundations</h3><p>Colors, typography, spacing, shadows, radius</p></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Atoms</h2>
+    <div class="grid">
+      <a class="card" href="atoms/buttons.html"><div class="cat">Atom</div><h3>Buttons</h3><p>AddBtn, CTABtn, CartBtn, NavItem</p></a>
+      <a class="card" href="atoms/badges.html"><div class="cat">Atom</div><h3>Badges & Tags</h3><p>RatingBadge, OfferBadge, StatusTag</p></a>
+      <a class="card" href="atoms/inputs.html"><div class="cat">Atom</div><h3>Inputs</h3><p>SearchBar, OTPInput, PhoneInput</p></a>
+      <a class="card" href="atoms/icons.html"><div class="cat">Atom</div><h3>Icons</h3><p>Category & nav icon tiles</p></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Molecules</h2>
+    <div class="grid">
+      <a class="card" href="molecules/seller-card.html"><div class="cat">Molecule</div><h3>Seller Card</h3><p>Home page seller listing card</p></a>
+      <a class="card" href="molecules/menu-item.html"><div class="cat">Molecule</div><h3>Menu Item Card</h3><p>2-col grid product card</p></a>
+      <a class="card" href="molecules/cart-bar.html"><div class="cat">Molecule</div><h3>Cart Bar</h3><p>Floating cart pill</p></a>
+      <a class="card" href="molecules/category-strip.html"><div class="cat">Molecule</div><h3>Category Strip</h3><p>Horizontal category icons</p></a>
+      <a class="card" href="molecules/preorder-banner.html"><div class="cat">Molecule</div><h3>Pre-order Banner</h3><p>Gradient CTA banner</p></a>
+      <a class="card" href="molecules/address-card.html"><div class="cat">Molecule</div><h3>Address Card</h3><p>Saved address with actions</p></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Organisms</h2>
+    <div class="grid">
+      <a class="card" href="organisms/app-header.html"><div class="cat">Organism</div><h3>App Header</h3><p>Brand header + location + profile</p></a>
+      <a class="card" href="organisms/bottom-nav.html"><div class="cat">Organism</div><h3>Bottom Nav</h3><p>5-tab navigation</p></a>
+      <a class="card" href="organisms/seller-hero.html"><div class="cat">Organism</div><h3>Seller Hero</h3><p>Seller page hero + stats</p></a>
+      <a class="card" href="organisms/checkout-sheet.html"><div class="cat">Organism</div><h3>Checkout Sheet</h3><p>3-step bottom sheet</p></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Screens</h2>
+    <div class="grid">
+      <a class="card" href="screens/01-home.html"><div class="cat">Screen</div><h3>01 — Home</h3><p>Seller browse homepage</p></a>
+      <a class="card" href="screens/02-seller-page.html"><div class="cat">Screen</div><h3>02 — Seller Page</h3><p>Menu + ordering</p></a>
+      <a class="card" href="screens/03-preorder.html"><div class="cat">Screen</div><h3>03 — Pre-order</h3><p>Species wizard flow</p></a>
+      <a class="card" href="screens/04-orders.html"><div class="cat">Screen</div><h3>04 — Orders</h3><p>Order tracking + reorder</p></a>
+      <a class="card" href="screens/05-profile.html"><div class="cat">Screen</div><h3>05 — Profile</h3><p>Account settings</p></a>
+      <a class="card" href="screens/06-search.html"><div class="cat">Screen</div><h3>06 — Search</h3><p>Full-screen search overlay</p></a>
+      <a class="card" href="screens/07-seller-dashboard.html"><div class="cat">Screen</div><h3>07 — Seller Dashboard</h3><p>Order management</p></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Figma Import</h2>
+    <div class="card" style="max-width:600px">
+      <div class="cat">Workflow</div>
+      <h3>How to push to Figma</h3>
+      <p style="margin-top:12px;font-size:13px;color:var(--ink2);line-height:1.6">
+        <b>Option 1 — html.to.design plugin:</b><br>
+        1. Install "html.to.design" plugin in Figma<br>
+        2. Open plugin, paste each URL (e.g., <code>relifish.store/design/molecules/seller-card.html</code>)<br>
+        3. Click "Import" — layers auto-create as Figma frames<br><br>
+        <b>Option 2 — Figma Dev Mode MCP:</b><br>
+        Install Figma desktop → Preferences → Enable Dev Mode MCP Server → add to Claude config:<br>
+        <code style="display:block;background:var(--bg3);padding:8px;border-radius:4px;margin-top:4px;font-size:11px">{"mcpServers":{"figma":{"url":"http://127.0.0.1:3845/mcp"}}}</code>
+        Then I can push direct.
+      </p>
+    </div>
+  </section>
+</div>
+</body>
+</html>

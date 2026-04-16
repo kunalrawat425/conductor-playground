@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Relifish — List Your Fish Shop Online FREE</title>
+<meta name="description" content="First 10 sellers get FREE lifetime listing. Join Relifish — Mumbai's fish marketplace. Get online orders, grow your customer base.">
+<meta property="og:title" content="Relifish — List Your Fish Shop Online FREE">
+<meta property="og:description" content="First 10 sellers get FREE setup. Online orders, more customers, zero hassle.">
+<meta property="og:image" content="https://www.relifish.store/icon-512.svg">
+<meta property="og:url" content="https://www.relifish.store/seller-onboard.html">
+<meta name="theme-color" content="#0F172A">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-height:100vh;overflow-x:hidden}
+
+/* Container */
+.wrap{max-width:480px;margin:0 auto;padding:0 20px env(safe-area-inset-bottom)}
+
+/* Header */
+.hdr{padding:20px 0 12px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:22px;font-weight:800;color:#60A5FA}
+.live-pill{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:700;color:#34D399;display:flex;align-items:center;gap:5px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#34D399;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Urgency banner */
+.urgency{background:linear-gradient(135deg,#DC2626,#EA580C);border-radius:12px;padding:14px 18px;margin:12px 0 20px;display:flex;align-items:center;gap:12px}
+.urgency .icon{font-size:28px;flex-shrink:0}
+.urgency .txt{font-size:14px;font-weight:600;line-height:1.4}
+.urgency .txt b{color:#FEF08A}
+.slots-count{font-size:24px;font-weight:900;color:#FEF08A}
+
+/* Hero */
+.hero{text-align:center;padding:8px 0 24px}
+.hero h1{font-size:28px;font-weight:900;line-height:1.2;letter-spacing:-.02em;margin-bottom:10px}
+.hero h1 span{color:#60A5FA}
+.hero p{font-size:15px;color:#94A3B8;line-height:1.6}
+
+/* What you get */
+.section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#60A5FA;margin-bottom:12px}
+.benefits{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.ben{display:flex;gap:12px;padding:14px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px}
+.ben .emoji{font-size:22px;flex-shrink:0;width:32px;text-align:center}
+.ben .info h4{font-size:14px;font-weight:700;color:#F1F5F9;margin-bottom:2px}
+.ben .info p{font-size:12px;color:#64748B;line-height:1.4}
+
+/* How it works */
+.steps{display:flex;flex-direction:column;gap:0;margin-bottom:24px;position:relative}
+.step{display:flex;gap:14px;padding:14px 0}
+.step-num{width:32px;height:32px;border-radius:50%;background:#2563EB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;position:relative;z-index:1}
+.step-line{position:absolute;left:35px;top:46px;bottom:46px;width:2px;background:rgba(37,99,235,.3)}
+.step .info h4{font-size:14px;font-weight:700;color:#E2E8F0}
+.step .info p{font-size:12px;color:#64748B;line-height:1.4;margin-top:2px}
+
+/* Social proof */
+.proof{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:24px;display:flex;align-items:center;gap:14px}
+.proof .avatars{display:flex;flex-shrink:0}
+.proof .av{width:36px;height:36px;border-radius:50%;border:2px solid #0F172A;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.proof .av:first-child{margin-left:0}
+.a1{background:linear-gradient(135deg,#2563EB,#1D4ED8)}.a2{background:linear-gradient(135deg,#EA580C,#DC2626)}.a3{background:linear-gradient(135deg,#059669,#10B981)}.a4{background:linear-gradient(135deg,#7C3AED,#A855F7)}.a5{background:linear-gradient(135deg,#0891B2,#06B6D4)}
+.proof .txt{font-size:13px;color:#94A3B8;line-height:1.4}
+.proof .txt b{color:#F1F5F9}
+
+/* Price comparison */
+.compare{margin-bottom:24px}
+.comp-row{display:flex;gap:10px;margin-bottom:8px}
+.comp-card{flex:1;padding:14px;border-radius:10px;text-align:center}
+.comp-old{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2)}
+.comp-old .lbl{font-size:10px;color:#F87171;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.comp-old .val{font-size:20px;font-weight:800;color:#FCA5A5;text-decoration:line-through;margin:4px 0}
+.comp-old .sub{font-size:10px;color:#64748B}
+.comp-new{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2)}
+.comp-new .lbl{font-size:10px;color:#34D399;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.comp-new .val{font-size:20px;font-weight:800;color:#6EE7B7;margin:4px 0}
+.comp-new .sub{font-size:10px;color:#64748B}
+
+/* Form */
+.form-wrap{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px 20px;margin-bottom:24px}
+.form-wrap h3{font-size:18px;font-weight:800;margin-bottom:4px}
+.form-wrap .form-sub{font-size:13px;color:#64748B;margin-bottom:16px}
+.field{margin-bottom:12px}
+.field label{font-size:11px;font-weight:600;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;display:block}
+.field input,.field select{width:100%;padding:13px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#fff;font-size:15px;font-family:inherit;outline:none;-webkit-appearance:none}
+.field input::placeholder{color:#475569}
+.field input:focus,.field select:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.field select{color:#94A3B8}
+.field select option{background:#1E293B;color:#fff}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:8px 14px;border:1.5px solid rgba(255,255,255,.12);border-radius:50px;font-size:12px;font-weight:600;color:#94A3B8;cursor:pointer;background:transparent;font-family:inherit;transition:all .15s}
+.chip.sel{background:#2563EB;color:#fff;border-color:#2563EB}
+.submit-btn{width:100%;padding:16px;background:#2563EB;color:#fff;font-size:16px;font-weight:800;border:none;border-radius:12px;cursor:pointer;font-family:inherit;margin-top:4px;min-height:52px}
+.submit-btn:hover{background:#1D4ED8}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.form-note{text-align:center;font-size:11px;color:#475569;margin-top:8px}
+
+/* Success */
+.success{display:none;text-align:center;padding:20px 0}
+.success .big{font-size:48px;margin-bottom:8px}
+.success h3{font-size:20px;font-weight:800;color:#34D399;margin-bottom:8px}
+.success p{font-size:14px;color:#94A3B8;line-height:1.6}
+
+/* Free badge */
+.free-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:.05em}
+
+/* FAQ */
+.faq{margin-bottom:32px}
+.faq-item{border-bottom:1px solid rgba(255,255,255,.06);padding:14px 0}
+.faq-q{font-size:14px;font-weight:700;color:#E2E8F0;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q::after{content:'+';font-size:18px;color:#64748B}
+.faq-item.open .faq-q::after{content:'−'}
+.faq-a{font-size:13px;color:#64748B;line-height:1.6;max-height:0;overflow:hidden;transition:max-height .3s}
+.faq-item.open .faq-a{max-height:200px;padding-top:8px}
+
+/* Footer */
+.footer{text-align:center;padding:20px 0 40px;border-top:1px solid rgba(255,255,255,.06)}
+.footer p{font-size:12px;color:#475569}
+.footer a{color:#60A5FA}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="logo">Relifish</div>
+    <div class="live-pill"><span class="live-dot"></span> 7 sellers joined</div>
+  </div>
+
+  <!-- Urgency -->
+  <div class="urgency">
+    <div class="slots-count">3</div>
+    <div class="txt">FREE slots left out of 10.<br><b>First 10 sellers = zero commission forever.</b></div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>List your fish shop <span>online in 2 minutes</span></h1>
+    <p>Get orders from buyers across Mumbai. More customers, more sales, less waste. Your shop, now on every phone.</p>
+  </div>
+
+  <!-- What you get -->
+  <div class="section-label">What you get — FREE</div>
+  <div class="benefits">
+    <div class="ben">
+      <div class="emoji">🏪</div>
+      <div class="info">
+        <h4>Your own online store <span class="free-badge">FREE</span></h4>
+        <p>Your shop name, your fish, your prices. Buyers find you by area. Like a digital dukaan.</p>
+      </div>
+    </div>
+    <div class="ben">
+      <div class="emoji">📱</div>
+      <div class="info">
+        <h4>Orders on WhatsApp</h4>
+        <p>Get order notifications directly on WhatsApp. No new app to learn. Accept with one tap.</p>
+      </div>
+    </div>
+    <div class="ben">
+      <div class="emoji">🌙</div>
+      <div class="info">
+        <h4>Pre-orders (sell fish before you catch it)</h4>
+        <p>Buyers order tonight → you know what to bring tomorrow. Less waste, guaranteed sales.</p>
+      </div>
+    </div>
+    <div class="ben">
+      <div class="emoji">👥</div>
+      <div class="info">
+        <h4>Reach 50-200 new buyers</h4>
+        <p>Your regulars + their friends + buyers searching for fish near them. Beyond your stall's 500m.</p>
+      </div>
+    </div>
+    <div class="ben">
+      <div class="emoji">📊</div>
+      <div class="info">
+        <h4>Dashboard to manage everything</h4>
+        <p>See all orders, track daily sales, manage inventory. Simple dashboard, works on phone.</p>
+      </div>
+    </div>
+    <div class="ben">
+      <div class="emoji">🆓</div>
+      <div class="info">
+        <h4>ZERO commission for first 10 sellers</h4>
+        <p>Free forever. No hidden charges. We make money only when you make more money.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="section-label">How onboarding works</div>
+  <div class="steps">
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="info">
+        <h4>Fill the form below (2 min)</h4>
+        <p>Your name, shop location, phone number, what fish you sell</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="info">
+        <h4>We call you within 24 hours</h4>
+        <p>Quick WhatsApp call to set up your store. We take photos + create your listing.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="info">
+        <h4>Your store goes live</h4>
+        <p>Buyers in your area can see your fish, prices, and order from you directly.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="info">
+        <h4>Orders start coming in</h4>
+        <p>Get notified on WhatsApp. Accept, pack, and earn more than before.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Social proof -->
+  <div class="proof">
+    <div class="avatars">
+      <div class="av a1">VP</div>
+      <div class="av a2">RK</div>
+      <div class="av a3">MT</div>
+      <div class="av a4">SB</div>
+      <div class="av a5">AG</div>
+    </div>
+    <div class="txt"><b>7 sellers already joined</b> from Versova, Sassoon Dock, and Mahim. <b>3 spots left</b> for free onboarding.</div>
+  </div>
+
+  <!-- Before/After -->
+  <div class="section-label">Without vs With Relifish</div>
+  <div class="compare">
+    <div class="comp-row">
+      <div class="comp-card comp-old">
+        <div class="lbl">Without</div>
+        <div class="val">500m</div>
+        <div class="sub">Only walk-in customers near your stall</div>
+      </div>
+      <div class="comp-card comp-new">
+        <div class="lbl">With Relifish</div>
+        <div class="val">5km+</div>
+        <div class="sub">Buyers from across your area find you online</div>
+      </div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-card comp-old">
+        <div class="lbl">Without</div>
+        <div class="val">25%</div>
+        <div class="sub">Fish wasted daily — unsold by afternoon</div>
+      </div>
+      <div class="comp-card comp-new">
+        <div class="lbl">With Relifish</div>
+        <div class="val">~5%</div>
+        <div class="sub">Pre-orders = you sell before you even set up</div>
+      </div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-card comp-old">
+        <div class="lbl">Without</div>
+        <div class="val">₹0</div>
+        <div class="sub">No orders after 11am when stall closes</div>
+      </div>
+      <div class="comp-card comp-new">
+        <div class="lbl">With Relifish</div>
+        <div class="val">24/7</div>
+        <div class="sub">Buyers can pre-order anytime, even at night</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-wrap" id="form-section">
+    <h3>Join Relifish — Free Setup</h3>
+    <p class="form-sub">Takes 2 minutes. We'll call you within 24 hours.</p>
+    <form id="seller-form">
+      <div class="field">
+        <label>Your Name *</label>
+        <input type="text" id="sf-name" placeholder="e.g. Raju Patil" required>
+      </div>
+      <div class="field">
+        <label>Shop / Stall Name</label>
+        <input type="text" id="sf-shop" placeholder="e.g. Raju Fish Stall, Versova Market">
+      </div>
+      <div class="field">
+        <label>WhatsApp Number *</label>
+        <input type="tel" id="sf-phone" placeholder="e.g. 9876543210" required>
+      </div>
+      <div class="field">
+        <label>Market / Area *</label>
+        <select id="sf-area" required>
+          <option value="">Select your market</option>
+          <option value="Sassoon Dock">Sassoon Dock, Colaba</option>
+          <option value="Versova">Versova Fish Market</option>
+          <option value="Mahim">Mahim Fish Market</option>
+          <option value="Malad">Malad Fish Market</option>
+          <option value="Dadar">Dadar Fish Market</option>
+          <option value="Crawford">Crawford Market</option>
+          <option value="Bandra">Bandra Koliwada</option>
+          <option value="Worli">Worli Koliwada</option>
+          <option value="other">Other (type below)</option>
+        </select>
+      </div>
+      <div class="field" id="other-area-field" style="display:none">
+        <label>Your Area</label>
+        <input type="text" id="sf-other-area" placeholder="e.g. Bhaucha Dhakka">
+      </div>
+      <div class="field">
+        <label>What fish do you sell? (select all)</label>
+        <div class="chips" id="fish-chips">
+          <button type="button" class="chip" data-val="Pomfret">Pomfret</button>
+          <button type="button" class="chip" data-val="Surmai">Surmai</button>
+          <button type="button" class="chip" data-val="Rawas">Rawas</button>
+          <button type="button" class="chip" data-val="Bangda">Bangda</button>
+          <button type="button" class="chip" data-val="Bombil">Bombil</button>
+          <button type="button" class="chip" data-val="Prawns">Prawns</button>
+          <button type="button" class="chip" data-val="Crab">Crab</button>
+          <button type="button" class="chip" data-val="Other">Other</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>How much do you sell per day? (approx)</label>
+        <div class="chips" id="volume-chips">
+          <button type="button" class="chip" data-val="<20kg">Under 20 kg</button>
+          <button type="button" class="chip" data-val="20-50kg">20-50 kg</button>
+          <button type="button" class="chip" data-val="50-100kg">50-100 kg</button>
+          <button type="button" class="chip" data-val="100kg+">100+ kg</button>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn" id="sf-submit">Join Relifish — Free Setup →</button>
+      <p class="form-note">Free for first 10 sellers. No credit card. No catch. We call you.</p>
+    </form>
+
+    <div class="success" id="sf-success">
+      <div class="big">🎉</div>
+      <h3>You're in!</h3>
+      <p>Welcome to Relifish. We'll WhatsApp you within 24 hours to set up your store.<br><br>
+      <b>Your seller number: #<span id="seller-num">8</span></b><br>
+      <span style="color:#FEF08A;font-weight:700">You're in the FREE onboarding batch!</span></p>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section-label">Common questions</div>
+  <div class="faq">
+    <div class="faq-item">
+      <div class="faq-q">What is Relifish?</div>
+      <div class="faq-a">Relifish is Mumbai's fish marketplace. It puts your fish shop online so buyers across your area can find you, see your prices, and order directly. Think of it as your own website + WhatsApp shop, but easier.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Is it really free?</div>
+      <div class="faq-a">Yes. First 10 sellers get zero commission forever. After that, we take a small 5-8% commission only when you make a sale. No upfront fees, no monthly charges.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Do I need a smartphone?</div>
+      <div class="faq-a">Just WhatsApp. All orders come to your WhatsApp. You accept with one message. No app to download, no tech to learn.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How will buyers find me?</div>
+      <div class="faq-a">When buyers search for fish in your area on Relifish, your shop appears with your fish, prices, and ratings. We also send daily "catch alerts" to buyers near you.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What if I don't have fish some days?</div>
+      <div class="faq-a">No problem. You update your listing daily — only show what you have. If the sea is rough or you take a day off, your shop shows "closed today."</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How do I get paid?</div>
+      <div class="faq-a">Buyers pay on pickup (cash or UPI). Money goes directly to you. Relifish doesn't hold your payments.</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>Relifish — Mumbai's Fish Marketplace</p>
+    <p style="margin-top:4px"><a href="https://relifish.store">relifish.store</a> &middot; WhatsApp: <a href="https://wa.me/919870619974">9870619974</a></p>
+    <p style="margin-top:8px;font-size:10px;color:#334155">Questions? WhatsApp us anytime. We reply in minutes.</p>
+  </div>
+
+</div>
+
+<script>
+// Chip selection
+document.querySelectorAll('.chips').forEach(group => {
+  group.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('sel'));
+  });
+});
+
+// Other area toggle
+document.getElementById('sf-area').addEventListener('change', function() {
+  document.getElementById('other-area-field').style.display = this.value === 'other' ? 'block' : 'none';
+});
+
+// FAQ toggle
+document.querySelectorAll('.faq-item').forEach(item => {
+  item.querySelector('.faq-q').addEventListener('click', () => item.classList.toggle('open'));
+});
+
+// Form submit
+document.getElementById('seller-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('sf-submit');
+  const name = document.getElementById('sf-name').value.trim();
+  const phone = document.getElementById('sf-phone').value.trim();
+  let area = document.getElementById('sf-area').value;
+  if (area === 'other') area = document.getElementById('sf-other-area').value.trim();
+
+  if (!name || !phone || !area) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Joining...';
+
+  const fish = [...document.querySelectorAll('#fish-chips .chip.sel')].map(c => c.dataset.val);
+  const volume = document.querySelector('#volume-chips .chip.sel')?.dataset.val || '';
+  const shop = document.getElementById('sf-shop').value.trim();
+
+  try {
+    const res = await fetch('/api/seller/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, shop_name: shop, area, fish_types: fish.join(', '), daily_volume: volume, source: 'onboard-page' })
+    });
+    const data = await res.json();
+    if (data.success || res.ok) {
+      document.getElementById('seller-form').style.display = 'none';
+      document.getElementById('sf-success').style.display = 'block';
+      document.getElementById('seller-num').textContent = data.seller_number || '8';
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Join Relifish — Free Setup →';
+      alert(data.error || 'Something went wrong. Try WhatsApp: 9870619974');
+    }
+  } catch(_) {
+    // Fallback: open WhatsApp with pre-filled message
+    const msg = encodeURIComponent(`Hi! I want to join Relifish.\nName: ${name}\nShop: ${shop || 'N/A'}\nArea: ${area}\nFish: ${fish.join(', ') || 'Various'}\nPhone: ${phone}`);
+    window.open(`https://wa.me/919870619974?text=${msg}`, '_blank');
+    document.getElementById('seller-form').style.display = 'none';
+    document.getElementById('sf-success').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 ---
-import { SPECIES_LIST, PRICE_UNITS } from "../lib/species";
+import { SPECIES_LIST } from "../lib/species";
 import type { FishListing } from "../lib/supabase";
+import { getListingPriceOptions } from "../lib/listing-pricing";
 
 interface Props {
   listing?: FishListing;
@@ -9,130 +10,510 @@ interface Props {
 
 const { listing, sellerId } = Astro.props;
 const isEdit = !!listing;
+
+const initialPricingJson = JSON.stringify(
+  listing
+    ? getListingPriceOptions(listing)
+    : [{ id: "default", label: "Per piece", price: 0, unit: "piece" as const, bundle_size: 1 }]
+);
 ---
 
-<form id="listing-form" class="listing-form" data-seller-id={sellerId} data-listing-id={listing?.id || ""}>
-  <div class="form-group">
-    <label for="species">Species</label>
-    <select id="species" name="species" required>
-      <option value="">Select species</option>
-      {SPECIES_LIST.map((s) => (
-        <option value={s.id} selected={listing?.species === s.id} data-unit={s.defaultUnit}>
-          {s.english} ({s.marathi})
-        </option>
-      ))}
-    </select>
-  </div>
+<form
+  id="listing-form"
+  class="listing-form listing-form--dashboard"
+  data-seller-id={sellerId}
+  data-listing-id={listing?.id || ""}
+  data-initial-pricing={initialPricingJson}
+  novalidate
+>
+  <p class="listing-lead">
+    Choose <strong>count</strong> (per piece) <em>or</em> <strong>weight</strong> (per kg — use decimals like 0.5 for half kg) — not both. All price tiers share that basis so one stock number matches every order. Set pricing first, then enter stock in that unit.
+  </p>
 
-  <div class="form-row">
-    <div class="form-group">
-      <label for="price">Price</label>
-      <input
-        type="number"
-        id="price"
-        name="price"
-        min="1"
-        step="0.01"
-        value={listing?.price || ""}
-        required
-        placeholder="e.g. 500"
-      />
-    </div>
-    <div class="form-group">
-      <label for="price_unit">Unit</label>
-      <select id="price_unit" name="price_unit" required>
-        {PRICE_UNITS.map((u) => (
-          <option value={u.value} selected={listing?.price_unit === u.value}>
-            {u.label}
+  <section class="listing-card" id="listing-section-details" aria-labelledby="listing-h-details">
+    <h2 class="listing-section-title" id="listing-h-details">Item details</h2>
+    <div class="listing-field">
+      <label for="species">Species <span class="listing-req" aria-hidden="true">*</span></label>
+      <select id="species" name="species" required aria-required="true">
+        <option value="">Select species</option>
+        {SPECIES_LIST.map((s) => (
+          <option value={s.id} selected={listing?.species === s.id} data-unit={s.defaultUnit}>
+            {s.english} ({s.marathi})
           </option>
         ))}
       </select>
     </div>
-  </div>
+    <div class="listing-field">
+      <label for="fish_size">Size <span class="listing-opt">(optional)</span></label>
+      <select id="fish_size" name="fish_size">
+        <option value="" selected={!listing?.fish_size}>Not specified</option>
+        <option value="small" selected={listing?.fish_size === "small"}>Small</option>
+        <option value="medium" selected={listing?.fish_size === "medium"}>Medium</option>
+        <option value="large" selected={listing?.fish_size === "large"}>Large</option>
+      </select>
+      <p class="form-hint">Shown on the public menu.</p>
+    </div>
+  </section>
 
-  <div class="form-group">
-    <label for="weight_avail">Stock (how much you have)</label>
-    <input
-      type="number"
-      id="weight_avail"
-      name="weight_avail"
-      min="0"
-      step="0.1"
-      value={listing?.weight_avail || ""}
-      required
-      placeholder="e.g. 10"
-    />
-  </div>
+  <section class="listing-card listing-card--pricing" id="listing-section-pricing" aria-labelledby="listing-h-pricing">
+    <h2 class="listing-section-title" id="listing-h-pricing">Pricing</h2>
+    <p class="listing-section-intro">
+      Choose <strong>Sell by</strong> (pieces or kg). For each tier, type the <strong>amount</strong> first (e.g. <strong>3</strong> pieces, <strong>1</strong> kg or <strong>0.5</strong> kg), then <strong>Selling ₹</strong> for that amount. Add more tiers with <strong>+ Add another price</strong>. Optional <strong>Name on menu</strong> labels the option in the dropdown. Stock is only under <strong>Inventory</strong>. <strong>Deals</strong>: enter list ₹, choose <strong>% off</strong> <em>or</em> <strong>fixed ₹ off</strong> (one at a time), check the preview, then <strong>Apply discount → Selling ₹</strong>.
+    </p>
+    <div id="pricing-rows" class="pricing-rows"></div>
+    <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>
+    <p class="form-hint" style="margin-top:8px;font-size:12px;">Remove a tier with <strong>✕</strong> on the row (at least one tier required). All tiers share the same sell-by unit and one stock number.</p>
+    <input type="hidden" name="pricing_options_json" id="pricing_options_json" value="" />
+    <p id="listing-pricing-error" class="listing-inline-error" role="alert" style="display:none;"></p>
+  </section>
 
-  <div class="form-group">
-    <label for="photo">Photo</label>
-    <input type="file" id="photo" name="photo" accept="image/*" />
-    {listing?.photo_url && (
-      <img src={listing.photo_url} alt="Current photo" class="current-photo" loading="lazy" />
-    )}
-  </div>
+  <section class="listing-card" id="stock-section" aria-labelledby="listing-h-stock">
+    <h2 class="listing-section-title" id="listing-h-stock">Inventory</h2>
+    <div class="listing-field">
+      <label for="weight_avail"
+        ><span id="stock-label">Stock quantity</span> <span class="listing-req" aria-hidden="true">*</span></label
+      >
+      <input
+        type="number"
+        id="weight_avail"
+        name="weight_avail"
+        min="0"
+        step="1"
+        inputmode="numeric"
+        autocomplete="off"
+        value={listing?.weight_avail ?? ""}
+        required
+        aria-required="true"
+        aria-describedby="stock-hint stock-info"
+        placeholder="e.g. 20"
+      />
+      <p class="form-hint" id="stock-hint">
+        Same unit as <strong>Sell by</strong> in pricing (pieces or kg). Drives cart limits and out-of-stock on your menu.
+      </p>
+      <p class="listing-stock-info" id="stock-info" aria-live="polite"></p>
+    </div>
+  </section>
 
-  <div class="form-group">
-    <label for="pickup_loc">Pickup Location</label>
-    <input
-      type="text"
-      id="pickup_loc"
-      name="pickup_loc"
-      value={listing?.pickup_loc || ""}
-      required
-      placeholder="e.g. Versova Fish Market, Stall #12"
-    />
-  </div>
+  <section class="listing-card" id="listing-section-photo" aria-labelledby="listing-h-photo">
+    <h2 class="listing-section-title" id="listing-h-photo">Photo</h2>
+    <div class="listing-field">
+      <label for="photo"
+        >Upload {isEdit ? <span class="listing-opt">(optional — replaces current)</span> : <span class="listing-opt">(optional)</span>}</label
+      >
+      <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" class="listing-file-input" />
+      <p class="form-hint">JPEG, PNG, WebP, or GIF — max 5MB.</p>
+      {listing?.photo_url && (
+        <div class="listing-photo-preview">
+          <span class="listing-photo-preview-label">Current</span>
+          <img src={listing.photo_url} alt="Current listing photo" class="current-photo" loading="lazy" width="160" height="120" />
+        </div>
+      )}
+    </div>
+  </section>
 
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary">
-      {isEdit ? "Update Listing" : "Add Listing"}
+  <section class="listing-card listing-card--compact" id="listing-section-limits" aria-labelledby="listing-h-limits">
+    <h2 class="listing-section-title" id="listing-h-limits">Display &amp; limits</h2>
+    <div class="listing-field">
+      <label for="oos_threshold">“Stock clearing soon” threshold <span class="listing-opt">(optional)</span></label>
+      <input
+        type="number"
+        id="oos_threshold"
+        name="oos_threshold"
+        min="0"
+        step="1"
+        inputmode="numeric"
+        value={listing?.oos_threshold || ""}
+        placeholder="e.g. 3"
+      />
+      <p class="form-hint">When stock is above zero but at or below this number, buyers see “Stock clearing soon”. Must not exceed current stock.</p>
+    </div>
+    <div class="listing-field">
+      <label for="buyer_daily_qty_limit">Per-buyer daily limit <span class="listing-opt">(optional)</span></label>
+      <input
+        type="number"
+        id="buyer_daily_qty_limit"
+        name="buyer_daily_qty_limit"
+        min="1"
+        step="1"
+        inputmode="numeric"
+        value={listing?.buyer_daily_qty_limit || ""}
+        placeholder="e.g. 10"
+      />
+      <p class="form-hint">Max units per phone per day (same unit as stock). Must be at least enough for one smallest pack and your seller minimum order ₹ (if any). Leave empty for no cap.</p>
+    </div>
+  </section>
+
+  <div class="form-actions listing-form-actions">
+    <button type="submit" class="btn btn-primary listing-submit-btn">
+      {isEdit ? "Save listing" : "Create listing"}
     </button>
-    {isEdit && (
-      <button type="button" class="btn btn-red" id="toggle-availability">
-        {listing.is_available ? "Mark Unavailable" : "Mark Available"}
-      </button>
-    )}
   </div>
 </form>
 
 <script>
-  // Auto-set price unit when species changes
-  const speciesSelect = document.getElementById("species") as HTMLSelectElement;
-  const unitSelect = document.getElementById("price_unit") as HTMLSelectElement;
+  import { setupListingPricingEditor } from "../lib/listing-pricing-setup";
+  import { validateListingPricingJson, stockQuantityInputStep } from "../lib/listing-pricing";
+  import type { ListingPriceOption } from "../lib/listing-pricing";
 
-  speciesSelect?.addEventListener("change", () => {
-    const option = speciesSelect.selectedOptions[0];
-    const defaultUnit = option?.dataset.unit;
-    if (defaultUnit && unitSelect) {
-      unitSelect.value = defaultUnit;
+  function runWhenDomReady(fn: () => void) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else {
+      fn();
     }
+  }
+
+  function initListingPricing() {
+    const form = document.getElementById("listing-form");
+    if (!form) return;
+
+    const initialPricingJson = form.dataset.initialPricing ?? "[]";
+
+    const speciesSelect = form.querySelector("#species") as HTMLSelectElement | null;
+    const stockLabel = form.querySelector("#stock-label");
+    const stockHint = form.querySelector("#stock-hint");
+    const stockInfo = form.querySelector("#stock-info");
+    const stockInput = form.querySelector("#weight_avail") as HTMLInputElement | null;
+    const dailyLimitInput = form.querySelector("#buyer_daily_qty_limit") as HTMLInputElement | null;
+    const pricingRowsEl = form.querySelector("#pricing-rows");
+    const pricingJsonInput = form.querySelector("#pricing_options_json") as HTMLInputElement | null;
+    const addPriceBtn = form.querySelector(".listing-add-price-btn") as HTMLButtonElement | null;
+
+    if (!pricingRowsEl || !pricingJsonInput || !addPriceBtn) return;
+
+    const unitMap: Record<string, { stock: string; stockHint: string; stockPlaceholder: string }> = {
+      piece: {
+        stock: "Stock (pieces)",
+        stockHint: "How many pieces you have. Buyers won't see this.",
+        stockPlaceholder: "e.g. 20",
+      },
+      kg: {
+        stock: "Stock (kg)",
+        stockHint: "How many kilograms you have (decimals ok). Buyers won't see this.",
+        stockPlaceholder: "e.g. 10 or 0.5",
+      },
+    };
+
+    let parsed: { id?: string; label: string; price: number; unit: string }[] = [];
+    try {
+      parsed = JSON.parse(initialPricingJson) as typeof parsed;
+      if (!Array.isArray(parsed)) parsed = [];
+    } catch {
+      parsed = [];
+    }
+    if (parsed.length === 0) {
+      parsed = [{ id: "default", label: "Per piece", price: 0, unit: "piece" }];
+    }
+
+    const initial = parsed.map((r, i) => {
+      const u = String(r.unit || "piece").toLowerCase();
+      let unit: ListingPriceOption["unit"] = "piece";
+      let bundle_size = r.bundle_size as number | undefined;
+      if (u === "kg") unit = "kg";
+      else if (u === "gram" || u === "g") {
+        unit = "kg";
+        const g = bundle_size != null && Number(bundle_size) >= 1 ? Number(bundle_size) : 1;
+        bundle_size = Math.max(0.01, Math.round((g / 1000) * 1000) / 1000);
+      } else if (u === "dozen" || u === "piece") unit = "piece";
+      return {
+        ...r,
+        id: r.id || `opt_${i}`,
+        unit,
+        bundle_size,
+      };
+    }) as ListingPriceOption[];
+
+    function currentResolvedUnit(): ListingPriceOption["unit"] {
+      const basis = pricingRowsEl.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
+      if (basis?.value === "weight") return "kg";
+      return "piece";
+    }
+
+    function syncStockLabelsFromFirstUnit() {
+      const unit = currentResolvedUnit();
+      const u = unitMap[unit] ?? unitMap.piece;
+      if (stockLabel) stockLabel.textContent = u.stock;
+      if (stockHint) {
+        stockHint.innerHTML =
+          unit === "kg"
+            ? "Enter total <strong>weight</strong> in stock in <strong>kg</strong> (decimals ok, e.g. 0.5)."
+            : "Enter a <strong>whole number</strong> of pieces.";
+      }
+      if (stockInput) {
+        stockInput.placeholder = u.stockPlaceholder;
+        const pu = unit as ListingPriceOption["unit"];
+        stockInput.step = stockQuantityInputStep(pu);
+        stockInput.inputMode = unit === "kg" ? "decimal" : "numeric";
+      }
+      updateStockInfo();
+    }
+
+    function updateStockInfo() {
+      if (!stockInfo || !stockInput) return;
+      const stock = parseFloat(stockInput.value) || 0;
+      const cap = parseFloat(dailyLimitInput?.value || "0") || 0;
+      const unit = currentResolvedUnit();
+      const unitWord = unit === "kg" ? "kg" : "pieces";
+      stockInfo.className = "listing-stock-info";
+      if (stock > 0 && cap > 0) {
+        const orders = Math.floor(stock / cap);
+        stockInfo.textContent = `With ${stock} ${unitWord} and max ${cap}/${unitWord} per buyer per day → ~${orders} buyers could fully use stock`;
+      } else if (stock > 0) {
+        stockInfo.textContent = `${stock} ${unitWord} available for orders`;
+      } else {
+        stockInfo.textContent = "";
+      }
+    }
+
+    const pricingEditor = setupListingPricingEditor({
+      container: pricingRowsEl,
+      hiddenInput: pricingJsonInput,
+      addButton: addPriceBtn,
+      initial,
+      onUnitChange: syncStockLabelsFromFirstUnit,
+    });
+    syncStockLabelsFromFirstUnit();
+
+    speciesSelect?.addEventListener("change", () => {
+      const option = speciesSelect.selectedOptions[0];
+      const defaultUnit = option?.dataset.unit;
+      const basis = pricingRowsEl.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
+      if (!defaultUnit || !basis) return;
+      const du = defaultUnit === "dozen" ? "piece" : defaultUnit;
+      if (du === "kg") {
+        basis.value = "weight";
+      } else {
+        basis.value = "count";
+      }
+      const kgHint = pricingRowsEl.querySelector(".listing-pricing-kg-hint") as HTMLElement | null;
+      if (kgHint) kgHint.style.display = basis.value === "weight" ? "block" : "none";
+      pricingEditor.sync();
+      syncStockLabelsFromFirstUnit();
+    });
+
+    stockInput?.addEventListener("input", updateStockInfo);
+    dailyLimitInput?.addEventListener("input", updateStockInfo);
+
+    const pricingErrEl = document.getElementById("listing-pricing-error");
+    form.addEventListener(
+      "submit",
+      (ev) => {
+        pricingEditor.sync();
+        const checked = validateListingPricingJson(pricingJsonInput.value);
+        if (!checked.ok) {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          if (pricingErrEl) {
+            pricingErrEl.textContent = checked.message;
+            pricingErrEl.style.display = "block";
+          }
+          return;
+        }
+        if (pricingErrEl) {
+          pricingErrEl.style.display = "none";
+          pricingErrEl.textContent = "";
+        }
+      },
+      true
+    );
+  }
+
+  runWhenDomReady(() => {
+    setTimeout(initListingPricing, 0);
   });
 </script>
 
 <style>
-  .listing-form {
-    max-width: 500px;
+  .listing-form--dashboard {
+    max-width: 520px;
+    margin: 0 auto;
   }
 
-  .form-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 12px;
+  .listing-lead {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--gray-700);
+    margin: 0 0 20px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, rgba(0, 102, 204, 0.06), rgba(40, 167, 69, 0.05));
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
   }
 
-  .form-actions {
+  .listing-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 16px 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+
+  .listing-card--pricing {
+    border-color: rgba(0, 102, 204, 0.2);
+  }
+
+  .listing-card--compact .listing-field:last-child {
+    margin-bottom: 0;
+  }
+
+  .listing-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+
+  .listing-section-intro {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin: -4px 0 12px;
+    line-height: 1.4;
+  }
+
+  .listing-field {
+    margin-bottom: 14px;
+  }
+
+  .listing-field:last-child {
+    margin-bottom: 0;
+  }
+
+  .listing-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 6px;
+  }
+
+  .listing-req {
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  .listing-opt {
+    font-weight: 500;
+    color: var(--gray-500);
+    font-size: 12px;
+  }
+
+  .listing-file-input {
+    padding: 10px;
+    border: 1px dashed var(--gray-200);
+    border-radius: 10px;
+    background: var(--gray-50);
+  }
+
+  .listing-photo-preview {
+    margin-top: 12px;
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .listing-photo-preview-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .listing-inline-error {
+    font-size: 13px;
+    color: var(--red);
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  .listing-stock-info {
+    font-size: 12px;
+    color: var(--blue);
+    font-weight: 600;
+    margin-top: 6px;
+    min-height: 1.2em;
+  }
+
+  .pricing-rows {
+    display: flex;
+    flex-direction: column;
     gap: 12px;
-    margin-top: 20px;
+  }
+
+  /* Qty | unit | ₹ | remove — min-width avoids cramped fields on narrow phones */
+  .pricing-row-grid {
+    display: grid;
+    grid-template-columns: minmax(72px, 1fr) auto minmax(92px, 1fr) 36px;
+    gap: 6px 8px;
+    align-items: end;
+    min-width: min(100%, 300px);
+  }
+
+  @media (max-width: 380px) {
+    .pricing-row-grid {
+      grid-template-columns: minmax(56px, 1fr) auto minmax(76px, 1fr) 32px;
+      gap: 4px 6px;
+    }
+  }
+
+  .btn-add-price {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px dashed var(--gray-300);
+    background: var(--gray-50);
+    color: var(--blue);
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .btn-remove-price {
+    height: 40px;
+    border: none;
+    background: var(--gray-100);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--gray-600);
+  }
+
+  .listing-form-actions {
+    margin-top: 8px;
+    padding-bottom: 24px;
+  }
+
+  .listing-submit-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  .form-hint {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 6px;
+    line-height: 1.35;
   }
 
   .current-photo {
-    width: 120px;
-    height: 90px;
+    width: 160px;
+    height: 120px;
     object-fit: cover;
     border-radius: var(--radius);
-    margin-top: 8px;
+    border: 1px solid var(--gray-200);
   }
 
+  .listing-form .profile-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+  }
 </style>

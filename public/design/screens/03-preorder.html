@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen 03 — Pre-order</title>
+<link rel="stylesheet" href="../_shared.css">
+<link rel="stylesheet" href="_screen-shared.css">
+<style>
+  .hero{background:linear-gradient(135deg,#4F46E5,#7C3AED);padding:20px 16px;color:#fff;position:relative;overflow:hidden}
+  .hero::before{content:'🌙';position:absolute;right:-10px;top:-10px;font-size:140px;opacity:.15}
+  .hero .back{font:500 13px Inter;color:rgba(255,255,255,.8);margin-bottom:12px;cursor:pointer;position:relative}
+  .hero h2{font:800 22px Inter;line-height:1.2;position:relative}
+  .hero p{font:400 13px Inter;margin-top:6px;opacity:.9;position:relative}
+
+  .wizard{padding:16px}
+  .steps{display:flex;gap:8px;margin-bottom:20px}
+  .step{flex:1;height:4px;border-radius:2px;background:#E2E8F0}
+  .step.done{background:#059669}
+  .step.active{background:#4F46E5}
+
+  .step-title{font:800 17px Inter;color:#0F172A;margin-bottom:4px}
+  .step-sub{font:400 12px Inter;color:#64748B;margin-bottom:16px}
+
+  .species{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .species-card{background:#fff;border:1.5px solid #E2E8F0;border-radius:12px;padding:14px;text-align:center;cursor:pointer}
+  .species-card.selected{border-color:#4F46E5;background:#F3E8FF}
+  .species-card .e{font-size:36px;margin-bottom:4px}
+  .species-card .n{font:700 13px Inter;color:#0F172A}
+  .species-card .p{font:500 11px Inter;color:#64748B;margin-top:2px}
+  .species-card .avail{font:500 10px Inter;color:#059669;margin-top:4px}
+
+  .qty-row{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+  .qty-row .label{flex:1;font:700 13px Inter;color:#0F172A}
+  .qty-row .qty{display:flex;align-items:center;background:#F1F5F9;border-radius:8px;overflow:hidden}
+  .qty-row .qty button{background:none;border:none;width:32px;height:32px;font:700 16px Inter;color:#0F172A}
+  .qty-row .qty span{padding:0 12px;font:700 13px Inter}
+
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+  .slot{padding:12px;background:#fff;border:1.5px solid #E2E8F0;border-radius:8px;text-align:center;cursor:pointer}
+  .slot.selected{border-color:#4F46E5;background:#F3E8FF}
+  .slot .time{font:700 13px Inter;color:#0F172A}
+  .slot.selected .time{color:#4F46E5}
+  .slot .lbl{font:500 10px Inter;color:#64748B;margin-top:2px}
+
+  .review{background:#ECFDF5;border:1px solid #A7F3D0;border-radius:12px;padding:16px;margin-bottom:16px}
+  .review h4{font:700 13px Inter;color:#059669;margin-bottom:8px}
+  .review-row{display:flex;justify-content:space-between;padding:6px 0;font:400 12px Inter;color:#0F172A}
+  .review-row b{font-weight:700}
+  .review-total{display:flex;justify-content:space-between;padding-top:8px;border-top:1px dashed #A7F3D0;font:800 14px Inter;color:#059669}
+
+  .confirm-cta{width:100%;background:#4F46E5;color:#fff;border:none;font:800 15px Inter;padding:14px;border-radius:12px}
+  .foot{font:400 10px Inter;color:#94A3B8;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Screen 03 — Pre-order</h1>
+  <p class="sub">Our moat. Must feel magical.</p>
+
+  <div class="phone">
+    <div class="phone-status" style="background:#4F46E5;color:#fff">9:41</div>
+    <div class="phone-body">
+      <div class="hero">
+        <div class="back">← Back</div>
+        <h2>Tomorrow's catch,<br>reserved tonight</h2>
+        <p>Pre-order by 10pm · Ready at 7am</p>
+      </div>
+
+      <div class="wizard">
+        <div class="steps">
+          <div class="step done"></div>
+          <div class="step done"></div>
+          <div class="step active"></div>
+        </div>
+
+        <div class="step-title">Pick your morning slot</div>
+        <div class="step-sub">Seller will reserve at dock before 5am</div>
+        <div class="slots">
+          <div class="slot"><div class="time">5-7am</div><div class="lbl">Dawn</div></div>
+          <div class="slot selected"><div class="time">7-9am</div><div class="lbl">Morning</div></div>
+          <div class="slot"><div class="time">9-11am</div><div class="lbl">Late</div></div>
+        </div>
+
+        <div class="review">
+          <h4>✓ Your pre-order summary</h4>
+          <div class="review-row"><span>Seller</span><b>Kamla Tai</b></div>
+          <div class="review-row"><span>Surmai (Whole)</span><b>2 kg</b></div>
+          <div class="review-row"><span>Prawns (Medium)</span><b>500 g</b></div>
+          <div class="review-row"><span>Pickup slot</span><b>Tomorrow 7-9am</b></div>
+          <div class="review-row"><span>Estimated price</span><span>₹1,450 ± 5%</span></div>
+          <div class="review-total"><span>You pay at pickup</span><span>~₹1,450</span></div>
+        </div>
+
+        <button class="confirm-cta">Reserve tomorrow's catch →</button>
+        <div class="foot">Seller confirms exact price by 5am · Cancel anytime</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

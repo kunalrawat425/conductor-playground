@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Foundations — Design Tokens</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .token-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+  .token{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px}
+  .token .t-label{font:600 10px Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px}
+  .token .t-value{font:700 13px Inter;color:var(--ink)}
+  .token .t-detail{font:400 11px Inter;color:var(--ink3);margin-top:2px}
+  .swatch{width:100%;height:32px;border-radius:6px;margin-bottom:8px}
+  .shadow-box{width:80px;height:60px;background:#fff;border-radius:var(--radius);margin-bottom:8px}
+  .radius-box{width:80px;height:60px;background:var(--brand-l);margin-bottom:8px}
+  .type-sample{margin-bottom:16px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm)}
+  .type-meta{font:500 10px Inter;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+  .spacing-demo{display:flex;gap:16px;align-items:flex-end;margin-top:16px}
+  .spacing-bar{background:var(--brand);border-radius:2px}
+  .spacing-bar.s1{width:4px;height:20px}
+  .spacing-bar.s2{width:8px;height:30px}
+  .spacing-bar.s3{width:12px;height:40px}
+  .spacing-bar.s4{width:16px;height:50px}
+  .spacing-bar.s5{width:20px;height:60px}
+  .spacing-bar.s6{width:24px;height:70px}
+  .spacing-bar.s8{width:32px;height:80px}
+  section{margin-bottom:40px}
+  section h2{font-size:18px;font-weight:800;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Foundations</h1>
+  <p class="sub">Design tokens — single source of truth for V2.</p>
+
+  <section>
+    <h2>Color · Brand</h2>
+    <div class="token-row">
+      <div class="token"><div class="swatch" style="background:#0066FF"></div><div class="t-label">brand</div><div class="t-value">#0066FF</div><div class="t-detail">Primary CTAs, headers</div></div>
+      <div class="token"><div class="swatch" style="background:#0052CC"></div><div class="t-label">brand-d</div><div class="t-value">#0052CC</div><div class="t-detail">Hover, pressed</div></div>
+      <div class="token"><div class="swatch" style="background:#E6F0FF"></div><div class="t-label">brand-l</div><div class="t-value">#E6F0FF</div><div class="t-detail">Tag backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#CCE0FF"></div><div class="t-label">brand-m</div><div class="t-value">#CCE0FF</div><div class="t-detail">Borders, dividers</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Color · Status</h2>
+    <div class="token-row">
+      <div class="token"><div class="swatch" style="background:#059669"></div><div class="t-label">green</div><div class="t-value">#059669</div><div class="t-detail">Open, success, prices</div></div>
+      <div class="token"><div class="swatch" style="background:#ECFDF5"></div><div class="t-label">green-l</div><div class="t-value">#ECFDF5</div><div class="t-detail">Success backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#EA580C"></div><div class="t-label">orange</div><div class="t-value">#EA580C</div><div class="t-detail">Pre-order, warning</div></div>
+      <div class="token"><div class="swatch" style="background:#FFF7ED"></div><div class="t-label">orange-l</div><div class="t-value">#FFF7ED</div><div class="t-detail">Warning backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#DC2626"></div><div class="t-label">red</div><div class="t-value">#DC2626</div><div class="t-detail">Error, sold out</div></div>
+      <div class="token"><div class="swatch" style="background:#FEF2F2"></div><div class="t-label">red-l</div><div class="t-value">#FEF2F2</div><div class="t-detail">Error backgrounds</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Color · Neutrals</h2>
+    <div class="token-row">
+      <div class="token"><div class="swatch" style="background:#0F172A"></div><div class="t-label">ink</div><div class="t-value">#0F172A</div><div class="t-detail">Headings, prices</div></div>
+      <div class="token"><div class="swatch" style="background:#334155"></div><div class="t-label">ink-2</div><div class="t-value">#334155</div><div class="t-detail">Body text</div></div>
+      <div class="token"><div class="swatch" style="background:#64748B"></div><div class="t-label">ink-3</div><div class="t-value">#64748B</div><div class="t-detail">Secondary text</div></div>
+      <div class="token"><div class="swatch" style="background:#94A3B8"></div><div class="t-label">ink-4</div><div class="t-value">#94A3B8</div><div class="t-detail">Muted, placeholders</div></div>
+      <div class="token"><div class="swatch" style="background:#FFFFFF;border:1px solid #E2E8F0"></div><div class="t-label">bg</div><div class="t-value">#FFFFFF</div><div class="t-detail">Card backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#F8FAFC"></div><div class="t-label">bg-2</div><div class="t-value">#F8FAFC</div><div class="t-detail">Page backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#F1F5F9"></div><div class="t-label">bg-3</div><div class="t-value">#F1F5F9</div><div class="t-detail">Subtle fills</div></div>
+      <div class="token"><div class="swatch" style="background:#E2E8F0"></div><div class="t-label">border</div><div class="t-value">#E2E8F0</div><div class="t-detail">All borders</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Typography</h2>
+    <div class="type-sample">
+      <div class="type-meta">display · 32/800/tight</div>
+      <div style="font:800 32px/1.1 Inter;letter-spacing:-.02em">Fresh fish, direct from sellers</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">h1 · 24/800</div>
+      <div style="font:800 24px/1.2 Inter;letter-spacing:-.02em">Browse nearby sellers</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">h2 · 17/800</div>
+      <div style="font:800 17px/1.3 Inter">Kamla Tai Fish Stall</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">h3 · 15/700</div>
+      <div style="font:700 15px/1.4 Inter">Today's Menu</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">card-title · 14/700</div>
+      <div style="font:700 14px/1.4 Inter">Surmai (King Fish)</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">body · 13/400</div>
+      <div style="font:400 13px/1.6 Inter">Same-day catch from Sassoon Dock. Cleaned and cut on request.</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">caption · 11/500</div>
+      <div style="font:500 11px/1.4 Inter;color:var(--ink3)">1.2 km · 45 min delivery</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">label · 10/600/caps</div>
+      <div style="font:600 10px/1 Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--brand)">Pre-order</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">price · 13-15/800</div>
+      <div style="font:800 15px Inter">₹650/kg</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Spacing · 4pt grid</h2>
+    <div class="spacing-demo">
+      <div><div class="spacing-bar s1"></div><div class="t-label">s-1 · 4px</div></div>
+      <div><div class="spacing-bar s2"></div><div class="t-label">s-2 · 8px</div></div>
+      <div><div class="spacing-bar s3"></div><div class="t-label">s-3 · 12px</div></div>
+      <div><div class="spacing-bar s4"></div><div class="t-label">s-4 · 16px</div></div>
+      <div><div class="spacing-bar s5"></div><div class="t-label">s-5 · 20px</div></div>
+      <div><div class="spacing-bar s6"></div><div class="t-label">s-6 · 24px</div></div>
+      <div><div class="spacing-bar s8"></div><div class="t-label">s-8 · 32px</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Border Radius</h2>
+    <div class="token-row">
+      <div class="token"><div class="radius-box" style="border-radius:4px"></div><div class="t-label">radius-xs</div><div class="t-value">4px</div><div class="t-detail">Small badges</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:8px"></div><div class="t-label">radius-sm</div><div class="t-value">8px</div><div class="t-detail">Buttons, inputs</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:12px"></div><div class="t-label">radius</div><div class="t-value">12px</div><div class="t-detail">Cards (default)</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:16px"></div><div class="t-label">radius-lg</div><div class="t-value">16px</div><div class="t-detail">Large cards, sheets</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:20px"></div><div class="t-label">radius-xl</div><div class="t-value">20px</div><div class="t-detail">Chips, pills</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:9999px"></div><div class="t-label">radius-full</div><div class="t-value">9999px</div><div class="t-detail">Avatars, circles</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Shadows</h2>
+    <div class="token-row">
+      <div class="token"><div class="shadow-box" style="box-shadow:var(--shadow-sm)"></div><div class="t-label">shadow-sm</div><div class="t-value">subtle</div><div class="t-detail">Menu items</div></div>
+      <div class="token"><div class="shadow-box" style="box-shadow:var(--shadow)"></div><div class="t-label">shadow</div><div class="t-value">default</div><div class="t-detail">Cards</div></div>
+      <div class="token"><div class="shadow-box" style="box-shadow:var(--shadow-md)"></div><div class="t-label">shadow-md</div><div class="t-value">medium</div><div class="t-detail">Floating search</div></div>
+      <div class="token"><div class="shadow-box" style="box-shadow:var(--shadow-lg)"></div><div class="t-label">shadow-lg</div><div class="t-value">large</div><div class="t-detail">Cart bar, modals</div></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

@@ -1,1 +1,1 @@
-/Users/kunalrawat/conductor/repos/conductor-playground/.claude/skills/gstack/health/SKILL.md
+/Users/kunalrawat/conductor/workspaces/conductor-playground/da-nang/.claude/skills/gstack/health/SKILL.md

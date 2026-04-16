@@ -1,0 +1,62 @@
+---
+// Toast container — global manager.
+// Trigger: window.dispatchEvent(new CustomEvent('v2-toast', { detail: { variant, title, description, duration, action } }))
+---
+<div id="v2-toast-container" class="v2-toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+  type Variant = "success" | "error" | "warning" | "info";
+  interface ToastDetail {
+    variant: Variant;
+    title: string;
+    description?: string;
+    duration?: number;
+    action?: { label: string; onClick?: () => void };
+  }
+
+  function escape(s: string) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]!));
+  }
+
+  const container = document.getElementById("v2-toast-container");
+
+  function show(detail: ToastDetail) {
+    if (!container) return;
+    const { variant, title, description = "", duration = variant === "error" ? 6000 : 4000 } = detail;
+    const icon = { success: "✓", error: "✕", warning: "!", info: "i" }[variant];
+    const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const el = document.createElement("div");
+    el.className = `v2-toast v2-toast-${variant}`;
+    el.id = id;
+    el.innerHTML = `
+      <span class="v2-toast-icon">${icon}</span>
+      <div class="v2-toast-body">
+        <div class="v2-toast-title">${escape(title)}</div>
+        ${description ? `<div class="v2-toast-desc">${escape(description)}</div>` : ""}
+      </div>
+      <button class="v2-toast-close" aria-label="Dismiss">&times;</button>
+    `;
+    container.appendChild(el);
+    el.querySelector(".v2-toast-close")?.addEventListener("click", () => dismiss(id));
+    setTimeout(() => dismiss(id), duration);
+  }
+
+  function dismiss(id: string) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.opacity = "0";
+    el.style.transform = "translateY(-8px)";
+    setTimeout(() => el.remove(), 200);
+  }
+
+  window.addEventListener("v2-toast", (e: any) => {
+    show(e.detail as ToastDetail);
+  });
+
+  // Expose helper
+  (window as any).v2Toast = (variant: Variant, title: string, description?: string) => {
+    show({ variant, title, description });
+  };
+</script>

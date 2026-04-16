@@ -18,6 +18,25 @@
       Choose a saved address or enter a new one. Your map area is reused when adding details.
     </p>
 
+    <div id="order-method-picker" class="order-method-picker" style="display:none;" role="radiogroup" aria-label="Delivery method">
+      <div class="order-method-card" id="order-method-pickup" role="radio" aria-checked="true" tabindex="0">
+        <span class="order-method-icon">🏪</span>
+        <div class="order-method-body">
+          <div class="order-method-title">Pickup</div>
+          <div class="order-method-sub">Collect from the seller</div>
+        </div>
+        <div class="order-method-check" aria-hidden="true"></div>
+      </div>
+      <div class="order-method-card" id="order-method-delivery" role="radio" aria-checked="false" tabindex="0">
+        <span class="order-method-icon">🛵</span>
+        <div class="order-method-body">
+          <div class="order-method-title">Delivery</div>
+          <div class="order-method-sub">Delivered to your address</div>
+        </div>
+        <div class="order-method-check" aria-hidden="true"></div>
+      </div>
+    </div>
+
     <a
       href="/me#addresses"
       class="text-muted"
@@ -88,6 +107,21 @@
       Back
     </button>
   </div>
+
+  <!-- Full-screen loading while order API runs (replaces closing the sheet before redirect) -->
+  <div
+    class="order-address-loading"
+    id="order-address-loading"
+    aria-hidden="true"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="order-address-loading-inner">
+      <div class="order-address-loading-spinner" aria-hidden="true"></div>
+      <p class="order-address-loading-title">Placing your order…</p>
+      <p class="order-address-loading-sub">Hang tight — this usually takes a moment.</p>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -132,6 +166,58 @@
   }
   .order-address-overlay.open .order-address-sheet {
     transform: translate(-50%, 0);
+  }
+
+  .order-address-loading {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .order-address-loading.open {
+    display: flex;
+  }
+  .order-address-loading-inner {
+    width: 100%;
+    max-width: 320px;
+    padding: 28px 24px 24px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    text-align: center;
+  }
+  .order-address-loading-spinner {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 16px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: order-address-spin 0.75s linear infinite;
+  }
+  @keyframes order-address-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .order-address-loading-title {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--gray-900);
+    letter-spacing: -0.02em;
+  }
+  .order-address-loading-sub {
+    margin: 0;
+    font-size: 13px;
+    color: var(--gray-500);
+    line-height: 1.4;
   }
 
   .order-address-list-wrap {
@@ -188,7 +274,7 @@
     padding: 14px 14px 14px 16px;
     margin: 0;
     border: 2px solid var(--gray-200);
-    border-radius: 14px;
+    border-radius: 8px;
     cursor: pointer;
     background: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -270,9 +356,19 @@
   #order-address-sheet .order-address-card-lines {
     display: block;
     margin-top: 6px;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.45;
-    color: var(--gray-600);
+    color: var(--gray-800);
+  }
+  #order-address-sheet .order-address-card-area {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    background: var(--gray-100);
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin-top: 6px;
   }
   #order-address-sheet .order-address-choice-check {
     flex-shrink: 0;
@@ -307,7 +403,7 @@
 
   .order-address-preview-card {
     padding: 14px 16px;
-    border-radius: 14px;
+    border-radius: 8px;
     border: 1px solid rgba(0, 102, 204, 0.25);
     background: linear-gradient(165deg, #f5f9ff 0%, #fff 55%);
     box-shadow: 0 1px 4px rgba(0, 102, 204, 0.08);
@@ -355,10 +451,10 @@
   }
   .order-address-billing {
     background: linear-gradient(180deg, #f8fafc 0%, var(--gray-50) 100%);
-    border-radius: 14px;
+    border-radius: 8px;
     padding: 16px 16px 14px;
     border: 1px solid var(--gray-200);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
   .order-address-billing-title {
     font-size: 16px;
@@ -428,6 +524,60 @@
     font-weight: 800;
     color: var(--blue);
   }
+
+  /* Method picker */
+  .order-method-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .order-method-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 2px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 14px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .order-method-card.selected {
+    border-color: #111;
+    background: #f9f9f9;
+  }
+  .order-method-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+  }
+  .order-method-body {
+    flex: 1;
+  }
+  .order-method-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+  }
+  .order-method-sub {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+  }
+  .order-method-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .order-method-card.selected .order-method-check {
+    border-color: #111;
+    background: #111;
+  }
 </style>
 
 <script>
@@ -439,12 +589,14 @@
     hasDeliveryUnitDetail,
     parseZeptoLocation,
   } from "../lib/buyer-address";
+  import { formatDetailLine } from "../lib/buyer-address";
   import type { BuyerAddressRow } from "../lib/buyer-address";
 
   const LS_SELECTION = "zepto_checkout_address_selection";
 
   const overlay = document.getElementById("order-address-overlay")!;
   const bg = document.getElementById("order-address-overlay-bg")!;
+  const loadingEl = document.getElementById("order-address-loading")!;
   const listWrap = document.getElementById("order-address-list-wrap")!;
   const listEl = document.getElementById("order-address-list")!;
   const newBlock = document.getElementById("order-address-new-block")!;
@@ -464,11 +616,28 @@
   const subtitleEl = document.getElementById("order-address-subtitle")!;
   const billingWrap = document.getElementById("order-address-billing-wrap")!;
 
+  const methodPickerEl = document.getElementById("order-method-picker")!;
+  const methodPickupCard = document.getElementById("order-method-pickup")!;
+  const methodDeliveryCard = document.getElementById("order-method-delivery")!;
+
   let requireAddressDetail = false;
-  let pendingOnConfirm: ((p: { buyer_addr: string | null }) => void | Promise<void>) | null = null;
+  let pickupMode = false;
+  let methodPickerMode = false;
+  let fromMethodPicker = false; // was in method picker before switching to delivery
+  let chosenMethod: "pickup" | "delivery" = "pickup";
+  let storedRawBilling: { subtotal: number; deliveryLabel: string; grandTotal: number; itemsLine: string } | null = null;
+  let pendingOnConfirm: ((p: { buyer_addr: string | null; orderType: "pickup" | "delivery" }) => void | Promise<void>) | null = null;
   let pendingOnCancel: (() => void) | null = null;
   let loadedAddresses: BuyerAddressRow[] = [];
   let selectedId: string = "new";
+  let orderPlacing = false;
+
+  function setOrderPlacing(on: boolean) {
+    orderPlacing = on;
+    loadingEl.classList.toggle("open", on);
+    loadingEl.setAttribute("aria-hidden", on ? "false" : "true");
+    overlay.setAttribute("aria-busy", on ? "true" : "false");
+  }
 
   function refreshAreaDisplay() {
     const area = getBuyerAddressFromStorage();
@@ -542,20 +711,27 @@
     selectedId = pickDefaultSelection(rows);
     listEl.innerHTML = rows
       .map(
-        (row) => `
+        (row) => {
+          const icon = (row.label || "").toLowerCase().includes("home") ? "🏠"
+            : (row.label || "").toLowerCase().includes("work") ? "🏢" : "📍";
+          const detail = formatDetailLine({ flat: row.flat ?? "", building: row.building ?? "", landmark: row.landmark ?? "" });
+          const areaName = (row.location_name || "").trim();
+          return `
       <label class="order-address-choice">
         <span class="order-address-choice-control">
           <input type="radio" name="order-checkout-addr" value="${esc(row.id)}" ${selectedId === row.id ? "checked" : ""} />
         </span>
         <span class="order-address-choice-body">
-          <span class="order-address-card-title">${esc(row.label || "Saved address")}${
+          <span class="order-address-card-title">${icon} ${esc(row.label || "Saved address")}${
             row.is_default ? '<span class="order-address-badge">Default</span>' : ""
           }</span>
-          <span class="order-address-card-lines">${esc(formatSavedBuyerAddress(row) || "—")}</span>
+          ${detail ? `<span class="order-address-card-lines">${esc(detail)}</span>` : ""}
+          ${areaName ? `<span class="order-address-card-area">${esc(areaName)}</span>` : ""}
         </span>
         <span class="order-address-choice-check" aria-hidden="true"></span>
       </label>
-    `
+    `;
+        }
       )
       .join("");
     listEl.innerHTML += `
@@ -583,6 +759,7 @@
   }
 
   function syncUiMode() {
+    if (pickupMode || methodPickerMode) return;
     const isNew = selectedId === "new";
     newBlock.style.display = isNew ? "block" : "none";
     savedPreview.style.display = isNew ? "none" : "block";
@@ -615,6 +792,7 @@
   }
 
   async function openSheet() {
+    setOrderPlacing(false);
     errEl.style.display = "none";
     saveBookCb.checked = false;
     saveLabelInput.style.display = "none";
@@ -624,15 +802,17 @@
     refreshAreaDisplay();
     loadDetailInputs();
 
-    const session = getSession();
-    if (session) {
-      const rows = await fetchAddresses(session.buyer_id);
-      renderList(rows);
-    } else {
-      loadedAddresses = [];
-      listWrap.style.display = "none";
-      selectedId = "new";
-      syncUiMode();
+    if (!pickupMode && !methodPickerMode) {
+      const session = getSession();
+      if (session) {
+        const rows = await fetchAddresses(session.buyer_id);
+        renderList(rows);
+      } else {
+        loadedAddresses = [];
+        listWrap.style.display = "none";
+        selectedId = "new";
+        syncUiMode();
+      }
     }
 
     overlay.classList.add("open");
@@ -640,27 +820,84 @@
   }
 
   function closeSheet() {
+    setOrderPlacing(false);
     overlay.classList.remove("open");
     overlay.setAttribute("aria-hidden", "true");
+    overlay.removeAttribute("aria-busy");
     renderBillingBlock(null);
   }
 
+  const addressManageLink = document.getElementById("order-address-manage-link") as HTMLAnchorElement;
+
+  function updateMethodCards() {
+    const isPickup = chosenMethod === "pickup";
+    methodPickupCard.classList.toggle("selected", isPickup);
+    methodDeliveryCard.classList.toggle("selected", !isPickup);
+    methodPickupCard.setAttribute("aria-checked", isPickup ? "true" : "false");
+    methodDeliveryCard.setAttribute("aria-checked", isPickup ? "false" : "true");
+    confirmBtn.textContent = isPickup ? "Place order" : "Continue";
+  }
+
   function applyModeLabels() {
-    if (requireAddressDetail) {
-      titleEl.textContent = "Delivery address";
-      subtitleEl.textContent = "Pick a saved address or add a new one. Delivery needs your area plus flat or building.";
+    if (methodPickerMode) {
+      titleEl.textContent = "How to receive your order?";
+      subtitleEl.style.display = "none";
+      addressManageLink.style.display = "none";
+      listWrap.style.display = "none";
+      newBlock.style.display = "none";
+      savedPreview.style.display = "none";
+      methodPickerEl.style.display = "flex";
+      updateMethodCards();
+    } else if (pickupMode) {
+      titleEl.textContent = "Confirm your order";
+      subtitleEl.style.display = "";
+      subtitleEl.textContent = "Review your order and tap Place order to confirm.";
+      addressManageLink.style.display = "none";
+      listWrap.style.display = "none";
+      newBlock.style.display = "none";
+      savedPreview.style.display = "none";
+      methodPickerEl.style.display = "none";
+      confirmBtn.textContent = "Place order";
     } else {
-      titleEl.textContent = "Address for this order";
-      subtitleEl.textContent = "Choose a saved address or enter a new one for this order.";
+      addressManageLink.style.display = "";
+      newBlock.style.display = "";
+      methodPickerEl.style.display = "none";
+      subtitleEl.style.display = "";
+      confirmBtn.textContent = "Place order";
+      if (requireAddressDetail) {
+        titleEl.textContent = "Delivery address";
+        subtitleEl.textContent = "Pick a saved address or add a new one. Delivery needs your area plus flat or building.";
+      } else {
+        titleEl.textContent = "Address for this order";
+        subtitleEl.textContent = "Choose a saved address or enter a new one for this order.";
+      }
     }
   }
+
+  function handleMethodCardKey(e: KeyboardEvent, method: "pickup" | "delivery") {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); chosenMethod = method; updateMethodCards(); }
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); chosenMethod = "delivery"; updateMethodCards(); methodDeliveryCard.focus(); }
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); chosenMethod = "pickup"; updateMethodCards(); methodPickupCard.focus(); }
+  }
+  methodPickupCard.addEventListener("click", () => { chosenMethod = "pickup"; updateMethodCards(); });
+  methodPickupCard.addEventListener("keydown", (e) => handleMethodCardKey(e, "pickup"));
+  methodDeliveryCard.addEventListener("click", () => { chosenMethod = "delivery"; updateMethodCards(); });
+  methodDeliveryCard.addEventListener("keydown", (e) => handleMethodCardKey(e, "delivery"));
 
   window.addEventListener("open-order-address-sheet", ((e: CustomEvent) => {
     const d = e.detail || {};
     requireAddressDetail = !!d.requireAddressDetail;
+    pickupMode = !!d.pickupMode;
+    methodPickerMode = !!d.showMethodPicker;
+    if (methodPickerMode) {
+      chosenMethod = "pickup";
+      requireAddressDetail = true; // delivery will require it
+    }
+    fromMethodPicker = false;
     pendingOnConfirm = typeof d.onConfirm === "function" ? d.onConfirm : null;
     pendingOnCancel = typeof d.onCancel === "function" ? d.onCancel : null;
     const raw = d.billing;
+    storedRawBilling = null;
     if (
       raw &&
       typeof raw.subtotal === "number" &&
@@ -668,12 +905,13 @@
       typeof raw.deliveryLabel === "string" &&
       typeof raw.itemsLine === "string"
     ) {
-      renderBillingBlock({
-        subtotal: raw.subtotal,
-        deliveryLabel: raw.deliveryLabel,
-        grandTotal: raw.grandTotal,
-        itemsLine: raw.itemsLine,
-      });
+      storedRawBilling = { subtotal: raw.subtotal, deliveryLabel: raw.deliveryLabel, grandTotal: raw.grandTotal, itemsLine: raw.itemsLine };
+      if (methodPickerMode) {
+        // Before user picks method, don't commit to delivery fee — show subtotal only
+        renderBillingBlock({ subtotal: raw.subtotal, deliveryLabel: "—", grandTotal: raw.subtotal, itemsLine: raw.itemsLine });
+      } else {
+        renderBillingBlock(storedRawBilling);
+      }
     } else {
       renderBillingBlock(null);
     }
@@ -734,6 +972,47 @@
   }
 
   confirmBtn.addEventListener("click", async () => {
+    if (methodPickerMode) {
+      if (chosenMethod === "pickup") {
+        // Switch to pickup confirm mode — update billing to show no delivery fee
+        methodPickerMode = false;
+        pickupMode = true;
+        if (storedRawBilling) {
+          renderBillingBlock({ ...storedRawBilling, deliveryLabel: "Pickup", grandTotal: storedRawBilling.subtotal });
+        }
+        applyModeLabels();
+      } else {
+        // Switch to delivery address mode — show real delivery fee
+        methodPickerMode = false;
+        pickupMode = false;
+        fromMethodPicker = true;
+        if (storedRawBilling) {
+          renderBillingBlock(storedRawBilling);
+        }
+        applyModeLabels();
+        // Load saved addresses
+        const session = getSession();
+        if (session) {
+          const rows = await fetchAddresses(session.buyer_id);
+          renderList(rows);
+        } else {
+          listWrap.style.display = "none";
+          selectedId = "new";
+          syncUiMode();
+        }
+      }
+      return;
+    }
+
+    if (pickupMode) {
+      const fn = pendingOnConfirm;
+      if (fn) {
+        setOrderPlacing(true);
+        try { await fn({ buyer_addr: null, orderType: "pickup" }); } catch { setOrderPlacing(false); }
+      }
+      return;
+    }
+
     if (!validate()) return;
 
     const session = getSession();
@@ -789,13 +1068,44 @@
     }
 
     const fn = pendingOnConfirm;
-    pendingOnConfirm = null;
-    pendingOnCancel = null;
-    closeSheet();
-    if (fn) await fn({ buyer_addr });
+    if (fn) {
+      const origText = confirmBtn.textContent;
+      confirmBtn.disabled = true;
+      backBtn.disabled = true;
+      setOrderPlacing(true);
+      try {
+        await fn({ buyer_addr, orderType: "delivery" });
+        // Success — keep loading visible until redirect (submitOrder); do not close sheet first
+        pendingOnConfirm = null;
+        pendingOnCancel = null;
+      } catch (err: any) {
+        setOrderPlacing(false);
+        confirmBtn.textContent = origText ?? "Place order";
+        confirmBtn.disabled = false;
+        backBtn.disabled = false;
+        errEl.textContent = err.message || "Order failed. Try again.";
+        errEl.style.display = "block";
+      }
+    } else {
+      pendingOnConfirm = null;
+      pendingOnCancel = null;
+      closeSheet();
+    }
   });
 
   function cancel() {
+    if (orderPlacing) return;
+    // If we got here from the method picker, go back to it instead of closing
+    if (fromMethodPicker) {
+      fromMethodPicker = false;
+      methodPickerMode = true;
+      pickupMode = false;
+      if (storedRawBilling) {
+        renderBillingBlock({ ...storedRawBilling, deliveryLabel: "—", grandTotal: storedRawBilling.subtotal });
+      }
+      applyModeLabels();
+      return;
+    }
     const oc = pendingOnCancel;
     pendingOnConfirm = null;
     pendingOnCancel = null;

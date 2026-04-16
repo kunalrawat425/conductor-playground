@@ -1,0 +1,86 @@
+---
+import type { EmptyStateProps } from "../../../types/v2-components";
+import Button from "../atoms/Button.astro";
+interface Props extends EmptyStateProps {}
+
+const presets: Record<string, { icon: string; title: string; desc: string; cta?: string; ghost?: string }> = {
+  "no-area": {
+    icon: "📍",
+    title: "We're not in your area yet",
+    desc: "Be the first to know when sellers are live near you.",
+    cta: "Join waitlist",
+    ghost: "Try a different area",
+  },
+  "closed": {
+    icon: "🌙",
+    title: "Markets closed for today",
+    desc: "Fish markets open 5am–11am. Pre-order tonight, ready by 7am tomorrow.",
+    cta: "Pre-order tomorrow",
+  },
+  "no-results": {
+    icon: "🔍",
+    title: "No sellers found",
+    desc: "Try changing your filters or search terms.",
+    cta: "Clear filters",
+  },
+  "no-orders": {
+    icon: "📋",
+    title: "No orders yet",
+    desc: "Browse sellers near you to get started.",
+    cta: "Browse sellers",
+  },
+  "cart-empty": {
+    icon: "🛒",
+    title: "Your cart is empty",
+    desc: "Add fresh fish from sellers near you.",
+    cta: "Browse sellers",
+  },
+  "no-internet": {
+    icon: "📡",
+    title: "You're offline",
+    desc: "Check your connection. Past orders still viewable.",
+    cta: "Retry",
+    ghost: "View past orders",
+  },
+  "server-error": {
+    icon: "⚠️",
+    title: "Something went wrong",
+    desc: "Our servers are having trouble. Try again in a moment.",
+    cta: "Try again",
+  },
+};
+
+const {
+  variant,
+  title: titleProp,
+  description: descProp,
+  ctaText: ctaProp,
+  ctaHref,
+  ghostCtaText: ghostProp,
+  ghostCtaHref,
+} = Astro.props;
+
+const preset = presets[variant];
+const title = titleProp || preset?.title;
+const description = descProp || preset?.desc;
+const ctaText = ctaProp || preset?.cta;
+const ghostText = ghostProp || preset?.ghost;
+const icon = preset?.icon || "📭";
+---
+<div class="v2-empty">
+  <div class="v2-empty-icon" aria-hidden="true">{icon}</div>
+  <h3 class="v2-empty-title">{title}</h3>
+  {description && <p class="v2-empty-desc">{description}</p>}
+  {ctaText && (
+    ctaHref ? (
+      <Button variant="primary" href={ctaHref}>{ctaText}</Button>
+    ) : (
+      <Button variant="primary"><slot>{ctaText}</slot></Button>
+    )
+  )}
+  {ghostText && (
+    <a href={ghostCtaHref || "#"} class="v2-empty-ghost">{ghostText} →</a>
+  )}
+</div>
+
+<!-- styles in src/styles/v2-components.css -->

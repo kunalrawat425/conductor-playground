@@ -76,10 +76,19 @@ export const POST: APIRoute = async ({ request }) => {
         );
       }
 
-      // Create new seller (DB default: is_active false until activated)
+      // Create new seller (DB default: is_active false until activated).
+      // Use phone-suffixed placeholder so multiple new sellers are distinguishable
+      // and don't appear as "New Seller" duplicates in any admin/list view.
+      const phoneSuffix = cleanPhone.replace(/\D/g, "").slice(-4);
       const { data: newSeller, error } = await supabase
         .from("sellers")
-        .insert({ phone: cleanPhone, name: "New Seller", location: "", location_name: "" })
+        .insert({
+          phone: cleanPhone,
+          name: `Seller ${phoneSuffix}`,
+          location: "",
+          location_name: "",
+          is_active: false,
+        })
         .select("id, name, is_active")
         .single();
 

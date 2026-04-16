@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — Investor Deck</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+    --bg:#FFFFFF;--bg2:#F8FAFC;--bg3:#F1F5F9;
+    --blue:#2563EB;--blue-d:#1D4ED8;--blue-l:#EFF6FF;--blue-m:#DBEAFE;
+    --green:#059669;--green-l:#ECFDF5;
+    --orange:#EA580C;--orange-l:#FFF7ED;
+    --red:#DC2626;--red-l:#FEF2F2;
+    --border:#E2E8F0;
+  }
+  body{font-family:'Inter',system-ui,sans-serif;background:#000;overflow:hidden;height:100vh;width:100vw}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:56px 72px;background:var(--bg);overflow:hidden}
+  .slide.active{display:flex}
+
+  /* Progress + counter */
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--blue);z-index:100;transition:width .3s}
+  .counter{position:fixed;bottom:16px;right:24px;font:500 12px/1 Inter,sans-serif;color:var(--ink4);z-index:100}
+  .hint{position:fixed;bottom:16px;left:24px;font:400 11px/1 Inter,sans-serif;color:var(--ink4);z-index:100;opacity:.5}
+
+  /* Typography */
+  .label{font:600 11px/1 Inter;text-transform:uppercase;letter-spacing:.12em;color:var(--blue);margin-bottom:10px}
+  h2{font-size:38px;font-weight:800;line-height:1.15;letter-spacing:-.02em;color:var(--ink)}
+  h3{font-size:20px;font-weight:700;color:var(--ink);line-height:1.3}
+  p,li{font-size:16px;line-height:1.65;color:var(--ink2)}
+  .sm{font-size:13px;color:var(--ink3)}
+  .xs{font-size:11px;color:var(--ink4)}
+  .accent{color:var(--blue)}
+  b{color:var(--ink)}
+
+  /* Layout */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px}
+  .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:20px}
+  .sp{height:24px}.sp2{height:16px}.sp3{height:32px}
+
+  /* Cards */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px}
+  .card h3{margin-bottom:6px;font-size:17px}
+  .card p{font-size:14px}
+  .card-b{background:var(--blue-l);border-color:var(--blue-m)}
+  .card-o{background:var(--orange-l);border-color:#FED7AA}
+  .card-g{background:var(--green-l);border-color:#A7F3D0}
+
+  /* Stats */
+  .stat{text-align:center;padding:16px 0}
+  .stat .n{font-size:44px;font-weight:900;color:var(--blue);line-height:1;letter-spacing:-.02em}
+  .stat .u{font-size:13px;color:var(--ink3);margin-top:4px}
+  .stat .src{font-size:10px;color:var(--ink4);margin-top:2px}
+
+  /* Metrics bar */
+  .mbar{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:20px}
+  .mbar .m{padding:16px 0;border-top:3px solid var(--blue)}
+  .mbar .m .v{font-size:24px;font-weight:800;color:var(--ink)}
+  .mbar .m .d{font-size:12px;color:var(--ink3);margin-top:2px}
+
+  /* Bullets */
+  ul.bl{list-style:none;padding:0}
+  ul.bl li{padding:10px 0;border-bottom:1px solid var(--border);font-size:16px;display:flex;align-items:baseline;gap:10px}
+  ul.bl li:last-child{border:none}
+  ul.bl li::before{content:'';width:6px;height:6px;background:var(--blue);border-radius:50%;flex-shrink:0;margin-top:7px}
+
+  /* Table */
+  .tbl{width:100%;border-collapse:collapse;font-size:14px}
+  .tbl th{text-align:left;padding:10px 12px;font-weight:600;color:var(--ink3);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border)}
+  .tbl td{padding:11px 12px;border-bottom:1px solid var(--bg3);color:var(--ink2)}
+  .tbl .hl{background:var(--blue-l);font-weight:600}
+  .tbl .hl td{color:var(--blue)}
+  .yes{color:var(--green);font-weight:700}.no{color:var(--red);font-weight:700}
+
+  /* Timeline */
+  .tl{display:flex;gap:0;margin-top:16px}
+  .tl .step{flex:1;padding:16px 20px;border-left:3px solid var(--blue);position:relative}
+  .tl .step::before{content:'';width:10px;height:10px;background:var(--blue);border-radius:50%;position:absolute;left:-6.5px;top:18px}
+  .tl .step .per{font:600 11px Inter;color:var(--blue);text-transform:uppercase;letter-spacing:.06em}
+  .tl .step .act{font-size:14px;color:var(--ink2);margin-top:4px;line-height:1.5}
+
+  /* Cover */
+  .cover{background:var(--ink);color:#fff;text-align:center;align-items:center}
+  .cover h1{font-size:64px;font-weight:900;color:#fff;letter-spacing:-.03em}
+  .cover .tag{font-size:24px;color:rgba(255,255,255,.8);margin-top:20px;line-height:1.4;font-weight:400}
+  .cover .sub{font-size:15px;color:rgba(255,255,255,.4);margin-top:24px}
+  .cover .pre{font:700 12px Inter;letter-spacing:.15em;text-transform:uppercase;color:var(--blue);margin-bottom:12px}
+
+  /* End */
+  .end{background:var(--ink);color:#fff;text-align:center;align-items:center}
+  .end h1{font-size:56px;font-weight:900;color:#fff}
+  .end p{color:rgba(255,255,255,.5)}
+  .end a{color:var(--blue);text-decoration:none;font-weight:600;font-size:18px}
+
+  /* Ask box */
+  .ask{background:var(--blue);border-radius:16px;padding:36px;color:#fff;text-align:center}
+  .ask .amt{font-size:48px;font-weight:900}
+  .ask .why{font-size:17px;color:rgba(255,255,255,.85);margin-top:8px}
+
+  /* Insight callout */
+  .callout{background:var(--blue-l);border-left:4px solid var(--blue);border-radius:0 8px 8px 0;padding:16px 20px;margin-top:16px}
+  .callout p{font-size:14px;margin:0;color:var(--ink2)}
+
+  /* Financial table */
+  .fin{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+  .fin th{text-align:center;padding:8px 6px;font-weight:600;color:var(--ink3);font-size:10px;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--border)}
+  .fin th:first-child{text-align:left}
+  .fin td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--bg3);color:var(--ink2)}
+  .fin td:first-child{text-align:left;font-weight:500;color:var(--ink)}
+  .fin .pos{color:var(--green);font-weight:600}
+
+  @media(max-width:1024px){
+    .slide{padding:32px 40px}
+    h2{font-size:28px}
+    .g2{gap:24px}
+    .stat .n{font-size:32px}
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter"></div>
+<div class="hint">← → keys &middot; click to navigate</div>
+
+<div id="deck">
+
+<!-- 1. COVER -->
+<div class="slide cover active">
+  <div class="pre">Pre-Seed &middot; April 2026</div>
+  <h1>Relifish</h1>
+  <div class="tag">India's ₹1.7 Lakh Crore fish market has<br>25 million sellers and zero technology.<br>We're building the rails.</div>
+  <div class="sub">relifish.store &middot; Kunal Rawat, Founder</div>
+</div>
+
+<!-- 2. PROBLEM -->
+<div class="slide">
+  <div class="label">The Problem</div>
+  <h2>Two sides of the same broken market</h2>
+  <div class="sp"></div>
+  <div class="g2">
+    <div>
+      <h3 style="color:var(--orange)">Sellers lose 25% of catch daily</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>No demand signal.</b> Haul catch, set up stall, hope. Unsold fish at 2pm = total loss.</li>
+        <li><b>No pre-sell mechanism.</b> Can't take orders in advance. First come, first served only.</li>
+        <li><b>Limited reach.</b> Sellers serve only walk-in customers within 500m of their stall.</li>
+        <li><b>&lt;10% cold storage</b> for India's total fish production. No buffer for unsold inventory.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color:var(--orange)">Buyers face friction at every step</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Wasted trips.</b> Travel to market, favorite species sold out, leave empty-handed.</li>
+        <li><b>No price visibility.</b> Can't compare sellers. Haggling is the only price discovery.</li>
+        <li><b>Time-locked.</b> Markets close by 11am. Working professionals can't access fresh catch.</li>
+        <li><b>Trust gap.</b> Delivery apps charge 25-30% markup. "Fresh" often means 2-3 days old.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">
+    <p><b>The core insight:</b> Fish is India's most traded perishable protein — ₹1.7L Cr/year domestically — yet the local supply chain has zero digital infrastructure. Not underserved. <b>Unserved.</b></p>
+  </div>
+</div>
+
+<!-- 3. MARKET SIZE -->
+<div class="slide">
+  <div class="label">Market Opportunity</div>
+  <h2>A $22 billion market growing 7.5% CAGR,<br>served by 25 million fishermen with zero tech</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="stat">
+      <div class="n">$22.4B</div>
+      <div class="u">India domestic fish market</div>
+      <div class="src">IMARC Group 2025 &middot; ₹1.7L Cr</div>
+    </div>
+    <div class="stat">
+      <div class="n">71%</div>
+      <div class="u">Sold through wet markets</div>
+      <div class="src">Unorganized retail &middot; 54% fresh</div>
+    </div>
+    <div class="stat">
+      <div class="n">25M</div>
+      <div class="u">Fishermen &amp; fish farmers</div>
+      <div class="src">1.2M coastal households &middot; FAO</div>
+    </div>
+  </div>
+  <div class="mbar">
+    <div class="m"><div class="v">25%</div><div class="d">Post-harvest loss annually</div></div>
+    <div class="m"><div class="v">8.9 kg</div><div class="d">Per capita (+81% in 15 years)</div></div>
+    <div class="m"><div class="v">2x</div><div class="d">Consumption doubling by 2048</div></div>
+    <div class="m"><div class="v">$7.4B</div><div class="d">Seafood exports FY25 (MPEDA)</div></div>
+  </div>
+  <div class="callout">
+    <p><b>TAM:</b> $22.4B (all India fish) &rarr; <b>SAM:</b> $3.2B (Mumbai metro + coastal Maharashtra fresh fish retail) &rarr; <b>SOM:</b> $8M (0.25% of SAM in 3 years = ₹65Cr GMV)</p>
+  </div>
+</div>
+
+<!-- 4. COMPETITIVE LANDSCAPE -->
+<div class="slide">
+  <div class="label">Competitive Landscape</div>
+  <h2>$930M+ funded into fish/meat delivery.<br>Zero dollars into empowering local fishermen.</h2>
+  <div class="sp2"></div>
+  <table class="tbl">
+    <thead><tr><th>Player</th><th>Model</th><th>Raised</th><th>Revenue</th><th>Local Sellers</th><th>Pre-orders</th><th>Gap</th></tr></thead>
+    <tbody>
+      <tr><td><b>FreshToHome</b></td><td>Inventory, cold chain</td><td>$320M / Series D</td><td>₹421Cr FY25</td><td class="no">No</td><td class="no">No</td><td>Warehouse model. Replaces sellers.</td></tr>
+      <tr><td><b>Licious</b></td><td>Inventory, meat-first</td><td>$490M / $2B IPO target</td><td>₹845Cr FY25</td><td class="no">No</td><td class="no">No</td><td>Fish is side category (15% of rev).</td></tr>
+      <tr><td><b>Captain Fresh</b></td><td>B2B export</td><td>$120M+ / $1B IPO filed</td><td>60%+ US/EU</td><td class="no">No</td><td class="no">No</td><td>Not consumer. Export-focused.</td></tr>
+      <tr><td><b>Blinkit / Zepto</b></td><td>Quick commerce</td><td>$1.4B+</td><td>₹11,110Cr (Zepto)</td><td class="no">No</td><td class="no">No</td><td>Frozen/packaged. Fish = afterthought.</td></tr>
+      <tr><td><b>Local wet market</b></td><td>Walk-in, cash</td><td>—</td><td>71% of retail</td><td class="yes">Yes</td><td class="no">No</td><td>Zero digital. Zero visibility.</td></tr>
+      <tr class="hl"><td><b>Relifish</b></td><td><b>Marketplace</b></td><td>Pre-seed</td><td>MVP live</td><td class="yes"><b>Yes</b></td><td class="yes"><b>Yes</b></td><td><b>Only platform empowering sellers</b></td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <p><b>Strategic white space:</b> Every funded player built supply chains to <em>replace</em> local fishermen. Relifish is the only product that <em>empowers</em> them. The 71% of fish sold through wet markets has no digital layer — that's our market.</p>
+  </div>
+</div>
+
+<!-- 5. SOLUTION -->
+<div class="slide">
+  <div class="label">The Solution</div>
+  <h2>Relifish is the marketplace layer between<br>India's fishermen and their customers</h2>
+  <div class="sp"></div>
+  <div class="g2">
+    <div>
+      <h3>For Sellers</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Daily catch listings</b> — photo, species, price per kg, availability window</li>
+        <li><b>Pre-orders</b> — receive orders tonight, reserve tomorrow's catch. Demand signal before they go to sea.</li>
+        <li><b>Seller dashboard</b> — manage inventory, accept/reject, set pricing tiers, track revenue</li>
+        <li><b>WhatsApp-native</b> — order notifications via WhatsApp. Zero new behavior required.</li>
+        <li><b>Expanded reach</b> — serve buyers beyond their 500m walk-in radius</li>
+      </ul>
+    </div>
+    <div>
+      <h3>For Buyers</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Browse nearby sellers</b> — see who's selling what, compare prices across sellers</li>
+        <li><b>Pre-order tomorrow's catch</b> — order at 10pm, reserved at the dock by 5am</li>
+        <li><b>Pickup or delivery</b> — scheduled slots, location-aware routing</li>
+        <li><b>Price transparency</b> — per-kg pricing, no hidden markup, direct seller rates</li>
+        <li><b>Trust</b> — seller profiles with photos, ratings, order history. Know your fisherman.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 6. WHY RELIFISH WINS -->
+<div class="slide">
+  <div class="label">Unfair Advantages</div>
+  <h2>Six structural reasons why this works<br>and why incumbents can't copy it</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b">
+      <h3>1. Asset-light marketplace</h3>
+      <p>We don't buy, store, or transport fish. Sellers handle fulfillment. Our gross margin = pure platform take rate. Infinitely scalable supply.</p>
+    </div>
+    <div class="card card-b">
+      <h3>2. Pre-orders (nobody else)</h3>
+      <p>Only platform where buyers order tonight and sellers reserve catch tomorrow. Reduces 25% waste. Guarantees species availability. Patent-worthy mechanic.</p>
+    </div>
+    <div class="card card-b">
+      <h3>3. Zero-CAC distribution</h3>
+      <p>Each seller has 50-200 regulars. Onboard 1 seller = acquire 50 buyers free. Sellers ARE the growth engine. Network effects from Day 1.</p>
+    </div>
+    <div class="card card-o">
+      <h3>4. WhatsApp-native</h3>
+      <p>500M+ Indians on WhatsApp. Fish sellers already use it informally. We formalize the workflow they already have. Zero behavior change = zero friction.</p>
+    </div>
+    <div class="card card-o">
+      <h3>5. Hyperlocal trust moat</h3>
+      <p>When a buyer knows Kamla Tai by name, that trust doesn't transfer to a warehouse. We digitize the <em>relationship</em>, not replace it. Defensible by design.</p>
+    </div>
+    <div class="card card-o">
+      <h3>6. Category creation</h3>
+      <p>$930M+ funded warehouses. $0 funded the 25M fishermen. We're not competing for share in an existing category. We're creating the category.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 7. PRODUCT -->
+<div class="slide">
+  <div class="label">Product</div>
+  <h2>Full MVP live at relifish.store — built in weeks, not months</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card">
+      <h3>Buyer Experience</h3>
+      <p>Location-aware seller browse, species search, daily catch view, pre-order flow, pickup/delivery selection, order tracking, WhatsApp integration</p>
+    </div>
+    <div class="card">
+      <h3>Seller Dashboard</h3>
+      <p>Inventory management, order accept/reject, pricing tiers, schedule slots, revenue tracking, WhatsApp notifications, performance analytics</p>
+    </div>
+    <div class="card">
+      <h3>Pre-Order Engine</h3>
+      <p>Buyer requests species + qty → seller confirms with morning price → buyer accepts/rejects → seller reserves at dock. Closes the demand-signal loop.</p>
+    </div>
+  </div>
+  <div class="sp"></div>
+  <div class="g4" style="text-align:center">
+    <div><div style="font-size:28px;font-weight:800;color:var(--ink)">Astro SSR</div><div class="xs">Server-rendered &middot; fast on 3G</div></div>
+    <div><div style="font-size:28px;font-weight:800;color:var(--ink)">Supabase</div><div class="xs">Postgres + Auth + Realtime</div></div>
+    <div><div style="font-size:28px;font-weight:800;color:var(--ink)">Vercel</div><div class="xs">Edge deploy &middot; zero DevOps</div></div>
+    <div><div style="font-size:28px;font-weight:800;color:var(--ink)">PWA</div><div class="xs">Installable + push notifications</div></div>
+  </div>
+  <div class="callout">
+    <p><b>Also built:</b> Physical marketing materials (standees, banners, QR flyers), SEO + structured data, dynamic sitemap, Marathi/English bilingual support, IndexNow for instant search indexing.</p>
+  </div>
+</div>
+
+<!-- 8. BUSINESS MODEL -->
+<div class="slide">
+  <div class="label">Business Model</div>
+  <h2>Platform take rate + 5 additional revenue streams</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b" style="text-align:center">
+      <div class="xs" style="margin-bottom:4px">NOW</div>
+      <div style="font-size:36px;font-weight:900;color:var(--blue)">5-8%</div>
+      <div class="sm">Commission per order</div>
+      <div class="sp2"></div>
+      <p>Tiered: 5% up to ₹50K GMV/seller, 7% to ₹2L, 8% above. Free to list. Pay only on sale.</p>
+    </div>
+    <div class="card card-o" style="text-align:center">
+      <div class="xs" style="margin-bottom:4px">MONTH 4+</div>
+      <div style="font-size:36px;font-weight:900;color:var(--orange)">₹30-79</div>
+      <div class="sm">Delivery fee per order</div>
+      <div class="sp2"></div>
+      <p>Distance-based. Free above ₹1,000 (pushes AOV up 40-60%). Net contribution ₹5-15/delivery.</p>
+    </div>
+    <div class="card card-g" style="text-align:center">
+      <div class="xs" style="margin-bottom:4px">MONTH 6+</div>
+      <div style="font-size:36px;font-weight:900;color:var(--green)">B2B</div>
+      <div class="sm">Restaurants + institutional</div>
+      <div class="sp2"></div>
+      <p>₹3,500+ AOV. 3x/week. 10x a consumer order. Contract pricing with weekly invoicing.</p>
+    </div>
+  </div>
+  <div class="sp2"></div>
+  <div class="mbar">
+    <div class="m"><div class="v">₹820</div><div class="d">Blended AOV</div></div>
+    <div class="m"><div class="v">₹53</div><div class="d">Commission/order (6.5%)</div></div>
+    <div class="m"><div class="v">2-3x/wk</div><div class="d">Purchase frequency</div></div>
+    <div class="m"><div class="v">₹4,018</div><div class="d">LTV per buyer (14 months)</div></div>
+  </div>
+  <div class="callout">
+    <p><b>Future streams:</b> Seller subscriptions (₹999-2,499/mo for analytics + priority placement), promoted listings (CPC: ₹2-5/click), market pricing data (₹10-25K/mo to institutions). Revenue mix at M12: Commission 55% + Delivery 15% + Subscriptions 12% + B2B 10% + Ads 6% + Data 2%.</p>
+  </div>
+</div>
+
+<!-- 9. UNIT ECONOMICS -->
+<div class="slide">
+  <div class="label">Unit Economics</div>
+  <h2>Path to contribution-positive by Month 7</h2>
+  <div class="sp2"></div>
+  <div class="g2">
+    <div>
+      <table class="fin">
+        <thead><tr><th>Per Order (M6)</th><th>Amount</th></tr></thead>
+        <tbody>
+          <tr><td>GMV</td><td>₹820</td></tr>
+          <tr><td>Commission (6.5%)</td><td>₹53</td></tr>
+          <tr><td>Delivery fee (avg)</td><td>₹25</td></tr>
+          <tr><td><b>Gross revenue</b></td><td><b>₹78</b></td></tr>
+          <tr><td>Delivery cost</td><td>-₹45</td></tr>
+          <tr><td>Payment gateway (2%)</td><td>-₹16</td></tr>
+          <tr><td>Packaging</td><td>-₹12</td></tr>
+          <tr><td><b>Gross margin</b></td><td><b>₹5</b></td></tr>
+        </tbody>
+      </table>
+      <div class="sp2"></div>
+      <div class="callout" style="margin-top:0">
+        <p><b>M12 target:</b> Gross margin ₹40/order (4.9%) as delivery density + ancillary revenue improve.</p>
+      </div>
+    </div>
+    <div>
+      <table class="fin">
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Blended CAC</td><td>₹130</td></tr>
+          <tr><td>LTV (conservative)</td><td>₹2,657</td></tr>
+          <tr><td>LTV (target)</td><td>₹4,018</td></tr>
+          <tr><td><b>LTV:CAC ratio</b></td><td class="pos"><b>31:1</b></td></tr>
+          <tr><td>Payback period</td><td>3.7 months</td></tr>
+          <tr><td>D30 retention target</td><td>40%+</td></tr>
+          <tr><td>Orders/buyer/month</td><td>7</td></tr>
+        </tbody>
+      </table>
+      <div class="sp2"></div>
+      <div class="callout" style="margin-top:0">
+        <p><b>Why LTV:CAC is high:</b> Fish is a <b>non-discretionary, high-frequency</b> purchase. Buyers order 2-3x/week. The habit is pre-existing — we just redirect it.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 10. FINANCIAL PROJECTIONS -->
+<div class="slide">
+  <div class="label">12-Month Projections</div>
+  <h2>₹1.5Cr monthly GMV by Month 12.<br>Operational break-even at Month 7.</h2>
+  <div class="sp2"></div>
+  <table class="fin">
+    <thead><tr><th>Month</th><th>Orders/Day</th><th>AOV</th><th>Monthly GMV</th><th>Net Revenue</th><th>Expenses</th><th>Burn</th></tr></thead>
+    <tbody>
+      <tr><td>M1</td><td>30</td><td>₹650</td><td>₹5.8L</td><td>₹19K</td><td>₹4.5L</td><td>-₹4.3L</td></tr>
+      <tr><td>M3</td><td>100</td><td>₹750</td><td>₹22.5L</td><td>₹1.1L</td><td>₹5.5L</td><td>-₹4.4L</td></tr>
+      <tr><td>M6</td><td>280</td><td>₹820</td><td>₹68.9L</td><td>₹5.5L</td><td>₹7.0L</td><td>-₹1.5L</td></tr>
+      <tr style="background:var(--green-l)"><td><b>M7</b></td><td><b>350</b></td><td><b>₹830</b></td><td><b>₹87.2L</b></td><td><b>₹7.9L</b></td><td><b>₹7.5L</b></td><td class="pos"><b>+₹35K</b></td></tr>
+      <tr><td>M9</td><td>450</td><td>₹850</td><td>₹1.15Cr</td><td>₹11.5L</td><td>₹8.5L</td><td class="pos">+₹3.0L</td></tr>
+      <tr><td><b>M12</b></td><td><b>600</b></td><td><b>₹880</b></td><td><b>₹1.58Cr</b></td><td><b>₹18.2L</b></td><td><b>₹10.0L</b></td><td class="pos"><b>+₹8.2L</b></td></tr>
+    </tbody>
+  </table>
+  <div class="sp2"></div>
+  <div class="g3">
+    <div class="callout" style="margin:0">
+      <p><b>Peak burn:</b> ₹21.7L cumulative (M1-6). Covered by ₹25L raise with ₹3.3L buffer.</p>
+    </div>
+    <div class="callout" style="margin:0">
+      <p><b>M12 run rate:</b> ₹18.2L/mo revenue. ₹1.58Cr/mo GMV. 350+ sellers. 22,000 orders/mo.</p>
+    </div>
+    <div class="callout" style="margin:0">
+      <p><b>Seed raise trigger:</b> M12 numbers → raise ₹1Cr seed at ₹8-10Cr valuation.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 11. GO-TO-MARKET -->
+<div class="slide">
+  <div class="label">Go-to-Market</div>
+  <h2>Neighborhood-by-neighborhood.<br>Physical-first. Zero paid acquisition to start.</h2>
+  <div class="sp"></div>
+  <div class="tl">
+    <div class="step"><div class="per">Week 1-2</div><div class="act"><b>WhatsApp concierge</b> — manual ops, 1 seller, 20 buyers. Validate demand with zero tech dependency.</div></div>
+    <div class="step"><div class="per">Month 1</div><div class="act"><b>3 power sellers</b> — deploy standees + QR at stalls. Each seller brings 10-20 buyers organically. Target: 100 orders.</div></div>
+    <div class="step"><div class="per">Month 2-3</div><div class="act"><b>Market-level</b> — one full Mumbai fish market. 10+ sellers, 100+ active buyers. First paid ads (₹30K/mo).</div></div>
+    <div class="step"><div class="per">Month 4-6</div><div class="act"><b>Second market + B2B</b> — prove the playbook replicates. 5 restaurant accounts. Start delivery pilot.</div></div>
+  </div>
+  <div class="sp"></div>
+  <div class="g2">
+    <div class="card">
+      <h3>Why this works</h3>
+      <p><b>Sellers ARE distribution.</b> One power seller has 50-200 regular customers who trust them. When that seller says "I'm on Relifish," those customers follow. We don't need Facebook ads to acquire our first 500 buyers — we need 10 good sellers.</p>
+    </div>
+    <div class="card">
+      <h3>Already built</h3>
+      <p><b>Physical assets ready:</b> Cardboard standees for fish stalls, buyer/seller banners (Marathi + English), QR-to-WhatsApp flyers, seller visiting cards — all designed, tested, ready to print. Zero time from funding to execution.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 12. WHY NOW + WHY ME -->
+<div class="slide">
+  <div class="label">Why Now &middot; Why Us</div>
+  <h2>The timing is perfect.<br>The builder is ready.</h2>
+  <div class="sp"></div>
+  <div class="g2">
+    <div>
+      <h3>Why Now</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>$930M+ proved the category.</b> FreshToHome + Licious proved Indian consumers buy fish online. None built for local sellers.</li>
+        <li><b>800M smartphones, 500M on WhatsApp.</b> Even fishermen run informal WhatsApp groups with regulars.</li>
+        <li><b>UPI: 16B+ txns/month.</b> Digital payments are mainstream at every fish market in Mumbai.</li>
+        <li><b>25% post-harvest loss = ₹35,000 Cr wasted/year.</b> Pre-orders directly address this waste.</li>
+        <li><b>Consumption doubling.</b> 8.9kg/capita today → 16kg by 2048. Demand growing, supply chain isn't.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Why Me</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Full-stack solo founder.</b> Built entire marketplace + infra in weeks — product most teams take 6 months to ship.</li>
+        <li><b>Domain obsession.</b> Deep understanding of Indian fish market dynamics, Koli community, coastal supply chain.</li>
+        <li><b>Lean operator.</b> Zero burn until funded. Shipping with free-tier infra. Testing before building.</li>
+        <li><b>Velocity proof.</b> MVP live, SEO optimized, marketing materials designed, seller pipeline identified — all before raising a rupee.</li>
+      </ul>
+      <div class="sp2"></div>
+      <div class="card card-b">
+        <p style="font-size:14px"><b>What I've shipped (pre-funding):</b> Full marketplace, seller dashboard, pre-order engine, pickup/delivery, WhatsApp integration, Marathi support, standee + banner designs, SEO + schema, 36,000-word marketing playbook.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 13. THE ASK -->
+<div class="slide">
+  <div class="label">The Ask</div>
+  <h2>Pre-Seed Round</h2>
+  <div class="sp2"></div>
+  <div class="ask">
+    <div class="amt">₹25 Lakhs</div>
+    <div class="why">6 months runway &middot; 3 fish markets &middot; Prove the playbook &middot; Then scale Mumbai</div>
+  </div>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card">
+      <h3>Use of Funds</h3>
+      <ul class="bl">
+        <li>Seller acquisition: 3 markets</li>
+        <li>Physical marketing + standees</li>
+        <li>Delivery pilot: 2 zones</li>
+        <li>Paid ads: ₹3L over 6 months</li>
+        <li>6 months founder runway</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>6-Month Milestones</h3>
+      <ul class="bl">
+        <li>50+ active sellers</li>
+        <li>280 orders/day</li>
+        <li>₹68.9L monthly GMV</li>
+        <li>40%+ D30 retention</li>
+        <li>Contribution-margin positive</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Then: Seed Round</h3>
+      <ul class="bl">
+        <li>₹1Cr raise at ₹8-10Cr valuation</li>
+        <li>Expand Mumbai-wide: 5+ markets</li>
+        <li>Own delivery logistics</li>
+        <li>B2B channel: 20+ restaurants</li>
+        <li>Coastal Maharashtra expansion</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 14. END -->
+<div class="slide end">
+  <h1>Relifish</h1>
+  <div class="sp2"></div>
+  <p style="font-size:20px;color:rgba(255,255,255,.75)">Building the rails for India's ₹1.7 Lakh Crore fish market.<br>One seller at a time.</p>
+  <div class="sp3"></div>
+  <a href="https://relifish.store" target="_blank">relifish.store</a>
+  <div class="sp2"></div>
+  <p>Kunal Rawat &middot; Founder</p>
+  <p style="font-size:14px;margin-top:4px;color:rgba(255,255,255,.3)">kunal@relifish.store</p>
+</div>
+
+</div>
+
+<script>
+const S=document.querySelectorAll('.slide'),C=document.getElementById('counter'),P=document.getElementById('progress');
+let c=0;const T=S.length;
+function go(i){if(i<0||i>=T)return;S[c].classList.remove('active');c=i;S[c].classList.add('active');C.textContent=`${c+1} / ${T}`;P.style.width=`${((c+1)/T)*100}%`}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(c+1)}if(e.key==='ArrowLeft'){e.preventDefault();go(c-1)}if(e.key==='Home')go(0);if(e.key==='End')go(T-1)});
+document.addEventListener('click',e=>{e.clientX>window.innerWidth/2?go(c+1):go(c-1)});
+let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?go(c+1):go(c-1)}});
+go(0);
+</script>
+</body>
+</html>
