@@ -27,14 +27,24 @@ export const GET: APIRoute = async ({ url }) => {
         *,
         listing:fish_listings ( id, species, photo_url, pricing_options,
           seller:sellers ( id, name, phone, location, location_name, opens_at, closes_at )
-        ),
-        address:buyer_addresses ( id, label, flat, building, landmark, location_name, lat, lng )
+        )
       `)
       .eq("id", id)
       .single();
 
     if (error || !order) {
-      return new Response(JSON.stringify({ error: "Order not found" }), { status: 404 });
+      return new Response(JSON.stringify({ error: error?.message || "Order not found" }), { status: 404 });
+    }
+
+    // Fetch address separately if order had one
+    let address = null;
+    if (order.buyer_addr) {
+      const { data: addr } = await sb
+        .from("buyer_addresses")
+        .select("id, label, flat, building, landmark, location_name, lat, lng")
+        .eq("id", order.buyer_addr)
+        .single();
+      address = addr;
     }
     // Authorization: buyer must own this order (matches buyer_id OR phone)
     if (order.buyer_id && order.buyer_id !== buyer_id) {
@@ -52,6 +62,7 @@ export const GET: APIRoute = async ({ url }) => {
         order: {
           ...order,
           seller,
+          address,
           listing: order.listing ? { species: order.listing.species, photo_url: order.listing.photo_url } : null,
         },
       }),
