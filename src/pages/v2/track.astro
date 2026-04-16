@@ -198,20 +198,29 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
       if (activeOrders.length > 0) {
         const o = activeOrders[0];
         const seller = o.listing?.seller?.name || "Seller";
-        const stepIdx = ["pending", "confirmed", "paid", "ready_for_pickup", "picked_up"].indexOf(o.status);
+        // Simplified 4-step flow (most orders are COD — no separate Paid step needed for buyer view)
+        // Map: pending → step 0, confirmed/paid → step 1, ready_for_pickup → step 2, picked_up/completed → step 3
+        const statusToStep: Record<string, number> = {
+          pending: 0, pre_order: 0, scheduled: 0,
+          confirmed: 1, paid: 1,
+          ready_for_pickup: 2,
+          picked_up: 3, completed: 3,
+        };
+        const stepIdx = statusToStep[o.status] ?? 0;
+        const labels = ["Placed", "Confirmed", "Ready", "Picked up"];
         active.innerHTML = `
           <div class="v2-active-order">
             <div class="label">Live · Active order</div>
             <h3>${escapeHtml(seller)}</h3>
-            <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${escapeHtml(statusToTag(o.status).replace(/<[^>]+>/g, ""))}</div>
+            <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()}</div>
             <div class="v2-stepper">
-              ${["Placed","Confirmed","Paid","Ready","Picked up"].map((label, i) => `
+              ${labels.map((label, i) => `
                 <div class="dot${i <= stepIdx ? ' done' : ''}">${i <= stepIdx ? '✓' : i + 1}</div>
-                ${i < 4 ? `<div class="line${i < stepIdx ? ' done' : ''}"></div>` : ''}
+                ${i < labels.length - 1 ? `<div class="line${i < stepIdx ? ' done' : ''}"></div>` : ''}
               `).join("")}
             </div>
             <div class="v2-stepper-labels">
-              <span>Placed</span><span>Confirmed</span><span>Paid</span><span>Ready</span><span>Pickup</span>
+              ${labels.map(l => `<span>${l}</span>`).join("")}
             </div>
           </div>`;
       }
