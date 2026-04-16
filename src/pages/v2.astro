@@ -1,0 +1,302 @@
+---
+import AppShellV2 from "../components/v2/AppShellV2.astro";
+import SellerCard from "../components/v2/molecules/SellerCard.astro";
+import PreorderBanner from "../components/v2/molecules/PreorderBanner.astro";
+import CategoryStrip from "../components/v2/molecules/CategoryStrip.astro";
+import EmptyState from "../components/v2/molecules/EmptyState.astro";
+import Skeleton from "../components/v2/atoms/Skeleton.astro";
+
+const categories = [
+  { id: "all", name: "All Fish", emoji: "🐟", active: true },
+  { id: "prawns", name: "Prawns", emoji: "🦐" },
+  { id: "crab", name: "Crab", emoji: "🦀" },
+  { id: "squid", name: "Squid", emoji: "🦑" },
+  { id: "shellfish", name: "Shellfish", emoji: "🐚" },
+];
+---
+<AppShellV2
+  title="Relifish V2 — Fresh Fish, Direct from Sellers"
+  description="V2 preview. Pre-order tomorrow's catch from local Mumbai fish sellers."
+  needsMap={true}
+  header={{
+    locationLabel: "Loading...",
+    locationSub: "Setting your area",
+    showSearch: true,
+    showCart: false,
+    cartCount: 0,
+  }}
+  nav={{ active: "home" }}
+>
+  <PreorderBanner variant="inline" />
+
+  <div style="margin-top: 16px;">
+    <CategoryStrip items={categories} />
+  </div>
+
+  <div class="v2-section-head">
+    <h2>Sellers near you</h2>
+    <span id="v2-seller-count" class="v2-count-badge">…</span>
+  </div>
+
+  <!-- Loading skeletons -->
+  <div id="v2-loading" class="v2-cards-grid">
+    <div class="v2-skel-card"><Skeleton shape="card" height="220px" /></div>
+    <div class="v2-skel-card"><Skeleton shape="card" height="220px" /></div>
+  </div>
+
+  <!-- Cards grid (filled by JS) -->
+  <div id="v2-sellers-grid" class="v2-cards-grid" style="display:none;"></div>
+
+  <!-- Empty -->
+  <div id="v2-empty" style="display:none;padding: 0 16px;">
+    <EmptyState variant="no-area" ctaHref="/buyer-banner.html#wl-form" ghostCtaHref="#" />
+  </div>
+
+  <!-- Markets closed -->
+  <div id="v2-closed" style="display:none;padding: 0 16px;">
+    <EmptyState variant="closed" ctaHref="/v2?mode=preorder" />
+  </div>
+</AppShellV2>
+
+<style is:global>
+  .v2-section-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 16px 10px;
+  }
+  .v2-section-head h2 {
+    font-family: var(--v2-font); font-weight: 800; font-size: 18px;
+    color: var(--v2-ink); margin: 0;
+  }
+  .v2-count-badge {
+    background: var(--v2-brand);
+    color: #fff;
+    font-family: var(--v2-font); font-weight: 700; font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+  }
+  .v2-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 16px;
+    animation: v2-fade-in var(--v2-dur) var(--v2-ease-out);
+  }
+  @media (min-width: 600px) {
+    .v2-cards-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .v2-skel-card { border-radius: 12px; overflow: hidden; }
+</style>
+
+<script>
+  import { supabase } from "../lib/supabase";
+  import { getSpeciesDisplay } from "../lib/species";
+  import type { Seller, FishListing } from "../lib/supabase";
+
+  type SellerHue = "sky" | "green" | "orange" | "indigo";
+
+  function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function isOpen(opens?: string | null, closes?: string | null) {
+    if (!opens || !closes) return true;
+    const now = new Date();
+    const cur = now.getHours() * 60 + now.getMinutes();
+    const [oh, om] = opens.split(":").map(Number);
+    const [ch, cm] = closes.split(":").map(Number);
+    return cur >= (oh * 60 + om) && cur <= (ch * 60 + cm);
+  }
+
+  function getBuyerLocation(): { lat: number; lng: number } | null {
+    try {
+      const lat = localStorage.getItem("zepto_buyer_lat");
+      const lng = localStorage.getItem("zepto_buyer_lng");
+      if (lat && lng) return { lat: parseFloat(lat), lng: parseFloat(lng) };
+    } catch {}
+    return null;
+  }
+
+  function getBuyerArea(): string {
+    try { return localStorage.getItem("zepto_buyer_location") || "Set location"; } catch { return "Set location"; }
+  }
+
+  function pickHue(seed: string): SellerHue {
+    const hues: SellerHue[] = ["sky", "green", "orange", "indigo"];
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    return hues[h % hues.length];
+  }
+
+  function escapeHtml(s: string) {
+    return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  }
+
+  async function loadSellers() {
+    const loading = document.getElementById("v2-loading")!;
+    const grid = document.getElementById("v2-sellers-grid")!;
+    const empty = document.getElementById("v2-empty")!;
+    const closed = document.getElementById("v2-closed")!;
+    const count = document.getElementById("v2-seller-count")!;
+
+    // Update header location label
+    const locMain = document.querySelector(".v2-loc-main");
+    const locSub = document.querySelector(".v2-loc-sub");
+    const area = getBuyerArea();
+    if (locMain) locMain.firstChild!.textContent = area + " ";
+
+    try {
+      const [{ data: listingsData }, { data: sellersData }] = await Promise.all([
+        supabase
+          .from("fish_listings")
+          .select("*, seller:sellers(*)")
+          .eq("is_available", true),
+        supabase
+          .from("sellers")
+          .select("*")
+          .eq("is_active", true)
+          .neq("name", "New Seller"),
+      ]);
+
+      const listings = (listingsData || []) as (FishListing & { seller: Seller })[];
+      const sellers = (sellersData || []) as Seller[];
+
+      // Group listings by seller
+      const sellerListings = new Map<string, FishListing[]>();
+      for (const l of listings) {
+        const sid = (l as any).seller?.id;
+        if (!sid) continue;
+        if (!sellerListings.has(sid)) sellerListings.set(sid, []);
+        sellerListings.get(sid)!.push(l);
+      }
+
+      // Filter sellers: must have listings OR accept pre-orders
+      const filtered = sellers.filter(s => {
+        const hasListings = (sellerListings.get(s.id) || []).length > 0;
+        return hasListings || s.accepts_preorder === true;
+      });
+
+      const buyerLoc = getBuyerLocation();
+      const groups = filtered.map(s => {
+        const dist = buyerLoc && s.lat != null && s.lng != null
+          ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
+          : null;
+        const open = isOpen(s.opens_at, s.closes_at);
+        return { seller: s, listings: sellerListings.get(s.id) || [], dist, open };
+      });
+
+      // Sort: open first, then by distance, then rating
+      groups.sort((a, b) => {
+        if (a.open !== b.open) return a.open ? -1 : 1;
+        if (a.dist != null && b.dist != null) return a.dist - b.dist;
+        return (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0);
+      });
+
+      loading.style.display = "none";
+
+      if (groups.length === 0) {
+        if (buyerLoc) {
+          empty.style.display = "block";
+        } else {
+          empty.style.display = "block";
+        }
+        return;
+      }
+
+      // Check if all closed
+      const anyOpen = groups.some(g => g.open);
+      if (!anyOpen) {
+        const anyPreorder = groups.some(g => g.seller.accepts_preorder);
+        if (!anyPreorder) {
+          closed.style.display = "block";
+          return;
+        }
+      }
+
+      count.textContent = String(groups.length);
+      grid.style.display = "grid";
+
+      // Render cards (use HTML strings so we don't need to re-import Astro components)
+      grid.innerHTML = groups.map(g => {
+        const s = g.seller;
+        const top = (g.listings || []).slice(0, 4).map(l => {
+          const name = getSpeciesDisplay(l.species);
+          const opt = (l.pricing_options as any[])?.[0];
+          const price = opt?.price ?? 0;
+          const unit = opt?.unit_label || "kg";
+          const emoji = (l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : "🐟";
+          return `<div class="v2-sc-chip"><span class="v2-sc-m-emoji">${emoji}</span><div><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${escapeHtml(unit)}</div></div></div>`;
+        }).join("");
+
+        const hue = pickHue(s.id);
+        const hueColors: Record<SellerHue, string> = {
+          sky: "linear-gradient(135deg,#E0F2FE,#BAE6FD)",
+          green: "linear-gradient(135deg,#ECFDF5,#D1FAE5)",
+          orange: "linear-gradient(135deg,#FFF7ED,#FED7AA)",
+          indigo: "linear-gradient(135deg,#EEF2FF,#E0E7FF)",
+        };
+
+        const status = !g.open ? "closed" : (g.listings.length === 0 && s.accepts_preorder ? "pre-order-only" : "open");
+        const statusBadge = status === "open"
+          ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md">Open now</span>`
+          : status === "closed"
+            ? `<span class="v2-badge v2-badge-tag v2-badge-red v2-badge-size-md">Closed</span>`
+            : `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md">Pre-order only</span>`;
+
+        const preorderTag = s.accepts_preorder && status !== "pre-order-only"
+          ? `<span class="v2-badge v2-badge-tag v2-badge-brand v2-badge-size-md">Pre-order</span>` : "";
+        const pickupTag = !s.has_delivery
+          ? `<span class="v2-badge v2-badge-tag v2-badge-size-md">Pickup only</span>` : "";
+
+        const rating = s.rating_avg ? Number(s.rating_avg).toFixed(1) : null;
+        const ratingBadge = rating ? `<span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">${rating} ★</span>` : "";
+
+        const distStr = g.dist != null ? `${g.dist.toFixed(1)} km` : "";
+        const subParts = [s.location_name || s.location || "", distStr].filter(Boolean).join(" · ");
+
+        const offerLabel = g.open && g.listings.length > 0 ? "Same-day catch" : (s.accepts_preorder ? "Pre-order today" : "");
+        const offerColor = offerLabel === "Same-day catch" ? "v2-badge-brand" : "v2-badge-indigo";
+        const offerBadge = offerLabel
+          ? `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>` : "";
+
+        const deliveryBar = s.has_delivery
+          ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
+          : "";
+
+        return `
+        <a href="/seller/${s.id}" class="v2-seller-card${status === "closed" ? " v2-seller-closed" : ""}">
+          <div class="v2-sc-img" style="background:${hueColors[hue]};">
+            ${offerBadge}
+            <span class="v2-sc-emoji">🐟</span>
+          </div>
+          <div class="v2-sc-body">
+            <div class="v2-sc-top">
+              <div class="v2-sc-info">
+                <div class="v2-sc-name">${escapeHtml(s.name)}</div>
+                ${subParts ? `<div class="v2-sc-loc">${escapeHtml(subParts)}</div>` : ""}
+              </div>
+              ${ratingBadge}
+            </div>
+            <div class="v2-sc-tags">${statusBadge}${preorderTag}${pickupTag}</div>
+          </div>
+          ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
+          ${deliveryBar}
+        </a>`;
+      }).join("");
+
+    } catch (err) {
+      console.error("v2: load failed", err);
+      loading.innerHTML = `<div style="text-align:center;padding:40px;color:var(--v2-red);">Failed to load. Refresh to try again.</div>`;
+    }
+  }
+
+  loadSellers();
+
+  // Open location picker bridge (legacy modal)
+  document.addEventListener("relifish:open-location-picker", () => {
+    window.dispatchEvent(new CustomEvent("open-location-picker"));
+  });
+</script>
