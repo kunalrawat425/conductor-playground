@@ -1,0 +1,63 @@
+---
+import AppShellV2 from "../../components/v2/AppShellV2.astro";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+---
+<AppShellV2
+  title={`Privacy Policy · ${brandName}`}
+  description={`Privacy policy for ${brandName} — how we handle your data.`}
+  header={{ variant: "page", title: "Privacy Policy", backHref: "/v2" }}
+  nav={{ active: "account" }}
+>
+  <div style="padding:16px;">
+    <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 16px;">Last updated: April 2026</p>
+
+    <div class="pp-content">
+      <h2>What we collect</h2>
+      <p>When you use {brandName}, we may collect:</p>
+      <ul>
+        <li><strong>Phone number</strong> — to send order updates and OTP for sign-in</li>
+        <li><strong>Location</strong> — to show sellers near you (browser geolocation or manual input)</li>
+        <li><strong>Email + name</strong> — only if you provide them in your profile</li>
+        <li><strong>Saved addresses</strong> — to make checkout faster</li>
+        <li><strong>Order history</strong> — so you can re-order and we can resolve disputes</li>
+      </ul>
+
+      <h2>How we use it</h2>
+      <ul>
+        <li>Connect you to nearby fish sellers</li>
+        <li>Process your orders and notify you of status changes</li>
+        <li>Send you push notifications (only with your permission)</li>
+        <li>Improve the marketplace based on aggregate usage</li>
+      </ul>
+
+      <h2>What we don't do</h2>
+      <ul>
+        <li>We don't sell your data</li>
+        <li>We don't share your phone number publicly</li>
+        <li>We don't track you across other apps or websites</li>
+      </ul>
+
+      <h2>Your rights</h2>
+      <p>You can request deletion of your data anytime by emailing <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a>.</p>
+
+      <h2>Contact</h2>
+      <p>{brandName} · Mumbai · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
+    </div>
+  </div>
+
+  <style is:global>
+    .pp-content {
+      font: 400 14px Inter;
+      color: var(--v2-ink-2);
+      line-height: 1.6;
+    }
+    .pp-content h2 {
+      font: 700 16px Inter;
+      color: var(--v2-ink);
+      margin: 24px 0 8px;
+    }
+    .pp-content ul { padding-left: 20px; margin-bottom: 16px; }
+    .pp-content li { margin-bottom: 6px; }
+    .pp-content a { color: var(--v2-brand); text-decoration: underline; }
+  </style>
+</AppShellV2>
