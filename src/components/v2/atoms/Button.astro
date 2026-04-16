@@ -33,42 +33,4 @@ const classes = [
   {iconRight && <span class="v2-btn-icon" aria-hidden="true">{iconRight}</span>}
 </Tag>
 
-<style is:global>
-  .v2-btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    gap: var(--v2-s-2);
-    border: none; border-radius: var(--v2-radius-sm);
-    font-family: var(--v2-font); font-weight: 700;
-    cursor: pointer; text-decoration: none;
-    transition: background var(--v2-dur-fast) var(--v2-ease), transform var(--v2-dur-fast) var(--v2-ease);
-    user-select: none;
-  }
-  .v2-btn:focus-visible { outline: 3px solid var(--v2-brand-l); outline-offset: 2px; }
-  .v2-btn[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
-  .v2-btn-loading { pointer-events: none; opacity: .7; }
-
-  /* Variants */
-  .v2-btn-primary { background: var(--v2-brand); color: #fff; }
-  .v2-btn-primary:hover:not([aria-disabled="true"]) { background: var(--v2-brand-d); }
-  .v2-btn-secondary { background: #fff; color: var(--v2-brand); border: 1.5px solid var(--v2-brand); }
-  .v2-btn-secondary:hover:not([aria-disabled="true"]) { background: var(--v2-brand-l); }
-  .v2-btn-ghost { background: transparent; color: var(--v2-ink); }
-  .v2-btn-ghost:hover:not([aria-disabled="true"]) { background: var(--v2-bg-3); }
-  .v2-btn-danger { background: var(--v2-red); color: #fff; }
-  .v2-btn-danger:hover:not([aria-disabled="true"]) { background: #B91C1C; }
-
-  /* Sizes — min 44px height for touch */
-  .v2-btn-sm { padding: 8px 16px; font-size: 13px; min-height: 36px; }
-  .v2-btn-md { padding: 12px 24px; font-size: 14px; min-height: 44px; }
-  .v2-btn-lg { padding: 14px 32px; font-size: 16px; min-height: 52px; }
-
-  .v2-btn-full { width: 100%; }
-
-  .v2-btn-icon { font-size: 1.1em; line-height: 1; }
-  .v2-btn-spinner {
-    width: 16px; height: 16px;
-    border: 2px solid currentColor; border-top-color: transparent;
-    border-radius: 50%;
-    animation: v2-spin .65s linear infinite;
-  }
-</style>
+<!-- styles in src/styles/v2-components.css -->
