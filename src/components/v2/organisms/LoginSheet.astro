@@ -134,11 +134,8 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
         }
       } catch {}
       // Push any guest cart items to server before redirect (buyer only)
-      if (role === "buyer") {
-        try {
-          const mod = await import("../../../lib/cart");
-          await mod.pushLocalToServer();
-        } catch {}
+      if (role === "buyer" && window.RelifishCart) {
+        try { await window.RelifishCart.pushLocalToServer(); } catch {}
       }
       window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
       setTimeout(() => { window.location.href = redirectTo; }, 600);

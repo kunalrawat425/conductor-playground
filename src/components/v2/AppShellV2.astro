@@ -109,5 +109,12 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
       a { color: inherit; }
       :root { --app-max-width: 800px; }
     </style>
+
+    <!-- Global cart module — exposed on window for inline scripts (define:vars) -->
+    <script>
+      import * as Cart from "../../lib/cart";
+      (window as any).RelifishCart = Cart;
+      document.dispatchEvent(new CustomEvent("v2-cart-ready"));
+    </script>
   </body>
 </html>
