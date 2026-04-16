@@ -161,12 +161,15 @@ export const POST: APIRoute = async ({ request }) => {
       if (!existing || existing.seller_id !== seller_id) {
         return new Response(JSON.stringify({ error: "Not your listing" }), { status: 403 });
       }
-      // Soft-delete: stamp deleted_at + flip is_available off, so existing orders keep
-      // their FK reference intact while the listing disappears from buyer + seller views.
-      const { error } = await supabase
-        .from("fish_listings")
-        .update({ is_available: false, weight_avail: 0, deleted_at: new Date().toISOString() })
-        .eq("id", listing_id);
+      // Soft-delete: flip is_available off + zero stock. Try setting deleted_at if column
+      // exists (migration 035); gracefully fallback without it.
+      const updates: Record<string, any> = { is_available: false, weight_avail: 0 };
+      try { updates.deleted_at = new Date().toISOString(); } catch {}
+      const { error: e1 } = await supabase.from("fish_listings").update(updates).eq("id", listing_id);
+      // If deleted_at column doesn't exist, retry without it
+      const error = (e1 && e1.message?.includes("deleted_at"))
+        ? (await supabase.from("fish_listings").update({ is_available: false, weight_avail: 0 }).eq("id", listing_id)).error
+        : e1;
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       }
