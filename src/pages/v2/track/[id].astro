@@ -293,6 +293,32 @@ const { id } = Astro.params;
           window.v2Toast?.("error", "Failed", err.message);
         }
       });
+    } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
+      // Finished/cancelled order — offer re-order from same seller.
+      const sellerIdForReorder = o.seller?.id || o.listing?.seller_id || "";
+      if (sellerIdForReorder) {
+        actions.innerHTML = `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`;
+        document.getElementById("v2-od-reorder-btn").addEventListener("click", () => {
+          // Dump items back into RelifishCart then navigate to seller page.
+          const Cart = window.RelifishCart;
+          if (Cart) {
+            items.forEach(it => {
+              Cart.addItem({
+                listing_id: o.listing_id || "",
+                seller_id: sellerIdForReorder,
+                seller_name: seller.name || "Seller",
+                name: it.species || "Fish",
+                qty_unit: it.quantity_unit || "kg",
+                price: it.total_price || 0,
+                qty: it.quantity || 1,
+              });
+            });
+          }
+          window.location.href = `/v2/seller/${sellerIdForReorder}`;
+        });
+      } else {
+        actions.innerHTML = "";
+      }
     } else {
       actions.innerHTML = "";
     }
