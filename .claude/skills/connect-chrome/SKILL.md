@@ -1,1 +1,1 @@
-/Users/kunalrawat/conductor/repos/conductor-playground/.claude/skills/gstack/connect-chrome/SKILL.md
+/Users/kunalrawat/conductor/workspaces/conductor-playground/da-nang/.claude/skills/gstack/connect-chrome/SKILL.md

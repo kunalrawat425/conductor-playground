@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Organism — Checkout Sheet</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .sheet{width:360px;background:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--shadow-lg);overflow:hidden}
+  .handle{height:4px;width:40px;background:var(--ink4);border-radius:2px;margin:8px auto}
+  .steps{display:flex;padding:12px 16px 16px;gap:8px;border-bottom:1px solid var(--border)}
+  .step{flex:1;height:4px;border-radius:2px;background:var(--bg3)}
+  .step.done{background:var(--green)}
+  .step.active{background:var(--brand)}
+  .sheet-title{font:800 17px Inter;color:var(--ink);padding:16px}
+  .row{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+  .row:last-child{border-bottom:none}
+  .row .lbl{font:500 13px Inter;color:var(--ink2)}
+  .row .val{font:700 13px Inter;color:var(--ink)}
+  .row .val.green{color:var(--green)}
+  .row .val.strike{text-decoration:line-through;color:var(--ink4);font-weight:400}
+  .total-row{background:var(--brand-l);padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+  .total-row .lbl{font:700 14px Inter;color:var(--ink)}
+  .total-row .val{font:800 18px Inter;color:var(--brand)}
+
+  .pay-options{padding:12px 16px}
+  .pay-opt{display:flex;align-items:center;gap:12px;padding:14px 12px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer}
+  .pay-opt.selected{border-color:var(--brand);background:var(--brand-l)}
+  .pay-opt .icon{width:32px;height:32px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .pay-opt .name{font:700 13px Inter;color:var(--ink);flex:1}
+  .pay-opt .desc{font:400 11px Inter;color:var(--ink3)}
+  .pay-opt .radio{width:18px;height:18px;border:2px solid var(--ink4);border-radius:50%;position:relative;flex-shrink:0}
+  .pay-opt.selected .radio{border-color:var(--brand)}
+  .pay-opt.selected .radio::after{content:'';position:absolute;inset:3px;background:var(--brand);border-radius:50%}
+
+  .cta{padding:12px 16px;background:#fff;border-top:1px solid var(--border)}
+  .cta button{width:100%;background:var(--brand);color:#fff;border:none;font:800 15px Inter;padding:14px;border-radius:var(--radius);cursor:pointer}
+  .cta .foot{font:400 10px Inter;color:var(--ink4);text-align:center;margin-top:8px}
+
+  .item-row{padding:10px 16px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)}
+  .item-row .emoji{font-size:24px}
+  .item-row .ir-body{flex:1}
+  .item-row .ir-name{font:600 13px Inter;color:var(--ink)}
+  .item-row .ir-meta{font:400 11px Inter;color:var(--ink3);margin-top:1px}
+  .item-row .ir-price{font:700 13px Inter;color:var(--ink)}
+  .item-row .qty{display:flex;align-items:center;background:var(--bg3);border-radius:6px;height:26px;margin-right:8px}
+  .item-row .qty button{background:none;border:none;width:26px;height:26px;font:700 14px Inter;color:var(--ink);cursor:pointer}
+  .item-row .qty span{padding:0 6px;font:700 11px Inter}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Checkout Sheet</h1>
+  <p class="sub">Bottom sheet for 3-step checkout. Cart → Address → Payment.</p>
+
+  <div class="component" data-name="CheckoutSheet · Step 1 Cart">
+    <div class="component-variants">
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="steps"><div class="step active"></div><div class="step"></div><div class="step"></div></div>
+        <div class="sheet-title">Your cart · 2 items</div>
+        <div class="item-row">
+          <span class="emoji">🐟</span>
+          <div class="ir-body">
+            <div class="ir-name">Surmai (King Fish)</div>
+            <div class="ir-meta">1 kg · Whole</div>
+          </div>
+          <div class="qty"><button>−</button><span>1</span><button>+</button></div>
+          <div class="ir-price">₹650</div>
+        </div>
+        <div class="item-row">
+          <span class="emoji">🦐</span>
+          <div class="ir-body">
+            <div class="ir-name">Prawns</div>
+            <div class="ir-meta">500g · Medium</div>
+          </div>
+          <div class="qty"><button>−</button><span>1</span><button>+</button></div>
+          <div class="ir-price">₹250</div>
+        </div>
+        <div class="row"><span class="lbl">Subtotal</span><span class="val">₹900</span></div>
+        <div class="row"><span class="lbl">Delivery fee</span><span class="val green">FREE</span></div>
+        <div class="row"><span class="lbl">Platform fee</span><span class="val">₹5</span></div>
+        <div class="total-row"><span class="lbl">Total</span><span class="val">₹905</span></div>
+        <div class="cta"><button>Next: Address →</button></div>
+      </div>
+    </div>
+    <div class="spec"><b>Step 1:</b> Review cart · edit quantities · bill breakdown</div>
+  </div>
+
+  <div class="component" data-name="CheckoutSheet · Step 3 Payment">
+    <div class="component-variants">
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="steps"><div class="step done"></div><div class="step done"></div><div class="step active"></div></div>
+        <div class="sheet-title">Payment method</div>
+        <div class="pay-options">
+          <div class="pay-opt selected">
+            <div class="icon">📱</div>
+            <div style="flex:1">
+              <div class="name">UPI</div>
+              <div class="desc">PhonePe, GPay, Paytm</div>
+            </div>
+            <div class="radio"></div>
+          </div>
+          <div class="pay-opt">
+            <div class="icon">💵</div>
+            <div style="flex:1">
+              <div class="name">Cash on delivery</div>
+              <div class="desc">Pay seller at pickup</div>
+            </div>
+            <div class="radio"></div>
+          </div>
+          <div class="pay-opt">
+            <div class="icon">💳</div>
+            <div style="flex:1">
+              <div class="name">Card</div>
+              <div class="desc">Credit / Debit</div>
+            </div>
+            <div class="radio"></div>
+          </div>
+        </div>
+        <div class="total-row"><span class="lbl">Total</span><span class="val">₹905</span></div>
+        <div class="cta">
+          <button>Pay ₹905 via UPI</button>
+          <div class="foot">🔒 Secured by Razorpay · 100% refund if seller cancels</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Step 3:</b> Payment selection · trust signals at bottom</div>
+  </div>
+</div>
+</body>
+</html>

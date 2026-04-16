@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen 02 — Seller Page</title>
+<link rel="stylesheet" href="../_shared.css">
+<link rel="stylesheet" href="_screen-shared.css">
+<style>
+  .hero{padding:16px;background:linear-gradient(180deg,#E0F2FE 0%,#fff 100%)}
+  .back{font:500 13px Inter;color:#64748B;margin-bottom:10px}
+  .top{display:flex;gap:12px;align-items:flex-start}
+  .avatar{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#0066FF,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .info h2{font:800 17px Inter;color:#0F172A}
+  .sub{font:400 12px Inter;color:#64748B;margin-top:2px}
+  .rating{display:flex;align-items:center;gap:3px;background:#059669;color:#fff;font:700 11px Inter;padding:3px 7px;border-radius:5px}
+  .tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .tag{font:500 10px Inter;padding:3px 9px;border-radius:20px;background:#fff;border:1px solid #E2E8F0;color:#334155}
+  .tag.g{background:#ECFDF5;color:#059669;border-color:transparent}
+  .tag.b{background:#E6F0FF;color:#0066FF;border-color:transparent}
+  .stats{display:flex;margin-top:14px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden}
+  .stat{flex:1;text-align:center;padding:12px 4px;border-right:1px solid #E2E8F0}
+  .stat:last-child{border-right:none}
+  .stat .v{font:800 14px Inter;color:#0F172A}
+  .stat .l{font:500 10px Inter;color:#94A3B8;margin-top:1px}
+  .stat .v.live::before{content:'';display:inline-block;width:6px;height:6px;background:#059669;border-radius:50%;margin-right:4px;vertical-align:middle}
+  .stat .v.live{color:#059669}
+
+  .menu-head{padding:14px 16px 8px;font:700 15px Inter;color:#0F172A}
+
+  .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+  .item{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+  .i-img{height:90px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:34px;position:relative}
+  .i-img .cut{position:absolute;top:6px;left:6px;background:#E6F0FF;color:#0066FF;font:600 8px Inter;padding:2px 6px;border-radius:4px}
+  .i-body{padding:8px 10px}
+  .i-name{font:600 12px Inter;color:#0F172A}
+  .i-wt{font:400 10px Inter;color:#94A3B8;margin-top:1px}
+  .i-bot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .i-price{font:800 13px Inter;color:#0F172A}
+  .i-add{width:28px;height:28px;border-radius:8px;background:#0066FF;color:#fff;border:none;font:700 16px Inter;display:flex;align-items:center;justify-content:center}
+
+  .cart-bar{position:absolute;bottom:64px;left:12px;right:12px;background:#0066FF;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 10px 15px rgba(0,0,0,.1)}
+  .cb-l{color:#fff}
+  .cb-i{font:600 12px Inter;opacity:.9}
+  .cb-t{font:800 15px Inter}
+  .cb-b{background:#fff;color:#0066FF;font:700 12px Inter;padding:8px 16px;border-radius:8px;border:none}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Screen 02 — Seller Page</h1>
+  <p class="sub">Where buying happens. 2-col grid menu + floating cart.</p>
+
+  <div class="phone">
+    <div class="phone-status" style="background:#E0F2FE">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="hero">
+        <div class="back">← Back</div>
+        <div class="top">
+          <div class="avatar">🐟</div>
+          <div class="info" style="flex:1">
+            <h2>Kamla Tai Fish Stall</h2>
+            <div class="sub">Sassoon Dock · 1.2 km · 45 min delivery</div>
+          </div>
+          <div class="rating">4.8 ★</div>
+        </div>
+        <div class="tags">
+          <span class="tag g">Open now</span>
+          <span class="tag b">Pre-order</span>
+          <span class="tag">Cleaned & cut</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="v">200+</div><div class="l">Orders</div></div>
+          <div class="stat"><div class="v">12</div><div class="l">Items</div></div>
+          <div class="stat"><div class="v">5:30am</div><div class="l">Catch</div></div>
+          <div class="stat"><div class="v live">Open</div><div class="l">Until 2pm</div></div>
+        </div>
+      </div>
+
+      <div class="menu-head">Today's Menu</div>
+      <div class="menu-grid">
+        <div class="item">
+          <div class="i-img" style="background:linear-gradient(135deg,#E0F2FE,#BAE6FD)">🐟<span class="cut">Whole/Cut</span></div>
+          <div class="i-body"><div class="i-name">Surmai</div><div class="i-wt">King Fish · Per kg</div><div class="i-bot"><div class="i-price">₹650</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#ECFDF5">🐟<span class="cut" style="background:#D1FAE5;color:#059669">Fresh today</span></div>
+          <div class="i-body"><div class="i-name">Rawas</div><div class="i-wt">Indian Salmon · Per kg</div><div class="i-bot"><div class="i-price">₹800</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#FFF7ED">🐟</div>
+          <div class="i-body"><div class="i-name">Pomfret</div><div class="i-wt">White · Per piece</div><div class="i-bot"><div class="i-price">₹900</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#E6F0FF">🦐</div>
+          <div class="i-body"><div class="i-name">Prawns</div><div class="i-wt">Medium · Per kg</div><div class="i-bot"><div class="i-price">₹500</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#FEF2F2">🦀</div>
+          <div class="i-body"><div class="i-name">Crab</div><div class="i-wt">Live · Per kg</div><div class="i-bot"><div class="i-price">₹400</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#F3E8FF">🐟<span class="cut" style="background:#F3E8FF;color:#7C3AED">Pre-order</span></div>
+          <div class="i-body"><div class="i-name">Ghol</div><div class="i-wt">Tomorrow · Per kg</div><div class="i-bot"><div class="i-price">₹450</div><button class="i-add" style="background:#7C3AED">+</button></div></div>
+        </div>
+      </div>
+      <div style="height:80px"></div>
+    </div>
+    <div class="cart-bar">
+      <div class="cb-l"><div class="cb-i">2 items</div><div class="cb-t">₹1,450</div></div>
+      <button class="cb-b">View Cart →</button>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item"><span class="icon">🏠</span>Home</div>
+      <div class="n-item"><span class="icon">🔍</span>Search</div>
+      <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="n-item"><span class="icon">📋</span>Orders</div>
+      <div class="n-item"><span class="icon">👤</span>Account</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

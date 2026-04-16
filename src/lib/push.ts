@@ -23,9 +23,13 @@ export async function subscribePush(): Promise<boolean> {
         return false;
       }
 
+      const keyBytes = urlBase64ToUint8Array(vapidKey);
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        applicationServerKey: keyBytes.buffer.slice(
+          keyBytes.byteOffset,
+          keyBytes.byteOffset + keyBytes.byteLength
+        ) as ArrayBuffer,
       });
     }
 

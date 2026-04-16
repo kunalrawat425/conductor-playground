@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Atom — Loaders & Skeletons</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+  .spinner{width:24px;height:24px;border:3px solid var(--bg3);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite}
+  .spinner.lg{width:48px;height:48px;border-width:4px}
+  .spinner.sm{width:16px;height:16px;border-width:2px}
+
+  .dots{display:flex;gap:6px}
+  .dots .d{width:8px;height:8px;background:var(--brand);border-radius:50%;animation:pulse 1.4s infinite}
+  .dots .d:nth-child(2){animation-delay:.2s}
+  .dots .d:nth-child(3){animation-delay:.4s}
+
+  .progress{width:280px;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+  .progress .fill{height:100%;background:var(--brand);border-radius:3px}
+  .progress .indeterminate{height:100%;background:var(--brand);border-radius:3px;width:30%;animation:slide 1.5s infinite ease-in-out}
+  @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(330%)}}
+
+  .skel{background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+  .skel-card{width:280px;background:#fff;border-radius:var(--radius);padding:0;overflow:hidden;border:1px solid var(--border)}
+  .skel-img{height:90px}
+  .skel-body{padding:14px}
+  .skel-line{height:12px;margin-bottom:6px}
+
+  .pull{width:280px;background:var(--bg2);border-radius:var(--radius);padding:32px;text-align:center}
+  .pull .arrow{font-size:32px;color:var(--brand);animation:pulse 1.2s infinite}
+  .pull .label{font:600 12px Inter;color:var(--ink3);margin-top:8px}
+
+  .full-page{width:280px;background:#fff;border-radius:var(--radius);padding:48px;text-align:center;border:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Loaders & Skeletons</h1>
+  <p class="sub">Wait states. Skeletons for content fetch, spinners for actions, progress for known duration.</p>
+
+  <div class="component" data-name="Spinner">
+    <div class="component-variants" style="align-items:center">
+      <div class="variant"><span class="variant-label">sm · button</span><div class="spinner sm"></div></div>
+      <div class="variant"><span class="variant-label">md · default</span><div class="spinner"></div></div>
+      <div class="variant"><span class="variant-label">lg · page</span><div class="spinner lg"></div></div>
+      <div class="variant"><span class="variant-label">dots</span><div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div></div>
+    </div>
+    <div class="spec"><b>sm:</b> 16px in buttons · <b>md:</b> 24px inline · <b>lg:</b> 48px page-level · <b>dots:</b> typing/processing indicator</div>
+  </div>
+
+  <div class="component" data-name="Progress Bar">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">determinate · 65%</span><div class="progress"><div class="fill" style="width:65%"></div></div></div>
+      <div class="variant"><span class="variant-label">indeterminate</span><div class="progress"><div class="indeterminate"></div></div></div>
+      <div class="variant"><span class="variant-label">free delivery progress</span><div class="progress" style="height:4px"><div class="fill" style="width:72%;background:var(--green)"></div></div></div>
+    </div>
+    <div class="spec"><b>height:</b> 6px (4px slim) · <b>indeterminate:</b> when duration unknown · <b>green:</b> goal-progress (delivery threshold)</div>
+  </div>
+
+  <div class="component" data-name="Skeleton · Card">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">seller card</span>
+        <div class="skel-card">
+          <div class="skel skel-img"></div>
+          <div class="skel-body">
+            <div class="skel skel-line" style="width:65%;height:14px"></div>
+            <div class="skel skel-line" style="width:45%;height:10px"></div>
+            <div style="display:flex;gap:6px;margin-top:10px"><div class="skel" style="width:60px;height:18px;border-radius:9px"></div><div class="skel" style="width:50px;height:18px;border-radius:9px"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">menu item</span>
+        <div class="skel-card" style="width:140px">
+          <div class="skel skel-img" style="height:80px"></div>
+          <div class="skel-body" style="padding:10px">
+            <div class="skel skel-line" style="width:60%;height:11px"></div>
+            <div class="skel skel-line" style="width:80%;height:9px"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><div class="skel" style="width:40px;height:14px"></div><div class="skel" style="width:30px;height:30px;border-radius:8px"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>shimmer:</b> 1.5s infinite linear · <b>colors:</b> bg3 base, ink4 highlight · matches card structure exactly</div>
+  </div>
+
+  <div class="component" data-name="PullToRefresh">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">pulling</span>
+        <div class="pull"><div class="arrow">↓</div><div class="label">Pull to refresh</div></div>
+      </div>
+      <div class="variant"><span class="variant-label">refreshing</span>
+        <div class="pull"><div class="spinner" style="margin:0 auto"></div><div class="label">Loading fresh catch...</div></div>
+      </div>
+    </div>
+    <div class="spec"><b>Trigger:</b> drag down 60px+ on top of scroll · <b>Threshold:</b> arrow flips at 80px</div>
+  </div>
+
+  <div class="component" data-name="FullPageLoader">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">centered</span>
+        <div class="full-page">
+          <div class="spinner lg" style="margin:0 auto 16px"></div>
+          <div style="font:700 14px Inter;color:var(--ink);margin-bottom:4px">Finding fresh catch...</div>
+          <div style="font:400 12px Inter;color:var(--ink3)">Checking sellers near you</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Use sparingly</b> · only for first-load or critical transitions · always with status text</div>
+  </div>
+</div>
+</body>
+</html>

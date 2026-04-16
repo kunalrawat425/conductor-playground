@@ -5,13 +5,17 @@ interface Props {
   ogImage?: string;
   activeTab?: "home" | "orders" | "me";
   showLocationBadge?: boolean;
+  needsMap?: boolean;
+  jsonLd?: Record<string, unknown>;
 }
 
 import VercelAnalytics from "./VercelAnalytics.astro";
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
-const defaultDescription = "Order fresh fish from local Mumbai sellers. Pre-order tonight, pick up tomorrow morning.";
-const { title = brandName, description = defaultDescription, ogImage = "/og-image.png", activeTab = "home", showLocationBadge = true } = Astro.props;
+const siteUrl = "https://www.relifish.store";
+const defaultDescription = "Order fresh fish from local Goa sellers. Pre-order tonight, pick up tomorrow morning.";
+const { title = brandName, description = defaultDescription, ogImage = "/og-image.png", activeTab = "home", showLocationBadge = true, needsMap = false, jsonLd } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
 ---
 
 <html lang="en">
@@ -25,16 +29,21 @@ const { title = brandName, description = defaultDescription, ogImage = "/og-imag
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={ogImage} />
+    <meta property="og:image" content={`${siteUrl}${ogImage}`} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={brandName} />
+    <meta property="og:locale" content="en_IN" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
+    <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body>
     <div class="app-shell">

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen 04 — Orders</title>
+<link rel="stylesheet" href="../_shared.css">
+<link rel="stylesheet" href="_screen-shared.css">
+<style>
+  .page-title{padding:20px 16px 10px;font:800 22px Inter;color:#0F172A}
+
+  .active-order{margin:0 16px 16px;background:linear-gradient(135deg,#E6F0FF,#DBEAFE);border:1px solid #CCE0FF;border-radius:16px;padding:16px}
+  .active-order .tag{font:700 10px Inter;color:#0066FF;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+  .active-order h3{font:800 16px Inter;color:#0F172A;margin-bottom:4px}
+  .active-order .sub{font:400 12px Inter;color:#334155}
+  .stepper{display:flex;margin-top:16px;align-items:center;gap:4px}
+  .stepper .dot{width:20px;height:20px;border-radius:50%;background:#059669;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px Inter;flex-shrink:0}
+  .stepper .dot.done{background:#059669}
+  .stepper .dot.pending{background:#94A3B8}
+  .stepper .line{flex:1;height:2px;background:#CCE0FF}
+  .stepper .line.done{background:#059669}
+  .stepper-labels{display:flex;justify-content:space-between;margin-top:6px;font:500 9px Inter;color:#64748B}
+
+  .order{margin:0 16px 12px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px}
+  .o-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+  .o-seller{font:700 14px Inter;color:#0F172A}
+  .o-meta{font:400 11px Inter;color:#64748B;margin-top:1px}
+  .o-status{font:600 10px Inter;padding:3px 9px;border-radius:20px}
+  .o-status.completed{background:#ECFDF5;color:#059669}
+  .o-status.cancelled{background:#FEF2F2;color:#DC2626}
+  .o-items{font:400 12px Inter;color:#334155;margin-top:4px}
+  .o-bot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #E2E8F0}
+  .o-total{font:800 14px Inter;color:#0F172A}
+  .o-reorder{background:#fff;color:#0066FF;border:1.5px solid #0066FF;font:700 11px Inter;padding:6px 14px;border-radius:8px;cursor:pointer}
+
+  .section-head{padding:12px 16px 8px;font:700 13px Inter;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Screen 04 — Orders</h1>
+  <p class="sub">Order tracking + reorder. Blinkit-style stepper.</p>
+
+  <div class="phone">
+    <div class="phone-status">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="page-title">Your Orders</div>
+
+      <div class="active-order">
+        <div class="tag">Live · Ready in 15 min</div>
+        <h3>Kamla Tai Fish Stall</h3>
+        <div class="sub">Order #RF238 · Arriving soon</div>
+        <div class="stepper">
+          <div class="dot done">✓</div>
+          <div class="line done"></div>
+          <div class="dot done">✓</div>
+          <div class="line done"></div>
+          <div class="dot done">✓</div>
+          <div class="line"></div>
+          <div class="dot pending">4</div>
+        </div>
+        <div class="stepper-labels">
+          <span>Placed</span>
+          <span>Confirmed</span>
+          <span>Packed</span>
+          <span>Delivered</span>
+        </div>
+      </div>
+
+      <div class="section-head">Previous orders</div>
+
+      <div class="order">
+        <div class="o-top">
+          <div><div class="o-seller">Kamla Tai Fish Stall</div><div class="o-meta">Yesterday · 7:30am pickup</div></div>
+          <span class="o-status completed">Completed</span>
+        </div>
+        <div class="o-items">🐟 Surmai (1kg), 🦐 Prawns (500g)</div>
+        <div class="o-bot">
+          <div class="o-total">₹905</div>
+          <button class="o-reorder">Reorder</button>
+        </div>
+      </div>
+
+      <div class="order">
+        <div class="o-top">
+          <div><div class="o-seller">Rafiq Bhai Fish</div><div class="o-meta">3 days ago · 6:00am pickup</div></div>
+          <span class="o-status completed">Completed</span>
+        </div>
+        <div class="o-items">🐟 Pomfret (1 piece), 🐟 Bangda (500g)</div>
+        <div class="o-bot">
+          <div class="o-total">₹1,150</div>
+          <button class="o-reorder">Reorder</button>
+        </div>
+      </div>
+
+      <div class="order">
+        <div class="o-top">
+          <div><div class="o-seller">Hassan Fresh Seafood</div><div class="o-meta">Last week · Cancelled</div></div>
+          <span class="o-status cancelled">Cancelled</span>
+        </div>
+        <div class="o-items">🐟 Rawas (1kg)</div>
+        <div class="o-bot">
+          <div class="o-total" style="color:#94A3B8;text-decoration:line-through">₹800</div>
+          <button class="o-reorder">Try another seller</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item"><span class="icon">🏠</span>Home</div>
+      <div class="n-item"><span class="icon">🔍</span>Search</div>
+      <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="n-item active"><span class="icon">📋</span>Orders</div>
+      <div class="n-item"><span class="icon">👤</span>Account</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

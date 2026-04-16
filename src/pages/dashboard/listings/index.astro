@@ -52,13 +52,30 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       </div>
 
       <div id="listings-list" class="grid grid-2"></div>
+
+      <!-- Bulk action bar -->
+      <div id="bulk-bar" class="bulk-bar" style="display:none;">
+        <span id="bulk-count" style="font-size:13px;font-weight:600;"></span>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="bulk-pause" class="btn" style="font-size:12px;padding:6px 14px;background:#fff3e0;color:#e65100;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Pause All</button>
+          <button type="button" id="bulk-resume" class="btn" style="font-size:12px;padding:6px 14px;background:#e8f5e9;color:#2e7d32;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Resume All</button>
+        </div>
+      </div>
     </main>
 
     <script>
       import { getSession, signOut } from "../../../lib/seller-auth";
-      import { getSellerById, getSellerListings } from "../../../lib/supabase";
+      import { getSellerById, getSellerListings, updateListing } from "../../../lib/supabase";
       import { getSpeciesDisplay } from "../../../lib/species";
       import type { Seller, FishListing } from "../../../lib/supabase";
+      import {
+        formatListingPriceSummary,
+        getListingPriceOptions,
+        priceUnitShortLabel,
+      } from "../../../lib/listing-pricing";
+      import { formatFishSizeSuffix } from "../../../lib/fish-size";
+
+      let _sellerId = "";
 
       async function init() {
         const session = getSession();
@@ -77,8 +94,45 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           return;
         }
 
-        const displayName = [seller.first_name, seller.last_name].filter(Boolean).join(" ") || seller.name;
+        _sellerId = seller.id;
+        const shopName = (seller.name || "").trim();
+        const displayName =
+          shopName || [seller.first_name, seller.last_name].filter(Boolean).join(" ").trim() || "My shop";
         document.getElementById("seller-name")!.textContent = `${displayName}'s Listings`;
+
+        function listToast(msg: string, type: string = "success") {
+          let t = document.getElementById("toast");
+          if (!t) { t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+          t.textContent = msg;
+          t.style.cssText = `display:block;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:white;background:${type === "error" ? "var(--red)" : "var(--green)"};box-shadow:0 4px 20px rgba(0,0,0,0.15);`;
+          setTimeout(() => { t!.style.display = "none"; }, 3000);
+        }
+
+        // Bulk action handlers
+        document.getElementById("bulk-pause")!.addEventListener("click", async () => {
+          const ids = getSelectedIds();
+          const btn = document.getElementById("bulk-pause") as HTMLButtonElement;
+          btn.disabled = true; btn.textContent = "Pausing...";
+          try {
+            for (const id of ids) { await updateListing(id, { is_available: false } as any, _sellerId); }
+            listToast(`${ids.length} listing(s) paused`);
+            const listings = await getSellerListings(_sellerId);
+            renderListings(listings);
+          } catch (_) { listToast("Failed to pause some listings", "error"); }
+          btn.disabled = false; btn.textContent = "Pause All";
+        });
+        document.getElementById("bulk-resume")!.addEventListener("click", async () => {
+          const ids = getSelectedIds();
+          const btn = document.getElementById("bulk-resume") as HTMLButtonElement;
+          btn.disabled = true; btn.textContent = "Resuming...";
+          try {
+            for (const id of ids) { await updateListing(id, { is_available: true } as any, _sellerId); }
+            listToast(`${ids.length} listing(s) resumed`);
+            const listings = await getSellerListings(_sellerId);
+            renderListings(listings);
+          } catch (_) { listToast("Failed to resume some listings", "error"); }
+          btn.disabled = false; btn.textContent = "Resume All";
+        });
 
         const listings = await getSellerListings(seller.id);
         renderListings(listings);
@@ -97,40 +151,63 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         return d.innerHTML;
       }
 
+      let _listings: FishListing[] = [];
+
       function renderListings(listings: FishListing[]) {
+        _listings = listings;
         const el = document.getElementById("listings-list")!;
+        const bulkBar = document.getElementById("bulk-bar")!;
         if (listings.length === 0) {
           el.innerHTML = '<p class="text-muted">No listings yet. <a href="/dashboard/listings/new">Add your first listing</a>.</p>';
+          bulkBar.style.display = "none";
           return;
         }
 
+        const LOW_STOCK = 2;
+
         el.innerHTML = listings
           .map((l) => {
-            const name = getSpeciesDisplay(l.species);
-            const unitLabel = l.price_unit === "dozen" ? "dz" : l.price_unit;
-            const isExpired = new Date(l.expires_at) < new Date();
+            const name = getSpeciesDisplay(l.species) + formatFishSizeSuffix(l.fish_size);
+            const priceOpts = getListingPriceOptions(l);
+            const stockUnit = priceOpts[0]?.unit ?? "piece";
+            const stockUnitShort = priceUnitShortLabel(stockUnit);
             const statusBadge = !l.is_available
-              ? '<span class="badge badge-red">Unavailable</span>'
-              : isExpired
-                ? '<span class="badge badge-orange">Expired</span>'
+              ? '<span class="badge badge-orange">Paused</span>'
+              : l.weight_avail <= 0
+                ? '<span class="badge badge-orange">Out of stock</span>'
                 : '<span class="badge badge-green">Active</span>';
+            const lowStock = l.is_available && l.weight_avail > 0 && l.weight_avail <= LOW_STOCK;
+            const stockText = l.weight_avail > 0
+              ? (lowStock ? `⚠️ Low stock: ${l.weight_avail} ${stockUnitShort}` : `📦 ${l.weight_avail} ${stockUnitShort} in stock`)
+              : `❌ Out of stock`;
+            const stockClass = lowStock ? "badge-orange" : l.weight_avail > 0 ? "" : "text-muted";
 
             return `
-              <div class="card listing-dash-card" style="cursor:pointer;">
+              <div class="card listing-dash-card" style="cursor:pointer;" data-listing-id="${l.id}">
                 <div class="card-body">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <h3 style="font-size:16px;font-weight:700;">${name}</h3>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <input type="checkbox" class="listing-check" data-id="${l.id}" style="width:18px;height:18px;accent-color:var(--blue);" />
+                      <h3 style="font-size:16px;font-weight:700;">${name}</h3>
+                    </div>
                     ${statusBadge}
                   </div>
-                  <div style="font-size:18px;font-weight:700;color:var(--green);margin-bottom:4px;">₹${l.price}/${unitLabel}</div>
-                  <div class="text-muted">${l.weight_avail > 0 ? `📦 ${l.weight_avail} ${l.price_unit} in stock` : `❌ Out of stock`}</div>
-                  <div class="listing-pickup-detail" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-200);">
-                    <div class="text-muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;">Pickup address</div>
-                    <div style="font-size:14px;font-weight:600;margin-top:6px;line-height:1.4;">${esc(l.pickup_loc || "—")}</div>
-                  </div>
-                  <p class="text-muted" style="font-size:12px;margin:10px 0 0;">Tap card to show or hide pickup address</p>
-                  <div class="listing-card-actions" style="margin-top:12px;">
+                  <div style="font-size:18px;font-weight:700;color:var(--green);margin-bottom:4px;">${esc(formatListingPriceSummary(l))}</div>
+                  ${
+                    priceOpts.length > 1
+                      ? `<div class="text-muted" style="font-size:12px;line-height:1.35;margin-bottom:6px;">
+                          ${priceOpts
+                            .map((o) => `₹${o.price}/${priceUnitShortLabel(o.unit)} · ${esc(o.label)}`)
+                            .join("<br/>")}
+                        </div>`
+                      : ""
+                  }
+                  <div class="${stockClass}" style="font-size:13px;${lowStock ? "color:#e65100;font-weight:600;" : ""}">${stockText}</div>
+                  <div class="listing-card-actions" style="margin-top:10px;display:flex;gap:8px;align-items:center;">
                     <a href="/dashboard/listings/${l.id}" class="btn btn-primary" style="padding:6px 16px;font-size:13px;">Edit</a>
+                    <button type="button" class="btn listing-toggle-btn" data-id="${l.id}" data-available="${l.is_available}" style="padding:6px 14px;font-size:12px;font-weight:600;background:${l.is_available ? "#fff3e0" : "#e8f5e9"};color:${l.is_available ? "#e65100" : "#2e7d32"};border:none;border-radius:8px;cursor:pointer;">
+                      ${l.is_available ? "Pause" : "Resume"}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -138,21 +215,72 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           })
           .join("");
 
-        el.querySelectorAll(".listing-dash-card").forEach((card) => {
-          card.addEventListener("click", (ev) => {
-            if ((ev.target as HTMLElement).closest("a, .listing-card-actions")) return;
-            const detail = card.querySelector(".listing-pickup-detail") as HTMLElement;
-            if (!detail) return;
-            const open = detail.style.display !== "block";
-            detail.style.display = open ? "block" : "none";
+        // Quick toggle per listing
+        el.querySelectorAll(".listing-toggle-btn").forEach((btn: any) => {
+          btn.addEventListener("click", async (e: Event) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            const currentlyAvailable = btn.dataset.available === "true";
+            btn.disabled = true;
+            btn.textContent = "...";
+            try {
+              await updateListing(id, { is_available: !currentlyAvailable } as any, _sellerId);
+              const l = _listings.find(x => x.id === id);
+              if (l) l.is_available = !currentlyAvailable;
+              renderListings(_listings);
+            } catch (_) { listToast("Failed to update", "error"); btn.disabled = false; btn.textContent = currentlyAvailable ? "Pause" : "Resume"; }
           });
         });
+
+        // Checkbox selection for bulk actions
+        updateBulkBar();
+        el.querySelectorAll(".listing-check").forEach((cb: any) => {
+          cb.addEventListener("change", updateBulkBar);
+        });
+      }
+
+      function getSelectedIds(): string[] {
+        return Array.from(document.querySelectorAll(".listing-check:checked")).map((cb: any) => cb.dataset.id);
+      }
+
+      function updateBulkBar() {
+        const ids = getSelectedIds();
+        const bar = document.getElementById("bulk-bar")!;
+        const countEl = document.getElementById("bulk-count")!;
+        if (ids.length > 0) {
+          bar.style.display = "flex";
+          countEl.textContent = `${ids.length} selected`;
+        } else {
+          bar.style.display = "none";
+        }
       }
 
       init();
     </script>
 
     <style is:global>
+      .bulk-bar {
+        position: fixed;
+        bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: var(--app-max-width);
+        z-index: 101;
+        padding: 12px 16px;
+        background: white;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+        border-radius: 16px 16px 0 0;
+      }
+      /* Extra bottom padding when bulk bar is visible */
+      body:has(.bulk-bar[style*="flex"]) #listings-list {
+        padding-bottom: 60px;
+      }
+
       .dash-nav {
         display: flex;
         gap: 0;

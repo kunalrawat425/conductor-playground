@@ -1,0 +1,133 @@
+---
+import BottomSheet from "./BottomSheet.astro";
+import PhoneInput from "../atoms/PhoneInput.astro";
+import OTPInput from "../atoms/OTPInput.astro";
+interface Props {
+  id?: string;
+  role?: "buyer" | "seller";
+  redirectTo?: string;
+}
+const { id = "v2-login", role = "buyer", redirectTo = "/" } = Astro.props;
+const title = role === "seller" ? "Seller sign in" : "Sign in";
+---
+<BottomSheet id={id} title={title} showClose={true}>
+  <div id={`${id}-step1`}>
+    <p style="font:400 13px Inter;color:var(--v2-ink-2);margin:0 0 16px;line-height:1.5;">
+      We'll send a one-time code to your phone. No password needed.
+    </p>
+    <form id={`${id}-phone-form`}>
+      <PhoneInput id={`${id}-phone`} required={true} />
+      <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-send-otp`}>
+        Send OTP
+      </button>
+    </form>
+  </div>
+
+  <div id={`${id}-step2`} style="display:none;">
+    <p style="font:400 13px Inter;color:var(--v2-ink-2);margin:0 0 16px;line-height:1.5;">
+      Enter the 6-digit code sent to <span id={`${id}-phone-display`}>your phone</span>.
+    </p>
+    <form id={`${id}-otp-form`}>
+      <OTPInput id={`${id}-otp`} length={6} autoSubmitFormId={`${id}-otp-form`} />
+      <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-verify-otp`} style="margin-top:8px;">
+        Verify & continue
+      </button>
+      <button type="button" class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-resend`} style="margin-top:8px;">
+        Resend code
+      </button>
+    </form>
+  </div>
+</BottomSheet>
+
+<script define:vars={{ id, role, redirectTo }}>
+  let currentPhone = "";
+
+  function getEl(suffix) { return document.getElementById(`${id}-${suffix}`); }
+  function showStep(n) {
+    getEl("step1").style.display = n === 1 ? "block" : "none";
+    getEl("step2").style.display = n === 2 ? "block" : "none";
+  }
+
+  getEl("phone-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = document.getElementById(`${id}-phone`);
+    const phone = input.value.replace(/\D/g, "");
+    if (phone.length !== 10) {
+      window.v2Toast?.("error", "Invalid phone", "Enter a 10-digit Indian mobile number");
+      return;
+    }
+    currentPhone = "+91" + phone;
+    const btn = getEl("send-otp");
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: currentPhone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+      getEl("phone-display").textContent = currentPhone;
+      showStep(2);
+      btn.disabled = false;
+      btn.textContent = "Send OTP";
+    } catch (err) {
+      window.v2Toast?.("error", "Failed to send OTP", err.message);
+      btn.disabled = false;
+      btn.textContent = "Send OTP";
+    }
+  });
+
+  getEl("otp-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const code = document.getElementById(`${id}-otp`).value;
+    if (code.length !== 6) {
+      window.v2Toast?.("error", "Incomplete OTP", "Enter all 6 digits");
+      return;
+    }
+    const btn = getEl("verify-otp");
+    btn.disabled = true;
+    btn.textContent = "Verifying...";
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: currentPhone, code, role }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Invalid OTP");
+      // Save session
+      try {
+        if (role === "seller") {
+          localStorage.setItem("zepto_seller_id", data.seller_id);
+          localStorage.setItem("zepto_seller_phone", currentPhone);
+        } else {
+          localStorage.setItem("zepto_buyer_id", data.buyer_id);
+          localStorage.setItem("zepto_phone", currentPhone);
+        }
+      } catch {}
+      window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
+      setTimeout(() => { window.location.href = redirectTo; }, 600);
+    } catch (err) {
+      window.v2Toast?.("error", "Invalid OTP", err.message);
+      btn.disabled = false;
+      btn.textContent = "Verify & continue";
+    }
+  });
+
+  getEl("resend")?.addEventListener("click", () => {
+    if (!currentPhone) { showStep(1); return; }
+    fetch("/api/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: currentPhone }),
+    }).then(r => r.json()).then(data => {
+      if (data.success) {
+        window.v2Toast?.("info", "OTP resent", "Check your SMS");
+      } else {
+        window.v2Toast?.("error", "Failed", data.error || "Try again");
+      }
+    });
+  });
+</script>

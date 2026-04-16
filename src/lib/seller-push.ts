@@ -17,9 +17,13 @@ export async function subscribeSellerPush(sellerId: string): Promise<boolean> {
       const vapidKey = (import.meta as any).env?.PUBLIC_VAPID_KEY;
       if (!vapidKey) return false;
 
+      const keyBytes = urlBase64ToUint8Array(vapidKey);
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        applicationServerKey: keyBytes.buffer.slice(
+          keyBytes.byteOffset,
+          keyBytes.byteOffset + keyBytes.byteLength
+        ) as ArrayBuffer,
       });
     }
 

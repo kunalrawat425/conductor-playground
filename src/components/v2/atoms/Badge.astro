@@ -1,0 +1,11 @@
+---
+import type { BadgeProps } from "../../../types/v2-components";
+interface Props extends BadgeProps {}
+const { variant = "tag", color = "ink", size = "md" } = Astro.props;
+const classes = ["v2-badge", `v2-badge-${variant}`, `v2-badge-${color}`, `v2-badge-size-${size}`].join(" ");
+---
+<span class={classes}>
+  <slot />
+</span>
+
+<!-- styles in src/styles/v2-components.css -->

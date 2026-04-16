@@ -1,0 +1,71 @@
+---
+// Modal/Dialog — global manager.
+// Trigger: window.v2Modal({ title, description, confirmText, cancelText, variant, onConfirm })
+---
+<div id="v2-modal-root"></div>
+
+<script>
+  interface ModalDetail {
+    title: string;
+    description?: string;
+    confirmText?: string;
+    cancelText?: string | null; // null = no cancel button
+    variant?: "default" | "danger" | "success" | "error";
+    icon?: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  }
+
+  function escape(s: string) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]!));
+  }
+
+  const root = document.getElementById("v2-modal-root");
+
+  function show(detail: ModalDetail) {
+    if (!root) return;
+    const {
+      title,
+      description = "",
+      confirmText = "Confirm",
+      cancelText = "Cancel",
+      variant = "default",
+      icon = variant === "danger" ? "🗑️" : variant === "success" ? "✓" : variant === "error" ? "✕" : "?",
+      onConfirm,
+      onCancel,
+    } = detail;
+    const id = `m-${Date.now()}`;
+    const isAlert = cancelText === null;
+    const confirmClass = variant === "danger" ? "v2-btn-danger" : "v2-btn-primary";
+    const iconBg = variant === "success" ? "v2-icon-circle-success" : variant === "error" || variant === "danger" ? "v2-icon-circle-error" : "";
+    const useIconCircle = variant === "success" || variant === "error";
+
+    root.innerHTML = `
+      <div class="v2-modal-backdrop" id="${id}">
+        <div class="v2-modal" role="dialog" aria-modal="true" aria-labelledby="${id}-t">
+          ${useIconCircle
+            ? `<div class="v2-icon-circle ${iconBg}">${icon}</div>`
+            : `<div class="v2-modal-icon">${icon}</div>`}
+          <h3 id="${id}-t" class="v2-modal-title">${escape(title)}</h3>
+          ${description ? `<p class="v2-modal-desc">${escape(description)}</p>` : ""}
+          <div class="v2-modal-actions">
+            ${cancelText !== null ? `<button class="v2-btn v2-btn-ghost v2-btn-md" data-action="cancel">${escape(cancelText)}</button>` : ""}
+            <button class="v2-btn ${confirmClass} v2-btn-md" data-action="confirm">${escape(confirmText)}</button>
+          </div>
+        </div>
+      </div>`;
+    const close = (cb?: () => void) => {
+      root.innerHTML = "";
+      cb?.();
+    };
+    root.querySelector("[data-action=confirm]")?.addEventListener("click", () => close(onConfirm));
+    root.querySelector("[data-action=cancel]")?.addEventListener("click", () => close(onCancel));
+    root.querySelector(".v2-modal-backdrop")?.addEventListener("click", (e) => {
+      if ((e.target as HTMLElement).classList.contains("v2-modal-backdrop")) close(onCancel);
+    });
+  }
+
+  (window as any).v2Modal = show;
+</script>

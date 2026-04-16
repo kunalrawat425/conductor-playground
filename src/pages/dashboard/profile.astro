@@ -124,15 +124,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <div id="profile-section-delivery" class="card" style="margin-bottom:16px;">
         <div class="card-body">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Delivery</h3>
+          <p class="text-muted" style="font-size:12px;margin:-4px 0 14px;line-height:1.4;">
+            Controls whether buyers see delivery on your public menu and how far you will travel. Pickup-only sellers can leave delivery off.
+          </p>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
             <div>
               <div style="font-weight:600;font-size:14px;">Offer delivery</div>
               <div class="text-muted" style="font-size:12px;">Buyers in range can choose delivery</div>
             </div>
-            <label style="position:relative;display:inline-block;width:48px;height:28px;">
-              <input type="checkbox" id="delivery-toggle" style="opacity:0;width:0;height:0;" />
-              <span id="delivery-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
-              <span id="delivery-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+            <label style="position:relative;display:inline-block;width:48px;height:28px;cursor:pointer;touch-action:manipulation;">
+              <!-- Full-size invisible input so mobile taps always toggle (0×0 checkbox is untappable) -->
+              <input
+                type="checkbox"
+                id="delivery-toggle"
+                aria-label="Offer delivery"
+                style="position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer;z-index:2;border:0;"
+              />
+              <span id="delivery-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;transition:background 0.2s;pointer-events:none;z-index:0;"></span>
+              <span id="delivery-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);pointer-events:none;z-index:1;"></span>
             </label>
           </div>
           <div style="margin-bottom:10px;">
@@ -151,7 +160,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         <div class="card-body">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Minimum order &amp; delivery fees</h3>
           <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
-            Shown on your public menu. Buyers must meet the minimum per item; delivery fee applies only to delivery orders.
+            Shown on your public menu. Buyers must meet the minimum on their whole cart (all items combined); delivery fee applies only to delivery orders.
           </p>
           <div style="margin-bottom:12px;">
             <label for="min-order-amt">Minimum order (₹ per line)</label>
@@ -181,6 +190,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Operating Hours</h3>
+          <p class="text-muted" style="font-size:12px;margin:0 0 12px;line-height:1.4;">
+            When your shop counts as “open” on the buyer app. Outside these times, buyers may still pre-order if you allow pre-orders below.
+          </p>
           <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <input type="time" id="opens-at" style="width:auto;padding:8px 10px;font-size:14px;" />
@@ -199,14 +211,87 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         <div class="card-body">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
-              <h3 style="font-size:15px;font-weight:700;margin-bottom:2px;">Accept Pre-orders</h3>
-              <div class="text-muted" style="font-size:12px;">Buyers can order when you're closed, for next day</div>
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:2px;">Accept pre-orders when closed</h3>
+              <div class="text-muted" style="font-size:12px;">When <strong>off</strong>, buyers see &quot;Closed&quot; / sold out and cannot order outside your hours. When <strong>on</strong>, they can place pre-orders for later pickup or delivery. (Separate from pickup <em>time slots</em> below.)</div>
             </div>
-            <label style="position:relative;display:inline-block;width:48px;height:28px;">
-              <input type="checkbox" id="preorder-toggle" style="opacity:0;width:0;height:0;" />
-              <span id="preorder-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;cursor:pointer;transition:background 0.2s;"></span>
-              <span id="preorder-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+            <label style="position:relative;display:inline-block;width:48px;height:28px;cursor:pointer;touch-action:manipulation;">
+              <input
+                type="checkbox"
+                id="preorder-toggle"
+                aria-label="Accept pre-orders when shop is closed"
+                style="position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer;z-index:2;border:0;"
+              />
+              <span id="preorder-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;transition:background 0.2s;pointer-events:none;z-index:0;"></span>
+              <span id="preorder-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);pointer-events:none;z-index:1;"></span>
             </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule & Availability -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;">
+            <h3 style="font-size:15px;font-weight:700;margin:0;">📅 Schedule & Availability</h3>
+            <label
+              class="dash-switch"
+              title="When off, buyers no longer see pickup slots (saved schedule is cleared)"
+              style="position:relative;display:inline-block;width:48px;height:28px;flex-shrink:0;cursor:pointer;touch-action:manipulation;"
+            >
+              <input
+                type="checkbox"
+                id="sched-toggle-input"
+                aria-label="Offer pickup time slots to buyers"
+                style="position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer;z-index:2;border:0;"
+              />
+              <span id="sched-slider" style="position:absolute;inset:0;background:var(--gray-200);border-radius:28px;transition:background 0.2s;pointer-events:none;z-index:0;"></span>
+              <span id="sched-knob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);pointer-events:none;z-index:1;"></span>
+            </label>
+          </div>
+
+          <div id="sched-panel" style="display:none;">
+            <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
+              Settings are stored in <code>seller_schedule_configs</code> (one row per seller). Buyers see slots computed from that row (virtual slots, not a separate slot table). Turn the switch off above to delete your config and remove all slots from the menu.
+            </p>
+            <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.35;">
+              Pick how many calendar days ahead buyers can book, then set the pickup time window and slot length. The schedule is generated from today forward — you do not set a manual start/end calendar date.
+            </p>
+
+            <!-- Config form -->
+            <div class="sched-form">
+              <div class="sched-field">
+                <label>Booking window (days ahead)</label>
+                <select id="sched-days" style="font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+                  <option value="3">3 days</option>
+                  <option value="7" selected>7 days (1 week)</option>
+                  <option value="14">14 days (2 weeks)</option>
+                  <option value="30">30 days (1 month)</option>
+                </select>
+                <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Number of consecutive days (from today) that get time slots.</div>
+              </div>
+              <div class="sched-row">
+                <div class="sched-field">
+                  <label>First slot starts</label>
+                  <input type="time" id="sched-start" />
+                </div>
+                <div class="sched-field">
+                  <label>Last slot ends by</label>
+                  <input type="time" id="sched-end" />
+                </div>
+              </div>
+              <div class="sched-field">
+                <label>Slot duration</label>
+                <select id="sched-duration" style="font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+                  <option value="30">30 minutes</option>
+                  <option value="60" selected>1 hour</option>
+                  <option value="120">2 hours</option>
+                </select>
+              </div>
+              <button type="button" id="sched-generate" class="btn btn-primary" style="width:100%;margin-top:8px;">Generate Schedule</button>
+            </div>
+
+            <!-- Generated slots grid -->
+            <div id="sched-slots" style="margin-top:16px;"></div>
           </div>
         </div>
       </div>
@@ -252,7 +337,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
     <script>
       import { getSession, signOut } from "../../lib/seller-auth";
-      import { getSellerById, updateSellerProfile } from "../../lib/supabase";
+      import { supabase, getSellerById, updateSellerProfile } from "../../lib/supabase";
       import type { Seller } from "../../lib/supabase";
       import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
       import { setButtonLoading, setBellLoading } from "../../lib/button-loading";
@@ -387,7 +472,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
         saveDeliveryBtn.addEventListener("click", async () => {
           const on = deliveryToggle.checked;
-          const raw = parseFloat(deliveryRadiusInput.value, 10);
+          const raw = parseFloat(deliveryRadiusInput.value);
           if (on && (!Number.isFinite(raw) || raw < 1 || raw > 100)) {
             showToast("Enter a radius between 1 and 100 km", "error");
             return;
@@ -421,10 +506,16 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         minOrderInput.value = String(Number(seller.min_order_amount) || 0);
         deliveryFeeEnabledCb.checked = !!seller.delivery_fee_enabled;
         deliveryFeeAmtInput.value = String(Number(seller.delivery_fee_amount) || 0);
+        deliveryFeeAmtInput.style.opacity = deliveryFeeEnabledCb.checked ? "1" : "0.4";
+        deliveryFeeEnabledCb.addEventListener("change", () => {
+          deliveryFeeAmtInput.style.opacity = deliveryFeeEnabledCb.checked ? "1" : "0.4";
+          freeDeliveryAboveInput.style.opacity = deliveryFeeEnabledCb.checked ? "1" : "0.4";
+        });
         freeDeliveryAboveInput.value =
           seller.free_delivery_above != null && seller.free_delivery_above !== ""
             ? String(seller.free_delivery_above)
             : "";
+        freeDeliveryAboveInput.style.opacity = deliveryFeeEnabledCb.checked ? "1" : "0.4";
 
         savePricingBtn.addEventListener("click", async () => {
           setLoading(savePricingBtn, true, "Save pricing rules");
@@ -490,8 +581,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         preorderToggle.addEventListener("change", async () => {
           const newVal = preorderToggle.checked;
           preorderToggle.disabled = true;
+          preorderSlider.style.opacity = "0.5";
           try {
             await updateSellerProfile(seller.id, { accepts_preorder: newVal } as any);
+            seller.accepts_preorder = newVal;
             updatePreorderUI(newVal);
             showToast(newVal ? "Pre-orders enabled" : "Pre-orders disabled");
           } catch (err: any) {
@@ -499,6 +592,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             showToast(err.message || "Failed to update", "error");
           } finally {
             preorderToggle.disabled = false;
+            preorderSlider.style.opacity = "1";
           }
         });
 
@@ -507,7 +601,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         const locationBtn = document.getElementById("use-location-btn") as HTMLButtonElement;
 
         if (seller.lat && seller.lng) {
-          locationStatus.textContent = `✅ Set (${seller.lat.toFixed(4)}, ${seller.lng.toFixed(4)})`;
+          locationStatus.textContent = `✅ Location set`;
         } else {
           locationStatus.textContent = "❌ Not set";
         }
@@ -524,7 +618,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               const lng = position.coords.longitude;
               try {
                 await updateSellerProfile(seller.id, { lat, lng } as any);
-                locationStatus.textContent = `✅ Set (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                locationStatus.textContent = `✅ Location set`;
                 showToast("Location updated!");
                 seller.lat = lat;
                 seller.lng = lng;
@@ -578,6 +672,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           }
         });
 
+        // Schedule: `schedule_pickup_slots` is the buyer-facing switch; config row holds the template.
+        if (seller.schedule_pickup_slots) {
+          updateSchedulePanelUI(true);
+          await loadExistingSchedule();
+        }
+
         // Logout
         document.getElementById("logout-btn")!.addEventListener("click", async () => {
           const btn = document.getElementById("logout-btn") as HTMLButtonElement;
@@ -594,6 +694,182 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           main.classList.add("fade-in");
         });
       }
+
+      // ===== Schedule =====
+      const schedPanel = document.getElementById("sched-panel")!;
+      const schedToggleInput = document.getElementById("sched-toggle-input") as HTMLInputElement;
+      const schedSlider = document.getElementById("sched-slider")!;
+      const schedKnob = document.getElementById("sched-knob")!;
+
+      function updateSchedulePanelUI(expanded: boolean) {
+        schedToggleInput.checked = expanded;
+        schedPanel.style.display = expanded ? "block" : "none";
+        schedSlider.style.background = expanded ? "var(--green)" : "var(--gray-200)";
+        schedKnob.style.transform = expanded ? "translateX(20px)" : "translateX(0)";
+      }
+
+      // Default: toggle off + panel hidden (HTML). Do not call updateSchedulePanelUI(false) here —
+      // that made the UI always look "off" while seller_schedule_configs still existed, so buyers
+      // kept seeing slots until the seller toggled on then off again.
+
+      schedToggleInput.addEventListener("change", async () => {
+        const on = schedToggleInput.checked;
+        updateSchedulePanelUI(on);
+        if (on) {
+          void loadExistingSchedule();
+          return;
+        }
+        document.getElementById("sched-slots")!.innerHTML = "";
+        const sellerId = localStorage.getItem("zepto_seller_id");
+        if (!sellerId) return;
+        try {
+          const res = await fetch("/api/seller/schedule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "delete_config", seller_id: sellerId }),
+            cache: "no-store",
+          });
+          const data = await res.json();
+          if (!data.success) showToast(data.error || "Could not clear schedule", "error");
+          else showToast("Schedule cleared. Buyers will not see slots after they refresh your menu.", "success");
+        } catch (e: any) {
+          showToast(e.message || "Could not clear schedule", "error");
+        }
+      });
+
+      async function loadExistingSchedule() {
+        const sellerId = localStorage.getItem("zepto_seller_id");
+        if (!sellerId) return;
+        const slotsContainer = document.getElementById("sched-slots")!;
+        const { data: config } = await supabase
+          .from("seller_schedule_configs")
+          .select("*")
+          .eq("seller_id", sellerId)
+          .maybeSingle();
+        if (!config) {
+          slotsContainer.innerHTML = "";
+          return;
+        }
+        const daysDiff =
+          config.days_ahead != null
+            ? Number(config.days_ahead)
+            : Math.ceil((new Date(config.date_to).getTime() - new Date(config.date_from).getTime()) / 86400000) + 1;
+        const daysSelect = document.getElementById("sched-days") as HTMLSelectElement;
+        const closest = [3, 7, 14, 30].reduce((a, b) => Math.abs(b - daysDiff) < Math.abs(a - daysDiff) ? b : a);
+        daysSelect.value = String(closest);
+        (document.getElementById("sched-start") as HTMLInputElement).value = config.start_time?.substring(0, 5);
+        (document.getElementById("sched-end") as HTMLInputElement).value = config.end_time?.substring(0, 5);
+        (document.getElementById("sched-duration") as HTMLSelectElement).value = String(config.slot_duration_minutes);
+        // Load virtual slots
+        const res = await fetch("/api/seller/schedule", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "get_slots", seller_id: sellerId }),
+        });
+        const data = await res.json();
+        const slots = data.slots || [];
+        if (slots.length > 0) renderSlotGrid(slots, sellerId);
+        else slotsContainer.innerHTML = "";
+      }
+
+      function renderSlotGrid(slots: any[], sellerId: string) {
+        const container = document.getElementById("sched-slots")!;
+        const grouped: Record<string, any[]> = {};
+        for (const s of slots) {
+          (grouped[s.slot_date] ||= []).push(s);
+        }
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        container.innerHTML = Object.entries(grouped).map(([date, daySlots]) => {
+          const d = new Date(date + "T00:00:00");
+          const dayName = days[d.getDay()];
+          const dateLabel = `${dayName}, ${d.getDate()}/${d.getMonth() + 1}`;
+          const allDisabled = daySlots[0]?.date_disabled;
+          return `
+            <div class="sched-date-group">
+              <div class="sched-date-header">
+                <span class="sched-date-label">${dateLabel}</span>
+                <button type="button" class="sched-date-toggle ${allDisabled ? "off" : "on"}" data-date="${date}" data-disabled="${allDisabled}"></button>
+              </div>
+              <div class="sched-chips">
+                ${daySlots.map(s => `<button type="button" class="sched-chip ${s.is_enabled && !s.date_disabled ? "on" : "off"}" data-slot-date="${s.slot_date}" data-slot-start="${s.slot_start.substring(0,5)}" data-enabled="${s.is_enabled}">${s.slot_start.substring(0,5)}-${s.slot_end.substring(0,5)}</button>`).join("")}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // Chip toggle
+        container.querySelectorAll(".sched-chip").forEach(chip => {
+          chip.addEventListener("click", async () => {
+            const wasEnabled = chip.getAttribute("data-enabled") === "true";
+            const newEnabled = !wasEnabled;
+            chip.setAttribute("data-enabled", String(newEnabled));
+            chip.className = `sched-chip ${newEnabled ? "on" : "off"}`;
+            const date = chip.getAttribute("data-slot-date")!;
+            const start = chip.getAttribute("data-slot-start")!;
+            await fetch("/api/seller/schedule", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "toggle_slot", seller_id: sellerId, slot_date: date, slot_start: start, is_enabled: newEnabled }),
+            });
+          });
+        });
+
+        // Date toggle
+        container.querySelectorAll(".sched-date-toggle").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const date = btn.getAttribute("data-date")!;
+            const wasDisabled = btn.getAttribute("data-disabled") === "true";
+            const newDisabled = !wasDisabled;
+            btn.setAttribute("data-disabled", String(newDisabled));
+            btn.className = `sched-date-toggle ${newDisabled ? "off" : "on"}`;
+            // Update all chips in this date group
+            const group = btn.closest(".sched-date-group")!;
+            group.querySelectorAll(".sched-chip").forEach(c => {
+              c.className = `sched-chip ${newDisabled ? "off" : "on"}`;
+              c.setAttribute("data-enabled", String(!newDisabled));
+            });
+            await fetch("/api/seller/schedule", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "toggle_date", seller_id: sellerId, slot_date: date, date_disabled: newDisabled }),
+            });
+          });
+        });
+      }
+
+      // Generate schedule
+      document.getElementById("sched-generate")!.addEventListener("click", async () => {
+        const sellerId = localStorage.getItem("zepto_seller_id");
+        if (!sellerId) return;
+        const btn = document.getElementById("sched-generate") as HTMLButtonElement;
+        btn.disabled = true;
+        btn.textContent = "Generating...";
+        try {
+          const res = await fetch("/api/seller/schedule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "save_config",
+              seller_id: sellerId,
+              days_ahead: parseInt((document.getElementById("sched-days") as HTMLSelectElement).value, 10),
+              start_time: (document.getElementById("sched-start") as HTMLInputElement).value,
+              end_time: (document.getElementById("sched-end") as HTMLInputElement).value,
+              slot_duration_minutes: parseInt((document.getElementById("sched-duration") as HTMLSelectElement).value, 10),
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Schedule created: ${data.slots_created} slots`);
+            await loadExistingSchedule();
+          } else {
+            showToast(data.error || "Failed", "error");
+          }
+        } catch (err: any) {
+          showToast(err.message, "error");
+        }
+        btn.disabled = false;
+        btn.textContent = "Generate Schedule";
+      });
 
       init();
     </script>
@@ -684,6 +960,26 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         color: var(--gray-800);
         font-weight: 600;
       }
+      /* Schedule */
+      .dash-switch { cursor: pointer; }
+      .sched-form { display: flex; flex-direction: column; gap: 10px; }
+      .sched-row { display: flex; gap: 10px; }
+      .sched-row > .sched-field { flex: 1; }
+      .sched-field { display: flex; flex-direction: column; gap: 4px; }
+      .sched-field label { font-size: 12px; font-weight: 600; color: var(--gray-600); }
+      .sched-field input, .sched-field select { font-size: 14px; padding: 8px 10px; border: 1px solid var(--gray-200); border-radius: 8px; font-family: inherit; }
+      .sched-date-group { margin-bottom: 12px; }
+      .sched-date-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+      .sched-date-label { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+      .sched-date-toggle { width: 40px; height: 24px; border-radius: 24px; border: none; cursor: pointer; position: relative; transition: background 0.2s; }
+      .sched-date-toggle.on { background: var(--green); }
+      .sched-date-toggle.off { background: var(--gray-300); }
+      .sched-date-toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+      .sched-date-toggle.on::after { transform: translateX(16px); }
+      .sched-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; }
+      .sched-chip { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--gray-200); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+      .sched-chip.on { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+      .sched-chip.off { background: var(--gray-100); color: var(--gray-400); text-decoration: line-through; }
     </style>
     <SellerBottomNav active="profile" />
     <VercelAnalytics />

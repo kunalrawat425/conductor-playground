@@ -1,0 +1,73 @@
+---
+import type { MenuItemProps } from "../../../types/v2-components";
+interface Props extends MenuItemProps {}
+const {
+  id,
+  name,
+  description,
+  price,
+  unit,
+  emoji = "🐟",
+  imageUrl,
+  badges = [],
+  inCart = 0,
+  isPreorder = false,
+  isSoldOut = false,
+  isLimited = false,
+  discount,
+} = Astro.props;
+
+const cardBg = isPreorder
+  ? "linear-gradient(135deg,#F3E8FF,#E9D5FF)"
+  : isLimited
+    ? "linear-gradient(135deg,#FFF7ED,#FED7AA)"
+    : "linear-gradient(135deg,#E0F2FE,#BAE6FD)";
+
+const accent = isPreorder ? "#7C3AED" : "var(--v2-brand)";
+---
+<div
+  class:list={["v2-item-card", inCart > 0 && "v2-item-incart", isSoldOut && "v2-item-soldout"]}
+  data-listing-id={id}
+>
+  <div class="v2-item-img" style={`background:${cardBg};`}>
+    {imageUrl ? (
+      <img src={imageUrl} alt={name} loading="lazy" />
+    ) : (
+      <span class="v2-item-emoji" aria-hidden="true">{emoji}</span>
+    )}
+    {isPreorder && <span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>}
+    {isLimited && !isPreorder && <span class="v2-item-cut" style="background:var(--v2-orange-l);color:var(--v2-orange);">Limited</span>}
+    {badges.length > 0 && !isPreorder && !isLimited && (
+      <span class="v2-item-cut">{badges[0]}</span>
+    )}
+    {isSoldOut && (
+      <div class="v2-item-soldout-overlay"><span>SOLD OUT</span></div>
+    )}
+  </div>
+  <div class="v2-item-body">
+    <div class="v2-item-name">{name}</div>
+    {description && <div class="v2-item-desc">{description}</div>}
+    <div class="v2-item-bottom">
+      <div class="v2-item-price">
+        ₹{price}
+        {discount && <span class="v2-item-orig">₹{discount.from}</span>}
+      </div>
+      {!isSoldOut && inCart > 0 ? (
+        <div class="v2-item-counter" data-listing-id={id}>
+          <button class="v2-item-dec" aria-label="Decrease">−</button>
+          <span class="v2-item-count">{inCart}</span>
+          <button class="v2-item-inc" aria-label="Increase">+</button>
+        </div>
+      ) : !isSoldOut ? (
+        <button
+          class="v2-item-add"
+          style={`background:${accent};`}
+          data-listing-id={id}
+          aria-label={`Add ${name} to cart`}
+        >+</button>
+      ) : (
+        <button class="v2-item-add" disabled style="background:var(--v2-ink-4);cursor:not-allowed;">+</button>
+      )}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,36 @@
+---
+import type { CartBarProps } from "../../../types/v2-components";
+interface Props extends CartBarProps {}
+const {
+  items,
+  total,
+  minOrder,
+  freeDeliveryThreshold,
+  isPreorder = false,
+  href = "/checkout",
+} = Astro.props;
+
+const belowMin = minOrder != null && total < minOrder;
+const freeDeliveryHit = freeDeliveryThreshold != null && total >= freeDeliveryThreshold;
+const variant = belowMin ? "warning" : freeDeliveryHit ? "success" : isPreorder ? "preorder" : "default";
+
+let leftLine: string;
+if (belowMin) leftLine = `Add ₹${minOrder! - total} more for min order`;
+else if (freeDeliveryHit) leftLine = "🎉 Free delivery unlocked";
+else if (isPreorder) leftLine = "🌙 Pre-order for tomorrow";
+else leftLine = `${items} item${items !== 1 ? "s" : ""}`;
+
+const ctaText = belowMin ? "Keep shopping" : isPreorder ? "Review →" : "View cart →";
+---
+<a
+  href={href}
+  class:list={["v2-cart-bar", `v2-cart-${variant}`]}
+  role="button"
+  aria-label={`Cart total ₹${total}, ${items} items, ${ctaText}`}
+>
+  <div class="v2-cb-left">
+    <div class="v2-cb-items">{leftLine}</div>
+    <div class="v2-cb-total">₹{total.toLocaleString("en-IN")}</div>
+  </div>
+  <span class="v2-cb-btn">{ctaText}</span>
+</a>

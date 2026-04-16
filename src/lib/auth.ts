@@ -3,7 +3,9 @@
  * Buyer session stored in localStorage (zepto_buyer_id, zepto_phone).
  */
 
-export type { BuyerAddressDetail } from "./buyer-address";
+import type { BuyerAddressDetail } from "./buyer-address";
+
+export type { BuyerAddressDetail };
 
 export async function sendOtp(phone: string) {
   const res = await fetch("/api/auth/send-otp", {

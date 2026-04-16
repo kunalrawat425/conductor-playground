@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Relifish — तुमचा मासा ऑनलाइन विका | Sell Fish Online Mumbai</title>
+<meta name="description" content="Relifish वर तुमचं दुकान FREE सेटअप करा. Orders, delivery, inventory — सगळं एका dashboard मधून. Mumbai fish sellers, sell online today.">
+<meta name="keywords" content="sell fish online, fish delivery Mumbai, fish marketplace, मासा विक्री, Relifish, fish seller app, seafood delivery">
+<link rel="canonical" href="https://www.relifish.store/seller-banner.html">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.relifish.store/seller-banner.html">
+<meta property="og:title" content="Relifish — तुमचं दुकान FREE सेटअप करा">
+<meta property="og:description" content="Orders, delivery, inventory — सगळं एका app मधून. Mumbai fish sellers, join Relifish today.">
+<meta property="og:image" content="https://www.relifish.store/icon-512.svg">
+<meta property="og:site_name" content="Relifish">
+<meta property="og:locale" content="mr_IN">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Relifish — Sell Fish Online Mumbai">
+<meta name="twitter:description" content="FREE setup. Orders, delivery, inventory — one dashboard. Join Relifish.">
+<meta name="twitter:image" content="https://www.relifish.store/icon-512.svg">
+
+<!-- Additional SEO -->
+<meta name="robots" content="index, follow">
+<meta name="author" content="Relifish">
+<meta name="theme-color" content="#0a0f1a">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #111; display: flex; flex-direction: column; align-items: center; font-family: 'Inter', -apple-system, system-ui, sans-serif; padding: max(12px, env(safe-area-inset-top)) clamp(12px,3.7vw,40px) max(24px, env(safe-area-inset-bottom)); gap: clamp(24px,5vw,56px); overflow-x: hidden; box-sizing: border-box; width: 100%; }
+  h2 { color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+
+  .banner-controls { position: sticky; top: 0; z-index: 10000; align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin: 0 0 8px 0; background: rgba(17,17,17,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07); max-width: 1080px; width: 100%; box-sizing: border-box; }
+  .lang-toggle { position: static; display: flex; background: #222; border-radius: 50px; padding: 4px; border: 1px solid #444; box-shadow: 0 2px 12px rgba(0,0,0,0.35); flex-shrink: 0; }
+  .lang-btn { padding: 10px 20px; border-radius: 50px; border: none; cursor: pointer; font-size: 14px; font-weight: 700; font-family: inherit; transition: all 0.2s ease; background: transparent; color: #888; min-height: 44px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .lang-btn.active { background: #0066cc; color: white; }
+  .lang-btn:hover:not(.active) { color: #ccc; }
+
+  [data-lang="mr"] { display: none; }
+  [data-lang="en"] { display: block; }
+  body.lang-mr [data-lang="mr"] { display: block; }
+  body.lang-mr [data-lang="en"] { display: none; }
+
+  .customizer { position: static; display: flex; gap: 10px; align-items: center; flex: 1; min-width: 160px; justify-content: flex-end; }
+  .customizer label { color: #888; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .customizer input { background: #222; border: 1px solid #444; color: white; padding: 10px 14px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: inherit; width: 100%; max-width: 280px; min-height: 44px; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
+  .customizer input:focus { border-color: #0066cc; }
+  .customizer input::placeholder { color: #555; }
+
+  /* ===== SHARED ===== */
+  .seller-brand-strip { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: linear-gradient(90deg, rgba(0,102,204,0.15), rgba(255,107,53,0.1)); border-top: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 2; }
+  .seller-brand-strip .seller-name-display { font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+  .seller-brand-strip .seller-tag { font-size: 13px; color: rgba(255,255,255,0.4); font-weight: 600; }
+  .seller-brand-strip .on-relifish { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #66b3ff; }
+  .seller-brand-strip .on-relifish .dot { width: 6px; height: 6px; border-radius: 50%; background: #4caf50; }
+
+  .seller-brand-strip-warm { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: rgba(0,0,0,0.12); border-top: 1px solid rgba(255,255,255,0.08); position: relative; z-index: 2; }
+  .seller-brand-strip-warm .seller-name-display { font-size: 22px; font-weight: 800; color: white; }
+  .seller-brand-strip-warm .on-relifish { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #ffd699; }
+  .seller-brand-strip-warm .on-relifish .dot { width: 6px; height: 6px; border-radius: 50%; background: #4caf50; }
+
+  .seller-brand-strip-white { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; position: relative; z-index: 1; }
+  .seller-brand-strip-white .seller-name-display { font-size: 20px; font-weight: 800; color: #1a1a1a; }
+  .seller-brand-strip-white .x-text { font-size: 14px; color: #999; font-weight: 600; }
+  .seller-brand-strip-white .relifish-text { font-size: 20px; font-weight: 800; color: #0066cc; }
+
+  .seller-brand-strip-story { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px 28px; margin-bottom: 32px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; position: relative; z-index: 1; }
+  .seller-brand-strip-story .seller-name-display { font-size: 24px; font-weight: 800; color: white; }
+  .seller-brand-strip-story .x-text { font-size: 16px; color: rgba(255,255,255,0.4); font-weight: 600; }
+  .seller-brand-strip-story .relifish-text { font-size: 24px; font-weight: 800; color: #66b3ff; }
+
+  /* ===== BANNER 1: Full — Brand + Pain/Solution + Growth ===== */
+  .b1 { width: min(1080px, 100%); height: auto; background: #0a0f1a; color: white; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  .b1 .fish-hero { position: absolute; top: 30px; right: -40px; width: 360px; height: 360px; z-index: 0; opacity: 0.07; }
+  .b1 .fish-hero svg { width: 100%; height: 100%; }
+  .b1 .glow-1 { position: absolute; top: 0; right: 0; width: 600px; height: 600px; background: radial-gradient(circle at top right, rgba(0,150,255,0.15) 0%, transparent 60%); }
+  .b1 .glow-2 { position: absolute; bottom: 0; left: 0; width: 500px; height: 500px; background: radial-gradient(circle at bottom left, rgba(255,107,53,0.09) 0%, transparent 60%); }
+  .b1 .glow-center { position: absolute; top: 180px; left: 50%; transform: translateX(-50%); width: 700px; height: 400px; background: radial-gradient(ellipse, rgba(0,102,204,0.2) 0%, transparent 65%); }
+  .b1 .content { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; padding: 48px 64px 32px; }
+
+  /* hero brand block */
+  .b1 .b1-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+  .b1 .b1-logo { font-size: 26px; font-weight: 800; color: #66b3ff; }
+  .b1 .b1-setup-pill { background: rgba(0,102,204,0.2); border: 1px solid rgba(102,179,255,0.3); border-radius: 50px; padding: 6px 14px; font-size: 12px; font-weight: 700; color: #66b3ff; }
+  .b1 .b1-hero { text-align: center; margin-bottom: 10px; }
+  .b1 .b1-now-on { font-size: 12px; text-transform: uppercase; letter-spacing: 5px; color: rgba(255,255,255,0.32); font-weight: 700; margin-bottom: 14px; }
+  .b1 .b1-brand { font-size: 72px; font-weight: 900; line-height: 1.0; letter-spacing: -2.5px; color: white; text-shadow: 0 0 100px rgba(102,179,255,0.6), 0 0 30px rgba(102,179,255,0.25); margin-bottom: 14px; word-break: break-word; }
+  .b1 .b1-url { font-size: 18px; font-weight: 700; color: #66b3ff; margin-bottom: 0; }
+  .b1 .b1-sep { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); margin: 28px 0; }
+
+  /* pain → solution */
+  .b1 .b1-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #ff6b35; font-weight: 700; margin-bottom: 14px; }
+  .b1 .b1-ps-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 0; }
+  .b1 .b1-ps-row { display: grid; grid-template-columns: 1fr 16px 1fr; align-items: center; gap: 0; }
+  .b1 .b1-pain { font-size: 13px; color: rgba(255,255,255,0.38); font-weight: 500; text-decoration: line-through; text-decoration-color: rgba(255,107,53,0.4); padding: 9px 12px; background: rgba(255,107,53,0.04); border-radius: 8px; line-height: 1.3; }
+  .b1 .b1-arrow { text-align: center; font-size: 11px; color: rgba(255,255,255,0.2); }
+  .b1 .b1-fix { font-size: 13px; color: rgba(255,255,255,0.82); font-weight: 600; padding: 9px 12px; background: rgba(102,179,255,0.07); border-left: 2px solid rgba(102,179,255,0.35); border-radius: 0 8px 8px 0; line-height: 1.3; }
+
+  /* growth strip */
+  .b1 .b1-growth { margin-top: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 18px 20px; }
+  .b1 .b1-growth-title { font-size: 13px; font-weight: 800; color: #66b3ff; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+  .b1 .b1-growth-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .b1 .b1-gpill { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 6px 14px; font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.75); }
+  .b1 .b1-gpill.blue { border-color: rgba(102,179,255,0.3); color: #99ccff; }
+  .b1 .b1-gpill.orange { border-color: rgba(255,107,53,0.3); color: #ffaa77; }
+
+  /* trust + bottom */
+  .b1 .b1-trust { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+  .b1 .b1-avatars { display: flex; }
+  .b1 .b1-av { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #0a0f1a; margin-left: -8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; }
+  .b1 .b1-av:first-child { margin-left: 0; }
+  .b1 .av1 { background: linear-gradient(135deg,#2a5298,#1e3c72); } .b1 .av2 { background: linear-gradient(135deg,#f5af19,#f12711); } .b1 .av3 { background: linear-gradient(135deg,#11998e,#38ef7d); } .b1 .av4 { background: linear-gradient(135deg,#ee0979,#ff6a00); }
+  .b1 .b1-trust-text { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.3; }
+  .b1 .b1-trust-text strong { color: rgba(255,255,255,0.7); }
+  .b1 .b1-bottom { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 16px 64px; background: rgba(255,255,255,0.04); border-top: 1px solid rgba(255,255,255,0.06); }
+  .b1 .b1-cta { background: #0066cc; color: white; padding: 12px 28px; border-radius: 50px; font-size: 15px; font-weight: 700; }
+  .b1 .b1-slots { font-size: 12px; color: rgba(255,255,255,0.35); text-align: right; line-height: 1.4; }
+  .b1 .tc { position: absolute; bottom: 6px; left: 64px; right: 64px; font-size: 9px; color: rgba(255,255,255,0.15); z-index: 3; text-align: center; }
+
+  /* ===== BANNER 2: Orange — Ops Focus ===== */
+  .b2 { width: min(1080px, 100%); height: auto; background: linear-gradient(160deg, #1a0a00 0%, #331400 30%, #ff6b35 100%); color: white; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  .b2 .fish-accent { position: absolute; bottom: -80px; right: -80px; width: 420px; height: 420px; z-index: 0; opacity: 0.65; }
+  .b2 .fish-accent svg { width: 100%; height: 100%; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.3)); }
+  .b2::before { content: ''; position: absolute; top: -200px; right: -200px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%); border-radius: 50%; }
+  .b2 .b2-inner { position: relative; z-index: 1; padding: 56px 64px 52px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .b2 .logo { font-size: 32px; font-weight: 800; color: #ffa366; margin-bottom: 24px; }
+  .b2 .headline { font-size: 46px; font-weight: 800; line-height: 1.12; letter-spacing: -1px; margin-bottom: 12px; }
+  .b2 .headline em { font-style: normal; color: #ffd699; }
+  .b2 .sub { font-size: 18px; font-weight: 500; opacity: 0.8; margin-bottom: 28px; }
+  .b2 .ops-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .b2 .ops-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 18px 16px; }
+  .b2 .ops-icon { font-size: 26px; margin-bottom: 8px; }
+  .b2 .ops-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .b2 .ops-desc { font-size: 13px; opacity: 0.65; line-height: 1.35; }
+  .b2 .ops-highlight { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .b2 .ops-highlight-icon { font-size: 28px; flex-shrink: 0; }
+  .b2 .ops-highlight-text { font-size: 17px; font-weight: 700; line-height: 1.3; }
+  .b2 .ops-highlight-text span { opacity: 0.6; font-weight: 400; font-size: 14px; display: block; margin-top: 2px; }
+  .b2 .trust { display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: rgba(0,0,0,0.12); border-radius: 14px; margin-bottom: 20px; }
+  .b2 .trust-faces { display: flex; }
+  .b2 .trust-face { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgba(255,107,53,0.3); margin-left: -10px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .b2 .trust-face:first-child { margin-left: 0; }
+  .b2 .tf1 { background: linear-gradient(135deg, #667eea, #764ba2); } .b2 .tf2 { background: linear-gradient(135deg, #f093fb, #f5576c); } .b2 .tf3 { background: linear-gradient(135deg, #4facfe, #00f2fe); } .b2 .tf4 { background: linear-gradient(135deg, #43e97b, #38f9d7); } .b2 .tf5 { background: linear-gradient(135deg, #fa709a, #fee140); }
+  .b2 .trust-copy { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .b2 .trust-copy span { opacity: 0.55; font-weight: 400; font-size: 13px; display: block; }
+  .b2 .b2-footer { display: flex; align-items: center; justify-content: space-between; }
+  .b2 .cta-btn { background: white; color: #cc4400; padding: 14px 32px; border-radius: 50px; font-size: 17px; font-weight: 700; }
+  .b2 .limit { font-size: 14px; opacity: 0.65; font-weight: 500; }
+  .b2 .tc { position: absolute; bottom: 10px; left: 64px; right: 64px; font-size: 9px; color: rgba(255,255,255,0.18); z-index: 3; }
+  .b2 .qr-block { display: flex; align-items: center; gap: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 14px 18px; margin-bottom: 16px; }
+  .b2 .qr-img { width: 72px; height: 72px; border-radius: 8px; background: white; padding: 4px; flex-shrink: 0; }
+  .b2 .qr-text { display: flex; flex-direction: column; gap: 4px; }
+  .b2 .qr-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); font-weight: 700; }
+  .b2 .qr-url { font-size: 17px; font-weight: 800; color: #ffd699; }
+  .b2 .qr-email { font-size: 15px; font-weight: 900; color: white; letter-spacing: -0.3px; }
+
+  /* ===== BANNER 3: Story ===== */
+  .b3 { width: min(1080px, 100%); height: auto; background: linear-gradient(180deg, #000d1a 0%, #001a33 25%, #0066cc 65%, #0052a3 100%); color: white; display: flex; flex-direction: column; align-items: center; padding: 90px 64px 80px; position: relative; overflow: hidden; }
+  .b3 .fish-bg { position: absolute; top: 80px; right: -40px; width: 380px; height: 380px; z-index: 0; opacity: 0.12; }
+  .b3 .fish-bg svg { width: 100%; height: 100%; }
+  .b3 .logo { font-size: 40px; font-weight: 800; color: #66b3ff; margin-bottom: 12px; position: relative; z-index: 1; }
+  .b3 .tagline { font-size: 17px; opacity: 0.45; margin-bottom: 32px; position: relative; z-index: 1; }
+  .b3 .hero { text-align: center; position: relative; z-index: 1; margin-bottom: 40px; }
+  .b3 .hero h1 { font-size: 50px; font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 14px; }
+  .b3 .hero h1 span { color: #66b3ff; }
+  .b3 .hero p { font-size: 19px; opacity: 0.55; max-width: 700px; margin: 0 auto; }
+  .b3 .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; opacity: 0.4; font-weight: 700; margin-bottom: 14px; position: relative; z-index: 1; width: 100%; }
+  .b3 .ribbon { position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+  .b3 .ribbon-item { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px 22px; }
+  .b3 .ribbon-icon { width: 44px; height: 44px; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .b3 .ribbon-text { font-size: 17px; font-weight: 600; }
+  .b3 .ribbon-sub { font-size: 13px; opacity: 0.45; margin-top: 2px; }
+  .b3 .ops-section { position: relative; z-index: 1; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 24px; margin-bottom: 32px; }
+  .b3 .ops-section-title { font-size: 14px; font-weight: 800; color: #66b3ff; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+  .b3 .ops-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .b3 .ops-item { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
+  .b3 .ops-item .check { width: 22px; height: 22px; border-radius: 50%; background: #0066cc; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .b3 .trust-section { position: relative; z-index: 1; width: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 40px; padding: 18px; background: rgba(255,255,255,0.06); border-radius: 18px; }
+  .b3 .trust-avatars { display: flex; }
+  .b3 .trust-av { width: 44px; height: 44px; border-radius: 50%; border: 3px solid rgba(0,102,204,0.3); margin-left: -10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+  .b3 .trust-av:first-child { margin-left: 0; }
+  .b3 .ta1 { background: linear-gradient(135deg, #2a5298, #1e3c72); } .b3 .ta2 { background: linear-gradient(135deg, #f5af19, #f12711); } .b3 .ta3 { background: linear-gradient(135deg, #11998e, #38ef7d); } .b3 .ta4 { background: linear-gradient(135deg, #ee0979, #ff6a00); }
+  .b3 .trust-label { font-size: 15px; font-weight: 600; }
+  .b3 .trust-label span { opacity: 0.45; font-weight: 400; font-size: 13px; }
+  .b3 .story-cta { position: relative; z-index: 1; text-align: center; }
+  .b3 .story-cta .btn { background: white; color: #0066cc; padding: 18px 48px; border-radius: 50px; font-size: 19px; font-weight: 700; display: inline-block; margin-bottom: 10px; }
+  .b3 .story-cta .note { font-size: 14px; opacity: 0.35; }
+  .b3 .tc { position: absolute; bottom: 14px; left: 64px; right: 64px; font-size: 9px; color: rgba(255,255,255,0.13); text-align: center; z-index: 3; }
+
+  /* ===== BANNER 4: White ===== */
+  .b4 { width: min(1080px, 100%); height: auto; min-height: 0; background: white; color: #1a1a1a; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 64px 72px; text-align: center; position: relative; overflow: hidden; }
+  .b4 .accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #0066cc, #ff6b35); }
+  .b4 .fish-watermark { position: absolute; bottom: -60px; right: -60px; width: 340px; height: 340px; opacity: 0.035; z-index: 0; }
+  .b4 .fish-watermark svg { width: 100%; height: 100%; }
+  .b4 .logo { font-size: 28px; font-weight: 800; color: #0066cc; margin-bottom: 16px; position: relative; z-index: 1; }
+  .b4 .fish-center { width: 140px; height: 140px; margin-bottom: 18px; position: relative; z-index: 1; }
+  .b4 .fish-center svg { width: 100%; height: 100%; filter: drop-shadow(0 12px 40px rgba(0,102,204,0.25)); }
+  .b4 .quote { font-size: 40px; font-weight: 800; line-height: 1.15; letter-spacing: -1px; max-width: 780px; margin-bottom: 16px; position: relative; z-index: 1; }
+  .b4 .quote span { color: #0066cc; }
+  .b4 .subtext { font-size: 17px; color: #666; font-weight: 500; max-width: 620px; line-height: 1.5; margin-bottom: 20px; position: relative; z-index: 1; }
+  .b4 .ops-strip { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; position: relative; z-index: 1; margin-bottom: 18px; }
+  .b4 .ops-tag { display: flex; align-items: center; gap: 6px; background: #f0f6ff; border: 1px solid #c8dcf5; padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 700; color: #0066cc; }
+  .b4 .ops-tag.warm { background: #fff4ee; border-color: #fcd5bc; color: #cc4400; }
+  .b4 .ops-tag .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .b4 .trust-row { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; position: relative; z-index: 1; }
+  .b4 .trust-row .faces { display: flex; }
+  .b4 .trust-row .face { width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; margin-left: -10px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .b4 .trust-row .face:first-child { margin-left: 0; }
+  .b4 .f1 { background: #2a5298; } .b4 .f2 { background: #e85d26; } .b4 .f3 { background: #11998e; } .b4 .f4 { background: #9b59b6; }
+  .b4 .trust-row .label { font-size: 13px; color: #999; font-weight: 500; }
+  .b4 .footer-line { position: absolute; bottom: 48px; font-size: 14px; color: #999; z-index: 1; }
+  .b4 .footer-line strong { color: #0066cc; }
+  .b4 .tc { position: absolute; bottom: 14px; font-size: 9px; color: #ccc; z-index: 1; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .banner-controls { flex-direction: column; align-items: stretch; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+    .customizer { flex-direction: column; align-items: stretch; min-width: 0; justify-content: flex-start; }
+    .customizer label { display: block; }
+    .customizer input { max-width: none; font-size: 16px; }
+    .lang-toggle { justify-content: center; width: 100%; }
+    .lang-btn { flex: 1; justify-content: center; }
+
+    /* B1 mobile */
+    .b1 .content { padding: 24px 18px 18px; }
+    .b1 .b1-top { margin-bottom: 20px; }
+    .b1 .b1-logo { font-size: 18px; }
+    .b1 .b1-setup-pill { font-size: 10px; padding: 4px 10px; }
+    .b1 .b1-brand { font-size: 38px; letter-spacing: -1px; margin-bottom: 10px; }
+    .b1 .b1-url { font-size: 13px; }
+    .b1 .b1-now-on { font-size: 10px; letter-spacing: 3px; margin-bottom: 10px; }
+    .b1 .b1-sep { margin: 16px 0; }
+    .b1 .b1-section-label { font-size: 9px; }
+    .b1 .b1-ps-list { gap: 6px; }
+    .b1 .b1-pain, .b1 .b1-fix { font-size: 10px; padding: 6px 8px; }
+    .b1 .b1-ps-row { grid-template-columns: 1fr 14px 1fr; }
+    .b1 .b1-arrow { font-size: 9px; }
+    .b1 .b1-growth { padding: 12px 14px; margin-top: 16px; }
+    .b1 .b1-growth-title { font-size: 10px; margin-bottom: 8px; }
+    .b1 .b1-gpill { font-size: 10px; padding: 4px 10px; }
+    .b1 .b1-trust { margin-top: 14px; }
+    .b1 .b1-trust-text { font-size: 10px; }
+    .b1 .b1-bottom { padding: 12px 18px; }
+    .b1 .b1-cta { font-size: 12px; padding: 9px 16px; }
+    .b1 .b1-slots { font-size: 10px; }
+
+    /* B2 mobile */
+    .b2 .b2-inner { padding: 24px 18px 22px; text-align: center; }
+    .b2 .logo { font-size: 20px; margin-bottom: 14px; text-align: center; }
+    .b2 .headline { font-size: 26px; text-align: center; }
+    .b2 .sub { font-size: 13px; margin-bottom: 18px; text-align: center; }
+    .b2 .ops-highlight { text-align: left; }
+    .b2 .ops-row { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .b2 .ops-card { text-align: left; padding: 10px 8px; border-radius: 10px; }
+    .b2 .ops-icon { font-size: 16px; margin-bottom: 4px; }
+    .b2 .ops-title { font-size: 11px; }
+    .b2 .ops-desc { font-size: 9px; }
+    .b2 .trust { text-align: left; }
+    .b2 .b2-footer { justify-content: center; text-align: center; }
+    .b2 .ops-highlight { padding: 10px 14px; gap: 10px; margin-bottom: 14px; }
+    .b2 .ops-highlight-icon { font-size: 20px; }
+    .b2 .ops-highlight-text { font-size: 13px; }
+    .b2 .ops-row { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .b2 .ops-card { padding: 12px 10px; border-radius: 12px; }
+    .b2 .ops-icon { font-size: 18px; margin-bottom: 6px; }
+    .b2 .ops-title { font-size: 12px; }
+    .b2 .ops-desc { font-size: 10px; }
+    .b2 .trust { padding: 10px 14px; gap: 10px; margin-bottom: 14px; }
+    .b2 .trust-copy { font-size: 11px; }
+    .b2 .qr-block { padding: 10px 14px; gap: 12px; margin-bottom: 12px; }
+    .b2 .qr-img { width: 52px; height: 52px; }
+    .b2 .qr-url { font-size: 13px; }
+    .b2 .qr-email { font-size: 12px; }
+    .b2 .cta-btn { font-size: 13px; padding: 10px 20px; }
+    .b2 .limit { font-size: 11px; }
+    .seller-brand-strip-warm { padding: 12px 18px; }
+    .seller-brand-strip-warm .seller-name-display { font-size: 16px; }
+
+    /* B3 mobile */
+    .b3 { padding: 44px 18px 36px; }
+    .b3 .logo { font-size: 24px; }
+    .b3 .tagline { font-size: 13px; margin-bottom: 20px; }
+    .b3 .hero h1 { font-size: 32px; letter-spacing: -1px; }
+    .b3 .hero p { font-size: 14px; }
+    .b3 .hero { margin-bottom: 24px; }
+    .b3 .ribbon-item { padding: 12px 16px; gap: 12px; }
+    .b3 .ribbon-icon { width: 36px; height: 36px; font-size: 16px; }
+    .b3 .ribbon-text { font-size: 13px; }
+    .b3 .ribbon-sub { font-size: 11px; }
+    .b3 .ops-section { padding: 18px; }
+    .b3 .ops-section-title { font-size: 11px; }
+    .b3 .ops-item { font-size: 12px; }
+    .b3 .story-cta .btn { font-size: 15px; padding: 14px 32px; }
+    .b3 .story-cta .note { font-size: 11px; }
+    .seller-brand-strip-story { padding: 14px 20px; margin-bottom: 20px; }
+    .seller-brand-strip-story .seller-name-display,
+    .seller-brand-strip-story .relifish-text { font-size: 18px; }
+
+    /* B4 mobile */
+    .b4 { padding: 32px 24px; }
+    .b4 .logo { font-size: 18px; margin-bottom: 10px; }
+    .b4 .fish-center { width: 90px; height: 90px; margin-bottom: 12px; }
+    .b4 .quote { font-size: 22px; letter-spacing: -0.5px; margin-bottom: 12px; }
+    .b4 .subtext { font-size: 13px; margin-bottom: 14px; }
+    .b4 .ops-tag { font-size: 10px; padding: 5px 12px; }
+    .b4 .trust-row { margin-bottom: 12px; }
+    .b4 .footer-line { font-size: 11px; }
+    .seller-brand-strip-white .seller-name-display,
+    .seller-brand-strip-white .relifish-text { font-size: 16px; }
+  }
+</style>
+<!-- Vercel Web Analytics: enable in dashboard → Analytics. Production serves /_vercel/insights/* (404 locally unless `vercel dev`). -->
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js" data-sdkn="@vercel/analytics" data-sdkv="1.6.1"></script>
+<!-- Vercel Speed Insights: enable in dashboard → Speed Insights. Production serves /_vercel/speed-insights/* -->
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+</head>
+<body>
+
+<div class="banner-controls">
+  <div class="customizer">
+    <label for="seller-name-input">Shop name</label>
+    <input type="text" id="seller-name-input" placeholder="e.g. Ramesh Fish Corner" oninput="updateSellerName(this.value)" autocomplete="organization" />
+  </div>
+  <div class="lang-toggle">
+    <button type="button" class="lang-btn" id="btn-mr" onclick="setLang('mr')">मराठी</button>
+    <button type="button" class="lang-btn active" id="btn-en" onclick="setLang('en')">English</button>
+  </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="fishGradBlue" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4facfe"/><stop offset="50%" style="stop-color:#0066cc"/><stop offset="100%" style="stop-color:#003d7a"/></linearGradient>
+    <linearGradient id="fishGradOrange" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ffd699"/><stop offset="50%" style="stop-color:#ff8c42"/><stop offset="100%" style="stop-color:#cc4400"/></linearGradient>
+    <linearGradient id="fishGradSilver" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#e8edf2"/><stop offset="30%" style="stop-color:#a8b8c8"/><stop offset="70%" style="stop-color:#7899b0"/><stop offset="100%" style="stop-color:#4a6d85"/></linearGradient>
+    <radialGradient id="fishEye" cx="50%" cy="50%" r="50%"><stop offset="0%" style="stop-color:#111"/><stop offset="60%" style="stop-color:#222"/><stop offset="100%" style="stop-color:#444"/></radialGradient>
+    <filter id="fish3d"><feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur"/><feOffset dx="4" dy="12" result="offset"/><feFlood flood-color="rgba(0,0,0,0.25)"/><feComposite in2="offset" operator="in" result="shadow"/><feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+</svg>
+
+<!-- ==================== BANNER 1 MR ==================== -->
+<div data-lang="mr">
+  <div class="b1">
+    <div class="glow-1"></div><div class="glow-2"></div><div class="glow-center"></div>
+    <div class="fish-hero"><svg viewBox="0 0 400 400"><g filter="url(#fish3d)" transform="rotate(-15,200,200)"><ellipse cx="200" cy="200" rx="140" ry="70" fill="url(#fishGradBlue)" opacity="0.9"/><ellipse cx="195" cy="220" rx="110" ry="35" fill="rgba(255,255,255,0.15)"/><polygon points="340,200 400,150 400,250" fill="url(#fishGradBlue)" opacity="0.8"/><path d="M160 130 Q200 80 240 130" fill="url(#fishGradBlue)" opacity="0.7"/><circle cx="120" cy="190" r="18" fill="white"/><circle cx="118" cy="188" r="12" fill="url(#fishEye)"/><circle cx="114" cy="185" r="4" fill="white" opacity="0.8"/></g></svg></div>
+    <div class="content">
+      <div class="b1-top">
+        <div class="b1-logo">&#x1F41F; Relifish</div>
+        <div class="b1-setup-pill">1 hr FREE setup</div>
+      </div>
+      <div class="b1-hero">
+        <div class="b1-now-on">आता Relifish वर</div>
+        <div class="b1-brand sn-target">तुमचं दुकान नाव</div>
+        <div class="b1-url">www.relifish.store/<span class="sn-slug-target">your-shop</span></div>
+      </div>
+      <div class="b1-sep"></div>
+      <div class="b1-section-label">तुमचे problems — आमचे solutions</div>
+      <div class="b1-ps-list">
+        <div class="b1-ps-row">
+          <div class="b1-pain">Stall सोडून कोणाला दिसत नाही</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Discovery: nearby buyers menu शोधतात</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">तेच 5 प्रश्न — rate, kg, delivery?</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Listing मध्ये सगळं — buyers decided येतात</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">WhatsApp च्या गोंधळात orders चुकतात</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Dashboard: हर order tracked, कोणी miss नाही</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">Opening rush ला stock अंदाज नाही</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Pre-orders: उद्याची demand आजच capture</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">Delivery fee arguments — trust तुटतो</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Rules upfront — handover ला zero arguments</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">जास्त orders = जास्त तुम्ही — extra staff नाही</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">एकाच dashboard — तोच तुम्ही, 2x काम</div>
+        </div>
+      </div>
+      <div class="b1-growth">
+        <div class="b1-growth-title">&#x1F3E2; तुमचा Business, तुमच्या Control मध्ये</div>
+        <div class="b1-growth-pills">
+          <div class="b1-gpill blue">&#x1F4F1; तुमचा Brand — तुमचं Online दुकान</div>
+          <div class="b1-gpill orange">&#x1F4CB; Pre-orders — demand आधीच capture</div>
+          <div class="b1-gpill orange">&#x1F4CA; Stats + Reports — CSV download</div>
+          <div class="b1-gpill blue">&#x23F8;&#xFE0F; Pause/Resume — तुम्ही ठरवा कधी विकायचं</div>
+          <div class="b1-gpill orange">&#x1F512; Order Limits — per item, per day control</div>
+          <div class="b1-gpill blue">&#x1F4E7; Push + Email — प्रत्येक order चं notification</div>
+          <div class="b1-gpill orange">&#x2B50; Ratings — trust वाढतो, orders वाढतात</div>
+          <div class="b1-gpill blue">&#x1F5D3;&#xFE0F; Pickup slots — वेळ + तारीख निवड</div>
+          <div class="b1-gpill orange">&#x1F9EE; Kg व piece — अनेक price tiers एका listing मध्ये</div>
+        </div>
+      </div>
+      <div class="b1-trust">
+        <div class="b1-avatars"><div class="b1-av av1">RK</div><div class="b1-av av2">PS</div><div class="b1-av av3">AM</div><div class="b1-av av4">VN</div></div>
+        <div class="b1-trust-text"><strong>तुमचं दुकान — तुमचे rules.</strong> किती विकायचं, कधी विकायचं, कोणाला विकायचं — सगळा control तुमचा. Relifish फक्त platform देतो. तुम्ही boss.</div>
+      </div>
+    </div>
+    <div class="b1-bottom">
+      <a class="b1-cta" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM करा — Free setup</a>
+      <div class="b1-slots">पहिले 10 sellers only<br>सगळं आम्ही करतो</div>
+    </div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
+  </div>
+</div>
+
+<!-- ==================== BANNER 1 EN ==================== -->
+<div data-lang="en">
+  <div class="b1">
+    <div class="glow-1"></div><div class="glow-2"></div><div class="glow-center"></div>
+    <div class="fish-hero"><svg viewBox="0 0 400 400"><g filter="url(#fish3d)" transform="rotate(-15,200,200)"><ellipse cx="200" cy="200" rx="140" ry="70" fill="url(#fishGradBlue)" opacity="0.9"/><ellipse cx="195" cy="220" rx="110" ry="35" fill="rgba(255,255,255,0.15)"/><polygon points="340,200 400,150 400,250" fill="url(#fishGradBlue)" opacity="0.8"/><path d="M160 130 Q200 80 240 130" fill="url(#fishGradBlue)" opacity="0.7"/><circle cx="120" cy="190" r="18" fill="white"/><circle cx="118" cy="188" r="12" fill="url(#fishEye)"/><circle cx="114" cy="185" r="4" fill="white" opacity="0.8"/></g></svg></div>
+    <div class="content">
+      <div class="b1-top">
+        <div class="b1-logo">&#x1F41F; Relifish</div>
+        <div class="b1-setup-pill">1 hr FREE setup</div>
+      </div>
+      <div class="b1-hero">
+        <div class="b1-now-on">Now on Relifish</div>
+        <div class="b1-brand sn-target">Your Brand Name</div>
+        <div class="b1-url">www.relifish.store/<span class="sn-slug-target">your-shop</span></div>
+      </div>
+      <div class="b1-sep"></div>
+      <div class="b1-section-label">Your problems — our solutions</div>
+      <div class="b1-ps-list">
+        <div class="b1-ps-row">
+          <div class="b1-pain">Invisible beyond your stall</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Discovery: nearby buyers find your menu</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">Same 5 questions all morning</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Listed once — buyers arrive decided</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">Orders lost in WhatsApp noise</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Dashboard: every order tracked, none missed</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">Guessing demand at opening rush</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Pre-orders: tomorrow's demand captured today</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">Delivery fee arguments at handover</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">Rules set upfront — zero arguments</div>
+        </div>
+        <div class="b1-ps-row">
+          <div class="b1-pain">More orders = more you, no extra staff</div>
+          <div class="b1-arrow">&#x2192;</div>
+          <div class="b1-fix">One dashboard — same you, 2x output</div>
+        </div>
+      </div>
+      <div class="b1-growth">
+        <div class="b1-growth-title">&#x1F3E2; Your Business. Your Control. At Scale.</div>
+        <div class="b1-growth-pills">
+          <div class="b1-gpill blue">&#x1F4F1; Your Brand — your own online store</div>
+          <div class="b1-gpill orange">&#x1F4CB; Pre-orders — capture demand in advance</div>
+          <div class="b1-gpill orange">&#x1F4CA; Stats + Reports — CSV export</div>
+          <div class="b1-gpill blue">&#x23F8;&#xFE0F; Pause/Resume — you decide when to sell</div>
+          <div class="b1-gpill orange">&#x1F512; Order Limits — per item, per day control</div>
+          <div class="b1-gpill blue">&#x1F4E7; Push + Email — notified on every order</div>
+          <div class="b1-gpill orange">&#x2B50; Ratings — trust grows, orders grow</div>
+          <div class="b1-gpill blue">&#x1F5D3;&#xFE0F; Pickup slots — date + time windows buyers book</div>
+          <div class="b1-gpill orange">&#x1F9EE; Kg &amp; piece pricing — multi-tier menus, deals</div>
+        </div>
+      </div>
+      <div class="b1-trust">
+        <div class="b1-avatars"><div class="b1-av av1">RK</div><div class="b1-av av2">PS</div><div class="b1-av av3">AM</div><div class="b1-av av4">VN</div></div>
+        <div class="b1-trust-text"><strong>Your shop. Your rules.</strong> How much to sell, when to sell, who to sell to — all your control. Relifish gives you the platform. You run the business.</div>
+      </div>
+    </div>
+    <div class="b1-bottom">
+      <a class="b1-cta" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM us — Free setup</a>
+      <div class="b1-slots">First 10 sellers only<br>We handle everything</div>
+    </div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
+  </div>
+</div>
+
+<!-- ==================== BANNER 2 MR — Ops Focus ==================== -->
+<div data-lang="mr">
+  <div class="b2">
+    <div class="fish-accent"><svg viewBox="0 0 400 400"><g filter="url(#fish3d)" transform="rotate(25,200,200)"><ellipse cx="200" cy="200" rx="130" ry="65" fill="url(#fishGradOrange)" opacity="0.85"/><ellipse cx="195" cy="218" rx="100" ry="30" fill="rgba(255,255,255,0.15)"/><polygon points="330,200 385,155 385,245" fill="url(#fishGradOrange)" opacity="0.75"/><circle cx="115" cy="190" r="16" fill="white"/><circle cx="113" cy="188" r="10" fill="url(#fishEye)"/></g></svg></div>
+    <div class="b2-inner">
+      <div>
+        <div class="logo">&#x1F41F; Relifish</div>
+        <div class="headline">जास्त orders handle करा<br><em>कमी staff सोबत</em></div>
+        <div class="sub">तुमचा मासा. तुमचे ग्राहक. तुमचं एक dashboard.</div>
+      </div>
+      <div>
+        <div class="ops-highlight">
+          <div class="ops-highlight-icon">&#x1F9D1;&#x200D;&#x1F373;</div>
+          <div class="ops-highlight-text">
+            जास्त orders म्हणजे आता जास्त तुम्ही नाही
+            <span>Relifish repetitive काम करतो — तुम्ही मासा विका</span>
+          </div>
+        </div>
+        <div class="ops-row">
+          <div class="ops-card"><div class="ops-icon">&#x1F4F1;</div><div class="ops-title">Discovery</div><div class="ops-desc">Nearby buyers तुमचा menu शोधतात — footfall नाही लागत</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4CB;</div><div class="ops-title">Pre-orders</div><div class="ops-desc">दुकान बंद किंवा stock संपला — तरी orders येतात</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4CA;</div><div class="ops-title">Dashboard</div><div class="ops-desc">Orders, status, alerts — एकाच ठिकाणी, एकट्याने manage</div></div>
+        </div>
+        <div class="ops-row" style="margin-top:0">
+          <div class="ops-card"><div class="ops-icon">&#x1F69A;</div><div class="ops-title">Delivery Rules</div><div class="ops-desc">Fee, radius, minimum — upfront, handover ला arguments नाहीत</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4E6;</div><div class="ops-title">Inventory</div><div class="ops-desc">Stock kg किंवा pieces; प्रति-ग्राहक daily limit; listing pause</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F514;</div><div class="ops-title">Notifications</div><div class="ops-desc">Push + Email — प्रत्येक order वर instant alert</div></div>
+        </div>
+        <div class="ops-row" style="margin-top:0">
+          <div class="ops-card"><div class="ops-icon">&#x1F5D3;&#xFE0F;</div><div class="ops-title">Schedule</div><div class="ops-desc">Date range + time slots — buyers तुमच्या वेळेनुसार book करतात</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4C4;</div><div class="ops-title">CSV Export</div><div class="ops-desc">Orders download करा — reports, accounting सोपं</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x23F8;&#xFE0F;</div><div class="ops-title">Pause/Resume</div><div class="ops-desc">Bulk listings pause — dock वर? Resume करा परत</div></div>
+        </div>
+        <div class="trust">
+          <div class="trust-faces"><div class="trust-face tf1">RK</div><div class="trust-face tf2">PS</div><div class="trust-face tf3">AM</div><div class="trust-face tf4">VN</div><div class="trust-face tf5">SD</div></div>
+          <div class="trust-copy">Mumbai sellers कमी staff सोबत जास्त orders handle करतात<br><span>"आता 2x orders, तोच मी एकटा" — रमेश, वर्सोवा</span></div>
+        </div>
+        <div class="qr-block">
+          <img class="qr-img" src="data:image/png;base64,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" alt="QR Code">
+          <div class="qr-text">
+            <div class="qr-label">Scan to join</div>
+            <div class="qr-url">www.relifish.store</div>
+            <div class="qr-email"><strong>relifishstore@gmail.com</strong></div>
+          </div>
+        </div>
+        <div class="b2-footer">
+          <a class="cta-btn" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM करा — <strong>relifishstore@gmail.com</strong></a>
+          <div class="limit">पहिले 10 sellers only</div>
+        </div>
+      </div>
+    </div>
+    <div class="seller-brand-strip-warm">
+      <div class="seller-name-display sn-target">तुमचं दुकान</div>
+      <div class="on-relifish"><div class="dot"></div>www.relifish.store/<span class="sn-slug-target">tumcha-dukaan</span></div>
+    </div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
+  </div>
+</div>
+
+<!-- ==================== BANNER 2 EN ==================== -->
+<div data-lang="en">
+  <div class="b2">
+    <div class="fish-accent"><svg viewBox="0 0 400 400"><g filter="url(#fish3d)" transform="rotate(25,200,200)"><ellipse cx="200" cy="200" rx="130" ry="65" fill="url(#fishGradOrange)" opacity="0.85"/><ellipse cx="195" cy="218" rx="100" ry="30" fill="rgba(255,255,255,0.15)"/><polygon points="330,200 385,155 385,245" fill="url(#fishGradOrange)" opacity="0.75"/><circle cx="115" cy="190" r="16" fill="white"/><circle cx="113" cy="188" r="10" fill="url(#fishEye)"/></g></svg></div>
+    <div class="b2-inner">
+      <div>
+        <div class="logo">&#x1F41F; Relifish</div>
+        <div class="headline">Handle more orders<br><em>with less staff</em></div>
+        <div class="sub">Your fish. Your customers. One dashboard.</div>
+      </div>
+      <div>
+        <div class="ops-highlight">
+          <div class="ops-highlight-icon">&#x1F9D1;&#x200D;&#x1F373;</div>
+          <div class="ops-highlight-text">
+            More orders no longer means more you
+            <span>Relifish carries the repetitive parts — you focus on selling great fish</span>
+          </div>
+        </div>
+        <div class="ops-row">
+          <div class="ops-card"><div class="ops-icon">&#x1F4F1;</div><div class="ops-title">Discovery</div><div class="ops-desc">Nearby buyers find your menu — no footfall needed</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4CB;</div><div class="ops-title">Pre-orders</div><div class="ops-desc">Shop closed or sold out — orders still come in</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4CA;</div><div class="ops-title">Dashboard</div><div class="ops-desc">Orders, status, alerts — one place, managed solo</div></div>
+        </div>
+        <div class="ops-row" style="margin-top:0">
+          <div class="ops-card"><div class="ops-icon">&#x1F69A;</div><div class="ops-title">Delivery Rules</div><div class="ops-desc">Fee, radius, minimum — upfront, no handover arguments</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4E6;</div><div class="ops-title">Inventory</div><div class="ops-desc">Stock in kg or pieces; per-buyer daily caps; listing pause</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F514;</div><div class="ops-title">Notifications</div><div class="ops-desc">Push + Email on every order — instant alerts</div></div>
+        </div>
+        <div class="ops-row" style="margin-top:0">
+          <div class="ops-card"><div class="ops-icon">&#x1F5D3;&#xFE0F;</div><div class="ops-title">Schedule</div><div class="ops-desc">Set date range + time slots — buyers book on your schedule</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x1F4C4;</div><div class="ops-title">CSV Export</div><div class="ops-desc">Download orders — reports and accounting made easy</div></div>
+          <div class="ops-card"><div class="ops-icon">&#x23F8;&#xFE0F;</div><div class="ops-title">Pause/Resume</div><div class="ops-desc">Bulk pause listings — going to dock? Resume when back</div></div>
+        </div>
+        <div class="trust">
+          <div class="trust-faces"><div class="trust-face tf1">RK</div><div class="trust-face tf2">PS</div><div class="trust-face tf3">AM</div><div class="trust-face tf4">VN</div><div class="trust-face tf5">SD</div></div>
+          <div class="trust-copy">Mumbai sellers handling 2x orders with same team size<br><span>"Double orders, still just me" — Ramesh, Versova</span></div>
+        </div>
+        <div class="qr-block">
+          <img class="qr-img" src="data:image/png;base64,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" alt="QR Code">
+          <div class="qr-text">
+            <div class="qr-label">Scan to join</div>
+            <div class="qr-url">www.relifish.store</div>
+            <div class="qr-email"><strong>relifishstore@gmail.com</strong></div>
+          </div>
+        </div>
+        <div class="b2-footer">
+          <a class="cta-btn" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM us — <strong>relifishstore@gmail.com</strong></a>
+          <div class="limit">First 10 sellers only</div>
+        </div>
+      </div>
+    </div>
+    <div class="seller-brand-strip-warm">
+      <div class="seller-name-display sn-target">Your Shop Name</div>
+      <div class="on-relifish"><div class="dot"></div>www.relifish.store/<span class="sn-slug-target">your-shop</span></div>
+    </div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
+  </div>
+</div>
+
+<!-- ==================== BANNER 3 MR ==================== -->
+<div data-lang="mr">
+  <div class="b3">
+    <div class="fish-bg"><svg viewBox="0 0 400 400"><g transform="rotate(-10,200,200)"><ellipse cx="200" cy="200" rx="150" ry="75" fill="white"/><polygon points="350,200 420,145 420,255" fill="white"/></g></svg></div>
+    <div class="logo">&#x1F41F; Relifish</div>
+    <div class="tagline">Mumbai चा fresh fish marketplace</div>
+    <div class="seller-brand-strip-story">
+      <div class="seller-name-display sn-target">तुमचं दुकान</div>
+      <div class="x-text">&#x2715;</div>
+      <div class="relifish-text">Relifish</div>
+    </div>
+    <div class="hero">
+      <h1>जास्त orders.<br>कमी staff.<br><span>एक app.</span></h1>
+      <p>सगळं आम्ही set up करतो — तुम्ही फक्त विका</p>
+    </div>
+    <div class="section-label">तुमचे pain points — आम्हाला माहीत आहेत</div>
+    <div class="ribbon">
+      <div class="ribbon-item"><div class="ribbon-icon">&#x1F441;&#xFE0F;</div><div><div class="ribbon-text">Invisible except at the stall</div><div class="ribbon-sub">&#x2192; Discovery: buyers area search करतात, तुम्ही दिसता</div></div></div>
+      <div class="ribbon-item"><div class="ribbon-icon">&#x1F4AC;</div><div><div class="ribbon-text">Rate-and-repeat fatigue — तेच 5 प्रश्न</div><div class="ribbon-sub">&#x2192; Listing मध्ये सगळं clear — buyers decided येतात</div></div></div>
+      <div class="ribbon-item"><div class="ribbon-icon">&#x1F4CB;</div><div><div class="ribbon-text">Opening rush ला guessing</div><div class="ribbon-sub">&#x2192; Pre-orders: उद्याची demand आजच capture</div></div></div>
+      <div class="ribbon-item"><div class="ribbon-icon">&#x1F69A;</div><div><div class="ribbon-text">Delivery fee arguments</div><div class="ribbon-sub">&#x2192; Fee, minimum, free-above — upfront visible</div></div></div>
+    </div>
+    <div class="ops-section">
+      <div class="ops-section-title">&#x26A1; Operations — कमी staff सोबत</div>
+      <div class="ops-grid">
+        <div class="ops-item"><div class="check">&#x2713;</div>Multi-order handling</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Inventory signals</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Order notifications</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Delivery dashboard</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Pre-order queue</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Branded storefront</div>
+      </div>
+    </div>
+    <div class="trust-section">
+      <div class="trust-avatars"><div class="trust-av ta1">RK</div><div class="trust-av ta2">PS</div><div class="trust-av ta3">AM</div><div class="trust-av ta4">VN</div></div>
+      <div class="trust-label">Mumbai sellers Relifish सोबत grow होत आहेत<br><span>"2x orders, तोच मी एकटा" — रमेश के.</span></div>
+    </div>
+    <div class="story-cta">
+      <a class="btn" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM करा — 1 hr FREE setup</a>
+      <div class="note">पहिले 10 sellers — सगळं आम्ही करतो</div>
+    </div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
+  </div>
+</div>
+
+<!-- ==================== BANNER 3 EN ==================== -->
+<div data-lang="en">
+  <div class="b3">
+    <div class="fish-bg"><svg viewBox="0 0 400 400"><g transform="rotate(-10,200,200)"><ellipse cx="200" cy="200" rx="150" ry="75" fill="white"/><polygon points="350,200 420,145 420,255" fill="white"/></g></svg></div>
+    <div class="logo">&#x1F41F; Relifish</div>
+    <div class="tagline">Fresh fish marketplace for Mumbai</div>
+    <div class="seller-brand-strip-story">
+      <div class="seller-name-display sn-target">Your Shop Name</div>
+      <div class="x-text">&#x2715;</div>
+      <div class="relifish-text">Relifish</div>
+    </div>
+    <div class="hero">
+      <h1>More orders.<br>Less staff.<br><span>One app.</span></h1>
+      <p>We set up everything — you just sell</p>
+    </div>
+    <div class="section-label">Your pain points — we know them</div>
+    <div class="ribbon">
+      <div class="ribbon-item"><div class="ribbon-icon">&#x1F441;&#xFE0F;</div><div><div class="ribbon-text">Invisible except at the stall</div><div class="ribbon-sub">&#x2192; Discovery: buyers search your area, you show up</div></div></div>
+      <div class="ribbon-item"><div class="ribbon-icon">&#x1F4AC;</div><div><div class="ribbon-text">Rate-and-repeat fatigue all morning</div><div class="ribbon-sub">&#x2192; Listing has it all — buyers arrive decided</div></div></div>
+      <div class="ribbon-item"><div class="ribbon-icon">&#x1F4CB;</div><div><div class="ribbon-text">Guessing demand at opening rush</div><div class="ribbon-sub">&#x2192; Pre-orders capture tomorrow's demand today</div></div></div>
+      <div class="ribbon-item"><div class="ribbon-icon">&#x1F69A;</div><div><div class="ribbon-text">Delivery fee arguments at handover</div><div class="ribbon-sub">&#x2192; Fee, minimum, free-above — all visible upfront</div></div></div>
+    </div>
+    <div class="ops-section">
+      <div class="ops-section-title">&#x26A1; Operations — with less staff</div>
+      <div class="ops-grid">
+        <div class="ops-item"><div class="check">&#x2713;</div>Multi-order handling</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Inventory signals</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Order notifications</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Delivery dashboard</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Pre-order queue</div>
+        <div class="ops-item"><div class="check">&#x2713;</div>Branded storefront</div>
+      </div>
+    </div>
+    <div class="trust-section">
+      <div class="trust-avatars"><div class="trust-av ta1">RK</div><div class="trust-av ta2">PS</div><div class="trust-av ta3">AM</div><div class="trust-av ta4">VN</div></div>
+      <div class="trust-label">Mumbai sellers handling 2x orders solo<br><span>"Double orders, still just me" — Ramesh K.</span></div>
+    </div>
+    <div class="story-cta">
+      <a class="btn" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">DM us — 1 hr FREE setup</a>
+      <div class="note">First 10 sellers — we handle everything</div>
+    </div>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
+  </div>
+</div>
+
+<!-- ==================== BANNER 4 MR ==================== -->
+<div data-lang="mr">
+  <div class="b4">
+    <div class="accent-bar"></div>
+    <div class="fish-watermark"><svg viewBox="0 0 400 400"><g transform="rotate(-10,200,200)"><ellipse cx="200" cy="200" rx="150" ry="75" fill="#1a1a1a"/><polygon points="350,200 420,145 420,255" fill="#1a1a1a"/></g></svg></div>
+    <div class="logo">&#x1F41F; Relifish</div>
+    <div class="seller-brand-strip-white">
+      <div class="seller-name-display sn-target">तुमचं दुकान</div>
+      <div class="x-text">&#x2715;</div>
+      <div class="relifish-text">Relifish</div>
+    </div>
+    <div class="fish-center"><svg viewBox="0 0 300 300"><g filter="url(#fish3d)" transform="translate(10,60)"><ellipse cx="140" cy="90" rx="110" ry="55" fill="url(#fishGradSilver)"/><ellipse cx="136" cy="105" rx="85" ry="25" fill="rgba(255,255,255,0.3)"/><polygon points="250,90 300,50 300,130" fill="url(#fishGradSilver)" opacity="0.8"/><circle cx="75" cy="82" r="14" fill="white"/><circle cx="73" cy="80" r="9" fill="url(#fishEye)"/><circle cx="70" cy="78" r="3" fill="white" opacity="0.9"/></g></svg></div>
+    <div class="quote"><span>जास्त orders, जास्त growth —</span> जास्त staff नाही</div>
+    <div class="subtext">Relifish repetitive काम करतो — visibility, pricing rules, order flow, alerts, delivery. तुम्ही फक्त मासा विका.</div>
+    <div class="ops-strip">
+      <div class="ops-tag"><div class="dot"></div>Discovery</div>
+      <div class="ops-tag"><div class="dot"></div>Pre-orders</div>
+      <div class="ops-tag warm"><div class="dot"></div>Delivery Rules</div>
+      <div class="ops-tag"><div class="dot"></div>Multi-order</div>
+      <div class="ops-tag warm"><div class="dot"></div>Inventory</div>
+      <div class="ops-tag"><div class="dot"></div>Dashboard</div>
+      <div class="ops-tag warm"><div class="dot"></div>Notifications</div>
+      <div class="ops-tag"><div class="dot"></div>Branded Storefront</div>
+    </div>
+    <div class="trust-row">
+      <div class="faces"><div class="face f1">R</div><div class="face f2">P</div><div class="face f3">A</div><div class="face f4">V</div></div>
+      <div class="label">Mumbai fish sellers चा विश्वास</div>
+    </div>
+    <a class="footer-line" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">पहिले 10 sellers — <strong>1 hr FREE setup, DM करा</strong></a>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
+  </div>
+</div>
+
+<!-- ==================== BANNER 4 EN ==================== -->
+<div data-lang="en">
+  <div class="b4">
+    <div class="accent-bar"></div>
+    <div class="fish-watermark"><svg viewBox="0 0 400 400"><g transform="rotate(-10,200,200)"><ellipse cx="200" cy="200" rx="150" ry="75" fill="#1a1a1a"/><polygon points="350,200 420,145 420,255" fill="#1a1a1a"/></g></svg></div>
+    <div class="logo">&#x1F41F; Relifish</div>
+    <div class="seller-brand-strip-white">
+      <div class="seller-name-display sn-target">Your Shop Name</div>
+      <div class="x-text">&#x2715;</div>
+      <div class="relifish-text">Relifish</div>
+    </div>
+    <div class="fish-center"><svg viewBox="0 0 300 300"><g filter="url(#fish3d)" transform="translate(10,60)"><ellipse cx="140" cy="90" rx="110" ry="55" fill="url(#fishGradSilver)"/><ellipse cx="136" cy="105" rx="85" ry="25" fill="rgba(255,255,255,0.3)"/><polygon points="250,90 300,50 300,130" fill="url(#fishGradSilver)" opacity="0.8"/><circle cx="75" cy="82" r="14" fill="white"/><circle cx="73" cy="80" r="9" fill="url(#fishEye)"/><circle cx="70" cy="78" r="3" fill="white" opacity="0.9"/></g></svg></div>
+    <div class="quote"><span>More orders, more growth —</span> without more staff</div>
+    <div class="subtext">Relifish carries the repetitive parts — visibility, pricing rules, order flow, alerts, delivery. You focus on selling great fish.</div>
+    <div class="ops-strip">
+      <div class="ops-tag"><div class="dot"></div>Discovery</div>
+      <div class="ops-tag"><div class="dot"></div>Pre-orders</div>
+      <div class="ops-tag warm"><div class="dot"></div>Delivery Rules</div>
+      <div class="ops-tag"><div class="dot"></div>Multi-order</div>
+      <div class="ops-tag warm"><div class="dot"></div>Inventory</div>
+      <div class="ops-tag"><div class="dot"></div>Dashboard</div>
+      <div class="ops-tag warm"><div class="dot"></div>Notifications</div>
+      <div class="ops-tag"><div class="dot"></div>Branded Storefront</div>
+    </div>
+    <div class="trust-row">
+      <div class="faces"><div class="face f1">R</div><div class="face f2">P</div><div class="face f3">A</div><div class="face f4">V</div></div>
+      <div class="label">Trusted by Mumbai fish sellers</div>
+    </div>
+    <a class="footer-line" href="mailto:relifishstore@gmail.com?subject=Free%20Setup" style="cursor:pointer;text-decoration:none;display:inline-block;">First 10 sellers — <strong>1 hr FREE setup, DM us</strong></a>
+    <div class="tc">*Standard terms apply. Commission applicable after introductory period. www.relifish.store/terms</div>
+  </div>
+</div>
+
+<script>
+function setLang(lang) {
+  document.body.className = lang === 'mr' ? 'lang-mr' : '';
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-mr').classList.toggle('active', lang === 'mr');
+}
+function toSlug(n) { return n.toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,'-').substring(0,20)||'your-shop'; }
+function updateSellerName(name) {
+  var display = name || (document.body.classList.contains('lang-mr') ? 'तुमचं दुकान' : 'Your Shop Name');
+  var slug = name ? toSlug(name) : 'your-shop';
+  document.querySelectorAll('.sn-target').forEach(function(el){ el.textContent = display; });
+  document.querySelectorAll('.sn-slug-target').forEach(function(el){ el.textContent = slug; });
+}
+
+// Read ?store= query param and ?lang= param on load
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var storeName = params.get('store') || params.get('name') || params.get('shop') || '';
+  var lang = params.get('lang');
+
+  // Default English unless ?lang=mr
+  if (lang === 'mr') {
+    setLang('mr');
+  } else {
+    setLang('en');
+  }
+
+  // Set store name from URL
+  if (storeName) {
+    storeName = decodeURIComponent(storeName);
+    var input = document.querySelector('.customizer input');
+    if (input) { input.value = storeName; }
+    updateSellerName(storeName);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+---
+import type { SellerHeroProps } from "../../../types/v2-components";
+interface Props extends SellerHeroProps {}
+const {
+  name,
+  location,
+  distanceKm,
+  deliveryEtaMin,
+  rating,
+  status,
+  closesAt,
+  opensAt,
+  totalOrders,
+  itemCount,
+  catchTime,
+  tags = [],
+} = Astro.props;
+
+const subParts = [
+  location,
+  distanceKm != null ? `${distanceKm.toFixed(1)} km` : null,
+  deliveryEtaMin != null ? `${deliveryEtaMin} min delivery` : null,
+].filter(Boolean).join(" · ");
+---
+<section class="v2-sh-hero">
+  <a href="/" class="v2-sh-back" aria-label="Back to sellers">← Back</a>
+
+  <div class="v2-sh-top">
+    <div class="v2-sh-avatar" aria-hidden="true">🐟</div>
+    <div class="v2-sh-info">
+      <h1 class="v2-sh-name">{name}</h1>
+      {subParts && <div class="v2-sh-sub">{subParts}</div>}
+    </div>
+    {rating > 0 && (
+      <span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">{rating.toFixed(1)} ★</span>
+    )}
+  </div>
+
+  {tags.length > 0 && (
+    <div class="v2-sh-tags">
+      {tags.map((t) => (
+        <span class="v2-badge v2-badge-tag v2-badge-size-md">{t}</span>
+      ))}
+    </div>
+  )}
+
+  <div class="v2-sh-stats">
+    <div class="v2-sh-stat">
+      <div class="v2-sh-v">{totalOrders ?? "—"}</div>
+      <div class="v2-sh-l">Orders</div>
+    </div>
+    <div class="v2-sh-stat">
+      <div class="v2-sh-v">{itemCount ?? "—"}</div>
+      <div class="v2-sh-l">Items</div>
+    </div>
+    <div class="v2-sh-stat">
+      <div class="v2-sh-v">{catchTime ?? "—"}</div>
+      <div class="v2-sh-l">Catch</div>
+    </div>
+    <div class="v2-sh-stat">
+      <div class:list={["v2-sh-v", status === "open" && "v2-sh-live"]}>
+        {status === "open" ? "Open" : "Closed"}
+      </div>
+      <div class="v2-sh-l">{status === "open" ? `Until ${closesAt ?? "11am"}` : `Opens ${opensAt ?? "5am"}`}</div>
+    </div>
+  </div>
+</section>
+
+<!-- styles in src/styles/v2-components.css -->

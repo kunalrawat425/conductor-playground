@@ -1,0 +1,3707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Relifish V2 — Complete Design System (All-in-One)</title>
+<style>
+/* Relifish V2 Design System — Shared Tokens */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  /* Ink / Neutrals */
+  --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+  --bg:#FFFFFF;--bg2:#F8FAFC;--bg3:#F1F5F9;
+
+  /* Brand */
+  --brand:#0066FF;--brand-d:#0052CC;--brand-l:#E6F0FF;--brand-m:#CCE0FF;
+
+  /* Status */
+  --green:#059669;--green-l:#ECFDF5;--green-bg:#D1FAE5;
+  --orange:#EA580C;--orange-l:#FFF7ED;
+  --red:#DC2626;--red-l:#FEF2F2;
+
+  /* Borders + Shadows */
+  --border:#E2E8F0;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+
+  /* Radius scale */
+  --radius-xs:4px;--radius-sm:8px;--radius:12px;--radius-lg:16px;--radius-xl:20px;--radius-full:9999px;
+
+  /* Spacing scale (4pt grid) */
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;--s-8:32px;--s-10:40px;--s-12:48px;
+}
+
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg2);color:var(--ink);line-height:1.5;padding:32px}
+
+/* Figma-export-friendly container */
+.figma-page{max-width:1440px;margin:0 auto}
+.figma-page h1{font-size:24px;font-weight:800;margin-bottom:8px}
+.figma-page .sub{font-size:14px;color:var(--ink3);margin-bottom:32px}
+
+/* Component section — each exportable separately */
+.component{background:#fff;border:1px dashed var(--border);border-radius:var(--radius);padding:32px;margin-bottom:24px;position:relative}
+.component::before{content:attr(data-name);position:absolute;top:-10px;left:16px;background:var(--brand);color:#fff;font:700 10px Inter;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:4px}
+
+.component-variants{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.variant{display:flex;flex-direction:column;gap:8px}
+.variant-label{font:500 11px Inter;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em}
+
+.spec{margin-top:16px;padding:12px 16px;background:var(--bg3);border-radius:var(--radius-sm);font:400 12px/1.6 'SF Mono',Menlo,monospace;color:var(--ink2)}
+.spec b{color:var(--ink);font-weight:700}
+
+/* Phone frame (for screens) */
+.phone{width:360px;height:720px;border-radius:36px;border:8px solid #1E293B;background:#fff;overflow:hidden;position:relative;box-shadow:var(--shadow-lg);margin:0 auto}
+.phone-status{height:44px;background:#fff;display:flex;align-items:center;justify-content:center;font:600 13px Inter}
+.phone-body{height:calc(100% - 44px);overflow-y:auto;overflow-x:hidden}
+.phone-body::-webkit-scrollbar{display:none}
+
+/* Shared styles for all screen mockups */
+body{background:#F1F5F9;padding:40px;font-family:'Inter',system-ui,sans-serif}
+.figma-page{max-width:400px;margin:0 auto}
+.figma-page h1{font-size:24px;font-weight:800;margin-bottom:8px}
+.figma-page .sub{font-size:13px;color:#64748B;margin-bottom:24px}
+
+.phone{width:360px;height:780px;border-radius:40px;border:10px solid #1E293B;background:#fff;overflow:hidden;position:relative;box-shadow:0 20px 40px rgba(0,0,0,.2)}
+.phone-status{height:44px;background:#fff;display:flex;align-items:center;justify-content:center;font:600 13px Inter}
+.phone-body{height:calc(100% - 44px);overflow-y:auto;overflow-x:hidden;background:#F8FAFC}
+.phone-body::-webkit-scrollbar{display:none}
+.phone-body.with-nav{height:calc(100% - 44px - 64px)}
+
+.app-header{padding:12px 16px;background:#0066FF;display:flex;align-items:center;gap:12px}
+.app-header .logo{font:800 16px Inter;color:#fff;letter-spacing:-.02em}
+.app-header .loc-wrap{flex:1;min-width:0}
+.app-header .loc-main{font:700 13px Inter;color:#fff}
+.app-header .loc-sub{font:400 10px Inter;color:rgba(255,255,255,.75)}
+.app-header .profile{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+
+.bottom-nav{height:64px;background:#fff;border-top:1px solid #E2E8F0;display:flex;position:absolute;bottom:0;left:0;right:0;box-shadow:0 -2px 4px rgba(0,0,0,.04)}
+.bottom-nav .n-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:#94A3B8;position:relative}
+.bottom-nav .n-item.active{color:#0066FF}
+.bottom-nav .n-item.active::before{content:'';position:absolute;top:0;width:24px;height:2px;background:#0066FF}
+.bottom-nav .n-item .icon{font-size:20px}
+
+.mega-section{margin:0 0 80px;padding:32px;background:#fff;border-radius:24px;box-shadow:0 4px 6px rgba(0,0,0,.05)}
+.mega-cat{font:800 11px Inter;text-transform:uppercase;letter-spacing:.15em;color:#0066FF;margin-bottom:8px}
+.mega-title{font-size:32px;font-weight:900;color:#0F172A;margin-bottom:32px;letter-spacing:-.02em}
+.mega-page{max-width:1600px;margin:0 auto;padding:40px}
+.mega-hero{margin-bottom:48px}
+.mega-hero h1{font-size:48px;font-weight:900;letter-spacing:-.03em;margin-bottom:8px}
+.mega-hero p{font-size:16px;color:#64748B}
+</style>
+</head>
+<body style="background:#F1F5F9;padding:0">
+<div class="mega-page">
+<div class="mega-hero">
+<h1>Relifish V2 Design System</h1>
+<p>33 components — atoms, molecules, organisms, screens. Every state covered.</p>
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">01 · Foundations</div>
+<h2 class="mega-title">Design Tokens</h2>
+<style>
+  .token-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+  .token{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px}
+  .token .t-label{font:600 10px Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px}
+  .token .t-value{font:700 13px Inter;color:var(--ink)}
+  .token .t-detail{font:400 11px Inter;color:var(--ink3);margin-top:2px}
+  .swatch{width:100%;height:32px;border-radius:6px;margin-bottom:8px}
+  .shadow-box{width:80px;height:60px;background:#fff;border-radius:var(--radius);margin-bottom:8px}
+  .radius-box{width:80px;height:60px;background:var(--brand-l);margin-bottom:8px}
+  .type-sample{margin-bottom:16px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm)}
+  .type-meta{font:500 10px Inter;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+  .spacing-demo{display:flex;gap:16px;align-items:flex-end;margin-top:16px}
+  .spacing-bar{background:var(--brand);border-radius:2px}
+  .spacing-bar.s1{width:4px;height:20px}
+  .spacing-bar.s2{width:8px;height:30px}
+  .spacing-bar.s3{width:12px;height:40px}
+  .spacing-bar.s4{width:16px;height:50px}
+  .spacing-bar.s5{width:20px;height:60px}
+  .spacing-bar.s6{width:24px;height:70px}
+  .spacing-bar.s8{width:32px;height:80px}
+  section{margin-bottom:40px}
+  section h2{font-size:18px;font-weight:800;margin-bottom:16px}
+
+</style>
+
+<div class="figma-page">
+  <h1>Foundations</h1>
+  <p class="sub">Design tokens — single source of truth for V2.</p>
+
+  <section>
+    <h2>Color · Brand</h2>
+    <div class="token-row">
+      <div class="token"><div class="swatch" style="background:#0066FF"></div><div class="t-label">brand</div><div class="t-value">#0066FF</div><div class="t-detail">Primary CTAs, headers</div></div>
+      <div class="token"><div class="swatch" style="background:#0052CC"></div><div class="t-label">brand-d</div><div class="t-value">#0052CC</div><div class="t-detail">Hover, pressed</div></div>
+      <div class="token"><div class="swatch" style="background:#E6F0FF"></div><div class="t-label">brand-l</div><div class="t-value">#E6F0FF</div><div class="t-detail">Tag backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#CCE0FF"></div><div class="t-label">brand-m</div><div class="t-value">#CCE0FF</div><div class="t-detail">Borders, dividers</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Color · Status</h2>
+    <div class="token-row">
+      <div class="token"><div class="swatch" style="background:#059669"></div><div class="t-label">green</div><div class="t-value">#059669</div><div class="t-detail">Open, success, prices</div></div>
+      <div class="token"><div class="swatch" style="background:#ECFDF5"></div><div class="t-label">green-l</div><div class="t-value">#ECFDF5</div><div class="t-detail">Success backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#EA580C"></div><div class="t-label">orange</div><div class="t-value">#EA580C</div><div class="t-detail">Pre-order, warning</div></div>
+      <div class="token"><div class="swatch" style="background:#FFF7ED"></div><div class="t-label">orange-l</div><div class="t-value">#FFF7ED</div><div class="t-detail">Warning backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#DC2626"></div><div class="t-label">red</div><div class="t-value">#DC2626</div><div class="t-detail">Error, sold out</div></div>
+      <div class="token"><div class="swatch" style="background:#FEF2F2"></div><div class="t-label">red-l</div><div class="t-value">#FEF2F2</div><div class="t-detail">Error backgrounds</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Color · Neutrals</h2>
+    <div class="token-row">
+      <div class="token"><div class="swatch" style="background:#0F172A"></div><div class="t-label">ink</div><div class="t-value">#0F172A</div><div class="t-detail">Headings, prices</div></div>
+      <div class="token"><div class="swatch" style="background:#334155"></div><div class="t-label">ink-2</div><div class="t-value">#334155</div><div class="t-detail">Body text</div></div>
+      <div class="token"><div class="swatch" style="background:#64748B"></div><div class="t-label">ink-3</div><div class="t-value">#64748B</div><div class="t-detail">Secondary text</div></div>
+      <div class="token"><div class="swatch" style="background:#94A3B8"></div><div class="t-label">ink-4</div><div class="t-value">#94A3B8</div><div class="t-detail">Muted, placeholders</div></div>
+      <div class="token"><div class="swatch" style="background:#FFFFFF;border:1px solid #E2E8F0"></div><div class="t-label">bg</div><div class="t-value">#FFFFFF</div><div class="t-detail">Card backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#F8FAFC"></div><div class="t-label">bg-2</div><div class="t-value">#F8FAFC</div><div class="t-detail">Page backgrounds</div></div>
+      <div class="token"><div class="swatch" style="background:#F1F5F9"></div><div class="t-label">bg-3</div><div class="t-value">#F1F5F9</div><div class="t-detail">Subtle fills</div></div>
+      <div class="token"><div class="swatch" style="background:#E2E8F0"></div><div class="t-label">border</div><div class="t-value">#E2E8F0</div><div class="t-detail">All borders</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Typography</h2>
+    <div class="type-sample">
+      <div class="type-meta">display · 32/800/tight</div>
+      <div style="font:800 32px/1.1 Inter;letter-spacing:-.02em">Fresh fish, direct from sellers</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">h1 · 24/800</div>
+      <div style="font:800 24px/1.2 Inter;letter-spacing:-.02em">Browse nearby sellers</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">h2 · 17/800</div>
+      <div style="font:800 17px/1.3 Inter">Kamla Tai Fish Stall</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">h3 · 15/700</div>
+      <div style="font:700 15px/1.4 Inter">Today's Menu</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">card-title · 14/700</div>
+      <div style="font:700 14px/1.4 Inter">Surmai (King Fish)</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">body · 13/400</div>
+      <div style="font:400 13px/1.6 Inter">Same-day catch from Sassoon Dock. Cleaned and cut on request.</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">caption · 11/500</div>
+      <div style="font:500 11px/1.4 Inter;color:var(--ink3)">1.2 km · 45 min delivery</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">label · 10/600/caps</div>
+      <div style="font:600 10px/1 Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--brand)">Pre-order</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-meta">price · 13-15/800</div>
+      <div style="font:800 15px Inter">₹650/kg</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Spacing · 4pt grid</h2>
+    <div class="spacing-demo">
+      <div><div class="spacing-bar s1"></div><div class="t-label">s-1 · 4px</div></div>
+      <div><div class="spacing-bar s2"></div><div class="t-label">s-2 · 8px</div></div>
+      <div><div class="spacing-bar s3"></div><div class="t-label">s-3 · 12px</div></div>
+      <div><div class="spacing-bar s4"></div><div class="t-label">s-4 · 16px</div></div>
+      <div><div class="spacing-bar s5"></div><div class="t-label">s-5 · 20px</div></div>
+      <div><div class="spacing-bar s6"></div><div class="t-label">s-6 · 24px</div></div>
+      <div><div class="spacing-bar s8"></div><div class="t-label">s-8 · 32px</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Border Radius</h2>
+    <div class="token-row">
+      <div class="token"><div class="radius-box" style="border-radius:4px"></div><div class="t-label">radius-xs</div><div class="t-value">4px</div><div class="t-detail">Small badges</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:8px"></div><div class="t-label">radius-sm</div><div class="t-value">8px</div><div class="t-detail">Buttons, inputs</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:12px"></div><div class="t-label">radius</div><div class="t-value">12px</div><div class="t-detail">Cards (default)</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:16px"></div><div class="t-label">radius-lg</div><div class="t-value">16px</div><div class="t-detail">Large cards, sheets</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:20px"></div><div class="t-label">radius-xl</div><div class="t-value">20px</div><div class="t-detail">Chips, pills</div></div>
+      <div class="token"><div class="radius-box" style="border-radius:9999px"></div><div class="t-label">radius-full</div><div class="t-value">9999px</div><div class="t-detail">Avatars, circles</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Shadows</h2>
+    <div class="token-row">
+      <div class="token"><div class="shadow-box" style="box-shadow:var(--shadow-sm)"></div><div class="t-label">shadow-sm</div><div class="t-value">subtle</div><div class="t-detail">Menu items</div></div>
+      <div class="token"><div class="shadow-box" style="box-shadow:var(--shadow)"></div><div class="t-label">shadow</div><div class="t-value">default</div><div class="t-detail">Cards</div></div>
+      <div class="token"><div class="shadow-box" style="box-shadow:var(--shadow-md)"></div><div class="t-label">shadow-md</div><div class="t-value">medium</div><div class="t-detail">Floating search</div></div>
+      <div class="token"><div class="shadow-box" style="box-shadow:var(--shadow-lg)"></div><div class="t-label">shadow-lg</div><div class="t-value">large</div><div class="t-detail">Cart bar, modals</div></div>
+    </div>
+  </section>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">02 · Atoms</div>
+<h2 class="mega-title">Buttons</h2>
+<style>
+  .btn-primary{background:var(--brand);color:#fff;border:none;font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
+  .btn-primary:hover{background:var(--brand-d)}
+  .btn-secondary{background:#fff;color:var(--brand);border:1.5px solid var(--brand);font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
+  .btn-ghost{background:transparent;color:var(--ink);border:none;font:600 13px Inter;padding:8px 12px;cursor:pointer}
+  .btn-danger{background:var(--red);color:#fff;border:none;font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
+  .btn-cta-lg{background:var(--brand);color:#fff;border:none;font:800 16px Inter;padding:14px 32px;border-radius:var(--radius);cursor:pointer;box-shadow:var(--shadow-md)}
+
+  .add-btn{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;border:none;font:700 18px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .add-btn-lg{width:36px;height:36px;border-radius:10px;background:var(--brand);color:#fff;border:none;font:700 22px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .add-counter{display:flex;align-items:center;background:var(--brand);border-radius:8px;overflow:hidden;height:28px}
+  .add-counter button{background:transparent;color:#fff;border:none;width:28px;height:28px;font:700 14px Inter;cursor:pointer}
+  .add-counter span{color:#fff;font:700 12px Inter;padding:0 8px;min-width:24px;text-align:center}
+
+  .cart-bar{background:var(--brand);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg);width:320px}
+  .cart-bar .c-left{color:#fff}
+  .cart-bar .c-items{font:600 12px Inter;opacity:.9}
+  .cart-bar .c-total{font:800 15px Inter}
+  .cart-bar .c-btn{background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:var(--radius-sm);border:none}
+
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;font:500 10px Inter;color:var(--ink4);padding:8px;position:relative}
+  .nav-item.active{color:var(--brand)}
+  .nav-item.active::before{content:'';position:absolute;top:0;width:24px;height:2px;background:var(--brand);border-radius:0 0 2px 2px}
+  .nav-item .icon{font-size:20px}
+
+</style>
+
+<div class="figma-page">
+  <h1>Buttons</h1>
+  <p class="sub">All button primitives for V2. Each variant maps 1:1 to a Figma component.</p>
+
+  <div class="component" data-name="Button / Primary">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span><button class="btn-primary">Place Order</button></div>
+      <div class="variant"><span class="variant-label">large</span><button class="btn-cta-lg">Place Order</button></div>
+      <div class="variant"><span class="variant-label">loading</span><button class="btn-primary" disabled style="opacity:.6">Placing...</button></div>
+      <div class="variant"><span class="variant-label">disabled</span><button class="btn-primary" disabled style="opacity:.4;cursor:not-allowed">Place Order</button></div>
+    </div>
+    <div class="spec">
+      <b>bg:</b> #0066FF &nbsp; <b>text:</b> #FFFFFF &nbsp; <b>font:</b> 700 / 14px &nbsp; <b>padding:</b> 12px 24px &nbsp; <b>radius:</b> 8px<br>
+      <b>hover:</b> bg #0052CC &nbsp; <b>disabled:</b> opacity 0.4
+    </div>
+  </div>
+
+  <div class="component" data-name="Button / Secondary">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span><button class="btn-secondary">Cancel</button></div>
+      <div class="variant"><span class="variant-label">ghost</span><button class="btn-ghost">Skip</button></div>
+    </div>
+    <div class="spec">
+      <b>Secondary:</b> bg white, border 1.5px #0066FF, text #0066FF<br>
+      <b>Ghost:</b> transparent bg, text #0F172A, no border
+    </div>
+  </div>
+
+  <div class="component" data-name="Button / Danger">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span><button class="btn-danger">Delete</button></div>
+    </div>
+    <div class="spec">
+      <b>bg:</b> #DC2626 &nbsp; <b>text:</b> #FFFFFF &nbsp; used for destructive actions only
+    </div>
+  </div>
+
+  <div class="component" data-name="AddButton (Menu Item)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">add · sm</span><button class="add-btn">+</button></div>
+      <div class="variant"><span class="variant-label">add · lg</span><button class="add-btn-lg">+</button></div>
+      <div class="variant"><span class="variant-label">counter · sm</span>
+        <div class="add-counter"><button>−</button><span>2</span><button>+</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">counter · lg</span>
+        <div class="add-counter" style="height:36px"><button style="width:36px;height:36px">−</button><span style="font-size:14px">2</span><button style="width:36px;height:36px">+</button></div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Blinkit pattern.</b> Single "+" → expands to "− count +" after first tap.<br>
+      <b>Size sm:</b> 28x28px · radius 8px · font 18px &nbsp; <b>Size lg:</b> 36x36px · radius 10px · font 22px
+    </div>
+  </div>
+
+  <div class="component" data-name="CartBar (Floating)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span>
+        <div class="cart-bar"><div class="c-left"><div class="c-items">2 items</div><div class="c-total">₹1,450</div></div><button class="c-btn">View Cart →</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">min-order-warning</span>
+        <div class="cart-bar" style="background:var(--orange)"><div class="c-left"><div class="c-items">Add ₹150 more</div><div class="c-total">₹850</div></div><button class="c-btn" style="color:var(--orange)">Min order ₹1,000</button></div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Placement:</b> fixed bottom, 12px from edges, above nav<br>
+      <b>bg:</b> #0066FF &nbsp; <b>radius:</b> 12px &nbsp; <b>shadow:</b> shadow-lg<br>
+      <b>Warning state:</b> orange bg when below min order threshold
+    </div>
+  </div>
+
+  <div class="component" data-name="NavItem (Bottom Nav)">
+    <div class="component-variants" style="background:#fff;padding:16px 24px;border-radius:8px;border-top:1px solid var(--border)">
+      <div class="nav-item active"><span class="icon">🏠</span>Home</div>
+      <div class="nav-item"><span class="icon">🔍</span>Search</div>
+      <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="nav-item"><span class="icon">📋</span>Orders</div>
+      <div class="nav-item"><span class="icon">👤</span>Account</div>
+    </div>
+    <div class="spec">
+      <b>Active:</b> color #0066FF + 2px top indicator bar<br>
+      <b>Inactive:</b> color #94A3B8 &nbsp; <b>icon:</b> 20px &nbsp; <b>label:</b> 500/10px
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">02 · Atoms</div>
+<h2 class="mega-title">Badges & Tags</h2>
+<style>
+  .rating{display:inline-flex;align-items:center;gap:3px;background:var(--green);color:#fff;font:700 11px Inter;padding:3px 7px;border-radius:5px}
+  .rating-lg{font:700 13px Inter;padding:4px 9px}
+  .offer-badge{background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px;display:inline-block}
+  .offer-badge-green{background:var(--green)}
+  .offer-badge-orange{background:var(--orange)}
+  .offer-badge-red{background:var(--red)}
+  .tag{display:inline-flex;font:500 10px Inter;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--ink3)}
+  .tag-green{background:var(--green-l);color:var(--green)}
+  .tag-brand{background:var(--brand-l);color:var(--brand)}
+  .tag-orange{background:var(--orange-l);color:var(--orange)}
+  .tag-red{background:var(--red-l);color:var(--red)}
+  .status-dot{display:inline-flex;align-items:center;gap:5px;font:500 11px Inter}
+  .status-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ink4)}
+  .status-dot.open{color:var(--green)}
+  .status-dot.open::before{background:var(--green)}
+  .status-dot.closed{color:var(--red)}
+  .status-dot.closed::before{background:var(--red)}
+  .cut-badge{background:var(--brand-l);color:var(--brand);font:600 9px Inter;padding:2px 6px;border-radius:4px;display:inline-block}
+
+</style>
+
+<div class="figma-page">
+  <h1>Badges & Tags</h1>
+  <p class="sub">Status indicators. Rating badges, offer badges, status tags.</p>
+
+  <div class="component" data-name="RatingBadge">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">sm</span><span class="rating">4.8 ★</span></div>
+      <div class="variant"><span class="variant-label">lg</span><span class="rating rating-lg">4.8 ★</span></div>
+      <div class="variant"><span class="variant-label">new</span><span class="rating" style="background:var(--ink3)">NEW</span></div>
+      <div class="variant"><span class="variant-label">low (orange)</span><span class="rating" style="background:var(--orange)">3.2 ★</span></div>
+    </div>
+    <div class="spec"><b>Zomato-style.</b> Green bg = trust. <b>sm:</b> 11/700 · padding 3px 7px · radius 5px</div>
+  </div>
+
+  <div class="component" data-name="OfferBadge">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">brand</span><span class="offer-badge">Same-day catch</span></div>
+      <div class="variant"><span class="variant-label">green</span><span class="offer-badge offer-badge-green">Fresh today</span></div>
+      <div class="variant"><span class="variant-label">orange</span><span class="offer-badge offer-badge-orange">Limited stock</span></div>
+      <div class="variant"><span class="variant-label">red</span><span class="offer-badge offer-badge-red">Sold out</span></div>
+    </div>
+    <div class="spec"><b>Placement:</b> top-left on card images · <b>font:</b> 700 / 10px · <b>padding:</b> 3px 8px · <b>radius:</b> 6px</div>
+  </div>
+
+  <div class="component" data-name="Tag (Status Chip)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">neutral</span><span class="tag">Pickup only</span></div>
+      <div class="variant"><span class="variant-label">green</span><span class="tag tag-green">Open now</span></div>
+      <div class="variant"><span class="variant-label">brand</span><span class="tag tag-brand">Pre-order</span></div>
+      <div class="variant"><span class="variant-label">orange</span><span class="tag tag-orange">Closing soon</span></div>
+      <div class="variant"><span class="variant-label">red</span><span class="tag tag-red">Closed</span></div>
+    </div>
+    <div class="spec"><b>font:</b> 500 / 10px · <b>padding:</b> 3px 10px · <b>radius:</b> 20px (pill)</div>
+  </div>
+
+  <div class="component" data-name="StatusDot (Live Indicator)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">open</span><span class="status-dot open">Open · Sassoon Dock</span></div>
+      <div class="variant"><span class="variant-label">closed</span><span class="status-dot closed">Closed · Opens 5am</span></div>
+    </div>
+    <div class="spec"><b>Dot:</b> 6x6px circle · <b>font:</b> 500 / 11px · animate pulse for live state</div>
+  </div>
+
+  <div class="component" data-name="CutBadge (Menu Item)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">options</span><span class="cut-badge">Whole / Cut</span></div>
+      <div class="variant"><span class="variant-label">cleaned</span><span class="cut-badge" style="background:var(--green-l);color:var(--green)">Cleaned</span></div>
+      <div class="variant"><span class="variant-label">fresh-today</span><span class="cut-badge" style="background:var(--green-l);color:var(--green)">Fresh today</span></div>
+    </div>
+    <div class="spec"><b>Placement:</b> top-left on menu item image · <b>font:</b> 600 / 9px · <b>padding:</b> 2px 6px</div>
+  </div>
+
+  <div class="component" data-name="OrderStatusBadge">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">placed</span><span class="tag tag-brand">Order placed</span></div>
+      <div class="variant"><span class="variant-label">confirmed</span><span class="tag tag-green">Confirmed</span></div>
+      <div class="variant"><span class="variant-label">ready</span><span class="tag" style="background:#E0F2FE;color:#0369A1">Ready for pickup</span></div>
+      <div class="variant"><span class="variant-label">completed</span><span class="tag tag-green">Completed</span></div>
+      <div class="variant"><span class="variant-label">cancelled</span><span class="tag tag-red">Cancelled</span></div>
+      <div class="variant"><span class="variant-label">scheduled</span><span class="tag" style="background:#F3E8FF;color:#7C3AED">Scheduled</span></div>
+    </div>
+    <div class="spec"><b>Color-coded status</b> · used in order history, tracking page, seller dashboard</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">02 · Atoms</div>
+<h2 class="mega-title">Inputs</h2>
+<style>
+  .input{width:280px;padding:12px 14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);font:400 14px Inter;color:var(--ink)}
+  .input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)}
+  .input.error{border-color:var(--red)}
+  .input-label{display:block;font:600 12px Inter;color:var(--ink2);margin-bottom:6px}
+  .helper{font:400 11px Inter;color:var(--ink4);margin-top:4px}
+  .helper.error{color:var(--red)}
+  .search-floating{width:320px;padding:14px 16px;background:#fff;border-radius:var(--radius);font:400 13px Inter;color:var(--ink4);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px}
+  .search-floating .icon{font-size:14px;color:var(--ink4)}
+  .otp{display:flex;gap:8px}
+  .otp input{width:44px;height:52px;text-align:center;font:700 20px Inter;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff}
+  .otp input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)}
+  .phone-input{display:flex;align-items:center;width:280px;padding:10px 14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);gap:8px}
+  .phone-input .prefix{font:600 14px Inter;color:var(--ink2);border-right:1px solid var(--border);padding-right:10px}
+  .phone-input input{flex:1;border:none;font:400 14px Inter;outline:none}
+  .slot-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:320px}
+  .slot{padding:10px;border:1.5px solid var(--border);background:#fff;border-radius:var(--radius-sm);text-align:center;cursor:pointer;transition:all .15s}
+  .slot:hover{border-color:var(--brand-m)}
+  .slot.selected{border-color:var(--brand);background:var(--brand-l)}
+  .slot .time{font:700 13px Inter;color:var(--ink)}
+  .slot .label{font:500 10px Inter;color:var(--ink3);margin-top:2px}
+  .slot.selected .time{color:var(--brand)}
+  .textarea{width:320px;min-height:80px;padding:12px 14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);font:400 14px Inter;resize:vertical;font-family:'Inter'}
+
+</style>
+
+<div class="figma-page">
+  <h1>Inputs</h1>
+  <p class="sub">All form inputs. Optimized for mobile tap targets.</p>
+
+  <div class="component" data-name="TextInput">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">default</span>
+        <label class="input-label">Full name</label>
+        <input class="input" placeholder="Priya Desai">
+      </div>
+      <div class="variant">
+        <span class="variant-label">focused</span>
+        <label class="input-label">Full name</label>
+        <input class="input" value="Priya Desai" style="border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)">
+      </div>
+      <div class="variant">
+        <span class="variant-label">error</span>
+        <label class="input-label">Full name</label>
+        <input class="input error" value="P">
+        <div class="helper error">Name must be at least 2 characters</div>
+      </div>
+    </div>
+    <div class="spec"><b>height:</b> 44px (touch) · <b>radius:</b> 8px · <b>focus:</b> brand border + 3px ring</div>
+  </div>
+
+  <div class="component" data-name="SearchBar (Floating)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">default</span><div class="search-floating"><span class="icon">🔍</span>Search "Surmai", "Pomfret", sellers...</div></div>
+      <div class="variant"><span class="variant-label">with-value</span><div class="search-floating" style="color:var(--ink)"><span class="icon">🔍</span>Surmai<span style="margin-left:auto;color:var(--ink4);font-size:16px">×</span></div></div>
+    </div>
+    <div class="spec"><b>Zepto-style floating search.</b> Overlaps header by 14px negative margin. <b>shadow:</b> shadow-md · <b>radius:</b> 12px</div>
+  </div>
+
+  <div class="component" data-name="PhoneInput">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">default</span>
+        <label class="input-label">Phone number</label>
+        <div class="phone-input"><span class="prefix">+91</span><input placeholder="98706 19974"></div>
+      </div>
+    </div>
+    <div class="spec"><b>Fixed +91 prefix</b> with divider. India-only launch.</div>
+  </div>
+
+  <div class="component" data-name="OTPInput">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">empty</span>
+        <div class="otp"><input><input><input><input><input><input></div>
+      </div>
+      <div class="variant">
+        <span class="variant-label">partial</span>
+        <div class="otp"><input value="9"><input value="8"><input value="7"><input><input><input></div>
+      </div>
+    </div>
+    <div class="spec"><b>6 digits</b> · auto-advance on keystroke · auto-paste from SMS · 44x52 per box</div>
+  </div>
+
+  <div class="component" data-name="SlotPicker (Time Slots)">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">pickup-slots</span>
+        <div class="slot-picker">
+          <div class="slot"><div class="time">5-7am</div><div class="label">Dawn</div></div>
+          <div class="slot selected"><div class="time">7-9am</div><div class="label">Morning</div></div>
+          <div class="slot"><div class="time">9-11am</div><div class="label">Late morning</div></div>
+          <div class="slot" style="opacity:.4;cursor:not-allowed"><div class="time">11am-1pm</div><div class="label">Sold out</div></div>
+          <div class="slot"><div class="time">4-6pm</div><div class="label">Evening</div></div>
+          <div class="slot"><div class="time">6-8pm</div><div class="label">Night</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>3-col grid</b> · selected: brand border + brand-l bg · disabled: opacity 0.4</div>
+  </div>
+
+  <div class="component" data-name="Textarea">
+    <div class="component-variants">
+      <div class="variant">
+        <span class="variant-label">default</span>
+        <label class="input-label">Special request</label>
+        <textarea class="textarea" placeholder="Clean and cut medium sized pieces..."></textarea>
+      </div>
+    </div>
+    <div class="spec"><b>min-height:</b> 80px · resize: vertical only</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">02 · Atoms</div>
+<h2 class="mega-title">Icons</h2>
+<style>
+  .icon-tile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;width:72px}
+  .icon-tile .tile{width:56px;height:56px;border-radius:var(--radius);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px}
+  .icon-tile .label{font:500 11px Inter;color:var(--ink2)}
+  .icon-row{display:flex;gap:12px;flex-wrap:wrap}
+  .nav-icons{display:flex;gap:24px;background:#fff;padding:12px 20px;border-radius:var(--radius);border:1px solid var(--border)}
+  .nav-icons .i{display:flex;flex-direction:column;align-items:center;gap:2px;font:500 10px Inter;color:var(--ink4)}
+  .nav-icons .i .g{font-size:22px}
+  .nav-icons .i.active{color:var(--brand)}
+
+</style>
+
+<div class="figma-page">
+  <h1>Icons</h1>
+  <p class="sub">Emoji-based icon system (V2 phase 1). Replace with SVG line icons (Lucide) in V2 phase 2.</p>
+
+  <div class="component" data-name="CategoryIcon">
+    <div class="icon-row">
+      <div class="icon-tile"><div class="tile">🐟</div><div class="label">All Fish</div></div>
+      <div class="icon-tile"><div class="tile">🦐</div><div class="label">Prawns</div></div>
+      <div class="icon-tile"><div class="tile">🦀</div><div class="label">Crab</div></div>
+      <div class="icon-tile"><div class="tile">🦑</div><div class="label">Squid</div></div>
+      <div class="icon-tile"><div class="tile">🐚</div><div class="label">Shellfish</div></div>
+      <div class="icon-tile"><div class="tile">🍤</div><div class="label">Seafood</div></div>
+      <div class="icon-tile"><div class="tile">🐠</div><div class="label">Exotic</div></div>
+    </div>
+    <div class="spec"><b>Tile:</b> 56x56 · radius 12px · bg bg-3 · <b>Emoji:</b> 28px · <b>Label:</b> 500 / 11px</div>
+  </div>
+
+  <div class="component" data-name="CategoryIcon · Colored Tiles">
+    <div class="icon-row">
+      <div class="icon-tile"><div class="tile" style="background:#E0F2FE">🐟</div><div class="label">Fresh catch</div></div>
+      <div class="icon-tile"><div class="tile" style="background:#ECFDF5">🌊</div><div class="label">Sea fish</div></div>
+      <div class="icon-tile"><div class="tile" style="background:#FFF7ED">🔥</div><div class="label">Trending</div></div>
+      <div class="icon-tile"><div class="tile" style="background:#FEF2F2">❤️</div><div class="label">Favorites</div></div>
+      <div class="icon-tile"><div class="tile" style="background:#F3E8FF">🌙</div><div class="label">Pre-order</div></div>
+    </div>
+    <div class="spec"><b>Colored tile bgs</b> · differentiate featured categories · use sparingly</div>
+  </div>
+
+  <div class="component" data-name="NavIcon (Bottom Nav)">
+    <div class="nav-icons">
+      <div class="i active"><div class="g">🏠</div>Home</div>
+      <div class="i"><div class="g">🔍</div>Search</div>
+      <div class="i"><div class="g">🌙</div>Pre-order</div>
+      <div class="i"><div class="g">📋</div>Orders</div>
+      <div class="i"><div class="g">👤</div>Account</div>
+    </div>
+    <div class="spec"><b>5-tab pattern.</b> Pre-order has unique moon icon (our differentiator). Icon 22px · label 500/10px</div>
+  </div>
+
+  <div class="component" data-name="StatusIcon (Trust Signals)">
+    <div class="icon-row">
+      <div class="icon-tile"><div class="tile" style="background:var(--green-l);color:var(--green)">✓</div><div class="label">Verified</div></div>
+      <div class="icon-tile"><div class="tile" style="background:var(--brand-l);color:var(--brand)">⭐</div><div class="label">Top rated</div></div>
+      <div class="icon-tile"><div class="tile" style="background:var(--orange-l);color:var(--orange)">⚡</div><div class="label">Fast</div></div>
+      <div class="icon-tile"><div class="tile" style="background:var(--green-l);color:var(--green)">🛡️</div><div class="label">Quality</div></div>
+    </div>
+    <div class="spec"><b>Trust signals</b> · seller profile badges · 56x56 tiles with status colors</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">02 · Atoms</div>
+<h2 class="mega-title">Toasts & Banners</h2>
+<style>
+  .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0F172A;color:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);width:320px;font:500 13px Inter}
+  .toast .icon{font-size:18px}
+  .toast .body{flex:1}
+  .toast .title{font:600 13px Inter}
+  .toast .desc{font:400 11px Inter;opacity:.85;margin-top:1px}
+  .toast .action{background:transparent;border:none;color:#60A5FA;font:700 12px Inter;cursor:pointer}
+  .toast .close{background:transparent;border:none;color:rgba(255,255,255,.6);font:400 16px Inter;cursor:pointer;padding:0 4px}
+
+  .toast.success{background:#059669}
+  .toast.error{background:#DC2626}
+  .toast.warning{background:#EA580C}
+  .toast.info{background:#0066FF}
+
+  .snack{display:flex;align-items:center;gap:10px;padding:14px 18px;background:#1E293B;color:#fff;border-radius:8px;box-shadow:var(--shadow-lg);width:340px;font:500 13px Inter}
+  .snack .body{flex:1}
+  .snack button{background:transparent;border:none;color:#FCD34D;font:700 12px Inter;cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+
+  .banner{padding:12px 16px;border-radius:var(--radius);width:340px;display:flex;align-items:center;gap:10px;font:500 13px Inter}
+  .banner.success{background:var(--green-l);color:#065F46;border-left:3px solid var(--green)}
+  .banner.error{background:var(--red-l);color:#991B1B;border-left:3px solid var(--red)}
+  .banner.warning{background:var(--orange-l);color:#9A3412;border-left:3px solid var(--orange)}
+  .banner.info{background:var(--brand-l);color:#1E40AF;border-left:3px solid var(--brand)}
+  .banner .icon{font-size:18px;flex-shrink:0}
+
+</style>
+
+<div class="figma-page">
+  <h1>Toasts & Banners</h1>
+  <p class="sub">Feedback layer. Top-toast for success, bottom-snack for undo, inline banner for context.</p>
+
+  <div class="component" data-name="Toast · All Variants">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">success</span>
+        <div class="toast success"><span class="icon">✓</span><div class="body"><div class="title">Order placed</div><div class="desc">Kamla Tai will confirm shortly</div></div><button class="close">×</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">error</span>
+        <div class="toast error"><span class="icon">✕</span><div class="body"><div class="title">Payment failed</div><div class="desc">Try a different method</div></div><button class="close">×</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">warning</span>
+        <div class="toast warning"><span class="icon">!</span><div class="body"><div class="title">Item out of stock</div><div class="desc">Surmai removed from cart</div></div><button class="close">×</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">info</span>
+        <div class="toast info"><span class="icon">i</span><div class="body"><div class="title">Pre-order confirmed</div><div class="desc">Ready by 7am tomorrow</div></div><button class="close">×</button></div>
+      </div>
+    </div>
+    <div class="spec"><b>Position:</b> top center, 16px from top · <b>Duration:</b> 4s success/info, 6s warning/error · <b>Animation:</b> slide-down + fade</div>
+  </div>
+
+  <div class="component" data-name="Snackbar · With Action">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">undo</span>
+        <div class="snack"><div class="body">Removed Surmai from cart</div><button>UNDO</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">retry</span>
+        <div class="snack"><div class="body">Couldn't load sellers</div><button>RETRY</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">view</span>
+        <div class="snack"><div class="body">Order confirmed by seller</div><button>VIEW</button></div>
+      </div>
+    </div>
+    <div class="spec"><b>Position:</b> bottom center, 80px from bottom (above nav) · <b>Duration:</b> 5-7s · <b>Action:</b> yellow accent text</div>
+  </div>
+
+  <div class="component" data-name="InlineBanner · Persistent Context">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">success</span>
+        <div class="banner success"><span class="icon">✓</span><div>Free delivery unlocked. Add ₹120 more for ₹50 off.</div></div>
+      </div>
+      <div class="variant"><span class="variant-label">warning</span>
+        <div class="banner warning"><span class="icon">⚠</span><div>Seller closes in 30 min. Place order soon.</div></div>
+      </div>
+      <div class="variant"><span class="variant-label">error</span>
+        <div class="banner error"><span class="icon">✕</span><div>3 items in cart unavailable. Tap to review.</div></div>
+      </div>
+      <div class="variant"><span class="variant-label">info</span>
+        <div class="banner info"><span class="icon">🌙</span><div>Market closed now. Pre-order for tomorrow morning.</div></div>
+      </div>
+    </div>
+    <div class="spec"><b>Inline placement:</b> in page flow, not floating · <b>Persistent</b> until condition resolved · 3px accent border-left</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">02 · Atoms</div>
+<h2 class="mega-title">Modals & Dialogs</h2>
+<style>
+  .backdrop{background:rgba(15,23,42,.5);padding:32px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;min-height:400px}
+
+  .dialog{background:#fff;border-radius:var(--radius-lg);width:320px;padding:24px;box-shadow:var(--shadow-lg);text-align:center}
+  .dialog .icon{font-size:48px;margin-bottom:12px}
+  .dialog h3{font:800 18px Inter;color:var(--ink);margin-bottom:6px}
+  .dialog p{font:400 13px Inter;color:var(--ink2);margin-bottom:20px;line-height:1.5}
+  .dialog-actions{display:flex;gap:8px}
+  .dialog-actions button{flex:1;padding:12px;border-radius:var(--radius-sm);font:700 13px Inter;border:none;cursor:pointer}
+  .btn-cancel{background:var(--bg3);color:var(--ink2)}
+  .btn-confirm{background:var(--brand);color:#fff}
+  .btn-danger{background:var(--red);color:#fff}
+
+  .alert{background:#fff;border-radius:var(--radius-lg);width:320px;padding:24px;box-shadow:var(--shadow-lg);text-align:center}
+  .alert .icon{width:64px;height:64px;border-radius:50%;background:var(--green-l);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px}
+  .alert.error .icon{background:var(--red-l);color:var(--red)}
+  .alert.warning .icon{background:var(--orange-l);color:var(--orange)}
+  .alert h3{font:800 17px Inter;color:var(--ink);margin-bottom:6px}
+  .alert p{font:400 13px Inter;color:var(--ink2);margin-bottom:20px}
+  .alert button{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius-sm);font:700 13px Inter;cursor:pointer}
+
+</style>
+
+<div class="figma-page">
+  <h1>Modals & Dialogs</h1>
+  <p class="sub">Confirmations, alerts, destructive actions. Always with backdrop.</p>
+
+  <div class="component" data-name="ConfirmDialog">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">confirm</span>
+        <div class="backdrop">
+          <div class="dialog">
+            <div class="icon">🌙</div>
+            <h3>Confirm pre-order?</h3>
+            <p>Reserve 2kg Surmai with Kamla Tai for tomorrow 7am pickup. Estimated ₹1,300 ± 5%.</p>
+            <div class="dialog-actions">
+              <button class="btn-cancel">Cancel</button>
+              <button class="btn-confirm">Confirm</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">destructive</span>
+        <div class="backdrop">
+          <div class="dialog">
+            <div class="icon">🗑️</div>
+            <h3>Cancel this order?</h3>
+            <p>You'll receive a full refund within 5-7 days. The seller has already started preparation.</p>
+            <div class="dialog-actions">
+              <button class="btn-cancel">Keep order</button>
+              <button class="btn-danger">Cancel order</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Backdrop:</b> rgba(15,23,42,.5) · <b>Dialog:</b> 320px · radius 16px · centered · <b>Destructive:</b> red confirm button</div>
+  </div>
+
+  <div class="component" data-name="AlertDialog · Success / Error">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">success</span>
+        <div class="backdrop">
+          <div class="alert">
+            <div class="icon">✓</div>
+            <h3>Order confirmed!</h3>
+            <p>Kamla Tai will reserve your fish. Pickup at 7-9am tomorrow.</p>
+            <button>View order</button>
+          </div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">error</span>
+        <div class="backdrop">
+          <div class="alert error">
+            <div class="icon">✕</div>
+            <h3>Payment failed</h3>
+            <p>Your UPI transaction was declined. Try a different payment method or contact your bank.</p>
+            <button>Try again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Single-action variant</b> · large status icon (64px circle) · used after critical action</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">02 · Atoms</div>
+<h2 class="mega-title">Loaders & Skeletons</h2>
+<style>
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+  .spinner{width:24px;height:24px;border:3px solid var(--bg3);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite}
+  .spinner.lg{width:48px;height:48px;border-width:4px}
+  .spinner.sm{width:16px;height:16px;border-width:2px}
+
+  .dots{display:flex;gap:6px}
+  .dots .d{width:8px;height:8px;background:var(--brand);border-radius:50%;animation:pulse 1.4s infinite}
+  .dots .d:nth-child(2){animation-delay:.2s}
+  .dots .d:nth-child(3){animation-delay:.4s}
+
+  .progress{width:280px;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+  .progress .fill{height:100%;background:var(--brand);border-radius:3px}
+  .progress .indeterminate{height:100%;background:var(--brand);border-radius:3px;width:30%;animation:slide 1.5s infinite ease-in-out}
+  @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(330%)}}
+
+  .skel{background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+  .skel-card{width:280px;background:#fff;border-radius:var(--radius);padding:0;overflow:hidden;border:1px solid var(--border)}
+  .skel-img{height:90px}
+  .skel-body{padding:14px}
+  .skel-line{height:12px;margin-bottom:6px}
+
+  .pull{width:280px;background:var(--bg2);border-radius:var(--radius);padding:32px;text-align:center}
+  .pull .arrow{font-size:32px;color:var(--brand);animation:pulse 1.2s infinite}
+  .pull .label{font:600 12px Inter;color:var(--ink3);margin-top:8px}
+
+  .full-page{width:280px;background:#fff;border-radius:var(--radius);padding:48px;text-align:center;border:1px solid var(--border)}
+
+</style>
+
+<div class="figma-page">
+  <h1>Loaders & Skeletons</h1>
+  <p class="sub">Wait states. Skeletons for content fetch, spinners for actions, progress for known duration.</p>
+
+  <div class="component" data-name="Spinner">
+    <div class="component-variants" style="align-items:center">
+      <div class="variant"><span class="variant-label">sm · button</span><div class="spinner sm"></div></div>
+      <div class="variant"><span class="variant-label">md · default</span><div class="spinner"></div></div>
+      <div class="variant"><span class="variant-label">lg · page</span><div class="spinner lg"></div></div>
+      <div class="variant"><span class="variant-label">dots</span><div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div></div>
+    </div>
+    <div class="spec"><b>sm:</b> 16px in buttons · <b>md:</b> 24px inline · <b>lg:</b> 48px page-level · <b>dots:</b> typing/processing indicator</div>
+  </div>
+
+  <div class="component" data-name="Progress Bar">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">determinate · 65%</span><div class="progress"><div class="fill" style="width:65%"></div></div></div>
+      <div class="variant"><span class="variant-label">indeterminate</span><div class="progress"><div class="indeterminate"></div></div></div>
+      <div class="variant"><span class="variant-label">free delivery progress</span><div class="progress" style="height:4px"><div class="fill" style="width:72%;background:var(--green)"></div></div></div>
+    </div>
+    <div class="spec"><b>height:</b> 6px (4px slim) · <b>indeterminate:</b> when duration unknown · <b>green:</b> goal-progress (delivery threshold)</div>
+  </div>
+
+  <div class="component" data-name="Skeleton · Card">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">seller card</span>
+        <div class="skel-card">
+          <div class="skel skel-img"></div>
+          <div class="skel-body">
+            <div class="skel skel-line" style="width:65%;height:14px"></div>
+            <div class="skel skel-line" style="width:45%;height:10px"></div>
+            <div style="display:flex;gap:6px;margin-top:10px"><div class="skel" style="width:60px;height:18px;border-radius:9px"></div><div class="skel" style="width:50px;height:18px;border-radius:9px"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">menu item</span>
+        <div class="skel-card" style="width:140px">
+          <div class="skel skel-img" style="height:80px"></div>
+          <div class="skel-body" style="padding:10px">
+            <div class="skel skel-line" style="width:60%;height:11px"></div>
+            <div class="skel skel-line" style="width:80%;height:9px"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><div class="skel" style="width:40px;height:14px"></div><div class="skel" style="width:30px;height:30px;border-radius:8px"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>shimmer:</b> 1.5s infinite linear · <b>colors:</b> bg3 base, ink4 highlight · matches card structure exactly</div>
+  </div>
+
+  <div class="component" data-name="PullToRefresh">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">pulling</span>
+        <div class="pull"><div class="arrow">↓</div><div class="label">Pull to refresh</div></div>
+      </div>
+      <div class="variant"><span class="variant-label">refreshing</span>
+        <div class="pull"><div class="spinner" style="margin:0 auto"></div><div class="label">Loading fresh catch...</div></div>
+      </div>
+    </div>
+    <div class="spec"><b>Trigger:</b> drag down 60px+ on top of scroll · <b>Threshold:</b> arrow flips at 80px</div>
+  </div>
+
+  <div class="component" data-name="FullPageLoader">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">centered</span>
+        <div class="full-page">
+          <div class="spinner lg" style="margin:0 auto 16px"></div>
+          <div style="font:700 14px Inter;color:var(--ink);margin-bottom:4px">Finding fresh catch...</div>
+          <div style="font:400 12px Inter;color:var(--ink3)">Checking sellers near you</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Use sparingly</b> · only for first-load or critical transitions · always with status text</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Seller Card</h2>
+<style>
+  .seller-card{width:320px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .sc-img{height:110px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-start;padding:10px;position:relative;overflow:hidden}
+  .sc-img .fish-emoji{font-size:56px;position:absolute;right:16px;bottom:12px;opacity:.35}
+  .sc-img .offer-badge{background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px}
+  .sc-body{padding:14px 16px}
+  .sc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .sc-name{font:700 15px Inter;color:var(--ink)}
+  .sc-loc{font:400 11px Inter;color:var(--ink3);margin-top:2px}
+  .sc-rating{display:flex;align-items:center;gap:3px;background:var(--green);color:#fff;font:700 11px Inter;padding:3px 7px;border-radius:5px}
+  .sc-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .sc-tag{font:500 10px Inter;padding:3px 9px;border-radius:20px;background:var(--bg3);color:var(--ink3)}
+  .sc-tag.green{background:var(--green-l);color:var(--green)}
+  .sc-tag.brand{background:var(--brand-l);color:var(--brand)}
+  .sc-menu{display:flex;gap:8px;padding:10px 16px 12px;overflow-x:auto;border-top:1px solid var(--border)}
+  .sc-menu::-webkit-scrollbar{display:none}
+  .sc-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);flex-shrink:0}
+  .sc-chip .m-e{font-size:18px}
+  .sc-chip .m-n{font:600 11px Inter;color:var(--ink)}
+  .sc-chip .m-p{font:700 11px Inter;color:var(--green)}
+  .sc-delivery{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--green-l);font:500 11px Inter;color:var(--green)}
+  .sc-delivery.orange{background:var(--orange-l);color:var(--orange)}
+  .sc-closed{opacity:.6;pointer-events:none}
+
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+</style>
+
+<div class="figma-page">
+  <h1>Seller Card</h1>
+  <p class="sub">The homepage primary card. Zomato + Blinkit hybrid pattern.</p>
+
+  <div class="component" data-name="SellerCard · Default">
+    <div class="component-variants">
+      <div class="seller-card">
+        <div class="sc-img"><span class="offer-badge">Same-day catch</span><span class="fish-emoji">🐟</span></div>
+        <div class="sc-body">
+          <div class="sc-top">
+            <div><div class="sc-name">Kamla Tai Fish Stall</div><div class="sc-loc">Sassoon Dock · 1.2 km · 45 min</div></div>
+            <div class="sc-rating">4.8 ★</div>
+          </div>
+          <div class="sc-tags">
+            <span class="sc-tag green">Open now</span>
+            <span class="sc-tag brand">Pre-order</span>
+            <span class="sc-tag">Cleaned & cut</span>
+          </div>
+        </div>
+        <div class="sc-menu">
+          <div class="sc-chip"><span class="m-e">🐟</span><div><div class="m-n">Surmai</div><div class="m-p">₹650/kg</div></div></div>
+          <div class="sc-chip"><span class="m-e">🐟</span><div><div class="m-n">Rawas</div><div class="m-p">₹800/kg</div></div></div>
+          <div class="sc-chip"><span class="m-e">🦐</span><div><div class="m-n">Prawns</div><div class="m-p">₹500/kg</div></div></div>
+          <div class="sc-chip"><span class="m-e">🐟</span><div><div class="m-n">Pomfret</div><div class="m-p">₹900</div></div></div>
+        </div>
+        <div class="sc-delivery">🚲 Delivery available · Free above ₹1,000</div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Width:</b> 320px (mobile) · <b>Image zone:</b> 110px · <b>Gradient bg:</b> sky blue<br>
+      <b>Offer badge:</b> top-left, brand bg · <b>Rating:</b> top-right body, green bg<br>
+      <b>Menu strip:</b> horizontal scroll · 4+ items overflow
+    </div>
+  </div>
+
+  <div class="component" data-name="SellerCard · Pre-order Only">
+    <div class="component-variants">
+      <div class="seller-card">
+        <div class="sc-img" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF)">
+          <span class="offer-badge" style="background:#4F46E5">Tomorrow's catch</span>
+          <span class="fish-emoji">🌙</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-top">
+            <div><div class="sc-name">Rafiq Bhai Fish</div><div class="sc-loc">Versova Beach · 0.8 km · Pre-order by 10pm</div></div>
+            <div class="sc-rating">4.6 ★</div>
+          </div>
+          <div class="sc-tags">
+            <span class="sc-tag brand">Pre-order only</span>
+            <span class="sc-tag">Pickup only</span>
+          </div>
+        </div>
+        <div class="sc-delivery" style="background:#EEF2FF;color:#4338CA">🌙 Reserve tonight · Ready at 7am tomorrow</div>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-order variant:</b> indigo gradient image · different CTA · emphasizes reservation</div>
+  </div>
+
+  <div class="component" data-name="SellerCard · Closed">
+    <div class="component-variants">
+      <div class="seller-card sc-closed">
+        <div class="sc-img" style="background:linear-gradient(135deg,#F1F5F9,#E2E8F0)">
+          <span class="offer-badge" style="background:var(--ink3)">Closed</span>
+          <span class="fish-emoji">🐟</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-top">
+            <div><div class="sc-name">Hassan Fish Market</div><div class="sc-loc">Crawford Market · 2.1 km · Opens 5am</div></div>
+            <div class="sc-rating" style="background:var(--ink3)">4.4 ★</div>
+          </div>
+          <div class="sc-tags">
+            <span class="sc-tag" style="background:var(--red-l);color:var(--red)">Closed</span>
+            <span class="sc-tag brand">Pre-order available</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Closed state:</b> opacity 0.6 · gray image · still allow pre-order CTA</div>
+  </div>
+
+  <div class="component" data-name="SellerCard · Loading Skeleton">
+    <div class="component-variants">
+      <div class="seller-card">
+        <div class="sc-img" style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite"></div>
+        <div class="sc-body">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <div style="flex:1">
+              <div style="height:14px;background:#E2E8F0;border-radius:4px;margin-bottom:6px;width:70%"></div>
+              <div style="height:10px;background:#F1F5F9;border-radius:4px;width:50%"></div>
+            </div>
+            <div style="width:40px;height:20px;background:#E2E8F0;border-radius:5px"></div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <div style="height:18px;width:60px;background:#F1F5F9;border-radius:20px"></div>
+            <div style="height:18px;width:50px;background:#F1F5F9;border-radius:20px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Shimmer animation</b> · 1.5s infinite · background-position animation</div>
+  </div>
+
+  <style>@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}</style>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Menu Item</h2>
+<style>
+  .item-card{width:160px;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+  .item-img{height:96px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
+  .item-img .cut-badge{position:absolute;top:6px;left:6px;background:var(--brand-l);color:var(--brand);font:600 9px Inter;padding:2px 6px;border-radius:4px}
+  .item-img .sold-out{position:absolute;inset:0;background:rgba(220,38,38,.1);display:flex;align-items:center;justify-content:center}
+  .item-img .sold-out span{background:var(--red);color:#fff;font:700 10px Inter;padding:4px 10px;border-radius:4px}
+  .item-body{padding:10px 12px}
+  .item-name{font:600 13px Inter;color:var(--ink)}
+  .item-weight{font:400 10px Inter;color:var(--ink4);margin-top:1px}
+  .item-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  .item-price{font:800 14px Inter;color:var(--ink)}
+  .item-price .orig{text-decoration:line-through;color:var(--ink4);font-weight:400;font-size:11px;margin-left:4px}
+  .add-btn{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;border:none;font:700 18px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .add-counter{display:flex;align-items:center;background:var(--brand);border-radius:8px;overflow:hidden;height:30px}
+  .add-counter button{background:transparent;color:#fff;border:none;width:30px;height:30px;font:700 14px Inter;cursor:pointer}
+  .add-counter span{color:#fff;font:700 12px Inter;padding:0 6px;min-width:20px;text-align:center}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:340px}
+
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+</style>
+
+<div class="figma-page">
+  <h1>Menu Item Card</h1>
+  <p class="sub">2-col grid product card. Blinkit/Zepto exact pattern.</p>
+
+  <div class="component" data-name="MenuItem · Default">
+    <div class="component-variants">
+      <div class="item-card">
+        <div class="item-img" style="background:linear-gradient(135deg,#E0F2FE,#BAE6FD)">🐟<span class="cut-badge">Whole / Cut</span></div>
+        <div class="item-body">
+          <div class="item-name">Surmai</div>
+          <div class="item-weight">King Fish · Per kg</div>
+          <div class="item-bottom">
+            <div class="item-price">₹650</div>
+            <button class="add-btn">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Width:</b> 160px (fits 2-col on 360px phone - 32px padding - 12px gap)<br>
+      <b>Image:</b> 96px height · <b>Padding:</b> 10px 12px · <b>Add btn:</b> 30x30 circle
+    </div>
+  </div>
+
+  <div class="component" data-name="MenuItem · In Cart">
+    <div class="component-variants">
+      <div class="item-card" style="box-shadow:0 0 0 2px var(--brand)">
+        <div class="item-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)">🦐<span class="cut-badge" style="background:var(--green-l);color:var(--green)">Fresh today</span></div>
+        <div class="item-body">
+          <div class="item-name">Prawns</div>
+          <div class="item-weight">Medium · Per kg</div>
+          <div class="item-bottom">
+            <div class="item-price">₹500</div>
+            <div class="add-counter"><button>−</button><span>2</span><button>+</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Selected state:</b> 2px brand ring around card · counter replaces + button</div>
+  </div>
+
+  <div class="component" data-name="MenuItem · Variants">
+    <div class="component-variants">
+      <div class="grid">
+        <div class="item-card">
+          <div class="item-img" style="background:#FFF7ED">🐟<span class="cut-badge" style="background:var(--orange-l);color:var(--orange)">Limited</span></div>
+          <div class="item-body">
+            <div class="item-name">Pomfret</div>
+            <div class="item-weight">White · Per piece</div>
+            <div class="item-bottom"><div class="item-price">₹900</div><button class="add-btn">+</button></div>
+          </div>
+        </div>
+
+        <div class="item-card">
+          <div class="item-img" style="background:var(--bg3)">🐟<div class="sold-out"><span>SOLD OUT</span></div></div>
+          <div class="item-body" style="opacity:.5">
+            <div class="item-name">Rawas</div>
+            <div class="item-weight">Indian Salmon · Per kg</div>
+            <div class="item-bottom"><div class="item-price">₹800</div><button class="add-btn" disabled style="background:var(--ink4);cursor:not-allowed">+</button></div>
+          </div>
+        </div>
+
+        <div class="item-card">
+          <div class="item-img" style="background:linear-gradient(135deg,#F3E8FF,#E9D5FF)">🌙<span class="cut-badge" style="background:#F3E8FF;color:#7C3AED">Pre-order</span></div>
+          <div class="item-body">
+            <div class="item-name">Ghol</div>
+            <div class="item-weight">Tomorrow · Per kg</div>
+            <div class="item-bottom"><div class="item-price">₹450</div><button class="add-btn" style="background:#7C3AED">+</button></div>
+          </div>
+        </div>
+
+        <div class="item-card">
+          <div class="item-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)">🦀<span class="cut-badge" style="background:var(--green-l);color:var(--green)">-20%</span></div>
+          <div class="item-body">
+            <div class="item-name">Crab</div>
+            <div class="item-weight">Live · Per kg</div>
+            <div class="item-bottom"><div class="item-price">₹400<span class="orig">₹500</span></div><button class="add-btn">+</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Limited:</b> orange badge · <b>Sold out:</b> red overlay + disabled btn · <b>Pre-order:</b> purple accent · <b>Discount:</b> green -X% + strikethrough price
+    </div>
+  </div>
+
+  <div class="component" data-name="MenuItem · Skeleton">
+    <div class="component-variants">
+      <div class="item-card">
+        <div class="item-img" style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite"></div>
+        <div class="item-body">
+          <div style="height:11px;background:#E2E8F0;border-radius:3px;margin-bottom:4px;width:60%"></div>
+          <div style="height:9px;background:#F1F5F9;border-radius:3px;width:80%"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:10px;align-items:center">
+            <div style="height:14px;width:40px;background:#E2E8F0;border-radius:3px"></div>
+            <div style="width:30px;height:30px;background:#F1F5F9;border-radius:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Loading state</b> · used while fetching menu items</div>
+  </div>
+
+  <style>@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}</style>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Cart Bar</h2>
+<style>
+  .cart-bar{width:336px;background:var(--brand);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg)}
+  .cb-left{color:#fff}
+  .cb-items{font:600 12px Inter;opacity:.9}
+  .cb-total{font:800 16px Inter}
+  .cb-btn{background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer}
+  .cb-warning{background:var(--orange)}
+  .cb-success{background:var(--green)}
+  .cb-empty{background:var(--ink3);opacity:.7}
+  .cb-progress{width:336px;background:var(--brand);border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow-lg);color:#fff}
+  .cb-progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .cb-progress-text{font:600 11px Inter}
+  .cb-progress-amt{font:800 14px Inter}
+  .cb-progress-bar{height:4px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+  .cb-progress-bar .fill{height:100%;background:#fff;border-radius:2px}
+
+</style>
+
+<div class="figma-page">
+  <h1>Cart Bar</h1>
+  <p class="sub">Floating cart pill. Blinkit signature pattern.</p>
+
+  <div class="component" data-name="CartBar · Default">
+    <div class="component-variants">
+      <div class="cart-bar">
+        <div class="cb-left">
+          <div class="cb-items">2 items</div>
+          <div class="cb-total">₹1,450</div>
+        </div>
+        <button class="cb-btn">View Cart →</button>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Placement:</b> fixed bottom · 12px from edges · above bottom nav (if present)<br>
+      <b>bg:</b> #0066FF · <b>radius:</b> 12px · <b>shadow:</b> shadow-lg<br>
+      <b>Appears:</b> slide-up animation on first item add
+    </div>
+  </div>
+
+  <div class="component" data-name="CartBar · Below Min Order">
+    <div class="component-variants">
+      <div class="cart-bar cb-warning">
+        <div class="cb-left">
+          <div class="cb-items">Add ₹150 more for min order</div>
+          <div class="cb-total">₹850</div>
+        </div>
+        <button class="cb-btn" style="color:var(--orange)">Keep shopping</button>
+      </div>
+    </div>
+    <div class="spec"><b>Warning state:</b> orange bg · shows how much more needed · CTA reverts to "Keep shopping"</div>
+  </div>
+
+  <div class="component" data-name="CartBar · Free Delivery Hit">
+    <div class="component-variants">
+      <div class="cart-bar cb-success">
+        <div class="cb-left">
+          <div class="cb-items">🎉 Free delivery unlocked</div>
+          <div class="cb-total">₹1,120</div>
+        </div>
+        <button class="cb-btn" style="color:var(--green)">Checkout →</button>
+      </div>
+    </div>
+    <div class="spec"><b>Success state:</b> green bg · celebrates milestone · pushes to checkout</div>
+  </div>
+
+  <div class="component" data-name="CartBar · With Progress Bar">
+    <div class="component-variants">
+      <div class="cb-progress">
+        <div class="cb-progress-top">
+          <div class="cb-progress-text">Add ₹280 more for free delivery</div>
+          <div class="cb-progress-amt">₹720</div>
+        </div>
+        <div class="cb-progress-bar"><div class="fill" style="width:72%"></div></div>
+      </div>
+    </div>
+    <div class="spec"><b>Progress variant:</b> AOV pusher · shows ₹ needed to unlock free delivery · Swiggy pattern</div>
+  </div>
+
+  <div class="component" data-name="CartBar · Pre-order Mode">
+    <div class="component-variants">
+      <div class="cart-bar" style="background:#4F46E5">
+        <div class="cb-left">
+          <div class="cb-items">🌙 Pre-order for tomorrow 7am</div>
+          <div class="cb-total">₹1,450</div>
+        </div>
+        <button class="cb-btn" style="color:#4F46E5">Review →</button>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-order variant:</b> indigo bg · differentiates from same-day order flow</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Category Strip</h2>
+<style>
+  .strip{display:flex;gap:12px;padding:12px 16px;overflow-x:auto;background:#fff;border-radius:var(--radius);width:336px;scroll-snap-type:x mandatory}
+  .strip::-webkit-scrollbar{display:none}
+  .cat{text-align:center;flex-shrink:0;width:60px;scroll-snap-align:start}
+  .cat .icon{width:52px;height:52px;border-radius:var(--radius);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto;transition:transform .15s}
+  .cat:hover .icon{transform:scale(1.05)}
+  .cat.active .icon{background:var(--brand-l);outline:2px solid var(--brand);outline-offset:-2px}
+  .cat .name{font:500 10px Inter;color:var(--ink2);margin-top:6px}
+  .cat.active .name{color:var(--brand);font-weight:600}
+
+</style>
+
+<div class="figma-page">
+  <h1>Category Strip</h1>
+  <p class="sub">Horizontal scroll of category icons. Instamart pattern.</p>
+
+  <div class="component" data-name="CategoryStrip · Default">
+    <div class="component-variants">
+      <div class="strip">
+        <div class="cat active"><div class="icon">🐟</div><div class="name">All Fish</div></div>
+        <div class="cat"><div class="icon">🦐</div><div class="name">Prawns</div></div>
+        <div class="cat"><div class="icon">🦀</div><div class="name">Crab</div></div>
+        <div class="cat"><div class="icon">🦑</div><div class="name">Squid</div></div>
+        <div class="cat"><div class="icon">🐚</div><div class="name">Shellfish</div></div>
+        <div class="cat"><div class="icon">🍤</div><div class="name">Seafood</div></div>
+        <div class="cat"><div class="icon">🐠</div><div class="name">Exotic</div></div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Layout:</b> horizontal scroll · scroll-snap-type x mandatory<br>
+      <b>Item width:</b> 60px · <b>Icon:</b> 52x52 radius 12px · <b>Active:</b> brand-l bg + 2px brand outline
+    </div>
+  </div>
+
+  <div class="component" data-name="CategoryStrip · Featured">
+    <div class="component-variants">
+      <div class="strip" style="background:linear-gradient(180deg,var(--bg2),#fff)">
+        <div class="cat"><div class="icon" style="background:#E0F2FE">🐟</div><div class="name">Fresh today</div></div>
+        <div class="cat"><div class="icon" style="background:#F3E8FF">🌙</div><div class="name">Pre-order</div></div>
+        <div class="cat"><div class="icon" style="background:#FEF2F2">🔥</div><div class="name">Trending</div></div>
+        <div class="cat"><div class="icon" style="background:#ECFDF5">💚</div><div class="name">Top rated</div></div>
+        <div class="cat"><div class="icon" style="background:#FFF7ED">⚡</div><div class="name">Quick</div></div>
+      </div>
+    </div>
+    <div class="spec"><b>Featured variant:</b> colored tile bgs for differentiation · for promo collections</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Pre-order Banner</h2>
+<style>
+  .banner{width:336px;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #C7D2FE;border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .banner .icon{font-size:36px}
+  .banner .text{flex:1}
+  .banner h4{font:700 14px Inter;color:#3730A3}
+  .banner p{font:400 11px Inter;color:#4338CA;margin-top:2px}
+  .banner .btn{background:#4F46E5;color:#fff;font:700 11px Inter;padding:8px 14px;border-radius:var(--radius-sm);border:none;flex-shrink:0;cursor:pointer}
+
+  .promo-hero{width:336px;background:linear-gradient(135deg,#4F46E5,#7C3AED);border-radius:var(--radius-lg);padding:20px;color:#fff;position:relative;overflow:hidden}
+  .promo-hero::before{content:'🌙';position:absolute;right:-10px;top:-10px;font-size:120px;opacity:.15}
+  .promo-hero h3{font:800 20px Inter;line-height:1.2;position:relative}
+  .promo-hero p{font:400 13px Inter;margin-top:6px;opacity:.9;position:relative}
+  .promo-hero .btn{background:#fff;color:#4F46E5;font:700 13px Inter;padding:10px 20px;border-radius:var(--radius-sm);border:none;margin-top:14px;position:relative;cursor:pointer}
+
+  .empty-banner{width:336px;background:linear-gradient(135deg,#FFF7ED,#FEF3C7);border-radius:var(--radius);padding:16px;display:flex;gap:12px;align-items:flex-start}
+  .empty-banner .icon{font-size:28px}
+  .empty-banner h4{font:700 13px Inter;color:#92400E}
+  .empty-banner p{font:400 11px Inter;color:#B45309;margin-top:2px;line-height:1.5}
+
+</style>
+
+<div class="figma-page">
+  <h1>Pre-order Banner</h1>
+  <p class="sub">Our differentiator. Must be prominent. Three variants for different screens.</p>
+
+  <div class="component" data-name="PreorderBanner · Inline">
+    <div class="component-variants">
+      <div class="banner">
+        <div class="icon">🌙</div>
+        <div class="text">
+          <h4>Pre-order tomorrow's catch</h4>
+          <p>Order tonight, reserved at dock by 5am</p>
+        </div>
+        <button class="btn">Browse</button>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Placement:</b> home page, below search, above category strip<br>
+      <b>bg:</b> indigo gradient (#EEF2FF → #E0E7FF) · <b>border:</b> 1px #C7D2FE<br>
+      <b>Icon:</b> moon 🌙 (nighttime = pre-order time)
+    </div>
+  </div>
+
+  <div class="component" data-name="PreorderBanner · Hero">
+    <div class="component-variants">
+      <div class="promo-hero">
+        <h3>Tomorrow's catch, reserved tonight</h3>
+        <p>Pre-order by 10pm. Ready at 7am. Zero waste.</p>
+        <button class="btn">Start pre-order</button>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Full hero variant</b> · for pre-order dedicated page · gradient indigo→purple<br>
+      <b>Background moon</b> at 15% opacity · marketing hero
+    </div>
+  </div>
+
+  <div class="component" data-name="PreorderBanner · Empty State">
+    <div class="component-variants">
+      <div class="empty-banner">
+        <div class="icon">💡</div>
+        <div class="text">
+          <h4>No sellers open right now</h4>
+          <p>Pre-order tomorrow's catch instead — 12 sellers available for tomorrow morning.</p>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Empty state helper</b> · shown when current seller list is empty (late night, early morning)</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Address Card</h2>
+<style>
+  .addr-card{width:336px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;gap:12px}
+  .addr-card.selected{border-color:var(--brand);background:var(--brand-l)}
+  .addr-icon{width:40px;height:40px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .addr-card.selected .addr-icon{background:var(--brand);color:#fff}
+  .addr-body{flex:1;min-width:0}
+  .addr-top{display:flex;align-items:center;gap:8px}
+  .addr-label{font:700 13px Inter;color:var(--ink)}
+  .addr-default{font:600 9px Inter;color:var(--green);background:var(--green-l);padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+  .addr-text{font:400 12px Inter;color:var(--ink3);margin-top:3px;line-height:1.45}
+  .addr-actions{display:flex;gap:12px;margin-top:8px}
+  .addr-actions button{background:none;border:none;font:600 11px Inter;color:var(--brand);cursor:pointer;padding:0}
+  .addr-actions button.danger{color:var(--red)}
+  .addr-radio{width:20px;height:20px;border:2px solid var(--ink4);border-radius:50%;flex-shrink:0;margin-top:8px;position:relative}
+  .addr-card.selected .addr-radio{border-color:var(--brand)}
+  .addr-card.selected .addr-radio::after{content:'';position:absolute;inset:3px;background:var(--brand);border-radius:50%}
+
+  .add-new{width:336px;background:var(--bg2);border:1.5px dashed var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--brand);font:700 13px Inter;cursor:pointer}
+  .add-new:hover{border-color:var(--brand);background:var(--brand-l)}
+
+</style>
+
+<div class="figma-page">
+  <h1>Address Card</h1>
+  <p class="sub">Saved delivery addresses. Used in /me page and checkout sheet.</p>
+
+  <div class="component" data-name="AddressCard · Home">
+    <div class="component-variants">
+      <div class="addr-card">
+        <div class="addr-icon">🏠</div>
+        <div class="addr-body">
+          <div class="addr-top">
+            <span class="addr-label">Home</span>
+            <span class="addr-default">Default</span>
+          </div>
+          <div class="addr-text">Flat 304, Sagar Mahal, Hill Road, near Mount Mary Church, Bandra West, Mumbai 400050</div>
+          <div class="addr-actions">
+            <button>Edit</button>
+            <button class="danger">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Default variant:</b> home icon · "Default" green chip · edit/delete actions</div>
+  </div>
+
+  <div class="component" data-name="AddressCard · Selected (Checkout)">
+    <div class="component-variants">
+      <div class="addr-card selected">
+        <div class="addr-icon">🏠</div>
+        <div class="addr-body">
+          <div class="addr-top">
+            <span class="addr-label">Home</span>
+          </div>
+          <div class="addr-text" style="color:var(--brand-d)">Flat 304, Sagar Mahal, Hill Road, Bandra West</div>
+        </div>
+        <div class="addr-radio"></div>
+      </div>
+      <div style="height:8px"></div>
+      <div class="addr-card">
+        <div class="addr-icon">🏢</div>
+        <div class="addr-body">
+          <div class="addr-top">
+            <span class="addr-label">Office</span>
+          </div>
+          <div class="addr-text">8th floor, Tower C, BKC, Mumbai 400051</div>
+        </div>
+        <div class="addr-radio"></div>
+      </div>
+    </div>
+    <div class="spec"><b>Selectable variant:</b> used in checkout · radio button right · brand border on selected</div>
+  </div>
+
+  <div class="component" data-name="AddressCard · All Types">
+    <div class="component-variants">
+      <div class="addr-card"><div class="addr-icon">🏠</div><div class="addr-body"><div class="addr-label">Home</div><div class="addr-text">Bandra West</div></div></div>
+      <div style="height:8px"></div>
+      <div class="addr-card"><div class="addr-icon">🏢</div><div class="addr-body"><div class="addr-label">Office</div><div class="addr-text">BKC</div></div></div>
+      <div style="height:8px"></div>
+      <div class="addr-card"><div class="addr-icon">📍</div><div class="addr-body"><div class="addr-label">Other</div><div class="addr-text">Custom location</div></div></div>
+    </div>
+    <div class="spec"><b>Icon variants:</b> 🏠 home · 🏢 office · 📍 other</div>
+  </div>
+
+  <div class="component" data-name="AddressCard · Add New">
+    <div class="component-variants">
+      <button class="add-new">+ Add new address</button>
+    </div>
+    <div class="spec"><b>Empty state / add button</b> · dashed border · brand text on hover</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Empty States</h2>
+<style>
+  .empty{width:320px;background:#fff;border-radius:var(--radius);padding:40px 24px;text-align:center;border:1px solid var(--border)}
+  .empty .icon{font-size:56px;margin-bottom:16px;display:inline-block}
+  .empty h3{font:800 17px Inter;color:var(--ink);margin-bottom:6px}
+  .empty p{font:400 13px Inter;color:var(--ink3);margin-bottom:20px;line-height:1.5}
+  .empty .cta{background:var(--brand);color:#fff;border:none;padding:12px 24px;border-radius:var(--radius-sm);font:700 13px Inter;cursor:pointer}
+  .empty .cta-ghost{background:transparent;color:var(--brand);border:none;padding:8px;font:600 13px Inter;cursor:pointer;margin-top:8px;display:block;width:100%}
+
+</style>
+
+<div class="figma-page">
+  <h1>Empty States</h1>
+  <p class="sub">Every empty case. Always with clear next action.</p>
+
+  <div class="component" data-name="Empty · No Sellers (Area Not Covered)">
+    <div class="empty">
+      <div class="icon">📍</div>
+      <h3>We're not in your area yet</h3>
+      <p>Be the first to know when sellers are live in <b>Bandra West</b>. Join the waitlist.</p>
+      <button class="cta">Join waitlist</button>
+      <button class="cta-ghost">Try a different area →</button>
+    </div>
+    <div class="spec"><b>Trigger:</b> 0 sellers in user's area · <b>Conversion play:</b> waitlist captures lead even when can't transact</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Sellers Open Now">
+    <div class="empty">
+      <div class="icon">🌙</div>
+      <h3>Markets closed for today</h3>
+      <p>Fish markets are open 5am–11am. Pre-order tonight, ready by 7am tomorrow.</p>
+      <button class="cta" style="background:#4F46E5">Pre-order tomorrow</button>
+    </div>
+    <div class="spec"><b>Trigger:</b> after 11am, no sellers open · <b>Pivot:</b> redirect to pre-order</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Search Results">
+    <div class="empty">
+      <div class="icon">🔍</div>
+      <h3>No results for "Salmon"</h3>
+      <p>Try searching for <b>Rawas</b> (Indian Salmon) or browse all sellers.</p>
+      <button class="cta">Browse all sellers</button>
+    </div>
+    <div class="spec"><b>Smart suggestion:</b> when known synonym exists (Salmon = Rawas) suggest it · <b>Fallback:</b> browse all CTA</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Orders Yet">
+    <div class="empty">
+      <div class="icon">📋</div>
+      <h3>No orders yet</h3>
+      <p>Your first order with us is <b>free delivery</b>. Browse sellers near you.</p>
+      <button class="cta">Browse fish</button>
+    </div>
+    <div class="spec"><b>First-order incentive</b> mentioned in copy · drives action vs blank state</div>
+  </div>
+
+  <div class="component" data-name="Empty · Cart Empty">
+    <div class="empty">
+      <div class="icon">🛒</div>
+      <h3>Your cart is empty</h3>
+      <p>Add fresh fish from sellers near you to get started.</p>
+      <button class="cta">Browse sellers</button>
+    </div>
+    <div class="spec"><b>Single CTA</b> · don't overcomplicate cart-empty state</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Saved Addresses">
+    <div class="empty">
+      <div class="icon">🏠</div>
+      <h3>Add your first address</h3>
+      <p>Save addresses for faster checkout next time.</p>
+      <button class="cta">+ Add address</button>
+    </div>
+  </div>
+
+  <div class="component" data-name="Empty · No Notifications">
+    <div class="empty">
+      <div class="icon">🔔</div>
+      <h3>You're all caught up</h3>
+      <p>We'll notify you when sellers update their catch or your orders progress.</p>
+    </div>
+    <div class="spec"><b>No CTA needed</b> · positive empty state ("you're all caught up")</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Internet">
+    <div class="empty">
+      <div class="icon">📡</div>
+      <h3>You're offline</h3>
+      <p>Check your connection and try again. Past orders are still viewable.</p>
+      <button class="cta">Retry</button>
+      <button class="cta-ghost">View past orders →</button>
+    </div>
+    <div class="spec"><b>Network state</b> · offer offline-viewable content (cached orders)</div>
+  </div>
+
+  <div class="component" data-name="Empty · Server Error">
+    <div class="empty">
+      <div class="icon">⚠️</div>
+      <h3>Something went wrong</h3>
+      <p>Our servers are having trouble. We're on it. Try again in a moment.</p>
+      <button class="cta">Try again</button>
+      <button class="cta-ghost">Report issue →</button>
+    </div>
+    <div class="spec"><b>500 error state</b> · honest copy · don't blame user · provide retry + escalation</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Error & Edge States</h2>
+<style>
+  .err-card{width:340px;background:#fff;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+  .err-card.warning{border-color:#FED7AA}
+  .err-card.danger{border-color:#FCA5A5}
+  .err-head{padding:16px;display:flex;gap:12px;align-items:flex-start}
+  .err-card.warning .err-head{background:var(--orange-l)}
+  .err-card.danger .err-head{background:var(--red-l)}
+  .err-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .err-card.warning .err-icon{background:var(--orange);color:#fff}
+  .err-card.danger .err-icon{background:var(--red);color:#fff}
+  .err-body h4{font:700 14px Inter;color:var(--ink)}
+  .err-card.warning .err-body h4{color:#9A3412}
+  .err-card.danger .err-body h4{color:#991B1B}
+  .err-body p{font:400 12px Inter;color:var(--ink2);margin-top:3px;line-height:1.45}
+  .err-actions{padding:12px 16px;display:flex;gap:8px;border-top:1px solid var(--border);background:#fff}
+  .err-btn{flex:1;padding:10px;border-radius:var(--radius-sm);font:700 12px Inter;border:none;cursor:pointer}
+  .err-btn.primary{background:var(--brand);color:#fff}
+  .err-btn.danger{background:var(--red);color:#fff}
+  .err-btn.ghost{background:var(--bg3);color:var(--ink2)}
+
+  .item-strike{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:8px;margin:8px 0}
+  .item-strike .e{font-size:24px}
+  .item-strike .info{flex:1}
+  .item-strike .n{font:600 13px Inter;color:var(--ink);text-decoration:line-through;opacity:.6}
+  .item-strike .reason{font:500 11px Inter;color:var(--red);margin-top:1px}
+  .item-strike .swap{font:600 11px Inter;color:var(--brand);background:none;border:none;cursor:pointer}
+
+</style>
+
+<div class="figma-page">
+  <h1>Error & Edge States</h1>
+  <p class="sub">Real-world failure modes. Each with recovery path.</p>
+
+  <div class="component" data-name="Error · Item Sold Out Mid-Cart">
+    <div class="err-card warning">
+      <div class="err-head">
+        <div class="err-icon">!</div>
+        <div class="err-body">
+          <h4>Items unavailable</h4>
+          <p>2 items in your cart sold out before you could checkout.</p>
+        </div>
+      </div>
+      <div style="padding:12px 16px">
+        <div class="item-strike"><span class="e">🐟</span><div class="info"><div class="n">Surmai · 1kg</div><div class="reason">Sold out</div></div><button class="swap">Suggest alt</button></div>
+        <div class="item-strike"><span class="e">🦐</span><div class="info"><div class="n">Prawns · 500g</div><div class="reason">Only 200g available</div></div><button class="swap">Adjust qty</button></div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">Remove all</button>
+        <button class="err-btn primary">Update cart</button>
+      </div>
+    </div>
+    <div class="spec"><b>Stock check at checkout</b> · show alternatives or quantity adjustments · don't auto-remove</div>
+  </div>
+
+  <div class="component" data-name="Error · Seller Closed During Checkout">
+    <div class="err-card warning">
+      <div class="err-head">
+        <div class="err-icon">🌙</div>
+        <div class="err-body">
+          <h4>Kamla Tai just closed for the day</h4>
+          <p>You can pre-order tomorrow's catch (ready by 7am) or pick a different seller.</p>
+        </div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">Other sellers</button>
+        <button class="err-btn primary" style="background:#4F46E5">Pre-order tomorrow</button>
+      </div>
+    </div>
+    <div class="spec"><b>Real-time seller state check</b> · graceful pivot to pre-order or alternative seller</div>
+  </div>
+
+  <div class="component" data-name="Error · Payment Failed">
+    <div class="err-card danger">
+      <div class="err-head">
+        <div class="err-icon">✕</div>
+        <div class="err-body">
+          <h4>UPI payment failed</h4>
+          <p>Bank declined the transaction. Your order is held for 5 minutes — try again or switch payment.</p>
+        </div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">Cash on delivery</button>
+        <button class="err-btn primary">Retry UPI</button>
+      </div>
+    </div>
+    <div class="spec"><b>Hold order</b> for retry window · <b>Always offer COD fallback</b></div>
+  </div>
+
+  <div class="component" data-name="Error · OTP Wrong / Expired">
+    <div class="err-card danger">
+      <div class="err-head">
+        <div class="err-icon">✕</div>
+        <div class="err-body">
+          <h4>OTP doesn't match</h4>
+          <p>Check the code in your SMS or request a new one. Code expires in 10 min.</p>
+        </div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">Resend OTP</button>
+        <button class="err-btn primary">Try again</button>
+      </div>
+    </div>
+    <div class="spec"><b>Inline below OTP input</b> · resend visible · countdown shown</div>
+  </div>
+
+  <div class="component" data-name="Error · Pre-order Price Increased">
+    <div class="err-card warning">
+      <div class="err-head">
+        <div class="err-icon">⚡</div>
+        <div class="err-body">
+          <h4>Morning price update</h4>
+          <p>Surmai today is ₹720/kg (estimate was ₹650). Total now ₹1,490 instead of ₹1,300. Confirm to proceed.</p>
+        </div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">Cancel order</button>
+        <button class="err-btn primary">Confirm new price</button>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-order specific</b> · catch price varies daily · always require confirm if change &gt; 5%</div>
+  </div>
+
+  <div class="component" data-name="Error · Seller Declined Order">
+    <div class="err-card danger">
+      <div class="err-head">
+        <div class="err-icon">✕</div>
+        <div class="err-body">
+          <h4>Seller couldn't fulfill</h4>
+          <p>Kamla Tai is out of Surmai today. Full refund processed. We've found 2 sellers nearby with Surmai available.</p>
+        </div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">View refund</button>
+        <button class="err-btn primary">See alternatives</button>
+      </div>
+    </div>
+    <div class="spec"><b>Auto-refund + auto-suggest</b> · turn negative into positive (alternative discovery)</div>
+  </div>
+
+  <div class="component" data-name="Error · Min Order Not Met">
+    <div class="err-card warning">
+      <div class="err-head">
+        <div class="err-icon">!</div>
+        <div class="err-body">
+          <h4>Add ₹150 more for delivery</h4>
+          <p>This seller's minimum is ₹500 for delivery. Or pickup at no minimum.</p>
+        </div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">Switch to pickup</button>
+        <button class="err-btn primary">Add more items</button>
+      </div>
+    </div>
+    <div class="spec"><b>Delivery threshold check</b> · always offer pickup as no-min alternative</div>
+  </div>
+
+  <div class="component" data-name="Error · Multiple Sellers in Cart">
+    <div class="err-card warning">
+      <div class="err-head">
+        <div class="err-icon">🐟</div>
+        <div class="err-body">
+          <h4>One seller per order</h4>
+          <p>Add Pomfret from Rafiq Bhai? This will replace items from Kamla Tai in your cart.</p>
+        </div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">Cancel</button>
+        <button class="err-btn primary">Replace cart</button>
+      </div>
+    </div>
+    <div class="spec"><b>Marketplace constraint</b> · one seller per order (enforces clear pickup logistics)</div>
+  </div>
+
+  <div class="component" data-name="Error · Delivery Address Out of Range">
+    <div class="err-card warning">
+      <div class="err-head">
+        <div class="err-icon">📍</div>
+        <div class="err-body">
+          <h4>Out of delivery range</h4>
+          <p>This address is 8.2 km from the seller (max 5 km). Switch to pickup or pick a closer address.</p>
+        </div>
+      </div>
+      <div class="err-actions">
+        <button class="err-btn ghost">Change address</button>
+        <button class="err-btn primary">Switch to pickup</button>
+      </div>
+    </div>
+    <div class="spec"><b>Range check</b> at checkout · always show actual distance for transparency</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Permission Prompts</h2>
+<style>
+  .prompt{width:340px;background:#fff;border-radius:var(--radius-lg);padding:24px;text-align:center;box-shadow:var(--shadow-md);border:1px solid var(--border)}
+  .prompt .icon-circle{width:72px;height:72px;border-radius:50%;background:var(--brand-l);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px}
+  .prompt h3{font:800 17px Inter;color:var(--ink);margin-bottom:6px}
+  .prompt p{font:400 13px Inter;color:var(--ink2);margin-bottom:20px;line-height:1.5}
+  .prompt-benefits{text-align:left;margin-bottom:20px}
+  .prompt-benefits li{font:500 12px Inter;color:var(--ink2);padding:6px 0;display:flex;gap:8px;align-items:flex-start}
+  .prompt-benefits li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+  .prompt-actions{display:flex;flex-direction:column;gap:8px}
+  .prompt-actions button{padding:12px;border-radius:var(--radius-sm);font:700 13px Inter;border:none;cursor:pointer}
+  .btn-allow{background:var(--brand);color:#fff}
+  .btn-skip{background:transparent;color:var(--ink3)}
+
+  .denial{width:340px;background:var(--orange-l);border:1px solid #FED7AA;border-radius:var(--radius);padding:16px;display:flex;gap:12px}
+  .denial .icon{font-size:24px;flex-shrink:0}
+  .denial h4{font:700 13px Inter;color:#9A3412}
+  .denial p{font:400 12px Inter;color:#9A3412;margin-top:3px;line-height:1.45}
+  .denial button{font:700 12px Inter;color:var(--orange);background:none;border:none;cursor:pointer;margin-top:6px;padding:0}
+
+</style>
+
+<div class="figma-page">
+  <h1>Permission Prompts</h1>
+  <p class="sub">Pre-prompts before native dialogs. Recovery flows for denials.</p>
+
+  <div class="component" data-name="Permission · Location (Pre-prompt)">
+    <div class="prompt">
+      <div class="icon-circle">📍</div>
+      <h3>Find sellers near you</h3>
+      <p>Allow location to see fresh fish from sellers in your area.</p>
+      <ul class="prompt-benefits">
+        <li>Show sellers within 5 km</li>
+        <li>Auto-fill delivery address</li>
+        <li>Get accurate delivery time</li>
+      </ul>
+      <div class="prompt-actions">
+        <button class="btn-allow">Allow location</button>
+        <button class="btn-skip">Enter manually</button>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-prompt before native dialog</b> · 3 benefit bullets · always offer manual fallback</div>
+  </div>
+
+  <div class="component" data-name="Permission · Push Notifications">
+    <div class="prompt">
+      <div class="icon-circle" style="background:#FFF7ED;color:var(--orange)">🔔</div>
+      <h3>Get notified about your fish</h3>
+      <p>We'll only ping you for things that matter.</p>
+      <ul class="prompt-benefits">
+        <li>Order confirmation by seller</li>
+        <li>Pre-order ready alerts (5am)</li>
+        <li>Price drops on favorite species</li>
+      </ul>
+      <div class="prompt-actions">
+        <button class="btn-allow" style="background:var(--orange)">Enable notifications</button>
+        <button class="btn-skip">Maybe later</button>
+      </div>
+    </div>
+    <div class="spec"><b>Time it right:</b> after first successful order, not on first launch · specific value props, not vague "stay updated"</div>
+  </div>
+
+  <div class="component" data-name="Permission · Location Denied (Recovery)">
+    <div class="denial">
+      <div class="icon">📍</div>
+      <div>
+        <h4>Location turned off</h4>
+        <p>We need location to show sellers near you. You can enter your area manually instead.</p>
+        <button>Enable in settings →</button>
+      </div>
+    </div>
+    <div class="spec"><b>Persistent banner</b> after denial · deep-link to settings · always provide manual alternative</div>
+  </div>
+
+  <div class="component" data-name="Permission · Notification Denied (Recovery)">
+    <div class="denial" style="background:var(--brand-l);border-color:var(--brand-m)">
+      <div class="icon">🔔</div>
+      <div>
+        <h4 style="color:#1E40AF">Notifications off</h4>
+        <p style="color:#1E40AF">You won't be alerted when sellers confirm or your pre-order is ready.</p>
+        <button style="color:var(--brand)">Turn on in settings →</button>
+      </div>
+    </div>
+    <div class="spec"><b>Inline at top of orders page</b> · only show if user has active orders</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">03 · Molecules</div>
+<h2 class="mega-title">Validation States</h2>
+<style>
+  .field{width:320px;margin-bottom:16px}
+  .field label{display:block;font:600 12px Inter;color:var(--ink2);margin-bottom:6px}
+  .field input{width:100%;padding:12px 14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);font:400 14px Inter;color:var(--ink);outline:none}
+  .field input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)}
+  .field input.valid{border-color:var(--green);padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M13.485 4.515a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L6.778 9.808l5.293-5.293a1 1 0 011.414 0z' fill='%23059669'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+  .field input.error{border-color:var(--red);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M8 1a7 7 0 100 14A7 7 0 008 1zm0 4v4m0 2v.01' stroke='%23DC2626' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+  .helper{font:400 11px Inter;margin-top:4px;display:flex;align-items:center;gap:4px}
+  .helper.error{color:var(--red)}
+  .helper.success{color:var(--green)}
+  .helper.hint{color:var(--ink4)}
+
+  .strength{display:flex;gap:3px;margin-top:6px}
+  .strength .bar{flex:1;height:3px;background:var(--bg3);border-radius:2px}
+  .strength.weak .bar:nth-child(1){background:var(--red)}
+  .strength.medium .bar:nth-child(-n+2){background:var(--orange)}
+  .strength.strong .bar{background:var(--green)}
+
+</style>
+
+<div class="figma-page">
+  <h1>Validation States</h1>
+  <p class="sub">Inline validation. Real-time feedback. Helpful errors.</p>
+
+  <div class="component" data-name="Validation · Phone Number">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">empty / hint</span>
+        <div class="field">
+          <label>Phone number</label>
+          <input placeholder="98706 19974">
+          <div class="helper hint">10-digit Indian mobile number</div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">typing</span>
+        <div class="field">
+          <label>Phone number</label>
+          <input value="987" autofocus>
+          <div class="helper hint">7 more digits</div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">valid</span>
+        <div class="field">
+          <label>Phone number</label>
+          <input class="valid" value="98706 19974">
+          <div class="helper success">✓ We'll send OTP here</div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">error · too short</span>
+        <div class="field">
+          <label>Phone number</label>
+          <input class="error" value="9870">
+          <div class="helper error">⚠ Too short. Phone must be 10 digits.</div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">error · invalid format</span>
+        <div class="field">
+          <label>Phone number</label>
+          <input class="error" value="abc123">
+          <div class="helper error">⚠ Numbers only please</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Real-time validation:</b> hint while typing → success on valid → error after blur if invalid · always show what's expected</div>
+  </div>
+
+  <div class="component" data-name="Validation · Email (Optional)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">valid</span>
+        <div class="field">
+          <label>Email <span style="color:var(--ink4);font-weight:400">(optional)</span></label>
+          <input class="valid" value="priya@example.com">
+          <div class="helper success">✓ Looks good</div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">error</span>
+        <div class="field">
+          <label>Email <span style="color:var(--ink4);font-weight:400">(optional)</span></label>
+          <input class="error" value="priya@">
+          <div class="helper error">⚠ Missing the part after @</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Specific errors</b> · "missing part after @" not "invalid email"</div>
+  </div>
+
+  <div class="component" data-name="Validation · Address Fields">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">incomplete</span>
+        <div class="field">
+          <label>Flat / House no.</label>
+          <input class="error" value="">
+          <div class="helper error">⚠ Required for delivery</div>
+        </div>
+        <div class="field">
+          <label>Building name</label>
+          <input class="valid" value="Sagar Mahal">
+        </div>
+        <div class="field">
+          <label>Pincode</label>
+          <input class="error" value="40005">
+          <div class="helper error">⚠ Pincode must be 6 digits</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Error on submit attempt</b> · don't error on blank/typing · clear required vs optional</div>
+  </div>
+
+  <div class="component" data-name="Validation · OTP Input">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">success</span>
+        <div class="field">
+          <label>Enter OTP</label>
+          <div style="display:flex;gap:6px"><input class="valid" value="9" style="width:44px;text-align:center"><input class="valid" value="8" style="width:44px;text-align:center"><input class="valid" value="7" style="width:44px;text-align:center"><input class="valid" value="0" style="width:44px;text-align:center"><input class="valid" value="6" style="width:44px;text-align:center"><input class="valid" value="3" style="width:44px;text-align:center"></div>
+          <div class="helper success">✓ Verified · Logging you in...</div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">wrong</span>
+        <div class="field">
+          <label>Enter OTP</label>
+          <div style="display:flex;gap:6px"><input class="error" value="1" style="width:44px;text-align:center"><input class="error" value="2" style="width:44px;text-align:center"><input class="error" value="3" style="width:44px;text-align:center"><input class="error" value="4" style="width:44px;text-align:center"><input class="error" value="5" style="width:44px;text-align:center"><input class="error" value="6" style="width:44px;text-align:center"></div>
+          <div class="helper error">⚠ Incorrect OTP. 2 tries left.</div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">expired</span>
+        <div class="field">
+          <label>Enter OTP</label>
+          <div style="display:flex;gap:6px"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"></div>
+          <div class="helper error">⚠ OTP expired. <a href="#" style="color:var(--brand)">Resend</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Track tries left</b> · 3 attempts then rate-limit · resend always available · auto-submit on 6th digit</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">04 · Organisms</div>
+<h2 class="mega-title">App Header</h2>
+<style>
+  .header{width:360px;padding:12px 16px;background:var(--brand);display:flex;align-items:center;gap:12px}
+  .logo{font:800 18px Inter;color:#fff;letter-spacing:-.02em}
+  .loc-wrap{flex:1;min-width:0}
+  .loc-main{font:700 14px Inter;color:#fff;display:flex;align-items:center;gap:4px}
+  .loc-sub{font:400 11px Inter;color:rgba(255,255,255,.75);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .loc-arrow{font-size:10px}
+  .profile{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer}
+  .cart-icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;position:relative}
+  .cart-icon .dot{position:absolute;top:-2px;right:-2px;background:var(--orange);color:#fff;font:700 9px Inter;min-width:16px;height:16px;border-radius:9999px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+  .search-card{width:336px;margin-top:-14px;margin-left:12px;padding:14px 16px;background:#fff;border-radius:var(--radius);font:400 13px Inter;color:var(--ink4);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px;position:relative;z-index:10}
+
+</style>
+
+<div class="figma-page">
+  <h1>App Header</h1>
+  <p class="sub">Top-of-app header. Brand presence + location + actions.</p>
+
+  <div class="component" data-name="AppHeader · Default">
+    <div class="component-variants">
+      <div>
+        <div class="header">
+          <span class="logo">relifish</span>
+          <div class="loc-wrap">
+            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
+            <div class="loc-sub">Deliver in 45 min · 3 sellers nearby</div>
+          </div>
+          <div class="profile">👤</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Height:</b> 56px (content) · <b>bg:</b> #0066FF · <b>sticky top</b><br>
+      <b>Logo:</b> 800/18px lowercase · <b>Location:</b> 700/14 + 400/11 subtitle<br>
+      <b>Profile:</b> 32px circle · rgba(255,255,255,.2) bg
+    </div>
+  </div>
+
+  <div class="component" data-name="AppHeader · With Search (Home)">
+    <div class="component-variants">
+      <div>
+        <div class="header" style="padding-bottom:20px">
+          <span class="logo">relifish</span>
+          <div class="loc-wrap">
+            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
+            <div class="loc-sub">Deliver in 45 min</div>
+          </div>
+          <div class="cart-icon">🛒<span class="dot">2</span></div>
+        </div>
+        <div class="search-card">
+          <span>🔍</span> Search "Surmai", "Pomfret", sellers...
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Search overlap:</b> margin-top -14px · floats on brand bg<br>
+      <b>Cart icon:</b> badge shows cart count · orange dot for visibility
+    </div>
+  </div>
+
+  <div class="component" data-name="AppHeader · With Back">
+    <div class="component-variants">
+      <div class="header">
+        <span style="font:700 20px Inter;color:#fff;cursor:pointer">←</span>
+        <div class="loc-wrap">
+          <div class="loc-main">Kamla Tai Fish Stall</div>
+          <div class="loc-sub">Sassoon Dock · 1.2 km</div>
+        </div>
+        <div class="profile">⋯</div>
+      </div>
+    </div>
+    <div class="spec"><b>Page-level header:</b> back arrow + page title · ⋯ menu right</div>
+  </div>
+
+  <div class="component" data-name="AppHeader · Pre-order Mode">
+    <div class="component-variants">
+      <div class="header" style="background:#4F46E5">
+        <span class="logo">🌙 relifish</span>
+        <div class="loc-wrap">
+          <div class="loc-main">Pre-order mode</div>
+          <div class="loc-sub">Tomorrow 7am · Bandra West</div>
+        </div>
+        <div class="profile">👤</div>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-order variant:</b> indigo bg · moon prefix · differentiates context</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">04 · Organisms</div>
+<h2 class="mega-title">Bottom Nav</h2>
+<style>
+  .nav{width:360px;height:64px;background:#fff;border-top:1px solid var(--border);display:flex;box-shadow:0 -2px 4px rgba(0,0,0,.04)}
+  .n-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4);position:relative;cursor:pointer}
+  .n-item.active{color:var(--brand)}
+  .n-item.active::before{content:'';position:absolute;top:0;width:24px;height:2px;background:var(--brand);border-radius:0 0 2px 2px}
+  .n-item .icon{font-size:22px}
+  .n-item .badge{position:absolute;top:10px;right:28%;background:var(--red);color:#fff;font:700 9px Inter;min-width:16px;height:16px;border-radius:9999px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+</style>
+
+<div class="figma-page">
+  <h1>Bottom Nav</h1>
+  <p class="sub">5-tab navigation. Pre-order gets dedicated tab (moat).</p>
+
+  <div class="component" data-name="BottomNav · Home Active">
+    <div class="component-variants">
+      <div class="nav">
+        <div class="n-item active"><span class="icon">🏠</span>Home</div>
+        <div class="n-item"><span class="icon">🔍</span>Search</div>
+        <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+        <div class="n-item"><span class="icon">📋</span>Orders</div>
+        <div class="n-item"><span class="icon">👤</span>Account</div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Height:</b> 64px · <b>Items:</b> 5 (equal flex) · <b>Active:</b> brand color + 2px top indicator<br>
+      <b>Icon:</b> 22px emoji · <b>Label:</b> 500/10px
+    </div>
+  </div>
+
+  <div class="component" data-name="BottomNav · With Badges">
+    <div class="component-variants">
+      <div class="nav">
+        <div class="n-item"><span class="icon">🏠</span>Home</div>
+        <div class="n-item"><span class="icon">🔍</span>Search</div>
+        <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+        <div class="n-item active"><span class="icon">📋</span>Orders<span class="badge">2</span></div>
+        <div class="n-item"><span class="icon">👤</span>Account</div>
+      </div>
+    </div>
+    <div class="spec"><b>Badge:</b> red dot with count · used for unread orders, notifications</div>
+  </div>
+
+  <div class="component" data-name="BottomNav · Seller Dashboard">
+    <div class="component-variants">
+      <div class="nav">
+        <div class="n-item active"><span class="icon">📋</span>Orders<span class="badge">5</span></div>
+        <div class="n-item"><span class="icon">🐟</span>Listings</div>
+        <div class="n-item"><span class="icon">📊</span>Stats</div>
+        <div class="n-item"><span class="icon">👤</span>Profile</div>
+      </div>
+    </div>
+    <div class="spec"><b>Seller mode:</b> 4 tabs · Orders / Listings / Stats / Profile · different from buyer nav</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">04 · Organisms</div>
+<h2 class="mega-title">Seller Hero</h2>
+<style>
+  .hero{width:360px;padding:16px;background:linear-gradient(180deg,#E0F2FE 0%,#fff 100%)}
+  .back{font:500 12px Inter;color:var(--ink3);margin-bottom:12px;cursor:pointer}
+  .top{display:flex;gap:12px;align-items:flex-start}
+  .avatar{width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,var(--brand),#3B82F6);display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:var(--shadow);flex-shrink:0}
+  .info{flex:1;min-width:0}
+  .info h2{font:800 18px Inter;color:var(--ink);letter-spacing:-.01em}
+  .sub{font:400 12px Inter;color:var(--ink3);margin-top:3px}
+  .rating{display:flex;align-items:center;gap:3px;background:var(--green);color:#fff;font:700 12px Inter;padding:4px 8px;border-radius:6px;flex-shrink:0;margin-top:2px}
+  .stats{display:flex;gap:0;margin-top:16px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .stat{flex:1;text-align:center;padding:12px 4px;border-right:1px solid var(--border)}
+  .stat:last-child{border-right:none}
+  .stat .val{font:800 15px Inter;color:var(--ink)}
+  .stat .lbl{font:500 10px Inter;color:var(--ink4);margin-top:2px}
+  .stat .val.live{color:var(--green)}
+  .stat .val.live::before{content:'';display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;margin-right:4px;vertical-align:middle}
+
+  .tags{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+  .tag{font:500 10px Inter;padding:3px 10px;border-radius:20px;background:#fff;border:1px solid var(--border);color:var(--ink2)}
+  .tag.green{background:var(--green-l);color:var(--green);border-color:transparent}
+  .tag.brand{background:var(--brand-l);color:var(--brand);border-color:transparent}
+
+</style>
+
+<div class="figma-page">
+  <h1>Seller Hero</h1>
+  <p class="sub">Seller profile page top section. Stats row = trust builder.</p>
+
+  <div class="component" data-name="SellerHero · Default">
+    <div class="component-variants">
+      <div class="hero">
+        <div class="back">← Back</div>
+        <div class="top">
+          <div class="avatar">🐟</div>
+          <div class="info">
+            <h2>Kamla Tai Fish Stall</h2>
+            <div class="sub">Sassoon Dock, Colaba · 1.2 km · 45 min delivery</div>
+          </div>
+          <div class="rating">4.8 ★</div>
+        </div>
+        <div class="tags">
+          <span class="tag green">Open now</span>
+          <span class="tag brand">Pre-order</span>
+          <span class="tag">Cleaned & cut</span>
+          <span class="tag">Verified seller</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="val">200+</div><div class="lbl">Orders</div></div>
+          <div class="stat"><div class="val">12</div><div class="lbl">Items today</div></div>
+          <div class="stat"><div class="val">5:30am</div><div class="lbl">Today's catch</div></div>
+          <div class="stat"><div class="val live">Open</div><div class="lbl">Until 2pm</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>bg:</b> gradient sky blue → white<br>
+      <b>Avatar:</b> 60x60 · radius 14 · brand gradient bg<br>
+      <b>Stats row:</b> 4 metrics · bordered divider · live green dot for status
+    </div>
+  </div>
+
+  <div class="component" data-name="SellerHero · New Seller">
+    <div class="component-variants">
+      <div class="hero" style="background:linear-gradient(180deg,#FFF7ED 0%,#fff 100%)">
+        <div class="back">← Back</div>
+        <div class="top">
+          <div class="avatar" style="background:linear-gradient(135deg,#EA580C,#F97316)">🆕</div>
+          <div class="info">
+            <h2>Hassan Fresh Seafood</h2>
+            <div class="sub">Crawford Market · 2.1 km · New this week</div>
+          </div>
+          <div class="rating" style="background:var(--orange)">NEW</div>
+        </div>
+        <div class="tags">
+          <span class="tag green">Open now</span>
+          <span class="tag" style="background:var(--orange-l);color:var(--orange);border-color:transparent">New seller</span>
+          <span class="tag">Intro ₹50 off</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="val">0</div><div class="lbl">Orders</div></div>
+          <div class="stat"><div class="val">8</div><div class="lbl">Items today</div></div>
+          <div class="stat"><div class="val">6:00am</div><div class="lbl">Today's catch</div></div>
+          <div class="stat"><div class="val live">Open</div><div class="lbl">Until 11am</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>New seller variant:</b> orange gradient · "NEW" badge · intro offer tag</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">04 · Organisms</div>
+<h2 class="mega-title">Checkout Sheet</h2>
+<style>
+  .sheet{width:360px;background:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--shadow-lg);overflow:hidden}
+  .handle{height:4px;width:40px;background:var(--ink4);border-radius:2px;margin:8px auto}
+  .steps{display:flex;padding:12px 16px 16px;gap:8px;border-bottom:1px solid var(--border)}
+  .step{flex:1;height:4px;border-radius:2px;background:var(--bg3)}
+  .step.done{background:var(--green)}
+  .step.active{background:var(--brand)}
+  .sheet-title{font:800 17px Inter;color:var(--ink);padding:16px}
+  .row{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+  .row:last-child{border-bottom:none}
+  .row .lbl{font:500 13px Inter;color:var(--ink2)}
+  .row .val{font:700 13px Inter;color:var(--ink)}
+  .row .val.green{color:var(--green)}
+  .row .val.strike{text-decoration:line-through;color:var(--ink4);font-weight:400}
+  .total-row{background:var(--brand-l);padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+  .total-row .lbl{font:700 14px Inter;color:var(--ink)}
+  .total-row .val{font:800 18px Inter;color:var(--brand)}
+
+  .pay-options{padding:12px 16px}
+  .pay-opt{display:flex;align-items:center;gap:12px;padding:14px 12px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer}
+  .pay-opt.selected{border-color:var(--brand);background:var(--brand-l)}
+  .pay-opt .icon{width:32px;height:32px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .pay-opt .name{font:700 13px Inter;color:var(--ink);flex:1}
+  .pay-opt .desc{font:400 11px Inter;color:var(--ink3)}
+  .pay-opt .radio{width:18px;height:18px;border:2px solid var(--ink4);border-radius:50%;position:relative;flex-shrink:0}
+  .pay-opt.selected .radio{border-color:var(--brand)}
+  .pay-opt.selected .radio::after{content:'';position:absolute;inset:3px;background:var(--brand);border-radius:50%}
+
+  .cta{padding:12px 16px;background:#fff;border-top:1px solid var(--border)}
+  .cta button{width:100%;background:var(--brand);color:#fff;border:none;font:800 15px Inter;padding:14px;border-radius:var(--radius);cursor:pointer}
+  .cta .foot{font:400 10px Inter;color:var(--ink4);text-align:center;margin-top:8px}
+
+  .item-row{padding:10px 16px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)}
+  .item-row .emoji{font-size:24px}
+  .item-row .ir-body{flex:1}
+  .item-row .ir-name{font:600 13px Inter;color:var(--ink)}
+  .item-row .ir-meta{font:400 11px Inter;color:var(--ink3);margin-top:1px}
+  .item-row .ir-price{font:700 13px Inter;color:var(--ink)}
+  .item-row .qty{display:flex;align-items:center;background:var(--bg3);border-radius:6px;height:26px;margin-right:8px}
+  .item-row .qty button{background:none;border:none;width:26px;height:26px;font:700 14px Inter;color:var(--ink);cursor:pointer}
+  .item-row .qty span{padding:0 6px;font:700 11px Inter}
+
+</style>
+
+<div class="figma-page">
+  <h1>Checkout Sheet</h1>
+  <p class="sub">Bottom sheet for 3-step checkout. Cart → Address → Payment.</p>
+
+  <div class="component" data-name="CheckoutSheet · Step 1 Cart">
+    <div class="component-variants">
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="steps"><div class="step active"></div><div class="step"></div><div class="step"></div></div>
+        <div class="sheet-title">Your cart · 2 items</div>
+        <div class="item-row">
+          <span class="emoji">🐟</span>
+          <div class="ir-body">
+            <div class="ir-name">Surmai (King Fish)</div>
+            <div class="ir-meta">1 kg · Whole</div>
+          </div>
+          <div class="qty"><button>−</button><span>1</span><button>+</button></div>
+          <div class="ir-price">₹650</div>
+        </div>
+        <div class="item-row">
+          <span class="emoji">🦐</span>
+          <div class="ir-body">
+            <div class="ir-name">Prawns</div>
+            <div class="ir-meta">500g · Medium</div>
+          </div>
+          <div class="qty"><button>−</button><span>1</span><button>+</button></div>
+          <div class="ir-price">₹250</div>
+        </div>
+        <div class="row"><span class="lbl">Subtotal</span><span class="val">₹900</span></div>
+        <div class="row"><span class="lbl">Delivery fee</span><span class="val green">FREE</span></div>
+        <div class="row"><span class="lbl">Platform fee</span><span class="val">₹5</span></div>
+        <div class="total-row"><span class="lbl">Total</span><span class="val">₹905</span></div>
+        <div class="cta"><button>Next: Address →</button></div>
+      </div>
+    </div>
+    <div class="spec"><b>Step 1:</b> Review cart · edit quantities · bill breakdown</div>
+  </div>
+
+  <div class="component" data-name="CheckoutSheet · Step 3 Payment">
+    <div class="component-variants">
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="steps"><div class="step done"></div><div class="step done"></div><div class="step active"></div></div>
+        <div class="sheet-title">Payment method</div>
+        <div class="pay-options">
+          <div class="pay-opt selected">
+            <div class="icon">📱</div>
+            <div style="flex:1">
+              <div class="name">UPI</div>
+              <div class="desc">PhonePe, GPay, Paytm</div>
+            </div>
+            <div class="radio"></div>
+          </div>
+          <div class="pay-opt">
+            <div class="icon">💵</div>
+            <div style="flex:1">
+              <div class="name">Cash on delivery</div>
+              <div class="desc">Pay seller at pickup</div>
+            </div>
+            <div class="radio"></div>
+          </div>
+          <div class="pay-opt">
+            <div class="icon">💳</div>
+            <div style="flex:1">
+              <div class="name">Card</div>
+              <div class="desc">Credit / Debit</div>
+            </div>
+            <div class="radio"></div>
+          </div>
+        </div>
+        <div class="total-row"><span class="lbl">Total</span><span class="val">₹905</span></div>
+        <div class="cta">
+          <button>Pay ₹905 via UPI</button>
+          <div class="foot">🔒 Secured by Razorpay · 100% refund if seller cancels</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Step 3:</b> Payment selection · trust signals at bottom</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">04 · Organisms</div>
+<h2 class="mega-title">Bottom Sheets</h2>
+<style>
+  .sheet{width:360px;background:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;border:1px solid var(--border)}
+  .handle{height:4px;width:40px;background:var(--ink4);border-radius:2px;margin:8px auto}
+  .sheet-head{padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+  .sheet-head h3{font:800 16px Inter;color:var(--ink)}
+  .sheet-head .close{font:400 22px Inter;color:var(--ink3);cursor:pointer;background:none;border:none}
+
+  .addr-pick{padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer}
+  .addr-pick:hover{background:var(--bg2)}
+  .addr-pick.selected{background:var(--brand-l)}
+  .addr-pick .icon{width:36px;height:36px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .addr-pick.selected .icon{background:var(--brand);color:#fff}
+  .addr-pick .info{flex:1}
+  .addr-pick .lbl{font:700 13px Inter;color:var(--ink)}
+  .addr-pick .text{font:400 11px Inter;color:var(--ink3);margin-top:2px}
+  .addr-pick .check{color:var(--brand);font:700 16px Inter;display:none}
+  .addr-pick.selected .check{display:block}
+
+  .add-new{padding:16px;display:flex;align-items:center;gap:8px;color:var(--brand);font:700 13px Inter;cursor:pointer;border-bottom:1px solid var(--border)}
+
+  .filter-section{padding:16px;border-bottom:1px solid var(--border)}
+  .filter-section h4{font:700 13px Inter;color:var(--ink);margin-bottom:10px}
+  .filter-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .filter-chip{padding:6px 12px;border:1px solid var(--border);border-radius:20px;font:500 12px Inter;color:var(--ink2);background:#fff;cursor:pointer}
+  .filter-chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+  .price-range{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font:600 12px Inter;color:var(--ink2)}
+  .slider{width:100%;height:4px;background:var(--bg3);border-radius:2px;position:relative;margin:12px 0}
+  .slider .track{position:absolute;left:20%;right:30%;height:100%;background:var(--brand);border-radius:2px}
+  .slider .thumb{position:absolute;width:18px;height:18px;background:#fff;border:2px solid var(--brand);border-radius:50%;top:-7px}
+  .slider .thumb.left{left:18%}
+  .slider .thumb.right{right:28%}
+
+  .sheet-cta{padding:14px 16px;background:#fff;border-top:1px solid var(--border)}
+  .sheet-cta button{width:100%;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius);font:800 14px Inter;cursor:pointer}
+
+  .slot-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px}
+  .slot-pill{padding:12px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);text-align:center;cursor:pointer}
+  .slot-pill.selected{border-color:var(--brand);background:var(--brand-l)}
+  .slot-pill .time{font:700 12px Inter;color:var(--ink)}
+  .slot-pill.selected .time{color:var(--brand)}
+  .slot-pill .lbl{font:500 10px Inter;color:var(--ink3);margin-top:2px}
+  .slot-pill .price{font:700 9px Inter;color:var(--green);margin-top:2px}
+  .slot-pill.disabled{opacity:.4;cursor:not-allowed}
+  .slot-pill.disabled .lbl{color:var(--red)}
+
+  .day-picker{display:flex;gap:6px;padding:12px 16px;overflow-x:auto}
+  .day-pill{flex-shrink:0;padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);font:600 12px Inter;color:var(--ink2);background:#fff}
+  .day-pill.selected{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .day-pill.today{border-color:var(--brand);color:var(--brand)}
+
+</style>
+
+<div class="figma-page">
+  <h1>Bottom Sheets</h1>
+  <p class="sub">Modal sheets from bottom. Address picker, filters, slot picker.</p>
+
+  <div class="component" data-name="BottomSheet · Address Picker">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head"><h3>Deliver to</h3><button class="close">×</button></div>
+      <div class="addr-pick selected">
+        <div class="icon">🏠</div>
+        <div class="info"><div class="lbl">Home</div><div class="text">Flat 304, Sagar Mahal, Bandra West</div></div>
+        <div class="check">✓</div>
+      </div>
+      <div class="addr-pick">
+        <div class="icon">🏢</div>
+        <div class="info"><div class="lbl">Office</div><div class="text">8th floor, Tower C, BKC</div></div>
+        <div class="check">✓</div>
+      </div>
+      <div class="addr-pick">
+        <div class="icon">📍</div>
+        <div class="info"><div class="lbl">Mom's place</div><div class="text">Khar West</div></div>
+        <div class="check">✓</div>
+      </div>
+      <div class="add-new">+ Add new address</div>
+      <div class="sheet-cta"><button>Deliver here →</button></div>
+    </div>
+    <div class="spec"><b>Triggered:</b> from app header location chip · <b>Tap row:</b> selects · <b>CTA:</b> confirms selection</div>
+  </div>
+
+  <div class="component" data-name="BottomSheet · Slot Picker (Pre-order)">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head"><h3>Pickup time tomorrow</h3><button class="close">×</button></div>
+
+      <div class="day-picker">
+        <div class="day-pill today selected">Tomorrow<br><span style="font-weight:400;font-size:10px">17 Apr</span></div>
+        <div class="day-pill">Sat 18</div>
+        <div class="day-pill">Sun 19</div>
+        <div class="day-pill">Mon 20</div>
+      </div>
+
+      <div style="padding:0 16px"><h4 style="font:700 12px Inter;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Morning slots</h4></div>
+      <div class="slot-row">
+        <div class="slot-pill"><div class="time">5-7am</div><div class="lbl">Dawn</div><div class="price">₹0 fee</div></div>
+        <div class="slot-pill selected"><div class="time">7-9am</div><div class="lbl">Morning</div><div class="price">₹0 fee</div></div>
+        <div class="slot-pill"><div class="time">9-11am</div><div class="lbl">Late</div><div class="price">+₹20</div></div>
+      </div>
+      <div style="padding:8px 16px"><h4 style="font:700 12px Inter;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Evening slots</h4></div>
+      <div class="slot-row">
+        <div class="slot-pill"><div class="time">4-6pm</div><div class="lbl">Evening</div><div class="price">+₹40</div></div>
+        <div class="slot-pill"><div class="time">6-8pm</div><div class="lbl">Night</div><div class="price">+₹40</div></div>
+        <div class="slot-pill disabled"><div class="time">8-10pm</div><div class="lbl">Sold out</div></div>
+      </div>
+      <div class="sheet-cta"><button>Confirm 7-9am →</button></div>
+    </div>
+    <div class="spec"><b>Day picker</b> top scroll · <b>Time grouped</b> morning/evening · <b>Slot fees</b> shown inline · disabled state when full</div>
+  </div>
+
+  <div class="component" data-name="BottomSheet · Filters">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head">
+        <h3>Filter sellers</h3>
+        <button style="background:none;border:none;color:var(--brand);font:600 12px Inter">Reset all</button>
+      </div>
+
+      <div class="filter-section">
+        <h4>Seller status</h4>
+        <div class="filter-chips">
+          <span class="filter-chip active">Open now</span>
+          <span class="filter-chip">Pre-order</span>
+          <span class="filter-chip">Both</span>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Delivery</h4>
+        <div class="filter-chips">
+          <span class="filter-chip active">Delivery</span>
+          <span class="filter-chip">Pickup</span>
+          <span class="filter-chip">Both</span>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Fish category</h4>
+        <div class="filter-chips">
+          <span class="filter-chip active">All</span>
+          <span class="filter-chip">Sea fish</span>
+          <span class="filter-chip">Freshwater</span>
+          <span class="filter-chip">Shellfish</span>
+          <span class="filter-chip">Crustaceans</span>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Price range (per kg)</h4>
+        <div class="price-range"><span>₹200</span><span>₹1,200</span></div>
+        <div class="slider"><div class="track"></div><div class="thumb left"></div><div class="thumb right"></div></div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Rating</h4>
+        <div class="filter-chips">
+          <span class="filter-chip">Any</span>
+          <span class="filter-chip active">4.0+</span>
+          <span class="filter-chip">4.5+</span>
+        </div>
+      </div>
+
+      <div class="sheet-cta"><button>Apply filters · 12 sellers</button></div>
+    </div>
+    <div class="spec"><b>Sections:</b> grouped chips · <b>Price:</b> dual-thumb slider · <b>CTA shows result count</b> live</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">04 · Organisms</div>
+<h2 class="mega-title">Onboarding</h2>
+<style>
+  .ob-screen{width:340px;background:#fff;border-radius:var(--radius-lg);padding:32px 24px;text-align:center;border:1px solid var(--border)}
+  .ob-illust{font-size:80px;margin-bottom:20px;display:inline-block}
+  .ob-screen h2{font:900 22px Inter;color:var(--ink);margin-bottom:8px;letter-spacing:-.02em}
+  .ob-screen p{font:400 14px Inter;color:var(--ink2);margin-bottom:24px;line-height:1.5}
+  .ob-dots{display:flex;justify-content:center;gap:6px;margin-bottom:20px}
+  .ob-dots .dot{width:6px;height:6px;border-radius:50%;background:var(--bg3)}
+  .ob-dots .dot.active{background:var(--brand);width:18px;border-radius:3px}
+  .ob-cta{width:100%;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius);font:800 14px Inter;cursor:pointer}
+  .ob-skip{margin-top:8px;background:none;border:none;color:var(--ink3);font:600 13px Inter;cursor:pointer}
+
+  .first-order-celebration{width:340px;background:linear-gradient(135deg,#0066FF,#3B82F6);border-radius:var(--radius-lg);padding:32px 24px;text-align:center;color:#fff;position:relative;overflow:hidden}
+  .first-order-celebration::before{content:'🎉';position:absolute;top:-20px;left:-10px;font-size:140px;opacity:.15;transform:rotate(-15deg)}
+  .first-order-celebration::after{content:'🐟';position:absolute;bottom:-30px;right:-10px;font-size:140px;opacity:.15;transform:rotate(15deg)}
+  .foc-badge{display:inline-block;background:rgba(255,255,255,.25);padding:4px 12px;border-radius:20px;font:700 10px Inter;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;position:relative}
+  .first-order-celebration h2{font:900 24px Inter;margin-bottom:6px;position:relative}
+  .first-order-celebration p{font:400 14px Inter;opacity:.9;margin-bottom:20px;position:relative}
+  .foc-cta{background:#fff;color:var(--brand);font:800 14px Inter;padding:12px 24px;border-radius:var(--radius);border:none;position:relative;cursor:pointer}
+
+  .tooltip{position:relative;display:inline-block}
+  .tooltip-content{background:var(--ink);color:#fff;padding:10px 14px;border-radius:8px;font:500 12px Inter;width:240px;text-align:center;position:relative;box-shadow:var(--shadow-lg)}
+  .tooltip-content::after{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid var(--ink)}
+  .tooltip-content b{color:#FCD34D}
+  .tooltip-content button{background:transparent;border:none;color:#94A3B8;font:600 11px Inter;cursor:pointer;display:block;margin:8px auto 0}
+
+</style>
+
+<div class="figma-page">
+  <h1>Onboarding & First-Time Flows</h1>
+  <p class="sub">First impressions. Education without friction.</p>
+
+  <div class="component" data-name="Onboarding · Step 1 (Welcome)">
+    <div class="ob-screen">
+      <div class="ob-illust">🐟</div>
+      <h2>Fresh fish, direct from sellers</h2>
+      <p>Skip the supermarket. Order from local Mumbai fishermen with same-day catch.</p>
+      <div class="ob-dots"><div class="dot active"></div><div class="dot"></div><div class="dot"></div></div>
+      <button class="ob-cta">Next →</button>
+      <button class="ob-skip">Skip</button>
+    </div>
+    <div class="spec"><b>3 steps max</b> · always show progress dots · always offer skip</div>
+  </div>
+
+  <div class="component" data-name="Onboarding · Step 2 (Pre-order)">
+    <div class="ob-screen">
+      <div class="ob-illust">🌙</div>
+      <h2>Tomorrow's catch, reserved tonight</h2>
+      <p>Pre-order by 10pm. Seller reserves at the dock by 5am. Fresh fish guaranteed.</p>
+      <div class="ob-dots"><div class="dot"></div><div class="dot active"></div><div class="dot"></div></div>
+      <button class="ob-cta">Next →</button>
+      <button class="ob-skip">Skip</button>
+    </div>
+    <div class="spec"><b>Highlight differentiator</b> in onboarding · sets expectation early</div>
+  </div>
+
+  <div class="component" data-name="Onboarding · Step 3 (Location)">
+    <div class="ob-screen">
+      <div class="ob-illust">📍</div>
+      <h2>Find sellers near you</h2>
+      <p>Allow location to see fresh fish from your neighborhood. Or enter manually.</p>
+      <div class="ob-dots"><div class="dot"></div><div class="dot"></div><div class="dot active"></div></div>
+      <button class="ob-cta">Allow location</button>
+      <button class="ob-skip">Enter manually</button>
+    </div>
+    <div class="spec"><b>Final step = action</b> · ends with permission ask + manual fallback</div>
+  </div>
+
+  <div class="component" data-name="First Order · Celebration Screen">
+    <div class="first-order-celebration">
+      <div class="foc-badge">First order</div>
+      <h2>You're in! 🎉</h2>
+      <p>Free delivery on this order from Kamla Tai. Welcome to Relifish.</p>
+      <button class="foc-cta">Track order →</button>
+    </div>
+    <div class="spec"><b>Delight moment</b> · only after first successful order · drives second-order intent</div>
+  </div>
+
+  <div class="component" data-name="Coachmark · Pre-order Tooltip">
+    <div class="tooltip-content">
+      <b>New: Pre-order</b><br>
+      Order tonight, fresh fish ready by 7am tomorrow.
+      <button>Got it</button>
+    </div>
+    <div class="spec"><b>One-time tooltip</b> · points at pre-order tab in nav · dismissed forever after first tap</div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">05 · Screens</div>
+<h2 class="mega-title">01 · Home</h2>
+<style>
+  .search{margin:0 16px;transform:translateY(-14px);padding:12px 14px;background:#fff;border-radius:12px;font:400 13px Inter;color:#94A3B8;box-shadow:0 4px 6px rgba(0,0,0,.07);display:flex;align-items:center;gap:8px;position:relative;z-index:5}
+
+  .banner{margin:0 16px 12px;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #C7D2FE;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+  .banner .icon{font-size:28px}
+  .banner h4{font:700 13px Inter;color:#3730A3}
+  .banner p{font:400 10px Inter;color:#4338CA;margin-top:1px}
+  .banner .btn{background:#4F46E5;color:#fff;font:700 11px Inter;padding:6px 12px;border-radius:8px;border:none;flex-shrink:0}
+
+  .cats{display:flex;gap:10px;padding:0 16px;margin-bottom:14px;overflow-x:auto}
+  .cats::-webkit-scrollbar{display:none}
+  .cat{text-align:center;flex-shrink:0;width:56px}
+  .cat .c{width:48px;height:48px;border-radius:12px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .cat.active .c{background:#E6F0FF;outline:2px solid #0066FF;outline-offset:-2px}
+  .cat .n{font:500 9px Inter;color:#334155;margin-top:4px}
+
+  .section{padding:0 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .section h3{font:700 15px Inter;color:#0F172A}
+  .section a{font:600 12px Inter;color:#0066FF;text-decoration:none}
+
+  .card{margin:0 16px 12px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden}
+  .card-img{height:100px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-start;padding:8px;position:relative}
+  .card-img .emoji{font-size:40px;position:absolute;right:12px;bottom:8px;opacity:.3}
+  .card-img .offer{background:#0066FF;color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px}
+  .card-body{padding:12px 14px}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .seller{font:700 14px Inter;color:#0F172A}
+  .loc{font:400 11px Inter;color:#64748B;margin-top:1px}
+  .rating{display:flex;align-items:center;gap:3px;background:#059669;color:#fff;font:700 11px Inter;padding:2px 6px;border-radius:5px;height:20px}
+  .tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .tag{font:500 10px Inter;padding:2px 8px;border-radius:20px;background:#F1F5F9;color:#64748B}
+  .tag.g{background:#ECFDF5;color:#059669}
+  .tag.b{background:#E6F0FF;color:#0066FF}
+  .menu{display:flex;gap:8px;padding:10px 14px 12px;overflow-x:auto;border-top:1px solid #E2E8F0}
+  .menu::-webkit-scrollbar{display:none}
+  .chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#F8FAFC;border-radius:8px;flex-shrink:0}
+  .chip .e{font-size:16px}
+  .chip .n{font:600 11px Inter;color:#0F172A}
+  .chip .p{font:700 11px Inter;color:#059669}
+  .delivery{display:flex;align-items:center;gap:6px;padding:8px 14px;background:#ECFDF5;font:500 11px Inter;color:#059669}
+
+</style>
+
+<div class="figma-page">
+  <h1>Screen 01 — Home</h1>
+  <p class="sub">Seller browse homepage. First impression. Must convert.</p>
+
+  <div class="phone">
+    <div class="phone-status">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="app-header" style="padding-bottom:20px">
+        <span class="logo">relifish</span>
+        <div class="loc-wrap">
+          <div class="loc-main">Bandra West ▼</div>
+          <div class="loc-sub">Deliver in 45 min · 3 sellers</div>
+        </div>
+        <div class="profile">👤</div>
+      </div>
+      <div class="search">🔍 Search "Surmai", "Pomfret", sellers...</div>
+
+      <div class="banner">
+        <div class="icon">🌙</div>
+        <div style="flex:1">
+          <h4>Pre-order tomorrow's catch</h4>
+          <p>Order tonight, reserved by 5am</p>
+        </div>
+        <button class="btn">Browse</button>
+      </div>
+
+      <div class="cats">
+        <div class="cat active"><div class="c">🐟</div><div class="n">All Fish</div></div>
+        <div class="cat"><div class="c">🦐</div><div class="n">Prawns</div></div>
+        <div class="cat"><div class="c">🦀</div><div class="n">Crab</div></div>
+        <div class="cat"><div class="c">🦑</div><div class="n">Squid</div></div>
+        <div class="cat"><div class="c">🐚</div><div class="n">Shellfish</div></div>
+      </div>
+
+      <div class="section"><h3>Near you</h3><a>See all →</a></div>
+
+      <div class="card">
+        <div class="card-img"><span class="offer">Same-day catch</span><span class="emoji">🐟</span></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div><div class="seller">Kamla Tai Fish Stall</div><div class="loc">Sassoon Dock · 1.2 km · 45 min</div></div>
+            <div class="rating">4.8 ★</div>
+          </div>
+          <div class="tags"><span class="tag g">Open now</span><span class="tag b">Pre-order</span><span class="tag">Cleaned & cut</span></div>
+        </div>
+        <div class="menu">
+          <div class="chip"><span class="e">🐟</span><div><div class="n">Surmai</div><div class="p">₹650/kg</div></div></div>
+          <div class="chip"><span class="e">🐟</span><div><div class="n">Rawas</div><div class="p">₹800/kg</div></div></div>
+          <div class="chip"><span class="e">🦐</span><div><div class="n">Prawns</div><div class="p">₹500/kg</div></div></div>
+        </div>
+        <div class="delivery">🚲 Delivery available · Free above ₹1,000</div>
+      </div>
+
+      <div class="card">
+        <div class="card-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)"><span class="offer" style="background:#059669">Fresh today</span><span class="emoji">🦐</span></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div><div class="seller">Rafiq Bhai Fish</div><div class="loc">Versova Beach · 0.8 km · 30 min</div></div>
+            <div class="rating">4.6 ★</div>
+          </div>
+          <div class="tags"><span class="tag g">Open now</span><span class="tag">Pickup only</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item active"><span class="icon">🏠</span>Home</div>
+      <div class="n-item"><span class="icon">🔍</span>Search</div>
+      <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="n-item"><span class="icon">📋</span>Orders</div>
+      <div class="n-item"><span class="icon">👤</span>Account</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">05 · Screens</div>
+<h2 class="mega-title">02 · Seller Page</h2>
+<style>
+  .hero{padding:16px;background:linear-gradient(180deg,#E0F2FE 0%,#fff 100%)}
+  .back{font:500 13px Inter;color:#64748B;margin-bottom:10px}
+  .top{display:flex;gap:12px;align-items:flex-start}
+  .avatar{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#0066FF,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .info h2{font:800 17px Inter;color:#0F172A}
+  .sub{font:400 12px Inter;color:#64748B;margin-top:2px}
+  .rating{display:flex;align-items:center;gap:3px;background:#059669;color:#fff;font:700 11px Inter;padding:3px 7px;border-radius:5px}
+  .tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .tag{font:500 10px Inter;padding:3px 9px;border-radius:20px;background:#fff;border:1px solid #E2E8F0;color:#334155}
+  .tag.g{background:#ECFDF5;color:#059669;border-color:transparent}
+  .tag.b{background:#E6F0FF;color:#0066FF;border-color:transparent}
+  .stats{display:flex;margin-top:14px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden}
+  .stat{flex:1;text-align:center;padding:12px 4px;border-right:1px solid #E2E8F0}
+  .stat:last-child{border-right:none}
+  .stat .v{font:800 14px Inter;color:#0F172A}
+  .stat .l{font:500 10px Inter;color:#94A3B8;margin-top:1px}
+  .stat .v.live::before{content:'';display:inline-block;width:6px;height:6px;background:#059669;border-radius:50%;margin-right:4px;vertical-align:middle}
+  .stat .v.live{color:#059669}
+
+  .menu-head{padding:14px 16px 8px;font:700 15px Inter;color:#0F172A}
+
+  .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+  .item{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+  .i-img{height:90px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:34px;position:relative}
+  .i-img .cut{position:absolute;top:6px;left:6px;background:#E6F0FF;color:#0066FF;font:600 8px Inter;padding:2px 6px;border-radius:4px}
+  .i-body{padding:8px 10px}
+  .i-name{font:600 12px Inter;color:#0F172A}
+  .i-wt{font:400 10px Inter;color:#94A3B8;margin-top:1px}
+  .i-bot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .i-price{font:800 13px Inter;color:#0F172A}
+  .i-add{width:28px;height:28px;border-radius:8px;background:#0066FF;color:#fff;border:none;font:700 16px Inter;display:flex;align-items:center;justify-content:center}
+
+  .cart-bar{position:absolute;bottom:64px;left:12px;right:12px;background:#0066FF;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 10px 15px rgba(0,0,0,.1)}
+  .cb-l{color:#fff}
+  .cb-i{font:600 12px Inter;opacity:.9}
+  .cb-t{font:800 15px Inter}
+  .cb-b{background:#fff;color:#0066FF;font:700 12px Inter;padding:8px 16px;border-radius:8px;border:none}
+
+</style>
+
+<div class="figma-page">
+  <h1>Screen 02 — Seller Page</h1>
+  <p class="sub">Where buying happens. 2-col grid menu + floating cart.</p>
+
+  <div class="phone">
+    <div class="phone-status" style="background:#E0F2FE">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="hero">
+        <div class="back">← Back</div>
+        <div class="top">
+          <div class="avatar">🐟</div>
+          <div class="info" style="flex:1">
+            <h2>Kamla Tai Fish Stall</h2>
+            <div class="sub">Sassoon Dock · 1.2 km · 45 min delivery</div>
+          </div>
+          <div class="rating">4.8 ★</div>
+        </div>
+        <div class="tags">
+          <span class="tag g">Open now</span>
+          <span class="tag b">Pre-order</span>
+          <span class="tag">Cleaned & cut</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="v">200+</div><div class="l">Orders</div></div>
+          <div class="stat"><div class="v">12</div><div class="l">Items</div></div>
+          <div class="stat"><div class="v">5:30am</div><div class="l">Catch</div></div>
+          <div class="stat"><div class="v live">Open</div><div class="l">Until 2pm</div></div>
+        </div>
+      </div>
+
+      <div class="menu-head">Today's Menu</div>
+      <div class="menu-grid">
+        <div class="item">
+          <div class="i-img" style="background:linear-gradient(135deg,#E0F2FE,#BAE6FD)">🐟<span class="cut">Whole/Cut</span></div>
+          <div class="i-body"><div class="i-name">Surmai</div><div class="i-wt">King Fish · Per kg</div><div class="i-bot"><div class="i-price">₹650</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#ECFDF5">🐟<span class="cut" style="background:#D1FAE5;color:#059669">Fresh today</span></div>
+          <div class="i-body"><div class="i-name">Rawas</div><div class="i-wt">Indian Salmon · Per kg</div><div class="i-bot"><div class="i-price">₹800</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#FFF7ED">🐟</div>
+          <div class="i-body"><div class="i-name">Pomfret</div><div class="i-wt">White · Per piece</div><div class="i-bot"><div class="i-price">₹900</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#E6F0FF">🦐</div>
+          <div class="i-body"><div class="i-name">Prawns</div><div class="i-wt">Medium · Per kg</div><div class="i-bot"><div class="i-price">₹500</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#FEF2F2">🦀</div>
+          <div class="i-body"><div class="i-name">Crab</div><div class="i-wt">Live · Per kg</div><div class="i-bot"><div class="i-price">₹400</div><button class="i-add">+</button></div></div>
+        </div>
+        <div class="item">
+          <div class="i-img" style="background:#F3E8FF">🐟<span class="cut" style="background:#F3E8FF;color:#7C3AED">Pre-order</span></div>
+          <div class="i-body"><div class="i-name">Ghol</div><div class="i-wt">Tomorrow · Per kg</div><div class="i-bot"><div class="i-price">₹450</div><button class="i-add" style="background:#7C3AED">+</button></div></div>
+        </div>
+      </div>
+      <div style="height:80px"></div>
+    </div>
+    <div class="cart-bar">
+      <div class="cb-l"><div class="cb-i">2 items</div><div class="cb-t">₹1,450</div></div>
+      <button class="cb-b">View Cart →</button>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item"><span class="icon">🏠</span>Home</div>
+      <div class="n-item"><span class="icon">🔍</span>Search</div>
+      <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="n-item"><span class="icon">📋</span>Orders</div>
+      <div class="n-item"><span class="icon">👤</span>Account</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">05 · Screens</div>
+<h2 class="mega-title">03 · Pre-order</h2>
+<style>
+  .hero{background:linear-gradient(135deg,#4F46E5,#7C3AED);padding:20px 16px;color:#fff;position:relative;overflow:hidden}
+  .hero::before{content:'🌙';position:absolute;right:-10px;top:-10px;font-size:140px;opacity:.15}
+  .hero .back{font:500 13px Inter;color:rgba(255,255,255,.8);margin-bottom:12px;cursor:pointer;position:relative}
+  .hero h2{font:800 22px Inter;line-height:1.2;position:relative}
+  .hero p{font:400 13px Inter;margin-top:6px;opacity:.9;position:relative}
+
+  .wizard{padding:16px}
+  .steps{display:flex;gap:8px;margin-bottom:20px}
+  .step{flex:1;height:4px;border-radius:2px;background:#E2E8F0}
+  .step.done{background:#059669}
+  .step.active{background:#4F46E5}
+
+  .step-title{font:800 17px Inter;color:#0F172A;margin-bottom:4px}
+  .step-sub{font:400 12px Inter;color:#64748B;margin-bottom:16px}
+
+  .species{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .species-card{background:#fff;border:1.5px solid #E2E8F0;border-radius:12px;padding:14px;text-align:center;cursor:pointer}
+  .species-card.selected{border-color:#4F46E5;background:#F3E8FF}
+  .species-card .e{font-size:36px;margin-bottom:4px}
+  .species-card .n{font:700 13px Inter;color:#0F172A}
+  .species-card .p{font:500 11px Inter;color:#64748B;margin-top:2px}
+  .species-card .avail{font:500 10px Inter;color:#059669;margin-top:4px}
+
+  .qty-row{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+  .qty-row .label{flex:1;font:700 13px Inter;color:#0F172A}
+  .qty-row .qty{display:flex;align-items:center;background:#F1F5F9;border-radius:8px;overflow:hidden}
+  .qty-row .qty button{background:none;border:none;width:32px;height:32px;font:700 16px Inter;color:#0F172A}
+  .qty-row .qty span{padding:0 12px;font:700 13px Inter}
+
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+  .slot{padding:12px;background:#fff;border:1.5px solid #E2E8F0;border-radius:8px;text-align:center;cursor:pointer}
+  .slot.selected{border-color:#4F46E5;background:#F3E8FF}
+  .slot .time{font:700 13px Inter;color:#0F172A}
+  .slot.selected .time{color:#4F46E5}
+  .slot .lbl{font:500 10px Inter;color:#64748B;margin-top:2px}
+
+  .review{background:#ECFDF5;border:1px solid #A7F3D0;border-radius:12px;padding:16px;margin-bottom:16px}
+  .review h4{font:700 13px Inter;color:#059669;margin-bottom:8px}
+  .review-row{display:flex;justify-content:space-between;padding:6px 0;font:400 12px Inter;color:#0F172A}
+  .review-row b{font-weight:700}
+  .review-total{display:flex;justify-content:space-between;padding-top:8px;border-top:1px dashed #A7F3D0;font:800 14px Inter;color:#059669}
+
+  .confirm-cta{width:100%;background:#4F46E5;color:#fff;border:none;font:800 15px Inter;padding:14px;border-radius:12px}
+  .foot{font:400 10px Inter;color:#94A3B8;text-align:center;margin-top:8px}
+
+</style>
+
+<div class="figma-page">
+  <h1>Screen 03 — Pre-order</h1>
+  <p class="sub">Our moat. Must feel magical.</p>
+
+  <div class="phone">
+    <div class="phone-status" style="background:#4F46E5;color:#fff">9:41</div>
+    <div class="phone-body">
+      <div class="hero">
+        <div class="back">← Back</div>
+        <h2>Tomorrow's catch,<br>reserved tonight</h2>
+        <p>Pre-order by 10pm · Ready at 7am</p>
+      </div>
+
+      <div class="wizard">
+        <div class="steps">
+          <div class="step done"></div>
+          <div class="step done"></div>
+          <div class="step active"></div>
+        </div>
+
+        <div class="step-title">Pick your morning slot</div>
+        <div class="step-sub">Seller will reserve at dock before 5am</div>
+        <div class="slots">
+          <div class="slot"><div class="time">5-7am</div><div class="lbl">Dawn</div></div>
+          <div class="slot selected"><div class="time">7-9am</div><div class="lbl">Morning</div></div>
+          <div class="slot"><div class="time">9-11am</div><div class="lbl">Late</div></div>
+        </div>
+
+        <div class="review">
+          <h4>✓ Your pre-order summary</h4>
+          <div class="review-row"><span>Seller</span><b>Kamla Tai</b></div>
+          <div class="review-row"><span>Surmai (Whole)</span><b>2 kg</b></div>
+          <div class="review-row"><span>Prawns (Medium)</span><b>500 g</b></div>
+          <div class="review-row"><span>Pickup slot</span><b>Tomorrow 7-9am</b></div>
+          <div class="review-row"><span>Estimated price</span><span>₹1,450 ± 5%</span></div>
+          <div class="review-total"><span>You pay at pickup</span><span>~₹1,450</span></div>
+        </div>
+
+        <button class="confirm-cta">Reserve tomorrow's catch →</button>
+        <div class="foot">Seller confirms exact price by 5am · Cancel anytime</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">05 · Screens</div>
+<h2 class="mega-title">04 · Orders</h2>
+<style>
+  .page-title{padding:20px 16px 10px;font:800 22px Inter;color:#0F172A}
+
+  .active-order{margin:0 16px 16px;background:linear-gradient(135deg,#E6F0FF,#DBEAFE);border:1px solid #CCE0FF;border-radius:16px;padding:16px}
+  .active-order .tag{font:700 10px Inter;color:#0066FF;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+  .active-order h3{font:800 16px Inter;color:#0F172A;margin-bottom:4px}
+  .active-order .sub{font:400 12px Inter;color:#334155}
+  .stepper{display:flex;margin-top:16px;align-items:center;gap:4px}
+  .stepper .dot{width:20px;height:20px;border-radius:50%;background:#059669;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px Inter;flex-shrink:0}
+  .stepper .dot.done{background:#059669}
+  .stepper .dot.pending{background:#94A3B8}
+  .stepper .line{flex:1;height:2px;background:#CCE0FF}
+  .stepper .line.done{background:#059669}
+  .stepper-labels{display:flex;justify-content:space-between;margin-top:6px;font:500 9px Inter;color:#64748B}
+
+  .order{margin:0 16px 12px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px}
+  .o-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+  .o-seller{font:700 14px Inter;color:#0F172A}
+  .o-meta{font:400 11px Inter;color:#64748B;margin-top:1px}
+  .o-status{font:600 10px Inter;padding:3px 9px;border-radius:20px}
+  .o-status.completed{background:#ECFDF5;color:#059669}
+  .o-status.cancelled{background:#FEF2F2;color:#DC2626}
+  .o-items{font:400 12px Inter;color:#334155;margin-top:4px}
+  .o-bot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #E2E8F0}
+  .o-total{font:800 14px Inter;color:#0F172A}
+  .o-reorder{background:#fff;color:#0066FF;border:1.5px solid #0066FF;font:700 11px Inter;padding:6px 14px;border-radius:8px;cursor:pointer}
+
+  .section-head{padding:12px 16px 8px;font:700 13px Inter;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
+
+</style>
+
+<div class="figma-page">
+  <h1>Screen 04 — Orders</h1>
+  <p class="sub">Order tracking + reorder. Blinkit-style stepper.</p>
+
+  <div class="phone">
+    <div class="phone-status">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="page-title">Your Orders</div>
+
+      <div class="active-order">
+        <div class="tag">Live · Ready in 15 min</div>
+        <h3>Kamla Tai Fish Stall</h3>
+        <div class="sub">Order #RF238 · Arriving soon</div>
+        <div class="stepper">
+          <div class="dot done">✓</div>
+          <div class="line done"></div>
+          <div class="dot done">✓</div>
+          <div class="line done"></div>
+          <div class="dot done">✓</div>
+          <div class="line"></div>
+          <div class="dot pending">4</div>
+        </div>
+        <div class="stepper-labels">
+          <span>Placed</span>
+          <span>Confirmed</span>
+          <span>Packed</span>
+          <span>Delivered</span>
+        </div>
+      </div>
+
+      <div class="section-head">Previous orders</div>
+
+      <div class="order">
+        <div class="o-top">
+          <div><div class="o-seller">Kamla Tai Fish Stall</div><div class="o-meta">Yesterday · 7:30am pickup</div></div>
+          <span class="o-status completed">Completed</span>
+        </div>
+        <div class="o-items">🐟 Surmai (1kg), 🦐 Prawns (500g)</div>
+        <div class="o-bot">
+          <div class="o-total">₹905</div>
+          <button class="o-reorder">Reorder</button>
+        </div>
+      </div>
+
+      <div class="order">
+        <div class="o-top">
+          <div><div class="o-seller">Rafiq Bhai Fish</div><div class="o-meta">3 days ago · 6:00am pickup</div></div>
+          <span class="o-status completed">Completed</span>
+        </div>
+        <div class="o-items">🐟 Pomfret (1 piece), 🐟 Bangda (500g)</div>
+        <div class="o-bot">
+          <div class="o-total">₹1,150</div>
+          <button class="o-reorder">Reorder</button>
+        </div>
+      </div>
+
+      <div class="order">
+        <div class="o-top">
+          <div><div class="o-seller">Hassan Fresh Seafood</div><div class="o-meta">Last week · Cancelled</div></div>
+          <span class="o-status cancelled">Cancelled</span>
+        </div>
+        <div class="o-items">🐟 Rawas (1kg)</div>
+        <div class="o-bot">
+          <div class="o-total" style="color:#94A3B8;text-decoration:line-through">₹800</div>
+          <button class="o-reorder">Try another seller</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item"><span class="icon">🏠</span>Home</div>
+      <div class="n-item"><span class="icon">🔍</span>Search</div>
+      <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="n-item active"><span class="icon">📋</span>Orders</div>
+      <div class="n-item"><span class="icon">👤</span>Account</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">05 · Screens</div>
+<h2 class="mega-title">05 · Profile</h2>
+<style>
+  .profile-hero{background:linear-gradient(135deg,#0066FF,#3B82F6);padding:24px 16px 60px;color:#fff;text-align:center;position:relative}
+  .avatar-lg{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 12px}
+  .name-lg{font:800 20px Inter}
+  .phone-num{font:400 12px Inter;opacity:.8;margin-top:2px}
+
+  .quick-actions{margin:-40px 16px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#fff;border-radius:16px;padding:16px 8px;box-shadow:0 4px 6px rgba(0,0,0,.07);position:relative;z-index:2}
+  .qa{text-align:center;cursor:pointer}
+  .qa .icon{width:44px;height:44px;border-radius:12px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 4px}
+  .qa .lbl{font:600 10px Inter;color:#0F172A}
+
+  .section-head{padding:16px 16px 8px;font:700 12px Inter;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
+
+  .addr{margin:0 16px 8px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:center}
+  .addr-icon{width:36px;height:36px;border-radius:10px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .addr-body{flex:1}
+  .addr-top{display:flex;align-items:center;gap:8px}
+  .addr-lbl{font:700 13px Inter;color:#0F172A}
+  .addr-def{font:600 9px Inter;color:#059669;background:#ECFDF5;padding:2px 6px;border-radius:4px;text-transform:uppercase}
+  .addr-text{font:400 11px Inter;color:#64748B;margin-top:2px;line-height:1.4}
+
+  .list-item{margin:0 16px 1px;background:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .list-item:first-child{border-radius:12px 12px 0 0}
+  .list-item:last-child{border-radius:0 0 12px 12px;margin-bottom:16px}
+  .list-item .li-icon{width:32px;height:32px;border-radius:8px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .list-item .li-name{flex:1;font:600 13px Inter;color:#0F172A}
+  .list-item .li-arrow{color:#94A3B8;font-size:14px}
+  .list-item .li-toggle{width:40px;height:24px;background:#0066FF;border-radius:12px;position:relative}
+  .list-item .li-toggle::after{content:'';position:absolute;right:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%}
+
+  .logout{margin:8px 16px;background:#fff;border:1px solid #FEE2E2;color:#DC2626;padding:14px;border-radius:12px;font:700 13px Inter;text-align:center}
+
+</style>
+
+<div class="figma-page">
+  <h1>Screen 05 — Profile</h1>
+  <p class="sub">Account settings. Quick actions grid + grouped lists.</p>
+
+  <div class="phone">
+    <div class="phone-status" style="background:#0066FF;color:#fff">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="profile-hero">
+        <div class="avatar-lg">👤</div>
+        <div class="name-lg">Priya Desai</div>
+        <div class="phone-num">+91 98706 19974</div>
+      </div>
+
+      <div class="quick-actions">
+        <div class="qa"><div class="icon">📍</div><div class="lbl">Addresses</div></div>
+        <div class="qa"><div class="icon">🔔</div><div class="lbl">Notifications</div></div>
+        <div class="qa"><div class="icon">💳</div><div class="lbl">Payments</div></div>
+        <div class="qa"><div class="icon">💬</div><div class="lbl">Help</div></div>
+      </div>
+
+      <div class="section-head">Saved addresses</div>
+      <div class="addr">
+        <div class="addr-icon">🏠</div>
+        <div class="addr-body">
+          <div class="addr-top"><span class="addr-lbl">Home</span><span class="addr-def">Default</span></div>
+          <div class="addr-text">Flat 304, Sagar Mahal, Hill Road, Bandra West</div>
+        </div>
+        <div style="color:#94A3B8">›</div>
+      </div>
+      <div class="addr">
+        <div class="addr-icon">🏢</div>
+        <div class="addr-body">
+          <div class="addr-top"><span class="addr-lbl">Office</span></div>
+          <div class="addr-text">8th floor, Tower C, BKC</div>
+        </div>
+        <div style="color:#94A3B8">›</div>
+      </div>
+
+      <div class="section-head">Preferences</div>
+      <div class="list-item"><div class="li-icon">🔔</div><div class="li-name">Push notifications</div><div class="li-toggle"></div></div>
+      <div class="list-item"><div class="li-icon">🌐</div><div class="li-name">Language</div><span style="font:500 12px Inter;color:#64748B">English</span><div class="li-arrow">›</div></div>
+      <div class="list-item"><div class="li-icon">📋</div><div class="li-name">Terms & Privacy</div><div class="li-arrow">›</div></div>
+      <div class="list-item"><div class="li-icon">ℹ️</div><div class="li-name">About Relifish</div><div class="li-arrow">›</div></div>
+
+      <div class="logout">Log out</div>
+      <div style="text-align:center;font:400 10px Inter;color:#94A3B8;padding:0 16px 80px">v2.0.0 · Made in Mumbai ❤️</div>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item"><span class="icon">🏠</span>Home</div>
+      <div class="n-item"><span class="icon">🔍</span>Search</div>
+      <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="n-item"><span class="icon">📋</span>Orders</div>
+      <div class="n-item active"><span class="icon">👤</span>Account</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">05 · Screens</div>
+<h2 class="mega-title">06 · Search</h2>
+<style>
+  .search-header{padding:14px 16px;background:#fff;border-bottom:1px solid #E2E8F0;display:flex;gap:10px;align-items:center}
+  .cancel{font:600 13px Inter;color:#0066FF;cursor:pointer}
+  .search-input{flex:1;padding:10px 14px;background:#F1F5F9;border-radius:10px;font:400 14px Inter;color:#0F172A;border:none;outline:none}
+
+  .chip-row{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;background:#fff;border-bottom:1px solid #E2E8F0}
+  .chip-row::-webkit-scrollbar{display:none}
+  .filter-chip{padding:6px 14px;font:600 12px Inter;border-radius:20px;border:1px solid #E2E8F0;background:#fff;color:#64748B;flex-shrink:0;white-space:nowrap}
+  .filter-chip.active{background:#0066FF;color:#fff;border-color:#0066FF}
+
+  .section-head{padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+  .section-head h3{font:700 13px Inter;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
+  .section-head a{font:600 11px Inter;color:#DC2626}
+
+  .recent{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
+  .recent-chip{padding:6px 12px;background:#F1F5F9;border-radius:20px;font:500 12px Inter;color:#0F172A;display:flex;align-items:center;gap:4px}
+  .recent-chip .x{color:#94A3B8;font-size:14px;margin-left:2px}
+
+  .trending{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px}
+  .trend-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer}
+  .trend-card .e{font-size:28px}
+  .trend-card .n{font:600 11px Inter;color:#0F172A;margin-top:4px}
+  .trend-card .p{font:500 10px Inter;color:#059669;margin-top:2px}
+
+  .result{padding:12px 16px;background:#fff;border-bottom:1px solid #F1F5F9;display:flex;gap:12px;align-items:center}
+  .result .emoji{width:44px;height:44px;border-radius:10px;background:#E0F2FE;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .result .body{flex:1}
+  .result .n{font:700 14px Inter;color:#0F172A}
+  .result .sub{font:400 11px Inter;color:#64748B;margin-top:1px}
+  .result .price{font:800 13px Inter;color:#0F172A}
+  .result .from{font:500 10px Inter;color:#64748B}
+
+</style>
+
+<div class="figma-page">
+  <h1>Screen 06 — Search</h1>
+  <p class="sub">Full-screen search overlay. Recent + Trending + Live results.</p>
+
+  <div class="phone">
+    <div class="phone-status">9:41</div>
+    <div class="phone-body">
+      <div class="search-header">
+        <span class="cancel">← Cancel</span>
+        <input class="search-input" placeholder="Search fish, sellers, areas..." value="Surmai">
+      </div>
+
+      <div class="chip-row">
+        <div class="filter-chip active">All</div>
+        <div class="filter-chip">Fish</div>
+        <div class="filter-chip">Sellers</div>
+        <div class="filter-chip">Pre-order</div>
+        <div class="filter-chip">Cleaned</div>
+      </div>
+
+      <div class="section-head"><h3>Showing results for "Surmai"</h3></div>
+
+      <div class="result">
+        <div class="emoji">🐟</div>
+        <div class="body">
+          <div class="n">Surmai (King Fish)</div>
+          <div class="sub">Kamla Tai · 1.2 km</div>
+        </div>
+        <div><div class="price">₹650/kg</div><div class="from">from</div></div>
+      </div>
+      <div class="result">
+        <div class="emoji">🐟</div>
+        <div class="body">
+          <div class="n">Surmai (King Fish)</div>
+          <div class="sub">Rafiq Bhai · 0.8 km</div>
+        </div>
+        <div><div class="price">₹620/kg</div><div class="from">from</div></div>
+      </div>
+      <div class="result">
+        <div class="emoji">🐟</div>
+        <div class="body">
+          <div class="n">Surmai (Cut)</div>
+          <div class="sub">Kamla Tai · Pre-order</div>
+        </div>
+        <div><div class="price">₹680/kg</div><div class="from">from</div></div>
+      </div>
+
+      <div class="section-head"><h3>Recent searches</h3><a>Clear all</a></div>
+      <div class="recent">
+        <div class="recent-chip">Pomfret <span class="x">×</span></div>
+        <div class="recent-chip">Prawns <span class="x">×</span></div>
+        <div class="recent-chip">Bandra <span class="x">×</span></div>
+        <div class="recent-chip">Kamla Tai <span class="x">×</span></div>
+      </div>
+
+      <div class="section-head"><h3>Trending near you</h3></div>
+      <div class="trending">
+        <div class="trend-card"><div class="e">🐟</div><div class="n">Surmai</div><div class="p">₹620/kg</div></div>
+        <div class="trend-card"><div class="e">🦐</div><div class="n">Prawns</div><div class="p">₹480/kg</div></div>
+        <div class="trend-card"><div class="e">🦀</div><div class="n">Crab</div><div class="p">₹400/kg</div></div>
+        <div class="trend-card"><div class="e">🐟</div><div class="n">Pomfret</div><div class="p">₹850/pc</div></div>
+        <div class="trend-card"><div class="e">🐟</div><div class="n">Bangda</div><div class="p">₹250/kg</div></div>
+        <div class="trend-card"><div class="e">🐟</div><div class="n">Ghol</div><div class="p">₹450/kg</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">05 · Screens</div>
+<h2 class="mega-title">07 · Seller Dashboard</h2>
+<style>
+  .dash-header{background:linear-gradient(135deg,#059669,#10B981);padding:16px;color:#fff}
+  .dash-greet{font:400 12px Inter;opacity:.9}
+  .dash-name{font:800 20px Inter;margin-top:2px}
+  .today-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+  .ts{background:rgba(255,255,255,.15);border-radius:10px;padding:10px;text-align:center;backdrop-filter:blur(10px)}
+  .ts .v{font:800 18px Inter;color:#fff}
+  .ts .l{font:500 10px Inter;color:rgba(255,255,255,.9);margin-top:1px}
+
+  .action-row{display:flex;gap:8px;padding:16px;background:#fff;border-bottom:1px solid #E2E8F0}
+  .action{flex:1;padding:10px;background:#F1F5F9;border:none;border-radius:10px;font:700 12px Inter;color:#0F172A;display:flex;align-items:center;justify-content:center;gap:6px}
+  .action.primary{background:#0066FF;color:#fff}
+
+  .tabs{display:flex;background:#fff;border-bottom:1px solid #E2E8F0}
+  .tab{flex:1;padding:12px;font:600 12px Inter;color:#64748B;text-align:center;position:relative}
+  .tab.active{color:#0066FF}
+  .tab.active::after{content:'';position:absolute;bottom:0;left:16px;right:16px;height:2px;background:#0066FF}
+  .tab .count{font-size:10px;margin-left:4px;background:#DC2626;color:#fff;padding:1px 6px;border-radius:9999px}
+
+  .order-card{margin:12px 16px 0;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px;position:relative}
+  .order-card.urgent{border-color:#EA580C;background:#FFF7ED}
+  .oc-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .oc-id{font:700 13px Inter;color:#0F172A}
+  .oc-time{font:400 11px Inter;color:#64748B;margin-top:1px}
+  .oc-badge{font:700 10px Inter;padding:3px 8px;border-radius:20px;background:#E6F0FF;color:#0066FF;text-transform:uppercase}
+  .oc-badge.urgent{background:#FED7AA;color:#EA580C}
+  .oc-items{font:400 12px Inter;color:#334155;margin-top:8px;padding:8px 10px;background:#F8FAFC;border-radius:8px}
+  .oc-bot{display:flex;gap:8px;margin-top:10px}
+  .oc-btn{flex:1;padding:10px;font:700 12px Inter;border-radius:8px;border:none;cursor:pointer}
+  .oc-btn.accept{background:#059669;color:#fff}
+  .oc-btn.reject{background:#fff;color:#DC2626;border:1.5px solid #FEE2E2}
+  .oc-total{font:800 14px Inter;color:#0F172A;margin-top:6px}
+
+</style>
+
+<div class="figma-page">
+  <h1>Screen 07 — Seller Dashboard</h1>
+  <p class="sub">Seller-facing ops. Swipe-to-accept. Today summary.</p>
+
+  <div class="phone">
+    <div class="phone-status" style="background:#059669;color:#fff">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="dash-header">
+        <div class="dash-greet">Good morning, Kamla Tai</div>
+        <div class="dash-name">Today's pipeline</div>
+        <div class="today-summary">
+          <div class="ts"><div class="v">5</div><div class="l">New orders</div></div>
+          <div class="ts"><div class="v">₹4,280</div><div class="l">Today's GMV</div></div>
+          <div class="ts"><div class="v">12</div><div class="l">Pre-orders</div></div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="action primary">✓ Mark all ready</button>
+        <button class="action">📤 Export</button>
+        <button class="action">➕ Listing</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Pending <span class="count">5</span></div>
+        <div class="tab">Accepted</div>
+        <div class="tab">Completed</div>
+      </div>
+
+      <div class="order-card urgent">
+        <div class="oc-top">
+          <div><div class="oc-id">#RF238 · Priya D.</div><div class="oc-time">7:00am pickup · in 25 min</div></div>
+          <span class="oc-badge urgent">Urgent</span>
+        </div>
+        <div class="oc-items">🐟 Surmai (1kg, whole) · 🦐 Prawns (500g, medium)</div>
+        <div class="oc-total">₹905 · UPI paid</div>
+        <div class="oc-bot">
+          <button class="oc-btn reject">Decline</button>
+          <button class="oc-btn accept">✓ Accept</button>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <div class="oc-top">
+          <div><div class="oc-id">#RF239 · Rahul M.</div><div class="oc-time">8:30am pickup</div></div>
+          <span class="oc-badge">New</span>
+        </div>
+        <div class="oc-items">🐟 Rawas (1kg, cleaned)</div>
+        <div class="oc-total">₹820 · UPI paid</div>
+        <div class="oc-bot">
+          <button class="oc-btn reject">Decline</button>
+          <button class="oc-btn accept">✓ Accept</button>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <div class="oc-top">
+          <div><div class="oc-id">🌙 #RF241 · Amit S. (Pre-order)</div><div class="oc-time">Tomorrow 7am</div></div>
+          <span class="oc-badge" style="background:#F3E8FF;color:#7C3AED">Pre-order</span>
+        </div>
+        <div class="oc-items">🐟 Ghol (2kg, whole) · 🐟 Surmai (1kg, cut)</div>
+        <div class="oc-total">₹1,550 · Pay at pickup</div>
+        <div class="oc-bot">
+          <button class="oc-btn reject">Decline</button>
+          <button class="oc-btn accept" style="background:#7C3AED">✓ Confirm</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item active"><span class="icon">📋</span>Orders</div>
+      <div class="n-item"><span class="icon">🐟</span>Listings</div>
+      <div class="n-item"><span class="icon">📊</span>Stats</div>
+      <div class="n-item"><span class="icon">👤</span>Profile</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="mega-section">
+<div class="mega-cat">05 · Screens</div>
+<h2 class="mega-title">08 · Edge Cases</h2>
+<style>
+  .pad{padding:24px}
+  .empty{padding:60px 24px;text-align:center}
+  .empty .icon{font-size:64px;margin-bottom:16px}
+  .empty h3{font:800 17px Inter;color:#0F172A;margin-bottom:6px}
+  .empty p{font:400 13px Inter;color:#64748B;margin-bottom:20px}
+  .empty .cta{background:#0066FF;color:#fff;border:none;padding:12px 28px;border-radius:8px;font:700 13px Inter}
+  .empty .cta-ghost{background:transparent;color:#0066FF;border:none;font:600 13px Inter;display:block;margin:8px auto;padding:8px}
+
+  .toast{position:absolute;top:60px;left:16px;right:16px;background:#0F172A;color:#fff;padding:12px 14px;border-radius:10px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 25px rgba(0,0,0,.3);z-index:50}
+  .toast.error{background:#DC2626}
+  .toast.success{background:#059669}
+  .toast .icon{font-size:18px}
+  .toast .body{flex:1}
+  .toast .title{font:600 13px Inter}
+  .toast .desc{font:400 11px Inter;opacity:.9;margin-top:1px}
+
+  .grid-screens{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+</style>
+
+<div class="figma-page" style="max-width:840px">
+  <h1>Edge Case Screens</h1>
+  <p class="sub">Composite screens showing real-world states.</p>
+
+  <div class="grid-screens">
+
+    <!-- AREA NOT COVERED -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Area Not Covered</h3>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body with-nav">
+          <div class="app-header">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap">
+              <div class="loc-main">Powai ▼</div>
+              <div class="loc-sub" style="color:#FCA5A5">No sellers in your area</div>
+            </div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="empty">
+            <div class="icon">📍</div>
+            <h3>We're not in Powai yet</h3>
+            <p>Be the first to know when sellers go live here.</p>
+            <button class="cta">Join waitlist</button>
+            <button class="cta-ghost">Try a different area →</button>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item active"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETS CLOSED -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">All Sellers Closed</h3>
+      <div class="phone">
+        <div class="phone-status">2:30 PM</div>
+        <div class="phone-body with-nav">
+          <div class="app-header">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap">
+              <div class="loc-main">Bandra West ▼</div>
+              <div class="loc-sub">Markets closed · 5am opening</div>
+            </div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="empty" style="background:linear-gradient(180deg,#EEF2FF,#fff);padding:50px 24px">
+            <div class="icon">🌙</div>
+            <h3>Fish markets closed</h3>
+            <p>Open 5am–11am daily. Pre-order now for tomorrow morning.</p>
+            <button class="cta" style="background:#4F46E5">Pre-order tomorrow</button>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item active"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ERROR TOAST -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Payment Failed Toast</h3>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body with-nav">
+          <div class="app-header">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap"><div class="loc-main">Bandra West ▼</div><div class="loc-sub">Deliver in 45 min</div></div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="toast error">
+            <span class="icon">✕</span>
+            <div class="body">
+              <div class="title">Payment failed</div>
+              <div class="desc">UPI declined · try cash on delivery</div>
+            </div>
+            <button style="background:transparent;border:none;color:rgba(255,255,255,.7);font:400 18px Inter">×</button>
+          </div>
+          <div style="padding:80px 24px 24px;text-align:center;color:#94A3B8;font:500 13px Inter">Cart preserved · ₹905 (2 items)</div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item active"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS TOAST -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Pre-order Confirmed Toast</h3>
+      <div class="phone">
+        <div class="phone-status">10:15 PM</div>
+        <div class="phone-body with-nav">
+          <div class="app-header" style="background:#4F46E5">
+            <span class="logo">🌙 relifish</span>
+            <div class="loc-wrap"><div class="loc-main">Pre-order mode</div><div class="loc-sub">Tomorrow 7am</div></div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="toast success">
+            <span class="icon">✓</span>
+            <div class="body">
+              <div class="title">Pre-order confirmed</div>
+              <div class="desc">Kamla Tai will reserve at 5am · ₹1,450</div>
+            </div>
+          </div>
+          <div style="padding:100px 24px 24px;text-align:center">
+            <div style="font-size:48px;margin-bottom:12px">🎉</div>
+            <div style="font:700 16px Inter;color:#0F172A;margin-bottom:4px">All set for tomorrow</div>
+            <div style="font:400 13px Inter;color:#64748B">We'll notify you at 5am with confirmation</div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item active"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOADING / SKELETON -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Loading State (Skeleton)</h3>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body with-nav">
+          <div class="app-header">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap"><div class="loc-main">Loading...</div></div>
+            <div class="profile">👤</div>
+          </div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
+            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
+            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item active"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OFFLINE -->
+    <div>
+      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Offline State</h3>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body with-nav">
+          <div class="app-header" style="background:#64748B">
+            <span class="logo">relifish</span>
+            <div class="loc-wrap"><div class="loc-main">📡 Offline</div><div class="loc-sub">Connection lost</div></div>
+            <div class="profile">👤</div>
+          </div>
+          <div class="empty" style="padding:80px 24px">
+            <div class="icon">📡</div>
+            <h3>You're offline</h3>
+            <p>Check connection. Past orders still viewable.</p>
+            <button class="cta">Retry</button>
+            <button class="cta-ghost">View past orders →</button>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">🔍</span>Search</div>
+          <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<style>@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}</style>
+
+</div>
+</div></body></html>

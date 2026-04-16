@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Atom — Modals & Dialogs</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .backdrop{background:rgba(15,23,42,.5);padding:32px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;min-height:400px}
+
+  .dialog{background:#fff;border-radius:var(--radius-lg);width:320px;padding:24px;box-shadow:var(--shadow-lg);text-align:center}
+  .dialog .icon{font-size:48px;margin-bottom:12px}
+  .dialog h3{font:800 18px Inter;color:var(--ink);margin-bottom:6px}
+  .dialog p{font:400 13px Inter;color:var(--ink2);margin-bottom:20px;line-height:1.5}
+  .dialog-actions{display:flex;gap:8px}
+  .dialog-actions button{flex:1;padding:12px;border-radius:var(--radius-sm);font:700 13px Inter;border:none;cursor:pointer}
+  .btn-cancel{background:var(--bg3);color:var(--ink2)}
+  .btn-confirm{background:var(--brand);color:#fff}
+  .btn-danger{background:var(--red);color:#fff}
+
+  .alert{background:#fff;border-radius:var(--radius-lg);width:320px;padding:24px;box-shadow:var(--shadow-lg);text-align:center}
+  .alert .icon{width:64px;height:64px;border-radius:50%;background:var(--green-l);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px}
+  .alert.error .icon{background:var(--red-l);color:var(--red)}
+  .alert.warning .icon{background:var(--orange-l);color:var(--orange)}
+  .alert h3{font:800 17px Inter;color:var(--ink);margin-bottom:6px}
+  .alert p{font:400 13px Inter;color:var(--ink2);margin-bottom:20px}
+  .alert button{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius-sm);font:700 13px Inter;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Modals & Dialogs</h1>
+  <p class="sub">Confirmations, alerts, destructive actions. Always with backdrop.</p>
+
+  <div class="component" data-name="ConfirmDialog">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">confirm</span>
+        <div class="backdrop">
+          <div class="dialog">
+            <div class="icon">🌙</div>
+            <h3>Confirm pre-order?</h3>
+            <p>Reserve 2kg Surmai with Kamla Tai for tomorrow 7am pickup. Estimated ₹1,300 ± 5%.</p>
+            <div class="dialog-actions">
+              <button class="btn-cancel">Cancel</button>
+              <button class="btn-confirm">Confirm</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">destructive</span>
+        <div class="backdrop">
+          <div class="dialog">
+            <div class="icon">🗑️</div>
+            <h3>Cancel this order?</h3>
+            <p>You'll receive a full refund within 5-7 days. The seller has already started preparation.</p>
+            <div class="dialog-actions">
+              <button class="btn-cancel">Keep order</button>
+              <button class="btn-danger">Cancel order</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Backdrop:</b> rgba(15,23,42,.5) · <b>Dialog:</b> 320px · radius 16px · centered · <b>Destructive:</b> red confirm button</div>
+  </div>
+
+  <div class="component" data-name="AlertDialog · Success / Error">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">success</span>
+        <div class="backdrop">
+          <div class="alert">
+            <div class="icon">✓</div>
+            <h3>Order confirmed!</h3>
+            <p>Kamla Tai will reserve your fish. Pickup at 7-9am tomorrow.</p>
+            <button>View order</button>
+          </div>
+        </div>
+      </div>
+      <div class="variant"><span class="variant-label">error</span>
+        <div class="backdrop">
+          <div class="alert error">
+            <div class="icon">✕</div>
+            <h3>Payment failed</h3>
+            <p>Your UPI transaction was declined. Try a different payment method or contact your bank.</p>
+            <button>Try again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Single-action variant</b> · large status icon (64px circle) · used after critical action</div>
+  </div>
+</div>
+</body>
+</html>

@@ -8,9 +8,12 @@ import OrderAddressSheet from "../../components/OrderAddressSheet.astro";
 
 const { species } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const speciesDisplay = species ? species.charAt(0).toUpperCase() + species.slice(1).replace(/-/g, " ") : "Fish";
+const pageTitle = `Pre-order ${speciesDisplay} - Fresh Tomorrow Morning | ${brandName}`;
+const pageDesc = `Pre-order fresh ${speciesDisplay.toLowerCase()} for tomorrow morning from local Goa sellers on ${brandName}. Best prices, same-day catch.`;
 ---
 
-<AppShell title={`Pre-order - ${brandName}`} description={`Pre-order fresh fish for tomorrow morning on ${brandName}.`} activeTab="home">
+<AppShell title={pageTitle} description={pageDesc} activeTab="home" showLocationBadge={false} needsMap={true}>
   <!-- Back -->
   <div style="padding:8px 0;">
     <a href="/" style="font-size:14px;color:var(--gray-500);display:inline-flex;align-items:center;gap:4px;">← Back</a>
@@ -160,6 +163,33 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       text-align: right;
       flex-shrink: 0;
     }
+    .po-price-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+    .po-price-was {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-decoration: line-through;
+      opacity: 0.85;
+    }
+    .po-price-now {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--green);
+    }
+    .po-off-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #c62828;
+      background: #ffebee;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
     .po-price {
       font-size: 18px;
       font-weight: 800;
@@ -227,6 +257,18 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     import("../../lib/supabase").then(async (db) => {
       const { SPECIES, getSpeciesDisplay } = await import("../../lib/species");
       const { getSession } = await import("../../lib/auth");
+      const {
+        getListingOptionById,
+        getListingPriceOptions,
+        optionHasDealDisplay,
+        optionDiscountPercentDisplay,
+        priceUnitShortLabel,
+        optionBundleAmount,
+        isPerBaseUnitPricing,
+        formatPriceOptionDropdownLabel,
+        formatBundleSizeLead,
+      } = await import("../../lib/listing-pricing");
+      const { formatFishSizeLabel } = await import("../../lib/fish-size");
 
       const FISH_EMOJI = {
         pomfret: "🐟", surmai: "🐠", rawas: "🐡", bangda: "🐟", bombil: "🍤",
@@ -270,7 +312,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       const sp = SPECIES[speciesId];
       const emoji = FISH_EMOJI[speciesId] || "🐟";
-      const unitLabel = sp?.defaultUnit === "dozen" ? "dz" : (sp?.defaultUnit || "kg");
+
+      function speciesHeroUnitLabel(du) {
+        if (!du) return "pcs";
+        if (du === "kg") return "kg";
+        return "pcs";
+      }
+      const unitLabel = speciesHeroUnitLabel(sp?.defaultUnit);
+
+      function poUnitDisplay(u) {
+        const s = String(u || "piece");
+        if (s === "piece" || s === "kg") return priceUnitShortLabel(s);
+        return s;
+      }
 
       // Fetch data
       let speciesRange = null;
@@ -341,7 +395,34 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         activeList.innerHTML = sorted.map(item => {
           const s = item.seller;
           const dist = getDist(s);
-          const pUnit = item.price_unit === "dozen" ? "dz" : item.price_unit;
+          const opts = getListingPriceOptions(item);
+          const first = opts[0];
+          const baseUnit = first?.unit ?? "piece";
+          const pUnit = poUnitDisplay(baseUnit);
+          const firstDealPct = first ? optionDiscountPercentDisplay(first) : null;
+          const strike =
+            first && optionHasDealDisplay(first) && first.compare_at_price != null
+              ? `<span class="po-price-was">₹${first.compare_at_price}</span> `
+              : "";
+          const pctBadge =
+            firstDealPct != null && firstDealPct > 0
+              ? `<span class="po-off-badge">${firstDealPct}% off</span>`
+              : "";
+          const bundleLead =
+            first ? `<div style="font-size:13px;color:var(--gray-700);font-weight:600;margin-bottom:4px;">${esc(formatBundleSizeLead(first))}</div>` : "";
+          const priceBlock =
+            opts.length <= 1
+              ? `${bundleLead}<div class="po-price-row">${strike}<span class="po-price-now">₹${first?.price ?? 0}</span> ${pctBadge}</div>
+               <div class="po-price-unit">${pUnit}</div>`
+              : `<div class="po-price" style="font-size:14px;color:var(--gray-700);font-weight:700;margin-bottom:6px;">Choose pack & price</div>
+               <select class="po-price-select" data-listing-id="${item.id}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--gray-200);font-size:14px;background:white;margin-bottom:6px;">
+                 ${opts.map((o) => {
+                   return `<option value="${o.id}">${esc(formatPriceOptionDropdownLabel(o))}</option>`;
+                 }).join("")}
+               </select>`;
+          const sizeLine = formatFishSizeLabel(item.fish_size)
+            ? `<div class="po-listing-size">${esc(formatFishSizeLabel(item.fish_size))}</div>`
+            : "";
           return `
             <div class="po-seller-card">
               <div class="po-seller-left">
@@ -350,9 +431,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
                 <div class="po-seller-badges">${sellerBadges(s, dist)}</div>
               </div>
               <div class="po-seller-right">
-                <div class="po-price">₹${item.price}</div>
-                <div class="po-price-unit">per ${pUnit} · ${item.weight_avail} avail</div>
-                <button class="po-order-btn" data-action="order" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-listing-id="${item.id || ""}" data-price="${item.price}" data-unit="${item.price_unit}">Order</button>
+                ${sizeLine}
+                ${priceBlock}
+                <button class="po-order-btn" data-action="order" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-listing-id="${item.id || ""}" data-has-delivery="${s.has_delivery ? "1" : "0"}" data-delivery-rad="${s.delivery_rad || 0}">Order</button>
               </div>
             </div>
           `;
@@ -388,7 +469,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               <div class="po-seller-right">
                 <div class="po-price" style="color:var(--orange);">${rangeText}</div>
                 <div class="po-price-unit">per ${unitLabel} · est. range</div>
-                <button class="po-preorder-btn" data-action="preorder" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-price="${speciesRange?.max_price || 0}" data-unit="${sp?.defaultUnit || 'kg'}">Pre-order</button>
+                <button class="po-preorder-btn" data-action="preorder" data-seller-id="${s.id}" data-seller-name="${esc(s.name)}" data-price="${speciesRange?.max_price || 0}" data-unit="${sp?.defaultUnit || 'kg'}" data-has-delivery="${s.has_delivery ? "1" : "0"}" data-delivery-rad="${s.delivery_rad || 0}">Pre-order</button>
               </div>
             </div>
           `;
@@ -403,15 +484,28 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       // Order sheet logic
       let currentOrder = null;
 
-      function openOrderSheet(action, sellerId, sellerName, listingId, price, unit) {
-        currentOrder = { action, sellerId, sellerName, listingId, price: parseFloat(price), unit };
+      function openOrderSheet(action, sellerId, sellerName, listingId, price, unit, pricingOptionId = null, chosenOpt = null) {
+        const bundleAmount = chosenOpt ? optionBundleAmount(chosenOpt) : 1;
+        const isPack = chosenOpt ? !isPerBaseUnitPricing(chosenOpt) : false;
+        currentOrder = {
+          action,
+          sellerId,
+          sellerName,
+          listingId,
+          price: parseFloat(price),
+          unit,
+          pricingOptionId,
+          bundleAmount,
+          isPack,
+        };
         const sheet = document.getElementById("order-sheet");
         const backdrop = document.getElementById("backdrop");
 
         document.getElementById("sheet-title").textContent =
           action === "preorder" ? `Pre-order from ${sellerName}` : `Order from ${sellerName}`;
 
-        document.getElementById("order-unit").textContent = unit === "dozen" ? "dz" : unit;
+        document.getElementById("order-unit").textContent =
+          action === "order" && isPack ? "pack" : poUnitDisplay(unit);
         (document.getElementById("order-qty")).value = "1";
         updatePriceInfo();
 
@@ -428,26 +522,38 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       function getPreorderBillingSnapshot() {
         if (!currentOrder) return null;
         const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
-        const unitLabel = currentOrder.unit === "dozen" ? "dz" : currentOrder.unit;
-        const subtotal = Math.round(qty * currentOrder.price);
+        const amt = currentOrder.bundleAmount || 1;
+        const isPack = currentOrder.isPack;
+        const unitLabel = poUnitDisplay(currentOrder.unit);
+        const packs = isPack ? Math.floor(qty) : null;
+        const subtotal = isPack
+          ? Math.round((packs || 0) * currentOrder.price)
+          : Math.round(qty * currentOrder.price);
+        const amtLabel = currentOrder.unit === "kg" ? `${amt} kg` : `${amt} ${unitLabel}`;
+        const itemsLine = isPack ? `${packs} pack (${amtLabel} each)` : `${qty} ${unitLabel}`;
         return {
           subtotal,
           deliveryLabel: "Pickup",
           grandTotal: subtotal,
-          itemsLine: `${qty} ${unitLabel}`,
+          itemsLine,
         };
       }
 
       function updatePriceInfo() {
         if (!currentOrder) return;
         const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
-        const total = qty * currentOrder.price;
+        const amt = currentOrder.bundleAmount || 1;
+        const isPack = currentOrder.isPack;
+        const packs = isPack ? Math.floor(qty) : null;
+        const total = isPack ? (packs || 0) * currentOrder.price : qty * currentOrder.price;
         const infoEl = document.getElementById("order-price-info");
+        const uDisp = poUnitDisplay(currentOrder.unit);
+        const amtPackLabel = currentOrder.unit === "kg" ? `${amt} kg` : `${amt} ${uDisp}`;
 
         if (currentOrder.action === "preorder") {
           infoEl.innerHTML = `
             <div style="font-size:14px;margin-bottom:4px;">
-              <strong>Max price:</strong> ₹${currentOrder.price}/${currentOrder.unit === "dozen" ? "dz" : currentOrder.unit}
+              <strong>Max price:</strong> ₹${currentOrder.price}/${uDisp}
             </div>
             <div style="font-size:18px;font-weight:800;color:var(--orange);">
               Estimated total: ₹${total.toFixed(0)}
@@ -456,10 +562,19 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
               Pay max upfront. Refund the difference if actual price is lower.
             </div>
           `;
+        } else if (isPack) {
+          infoEl.innerHTML = `
+            <div style="font-size:14px;margin-bottom:4px;">
+              <strong>Price:</strong> ₹${currentOrder.price} per pack · ${amtPackLabel} per pack
+            </div>
+            <div style="font-size:18px;font-weight:800;color:var(--green);">
+              Total: ₹${total.toFixed(0)}
+            </div>
+          `;
         } else {
           infoEl.innerHTML = `
             <div style="font-size:14px;margin-bottom:4px;">
-              <strong>Price:</strong> ₹${currentOrder.price}/${currentOrder.unit === "dozen" ? "dz" : currentOrder.unit}
+              <strong>Price:</strong> ₹${currentOrder.price}/${uDisp}
             </div>
             <div style="font-size:18px;font-weight:800;color:var(--green);">
               Total: ₹${total.toFixed(0)}
@@ -472,13 +587,24 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       document.getElementById("qty-minus").addEventListener("click", () => {
         const input = document.getElementById("order-qty");
         const val = parseFloat(input.value) || 1;
-        if (val > 0.5) input.value = String(val - 0.5);
+        const isPack = currentOrder?.isPack;
+        if (currentOrder?.action === "order" && isPack) {
+          const p = Math.floor(val);
+          if (p > 1) input.value = String(p - 1);
+        } else if (val > 0.5) {
+          input.value = String(val - 0.5);
+        }
         updatePriceInfo();
       });
       document.getElementById("qty-plus").addEventListener("click", () => {
         const input = document.getElementById("order-qty");
         const val = parseFloat(input.value) || 1;
-        input.value = String(val + 0.5);
+        const isPack = currentOrder?.isPack;
+        if (currentOrder?.action === "order" && isPack) {
+          input.value = String(Math.floor(val) + 1);
+        } else {
+          input.value = String(val + 0.5);
+        }
         updatePriceInfo();
       });
       document.getElementById("order-qty").addEventListener("input", updatePriceInfo);
@@ -490,8 +616,29 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       document.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-action]");
         if (!btn) return;
-        const { action, sellerId, sellerName, listingId, price, unit } = btn.dataset;
-        openOrderSheet(action, sellerId, sellerName, listingId, price, unit);
+        const { action, sellerId, sellerName, listingId, price, unit, hasDelivery, deliveryRad } = btn.dataset;
+        const sellerHasDelivery = hasDelivery === "1";
+        const sellerDeliveryRad = parseFloat(deliveryRad) || 0;
+        if (action === "order" && listingId) {
+          const listing = sellersData.active.find((x) => x.id === listingId);
+          const sel = document.querySelector(`.po-price-select[data-listing-id="${listingId}"]`);
+          const chosenOptId = sel ? (sel as HTMLSelectElement).value : null;
+          const chosen = listing ? getListingOptionById(listing, chosenOptId) : null;
+          openOrderSheet(
+            action,
+            sellerId,
+            sellerName,
+            listingId,
+            String(chosen?.price ?? 0),
+            String(chosen?.unit ?? "piece"),
+            chosen?.id ?? null,
+            chosen,
+            sellerHasDelivery,
+            sellerDeliveryRad
+          );
+          return;
+        }
+        openOrderSheet(action, sellerId, sellerName, listingId, price, unit, null, null, sellerHasDelivery, sellerDeliveryRad);
       });
 
       // Confirm order
@@ -507,15 +654,8 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
           return;
         }
 
-        window.dispatchEvent(
-          new CustomEvent("open-order-address-sheet", {
-            detail: {
-              requireAddressDetail: false,
-              billing: getPreorderBillingSnapshot(),
-              onConfirm: ({ buyer_addr }) => submitOrder(session, buyer_addr),
-            },
-          })
-        );
+        // Pre-orders are pickup only — skip address sheet, submit directly
+        submitOrder(session, null);
       });
 
       // After login, submit pending order
@@ -528,15 +668,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         window.__pendingPreorderQty = null;
         const session = getSession();
         if (session) {
-          window.dispatchEvent(
-            new CustomEvent("open-order-address-sheet", {
-              detail: {
-                requireAddressDetail: false,
-                billing: getPreorderBillingSnapshot(),
-                onConfirm: ({ buyer_addr }) => submitOrder(session, buyer_addr),
-              },
-            })
-          );
+          submitOrder(session, null);
         }
       });
 
@@ -560,7 +692,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         btn.style.opacity = "0.6";
 
         const qty = parseFloat((document.getElementById("order-qty")).value) || 1;
-        const totalPrice = qty * currentOrder.price;
+        const amt = currentOrder.bundleAmount || 1;
+        const isPack = currentOrder.isPack;
+        const packs = isPack ? Math.floor(qty) : 0;
+        const quantityForApi = isPack ? packs * amt : qty;
+        const totalPrice = isPack ? packs * currentOrder.price : qty * currentOrder.price;
 
         try {
           const res = await fetch("/api/orders/create", {
@@ -569,9 +705,10 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
             body: JSON.stringify({
               listing_id: currentOrder.listingId || null,
               species: speciesId,
-              quantity: qty,
+              quantity: quantityForApi,
               quantity_unit: currentOrder.unit,
               total_price: totalPrice,
+              pricing_option_id: currentOrder.pricingOptionId || undefined,
               buyer_phone: session.phone,
               buyer_id: session.buyer_id,
               buyer_addr: buyer_addr ?? null,
@@ -584,11 +721,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
           showToast("Order placed!");
           window.location.href = "/track";
-        } catch (err) {
+        } catch (err: any) {
           showToast(err.message || "Order failed. Please try again.", "error");
           btn.textContent = "Confirm Order";
           btn.disabled = false;
           btn.style.opacity = "1";
+          throw err;
         }
       }
     });

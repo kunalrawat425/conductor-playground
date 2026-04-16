@@ -1,0 +1,216 @@
+---
+import BottomSheet from "./BottomSheet.astro";
+interface Props {
+  id?: string;
+}
+const { id = "v2-checkout" } = Astro.props;
+---
+<BottomSheet id={id} title="Checkout" showClose={true}>
+  <!-- Step indicator -->
+  <div class="v2-co-steps">
+    <div class="v2-co-step v2-co-active" data-step="1"></div>
+    <div class="v2-co-step" data-step="2"></div>
+    <div class="v2-co-step" data-step="3"></div>
+  </div>
+
+  <!-- Step 1: Cart review -->
+  <div id={`${id}-step1`} class="v2-co-step-content">
+    <h4 class="v2-co-step-title">Your cart</h4>
+    <div id={`${id}-cart-items`}></div>
+    <div class="v2-co-rows">
+      <div class="v2-co-row"><span>Subtotal</span><span id={`${id}-subtotal`}>₹0</span></div>
+      <div class="v2-co-row"><span>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
+      <div class="v2-co-row"><span>Platform fee</span><span>₹5</span></div>
+      <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total`}>₹0</span></div>
+    </div>
+    <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" data-co-next="2">Next: Delivery →</button>
+  </div>
+
+  <!-- Step 2: Address + delivery -->
+  <div id={`${id}-step2`} class="v2-co-step-content" style="display:none;">
+    <h4 class="v2-co-step-title">Delivery method</h4>
+    <div class="v2-co-method">
+      <label class="v2-co-method-opt">
+        <input type="radio" name={`${id}-method`} value="pickup" checked />
+        <div>
+          <div class="v2-co-m-name">🧊 Pickup</div>
+          <div class="v2-co-m-desc">Collect from seller · No delivery fee</div>
+        </div>
+      </label>
+      <label class="v2-co-method-opt">
+        <input type="radio" name={`${id}-method`} value="delivery" />
+        <div>
+          <div class="v2-co-m-name">🚲 Delivery</div>
+          <div class="v2-co-m-desc">To your address · Fee applies</div>
+        </div>
+      </label>
+    </div>
+
+    <div id={`${id}-address-section`} style="display:none;margin-top:16px;">
+      <h4 class="v2-co-step-title">Deliver to</h4>
+      <div id={`${id}-current-address`} class="v2-addr-card">
+        <div class="v2-addr-icon">📍</div>
+        <div class="v2-addr-body">
+          <div class="v2-addr-label">No address selected</div>
+          <div class="v2-addr-text">Tap to add</div>
+        </div>
+      </div>
+      <button class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-pick-address`} style="margin-top:8px;">
+        Change address
+      </button>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="v2-btn v2-btn-ghost v2-btn-md" style="flex:1;" data-co-back="1">← Back</button>
+      <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" data-co-next="3">Next: Payment →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Payment -->
+  <div id={`${id}-step3`} class="v2-co-step-content" style="display:none;">
+    <h4 class="v2-co-step-title">Payment method</h4>
+    <div class="v2-co-pay-options">
+      <label class="v2-co-pay">
+        <input type="radio" name={`${id}-payment`} value="upi" checked />
+        <div class="v2-co-pay-icon">📱</div>
+        <div style="flex:1;">
+          <div class="v2-co-pay-name">UPI</div>
+          <div class="v2-co-pay-desc">PhonePe, GPay, Paytm</div>
+        </div>
+        <div class="v2-co-pay-radio"></div>
+      </label>
+      <label class="v2-co-pay">
+        <input type="radio" name={`${id}-payment`} value="cod" />
+        <div class="v2-co-pay-icon">💵</div>
+        <div style="flex:1;">
+          <div class="v2-co-pay-name">Cash on delivery</div>
+          <div class="v2-co-pay-desc">Pay seller at pickup</div>
+        </div>
+        <div class="v2-co-pay-radio"></div>
+      </label>
+    </div>
+
+    <div class="v2-co-rows" style="margin-top:16px;">
+      <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total-final`}>₹0</span></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="v2-btn v2-btn-ghost v2-btn-md" style="flex:1;" data-co-back="2">← Back</button>
+      <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" id={`${id}-place-order`}>Place order</button>
+    </div>
+    <div style="font:400 10px Inter;color:var(--v2-ink-4);text-align:center;margin-top:8px;">
+      🔒 100% refund if seller cancels
+    </div>
+  </div>
+</BottomSheet>
+
+<script define:vars={{ id }}>
+  let currentStep = 1;
+
+  function showStep(n) {
+    currentStep = n;
+    [1, 2, 3].forEach(i => {
+      document.getElementById(`${id}-step${i}`).style.display = i === n ? "block" : "none";
+      const step = document.querySelector(`.v2-co-step[data-step="${i}"]`);
+      if (step) {
+        step.classList.toggle("v2-co-active", i === n);
+        step.classList.toggle("v2-co-done", i < n);
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-co-next]").forEach(b => {
+    b.addEventListener("click", () => showStep(parseInt(b.dataset.coNext)));
+  });
+  document.querySelectorAll("[data-co-back]").forEach(b => {
+    b.addEventListener("click", () => showStep(parseInt(b.dataset.coBack)));
+  });
+
+  // Toggle address section based on method
+  document.querySelectorAll(`input[name="${id}-method"]`).forEach(r => {
+    r.addEventListener("change", () => {
+      const isDelivery = r.value === "delivery" && r.checked;
+      document.getElementById(`${id}-address-section`).style.display = isDelivery ? "block" : "none";
+    });
+  });
+
+  // Place order — actual logic in page that uses this sheet
+  document.getElementById(`${id}-place-order`)?.addEventListener("click", () => {
+    document.dispatchEvent(new CustomEvent("v2-checkout-place-order"));
+  });
+</script>
+
+<style is:global>
+  .v2-co-steps {
+    display: flex; gap: 8px;
+    margin-bottom: 16px;
+  }
+  .v2-co-step {
+    flex: 1; height: 4px;
+    background: var(--v2-bg-3);
+    border-radius: 2px;
+  }
+  .v2-co-active { background: var(--v2-brand); }
+  .v2-co-done { background: var(--v2-green); }
+  .v2-co-step-title {
+    font: 700 14px Inter;
+    color: var(--v2-ink);
+    margin: 0 0 12px;
+  }
+  .v2-co-rows { padding: 8px 0; }
+  .v2-co-row {
+    display: flex; justify-content: space-between;
+    padding: 8px 0;
+    font: 500 13px Inter;
+    color: var(--v2-ink-2);
+  }
+  .v2-co-row span:last-child { font-weight: 700; color: var(--v2-ink); }
+  .v2-co-total-row {
+    border-top: 1px solid var(--v2-border);
+    padding-top: 12px;
+    margin-top: 4px;
+    font: 800 14px Inter !important;
+    color: var(--v2-ink) !important;
+  }
+  .v2-co-total-row span { font-weight: 800 !important; }
+  .v2-co-method, .v2-co-pay-options {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .v2-co-method-opt, .v2-co-pay {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px;
+    border: 1.5px solid var(--v2-border);
+    border-radius: var(--v2-radius-sm);
+    background: #fff;
+    cursor: pointer;
+  }
+  .v2-co-method-opt input, .v2-co-pay input {
+    appearance: none;
+    width: 18px; height: 18px;
+    border: 2px solid var(--v2-ink-4);
+    border-radius: 50%;
+    margin: 0;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .v2-co-method-opt input:checked, .v2-co-pay input:checked {
+    border-color: var(--v2-brand);
+  }
+  .v2-co-method-opt input:checked::after, .v2-co-pay input:checked::after {
+    content: ''; position: absolute; inset: 3px;
+    background: var(--v2-brand); border-radius: 50%;
+  }
+  .v2-co-method-opt:has(input:checked), .v2-co-pay:has(input:checked) {
+    border-color: var(--v2-brand);
+    background: var(--v2-brand-l);
+  }
+  .v2-co-m-name, .v2-co-pay-name { font: 700 13px Inter; color: var(--v2-ink); }
+  .v2-co-m-desc, .v2-co-pay-desc { font: 400 11px Inter; color: var(--v2-ink-3); margin-top: 2px; }
+  .v2-co-pay-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--v2-bg-3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+</style>
