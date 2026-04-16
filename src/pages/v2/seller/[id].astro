@@ -263,7 +263,7 @@ const tags = [
         if (delivOpt) delivOpt.style.display = "none";
         if (noDelivNote) noDelivNote.style.display = "block";
         // Force pickup
-        const pickupRadio = document.querySelector('input[name="seller-checkout-method"][value="pickup"]') as HTMLInputElement;
+        const pickupRadio = document.querySelector('input[name="seller-checkout-method"][value="pickup"]');
         if (pickupRadio) pickupRadio.checked = true;
       }
 
@@ -281,7 +281,7 @@ const tags = [
         const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
         const data = await res.json();
         const addrs = data.addresses || [];
-        const def = addrs.find((a: any) => a.is_default) || addrs[0];
+        const def = addrs.find((a) => a.is_default) || addrs[0];
         if (def) {
           selectedAddressId = def.id;
           const labelEl = document.getElementById("seller-checkout-addr-label");
@@ -296,7 +296,7 @@ const tags = [
     }
 
     // Listen for address picker selection
-    document.addEventListener("v2-address-confirmed", async (e: any) => {
+    document.addEventListener("v2-address-confirmed", async (e) => {
       selectedAddressId = e.detail?.addressId;
       // Refresh address card UI from API
       let buyerId = null;
@@ -305,7 +305,7 @@ const tags = [
         try {
           const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
           const data = await res.json();
-          const addr = (data.addresses || []).find((a: any) => a.id === selectedAddressId);
+          const addr = (data.addresses || []).find((a) => a.id === selectedAddressId);
           if (addr) {
             const labelEl = document.getElementById("seller-checkout-addr-label");
             const textEl = document.getElementById("seller-checkout-addr-text");
