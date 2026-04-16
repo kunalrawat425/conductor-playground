@@ -56,7 +56,7 @@ const { id } = Astro.params;
           <div class="v2-od-seller" id="v2-od-seller">—</div>
           <div class="v2-od-sub" id="v2-od-seller-loc">—</div>
         </div>
-        <a id="v2-od-call" class="v2-od-call" style="display:none;">📞 Call</a>
+        <!-- Call option removed per user request -->
       </div>
     </div>
 
@@ -224,11 +224,7 @@ const { id } = Astro.params;
     const seller = o.seller || {};
     document.getElementById("v2-od-seller").textContent = seller.name || "Seller";
     document.getElementById("v2-od-seller-loc").textContent = seller.location_name || seller.location || "";
-    if (seller.phone) {
-      const callBtn = document.getElementById("v2-od-call");
-      callBtn.href = "tel:" + seller.phone;
-      callBtn.style.display = "inline-block";
-    }
+    // Call option removed per user request
 
     // Items
     const items = (o.items && o.items.length > 0) ? o.items : [{
