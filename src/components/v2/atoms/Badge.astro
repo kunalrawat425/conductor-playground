@@ -1,0 +1,47 @@
+---
+import type { BadgeProps } from "../../../types/v2-components";
+interface Props extends BadgeProps {}
+const { variant = "tag", color = "ink", size = "md" } = Astro.props;
+const classes = ["v2-badge", `v2-badge-${variant}`, `v2-badge-${color}`, `v2-badge-size-${size}`].join(" ");
+---
+<span class={classes}>
+  <slot />
+</span>
+
+<style is:global>
+  .v2-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: var(--v2-font); font-weight: 700;
+    border-radius: 5px; line-height: 1;
+    white-space: nowrap;
+  }
+  .v2-badge-size-sm { font-size: 10px; padding: 2px 6px; }
+  .v2-badge-size-md { font-size: 11px; padding: 3px 7px; }
+  .v2-badge-size-lg { font-size: 13px; padding: 4px 9px; }
+
+  /* Variant: rating — green pill */
+  .v2-badge-rating { background: var(--v2-green); color: #fff; }
+  .v2-badge-rating.v2-badge-orange { background: var(--v2-orange); }
+  .v2-badge-rating.v2-badge-red { background: var(--v2-red); }
+  .v2-badge-rating.v2-badge-ink { background: var(--v2-ink-3); }
+
+  /* Variant: offer — solid colored pill on cards */
+  .v2-badge-offer { color: #fff; border-radius: 6px; padding: 3px 8px; }
+  .v2-badge-offer.v2-badge-brand { background: var(--v2-brand); }
+  .v2-badge-offer.v2-badge-green { background: var(--v2-green); }
+  .v2-badge-offer.v2-badge-orange { background: var(--v2-orange); }
+  .v2-badge-offer.v2-badge-red { background: var(--v2-red); }
+  .v2-badge-offer.v2-badge-indigo { background: var(--v2-indigo); }
+
+  /* Variant: tag — pill chip */
+  .v2-badge-tag {
+    border-radius: 20px; padding: 3px 10px;
+    font-weight: 500; font-size: 10px;
+    background: var(--v2-bg-3); color: var(--v2-ink-3);
+  }
+  .v2-badge-tag.v2-badge-green { background: var(--v2-green-l); color: var(--v2-green); }
+  .v2-badge-tag.v2-badge-orange { background: var(--v2-orange-l); color: var(--v2-orange); }
+  .v2-badge-tag.v2-badge-red { background: var(--v2-red-l); color: var(--v2-red); }
+  .v2-badge-tag.v2-badge-brand { background: var(--v2-brand-l); color: var(--v2-brand); }
+  .v2-badge-tag.v2-badge-indigo { background: var(--v2-indigo-l); color: var(--v2-indigo); }
+</style>

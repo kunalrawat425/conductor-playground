@@ -1,0 +1,152 @@
+---
+import type { SellerCardProps } from "../../../types/v2-components";
+import Badge from "../atoms/Badge.astro";
+interface Props extends SellerCardProps {}
+const {
+  id,
+  name,
+  location,
+  distanceKm,
+  deliveryEtaMin,
+  rating,
+  status,
+  acceptsPreorder,
+  hasDelivery,
+  deliveryFreeAbove,
+  itemCount,
+  topItems = [],
+  imageHue = "sky",
+  offerLabel,
+} = Astro.props;
+
+const distance = distanceKm != null ? `${distanceKm.toFixed(1)} km` : null;
+const eta = deliveryEtaMin != null ? `${deliveryEtaMin} min` : null;
+const subParts = [location, distance, eta].filter(Boolean).join(" · ");
+
+const hueColors: Record<string, string> = {
+  sky: "linear-gradient(135deg,#E0F2FE,#BAE6FD)",
+  green: "linear-gradient(135deg,#ECFDF5,#D1FAE5)",
+  orange: "linear-gradient(135deg,#FFF7ED,#FED7AA)",
+  indigo: "linear-gradient(135deg,#EEF2FF,#E0E7FF)",
+};
+const cardImgBg = hueColors[imageHue] || hueColors.sky;
+const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "indigo" : "brand";
+---
+<a href={`/seller/${id}`} class:list={["v2-seller-card", status === "closed" && "v2-seller-closed"]}>
+  <div class="v2-sc-img" style={`background:${cardImgBg};`}>
+    {offerLabel && <Badge variant="offer" color={offerColor}>{offerLabel}</Badge>}
+    <span class="v2-sc-emoji" aria-hidden="true">🐟</span>
+  </div>
+
+  <div class="v2-sc-body">
+    <div class="v2-sc-top">
+      <div class="v2-sc-info">
+        <div class="v2-sc-name">{name}</div>
+        {subParts && <div class="v2-sc-loc">{subParts}</div>}
+      </div>
+      {rating > 0 && <Badge variant="rating" color="green">{rating.toFixed(1)} ★</Badge>}
+    </div>
+
+    <div class="v2-sc-tags">
+      {status === "open" && <Badge variant="tag" color="green">Open now</Badge>}
+      {status === "closed" && <Badge variant="tag" color="red">Closed</Badge>}
+      {status === "pre-order-only" && <Badge variant="tag" color="indigo">Pre-order only</Badge>}
+      {acceptsPreorder && status !== "pre-order-only" && <Badge variant="tag" color="brand">Pre-order</Badge>}
+      {!hasDelivery && <Badge variant="tag">Pickup only</Badge>}
+    </div>
+  </div>
+
+  {topItems.length > 0 && (
+    <div class="v2-sc-menu">
+      {topItems.slice(0, 4).map((it) => (
+        <div class="v2-sc-chip">
+          <span class="v2-sc-m-emoji" aria-hidden="true">{it.emoji}</span>
+          <div>
+            <div class="v2-sc-m-name">{it.name}</div>
+            <div class="v2-sc-m-price">₹{it.price}/{it.unit}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  {hasDelivery && (
+    <div class="v2-sc-delivery">
+      🚲 Delivery available{deliveryFreeAbove ? ` · Free above ₹${deliveryFreeAbove}` : ''}
+    </div>
+  )}
+</a>
+
+<style is:global>
+  .v2-seller-card {
+    display: block;
+    background: #fff;
+    border-radius: var(--v2-radius);
+    box-shadow: var(--v2-shadow);
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--v2-ink);
+    transition: transform var(--v2-dur-fast) var(--v2-ease), box-shadow var(--v2-dur-fast) var(--v2-ease);
+  }
+  .v2-seller-card:hover { transform: translateY(-2px); box-shadow: var(--v2-shadow-md); }
+  .v2-seller-card:focus-visible { outline: 2px solid var(--v2-brand); outline-offset: 2px; }
+  .v2-seller-closed { opacity: .6; }
+
+  .v2-sc-img {
+    height: 100px;
+    display: flex; align-items: flex-start; padding: 10px;
+    position: relative; overflow: hidden;
+  }
+  .v2-sc-emoji {
+    font-size: 56px; position: absolute;
+    right: 16px; bottom: 8px; opacity: .25;
+  }
+
+  .v2-sc-body { padding: 14px 16px; }
+  .v2-sc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .v2-sc-info { min-width: 0; flex: 1; }
+  .v2-sc-name {
+    font-family: var(--v2-font); font-weight: 700; font-size: 15px;
+    color: var(--v2-ink); line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .v2-sc-loc {
+    font-family: var(--v2-font); font-weight: 400; font-size: 11px;
+    color: var(--v2-ink-3); margin-top: 2px; line-height: 1.4;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .v2-sc-tags { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
+
+  .v2-sc-menu {
+    display: flex; gap: 8px;
+    padding: 10px 16px 12px;
+    overflow-x: auto;
+    border-top: 1px solid var(--v2-border);
+    scrollbar-width: none;
+  }
+  .v2-sc-menu::-webkit-scrollbar { display: none; }
+  .v2-sc-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 10px;
+    background: var(--v2-bg-2);
+    border-radius: var(--v2-radius-sm);
+    flex-shrink: 0;
+  }
+  .v2-sc-m-emoji { font-size: 18px; }
+  .v2-sc-m-name {
+    font-family: var(--v2-font); font-weight: 600; font-size: 11px;
+    color: var(--v2-ink);
+  }
+  .v2-sc-m-price {
+    font-family: var(--v2-font); font-weight: 700; font-size: 11px;
+    color: var(--v2-green);
+  }
+
+  .v2-sc-delivery {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px;
+    background: var(--v2-green-l);
+    font-family: var(--v2-font); font-weight: 500; font-size: 11px;
+    color: var(--v2-green);
+  }
+</style>
