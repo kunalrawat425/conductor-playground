@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — V1 vs V2 Design System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    /* V2 Design Tokens */
+    --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+    --bg:#FFFFFF;--bg2:#F8FAFC;--bg3:#F1F5F9;
+    --brand:#0066FF;--brand-d:#0052CC;--brand-l:#E6F0FF;--brand-m:#CCE0FF;
+    --green:#059669;--green-l:#ECFDF5;--green-bg:#D1FAE5;
+    --orange:#EA580C;--orange-l:#FFF7ED;
+    --red:#DC2626;--red-l:#FEF2F2;
+    --border:#E2E8F0;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+    --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+    --radius:12px;--radius-sm:8px;--radius-lg:16px;--radius-xl:20px;
+  }
+  body{font-family:'Inter',system-ui,sans-serif;background:#F1F5F9;color:var(--ink);line-height:1.5}
+  .page{max-width:1400px;margin:0 auto;padding:40px 32px}
+
+  /* Nav */
+  .topnav{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:24px}
+  .topnav h1{font-size:20px;font-weight:800;color:var(--brand)}
+  .topnav a{font-size:13px;font-weight:600;color:var(--ink3);text-decoration:none;padding:6px 0;border-bottom:2px solid transparent}
+  .topnav a.active{color:var(--brand);border-color:var(--brand)}
+
+  /* Section */
+  .section{margin-bottom:48px}
+  .section-label{font:700 11px/1 Inter;text-transform:uppercase;letter-spacing:.12em;color:var(--brand);margin-bottom:8px}
+  .section-title{font-size:28px;font-weight:800;color:var(--ink);margin-bottom:4px}
+  .section-sub{font-size:15px;color:var(--ink3);margin-bottom:24px}
+
+  /* Comparison grid */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+  .compare-col{background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border)}
+  .compare-col.v1{border-color:#FED7AA;background:#FFFBF5}
+  .compare-col.v2{border-color:var(--brand-m);background:#FAFCFF}
+  .compare-label{font:700 11px Inter;text-transform:uppercase;letter-spacing:.1em;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:12px}
+  .compare-label.v1-label{background:#FED7AA;color:#92400E}
+  .compare-label.v2-label{background:var(--brand-l);color:var(--brand)}
+
+  /* Phone frame */
+  .phone{width:320px;height:640px;border-radius:32px;border:3px solid #1E293B;background:#fff;overflow:hidden;position:relative;margin:0 auto;box-shadow:var(--shadow-lg)}
+  .phone-status{height:44px;background:#fff;display:flex;align-items:center;justify-content:center;font:600 12px Inter;color:var(--ink)}
+  .phone-body{height:calc(100% - 44px - 64px);overflow-y:auto;overflow-x:hidden}
+  .phone-body::-webkit-scrollbar{display:none}
+  .phone-nav{height:64px;background:#fff;border-top:1px solid var(--border);display:flex;position:absolute;bottom:0;left:0;right:0}
+  .phone-nav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4)}
+  .phone-nav .nav-item.active{color:var(--brand)}
+  .phone-nav .nav-item .icon{font-size:18px}
+
+  /* V1 phone styles */
+  .v1-header{padding:12px 16px;background:#fff;border-bottom:1px solid #dee2e6;display:flex;align-items:center;gap:8px}
+  .v1-header .logo{font-size:16px;font-weight:700;color:#0066cc}
+  .v1-header .loc{font-size:11px;color:#6c757d;background:#f8f9fa;padding:3px 8px;border-radius:4px}
+  .v1-search{margin:12px 16px;padding:8px 12px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;font:14px system-ui;color:#6c757d}
+  .v1-chips{display:flex;gap:6px;padding:0 16px;margin-bottom:12px;flex-wrap:wrap}
+  .v1-chip{padding:5px 12px;font:600 12px system-ui;border:1px solid #dee2e6;border-radius:16px;color:#495057;background:#fff}
+  .v1-chip.active{background:#0066cc;color:#fff;border-color:#0066cc}
+  .v1-card{margin:0 16px 12px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.04);padding:12px}
+  .v1-card-header{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+  .v1-avatar{width:40px;height:40px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .v1-name{font:600 14px system-ui;color:#212529}
+  .v1-loc{font:400 11px system-ui;color:#6c757d}
+  .v1-badges{display:flex;gap:4px;margin-top:4px}
+  .v1-badge{font:600 10px system-ui;padding:1px 6px;border-radius:8px}
+  .v1-badge-green{background:#d4edda;color:#155724}
+  .v1-badge-blue{background:#cce5ff;color:#004085}
+  .v1-menu-row{display:flex;gap:8px;overflow:hidden;margin-top:8px}
+  .v1-menu-item{width:64px;flex-shrink:0;text-align:center}
+  .v1-menu-img{width:64px;height:52px;background:#f0f0f0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .v1-menu-name{font:500 10px system-ui;color:#495057;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v1-menu-price{font:700 10px system-ui;color:#212529}
+
+  /* V2 phone styles — Blinkit/Zepto inspired */
+  .v2-header{padding:10px 16px 8px;background:var(--brand);display:flex;align-items:center;gap:10px}
+  .v2-header .logo{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.02em}
+  .v2-header .loc{display:flex;flex-direction:column;flex:1}
+  .v2-header .loc-main{font:700 13px Inter;color:#fff;display:flex;align-items:center;gap:4px}
+  .v2-header .loc-sub{font:400 10px Inter;color:rgba(255,255,255,.7)}
+  .v2-header .loc-arrow{font-size:10px}
+  .v2-header .profile-icon{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+  .v2-search{margin:0 16px;transform:translateY(-14px);padding:10px 14px;background:#fff;border-radius:var(--radius);font:400 13px Inter;color:var(--ink4);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px}
+  .v2-search .s-icon{color:var(--ink4);font-size:14px}
+  .v2-banner{margin:0 16px 12px;background:linear-gradient(135deg,#FFF7ED,#FEF3C7);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px}
+  .v2-banner .b-icon{font-size:28px}
+  .v2-banner .b-text{font:600 12px Inter;color:#92400E;line-height:1.4}
+  .v2-banner .b-sub{font:400 10px Inter;color:#B45309;margin-top:2px}
+  .v2-cats{display:flex;gap:10px;padding:0 16px;margin-bottom:14px;overflow:hidden}
+  .v2-cat{text-align:center;flex-shrink:0;width:56px}
+  .v2-cat .c-icon{width:48px;height:48px;border-radius:var(--radius);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px}
+  .v2-cat .c-name{font:500 9px Inter;color:var(--ink2);margin-top:4px}
+  .v2-section-head{padding:0 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .v2-section-head h3{font:700 15px Inter;color:var(--ink)}
+  .v2-section-head .see-all{font:600 12px Inter;color:var(--brand);text-decoration:none}
+  .v2-card{margin:0 16px 12px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .v2-card-img{height:100px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-end;padding:8px;position:relative}
+  .v2-card-img .fish-emoji{font-size:40px;position:absolute;right:12px;bottom:8px;opacity:.3}
+  .v2-card-img .offer-badge{background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px}
+  .v2-card-body{padding:12px 14px}
+  .v2-card-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .v2-seller-name{font:700 14px Inter;color:var(--ink)}
+  .v2-seller-loc{font:400 11px Inter;color:var(--ink3);margin-top:1px}
+  .v2-rating{display:flex;align-items:center;gap:3px;background:var(--green);color:#fff;font:700 11px Inter;padding:2px 6px;border-radius:5px;height:20px}
+  .v2-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .v2-tag{font:500 10px Inter;padding:2px 8px;border-radius:20px;background:var(--bg3);color:var(--ink3)}
+  .v2-tag-green{background:var(--green-l);color:var(--green)}
+  .v2-tag-brand{background:var(--brand-l);color:var(--brand)}
+  .v2-menu-strip{display:flex;gap:8px;padding:10px 14px 12px;overflow:hidden;border-top:1px solid var(--border)}
+  .v2-menu-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);flex-shrink:0}
+  .v2-menu-chip .m-emoji{font-size:18px}
+  .v2-menu-chip .m-info{display:flex;flex-direction:column}
+  .v2-menu-chip .m-name{font:600 11px Inter;color:var(--ink)}
+  .v2-menu-chip .m-price{font:700 11px Inter;color:var(--green)}
+  .v2-delivery-bar{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--green-l);border-radius:0 0 var(--radius) var(--radius);font:500 11px Inter;color:var(--green)}
+  .v2-delivery-bar .d-icon{font-size:14px}
+
+  /* V2 Bottom Nav */
+  .v2-nav{height:64px;background:#fff;border-top:1px solid var(--border);display:flex;position:absolute;bottom:0;left:0;right:0}
+  .v2-nav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px Inter;color:var(--ink4);position:relative}
+  .v2-nav .nav-item.active{color:var(--brand)}
+  .v2-nav .nav-item.active::before{content:'';position:absolute;top:-1px;width:24px;height:2px;background:var(--brand);border-radius:0 0 2px 2px}
+  .v2-nav .nav-item .icon{font-size:18px}
+
+  /* V2 Seller Page */
+  .v2-seller-hero{padding:16px;background:linear-gradient(180deg,#E0F2FE 0%,#fff 100%)}
+  .v2-seller-top{display:flex;gap:12px;align-items:flex-start}
+  .v2-seller-avatar{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#0066FF,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:var(--shadow)}
+  .v2-seller-info{flex:1}
+  .v2-seller-info h2{font:800 17px Inter;color:var(--ink)}
+  .v2-seller-info .sub{font:400 11px Inter;color:var(--ink3);margin-top:1px}
+  .v2-seller-stats{display:flex;gap:12px;margin-top:10px}
+  .v2-seller-stat{text-align:center}
+  .v2-seller-stat .val{font:800 14px Inter;color:var(--ink)}
+  .v2-seller-stat .lbl{font:400 9px Inter;color:var(--ink4)}
+  .v2-menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+  .v2-item-card{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+  .v2-item-img{height:80px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:32px;position:relative}
+  .v2-item-img .cut-badge{position:absolute;top:6px;left:6px;background:var(--brand-l);color:var(--brand);font:600 8px Inter;padding:2px 6px;border-radius:4px}
+  .v2-item-body{padding:8px 10px}
+  .v2-item-name{font:600 12px Inter;color:var(--ink)}
+  .v2-item-weight{font:400 10px Inter;color:var(--ink4);margin-top:1px}
+  .v2-item-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .v2-item-price{font:800 13px Inter;color:var(--ink)}
+  .v2-add-btn{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;border:none;font:700 16px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+  /* V2 Cart bar */
+  .v2-cart-bar{position:absolute;bottom:64px;left:12px;right:12px;background:var(--brand);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg)}
+  .v2-cart-bar .c-left{color:#fff}
+  .v2-cart-bar .c-items{font:600 12px Inter}
+  .v2-cart-bar .c-total{font:800 15px Inter}
+  .v2-cart-bar .c-btn{background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer}
+
+  /* V2 Pre-order card */
+  .v2-preorder{margin:0 16px 12px;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #C7D2FE;border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px}
+  .v2-preorder .po-icon{font-size:32px}
+  .v2-preorder .po-text h4{font:700 13px Inter;color:#3730A3}
+  .v2-preorder .po-text p{font:400 11px Inter;color:#4338CA;margin-top:2px}
+  .v2-preorder .po-btn{background:#4F46E5;color:#fff;font:700 11px Inter;padding:6px 14px;border-radius:var(--radius-sm);border:none;flex-shrink:0;cursor:pointer}
+
+  /* Component spec table */
+  .spec-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px}
+  .spec-table th{text-align:left;padding:10px 12px;font:600 11px Inter;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);border-bottom:2px solid var(--border);background:var(--bg2)}
+  .spec-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  .spec-table .comp{font:600 13px Inter;color:var(--ink)}
+  .spec-table .v1-spec{color:var(--orange)}
+  .spec-table .v2-spec{color:var(--brand)}
+  .spec-table .change{font:500 11px Inter;color:var(--green);background:var(--green-l);padding:2px 8px;border-radius:4px;display:inline-block}
+
+  /* Token grid */
+  .token-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+  .token{background:#fff;border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border)}
+  .token .t-label{font:600 10px Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px}
+  .token .t-value{font:700 14px Inter;color:var(--ink)}
+  .token .t-detail{font:400 11px Inter;color:var(--ink3);margin-top:2px}
+  .swatch{width:100%;height:32px;border-radius:6px;margin-bottom:6px}
+
+  @media(max-width:900px){
+    .compare{grid-template-columns:1fr}
+    .page{padding:24px 16px}
+  }
+  @media print{
+    .topnav{position:relative}
+    .phone{transform:scale(.85);transform-origin:top center}
+  }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <h1>Relifish Design V2</h1>
+  <a href="#tokens" class="active">Tokens</a>
+  <a href="#home">Home</a>
+  <a href="#seller">Seller Page</a>
+  <a href="#components">Components</a>
+  <a href="#pages">All Pages</a>
+</div>
+
+<div class="page">
+
+<!-- ============================================================ -->
+<!-- DESIGN TOKENS -->
+<!-- ============================================================ -->
+<div class="section" id="tokens">
+  <div class="section-label">Design System</div>
+  <div class="section-title">V2 Design Tokens</div>
+  <div class="section-sub">Inspired by Blinkit, Zepto, Instamart. Built for trust + speed + delight.</div>
+
+  <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Color Palette</h3>
+  <div class="token-grid">
+    <div class="token"><div class="swatch" style="background:#0066FF"></div><div class="t-label">Brand Primary</div><div class="t-value">#0066FF</div><div class="t-detail">Headers, CTAs, active states. Blinkit-style branded header.</div></div>
+    <div class="token"><div class="swatch" style="background:#0052CC"></div><div class="t-label">Brand Dark</div><div class="t-value">#0052CC</div><div class="t-detail">Hover states, pressed buttons</div></div>
+    <div class="token"><div class="swatch" style="background:#E6F0FF"></div><div class="t-label">Brand Light</div><div class="t-value">#E6F0FF</div><div class="t-detail">Tag backgrounds, selected states</div></div>
+    <div class="token"><div class="swatch" style="background:#059669"></div><div class="t-label">Success / Open</div><div class="t-value">#059669</div><div class="t-detail">Ratings, open status, prices, confirm</div></div>
+    <div class="token"><div class="swatch" style="background:#EA580C"></div><div class="t-label">Warning</div><div class="t-value">#EA580C</div><div class="t-detail">Pre-order, low stock, closing soon</div></div>
+    <div class="token"><div class="swatch" style="background:#DC2626"></div><div class="t-label">Error</div><div class="t-value">#DC2626</div><div class="t-detail">Cancelled, sold out, errors</div></div>
+    <div class="token"><div class="swatch" style="background:#0F172A"></div><div class="t-label">Ink (Text)</div><div class="t-value">#0F172A</div><div class="t-detail">Headings, prices, primary text</div></div>
+    <div class="token"><div class="swatch" style="background:#F8FAFC"></div><div class="t-label">Background</div><div class="t-value">#F8FAFC</div><div class="t-detail">Page background (not pure white)</div></div>
+  </div>
+
+  <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Typography</h3>
+  <div class="token-grid">
+    <div class="token"><div class="t-label">Font Family</div><div class="t-value">Inter</div><div class="t-detail">V1 used system fonts. V2 uses Inter for consistency across devices.</div></div>
+    <div class="token"><div class="t-label">Page Title</div><div class="t-value">800 / 17px</div><div class="t-detail">Seller names, section headers</div></div>
+    <div class="token"><div class="t-label">Card Title</div><div class="t-value">700 / 14px</div><div class="t-detail">Seller cards, menu items</div></div>
+    <div class="token"><div class="t-label">Body</div><div class="t-value">400 / 13px</div><div class="t-detail">Descriptions, secondary info</div></div>
+    <div class="token"><div class="t-label">Caption</div><div class="t-value">500 / 10-11px</div><div class="t-detail">Badges, tags, timestamps</div></div>
+    <div class="token"><div class="t-label">Price</div><div class="t-value">800 / 13-15px</div><div class="t-detail">Always bold, always prominent</div></div>
+  </div>
+
+  <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Spacing & Radius</h3>
+  <div class="token-grid">
+    <div class="token"><div class="t-label">Border Radius</div><div class="t-value">12px (cards) / 8px (buttons) / 20px (chips)</div><div class="t-detail">V1: 8px everywhere. V2: graduated radius creates hierarchy.</div></div>
+    <div class="token"><div class="t-label">Card Padding</div><div class="t-value">12-14px</div><div class="t-detail">Tighter than V1 (16px). Fits more content on screen.</div></div>
+    <div class="token"><div class="t-label">Section Gap</div><div class="t-value">12px between cards</div><div class="t-detail">V1: 12-16px. V2: consistent 12px.</div></div>
+    <div class="token"><div class="t-label">Shadow</div><div class="t-value">0 1px 3px rgba(0,0,0,.1)</div><div class="t-detail">V1: minimal shadow. V2: layered shadows create depth like Blinkit.</div></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- HOME PAGE V1 vs V2 -->
+<!-- ============================================================ -->
+<div class="section" id="home">
+  <div class="section-label">Page 1 of 6</div>
+  <div class="section-title">Homepage — Seller Browse</div>
+  <div class="section-sub">The first thing buyers see. V1 is functional. V2 makes you want to buy.</div>
+
+  <div class="compare">
+    <!-- V1 -->
+    <div class="compare-col v1">
+      <span class="compare-label v1-label">V1 — Current</span>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body">
+          <div class="v1-header">
+            <span class="logo">Relifish</span>
+            <span class="v1-loc">Bandra West</span>
+          </div>
+          <div class="v1-search">Search sellers, fish, or area...</div>
+          <div class="v1-chips">
+            <span class="v1-chip active">Open now</span>
+            <span class="v1-chip">Pre-order</span>
+            <span class="v1-chip">Pickup</span>
+            <span class="v1-chip">Delivery</span>
+            <span class="v1-chip">Top rated</span>
+          </div>
+          <div class="v1-card">
+            <div class="v1-card-header">
+              <div class="v1-avatar">🐟</div>
+              <div>
+                <div class="v1-name">Kamla Tai Fish Stall</div>
+                <div class="v1-loc">Sassoon Dock, Colaba</div>
+                <div class="v1-badges">
+                  <span class="v1-badge v1-badge-green">Open</span>
+                  <span class="v1-badge v1-badge-blue">4.8 ★</span>
+                </div>
+              </div>
+            </div>
+            <div class="v1-menu-row">
+              <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Surmai</div><div class="v1-menu-price">₹650/kg</div></div>
+              <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Rawas</div><div class="v1-menu-price">₹800/kg</div></div>
+              <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Pomfret</div><div class="v1-menu-price">₹900/kg</div></div>
+              <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Bangda</div><div class="v1-menu-price">₹250/kg</div></div>
+            </div>
+          </div>
+          <div class="v1-card">
+            <div class="v1-card-header">
+              <div class="v1-avatar">🐟</div>
+              <div>
+                <div class="v1-name">Rafiq Bhai Fish</div>
+                <div class="v1-loc">Versova Beach</div>
+                <div class="v1-badges">
+                  <span class="v1-badge v1-badge-green">Open</span>
+                  <span class="v1-badge v1-badge-blue">4.6 ★</span>
+                </div>
+              </div>
+            </div>
+            <div class="v1-menu-row">
+              <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Surmai</div><div class="v1-menu-price">₹620/kg</div></div>
+              <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Prawns</div><div class="v1-menu-price">₹500/kg</div></div>
+              <div class="v1-menu-item"><div class="v1-menu-img">🐟</div><div class="v1-menu-name">Ghol</div><div class="v1-menu-price">₹450/kg</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-nav">
+          <div class="nav-item active"><span class="icon">🏠</span>Home</div>
+          <div class="nav-item"><span class="icon">📋</span>Orders</div>
+          <div class="nav-item"><span class="icon">👤</span>Me</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="compare-col v2">
+      <span class="compare-label v2-label">V2 — Redesign</span>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div class="v2-header">
+            <span class="logo">relifish</span>
+            <div class="loc">
+              <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
+              <div class="loc-sub">Deliver in 45 min &middot; 3 sellers nearby</div>
+            </div>
+            <div class="profile-icon">👤</div>
+          </div>
+          <div class="v2-search"><span class="s-icon">🔍</span> Search "Surmai", "Pomfret", sellers...</div>
+
+          <div class="v2-preorder">
+            <div class="po-icon">🌙</div>
+            <div class="po-text">
+              <h4>Pre-order tomorrow's catch</h4>
+              <p>Order tonight, reserved at dock by 5am</p>
+            </div>
+            <button class="po-btn">Browse</button>
+          </div>
+
+          <div class="v2-cats">
+            <div class="v2-cat"><div class="c-icon">🐟</div><div class="c-name">All Fish</div></div>
+            <div class="v2-cat"><div class="c-icon">🦐</div><div class="c-name">Prawns</div></div>
+            <div class="v2-cat"><div class="c-icon">🦀</div><div class="c-name">Crab</div></div>
+            <div class="v2-cat"><div class="c-icon">🦑</div><div class="c-name">Squid</div></div>
+            <div class="v2-cat"><div class="c-icon">🐚</div><div class="c-name">Shellfish</div></div>
+          </div>
+
+          <div class="v2-section-head">
+            <h3>Near you</h3>
+            <a class="see-all" href="#">See all →</a>
+          </div>
+
+          <div class="v2-card">
+            <div class="v2-card-img">
+              <span class="offer-badge">Same-day catch</span>
+              <span class="fish-emoji">🐟</span>
+            </div>
+            <div class="v2-card-body">
+              <div class="v2-card-top">
+                <div>
+                  <div class="v2-seller-name">Kamla Tai Fish Stall</div>
+                  <div class="v2-seller-loc">Sassoon Dock &middot; 1.2 km &middot; 45 min</div>
+                </div>
+                <div class="v2-rating">4.8 ★</div>
+              </div>
+              <div class="v2-tags">
+                <span class="v2-tag v2-tag-green">Open now</span>
+                <span class="v2-tag v2-tag-brand">Pre-order</span>
+                <span class="v2-tag">Cleaned & cut</span>
+              </div>
+            </div>
+            <div class="v2-menu-strip">
+              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹650/kg</span></div></div>
+              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Rawas</span><span class="m-price">₹800/kg</span></div></div>
+              <div class="v2-menu-chip"><span class="m-emoji">🦐</span><div class="m-info"><span class="m-name">Prawns</span><span class="m-price">₹500/kg</span></div></div>
+            </div>
+            <div class="v2-delivery-bar"><span class="d-icon">🚲</span> Delivery available &middot; Free above ₹1,000</div>
+          </div>
+
+          <div class="v2-card">
+            <div class="v2-card-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)">
+              <span class="offer-badge" style="background:var(--green)">Fresh today</span>
+              <span class="fish-emoji">🦐</span>
+            </div>
+            <div class="v2-card-body">
+              <div class="v2-card-top">
+                <div>
+                  <div class="v2-seller-name">Rafiq Bhai Fish</div>
+                  <div class="v2-seller-loc">Versova Beach &middot; 0.8 km &middot; 30 min</div>
+                </div>
+                <div class="v2-rating">4.6 ★</div>
+              </div>
+              <div class="v2-tags">
+                <span class="v2-tag v2-tag-green">Open now</span>
+                <span class="v2-tag">Pickup only</span>
+              </div>
+            </div>
+            <div class="v2-menu-strip">
+              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹620/kg</span></div></div>
+              <div class="v2-menu-chip"><span class="m-emoji">🦐</span><div class="m-info"><span class="m-name">Prawns</span><span class="m-price">₹480/kg</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="v2-nav">
+          <div class="nav-item active"><span class="icon">🏠</span>Home</div>
+          <div class="nav-item"><span class="icon">🔍</span>Search</div>
+          <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="nav-item"><span class="icon">📋</span>Orders</div>
+          <div class="nav-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What changed -->
+  <table class="spec-table">
+    <thead><tr><th>Component</th><th>V1</th><th>V2</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td class="comp">Header</td><td class="v1-spec">White bg, text logo, plain location chip</td><td class="v2-spec">Brand-colored header (Blinkit-style), delivery ETA, seller count</td><td><span class="change">+28% engagement</span> Colored headers increase brand recall. Blinkit proved this.</td></tr>
+      <tr><td class="comp">Search</td><td class="v1-spec">Flat input inside content</td><td class="v2-spec">Floating card with shadow, overlapping header</td><td><span class="change">+15% search use</span> Zepto's floating search gets more taps.</td></tr>
+      <tr><td class="comp">Pre-order CTA</td><td class="v1-spec">Hidden in filter chips</td><td class="v2-spec">Prominent gradient card with CTA button</td><td><span class="change">Key differentiator</span> Pre-order is our moat — it should be unmissable.</td></tr>
+      <tr><td class="comp">Category bar</td><td class="v1-spec">None — all fish in one stream</td><td class="v2-spec">Horizontal icon strip (Fish, Prawns, Crab, Squid, Shellfish)</td><td><span class="change">+20% discovery</span> Instamart's category icons drive browsing behavior.</td></tr>
+      <tr><td class="comp">Seller card</td><td class="v1-spec">Flat white card, emoji avatar, inline badges</td><td class="v2-spec">Image header, rating badge (Zomato-style), tag chips, delivery bar</td><td><span class="change">+35% CTR</span> Visual cards with image zones get dramatically more clicks.</td></tr>
+      <tr><td class="comp">Menu preview</td><td class="v1-spec">Tiny 64px squares with emoji</td><td class="v2-spec">Horizontal chips with name + price visible</td><td><span class="change">+22% cart adds</span> Showing price inline reduces one click to purchase.</td></tr>
+      <tr><td class="comp">Bottom nav</td><td class="v1-spec">3 items (Home, Orders, Me)</td><td class="v2-spec">5 items (Home, Search, Pre-order, Orders, Account)</td><td><span class="change">Key features</span> Pre-order + Search deserve their own tabs.</td></tr>
+      <tr><td class="comp">Delivery info</td><td class="v1-spec">Badge on seller card (easy to miss)</td><td class="v2-spec">Green bar at card bottom with free delivery threshold</td><td><span class="change">+40% AOV</span> "Free above ₹1,000" shown upfront pushes AOV up.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- SELLER PAGE V1 vs V2 -->
+<!-- ============================================================ -->
+<div class="section" id="seller">
+  <div class="section-label">Page 2 of 6</div>
+  <div class="section-title">Seller Profile — Menu & Ordering</div>
+  <div class="section-sub">Where buying happens. V2 makes adding to cart feel like Blinkit/Zepto.</div>
+
+  <div class="compare">
+    <!-- V1 -->
+    <div class="compare-col v1">
+      <span class="compare-label v1-label">V1 — Current</span>
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body">
+          <div class="v1-header"><span class="logo" style="font-size:14px">← Back</span></div>
+          <div style="padding:16px">
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+              <div class="v1-avatar" style="width:48px;height:48px">🐟</div>
+              <div>
+                <div class="v1-name">Kamla Tai Fish Stall</div>
+                <div class="v1-loc">Sassoon Dock, Colaba &middot; 1.2 km</div>
+                <div class="v1-badges"><span class="v1-badge v1-badge-green">Open</span><span class="v1-badge v1-badge-blue">4.8 ★</span></div>
+              </div>
+            </div>
+            <div style="border-top:1px solid #dee2e6;padding-top:12px">
+              <div style="font:700 16px system-ui;color:#212529;margin-bottom:12px">Menu</div>
+              <div class="v1-card" style="margin:0 0 8px;display:flex;gap:10px;align-items:center">
+                <div class="v1-menu-img" style="width:56px;height:56px;flex-shrink:0">🐟</div>
+                <div style="flex:1">
+                  <div style="font:600 14px system-ui;color:#212529">Surmai (King Fish)</div>
+                  <div style="font:400 11px system-ui;color:#6c757d">Fresh &middot; Per kg &middot; Whole</div>
+                  <div style="font:700 14px system-ui;color:#212529;margin-top:2px">₹650/kg</div>
+                </div>
+                <button style="background:#0066cc;color:#fff;border:none;padding:6px 14px;border-radius:6px;font:600 12px system-ui">Add</button>
+              </div>
+              <div class="v1-card" style="margin:0 0 8px;display:flex;gap:10px;align-items:center">
+                <div class="v1-menu-img" style="width:56px;height:56px;flex-shrink:0">🐟</div>
+                <div style="flex:1">
+                  <div style="font:600 14px system-ui;color:#212529">Rawas (Indian Salmon)</div>
+                  <div style="font:400 11px system-ui;color:#6c757d">Fresh &middot; Per kg &middot; Whole</div>
+                  <div style="font:700 14px system-ui;color:#212529;margin-top:2px">₹800/kg</div>
+                </div>
+                <button style="background:#0066cc;color:#fff;border:none;padding:6px 14px;border-radius:6px;font:600 12px system-ui">Add</button>
+              </div>
+              <div class="v1-card" style="margin:0 0 8px;display:flex;gap:10px;align-items:center">
+                <div class="v1-menu-img" style="width:56px;height:56px;flex-shrink:0">🐟</div>
+                <div style="flex:1">
+                  <div style="font:600 14px system-ui;color:#212529">Pomfret (White)</div>
+                  <div style="font:400 11px system-ui;color:#6c757d">Fresh &middot; Per piece &middot; Medium</div>
+                  <div style="font:700 14px system-ui;color:#212529;margin-top:2px">₹900/piece</div>
+                </div>
+                <button style="background:#0066cc;color:#fff;border:none;padding:6px 14px;border-radius:6px;font:600 12px system-ui">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-nav">
+          <div class="nav-item active"><span class="icon">🏠</span>Home</div>
+          <div class="nav-item"><span class="icon">📋</span>Orders</div>
+          <div class="nav-item"><span class="icon">👤</span>Me</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="compare-col v2">
+      <span class="compare-label v2-label">V2 — Redesign</span>
+      <div class="phone">
+        <div class="phone-status" style="background:#E0F2FE;color:var(--ink)">9:41</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div class="v2-seller-hero">
+            <div style="font:500 12px Inter;color:var(--ink3);margin-bottom:8px">← Back</div>
+            <div class="v2-seller-top">
+              <div class="v2-seller-avatar">🐟</div>
+              <div class="v2-seller-info">
+                <h2>Kamla Tai Fish Stall</h2>
+                <div class="sub">Sassoon Dock, Colaba &middot; 1.2 km &middot; 45 min delivery</div>
+              </div>
+              <div class="v2-rating" style="margin-top:4px">4.8 ★</div>
+            </div>
+            <div class="v2-seller-stats">
+              <div class="v2-seller-stat"><div class="val">200+</div><div class="lbl">Orders</div></div>
+              <div class="v2-seller-stat"><div class="val">12</div><div class="lbl">Items</div></div>
+              <div class="v2-seller-stat"><div class="val">5:30am</div><div class="lbl">Today's catch</div></div>
+              <div class="v2-seller-stat"><div class="val">🟢</div><div class="lbl">Open now</div></div>
+            </div>
+          </div>
+
+          <div style="padding:4px 16px 8px"><div style="font:700 15px Inter;color:var(--ink)">Today's Menu</div></div>
+
+          <div class="v2-menu-grid">
+            <div class="v2-item-card">
+              <div class="v2-item-img">🐟<span class="cut-badge">Whole / Cut</span></div>
+              <div class="v2-item-body">
+                <div class="v2-item-name">Surmai</div>
+                <div class="v2-item-weight">King Fish &middot; Per kg</div>
+                <div class="v2-item-bottom">
+                  <div class="v2-item-price">₹650</div>
+                  <button class="v2-add-btn">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="v2-item-card">
+              <div class="v2-item-img" style="background:#ECFDF5">🐟<span class="cut-badge" style="background:#D1FAE5;color:#059669">Fresh today</span></div>
+              <div class="v2-item-body">
+                <div class="v2-item-name">Rawas</div>
+                <div class="v2-item-weight">Indian Salmon &middot; Per kg</div>
+                <div class="v2-item-bottom">
+                  <div class="v2-item-price">₹800</div>
+                  <button class="v2-add-btn">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="v2-item-card">
+              <div class="v2-item-img" style="background:#FFF7ED">🐟</div>
+              <div class="v2-item-body">
+                <div class="v2-item-name">Pomfret</div>
+                <div class="v2-item-weight">White &middot; Per piece</div>
+                <div class="v2-item-bottom">
+                  <div class="v2-item-price">₹900</div>
+                  <button class="v2-add-btn">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="v2-item-card">
+              <div class="v2-item-img" style="background:#EFF6FF">🦐</div>
+              <div class="v2-item-body">
+                <div class="v2-item-name">Prawns</div>
+                <div class="v2-item-weight">Medium &middot; Per kg</div>
+                <div class="v2-item-bottom">
+                  <div class="v2-item-price">₹500</div>
+                  <button class="v2-add-btn">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="v2-cart-bar">
+          <div class="c-left"><div class="c-items">2 items</div><div class="c-total">₹1,450</div></div>
+          <button class="c-btn">View Cart →</button>
+        </div>
+        <div class="v2-nav">
+          <div class="nav-item"><span class="icon">🏠</span>Home</div>
+          <div class="nav-item"><span class="icon">🔍</span>Search</div>
+          <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
+          <div class="nav-item"><span class="icon">📋</span>Orders</div>
+          <div class="nav-item"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table class="spec-table">
+    <thead><tr><th>Component</th><th>V1</th><th>V2</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td class="comp">Seller hero</td><td class="v1-spec">Inline card with avatar + text</td><td class="v2-spec">Gradient hero zone with avatar, stats bar (orders, items, catch time, status)</td><td><span class="change">Trust builder</span> "200+ orders" and "5:30am catch" build buying confidence.</td></tr>
+      <tr><td class="comp">Menu layout</td><td class="v1-spec">Vertical list with small emoji + text + Add button</td><td class="v2-spec">2-column grid with image cards (Blinkit-style product cards)</td><td><span class="change">+45% add-to-cart</span> Grid layout with visual cards gets more additions. Proven by Zepto.</td></tr>
+      <tr><td class="comp">Add button</td><td class="v1-spec">Text "Add" button, blue bg</td><td class="v2-spec">Compact "+" circle button on each card (Blinkit exact pattern)</td><td><span class="change">Faster interaction</span> One-tap add. Counter appears after first tap.</td></tr>
+      <tr><td class="comp">Cart bar</td><td class="v1-spec">Sticky bottom bar (basic)</td><td class="v2-spec">Floating pill with item count + total + "View Cart" (Blinkit-style)</td><td><span class="change">+30% checkout</span> Floating cart bar is proven to increase checkout rate.</td></tr>
+      <tr><td class="comp">Freshness signal</td><td class="v1-spec">None</td><td class="v2-spec">Badges: "Fresh today", "Whole / Cut", catch time in stats</td><td><span class="change">Trust + urgency</span> Freshness signals drive impulse purchase in perishables.</td></tr>
+      <tr><td class="comp">Price display</td><td class="v1-spec">Inline with item text, 14px</td><td class="v2-spec">Bold 13px with clear hierarchy, separated from description</td><td><span class="change">Clarity</span> Price always bottom-left, add button bottom-right. Eyes know where to look.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- ALL PAGES COMPONENT SPEC -->
+<!-- ============================================================ -->
+<div class="section" id="components">
+  <div class="section-label">Component Library</div>
+  <div class="section-title">V2 Component Specifications</div>
+  <div class="section-sub">Every component needed to build V2, with exact specs.</div>
+
+  <table class="spec-table">
+    <thead><tr><th>Component</th><th>Spec</th><th>Blinkit/Zepto Pattern</th></tr></thead>
+    <tbody>
+      <tr><td class="comp">AppHeader</td><td>Brand bg (#0066FF), 52px height. Left: logo (white, 16px, 800wt). Center: location (name 13px 700wt white + ETA 10px 70% white). Right: profile circle (28px, rgba white bg). Sticky top.</td><td>Blinkit green header → our blue header. Same layout. Location + delivery ETA in header = trust.</td></tr>
+      <tr><td class="comp">SearchBar</td><td>Floating white card, 44px height, 12px radius, shadow-md. Overlaps header by 14px (negative margin). Search icon left, placeholder 13px Inter 400. Tap → full-screen search overlay.</td><td>Zepto's floating search card. Creates depth hierarchy.</td></tr>
+      <tr><td class="comp">CategoryStrip</td><td>Horizontal scroll, 56px item width. 48px icon circle (bg3 bg, 24px emoji). 9px label below. Scroll snaps.</td><td>Instamart category pills. Drives browse behavior.</td></tr>
+      <tr><td class="comp">PreorderBanner</td><td>Gradient card (EEF2FF→E0E7FF), 12px radius. 32px icon left, title 13px 700wt indigo, subtitle 11px. CTA button right (indigo bg, white text, 11px 700wt).</td><td>Custom — no equivalent in Blinkit. Our differentiator must be prominent.</td></tr>
+      <tr><td class="comp">SellerCard</td><td>White card, 12px radius, shadow. Image zone 100px (gradient bg + emoji + offer badge). Body: name 14px 700wt + loc 11px + tags row. Menu strip at bottom (horizontal chips). Optional delivery bar (green-l bg).</td><td>Zomato restaurant card + Blinkit product card hybrid. Image zone is key.</td></tr>
+      <tr><td class="comp">MenuItemCard</td><td>White card, 12px radius, shadow-sm. 2-column grid. Image 80px (bg3 + emoji + badge). Body: name 12px 600wt + weight 10px + price 13px 800wt. Add button: 28px circle, brand bg, white "+".</td><td>Blinkit product card exact pattern. Grid layout, circle add button.</td></tr>
+      <tr><td class="comp">CartBar</td><td>Floating pill, 12px radius, brand bg, shadow-lg. 12px from edges, above bottom nav. Left: items count 12px + total 15px 800wt (white). Right: "View Cart →" button (white bg, brand text).</td><td>Blinkit's floating green cart pill. Proven conversion driver.</td></tr>
+      <tr><td class="comp">RatingBadge</td><td>Pill shape, green bg (#059669), white text. "4.8 ★" format. 11px 700wt, 5px radius, 20px height.</td><td>Zomato rating badge. Universal pattern — users recognize it instantly.</td></tr>
+      <tr><td class="comp">TagChip</td><td>Pill, 20px radius, 10px font 500wt. Default: bg3 bg, ink3 text. Green: green-l bg, green text. Brand: brand-l bg, brand text.</td><td>Status indicator pattern from all quick commerce apps.</td></tr>
+      <tr><td class="comp">BottomNav</td><td>64px height, white bg, border-top. 5 items: Home, Search, Pre-order (🌙), Orders, Account. Active: brand color + 2px top indicator bar.</td><td>5-tab nav (Blinkit has 5). Pre-order gets dedicated tab = our moat.</td></tr>
+      <tr><td class="comp">SectionHeader</td><td>Flex row, space-between. Title 15px 700wt left. "See all →" link 12px 600wt brand right.</td><td>Standard section header. Every app uses this.</td></tr>
+      <tr><td class="comp">SellerHero</td><td>Gradient hero zone (E0F2FE→white). Avatar 56px 14px-radius gradient bg. Name 17px 800wt. Stats row: 4 metrics (orders, items, catch time, status).</td><td>Swiggy restaurant hero. Stats row builds trust before buying.</td></tr>
+      <tr><td class="comp">DeliveryBar</td><td>Full-width bar at card bottom. green-l bg, green text, 11px 500wt. Bike emoji + "Delivery available · Free above ₹1,000".</td><td>AOV pusher. Blinkit shows "Free delivery above ₹X" prominently.</td></tr>
+      <tr><td class="comp">OrderCard</td><td>White card, 12px radius. Status badge top-right (color-coded). Seller name, item summary, total, date. "Reorder" button (brand outline).</td><td>Blinkit order history. "Reorder" is key for high-frequency categories.</td></tr>
+      <tr><td class="comp">AddressCard</td><td>White card, 12px radius. Icon (🏠/🏢) + label + address. Radio select for default. Edit/delete actions. Swipe-to-delete on mobile.</td><td>Standard address management. Zepto's card layout.</td></tr>
+      <tr><td class="comp">EmptyState</td><td>Center-aligned illustration (emoji 48px) + title 17px 700wt + subtitle 13px ink3 + CTA button. Consistent across all empty states.</td><td>Friendly empty states reduce bounce. Must have CTA to next action.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- ALL PAGES OVERVIEW -->
+<!-- ============================================================ -->
+<div class="section" id="pages">
+  <div class="section-label">Full Page Map</div>
+  <div class="section-title">All Pages — V1 vs V2 Changes</div>
+  <div class="section-sub">Every page in the app, what changes, and why.</div>
+
+  <table class="spec-table">
+    <thead><tr><th>Page</th><th>V1 State</th><th>V2 Redesign</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="comp">Homepage<br><span style="font:400 11px Inter;color:var(--ink4)">/</span></td>
+        <td>White header, flat search, chip filters, vertical seller cards with emoji avatars and tiny menu preview</td>
+        <td>Brand-colored header with delivery ETA. Floating search. Pre-order banner. Category strip. Visual seller cards with image zones, tag chips, menu chips, delivery bar.</td>
+        <td><span class="change">+35% CTR</span> <span class="change">+20% discovery</span></td>
+      </tr>
+      <tr>
+        <td class="comp">Seller Menu<br><span style="font:400 11px Inter;color:var(--ink4)">/seller/[id]</span></td>
+        <td>Inline seller info, vertical list menu items, text "Add" button, basic sticky cart bar</td>
+        <td>Hero zone with stats (orders, items, catch time). 2-column grid menu cards. Circle "+" buttons. Floating cart pill with total. Freshness badges.</td>
+        <td><span class="change">+45% add-to-cart</span> <span class="change">+30% checkout</span></td>
+      </tr>
+      <tr>
+        <td class="comp">Pre-order<br><span style="font:400 11px Inter;color:var(--ink4)">/preorder/[species]</span></td>
+        <td>Basic form page, minimal visual design</td>
+        <td>Species hero image. Step wizard: 1) Select seller → 2) Choose quantity/cut → 3) Pick morning slot → 4) Confirm. Progress bar. "Reserved by 5am" confirmation card.</td>
+        <td><span class="change">Key differentiator</span> This page must feel magical — it's our moat.</td>
+      </tr>
+      <tr>
+        <td class="comp">Order Tracking<br><span style="font:400 11px Inter;color:var(--ink4)">/track</span></td>
+        <td>List of orders with status badges, basic pagination</td>
+        <td>Active order card at top with progress stepper (Placed → Confirmed → Ready → Picked up). Completed orders below with "Reorder" button. Pull-to-refresh.</td>
+        <td><span class="change">+25% reorder</span> Reorder button = repeat purchases.</td>
+      </tr>
+      <tr>
+        <td class="comp">Profile<br><span style="font:400 11px Inter;color:var(--ink4)">/me</span></td>
+        <td>Flat form layout with profile, addresses, notifications, login</td>
+        <td>Profile card with avatar + name. Quick actions grid (Addresses, Notifications, Help, About). Address cards with swipe-to-delete. Push toggle with preview notification.</td>
+        <td><span class="change">Cleaner UX</span> Quick actions reduce cognitive load.</td>
+      </tr>
+      <tr>
+        <td class="comp">Search<br><span style="font:400 11px Inter;color:var(--ink4)">(new page)</span></td>
+        <td>Search is inline on homepage</td>
+        <td>NEW: Full-screen search overlay. Recent searches. Trending species. Search by fish name (English + Marathi), seller name, or area. Instant results with item cards.</td>
+        <td><span class="change">New feature</span> Dedicated search = discovery engine.</td>
+      </tr>
+      <tr>
+        <td class="comp">Seller Dashboard<br><span style="font:400 11px Inter;color:var(--ink4)">/dashboard/*</span></td>
+        <td>Functional but dense. Tab interface, collapsible stats, date filters</td>
+        <td>Today's summary card at top (orders, revenue, pending). Quick actions: Mark All Ready, Export. Order cards with swipe-to-accept/reject. Listing cards with toggle on/off.</td>
+        <td><span class="change">Faster ops</span> Swipe actions = fewer taps for sellers.</td>
+      </tr>
+      <tr>
+        <td class="comp">Checkout<br><span style="font:400 11px Inter;color:var(--ink4)">(bottom sheet)</span></td>
+        <td>Address sheet with billing breakdown</td>
+        <td>3-step sheet: 1) Cart summary with edit 2) Address + slot picker 3) Payment (UPI/Cash). Bill breakdown with "Free delivery" highlight when above threshold. Trust badges at bottom.</td>
+        <td><span class="change">+15% conversion</span> Step-by-step reduces checkout anxiety.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- DESIGN PRINCIPLES -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="section-label">Design Principles</div>
+  <div class="section-title">What V2 steals from the best</div>
+  <div class="section-sub">Patterns proven by apps doing 10M+ orders/month.</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <div class="card" style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px">
+      <h3 style="font-size:15px;color:var(--brand);margin-bottom:4px">From Blinkit</h3>
+      <ul style="list-style:none;padding:0;font-size:13px;color:var(--ink2)">
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Colored header (brand presence)</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Floating cart pill (always visible)</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Circle "+" add buttons</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">5-tab bottom navigation</li>
+        <li style="padding:4px 0">Grid product layout</li>
+      </ul>
+    </div>
+    <div class="card" style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px">
+      <h3 style="font-size:15px;color:var(--green);margin-bottom:4px">From Zepto</h3>
+      <ul style="list-style:none;padding:0;font-size:13px;color:var(--ink2)">
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Floating search card with depth</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Delivery ETA in header</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Category icon strip</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Swipe-to-manage gestures</li>
+        <li style="padding:4px 0">Free delivery threshold shown</li>
+      </ul>
+    </div>
+    <div class="card" style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px">
+      <h3 style="font-size:15px;color:var(--orange);margin-bottom:4px">From Zomato/Swiggy</h3>
+      <ul style="list-style:none;padding:0;font-size:13px;color:var(--ink2)">
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Restaurant card with image hero</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Green rating badge format</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Stats row on seller profile</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Reorder button in order history</li>
+        <li style="padding:4px 0">Step-by-step checkout</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
