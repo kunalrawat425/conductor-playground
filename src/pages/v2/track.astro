@@ -2,6 +2,8 @@
 export const prerender = false;
 import AppShellV2 from "../../components/v2/AppShellV2.astro";
 import EmptyState from "../../components/v2/molecules/EmptyState.astro";
+import LoginSheet from "../../components/v2/organisms/LoginSheet.astro";
+import Toast from "../../components/v2/atoms/Toast.astro";
 ---
 <AppShellV2
   title="Your Orders | Relifish"
@@ -13,19 +15,21 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
   }}
   nav={{ active: "orders" }}
 >
+  <Toast />
+  <LoginSheet id="v2-track-login" role="buyer" redirectTo="/v2/track" />
+
   <div id="v2-track-loading" style="padding:24px;text-align:center;">
     <span class="v2-spinner v2-spinner-md"></span>
     <div style="margin-top:8px;font:500 12px Inter;color:var(--v2-ink-3);">Loading your orders...</div>
   </div>
 
   <div id="v2-track-guest" style="display:none;padding:0 16px;margin-top:16px;">
-    <EmptyState
-      variant="no-orders"
-      title="Sign in to see your orders"
-      description="Use your phone number to view past orders and track current ones."
-      ctaText="Sign in"
-      ctaHref="/me"
-    />
+    <div class="v2-empty">
+      <div class="v2-empty-icon">📋</div>
+      <h3 class="v2-empty-title">Sign in to see your orders</h3>
+      <p class="v2-empty-desc">Use your phone number to view past orders and track current ones.</p>
+      <button id="v2-track-signin-btn" class="v2-btn v2-btn-primary v2-btn-md">Sign in</button>
+    </div>
   </div>
 
   <div id="v2-track-empty" style="display:none;padding:0 16px;margin-top:16px;">
@@ -173,6 +177,9 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
     if (!phone) {
       loading.style.display = "none";
       guest.style.display = "block";
+      document.getElementById("v2-track-signin-btn")?.addEventListener("click", () => {
+        (window as any).v2OpenSheet?.("v2-track-login");
+      });
       return;
     }
 
