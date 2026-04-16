@@ -7,7 +7,7 @@ interface Props {
   role?: "buyer" | "seller";
   redirectTo?: string;
 }
-const { id = "v2-login", role = "buyer", redirectTo = "/" } = Astro.props;
+const { id = "v2-login", role = "buyer", redirectTo = "/v2" } = Astro.props;
 const title = role === "seller" ? "Seller sign in" : "Sign in";
 ---
 <BottomSheet id={id} title={title} showClose={true}>

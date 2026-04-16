@@ -19,9 +19,9 @@ const categories = [
   description="V2 preview. Pre-order tomorrow's catch from local Mumbai fish sellers."
   needsMap={true}
   header={{
-    locationLabel: "Loading...",
-    locationSub: "Setting your area",
-    showSearch: true,
+    locationLabel: "Set location",
+    locationSub: "Tap to choose your area",
+    showSearch: false,
     showCart: false,
     cartCount: 0,
   }}
@@ -146,7 +146,47 @@ const categories = [
     const locMain = document.querySelector(".v2-loc-main");
     const locSub = document.querySelector(".v2-loc-sub");
     const area = getBuyerArea();
-    if (locMain) locMain.firstChild!.textContent = area + " ";
+    if (locMain && area && area !== "Set location") {
+      locMain.firstChild!.textContent = area + " ";
+    }
+
+    // First-visit location prompt — try geolocation API, fallback to manual on deny.
+    // Only auto-prompt if user has never set location and never dismissed prompt.
+    let promptedKey = "v2_loc_prompted";
+    let promptedThisSession = false;
+    try { promptedThisSession = sessionStorage.getItem(promptedKey) === "1"; } catch {}
+    const needsLocation = !getBuyerLocation();
+    if (needsLocation && !promptedThisSession && navigator.geolocation) {
+      try { sessionStorage.setItem(promptedKey, "1"); } catch {}
+      // Friendly delay so page paints first
+      setTimeout(() => {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            // Allowed: reverse geocode → save → reload data
+            const { latitude, longitude } = pos.coords;
+            try {
+              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+              const data = await r.json();
+              const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
+              try {
+                localStorage.setItem("zepto_buyer_location", a);
+                localStorage.setItem("zepto_buyer_lat", String(latitude));
+                localStorage.setItem("zepto_buyer_lng", String(longitude));
+              } catch {}
+              if (locMain) locMain.firstChild!.textContent = a + " ";
+              (window as any).v2Toast?.("success", "Location set", a);
+              loadSellers();
+            } catch {}
+          },
+          () => {
+            // Denied or failed: open manual picker after a beat (don't be pushy — just hint via subtitle)
+            if (locMain) locMain.firstChild!.textContent = "Set location ";
+            if (locSub) locSub.textContent = "Tap to choose your area";
+          },
+          { timeout: 7000, maximumAge: 60_000 * 5 }
+        );
+      }, 800);
+    }
 
     try {
       const [{ data: listingsData }, { data: sellersData }] = await Promise.all([
