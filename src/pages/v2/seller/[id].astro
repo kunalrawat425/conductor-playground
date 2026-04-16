@@ -112,18 +112,20 @@ const tags = [
 </style>
 
 <script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFreeAbove: seller?.delivery_free_above, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder }}>
-  import * as Cart from "../../../lib/cart";
+  function withCart(fn) {
+    if (window.RelifishCart) return fn(window.RelifishCart);
+    document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });
+  }
 
   const grid = document.getElementById("v2-menu-grid");
   const cartMount = document.getElementById("v2-cart-bar-mount");
   if (grid && listings) {
-    // One-time migration of old per-seller carts into the new global cart
-    Cart.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
-    // Hydrate from server if signed in
-    Cart.hydrateFromServer().then(() => render());
+    function Cart() { return window.RelifishCart; }
 
     function getSellerItems() {
-      const cart = Cart.getCart();
+      const c = Cart();
+      if (!c) return {};
+      const cart = c.getCart();
       const out = {};
       for (const lid of Object.keys(cart)) {
         if (cart[lid].seller_id === sellerId) out[lid] = cart[lid];
@@ -182,10 +184,11 @@ const tags = [
     let selectedAddressId = null;
 
     function renderCart() {
-      const cart = Cart.getCart();
-      const totalQty = Cart.totalQty(cart);
-      const totalPrice = Cart.totalPrice(cart);
-      const sellers = Cart.sellerCount(cart);
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const totalQty = c.totalQty(cart);
+      const totalPrice = c.totalPrice(cart);
+      const sellers = c.sellerCount(cart);
       if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
       document.body.classList.add("v2-has-cart");
       // Min-order check uses THIS seller's subtotal (each seller's min applies to its own order)
@@ -213,11 +216,12 @@ const tags = [
     }
 
     function openCheckout() {
-      const cart = Cart.getCart();
-      const groups = Cart.groupBySeller(cart);
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const groups = c.groupBySeller(cart);
       const items = Object.values(cart);
-      const totalQty = Cart.totalQty(cart);
-      const totalPrice = Cart.totalPrice(cart);
+      const totalQty = c.totalQty(cart);
+      const totalPrice = c.totalPrice(cart);
       if (totalQty === 0) return;
 
       // Pre-flight: must be signed in
@@ -323,7 +327,8 @@ const tags = [
 
     // Place order — one POST per seller group
     document.addEventListener("v2-checkout-place-order", async () => {
-      const groups = Cart.groupBySeller();
+      const c = Cart(); if (!c) return;
+      const groups = c.groupBySeller();
       if (groups.length === 0) return;
 
       let buyerId = null, buyerPhone = null;
@@ -373,7 +378,7 @@ const tags = [
       const failed = results.filter(r => !r.ok);
 
       // Clear successfully placed sellers from cart (failed ones stay so user can retry)
-      succeeded.forEach(r => Cart.clearCart({ sellerId: r.seller_id }));
+      succeeded.forEach(r => c.clearCart({ sellerId: r.seller_id }));
       render();
 
       if (failed.length === 0) {
@@ -392,7 +397,8 @@ const tags = [
     });
 
     function add(id, price, name, unit) {
-      Cart.addItem({
+      const c = Cart(); if (!c) return;
+      c.addItem({
         listing_id: id,
         seller_id: sellerId,
         seller_name: sellerName,
@@ -402,8 +408,8 @@ const tags = [
       });
       render();
     }
-    function dec(id) { Cart.decQty(id); render(); }
-    function inc(id) { Cart.incQty(id); render(); }
+    function dec(id) { const c = Cart(); if (!c) return; c.decQty(id); render(); }
+    function inc(id) { const c = Cart(); if (!c) return; c.incQty(id); render(); }
 
     grid.addEventListener("click", (e) => {
       const t = e.target;
@@ -423,6 +429,14 @@ const tags = [
       if (e.key === "v2_cart_global") render();
     });
 
+    // First paint: render whatever we know (works even before cart module loads)
     render();
+
+    // Once cart module loads: migrate legacy + hydrate from server, then re-render
+    withCart((c) => {
+      c.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
+      c.hydrateFromServer().then(() => render());
+      render();
+    });
   }
 </script>
