@@ -1,0 +1,144 @@
+---
+import type { SellerHeroProps } from "../../../types/v2-components";
+interface Props extends SellerHeroProps {}
+const {
+  name,
+  location,
+  distanceKm,
+  deliveryEtaMin,
+  rating,
+  status,
+  closesAt,
+  opensAt,
+  totalOrders,
+  itemCount,
+  catchTime,
+  tags = [],
+} = Astro.props;
+
+const subParts = [
+  location,
+  distanceKm != null ? `${distanceKm.toFixed(1)} km` : null,
+  deliveryEtaMin != null ? `${deliveryEtaMin} min delivery` : null,
+].filter(Boolean).join(" · ");
+---
+<section class="v2-sh-hero">
+  <a href="/" class="v2-sh-back" aria-label="Back to sellers">← Back</a>
+
+  <div class="v2-sh-top">
+    <div class="v2-sh-avatar" aria-hidden="true">🐟</div>
+    <div class="v2-sh-info">
+      <h1 class="v2-sh-name">{name}</h1>
+      {subParts && <div class="v2-sh-sub">{subParts}</div>}
+    </div>
+    {rating > 0 && (
+      <span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">{rating.toFixed(1)} ★</span>
+    )}
+  </div>
+
+  {tags.length > 0 && (
+    <div class="v2-sh-tags">
+      {tags.map((t) => (
+        <span class="v2-badge v2-badge-tag v2-badge-size-md">{t}</span>
+      ))}
+    </div>
+  )}
+
+  <div class="v2-sh-stats">
+    <div class="v2-sh-stat">
+      <div class="v2-sh-v">{totalOrders ?? "—"}</div>
+      <div class="v2-sh-l">Orders</div>
+    </div>
+    <div class="v2-sh-stat">
+      <div class="v2-sh-v">{itemCount ?? "—"}</div>
+      <div class="v2-sh-l">Items</div>
+    </div>
+    <div class="v2-sh-stat">
+      <div class="v2-sh-v">{catchTime ?? "—"}</div>
+      <div class="v2-sh-l">Catch</div>
+    </div>
+    <div class="v2-sh-stat">
+      <div class:list={["v2-sh-v", status === "open" && "v2-sh-live"]}>
+        {status === "open" ? "Open" : "Closed"}
+      </div>
+      <div class="v2-sh-l">{status === "open" ? `Until ${closesAt ?? "11am"}` : `Opens ${opensAt ?? "5am"}`}</div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .v2-sh-hero {
+    padding: 16px;
+    background: linear-gradient(180deg, #E0F2FE 0%, var(--v2-bg-2) 100%);
+  }
+  .v2-sh-back {
+    display: inline-block;
+    font-family: var(--v2-font); font-weight: 500; font-size: 13px;
+    color: var(--v2-ink-3);
+    text-decoration: none;
+    margin-bottom: 12px;
+    padding: 4px 0;
+  }
+  .v2-sh-top {
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .v2-sh-avatar {
+    width: 60px; height: 60px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--v2-brand), #3B82F6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+    box-shadow: var(--v2-shadow);
+    flex-shrink: 0;
+  }
+  .v2-sh-info { flex: 1; min-width: 0; }
+  .v2-sh-name {
+    font-family: var(--v2-font); font-weight: 800; font-size: 20px;
+    color: var(--v2-ink); margin: 0;
+    line-height: 1.2;
+  }
+  .v2-sh-sub {
+    font-family: var(--v2-font); font-weight: 400; font-size: 12px;
+    color: var(--v2-ink-3);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .v2-sh-tags {
+    display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;
+  }
+  .v2-sh-stats {
+    display: flex;
+    margin-top: 16px;
+    background: #fff;
+    border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius);
+    overflow: hidden;
+  }
+  .v2-sh-stat {
+    flex: 1; text-align: center;
+    padding: 12px 4px;
+    border-right: 1px solid var(--v2-border);
+  }
+  .v2-sh-stat:last-child { border-right: none; }
+  .v2-sh-v {
+    font-family: var(--v2-font); font-weight: 800; font-size: 14px;
+    color: var(--v2-ink);
+  }
+  .v2-sh-l {
+    font-family: var(--v2-font); font-weight: 500; font-size: 10px;
+    color: var(--v2-ink-4);
+    margin-top: 2px;
+  }
+  .v2-sh-live {
+    color: var(--v2-green);
+  }
+  .v2-sh-live::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--v2-green);
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+</style>
