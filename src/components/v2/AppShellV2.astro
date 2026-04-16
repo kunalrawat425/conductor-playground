@@ -72,6 +72,9 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
       </main>
       {!hideNav && nav && <BottomNav {...nav} />}
     </div>
+    <style is:global>
+      body.v2-has-bottom-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0)); }
+    </style>
 
     <style is:global>
       html, body {
