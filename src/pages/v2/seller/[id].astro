@@ -4,6 +4,11 @@ export const prerender = false;
 import AppShellV2 from "../../../components/v2/AppShellV2.astro";
 import SellerHero from "../../../components/v2/organisms/SellerHero.astro";
 import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
+import LoginSheet from "../../../components/v2/organisms/LoginSheet.astro";
+import CheckoutSheet from "../../../components/v2/organisms/CheckoutSheet.astro";
+import AddressPickerSheet from "../../../components/v2/organisms/AddressPickerSheet.astro";
+import Toast from "../../../components/v2/atoms/Toast.astro";
+import Modal from "../../../components/v2/atoms/Modal.astro";
 import { getSellerById, getSellerListings } from "../../../lib/supabase";
 import { getSpeciesDisplay } from "../../../lib/species";
 
@@ -18,12 +23,8 @@ try {
   if (seller) {
     listings = await getSellerListings(id!);
     listings = listings.filter((l: any) => l.is_available);
-  } else {
-    notFound = true;
-  }
-} catch {
-  notFound = true;
-}
+  } else notFound = true;
+} catch { notFound = true; }
 
 const sellerName = seller?.name || "Seller";
 const sellerLocation = seller?.location_name || "";
@@ -37,32 +38,27 @@ const isOpen = (() => {
   return cur >= (oh * 60 + om) && cur <= (ch * 60 + cm);
 })();
 const status: "open" | "closed" = isOpen ? "open" : "closed";
-
 const tags = [
   seller?.accepts_preorder ? "Pre-order" : null,
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
 ].filter(Boolean) as string[];
-
-const pageTitle = `${sellerName} - Fresh Fish Menu | ${brandName}`;
-const pageDesc = sellerLocation
-  ? `Order fresh fish from ${sellerName} in ${sellerLocation}.`
-  : `Order fresh fish from ${sellerName}.`;
 ---
 <AppShellV2
-  title={pageTitle}
-  description={pageDesc}
+  title={`${sellerName} · ${brandName}`}
+  description={`Order fresh fish from ${sellerName} in ${sellerLocation}.`}
   hideHeader={true}
   nav={{ active: "home" }}
 >
+  <Toast />
+  <Modal />
+  <LoginSheet id="seller-login-sheet" role="buyer" redirectTo={`/v2/seller/${id}`} />
+  <AddressPickerSheet id="seller-addr-sheet" />
+  <CheckoutSheet id="seller-checkout" />
+
   {notFound ? (
-    <div style="padding:0 16px;margin-top:24px;">
-      <EmptyState
-        variant="server-error"
-        title="Seller not found"
-        description="This seller doesn't exist or has been deactivated."
-        ctaHref="/v2"
-      />
+    <div style="padding:24px 16px;margin-top:24px;">
+      <EmptyState variant="server-error" title="Seller not found" description="This seller doesn't exist or has been deactivated." ctaText="Browse sellers" ctaHref="/" />
     </div>
   ) : (
     <>
@@ -81,18 +77,17 @@ const pageDesc = sellerLocation
         <div style="padding:0 16px;margin-top:16px;">
           <EmptyState
             variant="no-results"
-            title="No items right now"
-            description={seller?.accepts_preorder
-              ? "Check back during opening hours, or pre-order tomorrow's catch."
-              : "This seller has no listings available right now."}
-            ctaText={seller?.accepts_preorder ? "Pre-order" : "Browse other sellers"}
-            ctaHref={seller?.accepts_preorder ? "/v2" : "/v2"}
+            title="No items available"
+            description={seller?.accepts_preorder ? "Pre-order tomorrow's catch instead." : "Check back during opening hours."}
+            ctaText={seller?.accepts_preorder ? "Pre-order" : "Browse sellers"}
+            ctaHref={seller?.accepts_preorder ? "/v2/preorder" : "/"}
           />
         </div>
       ) : (
         <>
-          <div style="padding:16px 16px 8px;">
+          <div style="padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
             <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">Today's Menu</h2>
+            <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
           <div id="v2-menu-grid" class="v2-menu-grid"></div>
         </>
@@ -108,166 +103,221 @@ const pageDesc = sellerLocation
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    padding: 0 16px;
+    padding: 0 16px 24px;
   }
   @media (min-width: 600px) {
     .v2-menu-grid { grid-template-columns: repeat(3, 1fr); }
   }
-  body.v2-has-cart .v2-main { padding-bottom: 80px; }
+  body.v2-has-cart .v2-main { padding-bottom: 144px; }
 </style>
 
 <script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFreeAbove: seller?.delivery_free_above, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder }}>
   const grid = document.getElementById("v2-menu-grid");
   const cartMount = document.getElementById("v2-cart-bar-mount");
-  if (!grid || !listings) {
-    // No menu to render; bail.
-  } else {
+  if (grid && listings) {
+    const CART_KEY = `v2_cart_${sellerId}`;
+    function loadCart() { try { return JSON.parse(localStorage.getItem(CART_KEY) || "{}"); } catch { return {}; } }
+    function saveCart(c) { try { localStorage.setItem(CART_KEY, JSON.stringify(c)); } catch {} }
+    let cart = loadCart();
 
-  // Cart state per seller
-  const CART_KEY = `v2_cart_${sellerId}`;
-  function loadCart() {
-    try { return JSON.parse(localStorage.getItem(CART_KEY) || "{}"); } catch { return {}; }
-  }
-  function saveCart(c) {
-    try { localStorage.setItem(CART_KEY, JSON.stringify(c)); } catch {}
-  }
-  let cart = loadCart();
+    function speciesEmoji(sp) {
+      if (!sp) return "🐟";
+      const s = sp.toLowerCase();
+      if (s.includes("prawn")) return "🦐";
+      if (s.includes("crab")) return "🦀";
+      if (s.includes("squid") || s.includes("octopus")) return "🦑";
+      return "🐟";
+    }
+    function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+    function getName(sp) { try { return getSpeciesDisplay(sp) || sp; } catch { return sp; } }
 
-  function speciesEmoji(species) {
-    if (!species) return "🐟";
-    const s = species.toLowerCase();
-    if (s.includes("prawn")) return "🦐";
-    if (s.includes("crab")) return "🦀";
-    if (s.includes("squid") || s.includes("octopus")) return "🦑";
-    return "🐟";
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  }
-
-  function renderItem(l) {
-    const opt = (l.pricing_options || [])[0] || {};
-    const price = opt.price || 0;
-    const unit = opt.unit_label || "kg";
-    const name = getDisplayName(l.species);
-    const inCart = cart[l.id]?.qty || 0;
-    const emoji = speciesEmoji(l.species);
-    const isPreorder = l.is_preorder === true || (l.weight_avail === 0 && acceptsPreorder);
-
-    return `
-      <div class="v2-item-card${inCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
-        <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};">
-          <span class="v2-item-emoji">${emoji}</span>
-          ${isPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
-        </div>
-        <div class="v2-item-body">
-          <div class="v2-item-name">${escapeHtml(name)}</div>
-          <div class="v2-item-desc">Per ${escapeHtml(unit)}</div>
-          <div class="v2-item-bottom">
-            <div class="v2-item-price">₹${price}</div>
-            ${inCart > 0
-              ? `<div class="v2-item-counter" data-id="${l.id}">
-                   <button class="v2-item-dec" aria-label="Decrease">−</button>
-                   <span class="v2-item-count">${inCart}</span>
-                   <button class="v2-item-inc" aria-label="Increase">+</button>
-                 </div>`
-              : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escapeHtml(name)}" data-unit="${escapeHtml(unit)}" aria-label="Add ${escapeHtml(name)}">+</button>`}
+    function renderItem(l) {
+      const opt = (l.pricing_options || [])[0] || {};
+      const price = opt.price || 0;
+      const unit = opt.unit_label || "kg";
+      const name = getName(l.species);
+      const inCart = cart[l.id]?.qty || 0;
+      const emoji = speciesEmoji(l.species);
+      const isPreorder = l.weight_avail === 0 && acceptsPreorder;
+      return `
+        <div class="v2-item-card${inCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
+          <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};">
+            <span class="v2-item-emoji">${emoji}</span>
+            ${isPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
           </div>
-        </div>
-      </div>`;
-  }
-
-  function getDisplayName(species) {
-    try {
-      const display = getSpeciesDisplay ? getSpeciesDisplay(species) : species;
-      return display || species;
-    } catch { return species; }
-  }
-
-  function render() {
-    grid.innerHTML = listings.map(renderItem).join("");
-    renderCart();
-  }
-
-  function renderCart() {
-    const items = Object.values(cart);
-    const totalQty = items.reduce((s, i) => s + i.qty, 0);
-    const totalPrice = items.reduce((s, i) => s + i.qty * i.price, 0);
-
-    if (totalQty === 0) {
-      cartMount.innerHTML = "";
-      document.body.classList.remove("v2-has-cart");
-      return;
+          <div class="v2-item-body">
+            <div class="v2-item-name">${escape(name)}</div>
+            <div class="v2-item-desc">Per ${escape(unit)}</div>
+            <div class="v2-item-bottom">
+              <div class="v2-item-price">₹${price}</div>
+              ${inCart > 0
+                ? `<div class="v2-item-counter" data-id="${l.id}">
+                     <button class="v2-item-dec" aria-label="Decrease">−</button>
+                     <span class="v2-item-count">${inCart}</span>
+                     <button class="v2-item-inc" aria-label="Increase">+</button>
+                   </div>`
+                : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" aria-label="Add ${escape(name)}">+</button>`}
+            </div>
+          </div>
+        </div>`;
     }
 
-    document.body.classList.add("v2-has-cart");
+    function render() {
+      grid.innerHTML = listings.map(renderItem).join("");
+      renderCart();
+    }
 
-    const belowMin = minOrder && totalPrice < minOrder;
-    const freeHit = deliveryFreeAbove && totalPrice >= deliveryFreeAbove;
-    const variant = belowMin ? "warning" : freeHit ? "success" : "default";
-    const leftLine = belowMin
-      ? `Add ₹${minOrder - totalPrice} more for min order`
-      : freeHit
-        ? "🎉 Free delivery unlocked"
-        : `${totalQty} item${totalQty !== 1 ? "s" : ""}`;
-    const ctaText = belowMin ? "Keep shopping" : "View cart →";
-    const variantClass = variant === "warning" ? "v2-cart-warning" : variant === "success" ? "v2-cart-success" : "";
-    const ctaColorStyle = variant === "warning" ? "color:var(--v2-orange);" : variant === "success" ? "color:var(--v2-green);" : "";
+    let selectedAddressId = null;
 
-    cartMount.innerHTML = `
-      <a href="#" class="v2-cart-bar ${variantClass}" id="v2-checkout-btn" role="button">
+    function renderCart() {
+      const items = Object.values(cart);
+      const totalQty = items.reduce((s, i) => s + i.qty, 0);
+      const totalPrice = items.reduce((s, i) => s + i.qty * i.price, 0);
+      if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
+      document.body.classList.add("v2-has-cart");
+      const belowMin = minOrder && totalPrice < minOrder;
+      const freeHit = deliveryFreeAbove && totalPrice >= deliveryFreeAbove;
+      const variant = belowMin ? "warning" : freeHit ? "success" : "default";
+      const leftLine = belowMin
+        ? `Add ₹${minOrder - totalPrice} more for min order`
+        : freeHit ? "🎉 Free delivery unlocked" : `${totalQty} item${totalQty !== 1 ? "s" : ""}`;
+      const ctaText = belowMin ? "Keep shopping" : "View cart →";
+      const variantClass = variant === "warning" ? "v2-cart-warning" : variant === "success" ? "v2-cart-success" : "";
+      const ctaColorStyle = variant === "warning" ? "color:var(--v2-orange);" : variant === "success" ? "color:var(--v2-green);" : "";
+
+      cartMount.innerHTML = `<button class="v2-cart-bar ${variantClass}" id="v2-checkout-btn" type="button">
         <div class="v2-cb-left">
           <div class="v2-cb-items">${leftLine}</div>
           <div class="v2-cb-total">₹${totalPrice.toLocaleString("en-IN")}</div>
         </div>
         <span class="v2-cb-btn" style="${ctaColorStyle}">${ctaText}</span>
-      </a>`;
+      </button>`;
 
-    document.getElementById("v2-checkout-btn")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      // Hand off to existing checkout flow:
-      // store cart in legacy format, then navigate to /seller/[id] which handles checkout
-      try {
-        const lines = items.map(i => ({ listing_id: i.id, quantity: i.qty, name: i.name, price: i.price, unit: i.unit }));
-        sessionStorage.setItem("relifish_cart_handoff", JSON.stringify({ seller_id: sellerId, lines }));
-      } catch {}
-      // Navigate to V1 seller page which has full checkout flow (slot picker, address, payment)
-      window.location.href = `/seller/${sellerId}?from=v2cart`;
-    });
-  }
-
-  function add(id, price, name, unit) {
-    cart[id] = { id, qty: (cart[id]?.qty || 0) + 1, price, name, unit };
-    saveCart(cart);
-    render();
-  }
-  function dec(id) {
-    if (!cart[id]) return;
-    cart[id].qty -= 1;
-    if (cart[id].qty <= 0) delete cart[id];
-    saveCart(cart);
-    render();
-  }
-  function inc(id) {
-    if (!cart[id]) return;
-    cart[id].qty += 1;
-    saveCart(cart);
-    render();
-  }
-
-  grid.addEventListener("click", (e) => {
-    const t = e.target;
-    if (!(t instanceof HTMLElement)) return;
-    if (t.classList.contains("v2-item-add")) {
-      add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit);
-    } else if (t.classList.contains("v2-item-inc")) {
-      inc(t.closest(".v2-item-counter")?.dataset.id);
-    } else if (t.classList.contains("v2-item-dec")) {
-      dec(t.closest(".v2-item-counter")?.dataset.id);
+      document.getElementById("v2-checkout-btn")?.addEventListener("click", openCheckout);
     }
-  });
 
-  render();
-  } // end of if (!grid || !listings) else block
+    function openCheckout() {
+      const items = Object.values(cart);
+      const totalQty = items.reduce((s, i) => s + i.qty, 0);
+      const totalPrice = items.reduce((s, i) => s + i.qty * i.price, 0);
+      if (totalQty === 0) return;
+
+      // Pre-flight: must be signed in
+      let buyerId = null, buyerPhone = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      if (!buyerId || !buyerPhone) {
+        window.v2OpenSheet?.("seller-login-sheet");
+        return;
+      }
+
+      // Populate cart items in CheckoutSheet step 1
+      const cartItemsEl = document.getElementById("seller-checkout-cart-items");
+      if (cartItemsEl) {
+        cartItemsEl.innerHTML = items.map(i => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--v2-border);font:500 13px Inter;">
+            <div>
+              <div style="color:var(--v2-ink);font-weight:600;">${escape(i.name)}</div>
+              <div style="color:var(--v2-ink-3);font-size:11px;">${i.qty} ${escape(i.unit)}</div>
+            </div>
+            <div style="font-weight:700;color:var(--v2-ink);">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
+          </div>`).join("");
+      }
+      document.getElementById("seller-checkout-subtotal").textContent = `₹${totalPrice.toLocaleString("en-IN")}`;
+      const platformFee = 5;
+      const total = totalPrice + platformFee;
+      document.getElementById("seller-checkout-total").textContent = `₹${total.toLocaleString("en-IN")}`;
+      document.getElementById("seller-checkout-total-final").textContent = `₹${total.toLocaleString("en-IN")}`;
+
+      window.v2OpenSheet?.("seller-checkout");
+    }
+
+    // Listen for address picker selection
+    document.addEventListener("v2-address-confirmed", (e) => {
+      selectedAddressId = e.detail?.addressId;
+      window.v2Toast?.("success", "Address selected", "Continue to payment");
+    });
+
+    // Open address sheet when "Change address" tapped
+    document.getElementById("seller-checkout-pick-address")?.addEventListener("click", () => {
+      window.v2OpenSheet?.("seller-addr-sheet");
+    });
+
+    // Place order
+    document.addEventListener("v2-checkout-place-order", async () => {
+      const items = Object.values(cart);
+      let buyerId = null, buyerPhone = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      if (!buyerId || !buyerPhone) { window.v2OpenSheet?.("seller-login-sheet"); return; }
+
+      const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');
+      const orderType = methodEl?.value === "delivery" ? "delivery" : "pickup";
+      if (orderType === "delivery" && !selectedAddressId) {
+        window.v2Toast?.("error", "Address needed", "Pick a delivery address");
+        return;
+      }
+
+      const btn = document.getElementById("seller-checkout-place-order");
+      btn.disabled = true;
+      btn.textContent = "Placing order...";
+
+      try {
+        // Use seller-cart endpoint for multi-line order
+        const lines = items.map(i => ({
+          listing_id: i.id,
+          quantity: i.qty,
+          quantity_unit: i.unit,
+        }));
+        const res = await fetch("/api/orders/create-seller-cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seller_id: sellerId,
+            lines,
+            buyer_phone: buyerPhone,
+            buyer_id: buyerId,
+            buyer_addr: selectedAddressId,
+            order_type: orderType,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+
+        // Success: clear cart, toast, navigate
+        cart = {};
+        saveCart(cart);
+        window.v2Toast?.("success", "Order placed!", `${items.length} item${items.length !== 1 ? "s" : ""} confirmed`);
+        setTimeout(() => { window.location.href = "/v2/track"; }, 1200);
+      } catch (err) {
+        window.v2Toast?.("error", "Failed", err.message || "Try again");
+        btn.disabled = false;
+        btn.textContent = "Place order";
+      }
+    });
+
+    function add(id, price, name, unit) {
+      cart[id] = { id, qty: (cart[id]?.qty || 0) + 1, price, name, unit };
+      saveCart(cart); render();
+    }
+    function dec(id) {
+      if (!cart[id]) return;
+      cart[id].qty -= 1;
+      if (cart[id].qty <= 0) delete cart[id];
+      saveCart(cart); render();
+    }
+    function inc(id) { if (!cart[id]) return; cart[id].qty += 1; saveCart(cart); render(); }
+
+    grid.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.classList.contains("v2-item-add")) {
+        add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit);
+      } else if (t.classList.contains("v2-item-inc")) {
+        inc(t.closest(".v2-item-counter")?.dataset.id);
+      } else if (t.classList.contains("v2-item-dec")) {
+        dec(t.closest(".v2-item-counter")?.dataset.id);
+      }
+    });
+
+    render();
+  }
 </script>

@@ -1,0 +1,310 @@
+---
+export const prerender = false;
+import AppShellV2 from "../../../components/v2/AppShellV2.astro";
+import Toast from "../../../components/v2/atoms/Toast.astro";
+import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
+import LoginSheet from "../../../components/v2/organisms/LoginSheet.astro";
+import { supabase } from "../../../lib/supabase";
+
+const { species } = Astro.params;
+const speciesNames: Record<string, { en: string; mr: string; emoji: string }> = {
+  surmai: { en: "Surmai", mr: "सुरमई", emoji: "🐟" },
+  rawas: { en: "Rawas", mr: "रावस", emoji: "🐟" },
+  pomfret: { en: "Pomfret", mr: "पापलेट", emoji: "🐟" },
+  bangda: { en: "Bangda", mr: "बांगडा", emoji: "🐟" },
+  ghol: { en: "Ghol", mr: "घोल", emoji: "🐟" },
+  hilsa: { en: "Hilsa", mr: "पाला", emoji: "🐟" },
+  prawn: { en: "Prawns", mr: "कोलंबी", emoji: "🦐" },
+  crab: { en: "Crab", mr: "खेकडा", emoji: "🦀" },
+};
+const sp = speciesNames[species || ""] || { en: species || "Fish", mr: "", emoji: "🐟" };
+
+let sellers: any[] = [];
+try {
+  const { data } = await supabase
+    .from("sellers")
+    .select("id, name, location_name, opens_at, closes_at, accepts_preorder, has_delivery, rating_avg, min_order_amount")
+    .eq("is_active", true)
+    .eq("accepts_preorder", true)
+    .neq("name", "New Seller");
+  sellers = data || [];
+} catch {}
+---
+<AppShellV2
+  title={`Pre-order ${sp.en} · Relifish`}
+  description={`Pre-order ${sp.en} for tomorrow's catch`}
+  header={{ variant: "preorder", locationLabel: `Pre-order ${sp.en}`, locationSub: "3-step wizard" }}
+  nav={{ active: "preorder" }}
+>
+  <Toast />
+  <LoginSheet id="preorder-login-sheet" role="buyer" redirectTo={`/v2/preorder/${species}`} />
+
+  <div class="po-wizard">
+    <!-- Steps -->
+    <div class="po-steps">
+      <div class="po-step po-active" data-step="1"></div>
+      <div class="po-step" data-step="2"></div>
+      <div class="po-step" data-step="3"></div>
+      <div class="po-step" data-step="4"></div>
+    </div>
+
+    <!-- Step 1: pick seller -->
+    <section id="po-step1" class="po-content">
+      <h2 class="po-h">Step 1 · Pick a seller</h2>
+      <p class="po-sub">Sellers below accept pre-orders for {sp.en} {sp.mr ? `(${sp.mr})` : ""}.</p>
+
+      {sellers.length === 0 ? (
+        <EmptyState variant="no-results" title="No pre-order sellers yet" description="Be first when sellers go live." ctaText="Join waitlist" ctaHref="/buyer-banner.html" />
+      ) : (
+        <div id="po-seller-list">
+          {sellers.map((s) => (
+            <button class="po-seller" data-seller-id={s.id} data-seller-name={s.name} data-min-order={s.min_order_amount || 0} type="button">
+              <div class="po-s-avatar">🐟</div>
+              <div class="po-s-body">
+                <div class="po-s-name">{s.name}</div>
+                <div class="po-s-loc">{s.location_name || "Mumbai"}</div>
+                <div class="po-s-tags">
+                  {s.rating_avg && <span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-sm">{Number(s.rating_avg).toFixed(1)} ★</span>}
+                  <span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-sm">Pre-order</span>
+                  {!s.has_delivery && <span class="v2-badge v2-badge-tag v2-badge-size-sm">Pickup only</span>}
+                </div>
+              </div>
+              <div class="po-s-arrow">→</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+
+    <!-- Step 2: quantity + cut -->
+    <section id="po-step2" class="po-content" style="display:none;">
+      <h2 class="po-h">Step 2 · Quantity</h2>
+      <p class="po-sub">For <span id="po-selected-seller" style="font-weight:700;color:var(--v2-ink);">—</span></p>
+
+      <label class="po-label">Quantity</label>
+      <div style="display:flex;align-items:center;gap:12px;background:#fff;padding:12px 16px;border:1px solid var(--v2-border);border-radius:var(--v2-radius);margin-bottom:16px;">
+        <button type="button" id="po-qty-down" style="width:36px;height:36px;background:var(--v2-bg-3);border:none;border-radius:8px;font:700 18px Inter;cursor:pointer;">−</button>
+        <input type="number" id="po-qty" value="1" min="0.5" step="0.5" style="flex:1;text-align:center;border:none;font:700 18px Inter;color:var(--v2-ink);outline:none;" />
+        <button type="button" id="po-qty-up" style="width:36px;height:36px;background:var(--v2-bg-3);border:none;border-radius:8px;font:700 18px Inter;cursor:pointer;">+</button>
+        <span id="po-qty-unit" style="font:600 13px Inter;color:var(--v2-ink-3);min-width:30px;">kg</span>
+      </div>
+
+      <label class="po-label">Cut style</label>
+      <div class="po-cut-grid">
+        <label class="po-cut po-cut-selected"><input type="radio" name="cut" value="whole" checked /><div>🐟 Whole</div></label>
+        <label class="po-cut"><input type="radio" name="cut" value="cleaned" /><div>✂️ Cleaned</div></label>
+        <label class="po-cut"><input type="radio" name="cut" value="cut" /><div>🔪 Cut into pieces</div></label>
+      </div>
+
+      <label class="po-label">Special request (optional)</label>
+      <textarea id="po-notes" rows="2" placeholder="e.g. medium size pieces, no head" style="width:100%;padding:12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;resize:vertical;outline:none;"></textarea>
+
+      <div class="po-actions">
+        <button type="button" class="v2-btn v2-btn-ghost v2-btn-md" data-back="1">← Back</button>
+        <button type="button" class="v2-btn v2-btn-primary v2-btn-md" data-next="3">Next: Pickup time →</button>
+      </div>
+    </section>
+
+    <!-- Step 3: slot picker -->
+    <section id="po-step3" class="po-content" style="display:none;">
+      <h2 class="po-h">Step 3 · Pickup time</h2>
+      <p class="po-sub">Pick a morning slot. Seller reserves at the dock by 5am.</p>
+
+      <h4 class="v2-slot-group-title" style="margin-top:16px;">Tomorrow morning</h4>
+      <div class="v2-slot-grid" id="po-slots">
+        <button type="button" class="v2-slot" data-slot="5-7am" data-fee="0"><div class="v2-slot-time">5-7am</div><div class="v2-slot-label">Dawn</div><div class="v2-slot-fee">No fee</div></button>
+        <button type="button" class="v2-slot v2-slot-selected" data-slot="7-9am" data-fee="0"><div class="v2-slot-time">7-9am</div><div class="v2-slot-label">Morning</div><div class="v2-slot-fee">No fee</div></button>
+        <button type="button" class="v2-slot" data-slot="9-11am" data-fee="20"><div class="v2-slot-time">9-11am</div><div class="v2-slot-label">Late</div><div class="v2-slot-fee">+₹20</div></button>
+      </div>
+
+      <div class="po-actions">
+        <button type="button" class="v2-btn v2-btn-ghost v2-btn-md" data-back="2">← Back</button>
+        <button type="button" class="v2-btn v2-btn-primary v2-btn-md" data-next="4">Review →</button>
+      </div>
+    </section>
+
+    <!-- Step 4: confirm -->
+    <section id="po-step4" class="po-content" style="display:none;">
+      <h2 class="po-h">Step 4 · Confirm</h2>
+
+      <div style="background:var(--v2-green-l);border:1px solid #A7F3D0;border-radius:var(--v2-radius);padding:16px;margin-bottom:16px;">
+        <h4 style="font:700 13px Inter;color:var(--v2-green);margin:0 0 8px;">✓ Pre-order summary</h4>
+        <div style="font:500 13px Inter;color:var(--v2-ink);">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Seller</span><b id="po-rev-seller">—</b></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Species</span><b>{sp.en}</b></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Quantity</span><b id="po-rev-qty">1 kg</b></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Cut</span><b id="po-rev-cut">Whole</b></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Pickup</span><b id="po-rev-slot">Tomorrow 7-9am</b></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed #A7F3D0;margin-top:4px;font:800 14px Inter;color:var(--v2-green);"><span>You pay at pickup</span><span id="po-rev-est">~₹650</span></div>
+        </div>
+      </div>
+
+      <p style="font:400 11px Inter;color:var(--v2-ink-3);text-align:center;margin-bottom:16px;line-height:1.5;">
+        Seller confirms exact price by 5am.<br/>Cancel anytime before then.
+      </p>
+
+      <div class="po-actions">
+        <button type="button" class="v2-btn v2-btn-ghost v2-btn-md" data-back="3">← Back</button>
+        <button type="button" class="v2-btn v2-btn-primary v2-btn-md" id="po-submit">Reserve now →</button>
+      </div>
+    </section>
+  </div>
+</AppShellV2>
+
+<style is:global>
+  .po-wizard { padding: 16px; }
+  .po-steps { display: flex; gap: 6px; margin-bottom: 16px; }
+  .po-step { flex: 1; height: 4px; background: var(--v2-bg-3); border-radius: 2px; }
+  .po-step.po-active { background: var(--v2-indigo); }
+  .po-step.po-done { background: var(--v2-green); }
+  .po-h { font: 800 18px Inter; color: var(--v2-ink); margin: 0 0 4px; }
+  .po-sub { font: 400 13px Inter; color: var(--v2-ink-3); margin: 0 0 16px; }
+  .po-label { font: 600 12px Inter; color: var(--v2-ink-2); margin-bottom: 6px; display: block; }
+  .po-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .po-actions .v2-btn { flex: 1; }
+
+  .po-seller { display: flex; gap: 12px; align-items: center; padding: 14px; background: #fff; border: 1px solid var(--v2-border); border-radius: var(--v2-radius); margin-bottom: 8px; cursor: pointer; width: 100%; text-align: left; }
+  .po-seller:hover { border-color: var(--v2-indigo); }
+  .po-s-avatar { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--v2-indigo), #7C3AED); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .po-s-body { flex: 1; min-width: 0; }
+  .po-s-name { font: 700 14px Inter; color: var(--v2-ink); }
+  .po-s-loc { font: 400 11px Inter; color: var(--v2-ink-3); margin-top: 1px; }
+  .po-s-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+  .po-s-arrow { color: var(--v2-ink-4); font-size: 18px; }
+
+  .po-cut-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .po-cut { padding: 14px 8px; background: #fff; border: 1.5px solid var(--v2-border); border-radius: var(--v2-radius-sm); text-align: center; cursor: pointer; font: 600 12px Inter; color: var(--v2-ink); }
+  .po-cut input { display: none; }
+  .po-cut-selected { background: var(--v2-indigo-l); border-color: var(--v2-indigo); color: var(--v2-indigo); }
+</style>
+
+<script define:vars={{ species, speciesEn: sp.en }}>
+  const state = {
+    sellerId: null,
+    sellerName: null,
+    minOrder: 0,
+    qty: 1,
+    cut: "whole",
+    notes: "",
+    slot: "7-9am",
+    slotFee: 0,
+    estimate: 650,
+  };
+
+  function getEl(id) { return document.getElementById(id); }
+  function showStep(n) {
+    [1, 2, 3, 4].forEach((i) => {
+      getEl(`po-step${i}`).style.display = i === n ? "block" : "none";
+      const stepEl = document.querySelector(`.po-step[data-step="${i}"]`);
+      if (stepEl) {
+        stepEl.classList.toggle("po-active", i === n);
+        stepEl.classList.toggle("po-done", i < n);
+      }
+    });
+    window.scrollTo(0, 0);
+  }
+
+  // Step 1 → 2: seller pick
+  document.querySelectorAll(".po-seller").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.sellerId = btn.dataset.sellerId;
+      state.sellerName = btn.dataset.sellerName;
+      state.minOrder = parseInt(btn.dataset.minOrder) || 0;
+      getEl("po-selected-seller").textContent = state.sellerName;
+      showStep(2);
+    });
+  });
+
+  // Step 2 controls
+  getEl("po-qty-down")?.addEventListener("click", () => {
+    state.qty = Math.max(0.5, state.qty - 0.5);
+    getEl("po-qty").value = state.qty;
+  });
+  getEl("po-qty-up")?.addEventListener("click", () => {
+    state.qty += 0.5;
+    getEl("po-qty").value = state.qty;
+  });
+  getEl("po-qty")?.addEventListener("input", e => {
+    state.qty = parseFloat(e.target.value) || 0.5;
+  });
+  document.querySelectorAll('input[name="cut"]').forEach(r => {
+    r.addEventListener("change", () => {
+      state.cut = r.value;
+      document.querySelectorAll(".po-cut").forEach(c => c.classList.toggle("po-cut-selected", c.contains(r) || c.querySelector(`[value="${r.value}"]`)));
+      // simpler:
+      document.querySelectorAll(".po-cut").forEach(c => {
+        const inp = c.querySelector("input");
+        c.classList.toggle("po-cut-selected", inp && inp.checked);
+      });
+    });
+  });
+  getEl("po-notes")?.addEventListener("input", e => state.notes = e.target.value);
+
+  // Step 3: slot pick
+  document.querySelectorAll("#po-slots .v2-slot").forEach(b => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll("#po-slots .v2-slot").forEach(s => s.classList.remove("v2-slot-selected"));
+      b.classList.add("v2-slot-selected");
+      state.slot = b.dataset.slot;
+      state.slotFee = parseInt(b.dataset.fee) || 0;
+    });
+  });
+
+  // Next/back
+  document.querySelectorAll("[data-next]").forEach(b => {
+    b.addEventListener("click", () => {
+      const n = parseInt(b.dataset.next);
+      if (n === 4) {
+        // Update review
+        getEl("po-rev-seller").textContent = state.sellerName;
+        getEl("po-rev-qty").textContent = `${state.qty} kg`;
+        getEl("po-rev-cut").textContent = state.cut.charAt(0).toUpperCase() + state.cut.slice(1);
+        getEl("po-rev-slot").textContent = `Tomorrow ${state.slot}`;
+        const est = Math.round(650 * state.qty + state.slotFee); // rough estimate, seller confirms
+        state.estimate = est;
+        getEl("po-rev-est").textContent = `~₹${est}`;
+      }
+      showStep(n);
+    });
+  });
+  document.querySelectorAll("[data-back]").forEach(b => {
+    b.addEventListener("click", () => showStep(parseInt(b.dataset.back)));
+  });
+
+  // Submit
+  getEl("po-submit")?.addEventListener("click", async () => {
+    let buyerId = null, buyerPhone = null;
+    try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+    if (!buyerId || !buyerPhone) {
+      window.v2OpenSheet?.("preorder-login-sheet");
+      return;
+    }
+    const btn = getEl("po-submit");
+    btn.disabled = true;
+    btn.textContent = "Reserving...";
+    try {
+      const res = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          species,
+          quantity: state.qty,
+          quantity_unit: "kg",
+          buyer_phone: buyerPhone,
+          buyer_id: buyerId,
+          order_type: "pickup",
+          seller_id: state.sellerId,
+          // pricing_option_id null = pre-order without price
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      window.v2Toast?.("success", "Pre-order placed", `${state.sellerName} will confirm by 5am`);
+      setTimeout(() => { window.location.href = "/v2/track"; }, 1200);
+    } catch (err) {
+      window.v2Toast?.("error", "Failed", err.message);
+      btn.disabled = false;
+      btn.textContent = "Reserve now →";
+    }
+  });
+</script>
