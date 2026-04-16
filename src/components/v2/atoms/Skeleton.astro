@@ -1,0 +1,21 @@
+---
+interface Props {
+  width?: string;
+  height?: string;
+  radius?: string;
+  shape?: 'card' | 'line' | 'circle';
+}
+const { width = "100%", height = "16px", radius = "6px", shape = "line" } = Astro.props;
+const styleStr = shape === 'circle'
+  ? `width:${width};height:${width};border-radius:50%;`
+  : `width:${width};height:${height};border-radius:${shape === 'card' ? '12px' : radius};`;
+---
+<div class="v2-skeleton" style={styleStr} aria-hidden="true"></div>
+
+<style is:global>
+  .v2-skeleton {
+    background: linear-gradient(90deg, var(--v2-bg-3) 0%, var(--v2-border) 50%, var(--v2-bg-3) 100%);
+    background-size: 200% 100%;
+    animation: v2-shimmer 1.5s infinite;
+  }
+</style>

@@ -1,0 +1,22 @@
+---
+import type { SpinnerProps } from "../../../types/v2-components";
+interface Props extends SpinnerProps {}
+const { size = "md", color = "brand" } = Astro.props;
+---
+<span class={`v2-spinner v2-spinner-${size} v2-spinner-${color}`} role="status" aria-label="Loading"></span>
+
+<style is:global>
+  .v2-spinner {
+    display: inline-block;
+    border: 3px solid var(--v2-bg-3); border-top-color: var(--v2-brand);
+    border-radius: 50%;
+    animation: v2-spin .65s linear infinite;
+  }
+  .v2-spinner-sm { width: 16px; height: 16px; border-width: 2px; }
+  .v2-spinner-md { width: 24px; height: 24px; }
+  .v2-spinner-lg { width: 48px; height: 48px; border-width: 4px; }
+  .v2-spinner-green { border-top-color: var(--v2-green); }
+  .v2-spinner-orange { border-top-color: var(--v2-orange); }
+  .v2-spinner-red { border-top-color: var(--v2-red); }
+  .v2-spinner-indigo { border-top-color: var(--v2-indigo); }
+</style>

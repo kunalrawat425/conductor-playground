@@ -1,0 +1,118 @@
+---
+import type { EmptyStateProps } from "../../../types/v2-components";
+import Button from "../atoms/Button.astro";
+interface Props extends EmptyStateProps {}
+
+const presets: Record<string, { icon: string; title: string; desc: string; cta?: string; ghost?: string }> = {
+  "no-area": {
+    icon: "📍",
+    title: "We're not in your area yet",
+    desc: "Be the first to know when sellers are live near you.",
+    cta: "Join waitlist",
+    ghost: "Try a different area",
+  },
+  "closed": {
+    icon: "🌙",
+    title: "Markets closed for today",
+    desc: "Fish markets open 5am–11am. Pre-order tonight, ready by 7am tomorrow.",
+    cta: "Pre-order tomorrow",
+  },
+  "no-results": {
+    icon: "🔍",
+    title: "No sellers found",
+    desc: "Try changing your filters or search terms.",
+    cta: "Clear filters",
+  },
+  "no-orders": {
+    icon: "📋",
+    title: "No orders yet",
+    desc: "Browse sellers near you to get started.",
+    cta: "Browse sellers",
+  },
+  "cart-empty": {
+    icon: "🛒",
+    title: "Your cart is empty",
+    desc: "Add fresh fish from sellers near you.",
+    cta: "Browse sellers",
+  },
+  "no-internet": {
+    icon: "📡",
+    title: "You're offline",
+    desc: "Check your connection. Past orders still viewable.",
+    cta: "Retry",
+    ghost: "View past orders",
+  },
+  "server-error": {
+    icon: "⚠️",
+    title: "Something went wrong",
+    desc: "Our servers are having trouble. Try again in a moment.",
+    cta: "Try again",
+  },
+};
+
+const {
+  variant,
+  title: titleProp,
+  description: descProp,
+  ctaText: ctaProp,
+  ctaHref,
+  ghostCtaText: ghostProp,
+  ghostCtaHref,
+} = Astro.props;
+
+const preset = presets[variant];
+const title = titleProp || preset?.title;
+const description = descProp || preset?.desc;
+const ctaText = ctaProp || preset?.cta;
+const ghostText = ghostProp || preset?.ghost;
+const icon = preset?.icon || "📭";
+---
+<div class="v2-empty">
+  <div class="v2-empty-icon" aria-hidden="true">{icon}</div>
+  <h3 class="v2-empty-title">{title}</h3>
+  {description && <p class="v2-empty-desc">{description}</p>}
+  {ctaText && (
+    ctaHref ? (
+      <Button variant="primary" href={ctaHref}>{ctaText}</Button>
+    ) : (
+      <Button variant="primary"><slot>{ctaText}</slot></Button>
+    )
+  )}
+  {ghostText && (
+    <a href={ghostCtaHref || "#"} class="v2-empty-ghost">{ghostText} →</a>
+  )}
+</div>
+
+<style is:global>
+  .v2-empty {
+    text-align: center;
+    padding: 40px 24px;
+    background: #fff;
+    border-radius: var(--v2-radius);
+    border: 1px solid var(--v2-border);
+  }
+  .v2-empty-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+    display: inline-block;
+  }
+  .v2-empty-title {
+    font-family: var(--v2-font); font-weight: 800; font-size: 17px;
+    color: var(--v2-ink);
+    margin-bottom: 6px;
+  }
+  .v2-empty-desc {
+    font-family: var(--v2-font); font-weight: 400; font-size: 13px;
+    color: var(--v2-ink-3);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .v2-empty-ghost {
+    display: block;
+    margin-top: 8px;
+    font-family: var(--v2-font); font-weight: 600; font-size: 13px;
+    color: var(--v2-brand);
+    text-decoration: none;
+    padding: 8px;
+  }
+</style>
