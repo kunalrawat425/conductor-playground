@@ -130,7 +130,11 @@
 .v2-header-row {
   display: flex; align-items: center; gap: 12px;
   max-width: var(--app-max-width); margin: 0 auto;
+  min-width: 0;
 }
+.v2-header-row > .v2-logo,
+.v2-header-row > .v2-back { flex-shrink: 0; min-width: 0; }
+.v2-header-row > .v2-loc-wrap { flex: 1 1 auto; min-width: 0; overflow: hidden; }
 .v2-logo {
   font-family: var(--v2-font); font-weight: 800; font-size: 18px;
   color: #fff; letter-spacing: -.02em; text-decoration: none;
