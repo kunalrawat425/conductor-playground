@@ -37,6 +37,19 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       <button class="v2-dash-tab" data-tab="completed">Completed</button>
     </div>
 
+    <!-- Date filter -->
+    <div class="v2-dash-filterbar">
+      <label class="v2-dash-filter-lbl">Range:</label>
+      <select id="v2-dash-range" class="v2-dash-select">
+        <option value="today">Today</option>
+        <option value="7d">Last 7 days</option>
+        <option value="30d" selected>Last 30 days</option>
+        <option value="all">All time</option>
+      </select>
+      <span style="flex:1;"></span>
+      <span id="v2-orders-count" class="v2-dash-filter-lbl"></span>
+    </div>
+
     <div id="v2-orders-list">
       <div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 12px Inter;">
         <span class="v2-spinner v2-spinner-md"></span><div style="margin-top:8px;">Loading orders...</div>
@@ -127,6 +140,40 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
     padding: 1px 6px;
     border-radius: 9999px;
   }
+  .v2-dash-filterbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    background: var(--v2-bg);
+    border-bottom: 1px solid var(--v2-border);
+  }
+  .v2-dash-filter-lbl {
+    font: 600 11px Inter; color: var(--v2-ink-3);
+  }
+  .v2-dash-select {
+    background: var(--v2-bg-2);
+    border: 1px solid var(--v2-border);
+    color: var(--v2-ink);
+    font: 600 12px Inter;
+    padding: 6px 10px;
+    border-radius: var(--v2-radius-sm);
+    cursor: pointer;
+  }
+  .v2-pagination {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px;
+    gap: 8px;
+  }
+  .v2-pg-btn {
+    background: var(--v2-bg);
+    border: 1px solid var(--v2-border);
+    color: var(--v2-ink);
+    font: 600 12px Inter;
+    padding: 8px 14px;
+    border-radius: var(--v2-radius-sm);
+    cursor: pointer;
+  }
+  .v2-pg-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .v2-pg-info { font: 500 12px Inter; color: var(--v2-ink-3); }
 </style>
 
 <script>
@@ -135,7 +182,24 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
   let sellerId: string | null = null;
   let sellerData: any = null;
   let currentTab: "pending" | "accepted" | "completed" = "pending";
+  let currentRange = "30d";
+  let currentPage = 1;
+  const PAGE_SIZE = 20;
   let pollTimer: any;
+
+  const STATUS_BY_TAB: Record<string, string[]> = {
+    pending: ["pending", "pre_order", "scheduled"],
+    accepted: ["confirmed", "paid", "ready_for_pickup"],
+    completed: ["picked_up", "completed", "declined", "cancelled", "refunded"],
+  };
+
+  function rangeToDate(r: string): Date | null {
+    const now = new Date();
+    if (r === "today") { const d = new Date(); d.setHours(0,0,0,0); return d; }
+    if (r === "7d") return new Date(now.getTime() - 7 * 86400000);
+    if (r === "30d") return new Date(now.getTime() - 30 * 86400000);
+    return null;
+  }
 
   function getSellerId() {
     try { return localStorage.getItem("zepto_seller_id"); } catch { return null; }
@@ -187,39 +251,46 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         return;
       }
 
-      // Get all orders
-      const { data: orders } = await supabase
+      // === Stats (always fetch today's snapshot independently of pagination) ===
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      const { data: todayOrdersRaw } = await supabase
         .from("orders")
-        .select("*, listing:fish_listings(species)")
+        .select("status, total_price")
         .in("listing_id", listingIds)
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-      const allOrders = orders || [];
-
-      // Stats
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayOrders = allOrders.filter((o: any) => new Date(o.created_at) >= today);
-      const pendingOrders = allOrders.filter((o: any) => ["pending", "pre_order", "scheduled"].includes(o.status));
-      const acceptedOrders = allOrders.filter((o: any) => ["confirmed", "paid", "ready_for_pickup"].includes(o.status));
-      const completedOrders = allOrders.filter((o: any) => ["picked_up", "completed"].includes(o.status));
-      const preOrders = allOrders.filter((o: any) => o.status === "pre_order");
+        .gte("created_at", todayStart.toISOString());
+      const todayOrders = todayOrdersRaw || [];
+      const pendingTotal = todayOrders.filter((o: any) => STATUS_BY_TAB.pending.includes(o.status)).length;
+      const preOrdersTotal = todayOrders.filter((o: any) => o.status === "pre_order").length;
       const todayGmv = todayOrders.reduce((s: number, o: any) => s + (o.total_price || 0), 0);
-
-      document.getElementById("v2-dash-pending")!.textContent = String(pendingOrders.length);
+      document.getElementById("v2-dash-pending")!.textContent = String(pendingTotal);
       document.getElementById("v2-dash-gmv")!.textContent = `₹${todayGmv.toLocaleString("en-IN")}`;
-      document.getElementById("v2-dash-preorders")!.textContent = String(preOrders.length);
-      document.getElementById("v2-tab-pending-count")!.textContent = String(pendingOrders.length);
+      document.getElementById("v2-dash-preorders")!.textContent = String(preOrdersTotal);
+      document.getElementById("v2-tab-pending-count")!.textContent = String(pendingTotal);
 
-      const ordersToShow = currentTab === "pending" ? pendingOrders : currentTab === "accepted" ? acceptedOrders : completedOrders;
+      // === Paginated orders for current tab + range ===
+      const sinceDate = rangeToDate(currentRange);
+      const offset = (currentPage - 1) * PAGE_SIZE;
+      let q = supabase
+        .from("orders")
+        .select("*, listing:fish_listings(species)", { count: "exact" })
+        .in("listing_id", listingIds)
+        .in("status", STATUS_BY_TAB[currentTab])
+        .order("created_at", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (sinceDate) q = q.gte("created_at", sinceDate.toISOString());
+
+      const { data: orders, count } = await q;
+      const ordersToShow = orders || [];
+      const totalCount = count || 0;
+      const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+      document.getElementById("v2-orders-count")!.textContent = totalCount > 0 ? `${totalCount} ${currentTab}` : "";
 
       if (ordersToShow.length === 0) {
-        list.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--v2-ink-3);font:500 13px Inter;">No ${currentTab} orders</div>`;
+        list.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--v2-ink-3);font:500 13px Inter;">No ${currentTab} orders in this range</div>`;
         return;
       }
 
-      list.innerHTML = ordersToShow.map((o: any) => {
+      const orderHtml = ordersToShow.map((o: any) => {
         const isPreorder = o.status === "pre_order";
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
         const time = o.scheduled_for
@@ -249,6 +320,19 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           </div>` : ''}
         </div>`;
       }).join("");
+
+      const pagerHtml = totalPages > 1 ? `
+        <div class="v2-pagination">
+          <button class="v2-pg-btn" data-pg="prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+          <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
+          <button class="v2-pg-btn" data-pg="next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+        </div>` : '';
+
+      list.innerHTML = orderHtml + pagerHtml;
+
+      // Wire pagination
+      list.querySelector('[data-pg="prev"]')?.addEventListener("click", () => { currentPage = Math.max(1, currentPage - 1); loadOrders(); });
+      list.querySelector('[data-pg="next"]')?.addEventListener("click", () => { currentPage = Math.min(totalPages, currentPage + 1); loadOrders(); });
 
       // Wire actions
       list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
@@ -284,8 +368,16 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       document.querySelectorAll(".v2-dash-tab").forEach(t => t.classList.remove("v2-dash-tab-active"));
       tab.classList.add("v2-dash-tab-active");
       currentTab = tab.dataset.tab as any;
+      currentPage = 1;
       loadOrders();
     });
+  });
+
+  // Range filter
+  document.getElementById("v2-dash-range")?.addEventListener("change", (e) => {
+    currentRange = (e.target as HTMLSelectElement).value;
+    currentPage = 1;
+    loadOrders();
   });
 
   init();
