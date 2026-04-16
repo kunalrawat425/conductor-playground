@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Molecule — Empty States</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .empty{width:320px;background:#fff;border-radius:var(--radius);padding:40px 24px;text-align:center;border:1px solid var(--border)}
+  .empty .icon{font-size:56px;margin-bottom:16px;display:inline-block}
+  .empty h3{font:800 17px Inter;color:var(--ink);margin-bottom:6px}
+  .empty p{font:400 13px Inter;color:var(--ink3);margin-bottom:20px;line-height:1.5}
+  .empty .cta{background:var(--brand);color:#fff;border:none;padding:12px 24px;border-radius:var(--radius-sm);font:700 13px Inter;cursor:pointer}
+  .empty .cta-ghost{background:transparent;color:var(--brand);border:none;padding:8px;font:600 13px Inter;cursor:pointer;margin-top:8px;display:block;width:100%}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Empty States</h1>
+  <p class="sub">Every empty case. Always with clear next action.</p>
+
+  <div class="component" data-name="Empty · No Sellers (Area Not Covered)">
+    <div class="empty">
+      <div class="icon">📍</div>
+      <h3>We're not in your area yet</h3>
+      <p>Be the first to know when sellers are live in <b>Bandra West</b>. Join the waitlist.</p>
+      <button class="cta">Join waitlist</button>
+      <button class="cta-ghost">Try a different area →</button>
+    </div>
+    <div class="spec"><b>Trigger:</b> 0 sellers in user's area · <b>Conversion play:</b> waitlist captures lead even when can't transact</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Sellers Open Now">
+    <div class="empty">
+      <div class="icon">🌙</div>
+      <h3>Markets closed for today</h3>
+      <p>Fish markets are open 5am–11am. Pre-order tonight, ready by 7am tomorrow.</p>
+      <button class="cta" style="background:#4F46E5">Pre-order tomorrow</button>
+    </div>
+    <div class="spec"><b>Trigger:</b> after 11am, no sellers open · <b>Pivot:</b> redirect to pre-order</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Search Results">
+    <div class="empty">
+      <div class="icon">🔍</div>
+      <h3>No results for "Salmon"</h3>
+      <p>Try searching for <b>Rawas</b> (Indian Salmon) or browse all sellers.</p>
+      <button class="cta">Browse all sellers</button>
+    </div>
+    <div class="spec"><b>Smart suggestion:</b> when known synonym exists (Salmon = Rawas) suggest it · <b>Fallback:</b> browse all CTA</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Orders Yet">
+    <div class="empty">
+      <div class="icon">📋</div>
+      <h3>No orders yet</h3>
+      <p>Your first order with us is <b>free delivery</b>. Browse sellers near you.</p>
+      <button class="cta">Browse fish</button>
+    </div>
+    <div class="spec"><b>First-order incentive</b> mentioned in copy · drives action vs blank state</div>
+  </div>
+
+  <div class="component" data-name="Empty · Cart Empty">
+    <div class="empty">
+      <div class="icon">🛒</div>
+      <h3>Your cart is empty</h3>
+      <p>Add fresh fish from sellers near you to get started.</p>
+      <button class="cta">Browse sellers</button>
+    </div>
+    <div class="spec"><b>Single CTA</b> · don't overcomplicate cart-empty state</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Saved Addresses">
+    <div class="empty">
+      <div class="icon">🏠</div>
+      <h3>Add your first address</h3>
+      <p>Save addresses for faster checkout next time.</p>
+      <button class="cta">+ Add address</button>
+    </div>
+  </div>
+
+  <div class="component" data-name="Empty · No Notifications">
+    <div class="empty">
+      <div class="icon">🔔</div>
+      <h3>You're all caught up</h3>
+      <p>We'll notify you when sellers update their catch or your orders progress.</p>
+    </div>
+    <div class="spec"><b>No CTA needed</b> · positive empty state ("you're all caught up")</div>
+  </div>
+
+  <div class="component" data-name="Empty · No Internet">
+    <div class="empty">
+      <div class="icon">📡</div>
+      <h3>You're offline</h3>
+      <p>Check your connection and try again. Past orders are still viewable.</p>
+      <button class="cta">Retry</button>
+      <button class="cta-ghost">View past orders →</button>
+    </div>
+    <div class="spec"><b>Network state</b> · offer offline-viewable content (cached orders)</div>
+  </div>
+
+  <div class="component" data-name="Empty · Server Error">
+    <div class="empty">
+      <div class="icon">⚠️</div>
+      <h3>Something went wrong</h3>
+      <p>Our servers are having trouble. We're on it. Try again in a moment.</p>
+      <button class="cta">Try again</button>
+      <button class="cta-ghost">Report issue →</button>
+    </div>
+    <div class="spec"><b>500 error state</b> · honest copy · don't blame user · provide retry + escalation</div>
+  </div>
+</div>
+</body>
+</html>

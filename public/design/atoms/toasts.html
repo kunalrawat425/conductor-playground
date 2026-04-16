@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Atom — Toasts & Snackbars</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0F172A;color:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);width:320px;font:500 13px Inter}
+  .toast .icon{font-size:18px}
+  .toast .body{flex:1}
+  .toast .title{font:600 13px Inter}
+  .toast .desc{font:400 11px Inter;opacity:.85;margin-top:1px}
+  .toast .action{background:transparent;border:none;color:#60A5FA;font:700 12px Inter;cursor:pointer}
+  .toast .close{background:transparent;border:none;color:rgba(255,255,255,.6);font:400 16px Inter;cursor:pointer;padding:0 4px}
+
+  .toast.success{background:#059669}
+  .toast.error{background:#DC2626}
+  .toast.warning{background:#EA580C}
+  .toast.info{background:#0066FF}
+
+  .snack{display:flex;align-items:center;gap:10px;padding:14px 18px;background:#1E293B;color:#fff;border-radius:8px;box-shadow:var(--shadow-lg);width:340px;font:500 13px Inter}
+  .snack .body{flex:1}
+  .snack button{background:transparent;border:none;color:#FCD34D;font:700 12px Inter;cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+
+  .banner{padding:12px 16px;border-radius:var(--radius);width:340px;display:flex;align-items:center;gap:10px;font:500 13px Inter}
+  .banner.success{background:var(--green-l);color:#065F46;border-left:3px solid var(--green)}
+  .banner.error{background:var(--red-l);color:#991B1B;border-left:3px solid var(--red)}
+  .banner.warning{background:var(--orange-l);color:#9A3412;border-left:3px solid var(--orange)}
+  .banner.info{background:var(--brand-l);color:#1E40AF;border-left:3px solid var(--brand)}
+  .banner .icon{font-size:18px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Toasts & Banners</h1>
+  <p class="sub">Feedback layer. Top-toast for success, bottom-snack for undo, inline banner for context.</p>
+
+  <div class="component" data-name="Toast · All Variants">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">success</span>
+        <div class="toast success"><span class="icon">✓</span><div class="body"><div class="title">Order placed</div><div class="desc">Kamla Tai will confirm shortly</div></div><button class="close">×</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">error</span>
+        <div class="toast error"><span class="icon">✕</span><div class="body"><div class="title">Payment failed</div><div class="desc">Try a different method</div></div><button class="close">×</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">warning</span>
+        <div class="toast warning"><span class="icon">!</span><div class="body"><div class="title">Item out of stock</div><div class="desc">Surmai removed from cart</div></div><button class="close">×</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">info</span>
+        <div class="toast info"><span class="icon">i</span><div class="body"><div class="title">Pre-order confirmed</div><div class="desc">Ready by 7am tomorrow</div></div><button class="close">×</button></div>
+      </div>
+    </div>
+    <div class="spec"><b>Position:</b> top center, 16px from top · <b>Duration:</b> 4s success/info, 6s warning/error · <b>Animation:</b> slide-down + fade</div>
+  </div>
+
+  <div class="component" data-name="Snackbar · With Action">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">undo</span>
+        <div class="snack"><div class="body">Removed Surmai from cart</div><button>UNDO</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">retry</span>
+        <div class="snack"><div class="body">Couldn't load sellers</div><button>RETRY</button></div>
+      </div>
+      <div class="variant"><span class="variant-label">view</span>
+        <div class="snack"><div class="body">Order confirmed by seller</div><button>VIEW</button></div>
+      </div>
+    </div>
+    <div class="spec"><b>Position:</b> bottom center, 80px from bottom (above nav) · <b>Duration:</b> 5-7s · <b>Action:</b> yellow accent text</div>
+  </div>
+
+  <div class="component" data-name="InlineBanner · Persistent Context">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">success</span>
+        <div class="banner success"><span class="icon">✓</span><div>Free delivery unlocked. Add ₹120 more for ₹50 off.</div></div>
+      </div>
+      <div class="variant"><span class="variant-label">warning</span>
+        <div class="banner warning"><span class="icon">⚠</span><div>Seller closes in 30 min. Place order soon.</div></div>
+      </div>
+      <div class="variant"><span class="variant-label">error</span>
+        <div class="banner error"><span class="icon">✕</span><div>3 items in cart unavailable. Tap to review.</div></div>
+      </div>
+      <div class="variant"><span class="variant-label">info</span>
+        <div class="banner info"><span class="icon">🌙</span><div>Market closed now. Pre-order for tomorrow morning.</div></div>
+      </div>
+    </div>
+    <div class="spec"><b>Inline placement:</b> in page flow, not floating · <b>Persistent</b> until condition resolved · 3px accent border-left</div>
+  </div>
+</div>
+</body>
+</html>

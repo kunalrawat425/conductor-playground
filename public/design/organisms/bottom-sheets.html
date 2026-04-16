@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Organism — Bottom Sheets</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .sheet{width:360px;background:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;border:1px solid var(--border)}
+  .handle{height:4px;width:40px;background:var(--ink4);border-radius:2px;margin:8px auto}
+  .sheet-head{padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+  .sheet-head h3{font:800 16px Inter;color:var(--ink)}
+  .sheet-head .close{font:400 22px Inter;color:var(--ink3);cursor:pointer;background:none;border:none}
+
+  .addr-pick{padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer}
+  .addr-pick:hover{background:var(--bg2)}
+  .addr-pick.selected{background:var(--brand-l)}
+  .addr-pick .icon{width:36px;height:36px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .addr-pick.selected .icon{background:var(--brand);color:#fff}
+  .addr-pick .info{flex:1}
+  .addr-pick .lbl{font:700 13px Inter;color:var(--ink)}
+  .addr-pick .text{font:400 11px Inter;color:var(--ink3);margin-top:2px}
+  .addr-pick .check{color:var(--brand);font:700 16px Inter;display:none}
+  .addr-pick.selected .check{display:block}
+
+  .add-new{padding:16px;display:flex;align-items:center;gap:8px;color:var(--brand);font:700 13px Inter;cursor:pointer;border-bottom:1px solid var(--border)}
+
+  .filter-section{padding:16px;border-bottom:1px solid var(--border)}
+  .filter-section h4{font:700 13px Inter;color:var(--ink);margin-bottom:10px}
+  .filter-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .filter-chip{padding:6px 12px;border:1px solid var(--border);border-radius:20px;font:500 12px Inter;color:var(--ink2);background:#fff;cursor:pointer}
+  .filter-chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+  .price-range{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font:600 12px Inter;color:var(--ink2)}
+  .slider{width:100%;height:4px;background:var(--bg3);border-radius:2px;position:relative;margin:12px 0}
+  .slider .track{position:absolute;left:20%;right:30%;height:100%;background:var(--brand);border-radius:2px}
+  .slider .thumb{position:absolute;width:18px;height:18px;background:#fff;border:2px solid var(--brand);border-radius:50%;top:-7px}
+  .slider .thumb.left{left:18%}
+  .slider .thumb.right{right:28%}
+
+  .sheet-cta{padding:14px 16px;background:#fff;border-top:1px solid var(--border)}
+  .sheet-cta button{width:100%;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius);font:800 14px Inter;cursor:pointer}
+
+  .slot-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px}
+  .slot-pill{padding:12px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);text-align:center;cursor:pointer}
+  .slot-pill.selected{border-color:var(--brand);background:var(--brand-l)}
+  .slot-pill .time{font:700 12px Inter;color:var(--ink)}
+  .slot-pill.selected .time{color:var(--brand)}
+  .slot-pill .lbl{font:500 10px Inter;color:var(--ink3);margin-top:2px}
+  .slot-pill .price{font:700 9px Inter;color:var(--green);margin-top:2px}
+  .slot-pill.disabled{opacity:.4;cursor:not-allowed}
+  .slot-pill.disabled .lbl{color:var(--red)}
+
+  .day-picker{display:flex;gap:6px;padding:12px 16px;overflow-x:auto}
+  .day-pill{flex-shrink:0;padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);font:600 12px Inter;color:var(--ink2);background:#fff}
+  .day-pill.selected{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .day-pill.today{border-color:var(--brand);color:var(--brand)}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Bottom Sheets</h1>
+  <p class="sub">Modal sheets from bottom. Address picker, filters, slot picker.</p>
+
+  <div class="component" data-name="BottomSheet · Address Picker">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head"><h3>Deliver to</h3><button class="close">×</button></div>
+      <div class="addr-pick selected">
+        <div class="icon">🏠</div>
+        <div class="info"><div class="lbl">Home</div><div class="text">Flat 304, Sagar Mahal, Bandra West</div></div>
+        <div class="check">✓</div>
+      </div>
+      <div class="addr-pick">
+        <div class="icon">🏢</div>
+        <div class="info"><div class="lbl">Office</div><div class="text">8th floor, Tower C, BKC</div></div>
+        <div class="check">✓</div>
+      </div>
+      <div class="addr-pick">
+        <div class="icon">📍</div>
+        <div class="info"><div class="lbl">Mom's place</div><div class="text">Khar West</div></div>
+        <div class="check">✓</div>
+      </div>
+      <div class="add-new">+ Add new address</div>
+      <div class="sheet-cta"><button>Deliver here →</button></div>
+    </div>
+    <div class="spec"><b>Triggered:</b> from app header location chip · <b>Tap row:</b> selects · <b>CTA:</b> confirms selection</div>
+  </div>
+
+  <div class="component" data-name="BottomSheet · Slot Picker (Pre-order)">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head"><h3>Pickup time tomorrow</h3><button class="close">×</button></div>
+
+      <div class="day-picker">
+        <div class="day-pill today selected">Tomorrow<br><span style="font-weight:400;font-size:10px">17 Apr</span></div>
+        <div class="day-pill">Sat 18</div>
+        <div class="day-pill">Sun 19</div>
+        <div class="day-pill">Mon 20</div>
+      </div>
+
+      <div style="padding:0 16px"><h4 style="font:700 12px Inter;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Morning slots</h4></div>
+      <div class="slot-row">
+        <div class="slot-pill"><div class="time">5-7am</div><div class="lbl">Dawn</div><div class="price">₹0 fee</div></div>
+        <div class="slot-pill selected"><div class="time">7-9am</div><div class="lbl">Morning</div><div class="price">₹0 fee</div></div>
+        <div class="slot-pill"><div class="time">9-11am</div><div class="lbl">Late</div><div class="price">+₹20</div></div>
+      </div>
+      <div style="padding:8px 16px"><h4 style="font:700 12px Inter;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Evening slots</h4></div>
+      <div class="slot-row">
+        <div class="slot-pill"><div class="time">4-6pm</div><div class="lbl">Evening</div><div class="price">+₹40</div></div>
+        <div class="slot-pill"><div class="time">6-8pm</div><div class="lbl">Night</div><div class="price">+₹40</div></div>
+        <div class="slot-pill disabled"><div class="time">8-10pm</div><div class="lbl">Sold out</div></div>
+      </div>
+      <div class="sheet-cta"><button>Confirm 7-9am →</button></div>
+    </div>
+    <div class="spec"><b>Day picker</b> top scroll · <b>Time grouped</b> morning/evening · <b>Slot fees</b> shown inline · disabled state when full</div>
+  </div>
+
+  <div class="component" data-name="BottomSheet · Filters">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head">
+        <h3>Filter sellers</h3>
+        <button style="background:none;border:none;color:var(--brand);font:600 12px Inter">Reset all</button>
+      </div>
+
+      <div class="filter-section">
+        <h4>Seller status</h4>
+        <div class="filter-chips">
+          <span class="filter-chip active">Open now</span>
+          <span class="filter-chip">Pre-order</span>
+          <span class="filter-chip">Both</span>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Delivery</h4>
+        <div class="filter-chips">
+          <span class="filter-chip active">Delivery</span>
+          <span class="filter-chip">Pickup</span>
+          <span class="filter-chip">Both</span>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Fish category</h4>
+        <div class="filter-chips">
+          <span class="filter-chip active">All</span>
+          <span class="filter-chip">Sea fish</span>
+          <span class="filter-chip">Freshwater</span>
+          <span class="filter-chip">Shellfish</span>
+          <span class="filter-chip">Crustaceans</span>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Price range (per kg)</h4>
+        <div class="price-range"><span>₹200</span><span>₹1,200</span></div>
+        <div class="slider"><div class="track"></div><div class="thumb left"></div><div class="thumb right"></div></div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Rating</h4>
+        <div class="filter-chips">
+          <span class="filter-chip">Any</span>
+          <span class="filter-chip active">4.0+</span>
+          <span class="filter-chip">4.5+</span>
+        </div>
+      </div>
+
+      <div class="sheet-cta"><button>Apply filters · 12 sellers</button></div>
+    </div>
+    <div class="spec"><b>Sections:</b> grouped chips · <b>Price:</b> dual-thumb slider · <b>CTA shows result count</b> live</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Organism — Onboarding & First-Time Flows</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .ob-screen{width:340px;background:#fff;border-radius:var(--radius-lg);padding:32px 24px;text-align:center;border:1px solid var(--border)}
+  .ob-illust{font-size:80px;margin-bottom:20px;display:inline-block}
+  .ob-screen h2{font:900 22px Inter;color:var(--ink);margin-bottom:8px;letter-spacing:-.02em}
+  .ob-screen p{font:400 14px Inter;color:var(--ink2);margin-bottom:24px;line-height:1.5}
+  .ob-dots{display:flex;justify-content:center;gap:6px;margin-bottom:20px}
+  .ob-dots .dot{width:6px;height:6px;border-radius:50%;background:var(--bg3)}
+  .ob-dots .dot.active{background:var(--brand);width:18px;border-radius:3px}
+  .ob-cta{width:100%;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius);font:800 14px Inter;cursor:pointer}
+  .ob-skip{margin-top:8px;background:none;border:none;color:var(--ink3);font:600 13px Inter;cursor:pointer}
+
+  .first-order-celebration{width:340px;background:linear-gradient(135deg,#0066FF,#3B82F6);border-radius:var(--radius-lg);padding:32px 24px;text-align:center;color:#fff;position:relative;overflow:hidden}
+  .first-order-celebration::before{content:'🎉';position:absolute;top:-20px;left:-10px;font-size:140px;opacity:.15;transform:rotate(-15deg)}
+  .first-order-celebration::after{content:'🐟';position:absolute;bottom:-30px;right:-10px;font-size:140px;opacity:.15;transform:rotate(15deg)}
+  .foc-badge{display:inline-block;background:rgba(255,255,255,.25);padding:4px 12px;border-radius:20px;font:700 10px Inter;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;position:relative}
+  .first-order-celebration h2{font:900 24px Inter;margin-bottom:6px;position:relative}
+  .first-order-celebration p{font:400 14px Inter;opacity:.9;margin-bottom:20px;position:relative}
+  .foc-cta{background:#fff;color:var(--brand);font:800 14px Inter;padding:12px 24px;border-radius:var(--radius);border:none;position:relative;cursor:pointer}
+
+  .tooltip{position:relative;display:inline-block}
+  .tooltip-content{background:var(--ink);color:#fff;padding:10px 14px;border-radius:8px;font:500 12px Inter;width:240px;text-align:center;position:relative;box-shadow:var(--shadow-lg)}
+  .tooltip-content::after{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid var(--ink)}
+  .tooltip-content b{color:#FCD34D}
+  .tooltip-content button{background:transparent;border:none;color:#94A3B8;font:600 11px Inter;cursor:pointer;display:block;margin:8px auto 0}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Onboarding & First-Time Flows</h1>
+  <p class="sub">First impressions. Education without friction.</p>
+
+  <div class="component" data-name="Onboarding · Step 1 (Welcome)">
+    <div class="ob-screen">
+      <div class="ob-illust">🐟</div>
+      <h2>Fresh fish, direct from sellers</h2>
+      <p>Skip the supermarket. Order from local Mumbai fishermen with same-day catch.</p>
+      <div class="ob-dots"><div class="dot active"></div><div class="dot"></div><div class="dot"></div></div>
+      <button class="ob-cta">Next →</button>
+      <button class="ob-skip">Skip</button>
+    </div>
+    <div class="spec"><b>3 steps max</b> · always show progress dots · always offer skip</div>
+  </div>
+
+  <div class="component" data-name="Onboarding · Step 2 (Pre-order)">
+    <div class="ob-screen">
+      <div class="ob-illust">🌙</div>
+      <h2>Tomorrow's catch, reserved tonight</h2>
+      <p>Pre-order by 10pm. Seller reserves at the dock by 5am. Fresh fish guaranteed.</p>
+      <div class="ob-dots"><div class="dot"></div><div class="dot active"></div><div class="dot"></div></div>
+      <button class="ob-cta">Next →</button>
+      <button class="ob-skip">Skip</button>
+    </div>
+    <div class="spec"><b>Highlight differentiator</b> in onboarding · sets expectation early</div>
+  </div>
+
+  <div class="component" data-name="Onboarding · Step 3 (Location)">
+    <div class="ob-screen">
+      <div class="ob-illust">📍</div>
+      <h2>Find sellers near you</h2>
+      <p>Allow location to see fresh fish from your neighborhood. Or enter manually.</p>
+      <div class="ob-dots"><div class="dot"></div><div class="dot"></div><div class="dot active"></div></div>
+      <button class="ob-cta">Allow location</button>
+      <button class="ob-skip">Enter manually</button>
+    </div>
+    <div class="spec"><b>Final step = action</b> · ends with permission ask + manual fallback</div>
+  </div>
+
+  <div class="component" data-name="First Order · Celebration Screen">
+    <div class="first-order-celebration">
+      <div class="foc-badge">First order</div>
+      <h2>You're in! 🎉</h2>
+      <p>Free delivery on this order from Kamla Tai. Welcome to Relifish.</p>
+      <button class="foc-cta">Track order →</button>
+    </div>
+    <div class="spec"><b>Delight moment</b> · only after first successful order · drives second-order intent</div>
+  </div>
+
+  <div class="component" data-name="Coachmark · Pre-order Tooltip">
+    <div class="tooltip-content">
+      <b>New: Pre-order</b><br>
+      Order tonight, fresh fish ready by 7am tomorrow.
+      <button>Got it</button>
+    </div>
+    <div class="spec"><b>One-time tooltip</b> · points at pre-order tab in nav · dismissed forever after first tap</div>
+  </div>
+</div>
+</body>
+</html>
