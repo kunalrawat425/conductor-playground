@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Molecule — Pre-order Banner</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .banner{width:336px;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #C7D2FE;border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .banner .icon{font-size:36px}
+  .banner .text{flex:1}
+  .banner h4{font:700 14px Inter;color:#3730A3}
+  .banner p{font:400 11px Inter;color:#4338CA;margin-top:2px}
+  .banner .btn{background:#4F46E5;color:#fff;font:700 11px Inter;padding:8px 14px;border-radius:var(--radius-sm);border:none;flex-shrink:0;cursor:pointer}
+
+  .promo-hero{width:336px;background:linear-gradient(135deg,#4F46E5,#7C3AED);border-radius:var(--radius-lg);padding:20px;color:#fff;position:relative;overflow:hidden}
+  .promo-hero::before{content:'🌙';position:absolute;right:-10px;top:-10px;font-size:120px;opacity:.15}
+  .promo-hero h3{font:800 20px Inter;line-height:1.2;position:relative}
+  .promo-hero p{font:400 13px Inter;margin-top:6px;opacity:.9;position:relative}
+  .promo-hero .btn{background:#fff;color:#4F46E5;font:700 13px Inter;padding:10px 20px;border-radius:var(--radius-sm);border:none;margin-top:14px;position:relative;cursor:pointer}
+
+  .empty-banner{width:336px;background:linear-gradient(135deg,#FFF7ED,#FEF3C7);border-radius:var(--radius);padding:16px;display:flex;gap:12px;align-items:flex-start}
+  .empty-banner .icon{font-size:28px}
+  .empty-banner h4{font:700 13px Inter;color:#92400E}
+  .empty-banner p{font:400 11px Inter;color:#B45309;margin-top:2px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Pre-order Banner</h1>
+  <p class="sub">Our differentiator. Must be prominent. Three variants for different screens.</p>
+
+  <div class="component" data-name="PreorderBanner · Inline">
+    <div class="component-variants">
+      <div class="banner">
+        <div class="icon">🌙</div>
+        <div class="text">
+          <h4>Pre-order tomorrow's catch</h4>
+          <p>Order tonight, reserved at dock by 5am</p>
+        </div>
+        <button class="btn">Browse</button>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Placement:</b> home page, below search, above category strip<br>
+      <b>bg:</b> indigo gradient (#EEF2FF → #E0E7FF) · <b>border:</b> 1px #C7D2FE<br>
+      <b>Icon:</b> moon 🌙 (nighttime = pre-order time)
+    </div>
+  </div>
+
+  <div class="component" data-name="PreorderBanner · Hero">
+    <div class="component-variants">
+      <div class="promo-hero">
+        <h3>Tomorrow's catch, reserved tonight</h3>
+        <p>Pre-order by 10pm. Ready at 7am. Zero waste.</p>
+        <button class="btn">Start pre-order</button>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Full hero variant</b> · for pre-order dedicated page · gradient indigo→purple<br>
+      <b>Background moon</b> at 15% opacity · marketing hero
+    </div>
+  </div>
+
+  <div class="component" data-name="PreorderBanner · Empty State">
+    <div class="component-variants">
+      <div class="empty-banner">
+        <div class="icon">💡</div>
+        <div class="text">
+          <h4>No sellers open right now</h4>
+          <p>Pre-order tomorrow's catch instead — 12 sellers available for tomorrow morning.</p>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Empty state helper</b> · shown when current seller list is empty (late night, early morning)</div>
+  </div>
+</div>
+</body>
+</html>

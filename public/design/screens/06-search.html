@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen 06 — Search</title>
+<link rel="stylesheet" href="../_shared.css">
+<link rel="stylesheet" href="_screen-shared.css">
+<style>
+  .search-header{padding:14px 16px;background:#fff;border-bottom:1px solid #E2E8F0;display:flex;gap:10px;align-items:center}
+  .cancel{font:600 13px Inter;color:#0066FF;cursor:pointer}
+  .search-input{flex:1;padding:10px 14px;background:#F1F5F9;border-radius:10px;font:400 14px Inter;color:#0F172A;border:none;outline:none}
+
+  .chip-row{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;background:#fff;border-bottom:1px solid #E2E8F0}
+  .chip-row::-webkit-scrollbar{display:none}
+  .filter-chip{padding:6px 14px;font:600 12px Inter;border-radius:20px;border:1px solid #E2E8F0;background:#fff;color:#64748B;flex-shrink:0;white-space:nowrap}
+  .filter-chip.active{background:#0066FF;color:#fff;border-color:#0066FF}
+
+  .section-head{padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+  .section-head h3{font:700 13px Inter;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
+  .section-head a{font:600 11px Inter;color:#DC2626}
+
+  .recent{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
+  .recent-chip{padding:6px 12px;background:#F1F5F9;border-radius:20px;font:500 12px Inter;color:#0F172A;display:flex;align-items:center;gap:4px}
+  .recent-chip .x{color:#94A3B8;font-size:14px;margin-left:2px}
+
+  .trending{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px}
+  .trend-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer}
+  .trend-card .e{font-size:28px}
+  .trend-card .n{font:600 11px Inter;color:#0F172A;margin-top:4px}
+  .trend-card .p{font:500 10px Inter;color:#059669;margin-top:2px}
+
+  .result{padding:12px 16px;background:#fff;border-bottom:1px solid #F1F5F9;display:flex;gap:12px;align-items:center}
+  .result .emoji{width:44px;height:44px;border-radius:10px;background:#E0F2FE;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .result .body{flex:1}
+  .result .n{font:700 14px Inter;color:#0F172A}
+  .result .sub{font:400 11px Inter;color:#64748B;margin-top:1px}
+  .result .price{font:800 13px Inter;color:#0F172A}
+  .result .from{font:500 10px Inter;color:#64748B}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Screen 06 — Search</h1>
+  <p class="sub">Full-screen search overlay. Recent + Trending + Live results.</p>
+
+  <div class="phone">
+    <div class="phone-status">9:41</div>
+    <div class="phone-body">
+      <div class="search-header">
+        <span class="cancel">← Cancel</span>
+        <input class="search-input" placeholder="Search fish, sellers, areas..." value="Surmai">
+      </div>
+
+      <div class="chip-row">
+        <div class="filter-chip active">All</div>
+        <div class="filter-chip">Fish</div>
+        <div class="filter-chip">Sellers</div>
+        <div class="filter-chip">Pre-order</div>
+        <div class="filter-chip">Cleaned</div>
+      </div>
+
+      <div class="section-head"><h3>Showing results for "Surmai"</h3></div>
+
+      <div class="result">
+        <div class="emoji">🐟</div>
+        <div class="body">
+          <div class="n">Surmai (King Fish)</div>
+          <div class="sub">Kamla Tai · 1.2 km</div>
+        </div>
+        <div><div class="price">₹650/kg</div><div class="from">from</div></div>
+      </div>
+      <div class="result">
+        <div class="emoji">🐟</div>
+        <div class="body">
+          <div class="n">Surmai (King Fish)</div>
+          <div class="sub">Rafiq Bhai · 0.8 km</div>
+        </div>
+        <div><div class="price">₹620/kg</div><div class="from">from</div></div>
+      </div>
+      <div class="result">
+        <div class="emoji">🐟</div>
+        <div class="body">
+          <div class="n">Surmai (Cut)</div>
+          <div class="sub">Kamla Tai · Pre-order</div>
+        </div>
+        <div><div class="price">₹680/kg</div><div class="from">from</div></div>
+      </div>
+
+      <div class="section-head"><h3>Recent searches</h3><a>Clear all</a></div>
+      <div class="recent">
+        <div class="recent-chip">Pomfret <span class="x">×</span></div>
+        <div class="recent-chip">Prawns <span class="x">×</span></div>
+        <div class="recent-chip">Bandra <span class="x">×</span></div>
+        <div class="recent-chip">Kamla Tai <span class="x">×</span></div>
+      </div>
+
+      <div class="section-head"><h3>Trending near you</h3></div>
+      <div class="trending">
+        <div class="trend-card"><div class="e">🐟</div><div class="n">Surmai</div><div class="p">₹620/kg</div></div>
+        <div class="trend-card"><div class="e">🦐</div><div class="n">Prawns</div><div class="p">₹480/kg</div></div>
+        <div class="trend-card"><div class="e">🦀</div><div class="n">Crab</div><div class="p">₹400/kg</div></div>
+        <div class="trend-card"><div class="e">🐟</div><div class="n">Pomfret</div><div class="p">₹850/pc</div></div>
+        <div class="trend-card"><div class="e">🐟</div><div class="n">Bangda</div><div class="p">₹250/kg</div></div>
+        <div class="trend-card"><div class="e">🐟</div><div class="n">Ghol</div><div class="p">₹450/kg</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen 01 — Home</title>
+<link rel="stylesheet" href="../_shared.css">
+<link rel="stylesheet" href="_screen-shared.css">
+<style>
+  .search{margin:0 16px;transform:translateY(-14px);padding:12px 14px;background:#fff;border-radius:12px;font:400 13px Inter;color:#94A3B8;box-shadow:0 4px 6px rgba(0,0,0,.07);display:flex;align-items:center;gap:8px;position:relative;z-index:5}
+
+  .banner{margin:0 16px 12px;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #C7D2FE;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+  .banner .icon{font-size:28px}
+  .banner h4{font:700 13px Inter;color:#3730A3}
+  .banner p{font:400 10px Inter;color:#4338CA;margin-top:1px}
+  .banner .btn{background:#4F46E5;color:#fff;font:700 11px Inter;padding:6px 12px;border-radius:8px;border:none;flex-shrink:0}
+
+  .cats{display:flex;gap:10px;padding:0 16px;margin-bottom:14px;overflow-x:auto}
+  .cats::-webkit-scrollbar{display:none}
+  .cat{text-align:center;flex-shrink:0;width:56px}
+  .cat .c{width:48px;height:48px;border-radius:12px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .cat.active .c{background:#E6F0FF;outline:2px solid #0066FF;outline-offset:-2px}
+  .cat .n{font:500 9px Inter;color:#334155;margin-top:4px}
+
+  .section{padding:0 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .section h3{font:700 15px Inter;color:#0F172A}
+  .section a{font:600 12px Inter;color:#0066FF;text-decoration:none}
+
+  .card{margin:0 16px 12px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden}
+  .card-img{height:100px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-start;padding:8px;position:relative}
+  .card-img .emoji{font-size:40px;position:absolute;right:12px;bottom:8px;opacity:.3}
+  .card-img .offer{background:#0066FF;color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px}
+  .card-body{padding:12px 14px}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .seller{font:700 14px Inter;color:#0F172A}
+  .loc{font:400 11px Inter;color:#64748B;margin-top:1px}
+  .rating{display:flex;align-items:center;gap:3px;background:#059669;color:#fff;font:700 11px Inter;padding:2px 6px;border-radius:5px;height:20px}
+  .tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .tag{font:500 10px Inter;padding:2px 8px;border-radius:20px;background:#F1F5F9;color:#64748B}
+  .tag.g{background:#ECFDF5;color:#059669}
+  .tag.b{background:#E6F0FF;color:#0066FF}
+  .menu{display:flex;gap:8px;padding:10px 14px 12px;overflow-x:auto;border-top:1px solid #E2E8F0}
+  .menu::-webkit-scrollbar{display:none}
+  .chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#F8FAFC;border-radius:8px;flex-shrink:0}
+  .chip .e{font-size:16px}
+  .chip .n{font:600 11px Inter;color:#0F172A}
+  .chip .p{font:700 11px Inter;color:#059669}
+  .delivery{display:flex;align-items:center;gap:6px;padding:8px 14px;background:#ECFDF5;font:500 11px Inter;color:#059669}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Screen 01 — Home</h1>
+  <p class="sub">Seller browse homepage. First impression. Must convert.</p>
+
+  <div class="phone">
+    <div class="phone-status">9:41</div>
+    <div class="phone-body with-nav">
+      <div class="app-header" style="padding-bottom:20px">
+        <span class="logo">relifish</span>
+        <div class="loc-wrap">
+          <div class="loc-main">Bandra West ▼</div>
+          <div class="loc-sub">Deliver in 45 min · 3 sellers</div>
+        </div>
+        <div class="profile">👤</div>
+      </div>
+      <div class="search">🔍 Search "Surmai", "Pomfret", sellers...</div>
+
+      <div class="banner">
+        <div class="icon">🌙</div>
+        <div style="flex:1">
+          <h4>Pre-order tomorrow's catch</h4>
+          <p>Order tonight, reserved by 5am</p>
+        </div>
+        <button class="btn">Browse</button>
+      </div>
+
+      <div class="cats">
+        <div class="cat active"><div class="c">🐟</div><div class="n">All Fish</div></div>
+        <div class="cat"><div class="c">🦐</div><div class="n">Prawns</div></div>
+        <div class="cat"><div class="c">🦀</div><div class="n">Crab</div></div>
+        <div class="cat"><div class="c">🦑</div><div class="n">Squid</div></div>
+        <div class="cat"><div class="c">🐚</div><div class="n">Shellfish</div></div>
+      </div>
+
+      <div class="section"><h3>Near you</h3><a>See all →</a></div>
+
+      <div class="card">
+        <div class="card-img"><span class="offer">Same-day catch</span><span class="emoji">🐟</span></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div><div class="seller">Kamla Tai Fish Stall</div><div class="loc">Sassoon Dock · 1.2 km · 45 min</div></div>
+            <div class="rating">4.8 ★</div>
+          </div>
+          <div class="tags"><span class="tag g">Open now</span><span class="tag b">Pre-order</span><span class="tag">Cleaned & cut</span></div>
+        </div>
+        <div class="menu">
+          <div class="chip"><span class="e">🐟</span><div><div class="n">Surmai</div><div class="p">₹650/kg</div></div></div>
+          <div class="chip"><span class="e">🐟</span><div><div class="n">Rawas</div><div class="p">₹800/kg</div></div></div>
+          <div class="chip"><span class="e">🦐</span><div><div class="n">Prawns</div><div class="p">₹500/kg</div></div></div>
+        </div>
+        <div class="delivery">🚲 Delivery available · Free above ₹1,000</div>
+      </div>
+
+      <div class="card">
+        <div class="card-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)"><span class="offer" style="background:#059669">Fresh today</span><span class="emoji">🦐</span></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div><div class="seller">Rafiq Bhai Fish</div><div class="loc">Versova Beach · 0.8 km · 30 min</div></div>
+            <div class="rating">4.6 ★</div>
+          </div>
+          <div class="tags"><span class="tag g">Open now</span><span class="tag">Pickup only</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="n-item active"><span class="icon">🏠</span>Home</div>
+      <div class="n-item"><span class="icon">🔍</span>Search</div>
+      <div class="n-item"><span class="icon">🌙</span>Pre-order</div>
+      <div class="n-item"><span class="icon">📋</span>Orders</div>
+      <div class="n-item"><span class="icon">👤</span>Account</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

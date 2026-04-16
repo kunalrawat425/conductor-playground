@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Organism — App Header</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .header{width:360px;padding:12px 16px;background:var(--brand);display:flex;align-items:center;gap:12px}
+  .logo{font:800 18px Inter;color:#fff;letter-spacing:-.02em}
+  .loc-wrap{flex:1;min-width:0}
+  .loc-main{font:700 14px Inter;color:#fff;display:flex;align-items:center;gap:4px}
+  .loc-sub{font:400 11px Inter;color:rgba(255,255,255,.75);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .loc-arrow{font-size:10px}
+  .profile{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer}
+  .cart-icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;position:relative}
+  .cart-icon .dot{position:absolute;top:-2px;right:-2px;background:var(--orange);color:#fff;font:700 9px Inter;min-width:16px;height:16px;border-radius:9999px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+  .search-card{width:336px;margin-top:-14px;margin-left:12px;padding:14px 16px;background:#fff;border-radius:var(--radius);font:400 13px Inter;color:var(--ink4);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px;position:relative;z-index:10}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>App Header</h1>
+  <p class="sub">Top-of-app header. Brand presence + location + actions.</p>
+
+  <div class="component" data-name="AppHeader · Default">
+    <div class="component-variants">
+      <div>
+        <div class="header">
+          <span class="logo">relifish</span>
+          <div class="loc-wrap">
+            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
+            <div class="loc-sub">Deliver in 45 min · 3 sellers nearby</div>
+          </div>
+          <div class="profile">👤</div>
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Height:</b> 56px (content) · <b>bg:</b> #0066FF · <b>sticky top</b><br>
+      <b>Logo:</b> 800/18px lowercase · <b>Location:</b> 700/14 + 400/11 subtitle<br>
+      <b>Profile:</b> 32px circle · rgba(255,255,255,.2) bg
+    </div>
+  </div>
+
+  <div class="component" data-name="AppHeader · With Search (Home)">
+    <div class="component-variants">
+      <div>
+        <div class="header" style="padding-bottom:20px">
+          <span class="logo">relifish</span>
+          <div class="loc-wrap">
+            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
+            <div class="loc-sub">Deliver in 45 min</div>
+          </div>
+          <div class="cart-icon">🛒<span class="dot">2</span></div>
+        </div>
+        <div class="search-card">
+          <span>🔍</span> Search "Surmai", "Pomfret", sellers...
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Search overlap:</b> margin-top -14px · floats on brand bg<br>
+      <b>Cart icon:</b> badge shows cart count · orange dot for visibility
+    </div>
+  </div>
+
+  <div class="component" data-name="AppHeader · With Back">
+    <div class="component-variants">
+      <div class="header">
+        <span style="font:700 20px Inter;color:#fff;cursor:pointer">←</span>
+        <div class="loc-wrap">
+          <div class="loc-main">Kamla Tai Fish Stall</div>
+          <div class="loc-sub">Sassoon Dock · 1.2 km</div>
+        </div>
+        <div class="profile">⋯</div>
+      </div>
+    </div>
+    <div class="spec"><b>Page-level header:</b> back arrow + page title · ⋯ menu right</div>
+  </div>
+
+  <div class="component" data-name="AppHeader · Pre-order Mode">
+    <div class="component-variants">
+      <div class="header" style="background:#4F46E5">
+        <span class="logo">🌙 relifish</span>
+        <div class="loc-wrap">
+          <div class="loc-main">Pre-order mode</div>
+          <div class="loc-sub">Tomorrow 7am · Bandra West</div>
+        </div>
+        <div class="profile">👤</div>
+      </div>
+    </div>
+    <div class="spec"><b>Pre-order variant:</b> indigo bg · moon prefix · differentiates context</div>
+  </div>
+</div>
+</body>
+</html>

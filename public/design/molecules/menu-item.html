@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Molecule — Menu Item Card</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .item-card{width:160px;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+  .item-img{height:96px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
+  .item-img .cut-badge{position:absolute;top:6px;left:6px;background:var(--brand-l);color:var(--brand);font:600 9px Inter;padding:2px 6px;border-radius:4px}
+  .item-img .sold-out{position:absolute;inset:0;background:rgba(220,38,38,.1);display:flex;align-items:center;justify-content:center}
+  .item-img .sold-out span{background:var(--red);color:#fff;font:700 10px Inter;padding:4px 10px;border-radius:4px}
+  .item-body{padding:10px 12px}
+  .item-name{font:600 13px Inter;color:var(--ink)}
+  .item-weight{font:400 10px Inter;color:var(--ink4);margin-top:1px}
+  .item-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  .item-price{font:800 14px Inter;color:var(--ink)}
+  .item-price .orig{text-decoration:line-through;color:var(--ink4);font-weight:400;font-size:11px;margin-left:4px}
+  .add-btn{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;border:none;font:700 18px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .add-counter{display:flex;align-items:center;background:var(--brand);border-radius:8px;overflow:hidden;height:30px}
+  .add-counter button{background:transparent;color:#fff;border:none;width:30px;height:30px;font:700 14px Inter;cursor:pointer}
+  .add-counter span{color:#fff;font:700 12px Inter;padding:0 6px;min-width:20px;text-align:center}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:340px}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Menu Item Card</h1>
+  <p class="sub">2-col grid product card. Blinkit/Zepto exact pattern.</p>
+
+  <div class="component" data-name="MenuItem · Default">
+    <div class="component-variants">
+      <div class="item-card">
+        <div class="item-img" style="background:linear-gradient(135deg,#E0F2FE,#BAE6FD)">🐟<span class="cut-badge">Whole / Cut</span></div>
+        <div class="item-body">
+          <div class="item-name">Surmai</div>
+          <div class="item-weight">King Fish · Per kg</div>
+          <div class="item-bottom">
+            <div class="item-price">₹650</div>
+            <button class="add-btn">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Width:</b> 160px (fits 2-col on 360px phone - 32px padding - 12px gap)<br>
+      <b>Image:</b> 96px height · <b>Padding:</b> 10px 12px · <b>Add btn:</b> 30x30 circle
+    </div>
+  </div>
+
+  <div class="component" data-name="MenuItem · In Cart">
+    <div class="component-variants">
+      <div class="item-card" style="box-shadow:0 0 0 2px var(--brand)">
+        <div class="item-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)">🦐<span class="cut-badge" style="background:var(--green-l);color:var(--green)">Fresh today</span></div>
+        <div class="item-body">
+          <div class="item-name">Prawns</div>
+          <div class="item-weight">Medium · Per kg</div>
+          <div class="item-bottom">
+            <div class="item-price">₹500</div>
+            <div class="add-counter"><button>−</button><span>2</span><button>+</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Selected state:</b> 2px brand ring around card · counter replaces + button</div>
+  </div>
+
+  <div class="component" data-name="MenuItem · Variants">
+    <div class="component-variants">
+      <div class="grid">
+        <div class="item-card">
+          <div class="item-img" style="background:#FFF7ED">🐟<span class="cut-badge" style="background:var(--orange-l);color:var(--orange)">Limited</span></div>
+          <div class="item-body">
+            <div class="item-name">Pomfret</div>
+            <div class="item-weight">White · Per piece</div>
+            <div class="item-bottom"><div class="item-price">₹900</div><button class="add-btn">+</button></div>
+          </div>
+        </div>
+
+        <div class="item-card">
+          <div class="item-img" style="background:var(--bg3)">🐟<div class="sold-out"><span>SOLD OUT</span></div></div>
+          <div class="item-body" style="opacity:.5">
+            <div class="item-name">Rawas</div>
+            <div class="item-weight">Indian Salmon · Per kg</div>
+            <div class="item-bottom"><div class="item-price">₹800</div><button class="add-btn" disabled style="background:var(--ink4);cursor:not-allowed">+</button></div>
+          </div>
+        </div>
+
+        <div class="item-card">
+          <div class="item-img" style="background:linear-gradient(135deg,#F3E8FF,#E9D5FF)">🌙<span class="cut-badge" style="background:#F3E8FF;color:#7C3AED">Pre-order</span></div>
+          <div class="item-body">
+            <div class="item-name">Ghol</div>
+            <div class="item-weight">Tomorrow · Per kg</div>
+            <div class="item-bottom"><div class="item-price">₹450</div><button class="add-btn" style="background:#7C3AED">+</button></div>
+          </div>
+        </div>
+
+        <div class="item-card">
+          <div class="item-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)">🦀<span class="cut-badge" style="background:var(--green-l);color:var(--green)">-20%</span></div>
+          <div class="item-body">
+            <div class="item-name">Crab</div>
+            <div class="item-weight">Live · Per kg</div>
+            <div class="item-bottom"><div class="item-price">₹400<span class="orig">₹500</span></div><button class="add-btn">+</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec">
+      <b>Limited:</b> orange badge · <b>Sold out:</b> red overlay + disabled btn · <b>Pre-order:</b> purple accent · <b>Discount:</b> green -X% + strikethrough price
+    </div>
+  </div>
+
+  <div class="component" data-name="MenuItem · Skeleton">
+    <div class="component-variants">
+      <div class="item-card">
+        <div class="item-img" style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite"></div>
+        <div class="item-body">
+          <div style="height:11px;background:#E2E8F0;border-radius:3px;margin-bottom:4px;width:60%"></div>
+          <div style="height:9px;background:#F1F5F9;border-radius:3px;width:80%"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:10px;align-items:center">
+            <div style="height:14px;width:40px;background:#E2E8F0;border-radius:3px"></div>
+            <div style="width:30px;height:30px;background:#F1F5F9;border-radius:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec"><b>Loading state</b> · used while fetching menu items</div>
+  </div>
+
+  <style>@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}</style>
+</div>
+</body>
+</html>

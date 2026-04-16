@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Atom — Badges & Tags</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+  .rating{display:inline-flex;align-items:center;gap:3px;background:var(--green);color:#fff;font:700 11px Inter;padding:3px 7px;border-radius:5px}
+  .rating-lg{font:700 13px Inter;padding:4px 9px}
+  .offer-badge{background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px;display:inline-block}
+  .offer-badge-green{background:var(--green)}
+  .offer-badge-orange{background:var(--orange)}
+  .offer-badge-red{background:var(--red)}
+  .tag{display:inline-flex;font:500 10px Inter;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--ink3)}
+  .tag-green{background:var(--green-l);color:var(--green)}
+  .tag-brand{background:var(--brand-l);color:var(--brand)}
+  .tag-orange{background:var(--orange-l);color:var(--orange)}
+  .tag-red{background:var(--red-l);color:var(--red)}
+  .status-dot{display:inline-flex;align-items:center;gap:5px;font:500 11px Inter}
+  .status-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ink4)}
+  .status-dot.open{color:var(--green)}
+  .status-dot.open::before{background:var(--green)}
+  .status-dot.closed{color:var(--red)}
+  .status-dot.closed::before{background:var(--red)}
+  .cut-badge{background:var(--brand-l);color:var(--brand);font:600 9px Inter;padding:2px 6px;border-radius:4px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="figma-page">
+  <h1>Badges & Tags</h1>
+  <p class="sub">Status indicators. Rating badges, offer badges, status tags.</p>
+
+  <div class="component" data-name="RatingBadge">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">sm</span><span class="rating">4.8 ★</span></div>
+      <div class="variant"><span class="variant-label">lg</span><span class="rating rating-lg">4.8 ★</span></div>
+      <div class="variant"><span class="variant-label">new</span><span class="rating" style="background:var(--ink3)">NEW</span></div>
+      <div class="variant"><span class="variant-label">low (orange)</span><span class="rating" style="background:var(--orange)">3.2 ★</span></div>
+    </div>
+    <div class="spec"><b>Zomato-style.</b> Green bg = trust. <b>sm:</b> 11/700 · padding 3px 7px · radius 5px</div>
+  </div>
+
+  <div class="component" data-name="OfferBadge">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">brand</span><span class="offer-badge">Same-day catch</span></div>
+      <div class="variant"><span class="variant-label">green</span><span class="offer-badge offer-badge-green">Fresh today</span></div>
+      <div class="variant"><span class="variant-label">orange</span><span class="offer-badge offer-badge-orange">Limited stock</span></div>
+      <div class="variant"><span class="variant-label">red</span><span class="offer-badge offer-badge-red">Sold out</span></div>
+    </div>
+    <div class="spec"><b>Placement:</b> top-left on card images · <b>font:</b> 700 / 10px · <b>padding:</b> 3px 8px · <b>radius:</b> 6px</div>
+  </div>
+
+  <div class="component" data-name="Tag (Status Chip)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">neutral</span><span class="tag">Pickup only</span></div>
+      <div class="variant"><span class="variant-label">green</span><span class="tag tag-green">Open now</span></div>
+      <div class="variant"><span class="variant-label">brand</span><span class="tag tag-brand">Pre-order</span></div>
+      <div class="variant"><span class="variant-label">orange</span><span class="tag tag-orange">Closing soon</span></div>
+      <div class="variant"><span class="variant-label">red</span><span class="tag tag-red">Closed</span></div>
+    </div>
+    <div class="spec"><b>font:</b> 500 / 10px · <b>padding:</b> 3px 10px · <b>radius:</b> 20px (pill)</div>
+  </div>
+
+  <div class="component" data-name="StatusDot (Live Indicator)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">open</span><span class="status-dot open">Open · Sassoon Dock</span></div>
+      <div class="variant"><span class="variant-label">closed</span><span class="status-dot closed">Closed · Opens 5am</span></div>
+    </div>
+    <div class="spec"><b>Dot:</b> 6x6px circle · <b>font:</b> 500 / 11px · animate pulse for live state</div>
+  </div>
+
+  <div class="component" data-name="CutBadge (Menu Item)">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">options</span><span class="cut-badge">Whole / Cut</span></div>
+      <div class="variant"><span class="variant-label">cleaned</span><span class="cut-badge" style="background:var(--green-l);color:var(--green)">Cleaned</span></div>
+      <div class="variant"><span class="variant-label">fresh-today</span><span class="cut-badge" style="background:var(--green-l);color:var(--green)">Fresh today</span></div>
+    </div>
+    <div class="spec"><b>Placement:</b> top-left on menu item image · <b>font:</b> 600 / 9px · <b>padding:</b> 2px 6px</div>
+  </div>
+
+  <div class="component" data-name="OrderStatusBadge">
+    <div class="component-variants">
+      <div class="variant"><span class="variant-label">placed</span><span class="tag tag-brand">Order placed</span></div>
+      <div class="variant"><span class="variant-label">confirmed</span><span class="tag tag-green">Confirmed</span></div>
+      <div class="variant"><span class="variant-label">ready</span><span class="tag" style="background:#E0F2FE;color:#0369A1">Ready for pickup</span></div>
+      <div class="variant"><span class="variant-label">completed</span><span class="tag tag-green">Completed</span></div>
+      <div class="variant"><span class="variant-label">cancelled</span><span class="tag tag-red">Cancelled</span></div>
+      <div class="variant"><span class="variant-label">scheduled</span><span class="tag" style="background:#F3E8FF;color:#7C3AED">Scheduled</span></div>
+    </div>
+    <div class="spec"><b>Color-coded status</b> · used in order history, tracking page, seller dashboard</div>
+  </div>
+</div>
+</body>
+</html>
