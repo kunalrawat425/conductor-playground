@@ -1226,3 +1226,34 @@ body.v2-has-cart { padding-bottom: calc(64px + 60px + env(safe-area-inset-bottom
 .v2-order-row, .v2-order-row *,
 .v2-me-list-item, .v2-me-li-name,
 .v2-empty-ghost { text-decoration: none; }
+
+/* === Pagination === */
+.v2-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  margin-top: 8px;
+}
+.v2-pg-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1.5px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
+  font: 600 13px Inter;
+  color: var(--v2-ink);
+  cursor: pointer;
+}
+.v2-pg-btn:hover:not(:disabled) {
+  border-color: var(--v2-brand);
+  color: var(--v2-brand);
+}
+.v2-pg-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.v2-pg-info {
+  font: 500 12px Inter;
+  color: var(--v2-ink-3);
+}

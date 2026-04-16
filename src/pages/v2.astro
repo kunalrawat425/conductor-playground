@@ -33,6 +33,18 @@ const categories = [
     <CategoryStrip items={categories} />
   </div>
 
+  <!-- Filter chips: timing × fulfillment × top-rated -->
+  <div class="v2-filter-chips" id="v2-filter-chips" role="tablist" aria-label="Filter sellers">
+    <button type="button" class="v2-fchip v2-fchip-active" data-filter="all" data-group="all">All</button>
+    <button type="button" class="v2-fchip" data-filter="open" data-group="time">Open now</button>
+    <button type="button" class="v2-fchip" data-filter="preorder" data-group="time">Pre-order</button>
+    <span class="v2-fchip-sep" aria-hidden="true"></span>
+    <button type="button" class="v2-fchip" data-filter="pickup" data-group="fulfill">Pickup</button>
+    <button type="button" class="v2-fchip" data-filter="delivery" data-group="fulfill">Delivery</button>
+    <span class="v2-fchip-sep" aria-hidden="true"></span>
+    <button type="button" class="v2-fchip" data-filter="topRated" data-group="toggle">Top rated ★</button>
+  </div>
+
   <div class="v2-section-head">
     <h2>Sellers near you</h2>
     <span id="v2-seller-count" class="v2-count-badge">…</span>
@@ -85,6 +97,39 @@ const categories = [
     .v2-cards-grid { grid-template-columns: 1fr 1fr; }
   }
   .v2-skel-card { border-radius: 12px; overflow: hidden; }
+
+  /* Filter chips */
+  .v2-filter-chips {
+    display: flex; gap: 6px;
+    padding: 12px 16px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    align-items: center;
+  }
+  .v2-filter-chips::-webkit-scrollbar { display: none; }
+  .v2-fchip {
+    padding: 7px 14px;
+    border: 1.5px solid var(--v2-border);
+    background: #fff;
+    color: var(--v2-ink-2);
+    font: 600 12px Inter;
+    border-radius: 9999px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background var(--v2-dur-fast) var(--v2-ease), color var(--v2-dur-fast) var(--v2-ease), border-color var(--v2-dur-fast) var(--v2-ease);
+  }
+  .v2-fchip:hover { border-color: var(--v2-brand-m); }
+  .v2-fchip-active {
+    background: var(--v2-brand);
+    color: #fff;
+    border-color: var(--v2-brand);
+  }
+  .v2-fchip-sep {
+    width: 1px; height: 20px;
+    background: var(--v2-border);
+    flex-shrink: 0;
+    margin: 0 2px;
+  }
 </style>
 
 <script>
@@ -237,30 +282,69 @@ const categories = [
 
       loading.style.display = "none";
 
-      if (groups.length === 0) {
-        if (buyerLoc) {
-          empty.style.display = "block";
-        } else {
-          empty.style.display = "block";
-        }
-        return;
+      // Cache for filter re-render
+      (window as any).__v2allGroups = groups;
+      renderFiltered();
+    } catch (err) {
+      console.error("v2: load failed", err);
+      loading.innerHTML = `<div style="text-align:center;padding:40px;color:var(--v2-red);">Failed to load. Refresh to try again.</div>`;
+    }
+  }
+
+  // Filter state
+  const filterState = {
+    time: null as null | "open" | "preorder",
+    fulfill: null as null | "pickup" | "delivery",
+    topRated: false,
+  };
+
+  function applyFilters(groups: any[]) {
+    return groups.filter(g => {
+      const s = g.seller;
+      if (filterState.time === "open" && !g.open) return false;
+      if (filterState.time === "preorder" && !s.accepts_preorder) return false;
+      if (filterState.fulfill === "pickup" && s.has_delivery === true && (!s.delivery_rad || s.delivery_rad <= 0)) {
+        // pickup means the seller offers pickup. All sellers do by default.
       }
+      if (filterState.fulfill === "delivery" && !s.has_delivery) return false;
+      return true;
+    });
+  }
 
-      // Check if all closed
-      const anyOpen = groups.some(g => g.open);
-      if (!anyOpen) {
-        const anyPreorder = groups.some(g => g.seller.accepts_preorder);
-        if (!anyPreorder) {
-          closed.style.display = "block";
-          return;
-        }
-      }
+  function renderFiltered() {
+    const allGroups = (window as any).__v2allGroups || [];
+    const grid = document.getElementById("v2-sellers-grid")!;
+    const empty = document.getElementById("v2-empty")!;
+    const closed = document.getElementById("v2-closed")!;
+    const count = document.getElementById("v2-seller-count")!;
 
-      count.textContent = String(groups.length);
-      grid.style.display = "grid";
+    let filtered = applyFilters(allGroups);
+    if (filterState.topRated) {
+      filtered = [...filtered].sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
+    }
 
-      // Render cards (use HTML strings so we don't need to re-import Astro components)
-      grid.innerHTML = groups.map(g => {
+    empty.style.display = "none";
+    closed.style.display = "none";
+
+    if (allGroups.length === 0) {
+      empty.style.display = "block";
+      grid.style.display = "none";
+      return;
+    }
+
+    if (filtered.length === 0) {
+      grid.style.display = "none";
+      grid.innerHTML = "";
+      const noMatch = `<div style="padding:40px 24px;text-align:center;background:#fff;border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:48px;margin-bottom:12px;">🎣</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers match these filters</div><div style="font:400 12px Inter;color:var(--v2-ink-3);">Tap All to see everyone.</div></div>`;
+      empty.innerHTML = noMatch;
+      empty.style.display = "block";
+      return;
+    }
+
+    count.textContent = String(filtered.length);
+    grid.style.display = "grid";
+
+    grid.innerHTML = filtered.map((g: any) => {
         const s = g.seller;
         const top = (g.listings || []).slice(0, 4).map(l => {
           const name = getSpeciesDisplay(l.species);
@@ -326,12 +410,44 @@ const categories = [
           ${deliveryBar}
         </a>`;
       }).join("");
-
-    } catch (err) {
-      console.error("v2: load failed", err);
-      loading.innerHTML = `<div style="text-align:center;padding:40px;color:var(--v2-red);">Failed to load. Refresh to try again.</div>`;
-    }
   }
+
+  // Wire filter chips
+  document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const filter = btn.dataset.filter!;
+      const group = btn.dataset.group!;
+
+      if (filter === "all") {
+        // Reset
+        filterState.time = null;
+        filterState.fulfill = null;
+        filterState.topRated = false;
+      } else if (group === "time") {
+        // Toggle off if active, else select
+        filterState.time = filterState.time === filter ? null : (filter as any);
+      } else if (group === "fulfill") {
+        filterState.fulfill = filterState.fulfill === filter ? null : (filter as any);
+      } else if (group === "toggle") {
+        filterState.topRated = !filterState.topRated;
+      }
+
+      // Update chip styles
+      const noFilters = !filterState.time && !filterState.fulfill && !filterState.topRated;
+      document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((b) => {
+        const f = b.dataset.filter!;
+        const g = b.dataset.group!;
+        let active = false;
+        if (f === "all") active = noFilters;
+        else if (g === "time") active = filterState.time === f;
+        else if (g === "fulfill") active = filterState.fulfill === f;
+        else if (g === "toggle") active = filterState.topRated;
+        b.classList.toggle("v2-fchip-active", active);
+      });
+
+      renderFiltered();
+    });
+  });
 
   loadSellers();
 
