@@ -15,6 +15,8 @@ export type CartItem = {
   qty: number;
   qty_unit: string;
   price: number;
+  pricing_option_id: string;
+  pricing_label: string;
   added_at: number;
 };
 
