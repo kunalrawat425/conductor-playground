@@ -30,6 +30,17 @@ const isPage = variant === "page";
       {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
     </div>
 
+    <button
+      type="button"
+      class="v2-icon-btn"
+      id="v2-header-theme-toggle"
+      aria-label="Toggle theme"
+      title="Toggle dark/light mode"
+    >
+      <span class="v2-theme-sun">☀️</span>
+      <span class="v2-theme-moon">🌙</span>
+    </button>
+
     {showCart ? (
       <a href="/cart" class="v2-icon-btn v2-cart-icon" aria-label={`Cart with ${cartCount} items`}>
         🛒
@@ -55,5 +66,15 @@ const isPage = variant === "page";
   const trigger = document.getElementById('v2-location-trigger');
   trigger?.addEventListener('click', () => {
     document.dispatchEvent(new CustomEvent('relifish:open-location-picker'));
+  });
+
+  // Theme toggle in header (works on every page)
+  document.getElementById('v2-header-theme-toggle')?.addEventListener('click', () => {
+    const root = document.documentElement;
+    const current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('v2_theme', next); } catch {}
   });
 </script>
