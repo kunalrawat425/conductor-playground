@@ -225,29 +225,49 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
           </div>`;
       }
 
-      // Past orders
+      // Past orders — paginated (client-side, 10 per page)
       if (pastOrders.length > 0) {
-        list.innerHTML = `
-          <div class="v2-section-head-light">Past orders</div>
-          ${pastOrders.map(o => {
-            const seller = o.listing?.seller?.name || "Seller";
-            const sp = o.listing?.species || "";
-            return `
-              <a href="/track" class="v2-order-row">
-                <div class="v2-or-top">
-                  <div>
-                    <div class="v2-or-seller">${escapeHtml(seller)}</div>
-                    <div class="v2-or-meta">${escapeHtml(fmtDate(o.created_at))} · ${o.quantity}${o.quantity_unit || 'kg'} ${escapeHtml(sp)}</div>
+        const PAGE_SIZE = 10;
+        let currentPage = 1;
+        const totalPages = Math.ceil(pastOrders.length / PAGE_SIZE);
+
+        function renderPage(page: number) {
+          currentPage = Math.max(1, Math.min(totalPages, page));
+          const start = (currentPage - 1) * PAGE_SIZE;
+          const slice = pastOrders.slice(start, start + PAGE_SIZE);
+          list.innerHTML = `
+            <div class="v2-section-head-light">Past orders (${pastOrders.length})</div>
+            ${slice.map(o => {
+              const seller = o.listing?.seller?.name || "Seller";
+              const sp = o.listing?.species || "";
+              return `
+                <a href="/v2/track" class="v2-order-row">
+                  <div class="v2-or-top">
+                    <div>
+                      <div class="v2-or-seller">${escapeHtml(seller)}</div>
+                      <div class="v2-or-meta">${escapeHtml(fmtDate(o.created_at))} · ${o.quantity}${o.quantity_unit || 'kg'} ${escapeHtml(sp)}</div>
+                    </div>
+                    ${statusToTag(o.status)}
                   </div>
-                  ${statusToTag(o.status)}
-                </div>
-                <div class="v2-or-bot">
-                  <div class="v2-or-total">₹${(o.total_price || o.final_price || 0).toLocaleString("en-IN")}</div>
-                  <button class="v2-or-reorder" data-listing="${o.listing_id}">Reorder</button>
-                </div>
-              </a>`;
-          }).join("")}
-        `;
+                  <div class="v2-or-bot">
+                    <div class="v2-or-total">₹${(o.total_price || o.final_price || 0).toLocaleString("en-IN")}</div>
+                    <button class="v2-or-reorder" data-listing="${o.listing_id}">Reorder</button>
+                  </div>
+                </a>`;
+            }).join("")}
+            ${totalPages > 1 ? `
+              <div class="v2-pagination">
+                <button class="v2-pg-btn" data-pg="prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+                <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
+                <button class="v2-pg-btn" data-pg="next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+              </div>` : ''}
+          `;
+
+          list.querySelector('[data-pg="prev"]')?.addEventListener("click", () => renderPage(currentPage - 1));
+          list.querySelector('[data-pg="next"]')?.addEventListener("click", () => renderPage(currentPage + 1));
+        }
+
+        renderPage(1);
 
         list.addEventListener("click", (e) => {
           const t = e.target;
