@@ -63,11 +63,13 @@ const {
     });
   });
 
-  // Helper: window.v2OpenSheet(id)
+  // Helper: window.v2OpenSheet(id) — dispatches v2-sheet-opened so sheets can lazy-render.
   (window as any).v2OpenSheet = (id: string) => {
     document.getElementById(`${id}-backdrop`)?.classList.add("v2-sheet-open");
+    document.dispatchEvent(new CustomEvent("v2-sheet-opened", { detail: { id } }));
   };
   (window as any).v2CloseSheet = (id: string) => {
     document.getElementById(`${id}-backdrop`)?.classList.remove("v2-sheet-open");
+    document.dispatchEvent(new CustomEvent("v2-sheet-closed", { detail: { id } }));
   };
 </script>
