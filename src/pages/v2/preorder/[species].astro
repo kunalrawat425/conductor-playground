@@ -23,7 +23,7 @@ let sellers: any[] = [];
 try {
   const { data } = await supabase
     .from("sellers")
-    .select("id, name, location_name, opens_at, closes_at, accepts_preorder, has_delivery, rating_avg, min_order_amount")
+    .select("id, name, location_name, opens_at, closes_at, accepts_preorder, has_delivery, rating_avg, min_order_amount, schedule_pickup_slots")
     .eq("is_active", true)
     .eq("accepts_preorder", true)
     .neq("name", "New Seller");
@@ -86,6 +86,7 @@ try {
               data-opens-at={s.opens_at || "06:00"}
               data-closes-at={s.closes_at || "11:00"}
               data-est-price={estimatePriceBySeller[s.id] || 0}
+              data-has-slots={s.schedule_pickup_slots ? "true" : "false"}
               type="button">
               <div class="po-s-avatar">🐟</div>
               <div class="po-s-body">
@@ -112,7 +113,7 @@ try {
       <label class="po-label">Quantity</label>
       <div style="display:flex;align-items:center;gap:12px;background:var(--v2-bg);padding:12px 16px;border:1px solid var(--v2-border);border-radius:var(--v2-radius);margin-bottom:16px;">
         <button type="button" id="po-qty-down" style="width:36px;height:36px;background:var(--v2-bg-3);border:none;border-radius:8px;font:700 18px Inter;cursor:pointer;">−</button>
-        <input type="number" id="po-qty" value="1" min="0.5" step="0.5" style="flex:1;text-align:center;border:none;font:700 18px Inter;color:var(--v2-ink);outline:none;" />
+        <input type="number" id="po-qty" value="1" min="0.5" step="0.5" style="flex:1;text-align:center;border:none;font:700 18px Inter;color:var(--v2-ink);background:transparent;outline:none;" />
         <button type="button" id="po-qty-up" style="width:36px;height:36px;background:var(--v2-bg-3);border:none;border-radius:8px;font:700 18px Inter;cursor:pointer;">+</button>
         <span id="po-qty-unit" style="font:600 13px Inter;color:var(--v2-ink-3);min-width:30px;">kg</span>
       </div>
@@ -129,7 +130,7 @@ try {
 
       <div class="po-actions">
         <button type="button" class="v2-btn v2-btn-ghost v2-btn-md" data-back="1">← Back</button>
-        <button type="button" class="v2-btn v2-btn-primary v2-btn-md" data-next="3">Next: Pickup time →</button>
+        <button type="button" class="v2-btn v2-btn-primary v2-btn-md" id="po-step2-next" data-next="3">Next: Pickup time →</button>
       </div>
     </section>
 
@@ -211,6 +212,7 @@ try {
     minOrder: 0,
     opensAt: "06:00",
     closesAt: "11:00",
+    hasSlots: false, // only true if seller enabled schedule_pickup_slots
     estPrice: 0, // per kg/piece — comes from seller's most recent matching listing
     qty: 1,
     cut: "whole",
@@ -268,7 +270,23 @@ try {
   }
   function renderSlots() {
     const grid = getEl("po-slots");
+    const title = getEl("po-slot-group-title");
     if (!grid) return;
+
+    // If seller hasn't enabled pickup slots, show a simple "Tomorrow morning" message
+    // and the step 2 Next button will skip to step 4 (review) instead of step 3.
+    if (!state.hasSlots) {
+      if (title) title.textContent = "Pickup tomorrow morning";
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--v2-ink-2);font:500 13px Inter;background:var(--v2-bg);border-radius:var(--v2-radius);border:1px solid var(--v2-border);">
+        🌅 Ready next morning at seller's location<br/>
+        <span style="font-size:11px;color:var(--v2-ink-3);margin-top:4px;display:inline-block;">No slot selection needed — seller confirms availability in the morning</span>
+      </div>`;
+      state.slot = "morning";
+      state.slotFee = 0;
+      return;
+    }
+
+    if (title) title.textContent = "Pickup tomorrow · choose a time slot";
     const slots = buildSlots(state.opensAt, state.closesAt);
     if (slots.length === 0) {
       grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--v2-ink-3);font:500 12px Inter;">Seller hours not configured.</div>`;
@@ -304,6 +322,7 @@ try {
       state.opensAt = btn.dataset.opensAt || "06:00";
       state.closesAt = btn.dataset.closesAt || "11:00";
       state.estPrice = parseFloat(btn.dataset.estPrice) || 0;
+      state.hasSlots = btn.dataset.hasSlots === "true";
       getEl("po-selected-seller").textContent = state.sellerName;
       renderSlots();
       showStep(2);
@@ -337,10 +356,12 @@ try {
 
   // (Slot click wiring is set up inside renderSlots() once seller is chosen.)
 
-  // Next/back
+  // Next/back — skip step 3 if seller has no slots enabled
   document.querySelectorAll("[data-next]").forEach(b => {
     b.addEventListener("click", () => {
-      const n = parseInt(b.dataset.next);
+      let n = parseInt(b.dataset.next);
+      // Skip step 3 (slots) if seller doesn't have schedule_pickup_slots
+      if (n === 3 && !state.hasSlots) n = 4;
       if (n === 4) {
         // Update review — estimate uses seller's actual matching listing price when known.
         getEl("po-rev-seller").textContent = state.sellerName;
@@ -361,7 +382,12 @@ try {
     });
   });
   document.querySelectorAll("[data-back]").forEach(b => {
-    b.addEventListener("click", () => showStep(parseInt(b.dataset.back)));
+    b.addEventListener("click", () => {
+      let n = parseInt(b.dataset.back);
+      // Skip step 3 when going back from step 4 if seller has no slots
+      if (n === 3 && !state.hasSlots) n = 2;
+      showStep(n);
+    });
   });
 
   // Submit
@@ -387,7 +413,9 @@ try {
           buyer_id: buyerId,
           order_type: "pickup",
           seller_id: state.sellerId,
-          // pricing_option_id null = pre-order without price
+          buyer_notes: state.notes || "",
+          cut_style: state.cut || "whole",
+          schedule_slot_id: state.hasSlots ? state.slot : null,
         }),
       });
       const data = await res.json();
