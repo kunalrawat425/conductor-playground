@@ -14,6 +14,7 @@ const {
   itemCount,
   catchTime,
   tags = [],
+  phone,
 } = Astro.props;
 
 function fmtTime(t: string | undefined | null): string {
@@ -75,6 +76,17 @@ const subParts = [
       <div class="v2-sh-l">{status === "open" ? `Until ${closesAt}` : `Opens ${opensAt}`}</div>
     </div>
   </div>
+
+  {phone && (
+    <div class="v2-sh-actions">
+      <a href={`tel:${phone}`} class="v2-sh-call">
+        <span>📞</span> Call Seller
+      </a>
+      <a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener" class="v2-sh-whatsapp">
+        <span>💬</span> WhatsApp
+      </a>
+    </div>
+  )}
 </section>
 
 <!-- styles in src/styles/v2-components.css -->

@@ -158,7 +158,7 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
     <!-- Order card -->
     <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:16px;">
       <div style="font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:12px;">🐟 ${species}</div>
-      ${buyerPhone ? infoRow("Buyer", buyerPhone) : ""}
+      ${"" /* buyerPhone stripped — never expose buyer phone to seller emails */}
       ${infoRow("Quantity", `${quantity} ${quantity_unit}`)}
       ${deliveryFee > 0 ? infoRow("Subtotal", `₹${subtotal}`) : ""}
       ${deliveryFee > 0 ? infoRow("Delivery Fee", `₹${deliveryFee}`) : ""}

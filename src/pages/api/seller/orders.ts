@@ -164,7 +164,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Email seller
       const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
       if (seller?.email) {
-        await sendResendEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, orderEmailSeller({ ...emailArgs, buyerPhone: data.buyer_phone }));
+        await sendResendEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, orderEmailSeller(emailArgs));
       }
     } catch (_) {}
 

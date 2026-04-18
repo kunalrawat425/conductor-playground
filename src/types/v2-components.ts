@@ -172,6 +172,7 @@ export interface SellerHeroProps {
   itemCount?: number;
   catchTime?: string;
   tags?: string[];
+  phone?: string;
 }
 
 export interface BottomSheetProps {
