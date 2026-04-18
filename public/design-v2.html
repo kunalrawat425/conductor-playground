@@ -333,8 +333,6 @@
             </div>
             <div class="profile-icon">👤</div>
           </div>
-          <div class="v2-search"><span class="s-icon">🔍</span> Search "Surmai", "Pomfret", sellers...</div>
-
           <div class="v2-preorder">
             <div class="po-icon">🌙</div>
             <div class="po-text">
@@ -429,7 +427,7 @@
     <thead><tr><th>Component</th><th>V1</th><th>V2</th><th>Why</th></tr></thead>
     <tbody>
       <tr><td class="comp">Header</td><td class="v1-spec">White bg, text logo, plain location chip</td><td class="v2-spec">Brand-colored header (Blinkit-style), delivery ETA, seller count</td><td><span class="change">+28% engagement</span> Colored headers increase brand recall. Blinkit proved this.</td></tr>
-      <tr><td class="comp">Search</td><td class="v1-spec">Flat input inside content</td><td class="v2-spec">Floating card with shadow, overlapping header</td><td><span class="change">+15% search use</span> Zepto's floating search gets more taps.</td></tr>
+      <tr><td class="comp">Search</td><td class="v1-spec">Flat input inside content</td><td class="v2-spec">Dedicated /v2/search page with trending grid (floating card disabled)</td><td><span class="change">Separate page</span> Search via direct URL, not on home.</td></tr>
       <tr><td class="comp">Pre-order CTA</td><td class="v1-spec">Hidden in filter chips</td><td class="v2-spec">Prominent gradient card with CTA button</td><td><span class="change">Key differentiator</span> Pre-order is our moat — it should be unmissable.</td></tr>
       <tr><td class="comp">Category bar</td><td class="v1-spec">None — all fish in one stream</td><td class="v2-spec">Horizontal icon strip (Fish, Prawns, Crab, Squid, Shellfish)</td><td><span class="change">+20% discovery</span> Instamart's category icons drive browsing behavior.</td></tr>
       <tr><td class="comp">Seller card</td><td class="v1-spec">Flat white card, emoji avatar, inline badges</td><td class="v2-spec">Image header, rating badge (Zomato-style), tag chips, delivery bar</td><td><span class="change">+35% CTR</span> Visual cards with image zones get dramatically more clicks.</td></tr>
@@ -593,7 +591,7 @@
     <thead><tr><th>Component</th><th>Spec</th><th>Blinkit/Zepto Pattern</th></tr></thead>
     <tbody>
       <tr><td class="comp">AppHeader</td><td>Brand bg (#0066FF), 52px height. Left: logo (white, 16px, 800wt). Center: location (name 13px 700wt white + ETA 10px 70% white). Right: profile circle (28px, rgba white bg). Sticky top.</td><td>Blinkit green header → our blue header. Same layout. Location + delivery ETA in header = trust.</td></tr>
-      <tr><td class="comp">SearchBar</td><td>Floating white card, 44px height, 12px radius, shadow-md. Overlaps header by 14px (negative margin). Search icon left, placeholder 13px Inter 400. Tap → full-screen search overlay.</td><td>Zepto's floating search card. Creates depth hierarchy.</td></tr>
+      <tr><td class="comp">SearchBar</td><td>Floating white card, 44px height, 12px radius, shadow-md. Overlaps header by 14px. Currently disabled (showSearch: false). Search accessible via /v2/search direct URL.</td><td>Built but disabled on home. May enable later.</td></tr>
       <tr><td class="comp">CategoryStrip</td><td>Horizontal scroll, 56px item width. 48px icon circle (bg3 bg, 24px emoji). 9px label below. Scroll snaps.</td><td>Instamart category pills. Drives browse behavior.</td></tr>
       <tr><td class="comp">PreorderBanner</td><td>Gradient card (EEF2FF→E0E7FF), 12px radius. 32px icon left, title 13px 700wt indigo, subtitle 11px. CTA button right (indigo bg, white text, 11px 700wt).</td><td>Custom — no equivalent in Blinkit. Our differentiator must be prominent.</td></tr>
       <tr><td class="comp">SellerCard</td><td>White card, 12px radius, shadow. Image zone 100px (gradient bg + emoji + offer badge). Body: name 14px 700wt + loc 11px + tags row. Menu strip at bottom (horizontal chips). Optional delivery bar (green-l bg).</td><td>Zomato restaurant card + Blinkit product card hybrid. Image zone is key.</td></tr>
@@ -626,7 +624,7 @@
       <tr>
         <td class="comp">Homepage<br><span style="font:400 11px Inter;color:var(--ink4)">/</span></td>
         <td>White header, flat search, chip filters, vertical seller cards with emoji avatars and tiny menu preview</td>
-        <td>Brand-colored header with delivery ETA. Floating search. Pre-order banner. Category strip. Visual seller cards with image zones, tag chips, menu chips, delivery bar.</td>
+        <td>Brand-colored header with delivery ETA. Pre-order banner. Category strip. Filter chips. Visual seller cards with image zones, tag chips, menu chips, delivery bar.</td>
         <td><span class="change">+35% CTR</span> <span class="change">+20% discovery</span></td>
       </tr>
       <tr>
@@ -656,7 +654,7 @@
       <tr>
         <td class="comp">Search<br><span style="font:400 11px Inter;color:var(--ink4)">(new page)</span></td>
         <td>Search is inline on homepage</td>
-        <td>NEW: Full-screen search overlay. Recent searches. Trending species. Search by fish name (English + Marathi), seller name, or area. Instant results with item cards.</td>
+        <td>NEW: Full-screen search page. Trending species grid. Search by fish name (English + Marathi), seller name, or area. Instant results.</td>
         <td><span class="change">New feature</span> Dedicated search = discovery engine.</td>
       </tr>
       <tr>
@@ -697,7 +695,7 @@
     <div class="card" style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px">
       <h3 style="font-size:15px;color:var(--green);margin-bottom:4px">From Zepto</h3>
       <ul style="list-style:none;padding:0;font-size:13px;color:var(--ink2)">
-        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Floating search card with depth</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Filter chips on home (Open now, Pre-order, Pickup, Delivery)</li>
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Delivery ETA in header</li>
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Category icon strip</li>
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Swipe-to-manage gestures</li>
