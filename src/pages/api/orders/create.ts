@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
+import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 import {
   getListingOptionById,
   getListingPriceOptions,
@@ -109,7 +110,11 @@ export const POST: APIRoute = async ({ request, url }) => {
       const bundleAmount = optionBundleAmount(chosen);
       const perBase = isPerBaseUnitPricing(chosen);
 
-      if (!perBase) {
+      // Skip bundle validation for pre-orders (OOS / unavailable listings)
+      const weightAvailCheck = Number(listing.weight_avail);
+      const isPreorderCandidate = !listing.is_available || !Number.isFinite(weightAvailCheck) || weightAvailCheck <= 0 || weightAvailCheck < quantity;
+
+      if (!perBase && !isPreorderCandidate) {
         if (quantity_unit === "kg") {
           const qCent = Math.round(quantity * 100);
           const bCent = Math.round(bundleAmount * 100);
@@ -131,7 +136,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
       }
 
-      const bundleCount = quantity / bundleAmount;
+      const bundleCount = isPreorderCandidate ? (perBase ? quantity : quantity / bundleAmount) : quantity / bundleAmount;
       if (!Number.isFinite(bundleCount) || bundleCount <= 0) {
         return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
       }
@@ -421,20 +426,19 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Send email on order creation
     if (resendApiKey && order) {
       try {
-        const statusLabel = status === "scheduled" ? "Order Scheduled 🗓️" : status === "pre_order" ? "Pre-order Placed" : "Order Placed";
-        const schedText = scheduled_for ? `<p style="color:#1565c0;font-weight:600;">🗓️ Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${new Date(scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>` : "";
-        const emailBody = `
-          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
-            <h1 style="font-size:20px;margin:0 0 12px;">🐟 ${statusLabel}</h1>
-            <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin:0 0 16px;">
-              <p style="margin:0 0 8px;font-size:15px;"><strong>${species || "Fish"}</strong> · ${quantity} ${quantity_unit}</p>
-              <p style="margin:0 0 8px;font-size:15px;font-weight:600;">₹${total_price + delivery_fee}</p>
-              ${schedText}
-            </div>
-            <a href="https://www.relifish.store/track" style="display:inline-block;background:#0066cc;color:white;padding:10px 24px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px;">Track Order</a>
-            <p style="font-size:12px;color:#999;margin:16px 0 0;">— Team Relifish</p>
-          </div>
-        `;
+        const statusLabel = status === "scheduled" ? "Order Scheduled" : status === "pre_order" ? "Pre-order Placed" : "Order Placed";
+        const emailArgs = {
+          statusLabel,
+          species: species || "Fish",
+          quantity,
+          quantity_unit,
+          totalAmount: total_price + delivery_fee,
+          deliveryFee: delivery_fee,
+          orderId: order.id,
+          scheduled_for,
+          buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
+          cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
+        };
         // Email buyer
         if (buyer_id) {
           const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
@@ -442,7 +446,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <onboarding@resend.dev>", to: buyer.email, subject: `${statusLabel} — ${species || "Fish"}`, html: emailBody }),
+              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${statusLabel} — ${species || "Fish"}`, html: orderEmailBuyer(emailArgs) }),
             });
           }
         }
@@ -450,11 +454,10 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (seller_id) {
           const { data: sellerData } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
           if (sellerData?.email) {
-            const sellerEmail = emailBody.replace("Track Order", "View Orders").replace("/track", "/dashboard/orders");
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <onboarding@resend.dev>", to: sellerData.email, subject: `New Order: ${species || "Fish"}`, html: sellerEmail }),
+              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${species || "Fish"}`, html: orderEmailSeller({ ...emailArgs, buyerPhone: buyer_phone }) }),
             });
           }
         }

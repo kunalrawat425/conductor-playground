@@ -16,6 +16,10 @@ const { id = "v2-checkout" } = Astro.props;
   <div id={`${id}-step1`} class="v2-co-step-content">
     <h4 class="v2-co-step-title">Your cart</h4>
     <div id={`${id}-cart-items`}></div>
+    <div id={`${id}-free-delivery-banner`} style="display:none;background:var(--v2-green-l);border:1px solid var(--v2-green);border-radius:var(--v2-radius-sm);padding:10px 14px;margin-bottom:8px;text-align:center;">
+      <span style="font:700 12px Inter;color:var(--v2-green);">🎉 Free delivery unlocked!</span>
+    </div>
+    <div id={`${id}-delivery-hint`} style="display:none;font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:8px;text-align:center;"></div>
     <div class="v2-co-rows">
       <div class="v2-co-row"><span>Subtotal</span><span id={`${id}-subtotal`}>₹0</span></div>
       <div class="v2-co-row" id={`${id}-delivery-row`} style="display:none;"><span>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
@@ -39,7 +43,7 @@ const { id = "v2-checkout" } = Astro.props;
         <input type="radio" name={`${id}-method`} value="delivery" />
         <div>
           <div class="v2-co-m-name">🚲 Delivery</div>
-          <div class="v2-co-m-desc">To your address · Fee applies</div>
+          <div class="v2-co-m-desc" id={`${id}-delivery-desc`}>To your address · Fee applies</div>
         </div>
       </label>
     </div>
@@ -60,7 +64,7 @@ const { id = "v2-checkout" } = Astro.props;
     </div>
 
     <div class="v2-co-rows" style="margin-top:12px;">
-      <div class="v2-co-row v2-co-total-row"><span>Total (pay at pickup)</span><span id={`${id}-total-final`}>₹0</span></div>
+      <div class="v2-co-row v2-co-total-row"><span id={`${id}-total-label`}>Total (pay at pickup)</span><span id={`${id}-total-final`}>₹0</span></div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
@@ -121,11 +125,13 @@ const { id = "v2-checkout" } = Astro.props;
     b.addEventListener("click", () => showStep(parseInt(b.dataset.coBack)));
   });
 
-  // Toggle address section based on method
+  // Toggle address section + total label based on method
   document.querySelectorAll(`input[name="${id}-method"]`).forEach(r => {
     r.addEventListener("change", () => {
       const isDelivery = r.value === "delivery" && r.checked;
       document.getElementById(`${id}-address-section`).style.display = isDelivery ? "block" : "none";
+      const labelEl = document.getElementById(`${id}-total-label`);
+      if (labelEl) labelEl.textContent = isDelivery ? "Total (pay on delivery)" : "Total (pay at pickup)";
     });
   });
 

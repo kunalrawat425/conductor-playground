@@ -74,6 +74,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
+    {needsMap && <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>}
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body class:list={[!hideNav && "v2-has-bottom-nav"]}>

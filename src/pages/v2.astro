@@ -36,7 +36,7 @@ const categories = [
   <div class="v2-sticky-cluster">
     <PreorderBanner variant="inline" />
 
-    <div style="margin-top: 12px;">
+    <div style="margin-top: 6px;">
       <CategoryStrip items={categories} />
     </div>
 
@@ -76,6 +76,9 @@ const categories = [
   <div id="v2-closed" style="display:none;padding: 0 16px;">
     <EmptyState variant="closed" ctaHref="/v2?mode=preorder" />
   </div>
+
+  <!-- Sticky cart section (Swiggy-style, fixed above bottom nav) -->
+  <div id="v2-home-carts" style="display:none;position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:40;max-height:40vh;overflow-y:auto;background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.1);"></div>
 </AppShellV2>
 
 <style is:global>
@@ -109,21 +112,18 @@ const categories = [
   /* Sticky filter cluster — pin nav controls below header */
   .v2-sticky-cluster {
     position: sticky;
-    top: 56px; /* below the brand header (sticky 56px tall) */
+    top: 0;
     z-index: 30;
     background: var(--v2-bg-2);
-    padding: 16px 0 8px;
-    margin: 0 -16px;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding: 8px 16px 4px;
     border-bottom: 1px solid var(--v2-border);
   }
-  .v2-sticky-cluster .v2-pb-inline { margin: 0 0 12px; }
+  .v2-sticky-cluster .v2-pb-inline { margin: 0 0 6px; }
 
   /* Filter chips */
   .v2-filter-chips {
     display: flex; gap: 6px;
-    padding: 12px 16px 0;
+    padding: 6px 16px 0;
     overflow-x: auto;
     scrollbar-width: none;
     align-items: center;
@@ -445,7 +445,7 @@ const categories = [
         // Offer badge logic — never show "Pre-order today" on a closed seller (confusing)
         // Open + has items = Same-day catch (brand)
         // Open + no items + accepts pre-order = Pre-order only (indigo)
-        // Closed + accepts pre-order = Pre-order tomorrow (indigo)
+        // Closed + accepts pre-order = Pre-order available (indigo)
         // Closed + no preorder = Closed (red)
         let offerLabel = "", offerColor = "v2-badge-brand";
         if (g.open && g.listings.length > 0) {
@@ -455,7 +455,7 @@ const categories = [
           offerLabel = "Pre-order only";
           offerColor = "v2-badge-indigo";
         } else if (!g.open && s.accepts_preorder) {
-          offerLabel = "Pre-order tomorrow";
+          offerLabel = "Pre-order available";
           offerColor = "v2-badge-indigo";
         } else {
           offerLabel = "Closed today";
@@ -467,9 +467,10 @@ const categories = [
           ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
           : "";
 
+        const fullyClosed = status === "closed";
+
         return `
-        <a href="/v2/seller/${s.id}" class="v2-seller-card${status === "closed" ? " v2-seller-closed" : ""}">
-        <!-- closed-preorder cards are NOT greyed out — they're active for pre-orders -->
+        <${fullyClosed ? 'div' : `a href="/v2/seller/${s.id}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
           <div class="v2-sc-img" style="background:${hueColors[hue]};">
             ${offerBadge}
             <span class="v2-sc-emoji">🐟</span>
@@ -486,7 +487,7 @@ const categories = [
           </div>
           ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
           ${deliveryBar}
-        </a>`;
+        </${fullyClosed ? 'div' : 'a'}>`;
       }).join("");
   }
 
@@ -598,4 +599,66 @@ const categories = [
   document.addEventListener("relifish:open-location-picker", () => {
     (window as any).v2OpenSheet?.("v2-loc-picker");
   });
+
+  // === Inline "Your Carts" section (Swiggy-style) ===
+  function renderHomeCarts() {
+    const el = document.getElementById("v2-home-carts");
+    if (!el) return;
+    const Cart = (window as any).RelifishCart;
+    if (!Cart) { el.style.display = "none"; return; }
+    const groups = Cart.groupBySeller();
+    if (groups.length === 0) { el.style.display = "none"; return; }
+
+    el.style.display = "block";
+    el.innerHTML = `
+      <div style="padding:8px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font:800 14px Inter;color:var(--v2-ink);">Your Carts</span>
+          <button id="v2-home-clear-all" type="button" style="background:none;border:none;font:600 12px Inter;color:var(--v2-red);cursor:pointer;">Clear All</button>
+        </div>
+        ${groups.map((g: any, i: number) => {
+          const itemCount = g.items.length;
+          const border = i < groups.length - 1 ? "border-bottom:1px solid var(--v2-border);" : "";
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;${border}">
+            <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🐟</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.seller_name || "Seller")}</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/v2/seller/${g.seller_id}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
+            </div>
+            <a href="/v2/seller/${g.seller_id}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">
+              ₹${g.subtotal.toLocaleString("en-IN")}<br><span style="font:600 9px Inter;opacity:.85;">View Cart</span>
+            </a>
+            <button data-hc-remove="${g.seller_id}" style="background:none;border:none;color:var(--v2-ink-4);font-size:16px;cursor:pointer;padding:2px;flex-shrink:0;" aria-label="Remove">✕</button>
+          </div>`;
+        }).join("")}
+      </div>`;
+
+    // Wire remove buttons
+    el.querySelectorAll<HTMLButtonElement>("[data-hc-remove]").forEach(b => {
+      b.addEventListener("click", () => {
+        Cart.clearCart({ sellerId: b.dataset.hcRemove });
+        renderHomeCarts();
+        (window as any).v2Toast?.("success", "Cart removed");
+      });
+    });
+    // Wire clear all
+    document.getElementById("v2-home-clear-all")?.addEventListener("click", () => {
+      groups.forEach((g: any) => Cart.clearCart({ sellerId: g.seller_id }));
+      renderHomeCarts();
+      (window as any).v2Toast?.("success", "All carts cleared");
+    });
+  }
+
+  // Render carts on load and on changes
+  function initHomeCarts() {
+    if ((window as any).RelifishCart) {
+      renderHomeCarts();
+    }
+    document.addEventListener("v2-cart-ready", () => renderHomeCarts());
+    window.addEventListener("v2-cart-changed", () => renderHomeCarts());
+    window.addEventListener("storage", (e) => {
+      if (e.key === "v2_cart_global") renderHomeCarts();
+    });
+  }
+  initHomeCarts();
 </script>

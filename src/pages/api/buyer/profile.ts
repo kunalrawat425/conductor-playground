@@ -40,6 +40,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Cross-table uniqueness: email must not exist in sellers table
+    if (sanitized.email && typeof sanitized.email === "string") {
+      const { data: existingSeller } = await supabase
+        .from("sellers")
+        .select("id")
+        .eq("email", sanitized.email)
+        .maybeSingle();
+      if (existingSeller) {
+        return new Response(
+          JSON.stringify({ error: "That email is already registered as a seller. Use a different email." }),
+          { status: 409 }
+        );
+      }
+    }
+
     const { data, error } = await supabase
       .from("buyers")
       .update(sanitized)
@@ -81,7 +96,7 @@ export const GET: APIRoute = async ({ url }) => {
 
     const { data, error } = await supabase
       .from("buyers")
-      .select("id, phone, first_name, last_name, email, location_name, created_at, push_enabled")
+      .select("id, phone, first_name, last_name, email, email_verified, location_name, created_at, push_enabled")
       .eq("id", buyer_id)
       .single();
 

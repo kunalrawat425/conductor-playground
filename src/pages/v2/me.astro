@@ -29,6 +29,10 @@ import Toast from "../../components/v2/atoms/Toast.astro";
       <input id="v2-me-ln" class="v2-input" type="text" placeholder="Your last name" />
       <label class="v2-label" style="margin-top:12px;">Email (optional)</label>
       <input id="v2-me-em" class="v2-input" type="email" placeholder="you@example.com" />
+      <div id="v2-me-email-verify" style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+        <span id="v2-me-email-status" style="font:600 11px Inter;"></span>
+        <button type="button" id="v2-me-email-verify-btn" style="display:none;background:none;border:1px solid var(--v2-brand);color:var(--v2-brand);font:600 11px Inter;padding:4px 12px;border-radius:20px;cursor:pointer;">Send verification</button>
+      </div>
       <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" style="margin-top:16px;">Save</button>
     </form>
   </BottomSheet>
@@ -72,6 +76,14 @@ import Toast from "../../components/v2/atoms/Toast.astro";
     </div>
     <div style="margin: 0 16px 16px;">
       <button id="v2-me-add-addr" type="button" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full">+ Add new address</button>
+    </div>
+
+    <!-- Past orders -->
+    <div class="v2-me-section-head">Order history</div>
+    <div id="v2-me-orders" style="margin:0 16px 16px;">
+      <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
+        <span class="v2-spinner v2-spinner-sm"></span>
+      </div>
     </div>
 
     <!-- Settings list -->
@@ -234,6 +246,13 @@ import Toast from "../../components/v2/atoms/Toast.astro";
 </style>
 
 <script>
+  // If user is a seller, redirect to seller profile instead
+  try {
+    if (localStorage.getItem("zepto_seller_id")) {
+      window.location.href = "/v2/dashboard/profile";
+    }
+  } catch {}
+
   function getBuyerId(): string | null {
     try { return localStorage.getItem("zepto_buyer_id") || null; } catch { return null; }
   }
@@ -287,6 +306,20 @@ import Toast from "../../components/v2/atoms/Toast.astro";
         (document.getElementById("v2-me-fn") as HTMLInputElement).value = fn;
         (document.getElementById("v2-me-ln") as HTMLInputElement).value = ln;
         (document.getElementById("v2-me-em") as HTMLInputElement).value = em;
+        // Email verify status
+        const emailSt = document.getElementById("v2-me-email-status")!;
+        const emailBtn = document.getElementById("v2-me-email-verify-btn")!;
+        if (em) {
+          if (d.profile.email_verified) {
+            emailSt.textContent = "✅ Verified";
+            emailSt.style.color = "var(--v2-green)";
+            emailBtn.style.display = "none";
+          } else {
+            emailSt.textContent = "❌ Not verified";
+            emailSt.style.color = "var(--v2-orange)";
+            emailBtn.style.display = "inline-block";
+          }
+        }
       }
     } catch {}
 
@@ -316,9 +349,46 @@ import Toast from "../../components/v2/atoms/Toast.astro";
         const full = `${first_name} ${last_name}`.trim();
         document.getElementById("v2-me-name")!.textContent = full || "Welcome";
         (window as any).v2Toast?.("success", "Profile saved");
+        // Update email verify status inline
+        const emailSt = document.getElementById("v2-me-email-status")!;
+        const emailBtn = document.getElementById("v2-me-email-verify-btn")!;
+        if (email) {
+          emailSt.textContent = "❌ Not verified";
+          emailSt.style.color = "var(--v2-orange)";
+          emailBtn.style.display = "inline-block";
+          emailBtn.disabled = false;
+          emailBtn.textContent = "Send verification";
+        } else {
+          emailSt.textContent = "";
+          emailBtn.style.display = "none";
+        }
         (window as any).v2CloseSheet?.("v2-me-name-sheet");
       } catch (err: any) {
         (window as any).v2Toast?.("error", "Save failed", err.message);
+      }
+    });
+
+    // Email verify
+    document.getElementById("v2-me-email-verify-btn")?.addEventListener("click", async () => {
+      const email = (document.getElementById("v2-me-em") as HTMLInputElement)?.value?.trim();
+      if (!email) { (window as any).v2Toast?.("error", "No email", "Enter email first"); return; }
+      const btn = document.getElementById("v2-me-email-verify-btn") as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = "Sending...";
+      try {
+        const res = await fetch("/api/auth/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "buyer", id: buyerId, email }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+        (window as any).v2Toast?.("success", "Email sent", `Check ${email} for verification link`);
+        btn.textContent = "Sent ✓";
+      } catch (err: any) {
+        (window as any).v2Toast?.("error", "Failed", err.message);
+        btn.disabled = false;
+        btn.textContent = "Send verification";
       }
     });
 
@@ -419,5 +489,92 @@ import Toast from "../../components/v2/atoms/Toast.astro";
     });
 
     loadAddresses();
+
+    // === Past orders ===
+    const ORDER_PAGE_SIZE = 10;
+    let orderPage = 1;
+
+    function fmtDate(iso: string) {
+      const d = new Date(iso);
+      const today = new Date();
+      const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
+      if (diffDays === 0) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    }
+
+    function statusLabel(s: string) {
+      const map: Record<string, string> = {
+        pending: "Pending", pre_order: "Pre-order", scheduled: "Scheduled",
+        confirmed: "Confirmed", paid: "Paid",
+        ready_for_pickup: "Ready for pickup", out_for_delivery: "Out for delivery",
+        picked_up: "Picked up", completed: "Completed",
+        declined: "Declined", cancelled: "Cancelled", refunded: "Refunded",
+      };
+      return map[s] || s;
+    }
+
+    async function loadOrders() {
+      const el = document.getElementById("v2-me-orders")!;
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabaseUrl = (import.meta as any).env?.PUBLIC_SUPABASE_URL || "";
+        const supabaseKey = (import.meta as any).env?.PUBLIC_SUPABASE_ANON_KEY || "";
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const pastStatuses = ["picked_up", "completed", "declined", "cancelled", "refunded"];
+        const offset = (orderPage - 1) * ORDER_PAGE_SIZE;
+        const { data: orders, count } = await supabase
+          .from("orders")
+          .select("*, listing:fish_listings(species, seller:sellers(name))", { count: "exact" })
+          .in("buyer_phone", [phone, `+91${phone.replace(/^\+91/, "").replace(/\D/g, "")}`])
+          .in("status", pastStatuses)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + ORDER_PAGE_SIZE - 1);
+
+        if (!orders || orders.length === 0) {
+          el.innerHTML = `<div class="v2-me-addr-empty">No past orders yet.</div>`;
+          return;
+        }
+
+        const total = count || 0;
+        const totalPages = Math.ceil(total / ORDER_PAGE_SIZE);
+
+        el.innerHTML = orders.map((o: any) => {
+          const seller = o.listing?.seller?.name || "Seller";
+          const sp = o.listing?.species || "";
+          return `<a href="/v2/track/${o.id}" style="display:block;text-decoration:none;color:inherit;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:12px 14px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+              <div>
+                <div style="font:700 13px Inter;color:var(--v2-ink);">${escape(seller)}</div>
+                <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:1px;">${escape(fmtDate(o.created_at))} · ${o.quantity}${o.quantity_unit || 'kg'} ${escape(sp)}</div>
+                ${o.cut_style || o.buyer_notes ? `<div style="font:500 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${o.cut_style ? `✂️ ${escape(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escape(o.buyer_notes)}` : ''}</div>` : ''}
+              </div>
+              <span style="font:500 10px Inter;padding:3px 10px;border-radius:20px;background:var(--v2-bg-3);color:var(--v2-ink-3);">${statusLabel(o.status)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--v2-border);">
+              <span style="font:800 13px Inter;color:var(--v2-ink);">₹${(o.total_price || 0).toLocaleString("en-IN")}</span>
+              <span style="font:600 11px Inter;color:var(--v2-brand);">View →</span>
+            </div>
+          </a>`;
+        }).join("")
+        + (totalPages > 1 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+            <button class="v2-btn v2-btn-ghost v2-btn-sm" id="v2-me-ord-prev" ${orderPage <= 1 ? 'disabled style="opacity:.4;"' : ''}>← Prev</button>
+            <span style="font:500 12px Inter;color:var(--v2-ink-3);">Page ${orderPage} of ${totalPages}</span>
+            <button class="v2-btn v2-btn-ghost v2-btn-sm" id="v2-me-ord-next" ${orderPage >= totalPages ? 'disabled style="opacity:.4;"' : ''}>Next →</button>
+          </div>` : '');
+
+        document.getElementById("v2-me-ord-prev")?.addEventListener("click", () => {
+          if (orderPage > 1) { orderPage--; loadOrders(); }
+        });
+        document.getElementById("v2-me-ord-next")?.addEventListener("click", () => {
+          if (orderPage < totalPages) { orderPage++; loadOrders(); }
+        });
+      } catch {
+        el.innerHTML = `<div class="v2-me-addr-empty" style="color:var(--v2-red);">Failed to load orders</div>`;
+      }
+    }
+
+    loadOrders();
   }
 </script>

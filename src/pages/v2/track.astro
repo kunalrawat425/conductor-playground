@@ -39,29 +39,29 @@ import Toast from "../../components/v2/atoms/Toast.astro";
     />
   </div>
 
-  <div id="v2-track-active"></div>
-  <div id="v2-track-list" style="padding:0 16px;"></div>
+  <div id="v2-track-active" style="padding:0 16px;"></div>
 </AppShellV2>
 
 <style is:global>
   .v2-active-order {
     margin: 16px 16px 16px;
-    background: linear-gradient(135deg, var(--v2-brand-l), #DBEAFE);
-    border: 1px solid var(--v2-brand-m);
+    background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+    border: 1px solid #93C5FD;
     border-radius: var(--v2-radius-lg);
     padding: 16px;
   }
   .v2-active-order .label {
     font: 700 10px Inter;
-    color: var(--v2-brand);
+    color: #1D4ED8;
     text-transform: uppercase; letter-spacing: .1em;
     margin-bottom: 6px;
   }
+  .v2-active-order .label .v2-badge { font-size: 10px; }
   .v2-active-order h3 {
-    font: 800 16px Inter; color: var(--v2-ink); margin: 0 0 4px;
+    font: 800 16px Inter; color: #1E293B; margin: 0 0 4px;
   }
   .v2-active-order .sub {
-    font: 400 12px Inter; color: var(--v2-ink-2); margin: 0 0 16px;
+    font: 400 12px Inter; color: #475569; margin: 0 0 16px;
   }
   .v2-stepper {
     display: flex; align-items: center; gap: 4px;
@@ -69,19 +69,19 @@ import Toast from "../../components/v2/atoms/Toast.astro";
   .v2-stepper .dot {
     width: 22px; height: 22px;
     border-radius: 50%;
-    background: var(--v2-ink-4);
+    background: #CBD5E1;
     color: #fff;
     display: flex; align-items: center; justify-content: center;
     font: 700 11px Inter;
     flex-shrink: 0;
   }
-  .v2-stepper .dot.done { background: var(--v2-green); }
-  .v2-stepper .line { flex: 1; height: 2px; background: var(--v2-bg-3); }
-  .v2-stepper .line.done { background: var(--v2-green); }
+  .v2-stepper .dot.done { background: #16A34A; }
+  .v2-stepper .line { flex: 1; height: 2px; background: #CBD5E1; }
+  .v2-stepper .line.done { background: #16A34A; }
   .v2-stepper-labels {
     display: flex; justify-content: space-between;
     margin-top: 6px;
-    font: 500 9px Inter; color: var(--v2-ink-3);
+    font: 500 9px Inter; color: #64748B;
   }
 
   .v2-section-head-light {
@@ -124,10 +124,19 @@ import Toast from "../../components/v2/atoms/Toast.astro";
 </style>
 
 <script>
-  import { supabase } from "../../lib/supabase";
+  import { createClient } from "@supabase/supabase-js";
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL || "",
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
+  );
 
   function getBuyerPhone(): string | null {
     try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
+  }
+  // Orders may have phone stored with or without +91 prefix
+  function phoneVariants(phone: string): string[] {
+    const clean = phone.replace(/^\+91/, "").replace(/\D/g, "");
+    return [clean, `+91${clean}`];
   }
 
   function escapeHtml(s: string) {
@@ -140,6 +149,7 @@ import Toast from "../../components/v2/atoms/Toast.astro";
       "confirmed": ["Confirmed", "v2-badge-tag v2-badge-brand"],
       "paid": ["Paid", "v2-badge-tag v2-badge-brand"],
       "ready_for_pickup": ["Ready for pickup", "v2-badge-tag v2-badge-green"],
+      "out_for_delivery": ["Out for delivery", "v2-badge-tag v2-badge-brand"],
       "picked_up": ["Picked up", "v2-badge-tag v2-badge-green"],
       "completed": ["Completed", "v2-badge-tag v2-badge-green"],
       "declined": ["Declined", "v2-badge-tag v2-badge-red"],
@@ -153,7 +163,7 @@ import Toast from "../../components/v2/atoms/Toast.astro";
   }
 
   function isActive(status: string) {
-    return ["pending", "confirmed", "paid", "ready_for_pickup", "scheduled", "pre_order"].includes(status);
+    return ["pending", "confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled", "pre_order"].includes(status);
   }
 
   function fmtDate(iso: string) {
@@ -166,13 +176,15 @@ import Toast from "../../components/v2/atoms/Toast.astro";
     return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
   }
 
+  const PAGE_SIZE = 10;
+  let currentPage = 1;
+
   async function load() {
     const phone = getBuyerPhone();
     const loading = document.getElementById("v2-track-loading")!;
     const guest = document.getElementById("v2-track-guest")!;
     const empty = document.getElementById("v2-track-empty")!;
     const active = document.getElementById("v2-track-active")!;
-    const list = document.getElementById("v2-track-list")!;
 
     if (!phone) {
       loading.style.display = "none";
@@ -184,44 +196,45 @@ import Toast from "../../components/v2/atoms/Toast.astro";
     }
 
     try {
-      const { data: orders } = await supabase
+      const activeStatuses = ["pending", "confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled", "pre_order"];
+      const offset = (currentPage - 1) * PAGE_SIZE;
+      const phones = phoneVariants(phone);
+      const { data: allOrders, count } = await supabase
         .from("orders")
-        .select("*, listing:fish_listings(species, seller:sellers(name))")
-        .eq("buyer_phone", phone)
+        .select("*, listing:fish_listings(species, seller:sellers(name))", { count: "exact" })
+        .in("buyer_phone", phones)
+        .in("status", activeStatuses)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .range(offset, offset + PAGE_SIZE - 1);
 
       loading.style.display = "none";
+      empty.style.display = "none";
+      const totalCount = count || 0;
+      const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-      if (!orders || orders.length === 0) {
+      if (!allOrders || allOrders.length === 0) {
+        active.innerHTML = "";
         empty.style.display = "block";
         return;
       }
 
-      const activeOrders = orders.filter(o => isActive(o.status));
-      const pastOrders = orders.filter(o => !isActive(o.status));
-
-      // Active: render top one as stepper card (clickable → detail page)
-      if (activeOrders.length > 0) {
-        const o = activeOrders[0];
+      active.innerHTML = allOrders.map(o => {
         const seller = o.listing?.seller?.name || "Seller";
-        active.style.cursor = "pointer";
-        active.addEventListener("click", () => { window.location.href = `/v2/track/${o.id}`; });
-        // Simplified 4-step flow (most orders are COD — no separate Paid step needed for buyer view)
-        // Map: pending → step 0, confirmed/paid → step 1, ready_for_pickup → step 2, picked_up/completed → step 3
-        const statusToStep: Record<string, number> = {
-          pending: 0, pre_order: 0, scheduled: 0,
-          confirmed: 1, paid: 1,
-          ready_for_pickup: 2,
-          picked_up: 3, completed: 3,
-        };
+        const isDelivery = o.order_type === "delivery";
+        const statusToStep: Record<string, number> = isDelivery
+          ? { pending: 0, pre_order: 0, scheduled: 0, confirmed: 1, paid: 1, out_for_delivery: 2, completed: 3 }
+          : { pending: 0, pre_order: 0, scheduled: 0, confirmed: 1, paid: 1, ready_for_pickup: 2, picked_up: 3, completed: 3 };
+        const labels = isDelivery
+          ? ["Placed", "Confirmed", "On the way", "Delivered"]
+          : ["Placed", "Confirmed", "Ready", "Picked up"];
         const stepIdx = statusToStep[o.status] ?? 0;
-        const labels = ["Placed", "Confirmed", "Ready", "Picked up"];
-        active.innerHTML = `
-          <div class="v2-active-order">
-            <div class="label">Live · Active order</div>
+
+        return `
+          <a href="/v2/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
+            <div class="label">Live · ${statusToTag(o.status)}</div>
             <h3>${escapeHtml(seller)}</h3>
-            <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()}</div>
+            <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${o.quantity}${o.quantity_unit || 'kg'} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
+            ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
             <div class="v2-stepper">
               ${labels.map((label, i) => `
                 <div class="dot${i <= stepIdx ? ' done' : ''}">${i <= stepIdx ? '✓' : i + 1}</div>
@@ -231,75 +244,56 @@ import Toast from "../../components/v2/atoms/Toast.astro";
             <div class="v2-stepper-labels">
               ${labels.map(l => `<span>${l}</span>`).join("")}
             </div>
-          </div>`;
-      }
+          </a>`;
+      }).join("")
+      + (totalPages > 1 ? `
+        <div class="v2-pagination" style="padding:12px 0;">
+          <button class="v2-pg-btn" id="v2-track-prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+          <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
+          <button class="v2-pg-btn" id="v2-track-next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+        </div>` : '');
 
-      // Past orders — paginated (client-side, 10 per page)
-      if (pastOrders.length > 0) {
-        const PAGE_SIZE = 10;
-        let currentPage = 1;
-        const totalPages = Math.ceil(pastOrders.length / PAGE_SIZE);
+      document.getElementById("v2-track-prev")?.addEventListener("click", () => { if (currentPage > 1) { currentPage--; load(); } });
+      document.getElementById("v2-track-next")?.addEventListener("click", () => { if (currentPage < totalPages) { currentPage++; load(); } });
 
-        function renderPage(page: number) {
-          currentPage = Math.max(1, Math.min(totalPages, page));
-          const start = (currentPage - 1) * PAGE_SIZE;
-          const slice = pastOrders.slice(start, start + PAGE_SIZE);
-          list.innerHTML = `
-            <div class="v2-section-head-light">Past orders (${pastOrders.length})</div>
-            ${slice.map(o => {
-              const seller = o.listing?.seller?.name || "Seller";
-              const sp = o.listing?.species || "";
-              return `
-                <a href="/v2/track/${o.id}" class="v2-order-row">
-                  <div class="v2-or-top">
-                    <div>
-                      <div class="v2-or-seller">${escapeHtml(seller)}</div>
-                      <div class="v2-or-meta">${escapeHtml(fmtDate(o.created_at))} · ${o.quantity}${o.quantity_unit || 'kg'} ${escapeHtml(sp)}</div>
-                    </div>
-                    ${statusToTag(o.status)}
-                  </div>
-                  <div class="v2-or-bot">
-                    <div class="v2-or-total">₹${(o.total_price || o.final_price || 0).toLocaleString("en-IN")}</div>
-                    <span class="v2-or-reorder">View →</span>
-                  </div>
-                </a>`;
-            }).join("")}
-            ${totalPages > 1 ? `
-              <div class="v2-pagination">
-                <button class="v2-pg-btn" data-pg="prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
-                <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
-                <button class="v2-pg-btn" data-pg="next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
-              </div>` : ''}
-          `;
-
-          list.querySelector('[data-pg="prev"]')?.addEventListener("click", () => renderPage(currentPage - 1));
-          list.querySelector('[data-pg="next"]')?.addEventListener("click", () => renderPage(currentPage + 1));
-        }
-
-        renderPage(1);
-
-        list.addEventListener("click", (e) => {
-          const t = e.target;
-          if (t instanceof HTMLElement && t.classList.contains("v2-or-reorder")) {
-            e.preventDefault();
-            const listingId = t.getAttribute("data-listing");
-            // Navigate to seller page; user can re-add
-            window.location.href = "/v2";
-          }
-        });
-      } else if (activeOrders.length === 0) {
-        empty.style.display = "block";
-      }
     } catch (err) {
       console.error("track: load failed", err);
       loading.innerHTML = `<div style="text-align:center;padding:40px;color:var(--v2-red);">Failed to load orders.</div>`;
     }
   }
 
-  load();
-  // Real-time polling: refresh every 20s if any active orders
-  setInterval(() => {
-    const activeEl = document.getElementById("v2-track-active");
-    if (activeEl && activeEl.children.length > 0) load();
-  }, 20000);
+  function initTrack() {
+    load();
+
+    // Supabase Realtime
+    const buyerPhone = getBuyerPhone();
+    if (buyerPhone) {
+      const pv = phoneVariants(buyerPhone);
+      pv.forEach(ph => {
+        supabase
+          .channel("buyer-orders-" + ph)
+          .on("postgres_changes", {
+            event: "*",
+            schema: "public",
+            table: "orders",
+            filter: `buyer_phone=eq.${ph}`,
+          }, () => {
+            load();
+          })
+          .subscribe();
+      });
+    }
+
+    // Fallback poll every 30s
+    setInterval(() => {
+      const activeEl = document.getElementById("v2-track-active");
+      if (activeEl && activeEl.children.length > 0) load();
+    }, 30000);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initTrack);
+  } else {
+    initTrack();
+  }
 </script>

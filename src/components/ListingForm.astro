@@ -245,6 +245,24 @@ const initialPricingJson = JSON.stringify(
         stockInput.step = stockQuantityInputStep(pu);
         stockInput.inputMode = unit === "kg" ? "decimal" : "numeric";
       }
+      // Update threshold and daily limit placeholders/labels with unit
+      const unitWord = unit === "kg" ? "kg" : "pieces";
+      const oosInput = form.querySelector("#oos_threshold") as HTMLInputElement | null;
+      if (oosInput) {
+        oosInput.placeholder = unit === "kg" ? "e.g. 2 (kg)" : "e.g. 3 (pieces)";
+        oosInput.step = unit === "kg" ? "0.1" : "1";
+        oosInput.inputMode = unit === "kg" ? "decimal" : "numeric";
+      }
+      if (dailyLimitInput) {
+        dailyLimitInput.placeholder = unit === "kg" ? "e.g. 5 (kg)" : "e.g. 10 (pieces)";
+        dailyLimitInput.step = unit === "kg" ? "0.1" : "1";
+        dailyLimitInput.inputMode = unit === "kg" ? "decimal" : "numeric";
+      }
+      // Update labels
+      const oosLabel = form.querySelector('label[for="oos_threshold"]');
+      if (oosLabel) oosLabel.innerHTML = `"Stock clearing soon" threshold (${unitWord}) <span class="listing-opt">(optional)</span>`;
+      const dailyLabel = form.querySelector('label[for="buyer_daily_qty_limit"]');
+      if (dailyLabel) dailyLabel.innerHTML = `Per-buyer daily limit (${unitWord}) <span class="listing-opt">(optional)</span>`;
       updateStockInfo();
     }
 
