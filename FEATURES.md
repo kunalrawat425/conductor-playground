@@ -1,7 +1,7 @@
 # Relifish V2 — Feature List & Screen Map
 
 **Source of truth for QA, product review, and feature planning.**
-Last updated: 2026-04-17
+Last updated: 2026-04-18
 
 ---
 
@@ -41,6 +41,8 @@ Last updated: 2026-04-17
 | Add to cart → global cart (`v2_cart_global` localStorage) | ✅ | Single seller enforced |
 | Cart bar (item count, subtotal, min-order gate, free delivery badge) | ✅ | Current seller only |
 | Single-seller cart enforcement (adding from new seller clears old) | ✅ | Toast on switch |
+| Call Seller button (📞 `tel:` link in hero) | ✅ | Shows when seller has phone |
+| WhatsApp Seller button (💬 `wa.me/` link in hero) | ✅ | Opens WhatsApp with seller number |
 | Checkout → 2-step (cart review → delivery/address + place order) | ✅ | Payment step commented out |
 | Delivery/Pickup radio toggle | ✅ | Hidden if `has_delivery=false` |
 | Delivery fee preview (live estimate when delivery selected) | ✅ | ₹40 flat / FREE above threshold |
@@ -223,7 +225,7 @@ Last updated: 2026-04-17
 | Endpoint | Method | Purpose | Status |
 |----------|--------|---------|--------|
 | `/api/auth/send-otp` | POST | Send OTP via Twilio | ✅ |
-| `/api/auth/verify-otp` | POST | Verify OTP, create/find buyer/seller | ✅ |
+| `/api/auth/verify-otp` | POST | Verify OTP, create/find buyer/seller (phone stripped from response) | ✅ |
 | `/api/buyer/profile` | GET | Fetch buyer profile (name, email) | ✅ |
 | `/api/buyer/profile` | POST | Update first_name, last_name, email | ✅ |
 | `/api/buyer/addresses` | GET | List saved addresses | ✅ |
@@ -313,16 +315,32 @@ Last updated: 2026-04-17
 
 ---
 
+## PRIVACY & SECURITY
+
+| Rule | Implementation | Status |
+|------|---------------|--------|
+| Buyer phone never in API responses | Stripped from verify-otp, order emails | ✅ |
+| Buyer phone never in seller emails | `buyerPhone` removed from `orderEmailSeller()` | ✅ |
+| Buyer phone visible only on own profile | `/v2/me` shows own phone from localStorage | ✅ |
+| Seller phone shown to buyers | Call Seller + WhatsApp buttons on seller page | ✅ |
+| Design mockups use masked numbers | `+91 98XXX XXXXX` in all design HTML files | ✅ |
+
+---
+
 ## DESIGN SYSTEM
 
 | Token | Value |
 |-------|-------|
 | Font | Inter (variable) |
 | Brand color | `--v2-brand: #0066FF` |
+| Indigo (pre-order) | `--v2-indigo: #4F46E5`, `-l: #EEF2FF`, `-m: #E0E7FF`, `-d: #3730A3` |
 | Border radius | `--v2-radius: 12px`, `--v2-radius-sm: 8px`, `--v2-radius-lg: 16px` |
+| Shadows | `--v2-shadow-sm/shadow/shadow-md/shadow-lg` |
+| Z-layers | header:50, bottom-nav:40, cart-bar:45, modal:100, toast:200 |
+| Motion | `--v2-ease: cubic-bezier(.4,0,.2,1)`, dur-fast:150ms, dur:250ms, dur-slow:400ms |
 | Dark mode | `[data-theme="dark"]` + `@media (prefers-color-scheme: dark)` |
 | Bottom sheet | `BottomSheet.astro` with backdrop blur + 85% opacity |
-| Toast | `window.v2Toast(type, title, msg)` |
+| Toast | `window.v2Toast(type, title, msg)` — warning+error: 6s, success+info: 4s |
 | Sheet control | `window.v2OpenSheet(id)` / `v2CloseSheet(id)` |
 | Cart module | `window.RelifishCart` (global, from AppShellV2) |
 
