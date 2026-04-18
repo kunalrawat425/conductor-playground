@@ -333,7 +333,7 @@ Last updated: 2026-04-18
 |-------|-------|
 | Font | Inter (variable) |
 | Brand color | `--v2-brand: #0066FF` |
-| Indigo (pre-order) | `--v2-indigo: #4F46E5`, `-l: #EEF2FF`, `-m: #E0E7FF`, `-d: #3730A3` |
+| Indigo (pre-order) | `--v2-indigo: #4F46E5`, `-l: #EEF2FF`, `-d: #3730A3` |
 | Border radius | `--v2-radius: 12px`, `--v2-radius-sm: 8px`, `--v2-radius-lg: 16px` |
 | Shadows | `--v2-shadow-sm/shadow/shadow-md/shadow-lg` |
 | Z-layers | header:50, bottom-nav:40, cart-bar:45, modal:100, toast:200 |
