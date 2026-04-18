@@ -26,7 +26,7 @@ Last updated: 2026-04-18
 | Dark mode toggle in header | ✅ | `data-theme` attr, localStorage persist |
 | Empty state: "Markets closed" → pre-order CTA | ✅ | Links to `/v2?mode=preorder` |
 | Empty state: "Not in your area" → waitlist | ✅ | Links to `/buyer-banner.html` |
-| Bottom nav: Home / Pre-order / Orders / Account | ✅ | 4 items |
+| Bottom nav: Home / Orders / Account | ✅ | 3 items |
 
 ### 2. Seller Page (`/v2/seller/[id]`)
 
