@@ -269,7 +269,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         .subscribe();
 
       // Fallback poll every 30s
-      pollTimer = setInterval(() => { if (currentTab === "pending") loadOrders(false); }, 30000);
+      pollTimer = setInterval(() => { loadOrders(false); }, 30000);
     } catch (err) {
       console.error("dash init failed", err);
       (window as any).v2Toast?.("error", "Load failed", "Refresh to try again");
@@ -572,7 +572,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
   document.getElementById("v2-dash-export")?.addEventListener("click", (e) => {
     e.preventDefault();
     if (!sellerId) return;
-    const url = `/api/seller/orders-export?seller_id=${encodeURIComponent(sellerId)}&date_filter=${encodeURIComponent(currentRange === "all" ? "30d" : currentRange)}`;
+    const url = `/api/seller/orders-export?seller_id=${encodeURIComponent(sellerId)}&date_filter=${encodeURIComponent(currentRange)}`;
     window.location.href = url;
   });
 

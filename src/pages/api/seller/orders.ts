@@ -74,15 +74,29 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    // Validate status transition
+    const validTransitions: Record<string, string[]> = {
+      pending: ["confirmed", "declined"],
+      pre_order: ["confirmed", "declined"],
+      scheduled: ["confirmed", "declined"],
+      confirmed: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
+      paid: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
+      ready_for_pickup: ["completed", "cancelled"],
+      out_for_delivery: ["completed", "cancelled"],
+    };
+    const { data: currentOrder } = await supabase.from("orders").select("status").eq("id", order_id).single();
+    const currentStatus = currentOrder?.status;
+    if (currentStatus && validTransitions[currentStatus] && !validTransitions[currentStatus].includes(status)) {
+      return new Response(JSON.stringify({ error: `Cannot change from ${currentStatus} to ${status}` }), { status: 400 });
+    }
+
     const updates: any = { status };
     if (final_price !== undefined) {
       updates.final_price = final_price;
       // When seller sets final_price on a pre-order, keep as pre_order
       // Buyer must accept before it becomes confirmed
       if (status === "confirmed") {
-        // Check if this was a pre-order — if so, keep status as pre_order
-        const { data: currentOrder } = await supabase.from("orders").select("status").eq("id", order_id).single();
-        if (currentOrder?.status === "pre_order") {
+        if (currentStatus === "pre_order") {
           updates.status = "pre_order"; // Stay as pre_order until buyer accepts
         }
       }
