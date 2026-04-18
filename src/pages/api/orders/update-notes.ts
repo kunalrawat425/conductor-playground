@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { error } = await supabase
       .from("orders")
       .update({
-        cut_style: typeof cut_style === "string" ? cut_style.slice(0, 100) : "",
+        cut_style: typeof cut_style === "string" ? cut_style.slice(0, 50) : "",
         buyer_notes: typeof buyer_notes === "string" ? buyer_notes.slice(0, 500) : "",
       })
       .eq("id", order_id);
