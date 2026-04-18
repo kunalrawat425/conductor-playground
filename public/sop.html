@@ -117,7 +117,7 @@
     <div class="fn fn-b">Track page<br>/track</div><div class="fa">→</div>
     <div class="fn fn-g">Real-time<br>status updates</div><div class="fa">→</div>
     <div class="fn fn-g">Push + email<br>on changes</div><div class="fa">→</div>
-    <div class="fn fn-g">Details: ID,<br>seller contact</div>
+    <div class="fn fn-g">Details: ID,<br>📞 Call / 💬 WhatsApp</div>
   </div>
   <p style="font-size:12px;color:#666;margin-top:8px;">Cancel button available for pending/pre_order/scheduled. Reason prompt on cancel.</p>
 </div>
@@ -224,7 +224,7 @@
 <table>
   <tr><th>Condition</th><th>What Shows</th></tr>
   <tr><td>No location set</td><td>"Set your location" card</td></tr>
-  <tr><td>Location + sellers nearby</td><td>Promo card ("Join waitlist") + seller list (count = nearby only)</td></tr>
+  <tr><td>Location + sellers nearby</td><td>Filter chips (All, Open now, Pre-order, Pickup, Delivery, Top rated) + category strip + seller cards + "Your Carts" floating pill</td></tr>
   <tr><td>Location + no sellers</td><td>5-card waitlist: hero, flow diagram, 7 benefits, preference form, trust bar</td></tr>
   <tr><td>Filters active + no match</td><td>"No sellers match these filters"</td></tr>
   <tr><td>Seller outside area</td><td>Grayed card + "Outside your area" + waitlist CTA</td></tr>
@@ -240,6 +240,7 @@
   <tr><td><strong>Listings</strong></td><td>Add/edit, per-item Pause/Resume, bulk select + Pause All/Resume All, low stock alert (≤2)</td></tr>
   <tr><td><strong>Profile</strong></td><td>Hours, delivery settings, pre-order toggle, schedule & slots, GPS location</td></tr>
   <tr><td><strong>Notifications</strong></td><td>Push + email on every new order</td></tr>
+  <tr><td><strong>Dark Mode</strong></td><td>System preference or manual toggle via header button, persists in localStorage</td></tr>
 </table>
 
 <h2><span class="emoji">🔔</span> Notification Matrix</h2>
@@ -356,6 +357,7 @@
   <tr><td>Listing ownership</td><td>seller_id verified via listing before status change</td></tr>
   <tr><td>Auto-migration</td><td>Runs on every Vercel deploy (if DATABASE_URL set)</td></tr>
   <tr><td>Email</td><td>Resend API — order status + waitlist + welcome emails</td></tr>
+  <tr><td>Buyer phone privacy</td><td>Never shared with sellers — stripped from API responses, emails, and all UI</td></tr>
 </table>
 
 <h2><span class="emoji">🗺️</span> All Pages</h2>
@@ -363,10 +365,11 @@
 <table>
   <tr><th>URL</th><th>For</th><th>Purpose</th></tr>
   <tr><td><code>/</code></td><td>Buyer</td><td>Homepage — seller catalog, filters, waitlist card</td></tr>
-  <tr><td><code>/seller/[id]</code></td><td>Buyer</td><td>Menu — ADD/PRE-ORDER, schedule slots, cart, checkout</td></tr>
+  <tr><td><code>/seller/[id]</code></td><td>Buyer</td><td>Menu — ADD/PRE-ORDER, 📞 Call/💬 WhatsApp, cart, checkout</td></tr>
   <tr><td><code>/preorder/[species]</code></td><td>Buyer</td><td>Pre-order by species across sellers</td></tr>
   <tr><td><code>/track</code></td><td>Buyer</td><td>Order tracking — details, cancel, accept/reject price</td></tr>
   <tr><td><code>/me</code></td><td>Buyer</td><td>Profile — address book, location, push</td></tr>
+  <tr><td><code>/search</code></td><td>Buyer</td><td>Search sellers + fish species, trending, filter chips</td></tr>
   <tr><td><code>/buyer-banner.html</code></td><td>Buyer</td><td>Landing page — pain points, features, waitlist</td></tr>
   <tr><td><code>/seller-banner.html</code></td><td>Seller</td><td>Outreach — 4 banners, MR/EN</td></tr>
   <tr><td><code>/dashboard/login</code></td><td>Seller</td><td>OTP login</td></tr>
