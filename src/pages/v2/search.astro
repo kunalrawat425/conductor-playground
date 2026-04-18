@@ -168,7 +168,7 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
         return `<a href="/v2/seller/${l.seller?.id}" class="v2-search-result">
           <div class="emoji">${speciesEmoji(l.species)}</div>
           <div class="body">
-            <div class="n">${escape(l.species)}</div>
+            <div class="n" style="text-transform:capitalize;">${escape(l.species)}</div>
             <div class="sub">${escape(l.seller?.name || "")} · ${escape(l.seller?.location_name || "")}</div>
           </div>
           <div class="price">₹${price}/${escape(unit)}</div>

@@ -53,25 +53,24 @@
 .v2-sc-tags { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
 
 .v2-sc-menu {
-  display: flex; gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   padding: 10px 16px 12px;
-  overflow-x: auto;
   border-top: 1px solid var(--v2-border);
-  scrollbar-width: none;
 }
-.v2-sc-menu::-webkit-scrollbar { display: none; }
 .v2-sc-chip {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 10px;
   background: var(--v2-bg-2);
   border-radius: var(--v2-radius-sm);
-  flex-shrink: 0;
+  min-width: 0;
   text-decoration: none;
 }
 .v2-sc-m-emoji { font-size: 18px; line-height: 1; }
 .v2-sc-m-name {
   font-family: var(--v2-font); font-weight: 600; font-size: 11px;
-  color: var(--v2-ink); text-decoration: none;
+  color: var(--v2-ink); text-decoration: none; text-transform: capitalize;
 }
 .v2-sc-m-price {
   font-family: var(--v2-font); font-weight: 700; font-size: 11px;
@@ -462,6 +461,7 @@ body.v2-has-cart.v2-has-bottom-nav { padding-bottom: calc(64px + 60px + env(safe
   color: var(--v2-ink);
   line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-transform: capitalize;
 }
 .v2-item-desc {
   font-family: var(--v2-font); font-weight: 400; font-size: 10px;
@@ -1096,6 +1096,8 @@ body.v2-has-cart { padding-bottom: calc(64px + 60px + env(safe-area-inset-bottom
 .v2-oc-badge-new { background: var(--v2-brand-l); color: var(--v2-brand); }
 .v2-oc-badge-urgent { background: #FED7AA; color: var(--v2-orange); }
 .v2-oc-badge-preorder { background: #F3E8FF; color: #7C3AED; }
+.v2-oc-badge-ready { background: var(--v2-orange-l); color: var(--v2-orange); }
+.v2-oc-badge-done { background: var(--v2-green-l); color: var(--v2-green); }
 .v2-oc-items {
   font: 400 12px Inter;
   color: var(--v2-ink-2);

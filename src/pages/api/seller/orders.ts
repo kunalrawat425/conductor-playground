@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
+import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 
 export const prerender = false;
 
@@ -12,7 +13,9 @@ const STATUS_LABELS: Record<string, string> = {
   pending: "Order Placed",
   confirmed: "Order Confirmed",
   paid: "Payment Received",
-  picked_up: "Ready for Pickup",
+  ready_for_pickup: "Ready for Pickup",
+  out_for_delivery: "Out for Delivery",
+  picked_up: "Order Picked Up",
   completed: "Order Completed",
   declined: "Order Declined",
   cancelled: "Order Cancelled",
@@ -21,13 +24,13 @@ const STATUS_LABELS: Record<string, string> = {
   pre_order: "Pre-order Placed",
 };
 
-async function sendOrderEmail(to: string, subject: string, bodyHtml: string) {
+async function sendResendEmail(to: string, subject: string, bodyHtml: string) {
   if (!resendApiKey || !to || !to.includes("@")) return;
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "Relifish <onboarding@resend.dev>", to, subject, html: bodyHtml }),
+      body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to, subject, html: bodyHtml }),
     });
   } catch (_) {}
 }
@@ -122,36 +125,32 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       const statusLabel = STATUS_LABELS[status] || status;
       const species = order.species || "Fish";
-      const priceText = final_price ? `₹${final_price}` : data.total_price ? `₹${data.total_price}` : "";
-      const schedText = data.scheduled_for ? `<p style="color:#1565c0;font-weight:600;">🗓️ Scheduled: ${new Date(data.scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${new Date(data.scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>` : "";
-
-      const emailBody = `
-        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
-          <h1 style="font-size:20px;margin:0 0 12px;">🐟 ${statusLabel}</h1>
-          <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin:0 0 16px;">
-            <p style="margin:0 0 8px;font-size:15px;"><strong>${species}</strong> ${data.quantity ? `· ${data.quantity} ${data.quantity_unit}` : ""}</p>
-            ${priceText ? `<p style="margin:0 0 8px;font-size:15px;font-weight:600;">${priceText}</p>` : ""}
-            ${schedText}
-            <p style="margin:0;font-size:13px;color:#666;">Order #${order_id.substring(0, 8)}</p>
-          </div>
-          <a href="https://www.relifish.store/track" style="display:inline-block;background:#0066cc;color:white;padding:10px 24px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px;">Track Order</a>
-          <p style="font-size:12px;color:#999;margin:16px 0 0;">— Team Relifish</p>
-        </div>
-      `;
+      const totalAmount = final_price ? Number(final_price) : Number(data.total_price) || 0;
+      const emailArgs = {
+        statusLabel,
+        species,
+        quantity: data.quantity || 0,
+        quantity_unit: data.quantity_unit || "piece",
+        totalAmount: totalAmount + (Number(data.delivery_fee) || 0),
+        deliveryFee: Number(data.delivery_fee) || 0,
+        orderId: order_id,
+        scheduled_for: data.scheduled_for || null,
+        buyerNotes: data.buyer_notes || null,
+        cutStyle: data.cut_style || null,
+      };
 
       // Email buyer (if they have email)
       if (order.buyer_id) {
         const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
         if (buyer?.email) {
-          await sendOrderEmail(buyer.email, `${statusLabel} — ${species}`, emailBody);
+          await sendResendEmail(buyer.email, `${statusLabel} — ${species}`, orderEmailBuyer(emailArgs));
         }
       }
 
       // Email seller
       const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
       if (seller?.email) {
-        const sellerBody = emailBody.replace("Track Order", "View Orders").replace("/track", "/dashboard/orders");
-        await sendOrderEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, sellerBody);
+        await sendResendEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, orderEmailSeller({ ...emailArgs, buyerPhone: data.buyer_phone }));
       }
     } catch (_) {}
 

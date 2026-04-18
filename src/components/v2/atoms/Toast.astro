@@ -21,10 +21,25 @@
   }
 
   const container = document.getElementById("v2-toast-container");
+  const MAX_TOASTS = 1;
+  const recentTitles = new Map<string, number>();
 
   function show(detail: ToastDetail) {
     if (!container) return;
     const { variant, title, description = "", duration = variant === "error" ? 6000 : 4000 } = detail;
+
+    // Dedupe: skip if same title shown in last 2s
+    const dedupeKey = `${variant}:${title}`;
+    const lastShown = recentTitles.get(dedupeKey) || 0;
+    if (Date.now() - lastShown < 2000) return;
+    recentTitles.set(dedupeKey, Date.now());
+
+    // Limit: remove oldest if at max
+    while (container.children.length >= MAX_TOASTS) {
+      const oldest = container.children[0];
+      if (oldest) oldest.remove();
+    }
+
     const icon = { success: "✓", error: "✕", warning: "!", info: "i" }[variant];
     const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const el = document.createElement("div");

@@ -47,6 +47,13 @@ const tags = [
   seller?.accepts_preorder ? "Pre-order" : null,
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
+  seller?.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null,
+  seller?.delivery_fee_enabled && seller?.delivery_fee_amount > 0
+    ? (seller?.free_delivery_above > 0
+        ? `₹${seller.delivery_fee_amount} delivery · Free above ₹${seller.free_delivery_above}`
+        : `₹${seller.delivery_fee_amount} delivery fee`)
+    : null,
+  // seller?.schedule_pickup_slots ? "Scheduled pickup" : null, // hidden for now
 ].filter(Boolean) as string[];
 ---
 <AppShellV2
@@ -106,13 +113,25 @@ const tags = [
 
 <style is:global>
   .v2-menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
     padding: 0 16px 24px;
   }
-  @media (min-width: 600px) {
-    .v2-menu-grid { grid-template-columns: repeat(3, 1fr); }
+  .v2-item-card {
+    display: flex;
+    flex-direction: row;
+  }
+  .v2-item-img {
+    width: 100px;
+    height: auto;
+    min-height: 80px;
+    flex-shrink: 0;
+    border-radius: var(--v2-radius) 0 0 var(--v2-radius);
+  }
+  .v2-item-body {
+    flex: 1;
+    min-width: 0;
   }
   body.v2-has-cart .v2-main { padding-bottom: 144px; }
 
@@ -149,7 +168,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFreeAbove: seller?.delivery_free_above, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder }}>
+<script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: !isOpen && !seller?.accepts_preorder }}>
   function withCart(fn) {
     if (window.RelifishCart) return fn(window.RelifishCart);
     document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });
@@ -287,6 +306,19 @@ const tags = [
 
     function render() {
       grid.innerHTML = listings.map(renderItem).join("");
+      // If seller is fully closed (closed + no preorder), disable all add buttons and grey out items
+      if (sellerFullyClosed) {
+        grid.style.opacity = "0.5";
+        grid.style.pointerEvents = "none";
+        // Show closed banner above menu
+        if (!document.getElementById("v2-closed-banner")) {
+          const banner = document.createElement("div");
+          banner.id = "v2-closed-banner";
+          banner.style.cssText = "margin:0 16px 12px;padding:14px 16px;background:var(--v2-red-l);border:1px solid var(--v2-red);border-radius:var(--v2-radius);text-align:center;";
+          banner.innerHTML = `<div style="font:700 13px Inter;color:var(--v2-red);">🚫 This seller is closed</div><div style="font:400 11px Inter;color:var(--v2-ink-2);margin-top:4px;">Pre-orders are not available. Check back during opening hours.</div>`;
+          grid.parentElement?.insertBefore(banner, grid);
+        }
+      }
       renderCart();
     }
 
@@ -317,32 +349,38 @@ const tags = [
       document.body.classList.add("v2-has-cart");
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
-      const freeHit = deliveryFreeAbove && sellerSubtotal >= deliveryFreeAbove;
-      const variant = belowMin ? "warning" : freeHit ? "success" : "default";
+      const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
 
-      const leftLine = belowMin
-        ? `Add ₹${minOrder - sellerSubtotal} more for min order`
-        : freeHit ? "🎉 Free delivery unlocked"
-        : `${sellerQty} item${sellerQty !== 1 ? "s" : ""}`;
-      const displayTotal = sellerSubtotal;
-      const ctaText = belowMin ? "Keep shopping" : "Checkout →";
-      const variantClass = variant === "warning" ? "v2-cart-warning" : variant === "success" ? "v2-cart-success" : "";
-      const ctaColorStyle = variant === "warning" ? "color:var(--v2-orange);" : variant === "success" ? "color:var(--v2-green);" : "";
+      // Status line
+      let statusLine = `${sellerQty} item${sellerQty !== 1 ? "s" : ""}`;
+      let statusColor = "var(--v2-ink-3)";
+      if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
+      else if (freeHit) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
 
-      cartMount.innerHTML = `<button class="v2-cart-bar ${variantClass}" id="v2-checkout-btn" type="button">
-        <div class="v2-cb-left">
-          <div class="v2-cb-items">${leftLine}</div>
-          <div class="v2-cb-total">${sellerQty > 0 ? `₹${displayTotal.toLocaleString("en-IN")}` : ""}</div>
+      cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>
+            <div style="font:800 16px Inter;color:var(--v2-ink);">₹${sellerSubtotal.toLocaleString("en-IN")}</div>
+            <div style="font:500 11px Inter;color:${statusColor};margin-top:2px;">${statusLine}</div>
+          </div>
+          <button id="v2-cart-clear" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;" aria-label="Clear cart">✕</button>
         </div>
-        <span class="v2-cb-btn" style="${ctaColorStyle}">${ctaText}</span>
-      </button>`;
+        <div style="display:flex;gap:8px;">
+          <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
+          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.4;pointer-events:none;' : ''}">Checkout →</button>
+        </div>
+      </div>`;
 
-      document.getElementById("v2-checkout-btn")?.addEventListener("click", onCartBarTap);
-    }
-
-    // Single-seller cart: always go straight to checkout for this seller.
-    function onCartBarTap() {
-      openCheckout(sellerId);
+      document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
+      document.getElementById("v2-cart-manage")?.addEventListener("click", () => {
+        window.v2OpenSheet?.("seller-cart-stack");
+      });
+      document.getElementById("v2-cart-clear")?.addEventListener("click", () => {
+        const c = Cart(); if (!c) return;
+        c.clearCart({ sellerId });
+        render();
+        window.v2Toast?.("success", "Cart cleared");
+      });
     }
 
     // Toast when cart switches seller (user added item from different seller page)
@@ -357,6 +395,11 @@ const tags = [
       const c = Cart(); if (!c) return;
       const sid = targetSellerId || sellerId;
       activeCheckoutSellerId = sid;
+
+      if (sellerFullyClosed && sid === sellerId) {
+        window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
+        return;
+      }
 
       const groups = c.groupBySeller();
       const group = groups.find((g) => g.seller_id === sid);
@@ -400,6 +443,37 @@ const tags = [
       document.getElementById("seller-checkout-total").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
       document.getElementById("seller-checkout-total-final").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
 
+      // Free delivery banner + delivery hint in checkout step 1
+      const freeDelivBanner = document.getElementById("seller-checkout-free-delivery-banner");
+      const delivHint = document.getElementById("seller-checkout-delivery-hint");
+      if (deliveryFeeEnabled && deliveryFeeAmount > 0) {
+        if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
+          if (freeDelivBanner) freeDelivBanner.style.display = "block";
+          if (delivHint) delivHint.style.display = "none";
+        } else {
+          if (freeDelivBanner) freeDelivBanner.style.display = "none";
+          if (delivHint) {
+            delivHint.style.display = "block";
+            if (deliveryFreeAbove > 0) {
+              const remaining = deliveryFreeAbove - subtotal;
+              delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee · Add ₹${remaining.toLocaleString("en-IN")} more for free delivery`;
+            } else {
+              delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee applies for delivery orders`;
+            }
+          }
+        }
+      } else {
+        if (freeDelivBanner) freeDelivBanner.style.display = "none";
+        if (delivHint) {
+          if (hasDelivery) {
+            delivHint.style.display = "block";
+            delivHint.textContent = "🚲 Free delivery available";
+          } else {
+            delivHint.style.display = "none";
+          }
+        }
+      }
+
       // Reset delivery fee preview — method radio click will repopulate.
       const delivRow = document.getElementById("seller-checkout-delivery-row");
       if (delivRow) delivRow.style.display = "none";
@@ -420,6 +494,15 @@ const tags = [
         if (pickupRadio) pickupRadio.checked = true;
       }
 
+      // Update delivery fee description in checkout sheet
+      const delivDescEl = document.getElementById("seller-checkout-delivery-desc");
+      if (delivDescEl && deliveryFeeEnabled && deliveryFeeAmount > 0) {
+        const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
+        delivDescEl.textContent = `To your address · ₹${deliveryFeeAmount} fee${freeNote}`;
+      } else if (delivDescEl) {
+        delivDescEl.textContent = "To your address · Free delivery";
+      }
+
       // Auto-load default address when sheet opens
       preloadAddress();
 
@@ -438,12 +521,11 @@ const tags = [
         const subEl = document.getElementById("seller-checkout-subtotal");
         const subtotalText = (subEl?.textContent || "").replace(/[^\d]/g, "");
         const subtotal = parseInt(subtotalText) || 0;
-        // Rough client estimate — server is authoritative.
-        // ₹40 flat under ₹500, FREE at/above ₹500 when seller has free delivery threshold.
+        // Use actual seller config — matches server-side computeDeliveryFee logic.
         let fee = 0;
-        if (isDelivery) {
-          if (deliveryFreeAbove && subtotal >= deliveryFreeAbove) fee = 0;
-          else fee = 40;
+        if (isDelivery && deliveryFeeEnabled) {
+          if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) fee = 0;
+          else fee = deliveryFeeAmount;
         }
         if (delivRow) delivRow.style.display = isDelivery ? "flex" : "none";
         if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : "FREE";
@@ -551,11 +633,21 @@ const tags = [
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed");
 
-        // Success: clear cart, navigate to track.
+        // Success: clear cart, show fullscreen success animation, redirect
         c.clearCart({ sellerId: activeCheckoutSellerId });
-        render();
-        window.v2Toast?.("success", "Order placed!", `${group.items.length} item${group.items.length !== 1 ? "s" : ""} confirmed`);
-        setTimeout(() => { window.location.href = "/v2/track"; }, 1200);
+        window.v2CloseSheet?.("seller-checkout");
+
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:var(--v2-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:v2-fade-in 300ms ease-out;";
+        overlay.innerHTML = `
+          <div style="width:80px;height:80px;border-radius:50%;background:var(--v2-green);display:flex;align-items:center;justify-content:center;font-size:40px;animation:v2-slide-up 400ms ease-out;">✓</div>
+          <div style="font:800 22px Inter;color:var(--v2-ink);margin-top:20px;">Order placed!</div>
+          <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-top:8px;">${group.items.length} item${group.items.length !== 1 ? "s" : ""} confirmed</div>
+          <div style="margin-top:24px;"><span class="v2-spinner v2-spinner-sm"></span></div>
+          <div style="font:500 12px Inter;color:var(--v2-ink-4);margin-top:8px;">Redirecting to your orders...</div>
+        `;
+        document.body.appendChild(overlay);
+        setTimeout(() => { window.location.href = "/v2/track"; }, 2000);
       } catch (err) {
         window.v2Toast?.("error", "Failed", err.message || "Try again");
         btn.disabled = false;
@@ -564,15 +656,21 @@ const tags = [
     });
 
     function add(id, price, name, unit, optId, optLabel, bundleSize) {
+      if (sellerFullyClosed) {
+        window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
+        return;
+      }
       const c = Cart(); if (!c) return;
-      const bs = parseInt(bundleSize) || 1;
+      const bs = parseFloat(bundleSize) || 1;
+      // Store price per base unit so qty × price always gives correct total
+      const pricePerUnit = bs > 0 ? price / bs : price;
       c.addItem({
         listing_id: id,
         seller_id: sellerId,
         seller_name: sellerName,
         name,
         qty_unit: unit,
-        price,
+        price: pricePerUnit,
         pricing_option_id: optId || "default",
         pricing_label: optLabel || unit,
         qty: bs, // add one pack (= bundle_size base units)

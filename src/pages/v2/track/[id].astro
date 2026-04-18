@@ -153,7 +153,14 @@ const { id } = Astro.params;
   }
 </style>
 
-<script define:vars={{ orderId: id }}>
+<script>
+  import { createClient } from "@supabase/supabase-js";
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL || "",
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
+  );
+  // Extract order ID from URL path: /v2/track/{id}
+  const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
   function escape(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
@@ -165,6 +172,7 @@ const { id } = Astro.params;
       confirmed: "Confirmed",
       paid: "Paid",
       ready_for_pickup: "Ready for pickup",
+      out_for_delivery: "Out for delivery",
       picked_up: "Picked up",
       completed: "Completed",
       declined: "Declined by seller",
@@ -172,11 +180,15 @@ const { id } = Astro.params;
       refunded: "Refunded",
     })[s] || s;
   }
+  let _orderType = "pickup"; // set during load()
   function statusToStep(s) {
+    if (_orderType === "delivery") {
+      return ({ pending:0, pre_order:0, scheduled:0, confirmed:1, paid:1, out_for_delivery:2, picked_up:3, completed:3 })[s] ?? 0;
+    }
     return ({ pending:0, pre_order:0, scheduled:0, confirmed:1, paid:1, ready_for_pickup:2, picked_up:3, completed:3 })[s] ?? 0;
   }
   function isCancellable(s) {
-    return s === "pending" || s === "pre_order";
+    return s === "pending" || s === "pre_order" || s === "scheduled";
   }
 
   let pollTimer = null;
@@ -209,16 +221,22 @@ const { id } = Astro.params;
     document.getElementById("v2-od-content").style.display = "block";
 
     document.getElementById("v2-od-status").textContent = statusLabel(o.status);
-    document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,8).toUpperCase();
+    document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,6).toUpperCase();
     document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN");
 
-    // Stepper
+    // Stepper — different labels for pickup vs delivery
+    _orderType = o.order_type || "pickup";
     const step = statusToStep(o.status);
+    const stepLabels = _orderType === "delivery"
+      ? ["Placed", "Confirmed", "On the way", "Delivered"]
+      : ["Placed", "Confirmed", "Ready", "Picked up"];
     const stepper = document.getElementById("v2-od-stepper");
     stepper.innerHTML = [0,1,2,3].map(i =>
       `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
       (i < 3 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
     ).join("");
+    const stepLabelEl = document.querySelector(".v2-od-steplabels");
+    if (stepLabelEl) stepLabelEl.innerHTML = stepLabels.map(l => `<span>${l}</span>`).join("");
 
     // Seller
     const seller = o.seller || {};
@@ -233,14 +251,20 @@ const { id } = Astro.params;
       quantity_unit: o.quantity_unit,
       total_price: o.total_price,
     }];
+    // Cut style & notes (may be on order directly or on individual items)
+    const cutStyle = o.cut_style || "";
+    const buyerNotes = o.buyer_notes || "";
+
     document.getElementById("v2-od-items").innerHTML = items.map(it => `
       <div class="v2-od-item-row">
         <div>
-          <div class="v2-od-item-name">${escape(it.species || "Fish")}</div>
+          <div class="v2-od-item-name" style="text-transform:capitalize;">${escape(it.species || "Fish")}</div>
           <div class="v2-od-item-qty">${escape(it.quantity)} ${escape(it.quantity_unit || 'kg')}</div>
         </div>
         <div style="font-weight:700;">₹${(it.total_price || 0).toLocaleString("en-IN")}</div>
-      </div>`).join("");
+      </div>`).join("")
+      + (cutStyle ? `<div style="font:600 12px Inter;color:var(--v2-ink-2);margin-top:8px;">✂️ ${escape(cutStyle.split(",").map(c => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : "")
+      + (buyerNotes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(buyerNotes)}</div>` : "");
 
     // Fulfillment
     const fulfillEl = document.getElementById("v2-od-fulfill");
@@ -315,13 +339,125 @@ const { id } = Astro.params;
       } else {
         actions.innerHTML = "";
       }
+    } else if (["confirmed", "paid", "ready_for_pickup"].includes(o.status)) {
+      const hasCut = !!o.cut_style;
+      const hasNotes = !!o.buyer_notes;
+      const alreadySaved = hasCut || hasNotes;
+
+      const savedCuts = (o.cut_style || "").split(",").filter(Boolean);
+      const cutOptions = [
+        { value: "whole", label: "🐟 Whole" },
+        { value: "cleaned", label: "✂️ Cleaned" },
+        { value: "cut", label: "🔪 Cut" },
+      ];
+
+      if (alreadySaved) {
+        const cutDisplay = savedCuts.map(c => cutOptions.find(x => x.value === c)?.label || c).join(", ") || "Not set";
+        actions.innerHTML = `
+          <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div style="font:700 13px Inter;color:var(--v2-ink);">✅ Preferences saved</div>
+              <button id="v2-od-edit-prefs" type="button" style="background:none;border:none;font:600 12px Inter;color:var(--v2-brand);cursor:pointer;">Edit</button>
+            </div>
+            <div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">${cutDisplay}</div>
+            ${hasNotes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
+          </div>`;
+        document.getElementById("v2-od-edit-prefs")?.addEventListener("click", () => showPrefsForm(o));
+      } else {
+        showPrefsForm(o);
+      }
+
+      function showPrefsForm(o) {
+        const sc = (o.cut_style || "").split(",").filter(Boolean);
+        actions.innerHTML = `
+          <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
+            <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:10px;">✂️ Add preferences</div>
+            <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:12px;">Select how you want your fish prepared. You can choose multiple.</div>
+            <div style="margin-bottom:10px;">
+              <label style="font:600 12px Inter;color:var(--v2-ink-2);display:block;margin-bottom:6px;">Cut style</label>
+              <div style="display:flex;gap:8px;" id="v2-od-cut-opts">
+                ${cutOptions.map(opt => {
+                  const checked = sc.includes(opt.value);
+                  return `<label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid ${checked ? 'var(--v2-brand)' : 'var(--v2-border)'};border-radius:var(--v2-radius-sm);cursor:pointer;background:${checked ? 'var(--v2-brand-l)' : 'var(--v2-bg)'};font:500 12px Inter;color:var(--v2-ink);">
+                    <input type="checkbox" name="v2-od-cut" value="${opt.value}" ${checked ? 'checked' : ''} style="display:none;" /> ${opt.label}
+                  </label>`;
+                }).join("")}
+              </div>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font:600 12px Inter;color:var(--v2-ink-2);display:block;margin-bottom:6px;">Special request (optional)</label>
+              <textarea id="v2-od-notes" rows="2" placeholder="e.g. medium pieces, no head" style="width:100%;padding:10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);resize:vertical;outline:none;box-sizing:border-box;">${escape(o.buyer_notes || "")}</textarea>
+            </div>
+            <button id="v2-od-save-notes" class="v2-btn v2-btn-primary v2-btn-sm v2-btn-full">${alreadySaved ? 'Update preferences' : 'Save preferences'}</button>
+          </div>`;
+
+        actions.querySelectorAll('input[name="v2-od-cut"]').forEach(cb => {
+          cb.addEventListener("change", () => {
+            actions.querySelectorAll('#v2-od-cut-opts label').forEach(l => {
+              const inp = l.querySelector('input') as HTMLInputElement;
+              l.style.borderColor = inp?.checked ? 'var(--v2-brand)' : 'var(--v2-border)';
+              l.style.background = inp?.checked ? 'var(--v2-brand-l)' : 'var(--v2-bg)';
+            });
+          });
+        });
+
+        document.getElementById("v2-od-save-notes")?.addEventListener("click", async () => {
+          const checked = Array.from(actions.querySelectorAll('input[name="v2-od-cut"]:checked')).map((c: any) => c.value);
+          const cut = checked.join(",") || "";
+          const notes = (document.getElementById("v2-od-notes") as HTMLTextAreaElement)?.value?.trim() || "";
+          const btn = document.getElementById("v2-od-save-notes") as HTMLButtonElement;
+          btn.disabled = true;
+          btn.textContent = "Saving...";
+          try {
+            const res = await fetch("/api/orders/update-notes", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ order_id: o.id, buyer_id: localStorage.getItem("zepto_buyer_id"), cut_style: cut, buyer_notes: notes }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed");
+            window.v2Toast?.("success", "Preferences saved", "Seller will see your request");
+            load();
+          } catch (err) {
+            window.v2Toast?.("error", "Failed", err.message || "Could not save");
+            btn.disabled = false;
+            btn.textContent = "Save preferences";
+          }
+        });
+      }
     } else {
       actions.innerHTML = "";
     }
   }
 
-  load();
-  // Real-time polling every 15s while order is active
+  function initPage() {
+    load();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPage);
+  } else {
+    initPage();
+  }
+
+  // Supabase Realtime: instant order status updates
+  const terminalStatuses = ["picked_up", "completed", "cancelled", "declined", "refunded"];
+  const channel = supabase
+    .channel(`order-${orderId}`)
+    .on("postgres_changes", {
+      event: "UPDATE",
+      schema: "public",
+      table: "orders",
+      filter: `id=eq.${orderId}`,
+    }, (payload: any) => {
+      load(); // re-render with new data
+      const newStatus = payload.new?.status;
+      if (newStatus && terminalStatuses.includes(newStatus)) {
+        channel.unsubscribe();
+      }
+    })
+    .subscribe();
+
+  // Fallback poll every 30s in case realtime connection drops
   pollTimer = setInterval(() => {
     const statusEl = document.getElementById("v2-od-status");
     const text = statusEl?.textContent || "";
@@ -330,5 +466,5 @@ const { id } = Astro.params;
       return;
     }
     load();
-  }, 15000);
+  }, 30000);
 </script>

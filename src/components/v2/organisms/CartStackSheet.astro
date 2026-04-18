@@ -5,83 +5,71 @@ interface Props {
 }
 const { id = "v2-cart-stack" } = Astro.props;
 ---
-<!--
-  Zomato-style cart stack. Shows one card per seller with items in the global cart.
-  Each card: seller name · item count · subtotal · [Checkout] [🗑 Remove].
-  The parent page (e.g. /v2/seller/[id]) wires the Checkout click to openCheckout(sellerId).
--->
-<BottomSheet id={id} title="Your carts" showClose={true}>
+<BottomSheet id={id} title="Your Carts" showClose={true}>
+  <div id={`${id}-header`} style="display:none;padding:0 0 8px;">
+    <button id={`${id}-clear-all`} type="button" style="float:right;background:none;border:none;font:600 13px Inter;color:var(--v2-red);cursor:pointer;padding:4px 0;">Clear All</button>
+    <div style="clear:both;"></div>
+  </div>
   <div id={`${id}-body`}>
     <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
       <span class="v2-spinner v2-spinner-md"></span>
       <div style="margin-top:8px;">Loading carts…</div>
     </div>
   </div>
-  <div style="font:400 11px Inter;color:var(--v2-ink-3);text-align:center;margin-top:8px;line-height:1.5;">
-    One checkout per seller. Delivery fee + min order apply per seller.
-  </div>
 </BottomSheet>
 
 <style is:global>
-  .v2-cs-card {
-    background: var(--v2-bg);
-    border: 1px solid var(--v2-border);
-    border-radius: var(--v2-radius);
-    padding: 14px;
-    margin-bottom: 10px;
-  }
-  .v2-cs-top {
+  .v2-cs-row {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
-    margin-bottom: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--v2-border);
   }
-  .v2-cs-seller { font: 800 15px Inter; color: var(--v2-ink); }
-  .v2-cs-meta { font: 500 12px Inter; color: var(--v2-ink-3); margin-top: 2px; }
-  .v2-cs-total { font: 800 16px Inter; color: var(--v2-ink); white-space: nowrap; }
-  .v2-cs-items-list {
-    background: var(--v2-bg-2);
-    border-radius: var(--v2-radius-sm);
-    padding: 8px 10px;
-    margin-bottom: 10px;
-    max-height: 120px;
-    overflow-y: auto;
+  .v2-cs-row:last-child { border-bottom: none; }
+  .v2-cs-avatar {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--v2-brand-l), #DBEAFE);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
   }
-  .v2-cs-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    font: 500 12px Inter;
-    color: var(--v2-ink-2);
-  }
-  .v2-cs-warn {
-    font: 600 11px Inter;
-    color: var(--v2-orange);
-    margin-bottom: 8px;
-  }
-  .v2-cs-actions { display: flex; gap: 8px; }
-  .v2-cs-checkout {
-    flex: 1;
+  .v2-cs-info { flex: 1; min-width: 0; }
+  .v2-cs-seller { font: 700 14px Inter; color: var(--v2-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v2-cs-meta { font: 400 11px Inter; color: var(--v2-ink-3); margin-top: 2px; }
+  .v2-cs-meta a { color: var(--v2-brand); text-decoration: none; font-weight: 600; }
+  .v2-cs-price-badge {
     background: var(--v2-brand);
     color: #fff;
+    font: 800 13px Inter;
+    padding: 6px 12px;
+    border-radius: var(--v2-radius-sm);
+    white-space: nowrap;
+    text-align: center;
+    flex-shrink: 0;
+    cursor: pointer;
     border: none;
-    padding: 10px 14px;
-    border-radius: var(--v2-radius-sm);
-    font: 700 13px Inter;
-    cursor: pointer;
   }
-  .v2-cs-checkout:disabled { background: var(--v2-ink-4); cursor: not-allowed; }
-  .v2-cs-remove {
-    flex: 0 0 44px;
-    background: var(--v2-bg);
-    color: var(--v2-red);
-    border: 1.5px solid var(--v2-red-l);
-    padding: 10px;
-    border-radius: var(--v2-radius-sm);
-    cursor: pointer;
-    font-size: 16px;
+  .v2-cs-price-label {
+    display: block;
+    font: 600 9px Inter;
+    opacity: .85;
+    margin-top: 1px;
   }
+  .v2-cs-del {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: none;
+    border: none;
+    color: var(--v2-ink-4);
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 50%;
+    transition: background var(--v2-dur-fast) var(--v2-ease), color var(--v2-dur-fast) var(--v2-ease);
+  }
+  .v2-cs-del:hover { background: var(--v2-red-l); color: var(--v2-red); }
   .v2-cs-empty {
     text-align: center;
     padding: 24px;
@@ -97,45 +85,41 @@ const { id = "v2-cart-stack" } = Astro.props;
 
   function render() {
     const body = document.getElementById(`${id}-body`);
+    const header = document.getElementById(`${id}-header`);
     if (!body) return;
     const Cart = window.RelifishCart;
     if (!Cart) {
       body.innerHTML = `<div class="v2-cs-empty">Cart not ready — try again.</div>`;
+      if (header) header.style.display = "none";
       return;
     }
     const groups = Cart.groupBySeller();
     if (groups.length === 0) {
-      body.innerHTML = `<div class="v2-cs-empty">Your cart is empty.</div>`;
+      if (header) header.style.display = "none";
+      window.v2CloseSheet?.(id);
       return;
     }
+
+    if (header) header.style.display = "block";
+
     body.innerHTML = groups.map((g) => {
-      // We don't have seller.min_order_amount in the cart item; page that opens this
-      // sheet should annotate groups with `minOrder` via a global hint if needed.
-      // For now, show the checkout button; seller-page checkout will block below-min.
-      const minOrder = (window.__relifishMinOrders || {})[g.seller_id] || 0;
-      const belowMin = minOrder > 0 && g.subtotal < minOrder;
-      const itemsPreview = g.items.slice(0, 3).map((i) =>
-        `<div class="v2-cs-item"><span>${escape(i.name)} × ${i.qty}${escape(i.qty_unit || 'kg')}</span><span>₹${(i.qty * i.price).toLocaleString("en-IN")}</span></div>`
-      ).join("") + (g.items.length > 3 ? `<div class="v2-cs-item" style="color:var(--v2-ink-3);">+ ${g.items.length - 3} more item${g.items.length - 3 !== 1 ? "s" : ""}</div>` : "");
-      return `<div class="v2-cs-card" data-seller-id="${escape(g.seller_id)}">
-        <div class="v2-cs-top">
-          <div style="flex:1;min-width:0;">
-            <div class="v2-cs-seller">${escape(g.seller_name || "Seller")}</div>
-            <div class="v2-cs-meta">${g.total_qty} item${g.total_qty !== 1 ? "s" : ""}</div>
-          </div>
-          <div class="v2-cs-total">₹${g.subtotal.toLocaleString("en-IN")}</div>
+      const itemCount = g.items.length;
+      const itemLabel = `${itemCount} item${itemCount !== 1 ? "s" : ""}`;
+      return `<div class="v2-cs-row" data-seller-id="${escape(g.seller_id)}">
+        <div class="v2-cs-avatar">🐟</div>
+        <div class="v2-cs-info">
+          <div class="v2-cs-seller">${escape(g.seller_name || "Seller")}</div>
+          <div class="v2-cs-meta">${itemLabel} · <a href="/v2/seller/${escape(g.seller_id)}">View Menu ›</a></div>
         </div>
-        <div class="v2-cs-items-list">${itemsPreview}</div>
-        ${belowMin ? `<div class="v2-cs-warn">Add ₹${minOrder - g.subtotal} more for min order</div>` : ""}
-        <div class="v2-cs-actions">
-          <button class="v2-cs-checkout" data-cs-checkout="${escape(g.seller_id)}" ${belowMin ? "disabled" : ""}>
-            ${belowMin ? "Below min order" : `Checkout ₹${g.subtotal.toLocaleString("en-IN")} →`}
-          </button>
-          <button class="v2-cs-remove" data-cs-remove="${escape(g.seller_id)}" aria-label="Remove this cart" title="Remove this cart">🗑</button>
-        </div>
+        <button class="v2-cs-price-badge" data-cs-checkout="${escape(g.seller_id)}">
+          ₹${g.subtotal.toLocaleString("en-IN")}
+          <span class="v2-cs-price-label">View Cart</span>
+        </button>
+        <button class="v2-cs-del" data-cs-remove="${escape(g.seller_id)}" aria-label="Remove cart" title="Remove cart">✕</button>
       </div>`;
     }).join("");
 
+    // Checkout per seller
     body.querySelectorAll("[data-cs-checkout]").forEach((b) => {
       b.addEventListener("click", () => {
         const sellerId = b.getAttribute("data-cs-checkout");
@@ -143,10 +127,11 @@ const { id = "v2-cart-stack" } = Astro.props;
         document.dispatchEvent(new CustomEvent("v2-cs-checkout", { detail: { sellerId } }));
       });
     });
+
+    // Remove per seller
     body.querySelectorAll("[data-cs-remove]").forEach((b) => {
       b.addEventListener("click", () => {
         const sellerId = b.getAttribute("data-cs-remove");
-        if (!confirm("Remove this cart? Items will be cleared.")) return;
         window.RelifishCart?.clearCart({ sellerId });
         render();
         window.v2Toast?.("success", "Cart removed");
@@ -154,7 +139,18 @@ const { id = "v2-cart-stack" } = Astro.props;
     });
   }
 
-  // Re-render when cart changes (e.g. user added an item elsewhere)
+  // Clear all
+  document.getElementById(`${id}-clear-all`)?.addEventListener("click", () => {
+    const Cart = window.RelifishCart;
+    if (!Cart) return;
+    const groups = Cart.groupBySeller();
+    if (groups.length === 0) return;
+    groups.forEach(g => Cart.clearCart({ sellerId: g.seller_id }));
+    render();
+    window.v2Toast?.("success", "All carts cleared");
+  });
+
+  // Re-render when cart changes
   window.addEventListener("v2-cart-changed", () => {
     if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) render();
   });
@@ -164,6 +160,5 @@ const { id = "v2-cart-stack" } = Astro.props;
     if (e.detail?.id === id) render();
   });
 
-  // Initial render if visible at mount (rare)
   if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) render();
 </script>

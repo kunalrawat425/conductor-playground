@@ -118,15 +118,9 @@ try {
         <span id="po-qty-unit" style="font:600 13px Inter;color:var(--v2-ink-3);min-width:30px;">kg</span>
       </div>
 
-      <label class="po-label">Cut style</label>
-      <div class="po-cut-grid">
-        <label class="po-cut po-cut-selected"><input type="radio" name="cut" value="whole" checked /><div>🐟 Whole</div></label>
-        <label class="po-cut"><input type="radio" name="cut" value="cleaned" /><div>✂️ Cleaned</div></label>
-        <label class="po-cut"><input type="radio" name="cut" value="cut" /><div>🔪 Cut into pieces</div></label>
+      <div style="font:400 11px Inter;color:var(--v2-ink-3);background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);padding:10px 14px;margin-top:4px;">
+        ✂️ Cut style and special requests can be shared with the seller after your order is confirmed.
       </div>
-
-      <label class="po-label">Special request (optional)</label>
-      <textarea id="po-notes" rows="2" placeholder="e.g. medium size pieces, no head" style="width:100%;padding:12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;resize:vertical;outline:none;"></textarea>
 
       <div class="po-actions">
         <button type="button" class="v2-btn v2-btn-ghost v2-btn-md" data-back="1">← Back</button>
@@ -413,8 +407,6 @@ try {
           buyer_id: buyerId,
           order_type: "pickup",
           seller_id: state.sellerId,
-          buyer_notes: state.notes || "",
-          cut_style: state.cut || "whole",
           schedule_slot_id: state.hasSlots ? state.slot : null,
         }),
       });

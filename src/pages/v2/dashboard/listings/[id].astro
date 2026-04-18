@@ -33,8 +33,8 @@ const speciesName = listing?.species || "Listing";
     </div>
   </div>
 
-  <!-- Client-side ownership gate — the API also enforces (403) but we don't want the form to even render. -->
-  <script define:vars={{ ownerId: listing?.seller_id || "" }}>
+  <script define:vars={{ ownerId: listing?.seller_id || "", listingId: listing?.id || "" }}>
+    // Ownership gate
     try {
       const me = localStorage.getItem("zepto_seller_id");
       const form = document.getElementById("listing-form");
@@ -46,6 +46,85 @@ const speciesName = listing?.species || "Listing";
         if (denied) denied.style.display = "block";
       }
     } catch {}
+  </script>
+  <script>
+    import { updateListing, uploadFishPhoto } from "../../../../lib/supabase";
+    import { validateSellerListingForm, focusListingField } from "../../../../lib/listing-form-validation";
+    import { supabase } from "../../../../lib/supabase";
+
+    const sellerId = localStorage.getItem("zepto_seller_id");
+    if (sellerId) {
+      const form = document.getElementById("listing-form") as HTMLFormElement | null;
+      if (form) {
+        const lid = form.dataset.listingId;
+        if (lid && form.dataset.sellerId === sellerId) {
+          let sellerMinOrder = 0;
+          try {
+            const { data: s } = await supabase.from("sellers").select("min_order_amount").eq("id", sellerId).single();
+            sellerMinOrder = Number(s?.min_order_amount) || 0;
+          } catch {}
+
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const species = formData.get("species") as string;
+            const fishSizeRaw = (formData.get("fish_size") as string)?.trim() || "";
+            const fish_size = ["small", "medium", "large"].includes(fishSizeRaw) ? fishSizeRaw : null;
+            const photoFile = formData.get("photo") as File;
+
+            const validated = validateSellerListingForm({
+              species,
+              weightAvailStr: (formData.get("weight_avail") as string) ?? "",
+              pricingOptionsJson: (formData.get("pricing_options_json") as string) ?? "[]",
+              buyerDailyStr: formData.get("buyer_daily_qty_limit")?.toString() ?? "",
+              oosThresholdStr: formData.get("oos_threshold")?.toString() ?? "",
+              sellerMinOrderAmount: sellerMinOrder,
+            });
+            if (!validated.ok) {
+              (window as any).v2Toast?.("error", "Validation error", validated.message);
+              focusListingField(validated.focusId);
+              return;
+            }
+            const { weightAvail, buyerDaily, oosThreshold, pricingOptions } = validated.data;
+
+            const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+            if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
+
+            try {
+              let photoUrl: string | null | undefined = undefined;
+              if (photoFile?.size > 0) {
+                if (photoFile.size > 5 * 1024 * 1024) {
+                  (window as any).v2Toast?.("error", "Too large", "Photo must be under 5MB");
+                  if (btn) { btn.disabled = false; btn.textContent = "Save listing"; }
+                  return;
+                }
+                photoUrl = await uploadFishPhoto(photoFile, sellerId);
+              }
+
+              await updateListing(
+                lid,
+                {
+                  species,
+                  fish_size,
+                  pricing_options: pricingOptions,
+                  weight_avail: weightAvail,
+                  ...(photoUrl !== undefined ? { photo_url: photoUrl } : {}),
+                  buyer_daily_qty_limit: buyerDaily,
+                  oos_threshold: oosThreshold,
+                },
+                sellerId
+              );
+
+              (window as any).v2Toast?.("success", "Listing saved!", "Buyers see updated info");
+              setTimeout(() => { window.location.href = "/v2/dashboard/listings"; }, 800);
+            } catch (err: any) {
+              (window as any).v2Toast?.("error", "Failed", err.message || "Could not save listing");
+              if (btn) { btn.disabled = false; btn.textContent = "Save listing"; }
+            }
+          });
+        }
+      }
+    }
   </script>
 
   <style is:global>
@@ -96,7 +175,7 @@ const speciesName = listing?.species || "Listing";
     #v2-form-mount .btn-green { background: var(--v2-green) !important; }
     #v2-form-mount .btn-red { background: var(--v2-red) !important; }
 
-    /* Dark mode: override V1 listing form hardcoded whites/grays */
+    /* Dark mode: override ALL V1 listing form hardcoded colors */
     #v2-form-mount .listing-card {
       background: var(--v2-bg) !important;
       border-color: var(--v2-border) !important;
@@ -114,8 +193,14 @@ const speciesName = listing?.species || "Listing";
     #v2-form-mount .listing-opt,
     #v2-form-mount .listing-hint,
     #v2-form-mount .listing-stock-hint,
+    #v2-form-mount .listing-stock-info,
+    #v2-form-mount .listing-photo-preview-label,
+    #v2-form-mount .form-hint,
     #v2-form-mount p {
       color: var(--v2-ink-3) !important;
+    }
+    #v2-form-mount .listing-field label {
+      color: var(--v2-ink) !important;
     }
     #v2-form-mount .listing-file-input {
       background: var(--v2-bg-2) !important;
@@ -123,7 +208,8 @@ const speciesName = listing?.species || "Listing";
       color: var(--v2-ink-2) !important;
     }
     #v2-form-mount .listing-pricing-row,
-    #v2-form-mount .listing-price-row {
+    #v2-form-mount .listing-price-row,
+    #v2-form-mount .pricing-row-grid {
       background: var(--v2-bg-2) !important;
       border-color: var(--v2-border) !important;
     }
@@ -137,9 +223,84 @@ const speciesName = listing?.species || "Listing";
       color: var(--v2-brand) !important;
       border-color: var(--v2-border) !important;
     }
+    #v2-form-mount .btn-remove-price {
+      background: var(--v2-bg-3) !important;
+      color: var(--v2-ink-3) !important;
+    }
     #v2-form-mount .listing-radio-group label,
     #v2-form-mount .listing-checkbox label {
       color: var(--v2-ink) !important;
+    }
+    #v2-form-mount .listing-inline-error {
+      color: var(--v2-red) !important;
+    }
+    #v2-form-mount .listing-card--pricing {
+      border-color: var(--v2-brand) !important;
+    }
+    #v2-form-mount .current-photo {
+      border-color: var(--v2-border) !important;
+    }
+    #v2-form-mount .listing-req {
+      color: var(--v2-red) !important;
+    }
+    /* Deal/discount section inline-styled elements */
+    #v2-form-mount .pricing-row-deal {
+      background: var(--v2-bg-2) !important;
+      border-color: var(--v2-border) !important;
+    }
+    #v2-form-mount .pricing-row-deal div,
+    #v2-form-mount .pricing-row-deal span,
+    #v2-form-mount .pricing-row-deal label {
+      color: var(--v2-ink-2) !important;
+    }
+    #v2-form-mount .pricing-row-deal p {
+      color: var(--v2-ink-3) !important;
+    }
+    #v2-form-mount .pricing-row-deal input[type="number"],
+    #v2-form-mount .pricing-row-deal input[type="text"],
+    #v2-form-mount .price-compare-inp,
+    #v2-form-mount .discount-pct-inp,
+    #v2-form-mount .discount-amt-inp {
+      background: var(--v2-bg) !important;
+      border-color: var(--v2-border) !important;
+      color: var(--v2-ink) !important;
+    }
+    #v2-form-mount .deal-preview-line {
+      background: var(--v2-bg) !important;
+      border-color: var(--v2-border) !important;
+      color: var(--v2-ink-2) !important;
+    }
+    #v2-form-mount .btn-apply-deal {
+      background: var(--v2-green) !important;
+      color: #fff !important;
+    }
+    /* Pricing row inputs (label, qty, price) */
+    #v2-form-mount .pricing-row input[type="text"],
+    #v2-form-mount .pricing-row input[type="number"],
+    #v2-form-mount .price-label-inp {
+      background: var(--v2-bg) !important;
+      border-color: var(--v2-border) !important;
+      color: var(--v2-ink) !important;
+    }
+    #v2-form-mount .pricing-row label,
+    #v2-form-mount .pricing-row span {
+      color: var(--v2-ink-2) !important;
+    }
+    /* Sell-by basis select */
+    #v2-form-mount .listing-pricing-basis {
+      background: var(--v2-bg) !important;
+      border-color: var(--v2-border) !important;
+      color: var(--v2-ink) !important;
+    }
+    #v2-form-mount .listing-pricing-mode > div {
+      background: var(--v2-bg-2) !important;
+      border-color: var(--v2-border) !important;
+    }
+    #v2-form-mount .listing-pricing-mode label {
+      color: var(--v2-ink) !important;
+    }
+    #v2-form-mount .listing-pricing-kg-hint {
+      color: var(--v2-ink-3) !important;
     }
   </style>
 </AppShellV2>
