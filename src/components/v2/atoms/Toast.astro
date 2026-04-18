@@ -26,7 +26,7 @@
 
   function show(detail: ToastDetail) {
     if (!container) return;
-    const { variant, title, description = "", duration = variant === "error" ? 6000 : 4000 } = detail;
+    const { variant, title, description = "", duration = (variant === "error" || variant === "warning") ? 6000 : 4000 } = detail;
 
     // Dedupe: skip if same title shown in last 2s
     const dedupeKey = `${variant}:${title}`;
