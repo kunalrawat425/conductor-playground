@@ -374,10 +374,9 @@
                 <span class="v2-tag">Cleaned & cut</span>
               </div>
             </div>
-            <div class="v2-menu-strip">
-              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹650/kg</span></div></div>
-              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Rawas</span><span class="m-price">₹800/kg</span></div></div>
-              <div class="v2-menu-chip"><span class="m-emoji">🦐</span><div class="m-info"><span class="m-name">Prawns</span><span class="m-price">₹500/kg</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 16px 12px;border-top:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px"><span style="font-size:16px">🐟</span><div><div style="font:600 10px Inter">Surmai</div><div style="font:700 10px Inter;color:var(--green)">₹650/kg</div></div></div>
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px"><span style="font-size:16px">🦐</span><div><div style="font:600 10px Inter">Prawns</div><div style="font:700 10px Inter;color:var(--green)">₹500/kg</div></div></div>
             </div>
             <div class="v2-delivery-bar"><span class="d-icon">🚲</span> Delivery available &middot; Free above ₹1,000</div>
           </div>
@@ -400,16 +399,14 @@
                 <span class="v2-tag">Pickup only</span>
               </div>
             </div>
-            <div class="v2-menu-strip">
-              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹620/kg</span></div></div>
-              <div class="v2-menu-chip"><span class="m-emoji">🦐</span><div class="m-info"><span class="m-name">Prawns</span><span class="m-price">₹480/kg</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 16px 12px;border-top:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px"><span style="font-size:16px">🐟</span><div><div style="font:600 10px Inter">Surmai</div><div style="font:700 10px Inter;color:var(--green)">₹620/kg</div></div></div>
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px"><span style="font-size:16px">🦐</span><div><div style="font:600 10px Inter">Prawns</div><div style="font:700 10px Inter;color:var(--green)">₹480/kg</div></div></div>
             </div>
           </div>
         </div>
         <div class="v2-nav">
           <div class="nav-item active"><span class="icon">🏠</span>Home</div>
-          <div class="nav-item"><span class="icon">🔍</span>Search</div>
-          <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
           <div class="nav-item"><span class="icon">📋</span>Orders</div>
           <div class="nav-item"><span class="icon">👤</span>Account</div>
         </div>
@@ -426,8 +423,11 @@
       <tr><td class="comp">Pre-order CTA</td><td class="v1-spec">Hidden in filter chips</td><td class="v2-spec">Prominent gradient card with CTA button</td><td><span class="change">Key differentiator</span> Pre-order is our moat — it should be unmissable.</td></tr>
       <tr><td class="comp">Category bar</td><td class="v1-spec">None — all fish in one stream</td><td class="v2-spec">Horizontal icon strip (Fish, Prawns, Crab, Squid, Shellfish)</td><td><span class="change">+20% discovery</span> Instamart's category icons drive browsing behavior.</td></tr>
       <tr><td class="comp">Seller card</td><td class="v1-spec">Flat white card, emoji avatar, inline badges</td><td class="v2-spec">Image header, rating badge (Zomato-style), tag chips, delivery bar</td><td><span class="change">+35% CTR</span> Visual cards with image zones get dramatically more clicks.</td></tr>
-      <tr><td class="comp">Menu preview</td><td class="v1-spec">Tiny 64px squares with emoji</td><td class="v2-spec">Horizontal chips with name + price visible</td><td><span class="change">+22% cart adds</span> Showing price inline reduces one click to purchase.</td></tr>
-      <tr><td class="comp">Bottom nav</td><td class="v1-spec">3 items (Home, Orders, Me)</td><td class="v2-spec">5 items (Home, Search, Pre-order, Orders, Account)</td><td><span class="change">Key features</span> Pre-order + Search deserve their own tabs.</td></tr>
+      <tr><td class="comp">Menu preview</td><td class="v1-spec">Tiny 64px squares with emoji</td><td class="v2-spec">2-column grid chips with name + price (was horizontal scroll)</td><td><span class="change">+22% cart adds</span> Full-width grid uses space better than scroll.</td></tr>
+      <tr><td class="comp">Bottom nav</td><td class="v1-spec">3 items (Home, Orders, Me)</td><td class="v2-spec">3 items (Home, Orders, Account) — Pre-order as filter, not tab</td><td><span class="change">Simplified</span> Pre-order is a filter on home, not a separate flow.</td></tr>
+      <tr><td class="comp">Closed seller</td><td class="v1-spec">Greyed out, still clickable</td><td class="v2-spec">Non-clickable div, pointer-events:none. Closed+no-preorder = blocked</td><td><span class="change">No confusion</span> Can't order from truly closed sellers.</td></tr>
+      <tr><td class="comp">Cart section</td><td class="v1-spec">Not on home page</td><td class="v2-spec">Sticky Swiggy-style cart rows at bottom, always visible</td><td><span class="change">+30% checkout</span> Persistent cart visibility drives completion.</td></tr>
+      <tr><td class="comp">Min order / fees</td><td class="v1-spec">Hidden until checkout</td><td class="v2-spec">Tags on seller cards: "Min ₹600", "₹50 delivery · Free above ₹996"</td><td><span class="change">Transparency</span> No surprises at checkout.</td></tr>
       <tr><td class="comp">Delivery info</td><td class="v1-spec">Badge on seller card (easy to miss)</td><td class="v2-spec">Green bar at card bottom with free delivery threshold</td><td><span class="change">+40% AOV</span> "Free above ₹1,000" shown upfront pushes AOV up.</td></tr>
     </tbody>
   </table>
@@ -524,61 +524,29 @@
 
           <div style="padding:4px 16px 8px"><div style="font:700 15px Inter;color:var(--ink)">Today's Menu</div></div>
 
-          <div class="v2-menu-grid">
-            <div class="v2-item-card">
-              <div class="v2-item-img">🐟<span class="cut-badge">Whole / Cut</span></div>
-              <div class="v2-item-body">
-                <div class="v2-item-name">Surmai</div>
-                <div class="v2-item-weight">King Fish &middot; Per kg</div>
-                <div class="v2-item-bottom">
-                  <div class="v2-item-price">₹650</div>
-                  <button class="v2-add-btn">+</button>
-                </div>
-              </div>
+          <!-- Horizontal full-width menu items -->
+          <div style="display:flex;flex-direction:column;gap:8px;padding:0 16px 16px">
+            <div style="display:flex;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm);border:2px solid var(--brand)">
+              <div style="width:80px;min-height:70px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:center;justify-content:center;font-size:28px">🐟</div>
+              <div style="flex:1;padding:10px 12px"><div style="font:600 13px Inter;text-transform:capitalize">Surmai</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><div style="font:800 14px Inter">₹650<span style="font-size:10px;font-weight:500;color:var(--ink3)"> /kg</span></div><div style="display:flex;background:var(--brand);border-radius:6px;height:28px;overflow:hidden"><button style="background:none;border:none;color:#fff;width:28px;font:700 14px Inter;cursor:pointer">−</button><span style="color:#fff;font:700 11px Inter;padding:0 4px;display:flex;align-items:center">2</span><button style="background:none;border:none;color:#fff;width:28px;font:700 14px Inter;cursor:pointer">+</button></div></div></div>
             </div>
-            <div class="v2-item-card">
-              <div class="v2-item-img" style="background:#ECFDF5">🐟<span class="cut-badge" style="background:#D1FAE5;color:#059669">Fresh today</span></div>
-              <div class="v2-item-body">
-                <div class="v2-item-name">Rawas</div>
-                <div class="v2-item-weight">Indian Salmon &middot; Per kg</div>
-                <div class="v2-item-bottom">
-                  <div class="v2-item-price">₹800</div>
-                  <button class="v2-add-btn">+</button>
-                </div>
-              </div>
+            <div style="display:flex;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)">
+              <div style="width:80px;min-height:70px;background:linear-gradient(135deg,#ECFDF5,#D1FAE5);display:flex;align-items:center;justify-content:center;font-size:28px">🐟</div>
+              <div style="flex:1;padding:10px 12px"><div style="font:600 13px Inter;text-transform:capitalize">Pomfret <span style="font:600 9px Inter;color:var(--ink3);background:var(--bg3);padding:1px 5px;border-radius:4px">M</span></div><div style="font:400 10px Inter;color:var(--ink3)">⚡ Stock clearing soon</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><div style="font:800 14px Inter">₹1000<span style="font-size:10px;font-weight:500;color:var(--ink3)"> /4pc</span></div><button style="width:28px;height:28px;border-radius:6px;background:var(--brand);color:#fff;border:none;font:700 16px Inter;cursor:pointer">+</button></div></div>
             </div>
-            <div class="v2-item-card">
-              <div class="v2-item-img" style="background:#FFF7ED">🐟</div>
-              <div class="v2-item-body">
-                <div class="v2-item-name">Pomfret</div>
-                <div class="v2-item-weight">White &middot; Per piece</div>
-                <div class="v2-item-bottom">
-                  <div class="v2-item-price">₹900</div>
-                  <button class="v2-add-btn">+</button>
-                </div>
-              </div>
-            </div>
-            <div class="v2-item-card">
-              <div class="v2-item-img" style="background:#EFF6FF">🦐</div>
-              <div class="v2-item-body">
-                <div class="v2-item-name">Prawns</div>
-                <div class="v2-item-weight">Medium &middot; Per kg</div>
-                <div class="v2-item-bottom">
-                  <div class="v2-item-price">₹500</div>
-                  <button class="v2-add-btn">+</button>
-                </div>
-              </div>
+            <div style="display:flex;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)">
+              <div style="width:80px;min-height:70px;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:28px">🦐</div>
+              <div style="flex:1;padding:10px 12px"><div style="font:600 13px Inter;text-transform:capitalize">Prawns</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><div style="font:800 14px Inter">₹500<span style="font-size:10px;font-weight:500;color:var(--ink3)"> /kg</span></div><button style="width:28px;height:28px;border-radius:6px;background:var(--brand);color:#fff;border:none;font:700 16px Inter;cursor:pointer">+</button></div></div>
             </div>
           </div>
         </div>
-        <div class="v2-cart-bar">
-          <div class="c-left"><div class="c-items">2 items</div><div class="c-total">₹1,450</div></div>
-          <button class="c-btn">View Cart →</button>
+        <!-- New cart bar -->
+        <div style="position:absolute;bottom:64px;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:10px 14px;box-shadow:0 -4px 12px rgba(0,0,0,.08)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div><div style="font:800 14px Inter">₹1,300</div><div style="font:500 10px Inter;color:var(--green)">🎉 Free delivery unlocked</div></div><div style="width:24px;height:24px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink3)">✕</div></div>
+          <div style="display:flex;gap:6px"><button style="flex:1;background:#fff;border:1.5px solid var(--brand);color:var(--brand);padding:8px;border-radius:6px;font:700 12px Inter">🛒 View Cart</button><button style="flex:1;background:var(--brand);color:#fff;border:none;padding:8px;border-radius:6px;font:700 12px Inter">Checkout →</button></div>
         </div>
         <div class="v2-nav">
           <div class="nav-item"><span class="icon">🏠</span>Home</div>
-          <div class="nav-item"><span class="icon">🔍</span>Search</div>
-          <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
           <div class="nav-item"><span class="icon">📋</span>Orders</div>
           <div class="nav-item"><span class="icon">👤</span>Account</div>
         </div>
@@ -590,9 +558,9 @@
     <thead><tr><th>Component</th><th>V1</th><th>V2</th><th>Why</th></tr></thead>
     <tbody>
       <tr><td class="comp">Seller hero</td><td class="v1-spec">Inline card with avatar + text</td><td class="v2-spec">Gradient hero zone with avatar, stats bar (orders, items, catch time, status)</td><td><span class="change">Trust builder</span> "200+ orders" and "5:30am catch" build buying confidence.</td></tr>
-      <tr><td class="comp">Menu layout</td><td class="v1-spec">Vertical list with small emoji + text + Add button</td><td class="v2-spec">2-column grid with image cards (Blinkit-style product cards)</td><td><span class="change">+45% add-to-cart</span> Grid layout with visual cards gets more additions. Proven by Zepto.</td></tr>
+      <tr><td class="comp">Menu layout</td><td class="v1-spec">Vertical list with small emoji + text + Add button</td><td class="v2-spec">Horizontal full-width rows — image left, info right (was 2-col grid)</td><td><span class="change">Better scanning</span> Full-width rows show more info per item. Price + unit + stock visible at glance.</td></tr>
       <tr><td class="comp">Add button</td><td class="v1-spec">Text "Add" button, blue bg</td><td class="v2-spec">Compact "+" circle button on each card (Blinkit exact pattern)</td><td><span class="change">Faster interaction</span> One-tap add. Counter appears after first tap.</td></tr>
-      <tr><td class="comp">Cart bar</td><td class="v1-spec">Sticky bottom bar (basic)</td><td class="v2-spec">Floating pill with item count + total + "View Cart" (Blinkit-style)</td><td><span class="change">+30% checkout</span> Floating cart bar is proven to increase checkout rate.</td></tr>
+      <tr><td class="comp">Cart bar</td><td class="v1-spec">Sticky bottom bar (basic)</td><td class="v2-spec">Neutral bar: total + status + View Cart + Checkout buttons. No colored bars.</td><td><span class="change">Cleaner UX</span> Separate manage vs checkout. Clear total always visible.</td></tr>
       <tr><td class="comp">Freshness signal</td><td class="v1-spec">None</td><td class="v2-spec">Badges: "Fresh today", "Whole / Cut", catch time in stats</td><td><span class="change">Trust + urgency</span> Freshness signals drive impulse purchase in perishables.</td></tr>
       <tr><td class="comp">Price display</td><td class="v1-spec">Inline with item text, 14px</td><td class="v2-spec">Bold 13px with clear hierarchy, separated from description</td><td><span class="change">Clarity</span> Price always bottom-left, add button bottom-right. Eyes know where to look.</td></tr>
     </tbody>
