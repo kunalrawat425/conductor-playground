@@ -199,6 +199,8 @@
   <a href="#tokens" class="active">Tokens</a>
   <a href="#home">Home</a>
   <a href="#seller">Seller Page</a>
+  <a href="#buyer-flow">Buyer Flow</a>
+  <a href="#seller-flow">Seller Flow</a>
   <a href="#components">Components</a>
   <a href="#pages">All Pages</a>
 </div>
@@ -703,11 +705,39 @@
   </div>
 </div>
 
-<!-- ═══════ CART & CHECKOUT ═══════ -->
-<div class="section">
-  <div class="section-label">Buyer Flow</div>
-  <div class="section-title">Cart, Checkout & Order Tracking</div>
-  <div class="section-sub">Swiggy-inspired cart stack, 2-step checkout, real-time order tracking with stepper.</div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- BUYER FLOW — COMPLETE PROTOTYPE                               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="buyer-flow">
+  <div class="section-label">Buyer Journey</div>
+  <div class="section-title">Complete Buyer Flow — Step by Step</div>
+  <div class="section-sub">No separate pre-order screen. One unified flow: Browse → Add to Cart → Checkout → Track. Pre-orders happen naturally when seller is closed but accepts pre-orders.</div>
+
+  <!-- FLOW DIAGRAM -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-bottom:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Buyer Flow Map</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 12px Inter">
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">1. Home</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">2. Seller Menu</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">3. Add to Cart</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">4. Checkout</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">5. Order Placed</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">6. Track</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">7. Preferences</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">8. Pickup/Delivery</div>
+    </div>
+    <div style="font:400 11px Inter;color:var(--ink3);margin-top:12px;line-height:1.5">
+      <strong>Pre-order path:</strong> Same flow. If seller is closed + accepts pre-orders → buyer can still add items → order status = "pre_order" instead of "pending".<br>
+      <strong>Closed seller (no pre-order):</strong> Card non-clickable, menu greyed out, add buttons disabled.
+    </div>
+  </div>
 
   <div class="compare">
     <!-- Cart Stack -->
@@ -890,6 +920,161 @@
         <div class="phone-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item active"><span class="icon">👤</span>Account</div></div>
       </div>
       <div class="label">Buyer — Account & History</div>
+    </div>
+  </div>
+
+  <!-- BUYER STATUS STATES -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-top:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Buyer Order States</div>
+    <table style="width:100%;font:400 12px Inter;border-collapse:collapse">
+      <thead><tr style="background:var(--bg3);font-weight:700;text-align:left"><th style="padding:8px">Status</th><th style="padding:8px">Buyer Sees</th><th style="padding:8px">Actions</th><th style="padding:8px">Stepper Step</th></tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">pending</td><td>Awaiting confirmation</td><td>Cancel</td><td>1/4 Placed</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">pre_order</td><td>Pre-order placed</td><td>Cancel</td><td>1/4 Placed</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">confirmed</td><td>Confirmed</td><td>Add preferences (cut/notes)</td><td>2/4 Confirmed</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">ready_for_pickup</td><td>Ready for pickup</td><td>View preferences</td><td>3/4 Ready</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">out_for_delivery</td><td>Out for delivery</td><td>—</td><td>3/4 On the way</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">completed</td><td>Completed</td><td>Re-order</td><td>4/4 Done</td></tr>
+        <tr><td style="padding:8px">declined/cancelled</td><td>Declined/Cancelled</td><td>Re-order</td><td>1/4 (reset)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SELLER FLOW — COMPLETE PROTOTYPE                              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="seller-flow">
+  <div class="section-label">Seller Journey</div>
+  <div class="section-title">Complete Seller Flow — Step by Step</div>
+  <div class="section-sub">Seller manages listings, receives orders via websocket, processes through status pipeline, buyer gets real-time updates.</div>
+
+  <!-- FLOW DIAGRAM -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-bottom:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Seller Flow Map</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 12px Inter">
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">1. Login</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">2. Create Listings</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">3. Set Profile</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--orange-l);color:var(--orange);padding:8px 16px;border-radius:20px">4. New Order ⚡</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--orange-l);color:var(--orange);padding:8px 16px;border-radius:20px">5. Accept/Decline</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">6. Ready / Out for delivery</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">7. Picked up / Delivered</div>
+    </div>
+  </div>
+
+  <div class="compare">
+    <!-- Seller Dashboard -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">Seller Dashboard — Orders</div>
+      <div class="phone" style="height:560px">
+        <div class="phone-status" style="background:var(--green);color:#fff">Today's pipeline</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="background:var(--green);padding:8px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:6px;text-align:center"><div style="font:800 14px Inter;color:#fff">6</div><div style="font:500 8px Inter;color:rgba(255,255,255,.9)">New</div></div>
+            <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:6px;text-align:center"><div style="font:800 14px Inter;color:#fff">4</div><div style="font:500 8px Inter;color:rgba(255,255,255,.9)">In Progress</div></div>
+            <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:6px;text-align:center"><div style="font:800 14px Inter;color:#fff">₹27K</div><div style="font:500 8px Inter;color:rgba(255,255,255,.9)">GMV</div></div>
+          </div>
+          <div style="display:flex;background:#fff;border-bottom:1px solid var(--border)">
+            <div style="flex:1;text-align:center;padding:8px;font:600 10px Inter;color:var(--brand);border-bottom:2px solid var(--brand)">New <span style="background:var(--red);color:#fff;font-size:8px;padding:1px 4px;border-radius:99px">6</span></div>
+            <div style="flex:1;text-align:center;padding:8px;font:600 10px Inter;color:var(--ink3)">In Progress <span style="background:var(--red);color:#fff;font-size:8px;padding:1px 4px;border-radius:99px">4</span></div>
+            <div style="flex:1;text-align:center;padding:8px;font:600 10px Inter;color:var(--ink3)">History</div>
+          </div>
+          <div style="padding:6px 12px;background:#fff;border-bottom:1px solid var(--border)"><input style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font:400 11px Inter;box-sizing:border-box" placeholder="Search order ID or phone..." /></div>
+          <div style="padding:8px 12px">
+            <!-- Order card with preferences -->
+            <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between"><div style="font:700 11px Inter">🌙 #8FB0D8 · 9974</div><span style="font:700 8px Inter;padding:2px 6px;border-radius:20px;background:#F3E8FF;color:#7C3AED">PRE-ORDER</span></div>
+              <div style="font:400 10px Inter;color:var(--ink2);margin-top:4px;padding:4px 6px;background:var(--bg2);border-radius:4px;text-transform:capitalize">Pomfret · 3pc</div>
+              <div style="font:600 9px Inter;color:var(--ink2);margin-top:3px">✂️ Cleaned, Cut</div>
+              <div style="font:400 9px Inter;color:var(--ink3);margin-top:1px">📝 medium pieces</div>
+              <div style="font:800 12px Inter;margin-top:4px">₹720 · Pay at pickup</div>
+              <div style="display:flex;gap:4px;margin-top:6px"><button style="flex:1;background:#fff;color:var(--red);border:1px solid #FEE2E2;padding:6px;border-radius:6px;font:700 10px Inter">Decline</button><button style="flex:1;background:#7C3AED;color:#fff;border:none;padding:6px;border-radius:6px;font:700 10px Inter">✓ Confirm</button></div>
+            </div>
+            <!-- In progress card -->
+            <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px">
+              <div style="display:flex;justify-content:space-between"><div style="font:700 11px Inter">#CF2697 · 9974</div><span style="font:700 8px Inter;padding:2px 6px;border-radius:20px;background:var(--brand-l);color:var(--brand)">CONFIRMED</span></div>
+              <div style="font:400 10px Inter;color:var(--ink2);margin-top:4px;padding:4px 6px;background:var(--bg2);border-radius:4px;text-transform:capitalize">Hilsa · 3kg</div>
+              <div style="font:800 12px Inter;margin-top:4px">₹3,600 · Pay at pickup</div>
+              <div style="display:flex;gap:4px;margin-top:6px"><button style="flex:1;background:var(--brand);color:#fff;border:none;padding:6px;border-radius:6px;font:700 10px Inter">📦 Ready for pickup</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-nav"><div class="nav-item active"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">🐟</span>Listings</div><div class="nav-item"><span class="icon">👤</span>Profile</div></div>
+      </div>
+      <div class="label">Seller — Order Management</div>
+    </div>
+
+    <!-- Seller Profile -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">Seller Profile</div>
+      <div class="phone" style="height:560px">
+        <div class="phone-status" style="background:var(--brand);color:#fff">My profile</div>
+        <div class="phone-body" style="background:var(--bg2);padding:12px">
+          <div style="margin-bottom:8px"><label style="font:600 11px Inter;color:var(--ink2);display:block;margin-bottom:4px">Business name *</label><div style="padding:10px;border:1px solid var(--border);border-radius:6px;font:400 13px Inter;background:#fff">The Fishy Mart</div></div>
+          <div style="font:700 12px Inter;margin:12px 0 6px">📍 Location</div>
+          <div style="margin-bottom:6px"><label style="font:600 11px Inter;color:var(--ink2);display:block;margin-bottom:4px">Area</label><div style="padding:10px;border:1px solid var(--border);border-radius:6px;font:400 13px Inter;background:#fff">Versova, Andheri West</div></div>
+          <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">
+            <div style="font:600 12px Inter;color:var(--green);margin-bottom:6px">✅ Location set</div>
+            <button style="width:100%;background:#fff;border:1px solid var(--brand);color:var(--brand);padding:6px;border-radius:6px;font:700 11px Inter">📍 Use my current location</button>
+          </div>
+          <div style="font:700 12px Inter;margin:8px 0 6px">Email</div>
+          <div style="padding:10px;border:1px solid var(--border);border-radius:6px;font:400 13px Inter;background:#fff;margin-bottom:4px">kunal@example.com</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="font:600 10px Inter;color:var(--orange)">❌ Not verified</span><button style="background:none;border:1px solid var(--brand);color:var(--brand);font:600 10px Inter;padding:3px 10px;border-radius:20px">Send verification</button></div>
+          <div style="font:700 12px Inter;margin:8px 0 6px">Order settings</div>
+          <div style="padding:10px;border:1px solid var(--border);border-radius:6px;background:#fff;margin-bottom:6px"><span style="font:400 12px Inter">Min order: ₹600</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid var(--border);border-radius:6px;margin-bottom:6px"><input type="checkbox" checked /><div><div style="font:700 12px Inter">Offer delivery 🚲</div><div style="font:400 10px Inter;color:var(--ink3)">3km radius · ₹50 fee · Free above ₹996</div></div></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid var(--border);border-radius:6px;margin-bottom:6px"><input type="checkbox" checked /><div><div style="font:700 12px Inter">Accept pre-orders 🌙</div></div></div>
+          <div style="font:700 12px Inter;margin:8px 0 6px">🔔 Notifications</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px"><div style="font:400 11px Inter;color:var(--green)">Notifications are on</div><span style="font-size:18px">🔔</span></div>
+        </div>
+        <div class="phone-nav"><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">🐟</span>Listings</div><div class="nav-item active"><span class="icon">👤</span>Profile</div></div>
+      </div>
+      <div class="label">Seller — Config & Settings</div>
+    </div>
+  </div>
+
+  <!-- SELLER STATUS TRANSITIONS -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-top:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Seller Order Actions per Status</div>
+    <table style="width:100%;font:400 12px Inter;border-collapse:collapse">
+      <thead><tr style="background:var(--bg3);font-weight:700;text-align:left"><th style="padding:8px">Current Status</th><th style="padding:8px">Tab</th><th style="padding:8px">Actions</th><th style="padding:8px">Next Status</th></tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">pending / pre_order / scheduled</td><td>New</td><td>Accept / Decline</td><td>confirmed / declined</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">confirmed / paid (pickup)</td><td>In Progress</td><td>📦 Ready for pickup</td><td>ready_for_pickup</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">confirmed / paid (delivery)</td><td>In Progress</td><td>🚲 Out for delivery</td><td>out_for_delivery</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">ready_for_pickup</td><td>In Progress</td><td>✓ Picked up</td><td>completed</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">out_for_delivery</td><td>In Progress</td><td>✓ Delivered</td><td>completed</td></tr>
+        <tr><td style="padding:8px">completed / declined / cancelled</td><td>History</td><td>— (view only)</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WEBSOCKET FLOW -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-top:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Real-time Flow (Supabase Websocket)</div>
+    <div style="font:400 12px Inter;color:var(--ink2);line-height:1.6">
+      <div style="display:flex;gap:16px;margin-bottom:12px">
+        <div style="flex:1;background:var(--brand-l);border-radius:8px;padding:12px"><div style="font:700 11px Inter;color:var(--brand);margin-bottom:4px">BUYER</div>
+          <div>1. Places order → INSERT in orders table</div>
+          <div>2. Subscribes to channel: <code>buyer-orders-{phone}</code></div>
+          <div>3. Gets instant UPDATE events when seller acts</div>
+          <div>4. Stepper + status update without refresh</div>
+        </div>
+        <div style="flex:1;background:var(--green-l);border-radius:8px;padding:12px"><div style="font:700 11px Inter;color:var(--green);margin-bottom:4px">SELLER</div>
+          <div>1. Subscribes to channel: <code>seller-orders-{id}</code></div>
+          <div>2. Gets instant INSERT when new order arrives</div>
+          <div>3. Accepts → buyer sees "Confirmed" instantly</div>
+          <div>4. Ready → buyer stepper jumps to step 3</div>
+        </div>
+      </div>
+      <div style="font:500 11px Inter;color:var(--ink3)">Fallback: 30s poll if websocket connection drops. Migration 037 enables realtime on orders table.</div>
     </div>
   </div>
 </div>
