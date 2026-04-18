@@ -69,7 +69,6 @@ export const POST: APIRoute = async ({ request }) => {
             success: true,
             seller_id: existing.id,
             name: existing.name,
-            phone: cleanPhone,
             is_active: existing.is_active !== false,
           }),
           { status: 200 }
@@ -101,7 +100,6 @@ export const POST: APIRoute = async ({ request }) => {
           success: true,
           seller_id: newSeller.id,
           name: newSeller.name,
-          phone: cleanPhone,
           is_active: newSeller.is_active !== false,
         }),
         { status: 200 }
@@ -136,7 +134,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, buyer_id, phone: cleanPhone, is_active }),
+      JSON.stringify({ success: true, buyer_id, is_active }),
       { status: 200 }
     );
   } catch (err: any) {

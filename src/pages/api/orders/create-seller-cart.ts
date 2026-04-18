@@ -336,8 +336,8 @@ async function sendCartOrderEmail(
       body: JSON.stringify({
         from: "Relifish <noreply@relifish.store>",
         to: sellerData.email,
-        subject: `New Order: ${species || "Fish"} — ${buyer_phone}`,
-        html: orderEmailSeller({ ...emailArgs, buyerPhone: buyer_phone }),
+        subject: `New Order: ${species || "Fish"}`,
+        html: orderEmailSeller(emailArgs),
       }),
     });
   }

@@ -25,6 +25,10 @@
   .tag{font:500 10px Inter;padding:3px 10px;border-radius:20px;background:#fff;border:1px solid var(--border);color:var(--ink2)}
   .tag.green{background:var(--green-l);color:var(--green);border-color:transparent}
   .tag.brand{background:var(--brand-l);color:var(--brand);border-color:transparent}
+
+  .action-btns{display:flex;gap:8px;margin-top:12px}
+  .action-btn{display:flex;align-items:center;gap:6px;font:600 12px Inter;padding:8px 16px;border-radius:20px;border:none;cursor:pointer;background:#059669;color:#fff}
+  .action-btn:hover{opacity:.9}
 </style>
 </head>
 <body>
@@ -56,12 +60,17 @@
           <div class="stat"><div class="val">5:30am</div><div class="lbl">Today's catch</div></div>
           <div class="stat"><div class="val live">Open</div><div class="lbl">Until 2pm</div></div>
         </div>
+        <div class="action-btns">
+          <button class="action-btn">📞 Call Seller</button>
+          <button class="action-btn">💬 WhatsApp</button>
+        </div>
       </div>
     </div>
     <div class="spec">
       <b>bg:</b> gradient sky blue → white<br>
       <b>Avatar:</b> 60x60 · radius 14 · brand gradient bg<br>
-      <b>Stats row:</b> 4 metrics · bordered divider · live green dot for status
+      <b>Stats row:</b> 4 metrics · bordered divider · live green dot for status<br>
+      <b>Action buttons:</b> green pill buttons · Call + WhatsApp · after stats row
     </div>
   </div>
 

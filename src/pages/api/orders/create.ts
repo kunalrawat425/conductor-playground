@@ -457,7 +457,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${species || "Fish"}`, html: orderEmailSeller({ ...emailArgs, buyerPhone: buyer_phone }) }),
+              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${species || "Fish"}`, html: orderEmailSeller(emailArgs) }),
             });
           }
         }
