@@ -46,7 +46,7 @@ async function sendResendEmail(to: string, subject: string, bodyHtml: string) {
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { seller_id, order_id, status, action, final_price } = await request.json();
+    const { seller_id, order_id, status, action, final_price, refund_note } = await request.json();
 
     if (!seller_id || !order_id) {
       return new Response(JSON.stringify({ error: "seller_id and order_id required" }), { status: 400 });
@@ -109,6 +109,29 @@ export const POST: APIRoute = async ({ request }) => {
         } catch (_) {}
       }
       return new Response(JSON.stringify({ order: data, reconciled_status: newStatus }), { status: 200 });
+    }
+
+    // action=mark_refund_sent: seller confirms UPI refund was sent to buyer
+    if (action === "mark_refund_sent") {
+      const { data, error: rErr } = await supabase
+        .from("orders")
+        .update({
+          refund_sent_at: new Date().toISOString(),
+          refund_note: refund_note || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", order_id)
+        .select()
+        .single();
+      if (rErr) {
+        return new Response(JSON.stringify({ error: rErr.message }), { status: 500 });
+      }
+      if (order.buyer_id) {
+        try {
+          await sendBuyerOrderPush({ buyer_id: order.buyer_id, status: "refunded", species: order.species || "Fish", final_price: null });
+        } catch (_) {}
+      }
+      return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
     // action=verify_payment: mark payment verified and advance pending_payment → confirmed
