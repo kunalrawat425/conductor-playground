@@ -300,36 +300,60 @@ export const POST: APIRoute = async ({ request, url }) => {
           );
         }
         status = "scheduled";
-      } else if (seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
-        // Check per-listing preorder flag if listing_id present
-        if (listing_id) {
-          const { data: listingForPreorder } = await supabase
-            .from("fish_listings")
-            .select("is_preorder_enabled")
-            .eq("id", listing_id)
-            .single();
-          if (listingForPreorder?.is_preorder_enabled === false) {
-            return new Response(JSON.stringify({ error: "Pre-orders are not available for this item." }), { status: 400 });
-          }
-        } else if (!seller.accepts_preorder) {
-          return new Response(JSON.stringify({ error: "This seller is not accepting pre-orders." }), { status: 400 });
-        }
+      } else {
+        const DAY_NAMES = ['sun','mon','tue','wed','thu','fri','sat'];
+        const todayName = DAY_NAMES[new Date().getDay()];
 
-        // Enforce preorder cutoff time — after cutoff, no new pre-orders until seller reopens
-        if (seller.preorder_cutoff_time) {
-          const now = new Date();
-          const [cutHour, cutMin] = (seller.preorder_cutoff_time as string).split(":").map(Number);
-          const cutoff = new Date(now);
-          cutoff.setHours(cutHour, cutMin, 0, 0);
-          if (now >= cutoff) {
+        // open_days: if set+non-empty, today must be in it (seller's day off otherwise)
+        const isTodayOrderDay = !seller?.open_days?.length || seller.open_days.includes(todayName);
+        // preorder_days: if set+non-empty use it; else fall back to accepts_preorder boolean
+        const isTodayPreorderDay = (seller?.preorder_days && seller.preorder_days.length > 0)
+          ? seller.preorder_days.includes(todayName)
+          : !!seller?.accepts_preorder;
+
+        const openByTime = seller ? isSellerCurrentlyOpen(seller.opens_at, seller.closes_at) : true;
+        const sellerEffectivelyOpen = isTodayOrderDay && openByTime;
+
+        if (!sellerEffectivelyOpen) {
+          // Seller closed or day-off — try pre_order path
+          if (!isTodayPreorderDay) {
+            const dayLabel = !isTodayOrderDay ? "not open today" : "closed now";
             return new Response(
-              JSON.stringify({ error: `Pre-order cutoff time (${seller.preorder_cutoff_time}) has passed. Try again tomorrow.` }),
+              JSON.stringify({ error: `This seller is ${dayLabel} and does not accept pre-orders for next day. Check back when they open.` }),
               { status: 400 }
             );
           }
-        }
 
-        status = "pre_order";
+          // Per-listing preorder gate
+          if (listing_id) {
+            const { data: listingForPreorder } = await supabase
+              .from("fish_listings")
+              .select("is_preorder_enabled")
+              .eq("id", listing_id)
+              .single();
+            if (listingForPreorder?.is_preorder_enabled === false) {
+              return new Response(JSON.stringify({ error: "Pre-orders are not available for this item." }), { status: 400 });
+            }
+          } else if (!seller?.accepts_preorder && !isTodayPreorderDay) {
+            return new Response(JSON.stringify({ error: "This seller is not accepting pre-orders." }), { status: 400 });
+          }
+
+          // Enforce preorder cutoff time
+          if (seller?.preorder_cutoff_time) {
+            const now = new Date();
+            const [cutHour, cutMin] = (seller.preorder_cutoff_time as string).split(":").map(Number);
+            const cutoff = new Date(now);
+            cutoff.setHours(cutHour, cutMin, 0, 0);
+            if (now >= cutoff) {
+              return new Response(
+                JSON.stringify({ error: `Pre-order cutoff time (${seller.preorder_cutoff_time}) has passed. Try again tomorrow.` }),
+                { status: 400 }
+              );
+            }
+          }
+
+          status = "pre_order";
+        }
       }
 
       const minAmt = Number(seller?.min_order_amount) || 0;
