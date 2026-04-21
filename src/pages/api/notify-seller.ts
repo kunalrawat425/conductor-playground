@@ -4,6 +4,7 @@ import { priceUnitShortLabel } from "../../lib/listing-pricing";
 import type { PriceUnit } from "../../lib/species";
 import { loadWebPush } from "../../lib/server/load-web-push";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
+import { fmtDateTimeFullIST } from "../../lib/format-ist";
 
 export const prerender = false;
 
@@ -56,7 +57,7 @@ export const POST: APIRoute = async ({ request }) => {
       u === "piece" || u === "kg"
         ? priceUnitShortLabel(u as PriceUnit)
         : u;
-    const schedLabel = scheduled_for ? ` (Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })})` : "";
+    const schedLabel = scheduled_for ? ` (Scheduled: ${fmtDateTimeFullIST(scheduled_for)})` : "";
     const body = species
       ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel}${schedLabel}`
       : `You have a new${scheduled_for ? " scheduled" : ""} order${schedLabel}`;

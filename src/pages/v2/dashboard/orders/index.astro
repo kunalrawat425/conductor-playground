@@ -403,8 +403,8 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         const isPreorder = o.status === "pre_order";
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
         const time = o.scheduled_for
-          ? new Date(o.scheduled_for).toLocaleString("en-IN", { weekday: "short", hour: "numeric", minute: "2-digit" })
-          : new Date(o.created_at).toLocaleString("en-IN", { hour: "numeric", minute: "2-digit" });
+          ? new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", hour: "numeric", minute: "2-digit" })
+          : new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit" });
         const cls = isUrgent ? "v2-order-urgent" : "";
         const total = o.total_price || o.final_price || 0;
         const id6 = String(o.id || "").slice(0, 6).toUpperCase();
@@ -477,7 +477,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
             actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;">
               <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${refundAmt} marked as sent</div>
               ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(o.refund_note)}</div>` : ''}
-              <div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${new Date(o.refund_sent_at).toLocaleString("en-IN")}</div>
+              <div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
             </div>`;
           } else {
             actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
