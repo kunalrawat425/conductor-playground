@@ -51,7 +51,7 @@ const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "ind
       {status === "open" && <Badge variant="tag" color="green">Open now</Badge>}
       {status === "closed" && <Badge variant="tag" color="red">Closed</Badge>}
       {status === "pre-order-only" && <Badge variant="tag" color="indigo">Pre-order only</Badge>}
-      {acceptsPreorder && status !== "pre-order-only" && <Badge variant="tag" color="brand">Pre-order</Badge>}
+      {status === "closed-preorder" && <Badge variant="tag" color="indigo">Pre-orders open</Badge>}
       {!hasDelivery && <Badge variant="tag">Pickup only</Badge>}
     </div>
   </div>

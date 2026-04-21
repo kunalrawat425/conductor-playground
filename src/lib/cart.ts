@@ -73,6 +73,8 @@ export function migrateLegacyCarts(opts: { sellerLookup?: (sellerId: string) => 
             qty: item.qty || 0,
             qty_unit: item.unit || "kg",
             price: item.price || 0,
+            pricing_option_id: item.pricing_option_id || "",
+            pricing_label: item.pricing_label || "",
             added_at: Date.now(),
           };
           touched = true;
@@ -269,6 +271,8 @@ export async function hydrateFromServer(): Promise<void> {
         qty: Number(it.qty) || 0,
         qty_unit: it.qty_unit || "kg",
         price: Number(it.price_snapshot) || 0,
+        pricing_option_id: it.pricing_option_id || local[it.listing_id]?.pricing_option_id || "",
+        pricing_label: it.pricing_label || local[it.listing_id]?.pricing_label || "",
         added_at: it.created_at ? new Date(it.created_at).getTime() : Date.now(),
       };
     }

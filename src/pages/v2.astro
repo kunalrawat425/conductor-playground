@@ -8,12 +8,10 @@ import Skeleton from "../components/v2/atoms/Skeleton.astro";
 import Toast from "../components/v2/atoms/Toast.astro";
 import LocationPickerSheet from "../components/v2/organisms/LocationPickerSheet.astro";
 
+// Category strip is built dynamically from live listings data (see script below).
+// SSR renders only "All Fish" as a placeholder; JS fills the rest after data loads.
 const categories = [
   { id: "all", name: "All Fish", emoji: "🐟", active: true },
-  { id: "prawns", name: "Prawns", emoji: "🦐" },
-  { id: "crab", name: "Crab", emoji: "🦀" },
-  { id: "squid", name: "Squid", emoji: "🦑" },
-  { id: "shellfish", name: "Shellfish", emoji: "🐚" },
 ];
 ---
 <AppShellV2
@@ -108,6 +106,7 @@ const categories = [
     .v2-cards-grid { grid-template-columns: 1fr 1fr; }
   }
   .v2-skel-card { border-radius: 12px; overflow: hidden; }
+  .v2-badge-bold { font-weight: 800 !important; }
 
   /* Sticky filter cluster — pin nav controls below header */
   .v2-sticky-cluster {
@@ -310,6 +309,7 @@ const categories = [
 
       // Cache for filter re-render
       (window as any).__v2allGroups = groups;
+      buildCategoryStrip(groups);
       renderFiltered();
     } catch (err) {
       console.error("v2: load failed", err);
@@ -330,14 +330,82 @@ const categories = [
     maxKm: 25, // distance cap (km) when buyer location available
   };
 
-  // Map category id → list of species substrings to match
-  const categorySpecies: Record<string, string[]> = {
-    all: [],
-    prawns: ["prawn"],
-    crab: ["crab"],
-    squid: ["squid", "octopus", "cuttlefish"],
-    shellfish: ["clam", "mussel", "oyster"],
+  // Species id → emoji for category strip tiles
+  const speciesEmoji: Record<string, string> = {
+    pomfret: "🐠", surmai: "🐟", rawas: "🐟", bangda: "🐟",
+    bombil: "🐡", prawns: "🦐", crab: "🦀", squid: "🦑",
+    lobster: "🦞", oyster: "🦪", clam: "🐚", sardine: "🐟",
+    sole: "🐟", hilsa: "🐟", rohu: "🐟",
   };
+
+  // Species id → display name for category strip
+  const speciesLabel: Record<string, string> = {
+    pomfret: "Pomfret", surmai: "Surmai", rawas: "Rawas",
+    bangda: "Bangda", bombil: "Bombil", prawns: "Prawns",
+    crab: "Crab", squid: "Squid", lobster: "Lobster",
+    oyster: "Oyster", clam: "Clam", sardine: "Sardine",
+    sole: "Sole", hilsa: "Hilsa", rohu: "Rohu",
+  };
+
+  // Map category id → species substrings to match in listings
+  // Each species key matches its own name exactly; "all" matches everything.
+  const categorySpecies: Record<string, string[]> = { all: [] };
+  for (const id of Object.keys(speciesLabel)) {
+    categorySpecies[id] = [id];
+  }
+
+  // Build category strip from actual listings, sorted by listing count descending.
+  // Called once after data loads; ordering is fixed after that (doesn't re-sort on filter).
+  function buildCategoryStrip(groups: any[]) {
+    const counts: Record<string, number> = {};
+    for (const g of groups) {
+      for (const l of (g.listings || [])) {
+        const sp = (l.species || "").toLowerCase().trim();
+        if (sp && sp !== "all") counts[sp] = (counts[sp] || 0) + 1;
+      }
+    }
+    // Sort by count desc, take top 7
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 7)
+      .map(([id]) => id);
+
+    const strip = document.querySelector(".v2-cat-strip");
+    if (!strip) return;
+
+    const activeCat = filterState.category;
+    // Rebuild strip: All Fish first, then sorted species that have listings
+    const items = [
+      { id: "all", name: "All Fish", emoji: "🐟" },
+      ...sorted.map(id => ({
+        id,
+        name: speciesLabel[id] || id.charAt(0).toUpperCase() + id.slice(1),
+        emoji: speciesEmoji[id] || "🐟",
+      })),
+    ];
+
+    strip.innerHTML = items.map(item => {
+      const url = item.id === "all" ? "/v2" : `/v2?cat=${item.id}`;
+      const active = item.id === activeCat;
+      return `<a href="${url}" class="v2-cat-item${active ? " v2-cat-active" : ""}" role="tab" aria-selected="${active}">
+        <div class="v2-cat-tile"><span aria-hidden="true">${item.emoji}</span></div>
+        <div class="v2-cat-name">${item.name}</div>
+      </a>`;
+    }).join("");
+
+    // Re-wire click handlers for rebuilt strip
+    strip.querySelectorAll<HTMLAnchorElement>(".v2-cat-item").forEach(cat => {
+      cat.addEventListener("click", e => {
+        e.preventDefault();
+        const url = new URL((cat as HTMLAnchorElement).href, window.location.origin);
+        const catId = url.searchParams.get("cat") || "all";
+        filterState.category = catId;
+        strip.querySelectorAll(".v2-cat-item").forEach(c => c.classList.remove("v2-cat-active"));
+        cat.classList.add("v2-cat-active");
+        renderFiltered();
+      });
+    });
+  }
 
   function applyFilters(groups: any[]) {
     return groups.filter(g => {
@@ -421,18 +489,15 @@ const categories = [
           ? (s.accepts_preorder ? "closed-preorder" : "closed")
           : (g.listings.length === 0 && s.accepts_preorder ? "pre-order-only" : "open");
 
-        // Badge: ONE clear status per card. No redundant "Closed" + "Pre-order" combos.
+        // ONE status tag per card — mutually exclusive states.
         const statusBadge = status === "open"
           ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md">Open now</span>`
           : status === "closed-preorder"
-            ? `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md">🌙 Pre-order open</span>`
+            ? `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-orders open</span>`
             : status === "closed"
-              ? `<span class="v2-badge v2-badge-tag v2-badge-red v2-badge-size-md">Closed</span>`
-              : `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md">Pre-order only</span>`;
+              ? `<span class="v2-badge v2-badge-tag v2-badge-red v2-badge-size-md v2-badge-bold">Closed</span>`
+              : `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-order only</span>`;
 
-        // Don't show extra "Pre-order" tag if status badge already says it
-        const preorderTag = s.accepts_preorder && status === "open"
-          ? `<span class="v2-badge v2-badge-tag v2-badge-brand v2-badge-size-md">Pre-order</span>` : "";
         const pickupTag = !s.has_delivery
           ? `<span class="v2-badge v2-badge-tag v2-badge-size-md">Pickup only</span>` : "";
 
@@ -483,7 +548,7 @@ const categories = [
               </div>
               ${ratingBadge}
             </div>
-            <div class="v2-sc-tags">${statusBadge}${preorderTag}${pickupTag}</div>
+            <div class="v2-sc-tags">${statusBadge}${pickupTag}</div>
           </div>
           ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
           ${deliveryBar}
@@ -528,19 +593,7 @@ const categories = [
     });
   });
 
-  // Wire category strip
-  document.querySelectorAll<HTMLAnchorElement>(".v2-cat-item").forEach((cat) => {
-    cat.addEventListener("click", (e) => {
-      e.preventDefault();
-      const url = new URL(cat.href, window.location.origin);
-      const catId = url.searchParams.get("cat") || "all";
-      filterState.category = catId;
-      // Visual: toggle active class
-      document.querySelectorAll(".v2-cat-item").forEach(c => c.classList.remove("v2-cat-active"));
-      cat.classList.add("v2-cat-active");
-      renderFiltered();
-    });
-  });
+  // Category strip click handlers are wired inside buildCategoryStrip() after data loads.
 
   // Sync visual state with URL-seeded filterState on first paint
   function syncInitialChipState() {
@@ -555,13 +608,7 @@ const categories = [
       else if (g === "toggle") active = filterState.topRated;
       b.classList.toggle("v2-fchip-active", active);
     });
-    if (filterState.category && filterState.category !== "all") {
-      document.querySelectorAll<HTMLAnchorElement>(".v2-cat-item").forEach((cat) => {
-        const url = new URL(cat.href, window.location.origin);
-        const catId = url.searchParams.get("cat") || "all";
-        cat.classList.toggle("v2-cat-active", catId === filterState.category);
-      });
-    }
+    // Category strip active state is set inside buildCategoryStrip() after data loads.
   }
   syncInitialChipState();
 

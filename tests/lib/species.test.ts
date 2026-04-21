@@ -42,8 +42,8 @@ describe("species", () => {
     expect(getSpeciesDisplay("prawns")).toBe("Prawns (कोळंबी)");
   });
 
-  it("getSpeciesDisplay returns id for unknown species", () => {
-    expect(getSpeciesDisplay("unknown_fish")).toBe("unknown_fish");
+  it("getSpeciesDisplay returns capitalized id for unknown species", () => {
+    expect(getSpeciesDisplay("unknown_fish")).toBe("Unknown_fish");
   });
 
   it("PRICE_UNITS has piece and kg only (no dozen, no gram)", () => {

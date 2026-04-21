@@ -11,8 +11,10 @@ const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Order Placed",
+  pending_payment: "Payment Pending",
   confirmed: "Order Confirmed",
   paid: "Payment Received",
+  payment_required: "Additional Payment Required",
   ready_for_pickup: "Ready for Pickup",
   out_for_delivery: "Out for Delivery",
   picked_up: "Order Picked Up",
@@ -37,16 +39,20 @@ async function sendResendEmail(to: string, subject: string, bodyHtml: string) {
 
 /**
  * POST /api/seller/orders
- * Body: { seller_id, order_id, status, final_price? }
- * Uses service_role key to bypass RLS
- * Notifies buyer via push when status changes
+ * Body: { seller_id, order_id, status?, action?, final_price? }
+ * action=set_final_price: calls reconcile_preorder_price RPC, returns new status
+ * action=verify_payment: marks payment verified by seller
+ * Otherwise: status transition with optional final_price
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { seller_id, order_id, status, final_price } = await request.json();
+    const { seller_id, order_id, status, action, final_price } = await request.json();
 
-    if (!seller_id || !order_id || !status) {
-      return new Response(JSON.stringify({ error: "seller_id, order_id, and status required" }), { status: 400 });
+    if (!seller_id || !order_id) {
+      return new Response(JSON.stringify({ error: "seller_id and order_id required" }), { status: 400 });
+    }
+    if (!action && !status) {
+      return new Response(JSON.stringify({ error: "action or status required" }), { status: 400 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -74,13 +80,54 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Validate status transition
+    // action=set_final_price: use reconcile_preorder_price RPC
+    if (action === "set_final_price") {
+      if (final_price === undefined || final_price === null) {
+        return new Response(JSON.stringify({ error: "final_price required for set_final_price" }), { status: 400 });
+      }
+      const { data: newStatus, error: rpcErr } = await supabase.rpc("reconcile_preorder_price", {
+        p_order_id: order_id,
+        p_final_price: final_price,
+      });
+      if (rpcErr) {
+        return new Response(JSON.stringify({ error: rpcErr.message }), { status: 500 });
+      }
+      const { data, error: fetchErr } = await supabase.from("orders").select().eq("id", order_id).single();
+      if (fetchErr) {
+        return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
+      }
+      // Notify buyer
+      if (order.buyer_id) {
+        try {
+          await sendBuyerOrderPush({ buyer_id: order.buyer_id, status: newStatus, species: order.species || "Fish", final_price });
+        } catch (_) {}
+      }
+      return new Response(JSON.stringify({ order: data, reconciled_status: newStatus }), { status: 200 });
+    }
+
+    // action=verify_payment: mark payment screenshot as verified by seller
+    if (action === "verify_payment") {
+      const { data, error: vErr } = await supabase
+        .from("orders")
+        .update({ payment_verified_at: new Date().toISOString(), payment_verified_by: seller_id, updated_at: new Date().toISOString() })
+        .eq("id", order_id)
+        .select()
+        .single();
+      if (vErr) {
+        return new Response(JSON.stringify({ error: vErr.message }), { status: 500 });
+      }
+      return new Response(JSON.stringify({ order: data }), { status: 200 });
+    }
+
+    // Default: status transition
     const validTransitions: Record<string, string[]> = {
       pending: ["confirmed", "declined"],
+      pending_payment: ["confirmed", "declined"],
       pre_order: ["confirmed", "declined"],
       scheduled: ["confirmed", "declined"],
       confirmed: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       paid: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
+      payment_required: ["confirmed", "cancelled"],
       ready_for_pickup: ["completed", "cancelled"],
       out_for_delivery: ["completed", "cancelled"],
     };
@@ -93,13 +140,6 @@ export const POST: APIRoute = async ({ request }) => {
     const updates: any = { status };
     if (final_price !== undefined) {
       updates.final_price = final_price;
-      // When seller sets final_price on a pre-order, keep as pre_order
-      // Buyer must accept before it becomes confirmed
-      if (status === "confirmed") {
-        if (currentStatus === "pre_order") {
-          updates.status = "pre_order"; // Stay as pre_order until buyer accepts
-        }
-      }
     }
     if (status === "declined" || status === "cancelled") {
       updates.cancelled_by = "seller";
