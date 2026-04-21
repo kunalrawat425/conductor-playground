@@ -224,7 +224,7 @@ const { id } = Astro.params;
 
     document.getElementById("v2-od-status").textContent = statusLabel(o.status);
     document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,6).toUpperCase();
-    document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN");
+    document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     // Hero colour: green for confirmed/done, red for declined/cancelled, orange for payment actions
     const hero = document.querySelector(".v2-od-hero");
     if (hero) {
@@ -294,7 +294,7 @@ const { id } = Astro.params;
       fulfillEl.innerHTML = `
         <div class="v2-od-section-h">Pickup at</div>
         <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(seller.location_name || seller.location || "Seller location")}</div>
-        ${o.scheduled_for ? `<div class="v2-od-sub">Scheduled: ${new Date(o.scheduled_for).toLocaleString("en-IN")}</div>` : ''}`;
+        ${o.scheduled_for ? `<div class="v2-od-sub">Scheduled: ${new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>` : ''}`;
     }
 
     // Bill
@@ -455,7 +455,7 @@ const { id } = Astro.params;
       const paidAmt = Number(o.paid_amount) || 0;
       const finalAmt = Number(o.final_price) || 0;
       const refundAmt = finalAmt > 0 ? Math.max(0, paidAmt - finalAmt) : paidAmt;
-      const sentAt = o.refund_sent_at ? new Date(o.refund_sent_at).toLocaleString("en-IN") : null;
+      const sentAt = o.refund_sent_at ? new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : null;
       const note = o.refund_note || "";
       const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
       if (sentAt) {

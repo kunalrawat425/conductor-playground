@@ -2,6 +2,7 @@
  * Branded email templates for Relifish transactional emails.
  * All templates produce inline-styled HTML compatible with major email clients.
  */
+import { fmtDateTimeFullIST } from "./format-ist";
 
 const BRAND_BLUE = "#0066cc";
 const BRAND_DARK = "#0a0f1a";
@@ -86,10 +87,7 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
   let schedHtml = "";
   if (scheduled_for) {
     const d = new Date(scheduled_for);
-    schedHtml = infoRow(
-      "🗓️ Scheduled",
-      `${d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
-    );
+    schedHtml = infoRow("🗓️ Scheduled", fmtDateTimeFullIST(scheduled_for));
   }
 
   let notesHtml = "";
@@ -135,11 +133,7 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
 
   let schedHtml = "";
   if (scheduled_for) {
-    const d = new Date(scheduled_for);
-    schedHtml = infoRow(
-      "🗓️ Scheduled",
-      `${d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
-    );
+    schedHtml = infoRow("🗓️ Scheduled", fmtDateTimeFullIST(scheduled_for));
   }
 
   let notesHtml = "";

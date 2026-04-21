@@ -26,9 +26,9 @@ const { id = "v2-slot-picker", title = "Pickup time" } = Astro.props;
     let selectedSlot = null;
 
     function fmtDay(d, i) {
-      const opts = { day: "numeric", month: "short" };
-      const label = i === 0 ? "Tomorrow" : d.toLocaleDateString("en-IN", { weekday: "short" });
-      return `${label}<br><span style="font-weight:400;font-size:10px;">${d.toLocaleDateString("en-IN", opts)}</span>`;
+      const tz = { timeZone: "Asia/Kolkata" };
+      const label = i === 0 ? "Tomorrow" : d.toLocaleDateString("en-IN", { ...tz, weekday: "short" });
+      return `${label}<br><span style="font-weight:400;font-size:10px;">${d.toLocaleDateString("en-IN", { ...tz, day: "numeric", month: "short" })}</span>`;
     }
 
     function render() {
