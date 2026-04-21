@@ -42,9 +42,30 @@ const isOpen = (() => {
   if (openMin <= closeMin) return cur >= openMin && cur <= closeMin;
   return cur >= openMin || cur <= closeMin;
 })();
-const status: "open" | "closed" = isOpen ? "open" : "closed";
+// Day-of-week awareness
+const DAY_NAMES_SHORT = ['sun','mon','tue','wed','thu','fri','sat'];
+const DAY_LABELS: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+const todayDayName = DAY_NAMES_SHORT[new Date().getDay()];
+const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
+const preorderDays: string[] = seller?.preorder_days ?? [];
+const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
+const isTodayPreorderDay = preorderDays.length > 0 ? preorderDays.includes(todayDayName) : !!seller?.accepts_preorder;
+const isEffectivelyOpen = isOpen && isTodayOrderDay;
+// Pre-order mode: seller day-off or closed but pre-orders available today
+const isPreorderMode = !isEffectivelyOpen && isTodayPreorderDay;
+
+// Schedule display strings
+function fmtDays(days: string[]): string {
+  if (!days.length || days.length === 7) return "Every day";
+  return days.map(d => DAY_LABELS[d] || d).join(", ");
+}
+const orderDaysLabel = fmtDays(openDays);
+const preorderDaysLabel = preorderDays.length ? fmtDays(preorderDays) : null;
+const cutoffLabel = seller?.preorder_cutoff_time ? seller.preorder_cutoff_time.slice(0,5) : null;
+
+const status: "open" | "closed" = isEffectivelyOpen ? "open" : "closed";
 const tags = [
-  seller?.accepts_preorder ? "Pre-order" : null,
+  isTodayPreorderDay && !isEffectivelyOpen ? "Pre-order available" : (seller?.accepts_preorder ? "Pre-order" : null),
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
   seller?.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null,
@@ -86,6 +107,34 @@ const tags = [
         tags={tags}
         phone={seller.phone}
       />
+
+      {/* Schedule strip */}
+      <div style="padding:10px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:12px;">
+        <div style="font:500 11px Inter;color:var(--v2-ink-2);">
+          🗓 <strong>Orders:</strong> {orderDaysLabel}
+          {seller?.opens_at && seller?.closes_at && ` · ${seller.opens_at.slice(0,5)}–${seller.closes_at.slice(0,5)}`}
+        </div>
+        {preorderDaysLabel && (
+          <div style="font:500 11px Inter;color:#7C3AED;">
+            🌙 <strong>Pre-orders</strong> (next-day catch): {preorderDaysLabel}
+            {cutoffLabel && ` · cutoff ${cutoffLabel}`}
+          </div>
+        )}
+      </div>
+
+      {/* Pre-order context banner */}
+      {isPreorderMode && (
+        <div style="margin:12px 16px 0;padding:12px 14px;background:#F3E8FF;border:1px solid #DDD6FE;border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">🌙</span>
+          <div>
+            <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
+            <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
+              Items added today will be reserved from tomorrow's fresh catch.
+              {cutoffLabel && ` Place before ${cutoffLabel}.`}
+            </div>
+          </div>
+        </div>
+      )}
 
       {itemCount === 0 ? (
         <div style="padding:0 16px;margin-top:16px;">
@@ -169,7 +218,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: !isOpen && !seller?.accepts_preorder }}>
+<script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: !isEffectivelyOpen && !isTodayPreorderDay, isPreorderMode }}>
   function withCart(fn) {
     if (window.RelifishCart) return fn(window.RelifishCart);
     document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });
@@ -213,7 +262,8 @@ const tags = [
       const name = getName(l.species);
       const sellerItems = getSellerItems();
       const emoji = speciesEmoji(l.species);
-      const isPreorder = l.weight_avail === 0 && acceptsPreorder;
+      // Pre-order if: explicitly enabled per listing, OR seller is in preorder mode today
+      const isPreorder = isPreorderMode || (l.is_preorder_enabled && l.weight_avail <= 0);
 
       // Total qty across all tiers for this listing (for incart highlight)
       const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
@@ -316,7 +366,7 @@ const tags = [
           const banner = document.createElement("div");
           banner.id = "v2-closed-banner";
           banner.style.cssText = "margin:0 16px 12px;padding:14px 16px;background:var(--v2-red-l);border:1px solid var(--v2-red);border-radius:var(--v2-radius);text-align:center;";
-          banner.innerHTML = `<div style="font:700 13px Inter;color:var(--v2-red);">🚫 This seller is closed</div><div style="font:400 11px Inter;color:var(--v2-ink-2);margin-top:4px;">Pre-orders are not available. Check back during opening hours.</div>`;
+          banner.innerHTML = `<div style="font:700 13px Inter;color:var(--v2-red);">🚫 Not available today</div><div style="font:400 11px Inter;color:var(--v2-ink-2);margin-top:4px;">No orders or pre-orders available today. Check back on an order day.</div>`;
           grid.parentElement?.insertBefore(banner, grid);
         }
       }

@@ -4,6 +4,25 @@ import AppShellV2 from "../../../components/v2/AppShellV2.astro";
 import Toast from "../../../components/v2/atoms/Toast.astro";
 import Input from "../../../components/v2/atoms/Input.astro";
 ---
+<style is:global>
+  .v2-day-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font: 600 12px Inter;
+    background: var(--v2-bg-3);
+    color: var(--v2-ink-2);
+    border: 1.5px solid var(--v2-border);
+    user-select: none;
+    transition: background .1s, color .1s, border-color .1s;
+  }
+  .v2-day-pill-on {
+    background: var(--v2-brand-l);
+    color: var(--v2-brand);
+    border-color: var(--v2-brand);
+  }
+</style>
+
 <AppShellV2
   title="Profile · Seller Dashboard"
   description="Edit your seller profile"
@@ -50,13 +69,24 @@ import Input from "../../../components/v2/atoms/Input.astro";
 
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Order settings</h3>
     <Input id="p-min-order" name="min_order_amount" label="Minimum order (₹)" type="number" />
-    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+
+    <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:6px;">Order days</div>
+    <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Days you're open for same-day orders</div>
+    <div id="p-open-days" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:4px;">
       <input type="checkbox" id="p-preorder" />
       <div>
         <div style="font:700 13px Inter;color:var(--v2-ink);">Accept pre-orders 🌙</div>
         <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyers can reserve tomorrow's catch tonight</div>
       </div>
     </label>
+    <div id="p-preorder-schedule" style="display:none;margin-left:16px;padding:12px;border-left:2px solid var(--v2-border);margin-bottom:12px;background:var(--v2-bg-2);border-radius:0 var(--v2-radius-sm) var(--v2-radius-sm) 0;">
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-order days <span style="font-weight:400;color:var(--v2-ink-3);">(which days buyers can pre-order for next-day catch)</span></div>
+      <div id="p-preorder-days" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px;"></div>
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Cutoff time <span style="font-weight:400;color:var(--v2-ink-3);">(no pre-orders after this time)</span></div>
+      <input type="time" id="p-preorder-cutoff" value="22:00" style="padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;" />
+    </div>
     <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
       <input type="checkbox" id="p-delivery" />
       <div>
@@ -145,6 +175,15 @@ import Input from "../../../components/v2/atoms/Input.astro";
       (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
       (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
       (document.getElementById("p-preorder") as HTMLInputElement).checked = !!seller?.accepts_preorder;
+      // Day schedule
+      const allDays = ['mon','tue','wed','thu','fri','sat','sun'];
+      const dayLabels = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+      const openDays: string[] = seller?.open_days ?? allDays;
+      const preorderDays: string[] = seller?.preorder_days ?? [];
+      renderDayPills("p-open-days", allDays, dayLabels, openDays, "open");
+      renderDayPills("p-preorder-days", allDays, dayLabels, preorderDays, "preorder");
+      (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value = seller?.preorder_cutoff_time?.slice(0,5) || "22:00";
+      document.getElementById("p-preorder-schedule")!.style.display = seller?.accepts_preorder ? "block" : "none";
       (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
       (document.getElementById("p-delivery-rad") as HTMLInputElement).value = String(seller?.delivery_rad || 5);
       (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked = !!seller?.delivery_fee_enabled;
@@ -204,6 +243,9 @@ import Input from "../../../components/v2/atoms/Input.astro";
       closes_at: (document.getElementById("p-closes") as HTMLInputElement).value,
       min_order_amount: parseInt((document.getElementById("p-min-order") as HTMLInputElement).value) || 0,
       accepts_preorder: (document.getElementById("p-preorder") as HTMLInputElement).checked,
+      open_days: getCheckedDays("open"),
+      preorder_days: getCheckedDays("preorder"),
+      preorder_cutoff_time: (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value || "22:00",
       has_delivery: (document.getElementById("p-delivery") as HTMLInputElement).checked,
       delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
       delivery_fee_enabled: (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked,
@@ -259,6 +301,35 @@ import Input from "../../../components/v2/atoms/Input.astro";
       (window as any).v2Toast?.("error", "Save failed", err.message);
       btn.disabled = false; btn.textContent = "Save changes";
     }
+  });
+
+  // Day pill helpers
+  function renderDayPills(containerId: string, days: string[], labels: Record<string,string>, selected: string[], prefix: string) {
+    const el = document.getElementById(containerId)!;
+    el.innerHTML = days.map(d => {
+      const on = selected.includes(d);
+      return `<label style="cursor:pointer;">
+        <input type="checkbox" data-day-prefix="${prefix}" data-day="${d}" ${on ? 'checked' : ''} style="display:none;" />
+        <span class="v2-day-pill${on ? ' v2-day-pill-on' : ''}" data-day-prefix="${prefix}" data-day="${d}">${labels[d]}</span>
+      </label>`;
+    }).join("");
+    el.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener("change", () => {
+        const pill = el.querySelector(`span[data-day-prefix="${prefix}"][data-day="${(cb as HTMLInputElement).dataset.day}"]`);
+        if (pill) {
+          if ((cb as HTMLInputElement).checked) pill.classList.add("v2-day-pill-on");
+          else pill.classList.remove("v2-day-pill-on");
+        }
+      });
+    });
+  }
+  function getCheckedDays(prefix: string): string[] {
+    return Array.from(document.querySelectorAll(`input[data-day-prefix="${prefix}"]:checked`)).map((el: any) => el.dataset.day);
+  }
+
+  // Toggle preorder schedule sub-section
+  document.getElementById("p-preorder")?.addEventListener("change", (e) => {
+    document.getElementById("p-preorder-schedule")!.style.display = (e.target as HTMLInputElement).checked ? "block" : "none";
   });
 
   // Toggle delivery sub-settings visibility when checkbox changes
