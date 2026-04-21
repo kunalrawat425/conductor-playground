@@ -46,7 +46,7 @@ async function sendResendEmail(to: string, subject: string, bodyHtml: string) {
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { seller_id, order_id, status, action, final_price, refund_note } = await request.json();
+    const { seller_id, order_id, status, action, final_price, refund_note, refund_screenshot_path } = await request.json();
 
     if (!seller_id || !order_id) {
       return new Response(JSON.stringify({ error: "seller_id and order_id required" }), { status: 400 });
@@ -113,13 +113,15 @@ export const POST: APIRoute = async ({ request }) => {
 
     // action=mark_refund_sent: seller confirms UPI refund was sent to buyer
     if (action === "mark_refund_sent") {
+      const refundUpdate: Record<string, any> = {
+        refund_sent_at: new Date().toISOString(),
+        refund_note: refund_note || null,
+        updated_at: new Date().toISOString(),
+      };
+      if (refund_screenshot_path) refundUpdate.refund_screenshot_path = refund_screenshot_path;
       const { data, error: rErr } = await supabase
         .from("orders")
-        .update({
-          refund_sent_at: new Date().toISOString(),
-          refund_note: refund_note || null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(refundUpdate)
         .eq("id", order_id)
         .select()
         .single();

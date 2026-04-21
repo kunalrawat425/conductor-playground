@@ -338,15 +338,16 @@ export const POST: APIRoute = async ({ request, url }) => {
             return new Response(JSON.stringify({ error: "This seller is not accepting pre-orders." }), { status: 400 });
           }
 
-          // Enforce preorder cutoff time
+          // Enforce preorder cutoff time — compare in IST (UTC+5:30)
           if (seller?.preorder_cutoff_time) {
-            const now = new Date();
+            const nowISTMs = Date.now() + 5.5 * 60 * 60 * 1000;
+            const nowIST = new Date(nowISTMs);
+            const nowMinutes = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
             const [cutHour, cutMin] = (seller.preorder_cutoff_time as string).split(":").map(Number);
-            const cutoff = new Date(now);
-            cutoff.setHours(cutHour, cutMin, 0, 0);
-            if (now >= cutoff) {
+            const cutoffMinutes = cutHour * 60 + cutMin;
+            if (nowMinutes >= cutoffMinutes) {
               return new Response(
-                JSON.stringify({ error: `Pre-order cutoff time (${seller.preorder_cutoff_time}) has passed. Try again tomorrow.` }),
+                JSON.stringify({ error: `Pre-order cutoff time (${seller.preorder_cutoff_time} IST) has passed. Try again tomorrow.` }),
                 { status: 400 }
               );
             }

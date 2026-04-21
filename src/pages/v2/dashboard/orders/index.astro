@@ -482,7 +482,11 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           } else {
             actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
               <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${refundAmt} to buyer via UPI</div>
-              <input type="text" placeholder="Add UTR / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
+              <input type="text" placeholder="UTR number / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
+              <label style="cursor:pointer;">
+                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload UPI screenshot (optional)</div>
+                <input type="file" id="refund-file-${o.id}" accept="image/*" style="display:none;" />
+              </label>
               <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
             </div>`;
           }
@@ -525,6 +529,14 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           } else {
             updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
           }
+        });
+      });
+      // Wire refund file picker label updates
+      list.querySelectorAll<HTMLInputElement>("input[id^='refund-file-']").forEach((inp) => {
+        const orderId = inp.id.replace("refund-file-", "");
+        inp.addEventListener("change", () => {
+          const drop = document.getElementById(`refund-drop-${orderId}`);
+          if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload UPI screenshot (optional)";
         });
       });
   }
@@ -581,6 +593,20 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         if (action === "mark_refund_sent") {
           const noteInput = document.getElementById(`refund-note-${orderId}`) as HTMLInputElement | null;
           body.refund_note = noteInput?.value?.trim() || null;
+          // Upload screenshot first if selected
+          const fileInput = document.getElementById(`refund-file-${orderId}`) as HTMLInputElement | null;
+          const file = fileInput?.files?.[0];
+          if (file) {
+            const form = new FormData();
+            form.append("order_id", orderId);
+            form.append("seller_id", sellerId!);
+            form.append("file", file);
+            const uploadRes = await fetch("/api/seller/upload-refund", { method: "POST", body: form });
+            const uploadData = await uploadRes.json();
+            if (uploadRes.ok && uploadData.path) {
+              body.refund_screenshot_path = uploadData.path;
+            }
+          }
         }
       } else {
         body.status = statusMap[action] || "declined";

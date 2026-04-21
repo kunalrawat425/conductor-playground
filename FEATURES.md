@@ -368,9 +368,13 @@ preorder_cutoff_time: '22:00'
 
 | Gap | Impact |
 |---|---|
-| `refunded` — no automated UPI refund | Manual only; no tracking in app |
-| Seller dashboard has no screenshot viewer | Seller can't see payment proof images (API exists, no UI) |
 | `payment_required` — no shortcut payment from notifications | Buyer must navigate to track page |
-| `preorder_cutoff_time` compared in server TZ | Assumes IST; use `AT TIME ZONE 'Asia/Kolkata'` for safety |
 | `orders.seller_id` may be null for old orders | Ownership fallback denies; add column migration if needed |
-| Signed URL re-generation endpoint missing | Needed when seller views stored screenshot paths in future dashboard |
+
+### Resolved gaps (as of 2026-04-21)
+| Gap | Resolution |
+|---|---|
+| `refunded` — no tracking | Seller marks refund sent via dashboard with optional UPI screenshot; buyer sees amount + 7-day SLA + proof link |
+| Seller dashboard has no screenshot viewer | `GET /api/seller/payment-screenshot` generates signed URL; "View proof" button per screenshot on `pending_payment` orders |
+| Signed URL re-generation endpoint missing | Both `/api/seller/payment-screenshot` and `/api/orders/refund-screenshot` generate fresh 1h signed URLs from stored paths |
+| `preorder_cutoff_time` compared in server TZ | Fixed: uses IST UTC+5:30 offset arithmetic, no host-TZ dependency |
