@@ -17,14 +17,15 @@ import { BrowserManager } from './browser-manager';
 import { handleReadCommand } from './read-commands';
 import { handleWriteCommand } from './write-commands';
 import { handleMetaCommand } from './meta-commands';
-import { handleCookiePickerRoute } from './cookie-picker-routes';
+import { handleCookiePickerRoute, hasActivePicker } from './cookie-picker-routes';
 import { sanitizeExtensionUrl } from './sidebar-utils';
-import { COMMAND_DESCRIPTIONS, PAGE_CONTENT_COMMANDS, wrapUntrustedContent } from './commands';
+import { COMMAND_DESCRIPTIONS, PAGE_CONTENT_COMMANDS, wrapUntrustedContent, canonicalizeCommand, buildUnknownCommandError, ALL_COMMANDS } from './commands';
 import {
   wrapUntrustedPageContent, datamarkContent,
   runContentFilters, type ContentFilterResult,
   markHiddenElements, getCleanTextWithStripping, cleanupHiddenMarkers,
 } from './content-security';
+import { generateCanary, injectCanary, getStatus as getSecurityStatus, writeDecision } from './security';
 import { handleSnapshot, SNAPSHOT_FLAGS } from './snapshot';
 import {
   initRegistry, validateToken as validateScopedToken, checkScope, checkDomain,
@@ -525,6 +526,32 @@ function processAgentEvent(event: any): void {
     return;
   }
 
+  if (event.type === 'security_event') {
+    // Relay the security event as a chat entry so sidepanel.js's addChatEntry
+    // router (showSecurityBanner) sees it on the next /sidebar-chat poll.
+    // Preserve all the diagnostic fields the banner renders (verdict, reason,
+    // layer, confidence, domain, channel, tool).
+    addChatEntry({
+      ts,
+      role: 'agent',
+      type: 'security_event',
+      verdict: event.verdict,
+      reason: event.reason,
+      layer: event.layer,
+      confidence: event.confidence,
+      domain: event.domain,
+      channel: event.channel,
+      tool: event.tool,
+      signals: event.signals,
+      // Reviewable flow fields — sidepanel renders [Allow] / [Block] buttons
+      // and the suspected text excerpt when reviewable=true.
+      reviewable: event.reviewable,
+      suspected_text: event.suspected_text,
+      tabId: event.tabId,
+    } as any);
+    return;
+  }
+
   // agent_start and agent_done are handled by the caller in the endpoint handler
 }
 
@@ -551,6 +578,12 @@ function spawnClaude(userMessage: string, extensionUrl?: string | null, forTabId
   const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const escapedMessage = escapeXml(userMessage);
 
+  // Fresh canary per message. The sidebar-agent checks every outbound channel
+  // (stream text, tool_use arguments, URLs, file writes) for this token.
+  // If Claude echoes it anywhere, that's evidence a prompt injection overrode
+  // the system prompt — session is killed, user sees the banner.
+  const canary = generateCanary();
+
   const systemPrompt = [
     '<system>',
     `Browser co-pilot. Binary: ${B}`,
@@ -576,7 +609,11 @@ function spawnClaude(userMessage: string, extensionUrl?: string | null, forTabId
     '</system>',
   ].join('\n');
 
-  const prompt = `${systemPrompt}\n\n<user-message>\n${escapedMessage}\n</user-message>`;
+  // Append the canary instruction. injectCanary() tells Claude never to
+  // output the token on any channel.
+  const systemPromptWithCanary = injectCanary(systemPrompt, canary);
+
+  const prompt = `${systemPromptWithCanary}\n\n<user-message>\n${escapedMessage}\n</user-message>`;
   // Never resume — each message is a fresh context. Resuming carries stale
   // page URLs and old navigation state that makes the agent fight the user.
 
@@ -607,6 +644,7 @@ function spawnClaude(userMessage: string, extensionUrl?: string | null, forTabId
     sessionId: sidebarSession?.claudeSessionId || null,
     pageUrl: pageUrl,
     tabId: agentTabId,
+    canary, // sidebar-agent scans all outbound channels for this token
   });
   try {
     fs.mkdirSync(gstackDir, { recursive: true, mode: 0o700 });
@@ -757,16 +795,51 @@ const idleCheckInterval = setInterval(() => {
 // server can become an orphan — keeping chrome-headless-shell alive and
 // causing console-window flicker on Windows. Poll the parent PID every 15s
 // and self-terminate if it is gone.
+//
+// Headed mode (BROWSE_HEADED=1 or BROWSE_PARENT_PID=0): The user controls
+// the browser window lifecycle. The CLI exits immediately after connect,
+// so the watchdog would kill the server prematurely. Disabled in both cases
+// as defense-in-depth — the CLI sets PID=0 for headed mode, and the server
+// also checks BROWSE_HEADED in case a future launcher forgets.
+// Cleanup happens via browser disconnect event or $B disconnect.
 const BROWSE_PARENT_PID = parseInt(process.env.BROWSE_PARENT_PID || '0', 10);
-if (BROWSE_PARENT_PID > 0) {
+// Outer gate: if the spawner explicitly marks this as headed (env var set at
+// launch time), skip registering the watchdog entirely. Cheaper than entering
+// the closure every 15s. The CLI's connect path sets BROWSE_HEADED=1 + PID=0,
+// so this branch is the normal path for /open-gstack-browser.
+const IS_HEADED_WATCHDOG = process.env.BROWSE_HEADED === '1';
+if (BROWSE_PARENT_PID > 0 && !IS_HEADED_WATCHDOG) {
+  let parentGone = false;
   setInterval(() => {
     try {
       process.kill(BROWSE_PARENT_PID, 0); // signal 0 = existence check only, no signal sent
     } catch {
-      console.log(`[browse] Parent process ${BROWSE_PARENT_PID} exited, shutting down`);
-      shutdown();
+      // Parent exited. Resolution order:
+      // 1. Active cookie picker (one-time code or session live)? Stay alive
+      //    regardless of mode — tearing down the server mid-import leaves the
+      //    picker UI with a stale "Failed to fetch" error.
+      // 2. Headed / tunnel mode? Shutdown. The idle timeout doesn't apply in
+      //    these modes (see idleCheckInterval above — both early-return), so
+      //    ignoring parent death here would leak orphan daemons after
+      //    /pair-agent or /open-gstack-browser sessions.
+      // 3. Normal (headless) mode? Stay alive. Claude Code's Bash tool kills
+      //    the parent shell between invocations. The idle timeout (30 min)
+      //    handles eventual cleanup.
+      if (hasActivePicker()) return;
+      const headed = browserManager.getConnectionMode() === 'headed';
+      if (headed || tunnelActive) {
+        console.log(`[browse] Parent process ${BROWSE_PARENT_PID} exited in ${headed ? 'headed' : 'tunnel'} mode, shutting down`);
+        shutdown();
+      } else if (!parentGone) {
+        parentGone = true;
+        console.log(`[browse] Parent process ${BROWSE_PARENT_PID} exited (server stays alive, idle timeout will clean up)`);
+      }
     }
   }, 15_000);
+} else if (IS_HEADED_WATCHDOG) {
+  console.log('[browse] Parent-process watchdog disabled (headed mode)');
+} else if (BROWSE_PARENT_PID === 0) {
+  console.log('[browse] Parent-process watchdog disabled (BROWSE_PARENT_PID=0)');
 }
 
 // ─── Command Sets (from commands.ts — single source of truth) ───
@@ -793,6 +866,10 @@ function emitInspectorEvent(event: any): void {
 
 // ─── Server ────────────────────────────────────────────────────
 const browserManager = new BrowserManager();
+// When the user closes the headed browser window, run full cleanup
+// (kill sidebar-agent, save session, remove profile locks, delete state file)
+// before exiting with code 2. Exit code 2 distinguishes user-close from crashes (1).
+browserManager.onDisconnect = () => shutdown(2);
 let isShuttingDown = false;
 
 // Test if a port is available by binding and immediately releasing.
@@ -877,11 +954,20 @@ async function handleCommandInternal(
   tokenInfo?: TokenInfo | null,
   opts?: { skipRateCheck?: boolean; skipActivity?: boolean; chainDepth?: number },
 ): Promise<CommandResult> {
-  const { command, args = [], tabId } = body;
+  const { args = [], tabId } = body;
+  const rawCommand = body.command;
 
-  if (!command) {
+  if (!rawCommand) {
     return { status: 400, result: JSON.stringify({ error: 'Missing "command" field' }), json: true };
   }
+
+  // ─── Alias canonicalization (before scope, watch, tab-ownership, dispatch) ─
+  // Agent-friendly names like 'setcontent' route to canonical 'load-html'. Must
+  // happen BEFORE scope check so a read-scoped token calling 'setcontent' is still
+  // rejected (load-html lives in SCOPE_WRITE). Audit logging preserves rawCommand
+  // so the trail records what the agent actually typed.
+  const command = canonicalizeCommand(rawCommand);
+  const isAliased = command !== rawCommand;
 
   // ─── Recursion guard: reject nested chains ──────────────────
   if (command === 'chain' && (opts?.chainDepth ?? 0) > 0) {
@@ -1051,10 +1137,13 @@ async function handleCommandInternal(
       const helpText = generateHelpText();
       return { status: 200, result: helpText };
     } else {
+      // Use the rich unknown-command helper: names the input, suggests the closest
+      // match via Levenshtein (≤ 2 distance, ≥ 4 chars input), and appends an upgrade
+      // hint if the command is listed in NEW_IN_VERSION.
       return {
         status: 400, json: true,
         result: JSON.stringify({
-          error: `Unknown command: ${command}`,
+          error: buildUnknownCommandError(rawCommand, ALL_COMMANDS),
           hint: `Available commands: ${[...READ_COMMANDS, ...WRITE_COMMANDS, ...META_COMMANDS].sort().join(', ')}`,
         }),
       };
@@ -1109,6 +1198,7 @@ async function handleCommandInternal(
     writeAuditEntry({
       ts: new Date().toISOString(),
       cmd: command,
+      aliasOf: isAliased ? rawCommand : undefined,
       args: args.join(' '),
       origin: browserManager.getCurrentUrl(),
       durationMs: successDuration,
@@ -1153,6 +1243,7 @@ async function handleCommandInternal(
     writeAuditEntry({
       ts: new Date().toISOString(),
       cmd: command,
+      aliasOf: isAliased ? rawCommand : undefined,
       args: args.join(' '),
       origin: browserManager.getCurrentUrl(),
       durationMs: errorDuration,
@@ -1180,7 +1271,7 @@ async function handleCommand(body: any, tokenInfo?: TokenInfo | null): Promise<R
   });
 }
 
-async function shutdown() {
+async function shutdown(exitCode: number = 0) {
   if (isShuttingDown) return;
   isShuttingDown = true;
 
@@ -1221,12 +1312,40 @@ async function shutdown() {
   // Clean up state file
   safeUnlinkQuiet(config.stateFile);
 
-  process.exit(0);
+  process.exit(exitCode);
 }
 
 // Handle signals
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+//
+// Node passes the signal name (e.g. 'SIGTERM') as the first arg to listeners.
+// Wrap calls to shutdown() so it receives no args — otherwise the string gets
+// passed as exitCode and process.exit() coerces it to NaN, exiting with code 1
+// instead of 0. (Caught in v0.18.1.0 #1025.)
+//
+// SIGINT (Ctrl+C): user intentionally stopping → shutdown.
+process.on('SIGINT', () => shutdown());
+// SIGTERM behavior depends on mode:
+// - Normal (headless) mode: Claude Code's Bash sandbox fires SIGTERM when the
+//   parent shell exits between tool invocations. Ignoring it keeps the server
+//   alive across $B calls. Idle timeout (30 min) handles eventual cleanup.
+// - Headed / tunnel mode: idle timeout doesn't apply in these modes. Respect
+//   SIGTERM so external tooling (systemd, supervisord, CI) can shut cleanly
+//   without waiting forever. Ctrl+C and /stop still work either way.
+// - Active cookie picker: never tear down mid-import regardless of mode —
+//   would strand the picker UI with "Failed to fetch."
+process.on('SIGTERM', () => {
+  if (hasActivePicker()) {
+    console.log('[browse] Received SIGTERM but cookie picker is active, ignoring to avoid stranding the picker UI');
+    return;
+  }
+  const headed = browserManager.getConnectionMode() === 'headed';
+  if (headed || tunnelActive) {
+    console.log(`[browse] Received SIGTERM in ${headed ? 'headed' : 'tunnel'} mode, shutting down`);
+    shutdown();
+  } else {
+    console.log('[browse] Received SIGTERM (ignoring — use /stop or Ctrl+C for intentional shutdown)');
+  }
+});
 // Windows: taskkill /F bypasses SIGTERM, but 'exit' fires for some shutdown paths.
 // Defense-in-depth — primary cleanup is the CLI's stale-state detection via health check.
 if (process.platform === 'win32') {
@@ -1354,6 +1473,11 @@ async function start() {
             queueLength: messageQueue.length,
           },
           session: sidebarSession ? { id: sidebarSession.id, name: sidebarSession.name } : null,
+          // Security module status — drives the shield icon in the sidepanel.
+          // Returns {status: 'protected'|'degraded'|'inactive', layers: {...}}.
+          // Source of truth is ~/.gstack/security/session-state.json, written
+          // by sidebar-agent as the classifier warms up.
+          security: getSecurityStatus(),
         }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -1775,7 +1899,11 @@ async function start() {
         const activeTab = browserManager?.getActiveTabId?.() ?? 0;
         // Return per-tab agent status so the sidebar shows the right state per tab
         const tabAgentStatus = tabId !== null ? getTabAgentStatus(tabId) : agentStatus;
-        return new Response(JSON.stringify({ entries, total: chatNextId, agentStatus: tabAgentStatus, activeTabId: activeTab }), {
+        // Piggyback security state on the existing 300ms poll. Cheap:
+        // getSecurityStatus reads ~/.gstack/security/session-state.json.
+        // Sidepanel uses this to flip the shield icon when classifier
+        // warmup completes after initial connect.
+        return new Response(JSON.stringify({ entries, total: chatNextId, agentStatus: tabAgentStatus, activeTabId: activeTab, security: getSecurityStatus() }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'http://127.0.0.1' },
         });
@@ -1843,6 +1971,28 @@ async function start() {
       }
 
       // Kill hung agent
+      // User's decision on a reviewable BLOCK (from the security banner).
+      // Writes ~/.gstack/security/decisions/tab-<id>.json that sidebar-agent
+      // polls. Accepts {tabId: number, decision: 'allow'|'block'} JSON body.
+      if (url.pathname === '/security-decision' && req.method === 'POST') {
+        if (!validateAuth(req)) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+        }
+        const body = await req.json().catch(() => ({}));
+        const tabId = Number(body.tabId);
+        const decision = body.decision;
+        if (!Number.isFinite(tabId) || (decision !== 'allow' && decision !== 'block')) {
+          return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        }
+        writeDecision({
+          tabId,
+          decision,
+          ts: new Date().toISOString(),
+          reason: typeof body.reason === 'string' ? body.reason.slice(0, 200) : undefined,
+        });
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
       if (url.pathname === '/sidebar-agent/kill' && req.method === 'POST') {
         if (!validateAuth(req)) {
           return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
