@@ -58,14 +58,17 @@ export const POST: APIRoute = async ({ request }) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify order belongs to this seller's listings
-    const { data: order } = await supabase
+    const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
       .select("listing_id, buyer_id, species, seller_id")
       .eq("id", order_id)
       .single();
 
-    if (!order) {
-      return new Response(JSON.stringify({ error: "Order not found" }), { status: 404 });
+    if (orderFetchErr || !order) {
+      return new Response(
+        JSON.stringify({ error: orderFetchErr?.message || "Order not found" }),
+        { status: orderFetchErr ? 500 : 404 }
+      );
     }
 
     if (order.listing_id) {

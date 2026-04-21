@@ -519,10 +519,10 @@ const { id } = Astro.params;
             }
           </div>
           <div style="font:800 16px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${balance.toLocaleString("en-IN")}</div>
-          ${alreadyUploaded ? `<div style="font:500 12px Inter;color:var(--v2-green);margin-bottom:12px;">✓ Screenshot uploaded — awaiting seller confirmation</div>` : ""}
+          ${alreadyUploaded ? `<div id="v2-pay-ss-status" style="font:600 12px Inter;color:var(--v2-green);margin-bottom:6px;">✓ Screenshot uploaded — awaiting seller confirmation</div><div id="v2-pay-screenshots-list" style="margin-bottom:12px;font:400 11px Inter;color:var(--v2-ink-3);">Loading your screenshot...</div>` : ""}
           <label style="display:block;cursor:pointer;">
             <div id="v2-pay-drop" style="border:2px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:20px;text-align:center;font:500 13px Inter;color:var(--v2-ink-2);">
-              📷 Tap to select screenshot
+              ${alreadyUploaded ? "📷 Upload another screenshot" : "📷 Tap to select screenshot"}
             </div>
             <input type="file" id="v2-pay-file" accept="image/*" style="display:none;" />
           </label>
@@ -532,6 +532,33 @@ const { id } = Astro.params;
           <button id="v2-pay-submit" class="v2-btn v2-btn-primary v2-btn-full" style="margin-top:12px;display:none;">Submit payment proof</button>
           <div id="v2-pay-err" style="font:500 11px Inter;color:var(--v2-red);margin-top:8px;display:none;"></div>
         </div>`;
+
+      // Load and show buyer's uploaded screenshots
+      if (alreadyUploaded) {
+        const buyerIdForSS = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+        fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForSS)}`)
+          .then(r => r.json())
+          .then(ssData => {
+            const list = actions.querySelector('#v2-pay-screenshots-list');
+            const statusEl = actions.querySelector('#v2-pay-ss-status');
+            if (!list) return;
+            if (ssData.verified && statusEl) {
+              statusEl.textContent = "✓ Payment verified by seller";
+              statusEl.style.fontWeight = "800";
+            }
+            if (ssData.urls && ssData.urls.length > 0) {
+              list.innerHTML = ssData.urls.map((url: string) =>
+                `<img src="${url}" onclick="window.open('${url}','_blank','noopener')" style="width:100%;max-height:200px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);margin-bottom:6px;cursor:pointer;" />`
+              ).join("") + `<div style="font:400 10px Inter;color:var(--v2-ink-3);">Tap image to open full size</div>`;
+            } else {
+              list.innerHTML = "";
+            }
+          })
+          .catch(() => {
+            const list = actions.querySelector('#v2-pay-screenshots-list');
+            if (list) list.innerHTML = "";
+          });
+      }
 
       const fileInput = document.getElementById("v2-pay-file");
       const dropZone = document.getElementById("v2-pay-drop");
@@ -571,8 +598,17 @@ const { id } = Astro.params;
           const res = await fetch("/api/orders/upload-payment", { method: "POST", body: form });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Upload failed");
+          // Show immediate thumbnail using URL returned from upload
+          if (data.url) {
+            const list = actions.querySelector('#v2-pay-screenshots-list');
+            const statusEl = actions.querySelector('#v2-pay-ss-status');
+            if (statusEl) { statusEl.textContent = "✓ Screenshot uploaded — awaiting seller confirmation"; }
+            if (list) {
+              list.innerHTML = `<img src="${data.url}" onclick="window.open('${data.url}','_blank','noopener')" style="width:100%;max-height:200px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);margin-bottom:6px;cursor:pointer;" />`;
+            }
+          }
           window.v2Toast?.("success", "Payment proof submitted", "Seller will confirm shortly");
-          setTimeout(() => load(), 600);
+          setTimeout(() => load(), 1500);
         } catch (err) {
           errEl.style.display = "block";
           errEl.textContent = err.message || "Upload failed";
