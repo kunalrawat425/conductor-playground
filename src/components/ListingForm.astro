@@ -143,12 +143,85 @@ const initialPricingJson = JSON.stringify(
     </div>
   </section>
 
+  <section class="listing-card listing-card--compact" id="listing-section-preorder" aria-labelledby="listing-h-preorder">
+    <h2 class="listing-section-title" id="listing-h-preorder">Pre-order settings 🌙</h2>
+    <p class="listing-section-intro">Pre-orders are <strong>independent of inventory</strong>. Buyers pre-order "next day's catch" — stock is not deducted. Enable per listing.</p>
+    <div class="listing-field">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input
+          type="checkbox"
+          id="is_preorder_enabled"
+          name="is_preorder_enabled"
+          value="true"
+          checked={listing?.is_preorder_enabled === true}
+          style="margin-top:3px;flex-shrink:0;"
+        />
+        <div>
+          <div style="font-weight:700;">Enable pre-orders for this listing</div>
+          <div class="form-hint" style="margin:2px 0 0;">Buyers can pre-order even when stock shows 0. Seller sets actual price after the catch.</div>
+        </div>
+      </label>
+    </div>
+    <div id="preorder-range-fields" style="display:{listing?.is_preorder_enabled ? 'block' : 'none'};">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div class="listing-field" style="margin-bottom:0;">
+          <label for="preorder_min_qty">Min qty per pre-order <span class="listing-opt">(optional)</span></label>
+          <input
+            type="number"
+            id="preorder_min_qty"
+            name="preorder_min_qty"
+            min="0"
+            step="0.5"
+            inputmode="decimal"
+            value={listing?.preorder_min_qty ?? ""}
+            placeholder="e.g. 1"
+          />
+          <p class="form-hint">Minimum order size for pre-orders (same unit as pricing)</p>
+        </div>
+        <div class="listing-field" style="margin-bottom:0;">
+          <label for="preorder_max_qty">Max qty per pre-order <span class="listing-opt">(optional)</span></label>
+          <input
+            type="number"
+            id="preorder_max_qty"
+            name="preorder_max_qty"
+            min="0"
+            step="0.5"
+            inputmode="decimal"
+            value={listing?.preorder_max_qty ?? ""}
+            placeholder="e.g. 5 (blank = no cap)"
+          />
+          <p class="form-hint">Leave blank for no maximum</p>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:10px 12px;background:#EEF2FF;border-radius:6px;border-left:3px solid #6366F1;">
+        <div style="font:700 12px Inter;color:#4F46E5;margin-bottom:2px;">💡 How pre-order pricing works</div>
+        <div style="font:400 11px Inter;color:#4338CA;line-height:1.5;">
+          Buyer pays the listed price upfront. After the morning catch, you set the actual final price.
+          If final price &lt; buyer paid → automatic refund within 7 working days.
+          If final price &gt; buyer paid → buyer approves the difference.
+          If prices match → order auto-confirmed.
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="form-actions listing-form-actions">
     <button type="submit" class="btn btn-primary listing-submit-btn">
       {isEdit ? "Save listing" : "Create listing"}
     </button>
   </div>
 </form>
+
+<script>
+  // Toggle pre-order range fields visibility
+  const preorderCheckbox = document.getElementById("is_preorder_enabled") as HTMLInputElement | null;
+  const preorderFields = document.getElementById("preorder-range-fields");
+  if (preorderCheckbox && preorderFields) {
+    preorderCheckbox.addEventListener("change", () => {
+      preorderFields.style.display = preorderCheckbox.checked ? "block" : "none";
+    });
+  }
+</script>
 
 <script>
   import { setupListingPricingEditor } from "../lib/listing-pricing-setup";

@@ -66,6 +66,9 @@ const { id } = Astro.params;
       <div id="v2-od-items"></div>
     </div>
 
+    <!-- Pre-order info (shown only for pre_order status) -->
+    <div id="v2-od-preorder-info" style="display:none;"></div>
+
     <!-- Delivery / Pickup -->
     <div class="v2-od-section" id="v2-od-fulfill"></div>
 
@@ -236,6 +239,8 @@ const { id } = Astro.params;
         hero.style.background = "linear-gradient(135deg,#D97706,#F59E0B)";
       } else if (o.status === "refunded") {
         hero.style.background = "linear-gradient(135deg,#6366F1,#818CF8)";
+      } else if (o.status === "pre_order") {
+        hero.style.background = "linear-gradient(135deg,#7C3AED,#A78BFA)";
       }
     }
 
@@ -295,6 +300,24 @@ const { id } = Astro.params;
         <div class="v2-od-section-h">Pickup at</div>
         <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(seller.location_name || seller.location || "Seller location")}</div>
         ${o.scheduled_for ? `<div class="v2-od-sub">Scheduled: ${new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>` : ''}`;
+    }
+
+    // Pre-order info box
+    const preorderEl = document.getElementById("v2-od-preorder-info");
+    if (preorderEl) {
+      if (o.status === "pre_order") {
+        const paidAmt = o.paid_amount ? `₹${Number(o.paid_amount).toLocaleString("en-IN")}` : "";
+        preorderEl.innerHTML = `
+          <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
+            <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Next-day catch pre-order</div>
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;">Your pre-order is confirmed. The seller will set the final price after the morning catch.${paidAmt ? ` You pre-paid <strong>${paidAmt}</strong>.` : ""}</div>
+            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → refund within 7 working days. If <strong>higher</strong> → you'll approve the difference.</div>
+          </div>`;
+        preorderEl.style.display = "block";
+      } else {
+        preorderEl.style.display = "none";
+        preorderEl.innerHTML = "";
+      }
     }
 
     // Bill

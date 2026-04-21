@@ -23,7 +23,8 @@ try {
   seller = await getSellerById(id!);
   if (seller) {
     listings = await getSellerListings(id!);
-    listings = listings.filter((l: any) => l.is_available);
+    // Show listings that are in-stock OR have pre-orders enabled (pre-orders are inventory-independent)
+    listings = listings.filter((l: any) => l.is_available || l.is_preorder_enabled);
   } else notFound = true;
 } catch { notFound = true; }
 
@@ -32,8 +33,9 @@ const sellerLocation = seller?.location_name || "";
 const itemCount = listings.length;
 const isOpen = (() => {
   if (!seller?.opens_at || !seller?.closes_at) return true;
-  const now = new Date();
-  const cur = now.getHours() * 60 + now.getMinutes();
+  // Use IST (UTC+5:30) — SSR servers run UTC
+  const now = new Date(Date.now() + 5.5 * 3600 * 1000);
+  const cur = now.getUTCHours() * 60 + now.getUTCMinutes();
   const [oh, om] = seller.opens_at.split(":").map(Number);
   const [ch, cm] = seller.closes_at.split(":").map(Number);
   const openMin = oh * 60 + om;

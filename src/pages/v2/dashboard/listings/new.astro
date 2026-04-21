@@ -77,6 +77,12 @@ import Toast from "../../../../components/v2/atoms/Toast.astro";
               photoUrl = await uploadFishPhoto(photoFile, sellerId);
             }
 
+            const isPreorderEnabled = (formData.get("is_preorder_enabled") as string) === "true";
+            const preorderMinQtyRaw = formData.get("preorder_min_qty")?.toString() ?? "";
+            const preorderMaxQtyRaw = formData.get("preorder_max_qty")?.toString() ?? "";
+            const preorder_min_qty = preorderMinQtyRaw ? parseFloat(preorderMinQtyRaw) : null;
+            const preorder_max_qty = preorderMaxQtyRaw ? parseFloat(preorderMaxQtyRaw) : null;
+
             await createListing({
               seller_id: sellerId,
               species,
@@ -89,6 +95,9 @@ import Toast from "../../../../components/v2/atoms/Toast.astro";
               pickup_loc: "",
               buyer_daily_qty_limit: buyerDaily,
               oos_threshold: oosThreshold,
+              is_preorder_enabled: isPreorderEnabled,
+              ...(preorder_min_qty != null && { preorder_min_qty }),
+              ...(preorder_max_qty != null && { preorder_max_qty }),
             } as any);
 
             invalidateSellerListingIdsCache(sellerId);
