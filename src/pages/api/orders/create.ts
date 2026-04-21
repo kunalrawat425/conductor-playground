@@ -19,8 +19,9 @@ const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
 function isSellerCurrentlyOpen(opensAt: string | null, closesAt: string | null): boolean {
   if (!opensAt || !closesAt) return true;
-  const now = new Date();
-  const current = now.getHours() * 60 + now.getMinutes();
+  // Use IST (UTC+5:30) — Vercel servers run UTC
+  const now = new Date(Date.now() + 5.5 * 3600 * 1000);
+  const current = now.getUTCHours() * 60 + now.getUTCMinutes();
   const [oh, om] = opensAt.split(":").map(Number);
   const [ch, cm] = closesAt.split(":").map(Number);
   const open = oh * 60 + (om || 0);

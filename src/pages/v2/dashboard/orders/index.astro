@@ -211,8 +211,8 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
   let pollTimer: any;
 
   const STATUS_BY_TAB: Record<string, string[]> = {
-    pending: ["pending", "pre_order", "scheduled"],
-    accepted: ["confirmed", "paid", "ready_for_pickup", "out_for_delivery"],
+    pending: ["pending", "pending_payment", "pre_order", "scheduled"],
+    accepted: ["confirmed", "paid", "payment_required", "ready_for_pickup", "out_for_delivery"],
     completed: ["picked_up", "completed", "declined", "cancelled", "refunded"],
   };
 
