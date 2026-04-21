@@ -77,7 +77,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (listing_id) {
       const { data: listing } = await supabase
         .from("fish_listings")
-        .select("pricing_options, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold")
+        .select("pricing_options, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold, is_preorder_enabled")
         .eq("id", listing_id)
         .single();
 
@@ -287,7 +287,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots"
+          "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots, preorder_cutoff_time, open_days, preorder_days"
         )
         .eq("id", seller_id)
         .single();
@@ -301,6 +301,34 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
         status = "scheduled";
       } else if (seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
+        // Check per-listing preorder flag if listing_id present
+        if (listing_id) {
+          const { data: listingForPreorder } = await supabase
+            .from("fish_listings")
+            .select("is_preorder_enabled")
+            .eq("id", listing_id)
+            .single();
+          if (listingForPreorder?.is_preorder_enabled === false) {
+            return new Response(JSON.stringify({ error: "Pre-orders are not available for this item." }), { status: 400 });
+          }
+        } else if (!seller.accepts_preorder) {
+          return new Response(JSON.stringify({ error: "This seller is not accepting pre-orders." }), { status: 400 });
+        }
+
+        // Enforce preorder cutoff time — after cutoff, no new pre-orders until seller reopens
+        if (seller.preorder_cutoff_time) {
+          const now = new Date();
+          const [cutHour, cutMin] = (seller.preorder_cutoff_time as string).split(":").map(Number);
+          const cutoff = new Date(now);
+          cutoff.setHours(cutHour, cutMin, 0, 0);
+          if (now >= cutoff) {
+            return new Response(
+              JSON.stringify({ error: `Pre-order cutoff time (${seller.preorder_cutoff_time}) has passed. Try again tomorrow.` }),
+              { status: 400 }
+            );
+          }
+        }
+
         status = "pre_order";
       }
 
