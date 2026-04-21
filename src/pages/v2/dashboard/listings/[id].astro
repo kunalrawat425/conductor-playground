@@ -102,10 +102,6 @@ const speciesName = listing?.species || "Listing";
               }
 
               const isPreorderEnabled = (formData.get("is_preorder_enabled") as string) === "true";
-              const preorderMinQtyRaw = formData.get("preorder_min_qty")?.toString() ?? "";
-              const preorderMaxQtyRaw = formData.get("preorder_max_qty")?.toString() ?? "";
-              const preorder_min_qty = preorderMinQtyRaw ? parseFloat(preorderMinQtyRaw) : null;
-              const preorder_max_qty = preorderMaxQtyRaw ? parseFloat(preorderMaxQtyRaw) : null;
 
               await updateListing(
                 lid,
@@ -118,8 +114,6 @@ const speciesName = listing?.species || "Listing";
                   buyer_daily_qty_limit: buyerDaily,
                   oos_threshold: oosThreshold,
                   is_preorder_enabled: isPreorderEnabled,
-                  preorder_min_qty,
-                  preorder_max_qty,
                 },
                 sellerId
               );
