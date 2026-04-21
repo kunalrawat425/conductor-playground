@@ -452,6 +452,35 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           actionsHtml = `<div class="v2-oc-actions">
             <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="delivered" data-order-id="${o.id}">✓ Delivered</button>
           </div>`;
+        } else if (o.status === "pending_payment") {
+          actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
+            <div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer uploaded payment proof</div>
+            <div style="display:flex;gap:8px;">
+              <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline" data-order-id="${o.id}">Decline</button>
+              <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="verify_payment" data-order-id="${o.id}">✓ Verify & Confirm</button>
+            </div>
+          </div>`;
+        } else if (o.status === "payment_required") {
+          const balanceAmt = o.final_price && o.paid_amount ? (Number(o.final_price) - Number(o.paid_amount)).toLocaleString("en-IN") : "—";
+          actionsHtml = `<div style="padding:10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);margin-top:6px;">
+            <div style="font:700 12px Inter;color:var(--v2-orange);">⏳ Waiting for balance ₹${balanceAmt}</div>
+            <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">Buyer notified. Will confirm once they pay the difference.</div>
+          </div>`;
+        } else if (o.status === "refunded") {
+          const refundAmt = o.paid_amount && o.final_price ? (Number(o.paid_amount) - Number(o.final_price)).toLocaleString("en-IN") : "—";
+          if (o.refund_sent_at) {
+            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;">
+              <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${refundAmt} marked as sent</div>
+              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(o.refund_note)}</div>` : ''}
+              <div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${new Date(o.refund_sent_at).toLocaleString("en-IN")}</div>
+            </div>`;
+          } else {
+            actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
+              <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${refundAmt} to buyer via UPI</div>
+              <input type="text" placeholder="Add UTR / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
+              <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
+            </div>`;
+          }
         }
 
         return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}">
@@ -491,6 +520,8 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
 
   async function updateStatus(orderId: string, action: string, btn?: HTMLButtonElement) {
     if (!sellerId) return;
+    // Actions that go directly to the API as action= (not status transitions)
+    const apiActions = new Set(["verify_payment", "mark_refund_sent"]);
     const statusMap: Record<string, string> = {
       accept: "confirmed",
       decline: "declined",
@@ -499,19 +530,36 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       picked_up: "completed",
       delivered: "completed",
     };
-    const newStatus = statusMap[action] || "declined";
     const originalText = btn?.textContent || "";
-    const loadingLabels: Record<string, string> = { accept: "Confirming…", decline: "Declining…", ready: "Updating…", out_for_delivery: "Updating…", picked_up: "Completing…", delivered: "Completing…" };
-    const successLabels: Record<string, string> = { accept: "Confirmed", decline: "Declined", ready: "Marked ready", out_for_delivery: "Out for delivery", picked_up: "Completed", delivered: "Delivered" };
+    const loadingLabels: Record<string, string> = {
+      accept: "Confirming…", decline: "Declining…", ready: "Updating…",
+      out_for_delivery: "Updating…", picked_up: "Completing…", delivered: "Completing…",
+      verify_payment: "Verifying…", mark_refund_sent: "Saving…",
+    };
+    const successLabels: Record<string, string> = {
+      accept: "Confirmed", decline: "Declined", ready: "Marked ready",
+      out_for_delivery: "Out for delivery", picked_up: "Completed", delivered: "Delivered",
+      verify_payment: "Payment verified", mark_refund_sent: "Refund marked sent",
+    };
     if (btn) {
       btn.disabled = true;
       btn.textContent = loadingLabels[action] || "Updating…";
     }
     try {
+      let body: Record<string, any> = { seller_id: sellerId, order_id: orderId };
+      if (apiActions.has(action)) {
+        body.action = action;
+        if (action === "mark_refund_sent") {
+          const noteInput = document.getElementById(`refund-note-${orderId}`) as HTMLInputElement | null;
+          body.refund_note = noteInput?.value?.trim() || null;
+        }
+      } else {
+        body.status = statusMap[action] || "declined";
+      }
       const res = await fetch("/api/seller/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seller_id: sellerId, order_id: orderId, status: newStatus }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Update failed");
@@ -521,7 +569,9 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         confirmed: "accepted", paid: "accepted", ready_for_pickup: "accepted", out_for_delivery: "accepted",
         completed: "completed", declined: "completed", cancelled: "completed", refunded: "completed",
       };
-      const targetTab = tabForStatus[newStatus];
+      // For action-based calls, derive status from returned order or action semantics
+      const resolvedStatus = data.order?.status ?? body.status;
+      const targetTab = tabForStatus[resolvedStatus];
       if (targetTab && targetTab !== currentTab) {
         currentTab = targetTab as any;
         currentPage = 1;
