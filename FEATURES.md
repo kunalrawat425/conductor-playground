@@ -1,7 +1,7 @@
 # Relifish V2 — Feature List & Screen Map
 
 **Source of truth for QA, product review, and feature planning.**
-Last updated: 2026-04-18
+Last updated: 2026-04-21
 
 ---
 
@@ -19,7 +19,8 @@ Last updated: 2026-04-18
 | Filter chips (All / Open now / Pre-order / Pickup / Delivery / Top rated) | ✅ | Toggleable, URL-seeded via `?mode=` |
 | URL deep-link: `?mode=preorder`, `?species=prawns` | ✅ | Pre-seeds filter state on load |
 | Sticky filter cluster (pins below header on scroll) | ✅ | `overflow-x: clip` fix for sticky |
-| Seller cards with status badges (Open / Closed / Pre-order) | ✅ | SSR from Supabase |
+| Seller cards with status badges (Open / Closed / Pre-order) | ✅ | JS-rendered; one tag per card — mutually exclusive |
+| Category strip built from live listings | ✅ | Sorted by species frequency; rebuilt after data loads |
 | Cross-midnight `isOpen()` (e.g. 17:00→01:58) | ✅ | Wraps around midnight correctly |
 | Distance filter (25km cap when location set) | ✅ | Haversine distance calc |
 | Notification permission prompt (after location accepted) | ✅ | `Notification.requestPermission()` |
@@ -306,12 +307,16 @@ Last updated: 2026-04-18
 
 ## SELLER CARD UX (HOME PAGE)
 
+Exactly one status tag per card. Mutually exclusive — "Open now" and "Pre-orders" never shown together.
+
 | Seller State | Card Appearance | Badge |
 |---|---|---|
-| Open + has items | Normal card | "Open now" (green) + "Pre-order" if accepts |
-| Open + no items + accepts preorder | Normal card | "Pre-order only" (indigo) |
-| Closed + accepts preorder | **Normal card (NOT greyed)** | "🌙 Pre-order open" (indigo) |
-| Closed + no preorder | Grey card | "Closed" (red) |
+| Open + has items | Normal card | **"Open now"** (green) |
+| Open + no items + is_preorder_enabled on any listing | Normal card | **"Pre-order only"** (indigo, bold) |
+| Closed + accepts_preorder | Normal card (NOT greyed) | **"Pre-orders open"** (indigo, bold) |
+| Closed + no preorder | Grey card, pointer-events:none | **"Closed"** (red, bold) |
+
+CSS: `.v2-badge-bold { font-weight: 800 }` applied to red/indigo status tags.
 
 ---
 
@@ -346,13 +351,61 @@ Last updated: 2026-04-18
 
 ---
 
-## PENDING MIGRATIONS (apply in Supabase SQL editor)
+## PENDING MIGRATIONS (apply in Supabase SQL editor in order)
+
+Migration 035 (soft-delete) — already applied if `deleted_at` column exists.
 
 ```sql
--- Migration 035: soft-delete for listings
+-- Migration 035: soft-delete for listings (skip if already applied)
 ALTER TABLE fish_listings ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 CREATE INDEX IF NOT EXISTS idx_fish_listings_deleted_at ON fish_listings(deleted_at);
 ```
+
+Migration 041 — payment screenshots:
+- `orders.payment_screenshot_urls text[]`
+- `orders.payment_verified_at timestamptz`
+- `orders.payment_verified_by uuid`
+- New statuses: `pending_payment`, `payment_required`
+- File: `supabase/migrations/041_payment_screenshot.sql`
+
+Migration 042 — pre-order independence + per-day schedule:
+- `fish_listings.is_preorder_enabled boolean`
+- `fish_listings.preorder_min_qty`, `preorder_max_qty`
+- `sellers.open_days text[]`, `preorder_days text[]`, `preorder_cutoff_time time`
+- File: `supabase/migrations/042_preorder_independence.sql`
+
+Migration 043 — price reconciliation:
+- `orders.final_price numeric`
+- `reconcile_preorder_price(order_id, final_price)` RPC function
+- File: `supabase/migrations/043_preorder_price_reconciliation.sql`
+
+**Pre-flight for 041**: `SELECT DISTINCT status FROM orders;` — verify all values are in allowed list before running.
+
+## PAYMENT FLOW (screenshot-based)
+
+| Step | Actor | Action |
+|------|-------|--------|
+| 1 | Buyer | Places order → status: `pending_payment` |
+| 2 | Buyer | Uploads payment screenshot(s) via `/api/orders/upload-payment` → status: `pre_order` or `pending` |
+| 3 | Seller | Sees screenshot thumbnail in dashboard order card |
+| 4 | Seller | Taps "Verify payment" → status: `confirmed` + notify buyer |
+| 5 | Seller | (Optional) Taps "Decline" → status: `declined` + notify buyer |
+
+Storage: Supabase Storage private bucket `order-payments`, path: `order-payments/{order_id}/{filename}`.
+Screenshot retrieval: server-side signed URL via `/api/orders/payment-screenshot?order_id=X`.
+
+## PRE-ORDER INDEPENDENCE
+
+Pre-orders are now independent of inventory:
+- `is_preorder_enabled` on listing controls visibility (not `weight_avail`)
+- Seller sets `preorder_min_qty` / `preorder_max_qty` per listing
+- Seller sets `preorder_days[]` — which days they accept next-day pre-orders
+- Pre-order CTA hidden after `preorder_cutoff_time` (default 22:00)
+
+Price reconciliation when seller sets `final_price`:
+- `final_price === paid_amount` → auto-confirm, notify both
+- `final_price < paid_amount` → refund, notify buyer "₹X back in 7 days", notify seller "you owe refund"
+- `final_price > paid_amount` → `payment_required`, notify buyer to pay diff or cancel
 
 ---
 
@@ -361,7 +414,7 @@ CREATE INDEX IF NOT EXISTS idx_fish_listings_deleted_at ON fish_listings(deleted
 | Feature | Priority | Notes |
 |---------|----------|-------|
 | Cart expiry (auto-clear after 24h) | Low | |
-| UPI/online payment integration | Medium | Payment step commented out, COD only |
+| UPI/online payment integration (gateway) | Low | Screenshot-based verification shipped; full gateway deferred |
 | Save for later | Low | |
 | Cart sharing via QR | Low | |
 | Seller analytics/stats page | Medium | API exists, no UI |

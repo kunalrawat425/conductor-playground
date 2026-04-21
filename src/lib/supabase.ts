@@ -68,6 +68,12 @@ export interface Seller {
   delivery_fee_amount?: number;
   /** Waive delivery fee when subtotal >= this (₹); null = no waiver */
   free_delivery_above?: number | null;
+  /** Days open for normal same-day orders. Values: mon tue wed thu fri sat sun */
+  open_days?: string[];
+  /** Days that accept pre-orders (next-day catch). Empty = no pre-orders. */
+  preorder_days?: string[];
+  /** Latest time buyer can place a pre-order for next day (HH:MM). Default 22:00. */
+  preorder_cutoff_time?: string;
 }
 
 export interface FishListing {
@@ -87,6 +93,12 @@ export interface FishListing {
   /** Max units (same as listing unit) one buyer may order per calendar day for this listing; optional */
   buyer_daily_qty_limit?: number | null;
   oos_threshold?: number | null;
+  /** Seller enables pre-orders for this listing independently of stock level */
+  is_preorder_enabled?: boolean;
+  /** Minimum quantity buyer must pre-order */
+  preorder_min_qty?: number;
+  /** Maximum quantity per pre-order. null = uncapped. */
+  preorder_max_qty?: number | null;
   // joined
   seller?: Seller;
 }
@@ -94,13 +106,17 @@ export interface FishListing {
 export type OrderStatus =
   | "pre_order"
   | "pending"
+  | "pending_payment"
   | "confirmed"
   | "paid"
+  | "payment_required"
   | "picked_up"
   | "completed"
   | "declined"
   | "cancelled"
   | "scheduled"
+  | "out_for_delivery"
+  | "ready_for_pickup"
   | "refunded";
 
 export type OrderType = "pickup" | "delivery";
@@ -130,6 +146,10 @@ export interface Order {
   schedule_slot_id?: string | null;
   cancelled_by?: string | null;
   cancel_reason?: string | null;
+  /** Array of Supabase Storage URLs: order-payments/{order_id}/{filename} */
+  payment_screenshot_urls?: string[];
+  payment_verified_at?: string | null;
+  payment_verified_by?: string | null;
 }
 
 export interface Buyer {
