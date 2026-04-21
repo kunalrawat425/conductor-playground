@@ -180,10 +180,11 @@ export interface SpeciesRange {
 // --- Queries ---
 
 export async function getActiveListings() {
+  // Include OOS listings where pre-orders are enabled (pre-orders are inventory-independent)
   const { data, error } = await supabase
     .from("fish_listings")
     .select("*, seller:sellers(*)")
-    .eq("is_available", true)
+    .or("is_available.eq.true,is_preorder_enabled.eq.true")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
