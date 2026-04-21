@@ -21,6 +21,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Reset email_verified if email changed
+    if (updates.email !== undefined) {
+      const { data: current } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
+      if (current && current.email !== (updates.email?.trim() || null)) {
+        updates.email_verified = false;
+      }
+    }
+
     // Cross-table uniqueness: email and phone must not exist in buyers table
     if (updates.email && typeof updates.email === "string" && updates.email.trim()) {
       const email = updates.email.trim();

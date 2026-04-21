@@ -40,6 +40,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Reset email_verified if email changed
+    if (sanitized.email !== undefined) {
+      const { data: current } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
+      if (current && current.email !== sanitized.email) {
+        (sanitized as any).email_verified = false;
+      }
+    }
+
     // Cross-table uniqueness: email must not exist in sellers table
     if (sanitized.email && typeof sanitized.email === "string") {
       const { data: existingSeller } = await supabase
