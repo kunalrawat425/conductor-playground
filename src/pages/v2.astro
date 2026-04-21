@@ -364,11 +364,14 @@ const categories = [
         if (sp && sp !== "all") counts[sp] = (counts[sp] || 0) + 1;
       }
     }
-    // Sort by count desc, take top 7
-    const sorted = Object.entries(counts)
+    // Priority species always first (if they have listings), then others by count
+    const priority = ["surmai", "prawns", "pomfret", "crab"];
+    const priorityWithListings = priority.filter(sp => counts[sp] > 0);
+    const rest = Object.entries(counts)
+      .filter(([id]) => !priority.includes(id))
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 7)
       .map(([id]) => id);
+    const sorted = [...priorityWithListings, ...rest].slice(0, 7);
 
     const strip = document.querySelector(".v2-cat-strip");
     if (!strip) return;
@@ -491,7 +494,7 @@ const categories = [
 
         // ONE status tag per card — mutually exclusive states.
         const statusBadge = status === "open"
-          ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md">Open now</span>`
+          ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md v2-badge-bold">Open now</span>`
           : status === "closed-preorder"
             ? `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-orders open</span>`
             : status === "closed"
