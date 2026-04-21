@@ -167,25 +167,27 @@ const { id } = Astro.params;
   function statusLabel(s) {
     return ({
       pending: "Awaiting confirmation",
+      pending_payment: "Upload payment proof",
       pre_order: "Pre-order placed",
       scheduled: "Scheduled pickup",
-      confirmed: "Confirmed",
-      paid: "Paid",
+      confirmed: "Confirmed ✓",
+      paid: "Payment received",
+      payment_required: "Additional payment needed",
       ready_for_pickup: "Ready for pickup",
       out_for_delivery: "Out for delivery",
       picked_up: "Picked up",
       completed: "Completed",
       declined: "Declined by seller",
       cancelled: "Cancelled",
-      refunded: "Refunded",
+      refunded: "Refund processed",
     })[s] || s;
   }
   let _orderType = "pickup"; // set during load()
   function statusToStep(s) {
     if (_orderType === "delivery") {
-      return ({ pending:0, pre_order:0, scheduled:0, confirmed:1, paid:1, out_for_delivery:2, picked_up:3, completed:3 })[s] ?? 0;
+      return ({ pending:0, pending_payment:0, pre_order:0, scheduled:0, confirmed:1, paid:1, payment_required:1, out_for_delivery:2, picked_up:3, completed:3, refunded:3 })[s] ?? 0;
     }
-    return ({ pending:0, pre_order:0, scheduled:0, confirmed:1, paid:1, ready_for_pickup:2, picked_up:3, completed:3 })[s] ?? 0;
+    return ({ pending:0, pending_payment:0, pre_order:0, scheduled:0, confirmed:1, paid:1, payment_required:1, ready_for_pickup:2, picked_up:3, completed:3, refunded:3 })[s] ?? 0;
   }
   function isCancellable(s) {
     return s === "pending" || s === "pre_order" || s === "scheduled";
@@ -223,6 +225,19 @@ const { id } = Astro.params;
     document.getElementById("v2-od-status").textContent = statusLabel(o.status);
     document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,6).toUpperCase();
     document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN");
+    // Hero colour: green for confirmed/done, red for declined/cancelled, orange for payment actions
+    const hero = document.querySelector(".v2-od-hero");
+    if (hero) {
+      if (["confirmed","paid","ready_for_pickup","out_for_delivery","picked_up","completed"].includes(o.status)) {
+        hero.style.background = "linear-gradient(135deg,#059669,#10B981)";
+      } else if (["declined","cancelled"].includes(o.status)) {
+        hero.style.background = "linear-gradient(135deg,#DC2626,#EF4444)";
+      } else if (["pending_payment","payment_required"].includes(o.status)) {
+        hero.style.background = "linear-gradient(135deg,#D97706,#F59E0B)";
+      } else if (o.status === "refunded") {
+        hero.style.background = "linear-gradient(135deg,#6366F1,#818CF8)";
+      }
+    }
 
     // Stepper — different labels for pickup vs delivery
     _orderType = o.order_type || "pickup";
@@ -286,11 +301,18 @@ const { id } = Astro.params;
     const subtotal = o.total_price || 0;
     const delivery = o.delivery_fee || 0;
     const grand = subtotal + delivery;
+    const finalPrice = o.final_price ? Number(o.final_price) : null;
+    const paidAmount = o.paid_amount ? Number(o.paid_amount) : null;
+    const balance = finalPrice && paidAmount ? finalPrice - paidAmount : null;
     document.getElementById("v2-od-bill").innerHTML = `
       <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
       ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}
       <div class="total"><span>Total</span><span>₹${grand.toLocaleString("en-IN")}</span></div>
-      <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;">${o.paid_amount ? "Paid via UPI" : "Pay at pickup / on delivery"}</div>`;
+      ${finalPrice ? `<div style="padding-top:6px;border-top:1px solid var(--v2-border);margin-top:4px;"><span style="color:var(--v2-ink-2);">Final price (seller)</span><span style="font-weight:700;color:var(--v2-ink);">₹${finalPrice.toLocaleString("en-IN")}</span></div>` : ''}
+      ${paidAmount ? `<div><span style="color:var(--v2-ink-2);">You paid</span><span style="color:var(--v2-green);">₹${paidAmount.toLocaleString("en-IN")}</span></div>` : ''}
+      ${balance && balance > 0 ? `<div><span style="color:var(--v2-red);">Balance due</span><span style="font-weight:700;color:var(--v2-red);">₹${balance.toLocaleString("en-IN")}</span></div>` : ''}
+      ${balance && balance < 0 ? `<div><span style="color:var(--v2-green);">Refund</span><span style="font-weight:700;color:var(--v2-green);">₹${Math.abs(balance).toLocaleString("en-IN")}</span></div>` : ''}
+      <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;">${paidAmount ? "Paid via UPI" : "Pay at pickup / on delivery"}</div>`;
 
     // Actions
     const actions = document.getElementById("v2-od-actions");
@@ -425,8 +447,93 @@ const { id } = Astro.params;
           }
         });
       }
+    } else if (o.status === "pending_payment") {
+      renderPaymentUpload(o, false);
+    } else if (o.status === "payment_required") {
+      renderPaymentUpload(o, true);
     } else {
       actions.innerHTML = "";
+    }
+
+    function renderPaymentUpload(o, isBalance) {
+      const paidSoFar = Number(o.paid_amount) || 0;
+      const finalPrice = Number(o.final_price) || 0;
+      const balance = isBalance ? Math.max(0, finalPrice - paidSoFar) : (Number(o.total_price) + Number(o.delivery_fee || 0));
+      const alreadyUploaded = o.payment_screenshot_urls && o.payment_screenshot_urls.length > 0;
+
+      actions.innerHTML = `
+        <div style="background:var(--v2-bg);border:1.5px solid var(--v2-brand);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
+          <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">
+            ${isBalance ? "💸 Additional payment needed" : "💳 Upload payment proof"}
+          </div>
+          <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">
+            ${isBalance
+              ? `Seller updated the final price. Please pay ₹${balance.toLocaleString("en-IN")} and upload the UPI screenshot.`
+              : `Pay ₹${balance.toLocaleString("en-IN")} via UPI and upload the screenshot below.`
+            }
+          </div>
+          <div style="font:800 16px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${balance.toLocaleString("en-IN")}</div>
+          ${alreadyUploaded ? `<div style="font:500 12px Inter;color:var(--v2-green);margin-bottom:12px;">✓ Screenshot uploaded — awaiting seller confirmation</div>` : ""}
+          <label style="display:block;cursor:pointer;">
+            <div id="v2-pay-drop" style="border:2px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:20px;text-align:center;font:500 13px Inter;color:var(--v2-ink-2);">
+              📷 Tap to select screenshot
+            </div>
+            <input type="file" id="v2-pay-file" accept="image/*" style="display:none;" />
+          </label>
+          <div id="v2-pay-preview" style="margin-top:10px;display:none;">
+            <img id="v2-pay-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);" />
+          </div>
+          <button id="v2-pay-submit" class="v2-btn v2-btn-primary v2-btn-full" style="margin-top:12px;display:none;">Submit payment proof</button>
+          <div id="v2-pay-err" style="font:500 11px Inter;color:var(--v2-red);margin-top:8px;display:none;"></div>
+        </div>`;
+
+      const fileInput = document.getElementById("v2-pay-file");
+      const dropZone = document.getElementById("v2-pay-drop");
+      const preview = document.getElementById("v2-pay-preview");
+      const previewImg = document.getElementById("v2-pay-img") as HTMLImageElement;
+      const submitBtn = document.getElementById("v2-pay-submit") as HTMLButtonElement;
+      const errEl = document.getElementById("v2-pay-err");
+
+      fileInput?.addEventListener("change", () => {
+        const file = (fileInput as HTMLInputElement).files?.[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+          errEl.style.display = "block";
+          errEl.textContent = "File too large (max 5 MB)";
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        previewImg.src = url;
+        preview.style.display = "block";
+        dropZone.textContent = file.name;
+        submitBtn.style.display = "block";
+        errEl.style.display = "none";
+      });
+
+      submitBtn?.addEventListener("click", async () => {
+        const file = (fileInput as HTMLInputElement).files?.[0];
+        if (!file) return;
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Uploading...";
+        errEl.style.display = "none";
+        try {
+          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const form = new FormData();
+          form.append("order_id", o.id);
+          form.append("buyer_id", buyerId);
+          form.append("file", file);
+          const res = await fetch("/api/orders/upload-payment", { method: "POST", body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Upload failed");
+          window.v2Toast?.("success", "Payment proof submitted", "Seller will confirm shortly");
+          setTimeout(() => load(), 600);
+        } catch (err) {
+          errEl.style.display = "block";
+          errEl.textContent = err.message || "Upload failed";
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit payment proof";
+        }
+      });
     }
   }
 

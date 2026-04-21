@@ -547,7 +547,7 @@ import Toast from "../../components/v2/atoms/Toast.astro";
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
               <div>
                 <div style="font:700 13px Inter;color:var(--v2-ink);">${escape(seller)}</div>
-                <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:1px;">${escape(fmtDate(o.created_at))} · ${o.quantity}${o.quantity_unit || 'kg'} ${escape(sp)}</div>
+                <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:1px;">${escape(fmtDate(o.created_at))} · ${o.quantity}${o.quantity_unit || 'kg'} <span style="text-transform:capitalize;">${escape(sp)}</span></div>
                 ${o.cut_style || o.buyer_notes ? `<div style="font:500 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${o.cut_style ? `✂️ ${escape(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escape(o.buyer_notes)}` : ''}</div>` : ''}
               </div>
               <span style="font:500 10px Inter;padding:3px 10px;border-radius:20px;background:var(--v2-bg-3);color:var(--v2-ink-3);">${statusLabel(o.status)}</span>

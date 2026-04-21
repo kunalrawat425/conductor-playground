@@ -52,17 +52,8 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: uploadErr.message }), { status: 500 });
     }
 
-    // Get signed URL (24h expiry) — bucket is private
-    const { data: signedData, error: signErr } = await supabase.storage
-      .from("order-payments")
-      .createSignedUrl(path, 86400);
-
-    if (signErr || !signedData) {
-      return new Response(JSON.stringify({ error: "Upload succeeded but URL generation failed" }), { status: 500 });
-    }
-
     const existing: string[] = order.payment_screenshot_urls || [];
-    const updated = [...existing, signedData.signedUrl];
+    const updated = [...existing, path];
 
     const statusUpdate = order.status === "pending" ? { status: "pending_payment" } : {};
 
@@ -77,7 +68,12 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: updateErr.message }), { status: 500 });
     }
 
-    return new Response(JSON.stringify({ order: updatedOrder, url: signedData.signedUrl }), { status: 200 });
+    // Generate fresh signed URL for immediate display (path stored in DB for re-generation)
+    const { data: signedData } = await supabase.storage
+      .from("order-payments")
+      .createSignedUrl(path, 86400);
+
+    return new Response(JSON.stringify({ order: updatedOrder, url: signedData?.signedUrl ?? null, path }), { status: 200 });
   } catch (err: any) {
     console.error("upload-payment error:", err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });

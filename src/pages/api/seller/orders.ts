@@ -60,7 +60,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify order belongs to this seller's listings
     const { data: order } = await supabase
       .from("orders")
-      .select("listing_id, buyer_id, species")
+      .select("listing_id, buyer_id, species, seller_id")
       .eq("id", order_id)
       .single();
 
@@ -78,6 +78,12 @@ export const POST: APIRoute = async ({ request }) => {
       if (!listing || listing.seller_id !== seller_id) {
         return new Response(JSON.stringify({ error: "Not your order" }), { status: 403 });
       }
+    } else if (order.seller_id && order.seller_id !== seller_id) {
+      // Direct seller orders (no listing) — check seller_id on the order itself
+      return new Response(JSON.stringify({ error: "Not your order" }), { status: 403 });
+    } else if (!order.listing_id && !order.seller_id) {
+      // Orphan order with no ownership anchor — deny
+      return new Response(JSON.stringify({ error: "Order ownership cannot be verified" }), { status: 403 });
     }
 
     // action=set_final_price: use reconcile_preorder_price RPC
@@ -105,16 +111,31 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ order: data, reconciled_status: newStatus }), { status: 200 });
     }
 
-    // action=verify_payment: mark payment screenshot as verified by seller
+    // action=verify_payment: mark payment verified and advance pending_payment → confirmed
     if (action === "verify_payment") {
+      const { data: currentForVerify } = await supabase.from("orders").select("status").eq("id", order_id).single();
+      const verifyUpdates: any = {
+        payment_verified_at: new Date().toISOString(),
+        payment_verified_by: seller_id,
+        updated_at: new Date().toISOString(),
+      };
+      if (currentForVerify?.status === "pending_payment") {
+        verifyUpdates.status = "confirmed";
+      }
       const { data, error: vErr } = await supabase
         .from("orders")
-        .update({ payment_verified_at: new Date().toISOString(), payment_verified_by: seller_id, updated_at: new Date().toISOString() })
+        .update(verifyUpdates)
         .eq("id", order_id)
         .select()
         .single();
       if (vErr) {
         return new Response(JSON.stringify({ error: vErr.message }), { status: 500 });
+      }
+      // Notify buyer if status advanced
+      if (verifyUpdates.status === "confirmed" && order.buyer_id) {
+        try {
+          await sendBuyerOrderPush({ buyer_id: order.buyer_id, status: "confirmed", species: order.species || "Fish", final_price: null });
+        } catch (_) {}
       }
       return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
