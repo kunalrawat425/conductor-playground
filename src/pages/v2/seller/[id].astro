@@ -270,6 +270,16 @@ const tags = [
       // Total qty across all tiers for this listing (for incart highlight)
       const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
 
+      // Pre-order price range badge (shown for OOS pre-order listings)
+      const preorderRangeHtml = isPreorder && l.is_preorder_enabled && l.weight_avail <= 0 && (l.preorder_price_min || l.preorder_price_max)
+        ? (() => {
+            const mn = l.preorder_price_min ? `₹${Number(l.preorder_price_min).toLocaleString("en-IN")}` : "";
+            const mx = l.preorder_price_max ? `₹${Number(l.preorder_price_max).toLocaleString("en-IN")}` : "";
+            const range = mn && mx ? `${mn} – ${mx}` : mn || mx;
+            return `<div style="font:600 11px Inter;color:#7C3AED;margin-top:3px;">Est. price: ${range}</div>`;
+          })()
+        : "";
+
       // Show all pricing tiers as individual add buttons so buyer picks the right pack/unit.
       const pricingHtml = opts.length <= 1
         ? (() => {
@@ -357,6 +367,7 @@ const tags = [
           </div>
           <div class="v2-item-body">
             <div class="v2-item-name">${escape(name)}${sizeBadge}</div>
+            ${preorderRangeHtml}
             ${stockWarn}${limitHint}
             ${pricingHtml}
           </div>
