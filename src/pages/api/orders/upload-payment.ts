@@ -67,7 +67,7 @@ export const POST: APIRoute = async ({ request }) => {
     const existing: string[] = order.payment_screenshot_urls || [];
     const updated = [...existing, path];
 
-    const statusUpdate = order.status === "pending" ? { status: "pending_payment" } : {};
+    const statusUpdate = ["pending", "pre_order"].includes(order.status) ? { status: "pending_payment" } : {};
 
     const { data: updatedOrder, error: updateErr } = await supabase
       .from("orders")

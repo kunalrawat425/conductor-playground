@@ -244,12 +244,15 @@ const { id } = Astro.params;
       }
     }
 
-    // Stepper — different labels for pickup vs delivery
+    // Stepper — different labels for pickup vs delivery vs preorder
     _orderType = o.order_type || "pickup";
     const step = statusToStep(o.status);
-    const stepLabels = _orderType === "delivery"
-      ? ["Placed", "Confirmed", "On the way", "Delivered"]
-      : ["Placed", "Confirmed", "Ready", "Picked up"];
+    const isPreorderOrder = o.status === "pre_order" || (o.paid_amount && !o.final_price && o.status === "pending_payment");
+    const stepLabels = isPreorderOrder
+      ? ["Pre-ordered", "Payment sent", "Price set", "Confirmed"]
+      : _orderType === "delivery"
+        ? ["Placed", "Confirmed", "On the way", "Delivered"]
+        : ["Placed", "Confirmed", "Ready", "Picked up"];
     const stepper = document.getElementById("v2-od-stepper");
     stepper.innerHTML = [0,1,2,3].map(i =>
       `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
@@ -307,11 +310,17 @@ const { id } = Astro.params;
     if (preorderEl) {
       if (o.status === "pre_order") {
         const paidAmt = o.paid_amount ? `₹${Number(o.paid_amount).toLocaleString("en-IN")}` : "";
+        const priceMin = o.listing?.preorder_price_min;
+        const priceMax = o.listing?.preorder_price_max;
+        const rangeHtml = priceMin && priceMax
+          ? `<div style="font:700 13px Inter;color:#7C3AED;margin:8px 0 4px;">Expected price range: ₹${Number(priceMin).toLocaleString("en-IN")} – ₹${Number(priceMax).toLocaleString("en-IN")}</div>`
+          : priceMin ? `<div style="font:700 13px Inter;color:#7C3AED;margin:8px 0 4px;">Min estimate: ₹${Number(priceMin).toLocaleString("en-IN")}</div>` : "";
         preorderEl.innerHTML = `
           <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
             <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Next-day catch pre-order</div>
-            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;">Your pre-order is confirmed. The seller will set the final price after the morning catch.${paidAmt ? ` You pre-paid <strong>${paidAmt}</strong>.` : ""}</div>
-            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → refund within 7 working days. If <strong>higher</strong> → you'll approve the difference.</div>
+            ${rangeHtml}
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">Your pre-order is confirmed. The seller will set the final price after the morning catch.${paidAmt ? ` You pre-paid <strong>${paidAmt}</strong>.` : ""}</div>
+            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → <strong>refund within 7 working days</strong>. If <strong>higher</strong> → you'll approve the difference.</div>
           </div>`;
         preorderEl.style.display = "block";
       } else {
@@ -339,7 +348,29 @@ const { id } = Astro.params;
 
     // Actions
     const actions = document.getElementById("v2-od-actions");
-    if (isCancellable(o.status)) {
+    if (o.status === "pre_order") {
+      // Show payment upload + cancel option
+      renderPaymentUpload(o, false);
+      const cancelHtml = `<button class="v2-od-cancel" id="v2-od-cancel-btn" style="margin-top:8px;">Cancel pre-order</button>`;
+      actions.innerHTML += cancelHtml;
+      document.getElementById("v2-od-cancel-btn")?.addEventListener("click", async () => {
+        if (!confirm("Cancel this pre-order?")) return;
+        try {
+          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const res = await fetch("/api/orders/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Cancel failed");
+          window.v2Toast?.("success", "Pre-order cancelled");
+          setTimeout(() => load(), 600);
+        } catch (err) {
+          window.v2Toast?.("error", "Failed", err.message);
+        }
+      });
+    } else if (isCancellable(o.status)) {
       actions.innerHTML = `<button class="v2-od-cancel" id="v2-od-cancel-btn">Cancel order</button>`;
       document.getElementById("v2-od-cancel-btn").addEventListener("click", async () => {
         if (!confirm("Cancel this order? This cannot be undone.")) return;

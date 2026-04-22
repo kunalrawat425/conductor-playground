@@ -349,7 +349,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         const sq = searchQuery.toLowerCase();
         const { data: allOrders } = await supabase
           .from("orders")
-          .select("*, listing:fish_listings(species)")
+          .select("*, listing:fish_listings(species, preorder_price_min, preorder_price_max)")
           .in("listing_id", listingIds)
           .order("created_at", { ascending: false })
           .limit(500);
@@ -371,7 +371,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       } else {
         q = supabase
           .from("orders")
-          .select("*, listing:fish_listings(species)", { count: "exact" })
+          .select("*, listing:fish_listings(species, preorder_price_min, preorder_price_max)", { count: "exact" })
           .in("listing_id", listingIds)
           .in("status", STATUS_BY_TAB[currentTab])
           .order("created_at", { ascending: false })
@@ -431,14 +431,20 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         const isDelivery = o.order_type === "delivery";
         if (isPreorder) {
           const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "—";
+          const priceMin = o.listing?.preorder_price_min;
+          const priceMax = o.listing?.preorder_price_max;
+          const rangeHtml = priceMin && priceMax
+            ? `<div style="font:500 11px Inter;color:#7C3AED;">Your listed range: ₹${Number(priceMin).toLocaleString("en-IN")} – ₹${Number(priceMax).toLocaleString("en-IN")}</div>`
+            : "";
           actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;">
             <div style="font:500 11px Inter;color:var(--v2-ink-3);">🌙 Next-day catch. Set actual price after receiving the fish.</div>
             <div style="font:600 12px Inter;color:#7C3AED;">Buyer pre-paid: ₹${paidAmt}</div>
+            ${rangeHtml}
             <div style="display:flex;gap:8px;align-items:center;">
               <input type="number" placeholder="Final price (₹)" id="final-price-${o.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
               <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;white-space:nowrap;" data-action="set_final_price" data-order-id="${o.id}">Set price</button>
             </div>
-            <div style="font:400 11px Inter;color:#D97706;">⚠️ If final &lt; ₹${paidAmt} → auto refund difference. If final &gt; ₹${paidAmt} → buyer approves extra.</div>
+            <div style="font:400 11px Inter;color:#D97706;">⚠️ If final &lt; ₹${paidAmt} → auto refund within 7 working days. If final &gt; ₹${paidAmt} → buyer approves extra.</div>
             <button class="v2-btn v2-btn-sm" style="background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline" data-order-id="${o.id}">Decline pre-order</button>
           </div>`;
         } else if (["pending", "scheduled"].includes(o.status)) {
