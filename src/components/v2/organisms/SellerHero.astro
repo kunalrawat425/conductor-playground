@@ -8,13 +8,25 @@ const {
   deliveryEtaMin,
   rating,
   status,
-  closesAt,
-  opensAt,
+  closesAt: closesAtRaw,
+  opensAt: opensAtRaw,
   totalOrders,
   itemCount,
   catchTime,
   tags = [],
+  phone,
 } = Astro.props;
+
+function fmtTime(t: string | undefined | null): string {
+  if (!t) return "";
+  const [h, m] = String(t).split(":").map(Number);
+  if (Number.isNaN(h)) return t;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")} ${period}` : `${h12} ${period}`;
+}
+const opensAt = fmtTime(opensAtRaw) || "5 AM";
+const closesAt = fmtTime(closesAtRaw) || "11 AM";
 
 const subParts = [
   location,
@@ -23,7 +35,7 @@ const subParts = [
 ].filter(Boolean).join(" · ");
 ---
 <section class="v2-sh-hero">
-  <a href="/" class="v2-sh-back" aria-label="Back to sellers">← Back</a>
+  <a href="/v2" class="v2-sh-back" aria-label="Back to sellers">← Back</a>
 
   <div class="v2-sh-top">
     <div class="v2-sh-avatar" aria-hidden="true">🐟</div>
@@ -61,9 +73,20 @@ const subParts = [
       <div class:list={["v2-sh-v", status === "open" && "v2-sh-live"]}>
         {status === "open" ? "Open" : "Closed"}
       </div>
-      <div class="v2-sh-l">{status === "open" ? `Until ${closesAt ?? "11am"}` : `Opens ${opensAt ?? "5am"}`}</div>
+      <div class="v2-sh-l">{status === "open" ? `Until ${closesAt}` : `Opens ${opensAt}`}</div>
     </div>
   </div>
+
+  {phone && (
+    <div class="v2-sh-actions">
+      <a href={`tel:${phone}`} class="v2-sh-call">
+        <span>📞</span> Call Seller
+      </a>
+      <a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener" class="v2-sh-whatsapp">
+        <span>💬</span> WhatsApp
+      </a>
+    </div>
+  )}
 </section>
 
 <!-- styles in src/styles/v2-components.css -->

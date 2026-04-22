@@ -70,7 +70,7 @@ export const POST: APIRoute = async ({ request }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Relifish Waitlist <onboarding@resend.dev>",
+            from: "Relifish Waitlist <noreply@relifish.store>",
             to: "relifishstore@gmail.com",
             subject: `New Waitlist: ${area} — ${phoneE164}`,
             html: `
@@ -100,7 +100,7 @@ export const POST: APIRoute = async ({ request }) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "Relifish <onboarding@resend.dev>",
+              from: "Relifish <noreply@relifish.store>",
               to: email,
               subject: "You're on the Relifish waitlist! 🐟",
               html: `

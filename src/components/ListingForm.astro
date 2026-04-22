@@ -143,6 +143,36 @@ const initialPricingJson = JSON.stringify(
     </div>
   </section>
 
+  <section class="listing-card listing-card--compact" id="listing-section-preorder" aria-labelledby="listing-h-preorder">
+    <h2 class="listing-section-title" id="listing-h-preorder">Pre-order settings 🌙</h2>
+    <p class="listing-section-intro">Pre-orders are <strong>independent of inventory</strong>. Buyers pre-order "next day's catch" — stock is not deducted. Enable per listing.</p>
+    <div class="listing-field">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input
+          type="checkbox"
+          id="is_preorder_enabled"
+          name="is_preorder_enabled"
+          value="true"
+          checked={listing?.is_preorder_enabled === true}
+          style="margin-top:3px;flex-shrink:0;"
+        />
+        <div>
+          <div style="font-weight:700;">Enable pre-orders for this listing</div>
+          <div class="form-hint" style="margin:2px 0 0;">Buyers can pre-order even when stock shows 0. Seller sets actual price after the catch.</div>
+        </div>
+      </label>
+    </div>
+    <div style="margin-top:10px;padding:10px 12px;background:#EEF2FF;border-radius:6px;border-left:3px solid #6366F1;">
+        <div style="font:700 12px Inter;color:#4F46E5;margin-bottom:2px;">💡 How pre-order pricing works</div>
+        <div style="font:400 11px Inter;color:#4338CA;line-height:1.5;">
+          Buyer pays the listed price upfront. After the morning catch, you set the actual final price.
+          If final price &lt; buyer paid → automatic refund within 7 working days.
+          If final price &gt; buyer paid → buyer approves the difference.
+          If prices match → order auto-confirmed.
+        </div>
+      </div>
+  </section>
+
   <div class="form-actions listing-form-actions">
     <button type="submit" class="btn btn-primary listing-submit-btn">
       {isEdit ? "Save listing" : "Create listing"}
@@ -245,6 +275,24 @@ const initialPricingJson = JSON.stringify(
         stockInput.step = stockQuantityInputStep(pu);
         stockInput.inputMode = unit === "kg" ? "decimal" : "numeric";
       }
+      // Update threshold and daily limit placeholders/labels with unit
+      const unitWord = unit === "kg" ? "kg" : "pieces";
+      const oosInput = form.querySelector("#oos_threshold") as HTMLInputElement | null;
+      if (oosInput) {
+        oosInput.placeholder = unit === "kg" ? "e.g. 2 (kg)" : "e.g. 3 (pieces)";
+        oosInput.step = unit === "kg" ? "0.1" : "1";
+        oosInput.inputMode = unit === "kg" ? "decimal" : "numeric";
+      }
+      if (dailyLimitInput) {
+        dailyLimitInput.placeholder = unit === "kg" ? "e.g. 5 (kg)" : "e.g. 10 (pieces)";
+        dailyLimitInput.step = unit === "kg" ? "0.1" : "1";
+        dailyLimitInput.inputMode = unit === "kg" ? "decimal" : "numeric";
+      }
+      // Update labels
+      const oosLabel = form.querySelector('label[for="oos_threshold"]');
+      if (oosLabel) oosLabel.innerHTML = `"Stock clearing soon" threshold (${unitWord}) <span class="listing-opt">(optional)</span>`;
+      const dailyLabel = form.querySelector('label[for="buyer_daily_qty_limit"]');
+      if (dailyLabel) dailyLabel.innerHTML = `Per-buyer daily limit (${unitWord}) <span class="listing-opt">(optional)</span>`;
       updateStockInfo();
     }
 

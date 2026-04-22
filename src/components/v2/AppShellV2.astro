@@ -38,9 +38,21 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0066FF" />
+    <meta name="theme-color" content="#0066FF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Apply theme before paint to prevent FOUC -->
+    <script is:inline>
+      (function() {
+        try {
+          var t = localStorage.getItem("v2_theme");
+          if (t === "dark" || t === "light") {
+            document.documentElement.setAttribute("data-theme", t);
+          }
+        } catch(e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
@@ -62,6 +74,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
+    {needsMap && <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>}
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body class:list={[!hideNav && "v2-has-bottom-nav"]}>
@@ -84,7 +97,9 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
         color: var(--v2-ink);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        overflow-x: hidden;
+        /* `clip` (not `hidden`) avoids creating a scroll container that breaks
+           position:sticky on descendants. */
+        overflow-x: clip;
         width: 100%;
       }
       *, *::before, *::after { box-sizing: border-box; }
@@ -97,5 +112,12 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
       a { color: inherit; }
       :root { --app-max-width: 800px; }
     </style>
+
+    <!-- Global cart module — exposed on window for inline scripts (define:vars) -->
+    <script>
+      import * as Cart from "../../lib/cart";
+      (window as any).RelifishCart = Cart;
+      document.dispatchEvent(new CustomEvent("v2-cart-ready"));
+    </script>
   </body>
 </html>

@@ -68,14 +68,15 @@ gstack/
 ├── hosts/           # Typed host configs (one per AI agent)
 │   ├── claude.ts    # Primary host config
 │   ├── codex.ts, factory.ts, kiro.ts  # Existing hosts
-│   ├── opencode.ts, slate.ts, cursor.ts, openclaw.ts  # New hosts
+│   ├── opencode.ts, slate.ts, cursor.ts, openclaw.ts  # IDE hosts
+│   ├── hermes.ts, gbrain.ts  # Agent runtime hosts
 │   └── index.ts     # Registry: exports all, derives Host type
 ├── scripts/         # Build + DX tooling
 │   ├── gen-skill-docs.ts  # Template → SKILL.md generator (config-driven)
 │   ├── host-config.ts     # HostConfig interface + validator
 │   ├── host-config-export.ts  # Shell bridge for setup script
 │   ├── host-adapters/     # Host-specific adapters (OpenClaw tool mapping)
-│   ├── resolvers/   # Template resolver modules (preamble, design, review, etc.)
+│   ├── resolvers/   # Template resolver modules (preamble, design, review, gbrain, etc.)
 │   ├── skill-check.ts     # Health dashboard
 │   └── dev-skill.ts       # Watch mode
 ├── test/            # Skill validation + eval tests
@@ -138,6 +139,17 @@ SKILL.md files are **generated** from `.tmpl` templates. To update docs:
 To add a new browse command: add it to `browse/src/commands.ts` and rebuild.
 To add a snapshot flag: add it to `SNAPSHOT_FLAGS` in `browse/src/snapshot.ts` and rebuild.
 
+**Token ceiling:** Generated SKILL.md files trip a warning above 160KB (~40K tokens).
+This is a "watch for feature bloat" guardrail, not a hard gate. Modern flagship
+models have 200K-1M context windows, so 40K is 4-20% of window, and prompt caching
+makes the marginal cost of larger skills small. The ceiling exists to catch runaway
+preamble/resolver growth, not to force compression on carefully-tuned big skills
+(`ship`, `plan-ceo-review`, `office-hours` legitimately pack 25-35K tokens of
+behavior). If you blow past 40K, the right fix is usually: (1) look at WHAT grew,
+(2) if one resolver added 10K+ in a single PR, question whether it belongs inline
+or as a reference doc, (3) only compress carefully-tuned prose as a last resort —
+cuts to the coverage audit, review army, or voice directive have real quality cost.
+
 **Merge conflicts on SKILL.md files:** NEVER resolve conflicts on generated SKILL.md
 files by accepting either side. Instead: (1) resolve conflicts on the `.tmpl` templates
 and `scripts/gen-skill-docs.ts` (the sources of truth), (2) run `bun run gen:skill-docs`
@@ -173,6 +185,18 @@ Rules:
 - **Express conditionals as English.** Instead of nested `if/elif/else` in bash,
   write numbered decision steps: "1. If X, do Y. 2. Otherwise, do Z."
 
+## Writing style (V1)
+
+Default output from every tier-≥2 skill follows the Writing Style section in
+`scripts/resolvers/preamble.ts`: jargon glossed on first use (curated list in
+`scripts/jargon-list.json`, baked at gen-skill-docs time), questions framed in
+outcome terms ("what breaks for your users if...") not implementation terms,
+short sentences, decisions close with user impact. Power users who want the
+tighter V0 prose set `gstack-config set explain_level terse` (binary switch,
+no middle mode). See `docs/designs/PLAN_TUNING_V1.md` for the full design
+rationale. The review pacing overhaul that originally tried to ride alongside
+writing-style was extracted to V1.1 — see `docs/designs/PACING_UPDATES_V0.md`.
+
 ## Browser interaction
 
 When you need to interact with a browser (QA, dogfooding, cookie setup), use the
@@ -187,6 +211,48 @@ timeline, message flow, auth token chain, tab concurrency model, and known
 failure modes. The sidebar spans 5 files across 2 codebases (extension + server)
 with non-obvious ordering dependencies. The doc exists to prevent the kind of
 silent failures that come from not understanding the cross-component flow.
+
+**Sidebar security stack** (layered defense against prompt injection):
+
+| Layer | Module | Lives in |
+|-------|--------|----------|
+| L1-L3 | `content-security.ts` | both server and agent — datamarking, hidden element strip, ARIA regex, URL blocklist, envelope wrapping |
+| L4 | `security-classifier.ts` (TestSavantAI ONNX) | **sidebar-agent only** |
+| L4b | `security-classifier.ts` (Claude Haiku transcript) | **sidebar-agent only** |
+| L5 | `security.ts` (canary) | both — inject in compiled, check in agent |
+| L6 | `security.ts` (combineVerdict ensemble) | both |
+
+**Critical constraint:** `security-classifier.ts` CANNOT be imported from the
+compiled browse binary. `@huggingface/transformers` v4 requires `onnxruntime-node`
+which fails to `dlopen` from Bun compile's temp extract dir. Only `security.ts`
+(pure-string operations — canary, verdict combiner, attack log, status) is safe
+for `server.ts`. See `~/.gstack/projects/garrytan-gstack/ceo-plans/2026-04-19-prompt-injection-guard.md`
+§"Pre-Impl Gate 1 Outcome" for full architectural decision.
+
+**Thresholds** (in `security.ts`):
+- `BLOCK: 0.85` — single-layer score that would cause BLOCK if cross-confirmed
+- `WARN: 0.60` — cross-confirm threshold. When L4 AND L4b both >= 0.60 → BLOCK
+- `LOG_ONLY: 0.40` — gates transcript classifier (skip Haiku when all layers < 0.40)
+
+**Ensemble rule:** BLOCK only when the ML content classifier AND the transcript
+classifier both report >= WARN. Single-layer high confidence degrades to WARN —
+this is the Stack Overflow instruction-writing FP mitigation. Canary leak
+always BLOCKs (deterministic).
+
+**Env knobs:**
+- `GSTACK_SECURITY_OFF=1` — emergency kill switch. Classifier stays off even if
+  warmed. Canary is still injected; just the ML scan is skipped.
+- `GSTACK_SECURITY_ENSEMBLE=deberta` — opt-in DeBERTa-v3 ensemble. Adds
+  ProtectAI DeBERTa-v3-base-injection-onnx as L4c classifier for cross-model
+  agreement. 721MB first-run download. With ensemble enabled, BLOCK requires
+  2-of-3 ML classifiers agreeing at >= WARN (testsavant, deberta, transcript).
+  Without ensemble (default), BLOCK requires testsavant + transcript at >= WARN.
+- Classifier model cache: `~/.gstack/models/testsavant-small/` (112MB, first run only)
+  plus `~/.gstack/models/deberta-v3-injection/` (721MB, only when ensemble enabled)
+- Attack log: `~/.gstack/security/attempts.jsonl` (salted sha256 + domain only,
+  rotates at 10MB, 5 generations)
+- Per-device salt: `~/.gstack/security/device-salt` (0600)
+- Session state: `~/.gstack/security/session-state.json` (cross-process, atomic)
 
 ## Dev symlink awareness
 
@@ -333,7 +399,7 @@ own version bump and CHANGELOG entry. The entry describes what THIS branch adds 
 not what was already on main.
 
 **When to write the CHANGELOG entry:**
-- At `/ship` time (Step 5), not during development or mid-branch.
+- At `/ship` time (Step 13), not during development or mid-branch.
 - The entry covers ALL commits on this branch vs the base branch.
 - Never fold new work into an existing CHANGELOG entry from a prior version that
   already landed on main. If main has v0.10.0.0 and your branch adds features,
@@ -372,6 +438,60 @@ CHANGELOG.md is **for users**, not contributors. Write it like product release n
 - Every entry should make someone think "oh nice, I want to try that."
 - No jargon: say "every question now tells you which project and branch you're in" not
   "AskUserQuestion format standardized across skill templates via preamble resolver."
+
+### Release-summary format (every `## [X.Y.Z]` entry)
+
+Every version entry in `CHANGELOG.md` MUST start with a release-summary section in
+the GStack/Garry voice, one viewport's worth of prose + tables that lands like a
+verdict, not marketing. The itemized changelog (subsections, bullets, files) goes
+BELOW that summary, separated by a `### Itemized changes` header.
+
+The release-summary section gets read by humans, by the auto-update agent, and by
+anyone deciding whether to upgrade. The itemized list is for agents that need to
+know exactly what changed.
+
+Structure for the top of every `## [X.Y.Z]` entry:
+
+1. **Two-line bold headline** (10-14 words total). Should land like a verdict, not
+   marketing. Sound like someone who shipped today and cares whether it works.
+2. **Lead paragraph** (3-5 sentences). What shipped, what changed for the user.
+   Specific, concrete, no AI vocabulary, no em dashes, no hype.
+3. **A "The X numbers that matter" section** with:
+   - One short setup paragraph naming the source of the numbers (real production
+     deployment OR a reproducible benchmark, name the file/command to run).
+   - A table of 3-6 key metrics with BEFORE / AFTER / Δ columns.
+   - A second optional table for per-category breakdown if relevant.
+   - 1-2 sentences interpreting the most striking number in concrete user terms.
+4. **A "What this means for [audience]" closing paragraph** (2-4 sentences) tying
+   the metrics to a real workflow shift. End with what to do.
+
+Voice rules for the release summary:
+- No em dashes (use commas, periods, "...").
+- No AI vocabulary (delve, robust, comprehensive, nuanced, fundamental, etc.) or
+  banned phrases ("here's the kicker", "the bottom line", etc.).
+- Real numbers, real file names, real commands. Not "fast" but "~30s on 30K pages."
+- Short paragraphs, mix one-sentence punches with 2-3 sentence runs.
+- Connect to user outcomes: "the agent does ~3x less reading" beats "improved precision."
+- Be direct about quality. "Well-designed" or "this is a mess." No dancing.
+
+Source material:
+- CHANGELOG previous entry for prior context.
+- Benchmark files or `/retro` output for headline numbers.
+- Recent commits (`git log <prev-version>..HEAD --oneline`) for what shipped.
+- Don't make up numbers. If a metric isn't in a benchmark or production data,
+  don't include it. Say "no measurement yet" if asked.
+
+Target length: ~250-350 words for the summary. Should render as one viewport.
+
+### Itemized changes (below the release summary)
+
+Write `### Itemized changes` and continue with the detailed subsections (Added,
+Changed, Fixed, For contributors). Same rules as the user-facing voice guidance
+above, plus:
+
+- **Always credit community contributions.** When an entry includes work from a
+  community PR, name the contributor with `Contributed by @username`. Contributors
+  did real work. Thank them publicly every time, no exceptions.
 
 ## AI effort compression
 

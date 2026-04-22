@@ -1,7 +1,11 @@
 ---
 export const prerender = false;
 import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import EmptyState from "../../components/v2/molecules/EmptyState.astro";
+import ThemeToggle from "../../components/v2/atoms/ThemeToggle.astro";
+import LoginSheet from "../../components/v2/organisms/LoginSheet.astro";
+import AddressPickerSheet from "../../components/v2/organisms/AddressPickerSheet.astro";
+import BottomSheet from "../../components/v2/organisms/BottomSheet.astro";
+import Toast from "../../components/v2/atoms/Toast.astro";
 ---
 <AppShellV2
   title="Account | Relifish"
@@ -13,14 +17,33 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
   }}
   nav={{ active: "account" }}
 >
+  <Toast />
+  <LoginSheet id="v2-me-login" role="buyer" redirectTo="/v2/me" />
+  <AddressPickerSheet id="v2-me-addr-sheet" />
+
+  <BottomSheet id="v2-me-name-sheet" title="Edit your name">
+    <form id="v2-me-name-form">
+      <label class="v2-label">First name</label>
+      <input id="v2-me-fn" class="v2-input" type="text" placeholder="Your first name" />
+      <label class="v2-label" style="margin-top:12px;">Last name</label>
+      <input id="v2-me-ln" class="v2-input" type="text" placeholder="Your last name" />
+      <label class="v2-label" style="margin-top:12px;">Email (optional)</label>
+      <input id="v2-me-em" class="v2-input" type="email" placeholder="you@example.com" />
+      <div id="v2-me-email-verify" style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+        <span id="v2-me-email-status" style="font:600 11px Inter;"></span>
+        <button type="button" id="v2-me-email-verify-btn" style="display:none;background:none;border:1px solid var(--v2-brand);color:var(--v2-brand);font:600 11px Inter;padding:4px 12px;border-radius:20px;cursor:pointer;">Send verification</button>
+      </div>
+      <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" style="margin-top:16px;">Save</button>
+    </form>
+  </BottomSheet>
+
   <div id="v2-me-guest" style="display:none;padding:0 16px;margin-top:24px;">
-    <EmptyState
-      variant="no-orders"
-      title="Sign in to your account"
-      description="Use your phone number to view profile, saved addresses, and order history."
-      ctaText="Sign in"
-      ctaHref="/me"
-    />
+    <div class="v2-empty">
+      <div class="v2-empty-icon">🔑</div>
+      <h3 class="v2-empty-title">Sign in to your account</h3>
+      <p class="v2-empty-desc">Use your phone number to view profile, saved addresses, and order history.</p>
+      <button id="v2-me-signin-btn" class="v2-btn v2-btn-primary v2-btn-md">Sign in</button>
+    </div>
   </div>
 
   <div id="v2-me-loading" style="padding:24px;text-align:center;">
@@ -33,29 +56,45 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
       <div class="v2-me-avatar">👤</div>
       <div class="v2-me-name" id="v2-me-name">—</div>
       <div class="v2-me-phone" id="v2-me-phone">—</div>
+      <button id="v2-me-edit-name" class="v2-me-edit-btn">✎ Edit profile</button>
     </div>
 
     <!-- Quick actions -->
     <div class="v2-me-quick">
-      <a href="/me" class="v2-me-qa"><div class="v2-me-qa-icon">📍</div><div class="v2-me-qa-lbl">Addresses</div></a>
-      <a href="/me" class="v2-me-qa"><div class="v2-me-qa-icon">🔔</div><div class="v2-me-qa-lbl">Notifications</div></a>
+      <button type="button" class="v2-me-qa" data-action="addresses"><div class="v2-me-qa-icon">📍</div><div class="v2-me-qa-lbl">Addresses</div></button>
       <a href="/v2/track" class="v2-me-qa"><div class="v2-me-qa-icon">📋</div><div class="v2-me-qa-lbl">Orders</div></a>
+      <button type="button" class="v2-me-qa" data-action="notifications"><div class="v2-me-qa-icon">🔔</div><div class="v2-me-qa-lbl">Notifications</div></button>
       <a href="mailto:relifishstore@gmail.com" class="v2-me-qa"><div class="v2-me-qa-icon">💬</div><div class="v2-me-qa-lbl">Help</div></a>
+    </div>
+
+    <!-- Saved addresses block -->
+    <div class="v2-me-section-head">Saved addresses</div>
+    <div id="v2-me-addr-list" style="margin: 0 16px 16px;">
+      <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
+        <span class="v2-spinner v2-spinner-sm"></span>
+      </div>
+    </div>
+    <div style="margin: 0 16px 16px;">
+      <button id="v2-me-add-addr" type="button" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full">+ Add new address</button>
+    </div>
+
+    <!-- Past orders -->
+    <div class="v2-me-section-head">Order history</div>
+    <div id="v2-me-orders" style="margin:0 16px 16px;">
+      <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
+        <span class="v2-spinner v2-spinner-sm"></span>
+      </div>
     </div>
 
     <!-- Settings list -->
     <div class="v2-me-section-head">Preferences</div>
-    <a href="/me" class="v2-me-list-item">
-      <div class="v2-me-li-icon">🔔</div>
-      <div class="v2-me-li-name">Push notifications</div>
-      <div class="v2-me-li-arrow">›</div>
-    </a>
-    <a href="/me" class="v2-me-list-item">
-      <div class="v2-me-li-icon">📍</div>
-      <div class="v2-me-li-name">Saved addresses</div>
-      <div class="v2-me-li-arrow">›</div>
-    </a>
-    <a href="/privacy" class="v2-me-list-item">
+
+    <!-- Theme toggle -->
+    <div style="margin: 0 16px 16px;">
+      <ThemeToggle variant="button" />
+    </div>
+
+    <a href="/v2/privacy" class="v2-me-list-item">
       <div class="v2-me-li-icon">📋</div>
       <div class="v2-me-li-name">Terms & Privacy</div>
       <div class="v2-me-li-arrow">›</div>
@@ -83,20 +122,24 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
     font-size: 40px;
     margin: 0 auto 12px;
   }
-  .v2-me-name {
-    font: 800 22px Inter;
-  }
-  .v2-me-phone {
-    font: 400 12px Inter;
-    opacity: .85;
-    margin-top: 2px;
+  .v2-me-name { font: 800 22px Inter; }
+  .v2-me-phone { font: 400 12px Inter; opacity: .85; margin-top: 2px; }
+  .v2-me-edit-btn {
+    margin-top: 8px;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font: 600 12px Inter;
+    cursor: pointer;
   }
   .v2-me-quick {
     margin: -40px 16px 16px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
-    background: #fff;
+    background: var(--v2-bg);
     border-radius: var(--v2-radius-lg);
     padding: 16px 8px;
     box-shadow: var(--v2-shadow-md);
@@ -107,6 +150,10 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
     text-align: center;
     text-decoration: none;
     color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
   }
   .v2-me-qa-icon {
     width: 44px; height: 44px;
@@ -116,10 +163,7 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
     font-size: 22px;
     margin: 0 auto 4px;
   }
-  .v2-me-qa-lbl {
-    font: 600 10px Inter;
-    color: var(--v2-ink);
-  }
+  .v2-me-qa-lbl { font: 600 10px Inter; color: var(--v2-ink); }
   .v2-me-section-head {
     padding: 16px 16px 8px;
     font: 700 12px Inter;
@@ -128,14 +172,13 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
   }
   .v2-me-list-item {
     margin: 0 16px 1px;
-    background: #fff;
+    background: var(--v2-bg);
     padding: 14px 16px;
     display: flex; align-items: center; gap: 12px;
     text-decoration: none;
     color: inherit;
+    border-radius: var(--v2-radius);
   }
-  .v2-me-list-item:first-of-type { border-radius: var(--v2-radius) var(--v2-radius) 0 0; }
-  .v2-me-list-item:nth-of-type(3) { border-radius: 0 0 var(--v2-radius) var(--v2-radius); margin-bottom: 16px; }
   .v2-me-li-icon {
     width: 32px; height: 32px;
     border-radius: 8px;
@@ -144,18 +187,11 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
     font-size: 16px;
     flex-shrink: 0;
   }
-  .v2-me-li-name {
-    flex: 1;
-    font: 600 13px Inter;
-    color: var(--v2-ink);
-  }
-  .v2-me-li-arrow {
-    color: var(--v2-ink-4);
-    font-size: 20px;
-  }
+  .v2-me-li-name { flex: 1; font: 600 13px Inter; color: var(--v2-ink); }
+  .v2-me-li-arrow { color: var(--v2-ink-4); font-size: 20px; }
   .v2-me-logout {
     margin: 8px 16px;
-    background: #fff;
+    background: var(--v2-bg);
     border: 1px solid var(--v2-red-l);
     color: var(--v2-red);
     padding: 14px;
@@ -171,19 +207,60 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
     color: var(--v2-ink-4);
     padding: 16px;
   }
+  .v2-me-addr-card {
+    background: var(--v2-bg);
+    border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .v2-me-addr-label { font: 700 13px Inter; color: var(--v2-ink); }
+  .v2-me-addr-default { font: 600 10px Inter; color: var(--v2-green); margin-left: 6px; text-transform: uppercase; }
+  .v2-me-addr-text { font: 400 12px Inter; color: var(--v2-ink-2); margin-top: 2px; line-height: 1.4; }
+  .v2-me-addr-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .v2-me-addr-btn {
+    background: none;
+    border: none;
+    color: var(--v2-brand);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .v2-me-addr-btn-del { color: var(--v2-red); }
+  .v2-me-addr-empty {
+    text-align: center;
+    color: var(--v2-ink-3);
+    font: 500 12px Inter;
+    padding: 16px;
+    background: var(--v2-bg);
+    border-radius: var(--v2-radius);
+  }
 </style>
 
 <script>
+  // If user is a seller, redirect to seller profile instead
+  try {
+    if (localStorage.getItem("zepto_seller_id")) {
+      window.location.href = "/v2/dashboard/profile";
+    }
+  } catch {}
+
+  function getBuyerId(): string | null {
+    try { return localStorage.getItem("zepto_buyer_id") || null; } catch { return null; }
+  }
   function getBuyerPhone(): string | null {
     try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
   }
-  function getBuyerName(): string {
-    try {
-      const first = localStorage.getItem("zepto_buyer_first_name") || "";
-      const last = localStorage.getItem("zepto_buyer_last_name") || "";
-      const full = `${first} ${last}`.trim();
-      return full || "Welcome";
-    } catch { return "Welcome"; }
+  function escape(s: any) {
+    return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
   }
 
   const loading = document.getElementById("v2-me-loading")!;
@@ -191,22 +268,314 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
   const content = document.getElementById("v2-me-content")!;
 
   const phone = getBuyerPhone();
+  const buyerId = getBuyerId();
   loading.style.display = "none";
 
-  if (!phone) {
+  if (!phone || !buyerId) {
     guest.style.display = "block";
+    document.getElementById("v2-me-signin-btn")?.addEventListener("click", () => {
+      (window as any).v2OpenSheet?.("v2-me-login");
+    });
   } else {
     content.style.display = "block";
-    document.getElementById("v2-me-name")!.textContent = getBuyerName();
+    initSignedIn(buyerId, phone);
+  }
+
+  async function initSignedIn(buyerId: string, phone: string) {
+    // Hydrate name from local cache instantly
+    const fnLocal = localStorage.getItem("zepto_buyer_first_name") || "";
+    const lnLocal = localStorage.getItem("zepto_buyer_last_name") || "";
+    const fullLocal = `${fnLocal} ${lnLocal}`.trim();
+    document.getElementById("v2-me-name")!.textContent = fullLocal || "Welcome";
     document.getElementById("v2-me-phone")!.textContent = phone;
+
+    // Fetch profile from server (truth)
+    try {
+      const r = await fetch(`/api/buyer/profile?buyer_id=${buyerId}`);
+      const d = await r.json();
+      if (r.ok && d.profile) {
+        const fn = d.profile.first_name || "";
+        const ln = d.profile.last_name || "";
+        const em = d.profile.email || "";
+        const full = `${fn} ${ln}`.trim();
+        document.getElementById("v2-me-name")!.textContent = full || "Welcome";
+        try {
+          if (fn) localStorage.setItem("zepto_buyer_first_name", fn);
+          if (ln) localStorage.setItem("zepto_buyer_last_name", ln);
+        } catch {}
+        (document.getElementById("v2-me-fn") as HTMLInputElement).value = fn;
+        (document.getElementById("v2-me-ln") as HTMLInputElement).value = ln;
+        (document.getElementById("v2-me-em") as HTMLInputElement).value = em;
+        // Email verify status
+        const emailSt = document.getElementById("v2-me-email-status")!;
+        const emailBtn = document.getElementById("v2-me-email-verify-btn")!;
+        if (em) {
+          if (d.profile.email_verified) {
+            emailSt.textContent = "✅ Verified";
+            emailSt.style.color = "var(--v2-green)";
+            emailBtn.style.display = "none";
+          } else {
+            emailSt.textContent = "❌ Not verified";
+            emailSt.style.color = "var(--v2-orange)";
+            emailBtn.style.display = "inline-block";
+          }
+        }
+      }
+    } catch {}
+
+    // Edit name button
+    document.getElementById("v2-me-edit-name")?.addEventListener("click", () => {
+      (window as any).v2OpenSheet?.("v2-me-name-sheet");
+    });
+
+    // Save name form
+    document.getElementById("v2-me-name-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const first_name = (document.getElementById("v2-me-fn") as HTMLInputElement).value.trim();
+      const last_name = (document.getElementById("v2-me-ln") as HTMLInputElement).value.trim();
+      const email = (document.getElementById("v2-me-em") as HTMLInputElement).value.trim();
+      try {
+        const res = await fetch("/api/buyer/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ buyer_id: buyerId, updates: { first_name, last_name, email } }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Save failed");
+        try {
+          localStorage.setItem("zepto_buyer_first_name", first_name);
+          localStorage.setItem("zepto_buyer_last_name", last_name);
+        } catch {}
+        const full = `${first_name} ${last_name}`.trim();
+        document.getElementById("v2-me-name")!.textContent = full || "Welcome";
+        (window as any).v2Toast?.("success", "Profile saved");
+        // Update email verify status inline
+        const emailSt = document.getElementById("v2-me-email-status")!;
+        const emailBtn = document.getElementById("v2-me-email-verify-btn")!;
+        if (email) {
+          const verified = data.buyer?.email_verified === true;
+          emailSt.textContent = verified ? "✅ Verified" : "❌ Not verified";
+          emailSt.style.color = verified ? "var(--v2-green)" : "var(--v2-orange)";
+          emailBtn.style.display = verified ? "none" : "inline-block";
+          emailBtn.disabled = false;
+          emailBtn.textContent = "Send verification";
+        } else {
+          emailSt.textContent = "";
+          emailBtn.style.display = "none";
+        }
+        (window as any).v2CloseSheet?.("v2-me-name-sheet");
+      } catch (err: any) {
+        (window as any).v2Toast?.("error", "Save failed", err.message);
+      }
+    });
+
+    // Email verify
+    document.getElementById("v2-me-email-verify-btn")?.addEventListener("click", async () => {
+      const email = (document.getElementById("v2-me-em") as HTMLInputElement)?.value?.trim();
+      if (!email) { (window as any).v2Toast?.("error", "No email", "Enter email first"); return; }
+      const btn = document.getElementById("v2-me-email-verify-btn") as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = "Sending...";
+      try {
+        const res = await fetch("/api/auth/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "buyer", id: buyerId, email }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+        (window as any).v2Toast?.("success", "Email sent", `Check ${email} for verification link`);
+        btn.textContent = "Sent ✓";
+      } catch (err: any) {
+        (window as any).v2Toast?.("error", "Failed", err.message);
+        btn.disabled = false;
+        btn.textContent = "Send verification";
+      }
+    });
+
+    // Logout
     document.getElementById("v2-me-logout")?.addEventListener("click", () => {
       try {
         localStorage.removeItem("zepto_buyer_id");
         localStorage.removeItem("zepto_phone");
         localStorage.removeItem("zepto_buyer_first_name");
         localStorage.removeItem("zepto_buyer_last_name");
+        localStorage.removeItem("v2_cart_global");
       } catch {}
       window.location.href = "/v2";
     });
+
+    // Quick action: addresses → scroll to address section
+    document.querySelectorAll<HTMLButtonElement>('[data-action="addresses"]').forEach((b) => {
+      b.addEventListener("click", () => {
+        document.getElementById("v2-me-addr-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    // Quick action: notifications → request push permission
+    document.querySelectorAll<HTMLButtonElement>('[data-action="notifications"]').forEach((b) => {
+      b.addEventListener("click", async () => {
+        if (!("Notification" in window)) {
+          (window as any).v2Toast?.("error", "Not supported", "Push isn't available on this browser");
+          return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm === "granted") {
+          (window as any).v2Toast?.("success", "Notifications on", "We'll ping for order updates");
+        } else {
+          (window as any).v2Toast?.("error", "Denied", "Enable in browser settings");
+        }
+      });
+    });
+
+    // === Address book ===
+    async function loadAddresses() {
+      const listEl = document.getElementById("v2-me-addr-list")!;
+      try {
+        const r = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+        const d = await r.json();
+        const addrs = d.addresses || [];
+        if (addrs.length === 0) {
+          listEl.innerHTML = `<div class="v2-me-addr-empty">No saved addresses yet. Add one below.</div>`;
+          return;
+        }
+        listEl.innerHTML = addrs.map((a: any) => `
+          <div class="v2-me-addr-card" data-addr-id="${a.id}">
+            <div style="flex:1;min-width:0;">
+              <div class="v2-me-addr-label">
+                ${escape(a.label || "Address")}
+                ${a.is_default ? '<span class="v2-me-addr-default">Default</span>' : ''}
+              </div>
+              <div class="v2-me-addr-text">${[a.flat, a.building, a.landmark, a.location_name].filter(Boolean).map(escape).join(", ")}</div>
+            </div>
+            <div class="v2-me-addr-actions">
+              ${!a.is_default ? `<button class="v2-me-addr-btn" data-act="default" data-id="${a.id}" aria-label="Set default">⭐</button>` : ''}
+              <button class="v2-me-addr-btn v2-me-addr-btn-del" data-act="delete" data-id="${a.id}" aria-label="Delete">🗑</button>
+            </div>
+          </div>`).join("");
+
+        listEl.querySelectorAll<HTMLButtonElement>("[data-act]").forEach((b) => {
+          b.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const id = b.dataset.id!;
+            const act = b.dataset.act!;
+            if (act === "delete") {
+              if (!confirm("Delete this address?")) return;
+              await fetch("/api/buyer/addresses", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ buyer_id: buyerId, id }),
+              });
+            } else if (act === "default") {
+              await fetch("/api/buyer/addresses", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ buyer_id: buyerId, id, address: { is_default: true } }),
+              });
+            }
+            loadAddresses();
+          });
+        });
+      } catch (err) {
+        listEl.innerHTML = `<div class="v2-me-addr-empty" style="color:var(--v2-red);">Failed to load addresses</div>`;
+      }
+    }
+
+    document.getElementById("v2-me-add-addr")?.addEventListener("click", () => {
+      (window as any).v2OpenSheet?.("v2-me-addr-sheet");
+    });
+
+    document.addEventListener("v2-address-confirmed", () => {
+      loadAddresses();
+    });
+
+    loadAddresses();
+
+    // === Past orders ===
+    const ORDER_PAGE_SIZE = 10;
+    let orderPage = 1;
+
+    function fmtDate(iso: string) {
+      const d = new Date(iso);
+      const today = new Date();
+      const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
+      if (diffDays === 0) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      return d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" });
+    }
+
+    function statusLabel(s: string) {
+      const map: Record<string, string> = {
+        pending: "Pending", pre_order: "Pre-order", scheduled: "Scheduled",
+        confirmed: "Confirmed", paid: "Paid",
+        ready_for_pickup: "Ready for pickup", out_for_delivery: "Out for delivery",
+        picked_up: "Picked up", completed: "Completed",
+        declined: "Declined", cancelled: "Cancelled", refunded: "Refunded",
+      };
+      return map[s] || s;
+    }
+
+    async function loadOrders() {
+      const el = document.getElementById("v2-me-orders")!;
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabaseUrl = (import.meta as any).env?.PUBLIC_SUPABASE_URL || "";
+        const supabaseKey = (import.meta as any).env?.PUBLIC_SUPABASE_ANON_KEY || "";
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const pastStatuses = ["picked_up", "completed", "declined", "cancelled", "refunded"];
+        const offset = (orderPage - 1) * ORDER_PAGE_SIZE;
+        const { data: orders, count } = await supabase
+          .from("orders")
+          .select("*, listing:fish_listings(species, seller:sellers(name))", { count: "exact" })
+          .in("buyer_phone", [phone, `+91${phone.replace(/^\+91/, "").replace(/\D/g, "")}`])
+          .in("status", pastStatuses)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + ORDER_PAGE_SIZE - 1);
+
+        if (!orders || orders.length === 0) {
+          el.innerHTML = `<div class="v2-me-addr-empty">No past orders yet.</div>`;
+          return;
+        }
+
+        const total = count || 0;
+        const totalPages = Math.ceil(total / ORDER_PAGE_SIZE);
+
+        el.innerHTML = orders.map((o: any) => {
+          const seller = o.listing?.seller?.name || "Seller";
+          const sp = o.listing?.species || "";
+          return `<a href="/v2/track/${o.id}" style="display:block;text-decoration:none;color:inherit;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:12px 14px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+              <div>
+                <div style="font:700 13px Inter;color:var(--v2-ink);">${escape(seller)}</div>
+                <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:1px;">${escape(fmtDate(o.created_at))} · ${o.quantity}${o.quantity_unit || 'kg'} <span style="text-transform:capitalize;">${escape(sp)}</span></div>
+                ${o.cut_style || o.buyer_notes ? `<div style="font:500 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${o.cut_style ? `✂️ ${escape(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escape(o.buyer_notes)}` : ''}</div>` : ''}
+              </div>
+              <span style="font:500 10px Inter;padding:3px 10px;border-radius:20px;background:var(--v2-bg-3);color:var(--v2-ink-3);">${statusLabel(o.status)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--v2-border);">
+              <span style="font:800 13px Inter;color:var(--v2-ink);">₹${(o.total_price || 0).toLocaleString("en-IN")}</span>
+              <span style="font:600 11px Inter;color:var(--v2-brand);">View →</span>
+            </div>
+          </a>`;
+        }).join("")
+        + (totalPages > 1 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+            <button class="v2-btn v2-btn-ghost v2-btn-sm" id="v2-me-ord-prev" ${orderPage <= 1 ? 'disabled style="opacity:.4;"' : ''}>← Prev</button>
+            <span style="font:500 12px Inter;color:var(--v2-ink-3);">Page ${orderPage} of ${totalPages}</span>
+            <button class="v2-btn v2-btn-ghost v2-btn-sm" id="v2-me-ord-next" ${orderPage >= totalPages ? 'disabled style="opacity:.4;"' : ''}>Next →</button>
+          </div>` : '');
+
+        document.getElementById("v2-me-ord-prev")?.addEventListener("click", () => {
+          if (orderPage > 1) { orderPage--; loadOrders(); }
+        });
+        document.getElementById("v2-me-ord-next")?.addEventListener("click", () => {
+          if (orderPage < totalPages) { orderPage++; loadOrders(); }
+        });
+      } catch {
+        el.innerHTML = `<div class="v2-me-addr-empty" style="color:var(--v2-red);">Failed to load orders</div>`;
+      }
+    }
+
+    loadOrders();
   }
 </script>

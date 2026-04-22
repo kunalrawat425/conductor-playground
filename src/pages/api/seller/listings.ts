@@ -147,6 +147,35 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ listing: data }), { status: 200 });
     }
 
+    if (action === "delete") {
+      const { listing_id } = body;
+      if (!listing_id) {
+        return new Response(JSON.stringify({ error: "listing_id required" }), { status: 400 });
+      }
+      // Verify listing belongs to seller
+      const { data: existing } = await supabase
+        .from("fish_listings")
+        .select("seller_id")
+        .eq("id", listing_id)
+        .single();
+      if (!existing || existing.seller_id !== seller_id) {
+        return new Response(JSON.stringify({ error: "Not your listing" }), { status: 403 });
+      }
+      // Soft-delete: flip is_available off + zero stock. Try setting deleted_at if column
+      // exists (migration 035); gracefully fallback without it.
+      const updates: Record<string, any> = { is_available: false, weight_avail: 0 };
+      try { updates.deleted_at = new Date().toISOString(); } catch {}
+      const { error: e1 } = await supabase.from("fish_listings").update(updates).eq("id", listing_id);
+      // If deleted_at column doesn't exist, retry without it
+      const error = (e1 && e1.message?.includes("deleted_at"))
+        ? (await supabase.from("fish_listings").update({ is_available: false, weight_avail: 0 }).eq("id", listing_id)).error
+        : e1;
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      }
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+
     return new Response(JSON.stringify({ error: "Invalid action" }), { status: 400 });
   } catch (err: any) {
     console.error("Seller listings error:", err);
