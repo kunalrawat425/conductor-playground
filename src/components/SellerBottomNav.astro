@@ -11,7 +11,7 @@ const { active } = Astro.props;
 <nav class="seller-bottom-nav" aria-label="Seller dashboard">
   <div class="app-bottom-nav-inner">
   <a
-    href="/dashboard/orders"
+    href="/v2/dashboard/orders"
     class:list={["seller-bottom-nav-item", { "seller-bottom-nav-item--active": active === "orders" }]}
   >
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -23,7 +23,7 @@ const { active } = Astro.props;
     <span>Orders</span>
   </a>
   <a
-    href="/dashboard/listings"
+    href="/v2/dashboard/listings"
     class:list={["seller-bottom-nav-item", { "seller-bottom-nav-item--active": active === "listings" }]}
   >
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -35,7 +35,7 @@ const { active } = Astro.props;
     <span>Listings</span>
   </a>
   <a
-    href="/dashboard/profile"
+    href="/v2/dashboard/profile"
     class:list={["seller-bottom-nav-item", { "seller-bottom-nav-item--active": active === "profile" }]}
   >
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

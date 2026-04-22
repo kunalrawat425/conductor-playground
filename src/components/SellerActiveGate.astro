@@ -18,12 +18,16 @@
     const active = seller.is_active !== false;
 
     if (!active) {
-      const allowed = path === "/dashboard/pending" || path.startsWith("/dashboard/listings");
+      const allowed =
+        path === "/dashboard/pending" ||
+        path.startsWith("/dashboard/listings") ||
+        path === "/v2/dashboard/pending" ||
+        path.startsWith("/v2/dashboard/listings");
       if (!allowed) {
-        window.location.replace("/dashboard/pending");
+        window.location.replace("/v2/dashboard/pending");
       }
-    } else if (path === "/dashboard/pending") {
-      window.location.replace("/dashboard/orders");
+    } else if (path === "/dashboard/pending" || path === "/v2/dashboard/pending") {
+      window.location.replace("/v2/dashboard/orders");
     }
   } catch {
     /* allow page load if profile fetch fails */

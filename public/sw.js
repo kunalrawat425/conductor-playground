@@ -1,7 +1,7 @@
 // Relifish Service Worker
 // Handles push notifications and offline app shell caching
 
-const CACHE_NAME = "relifish-v1";
+const CACHE_NAME = "relifish-v2";
 const SHELL_ASSETS = ["/", "/manifest.json", "/favicon.svg"];
 
 // Install: cache app shell
