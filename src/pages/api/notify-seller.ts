@@ -21,7 +21,9 @@ const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailt
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { seller_id, species, quantity, quantity_unit, buyer_phone, scheduled_for } = await request.json();
+    const body = await request.json();
+    const kind = body.kind === "payment_proof" ? "payment_proof" : "new_order";
+    const { seller_id, species, quantity, quantity_unit, buyer_phone, scheduled_for, order_id_short } = body;
 
     if (!seller_id) {
       return new Response(JSON.stringify({ error: "Missing seller_id" }), {
@@ -37,11 +39,17 @@ export const POST: APIRoute = async ({ request }) => {
       .eq("id", seller_id)
       .single();
 
-    if (!seller?.push_enabled || !seller?.push_subscription) {
-      return new Response(JSON.stringify({ skipped: true, reason: "push not enabled" }), {
+    const subscription = seller?.push_subscription;
+    if (!subscription) {
+      return new Response(JSON.stringify({ skipped: true, reason: "no push subscription" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    // Heal flag when a subscription exists (mirrors buyer-push behavior).
+    if (!seller?.push_enabled) {
+      await supabase.from("sellers").update({ push_enabled: true }).eq("id", seller_id);
     }
 
     if (!vapidPublicKey || !vapidPrivateKey) {
@@ -52,26 +60,37 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const u = String(quantity_unit || "piece");
-    const unitLabel =
-      u === "piece" || u === "kg"
-        ? priceUnitShortLabel(u as PriceUnit)
-        : u;
-    const schedLabel = scheduled_for ? ` (Scheduled: ${fmtDateTimeFullIST(scheduled_for)})` : "";
-    const body = species
-      ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel}${schedLabel}`
-      : `You have a new${scheduled_for ? " scheduled" : ""} order${schedLabel}`;
+    let title: string;
+    let pushBody: string;
+    if (kind === "payment_proof") {
+      const id = order_id_short ? String(order_id_short).toUpperCase() : "";
+      title = "Payment proof received";
+      pushBody = species
+        ? `Buyer uploaded UPI proof for ${species}${id ? ` (order #${id})` : ""}. Verify in dashboard.`
+        : `A buyer uploaded payment proof${id ? ` for order #${id}` : ""}. Verify in dashboard.`;
+    } else {
+      const u = String(quantity_unit || "piece");
+      const unitLabel =
+        u === "piece" || u === "kg"
+          ? priceUnitShortLabel(u as PriceUnit)
+          : u;
+      const schedLabel = scheduled_for ? ` (Scheduled: ${fmtDateTimeFullIST(scheduled_for)})` : "";
+      pushBody = species
+        ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel}${schedLabel}`
+        : `You have a new${scheduled_for ? " scheduled" : ""} order${schedLabel}`;
+      title = scheduled_for ? "New Scheduled Order! 🗓️" : "New Order!";
+    }
 
     try {
       const webPush = await loadWebPush();
       webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
       await webPush.sendNotification(
-        seller.push_subscription,
+        subscription,
         JSON.stringify({
-          title: scheduled_for ? "New Scheduled Order! 🗓️" : "New Order!",
-          body,
-          url: "/dashboard/orders",
-          tag: `seller-order-${Date.now()}`,
+          title,
+          body: pushBody,
+          url: "/v2/dashboard/orders",
+          tag: `seller-${kind}-${Date.now()}`,
         })
       );
     } catch (pushErr: any) {

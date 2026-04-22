@@ -1,7 +1,28 @@
 # Relifish — Feature Reference
 
 Buyer and seller flows in parallel, module by module.
-Last updated: 2026-04-21
+Last updated: 2026-04-23
+
+### Buyer & seller sales flow (at a glance)
+
+| Flow | Buyer | Seller |
+|---|---|---|
+| **Same-day** | `/v2` → seller `/v2/seller/[id]` → cart → checkout → redirect **`/v2/track/[id]`**; order starts **`pending_payment`** → upload UPI proof → seller **Verify payment** → `confirmed` → fulfillment | `/v2/dashboard/orders` → **New** tab: **Verify payment** (not blind accept) → **In progress**: mark ready or out for delivery → complete |
+| **Catch pre-order** (next-day inventory) | Order may start **`pending_payment`** with advance + screenshot; track uses **preorder** 5-step stepper when `isPreorderCatchFlow`; after verify, seller sets **final price** → RPC reconciles → buyer may owe balance (`payment_required`) | Same **New** tab for proof; **Verify payment** → **Set final price** when shown; **View proof** whenever `payment_screenshot_urls` is non-empty |
+| **Same-day + UPI proof** | Same **5-step** buyer stepper as pre-order *except* no **Price set** row (`Placed → Payment proof → Confirmed → …`); whenever proof / verify / `pending_payment` applies | **Verify payment** same as above; no morning **final_price** RPC unless product adds it |
+
+Shared rules: inventory for **pre-orders** and **pay-first same-day** commits on **seller confirm** (not at buyer place-order); payment screenshot paths live on `orders.payment_screenshot_urls` (private bucket `order-payments`, signed URLs at read time).
+
+### Notifications (email + web push)
+
+| Event | Buyer | Seller |
+|---|---|---|
+| Order created | — (optional future: email) | **Push** `POST /api/notify-seller` (`new_order`); transactional **email** when status emails fire from create |
+| Buyer uploads / replaces UPI proof | — | **Email** `paymentProofReceivedEmailSeller` + **Push** `notify-seller` with `kind: "payment_proof"` |
+| Seller verifies / status change | **Push** `sendBuyerOrderPush` (from `/api/seller/orders`); **email** via Resend when templates sent | — |
+| Verify email (profile) | **Email** `verifyEmailTemplate` (magic link) | Same pattern if seller verifies email |
+
+All HTML transactional email bodies share one design system in **`src/lib/email-templates.ts`** (`shell`, `transactionIntro`, CTAs). Buyer push opens **`/v2/track`**; seller push opens **`/v2/dashboard/orders`**.
 
 ---
 
@@ -68,7 +89,7 @@ Last updated: 2026-04-21
 
 ### Menu Grid
 - Each listing card: species name (capitalized), photo or emoji, pricing tiers, size badge, stock warning
-- Add button: blue for regular order, purple for pre-order
+- Add button: primary brand blue (`+`) for both order and pre-order modes
 - Multi-tier: each tier gets own counter
 - Seller fully closed → grid greyed + `pointerEvents: none`
 
@@ -101,28 +122,18 @@ CartStackSheet — if multiple sellers have items, shows each seller's subtotal 
 
 ### Status determination (server-side)
 
-```
-scheduled_for set?
-  → status = "scheduled"
+Pay-first is the default for listing-backed orders (`POST /api/orders/create`):
 
-open_days check: today in open_days? (default: all 7 days)
-+ isSellerCurrentlyOpen (time-based: opens_at / closes_at)?
-  → effectively open?
-    → status = "pending"
+- **`pending_payment`** — default when seller is open for same-day, for **scheduled** slots, and for **next-day pre-order** after gates pass. Buyer must upload UPI proof; seller verifies before `confirmed`.
+- **`pre_order`** — only on the dedicated pre-order insert path when the listing is unavailable / out of stock but pre-order is enabled (legacy transition state).
+- Seller **closed** without a valid pre-order path → **400** with a readable reason (no silent `pending`).
 
-not effectively open → try pre_order path:
-  preorder_days set + today in it? (fallback: accepts_preorder bool)
-  is_preorder_enabled on listing? (if listing_id present)
-  preorder_cutoff_time not yet passed?
-    → status = "pre_order"
-
-none pass → 400 error with human-readable reason
-```
+There is no longer a separate **`pending`** “seller accept first” step for normal open-seller checkout; legacy rows may still show `pending`.
 
 ### Inventory
-- Regular orders: deduct `weight_avail` via `create_order_atomic` RPC (row-lock)
-- **Pre-orders: inventory skipped** — `isPreorderCandidate` path bypasses stock validation
-- Pre-order `paid_amount` = `total_price + delivery_fee` (reserved upfront at ordering price)
+- **`create_order_atomic`** (with deferred-stock migrations): stock is **not** held at `pending_payment` for same-day pay-first; it commits on seller confirm and restores on cancel before confirm (row-lock RPC).
+- **Pre-orders:** inventory skipped at creation — stock deducts when seller confirms.
+- Pre-order `paid_amount` = `total_price + delivery_fee` (amount buyer pays and uploads proof for)
 
 ### Pricing
 - Bundle validation: qty must be multiple of `bundle_size`
@@ -133,14 +144,20 @@ none pass → 400 error with human-readable reason
 
 ## Module 6 — Checkout Flow (Buyer)
 
-**Sheet:** `CheckoutSheet`
+**Components:** `CheckoutSheet` (embedded on seller page and similar), `AddressPickerSheet`, `BottomSheet` (shared shell).
 
-1. Buyer taps "Checkout" on cart bar
-2. Login gate if not authenticated
-3. Address picker if `order_type = delivery`
-4. Order summary: items, subtotal, delivery fee, total
-5. `POST /api/orders/create` → returns `order_id`
-6. Redirect to `/v2/track/[order_id]`
+### Steps (typical)
+1. Buyer taps checkout from cart bar / stack sheet → **LoginSheet** if not authenticated (`zepto_buyer_id` / phone).
+2. **Step 1 — Cart review:** line items, subtotal, delivery row, **Next: Delivery →**.
+3. **Step 2 — Delivery + place:**
+   - **Pickup vs delivery** radio (delivery hidden if seller has no delivery).
+   - If **delivery:** tap address card → **`AddressPickerSheet`** opens (elevated above checkout when nested). Saved addresses load from `GET /api/buyer/addresses`; primary CTA **Deliver here →** calls `v2ConfirmAddress(sheetId)` and dispatches `v2-address-confirmed` with `addressId`.
+4. **Place order** → page listens for `v2-checkout-place-order` → `POST /api/orders/create` (or seller-cart variant where used) → `order_id`.
+5. Redirect to **`/v2/track/[order_id]`** (or stay on seller page per product wiring).
+
+### Address picker implementation notes
+- Selection persisted in `sessionStorage` per sheet id (`{id}-selected`); default address seeded on load so CTA works without an extra tap.
+- **Add new address** links to `/v2/me` address book.
 
 ---
 
@@ -157,24 +174,35 @@ none pass → 400 error with human-readable reason
 | `declined`, `cancelled` | Red |
 | `refunded` | Indigo |
 
-### Stepper (4 steps)
-```
-Placed → Confirmed → Ready / On-the-way → Done
-```
-`pending_payment` and `payment_required` sit at step 1.
+### Stepper (`resolveBuyerStepper` in `src/lib/buyer-order-stepper.ts`)
+One implementation, **three variants** — same “seller approves UPI” idea for normal orders, without inventing a catch **Price set** step when it does not apply.
+
+| Variant | When | Pickup labels (delivery swaps Ready/Picked → On the way/Delivered) |
+|---|---|---|
+| **`simple`** | No UPI-proof journey on this order (`pending`→`confirmed` COD-style, no screenshots, not in `pending_payment` / `payment_required`, no `payment_verified_at`) | 4 steps: `Placed → Confirmed → Ready → Picked up` |
+| **`payment`** | Same-day (or non-catch) **UPI / paid before confirm** — `pending_payment` / `payment_required`, or `payment_screenshot_urls`, or `payment_verified_at`, or **`paid_amount` > 0** while status is `confirmed`+ (so “Confirmed” is after payment); and **not** `isPreorderCatchFlow` | 5 steps: `Placed → Payment proof → Confirmed → Ready → Picked up` |
+| **`preorder`** | Catch pre-order: `isPreorderCatchFlow` (e.g. `pre_order`, `payment_required`, advance on `pending_payment`, or post-pay reconcile where `final_price` ≠ `total_price`) | 5 steps: `Pre-ordered → Payment proof → Price set → Confirmed → …` |
+
+Do **not** infer catch pre-order from `paid_amount` / `final_price` alone on fulfilled same-day orders.
+
+- On the **preorder** path, `pending_payment` advances the **Payment proof** dot when `payment_screenshot_urls` is non-empty (same micro-step as before).
 
 ### Bill summary
 Shows: subtotal, delivery fee, total.
 Pre-order reconciled: also shows `final_price`, `paid_amount`, balance due or refund amount.
+**Payment footnote** (under bill): uses proof + paid state — e.g. *Payment proof submitted — seller will verify shortly* when `payment_screenshot_urls` has paths but advance not recorded yet; *Paid via UPI · screenshot on file* when both exist; *Payment proof pending* only when neither applies. (No `Pay at pickup` wording.)
 
 ### Action blocks (contextual)
 | Status | Action shown |
 |---|---|
 | `pending`, `pre_order`, `scheduled` | Cancel order |
+| `pending_payment` | Payment upload + cancel — cancel label is **Cancel pre-order** only if `isPreorderCatchFlow`; otherwise **Cancel order** |
 | `confirmed`, `paid`, `ready_for_pickup` | Cut style + buyer notes form |
-| `pending_payment` | Payment upload — amount due, file picker, preview, submit |
 | `payment_required` | Balance payment — shows shortfall (final - paid), file picker |
-| `completed`, `picked_up`, `cancelled`, `declined` | Re-order from same seller |
+| `completed`, `picked_up`, `cancelled`, `declined` | Re-order (+ rating / refund UI as applicable) |
+
+### Next-day catch callout (purple box)
+Shown only when **`isPreorderCatchFlow(order)`** and the order is still in a pre-reconciliation / pre-fulfillment stage (not for same-day “upload proof” orders that are not catch pre-orders).
 
 ### Payment upload flow
 1. Buyer sees amount due
@@ -182,8 +210,10 @@ Pre-order reconciled: also shows `final_price`, `paid_amount`, balance due or re
 3. Submit → `POST /api/orders/upload-payment` (multipart: order_id, buyer_id, file)
 4. Uploads to `order-payments/{order_id}/{timestamp}.ext` (private Supabase Storage bucket)
 5. **Storage path stored in DB** (not signed URL — avoids 24h expiry problem)
-6. Status transitions: `pending → pending_payment`
-7. Seller receives push notification
+6. Status transitions:
+   - same-day: order is usually **already** `pending_payment` at creation; upload attaches proof and clears `payment_verified_*` if re-uploading.
+   - early legacy: `pending` / `pre_order` → `pending_payment` when first proof is uploaded.
+7. Seller receives **branded email** (`paymentProofReceivedEmailSeller`) and **web push** (`/api/notify-seller` with `kind: "payment_proof"`).
 
 ### Realtime updates
 - Supabase Realtime channel subscribes to `orders` row for this `order_id`
@@ -206,15 +236,17 @@ Pre-order reconciled: also shows `final_price`, `paid_amount`, balance due or re
 
 ### Filters
 - Date range: today / 7d / 30d / all time
+- Type filter: all / order / pre-order
 - Search by order ID or buyer phone
 - CSV export
+- Order cards use neutral payment copy (`Payment status in order details`) instead of `Pay at pickup`
 
 ### Per-order status transitions (seller)
 | Current status | Allowed transitions |
 |---|---|
 | `pending` | confirmed, declined |
 | `pending_payment` | verify_payment → auto-confirmed |
-| `pre_order` | confirmed, declined |
+| `pre_order` | confirmed, declined *(legacy/transition state only)* |
 | `scheduled` | confirmed, declined |
 | `confirmed` | ready_for_pickup, out_for_delivery, cancelled |
 | `paid` | ready_for_pickup, out_for_delivery, cancelled |
@@ -226,6 +258,10 @@ Pre-order reconciled: also shows `final_price`, `paid_amount`, balance due or re
 - Stamps `payment_verified_at`, `payment_verified_by`
 - **Auto-advances** `pending_payment → confirmed`
 - Fires buyer push: "Order Confirmed"
+
+### View buyer payment proof
+- `GET /api/seller/payment-screenshot?order_id=&seller_id=&path=` returns a short-lived signed URL; path must be in `orders.payment_screenshot_urls`.
+- Dashboard renders **View proof** for any non-empty `payment_screenshot_urls`, including **pre-orders on `confirmed`/`paid` while final price is still unset** (so sellers are not stuck without the screenshot after verify).
 
 ### Set final price for pre-orders (`action=set_final_price`)
 - Calls `reconcile_preorder_price(order_id, final_price)` SQL RPC
@@ -244,9 +280,10 @@ BUYER (evening)                         SELLER (next morning)
 ─────────────────                       ──────────────────────
 Sees purple banner on seller page       Goes to fish market
 "Pre-ordering for tomorrow's catch"     Catches/weighs actual stock
-Adds items, pays upfront (paid_amount)  Opens dashboard
-Uploads UPI screenshot                  Sees pre_order tab
-status: pre_order                       Sets final_price via dashboard
+Adds items, sees amount due             Opens dashboard
+Uploads UPI screenshot                  Sees pending payment proof
+status: pending_payment                 Verifies payment → confirmed
+                                        Sets final_price via dashboard
                                         reconcile_preorder_price fires
 
            ┌──────────────────────────────────┐
@@ -262,7 +299,9 @@ Uploads new UPI screenshot
 Seller verifies → confirmed
 ```
 
-**Key point:** Inventory is irrelevant for pre-orders. `weight_avail` is not checked or decremented. Pre-order reserves future catch only.
+**Key point:** Inventory flow for pre-orders:
+- no deduction at pre-order creation or payment upload
+- deduction happens only when seller confirms the order
 
 ---
 
@@ -328,7 +367,8 @@ preorder_cutoff_time: '22:00'
 - Fires on seller status transitions
 - Sent to buyer (if email set and verified) AND seller
 - Templates: `orderEmailBuyer` / `orderEmailSeller` from `src/lib/email-templates.ts`
-- Subject: `"{StatusLabel} — {Species}"`
+- Subject: `"{StatusLabel} — {Species}"` with fish names title-cased
+- Ecommerce-style transactional template: status badge, aligned summary rows, note callout, clear CTA
 - Includes: quantity, cut style, notes, total, delivery fee, scheduled_for
 
 ---
@@ -339,7 +379,7 @@ preorder_cutoff_time: '22:00'
 [buyer places order]
         ↓
   pending ──────────────────────────→ declined
-  pre_order ────────────────────────→ declined
+  pre_order (legacy) ─────────────────→ declined
   scheduled ────────────────────────→ declined
   pending_payment
     → [seller verify_payment] → confirmed
@@ -351,8 +391,8 @@ preorder_cutoff_time: '22:00'
   completed (terminal)
 
   [pre-order reconcile path]
-  pre_order → [seller set_final_price]
-    → paid → reconcile_preorder_price RPC
+  confirmed(with paid_amount) → [seller set_final_price]
+    → reconcile_preorder_price RPC
       → confirmed    (final == paid)
       → refunded     (final < paid)  ← manual UPI refund, no automation
       → payment_required (final > paid)
@@ -378,3 +418,10 @@ preorder_cutoff_time: '22:00'
 | Seller dashboard has no screenshot viewer | `GET /api/seller/payment-screenshot` generates signed URL; "View proof" button per screenshot on `pending_payment` orders |
 | Signed URL re-generation endpoint missing | Both `/api/seller/payment-screenshot` and `/api/orders/refund-screenshot` generate fresh 1h signed URLs from stored paths |
 | `preorder_cutoff_time` compared in server TZ | Fixed: uses IST UTC+5:30 offset arithmetic, no host-TZ dependency |
+
+### Resolved gaps (as of 2026-04-23)
+| Gap | Resolution |
+|---|---|
+| Bottom sheet primary CTA (e.g. **Deliver here →**) did nothing | `BottomSheet` wires `button[data-sheet-action]` → `window[action](sheetId)` once globally; address + slot confirm pass sheet id |
+| Same-day orders showed pre-order stepper (Price set / Payment proof labels) | `isPreorderCatchFlow()` replaces broad `paid_amount \|\| final_price` heuristic |
+| Bill said “Payment proof pending” when proof already on order | Footnote + hero status copy consider `payment_screenshot_urls`; track list badge **Proof on file** for `pending_payment` + proof |
