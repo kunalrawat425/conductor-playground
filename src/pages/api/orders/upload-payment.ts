@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { paymentProofReceivedEmailSeller } from "../../../lib/email-templates";
+import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 
 export const prerender = false;
 
@@ -157,9 +158,19 @@ export const POST: APIRoute = async ({ request }) => {
             seller_id: sellerId,
             species,
             order_id_short: orderIdShort,
+            order_id,
           }),
         });
       }
+    } catch (_) {}
+
+    try {
+      await sendBuyerOrderPush({
+        buyer_id,
+        status: "pending_payment",
+        species: String((updatedOrder as any)?.species || "Fish"),
+        order_id,
+      });
     } catch (_) {}
 
     return new Response(JSON.stringify({ order: updatedOrder, url: signedData?.signedUrl ?? null, path }), { status: 200 });

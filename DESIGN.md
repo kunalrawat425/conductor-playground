@@ -167,6 +167,7 @@ Implementation: **`src/lib/email-templates.ts`** (Resend sends HTML from these b
 
 ## 8) Web push (buyer + seller)
 
-- **Buyer:** `sendBuyerOrderPush` (`src/lib/server/buyer-push.ts`) — triggered from seller order actions (e.g. `/api/seller/orders`) on status changes. Payload copy: `buyer-order-push-copy.ts`. Default open URL: **`/v2/track`**.
-- **Seller:** `POST /api/notify-seller` — **`new_order`** (default body from `create` / `create-seller-cart`: new order alert) or **`kind: "payment_proof"`** (buyer uploaded/replaced UPI screenshot on `upload-payment`). Open URL: **`/v2/dashboard/orders`**.
-- Both sides need an enabled push subscription in Supabase (`buyers` / `sellers`); VAPID env vars must be set server-side.
+- **Buyer:** `sendBuyerOrderPush` (`src/lib/server/buyer-push.ts`) — on **order create** (`/api/orders/create`, cart create), **buyer payment upload**, **buyer cancel**, and **seller** updates via `/api/seller/orders`. Copy: `buyer-order-push-copy.ts`. Payload **`url`** is an **absolute** link from `site-origin.ts` (`PUBLIC_SITE_URL` / Vercel / `www.relifish.store` fallback): list **`…/v2/track`** or detail **`…/v2/track/{order_id}`** when `order_id` is passed.
+- **Seller:** `POST /api/notify-seller` — **`new_order`** or **`kind: "payment_proof"`**. Payload **`url`** is absolute **`…/v2/dashboard/orders`** or **`…/v2/dashboard/orders?order={uuid}`** when `order_id` is sent (seller taps notification → orders page runs search + scroll highlight for that card).
+- **Service worker:** `public/sw.js` resolves click targets with `new URL(…, self.location.origin)` so relative fallbacks still work; prefers server-sent absolute URLs.
+- Subscriptions live on `buyers` / `sellers`; VAPID keys must be set server-side.

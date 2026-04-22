@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
-import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { capitalizeFishName, orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import {
   getListingOptionById,
   getListingPriceOptions,
@@ -35,7 +36,7 @@ function isSellerCurrentlyOpen(opensAt: string | null, closesAt: string | null):
  * Body: { listing_id, species, quantity, quantity_unit, buyer_phone, buyer_id?, buyer_addr?, order_type, seller_id? }
  * - Validates stock before accepting
  * - Checks seller accepts_preorder if seller is closed
- * - Inventory decrement handled by DB trigger (006_preorder_and_inventory.sql)
+ * - Inventory: pay-first orders start as pending_payment; stock deducts on seller confirm (see migration 029).
  */
 export const POST: APIRoute = async ({ request, url }) => {
   try {
@@ -221,7 +222,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             total_price,
             delivery_fee: 0,
             platform_fee: 0,
-            status: "pre_order",
+            // Pre-orders always require payment proof upload first.
+            status: "pending_payment",
             order_type,
             payment_type: "cod",
             paid_amount: amountDue,
@@ -246,9 +248,27 @@ export const POST: APIRoute = async ({ request, url }) => {
             await fetch(`${origin}/api/notify-seller`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, scheduled_for: scheduled_for || null }),
+              body: JSON.stringify({
+                seller_id,
+                species: species || "Fish",
+                quantity,
+                quantity_unit,
+                scheduled_for: scheduled_for || null,
+                order_id: preOrder.id,
+              }),
             });
           } catch {}
+        }
+
+        if (buyer_id && preOrder?.id) {
+          try {
+            await sendBuyerOrderPush({
+              buyer_id,
+              status: "placed",
+              species: species || "Fish",
+              order_id: preOrder.id,
+            });
+          } catch (_) {}
         }
 
         const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
@@ -278,8 +298,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
 
-    // Determine order status: scheduled > pre_order > pending
-    let status = "pending";
+    // Pay-first: new orders are pending_payment until buyer uploads proof; seller confirms after verify.
+    let status = "pending_payment";
     let delivery_fee = 0;
     if (scheduled_for && !seller_id) {
       return new Response(JSON.stringify({ error: "Scheduled orders require a seller." }), { status: 400 });
@@ -300,7 +320,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             { status: 400 }
           );
         }
-        status = "scheduled";
+        status = "pending_payment";
       } else {
         const DAY_NAMES = ['sun','mon','tue','wed','thu','fri','sat'];
         const todayName = DAY_NAMES[new Date().getDay()];
@@ -354,7 +374,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             }
           }
 
-          status = "pre_order";
+          // Pre-orders always require payment proof upload first.
+          status = "pending_payment";
         }
       }
 
@@ -424,7 +445,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             status,
             order_type,
             payment_type: "cod",
-            paid_amount: status === "pre_order" ? total_price + delivery_fee : null,
+            paid_amount: status === "pending_payment" ? total_price + delivery_fee : null,
             scheduled_for: scheduled_for || null,
             schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: orderPricingOptionId,
@@ -470,6 +491,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity_unit,
             buyer_phone,
             scheduled_for: scheduled_for || null,
+            order_id: order.id,
           }),
         });
       } catch {
@@ -477,10 +499,30 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
 
+    if (order?.buyer_id) {
+      try {
+        const pushStatus =
+          status === "pending_payment" ? "placed" : status === "pre_order" ? "pre_order" : "pending";
+        await sendBuyerOrderPush({
+          buyer_id: order.buyer_id,
+          status: pushStatus,
+          species: species || "Fish",
+          order_id: order.id,
+        });
+      } catch {
+        /* non-blocking */
+      }
+    }
+
     // Send email on order creation
     if (resendApiKey && order) {
       try {
-        const statusLabel = status === "scheduled" ? "Order Scheduled" : status === "pre_order" ? "Pre-order Placed" : "Order Placed";
+        const statusLabel =
+          status === "pending_payment"
+            ? scheduled_for
+              ? "Pickup scheduled — upload payment proof"
+              : "Order placed — upload payment proof"
+            : "Order placed";
         const emailArgs = {
           statusLabel,
           species: species || "Fish",
@@ -493,6 +535,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
           cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
         };
+        const speciesForEmail = capitalizeFishName(species || "Fish");
         // Email buyer
         if (buyer_id) {
           const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
@@ -500,7 +543,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${statusLabel} — ${species || "Fish"}`, html: orderEmailBuyer(emailArgs) }),
+              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${statusLabel} — ${speciesForEmail}`, html: orderEmailBuyer(emailArgs) }),
             });
           }
         }
@@ -511,7 +554,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${species || "Fish"}`, html: orderEmailSeller(emailArgs) }),
+              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${speciesForEmail}`, html: orderEmailSeller(emailArgs) }),
             });
           }
         }

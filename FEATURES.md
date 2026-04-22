@@ -17,12 +17,12 @@ Shared rules: inventory for **pre-orders** and **pay-first same-day** commits on
 
 | Event | Buyer | Seller |
 |---|---|---|
-| Order created | — (optional future: email) | **Push** `POST /api/notify-seller` (`new_order`); transactional **email** when status emails fire from create |
-| Buyer uploads / replaces UPI proof | — | **Email** `paymentProofReceivedEmailSeller` + **Push** `notify-seller` with `kind: "payment_proof"` |
-| Seller verifies / status change | **Push** `sendBuyerOrderPush` (from `/api/seller/orders`); **email** via Resend when templates sent | — |
+| Order created | **Push** `sendBuyerOrderPush` (`placed` / `pre_order` / `pending`) → opens **`/v2/track/{id}`** | **Push** `notify-seller` + `order_id` in body → **`/v2/dashboard/orders?order={id}`**; transactional **email** from create when configured |
+| Buyer uploads / replaces UPI proof | **Push** `pending_payment` → same order **detail** URL | **Email** + **Push** `payment_proof` + `order_id` (same dashboard deep link) |
+| Seller verifies / status change | **Push** (`confirmed`, `payment_verified`, transitions, cancel from buyer API, etc.) with **`order_id`** | — |
 | Verify email (profile) | **Email** `verifyEmailTemplate` (magic link) | Same pattern if seller verifies email |
 
-All HTML transactional email bodies share one design system in **`src/lib/email-templates.ts`** (`shell`, `transactionIntro`, CTAs). Buyer push opens **`/v2/track`**; seller push opens **`/v2/dashboard/orders`**.
+All HTML transactional email bodies share one design system in **`src/lib/email-templates.ts`** (`shell`, `transactionIntro`, CTAs). Push **`url`** fields use **absolute** URLs from **`src/lib/server/site-origin.ts`** so taps work from any origin; buyer order pushes prefer **`/v2/track/{order_id}`** when the id is known.
 
 ---
 

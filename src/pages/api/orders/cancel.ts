@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 
 export const prerender = false;
 
@@ -21,18 +22,27 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Order not found" }), { status: 404 });
     }
 
-    // Cancel: only allowed for pending, pre_order, scheduled
+    // Cancel: allowed only before fulfillment starts (including payment-pending pre-orders)
     if (action === "cancel") {
-      if (!["pending", "pre_order", "scheduled"].includes(order.status)) {
+      if (!["pending", "pending_payment", "pre_order", "scheduled"].includes(order.status)) {
         return new Response(JSON.stringify({ error: "Cannot cancel — order is already " + order.status }), { status: 400 });
       }
 
-      // Restore stock if listing exists
-      if (order.listing_id) {
+      // Restore stock only if inventory was deducted (029: pending_payment skips deduct until confirm)
+      if (order.listing_id && order.inventory_deducted === true) {
         await sb.rpc("restore_order_stock", { p_listing_id: order.listing_id, p_quantity: order.quantity });
       }
 
       await sb.from("orders").update({ status: "cancelled", cancelled_by: "buyer", cancel_reason: cancel_reason || null }).eq("id", order_id);
+
+      try {
+        await sendBuyerOrderPush({
+          buyer_id,
+          status: "cancelled",
+          species: order.species || "Fish",
+          order_id,
+        });
+      } catch (_) {}
 
       return new Response(JSON.stringify({ success: true, status: "cancelled" }), { status: 200 });
     }
@@ -43,6 +53,16 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: "No price to accept" }), { status: 400 });
       }
       await sb.from("orders").update({ status: "confirmed" }).eq("id", order_id);
+
+      try {
+        await sendBuyerOrderPush({
+          buyer_id,
+          status: "confirmed",
+          species: order.species || "Fish",
+          order_id,
+        });
+      } catch (_) {}
+
       return new Response(JSON.stringify({ success: true, status: "confirmed" }), { status: 200 });
     }
 
@@ -52,11 +72,20 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: "No price to reject" }), { status: 400 });
       }
 
-      if (order.listing_id) {
+      if (order.listing_id && order.inventory_deducted === true) {
         await sb.rpc("restore_order_stock", { p_listing_id: order.listing_id, p_quantity: order.quantity });
       }
 
       await sb.from("orders").update({ status: "cancelled", refund_amt: order.paid_amount, cancelled_by: "buyer", cancel_reason: "Price rejected by buyer" }).eq("id", order_id);
+
+      try {
+        await sendBuyerOrderPush({
+          buyer_id,
+          status: "cancelled",
+          species: order.species || "Fish",
+          order_id,
+        });
+      } catch (_) {}
 
       return new Response(JSON.stringify({ success: true, status: "cancelled" }), { status: 200 });
     }
