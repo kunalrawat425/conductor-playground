@@ -99,13 +99,15 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         const stockIcon = stock <= 0 ? "⚠" : "✓";
         const emoji = (l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : (l.species || "").includes("squid") ? "🦑" : "🐟";
 
-        return `<div class="v2-listing-card${l.is_available ? '' : ' v2-lc-paused'}" data-listing-id="${l.id}">
+        const isPreorderActive = l.is_preorder_enabled && !l.is_available;
+        return `<div class="v2-listing-card${!l.is_available && !l.is_preorder_enabled ? ' v2-lc-paused' : ''}" data-listing-id="${l.id}">
           <a href="/v2/dashboard/listings/${l.id}" class="v2-lc-main" style="text-decoration:none;color:inherit;display:flex;gap:12px;align-items:center;flex:1;min-width:0;">
             <div class="v2-lc-img">${l.photo_url ? `<img src="${l.photo_url}" alt="${escape(l.species)}">` : emoji}</div>
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:6px;">
                 <span class="v2-lc-name" style="text-transform:capitalize;">${escape(l.species)}</span>
                 ${l.fish_size ? `<span style="font:600 9px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:1px 5px;border-radius:4px;text-transform:uppercase;">${l.fish_size[0]}</span>` : ''}
+                ${isPreorderActive ? `<span style="font:700 9px Inter;color:#7C3AED;background:#F3E8FF;padding:1px 6px;border-radius:4px;">🌙 Pre-order</span>` : ''}
               </div>
               <div style="display:flex;gap:8px;margin-top:3px;font:500 11px Inter;align-items:center;">
                 <span style="font-weight:700;color:var(--v2-ink);">${priceLabel}</span>
@@ -115,7 +117,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
             </div>
           </a>
           <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
-            <button class="v2-lc-action-btn" style="color:${l.is_available ? 'var(--v2-orange)' : 'var(--v2-green)'};" data-toggle-id="${l.id}" data-toggle-state="${l.is_available}" title="${l.is_available ? 'Pause' : 'Resume'}">${l.is_available ? '⏸' : '▶'}</button>
+            <button class="v2-lc-action-btn" style="color:${l.is_available ? 'var(--v2-orange)' : isPreorderActive ? '#7C3AED' : 'var(--v2-green)'};" data-toggle-id="${l.id}" data-toggle-state="${l.is_available}" title="${l.is_available ? 'Pause' : isPreorderActive ? 'Pre-order active (OOS)' : 'Resume'}">${l.is_available ? '⏸' : isPreorderActive ? '🌙' : '▶'}</button>
             <button class="v2-lc-action-btn" style="color:var(--v2-red);" data-delete-id="${l.id}" data-delete-name="${escape(l.species)}" title="Delete">🗑</button>
           </div>
         </div>`;

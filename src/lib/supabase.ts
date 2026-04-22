@@ -513,7 +513,7 @@ export async function getSellersForSpecies(species: string) {
       "id, seller_id, pricing_options, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)"
     )
     .eq("species", species)
-    .eq("is_available", true)
+    .or("is_available.eq.true,is_preorder_enabled.eq.true")
     .order("created_at", { ascending: false });
 
   if (activeErr) throw activeErr;
