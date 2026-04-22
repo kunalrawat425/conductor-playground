@@ -512,9 +512,19 @@ const { id } = Astro.params;
       const sentAt = o.refund_sent_at ? new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : null;
       const note = o.refund_note || "";
       const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+      // Buyer's own payment screenshots (to show alongside refund info)
+      const buyerSsPaths: string[] = o.payment_screenshot_urls || [];
+      const buyerSsSection = buyerSsPaths.length > 0
+        ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--v2-border);">
+            <div style="font:600 11px Inter;color:var(--v2-ink-3);margin-bottom:6px;">💳 Your uploaded payment proof</div>
+            <div id="v2-od-buyer-ss-list" style="display:flex;flex-direction:column;gap:6px;">
+              ${buyerSsPaths.map((_, i) => `<button id="v2-od-buyer-ss-${i}" style="width:100%;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}</button>`).join('')}
+            </div>
+          </div>`
+        : "";
       if (sentAt) {
         const screenshotBtn = o.refund_screenshot_path
-          ? `<button id="v2-od-refund-ss" style="margin-top:10px;width:100%;padding:10px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View refund proof</button>`
+          ? `<button id="v2-od-refund-ss" style="margin-top:10px;width:100%;padding:10px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View seller's refund proof</button>`
           : "";
         actions.innerHTML = `
           <div style="background:var(--v2-bg);border:1.5px solid #6366F1;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
@@ -522,8 +532,9 @@ const { id } = Astro.params;
             ${refundAmt > 0 ? `<div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:6px;">₹${refundAmt.toLocaleString("en-IN")}</div>` : ''}
             <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Sent on ${sentAt}</div>
             ${note ? `<div style="font:500 12px Inter;color:var(--v2-ink-2);margin-top:6px;padding:8px 10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(note)}</div>` : ''}
-            <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:8px;">UPI refunds typically reflect within 7 business days. Check your UPI app. If not received after 7 days, contact the seller.</div>
+            <div style="font:600 11px Inter;color:#7C3AED;margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ UPI refunds reflect within <strong>7 working days</strong>. Check your UPI app. Not received after 7 days? Contact the seller.</div>
             ${screenshotBtn}
+            ${buyerSsSection}
           </div>`;
         if (o.refund_screenshot_path) {
           document.getElementById("v2-od-refund-ss")?.addEventListener("click", async (e) => {
@@ -539,17 +550,58 @@ const { id } = Astro.params;
               window.v2Toast?.("error", "Could not load", err.message);
             } finally {
               btn.disabled = false;
-              btn.textContent = "🖼 View refund proof";
+              btn.textContent = "🖼 View seller's refund proof";
             }
           });
         }
+        // Wire buyer's own screenshot buttons
+        buyerSsPaths.forEach((path, i) => {
+          document.getElementById(`v2-od-buyer-ss-${i}`)?.addEventListener("click", async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            btn.textContent = "Loading…";
+            try {
+              const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed");
+              const url = data.urls?.[i];
+              if (url) window.open(url, "_blank", "noopener");
+            } catch (err: any) {
+              window.v2Toast?.("error", "Could not load", err.message);
+            } finally {
+              btn.disabled = false;
+              btn.textContent = `🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}`;
+            }
+          });
+        });
       } else {
         actions.innerHTML = `
           <div style="background:var(--v2-bg);border:1.5px solid #A78BFA;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
             <div style="font:800 14px Inter;color:#7C3AED;margin-bottom:6px;">🔄 Refund being processed</div>
             ${refundAmt > 0 ? `<div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:6px;">₹${refundAmt.toLocaleString("en-IN")}</div>` : ''}
-            <div style="font:400 12px Inter;color:var(--v2-ink-2);">Seller will send your refund via UPI. UPI refunds typically reflect within 7 business days.</div>
+            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Seller will send your refund via UPI within <strong>7 working days</strong>.</div>
+            ${buyerSsSection}
           </div>`;
+        // Wire buyer screenshot buttons for "processing" state too
+        buyerSsPaths.forEach((path, i) => {
+          document.getElementById(`v2-od-buyer-ss-${i}`)?.addEventListener("click", async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            btn.textContent = "Loading…";
+            try {
+              const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed");
+              const url = data.urls?.[i];
+              if (url) window.open(url, "_blank", "noopener");
+            } catch (err: any) {
+              window.v2Toast?.("error", "Could not load", err.message);
+            } finally {
+              btn.disabled = false;
+              btn.textContent = `🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}`;
+            }
+          });
+        });
       }
     } else {
       actions.innerHTML = "";

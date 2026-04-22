@@ -483,18 +483,25 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           </div>`;
         } else if (o.status === "cancelled" && o.paid_amount > 0) {
           const refundAmt = Number(o.paid_amount).toLocaleString("en-IN");
+          const paymentSsPaths: string[] = o.payment_screenshot_urls || [];
+          const paymentSsBtns = paymentSsPaths.map((p, i) =>
+            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${encodeURIComponent(p)}">🖼 Buyer proof ${paymentSsPaths.length > 1 ? i + 1 : ''}</button>`
+          ).join("");
           if (o.refund_sent_at) {
-            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;">
+            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
               <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${refundAmt} marked as sent</div>
-              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(o.refund_note)}</div>` : ''}
-              <div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(o.refund_note)}</div>` : ''}
+              <div style="font:400 10px Inter;color:var(--v2-ink-3);">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+              ${paymentSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${paymentSsBtns}</div>` : ''}
             </div>`;
           } else {
             actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
               <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${refundAmt} to buyer via UPI</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">⏱ Buyer expects refund within 7 working days.</div>
+              ${paymentSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${paymentSsBtns}</div>` : ''}
               <input type="text" placeholder="UTR number / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
               <label style="cursor:pointer;">
-                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload UPI screenshot (optional)</div>
+                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload your UPI screenshot (optional)</div>
                 <input type="file" id="refund-file-${o.id}" accept="image/*" style="display:none;" />
               </label>
               <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
@@ -502,24 +509,36 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           }
         } else if (o.status === "payment_required") {
           const balanceAmt = o.final_price && o.paid_amount ? (Number(o.final_price) - Number(o.paid_amount)).toLocaleString("en-IN") : "—";
-          actionsHtml = `<div style="padding:10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);margin-top:6px;">
+          const balSsPaths: string[] = o.payment_screenshot_urls || [];
+          const balSsBtns = balSsPaths.map((p, i) =>
+            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${encodeURIComponent(p)}">🖼 Buyer proof ${balSsPaths.length > 1 ? i + 1 : ''}</button>`
+          ).join("");
+          actionsHtml = `<div style="padding:10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
             <div style="font:700 12px Inter;color:var(--v2-orange);">⏳ Waiting for balance ₹${balanceAmt}</div>
-            <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">Buyer notified. Will confirm once they pay the difference.</div>
+            <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyer notified. Will confirm once they pay the difference.</div>
+            ${balSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${balSsBtns}</div>` : ''}
           </div>`;
         } else if (o.status === "refunded") {
           const refundAmt = o.paid_amount && o.final_price ? (Number(o.paid_amount) - Number(o.final_price)).toLocaleString("en-IN") : "—";
+          const refSsPaths: string[] = o.payment_screenshot_urls || [];
+          const refSsBtns = refSsPaths.map((p, i) =>
+            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${encodeURIComponent(p)}">🖼 Buyer proof ${refSsPaths.length > 1 ? i + 1 : ''}</button>`
+          ).join("");
           if (o.refund_sent_at) {
-            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;">
+            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
               <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${refundAmt} marked as sent</div>
-              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(o.refund_note)}</div>` : ''}
-              <div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(o.refund_note)}</div>` : ''}
+              <div style="font:400 10px Inter;color:var(--v2-ink-3);">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+              ${refSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${refSsBtns}</div>` : ''}
             </div>`;
           } else {
             actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
               <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${refundAmt} to buyer via UPI</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">⏱ Buyer expects refund within 7 working days.</div>
+              ${refSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${refSsBtns}</div>` : ''}
               <input type="text" placeholder="UTR number / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
               <label style="cursor:pointer;">
-                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload UPI screenshot (optional)</div>
+                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload your UPI screenshot (optional)</div>
                 <input type="file" id="refund-file-${o.id}" accept="image/*" style="display:none;" />
               </label>
               <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
