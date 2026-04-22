@@ -5,6 +5,18 @@ export const prerender = false;
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
+const resendApiKey = import.meta.env.RESEND_API_KEY || "";
+
+async function sendResendEmail(to: string, subject: string, html: string) {
+  if (!resendApiKey || !to?.includes("@")) return;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to, subject, html }),
+    });
+  } catch (_) {}
+}
 
 /**
  * POST /api/orders/upload-payment
@@ -72,6 +84,27 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: signedData } = await supabase.storage
       .from("order-payments")
       .createSignedUrl(path, 86400);
+
+    // Notify seller that buyer uploaded payment screenshot
+    try {
+      const { data: fullOrder } = await supabase
+        .from("orders")
+        .select("species, listing_id, fish_listings(seller_id)")
+        .eq("id", order_id)
+        .single();
+      const sellerId = (fullOrder as any)?.fish_listings?.seller_id;
+      if (sellerId) {
+        const { data: seller } = await supabase.from("sellers").select("email, name").eq("id", sellerId).single();
+        if (seller?.email) {
+          const species = (fullOrder as any)?.species || "fish";
+          await sendResendEmail(
+            seller.email,
+            `Payment screenshot received — ${species}`,
+            `<p>Hi ${seller.name || "there"},</p><p>A buyer has uploaded a payment screenshot for order <strong>${order_id.slice(0, 8).toUpperCase()}</strong> (${species}). Please review it in your <a href="https://www.relifish.store/v2/dashboard/orders">seller dashboard</a> and verify the payment.</p>`
+          );
+        }
+      }
+    } catch (_) {}
 
     return new Response(JSON.stringify({ order: updatedOrder, url: signedData?.signedUrl ?? null, path }), { status: 200 });
   } catch (err: any) {
