@@ -64,7 +64,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
       ok: true,
       sent: false,
       reason:
-        "no push subscription — open /me, tap the bell, allow notifications, then try again",
+        "no push subscription — open /v2/me, tap the bell, allow notifications, then try again",
     };
   }
 
