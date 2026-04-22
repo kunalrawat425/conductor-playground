@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
-import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { capitalizeFishName, orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 
 export const prerender = false;
 
@@ -60,7 +60,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify order belongs to this seller's listings
     const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
-      .select("listing_id, buyer_id, species")
+      .select("listing_id, buyer_id, species, status, paid_amount, final_price, payment_screenshot_urls")
       .eq("id", order_id)
       .single();
 
@@ -91,9 +91,22 @@ export const POST: APIRoute = async ({ request }) => {
       if (final_price === undefined || final_price === null) {
         return new Response(JSON.stringify({ error: "final_price required for set_final_price" }), { status: 400 });
       }
+      const parsedFinal = Number(final_price);
+      if (!Number.isFinite(parsedFinal) || parsedFinal <= 0) {
+        return new Response(JSON.stringify({ error: "final_price must be a positive number" }), { status: 400 });
+      }
+      if (order.paid_amount === null || order.paid_amount === undefined) {
+        return new Response(JSON.stringify({ error: "set_final_price is only allowed for pre-orders with payment proof" }), { status: 400 });
+      }
+      if (order.final_price !== null && order.final_price !== undefined) {
+        return new Response(JSON.stringify({ error: "Final price already set for this order" }), { status: 400 });
+      }
+      if (!["confirmed", "paid"].includes(String(order.status || ""))) {
+        return new Response(JSON.stringify({ error: "Set final price after payment verification (confirmed stage)" }), { status: 400 });
+      }
       const { data: newStatus, error: rpcErr } = await supabase.rpc("reconcile_preorder_price", {
         p_order_id: order_id,
-        p_final_price: final_price,
+        p_final_price: parsedFinal,
       });
       if (rpcErr) {
         return new Response(JSON.stringify({ error: rpcErr.message }), { status: 500 });
@@ -105,7 +118,13 @@ export const POST: APIRoute = async ({ request }) => {
       // Notify buyer
       if (order.buyer_id) {
         try {
-          await sendBuyerOrderPush({ buyer_id: order.buyer_id, status: newStatus, species: order.species || "Fish", final_price });
+          await sendBuyerOrderPush({
+            buyer_id: order.buyer_id,
+            status: newStatus,
+            species: order.species || "Fish",
+            final_price,
+            order_id,
+          });
         } catch (_) {}
       }
       return new Response(JSON.stringify({ order: data, reconciled_status: newStatus }), { status: 200 });
@@ -118,31 +137,62 @@ export const POST: APIRoute = async ({ request }) => {
         refund_note: refund_note || null,
       };
       if (refund_screenshot_path) refundUpdate.refund_screenshot_path = refund_screenshot_path;
-      const { data, error: rErr } = await supabase
+      let { data, error: rErr } = await supabase
         .from("orders")
         .update(refundUpdate)
         .eq("id", order_id)
         .select()
         .single();
-      if (rErr) {
-        return new Response(JSON.stringify({ error: rErr.message }), { status: 500 });
+      // Backward compatibility for environments where refund columns migrations
+      // were not applied yet or PostgREST cache is stale.
+      if (rErr && /refund_note|refund_screenshot_path|schema cache/i.test(rErr.message || "")) {
+        const minimalUpdate = { refund_sent_at: refundUpdate.refund_sent_at };
+        const retry = await supabase
+          .from("orders")
+          .update(minimalUpdate)
+          .eq("id", order_id)
+          .select()
+          .single();
+        data = retry.data as any;
+        rErr = retry.error as any;
       }
+      if (rErr) return new Response(JSON.stringify({ error: rErr.message }), { status: 500 });
       if (order.buyer_id) {
         try {
-          await sendBuyerOrderPush({ buyer_id: order.buyer_id, status: "refunded", species: order.species || "Fish", final_price: null });
+          await sendBuyerOrderPush({
+            buyer_id: order.buyer_id,
+            status: "refunded",
+            species: order.species || "Fish",
+            final_price: null,
+            order_id,
+          });
         } catch (_) {}
       }
       return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
-    // action=verify_payment: mark payment verified and advance pending_payment → confirmed
+    // action=verify_payment: mark payment verified and advance pay-first rows → confirmed
     if (action === "verify_payment") {
-      const { data: currentForVerify } = await supabase.from("orders").select("status").eq("id", order_id).single();
+      const { data: currentForVerify } = await supabase
+        .from("orders")
+        .select("status, payment_screenshot_urls")
+        .eq("id", order_id)
+        .single();
+      const proofUrls = Array.isArray(currentForVerify?.payment_screenshot_urls)
+        ? currentForVerify.payment_screenshot_urls
+        : [];
+      if (proofUrls.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Buyer has not uploaded payment proof yet. Ask them to upload a screenshot on Track order." }),
+          { status: 400 }
+        );
+      }
       const verifyUpdates: any = {
         payment_verified_at: new Date().toISOString(),
         payment_verified_by: seller_id,
       };
-      if (currentForVerify?.status === "pending_payment") {
+      const verifyAdvanceStatuses = new Set(["pending_payment", "pending", "scheduled", "pre_order"]);
+      if (verifyAdvanceStatuses.has(String(currentForVerify?.status || ""))) {
         verifyUpdates.status = "confirmed";
       }
       const { data, error: vErr } = await supabase
@@ -154,10 +204,16 @@ export const POST: APIRoute = async ({ request }) => {
       if (vErr) {
         return new Response(JSON.stringify({ error: vErr.message }), { status: 500 });
       }
-      // Notify buyer if status advanced
-      if (verifyUpdates.status === "confirmed" && order.buyer_id) {
+      if (order.buyer_id) {
         try {
-          await sendBuyerOrderPush({ buyer_id: order.buyer_id, status: "confirmed", species: order.species || "Fish", final_price: null });
+          const pushStatus = verifyUpdates.status === "confirmed" ? "confirmed" : "payment_verified";
+          await sendBuyerOrderPush({
+            buyer_id: order.buyer_id,
+            status: pushStatus,
+            species: order.species || "Fish",
+            final_price: null,
+            order_id,
+          });
         } catch (_) {}
       }
       return new Response(JSON.stringify({ order: data }), { status: 200 });
@@ -175,10 +231,40 @@ export const POST: APIRoute = async ({ request }) => {
       ready_for_pickup: ["completed", "cancelled"],
       out_for_delivery: ["completed", "cancelled"],
     };
-    const { data: currentOrder } = await supabase.from("orders").select("status").eq("id", order_id).single();
+    const { data: currentOrder } = await supabase
+      .from("orders")
+      .select("status, paid_amount, final_price, payment_screenshot_urls")
+      .eq("id", order_id)
+      .single();
     const currentStatus = currentOrder?.status;
+
+    if (status === "confirmed") {
+      const proofUrls = Array.isArray(currentOrder?.payment_screenshot_urls)
+        ? currentOrder!.payment_screenshot_urls
+        : [];
+      const mustHaveProof = ["pending", "pending_payment", "scheduled", "pre_order"].includes(String(currentStatus || ""));
+      if (mustHaveProof && proofUrls.length === 0) {
+        return new Response(
+          JSON.stringify({
+            error: "Confirm only after the buyer uploads payment proof. Use Verify payment once their screenshot is visible.",
+          }),
+          { status: 400 }
+        );
+      }
+    }
     if (currentStatus && validTransitions[currentStatus] && !validTransitions[currentStatus].includes(status)) {
       return new Response(JSON.stringify({ error: `Cannot change from ${currentStatus} to ${status}` }), { status: 400 });
+    }
+    // Sequence guard for preorder flow:
+    // verify payment -> set final price -> then ready/out_for_delivery.
+    const isPreorderLike = currentOrder?.paid_amount !== null && currentOrder?.paid_amount !== undefined;
+    const tryingToFulfill = status === "ready_for_pickup" || status === "out_for_delivery";
+    const finalNotSet = currentOrder?.final_price === null || currentOrder?.final_price === undefined;
+    if (isPreorderLike && tryingToFulfill && finalNotSet) {
+      return new Response(
+        JSON.stringify({ error: "Set final price first before moving preorder to pickup/delivery" }),
+        { status: 400 }
+      );
     }
 
     const updates: any = { status };
@@ -208,6 +294,7 @@ export const POST: APIRoute = async ({ request }) => {
           status,
           species: order.species || "Fish",
           final_price: final_price ?? null,
+          order_id,
         });
         if (!pushResult.ok) {
           console.error("Buyer push failed:", pushResult.error);
@@ -222,7 +309,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Send email notifications to buyer and seller
     try {
       const statusLabel = STATUS_LABELS[status] || status;
-      const species = order.species || "Fish";
+      const species = capitalizeFishName(order.species || "Fish");
       const totalAmount = final_price ? Number(final_price) : Number(data.total_price) || 0;
       const emailArgs = {
         statusLabel,

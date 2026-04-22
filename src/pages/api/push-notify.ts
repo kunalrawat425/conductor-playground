@@ -11,13 +11,14 @@ export const prerender = false;
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { buyer_id, status, species, final_price } = body;
+    const { buyer_id, status, species, final_price, order_id } = body;
 
     const result = await sendBuyerOrderPush({
       buyer_id,
       status,
       species,
       final_price,
+      order_id,
     });
 
     if (!result.ok) {

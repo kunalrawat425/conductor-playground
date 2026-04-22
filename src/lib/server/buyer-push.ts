@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { buyerOrderPushNotification } from "./buyer-order-push-copy";
 import { loadWebPush } from "./load-web-push";
+import { absoluteUrl } from "./site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "./vapid-env";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
@@ -15,6 +16,8 @@ export type BuyerPushPayload = {
   status: string;
   species?: string | null;
   final_price?: number | null;
+  /** When set, notification opens this order on `/v2/track/[id]` (else track list). */
+  order_id?: string | null;
 };
 
 export type BuyerPushResult =
@@ -42,7 +45,7 @@ function normalizeSubscription(raw: unknown): PushSubscriptionJSON | null {
  * Shared by /api/push-notify (manual/test) and /api/seller/orders (no HTTP self-call).
  */
 export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<BuyerPushResult> {
-  const { buyer_id, status, species, final_price } = payload;
+  const { buyer_id, status, species, final_price, order_id } = payload;
 
   if (!buyer_id || !status) {
     return { ok: false, error: "Missing buyer_id or status" };
@@ -76,6 +79,8 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
   }
 
   const notification = buyerOrderPushNotification(status, species, final_price);
+  const trackPath = order_id ? `/v2/track/${order_id}` : "/v2/track";
+  const openUrl = absoluteUrl(trackPath);
 
   try {
     const webPush = await loadWebPush();
@@ -85,7 +90,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
       subscription,
       JSON.stringify({
         ...notification,
-        url: "/v2/track",
+        url: openUrl,
         tag: uniqueTag,
       })
     );

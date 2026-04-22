@@ -57,7 +57,7 @@ function uniqueFallbackTag() {
 }
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Relifish", body: "You have an update!", url: "/track" };
+  let data = { title: "Relifish", body: "You have an update!", url: "/v2/track" };
 
   if (event.data) {
     try {
@@ -83,23 +83,48 @@ self.addEventListener("push", (event) => {
   );
 });
 
-// Notification click: open the relevant page
+function resolvePushTarget(raw) {
+  const fallback = "/v2/track";
+  const r = (raw && String(raw).trim()) || fallback;
+  try {
+    if (/^https?:\/\//i.test(r)) return r;
+    return new URL(r, self.location.origin).href;
+  } catch {
+    try {
+      return new URL(fallback, self.location.origin).href;
+    } catch {
+      return r;
+    }
+  }
+}
+
+// Notification click: open the relevant page (absolute URL from server preferred)
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/";
+  const target = resolvePushTarget(event.notification.data?.url);
 
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clients) => {
-        // Focus existing window if open
+        let targetUrl;
+        try {
+          targetUrl = new URL(target);
+        } catch {
+          return self.clients.openWindow(target);
+        }
         for (const client of clients) {
-          if (client.url.includes(url) && "focus" in client) {
-            return client.focus();
+          try {
+            const cu = new URL(client.url);
+            if (cu.origin !== targetUrl.origin) continue;
+            if (cu.pathname === targetUrl.pathname && cu.search === targetUrl.search && "focus" in client) {
+              return client.focus();
+            }
+          } catch {
+            /* ignore */
           }
         }
-        // Otherwise open new window
-        return self.clients.openWindow(url);
+        return self.clients.openWindow(target);
       })
   );
 });

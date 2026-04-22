@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { priceUnitShortLabel } from "../../lib/listing-pricing";
 import type { PriceUnit } from "../../lib/species";
 import { loadWebPush } from "../../lib/server/load-web-push";
+import { absoluteUrl } from "../../lib/server/site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
 import { fmtDateTimeFullIST } from "../../lib/format-ist";
 
@@ -15,15 +16,30 @@ const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_
 const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
 const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@zepto.in";
 
+function normalizePushSubscription(raw: unknown): { endpoint: string; keys?: { p256dh: string; auth: string } } | null {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as { endpoint: string; keys?: { p256dh: string; auth: string } };
+    } catch {
+      return null;
+    }
+  }
+  if (typeof raw === "object" && raw !== null && "endpoint" in raw) {
+    return raw as { endpoint: string; keys?: { p256dh: string; auth: string } };
+  }
+  return null;
+}
+
 /**
  * POST /api/notify-seller
- * Body: { seller_id, species, quantity, quantity_unit, buyer_phone }
+ * Body: { seller_id, species, quantity, quantity_unit, buyer_phone, order_id?, kind? }
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const kind = body.kind === "payment_proof" ? "payment_proof" : "new_order";
-    const { seller_id, species, quantity, quantity_unit, buyer_phone, scheduled_for, order_id_short } = body;
+    const { seller_id, species, quantity, quantity_unit, buyer_phone, scheduled_for, order_id_short, order_id } = body;
 
     if (!seller_id) {
       return new Response(JSON.stringify({ error: "Missing seller_id" }), {
@@ -39,8 +55,8 @@ export const POST: APIRoute = async ({ request }) => {
       .eq("id", seller_id)
       .single();
 
-    const subscription = seller?.push_subscription;
-    if (!subscription) {
+    const subscription = normalizePushSubscription(seller?.push_subscription);
+    if (!subscription?.endpoint) {
       return new Response(JSON.stringify({ skipped: true, reason: "no push subscription" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -81,6 +97,11 @@ export const POST: APIRoute = async ({ request }) => {
       title = scheduled_for ? "New Scheduled Order! 🗓️" : "New Order!";
     }
 
+    let dashboardUrl = absoluteUrl("/v2/dashboard/orders");
+    if (typeof order_id === "string" && /^[0-9a-f-]{36}$/i.test(order_id.trim())) {
+      dashboardUrl = absoluteUrl(`/v2/dashboard/orders?order=${encodeURIComponent(order_id.trim())}`);
+    }
+
     try {
       const webPush = await loadWebPush();
       webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
@@ -89,7 +110,7 @@ export const POST: APIRoute = async ({ request }) => {
         JSON.stringify({
           title,
           body: pushBody,
-          url: "/v2/dashboard/orders",
+          url: dashboardUrl,
           tag: `seller-${kind}-${Date.now()}`,
         })
       );
