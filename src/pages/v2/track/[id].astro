@@ -254,12 +254,23 @@ const { id } = Astro.params;
         ? ["Placed", "Confirmed", "On the way", "Delivered"]
         : ["Placed", "Confirmed", "Ready", "Picked up"];
     const stepper = document.getElementById("v2-od-stepper");
+    const isTerminated = ["declined", "cancelled"].includes(o.status);
     stepper.innerHTML = [0,1,2,3].map(i =>
       `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
       (i < 3 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
-    ).join("");
+    ).join("") + (isTerminated
+      ? `<div class="line" style="background:#FCA5A5;"></div><div class="dot" style="background:#DC2626;color:#fff;font-size:11px;">${o.status === "declined" ? "✕" : "✕"}</div>`
+      : "");
     const stepLabelEl = document.querySelector(".v2-od-steplabels");
-    if (stepLabelEl) stepLabelEl.innerHTML = stepLabels.map(l => `<span>${l}</span>`).join("");
+    if (stepLabelEl) {
+      const labels = isTerminated ? [...stepLabels.slice(0, 1), o.status === "declined" ? "Declined ✕" : "Cancelled ✕"] : stepLabels;
+      // For terminated, show 2 labels spanning full width
+      if (isTerminated) {
+        stepLabelEl.innerHTML = `<span>${labels[0]}</span><span style="color:#DC2626;font-weight:700;margin-left:auto;">${labels[1]}</span>`;
+      } else {
+        stepLabelEl.innerHTML = stepLabels.map(l => `<span>${l}</span>`).join("");
+      }
+    }
 
     // Seller
     const seller = o.seller || {};
@@ -390,10 +401,44 @@ const { id } = Astro.params;
         }
       });
     } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
-      // Finished/cancelled order — offer re-order from same seller.
+      // Finished/cancelled order — show refund notice if paid, then offer re-order.
+      const paidForRefund = Number(o.paid_amount) || 0;
+      let refundHtml = "";
+      if (paidForRefund > 0 && ["cancelled", "declined"].includes(o.status)) {
+        const buyerSsPaths2: string[] = o.payment_screenshot_urls || [];
+        const buyerSsBtns2 = buyerSsPaths2.map((_, i) =>
+          `<button id="v2-od-refund-ss2-${i}" style="width:100%;margin-top:6px;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View my screenshot${buyerSsPaths2.length > 1 ? ' ' + (i+1) : ''}</button>`
+        ).join("");
+        const label = o.status === "declined" ? "Order declined by seller" : "Order cancelled";
+        refundHtml = `
+          <div style="background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius);padding:16px;margin-top:8px;margin-bottom:8px;">
+            <div style="font:800 14px Inter;color:#DC2626;margin-bottom:8px;">❌ ${label}</div>
+            <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Refund: ₹${paidForRefund.toLocaleString("en-IN")}</div>
+            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Your refund will be sent within <strong>7 working days</strong> via UPI. Check your UPI app.</div>
+            ${buyerSsBtns2}
+          </div>`;
+        // Wire screenshot buttons
+        setTimeout(() => {
+          const buyerIdForRef = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+          buyerSsPaths2.forEach((_, i) => {
+            document.getElementById(`v2-od-refund-ss2-${i}`)?.addEventListener("click", async (e) => {
+              const btn = e.currentTarget as HTMLButtonElement;
+              btn.disabled = true; btn.textContent = "Loading…";
+              try {
+                const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForRef)}`);
+                const data = await res.json();
+                const url = data.urls?.[i];
+                if (url) window.open(url, "_blank", "noopener");
+              } catch (err: any) { window.v2Toast?.("error", "Could not load", err.message); }
+              finally { btn.disabled = false; btn.textContent = `🖼 View my screenshot${buyerSsPaths2.length > 1 ? ' ' + (i+1) : ''}`; }
+            });
+          });
+        }, 0);
+      }
+      actions.innerHTML = refundHtml;
       const sellerIdForReorder = o.seller?.id || o.listing?.seller_id || "";
       if (sellerIdForReorder) {
-        actions.innerHTML = `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`;
+        actions.innerHTML += `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`;
         document.getElementById("v2-od-reorder-btn").addEventListener("click", () => {
           // Dump items back into RelifishCart then navigate to seller page.
           const Cart = window.RelifishCart;
