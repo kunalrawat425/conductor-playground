@@ -264,14 +264,14 @@ const tags = [
       const name = getName(l.species);
       const sellerItems = getSellerItems();
       const emoji = speciesEmoji(l.species);
-      // Pre-order if: explicitly enabled per listing, OR seller is in preorder mode today
-      const isPreorder = isPreorderMode || (l.is_preorder_enabled && l.weight_avail <= 0);
+      // Pre-order if: seller is in preorder mode today, OR listing explicitly has pre-order enabled
+      const isPreorder = isPreorderMode || l.is_preorder_enabled === true;
 
       // Total qty across all tiers for this listing (for incart highlight)
       const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
 
       // Pre-order price range badge (shown for OOS pre-order listings)
-      const preorderRangeHtml = isPreorder && l.is_preorder_enabled && l.weight_avail <= 0 && (l.preorder_price_min || l.preorder_price_max)
+      const preorderRangeHtml = l.is_preorder_enabled && (l.preorder_price_min || l.preorder_price_max)
         ? (() => {
             const mn = l.preorder_price_min ? `₹${Number(l.preorder_price_min).toLocaleString("en-IN")}` : "";
             const mx = l.preorder_price_max ? `₹${Number(l.preorder_price_max).toLocaleString("en-IN")}` : "";
