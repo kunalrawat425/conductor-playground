@@ -263,7 +263,7 @@ const categories = [
         supabase
           .from("fish_listings")
           .select("*, seller:sellers(*)")
-          .eq("is_available", true),
+          .or("is_available.eq.true,is_preorder_enabled.eq.true"),
         supabase
           .from("sellers")
           .select("*")

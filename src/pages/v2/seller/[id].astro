@@ -282,11 +282,17 @@ const tags = [
             return `<div class="v2-item-bottom">
               <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
               ${inCart > 0
-                ? `<div class="v2-item-counter" data-id="${key}">
+                ? (() => {
+                    const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
+                    const packs = bs > 1 ? Math.round(inCart / bs) : inCart;
+                    const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
+                    return `<div class="v2-item-counter" data-id="${key}">
                      <button class="v2-item-dec" aria-label="Decrease">−</button>
-                     <span class="v2-item-count">${inCart}</span>
+                     <span class="v2-item-count">${packLabel}</span>
                      <button class="v2-item-inc" aria-label="Increase">+</button>
-                   </div>`
+                   </div>`;
+                  })()
+
                 : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
             </div>`;
           })()
@@ -536,7 +542,8 @@ const tags = [
       // us into a different seller's checkout, treat delivery as unknown and force pickup.
       const delivOpt = document.getElementById("seller-checkout-delivery-opt");
       const noDelivNote = document.getElementById("seller-checkout-no-delivery-note");
-      const canDeliver = sid === sellerId && hasDelivery;
+      // Pre-orders are pickup-only (next-day catch, no delivery scheduling)
+      const canDeliver = sid === sellerId && hasDelivery && !isPreorderMode;
       if (canDeliver) {
         if (delivOpt) delivOpt.style.display = "flex";
         if (noDelivNote) noDelivNote.style.display = "none";
