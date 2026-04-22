@@ -71,7 +71,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { data: updatedOrder, error: updateErr } = await supabase
       .from("orders")
-      .update({ payment_screenshot_urls: updated, updated_at: new Date().toISOString(), ...statusUpdate })
+      .update({ payment_screenshot_urls: updated, ...statusUpdate })
       .eq("id", order_id)
       .select()
       .single();

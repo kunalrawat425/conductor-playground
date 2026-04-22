@@ -525,10 +525,12 @@ import Toast from "../../components/v2/atoms/Toast.astro";
         const supabase = createClient(supabaseUrl, supabaseKey);
         const pastStatuses = ["picked_up", "completed", "declined", "cancelled", "refunded"];
         const offset = (orderPage - 1) * ORDER_PAGE_SIZE;
+        const phoneNorm = `+91${phone.replace(/^\+91/, "").replace(/\D/g, "")}`;
+        // Match by buyer_id OR buyer_phone (orders may have either)
         const { data: orders, count } = await supabase
           .from("orders")
           .select("*, listing:fish_listings(species, seller:sellers(name))", { count: "exact" })
-          .in("buyer_phone", [phone, `+91${phone.replace(/^\+91/, "").replace(/\D/g, "")}`])
+          .or(`buyer_id.eq.${buyerId},buyer_phone.eq.${phone},buyer_phone.eq.${phoneNorm}`)
           .in("status", pastStatuses)
           .order("created_at", { ascending: false })
           .range(offset, offset + ORDER_PAGE_SIZE - 1);
@@ -551,7 +553,12 @@ import Toast from "../../components/v2/atoms/Toast.astro";
                 <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:1px;">${escape(fmtDate(o.created_at))} · ${o.quantity}${o.quantity_unit || 'kg'} <span style="text-transform:capitalize;">${escape(sp)}</span></div>
                 ${o.cut_style || o.buyer_notes ? `<div style="font:500 10px Inter;color:var(--v2-ink-3);margin-top:2px;">${o.cut_style ? `✂️ ${escape(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escape(o.buyer_notes)}` : ''}</div>` : ''}
               </div>
-              <span style="font:500 10px Inter;padding:3px 10px;border-radius:20px;background:var(--v2-bg-3);color:var(--v2-ink-3);">${statusLabel(o.status)}</span>
+              <span style="font:600 10px Inter;padding:3px 10px;border-radius:20px;${
+                  ["declined","cancelled"].includes(o.status) ? "background:#FEE2E2;color:#DC2626;" :
+                  o.status === "refunded" ? "background:#EDE9FE;color:#7C3AED;" :
+                  o.status === "completed" || o.status === "picked_up" ? "background:#DCFCE7;color:#16A34A;" :
+                  "background:var(--v2-bg-3);color:var(--v2-ink-3);"
+                }">${statusLabel(o.status)}</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--v2-border);">
               <span style="font:800 13px Inter;color:var(--v2-ink);">₹${(o.total_price || 0).toLocaleString("en-IN")}</span>
