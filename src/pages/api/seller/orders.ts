@@ -116,7 +116,6 @@ export const POST: APIRoute = async ({ request }) => {
       const refundUpdate: Record<string, any> = {
         refund_sent_at: new Date().toISOString(),
         refund_note: refund_note || null,
-        updated_at: new Date().toISOString(),
       };
       if (refund_screenshot_path) refundUpdate.refund_screenshot_path = refund_screenshot_path;
       const { data, error: rErr } = await supabase
@@ -142,7 +141,6 @@ export const POST: APIRoute = async ({ request }) => {
       const verifyUpdates: any = {
         payment_verified_at: new Date().toISOString(),
         payment_verified_by: seller_id,
-        updated_at: new Date().toISOString(),
       };
       if (currentForVerify?.status === "pending_payment") {
         verifyUpdates.status = "confirmed";

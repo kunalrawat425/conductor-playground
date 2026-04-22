@@ -68,7 +68,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     await supabase
       .from("orders")
-      .update({ refund_screenshot_path: path, updated_at: new Date().toISOString() })
+      .update({ refund_screenshot_path: path })
       .eq("id", order_id);
 
     const { data: signed } = await supabase.storage

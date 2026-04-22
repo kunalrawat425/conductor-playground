@@ -163,7 +163,10 @@ import Toast from "../../components/v2/atoms/Toast.astro";
   }
 
   function isActive(status: string) {
-    return ["pending", "confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled", "pre_order"].includes(status);
+    return ["pending", "pending_payment", "payment_required", "confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled", "pre_order"].includes(status);
+  }
+  function isTerminated(status: string) {
+    return ["declined", "cancelled", "refunded"].includes(status);
   }
 
   function fmtDate(iso: string) {
@@ -196,14 +199,16 @@ import Toast from "../../components/v2/atoms/Toast.astro";
     }
 
     try {
-      const activeStatuses = ["pending", "confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled", "pre_order"];
       const offset = (currentPage - 1) * PAGE_SIZE;
       const phones = phoneVariants(phone);
+      const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+      // Fetch all statuses — query by buyer_phone OR buyer_id
+      const phoneParts = phones.map(p => `buyer_phone.eq.${p}`).join(",");
+      const orFilter = buyerId ? `${phoneParts},buyer_id.eq.${buyerId}` : phoneParts;
       const { data: allOrders, count } = await supabase
         .from("orders")
         .select("*, listing:fish_listings(species, seller:sellers(name))", { count: "exact" })
-        .in("buyer_phone", phones)
-        .in("status", activeStatuses)
+        .or(orFilter)
         .order("created_at", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
 
@@ -221,30 +226,62 @@ import Toast from "../../components/v2/atoms/Toast.astro";
       active.innerHTML = allOrders.map(o => {
         const seller = o.listing?.seller?.name || "Seller";
         const isDelivery = o.order_type === "delivery";
+        const terminated = isTerminated(o.status);
         const statusToStep: Record<string, number> = isDelivery
-          ? { pending: 0, pre_order: 0, scheduled: 0, confirmed: 1, paid: 1, out_for_delivery: 2, completed: 3 }
-          : { pending: 0, pre_order: 0, scheduled: 0, confirmed: 1, paid: 1, ready_for_pickup: 2, picked_up: 3, completed: 3 };
+          ? { pending: 0, pending_payment: 0, payment_required: 0, pre_order: 0, scheduled: 0, confirmed: 1, paid: 1, out_for_delivery: 2, completed: 3, picked_up: 3, declined: 0, cancelled: 0, refunded: 0 }
+          : { pending: 0, pending_payment: 0, payment_required: 0, pre_order: 0, scheduled: 0, confirmed: 1, paid: 1, ready_for_pickup: 2, picked_up: 3, completed: 3, declined: 0, cancelled: 0, refunded: 0 };
         const labels = isDelivery
           ? ["Placed", "Confirmed", "On the way", "Delivered"]
           : ["Placed", "Confirmed", "Ready", "Picked up"];
         const stepIdx = statusToStep[o.status] ?? 0;
+        const paidAmt = Number(o.paid_amount) || 0;
 
-        return `
-          <a href="/v2/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
-            <div class="label">Live · ${statusToTag(o.status)}</div>
-            <h3>${escapeHtml(seller)}</h3>
-            <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${o.quantity}${o.quantity_unit || 'kg'} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
-            ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
-            <div class="v2-stepper">
-              ${labels.map((label, i) => `
+        const stepperHtml = terminated
+          ? `<div class="v2-stepper">
+              <div class="dot done">✓</div>
+              <div class="line done" style="background:#FCA5A5;"></div>
+              <div class="dot" style="background:#DC2626;color:#fff;">✕</div>
+            </div>
+            <div class="v2-stepper-labels" style="justify-content:space-between;">
+              <span>Placed</span>
+              <span style="color:#DC2626;font-weight:700;">${o.status === "declined" ? "Declined" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
+            </div>`
+          : `<div class="v2-stepper">
+              ${labels.map((_, i) => `
                 <div class="dot${i <= stepIdx ? ' done' : ''}">${i <= stepIdx ? '✓' : i + 1}</div>
                 ${i < labels.length - 1 ? `<div class="line${i < stepIdx ? ' done' : ''}"></div>` : ''}
               `).join("")}
             </div>
             <div class="v2-stepper-labels">
               ${labels.map(l => `<span>${l}</span>`).join("")}
-            </div>
-          </a>`;
+            </div>`;
+
+        const refundNote = terminated && paidAmt > 0
+          ? `<div style="margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:6px;font:600 11px Inter;color:#7C3AED;">⏱ Refund ₹${paidAmt.toLocaleString("en-IN")} within 7 working days via UPI</div>`
+          : "";
+
+        const cardStyle = terminated
+          ? `background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius-lg);padding:16px;margin-bottom:12px;`
+          : ``;
+
+        return terminated
+          ? `<a href="/v2/track/${o.id}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardStyle}">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined by seller" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
+                ${statusToTag(o.status)}
+              </div>
+              <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,6).toUpperCase()} · ${o.quantity}${o.quantity_unit||'kg'} · ${fmtDate(o.created_at)}</div>
+              ${stepperHtml}
+              ${refundNote}
+            </a>`
+          : `<a href="/v2/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
+              <div class="label">Live · ${statusToTag(o.status)}</div>
+              <h3>${escapeHtml(seller)}</h3>
+              <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${o.quantity}${o.quantity_unit || 'kg'} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
+              ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
+              ${stepperHtml}
+            </a>`;
       }).join("")
       + (totalPages > 1 ? `
         <div class="v2-pagination" style="padding:12px 0;">
@@ -267,21 +304,21 @@ import Toast from "../../components/v2/atoms/Toast.astro";
 
     // Supabase Realtime
     const buyerPhone = getBuyerPhone();
+    const rtBuyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
     if (buyerPhone) {
       const pv = phoneVariants(buyerPhone);
       pv.forEach(ph => {
         supabase
           .channel("buyer-orders-" + ph)
-          .on("postgres_changes", {
-            event: "*",
-            schema: "public",
-            table: "orders",
-            filter: `buyer_phone=eq.${ph}`,
-          }, () => {
-            load();
-          })
+          .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `buyer_phone=eq.${ph}` }, () => { load(); })
           .subscribe();
       });
+    }
+    if (rtBuyerId) {
+      supabase
+        .channel("buyer-orders-id-" + rtBuyerId)
+        .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `buyer_id=eq.${rtBuyerId}` }, () => { load(); })
+        .subscribe();
     }
 
     // Fallback poll every 30s

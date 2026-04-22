@@ -403,11 +403,28 @@ const initialPricingJson = JSON.stringify(
     // Show/hide preorder price range fields based on checkbox
     const preorderCb = document.getElementById("is_preorder_enabled") as HTMLInputElement | null;
     const priceFields = document.getElementById("preorder-price-fields") as HTMLElement | null;
-    if (preorderCb && priceFields) {
-      preorderCb.addEventListener("change", () => {
-        priceFields.style.display = preorderCb.checked ? "block" : "none";
-      });
+    const minInput = document.getElementById("preorder_price_min") as HTMLInputElement | null;
+    const maxInput = document.getElementById("preorder_price_max") as HTMLInputElement | null;
+    function setPreorderRequired(checked: boolean) {
+      if (minInput) { minInput.required = checked; if (checked) minInput.min = "1"; }
+      if (maxInput) { maxInput.required = checked; if (checked) maxInput.min = "1"; }
+      if (priceFields) priceFields.style.display = checked ? "block" : "none";
     }
+    if (preorderCb) {
+      setPreorderRequired(preorderCb.checked);
+      preorderCb.addEventListener("change", () => setPreorderRequired(preorderCb.checked));
+    }
+    // Cross-field validation: max must be >= min
+    maxInput?.addEventListener("change", () => {
+      const mn = Number(minInput?.value) || 0;
+      const mx = Number(maxInput.value) || 0;
+      if (mn && mx && mx < mn) {
+        maxInput.setCustomValidity("Max must be ≥ min price");
+      } else {
+        maxInput.setCustomValidity("");
+      }
+    });
+    minInput?.addEventListener("change", () => { maxInput?.dispatchEvent(new Event("change")); });
   });
 </script>
 
