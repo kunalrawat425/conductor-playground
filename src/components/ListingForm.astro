@@ -162,10 +162,42 @@ const initialPricingJson = JSON.stringify(
         </div>
       </label>
     </div>
+    <div id="preorder-price-fields" style="display:{listing?.is_preorder_enabled ? 'block' : 'none'};">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div class="listing-field">
+          <label for="preorder_price_min" class="form-label">Min price estimate (₹)</label>
+          <input
+            type="number"
+            id="preorder_price_min"
+            name="preorder_price_min"
+            min="0"
+            step="1"
+            placeholder="e.g. 300"
+            value={listing?.preorder_price_min ?? ""}
+            class="form-control"
+          />
+          <div class="form-hint">Lowest likely price</div>
+        </div>
+        <div class="listing-field">
+          <label for="preorder_price_max" class="form-label">Max price estimate (₹)</label>
+          <input
+            type="number"
+            id="preorder_price_max"
+            name="preorder_price_max"
+            min="0"
+            step="1"
+            placeholder="e.g. 500"
+            value={listing?.preorder_price_max ?? ""}
+            class="form-control"
+          />
+          <div class="form-hint">Highest likely price</div>
+        </div>
+      </div>
+    </div>
     <div style="margin-top:10px;padding:10px 12px;background:#EEF2FF;border-radius:6px;border-left:3px solid #6366F1;">
         <div style="font:700 12px Inter;color:#4F46E5;margin-bottom:2px;">💡 How pre-order pricing works</div>
         <div style="font:400 11px Inter;color:#4338CA;line-height:1.5;">
-          Buyer pays the listed price upfront. After the morning catch, you set the actual final price.
+          Buyer pays upfront based on your price range. After the morning catch, you set the actual final price.
           If final price &lt; buyer paid → automatic refund within 7 working days.
           If final price &gt; buyer paid → buyer approves the difference.
           If prices match → order auto-confirmed.
@@ -368,6 +400,14 @@ const initialPricingJson = JSON.stringify(
 
   runWhenDomReady(() => {
     setTimeout(initListingPricing, 0);
+    // Show/hide preorder price range fields based on checkbox
+    const preorderCb = document.getElementById("is_preorder_enabled") as HTMLInputElement | null;
+    const priceFields = document.getElementById("preorder-price-fields") as HTMLElement | null;
+    if (preorderCb && priceFields) {
+      preorderCb.addEventListener("change", () => {
+        priceFields.style.display = preorderCb.checked ? "block" : "none";
+      });
+    }
   });
 </script>
 
