@@ -53,6 +53,16 @@ export function buyerOrderPushNotification(
       title: "Order received",
       body: species ? `Your ${species} order is pending seller action` : "Your order is pending seller action",
     },
+    pending_payment: {
+      title: "Payment proof sent",
+      body: species
+        ? `We received your UPI screenshot for ${species}. The seller will verify shortly.`
+        : "We received your payment screenshot. The seller will verify shortly.",
+    },
+    payment_required: {
+      title: "Payment needed",
+      body: species ? `Complete payment for your ${species} order` : "Complete payment for your order",
+    },
     scheduled: {
       title: "Order Scheduled! 🗓️",
       body: species ? `Your ${species} order is scheduled. We'll notify you when it's time.` : "Your order is scheduled. We'll remind you!",

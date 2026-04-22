@@ -85,7 +85,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
       subscription,
       JSON.stringify({
         ...notification,
-        url: "/track",
+        url: "/v2/track",
         tag: uniqueTag,
       })
     );
