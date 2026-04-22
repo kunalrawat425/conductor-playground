@@ -19,9 +19,9 @@ export const GET: APIRoute = async ({ url }) => {
     // Search fish_listings by species (ILIKE on text + species code)
     const { data: listings } = await supabase
       .from("fish_listings")
-      .select("id, species, pricing_options, photo_url, weight_avail, is_available, seller:sellers(id, name, location_name, lat, lng, opens_at, closes_at, accepts_preorder, has_delivery, rating_avg, is_active)")
+      .select("id, species, pricing_options, photo_url, weight_avail, is_available, is_preorder_enabled, seller:sellers(id, name, location_name, lat, lng, opens_at, closes_at, accepts_preorder, has_delivery, rating_avg, is_active)")
       .ilike("species", `%${q}%`)
-      .eq("is_available", true)
+      .or("is_available.eq.true,is_preorder_enabled.eq.true")
       .limit(limit);
 
     // Filter to only sellers that are active
