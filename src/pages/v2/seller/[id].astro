@@ -4,6 +4,12 @@ export const prerender = false;
 import AppShellV2 from "../../../components/v2/AppShellV2.astro";
 import SellerHero from "../../../components/v2/organisms/SellerHero.astro";
 import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
+import LoginSheet from "../../../components/v2/organisms/LoginSheet.astro";
+import CheckoutSheet from "../../../components/v2/organisms/CheckoutSheet.astro";
+import CartStackSheet from "../../../components/v2/organisms/CartStackSheet.astro";
+import AddressPickerSheet from "../../../components/v2/organisms/AddressPickerSheet.astro";
+import Toast from "../../../components/v2/atoms/Toast.astro";
+import Modal from "../../../components/v2/atoms/Modal.astro";
 import { getSellerById, getSellerListings } from "../../../lib/supabase";
 import { getSpeciesDisplay } from "../../../lib/species";
 
@@ -17,52 +23,78 @@ try {
   seller = await getSellerById(id!);
   if (seller) {
     listings = await getSellerListings(id!);
-    listings = listings.filter((l: any) => l.is_available);
-  } else {
-    notFound = true;
-  }
-} catch {
-  notFound = true;
-}
+    // Show listings that are in-stock OR have pre-orders enabled (pre-orders are inventory-independent)
+    listings = listings.filter((l: any) => l.is_available || l.is_preorder_enabled);
+  } else notFound = true;
+} catch { notFound = true; }
 
 const sellerName = seller?.name || "Seller";
 const sellerLocation = seller?.location_name || "";
 const itemCount = listings.length;
 const isOpen = (() => {
   if (!seller?.opens_at || !seller?.closes_at) return true;
-  const now = new Date();
-  const cur = now.getHours() * 60 + now.getMinutes();
+  // Use IST (UTC+5:30) — SSR servers run UTC
+  const now = new Date(Date.now() + 5.5 * 3600 * 1000);
+  const cur = now.getUTCHours() * 60 + now.getUTCMinutes();
   const [oh, om] = seller.opens_at.split(":").map(Number);
   const [ch, cm] = seller.closes_at.split(":").map(Number);
-  return cur >= (oh * 60 + om) && cur <= (ch * 60 + cm);
+  const openMin = oh * 60 + om;
+  const closeMin = ch * 60 + cm;
+  // Handle cross-midnight ranges (e.g. 17:00 → 01:58)
+  if (openMin <= closeMin) return cur >= openMin && cur <= closeMin;
+  return cur >= openMin || cur <= closeMin;
 })();
-const status: "open" | "closed" = isOpen ? "open" : "closed";
+// Day-of-week awareness
+const DAY_NAMES_SHORT = ['sun','mon','tue','wed','thu','fri','sat'];
+const DAY_LABELS: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+const todayDayName = DAY_NAMES_SHORT[new Date().getDay()];
+const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
+const preorderDays: string[] = seller?.preorder_days ?? [];
+const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
+const isTodayPreorderDay = preorderDays.length > 0 ? preorderDays.includes(todayDayName) : !!seller?.accepts_preorder;
+const isEffectivelyOpen = isOpen && isTodayOrderDay;
+// Pre-order mode: seller day-off or closed but pre-orders available today
+const isPreorderMode = !isEffectivelyOpen && isTodayPreorderDay;
 
+// Schedule display strings
+function fmtDays(days: string[]): string {
+  if (!days.length || days.length === 7) return "Every day";
+  return days.map(d => DAY_LABELS[d] || d).join(", ");
+}
+const orderDaysLabel = fmtDays(openDays);
+const preorderDaysLabel = preorderDays.length ? fmtDays(preorderDays) : null;
+const cutoffLabel = seller?.preorder_cutoff_time ? seller.preorder_cutoff_time.slice(0,5) : null;
+
+const status: "open" | "closed" = isEffectivelyOpen ? "open" : "closed";
 const tags = [
-  seller?.accepts_preorder ? "Pre-order" : null,
+  isTodayPreorderDay && !isEffectivelyOpen ? "Pre-order available" : (seller?.accepts_preorder ? "Pre-order" : null),
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
+  seller?.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null,
+  seller?.delivery_fee_enabled && seller?.delivery_fee_amount > 0
+    ? (seller?.free_delivery_above > 0
+        ? `₹${seller.delivery_fee_amount} delivery · Free above ₹${seller.free_delivery_above}`
+        : `₹${seller.delivery_fee_amount} delivery fee`)
+    : null,
+  // seller?.schedule_pickup_slots ? "Scheduled pickup" : null, // hidden for now
 ].filter(Boolean) as string[];
-
-const pageTitle = `${sellerName} - Fresh Fish Menu | ${brandName}`;
-const pageDesc = sellerLocation
-  ? `Order fresh fish from ${sellerName} in ${sellerLocation}.`
-  : `Order fresh fish from ${sellerName}.`;
 ---
 <AppShellV2
-  title={pageTitle}
-  description={pageDesc}
+  title={`${sellerName} · ${brandName}`}
+  description={`Order fresh fish from ${sellerName} in ${sellerLocation}.`}
   hideHeader={true}
   nav={{ active: "home" }}
 >
+  <Toast />
+  <Modal />
+  <LoginSheet id="seller-login-sheet" role="buyer" redirectTo={`/v2/seller/${id}`} />
+  <AddressPickerSheet id="seller-addr-sheet" />
+  <CartStackSheet id="seller-cart-stack" />
+  <CheckoutSheet id="seller-checkout" />
+
   {notFound ? (
-    <div style="padding:0 16px;margin-top:24px;">
-      <EmptyState
-        variant="server-error"
-        title="Seller not found"
-        description="This seller doesn't exist or has been deactivated."
-        ctaHref="/v2"
-      />
+    <div style="padding:24px 16px;margin-top:24px;">
+      <EmptyState variant="server-error" title="Seller not found" description="This seller doesn't exist or has been deactivated." ctaText="Browse sellers" ctaHref="/" />
     </div>
   ) : (
     <>
@@ -75,24 +107,52 @@ const pageDesc = sellerLocation
         closesAt={seller?.closes_at}
         itemCount={itemCount}
         tags={tags}
+        phone={seller.phone}
       />
+
+      {/* Schedule strip */}
+      <div style="padding:10px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:12px;">
+        <div style="font:500 11px Inter;color:var(--v2-ink-2);">
+          🗓 <strong>Orders:</strong> {orderDaysLabel}
+          {seller?.opens_at && seller?.closes_at && ` · ${seller.opens_at.slice(0,5)}–${seller.closes_at.slice(0,5)}`}
+        </div>
+        {preorderDaysLabel && (
+          <div style="font:500 11px Inter;color:#7C3AED;">
+            🌙 <strong>Pre-orders</strong> (next-day catch): {preorderDaysLabel}
+            {cutoffLabel && ` · cutoff ${cutoffLabel}`}
+          </div>
+        )}
+      </div>
+
+      {/* Pre-order context banner */}
+      {isPreorderMode && (
+        <div style="margin:12px 16px 0;padding:12px 14px;background:#F3E8FF;border:1px solid #DDD6FE;border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">🌙</span>
+          <div>
+            <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
+            <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
+              Items added today will be reserved from tomorrow's fresh catch.
+              {cutoffLabel && ` Place before ${cutoffLabel}.`}
+            </div>
+          </div>
+        </div>
+      )}
 
       {itemCount === 0 ? (
         <div style="padding:0 16px;margin-top:16px;">
           <EmptyState
             variant="no-results"
-            title="No items right now"
-            description={seller?.accepts_preorder
-              ? "Check back during opening hours, or pre-order tomorrow's catch."
-              : "This seller has no listings available right now."}
-            ctaText={seller?.accepts_preorder ? "Pre-order" : "Browse other sellers"}
-            ctaHref={seller?.accepts_preorder ? "/v2" : "/v2"}
+            title="No items available"
+            description={seller?.accepts_preorder ? "Pre-order tomorrow's catch instead." : "Check back during opening hours."}
+            ctaText={seller?.accepts_preorder ? "Pre-order" : "Browse sellers"}
+            ctaHref={seller?.accepts_preorder ? "/v2/preorder" : "/"}
           />
         </div>
       ) : (
         <>
-          <div style="padding:16px 16px 8px;">
+          <div style="padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
             <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">Today's Menu</h2>
+            <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
           <div id="v2-menu-grid" class="v2-menu-grid"></div>
         </>
@@ -105,169 +165,632 @@ const pageDesc = sellerLocation
 
 <style is:global>
   .v2-menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-    padding: 0 16px;
+    padding: 0 16px 24px;
   }
-  @media (min-width: 600px) {
-    .v2-menu-grid { grid-template-columns: repeat(3, 1fr); }
+  .v2-item-card {
+    display: flex;
+    flex-direction: row;
   }
-  body.v2-has-cart .v2-main { padding-bottom: 80px; }
+  .v2-item-img {
+    width: 100px;
+    height: auto;
+    min-height: 80px;
+    flex-shrink: 0;
+    border-radius: var(--v2-radius) 0 0 var(--v2-radius);
+  }
+  .v2-item-body {
+    flex: 1;
+    min-width: 0;
+  }
+  body.v2-has-cart .v2-main { padding-bottom: 144px; }
+
+  /* Multi-tier pricing rows inside item cards */
+  .v2-item-tiers {
+    margin-top: 6px;
+  }
+  .v2-item-tier {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+  .v2-item-tier-label {
+    flex: 1;
+    font: 500 11px Inter;
+    color: var(--v2-ink-2);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .v2-item-tier-price {
+    font: 800 12px Inter;
+    color: var(--v2-ink);
+    white-space: nowrap;
+  }
+  .v2-item-add-sm {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px;
+    font-size: 14px !important;
+    padding: 0 !important;
+  }
 </style>
 
-<script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFreeAbove: seller?.delivery_free_above, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder }}>
+<script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: !isEffectivelyOpen && !isTodayPreorderDay, isPreorderMode }}>
+  function withCart(fn) {
+    if (window.RelifishCart) return fn(window.RelifishCart);
+    document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });
+  }
+
   const grid = document.getElementById("v2-menu-grid");
   const cartMount = document.getElementById("v2-cart-bar-mount");
-  if (!grid || !listings) {
-    // No menu to render; bail.
-  } else {
+  if (grid && listings) {
+    function Cart() { return window.RelifishCart; }
 
-  // Cart state per seller
-  const CART_KEY = `v2_cart_${sellerId}`;
-  function loadCart() {
-    try { return JSON.parse(localStorage.getItem(CART_KEY) || "{}"); } catch { return {}; }
-  }
-  function saveCart(c) {
-    try { localStorage.setItem(CART_KEY, JSON.stringify(c)); } catch {}
-  }
-  let cart = loadCart();
+    function getSellerItems() {
+      const c = Cart();
+      if (!c) return {};
+      const cart = c.getCart();
+      const out = {};
+      for (const lid of Object.keys(cart)) {
+        if (cart[lid].seller_id === sellerId) out[lid] = cart[lid];
+      }
+      return out;
+    }
 
-  function speciesEmoji(species) {
-    if (!species) return "🐟";
-    const s = species.toLowerCase();
-    if (s.includes("prawn")) return "🦐";
-    if (s.includes("crab")) return "🦀";
-    if (s.includes("squid") || s.includes("octopus")) return "🦑";
-    return "🐟";
-  }
+    function speciesEmoji(sp) {
+      if (!sp) return "🐟";
+      const s = sp.toLowerCase();
+      if (s.includes("prawn")) return "🦐";
+      if (s.includes("crab")) return "🦀";
+      if (s.includes("squid") || s.includes("octopus")) return "🦑";
+      return "🐟";
+    }
+    function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+    function getName(sp) { try { return getSpeciesDisplay(sp) || sp; } catch { return sp; } }
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  }
+    // Build composite cart key matching cart.ts logic
+    function ck(listingId, optId) {
+      return optId && optId !== "default" ? listingId + ":" + optId : listingId;
+    }
 
-  function renderItem(l) {
-    const opt = (l.pricing_options || [])[0] || {};
-    const price = opt.price || 0;
-    const unit = opt.unit_label || "kg";
-    const name = getDisplayName(l.species);
-    const inCart = cart[l.id]?.qty || 0;
-    const emoji = speciesEmoji(l.species);
-    const isPreorder = l.is_preorder === true || (l.weight_avail === 0 && acceptsPreorder);
+    function renderItem(l) {
+      const opts = l.pricing_options || [];
+      const firstOpt = opts[0] || {};
+      const name = getName(l.species);
+      const sellerItems = getSellerItems();
+      const emoji = speciesEmoji(l.species);
+      // Pre-order if: explicitly enabled per listing, OR seller is in preorder mode today
+      const isPreorder = isPreorderMode || (l.is_preorder_enabled && l.weight_avail <= 0);
 
-    return `
-      <div class="v2-item-card${inCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
-        <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};">
-          <span class="v2-item-emoji">${emoji}</span>
-          ${isPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
-        </div>
-        <div class="v2-item-body">
-          <div class="v2-item-name">${escapeHtml(name)}</div>
-          <div class="v2-item-desc">Per ${escapeHtml(unit)}</div>
-          <div class="v2-item-bottom">
-            <div class="v2-item-price">₹${price}</div>
-            ${inCart > 0
-              ? `<div class="v2-item-counter" data-id="${l.id}">
-                   <button class="v2-item-dec" aria-label="Decrease">−</button>
-                   <span class="v2-item-count">${inCart}</span>
-                   <button class="v2-item-inc" aria-label="Increase">+</button>
-                 </div>`
-              : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escapeHtml(name)}" data-unit="${escapeHtml(unit)}" aria-label="Add ${escapeHtml(name)}">+</button>`}
+      // Total qty across all tiers for this listing (for incart highlight)
+      const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
+
+      // Show all pricing tiers as individual add buttons so buyer picks the right pack/unit.
+      const pricingHtml = opts.length <= 1
+        ? (() => {
+            const price = firstOpt.price || 0;
+            const unit = firstOpt.unit_label || firstOpt.label || "kg";
+            const optId = firstOpt.id || "default";
+            const key = ck(l.id, optId);
+            const inCart = sellerItems[key]?.qty || 0;
+            const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
+            return `<div class="v2-item-bottom">
+              <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+              ${inCart > 0
+                ? (() => {
+                    const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
+                    const packs = bs > 1 ? Math.round(inCart / bs) : inCart;
+                    const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
+                    return `<div class="v2-item-counter" data-id="${key}">
+                     <button class="v2-item-dec" aria-label="Decrease">−</button>
+                     <span class="v2-item-count">${packLabel}</span>
+                     <button class="v2-item-inc" aria-label="Increase">+</button>
+                   </div>`;
+                  })()
+
+                : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+            </div>`;
+          })()
+        : (() => {
+            // Multiple tiers — each tier gets its own add/counter using composite key.
+            return `<div class="v2-item-tiers">
+              ${opts.map((o) => {
+                const label = o.label || o.unit_label || o.unit || "unit";
+                const optId = o.id || "default";
+                const key = ck(l.id, optId);
+                const tierQty = sellerItems[key]?.qty || 0;
+                const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
+                const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
+                return `<div class="v2-item-tier">
+                  <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
+                  <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
+                  ${tierQty > 0
+                    ? (() => {
+                        const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
+                        const packs = bs > 1 ? Math.round(tierQty / bs) : tierQty;
+                        const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
+                        return `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
+                         <button class="v2-item-dec" aria-label="Decrease">−</button>
+                         <span class="v2-item-count">${packLabel}</span>
+                         <button class="v2-item-inc" aria-label="Increase">+</button>
+                       </div>`;
+                      })()
+                    : `<button class="v2-item-add v2-item-add-sm" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                </div>`;
+              }).join("")}
+            </div>`;
+          })();
+
+      // Fish size badge
+      const sizeMap = { small: "S", medium: "M", large: "L" };
+      const sizeBadge = l.fish_size && sizeMap[l.fish_size] ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;">${sizeMap[l.fish_size]}</span>` : '';
+
+      // Low stock warning (oos_threshold)
+      const stockWarn = l.oos_threshold && l.weight_avail > 0 && l.weight_avail <= l.oos_threshold
+        ? `<div style="font:600 10px Inter;color:var(--v2-orange);margin-top:2px;">⚡ Stock clearing soon</div>` : '';
+
+      // Daily limit hint
+      const limitHint = l.buyer_daily_qty_limit
+        ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:1px;">Max ${l.buyer_daily_qty_limit} per buyer/day</div>` : '';
+
+      // Compare-at-price (discount) from first pricing option
+      const hasDiscount = firstOpt.compare_at_price && firstOpt.compare_at_price > firstOpt.price;
+      const discountBadge = hasDiscount
+        ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-red);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
+
+      // Image: use photo if available, else emoji
+      const imgContent = l.photo_url
+        ? `<img src="${escape(l.photo_url)}" alt="${escape(name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />`
+        : `<span class="v2-item-emoji">${emoji}</span>`;
+
+      return `
+        <div class="v2-item-card${totalInCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
+          <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};position:relative;overflow:hidden;">
+            ${imgContent}
+            ${isPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
+            ${discountBadge}
           </div>
+          <div class="v2-item-body">
+            <div class="v2-item-name">${escape(name)}${sizeBadge}</div>
+            ${stockWarn}${limitHint}
+            ${pricingHtml}
+          </div>
+        </div>`;
+    }
+
+    function render() {
+      grid.innerHTML = listings.map(renderItem).join("");
+      // If seller is fully closed (closed + no preorder), disable all add buttons and grey out items
+      if (sellerFullyClosed) {
+        grid.style.opacity = "0.5";
+        grid.style.pointerEvents = "none";
+        // Show closed banner above menu
+        if (!document.getElementById("v2-closed-banner")) {
+          const banner = document.createElement("div");
+          banner.id = "v2-closed-banner";
+          banner.style.cssText = "margin:0 16px 12px;padding:14px 16px;background:var(--v2-red-l);border:1px solid var(--v2-red);border-radius:var(--v2-radius);text-align:center;";
+          banner.innerHTML = `<div style="font:700 13px Inter;color:var(--v2-red);">🚫 Not available today</div><div style="font:400 11px Inter;color:var(--v2-ink-2);margin-top:4px;">No orders or pre-orders available today. Check back on an order day.</div>`;
+          grid.parentElement?.insertBefore(banner, grid);
+        }
+      }
+      renderCart();
+    }
+
+    let selectedAddressId = null;
+    // Remember which seller's cart we're currently checking out (set when user
+    // taps Checkout on a CartStackSheet card, OR defaults to this page's sellerId
+    // when only one seller has items).
+    let activeCheckoutSellerId = sellerId;
+
+    // Publish per-seller min-order hints so CartStackSheet can show "Add ₹X more"
+    // without needing its own DB query.
+    (function publishMinOrder() {
+      window.__relifishMinOrders = window.__relifishMinOrders || {};
+      window.__relifishMinOrders[sellerId] = minOrder || 0;
+    })();
+
+    function renderCart() {
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const totalQty = c.totalQty(cart);
+
+      // Single-seller cart: all items belong to one seller.
+      const sellerItems = Object.values(getSellerItems());
+      const sellerQty = sellerItems.reduce((s, i) => s + i.qty, 0);
+      const sellerSubtotal = sellerItems.reduce((s, i) => s + i.qty * i.price, 0);
+
+      if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
+      document.body.classList.add("v2-has-cart");
+
+      const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
+      const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
+
+      // Status line
+      let statusLine = `${sellerQty} item${sellerQty !== 1 ? "s" : ""}`;
+      let statusColor = "var(--v2-ink-3)";
+      if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
+      else if (freeHit) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
+
+      cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>
+            <div style="font:800 16px Inter;color:var(--v2-ink);">₹${sellerSubtotal.toLocaleString("en-IN")}</div>
+            <div style="font:500 11px Inter;color:${statusColor};margin-top:2px;">${statusLine}</div>
+          </div>
+          <button id="v2-cart-clear" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;" aria-label="Clear cart">✕</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
+          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.4;pointer-events:none;' : ''}">Checkout →</button>
         </div>
       </div>`;
-  }
 
-  function getDisplayName(species) {
-    try {
-      const display = getSpeciesDisplay ? getSpeciesDisplay(species) : species;
-      return display || species;
-    } catch { return species; }
-  }
-
-  function render() {
-    grid.innerHTML = listings.map(renderItem).join("");
-    renderCart();
-  }
-
-  function renderCart() {
-    const items = Object.values(cart);
-    const totalQty = items.reduce((s, i) => s + i.qty, 0);
-    const totalPrice = items.reduce((s, i) => s + i.qty * i.price, 0);
-
-    if (totalQty === 0) {
-      cartMount.innerHTML = "";
-      document.body.classList.remove("v2-has-cart");
-      return;
+      document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
+      document.getElementById("v2-cart-manage")?.addEventListener("click", () => {
+        window.v2OpenSheet?.("seller-cart-stack");
+      });
+      document.getElementById("v2-cart-clear")?.addEventListener("click", () => {
+        const c = Cart(); if (!c) return;
+        c.clearCart({ sellerId });
+        render();
+        window.v2Toast?.("success", "Cart cleared");
+      });
     }
 
-    document.body.classList.add("v2-has-cart");
+    // Toast when cart switches seller (user added item from different seller page)
+    window.addEventListener("v2-cart-seller-switched", () => {
+      window.v2Toast?.("success", "Cart updated", "Previous seller's items cleared");
+    });
 
-    const belowMin = minOrder && totalPrice < minOrder;
-    const freeHit = deliveryFreeAbove && totalPrice >= deliveryFreeAbove;
-    const variant = belowMin ? "warning" : freeHit ? "success" : "default";
-    const leftLine = belowMin
-      ? `Add ₹${minOrder - totalPrice} more for min order`
-      : freeHit
-        ? "🎉 Free delivery unlocked"
-        : `${totalQty} item${totalQty !== 1 ? "s" : ""}`;
-    const ctaText = belowMin ? "Keep shopping" : "View cart →";
-    const variantClass = variant === "warning" ? "v2-cart-warning" : variant === "success" ? "v2-cart-success" : "";
-    const ctaColorStyle = variant === "warning" ? "color:var(--v2-orange);" : variant === "success" ? "color:var(--v2-green);" : "";
+    // Single-seller checkout. `targetSellerId` is the seller whose cart we're placing.
+    // Defaults to this page's sellerId but CartStackSheet may pass any seller_id from
+    // the global cart.
+    function openCheckout(targetSellerId) {
+      const c = Cart(); if (!c) return;
+      const sid = targetSellerId || sellerId;
+      activeCheckoutSellerId = sid;
 
-    cartMount.innerHTML = `
-      <a href="#" class="v2-cart-bar ${variantClass}" id="v2-checkout-btn" role="button">
-        <div class="v2-cb-left">
-          <div class="v2-cb-items">${leftLine}</div>
-          <div class="v2-cb-total">₹${totalPrice.toLocaleString("en-IN")}</div>
-        </div>
-        <span class="v2-cb-btn" style="${ctaColorStyle}">${ctaText}</span>
-      </a>`;
+      if (sellerFullyClosed && sid === sellerId) {
+        window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
+        return;
+      }
 
-    document.getElementById("v2-checkout-btn")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      // Hand off to existing checkout flow:
-      // store cart in legacy format, then navigate to /seller/[id] which handles checkout
+      const groups = c.groupBySeller();
+      const group = groups.find((g) => g.seller_id === sid);
+      if (!group || group.items.length === 0) {
+        window.v2Toast?.("error", "Cart empty", "Add items before checkout");
+        return;
+      }
+
+      // Pre-flight: must be signed in
+      let buyerId = null, buyerPhone = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      if (!buyerId || !buyerPhone) {
+        window.v2OpenSheet?.("seller-login-sheet");
+        return;
+      }
+
+      // Min-order gate for the active seller (the one we're checking out).
+      // Only enforce for THIS page's seller since we only have minOrder for them.
+      if (sid === sellerId && minOrder && group.subtotal < minOrder) {
+        window.v2Toast?.("error", "Below min order", `Add ₹${minOrder - group.subtotal} more to checkout`);
+        return;
+      }
+
+      // Populate cart items in CheckoutSheet step 1 — single seller only
+      const cartItemsEl = document.getElementById("seller-checkout-cart-items");
+      if (cartItemsEl) {
+        cartItemsEl.innerHTML = `
+          <div style="font:700 12px Inter;color:var(--v2-ink-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">From ${escape(group.seller_name || "Seller")}</div>
+          ${group.items.map(i => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--v2-border);font:500 13px Inter;">
+              <div>
+                <div style="color:var(--v2-ink);font-weight:600;">${escape(i.name)}</div>
+                <div style="color:var(--v2-ink-3);font-size:11px;">${i.qty} × ${escape(i.pricing_label || i.qty_unit)}</div>
+              </div>
+              <div style="font-weight:700;color:var(--v2-ink);">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
+            </div>`).join("")}`;
+      }
+      const subtotal = group.subtotal;
+      document.getElementById("seller-checkout-subtotal").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+      // Total = subtotal (delivery fee shows up in the Delivery row below only if user picks delivery).
+      document.getElementById("seller-checkout-total").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+      document.getElementById("seller-checkout-total-final").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+
+      // Free delivery banner + delivery hint in checkout step 1
+      const freeDelivBanner = document.getElementById("seller-checkout-free-delivery-banner");
+      const delivHint = document.getElementById("seller-checkout-delivery-hint");
+      if (deliveryFeeEnabled && deliveryFeeAmount > 0) {
+        if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
+          if (freeDelivBanner) freeDelivBanner.style.display = "block";
+          if (delivHint) delivHint.style.display = "none";
+        } else {
+          if (freeDelivBanner) freeDelivBanner.style.display = "none";
+          if (delivHint) {
+            delivHint.style.display = "block";
+            if (deliveryFreeAbove > 0) {
+              const remaining = deliveryFreeAbove - subtotal;
+              delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee · Add ₹${remaining.toLocaleString("en-IN")} more for free delivery`;
+            } else {
+              delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee applies for delivery orders`;
+            }
+          }
+        }
+      } else {
+        if (freeDelivBanner) freeDelivBanner.style.display = "none";
+        if (delivHint) {
+          if (hasDelivery) {
+            delivHint.style.display = "block";
+            delivHint.textContent = "🚲 Free delivery available";
+          } else {
+            delivHint.style.display = "none";
+          }
+        }
+      }
+
+      // Reset delivery fee preview — method radio click will repopulate.
+      const delivRow = document.getElementById("seller-checkout-delivery-row");
+      if (delivRow) delivRow.style.display = "none";
+
+      // Toggle delivery option visibility based on seller's has_delivery.
+      // NOTE: we only know hasDelivery for this page's seller. If the CartStack sent
+      // us into a different seller's checkout, treat delivery as unknown and force pickup.
+      const delivOpt = document.getElementById("seller-checkout-delivery-opt");
+      const noDelivNote = document.getElementById("seller-checkout-no-delivery-note");
+      // Pre-orders are pickup-only (next-day catch, no delivery scheduling)
+      const canDeliver = sid === sellerId && hasDelivery && !isPreorderMode;
+      if (canDeliver) {
+        if (delivOpt) delivOpt.style.display = "flex";
+        if (noDelivNote) noDelivNote.style.display = "none";
+      } else {
+        if (delivOpt) delivOpt.style.display = "none";
+        if (noDelivNote) noDelivNote.style.display = "block";
+        const pickupRadio = document.querySelector('input[name="seller-checkout-method"][value="pickup"]');
+        if (pickupRadio) pickupRadio.checked = true;
+      }
+
+      // Update delivery fee description in checkout sheet
+      const delivDescEl = document.getElementById("seller-checkout-delivery-desc");
+      if (delivDescEl && deliveryFeeEnabled && deliveryFeeAmount > 0) {
+        const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
+        delivDescEl.textContent = `To your address · ₹${deliveryFeeAmount} fee${freeNote}`;
+      } else if (delivDescEl) {
+        delivDescEl.textContent = "To your address · Free delivery";
+      }
+
+      // Auto-load default address when sheet opens
+      preloadAddress();
+
+      window.v2OpenSheet?.("seller-checkout");
+    }
+
+    // When user toggles method to delivery, show the fee preview row with a client-side
+    // estimate. Real fee is computed server-side at place-order time via computeDeliveryFee.
+    document.querySelectorAll('input[name="seller-checkout-method"]').forEach((r) => {
+      r.addEventListener("change", () => {
+        const isDelivery = r.value === "delivery" && r.checked;
+        const delivRow = document.getElementById("seller-checkout-delivery-row");
+        const delivEl = document.getElementById("seller-checkout-delivery");
+        const totalEl = document.getElementById("seller-checkout-total");
+        const totalFinal = document.getElementById("seller-checkout-total-final");
+        const subEl = document.getElementById("seller-checkout-subtotal");
+        const subtotalText = (subEl?.textContent || "").replace(/[^\d]/g, "");
+        const subtotal = parseInt(subtotalText) || 0;
+        // Use actual seller config — matches server-side computeDeliveryFee logic.
+        let fee = 0;
+        if (isDelivery && deliveryFeeEnabled) {
+          if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) fee = 0;
+          else fee = deliveryFeeAmount;
+        }
+        if (delivRow) delivRow.style.display = isDelivery ? "flex" : "none";
+        if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : "FREE";
+        const total = subtotal + fee;
+        if (totalEl) totalEl.textContent = `₹${total.toLocaleString("en-IN")}`;
+        if (totalFinal) totalFinal.textContent = `₹${total.toLocaleString("en-IN")}`;
+      });
+    });
+
+    async function preloadAddress() {
+      let buyerId = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      if (!buyerId) return;
       try {
-        const lines = items.map(i => ({ listing_id: i.id, quantity: i.qty, name: i.name, price: i.price, unit: i.unit }));
-        sessionStorage.setItem("relifish_cart_handoff", JSON.stringify({ seller_id: sellerId, lines }));
+        const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+        const data = await res.json();
+        const addrs = data.addresses || [];
+        const def = addrs.find((a) => a.is_default) || addrs[0];
+        if (def) {
+          selectedAddressId = def.id;
+          const labelEl = document.getElementById("seller-checkout-addr-label");
+          const textEl = document.getElementById("seller-checkout-addr-text");
+          if (labelEl) labelEl.textContent = (def.label || "Address") + (def.is_default ? " · Default" : "");
+          if (textEl) {
+            const text = [def.flat, def.building, def.landmark, def.location_name].filter(Boolean).join(", ");
+            textEl.textContent = text || "Saved address";
+          }
+        }
       } catch {}
-      // Navigate to V1 seller page which has full checkout flow (slot picker, address, payment)
-      window.location.href = `/seller/${sellerId}?from=v2cart`;
+    }
+
+    // Listen for address picker selection
+    document.addEventListener("v2-address-confirmed", async (e) => {
+      selectedAddressId = e.detail?.addressId;
+      // Refresh address card UI from API
+      let buyerId = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      if (buyerId && selectedAddressId) {
+        try {
+          const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+          const data = await res.json();
+          const addr = (data.addresses || []).find((a) => a.id === selectedAddressId);
+          if (addr) {
+            const labelEl = document.getElementById("seller-checkout-addr-label");
+            const textEl = document.getElementById("seller-checkout-addr-text");
+            if (labelEl) labelEl.textContent = addr.label || "Address";
+            if (textEl) {
+              const text = [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ");
+              textEl.textContent = text || "Saved address";
+            }
+          }
+        } catch {}
+      }
+      window.v2Toast?.("success", "Address selected", "Continue to payment");
+    });
+
+    // Address card itself is the trigger (clickable)
+    document.getElementById("seller-checkout-current-address")?.addEventListener("click", () => {
+      window.v2OpenSheet?.("seller-addr-sheet");
+    });
+
+    // Place order — single seller only (the activeCheckoutSellerId)
+    document.addEventListener("v2-checkout-place-order", async () => {
+      const c = Cart(); if (!c) return;
+      const group = c.groupBySeller().find((g) => g.seller_id === activeCheckoutSellerId);
+      if (!group || group.items.length === 0) {
+        window.v2Toast?.("error", "Cart empty", "Add items before checkout");
+        return;
+      }
+
+      let buyerId = null, buyerPhone = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      if (!buyerId || !buyerPhone) { window.v2OpenSheet?.("seller-login-sheet"); return; }
+
+      const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');
+      const orderType = methodEl?.value === "delivery" ? "delivery" : "pickup";
+      if (orderType === "delivery" && !selectedAddressId) {
+        window.v2Toast?.("error", "Address needed", "Pick a delivery address");
+        return;
+      }
+
+      const btn = document.getElementById("seller-checkout-place-order");
+      btn.disabled = true;
+      btn.textContent = "Placing order...";
+
+      try {
+        const lines = group.items.map(i => ({
+          listing_id: i.listing_id,
+          quantity: i.qty,
+          quantity_unit: i.qty_unit,
+          pricing_option_id: i.pricing_option_id || null,
+        }));
+        const res = await fetch("/api/orders/create-seller-cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seller_id: activeCheckoutSellerId,
+            lines,
+            buyer_phone: buyerPhone,
+            buyer_id: buyerId,
+            buyer_addr: selectedAddressId,
+            order_type: orderType,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+
+        // Success: clear cart, show fullscreen success animation, redirect
+        c.clearCart({ sellerId: activeCheckoutSellerId });
+        window.v2CloseSheet?.("seller-checkout");
+
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:var(--v2-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:v2-fade-in 300ms ease-out;";
+        overlay.innerHTML = `
+          <div style="width:80px;height:80px;border-radius:50%;background:var(--v2-green);display:flex;align-items:center;justify-content:center;font-size:40px;animation:v2-slide-up 400ms ease-out;">✓</div>
+          <div style="font:800 22px Inter;color:var(--v2-ink);margin-top:20px;">Order placed!</div>
+          <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-top:8px;">${group.items.length} item${group.items.length !== 1 ? "s" : ""} confirmed</div>
+          <div style="margin-top:24px;"><span class="v2-spinner v2-spinner-sm"></span></div>
+          <div style="font:500 12px Inter;color:var(--v2-ink-4);margin-top:8px;">Redirecting to your orders...</div>
+        `;
+        document.body.appendChild(overlay);
+        setTimeout(() => { window.location.href = "/v2/track"; }, 2000);
+      } catch (err) {
+        window.v2Toast?.("error", "Failed", err.message || "Try again");
+        btn.disabled = false;
+        btn.textContent = "Place order";
+      }
+    });
+
+    function add(id, price, name, unit, optId, optLabel, bundleSize) {
+      if (sellerFullyClosed) {
+        window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
+        return;
+      }
+      const c = Cart(); if (!c) return;
+      const bs = parseFloat(bundleSize) || 1;
+      // Store price per base unit so qty × price always gives correct total
+      const pricePerUnit = bs > 0 ? price / bs : price;
+      c.addItem({
+        listing_id: id,
+        seller_id: sellerId,
+        seller_name: sellerName,
+        name,
+        qty_unit: unit,
+        price: pricePerUnit,
+        pricing_option_id: optId || "default",
+        pricing_label: optLabel || unit,
+        qty: bs, // add one pack (= bundle_size base units)
+      });
+      render();
+    }
+    // Inc/dec by bundle_size so qty stays a valid multiple
+    function dec(id) {
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const key = Object.keys(cart).find(k => k === id || k.startsWith(id + ":") || cart[k]?.listing_id === id);
+      if (!key || !cart[key]) return;
+      // Determine bundle step from the item's pricing option
+      const item = cart[key];
+      const listing = listings.find(l => l.id === item.listing_id);
+      const opt = (listing?.pricing_options || []).find(o => o.id === item.pricing_option_id);
+      const step = (opt?.bundle_size && opt.bundle_size > 1) ? opt.bundle_size : 1;
+      const newQty = item.qty - step;
+      c.setQty(key, newQty);
+      render();
+    }
+    function inc(id) {
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const key = Object.keys(cart).find(k => k === id || k.startsWith(id + ":") || cart[k]?.listing_id === id);
+      if (!key || !cart[key]) return;
+      const item = cart[key];
+      const listing = listings.find(l => l.id === item.listing_id);
+      const opt = (listing?.pricing_options || []).find(o => o.id === item.pricing_option_id);
+      const step = (opt?.bundle_size && opt.bundle_size > 1) ? opt.bundle_size : 1;
+      c.setQty(key, item.qty + step);
+      render();
+    }
+
+    grid.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.classList.contains("v2-item-add")) {
+        add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit, t.dataset.optId, t.dataset.optLabel, t.dataset.bundleSize);
+      } else if (t.classList.contains("v2-item-inc")) {
+        inc(t.closest(".v2-item-counter")?.dataset.id);
+      } else if (t.classList.contains("v2-item-dec")) {
+        dec(t.closest(".v2-item-counter")?.dataset.id);
+      }
+    });
+
+    // Re-render if cart changes from another tab/window or hydration completes
+    window.addEventListener("v2-cart-changed", () => render());
+    window.addEventListener("storage", (e) => {
+      if (e.key === "v2_cart_global") render();
+    });
+
+    // First paint: render whatever we know (works even before cart module loads)
+    render();
+
+    // Once cart module loads: migrate legacy + hydrate from server, then re-render
+    withCart((c) => {
+      c.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
+      c.hydrateFromServer().then(() => render());
+      render();
     });
   }
-
-  function add(id, price, name, unit) {
-    cart[id] = { id, qty: (cart[id]?.qty || 0) + 1, price, name, unit };
-    saveCart(cart);
-    render();
-  }
-  function dec(id) {
-    if (!cart[id]) return;
-    cart[id].qty -= 1;
-    if (cart[id].qty <= 0) delete cart[id];
-    saveCart(cart);
-    render();
-  }
-  function inc(id) {
-    if (!cart[id]) return;
-    cart[id].qty += 1;
-    saveCart(cart);
-    render();
-  }
-
-  grid.addEventListener("click", (e) => {
-    const t = e.target;
-    if (!(t instanceof HTMLElement)) return;
-    if (t.classList.contains("v2-item-add")) {
-      add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit);
-    } else if (t.classList.contains("v2-item-inc")) {
-      inc(t.closest(".v2-item-counter")?.dataset.id);
-    } else if (t.classList.contains("v2-item-dec")) {
-      dec(t.closest(".v2-item-counter")?.dataset.id);
-    }
-  });
-
-  render();
-  } // end of if (!grid || !listings) else block
 </script>

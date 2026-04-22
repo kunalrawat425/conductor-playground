@@ -12,7 +12,7 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
 >
   <Toast />
   <div class="v2-search-bar">
-    <a href="/" class="v2-search-back" aria-label="Back">←</a>
+    <a href="/v2" class="v2-search-back" aria-label="Back">←</a>
     <input
       id="v2-search-q"
       type="search"
@@ -48,7 +48,7 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
     position: sticky; top: 0; z-index: var(--v2-z-header);
     display: flex; align-items: center; gap: 10px;
     padding: 12px 16px;
-    background: #fff;
+    background: var(--v2-bg);
     border-bottom: 1px solid var(--v2-border);
   }
   .v2-search-back {
@@ -88,7 +88,7 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
     gap: 8px;
   }
   .v2-trend {
-    background: #fff;
+    background: var(--v2-bg);
     border: 1px solid var(--v2-border);
     border-radius: var(--v2-radius);
     padding: 12px 8px;
@@ -100,7 +100,7 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
   .v2-trend-n { font: 600 11px Inter; color: var(--v2-ink); margin-top: 4px; }
   .v2-search-result {
     padding: 12px 16px;
-    background: #fff;
+    background: var(--v2-bg);
     border-bottom: 1px solid #F1F5F9;
     display: flex; gap: 12px; align-items: center;
     text-decoration: none;
@@ -168,7 +168,7 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
         return `<a href="/v2/seller/${l.seller?.id}" class="v2-search-result">
           <div class="emoji">${speciesEmoji(l.species)}</div>
           <div class="body">
-            <div class="n">${escape(l.species)}</div>
+            <div class="n" style="text-transform:capitalize;">${escape(l.species)}</div>
             <div class="sub">${escape(l.seller?.name || "")} · ${escape(l.seller?.location_name || "")}</div>
           </div>
           <div class="price">₹${price}/${escape(unit)}</div>

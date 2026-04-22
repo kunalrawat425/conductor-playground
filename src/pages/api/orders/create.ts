@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
+import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 import {
   getListingOptionById,
   getListingPriceOptions,
@@ -18,8 +19,9 @@ const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
 function isSellerCurrentlyOpen(opensAt: string | null, closesAt: string | null): boolean {
   if (!opensAt || !closesAt) return true;
-  const now = new Date();
-  const current = now.getHours() * 60 + now.getMinutes();
+  // Use IST (UTC+5:30) — Vercel servers run UTC
+  const now = new Date(Date.now() + 5.5 * 3600 * 1000);
+  const current = now.getUTCHours() * 60 + now.getUTCMinutes();
   const [oh, om] = opensAt.split(":").map(Number);
   const [ch, cm] = closesAt.split(":").map(Number);
   const open = oh * 60 + (om || 0);
@@ -51,6 +53,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       scheduled_for,
       schedule_slot_id,
       pricing_option_id: clientPricingOptionId,
+      buyer_notes,
+      cut_style,
     } = body;
 
     let quantity = typeof rawQuantity === "number" ? rawQuantity : parseFloat(String(rawQuantity));
@@ -74,7 +78,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (listing_id) {
       const { data: listing } = await supabase
         .from("fish_listings")
-        .select("pricing_options, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold")
+        .select("pricing_options, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold, is_preorder_enabled")
         .eq("id", listing_id)
         .single();
 
@@ -107,7 +111,11 @@ export const POST: APIRoute = async ({ request, url }) => {
       const bundleAmount = optionBundleAmount(chosen);
       const perBase = isPerBaseUnitPricing(chosen);
 
-      if (!perBase) {
+      // Skip bundle validation for pre-orders (OOS / unavailable listings)
+      const weightAvailCheck = Number(listing.weight_avail);
+      const isPreorderCandidate = !listing.is_available || !Number.isFinite(weightAvailCheck) || weightAvailCheck <= 0 || weightAvailCheck < quantity;
+
+      if (!perBase && !isPreorderCandidate) {
         if (quantity_unit === "kg") {
           const qCent = Math.round(quantity * 100);
           const bCent = Math.round(bundleAmount * 100);
@@ -129,7 +137,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
       }
 
-      const bundleCount = quantity / bundleAmount;
+      const bundleCount = isPreorderCandidate ? (perBase ? quantity : quantity / bundleAmount) : quantity / bundleAmount;
       if (!Number.isFinite(bundleCount) || bundleCount <= 0) {
         return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
       }
@@ -221,6 +229,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
+            ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
+            ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
           .select()
           .single();
@@ -278,7 +288,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots"
+          "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots, preorder_cutoff_time, open_days, preorder_days"
         )
         .eq("id", seller_id)
         .single();
@@ -291,8 +301,61 @@ export const POST: APIRoute = async ({ request, url }) => {
           );
         }
         status = "scheduled";
-      } else if (seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
-        status = "pre_order";
+      } else {
+        const DAY_NAMES = ['sun','mon','tue','wed','thu','fri','sat'];
+        const todayName = DAY_NAMES[new Date().getDay()];
+
+        // open_days: if set+non-empty, today must be in it (seller's day off otherwise)
+        const isTodayOrderDay = !seller?.open_days?.length || seller.open_days.includes(todayName);
+        // preorder_days: if set+non-empty use it; else fall back to accepts_preorder boolean
+        const isTodayPreorderDay = (seller?.preorder_days && seller.preorder_days.length > 0)
+          ? seller.preorder_days.includes(todayName)
+          : !!seller?.accepts_preorder;
+
+        const openByTime = seller ? isSellerCurrentlyOpen(seller.opens_at, seller.closes_at) : true;
+        const sellerEffectivelyOpen = isTodayOrderDay && openByTime;
+
+        if (!sellerEffectivelyOpen) {
+          // Seller closed or day-off — try pre_order path
+          if (!isTodayPreorderDay) {
+            const dayLabel = !isTodayOrderDay ? "not open today" : "closed now";
+            return new Response(
+              JSON.stringify({ error: `This seller is ${dayLabel} and does not accept pre-orders for next day. Check back when they open.` }),
+              { status: 400 }
+            );
+          }
+
+          // Per-listing preorder gate
+          if (listing_id) {
+            const { data: listingForPreorder } = await supabase
+              .from("fish_listings")
+              .select("is_preorder_enabled")
+              .eq("id", listing_id)
+              .single();
+            if (listingForPreorder?.is_preorder_enabled === false) {
+              return new Response(JSON.stringify({ error: "Pre-orders are not available for this item." }), { status: 400 });
+            }
+          } else if (!seller?.accepts_preorder && !isTodayPreorderDay) {
+            return new Response(JSON.stringify({ error: "This seller is not accepting pre-orders." }), { status: 400 });
+          }
+
+          // Enforce preorder cutoff time — compare in IST (UTC+5:30)
+          if (seller?.preorder_cutoff_time) {
+            const nowISTMs = Date.now() + 5.5 * 60 * 60 * 1000;
+            const nowIST = new Date(nowISTMs);
+            const nowMinutes = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
+            const [cutHour, cutMin] = (seller.preorder_cutoff_time as string).split(":").map(Number);
+            const cutoffMinutes = cutHour * 60 + cutMin;
+            if (nowMinutes >= cutoffMinutes) {
+              return new Response(
+                JSON.stringify({ error: `Pre-order cutoff time (${seller.preorder_cutoff_time} IST) has passed. Try again tomorrow.` }),
+                { status: 400 }
+              );
+            }
+          }
+
+          status = "pre_order";
+        }
       }
 
       const minAmt = Number(seller?.min_order_amount) || 0;
@@ -366,6 +429,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
+            ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
+            ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
           .select()
           .single();
@@ -415,20 +480,19 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Send email on order creation
     if (resendApiKey && order) {
       try {
-        const statusLabel = status === "scheduled" ? "Order Scheduled 🗓️" : status === "pre_order" ? "Pre-order Placed" : "Order Placed";
-        const schedText = scheduled_for ? `<p style="color:#1565c0;font-weight:600;">🗓️ Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${new Date(scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>` : "";
-        const emailBody = `
-          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
-            <h1 style="font-size:20px;margin:0 0 12px;">🐟 ${statusLabel}</h1>
-            <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin:0 0 16px;">
-              <p style="margin:0 0 8px;font-size:15px;"><strong>${species || "Fish"}</strong> · ${quantity} ${quantity_unit}</p>
-              <p style="margin:0 0 8px;font-size:15px;font-weight:600;">₹${total_price + delivery_fee}</p>
-              ${schedText}
-            </div>
-            <a href="https://www.relifish.store/track" style="display:inline-block;background:#0066cc;color:white;padding:10px 24px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px;">Track Order</a>
-            <p style="font-size:12px;color:#999;margin:16px 0 0;">— Team Relifish</p>
-          </div>
-        `;
+        const statusLabel = status === "scheduled" ? "Order Scheduled" : status === "pre_order" ? "Pre-order Placed" : "Order Placed";
+        const emailArgs = {
+          statusLabel,
+          species: species || "Fish",
+          quantity,
+          quantity_unit,
+          totalAmount: total_price + delivery_fee,
+          deliveryFee: delivery_fee,
+          orderId: order.id,
+          scheduled_for,
+          buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
+          cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
+        };
         // Email buyer
         if (buyer_id) {
           const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
@@ -436,7 +500,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <onboarding@resend.dev>", to: buyer.email, subject: `${statusLabel} — ${species || "Fish"}`, html: emailBody }),
+              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${statusLabel} — ${species || "Fish"}`, html: orderEmailBuyer(emailArgs) }),
             });
           }
         }
@@ -444,11 +508,10 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (seller_id) {
           const { data: sellerData } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
           if (sellerData?.email) {
-            const sellerEmail = emailBody.replace("Track Order", "View Orders").replace("/track", "/dashboard/orders");
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <onboarding@resend.dev>", to: sellerData.email, subject: `New Order: ${species || "Fish"}`, html: sellerEmail }),
+              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${species || "Fish"}`, html: orderEmailSeller(emailArgs) }),
             });
           }
         }

@@ -8,7 +8,7 @@ const { items, paramKey = "cat" } = Astro.props;
 ---
 <div class="v2-cat-strip" role="tablist">
   {items.map((item) => {
-    const url = item.id === "all" ? "/" : `/?${paramKey}=${item.id}`;
+    const url = item.id === "all" ? "/v2" : `/v2?${paramKey}=${item.id}`;
     return (
       <a
         href={url}

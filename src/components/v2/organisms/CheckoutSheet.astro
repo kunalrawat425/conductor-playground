@@ -6,21 +6,23 @@ interface Props {
 const { id = "v2-checkout" } = Astro.props;
 ---
 <BottomSheet id={id} title="Checkout" showClose={true}>
-  <!-- Step indicator -->
+  <!-- Step indicator (2 steps: cart review → delivery + place order) -->
   <div class="v2-co-steps">
     <div class="v2-co-step v2-co-active" data-step="1"></div>
     <div class="v2-co-step" data-step="2"></div>
-    <div class="v2-co-step" data-step="3"></div>
   </div>
 
   <!-- Step 1: Cart review -->
   <div id={`${id}-step1`} class="v2-co-step-content">
     <h4 class="v2-co-step-title">Your cart</h4>
     <div id={`${id}-cart-items`}></div>
+    <div id={`${id}-free-delivery-banner`} style="display:none;background:var(--v2-green-l);border:1px solid var(--v2-green);border-radius:var(--v2-radius-sm);padding:10px 14px;margin-bottom:8px;text-align:center;">
+      <span style="font:700 12px Inter;color:var(--v2-green);">🎉 Free delivery unlocked!</span>
+    </div>
+    <div id={`${id}-delivery-hint`} style="display:none;font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:8px;text-align:center;"></div>
     <div class="v2-co-rows">
       <div class="v2-co-row"><span>Subtotal</span><span id={`${id}-subtotal`}>₹0</span></div>
-      <div class="v2-co-row"><span>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
-      <div class="v2-co-row"><span>Platform fee</span><span>₹5</span></div>
+      <div class="v2-co-row" id={`${id}-delivery-row`} style="display:none;"><span>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
       <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total`}>₹0</span></div>
     </div>
     <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" data-co-next="2">Next: Delivery →</button>
@@ -37,71 +39,66 @@ const { id = "v2-checkout" } = Astro.props;
           <div class="v2-co-m-desc">Collect from seller · No delivery fee</div>
         </div>
       </label>
-      <label class="v2-co-method-opt">
+      <label class="v2-co-method-opt" id={`${id}-delivery-opt`} style="display:none;">
         <input type="radio" name={`${id}-method`} value="delivery" />
         <div>
           <div class="v2-co-m-name">🚲 Delivery</div>
-          <div class="v2-co-m-desc">To your address · Fee applies</div>
+          <div class="v2-co-m-desc" id={`${id}-delivery-desc`}>To your address · Fee applies</div>
         </div>
       </label>
+    </div>
+    <div id={`${id}-no-delivery-note`} style="display:none;margin-top:8px;font:400 11px Inter;color:var(--v2-ink-3);text-align:center;">
+      This seller offers pickup only.
     </div>
 
     <div id={`${id}-address-section`} style="display:none;margin-top:16px;">
       <h4 class="v2-co-step-title">Deliver to</h4>
-      <div id={`${id}-current-address`} class="v2-addr-card">
+      <button id={`${id}-current-address`} type="button" class="v2-addr-card" style="width:100%;text-align:left;border:1.5px solid var(--v2-border);background:var(--v2-bg);cursor:pointer;">
         <div class="v2-addr-icon">📍</div>
         <div class="v2-addr-body">
-          <div class="v2-addr-label">No address selected</div>
-          <div class="v2-addr-text">Tap to add</div>
+          <div class="v2-addr-label" id={`${id}-addr-label`}>No address selected</div>
+          <div class="v2-addr-text" id={`${id}-addr-text`}>Tap to add</div>
         </div>
-      </div>
-      <button class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-pick-address`} style="margin-top:8px;">
-        Change address
+        <div style="color:var(--v2-ink-4);align-self:center;">›</div>
       </button>
+    </div>
+
+    <div class="v2-co-rows" style="margin-top:12px;">
+      <div class="v2-co-row v2-co-total-row"><span id={`${id}-total-label`}>Total (pay at pickup)</span><span id={`${id}-total-final`}>₹0</span></div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
       <button class="v2-btn v2-btn-ghost v2-btn-md" style="flex:1;" data-co-back="1">← Back</button>
-      <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" data-co-next="3">Next: Payment →</button>
+      <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" id={`${id}-place-order`}>Place order</button>
+    </div>
+    <div style="font:400 10px Inter;color:var(--v2-ink-4);text-align:center;margin-top:8px;">
+      🔒 100% refund if seller cancels · Cash on delivery
     </div>
   </div>
 
-  <!-- Step 3: Payment -->
-  <div id={`${id}-step3`} class="v2-co-step-content" style="display:none;">
+  <!-- Step 3: Payment (commented out — COD only for now)
+  <div id={id + "-step3"} class="v2-co-step-content" style="display:none;">
     <h4 class="v2-co-step-title">Payment method</h4>
     <div class="v2-co-pay-options">
       <label class="v2-co-pay">
-        <input type="radio" name={`${id}-payment`} value="upi" checked />
+        <input type="radio" name={id + "-payment"} value="upi" checked />
         <div class="v2-co-pay-icon">📱</div>
         <div style="flex:1;">
           <div class="v2-co-pay-name">UPI</div>
           <div class="v2-co-pay-desc">PhonePe, GPay, Paytm</div>
         </div>
-        <div class="v2-co-pay-radio"></div>
       </label>
       <label class="v2-co-pay">
-        <input type="radio" name={`${id}-payment`} value="cod" />
+        <input type="radio" name={id + "-payment"} value="cod" />
         <div class="v2-co-pay-icon">💵</div>
         <div style="flex:1;">
           <div class="v2-co-pay-name">Cash on delivery</div>
           <div class="v2-co-pay-desc">Pay seller at pickup</div>
         </div>
-        <div class="v2-co-pay-radio"></div>
       </label>
     </div>
-
-    <div class="v2-co-rows" style="margin-top:16px;">
-      <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total-final`}>₹0</span></div>
-    </div>
-
-    <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="v2-btn v2-btn-ghost v2-btn-md" style="flex:1;" data-co-back="2">← Back</button>
-      <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" id={`${id}-place-order`}>Place order</button>
-    </div>
-    <div style="font:400 10px Inter;color:var(--v2-ink-4);text-align:center;margin-top:8px;">
-      🔒 100% refund if seller cancels
-    </div>
   </div>
+  END payment step comment -->
 </BottomSheet>
 
 <script define:vars={{ id }}>
@@ -109,8 +106,10 @@ const { id = "v2-checkout" } = Astro.props;
 
   function showStep(n) {
     currentStep = n;
-    [1, 2, 3].forEach(i => {
-      document.getElementById(`${id}-step${i}`).style.display = i === n ? "block" : "none";
+    // 2-step flow: cart review → delivery/address + place order (payment commented out)
+    [1, 2].forEach(i => {
+      const el = document.getElementById(`${id}-step${i}`);
+      if (el) el.style.display = i === n ? "block" : "none";
       const step = document.querySelector(`.v2-co-step[data-step="${i}"]`);
       if (step) {
         step.classList.toggle("v2-co-active", i === n);
@@ -126,11 +125,13 @@ const { id = "v2-checkout" } = Astro.props;
     b.addEventListener("click", () => showStep(parseInt(b.dataset.coBack)));
   });
 
-  // Toggle address section based on method
+  // Toggle address section + total label based on method
   document.querySelectorAll(`input[name="${id}-method"]`).forEach(r => {
     r.addEventListener("change", () => {
       const isDelivery = r.value === "delivery" && r.checked;
       document.getElementById(`${id}-address-section`).style.display = isDelivery ? "block" : "none";
+      const labelEl = document.getElementById(`${id}-total-label`);
+      if (labelEl) labelEl.textContent = isDelivery ? "Total (pay on delivery)" : "Total (pay at pickup)";
     });
   });
 
@@ -181,7 +182,7 @@ const { id = "v2-checkout" } = Astro.props;
     padding: 14px;
     border: 1.5px solid var(--v2-border);
     border-radius: var(--v2-radius-sm);
-    background: #fff;
+    background: var(--v2-bg);
     cursor: pointer;
   }
   .v2-co-method-opt input, .v2-co-pay input {

@@ -1,0 +1,110 @@
+---
+interface Props {
+  variant?: "icon" | "button";
+}
+const { variant = "button" } = Astro.props;
+---
+{variant === "icon" ? (
+  <button
+    id="v2-theme-toggle"
+    class="v2-theme-icon-btn"
+    aria-label="Toggle theme"
+    title="Toggle theme"
+  >
+    <span class="v2-theme-sun">☀️</span>
+    <span class="v2-theme-moon">🌙</span>
+  </button>
+) : (
+  <button id="v2-theme-toggle" class="v2-theme-btn" type="button">
+    <span class="v2-theme-icon" aria-hidden="true">
+      <span class="v2-theme-sun">☀️</span>
+      <span class="v2-theme-moon">🌙</span>
+    </span>
+    <span class="v2-theme-label">
+      <span class="v2-theme-label-light">Switch to dark mode</span>
+      <span class="v2-theme-label-dark">Switch to light mode</span>
+    </span>
+  </button>
+)}
+
+<script>
+  function applyTheme(theme: "light" | "dark" | "system") {
+    const root = document.documentElement;
+    if (theme === "system") {
+      root.removeAttribute("data-theme");
+    } else {
+      root.setAttribute("data-theme", theme);
+    }
+    try { localStorage.setItem("v2_theme", theme); } catch {}
+  }
+
+  function getTheme(): "light" | "dark" | "system" {
+    try {
+      const saved = localStorage.getItem("v2_theme");
+      if (saved === "light" || saved === "dark" || saved === "system") return saved;
+    } catch {}
+    return "system";
+  }
+
+  function toggle() {
+    const root = document.documentElement;
+    const current = root.getAttribute("data-theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    applyTheme(current === "dark" ? "light" : "dark");
+  }
+
+  document.querySelectorAll("#v2-theme-toggle").forEach((btn) => {
+    btn.addEventListener("click", toggle);
+  });
+
+  // Apply saved theme on mount (no-op for system)
+  const t = getTheme();
+  if (t !== "system") applyTheme(t);
+</script>
+
+<style is:global>
+  .v2-theme-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    background: var(--v2-bg);
+    border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-family: var(--v2-font);
+  }
+  .v2-theme-btn:hover { border-color: var(--v2-brand); }
+  .v2-theme-icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, .2);
+    cursor: pointer;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .v2-theme-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--v2-bg-3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .v2-theme-label {
+    flex: 1;
+    font: 600 13px Inter; color: var(--v2-ink);
+  }
+  /* Show light or dark label based on current theme */
+  .v2-theme-sun, .v2-theme-label-light { display: inline; }
+  .v2-theme-moon, .v2-theme-label-dark { display: none; }
+  [data-theme="dark"] .v2-theme-sun, [data-theme="dark"] .v2-theme-label-light { display: none; }
+  [data-theme="dark"] .v2-theme-moon, [data-theme="dark"] .v2-theme-label-dark { display: inline; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .v2-theme-sun,
+    :root:not([data-theme="light"]) .v2-theme-label-light { display: none; }
+    :root:not([data-theme="light"]) .v2-theme-moon,
+    :root:not([data-theme="light"]) .v2-theme-label-dark { display: inline; }
+  }
+</style>

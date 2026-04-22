@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
+import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import type { OosPreorderLinePayload, StandardOrderLinePayload } from "../../../lib/server/resolve-listing-order-line";
 
@@ -49,6 +50,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       seller_id: clientSellerId,
       scheduled_for,
       schedule_slot_id,
+      buyer_notes,
+      cut_style,
     } = body;
 
     if (!buyer_phone) {
@@ -147,6 +150,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: line.pricing_option_id,
             pricing_label: line.pricing_label,
+            ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
+            ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
           .select()
           .single();
@@ -176,7 +181,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
         if (resendApiKey && preOrder) {
           try {
-            await sendOrderEmail(supabase, resendApiKey, {
+            await sendCartOrderEmail(supabase, resendApiKey, {
               order: preOrder,
               species: line.species,
               quantity: line.quantity,
@@ -250,7 +255,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         const stLabel =
           status === "scheduled" ? "Order Scheduled 🗓️" : status === "pre_order" ? "Pre-order Placed" : "Order Placed";
         try {
-          await sendOrderEmail(supabase, resendApiKey, {
+          await sendCartOrderEmail(supabase, resendApiKey, {
             order: fetchedOrder,
             species: line.species,
             quantity: line.quantity,
@@ -277,9 +282,9 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 };
 
-async function sendOrderEmail(
+async function sendCartOrderEmail(
   supabase: SupabaseClient,
-  resendApiKey: string,
+  apiKey: string,
   args: {
     order: { id?: string };
     species: string | null;
@@ -295,58 +300,44 @@ async function sendOrderEmail(
   }
 ) {
   const {
-    species,
+    species, quantity, quantity_unit, total_price, delivery_fee,
+    statusLabel, scheduled_for, buyer_id, buyer_phone, seller_id,
+  } = args;
+  const emailArgs = {
+    statusLabel,
+    species: species || "Fish",
     quantity,
     quantity_unit,
-    total_price,
-    delivery_fee,
-    statusLabel,
-    scheduled_for,
-    buyer_id,
-    buyer_phone,
-    seller_id,
-  } = args;
-  const schedText = scheduled_for
-    ? `<p style="color:#1565c0;font-weight:600;">🗓️ Scheduled: ${new Date(scheduled_for).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${new Date(scheduled_for).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>`
-    : "";
-  const emailBody = `
-          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
-            <h1 style="font-size:20px;margin:0 0 12px;">🐟 ${statusLabel}</h1>
-            <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin:0 0 16px;">
-              <p style="margin:0 0 8px;font-size:15px;"><strong>${species || "Fish"}</strong> · ${quantity} ${quantity_unit}</p>
-              <p style="margin:0 0 8px;font-size:15px;font-weight:600;">₹${total_price + delivery_fee}</p>
-              ${schedText}
-            </div>
-            <a href="https://www.relifish.store/track" style="display:inline-block;background:#0066cc;color:white;padding:10px 24px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px;">Track Order</a>
-            <p style="font-size:12px;color:#999;margin:16px 0 0;">— Team Relifish</p>
-          </div>
-        `;
+    totalAmount: total_price + delivery_fee,
+    deliveryFee: delivery_fee,
+    orderId: args.order?.id,
+    scheduled_for: scheduled_for || null,
+  };
   if (buyer_id) {
     const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
     if (buyer?.email) {
       await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: "Relifish <onboarding@resend.dev>",
+          from: "Relifish <noreply@relifish.store>",
           to: buyer.email,
           subject: `${statusLabel} — ${species || "Fish"}`,
-          html: emailBody,
+          html: orderEmailBuyer(emailArgs),
         }),
       });
     }
   }
   const { data: sellerData } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
   if (sellerData?.email) {
-    const sellerEmail = emailBody.replace("Track Order", "View Orders").replace("/track", "/dashboard/orders");
     await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: "Relifish <onboarding@resend.dev>",
+        from: "Relifish <noreply@relifish.store>",
         to: sellerData.email,
-        subject: `New Order: ${species || "Fish"} — ${buyer_phone}`,
-        html: sellerEmail,
+        subject: `New Order: ${species || "Fish"}`,
+        html: orderEmailSeller(emailArgs),
       }),
     });
   }

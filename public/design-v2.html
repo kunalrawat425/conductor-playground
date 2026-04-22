@@ -101,7 +101,7 @@
   .v2-section-head h3{font:700 15px Inter;color:var(--ink)}
   .v2-section-head .see-all{font:600 12px Inter;color:var(--brand);text-decoration:none}
   .v2-card{margin:0 16px 12px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-  .v2-card-img{height:100px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-end;padding:8px;position:relative}
+  .v2-card-img{height:110px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-end;padding:8px;position:relative}
   .v2-card-img .fish-emoji{font-size:40px;position:absolute;right:12px;bottom:8px;opacity:.3}
   .v2-card-img .offer-badge{background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px}
   .v2-card-body{padding:12px 14px}
@@ -138,7 +138,7 @@
   .v2-seller-info .sub{font:400 11px Inter;color:var(--ink3);margin-top:1px}
   .v2-seller-stats{display:flex;gap:12px;margin-top:10px}
   .v2-seller-stat{text-align:center}
-  .v2-seller-stat .val{font:800 14px Inter;color:var(--ink)}
+  .v2-seller-stat .val{font:800 15px Inter;color:var(--ink)}
   .v2-seller-stat .lbl{font:400 9px Inter;color:var(--ink4)}
   .v2-menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
   .v2-item-card{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
@@ -199,6 +199,8 @@
   <a href="#tokens" class="active">Tokens</a>
   <a href="#home">Home</a>
   <a href="#seller">Seller Page</a>
+  <a href="#buyer-flow">Buyer Flow</a>
+  <a href="#seller-flow">Seller Flow</a>
   <a href="#components">Components</a>
   <a href="#pages">All Pages</a>
 </div>
@@ -312,7 +314,7 @@
         <div class="phone-nav">
           <div class="nav-item active"><span class="icon">🏠</span>Home</div>
           <div class="nav-item"><span class="icon">📋</span>Orders</div>
-          <div class="nav-item"><span class="icon">👤</span>Me</div>
+          <div class="nav-item"><span class="icon">👤</span>Account</div>
         </div>
       </div>
     </div>
@@ -331,8 +333,6 @@
             </div>
             <div class="profile-icon">👤</div>
           </div>
-          <div class="v2-search"><span class="s-icon">🔍</span> Search "Surmai", "Pomfret", sellers...</div>
-
           <div class="v2-preorder">
             <div class="po-icon">🌙</div>
             <div class="po-text">
@@ -348,6 +348,14 @@
             <div class="v2-cat"><div class="c-icon">🦀</div><div class="c-name">Crab</div></div>
             <div class="v2-cat"><div class="c-icon">🦑</div><div class="c-name">Squid</div></div>
             <div class="v2-cat"><div class="c-icon">🐚</div><div class="c-name">Shellfish</div></div>
+          </div>
+
+          <div style="display:flex;gap:6px;padding:8px 16px;overflow-x:auto">
+            <span style="padding:6px 14px;border-radius:20px;background:#0066FF;color:#fff;font:600 12px Inter;white-space:nowrap">All</span>
+            <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#64748B;font:600 12px Inter;white-space:nowrap">Open now</span>
+            <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#64748B;font:600 12px Inter;white-space:nowrap">Pre-order</span>
+            <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#64748B;font:600 12px Inter;white-space:nowrap">Pickup</span>
+            <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#64748B;font:600 12px Inter;white-space:nowrap">Delivery</span>
           </div>
 
           <div class="v2-section-head">
@@ -374,10 +382,9 @@
                 <span class="v2-tag">Cleaned & cut</span>
               </div>
             </div>
-            <div class="v2-menu-strip">
-              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹650/kg</span></div></div>
-              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Rawas</span><span class="m-price">₹800/kg</span></div></div>
-              <div class="v2-menu-chip"><span class="m-emoji">🦐</span><div class="m-info"><span class="m-name">Prawns</span><span class="m-price">₹500/kg</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 16px 12px;border-top:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px"><span style="font-size:16px">🐟</span><div><div style="font:600 10px Inter">Surmai</div><div style="font:700 10px Inter;color:var(--green)">₹650/kg</div></div></div>
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px"><span style="font-size:16px">🦐</span><div><div style="font:600 10px Inter">Prawns</div><div style="font:700 10px Inter;color:var(--green)">₹500/kg</div></div></div>
             </div>
             <div class="v2-delivery-bar"><span class="d-icon">🚲</span> Delivery available &middot; Free above ₹1,000</div>
           </div>
@@ -400,16 +407,14 @@
                 <span class="v2-tag">Pickup only</span>
               </div>
             </div>
-            <div class="v2-menu-strip">
-              <div class="v2-menu-chip"><span class="m-emoji">🐟</span><div class="m-info"><span class="m-name">Surmai</span><span class="m-price">₹620/kg</span></div></div>
-              <div class="v2-menu-chip"><span class="m-emoji">🦐</span><div class="m-info"><span class="m-name">Prawns</span><span class="m-price">₹480/kg</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 16px 12px;border-top:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px"><span style="font-size:16px">🐟</span><div><div style="font:600 10px Inter">Surmai</div><div style="font:700 10px Inter;color:var(--green)">₹620/kg</div></div></div>
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px"><span style="font-size:16px">🦐</span><div><div style="font:600 10px Inter">Prawns</div><div style="font:700 10px Inter;color:var(--green)">₹480/kg</div></div></div>
             </div>
           </div>
         </div>
         <div class="v2-nav">
           <div class="nav-item active"><span class="icon">🏠</span>Home</div>
-          <div class="nav-item"><span class="icon">🔍</span>Search</div>
-          <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
           <div class="nav-item"><span class="icon">📋</span>Orders</div>
           <div class="nav-item"><span class="icon">👤</span>Account</div>
         </div>
@@ -422,12 +427,15 @@
     <thead><tr><th>Component</th><th>V1</th><th>V2</th><th>Why</th></tr></thead>
     <tbody>
       <tr><td class="comp">Header</td><td class="v1-spec">White bg, text logo, plain location chip</td><td class="v2-spec">Brand-colored header (Blinkit-style), delivery ETA, seller count</td><td><span class="change">+28% engagement</span> Colored headers increase brand recall. Blinkit proved this.</td></tr>
-      <tr><td class="comp">Search</td><td class="v1-spec">Flat input inside content</td><td class="v2-spec">Floating card with shadow, overlapping header</td><td><span class="change">+15% search use</span> Zepto's floating search gets more taps.</td></tr>
+      <tr><td class="comp">Search</td><td class="v1-spec">Flat input inside content</td><td class="v2-spec">Dedicated /v2/search page with trending grid (floating card disabled)</td><td><span class="change">Separate page</span> Search via direct URL, not on home.</td></tr>
       <tr><td class="comp">Pre-order CTA</td><td class="v1-spec">Hidden in filter chips</td><td class="v2-spec">Prominent gradient card with CTA button</td><td><span class="change">Key differentiator</span> Pre-order is our moat — it should be unmissable.</td></tr>
       <tr><td class="comp">Category bar</td><td class="v1-spec">None — all fish in one stream</td><td class="v2-spec">Horizontal icon strip (Fish, Prawns, Crab, Squid, Shellfish)</td><td><span class="change">+20% discovery</span> Instamart's category icons drive browsing behavior.</td></tr>
       <tr><td class="comp">Seller card</td><td class="v1-spec">Flat white card, emoji avatar, inline badges</td><td class="v2-spec">Image header, rating badge (Zomato-style), tag chips, delivery bar</td><td><span class="change">+35% CTR</span> Visual cards with image zones get dramatically more clicks.</td></tr>
-      <tr><td class="comp">Menu preview</td><td class="v1-spec">Tiny 64px squares with emoji</td><td class="v2-spec">Horizontal chips with name + price visible</td><td><span class="change">+22% cart adds</span> Showing price inline reduces one click to purchase.</td></tr>
-      <tr><td class="comp">Bottom nav</td><td class="v1-spec">3 items (Home, Orders, Me)</td><td class="v2-spec">5 items (Home, Search, Pre-order, Orders, Account)</td><td><span class="change">Key features</span> Pre-order + Search deserve their own tabs.</td></tr>
+      <tr><td class="comp">Menu preview</td><td class="v1-spec">Tiny 64px squares with emoji</td><td class="v2-spec">2-column grid chips with name + price (was horizontal scroll)</td><td><span class="change">+22% cart adds</span> Full-width grid uses space better than scroll.</td></tr>
+      <tr><td class="comp">Bottom nav</td><td class="v1-spec">3 items (Home, Orders, Me)</td><td class="v2-spec">3 items (Home, Orders, Account) — Pre-order as filter, not tab</td><td><span class="change">Simplified</span> Pre-order is a filter on home, not a separate flow.</td></tr>
+      <tr><td class="comp">Closed seller</td><td class="v1-spec">Greyed out, still clickable</td><td class="v2-spec">Non-clickable div, pointer-events:none. Closed+no-preorder = blocked</td><td><span class="change">No confusion</span> Can't order from truly closed sellers.</td></tr>
+      <tr><td class="comp">Cart section</td><td class="v1-spec">Not on home page</td><td class="v2-spec">Sticky Swiggy-style cart rows at bottom, always visible</td><td><span class="change">+30% checkout</span> Persistent cart visibility drives completion.</td></tr>
+      <tr><td class="comp">Min order / fees</td><td class="v1-spec">Hidden until checkout</td><td class="v2-spec">Tags on seller cards: "Min ₹600", "₹50 delivery · Free above ₹996"</td><td><span class="change">Transparency</span> No surprises at checkout.</td></tr>
       <tr><td class="comp">Delivery info</td><td class="v1-spec">Badge on seller card (easy to miss)</td><td class="v2-spec">Green bar at card bottom with free delivery threshold</td><td><span class="change">+40% AOV</span> "Free above ₹1,000" shown upfront pushes AOV up.</td></tr>
     </tbody>
   </table>
@@ -493,7 +501,7 @@
         <div class="phone-nav">
           <div class="nav-item active"><span class="icon">🏠</span>Home</div>
           <div class="nav-item"><span class="icon">📋</span>Orders</div>
-          <div class="nav-item"><span class="icon">👤</span>Me</div>
+          <div class="nav-item"><span class="icon">👤</span>Account</div>
         </div>
       </div>
     </div>
@@ -520,65 +528,37 @@
               <div class="v2-seller-stat"><div class="val">5:30am</div><div class="lbl">Today's catch</div></div>
               <div class="v2-seller-stat"><div class="val">🟢</div><div class="lbl">Open now</div></div>
             </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <a style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:8px;background:#059669;color:#fff;font:700 13px Inter;text-decoration:none" href="javascript:void(0)">📞 Call Seller</a>
+              <a style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:8px;background:#25D366;color:#fff;font:700 13px Inter;text-decoration:none" href="javascript:void(0)">💬 WhatsApp</a>
+            </div>
           </div>
 
           <div style="padding:4px 16px 8px"><div style="font:700 15px Inter;color:var(--ink)">Today's Menu</div></div>
 
-          <div class="v2-menu-grid">
-            <div class="v2-item-card">
-              <div class="v2-item-img">🐟<span class="cut-badge">Whole / Cut</span></div>
-              <div class="v2-item-body">
-                <div class="v2-item-name">Surmai</div>
-                <div class="v2-item-weight">King Fish &middot; Per kg</div>
-                <div class="v2-item-bottom">
-                  <div class="v2-item-price">₹650</div>
-                  <button class="v2-add-btn">+</button>
-                </div>
-              </div>
+          <!-- Horizontal full-width menu items -->
+          <div style="display:flex;flex-direction:column;gap:8px;padding:0 16px 16px">
+            <div style="display:flex;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm);border:2px solid var(--brand)">
+              <div style="width:80px;min-height:70px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:center;justify-content:center;font-size:28px">🐟</div>
+              <div style="flex:1;padding:10px 12px"><div style="font:600 13px Inter;text-transform:capitalize">Surmai</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><div style="font:800 14px Inter">₹650<span style="font-size:10px;font-weight:500;color:var(--ink3)"> /kg</span></div><div style="display:flex;background:var(--brand);border-radius:6px;height:28px;overflow:hidden"><button style="background:none;border:none;color:#fff;width:28px;font:700 14px Inter;cursor:pointer">−</button><span style="color:#fff;font:700 11px Inter;padding:0 4px;display:flex;align-items:center">2</span><button style="background:none;border:none;color:#fff;width:28px;font:700 14px Inter;cursor:pointer">+</button></div></div></div>
             </div>
-            <div class="v2-item-card">
-              <div class="v2-item-img" style="background:#ECFDF5">🐟<span class="cut-badge" style="background:#D1FAE5;color:#059669">Fresh today</span></div>
-              <div class="v2-item-body">
-                <div class="v2-item-name">Rawas</div>
-                <div class="v2-item-weight">Indian Salmon &middot; Per kg</div>
-                <div class="v2-item-bottom">
-                  <div class="v2-item-price">₹800</div>
-                  <button class="v2-add-btn">+</button>
-                </div>
-              </div>
+            <div style="display:flex;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)">
+              <div style="width:80px;min-height:70px;background:linear-gradient(135deg,#ECFDF5,#D1FAE5);display:flex;align-items:center;justify-content:center;font-size:28px">🐟</div>
+              <div style="flex:1;padding:10px 12px"><div style="font:600 13px Inter;text-transform:capitalize">Pomfret <span style="font:600 9px Inter;color:var(--ink3);background:var(--bg3);padding:1px 5px;border-radius:4px">M</span></div><div style="font:400 10px Inter;color:var(--ink3)">⚡ Stock clearing soon</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><div style="font:800 14px Inter">₹1000<span style="font-size:10px;font-weight:500;color:var(--ink3)"> /4pc</span></div><button style="width:28px;height:28px;border-radius:6px;background:var(--brand);color:#fff;border:none;font:700 16px Inter;cursor:pointer">+</button></div></div>
             </div>
-            <div class="v2-item-card">
-              <div class="v2-item-img" style="background:#FFF7ED">🐟</div>
-              <div class="v2-item-body">
-                <div class="v2-item-name">Pomfret</div>
-                <div class="v2-item-weight">White &middot; Per piece</div>
-                <div class="v2-item-bottom">
-                  <div class="v2-item-price">₹900</div>
-                  <button class="v2-add-btn">+</button>
-                </div>
-              </div>
-            </div>
-            <div class="v2-item-card">
-              <div class="v2-item-img" style="background:#EFF6FF">🦐</div>
-              <div class="v2-item-body">
-                <div class="v2-item-name">Prawns</div>
-                <div class="v2-item-weight">Medium &middot; Per kg</div>
-                <div class="v2-item-bottom">
-                  <div class="v2-item-price">₹500</div>
-                  <button class="v2-add-btn">+</button>
-                </div>
-              </div>
+            <div style="display:flex;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)">
+              <div style="width:80px;min-height:70px;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:28px">🦐</div>
+              <div style="flex:1;padding:10px 12px"><div style="font:600 13px Inter;text-transform:capitalize">Prawns</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><div style="font:800 14px Inter">₹500<span style="font-size:10px;font-weight:500;color:var(--ink3)"> /kg</span></div><button style="width:28px;height:28px;border-radius:6px;background:var(--brand);color:#fff;border:none;font:700 16px Inter;cursor:pointer">+</button></div></div>
             </div>
           </div>
         </div>
-        <div class="v2-cart-bar">
-          <div class="c-left"><div class="c-items">2 items</div><div class="c-total">₹1,450</div></div>
-          <button class="c-btn">View Cart →</button>
+        <!-- New cart bar -->
+        <div style="position:absolute;bottom:64px;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:10px 14px;box-shadow:0 -4px 12px rgba(0,0,0,.08)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div><div style="font:800 14px Inter">₹1,300</div><div style="font:500 10px Inter;color:var(--green)">🎉 Free delivery unlocked</div></div><div style="width:24px;height:24px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink3)">✕</div></div>
+          <div style="display:flex;gap:6px"><button style="flex:1;background:#fff;border:1.5px solid var(--brand);color:var(--brand);padding:8px;border-radius:6px;font:700 12px Inter">🛒 View Cart</button><button style="flex:1;background:var(--brand);color:#fff;border:none;padding:8px;border-radius:6px;font:700 12px Inter">Checkout →</button></div>
         </div>
         <div class="v2-nav">
           <div class="nav-item"><span class="icon">🏠</span>Home</div>
-          <div class="nav-item"><span class="icon">🔍</span>Search</div>
-          <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
           <div class="nav-item"><span class="icon">📋</span>Orders</div>
           <div class="nav-item"><span class="icon">👤</span>Account</div>
         </div>
@@ -590,9 +570,9 @@
     <thead><tr><th>Component</th><th>V1</th><th>V2</th><th>Why</th></tr></thead>
     <tbody>
       <tr><td class="comp">Seller hero</td><td class="v1-spec">Inline card with avatar + text</td><td class="v2-spec">Gradient hero zone with avatar, stats bar (orders, items, catch time, status)</td><td><span class="change">Trust builder</span> "200+ orders" and "5:30am catch" build buying confidence.</td></tr>
-      <tr><td class="comp">Menu layout</td><td class="v1-spec">Vertical list with small emoji + text + Add button</td><td class="v2-spec">2-column grid with image cards (Blinkit-style product cards)</td><td><span class="change">+45% add-to-cart</span> Grid layout with visual cards gets more additions. Proven by Zepto.</td></tr>
+      <tr><td class="comp">Menu layout</td><td class="v1-spec">Vertical list with small emoji + text + Add button</td><td class="v2-spec">Horizontal full-width rows — image left, info right (was 2-col grid)</td><td><span class="change">Better scanning</span> Full-width rows show more info per item. Price + unit + stock visible at glance.</td></tr>
       <tr><td class="comp">Add button</td><td class="v1-spec">Text "Add" button, blue bg</td><td class="v2-spec">Compact "+" circle button on each card (Blinkit exact pattern)</td><td><span class="change">Faster interaction</span> One-tap add. Counter appears after first tap.</td></tr>
-      <tr><td class="comp">Cart bar</td><td class="v1-spec">Sticky bottom bar (basic)</td><td class="v2-spec">Floating pill with item count + total + "View Cart" (Blinkit-style)</td><td><span class="change">+30% checkout</span> Floating cart bar is proven to increase checkout rate.</td></tr>
+      <tr><td class="comp">Cart bar</td><td class="v1-spec">Sticky bottom bar (basic)</td><td class="v2-spec">Neutral bar: total + status + View Cart + Checkout buttons. No colored bars.</td><td><span class="change">Cleaner UX</span> Separate manage vs checkout. Clear total always visible.</td></tr>
       <tr><td class="comp">Freshness signal</td><td class="v1-spec">None</td><td class="v2-spec">Badges: "Fresh today", "Whole / Cut", catch time in stats</td><td><span class="change">Trust + urgency</span> Freshness signals drive impulse purchase in perishables.</td></tr>
       <tr><td class="comp">Price display</td><td class="v1-spec">Inline with item text, 14px</td><td class="v2-spec">Bold 13px with clear hierarchy, separated from description</td><td><span class="change">Clarity</span> Price always bottom-left, add button bottom-right. Eyes know where to look.</td></tr>
     </tbody>
@@ -611,15 +591,15 @@
     <thead><tr><th>Component</th><th>Spec</th><th>Blinkit/Zepto Pattern</th></tr></thead>
     <tbody>
       <tr><td class="comp">AppHeader</td><td>Brand bg (#0066FF), 52px height. Left: logo (white, 16px, 800wt). Center: location (name 13px 700wt white + ETA 10px 70% white). Right: profile circle (28px, rgba white bg). Sticky top.</td><td>Blinkit green header → our blue header. Same layout. Location + delivery ETA in header = trust.</td></tr>
-      <tr><td class="comp">SearchBar</td><td>Floating white card, 44px height, 12px radius, shadow-md. Overlaps header by 14px (negative margin). Search icon left, placeholder 13px Inter 400. Tap → full-screen search overlay.</td><td>Zepto's floating search card. Creates depth hierarchy.</td></tr>
+      <tr><td class="comp">SearchBar</td><td>Floating white card, 44px height, 12px radius, shadow-md. Overlaps header by 14px. Currently disabled (showSearch: false). Search accessible via /v2/search direct URL.</td><td>Built but disabled on home. May enable later.</td></tr>
       <tr><td class="comp">CategoryStrip</td><td>Horizontal scroll, 56px item width. 48px icon circle (bg3 bg, 24px emoji). 9px label below. Scroll snaps.</td><td>Instamart category pills. Drives browse behavior.</td></tr>
       <tr><td class="comp">PreorderBanner</td><td>Gradient card (EEF2FF→E0E7FF), 12px radius. 32px icon left, title 13px 700wt indigo, subtitle 11px. CTA button right (indigo bg, white text, 11px 700wt).</td><td>Custom — no equivalent in Blinkit. Our differentiator must be prominent.</td></tr>
-      <tr><td class="comp">SellerCard</td><td>White card, 12px radius, shadow. Image zone 100px (gradient bg + emoji + offer badge). Body: name 14px 700wt + loc 11px + tags row. Menu strip at bottom (horizontal chips). Optional delivery bar (green-l bg).</td><td>Zomato restaurant card + Blinkit product card hybrid. Image zone is key.</td></tr>
+      <tr><td class="comp">SellerCard</td><td>White card, 12px radius, shadow. Image zone 110px (gradient bg + emoji + offer badge). Body: name 15px 700wt + loc 11px + tags row. Menu strip at bottom (2-col grid chips). Optional delivery bar (green-l bg).</td><td>Zomato restaurant card + Blinkit product card hybrid. Image zone is key.</td></tr>
       <tr><td class="comp">MenuItemCard</td><td>White card, 12px radius, shadow-sm. 2-column grid. Image 80px (bg3 + emoji + badge). Body: name 12px 600wt + weight 10px + price 13px 800wt. Add button: 28px circle, brand bg, white "+".</td><td>Blinkit product card exact pattern. Grid layout, circle add button.</td></tr>
       <tr><td class="comp">CartBar</td><td>Floating pill, 12px radius, brand bg, shadow-lg. 12px from edges, above bottom nav. Left: items count 12px + total 15px 800wt (white). Right: "View Cart →" button (white bg, brand text).</td><td>Blinkit's floating green cart pill. Proven conversion driver.</td></tr>
       <tr><td class="comp">RatingBadge</td><td>Pill shape, green bg (#059669), white text. "4.8 ★" format. 11px 700wt, 5px radius, 20px height.</td><td>Zomato rating badge. Universal pattern — users recognize it instantly.</td></tr>
       <tr><td class="comp">TagChip</td><td>Pill, 20px radius, 10px font 500wt. Default: bg3 bg, ink3 text. Green: green-l bg, green text. Brand: brand-l bg, brand text.</td><td>Status indicator pattern from all quick commerce apps.</td></tr>
-      <tr><td class="comp">BottomNav</td><td>64px height, white bg, border-top. 5 items: Home, Search, Pre-order (🌙), Orders, Account. Active: brand color + 2px top indicator bar.</td><td>5-tab nav (Blinkit has 5). Pre-order gets dedicated tab = our moat.</td></tr>
+      <tr><td class="comp">BottomNav</td><td>64px height, white bg, border-top. 3 items: Home, Orders, Account. Active: brand color + 2px top indicator bar.</td><td>3-tab nav. Pre-order via banner + filter chips on home.</td></tr>
       <tr><td class="comp">SectionHeader</td><td>Flex row, space-between. Title 15px 700wt left. "See all →" link 12px 600wt brand right.</td><td>Standard section header. Every app uses this.</td></tr>
       <tr><td class="comp">SellerHero</td><td>Gradient hero zone (E0F2FE→white). Avatar 56px 14px-radius gradient bg. Name 17px 800wt. Stats row: 4 metrics (orders, items, catch time, status).</td><td>Swiggy restaurant hero. Stats row builds trust before buying.</td></tr>
       <tr><td class="comp">DeliveryBar</td><td>Full-width bar at card bottom. green-l bg, green text, 11px 500wt. Bike emoji + "Delivery available · Free above ₹1,000".</td><td>AOV pusher. Blinkit shows "Free delivery above ₹X" prominently.</td></tr>
@@ -644,7 +624,7 @@
       <tr>
         <td class="comp">Homepage<br><span style="font:400 11px Inter;color:var(--ink4)">/</span></td>
         <td>White header, flat search, chip filters, vertical seller cards with emoji avatars and tiny menu preview</td>
-        <td>Brand-colored header with delivery ETA. Floating search. Pre-order banner. Category strip. Visual seller cards with image zones, tag chips, menu chips, delivery bar.</td>
+        <td>Brand-colored header with delivery ETA. Pre-order banner. Category strip. Filter chips. Visual seller cards with image zones, tag chips, menu chips, delivery bar.</td>
         <td><span class="change">+35% CTR</span> <span class="change">+20% discovery</span></td>
       </tr>
       <tr>
@@ -656,7 +636,7 @@
       <tr>
         <td class="comp">Pre-order<br><span style="font:400 11px Inter;color:var(--ink4)">/preorder/[species]</span></td>
         <td>Basic form page, minimal visual design</td>
-        <td>Species hero image. Step wizard: 1) Select seller → 2) Choose quantity/cut → 3) Pick morning slot → 4) Confirm. Progress bar. "Reserved by 5am" confirmation card.</td>
+        <td>Species hero image. 4-step wizard: 1) Select seller → 2) Choose quantity/cut → 3) Pick morning slot → 4) Confirm. Progress bar. "Reserved by 5am" confirmation card.</td>
         <td><span class="change">Key differentiator</span> This page must feel magical — it's our moat.</td>
       </tr>
       <tr>
@@ -674,7 +654,7 @@
       <tr>
         <td class="comp">Search<br><span style="font:400 11px Inter;color:var(--ink4)">(new page)</span></td>
         <td>Search is inline on homepage</td>
-        <td>NEW: Full-screen search overlay. Recent searches. Trending species. Search by fish name (English + Marathi), seller name, or area. Instant results with item cards.</td>
+        <td>NEW: Full-screen search page. Trending species grid. Search by fish name (English + Marathi), seller name, or area. Instant results.</td>
         <td><span class="change">New feature</span> Dedicated search = discovery engine.</td>
       </tr>
       <tr>
@@ -686,7 +666,7 @@
       <tr>
         <td class="comp">Checkout<br><span style="font:400 11px Inter;color:var(--ink4)">(bottom sheet)</span></td>
         <td>Address sheet with billing breakdown</td>
-        <td>3-step sheet: 1) Cart summary with edit 2) Address + slot picker 3) Payment (UPI/Cash). Bill breakdown with "Free delivery" highlight when above threshold. Trust badges at bottom.</td>
+        <td>2-step sheet: 1) Cart summary with edit 2) Address + slot picker + place order (COD only). Bill breakdown with "Free delivery" highlight when above threshold. Trust badges at bottom.</td>
         <td><span class="change">+15% conversion</span> Step-by-step reduces checkout anxiety.</td>
       </tr>
     </tbody>
@@ -708,14 +688,14 @@
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Colored header (brand presence)</li>
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Floating cart pill (always visible)</li>
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Circle "+" add buttons</li>
-        <li style="padding:4px 0;border-bottom:1px solid var(--border)">5-tab bottom navigation</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">3-tab bottom navigation</li>
         <li style="padding:4px 0">Grid product layout</li>
       </ul>
     </div>
     <div class="card" style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px">
       <h3 style="font-size:15px;color:var(--green);margin-bottom:4px">From Zepto</h3>
       <ul style="list-style:none;padding:0;font-size:13px;color:var(--ink2)">
-        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Floating search card with depth</li>
+        <li style="padding:4px 0;border-bottom:1px solid var(--border)">Filter chips on home (Open now, Pre-order, Pickup, Delivery)</li>
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Delivery ETA in header</li>
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Category icon strip</li>
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Swipe-to-manage gestures</li>
@@ -731,6 +711,380 @@
         <li style="padding:4px 0;border-bottom:1px solid var(--border)">Reorder button in order history</li>
         <li style="padding:4px 0">Step-by-step checkout</li>
       </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- BUYER FLOW — COMPLETE PROTOTYPE                               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="buyer-flow">
+  <div class="section-label">Buyer Journey</div>
+  <div class="section-title">Complete Buyer Flow — Step by Step</div>
+  <div class="section-sub">No separate pre-order screen. One unified flow: Browse → Add to Cart → Checkout → Track. Pre-orders happen naturally when seller is closed but accepts pre-orders.</div>
+
+  <!-- FLOW DIAGRAM -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-bottom:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Buyer Flow Map</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 12px Inter">
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">1. Home</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">2. Seller Menu</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">3. Add to Cart</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">4. Checkout</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">5. Order Placed</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">6. Track</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">7. Preferences</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">8. Pickup/Delivery</div>
+    </div>
+    <div style="font:400 11px Inter;color:var(--ink3);margin-top:12px;line-height:1.5">
+      <strong>Pre-order path:</strong> Same flow. If seller is closed + accepts pre-orders → buyer can still add items → order status = "pre_order" instead of "pending".<br>
+      <strong>Closed seller (no pre-order):</strong> Card non-clickable, menu greyed out, add buttons disabled.
+    </div>
+  </div>
+
+  <div class="compare">
+    <!-- Cart Stack -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">V2 Cart Stack</div>
+      <div class="phone" style="height:480px">
+        <div class="phone-status" style="background:var(--brand);color:#fff">9:41</div>
+        <div class="phone-body" style="background:var(--bg2);padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font:800 17px Inter">Your Carts</span><span style="font:600 13px Inter;color:var(--red)">Clear All</span></div>
+          <!-- Seller row 1 -->
+          <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:12px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#E6F0FF,#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:18px">🐟</div>
+              <div style="flex:1"><div style="font:700 13px Inter">The Fishy Mart</div><div style="font:400 11px Inter;color:var(--ink3)">3 items · <span style="color:var(--brand);font-weight:600">View Menu ›</span></div></div>
+              <div style="background:var(--brand);color:#fff;font:800 11px Inter;padding:5px 10px;border-radius:6px;text-align:center">₹1,240<br><span style="font:600 8px Inter;opacity:.8">View Cart</span></div>
+              <span style="color:var(--ink4);font-size:14px">✕</span>
+            </div>
+          </div>
+          <!-- Seller row 2 -->
+          <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:12px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#E6F0FF,#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:18px">🦐</div>
+              <div style="flex:1"><div style="font:700 13px Inter">RAJU Fish HUb</div><div style="font:400 11px Inter;color:var(--ink3)">1 item · <span style="color:var(--brand);font-weight:600">View Menu ›</span></div></div>
+              <div style="background:var(--brand);color:#fff;font:800 11px Inter;padding:5px 10px;border-radius:6px;text-align:center">₹450<br><span style="font:600 8px Inter;opacity:.8">View Cart</span></div>
+              <span style="color:var(--ink4);font-size:14px">✕</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="label">Cart Stack (bottom sheet)</div>
+    </div>
+
+    <!-- Checkout -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">V2 Checkout</div>
+      <div class="phone" style="height:480px">
+        <div class="phone-status" style="background:#fff;color:var(--ink)">Checkout ×</div>
+        <div class="phone-body" style="background:#fff;padding:16px">
+          <div style="display:flex;gap:8px;margin-bottom:16px"><div style="flex:1;height:4px;background:var(--green);border-radius:2px"></div><div style="flex:1;height:4px;background:var(--brand);border-radius:2px"></div></div>
+          <div style="font:700 14px Inter;margin-bottom:12px">Delivery method</div>
+          <div style="border:1.5px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px"><div style="width:18px;height:18px;border:2px solid var(--ink4);border-radius:50%"></div><div><div style="font:700 13px Inter">🧊 Pickup</div><div style="font:400 11px Inter;color:var(--ink3)">Collect from seller</div></div></div>
+          <div style="border:1.5px solid var(--brand);border-radius:8px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;background:var(--brand-l)"><div style="width:18px;height:18px;border:2px solid var(--brand);border-radius:50%;position:relative"><div style="position:absolute;inset:3px;background:var(--brand);border-radius:50%"></div></div><div><div style="font:700 13px Inter">🚲 Delivery</div><div style="font:400 11px Inter;color:var(--ink3)">₹50 fee · Free above ₹500</div></div></div>
+          <div style="font:700 14px Inter;margin-bottom:8px">Deliver to</div>
+          <div style="border:1.5px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:center;gap:12px"><div style="font-size:20px">📍</div><div style="flex:1"><div style="font:700 13px Inter">Home</div><div style="font:400 12px Inter;color:var(--ink3)">Sagar, K/W Ward</div></div><span style="color:var(--ink4)">›</span></div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;margin-top:12px;border-top:1px solid var(--border);font:800 14px Inter"><span>Total (pay on delivery)</span><span>₹1,290</span></div>
+          <div style="display:flex;gap:8px;margin-top:12px"><button style="flex:1;background:none;border:none;font:700 13px Inter;color:var(--ink3);padding:12px">← Back</button><button style="flex:1;background:var(--brand);color:#fff;border:none;padding:12px;border-radius:8px;font:700 13px Inter">Place order</button></div>
+        </div>
+      </div>
+      <div class="label">Checkout Step 2 — Delivery</div>
+    </div>
+  </div>
+
+  <div class="compare">
+    <!-- Order Track -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">V2 Order Tracking</div>
+      <div class="phone" style="height:560px">
+        <div class="phone-status" style="background:var(--brand);color:#fff">Your Orders</div>
+        <div class="phone-body" style="background:var(--bg2);padding:16px">
+          <!-- Active order card -->
+          <div style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:16px;padding:16px;margin-bottom:12px">
+            <div style="font:700 10px Inter;color:#1D4ED8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Live · <span style="background:var(--brand-l);color:var(--brand);padding:2px 8px;border-radius:20px;font-weight:500;font-size:10px">Confirmed</span></div>
+            <div style="font:800 16px Inter;color:#1E293B">The Fishy Mart</div>
+            <div style="font:400 12px Inter;color:#475569;margin:4px 0 12px">Order #8FB0D8 · 3kg · 🧊 Pickup</div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:20px;height:20px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px Inter">✓</div>
+              <div style="flex:1;height:2px;background:#16A34A"></div>
+              <div style="width:20px;height:20px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px Inter">✓</div>
+              <div style="flex:1;height:2px;background:#CBD5E1"></div>
+              <div style="width:20px;height:20px;border-radius:50%;background:#CBD5E1;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px Inter">3</div>
+              <div style="flex:1;height:2px;background:#CBD5E1"></div>
+              <div style="width:20px;height:20px;border-radius:50%;background:#CBD5E1;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px Inter">4</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;font:500 8px Inter;color:#64748B"><span>Placed</span><span>Confirmed</span><span>Ready</span><span>Picked up</span></div>
+          </div>
+          <!-- Delivery order -->
+          <div style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:16px;padding:16px">
+            <div style="font:700 10px Inter;color:#1D4ED8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Live · <span style="background:var(--brand-l);color:var(--brand);padding:2px 8px;border-radius:20px;font-weight:500;font-size:10px">Out for delivery</span></div>
+            <div style="font:800 16px Inter;color:#1E293B">RAJU Fish HUb</div>
+            <div style="font:400 12px Inter;color:#475569;margin:4px 0 12px">Order #CF2697 · 1kg · 🚲 Delivery</div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:20px;height:20px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px Inter">✓</div>
+              <div style="flex:1;height:2px;background:#16A34A"></div>
+              <div style="width:20px;height:20px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px Inter">✓</div>
+              <div style="flex:1;height:2px;background:#16A34A"></div>
+              <div style="width:20px;height:20px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px Inter">✓</div>
+              <div style="flex:1;height:2px;background:#CBD5E1"></div>
+              <div style="width:20px;height:20px;border-radius:50%;background:#CBD5E1;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px Inter">4</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;font:500 8px Inter;color:#64748B"><span>Placed</span><span>Confirmed</span><span>On the way</span><span>Delivered</span></div>
+          </div>
+        </div>
+        <div class="phone-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item active"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">👤</span>Account</div></div>
+      </div>
+      <div class="label">Buyer — Active Orders</div>
+    </div>
+
+    <!-- Seller Dashboard -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">V2 Seller Dashboard</div>
+      <div class="phone" style="height:560px">
+        <div class="phone-status" style="background:var(--green);color:#fff">Today's pipeline</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <!-- Stats -->
+          <div style="background:var(--green);padding:12px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:8px;text-align:center"><div style="font:800 16px Inter;color:#fff">6</div><div style="font:500 9px Inter;color:rgba(255,255,255,.9)">New</div></div>
+            <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:8px;text-align:center"><div style="font:800 16px Inter;color:#fff">4</div><div style="font:500 9px Inter;color:rgba(255,255,255,.9)">In Progress</div></div>
+            <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:8px;text-align:center"><div style="font:800 16px Inter;color:#fff">₹27K</div><div style="font:500 9px Inter;color:rgba(255,255,255,.9)">Today GMV</div></div>
+          </div>
+          <!-- Tabs -->
+          <div style="display:flex;background:#fff;border-bottom:1px solid var(--border)">
+            <div style="flex:1;text-align:center;padding:10px;font:600 11px Inter;color:var(--brand);border-bottom:2px solid var(--brand)">New <span style="background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;margin-left:2px">6</span></div>
+            <div style="flex:1;text-align:center;padding:10px;font:600 11px Inter;color:var(--ink3)">In Progress <span style="background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;margin-left:2px">4</span></div>
+            <div style="flex:1;text-align:center;padding:10px;font:600 11px Inter;color:var(--ink3)">History</div>
+          </div>
+          <!-- Search -->
+          <div style="padding:8px 16px;background:#fff;border-bottom:1px solid var(--border)"><input style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:6px;font:400 12px Inter;outline:none;box-sizing:border-box" placeholder="Search by order ID or phone..." /></div>
+          <!-- Order cards -->
+          <div style="padding:12px 16px">
+            <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between"><div><div style="font:700 12px Inter">🌙 #8FB0D8 · 9974</div><div style="font:400 10px Inter;color:var(--ink3)">2:49 am</div></div><span style="font:700 9px Inter;padding:2px 8px;border-radius:20px;background:#F3E8FF;color:#7C3AED;text-transform:uppercase">Pre-order</span></div>
+              <div style="font:400 11px Inter;color:var(--ink2);margin-top:6px;padding:6px 8px;background:var(--bg2);border-radius:6px;text-transform:capitalize">Pomfret · 3piece</div>
+              <div style="font:600 10px Inter;color:var(--ink2);margin-top:4px">✂️ Cleaned, Cut</div>
+              <div style="font:800 13px Inter;margin-top:4px">₹720 · Pay at pickup</div>
+              <div style="display:flex;gap:6px;margin-top:8px"><button style="flex:1;background:#fff;color:var(--red);border:1.5px solid #FEE2E2;padding:7px;border-radius:6px;font:700 11px Inter;cursor:pointer">Decline</button><button style="flex:1;background:#7C3AED;color:#fff;border:none;padding:7px;border-radius:6px;font:700 11px Inter;cursor:pointer">✓ Confirm</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-nav"><div class="nav-item active"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">🐟</span>Listings</div><div class="nav-item"><span class="icon">👤</span>Profile</div></div>
+      </div>
+      <div class="label">Seller — Order Dashboard</div>
+    </div>
+  </div>
+
+  <div class="compare">
+    <!-- Seller Listings -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">V2 Seller Listings</div>
+      <div class="phone" style="height:480px">
+        <div class="phone-status" style="background:var(--brand);color:#fff">My listings</div>
+        <div class="phone-body" style="background:var(--bg2);padding:16px">
+          <button style="width:100%;background:var(--brand);color:#fff;border:none;padding:12px;border-radius:8px;font:700 13px Inter;margin-bottom:12px">+ Add new listing</button>
+          <div style="display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+            <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:center;justify-content:center;font-size:22px">🐟</div>
+            <div style="flex:1"><div style="font:700 14px Inter;text-transform:capitalize">Pomfret <span style="font:600 9px Inter;color:var(--ink3);background:var(--bg3);padding:1px 5px;border-radius:4px">M</span></div><div style="display:flex;gap:8px;margin-top:3px;font:500 11px Inter"><span style="font-weight:700">₹1000/4pc</span><span style="color:var(--green)">✓ 17pc</span><span style="color:var(--brand);font-weight:600">2 tiers</span></div></div>
+            <div style="display:flex;gap:4px"><div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg2);border-radius:6px;font-size:14px;color:var(--orange)">⏸</div><div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg2);border-radius:6px;font-size:14px;color:var(--red)">🗑</div></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;opacity:.6">
+            <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:center;justify-content:center;font-size:22px">🦐</div>
+            <div style="flex:1"><div style="font:700 14px Inter;text-transform:capitalize">Prawns</div><div style="display:flex;gap:8px;margin-top:3px;font:500 11px Inter"><span style="font-weight:700">₹300/kg</span><span style="color:var(--red)">⚠ 0kg</span></div></div>
+            <div style="display:flex;gap:4px"><div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg2);border-radius:6px;font-size:14px;color:var(--green)">▶</div><div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg2);border-radius:6px;font-size:14px;color:var(--red)">🗑</div></div>
+          </div>
+        </div>
+        <div class="phone-nav"><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item active"><span class="icon">🐟</span>Listings</div><div class="nav-item"><span class="icon">👤</span>Profile</div></div>
+      </div>
+      <div class="label">Seller — Listing Management</div>
+    </div>
+
+    <!-- Buyer Profile -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">V2 Buyer Profile</div>
+      <div class="phone" style="height:480px">
+        <div class="phone-status" style="background:var(--brand);color:#fff">Account</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="background:linear-gradient(135deg,var(--brand),#3B82F6);padding:28px 16px 50px;text-align:center;color:#fff">
+            <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 10px">👤</div>
+            <div style="font:800 20px Inter">Kunal Rawat</div>
+            <div style="font:400 12px Inter;opacity:.85;margin-top:2px">+91 98XXX XXXXX</div>
+          </div>
+          <div style="margin:-36px 16px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#fff;border-radius:12px;padding:14px 8px;box-shadow:var(--shadow-md);position:relative;z-index:2">
+            <div style="text-align:center"><div style="width:36px;height:36px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 4px">📍</div><div style="font:600 9px Inter">Addresses</div></div>
+            <div style="text-align:center"><div style="width:36px;height:36px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 4px">📋</div><div style="font:600 9px Inter">Orders</div></div>
+            <div style="text-align:center"><div style="width:36px;height:36px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 4px">🔔</div><div style="font:600 9px Inter">Notifs</div></div>
+            <div style="text-align:center"><div style="width:36px;height:36px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 4px">💬</div><div style="font:600 9px Inter">Help</div></div>
+          </div>
+          <div style="padding:0 16px"><div style="font:700 11px Inter;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;padding:8px 0">Order History</div>
+            <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font:700 12px Inter">RAJU Fish HUb</div><span style="font:500 9px Inter;background:var(--bg3);color:var(--ink3);padding:2px 8px;border-radius:20px">Completed</span></div><div style="font:400 10px Inter;color:var(--ink3);margin-top:2px">Today · 5pc crab · ✂️ Whole</div><div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span style="font:800 12px Inter">₹750</span><span style="font:600 10px Inter;color:var(--brand)">View →</span></div></div>
+          </div>
+        </div>
+        <div class="phone-nav"><div class="nav-item"><span class="icon">🏠</span>Home</div><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item active"><span class="icon">👤</span>Account</div></div>
+      </div>
+      <div class="label">Buyer — Account & History</div>
+    </div>
+  </div>
+
+  <!-- BUYER STATUS STATES -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-top:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Buyer Order States</div>
+    <table style="width:100%;font:400 12px Inter;border-collapse:collapse">
+      <thead><tr style="background:var(--bg3);font-weight:700;text-align:left"><th style="padding:8px">Status</th><th style="padding:8px">Buyer Sees</th><th style="padding:8px">Actions</th><th style="padding:8px">Stepper Step</th></tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">pending</td><td>Awaiting confirmation</td><td>Cancel</td><td>1/4 Placed</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">pre_order</td><td>Pre-order placed</td><td>Cancel</td><td>1/4 Placed</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">confirmed</td><td>Confirmed</td><td>Add preferences (cut/notes)</td><td>2/4 Confirmed</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">ready_for_pickup</td><td>Ready for pickup</td><td>View preferences</td><td>3/4 Ready</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">out_for_delivery</td><td>Out for delivery</td><td>—</td><td>3/4 On the way</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">completed</td><td>Completed</td><td>Re-order</td><td>4/4 Done</td></tr>
+        <tr><td style="padding:8px">declined/cancelled</td><td>Declined/Cancelled</td><td>Re-order</td><td>1/4 (reset)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SELLER FLOW — COMPLETE PROTOTYPE                              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="seller-flow">
+  <div class="section-label">Seller Journey</div>
+  <div class="section-title">Complete Seller Flow — Step by Step</div>
+  <div class="section-sub">Seller manages listings, receives orders via websocket, processes through status pipeline, buyer gets real-time updates.</div>
+
+  <!-- FLOW DIAGRAM -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-bottom:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Seller Flow Map</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 12px Inter">
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">1. Login</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">2. Create Listings</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--green-l);color:var(--green);padding:8px 16px;border-radius:20px">3. Set Profile</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--orange-l);color:var(--orange);padding:8px 16px;border-radius:20px">4. New Order ⚡</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--orange-l);color:var(--orange);padding:8px 16px;border-radius:20px">5. Accept/Decline</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">6. Ready / Out for delivery</div>
+      <span style="color:var(--ink4)">→</span>
+      <div style="background:var(--brand-l);color:var(--brand);padding:8px 16px;border-radius:20px">7. Picked up / Delivered</div>
+    </div>
+  </div>
+
+  <div class="compare">
+    <!-- Seller Dashboard -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">Seller Dashboard — Orders</div>
+      <div class="phone" style="height:560px">
+        <div class="phone-status" style="background:var(--green);color:#fff">Today's pipeline</div>
+        <div class="phone-body" style="background:var(--bg2)">
+          <div style="background:var(--green);padding:8px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:6px;text-align:center"><div style="font:800 14px Inter;color:#fff">6</div><div style="font:500 8px Inter;color:rgba(255,255,255,.9)">New</div></div>
+            <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:6px;text-align:center"><div style="font:800 14px Inter;color:#fff">4</div><div style="font:500 8px Inter;color:rgba(255,255,255,.9)">In Progress</div></div>
+            <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:6px;text-align:center"><div style="font:800 14px Inter;color:#fff">₹27K</div><div style="font:500 8px Inter;color:rgba(255,255,255,.9)">GMV</div></div>
+          </div>
+          <div style="display:flex;background:#fff;border-bottom:1px solid var(--border)">
+            <div style="flex:1;text-align:center;padding:8px;font:600 10px Inter;color:var(--brand);border-bottom:2px solid var(--brand)">New <span style="background:var(--red);color:#fff;font-size:8px;padding:1px 4px;border-radius:99px">6</span></div>
+            <div style="flex:1;text-align:center;padding:8px;font:600 10px Inter;color:var(--ink3)">In Progress <span style="background:var(--red);color:#fff;font-size:8px;padding:1px 4px;border-radius:99px">4</span></div>
+            <div style="flex:1;text-align:center;padding:8px;font:600 10px Inter;color:var(--ink3)">History</div>
+          </div>
+          <div style="padding:6px 12px;background:#fff;border-bottom:1px solid var(--border)"><input style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font:400 11px Inter;box-sizing:border-box" placeholder="Search order ID or phone..." /></div>
+          <div style="padding:8px 12px">
+            <!-- Order card with preferences -->
+            <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between"><div style="font:700 11px Inter">🌙 #8FB0D8 · 9974</div><span style="font:700 8px Inter;padding:2px 6px;border-radius:20px;background:#F3E8FF;color:#7C3AED">PRE-ORDER</span></div>
+              <div style="font:400 10px Inter;color:var(--ink2);margin-top:4px;padding:4px 6px;background:var(--bg2);border-radius:4px;text-transform:capitalize">Pomfret · 3pc</div>
+              <div style="font:600 9px Inter;color:var(--ink2);margin-top:3px">✂️ Cleaned, Cut</div>
+              <div style="font:400 9px Inter;color:var(--ink3);margin-top:1px">📝 medium pieces</div>
+              <div style="font:800 12px Inter;margin-top:4px">₹720 · Pay at pickup</div>
+              <div style="display:flex;gap:4px;margin-top:6px"><button style="flex:1;background:#fff;color:var(--red);border:1px solid #FEE2E2;padding:6px;border-radius:6px;font:700 10px Inter">Decline</button><button style="flex:1;background:#7C3AED;color:#fff;border:none;padding:6px;border-radius:6px;font:700 10px Inter">✓ Confirm</button></div>
+            </div>
+            <!-- In progress card -->
+            <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px">
+              <div style="display:flex;justify-content:space-between"><div style="font:700 11px Inter">#CF2697 · 9974</div><span style="font:700 8px Inter;padding:2px 6px;border-radius:20px;background:var(--brand-l);color:var(--brand)">CONFIRMED</span></div>
+              <div style="font:400 10px Inter;color:var(--ink2);margin-top:4px;padding:4px 6px;background:var(--bg2);border-radius:4px;text-transform:capitalize">Hilsa · 3kg</div>
+              <div style="font:800 12px Inter;margin-top:4px">₹3,600 · Pay at pickup</div>
+              <div style="display:flex;gap:4px;margin-top:6px"><button style="flex:1;background:var(--brand);color:#fff;border:none;padding:6px;border-radius:6px;font:700 10px Inter">📦 Ready for pickup</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-nav"><div class="nav-item active"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">🐟</span>Listings</div><div class="nav-item"><span class="icon">👤</span>Profile</div></div>
+      </div>
+      <div class="label">Seller — Order Management</div>
+    </div>
+
+    <!-- Seller Profile -->
+    <div class="compare-col v2">
+      <div class="compare-label v2-label">Seller Profile</div>
+      <div class="phone" style="height:560px">
+        <div class="phone-status" style="background:var(--brand);color:#fff">My profile</div>
+        <div class="phone-body" style="background:var(--bg2);padding:12px">
+          <div style="margin-bottom:8px"><label style="font:600 11px Inter;color:var(--ink2);display:block;margin-bottom:4px">Business name *</label><div style="padding:10px;border:1px solid var(--border);border-radius:6px;font:400 13px Inter;background:#fff">The Fishy Mart</div></div>
+          <div style="font:700 12px Inter;margin:12px 0 6px">📍 Location</div>
+          <div style="margin-bottom:6px"><label style="font:600 11px Inter;color:var(--ink2);display:block;margin-bottom:4px">Area</label><div style="padding:10px;border:1px solid var(--border);border-radius:6px;font:400 13px Inter;background:#fff">Versova, Andheri West</div></div>
+          <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">
+            <div style="font:600 12px Inter;color:var(--green);margin-bottom:6px">✅ Location set</div>
+            <button style="width:100%;background:#fff;border:1px solid var(--brand);color:var(--brand);padding:6px;border-radius:6px;font:700 11px Inter">📍 Use my current location</button>
+          </div>
+          <div style="font:700 12px Inter;margin:8px 0 6px">Email</div>
+          <div style="padding:10px;border:1px solid var(--border);border-radius:6px;font:400 13px Inter;background:#fff;margin-bottom:4px">kunal@example.com</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="font:600 10px Inter;color:var(--orange)">❌ Not verified</span><button style="background:none;border:1px solid var(--brand);color:var(--brand);font:600 10px Inter;padding:3px 10px;border-radius:20px">Send verification</button></div>
+          <div style="font:700 12px Inter;margin:8px 0 6px">Order settings</div>
+          <div style="padding:10px;border:1px solid var(--border);border-radius:6px;background:#fff;margin-bottom:6px"><span style="font:400 12px Inter">Min order: ₹600</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid var(--border);border-radius:6px;margin-bottom:6px"><input type="checkbox" checked /><div><div style="font:700 12px Inter">Offer delivery 🚲</div><div style="font:400 10px Inter;color:var(--ink3)">3km radius · ₹50 fee · Free above ₹996</div></div></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid var(--border);border-radius:6px;margin-bottom:6px"><input type="checkbox" checked /><div><div style="font:700 12px Inter">Accept pre-orders 🌙</div></div></div>
+          <div style="font:700 12px Inter;margin:8px 0 6px">🔔 Notifications</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px"><div style="font:400 11px Inter;color:var(--green)">Notifications are on</div><span style="font-size:18px">🔔</span></div>
+        </div>
+        <div class="phone-nav"><div class="nav-item"><span class="icon">📋</span>Orders</div><div class="nav-item"><span class="icon">🐟</span>Listings</div><div class="nav-item active"><span class="icon">👤</span>Profile</div></div>
+      </div>
+      <div class="label">Seller — Config & Settings</div>
+    </div>
+  </div>
+
+  <!-- SELLER STATUS TRANSITIONS -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-top:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Seller Order Actions per Status</div>
+    <table style="width:100%;font:400 12px Inter;border-collapse:collapse">
+      <thead><tr style="background:var(--bg3);font-weight:700;text-align:left"><th style="padding:8px">Current Status</th><th style="padding:8px">Tab</th><th style="padding:8px">Actions</th><th style="padding:8px">Next Status</th></tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">pending / pre_order / scheduled</td><td>New</td><td>Accept / Decline</td><td>confirmed / declined</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">confirmed / paid (pickup)</td><td>In Progress</td><td>📦 Ready for pickup</td><td>ready_for_pickup</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">confirmed / paid (delivery)</td><td>In Progress</td><td>🚲 Out for delivery</td><td>out_for_delivery</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">ready_for_pickup</td><td>In Progress</td><td>✓ Picked up</td><td>completed</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">out_for_delivery</td><td>In Progress</td><td>✓ Delivered</td><td>completed</td></tr>
+        <tr><td style="padding:8px">completed / declined / cancelled</td><td>History</td><td>— (view only)</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WEBSOCKET FLOW -->
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);margin-top:32px">
+    <div style="font:700 14px Inter;margin-bottom:16px">Real-time Flow (Supabase Websocket)</div>
+    <div style="font:400 12px Inter;color:var(--ink2);line-height:1.6">
+      <div style="display:flex;gap:16px;margin-bottom:12px">
+        <div style="flex:1;background:var(--brand-l);border-radius:8px;padding:12px"><div style="font:700 11px Inter;color:var(--brand);margin-bottom:4px">BUYER</div>
+          <div>1. Places order → INSERT in orders table</div>
+          <div>2. Subscribes to channel: <code>buyer-orders-{phone}</code></div>
+          <div>3. Gets instant UPDATE events when seller acts</div>
+          <div>4. Stepper + status update without refresh</div>
+        </div>
+        <div style="flex:1;background:var(--green-l);border-radius:8px;padding:12px"><div style="font:700 11px Inter;color:var(--green);margin-bottom:4px">SELLER</div>
+          <div>1. Subscribes to channel: <code>seller-orders-{id}</code></div>
+          <div>2. Gets instant INSERT when new order arrives</div>
+          <div>3. Accepts → buyer sees "Confirmed" instantly</div>
+          <div>4. Ready → buyer stepper jumps to step 3</div>
+        </div>
+      </div>
+      <div style="font:500 11px Inter;color:var(--ink3)">Fallback: 30s poll if websocket connection drops. Migration 037 enables realtime on orders table.</div>
     </div>
   </div>
 </div>

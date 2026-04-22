@@ -26,7 +26,7 @@ const species = [
   <Toast />
 
   <div style="padding:16px;">
-    <PreorderBanner variant="hero" title="Tomorrow's catch, reserved tonight" description="Pick a species. Pick a seller. Slot picked at 5am." ctaText="" />
+    <PreorderBanner variant="hero" title="Order tomorrow's catch tonight" description="Pick species. Pick seller. We confirm in the morning." ctaText="" />
   </div>
 
   <div style="padding:0 16px;">
@@ -63,7 +63,7 @@ const species = [
     .v2-species-grid { grid-template-columns: repeat(3, 1fr); }
   }
   .v2-species-card {
-    background: #fff;
+    background: var(--v2-bg);
     border: 1px solid var(--v2-border);
     border-radius: var(--v2-radius);
     padding: 12px 8px;
@@ -83,6 +83,15 @@ const species = [
 
   function escape(s: string) {
     return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
+  }
+
+  function formatOpensAt(t: string | null | undefined): string {
+    if (!t) return "next morning";
+    const [h, m] = String(t).split(":").map(Number);
+    if (Number.isNaN(h)) return "next morning";
+    const period = h >= 12 ? "pm" : "am";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")}${period}` : `${h12}${period}`;
   }
 
   async function loadSellers() {
@@ -121,7 +130,7 @@ const species = [
               ${rating ? `<span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">${rating} ★</span>` : ''}
             </div>
             <div class="v2-sc-tags">
-              <span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md">Reserves at 5am</span>
+              <span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md">Ready ${escape(formatOpensAt(s.opens_at))}</span>
               ${s.has_delivery ? '<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md">Delivery available</span>' : '<span class="v2-badge v2-badge-tag v2-badge-size-md">Pickup only</span>'}
             </div>
           </div>

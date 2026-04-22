@@ -17,7 +17,7 @@ const { id = "v2-onboarding", forceShow = false } = Astro.props;
     <div id={`${id}-step2`} class="v2-onb-step" style="display:none;">
       <div class="v2-onb-illust">🌙</div>
       <h2 class="v2-onb-title">Tomorrow's catch, reserved tonight</h2>
-      <p class="v2-onb-desc">Pre-order by 10pm. Seller reserves at 5am. Fresh fish guaranteed.</p>
+      <p class="v2-onb-desc">Pre-order tonight. Confirmed in the morning. Fresh fish guaranteed.</p>
     </div>
     <!-- Step 3 -->
     <div id={`${id}-step3`} class="v2-onb-step" style="display:none;">
@@ -90,7 +90,7 @@ const { id = "v2-onboarding", forceShow = false } = Astro.props;
     animation: v2-fade-in 200ms var(--v2-ease-out);
   }
   .v2-onb-card {
-    background: #fff;
+    background: var(--v2-bg);
     border-radius: var(--v2-radius-lg);
     padding: 32px 24px;
     width: 100%; max-width: 360px;

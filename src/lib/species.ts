@@ -39,10 +39,14 @@ export function getSpeciesById(id: string): Species | undefined {
   return SPECIES[id];
 }
 
+function capitalize(s: string): string {
+  return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
 export function getSpeciesDisplay(id: string): string {
   const s = SPECIES[id];
-  if (!s) return id;
-  return `${s.english} (${s.marathi})`;
+  if (!s) return capitalize(id);
+  return `${capitalize(s.english)} (${s.marathi})`;
 }
 
 /** Count-based selling (one inventory pool in pieces). */

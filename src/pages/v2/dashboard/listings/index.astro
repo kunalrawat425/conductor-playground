@@ -42,6 +42,10 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
   function getSellerId() { try { return localStorage.getItem("zepto_seller_id"); } catch { return null; } }
   function escape(s: string) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!)); }
 
+  const PAGE_SIZE = 10;
+  let currentPage = 1;
+  let _listings: any[] = [];
+
   async function load() {
     const sellerId = getSellerId();
     const loading = document.getElementById("v2-listings-loading")!;
@@ -54,57 +58,152 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
     }
 
     try {
-      const { data: listings, error } = await supabase
-        .from("fish_listings")
-        .select("*")
-        .eq("seller_id", sellerId)
-        .order("created_at", { ascending: false });
+      const offset = (currentPage - 1) * PAGE_SIZE;
+      const baseQ = () => supabase.from("fish_listings").select("*", { count: "exact" }).eq("seller_id", sellerId).order("created_at", { ascending: false });
+      const r1 = await baseQ().is("deleted_at", null).range(offset, offset + PAGE_SIZE - 1);
+      let listings: any[] = [];
+      let error: any = null;
+      let totalCount = 0;
+      if (r1.error && r1.error.message?.includes("deleted_at")) {
+        const r2 = await baseQ().range(offset, offset + PAGE_SIZE - 1);
+        listings = r2.data || [];
+        error = r2.error;
+        totalCount = r2.count || 0;
+      } else {
+        listings = r1.data || [];
+        error = r1.error;
+        totalCount = r1.count || 0;
+      }
 
       loading.style.display = "none";
       if (error) throw error;
       if (!listings || listings.length === 0) {
-        empty.style.display = "block";
-        return;
+        if (currentPage === 1) { empty.style.display = "block"; return; }
+        currentPage = 1; load(); return;
+      }
+      empty.style.display = "none";
+
+      _listings = listings;
+      const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+      function renderCard(l: any): string {
+        const opts = l.pricing_options || [];
+        const opt = opts[0] || {};
+        const price = opt.price || 0;
+        const unit = opt.unit || "piece";
+        const bs = opt.bundle_size || 1;
+        const stock = l.weight_avail || 0;
+        const unitLabel = unit === "kg" ? "kg" : "pc";
+        const priceLabel = bs > 1 ? `₹${price}/${bs}${unitLabel}` : `₹${price}/${unitLabel}`;
+        const tiersCount = opts.length;
+        const stockColor = stock <= 0 ? "var(--v2-red)" : "var(--v2-green)";
+        const stockIcon = stock <= 0 ? "⚠" : "✓";
+        const emoji = (l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : (l.species || "").includes("squid") ? "🦑" : "🐟";
+
+        return `<div class="v2-listing-card${l.is_available ? '' : ' v2-lc-paused'}" data-listing-id="${l.id}">
+          <a href="/v2/dashboard/listings/${l.id}" class="v2-lc-main" style="text-decoration:none;color:inherit;display:flex;gap:12px;align-items:center;flex:1;min-width:0;">
+            <div class="v2-lc-img">${l.photo_url ? `<img src="${l.photo_url}" alt="${escape(l.species)}">` : emoji}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="v2-lc-name" style="text-transform:capitalize;">${escape(l.species)}</span>
+                ${l.fish_size ? `<span style="font:600 9px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:1px 5px;border-radius:4px;text-transform:uppercase;">${l.fish_size[0]}</span>` : ''}
+              </div>
+              <div style="display:flex;gap:8px;margin-top:3px;font:500 11px Inter;align-items:center;">
+                <span style="font-weight:700;color:var(--v2-ink);">${priceLabel}</span>
+                <span style="color:${stockColor};">${stockIcon} ${stock}${unitLabel}</span>
+                ${tiersCount > 1 ? `<span style="color:var(--v2-brand);font-weight:600;">${tiersCount} tiers</span>` : ''}
+              </div>
+            </div>
+          </a>
+          <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+            <button class="v2-lc-action-btn" style="color:${l.is_available ? 'var(--v2-orange)' : 'var(--v2-green)'};" data-toggle-id="${l.id}" data-toggle-state="${l.is_available}" title="${l.is_available ? 'Pause' : 'Resume'}">${l.is_available ? '⏸' : '▶'}</button>
+            <button class="v2-lc-action-btn" style="color:var(--v2-red);" data-delete-id="${l.id}" data-delete-name="${escape(l.species)}" title="Delete">🗑</button>
+          </div>
+        </div>`;
       }
 
       list.style.display = "block";
-      list.innerHTML = listings.map((l: any) => {
-        const opt = (l.pricing_options || [])[0] || {};
-        const price = opt.price || 0;
-        const unit = opt.unit_label || "kg";
-        const stock = l.weight_avail || 0;
-        return `<div class="v2-listing-card" data-listing-id="${l.id}">
-          <div class="v2-lc-img">${l.photo_url ? `<img src="${l.photo_url}" alt="${escape(l.species)}">` : '🐟'}</div>
-          <div class="v2-lc-body">
-            <div class="v2-lc-name">${escape(l.species)}</div>
-            <div class="v2-lc-meta">₹${price}/${escape(unit)} · ${stock}${escape(unit)} available</div>
-            <div style="margin-top:8px;display:flex;gap:6px;">
-              <a href="/v2/dashboard/listings/${l.id}" class="v2-btn v2-btn-secondary v2-btn-sm" style="flex:1;">Edit</a>
-              <button class="v2-btn v2-btn-sm" style="flex:1;background:${l.is_available ? 'var(--v2-orange-l)' : 'var(--v2-green-l)'};color:${l.is_available ? 'var(--v2-orange)' : 'var(--v2-green)'};" data-toggle-id="${l.id}" data-toggle-state="${l.is_available}">${l.is_available ? '⏸ Pause' : '▶ Resume'}</button>
-            </div>
-          </div>
-        </div>`;
-      }).join("");
+      list.innerHTML = _listings.map(renderCard).join("")
+        + (totalPages > 1 ? `
+          <div class="v2-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:8px;">
+            <button class="v2-pg-btn" id="v2-lst-prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+            <span style="font:500 12px Inter;color:var(--v2-ink-3);">Page ${currentPage} of ${totalPages}</span>
+            <button class="v2-pg-btn" id="v2-lst-next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+          </div>` : '');
+      document.getElementById("v2-lst-prev")?.addEventListener("click", () => { if (currentPage > 1) { currentPage--; load(); } });
+      document.getElementById("v2-lst-next")?.addEventListener("click", () => { if (currentPage < totalPages) { currentPage++; load(); } });
 
-      list.querySelectorAll<HTMLButtonElement>("[data-toggle-id]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const lid = btn.dataset.toggleId!;
-          const newState = btn.dataset.toggleState !== "true";
-          try {
-            const res = await fetch("/api/seller/listings", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "update", seller_id: sellerId, listing_id: lid, updates: { is_available: newState } }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed");
-            (window as any).v2Toast?.("success", newState ? "Listing live" : "Paused", "Buyers will see updated state");
-            load();
-          } catch (err: any) {
-            (window as any).v2Toast?.("error", "Failed", err.message);
-          }
+      function rerenderOne(lid: string) {
+        const l = _listings.find((x) => x.id === lid);
+        if (!l) return;
+        const card = list.querySelector(`[data-listing-id="${lid}"]`);
+        if (card) card.outerHTML = renderCard(l);
+        wireCardActions();
+      }
+
+      function removeCard(lid: string) {
+        _listings = _listings.filter((x) => x.id !== lid);
+        const card = list.querySelector(`[data-listing-id="${lid}"]`);
+        if (card) card.remove();
+        if (_listings.length === 0) {
+          list.style.display = "none";
+          empty.style.display = "block";
+        }
+      }
+
+      function wireCardActions() {
+        list.querySelectorAll<HTMLButtonElement>("[data-toggle-id]").forEach((btn) => {
+          btn.onclick = async () => {
+            const lid = btn.dataset.toggleId!;
+            const l = _listings.find((x) => x.id === lid);
+            if (!l) return;
+            const prev = !!l.is_available;
+            const next = !prev;
+            // Optimistic flip
+            l.is_available = next;
+            rerenderOne(lid);
+            try {
+              const res = await fetch("/api/seller/listings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "update", seller_id: sellerId, listing_id: lid, updates: { is_available: next } }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed");
+              (window as any).v2Toast?.("success", next ? "Listing live" : "Paused", "Buyers will see updated state");
+            } catch (err: any) {
+              // Rollback
+              l.is_available = prev;
+              rerenderOne(lid);
+              (window as any).v2Toast?.("error", "Failed", err.message);
+            }
+          };
         });
-      });
+        list.querySelectorAll<HTMLButtonElement>("[data-delete-id]").forEach((btn) => {
+          btn.onclick = async () => {
+            const lid = btn.dataset.deleteId!;
+            const name = btn.dataset.deleteName!;
+            if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+            btn.disabled = true;
+            btn.textContent = "…";
+            try {
+              const res = await fetch("/api/seller/listings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "delete", seller_id: sellerId, listing_id: lid }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Delete failed");
+              removeCard(lid);
+              (window as any).v2Toast?.("success", "Deleted", `${name} removed from your menu`);
+            } catch (err: any) {
+              btn.disabled = false;
+              btn.textContent = "🗑";
+              (window as any).v2Toast?.("error", "Delete failed", err.message);
+            }
+          };
+        });
+      }
+      wireCardActions();
     } catch (err: any) {
       loading.innerHTML = `<div style="color:var(--v2-red);">Failed to load: ${escape(err.message)}</div>`;
     }
@@ -114,24 +213,40 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
 
 <style is:global>
   .v2-listing-card {
-    display: flex; gap: 12px;
-    background: #fff;
+    display: flex; gap: 8px;
+    align-items: center;
+    background: var(--v2-bg);
     border: 1px solid var(--v2-border);
     border-radius: var(--v2-radius);
-    padding: 12px;
-    margin-bottom: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    transition: opacity var(--v2-dur-fast) var(--v2-ease);
   }
+  .v2-listing-card:active { transform: scale(0.99); }
+  .v2-lc-paused { opacity: .6; }
   .v2-lc-img {
-    width: 70px; height: 70px;
+    width: 44px; height: 44px;
     border-radius: 10px;
-    background: var(--v2-bg-3);
+    background: linear-gradient(135deg, #E0F2FE, #BAE6FD);
     display: flex; align-items: center; justify-content: center;
-    font-size: 32px;
+    font-size: 22px;
     flex-shrink: 0;
     overflow: hidden;
   }
   .v2-lc-img img { width: 100%; height: 100%; object-fit: cover; }
-  .v2-lc-body { flex: 1; min-width: 0; }
-  .v2-lc-name { font: 700 14px Inter; color: var(--v2-ink); }
-  .v2-lc-meta { font: 400 12px Inter; color: var(--v2-ink-3); margin-top: 2px; }
+  .v2-lc-name {
+    font: 700 14px Inter; color: var(--v2-ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .v2-lc-action-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--v2-bg-2);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background var(--v2-dur-fast) var(--v2-ease);
+  }
+  .v2-lc-action-btn:hover { background: var(--v2-bg-3); }
 </style>

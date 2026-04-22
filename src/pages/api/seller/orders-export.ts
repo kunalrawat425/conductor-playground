@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { fmtDateLongIST } from "../../../lib/format-ist";
 
 export const prerender = false;
 
@@ -37,8 +38,8 @@ export const GET: APIRoute = async ({ url }) => {
 
     const header = "Order ID,Species,Quantity,Unit,Price,Delivery Fee,Status,Type,Scheduled For,Date\n";
     const rows = (orders || []).map((o: any) => {
-      const date = new Date(o.created_at).toLocaleDateString("en-IN");
-      const sched = o.scheduled_for ? new Date(o.scheduled_for).toLocaleDateString("en-IN") : "";
+      const date = fmtDateLongIST(o.created_at);
+      const sched = o.scheduled_for ? fmtDateLongIST(o.scheduled_for) : "";
       return `${o.id.substring(0, 8)},${o.species || ""},${o.quantity},${o.quantity_unit},${o.total_price},${o.delivery_fee || 0},${o.status},${o.order_type},${sched},${date}`;
     }).join("\n");
 

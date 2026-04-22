@@ -7,7 +7,7 @@ interface Props {
   role?: "buyer" | "seller";
   redirectTo?: string;
 }
-const { id = "v2-login", role = "buyer", redirectTo = "/" } = Astro.props;
+const { id = "v2-login", role = "buyer", redirectTo = "/v2" } = Astro.props;
 const title = role === "seller" ? "Seller sign in" : "Sign in";
 ---
 <BottomSheet id={id} title={title} showClose={true}>
@@ -79,11 +79,18 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
     }
   });
 
+  let otpAttempts = 0;
+  const MAX_OTP_ATTEMPTS = 3;
+
   getEl("otp-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const code = document.getElementById(`${id}-otp`).value;
     if (code.length !== 6) {
       window.v2Toast?.("error", "Incomplete OTP", "Enter all 6 digits");
+      return;
+    }
+    if (otpAttempts >= MAX_OTP_ATTEMPTS) {
+      window.v2Toast?.("error", "Too many attempts", "Tap Resend to get a new code");
       return;
     }
     const btn = getEl("verify-otp");
@@ -96,8 +103,27 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
         body: JSON.stringify({ phone: currentPhone, code, role }),
       });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "Invalid OTP");
-      // Save session
+      if (!res.ok || !data.success) {
+        otpAttempts++;
+        const left = MAX_OTP_ATTEMPTS - otpAttempts;
+        const msg = left > 0
+          ? `Wrong code. ${left} ${left === 1 ? "try" : "tries"} left.`
+          : "No tries left. Tap Resend.";
+        window.v2Toast?.("error", "Invalid OTP", msg);
+        // Clear OTP cells for retry
+        document.querySelectorAll(`#${id}-otp ~ .v2-otp .v2-otp-cell, .v2-otp .v2-otp-cell`).forEach((c) => {
+          c.value = "";
+          c.classList.add("v2-input-error");
+        });
+        const hidden = document.getElementById(`${id}-otp`);
+        if (hidden) hidden.value = "";
+        const firstCell = document.querySelector(".v2-otp .v2-otp-cell");
+        firstCell?.focus();
+        btn.disabled = false;
+        btn.textContent = left > 0 ? "Try again" : "Resend OTP first";
+        return;
+      }
+      // Success
       try {
         if (role === "seller") {
           localStorage.setItem("zepto_seller_id", data.seller_id);
@@ -107,10 +133,15 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
           localStorage.setItem("zepto_phone", currentPhone);
         }
       } catch {}
+      // Push any guest cart items to server before redirect (buyer only)
+      if (role === "buyer" && window.RelifishCart) {
+        try { await window.RelifishCart.pushLocalToServer(); } catch {}
+      }
       window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
       setTimeout(() => { window.location.href = redirectTo; }, 600);
     } catch (err) {
-      window.v2Toast?.("error", "Invalid OTP", err.message);
+      otpAttempts++;
+      window.v2Toast?.("error", "Network error", err.message || "Try again");
       btn.disabled = false;
       btn.textContent = "Verify & continue";
     }

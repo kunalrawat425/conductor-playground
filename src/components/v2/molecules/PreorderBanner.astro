@@ -4,16 +4,16 @@ interface Props extends PreorderBannerProps {}
 const {
   variant = "inline",
   title = "Pre-order tomorrow's catch",
-  description = "Order tonight, reserved at dock by 5am",
+  description = "Order tonight, ready next morning",
   ctaText = "Browse",
-  href = "/preorder",
+  href = "/v2?mode=preorder",
 } = Astro.props;
 ---
 {variant === "hero" ? (
   <a href={href} class="v2-pb-hero">
     <h3 class="v2-pb-hero-title">{title}</h3>
     <p class="v2-pb-hero-desc">{description}</p>
-    <span class="v2-pb-hero-btn">{ctaText} →</span>
+    {ctaText && <span class="v2-pb-hero-btn">{ctaText} →</span>}
   </a>
 ) : variant === "empty" ? (
   <div class="v2-pb-empty">
