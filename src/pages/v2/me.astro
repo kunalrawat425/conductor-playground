@@ -353,9 +353,10 @@ import Toast from "../../components/v2/atoms/Toast.astro";
         const emailSt = document.getElementById("v2-me-email-status")!;
         const emailBtn = document.getElementById("v2-me-email-verify-btn")!;
         if (email) {
-          emailSt.textContent = "❌ Not verified";
-          emailSt.style.color = "var(--v2-orange)";
-          emailBtn.style.display = "inline-block";
+          const verified = data.buyer?.email_verified === true;
+          emailSt.textContent = verified ? "✅ Verified" : "❌ Not verified";
+          emailSt.style.color = verified ? "var(--v2-green)" : "var(--v2-orange)";
+          emailBtn.style.display = verified ? "none" : "inline-block";
           emailBtn.disabled = false;
           emailBtn.textContent = "Send verification";
         } else {

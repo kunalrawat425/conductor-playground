@@ -288,9 +288,10 @@ import Input from "../../../components/v2/atoms/Input.astro";
       const emailStatus = document.getElementById("p-email-status")!;
       const emailVerifyBtn = document.getElementById("p-email-verify-btn")!;
       if (emailVal) {
-        emailStatus.textContent = "❌ Not verified";
-        emailStatus.style.color = "var(--v2-orange)";
-        emailVerifyBtn.style.display = "inline-block";
+        const verified = data.seller?.email_verified === true;
+        emailStatus.textContent = verified ? "✅ Verified" : "❌ Not verified";
+        emailStatus.style.color = verified ? "var(--v2-green)" : "var(--v2-orange)";
+        emailVerifyBtn.style.display = verified ? "none" : "inline-block";
         emailVerifyBtn.disabled = false;
         emailVerifyBtn.textContent = "Send verification";
       } else {
