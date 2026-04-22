@@ -190,7 +190,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       // Single inventory number for the listing (`fish_listings.weight_avail`), in the chosen tier’s unit (pc / kg / g). DB `create_order_atomic` subtracts `quantity` from this field only — no per-tier stock.
       const weightAvail = Number(listing.weight_avail);
       const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
-      if (!listing.is_available || availOk <= 0 || availOk < quantity) {
+      if (listing.is_preorder_enabled || !listing.is_available || availOk <= 0 || availOk < quantity) {
         if (scheduled_for) {
           const { data: schedSeller } = await supabase
             .from("sellers")

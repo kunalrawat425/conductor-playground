@@ -24,7 +24,8 @@ try {
   if (seller) {
     listings = await getSellerListings(id!);
     // Show listings that are in-stock OR have pre-orders enabled (pre-orders are inventory-independent)
-    listings = listings.filter((l: any) => l.is_available || l.is_preorder_enabled);
+    // Preorder listings only show if enabled AND price range (min+max) is set by seller
+    listings = listings.filter((l: any) => l.is_available || (l.is_preorder_enabled && l.preorder_price_min && l.preorder_price_max));
   } else notFound = true;
 } catch { notFound = true; }
 
@@ -264,77 +265,80 @@ const tags = [
       const name = getName(l.species);
       const sellerItems = getSellerItems();
       const emoji = speciesEmoji(l.species);
-      // Pre-order if: seller is in preorder mode today, OR listing explicitly has pre-order enabled
-      const isPreorder = isPreorderMode || l.is_preorder_enabled === true;
+      // Preorder listing: is_preorder_enabled=true means inventory-independent pre-order
+      // Regular listing: only available when is_available=true (play/pause dependent)
+      const isListingPreorder = l.is_preorder_enabled === true && l.preorder_price_min && l.preorder_price_max;
+      const hasStock = !isListingPreorder && l.is_available;
 
       // Total qty across all tiers for this listing (for incart highlight)
       const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
 
-      // Pre-order price range badge (shown for OOS pre-order listings)
-      const preorderRangeHtml = l.is_preorder_enabled && (l.preorder_price_min || l.preorder_price_max)
-        ? (() => {
-            const mn = l.preorder_price_min ? `₹${Number(l.preorder_price_min).toLocaleString("en-IN")}` : "";
-            const mx = l.preorder_price_max ? `₹${Number(l.preorder_price_max).toLocaleString("en-IN")}` : "";
-            const range = mn && mx ? `${mn} – ${mx}` : mn || mx;
-            return `<div style="font:600 11px Inter;color:#7C3AED;margin-top:3px;">Est. price: ${range}</div>`;
-          })()
+      // Pre-order price range (shown on preorder listings)
+      const mn = l.preorder_price_min ? `₹${Number(l.preorder_price_min).toLocaleString("en-IN")}` : "";
+      const mx = l.preorder_price_max ? `₹${Number(l.preorder_price_max).toLocaleString("en-IN")}` : "";
+      const preorderRangeHtml = isListingPreorder
+        ? `<div style="font:600 11px Inter;color:#7C3AED;margin-top:3px;">🌙 Est. ${mn} – ${mx}</div>`
         : "";
 
-      // Show all pricing tiers as individual add buttons so buyer picks the right pack/unit.
-      const pricingHtml = opts.length <= 1
-        ? (() => {
-            const price = firstOpt.price || 0;
-            const unit = firstOpt.unit_label || firstOpt.label || "kg";
-            const optId = firstOpt.id || "default";
-            const key = ck(l.id, optId);
-            const inCart = sellerItems[key]?.qty || 0;
-            const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
-            return `<div class="v2-item-bottom">
-              <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
-              ${inCart > 0
-                ? (() => {
-                    const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
-                    const packs = bs > 1 ? Math.round(inCart / bs) : inCart;
-                    const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
-                    return `<div class="v2-item-counter" data-id="${key}">
-                     <button class="v2-item-dec" aria-label="Decrease">−</button>
-                     <span class="v2-item-count">${packLabel}</span>
-                     <button class="v2-item-inc" aria-label="Increase">+</button>
-                   </div>`;
-                  })()
+      // Button color: purple for preorder, brand for regular
+      const btnBg = isListingPreorder ? '#7C3AED' : 'var(--v2-brand)';
+      const btnLabel = isListingPreorder ? 'Pre-order' : '+';
 
-                : `<button class="v2-item-add" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
-            </div>`;
-          })()
-        : (() => {
-            // Multiple tiers — each tier gets its own add/counter using composite key.
-            return `<div class="v2-item-tiers">
-              ${opts.map((o) => {
-                const label = o.label || o.unit_label || o.unit || "unit";
-                const optId = o.id || "default";
-                const key = ck(l.id, optId);
-                const tierQty = sellerItems[key]?.qty || 0;
-                const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
-                const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
-                return `<div class="v2-item-tier">
-                  <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
-                  <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
-                  ${tierQty > 0
-                    ? (() => {
-                        const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
-                        const packs = bs > 1 ? Math.round(tierQty / bs) : tierQty;
-                        const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
-                        return `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
-                         <button class="v2-item-dec" aria-label="Decrease">−</button>
-                         <span class="v2-item-count">${packLabel}</span>
-                         <button class="v2-item-inc" aria-label="Increase">+</button>
-                       </div>`;
-                      })()
-                    : `<button class="v2-item-add v2-item-add-sm" style="background:${isPreorder ? '#7C3AED' : 'var(--v2-brand)'};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
-                </div>`;
-              }).join("")}
-            </div>`;
-          })();
+      // Show all pricing tiers as individual add buttons — preorder always shown, regular only when hasStock
+      const pricingHtml = (isListingPreorder || hasStock)
+        ? (opts.length <= 1
+          ? (() => {
+              const price = firstOpt.price || 0;
+              const unit = firstOpt.unit_label || firstOpt.label || "kg";
+              const optId = firstOpt.id || "default";
+              const key = ck(l.id, optId);
+              const inCart = sellerItems[key]?.qty || 0;
+              const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
+              return `<div class="v2-item-bottom">
+                <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+                ${inCart > 0
+                  ? (() => {
+                      const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
+                      const packs = bs > 1 ? Math.round(inCart / bs) : inCart;
+                      const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
+                      return `<div class="v2-item-counter" data-id="${key}">
+                       <button class="v2-item-dec" aria-label="Decrease">−</button>
+                       <span class="v2-item-count">${packLabel}</span>
+                       <button class="v2-item-inc" aria-label="Increase">+</button>
+                     </div>`;
+                    })()
+                  : `<button class="v2-item-add" style="background:${btnBg};${isListingPreorder ? 'font-size:11px;padding:0 10px;' : ''}" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">${btnLabel}</button>`}
+              </div>`;
+            })()
+          : (() => {
+              return `<div class="v2-item-tiers">
+                ${opts.map((o) => {
+                  const label = o.label || o.unit_label || o.unit || "unit";
+                  const optId = o.id || "default";
+                  const key = ck(l.id, optId);
+                  const tierQty = sellerItems[key]?.qty || 0;
+                  const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
+                  const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
+                  return `<div class="v2-item-tier">
+                    <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
+                    <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
+                    ${tierQty > 0
+                      ? (() => {
+                          const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
+                          const packs = bs > 1 ? Math.round(tierQty / bs) : tierQty;
+                          const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
+                          return `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
+                           <button class="v2-item-dec" aria-label="Decrease">−</button>
+                           <span class="v2-item-count">${packLabel}</span>
+                           <button class="v2-item-inc" aria-label="Increase">+</button>
+                         </div>`;
+                        })()
+                      : `<button class="v2-item-add v2-item-add-sm" style="background:${btnBg};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">${btnLabel}</button>`}
+                  </div>`;
+                }).join("")}
+              </div>`;
+            })())
+        : `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-top:8px;text-align:center;">Unavailable</div>`;
 
       // Fish size badge
       const sizeMap = { small: "S", medium: "M", large: "L" };
@@ -360,9 +364,9 @@ const tags = [
 
       return `
         <div class="v2-item-card${totalInCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
-          <div class="v2-item-img" style="background:${isPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};position:relative;overflow:hidden;">
+          <div class="v2-item-img" style="background:${isListingPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};position:relative;overflow:hidden;">
             ${imgContent}
-            ${isPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
+            ${isListingPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
             ${discountBadge}
           </div>
           <div class="v2-item-body">
