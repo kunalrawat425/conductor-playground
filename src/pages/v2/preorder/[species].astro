@@ -156,7 +156,7 @@ try {
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Quantity</span><b id="po-rev-qty">1 kg</b></div>
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Cut</span><b id="po-rev-cut">Whole</b></div>
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Pickup</span><b id="po-rev-slot">Tomorrow 7-9am</b></div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed #A7F3D0;margin-top:4px;font:800 14px Inter;color:var(--v2-green);"><span>You pay at pickup</span><span id="po-rev-est">~₹650</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed #A7F3D0;margin-top:4px;font:800 14px Inter;color:var(--v2-green);"><span>Estimated total</span><span id="po-rev-est">~₹650</span></div>
         </div>
       </div>
 
@@ -412,8 +412,11 @@ try {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      window.v2Toast?.("success", "Pre-order placed", `${state.sellerName} will confirm in the morning`);
-      setTimeout(() => { window.location.href = "/v2/track"; }, 1200);
+      window.v2Toast?.("success", "Pre-order placed", "Upload your payment screenshot on the next screen so the seller can confirm.");
+      const oid = data.order?.id ? String(data.order.id) : "";
+      setTimeout(() => {
+        window.location.href = oid ? `/v2/track/${encodeURIComponent(oid)}` : "/v2/track";
+      }, 1200);
     } catch (err) {
       window.v2Toast?.("error", "Failed", err.message);
       btn.disabled = false;

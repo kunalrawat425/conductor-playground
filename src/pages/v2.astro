@@ -181,6 +181,11 @@ const categories = [
     return cur >= openMin || cur <= closeMin;
   }
 
+  const DAY_NAMES_SHORT = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  function todayDayName() {
+    return DAY_NAMES_SHORT[new Date().getDay()];
+  }
+
   function getBuyerLocation(): { lat: number; lng: number } | null {
     try {
       const lat = localStorage.getItem("zepto_buyer_lat");
@@ -294,8 +299,30 @@ const categories = [
         const dist = buyerLoc && s.lat != null && s.lng != null
           ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
           : null;
-        const open = isOpen(s.opens_at, s.closes_at);
-        return { seller: s, listings: sellerListings.get(s.id) || [], dist, open };
+        const rawListings = sellerListings.get(s.id) || [];
+        const openDays: string[] = Array.isArray((s as any).open_days) ? (s as any).open_days : [];
+        const preorderDays: string[] = Array.isArray((s as any).preorder_days) ? (s as any).preorder_days : [];
+        const day = todayDayName();
+        const isTodayOrderDay = !openDays.length || openDays.includes(day);
+        const isTodayPreorderDay = preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder;
+        const openNow = isOpen(s.opens_at, s.closes_at) && isTodayOrderDay;
+        const preorderMode = !openNow && isTodayPreorderDay;
+        const listings = rawListings.filter((l: any) => preorderMode
+          ? (
+              l?.is_preorder_enabled === true &&
+              l?.preorder_price_min != null &&
+              l?.preorder_price_max != null
+            )
+          : l?.is_available === true
+        );
+        return {
+          seller: s,
+          listings,
+          dist,
+          open: openNow,
+          preorderMode,
+          preorderAvailableToday: isTodayPreorderDay,
+        };
       });
 
       // Sort: open first, then by distance, then rating
@@ -415,7 +442,7 @@ const categories = [
       const s = g.seller;
       // Time
       if (filterState.time === "open" && !g.open) return false;
-      if (filterState.time === "preorder" && !s.accepts_preorder) return false;
+      if (filterState.time === "preorder" && !g.preorderAvailableToday) return false;
       // Fulfill (delivery filter is the only meaningful one)
       if (filterState.fulfill === "delivery" && !s.has_delivery) return false;
       // Distance — when buyer location set, hide far-away sellers
@@ -487,10 +514,9 @@ const categories = [
         };
 
         // Status: open / closed-preorder (still active for pre-orders) / closed / pre-order-only
-        const closedButPreorder = !g.open && s.accepts_preorder;
         const status = !g.open
-          ? (s.accepts_preorder ? "closed-preorder" : "closed")
-          : (g.listings.length === 0 && s.accepts_preorder ? "pre-order-only" : "open");
+          ? (g.preorderAvailableToday ? "closed-preorder" : "closed")
+          : (g.listings.length === 0 && g.preorderAvailableToday ? "pre-order-only" : "open");
 
         // ONE status tag per card — mutually exclusive states.
         const statusBadge = status === "open"
@@ -519,10 +545,10 @@ const categories = [
         if (g.open && g.listings.length > 0) {
           offerLabel = "Same-day catch";
           offerColor = "v2-badge-brand";
-        } else if (g.open && s.accepts_preorder) {
+        } else if (g.open && g.preorderAvailableToday) {
           offerLabel = "Pre-order only";
           offerColor = "v2-badge-indigo";
-        } else if (!g.open && s.accepts_preorder) {
+        } else if (!g.open && g.preorderAvailableToday) {
           offerLabel = "Pre-order available";
           offerColor = "v2-badge-indigo";
         } else {

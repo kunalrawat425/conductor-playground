@@ -23,15 +23,15 @@ try {
   seller = await getSellerById(id!);
   if (seller) {
     listings = await getSellerListings(id!);
-    // Show listings that are in-stock OR have pre-orders enabled (pre-orders are inventory-independent)
-    // Preorder listings only show if enabled AND price range (min+max) is set by seller
-    listings = listings.filter((l: any) => l.is_available || (l.is_preorder_enabled && l.preorder_price_min && l.preorder_price_max));
+    // Keep menu broad so buyers can still place pre-orders when the seller is in
+    // pre-order mode and stock is unavailable. Exact add/disable behavior is handled
+    // in the card renderer below.
+    listings = listings.filter((l: any) => !!(l.pricing_options?.length));
   } else notFound = true;
 } catch { notFound = true; }
 
 const sellerName = seller?.name || "Seller";
 const sellerLocation = seller?.location_name || "";
-const itemCount = listings.length;
 const isOpen = (() => {
   if (!seller?.opens_at || !seller?.closes_at) return true;
   // Use IST (UTC+5:30) — SSR servers run UTC
@@ -53,9 +53,38 @@ const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
 const preorderDays: string[] = seller?.preorder_days ?? [];
 const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
 const isTodayPreorderDay = preorderDays.length > 0 ? preorderDays.includes(todayDayName) : !!seller?.accepts_preorder;
+// Listing-level pre-order must still work even if seller-level day config is missing.
+const hasListingPreorderEnabled = listings.some((l: any) => l?.is_preorder_enabled === true);
+const isPreorderAvailableToday = isTodayPreorderDay || hasListingPreorderEnabled;
 const isEffectivelyOpen = isOpen && isTodayOrderDay;
 // Pre-order mode: seller day-off or closed but pre-orders available today
-const isPreorderMode = !isEffectivelyOpen && isTodayPreorderDay;
+const isPreorderMode = !isEffectivelyOpen && isPreorderAvailableToday;
+// Timing-first menu behavior:
+// - During pre-order mode, show only pre-order-capable items (avoid greyed rows).
+// - During order mode, show only in-stock inventory items.
+if (isPreorderMode) {
+  listings = listings.filter((l: any) =>
+    l?.is_preorder_enabled === true &&
+    l?.preorder_price_min != null &&
+    l?.preorder_price_max != null
+  );
+} else {
+  listings = listings.filter((l: any) => l?.is_available === true);
+}
+const itemCount = listings.length;
+
+/** Map species id → display label for client menu + checkout (getSpeciesDisplay is server-only). */
+const speciesDisplayById: Record<string, string> = {};
+for (const l of listings) {
+  const sp = typeof l?.species === "string" ? l.species.trim() : "";
+  if (sp && speciesDisplayById[sp] == null) {
+    try {
+      speciesDisplayById[sp] = getSpeciesDisplay(sp);
+    } catch {
+      speciesDisplayById[sp] = sp.charAt(0).toUpperCase() + sp.slice(1);
+    }
+  }
+}
 
 // Schedule display strings
 function fmtDays(days: string[]): string {
@@ -68,7 +97,7 @@ const cutoffLabel = seller?.preorder_cutoff_time ? seller.preorder_cutoff_time.s
 
 const status: "open" | "closed" = isEffectivelyOpen ? "open" : "closed";
 const tags = [
-  isTodayPreorderDay && !isEffectivelyOpen ? "Pre-order available" : (seller?.accepts_preorder ? "Pre-order" : null),
+  isPreorderAvailableToday && !isEffectivelyOpen ? "Pre-order available" : (isPreorderAvailableToday ? "Pre-order" : null),
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
   seller?.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null,
@@ -89,9 +118,10 @@ const tags = [
   <Toast />
   <Modal />
   <LoginSheet id="seller-login-sheet" role="buyer" redirectTo={`/v2/seller/${id}`} />
-  <AddressPickerSheet id="seller-addr-sheet" />
   <CartStackSheet id="seller-cart-stack" />
   <CheckoutSheet id="seller-checkout" />
+  <!-- Elevated z-index so address picker paints above checkout (main stacking context). -->
+  <AddressPickerSheet id="seller-addr-sheet" elevated />
 
   {notFound ? (
     <div style="padding:24px 16px;margin-top:24px;">
@@ -144,9 +174,9 @@ const tags = [
           <EmptyState
             variant="no-results"
             title="No items available"
-            description={seller?.accepts_preorder ? "Pre-order tomorrow's catch instead." : "Check back during opening hours."}
-            ctaText={seller?.accepts_preorder ? "Pre-order" : "Browse sellers"}
-            ctaHref={seller?.accepts_preorder ? "/v2/preorder" : "/"}
+            description={isPreorderAvailableToday ? "Pre-order tomorrow's catch instead." : "Check back during opening hours."}
+            ctaText={isPreorderAvailableToday ? "Pre-order" : "Browse sellers"}
+            ctaHref={isPreorderAvailableToday ? "/v2/preorder" : "/"}
           />
         </div>
       ) : (
@@ -221,7 +251,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: !isEffectivelyOpen && !isTodayPreorderDay, isPreorderMode }}>
+<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: !isEffectivelyOpen && !isPreorderAvailableToday, isPreorderMode }}>
   function withCart(fn) {
     if (window.RelifishCart) return fn(window.RelifishCart);
     document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });
@@ -252,7 +282,80 @@ const tags = [
       return "🐟";
     }
     function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-    function getName(sp) { try { return getSpeciesDisplay(sp) || sp; } catch { return sp; } }
+    function titleCaseWords(s) {
+      return String(s || "").trim().split(/\s+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+    }
+    function getName(sp) {
+      const id = String(sp || "").trim();
+      if (!id) return "Fish";
+      if (speciesDisplayById && speciesDisplayById[id]) return speciesDisplayById[id];
+      return id.charAt(0).toUpperCase() + id.slice(1);
+    }
+    function bundleStepFromOpt(opt) {
+      const n = Number(opt?.bundle_size);
+      return Number.isFinite(n) && n > 1 ? n : 1;
+    }
+    function isGenericTierLabel(lab) {
+      const s = String(lab || "").trim();
+      if (!s) return true;
+      if (/^option$/i.test(s) || /^unit$/i.test(s)) return true;
+      if (/^per\s*piece$/i.test(s) || /^per\s*kg$/i.test(s)) return true;
+      return false;
+    }
+    /** Checkout subtitle: e.g. "4 pack · Medium" or "1.5 kg" (no bogus "× Option"). */
+    function checkoutLineMeta(i) {
+      const listing = listings.find((l) => l.id === i.listing_id);
+      const opts = listing?.pricing_options || [];
+      const wantId = i.pricing_option_id && i.pricing_option_id !== "default" ? i.pricing_option_id : null;
+      const opt =
+        (wantId && opts.find((o) => (o.id || "default") === wantId)) ||
+        opts[0] ||
+        null;
+      if (!opt) {
+        const pl = String(i.pricing_label || i.qty_unit || "").trim();
+        const qtyPart = `${fmtQty(i.qty)} ${i.qty_unit || "kg"}`;
+        if (!pl || isGenericTierLabel(pl)) return escape(qtyPart);
+        return `${escape(qtyPart)} · ${escape(titleCaseWords(pl))}`;
+      }
+      const unit = resolveUnit(opt);
+      const bs = bundleStepFromOpt(opt);
+      const qtyPart = counterQtyLabel(i.qty, unit, bs);
+      const lab = String(opt.label || opt.unit_label || "").trim();
+      const stored = String(i.pricing_label || "").trim();
+      const tierCandidate = !isGenericTierLabel(lab) ? lab : !isGenericTierLabel(stored) ? stored : "";
+      const tierPretty = tierCandidate ? titleCaseWords(tierCandidate) : "";
+      const multi = opts.length > 1;
+      if (tierPretty && multi) return `${escape(qtyPart)} · ${escape(tierPretty)}`;
+      if (tierPretty && tierPretty.toLowerCase() !== String(unit).toLowerCase() && !/^piece|kg|pc|pcs$/i.test(tierPretty)) {
+        return `${escape(qtyPart)} · ${escape(tierPretty)}`;
+      }
+      return escape(qtyPart);
+    }
+    function checkoutFishTitle(i) {
+      const listing = listings.find((l) => l.id === i.listing_id);
+      const sp = listing?.species;
+      if (sp && speciesDisplayById && speciesDisplayById[sp]) return escape(speciesDisplayById[sp]);
+      return escape(titleCaseWords(i.name || "Item"));
+    }
+    function resolveUnit(opt) {
+      const raw = String(opt?.unit || opt?.price_unit || opt?.unit_label || opt?.label || "").toLowerCase();
+      if (raw.includes("piece") || raw.includes("pc")) return "piece";
+      if (raw.includes("kg")) return "kg";
+      return String(opt?.unit || "kg").toLowerCase();
+    }
+    function fmtQty(v) {
+      const n = Number(v) || 0;
+      return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+    }
+    function counterQtyLabel(qty, unit, bundleSize) {
+      const u = String(unit || "").toLowerCase();
+      const bs = bundleSize && bundleSize > 1 ? Number(bundleSize) : 1;
+      if (u === "piece" || u === "pc" || u === "pcs") {
+        const packs = bs > 1 ? Math.round(Number(qty) / bs) : Number(qty);
+        return `${fmtQty(packs)} pack`;
+      }
+      return `${fmtQty(qty)} ${unit || "kg"}`;
+    }
 
     // Build composite cart key matching cart.ts logic
     function ck(listingId, optId) {
@@ -265,80 +368,120 @@ const tags = [
       const name = getName(l.species);
       const sellerItems = getSellerItems();
       const emoji = speciesEmoji(l.species);
-      // Preorder listing: is_preorder_enabled=true means inventory-independent pre-order
-      // Regular listing: only available when is_available=true (play/pause dependent)
-      const isListingPreorder = l.is_preorder_enabled === true && l.preorder_price_min && l.preorder_price_max;
-      const hasStock = !isListingPreorder && l.is_available;
+      // Menu mode is timing-first:
+      // - pre-order mode: only listing-level pre-order enabled items
+      // - order mode: only in-stock inventory items
+      const isListingPreorder = isPreorderMode &&
+        l.is_preorder_enabled === true &&
+        l.preorder_price_min != null &&
+        l.preorder_price_max != null;
+      const hasStock = l.is_available === true;
+      const canAddItem = !sellerFullyClosed && (isPreorderMode ? isListingPreorder : hasStock);
+      const unavailableReason = (() => {
+        if (sellerFullyClosed) return "Seller closed today";
+        if (canAddItem) return null;
+        if (!hasStock && !isPreorderMode) return "Out of stock";
+        return "Unavailable";
+      })();
 
       // Total qty across all tiers for this listing (for incart highlight)
       const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
 
       // Pre-order price range (shown on preorder listings)
-      const mn = l.preorder_price_min ? `₹${Number(l.preorder_price_min).toLocaleString("en-IN")}` : "";
-      const mx = l.preorder_price_max ? `₹${Number(l.preorder_price_max).toLocaleString("en-IN")}` : "";
+      const fallbackPrice = firstOpt?.price ? `₹${Number(firstOpt.price).toLocaleString("en-IN")}` : "";
+      const mn = l.preorder_price_min ? `₹${Number(l.preorder_price_min).toLocaleString("en-IN")}` : fallbackPrice;
+      const mx = l.preorder_price_max ? `₹${Number(l.preorder_price_max).toLocaleString("en-IN")}` : fallbackPrice;
       const preorderRangeHtml = isListingPreorder
-        ? `<div style="font:600 11px Inter;color:#7C3AED;margin-top:3px;">🌙 Est. ${mn} – ${mx}</div>`
+        ? `<div style="font:600 11px Inter;color:#7C3AED;margin-top:3px;">🌙 Est. ${mn}${mx && mx !== mn ? ` – ${mx}` : ""}</div>`
         : "";
 
-      // Button color: purple for preorder, brand for regular
-      const btnBg = isListingPreorder ? '#7C3AED' : 'var(--v2-brand)';
-      const btnLabel = isListingPreorder ? 'Pre-order' : '+';
-
-      // Show all pricing tiers as individual add buttons — preorder always shown, regular only when hasStock
-      const pricingHtml = (isListingPreorder || hasStock)
-        ? (opts.length <= 1
-          ? (() => {
-              const price = firstOpt.price || 0;
-              const unit = firstOpt.unit_label || firstOpt.label || "kg";
-              const optId = firstOpt.id || "default";
-              const key = ck(l.id, optId);
-              const inCart = sellerItems[key]?.qty || 0;
-              const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
-              return `<div class="v2-item-bottom">
-                <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
-                ${inCart > 0
-                  ? (() => {
-                      const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
-                      const packs = bs > 1 ? Math.round(inCart / bs) : inCart;
-                      const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
-                      return `<div class="v2-item-counter" data-id="${key}">
-                       <button class="v2-item-dec" aria-label="Decrease">−</button>
-                       <span class="v2-item-count">${packLabel}</span>
-                       <button class="v2-item-inc" aria-label="Increase">+</button>
-                     </div>`;
-                    })()
-                  : `<button class="v2-item-add" style="background:${btnBg};${isListingPreorder ? 'font-size:11px;padding:0 10px;' : ''}" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">${btnLabel}</button>`}
-              </div>`;
-            })()
-          : (() => {
-              return `<div class="v2-item-tiers">
-                ${opts.map((o) => {
-                  const label = o.label || o.unit_label || o.unit || "unit";
-                  const optId = o.id || "default";
-                  const key = ck(l.id, optId);
-                  const tierQty = sellerItems[key]?.qty || 0;
-                  const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
-                  const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
-                  return `<div class="v2-item-tier">
-                    <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
-                    <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
-                    ${tierQty > 0
-                      ? (() => {
-                          const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
-                          const packs = bs > 1 ? Math.round(tierQty / bs) : tierQty;
-                          const packLabel = bs > 1 ? `${packs}×${bs}` : packs;
-                          return `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
-                           <button class="v2-item-dec" aria-label="Decrease">−</button>
-                           <span class="v2-item-count">${packLabel}</span>
-                           <button class="v2-item-inc" aria-label="Increase">+</button>
-                         </div>`;
-                        })()
-                      : `<button class="v2-item-add v2-item-add-sm" style="background:${btnBg};" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(o.unit || 'kg')}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">${btnLabel}</button>`}
-                  </div>`;
-                }).join("")}
-              </div>`;
-            })())
-        : `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-top:8px;text-align:center;">Unavailable</div>`;
+      // Preorder listings: show min–max range + single Pre-order button (price is estimated, set after catch)
+      // Regular listings: show exact pricing_options tiers as normal
+      const pricingHtml = isListingPreorder && canAddItem
+        ? (() => {
+            const unit = resolveUnit(firstOpt);
+            const optId = firstOpt.id || "default";
+            const key = ck(l.id, optId);
+            const inCart = sellerItems[key]?.qty || 0;
+            return `<div class="v2-item-bottom">
+              <div class="v2-item-price" style="color:#7C3AED;">${mn}–${mx}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+              ${inCart > 0
+                ? (() => {
+                    const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
+                    const packLabel = counterQtyLabel(inCart, unit, bs);
+                    return `<div class="v2-item-counter" data-id="${key}">
+                     <button class="v2-item-dec" aria-label="Decrease">−</button>
+                     <span class="v2-item-count">${packLabel}</span>
+                     <button class="v2-item-inc" aria-label="Increase">+</button>
+                   </div>`;
+                  })()
+                : `<button class="v2-item-add" data-id="${l.id}" data-price="${firstOpt.price || 0}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+            </div>`;
+          })()
+        : canAddItem && hasStock
+          ? (opts.length <= 1
+            ? (() => {
+                const price = firstOpt.price || 0;
+                const unit = resolveUnit(firstOpt);
+                const optId = firstOpt.id || "default";
+                const key = ck(l.id, optId);
+                const inCart = sellerItems[key]?.qty || 0;
+                const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
+                return `<div class="v2-item-bottom">
+                  <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+                  ${inCart > 0
+                    ? (() => {
+                        const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
+                        const packLabel = counterQtyLabel(inCart, unit, bs);
+                        return `<div class="v2-item-counter" data-id="${key}">
+                         <button class="v2-item-dec" aria-label="Decrease">−</button>
+                         <span class="v2-item-count">${packLabel}</span>
+                         <button class="v2-item-inc" aria-label="Increase">+</button>
+                       </div>`;
+                      })()
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+                </div>`;
+              })()
+            : (() => {
+                return `<div class="v2-item-tiers">
+                  ${opts.map((o) => {
+                    const label = o.label || o.unit_label || o.unit || "unit";
+                    const tierUnit = resolveUnit(o);
+                    const optId = o.id || "default";
+                    const key = ck(l.id, optId);
+                    const tierQty = sellerItems[key]?.qty || 0;
+                    const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
+                    const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
+                    return `<div class="v2-item-tier">
+                      <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
+                      <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
+                      ${tierQty > 0
+                        ? (() => {
+                            const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
+                            const packLabel = counterQtyLabel(tierQty, tierUnit, bs);
+                            return `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
+                             <button class="v2-item-dec" aria-label="Decrease">−</button>
+                             <span class="v2-item-count">${packLabel}</span>
+                             <button class="v2-item-inc" aria-label="Increase">+</button>
+                           </div>`;
+                          })()
+                        : `<button class="v2-item-add v2-item-add-sm" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                    </div>`;
+                  }).join("")}
+                </div>`;
+              })())
+          : `<div class="v2-item-bottom" style="opacity:.85;">
+              <div class="v2-item-price" style="color:var(--v2-ink-3);">—</div>
+              <button class="v2-item-add" type="button" disabled aria-disabled="true"
+                style="background:var(--v2-bg-3);color:var(--v2-ink-4);cursor:not-allowed;"
+                title="${escape(unavailableReason || 'Unavailable')}">
+                +
+              </button>
+            </div>
+            <div style="font:600 11px Inter;color:var(--v2-ink-3);margin-top:6px;text-align:right;">
+              ${escape(unavailableReason || 'Unavailable')}
+              ${!isListingPreorder && acceptsPreorder && !sellerFullyClosed ? ` · enable pre-order range in seller dashboard` : ``}
+            </div>`;
 
       // Fish size badge
       const sizeMap = { small: "S", medium: "M", large: "L" };
@@ -352,8 +495,10 @@ const tags = [
       const limitHint = l.buyer_daily_qty_limit
         ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:1px;">Max ${l.buyer_daily_qty_limit} per buyer/day</div>` : '';
 
-      // Compare-at-price (discount) from first pricing option
-      const hasDiscount = firstOpt.compare_at_price && firstOpt.compare_at_price > firstOpt.price;
+      // Compare-at-price (discount) — hide on pre-order cards; final price is set after catch, list/was pricing is misleading.
+      const hasDiscount =
+        !isListingPreorder &&
+        !!(firstOpt.compare_at_price && firstOpt.compare_at_price > firstOpt.price);
       const discountBadge = hasDiscount
         ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-red);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
 
@@ -379,7 +524,28 @@ const tags = [
     }
 
     function render() {
-      grid.innerHTML = listings.map(renderItem).join("");
+      grid.innerHTML = listings.map((l) => {
+        try {
+          return renderItem(l);
+        } catch (err) {
+          // Keep menu functional even if one listing payload is malformed.
+          console.error("seller menu renderItem failed", err, l);
+          const firstOpt = (l?.pricing_options || [])[0] || {};
+          const name = escape(getName(l?.species || "Fish"));
+          const unit = escape(firstOpt.unit_label || firstOpt.label || firstOpt.unit || "kg");
+          const price = Number(firstOpt.price) || 0;
+          const optId = firstOpt.id || "default";
+          return `<div class="v2-item-card" data-listing-id="${l?.id || ""}">
+            <div class="v2-item-body">
+              <div class="v2-item-name">${name}</div>
+              <div class="v2-item-bottom">
+                <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${unit}</span></div>
+                <button class="v2-item-add" data-id="${l?.id || ""}" data-price="${price}" data-name="${name}" data-unit="${unit}" data-opt-id="${optId}" data-opt-label="${unit}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${name}">+</button>
+              </div>
+            </div>
+          </div>`;
+        }
+      }).join("");
       // If seller is fully closed (closed + no preorder), disable all add buttons and grey out items
       if (sellerFullyClosed) {
         grid.style.opacity = "0.5";
@@ -425,11 +591,12 @@ const tags = [
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
       const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
 
-      // Status line
+      // Status line (pre-order window is pickup-only — don't imply a delivery savings perk)
       let statusLine = `${sellerQty} item${sellerQty !== 1 ? "s" : ""}`;
       let statusColor = "var(--v2-ink-3)";
       if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
-      else if (freeHit) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
+      else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
+      else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
 
       cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -501,14 +668,16 @@ const tags = [
       const cartItemsEl = document.getElementById("seller-checkout-cart-items");
       if (cartItemsEl) {
         cartItemsEl.innerHTML = `
-          <div style="font:700 12px Inter;color:var(--v2-ink-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">From ${escape(group.seller_name || "Seller")}</div>
+          <div style="font:700 11px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">From ${escape(group.seller_name || "Seller")}</div>
           ${group.items.map(i => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--v2-border);font:500 13px Inter;">
-              <div>
-                <div style="color:var(--v2-ink);font-weight:600;">${escape(i.name)}</div>
-                <div style="color:var(--v2-ink-3);font-size:11px;">${i.qty} × ${escape(i.pricing_label || i.qty_unit)}</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--v2-border);">
+              <div style="flex:1;min-width:0;">
+                <div style="font:700 15px Inter;color:var(--v2-ink);letter-spacing:-0.02em;line-height:1.25;">${checkoutFishTitle(i)}</div>
+                <div style="margin-top:8px;">
+                  <span style="display:inline-block;font:600 11px Inter;line-height:1.35;color:var(--v2-brand);background:var(--v2-brand-l);padding:5px 11px;border-radius:999px;max-width:100%;">${checkoutLineMeta(i)}</span>
+                </div>
               </div>
-              <div style="font-weight:700;color:var(--v2-ink);">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
+              <div style="font:800 15px Inter;color:var(--v2-ink);flex-shrink:0;white-space:nowrap;padding-top:1px;">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
             </div>`).join("")}`;
       }
       const subtotal = group.subtotal;
@@ -517,10 +686,14 @@ const tags = [
       document.getElementById("seller-checkout-total").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
       document.getElementById("seller-checkout-total-final").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
 
-      // Free delivery banner + delivery hint in checkout step 1
+      // Free delivery banner + delivery hint in checkout step 1 (omit for pre-order window on this seller)
+      const hideDeliverySavingsUi = isPreorderMode && sid === sellerId;
       const freeDelivBanner = document.getElementById("seller-checkout-free-delivery-banner");
       const delivHint = document.getElementById("seller-checkout-delivery-hint");
-      if (deliveryFeeEnabled && deliveryFeeAmount > 0) {
+      if (hideDeliverySavingsUi) {
+        if (freeDelivBanner) freeDelivBanner.style.display = "none";
+        if (delivHint) delivHint.style.display = "none";
+      } else if (deliveryFeeEnabled && deliveryFeeAmount > 0) {
         if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
           if (freeDelivBanner) freeDelivBanner.style.display = "block";
           if (delivHint) delivHint.style.display = "none";
@@ -657,8 +830,11 @@ const tags = [
       window.v2Toast?.("success", "Address selected", "Continue to payment");
     });
 
-    // Address card itself is the trigger (clickable)
+    // Address card opens picker above checkout (AddressPickerSheet is after CheckoutSheet in DOM).
     document.getElementById("seller-checkout-current-address")?.addEventListener("click", () => {
+      try {
+        if (selectedAddressId) sessionStorage.setItem("seller-addr-sheet-selected", selectedAddressId);
+      } catch {}
       window.v2OpenSheet?.("seller-addr-sheet");
     });
 
@@ -722,7 +898,10 @@ const tags = [
           <div style="font:500 12px Inter;color:var(--v2-ink-4);margin-top:8px;">Redirecting to your orders...</div>
         `;
         document.body.appendChild(overlay);
-        setTimeout(() => { window.location.href = "/v2/track"; }, 2000);
+        const firstOrderId = Array.isArray(data.orders) && data.orders[0]?.id ? String(data.orders[0].id) : "";
+        setTimeout(() => {
+          window.location.href = firstOrderId ? `/v2/track/${encodeURIComponent(firstOrderId)}` : "/v2/track";
+        }, 2000);
       } catch (err) {
         window.v2Toast?.("error", "Failed", err.message || "Try again");
         btn.disabled = false;

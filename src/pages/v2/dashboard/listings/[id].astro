@@ -106,6 +106,26 @@ const speciesName = listing?.species || "Listing";
               const preorderPriceMaxRaw = formData.get("preorder_price_max")?.toString().trim();
               const preorder_price_min = preorderPriceMinRaw ? Number(preorderPriceMinRaw) : null;
               const preorder_price_max = preorderPriceMaxRaw ? Number(preorderPriceMaxRaw) : null;
+              if (isPreorderEnabled) {
+                if (!Number.isFinite(preorder_price_min as any) || !Number.isFinite(preorder_price_max as any)) {
+                  (window as any).v2Toast?.("error", "Pre-order pricing required", "Set both min and max price");
+                  focusListingField("preorder_price_min");
+                  if (btn) { btn.disabled = false; btn.textContent = "Save listing"; }
+                  return;
+                }
+                if ((preorder_price_min as number) <= 0 || (preorder_price_max as number) <= 0) {
+                  (window as any).v2Toast?.("error", "Invalid pre-order range", "Min and max must be > 0");
+                  focusListingField("preorder_price_min");
+                  if (btn) { btn.disabled = false; btn.textContent = "Save listing"; }
+                  return;
+                }
+                if ((preorder_price_min as number) > (preorder_price_max as number)) {
+                  (window as any).v2Toast?.("error", "Invalid pre-order range", "Min cannot be greater than max");
+                  focusListingField("preorder_price_min");
+                  if (btn) { btn.disabled = false; btn.textContent = "Save listing"; }
+                  return;
+                }
+              }
 
               await updateListing(
                 lid,

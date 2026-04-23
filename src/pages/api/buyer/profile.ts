@@ -48,16 +48,29 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Cross-table uniqueness: email must not exist in sellers table
+    // Uniqueness: same checks as seller profile (cross-table + no other buyer with this email)
     if (sanitized.email && typeof sanitized.email === "string") {
+      const email = sanitized.email;
       const { data: existingSeller } = await supabase
         .from("sellers")
         .select("id")
-        .eq("email", sanitized.email)
+        .eq("email", email)
         .maybeSingle();
       if (existingSeller) {
         return new Response(
           JSON.stringify({ error: "That email is already registered as a seller. Use a different email." }),
+          { status: 409 }
+        );
+      }
+      const { data: otherBuyer } = await supabase
+        .from("buyers")
+        .select("id")
+        .eq("email", email)
+        .neq("id", buyer_id)
+        .maybeSingle();
+      if (otherBuyer) {
+        return new Response(
+          JSON.stringify({ error: "That email is already in use. Email is case-sensitive." }),
           { status: 409 }
         );
       }
@@ -75,8 +88,10 @@ export const POST: APIRoute = async ({ request }) => {
         const msg = (error.message || "").toLowerCase();
         const human =
           msg.includes("email") || msg.includes("buyers_email")
-            ? "That email is already in use."
-            : "This value is already in use.";
+            ? "That email is already in use. Email is case-sensitive."
+            : msg.includes("phone")
+              ? "That phone number is already registered."
+              : "This value is already in use.";
         return new Response(JSON.stringify({ error: human }), { status: 409 });
       }
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
