@@ -28,14 +28,30 @@ export function orderAmountDue(o: Pick<BuyerStepperOrder, "total_price" | "deliv
   return total + del;
 }
 
+function isPartialAgainstListedDue(o: Pick<BuyerStepperOrder, "paid_amount" | "total_price" | "delivery_fee">): boolean {
+  const paid = Number(o.paid_amount);
+  const due = orderAmountDue(o);
+  return (
+    Number.isFinite(paid) &&
+    paid > 0 &&
+    Number.isFinite(due) &&
+    due > 0 &&
+    paid + 0.01 < due
+  );
+}
+
+function finalPriceUnset(o: BuyerStepperOrder): boolean {
+  const fin = o.final_price;
+  return fin === null || fin === undefined || fin === "";
+}
+
 /** Next-day / catch pre-order: partial advance (paid < due) or explicit pre_order statuses. */
 export function isPartialAdvanceCatch(o: BuyerStepperOrder): boolean {
   if (o.status === "pre_order" || o.status === "payment_required") return true;
-  const paid = Number(o.paid_amount);
-  const due = orderAmountDue(o);
-  if (o.status === "pending_payment" && Number.isFinite(paid) && paid > 0 && Number.isFinite(due) && due > 0 && paid + 0.01 < due) {
-    return true;
-  }
+  if (!isPartialAgainstListedDue(o)) return false;
+  if (o.status === "pending_payment") return true;
+  // After seller verify: same guard as seller dashboard `needsFinalPrice` — still catch flow until final price exists.
+  if (finalPriceUnset(o) && (o.status === "confirmed" || o.status === "paid")) return true;
   return false;
 }
 
@@ -165,7 +181,16 @@ function paymentTrackStep(
   return m[status] ?? 0;
 }
 
-function preorderTrackStep(status: string, hasPaymentProof: boolean): number {
+function preorderTrackStep(o: BuyerStepperOrder, hasPaymentProof: boolean): number {
+  const status = o.status;
+  // Seller verified payment but morning final price not set yet — stay on "Price set" (index 2), not "Confirmed".
+  if (
+    (status === "confirmed" || status === "paid") &&
+    isPartialAgainstListedDue(o) &&
+    finalPriceUnset(o)
+  ) {
+    return 2;
+  }
   const m: Record<string, number> = {
     pre_order: 0,
     pending: 0,
@@ -191,7 +216,7 @@ export function getBuyerStepperStep(o: BuyerStepperOrder, orderType: "pickup" | 
     Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
   if (variant === "simple") return simpleStatusStep(o.status, orderType);
   if (variant === "payment") return paymentTrackStep(o.status, hasPaymentProof, orderType);
-  return preorderTrackStep(o.status, hasPaymentProof);
+  return preorderTrackStep(o, hasPaymentProof);
 }
 
 export function resolveBuyerStepper(

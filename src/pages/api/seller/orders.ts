@@ -233,7 +233,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
     const { data: currentOrder } = await supabase
       .from("orders")
-      .select("status, paid_amount, final_price, payment_screenshot_urls")
+      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee")
       .eq("id", order_id)
       .single();
     const currentStatus = currentOrder?.status;
@@ -255,16 +255,27 @@ export const POST: APIRoute = async ({ request }) => {
     if (currentStatus && validTransitions[currentStatus] && !validTransitions[currentStatus].includes(status)) {
       return new Response(JSON.stringify({ error: `Cannot change from ${currentStatus} to ${status}` }), { status: 400 });
     }
-    // Sequence guard for preorder flow:
-    // verify payment -> set final price -> then ready/out_for_delivery.
-    const isPreorderLike = currentOrder?.paid_amount !== null && currentOrder?.paid_amount !== undefined;
+    // Next-day catch only: buyer paid an advance *below* listed total — seller must set final_price before fulfillment.
+    // Pay-first same-day sets paid_amount === total+delivery; do not require final_price (matches dashboard `needsFinalPrice`).
     const tryingToFulfill = status === "ready_for_pickup" || status === "out_for_delivery";
     const finalNotSet = currentOrder?.final_price === null || currentOrder?.final_price === undefined;
-    if (isPreorderLike && tryingToFulfill && finalNotSet) {
-      return new Response(
-        JSON.stringify({ error: "Set final price first before moving preorder to pickup/delivery" }),
-        { status: 400 }
-      );
+    if (tryingToFulfill && finalNotSet && ["confirmed", "paid"].includes(String(currentStatus || ""))) {
+      const totalDue =
+        Number(currentOrder?.total_price || 0) +
+        Number((currentOrder as { delivery_fee?: number | null } | null)?.delivery_fee || 0);
+      const paid = Number(currentOrder?.paid_amount);
+      const partialAdvanceCatch =
+        Number.isFinite(paid) &&
+        paid > 0 &&
+        Number.isFinite(totalDue) &&
+        totalDue > 0 &&
+        paid + 0.01 < totalDue;
+      if (partialAdvanceCatch) {
+        return new Response(
+          JSON.stringify({ error: "Set final price first before moving preorder to pickup/delivery" }),
+          { status: 400 }
+        );
+      }
     }
 
     const updates: any = { status };

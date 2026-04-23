@@ -29,6 +29,30 @@ describe("isPartialAdvanceCatch", () => {
       })
     ).toBe(true);
   });
+
+  it("is true when confirmed after verify but advance still below due and final_price unset (seller morning step)", () => {
+    expect(
+      isPartialAdvanceCatch({
+        status: "confirmed",
+        paid_amount: 100,
+        total_price: 500,
+        delivery_fee: 0,
+        final_price: null,
+      })
+    ).toBe(true);
+  });
+
+  it("is false when confirmed partial but final_price already set", () => {
+    expect(
+      isPartialAdvanceCatch({
+        status: "confirmed",
+        paid_amount: 100,
+        total_price: 500,
+        delivery_fee: 0,
+        final_price: 480,
+      })
+    ).toBe(false);
+  });
 });
 
 describe("isPreorderCatchFlow", () => {
@@ -58,6 +82,18 @@ describe("isPreorderCatchFlow", () => {
         paid_amount: 100,
         total_price: 500,
         delivery_fee: 0,
+      })
+    ).toBe(true);
+  });
+
+  it("returns true for confirmed partial advance before final_price (aligned with seller needsFinalPrice)", () => {
+    expect(
+      isPreorderCatchFlow({
+        status: "confirmed",
+        paid_amount: 100,
+        total_price: 500,
+        delivery_fee: 0,
+        final_price: null,
       })
     ).toBe(true);
   });
@@ -117,6 +153,18 @@ describe("usesSameDayPaymentStepper", () => {
     ).toBe(false);
   });
 
+  it("is false when confirmed after verify but still catch preorder (awaiting final price)", () => {
+    expect(
+      usesSameDayPaymentStepper({
+        status: "confirmed",
+        paid_amount: 100,
+        total_price: 500,
+        delivery_fee: 0,
+        final_price: null,
+      })
+    ).toBe(false);
+  });
+
   it("is true when proof on file even if confirmed", () => {
     expect(
       usesSameDayPaymentStepper({
@@ -149,6 +197,23 @@ describe("resolveBuyerStepper", () => {
     );
     expect(r.variant).toBe("preorder");
     expect(r.labels[2]).toBe("Price set");
+  });
+
+  it("uses preorder variant and step 2 (Price set) when confirmed, partial paid, final_price unset", () => {
+    const r = resolveBuyerStepper(
+      {
+        status: "confirmed",
+        paid_amount: 100,
+        total_price: 500,
+        delivery_fee: 0,
+        final_price: null,
+        payment_screenshot_urls: ["proof/1.png"],
+      },
+      "pickup"
+    );
+    expect(r.variant).toBe("preorder");
+    expect(r.labels[2]).toBe("Price set");
+    expect(r.step).toBe(2);
   });
 
   it("uses payment 5-step for confirmed without screenshots (pay-first messaging)", () => {
