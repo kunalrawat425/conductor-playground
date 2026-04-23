@@ -80,6 +80,8 @@ const { id } = Astro.params;
 
     <!-- Actions -->
     <div id="v2-od-actions" style="margin-top:16px;"></div>
+    <!-- Optional payment proof (confirmed+); separate from #v2-od-actions so prefs form re-renders do not wipe it -->
+    <div id="v2-od-extra-payment"></div>
   </div>
 </AppShellV2>
 
@@ -158,6 +160,7 @@ const { id } = Astro.params;
 
 <script>
   import { createClient } from "@supabase/supabase-js";
+  import { isPreorderCatchFlow, resolveBuyerStepper } from "../../../lib/buyer-order-stepper";
   const supabase = createClient(
     import.meta.env.PUBLIC_SUPABASE_URL || "",
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
@@ -167,10 +170,15 @@ const { id } = Astro.params;
   function escape(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
-  function statusLabel(s) {
+  function stars(n) {
+    const rating = Math.max(0, Math.min(5, Number(n) || 0));
+    return [1, 2, 3, 4, 5].map(i => i <= rating ? "★" : "☆").join(" ");
+  }
+  function statusLabel(s, o) {
+    const proofOnFile = o && Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
     return ({
       pending: "Awaiting confirmation",
-      pending_payment: "Upload payment proof",
+      pending_payment: proofOnFile ? "Payment proof submitted" : "Upload payment proof",
       pre_order: "Pre-order placed",
       scheduled: "Scheduled pickup",
       confirmed: "Confirmed ✓",
@@ -185,15 +193,16 @@ const { id } = Astro.params;
       refunded: "Refund processed",
     })[s] || s;
   }
-  let _orderType = "pickup"; // set during load()
-  function statusToStep(s) {
-    if (_orderType === "delivery") {
-      return ({ pending:0, pending_payment:0, pre_order:0, scheduled:0, confirmed:1, paid:1, payment_required:1, out_for_delivery:2, picked_up:3, completed:3, refunded:3 })[s] ?? 0;
-    }
-    return ({ pending:0, pending_payment:0, pre_order:0, scheduled:0, confirmed:1, paid:1, payment_required:1, ready_for_pickup:2, picked_up:3, completed:3, refunded:3 })[s] ?? 0;
+  function billPaymentFootnote(o) {
+    const paidAmt = o.paid_amount ? Number(o.paid_amount) : 0;
+    const proofOnFile = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
+    if (paidAmt > 0 && proofOnFile) return "Paid via UPI · screenshot on file";
+    if (paidAmt > 0) return "Paid via UPI";
+    if (proofOnFile) return "Payment proof submitted — seller will verify shortly";
+    return "Payment proof pending";
   }
   function isCancellable(s) {
-    return s === "pending" || s === "pre_order" || s === "scheduled";
+    return s === "pending" || s === "pending_payment" || s === "pre_order";
   }
 
   let pollTimer = null;
@@ -224,8 +233,10 @@ const { id } = Astro.params;
   function render(o) {
     document.getElementById("v2-od-loading").style.display = "none";
     document.getElementById("v2-od-content").style.display = "block";
+    const extraPaySlot = document.getElementById("v2-od-extra-payment");
+    if (extraPaySlot) extraPaySlot.innerHTML = "";
 
-    document.getElementById("v2-od-status").textContent = statusLabel(o.status);
+    document.getElementById("v2-od-status").textContent = statusLabel(o.status, o);
     document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,6).toUpperCase();
     document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     // Hero colour: green for confirmed/done, red for declined/cancelled, orange for payment actions
@@ -244,29 +255,32 @@ const { id } = Astro.params;
       }
     }
 
-    // Stepper — different labels for pickup vs delivery vs preorder
-    _orderType = o.order_type || "pickup";
-    const step = statusToStep(o.status);
-    const isPreorderOrder = o.status === "pre_order" || (o.paid_amount && !o.final_price && o.status === "pending_payment");
-    const stepLabels = isPreorderOrder
-      ? ["Pre-ordered", "Payment sent", "Price set", "Confirmed"]
-      : _orderType === "delivery"
-        ? ["Placed", "Confirmed", "On the way", "Delivered"]
-        : ["Placed", "Confirmed", "Ready", "Picked up"];
+    // Stepper — simple (4) vs same-day UPI (5, no Price set) vs catch pre-order (5 + Price set)
+    const orderType = (o.order_type || "pickup") === "delivery" ? "delivery" : "pickup";
+    const { labels: stepLabels, step } = resolveBuyerStepper(o, orderType);
     const stepper = document.getElementById("v2-od-stepper");
-    const isTerminated = ["declined", "cancelled"].includes(o.status);
-    stepper.innerHTML = [0,1,2,3].map(i =>
-      `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
-      (i < 3 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
-    ).join("") + (isTerminated
-      ? `<div class="line" style="background:#FCA5A5;"></div><div class="dot" style="background:#DC2626;color:#fff;font-size:11px;">${o.status === "declined" ? "✕" : "✕"}</div>`
-      : "");
+    const terminalMeta = {
+      declined: { label: "Declined", color: "#DC2626", icon: "✕" },
+      cancelled: { label: "Cancelled", color: "#DC2626", icon: "✕" },
+      refunded: { label: "Refunded", color: "#7C3AED", icon: "₹" },
+    };
+    const terminal = terminalMeta[o.status];
+    if (terminal) {
+      stepper.innerHTML = `
+        <div class="dot done">✓</div>
+        <div class="line done"></div>
+        <div class="dot" style="background:${terminal.color};color:#fff;font-size:11px;">${terminal.icon}</div>
+      `;
+    } else {
+      stepper.innerHTML = Array.from({ length: stepLabels.length }, (_, i) =>
+        `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
+        (i < stepLabels.length - 1 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
+      ).join("");
+    }
     const stepLabelEl = document.querySelector(".v2-od-steplabels");
     if (stepLabelEl) {
-      const labels = isTerminated ? [...stepLabels.slice(0, 1), o.status === "declined" ? "Declined ✕" : "Cancelled ✕"] : stepLabels;
-      // For terminated, show 2 labels spanning full width
-      if (isTerminated) {
-        stepLabelEl.innerHTML = `<span>${labels[0]}</span><span style="color:#DC2626;font-weight:700;margin-left:auto;">${labels[1]}</span>`;
+      if (terminal) {
+        stepLabelEl.innerHTML = `<span>Placed</span><span style="color:${terminal.color};font-weight:700;margin-left:auto;">${terminal.label}</span>`;
       } else {
         stepLabelEl.innerHTML = stepLabels.map(l => `<span>${l}</span>`).join("");
       }
@@ -289,14 +303,21 @@ const { id } = Astro.params;
     const cutStyle = o.cut_style || "";
     const buyerNotes = o.buyer_notes || "";
 
-    document.getElementById("v2-od-items").innerHTML = items.map(it => `
+    const pricingOpts = o.listing?.pricing_options || [];
+    const opt = pricingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
+    const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+    document.getElementById("v2-od-items").innerHTML = items.map(it => {
+      const unit = it.quantity_unit || 'kg';
+      const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(it.quantity) / bundle)} pack` : `${escape(it.quantity)} ${escape(unit)}`;
+      return `
       <div class="v2-od-item-row">
         <div>
           <div class="v2-od-item-name" style="text-transform:capitalize;">${escape(it.species || "Fish")}</div>
-          <div class="v2-od-item-qty">${escape(it.quantity)} ${escape(it.quantity_unit || 'kg')}</div>
+          <div class="v2-od-item-qty">${qtyLabel}</div>
         </div>
         <div style="font-weight:700;">₹${(it.total_price || 0).toLocaleString("en-IN")}</div>
-      </div>`).join("")
+      </div>`;
+    }).join("")
       + (cutStyle ? `<div style="font:600 12px Inter;color:var(--v2-ink-2);margin-top:8px;">✂️ ${escape(cutStyle.split(",").map(c => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : "")
       + (buyerNotes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(buyerNotes)}</div>` : "");
 
@@ -319,8 +340,14 @@ const { id } = Astro.params;
     // Pre-order info box
     const preorderEl = document.getElementById("v2-od-preorder-info");
     if (preorderEl) {
-      if (o.status === "pre_order") {
-        const paidAmt = o.paid_amount ? `₹${Number(o.paid_amount).toLocaleString("en-IN")}` : "";
+      const awaitingFinal =
+        Number(o.paid_amount) > 0 &&
+        (o.final_price == null || o.final_price === "");
+      if (
+        isPreorderCatchFlow(o) &&
+        (["pending_payment", "payment_required", "pre_order"].includes(o.status) || awaitingFinal)
+      ) {
+        const amountDue = o.paid_amount ? `₹${Number(o.paid_amount).toLocaleString("en-IN")}` : "";
         const priceMin = o.listing?.preorder_price_min;
         const priceMax = o.listing?.preorder_price_max;
         const rangeHtml = priceMin && priceMax
@@ -330,7 +357,7 @@ const { id } = Astro.params;
           <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
             <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Next-day catch pre-order</div>
             ${rangeHtml}
-            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">Your pre-order is confirmed. The seller will set the final price after the morning catch.${paidAmt ? ` You pre-paid <strong>${paidAmt}</strong>.` : ""}</div>
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">Pay and upload UPI screenshot so the seller can verify, then they’ll set the final price after the morning catch.${amountDue ? ` Amount: <strong>${amountDue}</strong>.` : ""}</div>
             <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → <strong>refund within 7 working days</strong>. If <strong>higher</strong> → you'll approve the difference.</div>
           </div>`;
         preorderEl.style.display = "block";
@@ -355,17 +382,23 @@ const { id } = Astro.params;
       ${paidAmount ? `<div><span style="color:var(--v2-ink-2);">You paid</span><span style="color:var(--v2-green);">₹${paidAmount.toLocaleString("en-IN")}</span></div>` : ''}
       ${balance && balance > 0 ? `<div><span style="color:var(--v2-red);">Balance due</span><span style="font-weight:700;color:var(--v2-red);">₹${balance.toLocaleString("en-IN")}</span></div>` : ''}
       ${balance && balance < 0 ? `<div><span style="color:var(--v2-green);">Refund</span><span style="font-weight:700;color:var(--v2-green);">₹${Math.abs(balance).toLocaleString("en-IN")}</span></div>` : ''}
-      <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;">${paidAmount ? "Paid via UPI" : "Pay at pickup / on delivery"}</div>`;
+      <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;">${escape(billPaymentFootnote(o))}</div>`;
 
     // Actions
     const actions = document.getElementById("v2-od-actions");
-    if (o.status === "pre_order") {
-      // Show payment upload + cancel option
-      renderPaymentUpload(o, false);
-      const cancelHtml = `<button class="v2-od-cancel" id="v2-od-cancel-btn" style="margin-top:8px;">Cancel pre-order</button>`;
-      actions.innerHTML += cancelHtml;
+    if (o.status === "pending_payment") {
+      // UPI screenshot upload (catch pre-order + same-day when seller asks for proof)
+      renderPaymentUpload(o, "pending");
+      const pre = isPreorderCatchFlow(o);
+      const cancelLabel = pre ? "Cancel pre-order" : "Cancel order";
+      const cancelConfirm = pre ? "Cancel this pre-order?" : "Cancel this order?";
+      const cancelToast = pre ? "Pre-order cancelled" : "Order cancelled";
+      const cancelHtml = `<button class="v2-od-cancel" id="v2-od-cancel-btn" style="margin-top:8px;">${cancelLabel}</button>`;
+      // Don't use `innerHTML += ...` here. It re-parses the whole subtree and drops
+      // the event listeners we just attached inside renderPaymentUpload().
+      actions.insertAdjacentHTML("beforeend", cancelHtml);
       document.getElementById("v2-od-cancel-btn")?.addEventListener("click", async () => {
-        if (!confirm("Cancel this pre-order?")) return;
+        if (!confirm(cancelConfirm)) return;
         try {
           const buyerId = localStorage.getItem("zepto_buyer_id") || "";
           const res = await fetch("/api/orders/cancel", {
@@ -375,7 +408,7 @@ const { id } = Astro.params;
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Cancel failed");
-          window.v2Toast?.("success", "Pre-order cancelled");
+          window.v2Toast?.("success", cancelToast);
           setTimeout(() => load(), 600);
         } catch (err) {
           window.v2Toast?.("error", "Failed", err.message);
@@ -401,9 +434,11 @@ const { id } = Astro.params;
         }
       });
     } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
-      // Finished/cancelled order — show refund notice if paid, then offer re-order.
+      // Finished/cancelled order — show refund notice if paid, ask rating for completed/picked_up, then offer re-order.
       const paidForRefund = Number(o.paid_amount) || 0;
       let refundHtml = "";
+      const isDelivered = ["completed", "picked_up"].includes(o.status);
+      const existingFeedback = o.buyer_feedback || null;
       if (paidForRefund > 0 && ["cancelled", "declined"].includes(o.status)) {
         const buyerSsPaths2: string[] = o.payment_screenshot_urls || [];
         const buyerSsBtns2 = buyerSsPaths2.map((_, i) =>
@@ -435,7 +470,75 @@ const { id } = Astro.params;
           });
         }, 0);
       }
-      actions.innerHTML = refundHtml;
+      const feedbackHtml = isDelivered
+        ? `
+          <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:14px;margin-top:8px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+              <div style="font:700 13px Inter;color:var(--v2-ink);">⭐ Rate your order</div>
+              ${existingFeedback ? `<div style="font:700 12px Inter;color:#D97706;">${stars(existingFeedback.rating)}</div>` : ""}
+            </div>
+            <div id="v2-od-rate-stars" style="display:flex;gap:6px;margin-bottom:10px;">
+              ${[1, 2, 3, 4, 5].map((r) =>
+                `<button type="button" class="v2-od-rate-star" data-rating="${r}" aria-label="Rate ${r} star" style="border:1px solid var(--v2-border);background:${existingFeedback && Number(existingFeedback.rating) >= r ? "#FEF3C7" : "var(--v2-bg)"};color:${existingFeedback && Number(existingFeedback.rating) >= r ? "#D97706" : "var(--v2-ink-3)"};border-radius:8px;padding:6px 8px;font:700 14px Inter;cursor:pointer;">★</button>`
+              ).join("")}
+            </div>
+            <textarea id="v2-od-feedback" rows="2" placeholder="Share your feedback (optional)" style="width:100%;padding:10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);resize:vertical;outline:none;box-sizing:border-box;">${escape(existingFeedback?.feedback || "")}</textarea>
+            <button id="v2-od-feedback-save" class="v2-btn v2-btn-primary v2-btn-sm v2-btn-full" style="margin-top:10px;">${existingFeedback ? "Update rating" : "Submit rating"}</button>
+            ${existingFeedback ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-top:6px;">Thanks for your feedback on ${new Date(existingFeedback.updated_at || existingFeedback.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>` : ""}
+          </div>`
+        : "";
+      actions.innerHTML = refundHtml + feedbackHtml;
+      if (isDelivered) {
+        let selectedRating = Number(existingFeedback?.rating) || 0;
+        const paint = () => {
+          actions.querySelectorAll(".v2-od-rate-star").forEach((el) => {
+            const star = el as HTMLButtonElement;
+            const r = Number(star.dataset.rating || 0);
+            const on = r <= selectedRating;
+            star.style.background = on ? "#FEF3C7" : "var(--v2-bg)";
+            star.style.color = on ? "#D97706" : "var(--v2-ink-3)";
+            star.style.borderColor = on ? "#FCD34D" : "var(--v2-border)";
+          });
+        };
+        actions.querySelectorAll(".v2-od-rate-star").forEach((el) => {
+          el.addEventListener("click", () => {
+            selectedRating = Number((el as HTMLButtonElement).dataset.rating || 0);
+            paint();
+          });
+        });
+        paint();
+        document.getElementById("v2-od-feedback-save")?.addEventListener("click", async () => {
+          if (!selectedRating) {
+            window.v2Toast?.("error", "Please rate", "Tap 1-5 stars before submitting");
+            return;
+          }
+          const btn = document.getElementById("v2-od-feedback-save") as HTMLButtonElement;
+          const note = (document.getElementById("v2-od-feedback") as HTMLTextAreaElement)?.value?.trim() || "";
+          btn.disabled = true;
+          btn.textContent = "Saving...";
+          try {
+            const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+            const res = await fetch("/api/orders/feedback", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                order_id: o.id,
+                buyer_id: buyerId,
+                rating: selectedRating,
+                feedback: note,
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to save feedback");
+            window.v2Toast?.("success", "Thanks for rating", "Your feedback helps improve seller quality");
+            setTimeout(() => load(), 500);
+          } catch (err: any) {
+            window.v2Toast?.("error", "Failed", err.message || "Could not save feedback");
+            btn.disabled = false;
+            btn.textContent = existingFeedback ? "Update rating" : "Submit rating";
+          }
+        });
+      }
       const sellerIdForReorder = o.seller?.id || o.listing?.seller_id || "";
       if (sellerIdForReorder) {
         actions.innerHTML += `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`;
@@ -460,7 +563,7 @@ const { id } = Astro.params;
       } else {
         actions.innerHTML = "";
       }
-    } else if (["confirmed", "paid", "ready_for_pickup"].includes(o.status)) {
+    } else if (["confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled"].includes(o.status)) {
       const hasCut = !!o.cut_style;
       const hasNotes = !!o.buyer_notes;
       const alreadySaved = hasCut || hasNotes;
@@ -546,10 +649,36 @@ const { id } = Astro.params;
           }
         });
       }
-    } else if (o.status === "pending_payment") {
-      renderPaymentUpload(o, false);
+
+      const paySlot = document.getElementById("v2-od-extra-payment");
+      if (paySlot) {
+        if (o.status === "scheduled") {
+          paySlot.innerHTML = `<button type="button" class="v2-od-cancel" id="v2-od-cancel-sched" style="margin-bottom:10px;">Cancel order</button><div id="v2-od-opt-pay-host"></div>`;
+          document.getElementById("v2-od-cancel-sched")?.addEventListener("click", async () => {
+            if (!confirm("Cancel this scheduled order?")) return;
+            try {
+              const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+              const res = await fetch("/api/orders/cancel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Cancel failed");
+              window.v2Toast?.("success", "Order cancelled");
+              setTimeout(() => load(), 600);
+            } catch (err: any) {
+              window.v2Toast?.("error", "Failed", err.message);
+            }
+          });
+          const host = document.getElementById("v2-od-opt-pay-host");
+          if (host) renderPaymentUpload(o, "optional", host);
+        } else {
+          renderPaymentUpload(o, "optional", paySlot);
+        }
+      }
     } else if (o.status === "payment_required") {
-      renderPaymentUpload(o, true);
+      renderPaymentUpload(o, "balance");
     } else if (o.status === "refunded") {
       const paidAmt = Number(o.paid_amount) || 0;
       const finalAmt = Number(o.final_price) || 0;
@@ -652,46 +781,70 @@ const { id } = Astro.params;
       actions.innerHTML = "";
     }
 
-    function renderPaymentUpload(o, isBalance) {
+    function renderPaymentUpload(o, kind, mountEl) {
+      const actionsRoot = document.getElementById("v2-od-actions");
+      const root = mountEl || actionsRoot;
+      if (!root) return;
+
+      const isBalance = kind === "balance";
+      const isOptional = kind === "optional";
+
       const paidSoFar = Number(o.paid_amount) || 0;
       const finalPrice = Number(o.final_price) || 0;
-      const balance = isBalance ? Math.max(0, finalPrice - paidSoFar) : (Number(o.total_price) + Number(o.delivery_fee || 0));
-      const alreadyUploaded = o.payment_screenshot_urls && o.payment_screenshot_urls.length > 0;
+      let balance = 0;
+      if (isBalance) {
+        balance = Math.max(0, finalPrice - paidSoFar);
+      } else if (!isOptional) {
+        balance = Number(o.total_price) + Number(o.delivery_fee || 0);
+      }
 
-      actions.innerHTML = `
+      const alreadyUploaded = o.payment_screenshot_urls && o.payment_screenshot_urls.length > 0;
+      const orderTotalRef = Number(o.total_price) + Number(o.delivery_fee || 0);
+
+      const title = isOptional
+        ? "💳 Payment screenshot"
+        : isBalance
+          ? "💸 Additional payment needed"
+          : "💳 Upload payment proof";
+      const subtitle = isOptional
+        ? "Upload or replace your UPI payment photo. The seller is notified and can verify again if needed."
+        : isBalance
+          ? `Seller updated the final price. Please pay ₹${balance.toLocaleString("en-IN")} and upload the UPI screenshot.`
+          : `Pay ₹${balance.toLocaleString("en-IN")} via UPI and upload the screenshot below.`;
+      const amountBlock = isOptional
+        ? paidSoFar > 0
+          ? `<div style="font:600 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">Paid on record: ₹${paidSoFar.toLocaleString("en-IN")}</div>`
+          : `<div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">Order total (reference): ₹${orderTotalRef.toLocaleString("en-IN")}</div>`
+        : `<div style="font:800 16px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${balance.toLocaleString("en-IN")}</div>`;
+
+      root.innerHTML = `
         <div style="background:var(--v2-bg);border:1.5px solid var(--v2-brand);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
-          <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">
-            ${isBalance ? "💸 Additional payment needed" : "💳 Upload payment proof"}
-          </div>
-          <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">
-            ${isBalance
-              ? `Seller updated the final price. Please pay ₹${balance.toLocaleString("en-IN")} and upload the UPI screenshot.`
-              : `Pay ₹${balance.toLocaleString("en-IN")} via UPI and upload the screenshot below.`
-            }
-          </div>
-          <div style="font:800 16px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${balance.toLocaleString("en-IN")}</div>
+          <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">${title}</div>
+          <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">${subtitle}</div>
+          ${amountBlock}
           ${alreadyUploaded ? `<div id="v2-pay-ss-status" style="font:600 12px Inter;color:var(--v2-green);margin-bottom:6px;">✓ Screenshot uploaded — awaiting seller confirmation</div><div id="v2-pay-screenshots-list" style="margin-bottom:12px;font:400 11px Inter;color:var(--v2-ink-3);">Loading your screenshot...</div>` : ""}
           <label style="display:block;cursor:pointer;">
             <div id="v2-pay-drop" style="border:2px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:20px;text-align:center;font:500 13px Inter;color:var(--v2-ink-2);">
-              ${alreadyUploaded ? "📷 Upload another screenshot" : "📷 Tap to select screenshot"}
+              ${alreadyUploaded ? "📷 Replace screenshot" : "📷 Tap to select screenshot"}
             </div>
             <input type="file" id="v2-pay-file" accept="image/*" style="display:none;" />
           </label>
           <div id="v2-pay-preview" style="margin-top:10px;display:none;">
             <img id="v2-pay-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);" />
           </div>
-          <button id="v2-pay-submit" class="v2-btn v2-btn-primary v2-btn-full" style="margin-top:12px;display:none;">Submit payment proof</button>
+          <button type="button" id="v2-pay-submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" style="margin-top:12px;display:none;">Submit payment proof</button>
           <div id="v2-pay-err" style="font:500 11px Inter;color:var(--v2-red);margin-top:8px;display:none;"></div>
         </div>`;
 
-      // Load and show buyer's uploaded screenshots
+      const qs = (sel) => root.querySelector(sel);
+
       if (alreadyUploaded) {
         const buyerIdForSS = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
         fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForSS)}`)
           .then(r => r.json())
           .then(ssData => {
-            const list = actions.querySelector('#v2-pay-screenshots-list');
-            const statusEl = actions.querySelector('#v2-pay-ss-status');
+            const list = qs("#v2-pay-screenshots-list");
+            const statusEl = qs("#v2-pay-ss-status");
             if (!list) return;
             if (ssData.verified && statusEl) {
               statusEl.textContent = "✓ Payment verified by seller";
@@ -706,21 +859,21 @@ const { id } = Astro.params;
             }
           })
           .catch(() => {
-            const list = actions.querySelector('#v2-pay-screenshots-list');
+            const list = qs("#v2-pay-screenshots-list");
             if (list) list.innerHTML = "";
           });
       }
 
-      const fileInput = document.getElementById("v2-pay-file");
-      const dropZone = document.getElementById("v2-pay-drop");
-      const preview = document.getElementById("v2-pay-preview");
-      const previewImg = document.getElementById("v2-pay-img") as HTMLImageElement;
-      const submitBtn = document.getElementById("v2-pay-submit") as HTMLButtonElement;
-      const errEl = document.getElementById("v2-pay-err");
+      const fileInput = qs("#v2-pay-file") as HTMLInputElement | null;
+      const dropZone = qs("#v2-pay-drop") as HTMLElement | null;
+      const preview = qs("#v2-pay-preview") as HTMLElement | null;
+      const previewImg = qs("#v2-pay-img") as HTMLImageElement | null;
+      const submitBtn = qs("#v2-pay-submit") as HTMLButtonElement | null;
+      const errEl = qs("#v2-pay-err") as HTMLElement | null;
 
       fileInput?.addEventListener("change", () => {
-        const file = (fileInput as HTMLInputElement).files?.[0];
-        if (!file) return;
+        const file = fileInput.files?.[0];
+        if (!file || !errEl || !preview || !dropZone || !previewImg || !submitBtn) return;
         if (file.size > 5 * 1024 * 1024) {
           errEl.style.display = "block";
           errEl.textContent = "File too large (max 5 MB)";
@@ -735,8 +888,8 @@ const { id } = Astro.params;
       });
 
       submitBtn?.addEventListener("click", async () => {
-        const file = (fileInput as HTMLInputElement).files?.[0];
-        if (!file) return;
+        const file = fileInput?.files?.[0];
+        if (!file || !submitBtn || !errEl) return;
         submitBtn.disabled = true;
         submitBtn.textContent = "Uploading...";
         errEl.style.display = "none";
@@ -749,20 +902,28 @@ const { id } = Astro.params;
           const res = await fetch("/api/orders/upload-payment", { method: "POST", body: form });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Upload failed");
-          // Show immediate thumbnail using URL returned from upload
           if (data.url) {
-            const list = actions.querySelector('#v2-pay-screenshots-list');
-            const statusEl = actions.querySelector('#v2-pay-ss-status');
-            if (statusEl) { statusEl.textContent = "✓ Screenshot uploaded — awaiting seller confirmation"; }
+            const list = qs("#v2-pay-screenshots-list");
+            const statusEl = qs("#v2-pay-ss-status");
+            if (statusEl) statusEl.textContent = "✓ Screenshot uploaded — awaiting seller confirmation";
             if (list) {
               list.innerHTML = `<img src="${data.url}" onclick="window.open('${data.url}','_blank','noopener')" style="width:100%;max-height:200px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);margin-bottom:6px;cursor:pointer;" />`;
             }
           }
-          window.v2Toast?.("success", "Payment proof submitted", "Seller will confirm shortly");
+          window.v2Toast?.(
+            "success",
+            isOptional ? "Payment proof updated" : "Payment proof submitted",
+            isOptional ? "The seller has been notified." : "Seller will confirm shortly"
+          );
           setTimeout(() => load(), 1500);
         } catch (err) {
           errEl.style.display = "block";
-          errEl.textContent = err.message || "Upload failed";
+          const msg = err.message || "Upload failed";
+          if (/bucket[_ ]missing|storage is not configured|bucket .*not found/i.test(msg)) {
+            errEl.textContent = "Payment upload is not configured yet. Ask admin to create private Supabase bucket `order-payments`.";
+          } else {
+            errEl.textContent = msg;
+          }
           submitBtn.disabled = false;
           submitBtn.textContent = "Submit payment proof";
         }

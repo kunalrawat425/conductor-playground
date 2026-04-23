@@ -7,6 +7,8 @@ interface Props {
   showHandle?: boolean;
   showClose?: boolean;
   open?: boolean;
+  /** Stack above other open sheets (same z-index) — use for nested flows e.g. address over checkout */
+  elevated?: boolean;
 }
 const {
   id,
@@ -16,10 +18,11 @@ const {
   showHandle = true,
   showClose = true,
   open = false,
+  elevated = false,
 } = Astro.props;
 ---
 <div
-  class:list={["v2-sheet-backdrop", open && "v2-sheet-open"]}
+  class:list={["v2-sheet-backdrop", open && "v2-sheet-open", elevated && "v2-sheet-elevated"]}
   id={`${id}-backdrop`}
   data-sheet-backdrop={id}
   aria-hidden={!open}
@@ -72,4 +75,23 @@ const {
     document.getElementById(`${id}-backdrop`)?.classList.remove("v2-sheet-open");
     document.dispatchEvent(new CustomEvent("v2-sheet-closed", { detail: { id } }));
   };
+
+  // Primary CTA — `data-sheet-action` is a `window` function name; pass sheet id from `data-sheet-cta`.
+  const w = window as unknown as { __v2SheetCtaBound?: boolean };
+  if (!w.__v2SheetCtaBound) {
+    w.__v2SheetCtaBound = true;
+    document.addEventListener("click", (e) => {
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      const btn = t.closest("button[data-sheet-action]") as HTMLButtonElement | null;
+      if (!btn) return;
+      const action = btn.dataset.sheetAction;
+      if (!action) return;
+      const sheetId = btn.dataset.sheetCta || "";
+      const fn = (window as unknown as Record<string, unknown>)[action];
+      if (typeof fn === "function") {
+        (fn as (sid: string) => void)(sheetId);
+      }
+    });
+  }
 </script>
