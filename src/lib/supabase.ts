@@ -95,10 +95,8 @@ export interface FishListing {
   oos_threshold?: number | null;
   /** Seller enables pre-orders for this listing independently of stock level */
   is_preorder_enabled?: boolean;
-  /** Minimum quantity buyer must pre-order */
-  preorder_min_qty?: number;
-  /** Maximum quantity per pre-order. null = uncapped. */
-  preorder_max_qty?: number | null;
+  /** When true, listing is hidden from same-day orders but visible in pre-order menu */
+  is_order_paused?: boolean;
   // joined
   seller?: Seller;
 }

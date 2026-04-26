@@ -295,6 +295,31 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
     try { return localStorage.getItem("zepto_seller_id"); } catch { return null; }
   }
 
+  function renderProfileCompletion(s: any) {
+    const steps = [
+      { label: "Business name", done: !!(s.name && s.name.trim() && s.name !== "New Seller") },
+      { label: "Location set", done: !!(s.location_name || (s.lat && s.lng)) },
+      { label: "Store hours", done: !!(s.opens_at && s.closes_at) },
+      { label: "Email verified", done: !!(s.email && s.email_verified) },
+    ];
+    const incomplete = steps.filter(st => !st.done);
+    if (incomplete.length === 0) return;
+    const hero = document.querySelector(".v2-dash-hero");
+    if (!hero) return;
+    const banner = document.createElement("div");
+    banner.id = "v2-profile-completion-banner";
+    banner.style.cssText = "margin:12px 16px 0;padding:12px 14px;background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:var(--v2-radius);";
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font:700 12px Inter;color:#EA580C;">⚡ Complete your setup</div>
+        <a href="/v2/dashboard/profile" style="font:600 11px Inter;color:var(--v2-brand);text-decoration:none;">Go to profile →</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${steps.map(st => `<div style="font:500 11px Inter;color:${st.done ? '#059669' : '#EA580C'};">${st.done ? '✓' : '○'} ${st.label}</div>`).join("")}
+      </div>`;
+    hero.after(banner);
+  }
+
   function escape(s: string) {
     return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
   }
@@ -356,6 +381,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       }
       document.getElementById("v2-dash-content")!.style.display = "block";
       document.getElementById("v2-dash-name")!.textContent = sellerData.name || "seller";
+      renderProfileCompletion(sellerData);
       await loadOrders();
 
       // Deep link from Web Push: `/v2/dashboard/orders?order=<uuid>` — search loads the row on any tab.
@@ -471,7 +497,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         const sq = searchQuery.toLowerCase();
         const { data: allOrders } = await supabase
           .from("orders")
-          .select("*, listing:fish_listings(species, pricing_options, preorder_price_min, preorder_price_max)")
+          .select("*, listing:fish_listings(species, pricing_options)")
           .in("listing_id", listingIds)
           .order("created_at", { ascending: false })
           .limit(500);
@@ -506,7 +532,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       } else {
         q = supabase
           .from("orders")
-          .select("*, listing:fish_listings(species, pricing_options, preorder_price_min, preorder_price_max)", { count: "exact" })
+          .select("*, listing:fish_listings(species, pricing_options)", { count: "exact" })
           .in("listing_id", listingIds)
           .in("status", STATUS_BY_TAB[currentTab])
           .order("created_at", { ascending: false })
@@ -604,8 +630,10 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           const preorderPriceBlock = needsFinalPrice
             ? (() => {
                 const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "—";
-                const priceMin = o.listing?.preorder_price_min;
-                const priceMax = o.listing?.preorder_price_max;
+                const listingOpts2 = o.listing?.pricing_options || [];
+                const matchedOpt = listingOpts2.find((x: any) => x?.id && x.id === o.pricing_option_id) || listingOpts2[0] || null;
+                const priceMin = matchedOpt?.preorder_price_min;
+                const priceMax = matchedOpt?.preorder_price_max;
                 const rangeHtml = priceMin && priceMax
                   ? `<div style="font:500 11px Inter;color:#7C3AED;">Your listed range: ₹${Number(priceMin).toLocaleString("en-IN")} – ₹${Number(priceMax).toLocaleString("en-IN")}</div>`
                   : "";
@@ -645,7 +673,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           actionsHtml = `<div class="v2-oc-actions">
             <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="delivered" data-order-id="${o.id}">✓ Delivered</button>
           </div>`;
-        } else if (o.status === "cancelled" && o.paid_amount > 0) {
+        } else if (["cancelled", "declined"].includes(o.status) && o.paid_amount > 0) {
           const refundAmt = Number(o.paid_amount).toLocaleString("en-IN");
           const paymentSsPaths: string[] = o.payment_screenshot_urls || [];
           const paymentSsBtns = paymentSsPaths.map((p, i) =>

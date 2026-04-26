@@ -25,7 +25,7 @@ export const GET: APIRoute = async ({ url }) => {
       .from("orders")
       .select(`
         *,
-        listing:fish_listings ( id, species, photo_url, pricing_options, preorder_price_min, preorder_price_max, is_preorder_enabled,
+        listing:fish_listings ( id, species, photo_url, pricing_options, is_preorder_enabled,
           seller:sellers ( id, name, phone, location, location_name, opens_at, closes_at )
         )
       `)
@@ -75,8 +75,6 @@ export const GET: APIRoute = async ({ url }) => {
             ? {
                 species: order.listing.species,
                 photo_url: order.listing.photo_url,
-                preorder_price_min: order.listing.preorder_price_min,
-                preorder_price_max: order.listing.preorder_price_max,
                 is_preorder_enabled: (order.listing as any).is_preorder_enabled === true,
                 pricing_options: (order.listing as any).pricing_options || [],
                 seller_id: (order.listing as any).seller?.id || null,

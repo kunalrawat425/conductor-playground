@@ -408,6 +408,8 @@ try {
           order_type: "pickup",
           seller_id: state.sellerId,
           schedule_slot_id: state.hasSlots ? state.slot : null,
+          buyer_notes: state.notes || null,
+          cut_style: state.cut || null,
         }),
       });
       const data = await res.json();

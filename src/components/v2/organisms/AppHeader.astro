@@ -68,6 +68,14 @@ const isPage = variant === "page";
     document.dispatchEvent(new CustomEvent('relifish:open-location-picker'));
   });
 
+  // Auto-prompt location picker after first login if no location saved
+  try {
+    if (localStorage.getItem("v2_prompt_location") === "1" && trigger) {
+      localStorage.removeItem("v2_prompt_location");
+      setTimeout(() => { trigger.click(); }, 400);
+    }
+  } catch {}
+
   // Theme toggle in header (works on every page)
   document.getElementById('v2-header-theme-toggle')?.addEventListener('click', () => {
     const root = document.documentElement;

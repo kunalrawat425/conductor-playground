@@ -138,6 +138,14 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
         try { await window.RelifishCart.pushLocalToServer(); } catch {}
       }
       window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
+      // If buyer has no location saved, set flag so home page triggers location picker on load
+      if (role === "buyer") {
+        try {
+          if (!localStorage.getItem("v2_buyer_location")) {
+            localStorage.setItem("v2_prompt_location", "1");
+          }
+        } catch {}
+      }
       setTimeout(() => { window.location.href = redirectTo; }, 600);
     } catch (err) {
       otpAttempts++;
