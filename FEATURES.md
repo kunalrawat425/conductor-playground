@@ -1,7 +1,42 @@
 # Relifish — Feature Reference
 
 Buyer and seller flows in parallel, module by module.
-Last updated: 2026-04-23
+Last updated: 2026-04-26
+
+---
+
+## Implementation Status (as of 2026-04-26)
+
+| # | Feature | Status | Notes |
+|---|---|---|---|
+| M1 | Profile completion banner (guided onboarding) | ✅ Done | Inline banner on orders dashboard shows missing steps |
+| M2 | Pre-order pricing per unit (min/max per kg/piece, JSONB) | ✅ Done | `listing-pricing.ts`, `listing-pricing-setup.ts`, migration 051 |
+| M3 | No discount in pre-order mode | ✅ Done | `compare_at_price` suppressed in `seller/[id].astro` when `isListingPreorder` |
+| M4 | `is_order_paused` — pause same-day, keep in pre-order | ✅ Done | DB column, `ListingForm.astro` checkbox, `seller/[id].astro` `hasStock` check |
+| M5 | Buyer notes + cut style sent to API from pre-order wizard | ✅ Fixed | `preorder/[species].astro` POST body now includes `buyer_notes`, `cut_style` |
+| M6 | Notes form locked at `ready_for_pickup` | ✅ Fixed | Read-only view shown; editable form removed at `ready_for_pickup` |
+| M7 | Seller sees buyer notes / cut style in dashboard | ✅ Done | Order cards show cut style + notes |
+| M8 | Seller refund screenshot upload UI | ✅ Done | Upload block shown for `declined` + `cancelled` orders with `paid_amount > 0` |
+| M9 | Pre-order order total = `preorder_price_max × qty` | ✅ Done | `orders/create.ts` uses `chosen.preorder_price_max` |
+| M10 | 7-day refund note visible to buyer | ✅ Done | Track page shows note on `refunded`, `declined`, `cancelled` statuses |
+| M11 | Seller card offer label ("Same Day" / "Pre-order") | ✅ Done | `v2.astro` computes `offerLabel` and passes `offerBadge` to card |
+| M12 | Store images | ❌ Missing | Needs DB migration + profile upload UI + SellerCard update |
+| M13 | Location prompt immediately after login | ✅ Done | `LoginSheet.astro` sets `v2_prompt_location` flag; `AppHeader.astro` triggers picker |
+| M14 | Payment screenshot replaces (not appends) | ✅ Done | `upload-payment.ts` line 107: `const updated = [path]` |
+| M15 | Verify button disabled without proof | ✅ Done | `verifyBtnAttrs` disables when `!hasPaymentProof` |
+
+**New gaps found in second audit:**
+| # | Gap | Status |
+|---|---|---|
+| N1 | Pre-order menu unavailable message when no items have `is_preorder_enabled=true` | ✅ Done — `seller/[id].astro` `render()` now shows purple empty state |
+| N2 | `is_order_paused` not in `ListingForm.astro` UI | ✅ Done — checkbox added to Display & limits section |
+| N3 | Store images (`store_image_url`) | ❌ Missing — needs migration + upload |
+
+**Migrations still to apply in Supabase SQL editor:**
+- `036_order_notes_cut.sql` — adds `buyer_notes`, `cut_style` to orders
+- `051_preorder_per_unit_pricing.sql` — per-unit preorder pricing, drops old global columns, adds `is_order_paused`
+
+---
 
 ### Buyer & seller sales flow (at a glance)
 
@@ -63,6 +98,8 @@ All HTML transactional email bodies share one design system in **`src/lib/email-
 - Status badge: exactly one of `Open Now` / `Pre-order` / `Closed` / `Pre-order only`
 - Mutual exclusivity enforced in SSR
 - Shows: species chips, rating, location, delivery tag, distance
+- ⚠️ **[M11]** Left offer label ("Same Day" / "Pre-order") — `offer` prop exists on `SellerCard.astro` but never auto-populated from home page
+- ⚠️ **[M12]** Store image — no `store_image_url` on sellers; card shows `🐟` emoji placeholder
 
 ### Search
 - `/v2/search?q=term` — searches species name + Marathi name
@@ -197,7 +234,8 @@ Pre-order reconciled: also shows `final_price`, `paid_amount`, balance due or re
 |---|---|
 | `pending`, `pre_order`, `scheduled` | Cancel order |
 | `pending_payment` | Payment upload + cancel — cancel label is **Cancel pre-order** only if `isPreorderCatchFlow`; otherwise **Cancel order** |
-| `confirmed`, `paid`, `ready_for_pickup` | Cut style + buyer notes form |
+| `confirmed`, `paid` | Cut style + buyer notes form (editable) |
+| `ready_for_pickup` | ⚠️ **[M6 — BUG]** Form currently still shows editable. **Should:** remove form, show read-only display of saved notes + "No changes after this point" note. |
 | `payment_required` | Balance payment — shows shortfall (final - paid), file picker |
 | `completed`, `picked_up`, `cancelled`, `declined` | Re-order (+ rating / refund UI as applicable) |
 
@@ -258,10 +296,18 @@ Shown only when **`isPreorderCatchFlow(order)`** and the order is still in a pre
 - Stamps `payment_verified_at`, `payment_verified_by`
 - **Auto-advances** `pending_payment → confirmed`
 - Fires buyer push: "Order Confirmed"
+- ⚠️ **[M15]** Verify button should be disabled when `payment_screenshot_urls` is empty — needs audit
 
 ### View buyer payment proof
 - `GET /api/seller/payment-screenshot?order_id=&seller_id=&path=` returns a short-lived signed URL; path must be in `orders.payment_screenshot_urls`.
 - Dashboard renders **View proof** for any non-empty `payment_screenshot_urls`, including **pre-orders on `confirmed`/`paid` while final price is still unset** (so sellers are not stuck without the screenshot after verify).
+
+### Buyer notes / cut style
+- ⚠️ **[M7]** Seller dashboard order cards do NOT yet display `buyer_notes` or `cut_style`. Fields exist in DB. Add to order detail/expand section.
+
+### Refund screenshot upload
+- API: `POST /api/seller/upload-refund` (stores to `order-payments/{order_id}/refund-*.ext`, updates `orders.refund_screenshot_path`)
+- ⚠️ **[M8]** No UI button in dashboard. Seller cannot upload refund proof from the app. Add "Upload refund proof" button on `declined` / `cancelled` / `refunded` orders.
 
 ### Set final price for pre-orders (`action=set_final_price`)
 - Calls `reconcile_preorder_price(order_id, final_price)` SQL RPC
@@ -336,18 +382,26 @@ preorder_cutoff_time: '22:00'
 
 **Pages:** `/v2/dashboard/listings`, `/v2/dashboard/listings/new`, `/v2/dashboard/listings/[id]`
 
-| Field | Purpose |
-|---|---|
-| `species` | Fish type; displayed capitalized everywhere in UI |
-| `pricing_options[]` | Multi-tier: `price`, `unit`, `label`, `bundle_size`, `compare_at_price` |
-| `weight_avail` | Current stock (kg or pieces) — irrelevant for pre-orders |
-| `is_available` | Master visibility toggle |
-| `is_preorder_enabled` | Per-listing pre-order gate (overrides seller-level `accepts_preorder`) |
-| `preorder_min_qty` / `preorder_max_qty` | Quantity bounds for pre-orders on this listing |
-| `buyer_daily_qty_limit` | Per-buyer daily cap (enforced in order create) |
-| `oos_threshold` | Shows "Stock clearing soon" warning when `weight_avail <= oos_threshold` |
-| `fish_size` | S / M / L badge |
-| `photo_url` | Product image |
+| Field | Purpose | Status |
+|---|---|---|
+| `species` | Fish type; displayed capitalized everywhere in UI | ✅ |
+| `pricing_options[]` | Multi-tier: `price`, `unit` (kg/piece), `label`, `bundle_size`, `compare_at_price` | ✅ |
+| `weight_avail` | Current stock (kg or pieces) — irrelevant for pre-orders | ✅ |
+| `is_available` | Master visibility toggle (hides from all menus) | ✅ |
+| `is_preorder_enabled` | Per-listing pre-order gate (overrides seller-level `accepts_preorder`) | ✅ |
+| `preorder_min_qty` / `preorder_max_qty` | Quantity bounds for pre-orders (not price bounds) | ✅ |
+| `preorder_price_min` / `preorder_price_max` | **Global** pre-order price range — ⚠️ **[M2]** spec requires per-unit (kg and piece each get own range) | ⚠️ Partial |
+| `buyer_daily_qty_limit` | Per-buyer daily cap (enforced in order create) | ✅ |
+| `oos_threshold` | Shows "Stock clearing soon" warning when `weight_avail <= oos_threshold` | ✅ |
+| `fish_size` | S / M / L badge | ✅ |
+| `photo_url` | Product image | ✅ |
+| `is_order_paused` | Pause listing for same-day orders only, keep in pre-order menu | ❌ **[M4]** Not yet added |
+
+### Pre-order pricing rules (spec)
+- Pre-order items show min/max price range per unit type (not a fixed price)
+- **No discounts** (`compare_at_price` suppressed in pre-order mode) — **[M3]** not yet enforced
+- Buyer pays max price at checkout; seller sets final price in morning → refund if lower
+- 7-day refund SLA note shown to buyer at checkout — **[M10]** copy not yet present
 
 ---
 
@@ -410,6 +464,21 @@ preorder_cutoff_time: '22:00'
 |---|---|
 | `payment_required` — no shortcut payment from notifications | Buyer must navigate to track page |
 | `orders.seller_id` may be null for old orders | Ownership fallback denies; add column migration if needed |
+| **[M1]** No profile completion wizard | Sellers may skip name/email; no guided onboarding |
+| **[M2]** Pre-order price range is global, not per-unit | Kg and piece can't have separate min/max ranges |
+| **[M3]** `compare_at_price` not stripped in pre-order mode | Discounts may show on pre-order items (spec says none) |
+| **[M4]** No `is_order_paused` — can't pause same-day while keeping pre-order | Seller must hide listing entirely to stop same-day |
+| **[M5]** `buyer_notes` + `cut_style` not sent to API from pre-order wizard | Buyer preferences silently lost |
+| **[M6]** Notes form editable at `ready_for_pickup` | Buyer can change notes after seller starts prep |
+| **[M7]** Seller can't see `buyer_notes`/`cut_style` in dashboard | Seller doesn't know cut preference |
+| **[M8]** No UI to upload refund screenshot (API exists) | Seller can't prove refund sent |
+| **[M9]** Pre-order checkout max-price unverified | May use listing price instead of `preorder_price_max` |
+| **[M10]** 7-day refund note absent at pre-order checkout | Buyer unaware of refund policy before placing |
+| **[M11]** Seller card "Same Day" / "Pre-order" left label never set | Card offer label always empty |
+| **[M12]** No store images on sellers table or card | Card shows fish emoji instead |
+| **[M13]** Location not prompted at login | New buyer sees empty home page |
+| **[M14]** Payment screenshot may append instead of replace | Spec allows only 1 screenshot |
+| **[M15]** Verify button may not be disabled without proof | Seller could verify before buyer uploads |
 
 ### Resolved gaps (as of 2026-04-21)
 | Gap | Resolution |

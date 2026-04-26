@@ -78,10 +78,7 @@ import Toast from "../../../../components/v2/atoms/Toast.astro";
             }
 
             const isPreorderEnabled = (formData.get("is_preorder_enabled") as string) === "true";
-            const preorderPriceMinRaw = formData.get("preorder_price_min")?.toString().trim();
-            const preorderPriceMaxRaw = formData.get("preorder_price_max")?.toString().trim();
-            const preorder_price_min = preorderPriceMinRaw ? Number(preorderPriceMinRaw) : null;
-            const preorder_price_max = preorderPriceMaxRaw ? Number(preorderPriceMaxRaw) : null;
+            const isOrderPaused = (formData.get("is_order_paused") as string) === "true";
 
             await createListing({
               seller_id: sellerId,
@@ -96,8 +93,7 @@ import Toast from "../../../../components/v2/atoms/Toast.astro";
               buyer_daily_qty_limit: buyerDaily,
               oos_threshold: oosThreshold,
               is_preorder_enabled: isPreorderEnabled,
-              ...(isPreorderEnabled && preorder_price_min != null ? { preorder_price_min } : {}),
-              ...(isPreorderEnabled && preorder_price_max != null ? { preorder_price_max } : {}),
+              is_order_paused: isOrderPaused,
             } as any);
 
             invalidateSellerListingIdsCache(sellerId);

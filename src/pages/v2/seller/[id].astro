@@ -63,13 +63,11 @@ const isPreorderMode = !isEffectivelyOpen && isPreorderAvailableToday;
 // - During pre-order mode, show only pre-order-capable items (avoid greyed rows).
 // - During order mode, show only in-stock inventory items.
 if (isPreorderMode) {
-  listings = listings.filter((l: any) =>
-    l?.is_preorder_enabled === true &&
-    l?.preorder_price_min != null &&
-    l?.preorder_price_max != null
-  );
+  // Show listings with preorder enabled (per-unit price ranges live in pricing_options JSONB)
+  listings = listings.filter((l: any) => l?.is_preorder_enabled === true);
 } else {
-  listings = listings.filter((l: any) => l?.is_available === true);
+  // Same-day: in-stock and not paused
+  listings = listings.filter((l: any) => l?.is_available === true && !l?.is_order_paused);
 }
 const itemCount = listings.length;
 
@@ -370,12 +368,9 @@ const tags = [
       const emoji = speciesEmoji(l.species);
       // Menu mode is timing-first:
       // - pre-order mode: only listing-level pre-order enabled items
-      // - order mode: only in-stock inventory items
-      const isListingPreorder = isPreorderMode &&
-        l.is_preorder_enabled === true &&
-        l.preorder_price_min != null &&
-        l.preorder_price_max != null;
-      const hasStock = l.is_available === true;
+      // - order mode: only in-stock inventory items (not paused for same-day)
+      const isListingPreorder = isPreorderMode && l.is_preorder_enabled === true;
+      const hasStock = l.is_available === true && !l.is_order_paused;
       const canAddItem = !sellerFullyClosed && (isPreorderMode ? isListingPreorder : hasStock);
       const unavailableReason = (() => {
         if (sellerFullyClosed) return "Seller closed today";
@@ -387,24 +382,35 @@ const tags = [
       // Total qty across all tiers for this listing (for incart highlight)
       const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
 
-      // Pre-order price range (shown on preorder listings)
-      const fallbackPrice = firstOpt?.price ? `₹${Number(firstOpt.price).toLocaleString("en-IN")}` : "";
-      const mn = l.preorder_price_min ? `₹${Number(l.preorder_price_min).toLocaleString("en-IN")}` : fallbackPrice;
-      const mx = l.preorder_price_max ? `₹${Number(l.preorder_price_max).toLocaleString("en-IN")}` : fallbackPrice;
+      // Pre-order price range (shown on preorder listings, per pricing tier)
       const preorderRangeHtml = isListingPreorder
-        ? `<div style="font:600 11px Inter;color:#7C3AED;margin-top:3px;">🌙 Est. ${mn}${mx && mx !== mn ? ` – ${mx}` : ""}</div>`
+        ? opts.map((opt: any) => {
+            const pmn = opt.preorder_price_min;
+            const pmx = opt.preorder_price_max;
+            if (!pmn && !pmx) return "";
+            const mnStr = pmn ? `₹${Number(pmn).toLocaleString("en-IN")}` : "";
+            const mxStr = pmx ? `₹${Number(pmx).toLocaleString("en-IN")}` : "";
+            const range = mnStr && mxStr && mnStr !== mxStr ? `${mnStr}–${mxStr}` : mnStr || mxStr;
+            const unitSuffix = opt.unit === "kg" ? "/kg" : "/pc";
+            return `<div style="font:600 11px Inter;color:#7C3AED;margin-top:2px;">🌙 ${range}${unitSuffix}</div>`;
+          }).join("")
         : "";
 
-      // Preorder listings: show min–max range + single Pre-order button (price is estimated, set after catch)
+      // Preorder listings: show per-tier min–max range + add button per tier (no discount shown)
       // Regular listings: show exact pricing_options tiers as normal
       const pricingHtml = isListingPreorder && canAddItem
         ? (() => {
             const unit = resolveUnit(firstOpt);
+            // Use preorder_price_max as the add-to-cart price (buyer pays max, seller reconciles later)
+            const poPrice = firstOpt.preorder_price_max || firstOpt.preorder_price_min || firstOpt.price || 0;
+            const pmnStr = firstOpt.preorder_price_min ? `₹${Number(firstOpt.preorder_price_min).toLocaleString("en-IN")}` : "";
+            const pmxStr = firstOpt.preorder_price_max ? `₹${Number(firstOpt.preorder_price_max).toLocaleString("en-IN")}` : "";
+            const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${firstOpt.price}`;
             const optId = firstOpt.id || "default";
             const key = ck(l.id, optId);
             const inCart = sellerItems[key]?.qty || 0;
             return `<div class="v2-item-bottom">
-              <div class="v2-item-price" style="color:#7C3AED;">${mn}–${mx}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+              <div class="v2-item-price" style="color:#7C3AED;">${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
               ${inCart > 0
                 ? (() => {
                     const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
@@ -415,7 +421,7 @@ const tags = [
                      <button class="v2-item-inc" aria-label="Increase">+</button>
                    </div>`;
                   })()
-                : `<button class="v2-item-add" data-id="${l.id}" data-price="${firstOpt.price || 0}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+                : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
             </div>`;
           })()
         : canAddItem && hasStock
@@ -524,7 +530,21 @@ const tags = [
     }
 
     function render() {
-      grid.innerHTML = listings.map((l) => {
+      // In pre-order mode, only show items with is_preorder_enabled=true
+      const visibleListings = isPreorderMode
+        ? listings.filter((l: any) => l.is_preorder_enabled === true)
+        : listings;
+
+      if (isPreorderMode && visibleListings.length === 0 && !sellerFullyClosed) {
+        grid.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--v2-ink-3);">
+          <div style="font:700 20px Inter;margin-bottom:8px;">🌙</div>
+          <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:4px;">Pre-order menu unavailable</div>
+          <div style="font:400 12px Inter;color:var(--v2-ink-3);">This seller hasn't set up pre-orders for any items yet.</div>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = visibleListings.map((l: any) => {
         try {
           return renderItem(l);
         } catch (err) {

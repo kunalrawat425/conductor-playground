@@ -4,7 +4,7 @@ export interface ListingPriceOption {
   id: string;
   /** Seller-defined label, e.g. "Large piece", "Per kg" */
   label: string;
-  /** Amount charged at checkout (single source of truth for orders). */
+  /** Amount charged at checkout (single source of truth for same-day orders). */
   price: number;
   unit: PriceUnit;
   /**
@@ -15,9 +15,13 @@ export interface ListingPriceOption {
   bundle_size?: number;
   /**
    * Optional higher "was / list" price for display (strikethrough + % off).
-   * When set, must be greater than `price`.
+   * When set, must be greater than `price`. Not shown in pre-order mode.
    */
   compare_at_price?: number;
+  /** Pre-order estimated minimum price for this tier. Buyer sees range; no discount applies. */
+  preorder_price_min?: number | null;
+  /** Pre-order estimated maximum price for this tier. Buyer pays this at order time. */
+  preorder_price_max?: number | null;
 }
 
 /** Minimal listing fields for pricing helpers (avoids circular import with supabase.ts). */
@@ -245,6 +249,10 @@ export function canonicalPricingOptionsFromPayload(raw: unknown): ListingPriceOp
       row.bundle_size = n;
     }
     if (cap != null && cap > price) row.compare_at_price = cap;
+    const pmin = o.preorder_price_min != null && o.preorder_price_min !== "" ? Number(o.preorder_price_min) : null;
+    const pmax = o.preorder_price_max != null && o.preorder_price_max !== "" ? Number(o.preorder_price_max) : null;
+    if (pmin != null && Number.isFinite(pmin) && pmin > 0) row.preorder_price_min = pmin;
+    if (pmax != null && Number.isFinite(pmax) && pmax > 0) row.preorder_price_max = pmax;
     out.push(row);
   }
   return out.length > 0 ? out : null;

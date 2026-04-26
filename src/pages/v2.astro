@@ -310,8 +310,7 @@ const categories = [
         const listings = rawListings.filter((l: any) => preorderMode
           ? (
               l?.is_preorder_enabled === true &&
-              l?.preorder_price_min != null &&
-              l?.preorder_price_max != null
+              (Array.isArray(l?.pricing_options) ? l.pricing_options.some((o: any) => o?.preorder_price_min != null || o?.preorder_price_max != null) : true)
             )
           : l?.is_available === true
         );

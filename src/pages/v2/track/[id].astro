@@ -348,8 +348,11 @@ const { id } = Astro.params;
         (["pending_payment", "payment_required", "pre_order"].includes(o.status) || awaitingFinal)
       ) {
         const amountDue = o.paid_amount ? `₹${Number(o.paid_amount).toLocaleString("en-IN")}` : "";
-        const priceMin = o.listing?.preorder_price_min;
-        const priceMax = o.listing?.preorder_price_max;
+        // Per-unit preorder range from pricing_options (matched by pricing_option_id used on this order)
+        const popts: any[] = o.listing?.pricing_options || [];
+        const matchedOpt = popts.find((p: any) => p?.id && p.id === o.pricing_option_id) || popts[0] || {};
+        const priceMin = matchedOpt.preorder_price_min;
+        const priceMax = matchedOpt.preorder_price_max;
         const rangeHtml = priceMin && priceMax
           ? `<div style="font:700 13px Inter;color:#7C3AED;margin:8px 0 4px;">Expected price range: ₹${Number(priceMin).toLocaleString("en-IN")} – ₹${Number(priceMax).toLocaleString("en-IN")}</div>`
           : priceMin ? `<div style="font:700 13px Inter;color:#7C3AED;margin:8px 0 4px;">Min estimate: ₹${Number(priceMin).toLocaleString("en-IN")}</div>` : "";
@@ -445,16 +448,37 @@ const { id } = Astro.params;
           `<button id="v2-od-refund-ss2-${i}" style="width:100%;margin-top:6px;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View my screenshot${buyerSsPaths2.length > 1 ? ' ' + (i+1) : ''}</button>`
         ).join("");
         const label = o.status === "declined" ? "Order declined by seller" : "Order cancelled";
+        const sellerRefundBtn = o.refund_screenshot_path
+          ? `<button id="v2-od-seller-refund-ss" style="width:100%;margin-top:6px;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🧾 View seller's refund proof</button>`
+          : "";
+        const sellerRefundNote = o.refund_sent_at
+          ? `<div style="font:500 11px Inter;color:#059669;margin-top:6px;">✓ Seller marked refund sent on ${new Date(o.refund_sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</div>`
+          : "";
+        const sellerNote = o.refund_note
+          ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;padding:6px 8px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(o.refund_note)}</div>`
+          : "";
         refundHtml = `
           <div style="background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius);padding:16px;margin-top:8px;margin-bottom:8px;">
             <div style="font:800 14px Inter;color:#DC2626;margin-bottom:8px;">❌ ${label}</div>
             <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Refund: ₹${paidForRefund.toLocaleString("en-IN")}</div>
             <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Your refund will be sent within <strong>7 working days</strong> via UPI. Check your UPI app.</div>
-            ${buyerSsBtns2}
+            ${sellerRefundNote}${sellerNote}${sellerRefundBtn}${buyerSsBtns2}
           </div>`;
         // Wire screenshot buttons
         setTimeout(() => {
           const buyerIdForRef = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+          // Seller's refund screenshot
+          document.getElementById("v2-od-seller-refund-ss")?.addEventListener("click", async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true; btn.textContent = "Loading…";
+            try {
+              const res = await fetch(`/api/orders/refund-screenshot?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForRef)}`);
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed");
+              window.open(data.url, "_blank", "noopener");
+            } catch (err: any) { window.v2Toast?.("error", "Could not load", err.message); }
+            finally { btn.disabled = false; btn.textContent = "🧾 View seller's refund proof"; }
+          });
           buyerSsPaths2.forEach((_, i) => {
             document.getElementById(`v2-od-refund-ss2-${i}`)?.addEventListener("click", async (e) => {
               const btn = e.currentTarget as HTMLButtonElement;
@@ -563,7 +587,19 @@ const { id } = Astro.params;
       } else {
         actions.innerHTML = "";
       }
-    } else if (["confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled"].includes(o.status)) {
+    } else if (o.status === "ready_for_pickup") {
+      // Form locked — show read-only preferences only
+      const savedCuts2 = (o.cut_style || "").split(",").filter(Boolean);
+      const cutLabels2: Record<string, string> = { whole: "🐟 Whole", cleaned: "✂️ Cleaned", cut: "🔪 Cut" };
+      const cutDisplay2 = savedCuts2.map(c => cutLabels2[c] || c).join(", ");
+      actions.innerHTML = `
+        <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
+          <div style="font:700 13px Inter;color:#059669;margin-bottom:6px;">✅ Order ready — preferences locked</div>
+          ${cutDisplay2 ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Cut: ${cutDisplay2}</div>` : ""}
+          ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);">📝 ${escape(o.buyer_notes)}</div>` : ""}
+          <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:8px;">No changes possible after this point.</div>
+        </div>`;
+    } else if (["confirmed", "paid", "out_for_delivery", "scheduled"].includes(o.status)) {
       const hasCut = !!o.cut_style;
       const hasNotes = !!o.buyer_notes;
       const alreadySaved = hasCut || hasNotes;

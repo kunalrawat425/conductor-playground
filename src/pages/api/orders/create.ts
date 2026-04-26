@@ -152,7 +152,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       const pricingOpts = getListingPriceOptions(listing);
       const dailyCapFloor = minimumRequiredBuyerDailyCap(pricingOpts, minOrderAmt);
 
-      if (listing.buyer_daily_qty_limit != null && Number(listing.buyer_daily_qty_limit) > 0) {
+      // Daily qty limit applies to same-day orders only; pre-orders have no qty cap per spec
+      if (listing.buyer_daily_qty_limit != null && Number(listing.buyer_daily_qty_limit) > 0 && !isPreorderCandidate) {
         const cap = Number(listing.buyer_daily_qty_limit);
         if (cap < dailyCapFloor) {
           return new Response(
@@ -206,7 +207,9 @@ export const POST: APIRoute = async ({ request, url }) => {
           }
         }
         // Always allow as pre-order — no stock deduction, no blocking
-        total_price = linePrice * bundleCount;
+        // Use preorder_price_max as the charge price (buyer pays max; seller reconciles after catch)
+        const preorderUnitPrice = chosen.preorder_price_max ?? chosen.preorder_price_min ?? linePrice;
+        total_price = preorderUnitPrice * bundleCount;
         seller_id = listing.seller_id;
         const amountDue = total_price;
         const { data: preOrder, error: preErr } = await supabase
