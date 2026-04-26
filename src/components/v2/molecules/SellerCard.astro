@@ -58,7 +58,7 @@ const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "ind
 
   {topItems.length > 0 && (
     <div class="v2-sc-menu">
-      {topItems.slice(0, 4).map((it) => (
+      {topItems.slice(0, 3).map((it) => (
         <div class="v2-sc-chip">
           <span class="v2-sc-m-emoji" aria-hidden="true">{it.emoji}</span>
           <div>
@@ -67,6 +67,11 @@ const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "ind
           </div>
         </div>
       ))}
+      {topItems.length > 3 && (
+        <div class="v2-sc-chip v2-sc-chip-more">
+          <span class="v2-sc-m-more">+{topItems.length - 3} more</span>
+        </div>
+      )}
     </div>
   )}
 

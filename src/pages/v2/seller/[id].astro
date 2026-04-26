@@ -370,12 +370,16 @@ const tags = [
       // - pre-order mode: only listing-level pre-order enabled items
       // - order mode: only in-stock inventory items (not paused for same-day)
       const isListingPreorder = isPreorderMode && l.is_preorder_enabled === true;
-      const hasStock = l.is_available === true && !l.is_order_paused;
+      // weight_avail null = seller hasn't set it, treat as in stock; 0 = out of stock
+      const weightOk = l.weight_avail == null || Number(l.weight_avail) > 0;
+      const hasStock = l.is_available === true && !l.is_order_paused && weightOk;
       const canAddItem = !sellerFullyClosed && (isPreorderMode ? isListingPreorder : hasStock);
       const unavailableReason = (() => {
         if (sellerFullyClosed) return "Seller closed today";
         if (canAddItem) return null;
-        if (!hasStock && !isPreorderMode) return "Out of stock";
+        if (!l.is_available) return "Out of stock";
+        if (!weightOk) return "Out of stock";
+        if (!isPreorderMode) return "Out of stock";
         return "Unavailable";
       })();
 
@@ -384,7 +388,7 @@ const tags = [
 
       // Pre-order price range (shown on preorder listings, per pricing tier)
       const preorderRangeHtml = isListingPreorder
-        ? opts.map((opt: any) => {
+        ? opts.map((opt) => {
             const pmn = opt.preorder_price_min;
             const pmx = opt.preorder_price_max;
             if (!pmn && !pmx) return "";
@@ -532,7 +536,7 @@ const tags = [
     function render() {
       // In pre-order mode, only show items with is_preorder_enabled=true
       const visibleListings = isPreorderMode
-        ? listings.filter((l: any) => l.is_preorder_enabled === true)
+        ? listings.filter((l) => l.is_preorder_enabled === true)
         : listings;
 
       if (isPreorderMode && visibleListings.length === 0 && !sellerFullyClosed) {
@@ -544,7 +548,7 @@ const tags = [
         return;
       }
 
-      grid.innerHTML = visibleListings.map((l: any) => {
+      grid.innerHTML = visibleListings.map((l) => {
         try {
           return renderItem(l);
         } catch (err) {
