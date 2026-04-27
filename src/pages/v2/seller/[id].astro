@@ -960,8 +960,9 @@ const tags = [
       // Determine bundle step from the item's pricing option
       const item = cart[key];
       const listing = listings.find(l => l.id === item.listing_id);
-      const opt = (listing?.pricing_options || []).find(o => o.id === item.pricing_option_id);
-      const step = (opt?.bundle_size && opt.bundle_size > 1) ? opt.bundle_size : 1;
+      const opts0 = listing?.pricing_options || [];
+      const opt = opts0.find(o => o.id === item.pricing_option_id) || opts0[0];
+      const step = (opt?.bundle_size && opt.bundle_size > 1) ? Number(opt.bundle_size) : 1;
       const newQty = item.qty - step;
       c.setQty(key, newQty);
       render();
@@ -973,8 +974,9 @@ const tags = [
       if (!key || !cart[key]) return;
       const item = cart[key];
       const listing = listings.find(l => l.id === item.listing_id);
-      const opt = (listing?.pricing_options || []).find(o => o.id === item.pricing_option_id);
-      const step = (opt?.bundle_size && opt.bundle_size > 1) ? opt.bundle_size : 1;
+      const opts1 = listing?.pricing_options || [];
+      const opt = opts1.find(o => o.id === item.pricing_option_id) || opts1[0];
+      const step = (opt?.bundle_size && opt.bundle_size > 1) ? Number(opt.bundle_size) : 1;
       c.setQty(key, item.qty + step);
       render();
     }
