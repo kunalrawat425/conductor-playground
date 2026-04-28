@@ -444,8 +444,9 @@ const categories = [
       if (filterState.time === "preorder" && !g.preorderAvailableToday) return false;
       // Fulfill (delivery filter is the only meaningful one)
       if (filterState.fulfill === "delivery" && !s.has_delivery) return false;
-      // Distance — when buyer location set, hide far-away sellers
-      if (g.dist != null && g.dist > filterState.maxKm) return false;
+      // Distance — respect seller's delivery_rad; fall back to global 25km cap
+      const sellerRadKm = s.delivery_rad ? Number(s.delivery_rad) : filterState.maxKm;
+      if (g.dist != null && g.dist > sellerRadKm) return false;
       // Category — filter by species substrings in seller's listings
       const cat = filterState.category;
       if (cat && cat !== "all") {
