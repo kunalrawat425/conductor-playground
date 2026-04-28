@@ -74,6 +74,8 @@ export interface Seller {
   preorder_days?: string[];
   /** Latest time buyer can place a pre-order for next day (HH:MM). Default 22:00. */
   preorder_cutoff_time?: string;
+  /** UPI ID shown to buyers on payment-pending orders. */
+  upi_id?: string | null;
 }
 
 export interface FishListing {

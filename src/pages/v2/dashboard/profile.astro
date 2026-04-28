@@ -67,6 +67,9 @@ import Input from "../../../components/v2/atoms/Input.astro";
       <div style="flex:1;"><Input id="p-closes" name="closes_at" label="Closes" type="time" /></div>
     </div>
 
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Payment</h3>
+    <Input id="p-upi-id" name="upi_id" label="UPI ID (shown to buyers on payment page)" type="text" placeholder="e.g. 9876543210@upi or name@bank" />
+
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Order settings</h3>
     <Input id="p-min-order" name="min_order_amount" label="Minimum order (₹)" type="number" />
 
@@ -173,6 +176,7 @@ import Input from "../../../components/v2/atoms/Input.astro";
       (document.getElementById("p-email") as HTMLInputElement).value = seller?.email || "";
       (document.getElementById("p-opens") as HTMLInputElement).value = seller?.opens_at || "05:00";
       (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
+      (document.getElementById("p-upi-id") as HTMLInputElement).value = seller?.upi_id || "";
       (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
       (document.getElementById("p-preorder") as HTMLInputElement).checked = !!seller?.accepts_preorder;
       // Day schedule
@@ -241,6 +245,7 @@ import Input from "../../../components/v2/atoms/Input.astro";
       email: (document.getElementById("p-email") as HTMLInputElement).value.trim(),
       opens_at: (document.getElementById("p-opens") as HTMLInputElement).value,
       closes_at: (document.getElementById("p-closes") as HTMLInputElement).value,
+      upi_id: (document.getElementById("p-upi-id") as HTMLInputElement).value.trim() || null,
       min_order_amount: parseInt((document.getElementById("p-min-order") as HTMLInputElement).value) || 0,
       accepts_preorder: (document.getElementById("p-preorder") as HTMLInputElement).checked,
       open_days: getCheckedDays("open"),
