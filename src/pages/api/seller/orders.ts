@@ -232,6 +232,7 @@ export const POST: APIRoute = async ({ request }) => {
       confirmed: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       paid: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       payment_required: ["confirmed", "cancelled"],
+      refunded: ["ready_for_pickup", "out_for_delivery"],
       ready_for_pickup: ["completed", "cancelled"],
       out_for_delivery: ["completed", "cancelled"],
     };

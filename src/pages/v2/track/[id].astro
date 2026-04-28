@@ -273,7 +273,6 @@ const { id } = Astro.params;
       const terminalMeta = {
         declined: { label: "Declined", color: "#DC2626", icon: "✕" },
         cancelled: { label: "Cancelled", color: "#DC2626", icon: "✕" },
-        refunded: { label: "Refunded", color: "#7C3AED", icon: "₹" },
       };
       const terminal = terminalMeta[o.status];
       if (terminal) {
@@ -745,11 +744,11 @@ const { id } = Astro.params;
           : "";
         actions.innerHTML = `
           <div style="background:var(--v2-bg);border:1.5px solid #6366F1;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
-            <div style="font:800 14px Inter;color:#6366F1;margin-bottom:6px;">✅ Refund initiated by seller</div>
-            ${refundAmt > 0 ? `<div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:6px;">₹${refundAmt.toLocaleString("en-IN")}</div>` : ''}
+            <div style="font:700 10px Inter;color:#059669;background:#DCFCE7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">✅ Your order is confirmed — being prepared</div>
+            <div style="font:800 14px Inter;color:#6366F1;margin-bottom:6px;">↩ Refund: ₹${refundAmt.toLocaleString("en-IN")} sent back</div>
             <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Sent on ${sentAt}</div>
             ${note ? `<div style="font:500 12px Inter;color:var(--v2-ink-2);margin-top:6px;padding:8px 10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(note)}</div>` : ''}
-            <div style="font:600 11px Inter;color:#7C3AED;margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ UPI refunds reflect within <strong>7 working days</strong>. Check your UPI app. Not received after 7 days? Contact the seller.</div>
+            <div style="font:600 11px Inter;color:#7C3AED;margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ UPI refunds reflect within <strong>7 working days</strong>. Check your UPI app.</div>
             ${screenshotBtn}
             ${buyerSsSection}
           </div>`;
@@ -794,9 +793,9 @@ const { id } = Astro.params;
       } else {
         actions.innerHTML = `
           <div style="background:var(--v2-bg);border:1.5px solid #A78BFA;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
-            <div style="font:800 14px Inter;color:#7C3AED;margin-bottom:6px;">🔄 Refund being processed</div>
-            ${refundAmt > 0 ? `<div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:6px;">₹${refundAmt.toLocaleString("en-IN")}</div>` : ''}
-            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Seller will send your refund via UPI within <strong>7 working days</strong>.</div>
+            <div style="font:700 10px Inter;color:#059669;background:#DCFCE7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">✅ Your order is confirmed — being prepared</div>
+            <div style="font:800 14px Inter;color:#7C3AED;margin-bottom:6px;">↩ Refund ₹${refundAmt.toLocaleString("en-IN")} pending</div>
+            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Seller will send ₹${refundAmt.toLocaleString("en-IN")} back to your UPI within <strong>7 working days</strong>.</div>
             ${buyerSsSection}
           </div>`;
         // Wire buyer screenshot buttons for "processing" state too
