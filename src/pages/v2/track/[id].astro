@@ -259,30 +259,36 @@ const { id } = Astro.params;
     const orderType = (o.order_type || "pickup") === "delivery" ? "delivery" : "pickup";
     const { labels: stepLabels, step } = resolveBuyerStepper(o, orderType);
     const stepper = document.getElementById("v2-od-stepper");
-    const terminalMeta = {
-      declined: { label: "Declined", color: "#DC2626", icon: "✕" },
-      cancelled: { label: "Cancelled", color: "#DC2626", icon: "✕" },
-      refunded: { label: "Refunded", color: "#7C3AED", icon: "₹" },
-    };
-    const terminal = terminalMeta[o.status];
-    if (terminal) {
-      stepper.innerHTML = `
-        <div class="dot done">✓</div>
-        <div class="line done"></div>
-        <div class="dot" style="background:${terminal.color};color:#fff;font-size:11px;">${terminal.icon}</div>
-      `;
-    } else {
-      stepper.innerHTML = Array.from({ length: stepLabels.length }, (_, i) =>
-        `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
-        (i < stepLabels.length - 1 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
-      ).join("");
-    }
     const stepLabelEl = document.querySelector(".v2-od-steplabels");
-    if (stepLabelEl) {
+    const isRefundStepper = ["declined","cancelled"].includes(o.status) && Number(o.paid_amount) > 0;
+    if (isRefundStepper) {
+      const refundStep = o.refund_sent_at ? 2 : 1;
+      const refundLabels = ["Placed", o.status === "declined" ? "Declined" : "Cancelled", "Refund"];
+      stepper.innerHTML = [0,1,2].map(i =>
+        `<div class="dot${i <= refundStep ? ' done' : ''}" style="${i === 1 ? 'background:var(--v2-red);' : ''}">${i <= refundStep ? '✓' : i+1}</div>` +
+        (i < 2 ? `<div class="line${i < refundStep ? ' done' : ''}"></div>` : '')
+      ).join("");
+      if (stepLabelEl) stepLabelEl.innerHTML = refundLabels.map(l => `<span>${l}</span>`).join("");
+    } else {
+      const terminalMeta = {
+        declined: { label: "Declined", color: "#DC2626", icon: "✕" },
+        cancelled: { label: "Cancelled", color: "#DC2626", icon: "✕" },
+        refunded: { label: "Refunded", color: "#7C3AED", icon: "₹" },
+      };
+      const terminal = terminalMeta[o.status];
       if (terminal) {
-        stepLabelEl.innerHTML = `<span>Placed</span><span style="color:${terminal.color};font-weight:700;margin-left:auto;">${terminal.label}</span>`;
+        stepper.innerHTML = `
+          <div class="dot done">✓</div>
+          <div class="line done"></div>
+          <div class="dot" style="background:${terminal.color};color:#fff;font-size:11px;">${terminal.icon}</div>
+        `;
+        if (stepLabelEl) stepLabelEl.innerHTML = `<span>Placed</span><span style="color:${terminal.color};font-weight:700;margin-left:auto;">${terminal.label}</span>`;
       } else {
-        stepLabelEl.innerHTML = stepLabels.map(l => `<span>${l}</span>`).join("");
+        stepper.innerHTML = Array.from({ length: stepLabels.length }, (_, i) =>
+          `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
+          (i < stepLabels.length - 1 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
+        ).join("");
+        if (stepLabelEl) stepLabelEl.innerHTML = stepLabels.map(l => `<span>${l}</span>`).join("");
       }
     }
 
@@ -951,7 +957,7 @@ const { id } = Astro.params;
             isOptional ? "Payment proof updated" : "Payment proof submitted",
             isOptional ? "The seller has been notified." : "Seller will confirm shortly"
           );
-          setTimeout(() => load(), 1500);
+          // Realtime subscription handles re-render when DB updates — no manual load() needed here.
         } catch (err) {
           errEl.style.display = "block";
           const msg = err.message || "Upload failed";

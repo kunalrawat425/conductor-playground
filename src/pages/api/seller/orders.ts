@@ -1,7 +1,11 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
-import { capitalizeFishName, orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+
+function capitalizeFishName(s: string): string {
+  return s.replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export const prerender = false;
 
@@ -284,6 +288,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
     if (status === "declined" || status === "cancelled") {
       updates.cancelled_by = "seller";
+      if (refund_note) updates.refund_note = refund_note;
     }
 
     const { data, error } = await supabase
