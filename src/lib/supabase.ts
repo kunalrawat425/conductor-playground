@@ -76,6 +76,8 @@ export interface Seller {
   preorder_cutoff_time?: string;
   /** UPI ID shown to buyers on payment-pending orders. */
   upi_id?: string | null;
+  /** Store cover photo URL. */
+  store_image_url?: string | null;
 }
 
 export interface FishListing {
@@ -592,7 +594,12 @@ export async function uploadFishPhoto(
     .from("fish-photos")
     .upload(path, file);
 
-  if (error) throw error;
+  if (error) {
+    if (/bucket.*not found|not found.*bucket/i.test(error.message)) {
+      throw new Error("Photo upload failed: 'fish-photos' storage bucket not found. Create a public bucket named 'fish-photos' in Supabase Dashboard → Storage.");
+    }
+    throw error;
+  }
 
   const {
     data: { publicUrl },
@@ -601,4 +608,26 @@ export async function uploadFishPhoto(
   });
 
   return publicUrl;
+}
+
+export async function uploadSellerStoreImage(
+  file: File,
+  sellerId: string
+): Promise<string> {
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `sellers/${sellerId}/store.${ext}`;
+
+  await supabase.storage.from("fish-photos").remove([path]);
+  const { error } = await supabase.storage
+    .from("fish-photos")
+    .upload(path, file, { upsert: true });
+
+  if (error) {
+    if (/bucket.*not found|not found.*bucket/i.test(error.message)) {
+      throw new Error("Photo upload failed: 'fish-photos' storage bucket not found. Create a public bucket named 'fish-photos' in Supabase Dashboard → Storage.");
+    }
+    throw error;
+  }
+
+  return supabase.storage.from("fish-photos").getPublicUrl(path).data.publicUrl;
 }

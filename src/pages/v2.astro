@@ -567,7 +567,9 @@ const categories = [
         <${fullyClosed ? 'div' : `a href="/v2/seller/${s.id}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
           <div class="v2-sc-img" style="background:${hueColors[hue]};">
             ${offerBadge}
-            <span class="v2-sc-emoji">🐟</span>
+            ${(s as any).store_image_url
+              ? `<img src="${escapeHtml((s as any).store_image_url)}" alt="${escapeHtml(s.name)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />`
+              : `<span class="v2-sc-emoji">🐟</span>`}
           </div>
           <div class="v2-sc-body">
             <div class="v2-sc-top">

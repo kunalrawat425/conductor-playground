@@ -67,6 +67,19 @@ import Input from "../../../components/v2/atoms/Input.astro";
       <div style="flex:1;"><Input id="p-closes" name="closes_at" label="Closes" type="time" /></div>
     </div>
 
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Store photo</h3>
+    <div id="p-store-photo-section" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px;">
+      <div id="p-store-preview" style="display:none;position:relative;width:100%;max-width:240px;">
+        <img id="p-store-preview-img" src="" alt="Store photo" style="width:100%;border-radius:var(--v2-radius-sm);object-fit:cover;max-height:140px;" />
+        <button type="button" id="p-store-remove" style="position:absolute;top:6px;right:6px;background:#DC2626;color:#fff;border:none;border-radius:50%;width:24px;height:24px;font:700 14px Inter;cursor:pointer;line-height:24px;text-align:center;">×</button>
+      </div>
+      <label style="cursor:pointer;">
+        <div id="p-store-drop" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;text-align:center;font:500 12px Inter;color:var(--v2-ink-3);">📷 Upload store photo (max 5 MB)</div>
+        <input type="file" id="p-store-file" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+      </label>
+      <div id="p-store-error" style="display:none;font:500 11px Inter;color:var(--v2-red);"></div>
+    </div>
+
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Payment</h3>
     <Input id="p-upi-id" name="upi_id" label="UPI ID (shown to buyers on payment page)" type="text" placeholder="e.g. 9876543210@upi or name@bank" />
 
@@ -177,6 +190,14 @@ import Input from "../../../components/v2/atoms/Input.astro";
       (document.getElementById("p-opens") as HTMLInputElement).value = seller?.opens_at || "05:00";
       (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
       (document.getElementById("p-upi-id") as HTMLInputElement).value = seller?.upi_id || "";
+      // Store photo
+      if (seller?.store_image_url) {
+        const preview = document.getElementById("p-store-preview") as HTMLElement;
+        const img = document.getElementById("p-store-preview-img") as HTMLImageElement;
+        img.src = seller.store_image_url;
+        preview.style.display = "block";
+        document.getElementById("p-store-drop")!.textContent = "📷 Replace store photo";
+      }
       (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
       (document.getElementById("p-preorder") as HTMLInputElement).checked = !!seller?.accepts_preorder;
       // Day schedule
@@ -279,6 +300,27 @@ import Input from "../../../components/v2/atoms/Input.astro";
     }
 
     try {
+      // Upload store photo if a new file was selected
+      const storeFile = (document.getElementById("p-store-file") as HTMLInputElement)?.files?.[0];
+      if (storeFile) {
+        if (storeFile.size > 5 * 1024 * 1024) {
+          (window as any).v2Toast?.("error", "File too large", "Store photo must be under 5 MB");
+          btn.disabled = false; btn.textContent = "Save changes"; return;
+        }
+        const storeErrEl = document.getElementById("p-store-error") as HTMLElement;
+        const form = new FormData();
+        form.append("seller_id", sellerId!);
+        form.append("file", storeFile);
+        const upRes = await fetch("/api/seller/upload-store-photo", { method: "POST", body: form });
+        const upData = await upRes.json();
+        if (!upRes.ok) {
+          storeErrEl.textContent = upData.error || "Store photo upload failed";
+          storeErrEl.style.display = "block";
+          btn.disabled = false; btn.textContent = "Save changes"; return;
+        }
+        storeErrEl.style.display = "none";
+      }
+
       const res = await fetch("/api/seller/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -332,6 +374,30 @@ import Input from "../../../components/v2/atoms/Input.astro";
   function getCheckedDays(prefix: string): string[] {
     return Array.from(document.querySelectorAll(`input[data-day-prefix="${prefix}"]:checked`)).map((el: any) => el.dataset.day);
   }
+
+  // Store photo file picker
+  document.getElementById("p-store-file")?.addEventListener("change", (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const drop = document.getElementById("p-store-drop")!;
+    const preview = document.getElementById("p-store-preview") as HTMLElement;
+    const img = document.getElementById("p-store-preview-img") as HTMLImageElement;
+    drop.textContent = file.name;
+    img.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  });
+  document.getElementById("p-store-remove")?.addEventListener("click", async () => {
+    if (!confirm("Remove store photo?")) return;
+    const form = new FormData();
+    form.append("seller_id", sellerId!);
+    form.append("remove", "1");
+    await fetch("/api/seller/upload-store-photo", { method: "POST", body: form });
+    (document.getElementById("p-store-preview") as HTMLElement).style.display = "none";
+    (document.getElementById("p-store-preview-img") as HTMLImageElement).src = "";
+    (document.getElementById("p-store-file") as HTMLInputElement).value = "";
+    document.getElementById("p-store-drop")!.textContent = "📷 Upload store photo (max 5 MB)";
+    (window as any).v2Toast?.("success", "Photo removed");
+  });
 
   // Toggle preorder schedule sub-section
   document.getElementById("p-preorder")?.addEventListener("change", (e) => {
