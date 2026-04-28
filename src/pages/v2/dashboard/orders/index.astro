@@ -621,10 +621,12 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
             ${awaitingNote}
             ${proofPending}
+            <input type="text" placeholder="Decline reason (shown to buyer, optional)" id="decline-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;display:none;" />
             <div style="display:flex;gap:8px;">
-              <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline" data-order-id="${o.id}">Decline</button>
+              <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline-show-reason" data-order-id="${o.id}">Decline</button>
               <button class="v2-btn v2-btn-sm" ${verifyBtnAttrs} data-action="verify_payment" data-order-id="${o.id}">✓ Verify & Confirm</button>
             </div>
+            <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Confirm decline</button>
           </div>`;
         } else if (o.status === "confirmed" || o.status === "paid") {
           const preorderPriceBlock = needsFinalPrice
@@ -797,6 +799,13 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         btn.addEventListener("click", () => {
           if (btn.dataset.action === "view_screenshot") {
             viewScreenshot(btn.dataset.orderId!, btn.dataset.path!, btn);
+          } else if (btn.dataset.action === "decline-show-reason") {
+            const orderId = btn.dataset.orderId!;
+            const noteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
+            const confirmBtn = document.getElementById(`decline-confirm-${orderId}`) as HTMLButtonElement | null;
+            if (noteInput) noteInput.style.display = "block";
+            if (confirmBtn) confirmBtn.style.display = "block";
+            btn.style.display = "none";
           } else {
             updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
           }
@@ -912,6 +921,11 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         }
       } else {
         body.status = statusMap[action] || "declined";
+        if (body.status === "declined" || body.status === "cancelled") {
+          const declineNoteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
+          const note = declineNoteInput?.value?.trim();
+          if (note) body.refund_note = note;
+        }
       }
       const res = await fetch("/api/seller/orders", {
         method: "POST",
