@@ -173,6 +173,7 @@ export interface SellerHeroProps {
   catchTime?: string;
   tags?: string[];
   phone?: string;
+  storeImageUrl?: string | null;
 }
 
 export interface BottomSheetProps {
