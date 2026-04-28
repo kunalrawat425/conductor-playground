@@ -859,10 +859,20 @@ const { id } = Astro.params;
           : `<div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">Order total (reference): ₹${orderTotalRef.toLocaleString("en-IN")}</div>`
         : `<div style="font:800 16px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${balance.toLocaleString("en-IN")}</div>`;
 
+      const sellerUpi = o.seller?.upi_id || (o.listing?.seller as any)?.upi_id || null;
+      const upiCard = sellerUpi
+        ? `<div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:var(--v2-radius-sm);padding:12px;margin-bottom:12px;">
+            <div style="font:600 11px Inter;color:#92400E;margin-bottom:2px;">💳 Pay via UPI</div>
+            <div style="font:800 16px Inter;color:#78350F;letter-spacing:0.3px;">${sellerUpi}</div>
+            <div style="font:400 11px Inter;color:#92400E;margin-top:3px;">Copy this ID → open your UPI app → paste and pay</div>
+          </div>`
+        : "";
+
       root.innerHTML = `
         <div style="background:var(--v2-bg);border:1.5px solid var(--v2-brand);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
           <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">${title}</div>
           <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">${subtitle}</div>
+          ${upiCard}
           ${amountBlock}
           ${alreadyUploaded ? `<div id="v2-pay-ss-status" style="font:600 12px Inter;color:var(--v2-green);margin-bottom:6px;">✓ Screenshot uploaded — awaiting seller confirmation</div><div id="v2-pay-screenshots-list" style="margin-bottom:12px;font:400 11px Inter;color:var(--v2-ink-3);">Loading your screenshot...</div>` : ""}
           <label style="display:block;cursor:pointer;">
