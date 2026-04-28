@@ -177,7 +177,7 @@ const { id } = Astro.params;
   function statusLabel(s, o) {
     const proofOnFile = o && Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
     return ({
-      pending: "Awaiting confirmation",
+      pending: proofOnFile ? "Payment proof submitted" : "Upload payment proof",
       pending_payment: proofOnFile ? "Payment proof submitted" : "Upload payment proof",
       pre_order: "Pre-order placed",
       scheduled: "Scheduled pickup",
@@ -395,8 +395,9 @@ const { id } = Astro.params;
 
     // Actions
     const actions = document.getElementById("v2-od-actions");
-    if (o.status === "pending_payment") {
-      // UPI screenshot upload (catch pre-order + same-day when seller asks for proof)
+    if (o.status === "pending_payment" || o.status === "pending") {
+      // UPI screenshot upload — pending_payment is the normal pay-first flow;
+      // pending covers legacy orders created before the pending_payment migration.
       renderPaymentUpload(o, "pending");
       const pre = isPreorderCatchFlow(o);
       const cancelLabel = pre ? "Cancel pre-order" : "Cancel order";
