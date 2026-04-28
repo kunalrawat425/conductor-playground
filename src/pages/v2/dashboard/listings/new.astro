@@ -74,7 +74,17 @@ import Toast from "../../../../components/v2/atoms/Toast.astro";
                 if (btn) { btn.disabled = false; btn.textContent = "Create listing"; }
                 return;
               }
-              photoUrl = await uploadFishPhoto(photoFile, sellerId);
+              const upForm = new FormData();
+              upForm.append("seller_id", sellerId);
+              upForm.append("file", photoFile);
+              const upRes = await fetch("/api/seller/upload-listing-photo", { method: "POST", body: upForm });
+              const upData = await upRes.json();
+              if (!upRes.ok) {
+                (window as any).v2Toast?.("error", "Photo upload failed", upData.error || "Unknown error");
+                if (btn) { btn.disabled = false; btn.textContent = "Create listing"; }
+                return;
+              }
+              photoUrl = upData.url;
             }
 
             const isPreorderEnabled = (formData.get("is_preorder_enabled") as string) === "true";
