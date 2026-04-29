@@ -497,7 +497,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         const sq = searchQuery.toLowerCase();
         const { data: allOrders } = await supabase
           .from("orders")
-          .select("*, listing:fish_listings(species, pricing_options)")
+          .select("*, listing:fish_listings(species, pricing_options), order_feedback(rating, feedback, updated_at)")
           .in("listing_id", listingIds)
           .order("created_at", { ascending: false })
           .limit(500);
@@ -532,7 +532,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       } else {
         q = supabase
           .from("orders")
-          .select("*, listing:fish_listings(species, pricing_options)", { count: "exact" })
+          .select("*, listing:fish_listings(species, pricing_options), order_feedback(rating, feedback, updated_at)", { count: "exact" })
           .in("listing_id", listingIds)
           .in("status", STATUS_BY_TAB[currentTab])
           .order("created_at", { ascending: false })
@@ -774,6 +774,16 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
         } else if (o.status === "out_for_delivery") {
           nextStepHint = "Next: Mark as delivered after drop-off.";
         }
+        const fbRaw = o.order_feedback;
+        const fbRow = Array.isArray(fbRaw) ? fbRaw[0] : fbRaw;
+        const buyerRatingHtml =
+          fbRow && Number(fbRow.rating) > 0
+            ? `<div style="margin-top:8px;padding:10px;background:#FFFBEB;border:1px solid #FCD34D;border-radius:var(--v2-radius-sm);">
+                <div style="font:700 12px Inter;color:#D97706;">⭐ Buyer rated ${Number(fbRow.rating)}/5</div>
+                ${fbRow.feedback ? `<div style="font:400 12px Inter;color:var(--v2-ink);margin-top:4px;">${escape(String(fbRow.feedback))}</div>` : ""}
+                ${fbRow.updated_at ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:4px;">${escape(new Date(fbRow.updated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }))}</div>` : ""}
+              </div>`
+            : "";
         return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}" data-has-payment-proof="${hasPaymentProof ? "true" : "false"}">
           <div class="v2-oc-top">
             <div>
@@ -789,6 +799,7 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           </div>
           ${o.cut_style ? `<div style="font:600 11px Inter;color:var(--v2-ink-2);margin-top:4px;">✂️ ${escape(o.cut_style.split(",").map((c: string) => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : ''}
           ${o.buyer_notes ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
+          ${buyerRatingHtml}
           <div class="v2-oc-total">₹${total.toLocaleString("en-IN")}</div>
           <div class="v2-oc-sub">Payment status is managed in order details.</div>
           ${nextStepHint ? `<div class="v2-oc-next">${nextStepHint}</div>` : ""}

@@ -571,12 +571,16 @@ const { id } = Astro.params;
       }
       const sellerIdForReorder = o.seller?.id || o.listing?.seller_id || "";
       if (sellerIdForReorder) {
-        actions.innerHTML += `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`;
-        document.getElementById("v2-od-reorder-btn").addEventListener("click", () => {
-          // Dump items back into RelifishCart then navigate to seller page.
+        // insertAdjacentHTML preserves existing nodes — innerHTML += re-parses the whole
+        // actions block and drops rating/submit listeners.
+        actions.insertAdjacentHTML(
+          "beforeend",
+          `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`
+        );
+        document.getElementById("v2-od-reorder-btn")?.addEventListener("click", () => {
           const Cart = window.RelifishCart;
           if (Cart) {
-            items.forEach(it => {
+            items.forEach((it) => {
               Cart.addItem({
                 listing_id: o.listing_id || "",
                 seller_id: sellerIdForReorder,
@@ -590,8 +594,6 @@ const { id } = Astro.params;
           }
           window.location.href = `/v2/seller/${sellerIdForReorder}`;
         });
-      } else {
-        actions.innerHTML = "";
       }
     } else if (o.status === "ready_for_pickup") {
       // Form locked — show read-only preferences only
