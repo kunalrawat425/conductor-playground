@@ -121,7 +121,7 @@ export function getBuyerStepperLabels(
       ? ["Placed", "Payment proof", "Confirmed", "On the way", last]
       : ["Placed", "Payment proof", "Confirmed", "Ready", last];
   }
-  return ["Pre-ordered", "Payment proof", "Price set", "Confirmed", last];
+  return ["Pre-ordered", "Payment proof", "Confirmed", last];
 }
 
 function simpleStatusStep(status: string, orderType: "pickup" | "delivery"): number {
@@ -183,27 +183,19 @@ function paymentTrackStep(
 
 function preorderTrackStep(o: BuyerStepperOrder, hasPaymentProof: boolean): number {
   const status = o.status;
-  // Seller verified payment but morning final price not set yet — stay on "Price set" (index 2), not "Confirmed".
-  if (
-    (status === "confirmed" || status === "paid") &&
-    isPartialAgainstListedDue(o) &&
-    finalPriceUnset(o)
-  ) {
-    return 2;
-  }
   const m: Record<string, number> = {
-    pre_order: 0,
-    pending: 0,
-    scheduled: hasPaymentProof ? 1 : 0,
+    pre_order: hasPaymentProof ? 1 : 0,
+    pending: hasPaymentProof ? 1 : 0,
     pending_payment: hasPaymentProof ? 1 : 0,
-    payment_required: 2,
-    confirmed: 3,
-    paid: 3,
-    ready_for_pickup: 4,
-    out_for_delivery: 4,
-    picked_up: 4,
-    completed: 4,
-    refunded: 4,
+    scheduled: hasPaymentProof ? 1 : 0,
+    payment_required: 1,
+    confirmed: 2,
+    paid: 2,
+    refunded: 2,
+    ready_for_pickup: 3,
+    out_for_delivery: 3,
+    picked_up: 3,
+    completed: 3,
     cancelled: 0,
     declined: 0,
   };
