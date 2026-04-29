@@ -196,10 +196,10 @@ describe("resolveBuyerStepper", () => {
       "pickup"
     );
     expect(r.variant).toBe("preorder");
-    expect(r.labels[2]).toBe("Price set");
+    expect(r.labels[2]).toBe("Confirmed");
   });
 
-  it("uses preorder variant and step 2 (Price set) when confirmed, partial paid, final_price unset", () => {
+  it("uses preorder variant and step 2 (Confirmed) when confirmed, partial paid, final_price unset", () => {
     const r = resolveBuyerStepper(
       {
         status: "confirmed",
@@ -212,7 +212,7 @@ describe("resolveBuyerStepper", () => {
       "pickup"
     );
     expect(r.variant).toBe("preorder");
-    expect(r.labels[2]).toBe("Price set");
+    expect(r.labels[2]).toBe("Confirmed");
     expect(r.step).toBe(2);
   });
 
