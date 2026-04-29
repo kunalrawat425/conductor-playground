@@ -51,6 +51,8 @@ export interface Seller {
   rating_avg: number;
   total_orders: number;
   has_delivery: boolean;
+  /** When false, buyers cannot choose pickup for this seller. Default true in DB. */
+  has_pickup?: boolean;
   delivery_rad: number | null;
   is_admin: boolean;
   flagged: boolean;

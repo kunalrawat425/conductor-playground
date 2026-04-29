@@ -63,6 +63,20 @@ function normalizeLabelForUnit(
   return s;
 }
 
+/** Slash after menu/preorder prices: `/pc`, `/3pc`, `/kg`, `/0.5kg`. Matches multi-tier bundle hints. */
+export function formatBuyerMenuUnitSuffix(opt: ListingPriceOption | undefined): string {
+  if (!opt) return "/pc";
+  if (opt.unit === "kg") {
+    if (isPerBaseUnitPricing(opt)) return "/kg";
+    const amt = optionBundleAmount(opt);
+    const r = Math.round(amt * 100) / 100;
+    return `/${r}kg`;
+  }
+  if (isPerBaseUnitPricing(opt)) return "/pc";
+  const n = Math.floor(optionBundleAmount(opt));
+  return `/${n}pc`;
+}
+
 /** Short suffix for menus and cart (pc, dz, kg, g). */
 export function priceUnitShortLabel(unit: PriceUnit): string {
   switch (unit) {

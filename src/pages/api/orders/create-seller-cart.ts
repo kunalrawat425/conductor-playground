@@ -82,7 +82,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const { data: seller } = await supabase
       .from("sellers")
       .select(
-        "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots"
+        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots"
       )
       .eq("id", clientSellerId)
       .single();
@@ -104,6 +104,9 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     if (order_type === "delivery" && !seller?.has_delivery) {
       return new Response(JSON.stringify({ error: "This seller does not offer delivery" }), { status: 400 });
+    }
+    if (order_type === "pickup" && seller?.has_pickup === false) {
+      return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
     }
 
     // Pay-first: same-day and scheduled slots both start as pending_payment until proof is uploaded.

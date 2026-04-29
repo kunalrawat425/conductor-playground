@@ -104,10 +104,17 @@ import Input from "../../../components/v2/atoms/Input.astro";
       <input type="time" id="p-preorder-cutoff" value="22:00" style="padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;" />
     </div>
     <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+      <input type="checkbox" id="p-pickup" />
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Offer pickup 🏪</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyers collect orders at your location</div>
+      </div>
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
       <input type="checkbox" id="p-delivery" />
       <div>
         <div style="font:700 13px Inter;color:var(--v2-ink);">Offer delivery 🚲</div>
-        <div style="font:400 11px Inter;color:var(--v2-ink-3);">In addition to pickup</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Deliver to buyers within your radius</div>
       </div>
     </label>
 
@@ -209,6 +216,7 @@ import Input from "../../../components/v2/atoms/Input.astro";
       renderDayPills("p-preorder-days", allDays, dayLabels, preorderDays, "preorder");
       (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value = seller?.preorder_cutoff_time?.slice(0,5) || "22:00";
       document.getElementById("p-preorder-schedule")!.style.display = seller?.accepts_preorder ? "block" : "none";
+      (document.getElementById("p-pickup") as HTMLInputElement).checked = seller?.has_pickup !== false;
       (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
       (document.getElementById("p-delivery-rad") as HTMLInputElement).value = String(seller?.delivery_rad || 5);
       (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked = !!seller?.delivery_fee_enabled;
@@ -272,6 +280,7 @@ import Input from "../../../components/v2/atoms/Input.astro";
       open_days: getCheckedDays("open"),
       preorder_days: getCheckedDays("preorder"),
       preorder_cutoff_time: (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value || "22:00",
+      has_pickup: (document.getElementById("p-pickup") as HTMLInputElement).checked,
       has_delivery: (document.getElementById("p-delivery") as HTMLInputElement).checked,
       delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
       delivery_fee_enabled: (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked,
@@ -296,6 +305,10 @@ import Input from "../../../components/v2/atoms/Input.astro";
     }
     if (updates.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.email)) {
       (window as any).v2Toast?.("error", "Invalid email", "Use a valid email address");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+    if (!updates.has_pickup && !updates.has_delivery) {
+      (window as any).v2Toast?.("error", "Pickup or delivery required", "Enable at least pickup or delivery so buyers can get orders");
       btn.disabled = false; btn.textContent = "Save changes"; return;
     }
 

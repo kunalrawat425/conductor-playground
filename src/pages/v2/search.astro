@@ -121,6 +121,7 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
 </style>
 
 <script>
+  import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
   const input = document.getElementById("v2-search-q") as HTMLInputElement;
   const clear = document.getElementById("v2-search-clear")!;
   const trending = document.getElementById("v2-search-trending")!;
@@ -162,16 +163,20 @@ import EmptyState from "../../components/v2/molecules/EmptyState.astro";
       results.style.display = "block";
 
       const listingsHtml = lst.map((l: any) => {
-        const opt = (l.pricing_options || [])[0] || {};
-        const price = opt.price || 0;
-        const unit = opt.unit_label || "kg";
+        const opts = getListingPriceOptions(l);
+        const opt = opts[0];
+        const rawOpt = (l.pricing_options || [])[0] || {};
+        const price = Number(opt?.price ?? rawOpt.price) || 0;
+        const unitPart = opt
+          ? formatBuyerMenuUnitSuffix(opt).replace(/^\//, "")
+          : escape(String(rawOpt.unit_label || "kg"));
         return `<a href="/v2/seller/${l.seller?.id}" class="v2-search-result">
           <div class="emoji">${speciesEmoji(l.species)}</div>
           <div class="body">
             <div class="n" style="text-transform:capitalize;">${escape(l.species)}</div>
             <div class="sub">${escape(l.seller?.name || "")} · ${escape(l.seller?.location_name || "")}</div>
           </div>
-          <div class="price">₹${price}/${escape(unit)}</div>
+          <div class="price">₹${price}/${unitPart}</div>
         </a>`;
       }).join("");
 

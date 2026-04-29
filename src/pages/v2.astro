@@ -31,7 +31,7 @@ const categories = [
   <LocationPickerSheet />
 
   <!-- Sticky filter cluster — stays in view when scrolling cards -->
-  <div class="v2-sticky-cluster">
+  <div id="v2-sticky-cluster" class="v2-sticky-cluster">
     <PreorderBanner variant="inline" />
 
     <div style="margin-top: 6px;">
@@ -156,6 +156,7 @@ const categories = [
 <script>
   import { supabase } from "../lib/supabase";
   import { getSpeciesDisplay } from "../lib/species";
+  import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
   import type { Seller, FishListing } from "../lib/supabase";
 
   type SellerHue = "sky" | "green" | "orange" | "indigo";
@@ -208,6 +209,26 @@ const categories = [
 
   function escapeHtml(s: string) {
     return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  }
+
+  function listingChipHtml(l: any): string {
+    const name = getSpeciesDisplay(l.species);
+    const opts = getListingPriceOptions(l);
+    const opt = opts[0];
+    const price = opt?.price ?? (l.pricing_options as any[])?.[0]?.price ?? 0;
+    const unitPart = opt
+      ? formatBuyerMenuUnitSuffix(opt).replace(/^\//, "")
+      : escapeHtml(String((l.pricing_options as any[])?.[0]?.unit_label || "kg"));
+    const emoji = (l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : "🐟";
+    return `<div class="v2-sc-chip"><span class="v2-sc-m-emoji">${emoji}</span><div><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${unitPart}</div></div></div>`;
+  }
+
+  /** At most 2 cells: two products, or first product + "+N" (N = number of additional listings). */
+  function sellerMenuChipsHtml(listings: any[] | undefined): string {
+    const lst = listings || [];
+    if (lst.length === 0) return "";
+    if (lst.length <= 2) return lst.map(listingChipHtml).join("");
+    return listingChipHtml(lst[0]) + `<div class="v2-sc-chip v2-sc-chip-more"><span class="v2-sc-m-more">+${lst.length - 1}</span></div>`;
   }
 
   async function loadSellers() {
@@ -335,7 +356,11 @@ const categories = [
 
       // Cache for filter re-render
       (window as any).__v2allGroups = groups;
-      buildCategoryStrip(groups);
+      if (getBuyerLocation()) {
+        buildCategoryStrip(groups);
+      } else {
+        buildCategoryStrip([]);
+      }
       renderFiltered();
     } catch (err) {
       console.error("v2: load failed", err);
@@ -437,23 +462,35 @@ const categories = [
   }
 
   function applyFilters(groups: any[]) {
-    return groups.filter(g => {
+    const buyerLoc = getBuyerLocation();
+    if (!buyerLoc) return [];
+
+    return groups.filter((g) => {
       const s = g.seller;
+      // Buyer has coordinates but seller missing map pin — cannot verify service area
+      if (g.dist == null) return false;
+
+      const rad = Number(s.delivery_rad);
+      const capKm =
+        rad > 0
+          ? rad
+          : s.has_delivery
+            ? Math.min(10, filterState.maxKm)
+            : filterState.maxKm;
+      if (g.dist > capKm) return false;
+
       // Time
       if (filterState.time === "open" && !g.open) return false;
       if (filterState.time === "preorder" && !g.preorderAvailableToday) return false;
       // Fulfill (delivery filter is the only meaningful one)
       if (filterState.fulfill === "delivery" && !s.has_delivery) return false;
-      // Distance — respect seller's delivery_rad; fall back to global 25km cap
-      const sellerRadKm = s.delivery_rad ? Number(s.delivery_rad) : filterState.maxKm;
-      if (g.dist != null && g.dist > sellerRadKm) return false;
       // Category — filter by species substrings in seller's listings
       const cat = filterState.category;
       if (cat && cat !== "all") {
         const subs = categorySpecies[cat] || [];
         const hasMatch = (g.listings || []).some((l: any) => {
           const sp = (l.species || "").toLowerCase();
-          return subs.some(needle => sp.includes(needle));
+          return subs.some((needle) => sp.includes(needle));
         });
         if (!hasMatch) return false;
       }
@@ -467,22 +504,50 @@ const categories = [
     const empty = document.getElementById("v2-empty")!;
     const closed = document.getElementById("v2-closed")!;
     const count = document.getElementById("v2-seller-count")!;
+    const sticky = document.getElementById("v2-sticky-cluster");
+    const sectionHead = document.querySelector(".v2-section-head") as HTMLElement | null;
+
+    empty.style.display = "none";
+    closed.style.display = "none";
+
+    if (!getBuyerLocation()) {
+      sticky?.style && (sticky.style.display = "none");
+      if (sectionHead) sectionHead.style.display = "none";
+      grid.style.display = "none";
+      grid.innerHTML = "";
+      empty.innerHTML = `
+<div style="padding:40px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;">
+  <div style="font-size:48px;margin-bottom:12px;">📍</div>
+  <div style="font:700 17px Inter;color:var(--v2-ink);margin-bottom:8px;">Set your location</div>
+  <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto;line-height:1.45;">
+    Choose your area to see sellers who deliver or offer pickup near you. We only show sellers that serve your distance.
+  </div>
+  <button type="button" id="v2-open-loc-empty" style="background:var(--v2-brand);color:#fff;border:none;font:700 14px Inter;padding:12px 28px;border-radius:var(--v2-radius-sm);cursor:pointer;">
+    Choose area
+  </button>
+</div>`;
+      empty.style.display = "block";
+      return;
+    }
+
+    sticky?.style && (sticky.style.display = "");
+    if (sectionHead) sectionHead.style.display = "";
 
     let filtered = applyFilters(allGroups);
     if (filterState.topRated) {
       filtered = [...filtered].sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
     }
 
-    empty.style.display = "none";
-    closed.style.display = "none";
-
     if (allGroups.length === 0) {
+      count.textContent = "0";
+      empty.innerHTML = `<div style="padding:40px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:48px;margin-bottom:12px;">🐟</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers yet</div><div style="font:400 12px Inter;color:var(--v2-ink-3);">Check back soon.</div></div>`;
       empty.style.display = "block";
       grid.style.display = "none";
       return;
     }
 
     if (filtered.length === 0) {
+      count.textContent = "0";
       grid.style.display = "none";
       grid.innerHTML = "";
       const noMatch = `<div style="padding:40px 24px;text-align:center;background:#fff;border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:48px;margin-bottom:12px;">🎣</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers match these filters</div><div style="font:400 12px Inter;color:var(--v2-ink-3);">Tap All to see everyone.</div></div>`;
@@ -496,14 +561,7 @@ const categories = [
 
     grid.innerHTML = filtered.map((g: any) => {
         const s = g.seller;
-        const top = (g.listings || []).slice(0, 4).map(l => {
-          const name = getSpeciesDisplay(l.species);
-          const opt = (l.pricing_options as any[])?.[0];
-          const price = opt?.price ?? 0;
-          const unit = opt?.unit_label || "kg";
-          const emoji = (l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : "🐟";
-          return `<div class="v2-sc-chip"><span class="v2-sc-m-emoji">${emoji}</span><div><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${escapeHtml(unit)}</div></div></div>`;
-        }).join("");
+        const top = sellerMenuChipsHtml(g.listings);
 
         const hue = pickHue(s.id);
         const hueColors: Record<SellerHue, string> = {
@@ -666,6 +724,7 @@ const categories = [
 
   // After location set or skipped, prompt notifications
   document.addEventListener("v2-location-confirmed", () => {
+    loadSellers();
     setTimeout(maybeAskNotifications, 2000);
   });
   // Also if user already has location, ask after page load
@@ -676,6 +735,13 @@ const categories = [
   // Open location picker bridge — V2 native sheet
   document.addEventListener("relifish:open-location-picker", () => {
     (window as any).v2OpenSheet?.("v2-loc-picker");
+  });
+
+  document.getElementById("v2-empty")?.addEventListener("click", (e) => {
+    if ((e.target as HTMLElement).closest("#v2-open-loc-empty")) {
+      e.preventDefault();
+      document.dispatchEvent(new CustomEvent("relifish:open-location-picker"));
+    }
   });
 
   // === Inline "Your Carts" section (Swiggy-style) ===
