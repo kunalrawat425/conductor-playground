@@ -66,6 +66,8 @@ export function isPreorderCatchFlow(o: BuyerStepperOrder): boolean {
   const st = o.status;
   if (st === "pre_order") return true;
   if (st === "payment_required") return true;
+  // refunded only comes from reconcile_preorder_price RPC — always a preorder
+  if (st === "refunded") return true;
   if (isPartialAdvanceCatch(o)) return true;
   const paid = Number(o.paid_amount);
   const finRaw = o.final_price;
@@ -101,7 +103,7 @@ export function usesSameDayPaymentStepper(o: BuyerStepperOrder): boolean {
 }
 
 export function getBuyerStepperVariant(o: BuyerStepperOrder): BuyerStepperVariant {
-  if (["declined", "cancelled", "refunded"].includes(o.status)) return "simple";
+  if (["declined", "cancelled"].includes(o.status)) return "simple";
   if (isPreorderCatchFlow(o)) return "preorder";
   return "payment";
 }
