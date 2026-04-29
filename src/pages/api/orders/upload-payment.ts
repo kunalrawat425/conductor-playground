@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify order belongs to this buyer
     const { data: order } = await supabase
       .from("orders")
-      .select("buyer_id, status, payment_screenshot_urls")
+      .select("buyer_id, buyer_phone, status, payment_screenshot_urls")
       .eq("id", order_id)
       .single();
 
@@ -167,6 +167,7 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       await sendBuyerOrderPush({
         buyer_id,
+        buyer_phone: order.buyer_phone ?? null,
         status: "pending_payment",
         species: String((updatedOrder as any)?.species || "Fish"),
         order_id,

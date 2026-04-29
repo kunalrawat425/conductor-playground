@@ -38,6 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         await sendBuyerOrderPush({
           buyer_id,
+          buyer_phone: order.buyer_phone ?? null,
           status: "cancelled",
           species: order.species || "Fish",
           order_id,
@@ -57,6 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         await sendBuyerOrderPush({
           buyer_id,
+          buyer_phone: order.buyer_phone ?? null,
           status: "confirmed",
           species: order.species || "Fish",
           order_id,
@@ -81,6 +83,7 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         await sendBuyerOrderPush({
           buyer_id,
+          buyer_phone: order.buyer_phone ?? null,
           status: "cancelled",
           species: order.species || "Fish",
           order_id,
