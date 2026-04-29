@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify order belongs to this seller's listings
     const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
-      .select("listing_id, buyer_id, species, status, paid_amount, final_price, payment_screenshot_urls")
+      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, payment_screenshot_urls")
       .eq("id", order_id)
       .single();
 
@@ -119,11 +119,11 @@ export const POST: APIRoute = async ({ request }) => {
       if (fetchErr) {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
       }
-      // Notify buyer
-      if (order.buyer_id) {
+      if (order.buyer_id || order.buyer_phone) {
         try {
           await sendBuyerOrderPush({
             buyer_id: order.buyer_id,
+            buyer_phone: order.buyer_phone,
             status: newStatus,
             species: order.species || "Fish",
             final_price,
@@ -161,10 +161,11 @@ export const POST: APIRoute = async ({ request }) => {
         rErr = retry.error as any;
       }
       if (rErr) return new Response(JSON.stringify({ error: rErr.message }), { status: 500 });
-      if (order.buyer_id) {
+      if (order.buyer_id || order.buyer_phone) {
         try {
           await sendBuyerOrderPush({
             buyer_id: order.buyer_id,
+            buyer_phone: order.buyer_phone,
             status: "refunded",
             species: order.species || "Fish",
             final_price: null,
@@ -208,11 +209,12 @@ export const POST: APIRoute = async ({ request }) => {
       if (vErr) {
         return new Response(JSON.stringify({ error: vErr.message }), { status: 500 });
       }
-      if (order.buyer_id) {
+      if (order.buyer_id || order.buyer_phone) {
         try {
           const pushStatus = verifyUpdates.status === "confirmed" ? "confirmed" : "payment_verified";
           await sendBuyerOrderPush({
             buyer_id: order.buyer_id,
+            buyer_phone: order.buyer_phone,
             status: pushStatus,
             species: order.species || "Fish",
             final_price: null,
@@ -304,10 +306,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Notify buyer via push — never fail the order update if push throws
-    if (order.buyer_id) {
+    if (order.buyer_id || order.buyer_phone) {
       try {
         const pushResult = await sendBuyerOrderPush({
           buyer_id: order.buyer_id,
+          buyer_phone: order.buyer_phone,
           status,
           species: order.species || "Fish",
           final_price: final_price ?? null,

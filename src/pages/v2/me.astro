@@ -412,18 +412,35 @@ import Toast from "../../components/v2/atoms/Toast.astro";
       });
     });
 
-    // Quick action: notifications → request push permission
+    // Quick action: notifications → permission + save push subscription to Supabase
     document.querySelectorAll<HTMLButtonElement>('[data-action="notifications"]').forEach((b) => {
       b.addEventListener("click", async () => {
         if (!("Notification" in window)) {
           (window as any).v2Toast?.("error", "Not supported", "Push isn't available on this browser");
           return;
         }
+        if ("serviceWorker" in navigator) {
+          await navigator.serviceWorker.register("/sw.js").catch(() => {});
+        }
         const perm = await Notification.requestPermission();
         if (perm === "granted") {
-          (window as any).v2Toast?.("success", "Notifications on", "We'll ping for order updates");
+          try {
+            const { subscribePush } = await import("../../lib/push");
+            const ok = await subscribePush();
+            if (ok) {
+              (window as any).v2Toast?.("success", "Notifications on", "We'll ping you for order updates");
+            } else {
+              (window as any).v2Toast?.(
+                "error",
+                "Could not subscribe",
+                "Sign in with your phone on this device, or contact support if keys are missing."
+              );
+            }
+          } catch {
+            (window as any).v2Toast?.("error", "Subscribe failed", "Try again or refresh the page.");
+          }
         } else {
-          (window as any).v2Toast?.("error", "Denied", "Enable in browser settings");
+          (window as any).v2Toast?.("error", "Denied", "Enable notifications in browser settings");
         }
       });
     });

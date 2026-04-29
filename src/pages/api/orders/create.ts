@@ -263,10 +263,11 @@ export const POST: APIRoute = async ({ request, url }) => {
           } catch {}
         }
 
-        if (buyer_id && preOrder?.id) {
+        if (preOrder?.id) {
           try {
             await sendBuyerOrderPush({
-              buyer_id,
+              buyer_id: buyer_id || null,
+              buyer_phone,
               status: "placed",
               species: species || "Fish",
               order_id: preOrder.id,
@@ -505,12 +506,13 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
 
-    if (order?.buyer_id) {
+    if (order?.id && (order.buyer_id || buyer_phone)) {
       try {
         const pushStatus =
           status === "pending_payment" ? "placed" : status === "pre_order" ? "pre_order" : "pending";
         await sendBuyerOrderPush({
           buyer_id: order.buyer_id,
+          buyer_phone,
           status: pushStatus,
           species: species || "Fish",
           order_id: order.id,

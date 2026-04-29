@@ -79,6 +79,12 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body class:list={[!hideNav && "v2-has-bottom-nav"]}>
+    <!-- Web Push requires an active service worker; v1 registers from AppShell only -->
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      }
+    </script>
     <div class="v2-app">
       {!hideHeader && header && <AppHeader {...header} />}
       <main class="v2-main">

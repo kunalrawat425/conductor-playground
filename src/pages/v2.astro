@@ -155,6 +155,8 @@ const categories = [
 
 <script>
   import { supabase } from "../lib/supabase";
+  import { getSession } from "../lib/auth";
+  import { subscribePush } from "../lib/push";
   import { getSpeciesDisplay } from "../lib/species";
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
   import type { Seller, FishListing } from "../lib/supabase";
@@ -717,6 +719,17 @@ const categories = [
         const result = await Notification.requestPermission();
         if (result === "granted") {
           (window as any).v2Toast?.("success", "Notifications on", "We'll only ping for orders");
+          const session = getSession();
+          if (session) {
+            const ok = await subscribePush();
+            if (!ok) {
+              (window as any).v2Toast?.(
+                "error",
+                "Alerts not fully enabled",
+                "Open Account and tap Notifications, or check browser settings."
+              );
+            }
+          }
         }
       } catch {}
     }, 5000);
