@@ -622,14 +622,10 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "";
           const preOrderExtras = o.status === "pre_order" ? `
             <div style="background:#F5F3FF;border-radius:var(--v2-radius-sm);padding:10px;display:flex;flex-direction:column;gap:8px;">
-              <div style="font:600 11px Inter;color:#7C3AED;">🌙 Pre-order — set actual selling price before confirming</div>
-              ${paidAmt ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">Buyer pre-paid: ₹${paidAmt}. If price lower → auto-refund difference.</div>` : ""}
-              <input type="number" placeholder="Actual selling price ₹ (required)" id="pre-confirm-price-${o.id}"
+              <div style="font:600 11px Inter;color:#7C3AED;">🌙 Pre-order — enter actual selling price</div>
+              ${paidAmt ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">Buyer pre-paid: ₹${paidAmt}. Lower price → auto-refund difference.</div>` : ""}
+              <input type="number" placeholder="Actual selling price ₹" id="pre-confirm-price-${o.id}"
                 style="width:100%;padding:8px 10px;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
-              <label style="cursor:pointer;">
-                <div id="pre-confirm-drop-${o.id}" style="border:1.5px dashed #C4B5FD;border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:#7C3AED;">📷 Upload catch photo / receipt (optional)</div>
-                <input type="file" id="pre-confirm-file-${o.id}" accept="image/*" style="display:none;" />
-              </label>
             </div>` : "";
           actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
             ${awaitingNote}
@@ -838,13 +834,6 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload UPI screenshot (optional)";
         });
       });
-      list.querySelectorAll<HTMLInputElement>("input[id^='pre-confirm-file-']").forEach((inp) => {
-        const orderId = inp.id.replace("pre-confirm-file-", "");
-        inp.addEventListener("change", () => {
-          const drop = document.getElementById(`pre-confirm-drop-${orderId}`);
-          if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload catch photo / receipt (optional)";
-        });
-      });
 
       tryFocusOrderFromQuery();
   }
@@ -928,10 +917,8 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
           body.final_price = finalPrice;
         }
         if (action === "verify_payment") {
-          // Pre-order: after verify, chain set_final_price if price entered
           const priceInput = document.getElementById(`pre-confirm-price-${orderId}`) as HTMLInputElement | null;
           body._preOrderPrice = priceInput ? parseFloat(priceInput.value || "") : NaN;
-          body._preOrderFileInput = `pre-confirm-file-${orderId}`;
         }
         if (action === "mark_refund_sent") {
           const noteInput = document.getElementById(`refund-note-${orderId}`) as HTMLInputElement | null;
@@ -967,25 +954,8 @@ import EmptyState from "../../../../components/v2/molecules/EmptyState.astro";
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Update failed");
 
-      // Pre-order verify: chain set_final_price + optional catch photo upload
+      // Pre-order verify: chain set_final_price if price entered
       if (action === "verify_payment" && Number.isFinite(body._preOrderPrice) && body._preOrderPrice > 0) {
-        const catchFileInput = document.getElementById(body._preOrderFileInput) as HTMLInputElement | null;
-        const catchFile = catchFileInput?.files?.[0];
-        if (catchFile) {
-          const form = new FormData();
-          form.append("order_id", orderId);
-          form.append("seller_id", sellerId!);
-          form.append("file", catchFile);
-          const upRes = await fetch("/api/seller/upload-refund", { method: "POST", body: form });
-          const upData = await upRes.json();
-          if (upRes.ok && upData.path) {
-            await fetch("/api/seller/orders", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ seller_id: sellerId, order_id: orderId, action: "mark_refund_sent", refund_screenshot_path: upData.path }),
-            });
-          }
-        }
         await fetch("/api/seller/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
