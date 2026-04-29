@@ -257,7 +257,7 @@
 }
 
 body.v2-has-bottom-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0)); }
-body.v2-has-cart.v2-has-bottom-nav { padding-bottom: calc(64px + 60px + env(safe-area-inset-bottom, 0)); }
+body.v2-has-cart.v2-has-bottom-nav { padding-bottom: calc(64px + 68px + env(safe-area-inset-bottom, 0)); }
 
 /* === Buttons === */
 .v2-btn {
@@ -538,7 +538,7 @@ body.v2-has-cart.v2-has-bottom-nav { padding-bottom: calc(64px + 60px + env(safe
 /* === CartBar === */
 .v2-cart-bar {
   position: fixed;
-  bottom: calc(64px + env(safe-area-inset-bottom, 0) + 8px);
+  bottom: calc(64px + env(safe-area-inset-bottom, 0) + 16px);
   left: 12px; right: 12px;
   max-width: calc(var(--app-max-width) - 24px);
   margin: 0 auto;
@@ -578,7 +578,7 @@ body.v2-has-cart.v2-has-bottom-nav { padding-bottom: calc(64px + 60px + env(safe
 .v2-cart-preorder .v2-cb-btn { color: var(--v2-indigo); }
 
 /* When cart bar present, push content up */
-body.v2-has-cart { padding-bottom: calc(64px + 60px + env(safe-area-inset-bottom, 0)); }
+body.v2-has-cart { padding-bottom: calc(64px + 68px + env(safe-area-inset-bottom, 0)); }
 
 /* === SellerHero === */
 .v2-sh-hero {
@@ -1224,7 +1224,7 @@ body.v2-has-cart { padding-bottom: calc(64px + 60px + env(safe-area-inset-bottom
   -webkit-overflow-scrolling: touch;
 }
 .v2-sheet-cta {
-  padding: 12px 16px env(safe-area-inset-bottom, 12px);
+  padding: 12px 16px max(env(safe-area-inset-bottom, 0px), 16px);
   background: var(--v2-bg);
   border-top: 1px solid var(--v2-border);
 }
