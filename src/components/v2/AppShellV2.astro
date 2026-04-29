@@ -3,6 +3,7 @@ import "../../styles/tokens.css";
 import "../../styles/v2-components.css";
 import AppHeader from "./organisms/AppHeader.astro";
 import BottomNav from "./organisms/BottomNav.astro";
+import VercelAnalytics from "../VercelAnalytics.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/v2-components";
 
 interface Props {
@@ -119,5 +120,6 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
     </script>
+    <VercelAnalytics />
   </body>
 </html>
