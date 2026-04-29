@@ -121,7 +121,9 @@ export function getBuyerStepperLabels(
       ? ["Placed", "Payment proof", "Confirmed", "On the way", last]
       : ["Placed", "Payment proof", "Confirmed", "Ready", last];
   }
-  return ["Pre-ordered", "Payment proof", "Confirmed", last];
+  return orderType === "delivery"
+    ? ["Pre-ordered", "Payment proof", "Confirmed", "On the way", last]
+    : ["Pre-ordered", "Payment proof", "Confirmed", "Ready", last];
 }
 
 function simpleStatusStep(status: string, orderType: "pickup" | "delivery"): number {
@@ -194,8 +196,8 @@ function preorderTrackStep(o: BuyerStepperOrder, hasPaymentProof: boolean): numb
     refunded: 2,
     ready_for_pickup: 3,
     out_for_delivery: 3,
-    picked_up: 3,
-    completed: 3,
+    picked_up: 4,
+    completed: 4,
     cancelled: 0,
     declined: 0,
   };
