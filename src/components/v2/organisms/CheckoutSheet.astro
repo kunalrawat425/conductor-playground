@@ -32,7 +32,7 @@ const { id = "v2-checkout" } = Astro.props;
   <div id={`${id}-step2`} class="v2-co-step-content" style="display:none;">
     <h4 class="v2-co-step-title">Delivery method</h4>
     <div class="v2-co-method">
-      <label class="v2-co-method-opt">
+      <label class="v2-co-method-opt" id={`${id}-pickup-opt`}>
         <input type="radio" name={`${id}-method`} value="pickup" checked />
         <div>
           <div class="v2-co-m-name">🧊 Pickup</div>
@@ -49,6 +49,9 @@ const { id = "v2-checkout" } = Astro.props;
     </div>
     <div id={`${id}-no-delivery-note`} style="display:none;margin-top:8px;font:400 11px Inter;color:var(--v2-ink-3);text-align:center;">
       This seller offers pickup only.
+    </div>
+    <div id={`${id}-no-pickup-note`} style="display:none;margin-top:8px;font:400 11px Inter;color:var(--v2-ink-3);text-align:center;">
+      This seller offers delivery only.
     </div>
 
     <div id={`${id}-address-section`} style="display:none;margin-top:16px;">
@@ -126,7 +129,15 @@ const { id = "v2-checkout" } = Astro.props;
   }
 
   document.querySelectorAll("[data-co-next]").forEach(b => {
-    b.addEventListener("click", () => showStep(parseInt(b.dataset.coNext)));
+    b.addEventListener("click", () => {
+      const n = parseInt(b.dataset.coNext, 10);
+      if (n === 2) {
+        document.dispatchEvent(
+          new CustomEvent("v2-checkout-step2", { detail: { checkoutId: id } })
+        );
+      }
+      showStep(n);
+    });
   });
   document.querySelectorAll("[data-co-back]").forEach(b => {
     b.addEventListener("click", () => showStep(parseInt(b.dataset.coBack)));

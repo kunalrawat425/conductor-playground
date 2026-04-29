@@ -311,7 +311,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots, preorder_cutoff_time, open_days, preorder_days"
+          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots, preorder_cutoff_time, open_days, preorder_days"
         )
         .eq("id", seller_id)
         .single();
@@ -392,6 +392,9 @@ export const POST: APIRoute = async ({ request, url }) => {
 
       if (order_type === "delivery" && !seller?.has_delivery) {
         return new Response(JSON.stringify({ error: "This seller does not offer delivery" }), { status: 400 });
+      }
+      if (order_type === "pickup" && seller?.has_pickup === false) {
+        return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
       }
 
       delivery_fee = seller ? computeDeliveryFee(seller, total_price, order_type) : 0;

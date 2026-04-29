@@ -12,6 +12,7 @@ import Toast from "../../../components/v2/atoms/Toast.astro";
 import Modal from "../../../components/v2/atoms/Modal.astro";
 import { getSellerById, getSellerListings } from "../../../lib/supabase";
 import { getSpeciesDisplay } from "../../../lib/species";
+import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../../lib/listing-pricing";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -68,6 +69,15 @@ if (isPreorderMode) {
 } else {
   // Same-day: in-stock and not paused
   listings = listings.filter((l: any) => l?.is_available === true && !l?.is_order_paused);
+}
+for (const l of listings) {
+  const opts = getListingPriceOptions(l);
+  if (opts.length > 0) {
+    l.pricing_options = opts.map((o) => ({
+      ...o,
+      buyer_menu_suffix: formatBuyerMenuUnitSuffix(o),
+    }));
+  }
 }
 const itemCount = listings.length;
 
@@ -396,7 +406,7 @@ const tags = [
             const mnStr = pmn ? `₹${Number(pmn).toLocaleString("en-IN")}` : "";
             const mxStr = pmx ? `₹${Number(pmx).toLocaleString("en-IN")}` : "";
             const range = mnStr && mxStr && mnStr !== mxStr ? `${mnStr}–${mxStr}` : mnStr || mxStr;
-            const unitSuffix = opt.unit === "kg" ? "/kg" : "/pc";
+            const unitSuffix = opt.buyer_menu_suffix || (opt.unit === "kg" ? "/kg" : "/pc");
             return `<div style="font:600 11px Inter;color:#7C3AED;margin-top:2px;">🌙 ${range}${unitSuffix}</div>`;
           }).join("")
         : "";
@@ -415,7 +425,7 @@ const tags = [
             const key = ck(l.id, optId);
             const inCart = sellerItems[key]?.qty || 0;
             return `<div class="v2-item-bottom">
-              <div class="v2-item-price" style="color:#7C3AED;">${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+              <div class="v2-item-price" style="color:#7C3AED;">${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
               ${inCart > 0
                 ? (() => {
                     const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
@@ -439,7 +449,7 @@ const tags = [
                 const inCart = sellerItems[key]?.qty || 0;
                 const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
                 return `<div class="v2-item-bottom">
-                  <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${escape(unit)}</span></div>
+                  <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
                   ${inCart > 0
                     ? (() => {
                         const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
@@ -491,7 +501,6 @@ const tags = [
             </div>
             <div style="font:600 11px Inter;color:var(--v2-ink-3);margin-top:6px;text-align:right;">
               ${escape(unavailableReason || 'Unavailable')}
-              ${!isListingPreorder && acceptsPreorder && !sellerFullyClosed ? ` · enable pre-order range in seller dashboard` : ``}
             </div>`;
 
       // Fish size badge
@@ -560,11 +569,12 @@ const tags = [
           const unit = escape(firstOpt.unit_label || firstOpt.label || firstOpt.unit || "kg");
           const price = Number(firstOpt.price) || 0;
           const optId = firstOpt.id || "default";
+          const priceSuf = escape(String(firstOpt.buyer_menu_suffix || "/pc"));
           return `<div class="v2-item-card" data-listing-id="${l?.id || ""}">
             <div class="v2-item-body">
               <div class="v2-item-name">${name}</div>
               <div class="v2-item-bottom">
-                <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> /${unit}</span></div>
+                <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${priceSuf}</span></div>
                 <button class="v2-item-add" data-id="${l?.id || ""}" data-price="${price}" data-name="${name}" data-unit="${unit}" data-opt-id="${optId}" data-opt-label="${unit}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${name}">+</button>
               </div>
             </div>
@@ -592,6 +602,81 @@ const tags = [
     // taps Checkout on a CartStackSheet card, OR defaults to this page's sellerId
     // when only one seller has items).
     let activeCheckoutSellerId = sellerId;
+
+    async function fetchSellerFulfillment(sellerSid) {
+      try {
+        const res = await fetch(
+          `/api/seller/fulfillment?seller_id=${encodeURIComponent(sellerSid)}`
+        );
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
+
+    /**
+     * Show/hide pickup vs delivery from live API flags. `fromRefetch` preserves a valid
+     * buyer choice when step 2 loads; initial open defaults to pickup when both exist.
+     */
+    function applyCheckoutFulfillment(sid, fulfill, fromRefetch) {
+      if (!fulfill) return;
+      const has_pickup = fulfill.has_pickup !== false;
+      const has_delivery = !!fulfill.has_delivery;
+      const preorderHere = isPreorderMode && sid === sellerId;
+      const canDeliver = sid === sellerId && has_delivery && !preorderHere;
+      const showPickup = has_pickup;
+      const showDelivery = canDeliver;
+
+      const pickupOpt = document.getElementById("seller-checkout-pickup-opt");
+      const delivOpt = document.getElementById("seller-checkout-delivery-opt");
+      const noDelivNote = document.getElementById("seller-checkout-no-delivery-note");
+      const noPickupNote = document.getElementById("seller-checkout-no-pickup-note");
+
+      if (pickupOpt) pickupOpt.style.display = showPickup ? "flex" : "none";
+      if (delivOpt) delivOpt.style.display = showDelivery ? "flex" : "none";
+      if (noDelivNote) noDelivNote.style.display = showPickup && !showDelivery ? "block" : "none";
+      if (noPickupNote) noPickupNote.style.display = !showPickup && showDelivery ? "block" : "none";
+
+      const pickupRadio = document.querySelector(
+        'input[name="seller-checkout-method"][value="pickup"]'
+      );
+      const delivRadio = document.querySelector(
+        'input[name="seller-checkout-method"][value="delivery"]'
+      );
+
+      let next = "pickup";
+      if (fromRefetch) {
+        const curDel = !!(delivRadio && delivRadio.checked);
+        const curPick = !!(pickupRadio && pickupRadio.checked);
+        if (curDel && showDelivery) next = "delivery";
+        else if (curPick && showPickup) next = "pickup";
+        else if (showDelivery) next = "delivery";
+        else if (showPickup) next = "pickup";
+      } else {
+        if (showPickup && showDelivery) next = "pickup";
+        else if (showDelivery) next = "delivery";
+        else if (showPickup) next = "pickup";
+      }
+
+      if (next === "delivery" && delivRadio) {
+        delivRadio.checked = true;
+        delivRadio.dispatchEvent(new Event("change", { bubbles: true }));
+      } else if (pickupRadio) {
+        pickupRadio.checked = true;
+        pickupRadio.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+
+    document.addEventListener("v2-checkout-step2", (e) => {
+      if (e.detail?.checkoutId !== "seller-checkout") return;
+      const sid = activeCheckoutSellerId;
+      if (!sid) return;
+      fetchSellerFulfillment(sid).then((f) => {
+        if (f) applyCheckoutFulfillment(sid, f, true);
+        else window.v2Toast?.("error", "Couldn't load options", "Check connection and try again");
+      });
+    });
 
     // Publish per-seller min-order hints so CartStackSheet can show "Add ₹X more"
     // without needing its own DB query.
@@ -657,7 +742,7 @@ const tags = [
     // Single-seller checkout. `targetSellerId` is the seller whose cart we're placing.
     // Defaults to this page's sellerId but CartStackSheet may pass any seller_id from
     // the global cart.
-    function openCheckout(targetSellerId) {
+    async function openCheckout(targetSellerId) {
       const c = Cart(); if (!c) return;
       const sid = targetSellerId || sellerId;
       activeCheckoutSellerId = sid;
@@ -679,6 +764,16 @@ const tags = [
       try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
       if (!buyerId || !buyerPhone) {
         window.v2OpenSheet?.("seller-login-sheet");
+        return;
+      }
+
+      const fulfill = await fetchSellerFulfillment(sid);
+      if (!fulfill) {
+        window.v2Toast?.("error", "Couldn't load checkout", "Try again in a moment");
+        return;
+      }
+      if (!fulfill.has_pickup && !fulfill.has_delivery) {
+        window.v2Toast?.("error", "Unavailable", "This seller has no pickup or delivery enabled");
         return;
       }
 
@@ -750,22 +845,8 @@ const tags = [
       const delivRow = document.getElementById("seller-checkout-delivery-row");
       if (delivRow) delivRow.style.display = "none";
 
-      // Toggle delivery option visibility based on seller's has_delivery.
-      // NOTE: we only know hasDelivery for this page's seller. If the CartStack sent
-      // us into a different seller's checkout, treat delivery as unknown and force pickup.
-      const delivOpt = document.getElementById("seller-checkout-delivery-opt");
-      const noDelivNote = document.getElementById("seller-checkout-no-delivery-note");
-      // Pre-orders are pickup-only (next-day catch, no delivery scheduling)
-      const canDeliver = sid === sellerId && hasDelivery && !isPreorderMode;
-      if (canDeliver) {
-        if (delivOpt) delivOpt.style.display = "flex";
-        if (noDelivNote) noDelivNote.style.display = "none";
-      } else {
-        if (delivOpt) delivOpt.style.display = "none";
-        if (noDelivNote) noDelivNote.style.display = "block";
-        const pickupRadio = document.querySelector('input[name="seller-checkout-method"][value="pickup"]');
-        if (pickupRadio) pickupRadio.checked = true;
-      }
+      // Fulfillment options from API (pickup toggle in seller settings).
+      applyCheckoutFulfillment(sid, fulfill, false);
 
       // Update delivery fee description in checkout sheet
       const delivDescEl = document.getElementById("seller-checkout-delivery-desc");
