@@ -58,7 +58,10 @@ const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
 const isEffectivelyOpen = isOpenByTime && isTodayOrderDay;
 
 // Priority 2: preorder window — store closed for same-day, preorders enabled, cutoff not yet passed
-const acceptsPreorder = !!seller?.accepts_preorder || listings.some((l: any) => l?.is_preorder_enabled === true);
+// seller.accepts_preorder=false is the master off switch; null/undefined falls back to listing-level flag
+const acceptsPreorder = seller?.accepts_preorder === false
+  ? false
+  : (!!seller?.accepts_preorder || listings.some((l: any) => l?.is_preorder_enabled === true));
 const isTodayPreorderDay = preorderDays.length > 0 ? preorderDays.includes(todayDayName) : acceptsPreorder;
 const isBeforeCutoff = (() => {
   if (!seller?.preorder_cutoff_time) return true; // no cutoff = always before cutoff
