@@ -178,7 +178,19 @@ const tags = [
         </div>
       )}
 
-      {itemCount === 0 ? (
+      {!isEffectivelyOpen && !isPreorderMode ? (
+        <div style="padding:32px 16px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">🔒</div>
+          <div style="font:800 16px Inter;color:var(--v2-ink);margin-bottom:6px;">Closed right now</div>
+          <div style="font:400 13px Inter;color:var(--v2-ink-3);line-height:1.6;">
+            {seller?.opens_at ? `Opens at ${seller.opens_at.slice(0,5)}` : "Check back during opening hours"}
+            {isPreorderAvailableToday ? " · Pre-orders available for tomorrow's catch" : ""}
+          </div>
+          {isPreorderAvailableToday && (
+            <a href="/v2/preorder" class="v2-btn v2-btn-primary v2-btn-md" style="display:inline-block;margin-top:16px;">🌙 Pre-order tomorrow</a>
+          )}
+        </div>
+      ) : itemCount === 0 ? (
         <div style="padding:0 16px;margin-top:16px;">
           <EmptyState
             variant="no-results"
@@ -191,7 +203,7 @@ const tags = [
       ) : (
         <>
           <div style="padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">Today's Menu</h2>
+            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">{isPreorderMode ? "Pre-order Menu" : "Today's Menu"}</h2>
             <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
           <div id="v2-menu-grid" class="v2-menu-grid"></div>
