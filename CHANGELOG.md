@@ -2,6 +2,19 @@
 
 All notable changes to Relifish are documented here.
 
+## [0.1.1.0] - 2026-05-05
+
+### Fixed
+- **Seller open/preorder/closed logic**: simplified to three clear priority states — open by time shows order menu, closed + preorders enabled + before cutoff shows preorder menu only, otherwise shows closed with no menu
+- **Pre-order cutoff enforcement**: preorder window now closes once `preorder_cutoff_time` is passed in IST; uses IST day-of-week (not UTC, which was wrong near midnight)
+- **Preorder mode hidden behind closed state**: `isClosed` gate now correctly passes through to preorder menu when `isPreorderMode=true`
+- **`accepts_preorder` as master switch**: when seller unchecks preorders, store never enters preorder mode regardless of per-listing `is_preorder_enabled` flags
+- **Seller page location picker map**: polls for Leaflet availability instead of failing instantly; both sheet open events trigger map init
+- **Buyer home location gate**: shows "Set location" prompt and skips DB fetch until buyer grants location; distance filter strictly uses seller `delivery_rad`
+- **Bundle unit label**: 3-piece listings now show `/3pc` instead of `/piece` on home chips and seller menu
+- **Home seller chips**: capped at 2, with `+N` badge on the 2nd chip when more listings exist
+- **Closed seller menu**: seller detail page now shows locked state with opens-at time when store is closed, no menu shown
+
 ## [0.1.0.0] - 2026-04-22
 
 ### Added
