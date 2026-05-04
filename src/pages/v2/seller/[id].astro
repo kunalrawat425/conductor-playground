@@ -58,8 +58,16 @@ const isTodayPreorderDay = preorderDays.length > 0 ? preorderDays.includes(today
 const hasListingPreorderEnabled = listings.some((l: any) => l?.is_preorder_enabled === true);
 const isPreorderAvailableToday = isTodayPreorderDay || hasListingPreorderEnabled;
 const isEffectivelyOpen = isOpen && isTodayOrderDay;
-// Pre-order mode: seller day-off or closed but pre-orders available today
-const isPreorderMode = !isEffectivelyOpen && isPreorderAvailableToday;
+// Pre-order window: closed for same-day but cutoff hasn't passed yet
+const isBeforeCutoff = (() => {
+  if (!seller?.preorder_cutoff_time) return true; // no cutoff set → always before cutoff
+  const now = new Date(Date.now() + 5.5 * 3600 * 1000); // IST
+  const cur = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const [ch, cm] = seller.preorder_cutoff_time.split(":").map(Number);
+  return cur < ch * 60 + cm;
+})();
+// Pre-order mode: seller closed for same-day AND cutoff not yet passed AND preorders enabled today
+const isPreorderMode = !isEffectivelyOpen && isPreorderAvailableToday && isBeforeCutoff;
 // Timing-first menu behavior:
 // - During pre-order mode, show only pre-order-capable items (avoid greyed rows).
 // - During order mode, show only in-stock inventory items.
