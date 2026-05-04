@@ -33,50 +33,50 @@ try {
 
 const sellerName = seller?.name || "Seller";
 const sellerLocation = seller?.location_name || "";
-const isOpen = (() => {
+// IST time (servers run UTC; IST = UTC+5:30)
+const nowIST = new Date(Date.now() + 5.5 * 3600 * 1000);
+const curMin = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
+
+const DAY_NAMES_SHORT = ['sun','mon','tue','wed','thu','fri','sat'];
+const DAY_LABELS: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+// Use IST day (not UTC day — they differ near midnight)
+const todayDayName = DAY_NAMES_SHORT[nowIST.getUTCDay()];
+const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
+const preorderDays: string[] = seller?.preorder_days ?? [];
+
+// Priority 1: store open by time + day?
+const isOpenByTime = (() => {
   if (!seller?.opens_at || !seller?.closes_at) return true;
-  // Use IST (UTC+5:30) — SSR servers run UTC
-  const now = new Date(Date.now() + 5.5 * 3600 * 1000);
-  const cur = now.getUTCHours() * 60 + now.getUTCMinutes();
   const [oh, om] = seller.opens_at.split(":").map(Number);
   const [ch, cm] = seller.closes_at.split(":").map(Number);
   const openMin = oh * 60 + om;
   const closeMin = ch * 60 + cm;
-  // Handle cross-midnight ranges (e.g. 17:00 → 01:58)
-  if (openMin <= closeMin) return cur >= openMin && cur <= closeMin;
-  return cur >= openMin || cur <= closeMin;
+  if (openMin <= closeMin) return curMin >= openMin && curMin <= closeMin;
+  return curMin >= openMin || curMin <= closeMin; // overnight e.g. 17:00–02:59
 })();
-// Day-of-week awareness
-const DAY_NAMES_SHORT = ['sun','mon','tue','wed','thu','fri','sat'];
-const DAY_LABELS: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
-const todayDayName = DAY_NAMES_SHORT[new Date().getDay()];
-const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
-const preorderDays: string[] = seller?.preorder_days ?? [];
 const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
-const isTodayPreorderDay = preorderDays.length > 0 ? preorderDays.includes(todayDayName) : !!seller?.accepts_preorder;
-// Listing-level pre-order must still work even if seller-level day config is missing.
-const hasListingPreorderEnabled = listings.some((l: any) => l?.is_preorder_enabled === true);
-const isPreorderAvailableToday = isTodayPreorderDay || hasListingPreorderEnabled;
-const isEffectivelyOpen = isOpen && isTodayOrderDay;
-// Pre-order window: closed for same-day but cutoff hasn't passed yet
+const isEffectivelyOpen = isOpenByTime && isTodayOrderDay;
+
+// Priority 2: preorder window — store closed for same-day, preorders enabled, cutoff not yet passed
+const acceptsPreorder = !!seller?.accepts_preorder || listings.some((l: any) => l?.is_preorder_enabled === true);
+const isTodayPreorderDay = preorderDays.length > 0 ? preorderDays.includes(todayDayName) : acceptsPreorder;
 const isBeforeCutoff = (() => {
-  if (!seller?.preorder_cutoff_time) return true; // no cutoff set → always before cutoff
-  const now = new Date(Date.now() + 5.5 * 3600 * 1000); // IST
-  const cur = now.getUTCHours() * 60 + now.getUTCMinutes();
+  if (!seller?.preorder_cutoff_time) return true; // no cutoff = always before cutoff
   const [ch, cm] = seller.preorder_cutoff_time.split(":").map(Number);
-  return cur < ch * 60 + cm;
+  return curMin < ch * 60 + cm;
 })();
-// Pre-order mode: seller closed for same-day AND cutoff not yet passed AND preorders enabled today
-const isPreorderMode = !isEffectivelyOpen && isPreorderAvailableToday && isBeforeCutoff;
-// Timing-first menu behavior:
-// - During pre-order mode, show only pre-order-capable items (avoid greyed rows).
-// - During order mode, show only in-stock inventory items.
-if (isPreorderMode) {
-  // Show listings with preorder enabled (per-unit price ranges live in pricing_options JSONB)
+const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isTodayPreorderDay && isBeforeCutoff;
+
+// Priority 3: closed — no menu shown
+const isClosed = !isEffectivelyOpen && !isPreorderMode;
+
+// Filter listings to match current mode
+if (isEffectivelyOpen) {
+  listings = listings.filter((l: any) => l?.is_available === true && !l?.is_order_paused);
+} else if (isPreorderMode) {
   listings = listings.filter((l: any) => l?.is_preorder_enabled === true);
 } else {
-  // Same-day: in-stock and not paused
-  listings = listings.filter((l: any) => l?.is_available === true && !l?.is_order_paused);
+  listings = [];
 }
 for (const l of listings) {
   const opts = getListingPriceOptions(l);
@@ -113,7 +113,7 @@ const cutoffLabel = seller?.preorder_cutoff_time ? seller.preorder_cutoff_time.s
 
 const status: "open" | "closed" = isEffectivelyOpen ? "open" : "closed";
 const tags = [
-  isPreorderAvailableToday && !isEffectivelyOpen ? "Pre-order available" : (isPreorderAvailableToday ? "Pre-order" : null),
+  acceptsPreorder && isPreorderMode ? "Pre-order available" : (acceptsPreorder ? "Pre-order" : null),
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
   seller?.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null,
@@ -186,7 +186,7 @@ const tags = [
         </div>
       )}
 
-      {!isEffectivelyOpen && !isPreorderMode ? (
+      {isClosed ? (
         <div style="padding:32px 16px;text-align:center;">
           <div style="font-size:40px;margin-bottom:12px;">🔒</div>
           <div style="font:800 16px Inter;color:var(--v2-ink);margin-bottom:6px;">Closed right now</div>
@@ -200,9 +200,9 @@ const tags = [
           <EmptyState
             variant="no-results"
             title="No items available"
-            description={isPreorderAvailableToday ? "Pre-order tomorrow's catch instead." : "Check back during opening hours."}
-            ctaText={isPreorderAvailableToday ? "Pre-order" : "Browse sellers"}
-            ctaHref={isPreorderAvailableToday ? "/v2/preorder" : "/"}
+            description={acceptsPreorder ? "Pre-order tomorrow's catch instead." : "Check back during opening hours."}
+            ctaText={acceptsPreorder ? "Pre-order" : "Browse sellers"}
+            ctaHref={acceptsPreorder ? "/v2/preorder" : "/"}
           />
         </div>
       ) : (
@@ -277,7 +277,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: !isEffectivelyOpen && !isPreorderAvailableToday, isPreorderMode }}>
+<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode }}>
   function withCart(fn) {
     if (window.RelifishCart) return fn(window.RelifishCart);
     document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });
