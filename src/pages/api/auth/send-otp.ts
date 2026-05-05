@@ -95,7 +95,9 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    const otp = generateOTP();
+    // TODO: enable MSG91 when ready — for now use fixed OTP 123456
+    const OTP_SEND_ENABLED = false;
+    const otp = OTP_SEND_ENABLED ? generateOTP() : "123456";
     const expiresAt = new Date(now.getTime() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
     // Upsert: new code, reset verify attempts, bump send count
@@ -116,20 +118,11 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Failed to create OTP" }), { status: 500 });
     }
 
-    // MSG91 configured?
-    const msg91Configured = !!msg91AuthKey && !!msg91TemplateId;
-    if (!msg91Configured) {
-      // Dev/staging fallback — OTP is 123456, log to console only
-      if (import.meta.env.DEV) console.info(`[DEV] OTP for ${normalised}: ${otp}`);
-      return new Response(
-        JSON.stringify({ success: true, dev: !msg91Configured }),
-        { status: 200 }
-      );
-    }
-
-    const sms = await sendViaMSG91(normalised, otp);
-    if (!sms.ok) {
-      return new Response(JSON.stringify({ error: sms.error || "Failed to send OTP" }), { status: 502 });
+    if (OTP_SEND_ENABLED) {
+      const sms = await sendViaMSG91(normalised, otp);
+      if (!sms.ok) {
+        return new Response(JSON.stringify({ error: sms.error || "Failed to send OTP" }), { status: 502 });
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
