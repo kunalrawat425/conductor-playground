@@ -9,13 +9,17 @@ interface Props {
 }
 const { id = "v2-login", role = "buyer", redirectTo = "/v2" } = Astro.props;
 const title = role === "seller" ? "Seller sign in" : "Sign in";
+const SESSION_KEY = `otp_session_${role}`;
+const RESEND_COOLDOWN = 30;
+const MAX_ATTEMPTS = 3;
 ---
 <BottomSheet id={id} title={title} showClose={true}>
+  <!-- Step 1: phone entry -->
   <div id={`${id}-step1`}>
     <p style="font:400 13px Inter;color:var(--v2-ink-2);margin:0 0 16px;line-height:1.5;">
-      We'll send a one-time code to your phone. No password needed.
+      Enter your mobile number. We'll send a one-time code — no password needed.
     </p>
-    <form id={`${id}-phone-form`}>
+    <form id={`${id}-phone-form`} autocomplete="off">
       <PhoneInput id={`${id}-phone`} required={true} />
       <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-send-otp`}>
         Send OTP
@@ -23,32 +27,39 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
     </form>
   </div>
 
+  <!-- Step 2: OTP entry -->
   <div id={`${id}-step2`} style="display:none;">
-    <p style="font:400 13px Inter;color:var(--v2-ink-2);margin:0 0 4px;line-height:1.5;">
-      Enter the 6-digit code sent to <strong id={`${id}-phone-display`}>your phone</strong>.
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <span style="font:600 14px Inter;color:var(--v2-ink);" id={`${id}-phone-display`}></span>
+      <button type="button" id={`${id}-change-phone`}
+        style="font:400 12px Inter;color:var(--v2-ink-3);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">
+        Change
+      </button>
+    </div>
+    <p style="font:400 12px Inter;color:var(--v2-ink-3);margin:0 0 16px;line-height:1.5;">
+      6-digit code sent via SMS · expires in 10 min
     </p>
-    <p style="font:400 11px Inter;color:var(--v2-ink-3);margin:0 0 16px;">
-      Code expires in 10 minutes · Max 3 attempts
-    </p>
-    <form id={`${id}-otp-form`}>
+    <form id={`${id}-otp-form`} autocomplete="off">
       <OTPInput id={`${id}-otp`} length={6} autoSubmitFormId={`${id}-otp-form`} />
-      <p id={`${id}-tries-msg`} style="font:400 12px Inter;color:var(--v2-orange);min-height:18px;margin:6px 0 0;text-align:center;"></p>
-      <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-verify-otp`} style="margin-top:8px;">
+      <!-- inline error/hint row -->
+      <p id={`${id}-hint`}
+        style="font:400 12px Inter;color:var(--v2-orange);min-height:16px;margin:6px 0 0;text-align:center;"></p>
+      <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-verify-otp`}
+        style="margin-top:10px;">
         Verify &amp; continue
       </button>
-      <button type="button" class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-resend`} style="margin-top:8px;" disabled>
-        Resend code (<span id={`${id}-countdown`}>30</span>s)
-      </button>
-      <button type="button" class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-change-phone`} style="margin-top:4px;font-size:12px;opacity:0.7;">
-        Change number
+      <!-- resend: disabled with countdown, enabled when ready -->
+      <button type="button" class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-resend`}
+        style="margin-top:8px;" disabled>
+        <span id={`${id}-resend-label`}>Resend code (30s)</span>
       </button>
     </form>
   </div>
 </BottomSheet>
 
-<script define:vars={{ id, role, redirectTo }}>
-  const RESEND_COOLDOWN = 30;
+<script define:vars={{ id, role, redirectTo, SESSION_KEY, RESEND_COOLDOWN, MAX_ATTEMPTS }}>
   let currentPhone = "";
+  let otpAttempts = 0;
   let countdownTimer = null;
 
   function getEl(suffix) { return document.getElementById(`${id}-${suffix}`); }
@@ -56,51 +67,110 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
   function showStep(n) {
     getEl("step1").style.display = n === 1 ? "block" : "none";
     getEl("step2").style.display = n === 2 ? "block" : "none";
+    if (n === 2) {
+      // auto-focus first OTP cell
+      setTimeout(() => {
+        document.querySelector(`#${id}-step2 .v2-otp-cell`)?.focus();
+      }, 120);
+    }
   }
 
-  function startCountdown() {
-    const btn = getEl("resend");
-    const cd = getEl("countdown");
-    btn.disabled = true;
-    let secs = RESEND_COOLDOWN;
-    cd.textContent = secs;
-    btn.textContent = "";
-    btn.appendChild(document.createTextNode("Resend code ("));
-    btn.appendChild(cd);
-    btn.appendChild(document.createTextNode("s)"));
-
-    clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-      secs--;
-      cd.textContent = secs;
-      if (secs <= 0) {
-        clearInterval(countdownTimer);
-        btn.disabled = false;
-        btn.textContent = "Resend code";
-      }
-    }, 1000);
+  function saveSession(phone, sentAt) {
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ phone, sentAt }));
+    } catch {}
+  }
+  function loadSession() {
+    try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null"); } catch { return null; }
+  }
+  function clearSession() {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch {}
   }
 
   function clearOTPCells() {
-    const otpInput = document.getElementById(`${id}-otp`);
-    if (otpInput) otpInput.value = "";
+    const hidden = document.getElementById(`${id}-otp`);
+    if (hidden) hidden.value = "";
     document.querySelectorAll(`#${id}-step2 .v2-otp-cell`).forEach((c) => {
       c.value = "";
       c.classList.remove("v2-input-error");
     });
-    document.querySelector(`#${id}-step2 .v2-otp-cell`)?.focus();
+    getEl("hint").textContent = "";
   }
+
+  function startCountdown(fromSeconds) {
+    const btn = getEl("resend");
+    const label = getEl("resend-label");
+    btn.disabled = true;
+    let secs = Math.max(0, Math.ceil(fromSeconds));
+    if (secs <= 0) {
+      btn.disabled = false;
+      label.textContent = "Resend code";
+      return;
+    }
+    label.textContent = `Resend code (${secs}s)`;
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      secs--;
+      if (secs <= 0) {
+        clearInterval(countdownTimer);
+        btn.disabled = false;
+        label.textContent = "Resend code";
+      } else {
+        label.textContent = `Resend code (${secs}s)`;
+      }
+    }, 1000);
+  }
+
+  function enterStep2(phone, sentAtMs) {
+    currentPhone = phone;
+    otpAttempts = 0;
+    getEl("phone-display").textContent = phone;
+    getEl("verify-otp").textContent = "Verify & continue";
+    getEl("verify-otp").disabled = false;
+    clearOTPCells();
+    showStep(2);
+    const elapsed = (Date.now() - sentAtMs) / 1000;
+    startCountdown(RESEND_COOLDOWN - elapsed);
+  }
+
+  // On sheet open: restore session if OTP was sent recently
+  const sheet = document.getElementById(id);
+  sheet?.addEventListener("v2-sheet-opened", () => {
+    // Already logged in?
+    try {
+      const alreadyIn = role === "seller"
+        ? localStorage.getItem("zepto_seller_id")
+        : localStorage.getItem("zepto_buyer_id");
+      if (alreadyIn) {
+        window.location.href = redirectTo;
+        return;
+      }
+    } catch {}
+
+    const sess = loadSession();
+    if (sess?.phone && sess?.sentAt) {
+      const age = (Date.now() - sess.sentAt) / 1000;
+      if (age < 600) {
+        // OTP still potentially valid (< 10 min) — restore step 2
+        const phoneInput = document.getElementById(`${id}-phone`);
+        if (phoneInput) phoneInput.value = sess.phone.replace("+91", "");
+        enterStep2(sess.phone, sess.sentAt);
+        return;
+      }
+    }
+    showStep(1);
+  });
 
   // Step 1: send OTP
   getEl("phone-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = document.getElementById(`${id}-phone`);
-    const phone = input.value.replace(/\D/g, "");
-    if (phone.length !== 10) {
-      window.v2Toast?.("error", "Invalid phone", "Enter a 10-digit Indian mobile number");
+    const raw = (input?.value || "").replace(/\D/g, "");
+    if (raw.length !== 10) {
+      window.v2Toast?.("error", "Invalid number", "Enter a 10-digit Indian mobile number");
       return;
     }
-    currentPhone = "+91" + phone;
+    const phone = "+91" + raw;
     const btn = getEl("send-otp");
     btn.disabled = true;
     btn.textContent = "Sending…";
@@ -108,15 +178,13 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: currentPhone }),
+        body: JSON.stringify({ phone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
-      getEl("phone-display").textContent = currentPhone;
-      getEl("tries-msg").textContent = "";
-      clearOTPCells();
-      showStep(2);
-      startCountdown();
+      const sentAt = Date.now();
+      saveSession(phone, sentAt);
+      enterStep2(phone, sentAt);
     } catch (err) {
       window.v2Toast?.("error", "Failed to send OTP", err.message);
     } finally {
@@ -126,9 +194,6 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
   });
 
   // Step 2: verify OTP
-  let otpAttempts = 0;
-  const MAX_OTP_ATTEMPTS = 3;
-
   getEl("otp-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const code = document.getElementById(`${id}-otp`)?.value || "";
@@ -136,8 +201,8 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
       window.v2Toast?.("error", "Incomplete OTP", "Enter all 6 digits");
       return;
     }
-    if (otpAttempts >= MAX_OTP_ATTEMPTS) {
-      window.v2Toast?.("error", "Too many attempts", "Tap Resend to get a new code");
+    if (otpAttempts >= MAX_ATTEMPTS) {
+      getEl("hint").textContent = "Too many attempts — tap Resend for a new code.";
       return;
     }
     const btn = getEl("verify-otp");
@@ -153,17 +218,26 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
 
       if (!res.ok || !data.success) {
         otpAttempts++;
-        const left = MAX_OTP_ATTEMPTS - otpAttempts;
-        const triesEl = getEl("tries-msg");
-        if (triesEl) triesEl.textContent = data.error || (left > 0 ? `Wrong code. ${left} ${left === 1 ? "try" : "tries"} left.` : "No tries left. Tap Resend.");
-        document.querySelectorAll(`#${id}-step2 .v2-otp-cell`).forEach((c) => c.classList.add("v2-input-error"));
-        clearOTPCells();
+        const left = MAX_ATTEMPTS - otpAttempts;
+        const hint = getEl("hint");
+        hint.textContent = data.error || (left > 0
+          ? `Wrong code — ${left} ${left === 1 ? "try" : "tries"} left`
+          : "No tries left — tap Resend for a new code");
+        document.querySelectorAll(`#${id}-step2 .v2-otp-cell`).forEach((c) => {
+          c.value = "";
+          c.classList.add("v2-input-error");
+        });
+        document.getElementById(`${id}-otp`).value = "";
+        document.querySelector(`#${id}-step2 .v2-otp-cell`)?.focus();
         btn.disabled = false;
         btn.textContent = left > 0 ? "Try again" : "Resend OTP first";
         return;
       }
 
-      // Success
+      // Verified
+      clearSession();
+      clearInterval(countdownTimer);
+
       try {
         if (role === "seller") {
           localStorage.setItem("zepto_seller_id", data.seller_id);
@@ -178,8 +252,6 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
         try { await window.RelifishCart.pushLocalToServer(); } catch {}
       }
 
-      window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
-
       if (role === "buyer") {
         try {
           if (!localStorage.getItem("v2_buyer_location")) {
@@ -188,12 +260,14 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
         } catch {}
       }
 
-      setTimeout(() => { window.location.href = redirectTo; }, 600);
+      btn.textContent = "✓ Signed in!";
+      window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
+      setTimeout(() => { window.location.href = redirectTo; }, 500);
     } catch (err) {
       otpAttempts++;
       window.v2Toast?.("error", "Network error", err.message || "Try again");
       btn.disabled = false;
-      btn.textContent = "Verify & continue";
+      btn.textContent = "Try again";
     }
   });
 
@@ -202,6 +276,7 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
     if (!currentPhone) { showStep(1); return; }
     const btn = getEl("resend");
     btn.disabled = true;
+    getEl("resend-label").textContent = "Sending…";
     try {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
@@ -210,22 +285,28 @@ const title = role === "seller" ? "Seller sign in" : "Sign in";
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
+      const sentAt = Date.now();
+      saveSession(currentPhone, sentAt);
       otpAttempts = 0;
-      getEl("tries-msg").textContent = "";
+      getEl("hint").textContent = "";
       getEl("verify-otp").textContent = "Verify & continue";
+      getEl("verify-otp").disabled = false;
       clearOTPCells();
-      startCountdown();
+      startCountdown(RESEND_COOLDOWN);
       window.v2Toast?.("info", "OTP resent", "Check your SMS");
     } catch (err) {
-      window.v2Toast?.("error", "Failed", err.message || "Try again");
+      window.v2Toast?.("error", "Resend failed", err.message || "Try again");
       btn.disabled = false;
+      getEl("resend-label").textContent = "Resend code";
     }
   });
 
-  // Change number
+  // Change number — back to step 1, clear session
   getEl("change-phone")?.addEventListener("click", () => {
     clearInterval(countdownTimer);
+    clearSession();
     otpAttempts = 0;
     showStep(1);
+    document.getElementById(`${id}-phone`)?.focus();
   });
 </script>
