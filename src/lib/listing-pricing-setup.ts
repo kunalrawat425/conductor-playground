@@ -110,6 +110,10 @@ export function setupListingPricingEditor(opts: {
       if (Number.isFinite(compareParsed) && compareParsed >= 1 && compareParsed > price) {
         rowOut.compare_at_price = compareParsed;
       }
+      const pmin = parseFloat((row.querySelector(".preorder-min-inp") as HTMLInputElement)?.value || "");
+      const pmax = parseFloat((row.querySelector(".preorder-max-inp") as HTMLInputElement)?.value || "");
+      if (Number.isFinite(pmin) && pmin > 0) rowOut.preorder_price_min = pmin;
+      if (Number.isFinite(pmax) && pmax > 0) rowOut.preorder_price_max = pmax;
       out.push(rowOut);
     });
     hiddenInput.value = JSON.stringify(out);
@@ -207,6 +211,13 @@ export function setupListingPricingEditor(opts: {
     toggleDiscountModeRows();
   }
 
+  function updatePreorderTierVisibility() {
+    const isEnabled = !!(document.getElementById("is_preorder_enabled") as HTMLInputElement | null)?.checked;
+    container.querySelectorAll<HTMLElement>(".preorder-price-tier").forEach((el) => {
+      el.style.display = isEnabled ? "block" : "none";
+    });
+  }
+
   function renderRow(opt: ListingPriceOption) {
     const id = opt.id || `opt_${Date.now()}`;
     const wrap = document.createElement("div");
@@ -276,6 +287,20 @@ export function setupListingPricingEditor(opts: {
         <div class="deal-preview-line" style="min-height:36px;margin-bottom:10px;padding:10px 12px;background:white;border-radius:8px;border:1px solid var(--gray-200);line-height:1.4;"></div>
         <button type="button" class="btn-apply-deal" style="width:100%;padding:11px 14px;border-radius:10px;border:none;background:var(--green);color:white;font-weight:700;cursor:pointer;font-size:13px;">Apply discount → Selling ₹</button>
       </div>
+      <div class="preorder-price-tier" style="display:none;margin-top:8px;padding:12px;background:#EEF2FF;border-radius:8px;border:1px solid #C7D2FE;">
+        <div style="font-size:12px;font-weight:700;color:#4F46E5;margin-bottom:4px;">🌙 Pre-order price range (this tier)</div>
+        <p style="font-size:11px;color:#4338CA;margin:0 0 8px;line-height:1.4;">Buyer pays max price upfront. You set actual price after morning catch. No discount in pre-order.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#4338CA;display:block;margin-bottom:4px;">Min estimate (₹)</label>
+            <input type="number" class="preorder-min-inp" min="1" step="1" placeholder="e.g. 300" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #C7D2FE;border-radius:6px;font-size:13px;" value="${opt.preorder_price_min ?? ""}" />
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#4338CA;display:block;margin-bottom:4px;">Max estimate (₹)</label>
+            <input type="number" class="preorder-max-inp" min="1" step="1" placeholder="e.g. 500" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #C7D2FE;border-radius:6px;font-size:13px;" value="${opt.preorder_price_max ?? ""}" />
+          </div>
+        </div>
+      </div>
     `;
     wrap.querySelector(".btn-remove-price")?.addEventListener("click", () => {
       if (container.querySelectorAll(".pricing-row").length <= 1) return;
@@ -289,6 +314,7 @@ export function setupListingPricingEditor(opts: {
     wireDealButtons(wrap);
     container.appendChild(wrap);
     updateBundleFieldCopy();
+    updatePreorderTierVisibility();
   }
 
   const modeEl = document.createElement("div");

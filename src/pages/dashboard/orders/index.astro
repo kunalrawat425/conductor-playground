@@ -1,4 +1,1110 @@
 ---
 export const prerender = false;
-return Astro.redirect("/v2/dashboard/orders", 302);
+import AppShellV2 from "../../../components/v2/AppShellV2.astro";
+import Toast from "../../../components/v2/atoms/Toast.astro";
+import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
 ---
+<AppShellV2
+  title="Orders · Seller Dashboard"
+  description="Manage today's orders"
+  hideHeader={true}
+  nav={{ active: "orders", mode: "seller" }}
+>
+  <Toast />
+
+  <div id="v2-dash-content" style="display:none;">
+    <!-- Hero with toggleable stats -->
+    <div class="v2-dash-hero">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="v2-dash-greet">Good day, <span id="v2-dash-name">seller</span></div>
+          <div class="v2-dash-title">Today's pipeline</div>
+        </div>
+        <button id="v2-stats-toggle" type="button" style="background:rgba(255,255,255,.2);border:none;color:#fff;font:600 11px Inter;padding:6px 12px;border-radius:20px;cursor:pointer;">Stats ▼</button>
+      </div>
+      <div id="v2-dash-stats-panel" style="display:none;">
+        <div class="v2-dash-stats" style="margin-top:12px;">
+          <div class="v2-dash-stat"><div class="v2-dash-v" id="v2-dash-pending">—</div><div class="v2-dash-l">New</div></div>
+          <div class="v2-dash-stat"><div class="v2-dash-v" id="v2-dash-inprogress">—</div><div class="v2-dash-l">In Progress</div></div>
+          <div class="v2-dash-stat"><div class="v2-dash-v" id="v2-dash-gmv">₹0</div><div class="v2-dash-l">Today GMV</div></div>
+        </div>
+        <div class="v2-dash-stats" style="margin-top:8px;">
+          <div class="v2-dash-stat"><div class="v2-dash-v" id="v2-dash-preorders">—</div><div class="v2-dash-l">Pre-orders</div></div>
+          <div class="v2-dash-stat"><div class="v2-dash-v" id="v2-dash-completed">—</div><div class="v2-dash-l">Completed</div></div>
+          <div class="v2-dash-stat"><div class="v2-dash-v" id="v2-dash-declined">—</div><div class="v2-dash-l">Declined</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action row removed — use Listings tab and per-order actions instead -->
+
+    <div class="v2-dash-sticky-controls">
+      <!-- Tabs -->
+      <div class="v2-dash-tabs">
+        <button class="v2-dash-tab v2-dash-tab-active" data-tab="pending">New <span class="v2-dash-tab-count" id="v2-tab-pending-count">0</span></button>
+        <button class="v2-dash-tab" data-tab="accepted">In Progress <span class="v2-dash-tab-count" id="v2-tab-accepted-count" style="display:none;">0</span></button>
+        <button class="v2-dash-tab" data-tab="completed">History <span class="v2-dash-tab-count" id="v2-tab-completed-count" style="display:none;">0</span></button>
+      </div>
+
+      <!-- Search + Date filter + export -->
+      <div style="padding:8px 16px;background:var(--v2-bg);border-bottom:1px solid var(--v2-border);">
+        <input id="v2-dash-search" type="text" placeholder="Search by order ID or phone..." style="width:100%;padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg-2);outline:none;box-sizing:border-box;" />
+      </div>
+      <div class="v2-dash-filterbar">
+        <label class="v2-dash-filter-lbl">Range:</label>
+        <select id="v2-dash-range" class="v2-dash-select">
+          <option value="today">Today</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d" selected>Last 30 days</option>
+          <option value="all">All time</option>
+        </select>
+        <label class="v2-dash-filter-lbl" style="margin-left:6px;">Type:</label>
+        <select id="v2-dash-type" class="v2-dash-select">
+          <option value="all" selected>All</option>
+          <option value="order">Order</option>
+          <option value="preorder">Pre-order</option>
+        </select>
+        <a id="v2-dash-export" href="#" class="v2-dash-export-link" title="Download orders as CSV">⬇ CSV</a>
+        <span style="flex:1;"></span>
+        <span id="v2-orders-count" class="v2-dash-filter-lbl"></span>
+      </div>
+    </div>
+
+    <div id="v2-orders-list">
+      <div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 12px Inter;">
+        <span class="v2-spinner v2-spinner-md"></span><div style="margin-top:8px;">Loading orders...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="v2-dash-not-active" style="display:none;padding:24px 16px;">
+    <EmptyState
+      variant="server-error"
+      title="Account pending activation"
+      description="Your seller account is awaiting admin approval. We'll notify you when activated."
+      ctaText="Refresh status"
+      ghostCtaText="Sign out"
+    />
+  </div>
+
+  <div id="v2-dash-no-auth" style="display:none;padding:24px 16px;">
+    <EmptyState
+      variant="server-error"
+      title="Sign in required"
+      description="Please sign in to access your seller dashboard."
+      ctaText="Sign in"
+      ctaHref="/dashboard/login"
+    />
+  </div>
+</AppShellV2>
+
+<style is:global>
+  .v2-dash-sticky-controls {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    background: var(--v2-bg);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, .08);
+  }
+  .v2-dash-hero {
+    background: linear-gradient(135deg, var(--v2-green), #10B981);
+    padding: 16px;
+    color: #fff;
+  }
+  .v2-dash-greet { font: 400 12px Inter; opacity: .9; }
+  .v2-dash-title { font: 800 20px Inter; margin-top: 2px; }
+  .v2-dash-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; margin-top: 16px;
+  }
+  .v2-dash-stat {
+    background: rgba(255, 255, 255, .15);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+  .v2-dash-v { font: 800 18px Inter; color: #fff; }
+  .v2-dash-l { font: 500 10px Inter; color: rgba(255, 255, 255, .9); margin-top: 1px; }
+  .v2-dash-actions {
+    display: flex; gap: 8px;
+    padding: 16px;
+    background: var(--v2-bg);
+    border-bottom: 1px solid var(--v2-border);
+  }
+  .v2-dash-actions .v2-btn { flex: 1; }
+  .v2-dash-tabs {
+    display: flex;
+    background: var(--v2-bg);
+    border-bottom: 1px solid var(--v2-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .v2-dash-tabs::-webkit-scrollbar { display: none; }
+  .v2-dash-tab {
+    flex: 1; padding: 12px;
+    font: 600 12px Inter;
+    color: var(--v2-ink-3);
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+    min-width: 100px;
+  }
+  .v2-dash-tab-active { color: var(--v2-brand); }
+  .v2-dash-tab-active::after {
+    content: '';
+    position: absolute; bottom: 0; left: 16px; right: 16px;
+    height: 2px;
+    background: var(--v2-brand);
+  }
+  .v2-dash-tab-count {
+    font-size: 10px;
+    margin-left: 4px;
+    background: var(--v2-red); color: #fff;
+    padding: 1px 6px;
+    border-radius: 9999px;
+  }
+  .v2-dash-filterbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    background: var(--v2-bg);
+    border-bottom: 1px solid var(--v2-border);
+    flex-wrap: wrap;
+  }
+  .v2-dash-filter-lbl {
+    font: 600 11px Inter; color: var(--v2-ink-3);
+  }
+  .v2-dash-select {
+    background: var(--v2-bg-2);
+    border: 1px solid var(--v2-border);
+    color: var(--v2-ink);
+    font: 600 12px Inter;
+    padding: 6px 10px;
+    border-radius: var(--v2-radius-sm);
+    cursor: pointer;
+  }
+  .v2-dash-export-link {
+    font: 600 12px Inter;
+    color: var(--v2-brand);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: var(--v2-radius-sm);
+    border: 1px solid var(--v2-border);
+    background: var(--v2-bg-2);
+  }
+  .v2-dash-export-link:hover { background: var(--v2-brand-l); }
+  #v2-orders-list {
+    margin-top: 12px;
+    padding: 0 8px 8px;
+  }
+  .v2-seller-order {
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+    border: 1px solid color-mix(in srgb, var(--v2-border) 88%, #ffffff);
+  }
+  .v2-oc-meta {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .v2-oc-meta-pill {
+    font: 700 10px Inter;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--v2-ink-3);
+    background: var(--v2-bg-2);
+    border: 1px solid var(--v2-border);
+    border-radius: 999px;
+    padding: 3px 8px;
+  }
+  .v2-oc-sub {
+    font: 500 11px Inter;
+    color: var(--v2-ink-3);
+    margin-top: 2px;
+  }
+  .v2-oc-next {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px dashed var(--v2-border);
+    background: var(--v2-bg-2);
+    font: 600 11px Inter;
+    color: var(--v2-ink-2);
+  }
+  @media (max-width: 430px) {
+    .v2-dash-filterbar { gap: 6px; }
+    .v2-dash-select { padding: 6px 8px; font-size: 11px; }
+    .v2-dash-export-link { padding: 6px 8px; font-size: 11px; }
+  }
+  .v2-pagination {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px;
+    gap: 8px;
+  }
+  .v2-pg-btn {
+    background: var(--v2-bg);
+    border: 1px solid var(--v2-border);
+    color: var(--v2-ink);
+    font: 600 12px Inter;
+    padding: 8px 14px;
+    border-radius: var(--v2-radius-sm);
+    cursor: pointer;
+  }
+  .v2-pg-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .v2-pg-info { font: 500 12px Inter; color: var(--v2-ink-3); }
+</style>
+
+<script>
+  import { supabase } from "../../../lib/supabase";
+
+  let sellerId: string | null = null;
+  let sellerData: any = null;
+  let currentTab: "pending" | "accepted" | "completed" = "pending";
+  let currentRange = "30d";
+  let currentPage = 1;
+  let searchQuery = "";
+  let currentType: "all" | "order" | "preorder" = "all";
+  const PAGE_SIZE = 10;
+  let pollTimer: any;
+  /** One-shot scroll/highlight from `?order=<uuid>` (e.g. seller Web Push deep link). */
+  let didFocusFromOrderQuery = false;
+
+  const STATUS_BY_TAB: Record<string, string[]> = {
+    pending: ["pending", "pending_payment", "pre_order", "scheduled"],
+    accepted: ["confirmed", "paid", "payment_required", "ready_for_pickup", "out_for_delivery"],
+    completed: ["picked_up", "completed", "declined", "cancelled", "refunded"],
+  };
+
+  function nowInIST(): Date {
+    // Convert "current time in IST" → Date object in local runtime.
+    // (We only use this for filtering cutoffs, not for display.)
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  }
+  function rangeToDate(r: string): Date | null {
+    const now = nowInIST();
+    if (r === "today") { const d = new Date(now); d.setHours(0,0,0,0); return d; }
+    if (r === "7d") return new Date(now.getTime() - 7 * 86400000);
+    if (r === "30d") return new Date(now.getTime() - 30 * 86400000);
+    return null;
+  }
+
+  function getSellerId() {
+    try { return localStorage.getItem("zepto_seller_id"); } catch { return null; }
+  }
+
+  function renderProfileCompletion(s: any) {
+    const steps = [
+      { label: "Business name", done: !!(s.name && s.name.trim() && s.name !== "New Seller") },
+      { label: "Location set", done: !!(s.location_name || (s.lat && s.lng)) },
+      { label: "Store hours", done: !!(s.opens_at && s.closes_at) },
+      { label: "Email verified", done: !!(s.email && s.email_verified) },
+    ];
+    const incomplete = steps.filter(st => !st.done);
+    if (incomplete.length === 0) return;
+    const hero = document.querySelector(".v2-dash-hero");
+    if (!hero) return;
+    const banner = document.createElement("div");
+    banner.id = "v2-profile-completion-banner";
+    banner.style.cssText = "margin:12px 16px 0;padding:12px 14px;background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:var(--v2-radius);";
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font:700 12px Inter;color:#EA580C;">⚡ Complete your setup</div>
+        <a href="/dashboard/profile" style="font:600 11px Inter;color:var(--v2-brand);text-decoration:none;">Go to profile →</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${steps.map(st => `<div style="font:500 11px Inter;color:${st.done ? '#059669' : '#EA580C'};">${st.done ? '✓' : '○'} ${st.label}</div>`).join("")}
+      </div>`;
+    hero.after(banner);
+  }
+
+  function escape(s: string) {
+    return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
+  }
+
+  function tryFocusOrderFromQuery() {
+    if (didFocusFromOrderQuery) return;
+    const id = new URLSearchParams(location.search).get("order");
+    if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return;
+    const root = document.getElementById("v2-orders-list");
+    if (!root) return;
+    const card = root.querySelector(`[data-order-id="${id}"]`) as HTMLElement | null;
+    if (!card) return;
+    didFocusFromOrderQuery = true;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    const prev = card.style.outline;
+    card.style.outline = "2px solid var(--v2-brand, #0066cc)";
+    card.style.outlineOffset = "2px";
+    setTimeout(() => {
+      card.style.outline = prev;
+      card.style.outlineOffset = "";
+    }, 4500);
+  }
+
+  /** Storage paths for data-path= (do not use encodeURIComponent — dataset/DOM decoding breaks slashes). */
+  function attrDataPath(p: string) {
+    return String(p || "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;");
+  }
+
+  /** Signed URLs via /api/seller/payment-screenshot — show whenever paths exist. */
+  function paymentProofHtml(orderId: string, paths: string[] | null | undefined, heading = "Buyer payment proof") {
+    const arr = Array.isArray(paths) ? paths.filter(Boolean) : [];
+    if (!arr.length) return "";
+    const btns = arr
+      .map(
+        (p, i) =>
+          `<button type="button" class="v2-btn v2-btn-sm v2-oc-proof-btn" data-action="view_screenshot" data-order-id="${orderId}" data-path="${attrDataPath(p)}">🖼 View proof${arr.length > 1 ? " " + (i + 1) : ""}</button>`,
+      )
+      .join("");
+    return `<div class="v2-oc-proof">
+      <div class="v2-oc-proof-label">💳 ${escape(heading)}</div>
+      <div class="v2-oc-proof-btns">${btns}</div>
+    </div>`;
+  }
+
+  async function init() {
+    sellerId = getSellerId();
+    if (!sellerId) {
+      document.getElementById("v2-dash-no-auth")!.style.display = "block";
+      return;
+    }
+    try {
+      const { data } = await supabase.from("sellers").select("*").eq("id", sellerId).single();
+      sellerData = data;
+      if (!sellerData?.is_active) {
+        document.getElementById("v2-dash-not-active")!.style.display = "block";
+        return;
+      }
+      document.getElementById("v2-dash-content")!.style.display = "block";
+      document.getElementById("v2-dash-name")!.textContent = sellerData.name || "seller";
+      renderProfileCompletion(sellerData);
+      await loadOrders();
+
+      // Deep link from Web Push: `/dashboard/orders?order=<uuid>` — search loads the row on any tab.
+      const deepOrder = new URLSearchParams(location.search).get("order");
+      if (deepOrder && /^[0-9a-f-]{36}$/i.test(deepOrder.trim())) {
+        const searchInput = document.getElementById("v2-dash-search") as HTMLInputElement | null;
+        if (searchInput && !searchQuery.trim()) {
+          searchInput.value = deepOrder.trim();
+          searchQuery = deepOrder.trim();
+          currentPage = 1;
+          await loadOrders(false);
+        }
+      }
+
+      // Supabase Realtime: listen for new/updated orders for this seller's listings
+      const { data: myListings } = await supabase.from("fish_listings").select("id").eq("seller_id", sellerId);
+      const myListingIds = new Set((myListings || []).map((l: any) => l.id));
+
+      supabase
+        .channel("seller-orders-" + sellerId)
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        }, (payload: any) => {
+          // Only reload if order belongs to this seller's listings
+          const lid = payload.new?.listing_id || payload.old?.listing_id;
+          if (lid && myListingIds.has(lid)) {
+            loadOrders(false);
+          }
+        })
+        .subscribe();
+
+      // Fallback poll every 30s
+      pollTimer = setInterval(() => { loadOrders(false); }, 30000);
+    } catch (err) {
+      console.error("dash init failed", err);
+      (window as any).v2Toast?.("error", "Load failed", "Refresh to try again");
+    }
+  }
+
+  async function loadOrders(showSpinner = true) {
+    if (!sellerId) return;
+    const list = document.getElementById("v2-orders-list")!;
+
+    if (showSpinner) {
+      list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 12px Inter;"><span class="v2-spinner v2-spinner-md"></span><div style="margin-top:8px;">Loading orders...</div></div>`;
+    }
+
+    try {
+      // Get listing ids for this seller
+      const { data: listings } = await supabase.from("fish_listings").select("id").eq("seller_id", sellerId);
+      const listingIds = (listings || []).map((l: any) => l.id);
+
+      if (listingIds.length === 0) {
+        list.innerHTML = `<div style="padding:24px 16px;"><div class="v2-empty"><div class="v2-empty-icon">📋</div><h3 class="v2-empty-title">No listings yet</h3><p class="v2-empty-desc">Create your first listing to start receiving orders.</p><a href="/dashboard/listings/new" class="v2-btn v2-btn-primary v2-btn-md">Create listing</a></div></div>`;
+        return;
+      }
+
+      // === Stats: all counts ALL-TIME so seller sees real backlog ===
+      const [
+        { count: pendingCount },
+        { count: inProgressCount },
+        { count: completedCount },
+        { count: declinedCount },
+        { count: preorderCount },
+      ] = await Promise.all([
+        supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).in("status", STATUS_BY_TAB.pending),
+        supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).in("status", STATUS_BY_TAB.accepted),
+        supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).in("status", ["picked_up", "completed"]),
+        supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).in("status", ["declined", "cancelled", "refunded"]),
+        // Pre-orders are tracked via paid_amount, but the entry state is pending_payment.
+        supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).eq("status", "pending_payment"),
+      ]);
+      // GMV = today only
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      const { data: todayOrdersRaw } = await supabase
+        .from("orders")
+        .select("total_price")
+        .in("listing_id", listingIds)
+        .gte("created_at", todayStart.toISOString());
+      const todayGmv = (todayOrdersRaw || []).reduce((s: number, o: any) => s + (o.total_price || 0), 0);
+
+      const pt = pendingCount || 0;
+      const ip = inProgressCount || 0;
+      const ct = (completedCount || 0);
+      const dc = declinedCount || 0;
+      const po = preorderCount || 0;
+
+      // Hero stats
+      document.getElementById("v2-dash-pending")!.textContent = String(pt);
+      document.getElementById("v2-dash-inprogress")!.textContent = String(ip);
+      document.getElementById("v2-dash-gmv")!.textContent = `₹${todayGmv.toLocaleString("en-IN")}`;
+      document.getElementById("v2-dash-preorders")!.textContent = String(po);
+      document.getElementById("v2-dash-completed")!.textContent = String(ct);
+      document.getElementById("v2-dash-declined")!.textContent = String(dc);
+
+      // Tab badges
+      document.getElementById("v2-tab-pending-count")!.textContent = String(pt);
+      const ipBadge = document.getElementById("v2-tab-accepted-count")!;
+      ipBadge.textContent = String(ip);
+      ipBadge.style.display = ip > 0 ? "inline" : "none";
+      const hBadge = document.getElementById("v2-tab-completed-count")!;
+      hBadge.textContent = String(ct + dc);
+      hBadge.style.display = (ct + dc) > 0 ? "inline" : "none";
+
+      // === Paginated orders for current tab + range ===
+      const sinceDate = rangeToDate(currentRange);
+      const offset = (currentPage - 1) * PAGE_SIZE;
+      let q;
+      if (searchQuery) {
+        // Search mode — always fetch + filter client-side (UUID can't be ilike'd)
+        const sq = searchQuery.toLowerCase();
+        const { data: allOrders } = await supabase
+          .from("orders")
+          .select("*, listing:fish_listings(species, pricing_options), order_feedback(rating, feedback, updated_at)")
+          .in("listing_id", listingIds)
+          .order("created_at", { ascending: false })
+          .limit(500);
+        const matched = (allOrders || []).filter((o: any) =>
+          o.id.toLowerCase().includes(sq) ||
+          (o.buyer_phone || "").includes(sq)
+        );
+        const typeFiltered = matched.filter((o: any) => {
+          const due = Number(o.total_price || 0) + Number(o.delivery_fee || 0);
+          const paid = Number(o.paid_amount);
+          const partialCatch =
+            Number.isFinite(paid) && Number.isFinite(due) && due > 0 && paid + 0.01 < due;
+          const isPre =
+            o.status === "pre_order" ||
+            o.status === "payment_required" ||
+            partialCatch;
+          if (currentType === "order") return !isPre;
+          if (currentType === "preorder") return isPre;
+          return true;
+        });
+        const totalCount = typeFiltered.length;
+        const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+        const ordersToShow = typeFiltered.slice(offset, offset + PAGE_SIZE);
+        document.getElementById("v2-orders-count")!.textContent = totalCount > 0 ? `${totalCount} found` : "No results";
+
+        if (ordersToShow.length === 0) {
+          list.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--v2-ink-3);font:500 13px Inter;">No orders matching "${escape(searchQuery)}"</div>`;
+          return;
+        }
+        renderOrders(ordersToShow, totalPages);
+        return;
+      } else {
+        q = supabase
+          .from("orders")
+          .select("*, listing:fish_listings(species, pricing_options), order_feedback(rating, feedback, updated_at)", { count: "exact" })
+          .in("listing_id", listingIds)
+          .in("status", STATUS_BY_TAB[currentTab])
+          .order("created_at", { ascending: false })
+          .range(offset, offset + PAGE_SIZE - 1);
+        if (sinceDate) q = q.gte("created_at", sinceDate.toISOString());
+        if (currentType === "order") {
+          q = q.not("status", "in", '("pre_order","payment_required")');
+        }
+        if (currentType === "preorder") {
+          q = q.in("status", ["pre_order", "payment_required"]);
+        }
+      }
+
+      const { data: orders, count } = await q;
+      const ordersToShow = orders || [];
+      const totalCount = count || 0;
+      const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+      document.getElementById("v2-orders-count")!.textContent = totalCount > 0 ? `${totalCount} ${searchQuery ? 'found' : currentTab}` : "";
+
+      if (ordersToShow.length === 0) {
+        list.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--v2-ink-3);font:500 13px Inter;">No ${searchQuery ? 'results' : currentTab + ' orders in this range'}</div>`;
+        return;
+      }
+
+      renderOrders(ordersToShow, totalPages);
+    } catch (err: any) {
+      console.error("loadOrders failed", err);
+      list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--v2-red);font:500 13px Inter;">Failed to load orders</div>`;
+    }
+  }
+
+  function renderOrders(ordersToShow: any[], totalPages: number) {
+    const list = document.getElementById("v2-orders-list")!;
+    const orderHtml = ordersToShow.map((o: any) => {
+        const totalDue = Number(o.total_price || 0) + Number(o.delivery_fee || 0);
+        const paidNum = Number(o.paid_amount);
+        const partialCatch =
+          Number.isFinite(paidNum) &&
+          Number.isFinite(totalDue) &&
+          totalDue > 0 &&
+          paidNum + 0.01 < totalDue;
+        const needsFinalPrice =
+          (o.final_price === null || o.final_price === undefined) &&
+          ["confirmed", "paid"].includes(o.status) &&
+          partialCatch;
+        const isPreorder =
+          partialCatch || o.status === "pre_order" || o.status === "payment_required";
+        const hasPaymentProof = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
+        const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
+        const time = o.scheduled_for
+          ? new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
+          : new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+        const cls = isUrgent ? "v2-order-urgent" : "";
+        const total = o.total_price || o.final_price || 0;
+        const id6 = String(o.id || "").slice(0, 6).toUpperCase();
+
+        // Badge per status
+        const statusBadges: Record<string, [string, string]> = {
+          pending: ["New", "v2-oc-badge-new"],
+          pre_order: ["Pre-order", "v2-oc-badge-preorder"],
+          pending_payment: ["Payment pending", "v2-oc-badge-preorder"],
+          scheduled: ["Scheduled", "v2-oc-badge-new"],
+          confirmed: ["Confirmed", "v2-oc-badge-new"],
+          paid: ["Paid", "v2-oc-badge-new"],
+          ready_for_pickup: ["Ready", "v2-oc-badge-ready"],
+          out_for_delivery: ["Out for delivery", "v2-oc-badge-ready"],
+          picked_up: ["Picked up", "v2-oc-badge-done"],
+          completed: ["Completed", "v2-oc-badge-done"],
+          payment_required: ["Extra payment needed", "v2-oc-badge-urgent"],
+          declined: ["Declined", "v2-oc-badge-urgent"],
+          cancelled: ["Cancelled", "v2-oc-badge-urgent"],
+          refunded: ["Refunded", "v2-oc-badge-urgent"],
+        };
+        const [badgeText, badgeCls] = statusBadges[o.status] || [o.status, "v2-oc-badge-new"];
+
+        // Actions based on status (not tab — so search results also show actions)
+        let actionsHtml = "";
+        const isDelivery = o.order_type === "delivery";
+        if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
+          const proofPending = paymentProofHtml(o.id, o.payment_screenshot_urls, "Buyer uploaded payment proof");
+          const awaitingNote = proofPending
+            ? ""
+            : `<div style="font:500 11px Inter;color:var(--v2-orange);">Awaiting buyer payment screenshot</div>`;
+          const verifyBtnAttrs = !hasPaymentProof
+            ? `disabled style="flex:1;background:#CBD5E1;color:#64748B;cursor:not-allowed;"`
+            : `style="flex:1;background:var(--v2-green);color:#fff;"`;
+          const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "";
+          const preOrderExtras = o.status === "pre_order" ? `
+            <div style="background:#F5F3FF;border-radius:var(--v2-radius-sm);padding:10px;display:flex;flex-direction:column;gap:8px;">
+              <div style="font:600 11px Inter;color:#7C3AED;">🌙 Pre-order — enter actual selling price</div>
+              ${paidAmt ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">Buyer pre-paid: ₹${paidAmt}. Lower price → auto-refund difference.</div>` : ""}
+              <input type="number" placeholder="Actual selling price ₹" id="pre-confirm-price-${o.id}"
+                style="width:100%;padding:8px 10px;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
+            </div>` : "";
+          actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
+            ${awaitingNote}
+            ${proofPending}
+            ${preOrderExtras}
+            <input type="text" placeholder="Decline reason (shown to buyer, optional)" id="decline-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;display:none;" />
+            <div style="display:flex;gap:8px;">
+              <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline-show-reason" data-order-id="${o.id}">Can't fulfill</button>
+              <button class="v2-btn v2-btn-sm" ${verifyBtnAttrs} data-action="verify_payment" data-order-id="${o.id}" data-is-preorder="${o.status === "pre_order" ? "1" : "0"}">✓ Verify & Confirm</button>
+            </div>
+            <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Confirm — refund buyer</button>
+          </div>`;
+        } else if (o.status === "confirmed" || o.status === "paid") {
+          const preorderPriceBlock = needsFinalPrice
+            ? (() => {
+                const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "—";
+                const listingOpts2 = o.listing?.pricing_options || [];
+                const matchedOpt = listingOpts2.find((x: any) => x?.id && x.id === o.pricing_option_id) || listingOpts2[0] || null;
+                const priceMin = matchedOpt?.preorder_price_min;
+                const priceMax = matchedOpt?.preorder_price_max;
+                const rangeHtml = priceMin && priceMax
+                  ? `<div style="font:500 11px Inter;color:#7C3AED;">Your listed range: ₹${Number(priceMin).toLocaleString("en-IN")} – ₹${Number(priceMax).toLocaleString("en-IN")}</div>`
+                  : "";
+                const proofBlock = paymentProofHtml(o.id, o.payment_screenshot_urls, "Buyer uploaded payment proof");
+                return `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;margin-top:8px;">
+                  <div style="font:500 11px Inter;color:var(--v2-ink-3);">🌙 Next-day catch. Set actual price after receiving the fish.</div>
+                  <div style="font:600 12px Inter;color:#7C3AED;">Amount received: ₹${paidAmt}</div>
+                  ${proofBlock}
+                  ${rangeHtml}
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="number" placeholder="Final price (₹)" id="final-price-${o.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
+                    <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;white-space:nowrap;" data-action="set_final_price" data-order-id="${o.id}">Set price</button>
+                  </div>
+                  <div style="font:400 11px Inter;color:#D97706;">⚠️ If final &lt; ₹${paidAmt} → refund within 7 working days. If final &gt; ₹${paidAmt} → buyer pays the difference.</div>
+                  <div style="font:600 11px Inter;color:#7C3AED;">Next step unlocks only after final price is set.</div>
+                </div>`;
+              })()
+            : "";
+          if (needsFinalPrice) {
+            actionsHtml = preorderPriceBlock;
+          } else {
+            const proofAfterPrice = paymentProofHtml(o.id, o.payment_screenshot_urls, "Payment proof on file");
+            const fulfill = isDelivery
+              ? `<div class="v2-oc-actions">
+                  <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="out_for_delivery" data-order-id="${o.id}">🚲 Out for delivery</button>
+                </div>`
+              : `<div class="v2-oc-actions">
+                  <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="ready" data-order-id="${o.id}">📦 Ready for pickup</button>
+                </div>`;
+            actionsHtml = `${proofAfterPrice ? `<div style="display:flex;flex-direction:column;gap:8px;">${proofAfterPrice}</div>` : ""}${fulfill}`;
+          }
+        } else if (o.status === "ready_for_pickup") {
+          actionsHtml = `<div class="v2-oc-actions">
+            <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="picked_up" data-order-id="${o.id}">✓ Picked up</button>
+          </div>`;
+        } else if (o.status === "out_for_delivery") {
+          actionsHtml = `<div class="v2-oc-actions">
+            <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="delivered" data-order-id="${o.id}">✓ Delivered</button>
+          </div>`;
+        } else if (["cancelled", "declined"].includes(o.status) && o.paid_amount > 0) {
+          const refundAmt = Number(o.paid_amount).toLocaleString("en-IN");
+          const paymentSsPaths: string[] = o.payment_screenshot_urls || [];
+          const paymentSsBtns = paymentSsPaths.map((p, i) =>
+            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${attrDataPath(p)}">🖼 Buyer proof ${paymentSsPaths.length > 1 ? i + 1 : ''}</button>`
+          ).join("");
+          if (o.refund_sent_at) {
+            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+              <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${refundAmt} marked as sent</div>
+              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(o.refund_note)}</div>` : ''}
+              <div style="font:400 10px Inter;color:var(--v2-ink-3);">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+              ${paymentSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${paymentSsBtns}</div>` : ''}
+            </div>`;
+          } else {
+            actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
+              <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${refundAmt} to buyer via UPI</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">⏱ Buyer expects refund within 7 working days.</div>
+              ${paymentSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${paymentSsBtns}</div>` : ''}
+              <input type="text" placeholder="UTR number / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
+              <label style="cursor:pointer;">
+                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload your UPI screenshot (optional)</div>
+                <input type="file" id="refund-file-${o.id}" accept="image/*" style="display:none;" />
+              </label>
+              <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
+            </div>`;
+          }
+        } else if (o.status === "payment_required") {
+          const balanceAmt = o.final_price && o.paid_amount ? (Number(o.final_price) - Number(o.paid_amount)).toLocaleString("en-IN") : "—";
+          const balSsPaths: string[] = o.payment_screenshot_urls || [];
+          const balSsBtns = balSsPaths.map((p, i) =>
+            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${attrDataPath(p)}">🖼 Buyer proof ${balSsPaths.length > 1 ? i + 1 : ''}</button>`
+          ).join("");
+          actionsHtml = `<div style="padding:10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+            <div style="font:700 12px Inter;color:var(--v2-orange);">⏳ Waiting for balance ₹${balanceAmt}</div>
+            <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyer notified. Will confirm once they pay the difference.</div>
+            ${balSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${balSsBtns}</div>` : ''}
+          </div>`;
+        } else if (o.status === "refunded") {
+          const refundAmt = o.paid_amount && o.final_price ? (Number(o.paid_amount) - Number(o.final_price)).toLocaleString("en-IN") : "—";
+          const refSsPaths: string[] = o.payment_screenshot_urls || [];
+          const refSsBtns = refSsPaths.map((p, i) =>
+            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${attrDataPath(p)}">🖼 Buyer proof ${refSsPaths.length > 1 ? i + 1 : ''}</button>`
+          ).join("");
+          const fulfillBtns = isDelivery
+            ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="out_for_delivery" data-order-id="${o.id}">🚲 Out for delivery</button>`
+            : `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="ready" data-order-id="${o.id}">📦 Ready for pickup</button>`;
+          if (o.refund_sent_at) {
+            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+              <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${refundAmt} marked as sent</div>
+              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(o.refund_note)}</div>` : ''}
+              <div style="font:400 10px Inter;color:var(--v2-ink-3);">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+              ${refSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${refSsBtns}</div>` : ''}
+            </div>
+            <div class="v2-oc-actions" style="margin-top:6px;">${fulfillBtns}</div>`;
+          } else {
+            actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
+              <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${refundAmt} difference to buyer via UPI</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">⏱ Send the difference first, then mark the order ready.</div>
+              ${refSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${refSsBtns}</div>` : ''}
+              <input type="text" placeholder="UTR number / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
+              <label style="cursor:pointer;">
+                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload your UPI screenshot (optional)</div>
+                <input type="file" id="refund-file-${o.id}" accept="image/*" style="display:none;" />
+              </label>
+              <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
+              <div class="v2-oc-actions" style="margin-top:4px;">${fulfillBtns}</div>
+            </div>`;
+          }
+        }
+
+        const listingOpts = o.listing?.pricing_options || [];
+        const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
+        const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+        const unit = o.quantity_unit || "kg";
+        const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(o.quantity) / bundle)} pack` : `${o.quantity}${escape(unit)}`;
+        let nextStepHint = "";
+        if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
+          nextStepHint = "Next: Wait for payment screenshot, then verify and confirm.";
+        } else if ((o.status === "confirmed" || o.status === "paid") && needsFinalPrice) {
+          nextStepHint = "Next: Set final price before delivery or pickup.";
+        } else if (o.status === "confirmed" || o.status === "paid") {
+          nextStepHint = isDelivery ? "Next: Mark as out for delivery." : "Next: Mark as ready for pickup.";
+        } else if (o.status === "payment_required") {
+          nextStepHint = "Waiting: Buyer must pay the difference.";
+        } else if (o.status === "ready_for_pickup") {
+          nextStepHint = "Next: Mark as picked up when handed over.";
+        } else if (o.status === "out_for_delivery") {
+          nextStepHint = "Next: Mark as delivered after drop-off.";
+        }
+        const fbRaw = o.order_feedback;
+        const fbRow = Array.isArray(fbRaw) ? fbRaw[0] : fbRaw;
+        const buyerRatingHtml =
+          fbRow && Number(fbRow.rating) > 0
+            ? `<div style="margin-top:8px;padding:10px;background:#FFFBEB;border:1px solid #FCD34D;border-radius:var(--v2-radius-sm);">
+                <div style="font:700 12px Inter;color:#D97706;">⭐ Buyer rated ${Number(fbRow.rating)}/5</div>
+                ${fbRow.feedback ? `<div style="font:400 12px Inter;color:var(--v2-ink);margin-top:4px;">${escape(String(fbRow.feedback))}</div>` : ""}
+                ${fbRow.updated_at ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:4px;">${escape(new Date(fbRow.updated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }))}</div>` : ""}
+              </div>`
+            : "";
+        return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}" data-has-payment-proof="${hasPaymentProof ? "true" : "false"}">
+          <div class="v2-oc-top">
+            <div>
+              <div class="v2-oc-id">${isPreorder ? "🌙 " : ""}#${id6}${o.buyer_phone ? ' · ' + escape(o.buyer_phone.slice(-4)) : ''}</div>
+              <div class="v2-oc-time">${escape(time)}</div>
+            </div>
+            <span class="v2-oc-badge ${badgeCls}">${badgeText}</span>
+          </div>
+          <div class="v2-oc-items" style="text-transform:capitalize;">${escape(o.listing?.species || o.species || "")} · ${qtyLabel}</div>
+          <div class="v2-oc-meta">
+            <span class="v2-oc-meta-pill">${isPreorder ? "Pre-order" : "Order"}</span>
+            <span class="v2-oc-meta-pill">${isDelivery ? "Delivery" : "Pickup"}</span>
+          </div>
+          ${o.cut_style ? `<div style="font:600 11px Inter;color:var(--v2-ink-2);margin-top:4px;">✂️ ${escape(o.cut_style.split(",").map((c: string) => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : ''}
+          ${o.buyer_notes ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
+          ${buyerRatingHtml}
+          <div class="v2-oc-total">₹${total.toLocaleString("en-IN")}</div>
+          <div class="v2-oc-sub">Payment status is managed in order details.</div>
+          ${nextStepHint ? `<div class="v2-oc-next">${nextStepHint}</div>` : ""}
+          ${actionsHtml}
+        </div>`;
+      }).join("");
+
+      const pagerHtml = totalPages > 1 ? `
+        <div class="v2-pagination">
+          <button class="v2-pg-btn" data-pg="prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+          <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
+          <button class="v2-pg-btn" data-pg="next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+        </div>` : '';
+
+      list.innerHTML = orderHtml + pagerHtml;
+
+      // Wire pagination
+      list.querySelector('[data-pg="prev"]')?.addEventListener("click", () => { currentPage = Math.max(1, currentPage - 1); loadOrders(); });
+      list.querySelector('[data-pg="next"]')?.addEventListener("click", () => { currentPage = Math.min(totalPages, currentPage + 1); loadOrders(); });
+
+      // Wire actions
+      list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (btn.dataset.action === "view_screenshot") {
+            viewScreenshot(btn.dataset.orderId!, btn.dataset.path!, btn);
+          } else if (btn.dataset.action === "decline-show-reason") {
+            const orderId = btn.dataset.orderId!;
+            const noteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
+            const confirmBtn = document.getElementById(`decline-confirm-${orderId}`) as HTMLButtonElement | null;
+            if (noteInput) noteInput.style.display = "block";
+            if (confirmBtn) confirmBtn.style.display = "block";
+            btn.style.display = "none";
+          } else {
+            updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
+          }
+        });
+      });
+      // Wire refund file picker label updates
+      list.querySelectorAll<HTMLInputElement>("input[id^='refund-file-']").forEach((inp) => {
+        const orderId = inp.id.replace("refund-file-", "");
+        inp.addEventListener("change", () => {
+          const drop = document.getElementById(`refund-drop-${orderId}`);
+          if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload UPI screenshot (optional)";
+        });
+      });
+
+      tryFocusOrderFromQuery();
+  }
+
+  async function viewScreenshot(orderId: string, _pathFromDataset: string, btn: HTMLButtonElement) {
+    if (!orderId) {
+      (window as any).v2Toast?.("error", "Could not load screenshot", "Missing order id on this card. Refresh and retry.");
+      return;
+    }
+    const raw = (btn.getAttribute("data-path") || _pathFromDataset || "").trim();
+    let path = raw;
+    try {
+      path = decodeURIComponent(raw);
+    } catch {
+      path = raw;
+    }
+    const orig = btn.textContent || "";
+    btn.disabled = true;
+    btn.textContent = "Loading…";
+    try {
+      const res = await fetch(`/api/seller/payment-screenshot?order_id=${encodeURIComponent(orderId)}&seller_id=${encodeURIComponent(sellerId!)}&path=${encodeURIComponent(path)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      window.open(data.url, "_blank", "noopener");
+    } catch (err: any) {
+      const msg = err.message || "Failed";
+      if (/order not found|screenshot not found on this order/i.test(msg)) {
+        (window as any).v2Toast?.("error", "Could not load screenshot", "Order lookup failed for this screenshot. Please refresh orders and try again.");
+      } else {
+        (window as any).v2Toast?.("error", "Could not load screenshot", msg);
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  async function updateStatus(orderId: string, action: string, btn?: HTMLButtonElement) {
+    if (!sellerId) return;
+    if (!orderId) {
+      (window as any).v2Toast?.("error", "Order action failed", "Missing order id on this action. Refresh and retry.");
+      return;
+    }
+    // Actions that go directly to the API as action= (not status transitions)
+    const apiActions = new Set(["verify_payment", "mark_refund_sent", "set_final_price"]);
+    const statusMap: Record<string, string> = {
+      accept: "confirmed",
+      decline: "declined",
+      ready: "ready_for_pickup",
+      out_for_delivery: "out_for_delivery",
+      picked_up: "completed",
+      delivered: "completed",
+    };
+    const originalText = btn?.textContent || "";
+    const loadingLabels: Record<string, string> = {
+      accept: "Confirming…", decline: "Declining…", ready: "Updating…",
+      out_for_delivery: "Updating…", picked_up: "Completing…", delivered: "Completing…",
+      verify_payment: "Verifying…", mark_refund_sent: "Saving…", set_final_price: "Setting…",
+    };
+    const successLabels: Record<string, string> = {
+      accept: "Confirmed", decline: "Declined", ready: "Marked ready",
+      out_for_delivery: "Out for delivery", picked_up: "Completed", delivered: "Delivered",
+      verify_payment: "Payment verified", mark_refund_sent: "Refund marked sent", set_final_price: "Price set",
+    };
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = loadingLabels[action] || "Updating…";
+    }
+    try {
+      let body: Record<string, any> = { seller_id: sellerId, order_id: orderId };
+      if (apiActions.has(action)) {
+        body.action = action;
+        if (action === "set_final_price") {
+          const priceInput = document.getElementById(`final-price-${orderId}`) as HTMLInputElement | null;
+          const finalPrice = parseFloat(priceInput?.value || "");
+          if (isNaN(finalPrice) || finalPrice <= 0) {
+            (window as any).v2Toast?.("error", "Invalid price", "Enter a valid final price");
+            if (btn) { btn.disabled = false; btn.textContent = originalText; }
+            return;
+          }
+          body.final_price = finalPrice;
+        }
+        if (action === "verify_payment") {
+          const priceInput = document.getElementById(`pre-confirm-price-${orderId}`) as HTMLInputElement | null;
+          body._preOrderPrice = priceInput ? parseFloat(priceInput.value || "") : NaN;
+        }
+        if (action === "mark_refund_sent") {
+          const noteInput = document.getElementById(`refund-note-${orderId}`) as HTMLInputElement | null;
+          body.refund_note = noteInput?.value?.trim() || null;
+          // Upload screenshot first if selected
+          const fileInput = document.getElementById(`refund-file-${orderId}`) as HTMLInputElement | null;
+          const file = fileInput?.files?.[0];
+          if (file) {
+            const form = new FormData();
+            form.append("order_id", orderId);
+            form.append("seller_id", sellerId!);
+            form.append("file", file);
+            const uploadRes = await fetch("/api/seller/upload-refund", { method: "POST", body: form });
+            const uploadData = await uploadRes.json();
+            if (uploadRes.ok && uploadData.path) {
+              body.refund_screenshot_path = uploadData.path;
+            }
+          }
+        }
+      } else {
+        body.status = statusMap[action] || "declined";
+        if (body.status === "declined" || body.status === "cancelled") {
+          const declineNoteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
+          const note = declineNoteInput?.value?.trim();
+          if (note) body.refund_note = note;
+        }
+      }
+      const res = await fetch("/api/seller/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Update failed");
+
+      // Pre-order verify: chain set_final_price if price entered
+      if (action === "verify_payment" && Number.isFinite(body._preOrderPrice) && body._preOrderPrice > 0) {
+        await fetch("/api/seller/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ seller_id: sellerId, order_id: orderId, action: "set_final_price", final_price: body._preOrderPrice }),
+        });
+      }
+
+      (window as any).v2Toast?.("success", successLabels[action] || "Updated", "Order status updated");
+      // Auto-switch to tab where order now lives
+      const tabForStatus: Record<string, string> = {
+        confirmed: "accepted", paid: "accepted", ready_for_pickup: "accepted", out_for_delivery: "accepted",
+        completed: "completed", declined: "completed", cancelled: "completed", refunded: "completed",
+      };
+      // For action-based calls, derive status from returned order or action semantics
+      const resolvedStatus = data.order?.status ?? body.status;
+      const targetTab = tabForStatus[resolvedStatus];
+      if (targetTab && targetTab !== currentTab) {
+        currentTab = targetTab as any;
+        currentPage = 1;
+        document.querySelectorAll(".v2-dash-tab").forEach(t => t.classList.remove("v2-dash-tab-active"));
+        document.querySelector(`.v2-dash-tab[data-tab="${targetTab}"]`)?.classList.add("v2-dash-tab-active");
+      }
+      await loadOrders(false);
+    } catch (err: any) {
+      (window as any).v2Toast?.("error", "Failed", err.message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+  }
+
+  // Tab switching
+  document.querySelectorAll<HTMLButtonElement>(".v2-dash-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".v2-dash-tab").forEach(t => t.classList.remove("v2-dash-tab-active"));
+      tab.classList.add("v2-dash-tab-active");
+      currentTab = tab.dataset.tab as any;
+      currentPage = 1;
+      loadOrders();
+    });
+  });
+
+  // Range filter
+  document.getElementById("v2-dash-range")?.addEventListener("change", (e) => {
+    currentRange = (e.target as HTMLSelectElement).value;
+    currentPage = 1;
+    loadOrders();
+  });
+
+  // Order type filter (Order vs Pre-order)
+  document.getElementById("v2-dash-type")?.addEventListener("change", (e) => {
+    currentType = (e.target as HTMLSelectElement).value as any;
+    currentPage = 1;
+    loadOrders();
+  });
+
+  // Search by order ID or phone
+  let searchTimer: any;
+  document.getElementById("v2-dash-search")?.addEventListener("input", (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      searchQuery = (e.target as HTMLInputElement).value.trim();
+      currentPage = 1;
+      loadOrders();
+    }, 400);
+  });
+
+  // CSV export — respects current range
+  document.getElementById("v2-dash-export")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (!sellerId) return;
+    const url = `/api/seller/orders-export?seller_id=${encodeURIComponent(sellerId)}&date_filter=${encodeURIComponent(currentRange)}`;
+    window.location.href = url;
+  });
+
+  // Bulk-verify orders that already have buyer payment proof in the current list
+  document.getElementById("v2-mark-ready")?.addEventListener("click", async () => {
+    if (!sellerId) return;
+    const list = document.getElementById("v2-orders-list");
+    const cards = Array.from(list?.querySelectorAll<HTMLDivElement>("[data-order-id][data-has-payment-proof=\"true\"]") || []);
+    const ids = cards.map((c) => c.dataset.orderId!).filter(Boolean);
+    if (ids.length === 0) {
+      (window as any).v2Toast?.("error", "Nothing to verify", "No orders with payment proof in view — upload must appear on each card first.");
+      return;
+    }
+    if (!confirm(`Verify payment and confirm ${ids.length} order${ids.length !== 1 ? "s" : ""} that already have buyer proof?`)) return;
+    const btn = document.getElementById("v2-mark-ready") as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = `Verifying ${ids.length}…`;
+    const results = await Promise.all(ids.map(async (id) => {
+      try {
+        const res = await fetch("/api/seller/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ seller_id: sellerId, order_id: id, action: "verify_payment" }),
+        });
+        return res.ok;
+      } catch { return false; }
+    }));
+    const ok = results.filter(Boolean).length;
+    const fail = results.length - ok;
+    if (fail === 0) {
+      (window as any).v2Toast?.("success", `${ok} verified`, "Payment verified for all selected orders");
+    } else {
+      (window as any).v2Toast?.("error", `${ok} verified, ${fail} failed`, "Retry the failed ones individually");
+    }
+    btn.disabled = false;
+    btn.textContent = "✓ Verify all with proof";
+    await loadOrders(false);
+  });
+
+  // Wire empty-state CTAs (Refresh status + Sign out on pending activation page)
+  document.querySelectorAll<HTMLElement>(".v2-empty-ghost").forEach((el) => {
+    if (el.textContent?.includes("Sign out")) {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        try {
+          localStorage.removeItem("zepto_seller_id");
+          localStorage.removeItem("zepto_seller_phone");
+        } catch {}
+        window.location.href = "/dashboard/login";
+      });
+    }
+  });
+  // "Refresh status" button = reload
+  const refreshBtn = document.getElementById("v2-dash-not-active")?.querySelector(".v2-btn");
+  refreshBtn?.addEventListener("click", () => location.reload());
+
+  // Stats panel toggle (hidden by default)
+  document.getElementById("v2-stats-toggle")?.addEventListener("click", () => {
+    const panel = document.getElementById("v2-dash-stats-panel")!;
+    const btn = document.getElementById("v2-stats-toggle")!;
+    const open = panel.style.display !== "none";
+    panel.style.display = open ? "none" : "block";
+    btn.textContent = open ? "Stats ▼" : "Stats ▲";
+  });
+
+  init();
+</script>

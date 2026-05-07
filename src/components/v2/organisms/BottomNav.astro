@@ -5,14 +5,14 @@ const { active, ordersCount = 0, mode = "buyer" } = Astro.props;
 
 const buyerItems = [
   { id: "home", label: "Home", icon: "🏠", href: "/v2" },
-  { id: "orders", label: "Orders", icon: "📋", href: "/v2/track" },
-  { id: "account", label: "Account", icon: "👤", href: "/v2/me" },
+  { id: "orders", label: "Orders", icon: "📋", href: "/track" },
+  { id: "account", label: "Account", icon: "👤", href: "/me" },
 ];
 
 const sellerItems = [
-  { id: "orders", label: "Orders", icon: "📋", href: "/v2/dashboard/orders" },
-  { id: "listings", label: "Listings", icon: "🐟", href: "/v2/dashboard/listings" },
-  { id: "account", label: "Profile", icon: "👤", href: "/v2/dashboard/profile" },
+  { id: "orders", label: "Orders", icon: "📋", href: "/dashboard/orders" },
+  { id: "listings", label: "Listings", icon: "🐟", href: "/dashboard/listings" },
+  { id: "account", label: "Profile", icon: "👤", href: "/dashboard/profile" },
 ];
 
 const items = mode === "seller" ? sellerItems : buyerItems;

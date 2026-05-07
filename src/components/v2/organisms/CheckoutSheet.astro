@@ -32,7 +32,7 @@ const { id = "v2-checkout" } = Astro.props;
   <div id={`${id}-step2`} class="v2-co-step-content" style="display:none;">
     <h4 class="v2-co-step-title">Delivery method</h4>
     <div class="v2-co-method">
-      <label class="v2-co-method-opt">
+      <label class="v2-co-method-opt" id={`${id}-pickup-opt`}>
         <input type="radio" name={`${id}-method`} value="pickup" checked />
         <div>
           <div class="v2-co-m-name">🧊 Pickup</div>
@@ -50,21 +50,31 @@ const { id = "v2-checkout" } = Astro.props;
     <div id={`${id}-no-delivery-note`} style="display:none;margin-top:8px;font:400 11px Inter;color:var(--v2-ink-3);text-align:center;">
       This seller offers pickup only.
     </div>
+    <div id={`${id}-no-pickup-note`} style="display:none;margin-top:8px;font:400 11px Inter;color:var(--v2-ink-3);text-align:center;">
+      This seller offers delivery only.
+    </div>
 
     <div id={`${id}-address-section`} style="display:none;margin-top:16px;">
       <h4 class="v2-co-step-title">Deliver to</h4>
-      <button id={`${id}-current-address`} type="button" class="v2-addr-card" style="width:100%;text-align:left;border:1.5px solid var(--v2-border);background:var(--v2-bg);cursor:pointer;">
+      <button
+        id={`${id}-current-address`}
+        type="button"
+        class="v2-addr-card"
+        aria-label="Choose or change delivery address"
+        title="Tap to change address"
+        style="width:100%;text-align:left;border:1.5px solid var(--v2-border);background:var(--v2-bg);cursor:pointer;"
+      >
         <div class="v2-addr-icon">📍</div>
         <div class="v2-addr-body">
           <div class="v2-addr-label" id={`${id}-addr-label`}>No address selected</div>
-          <div class="v2-addr-text" id={`${id}-addr-text`}>Tap to add</div>
+          <div class="v2-addr-text" id={`${id}-addr-text`}>Tap to choose address</div>
         </div>
         <div style="color:var(--v2-ink-4);align-self:center;">›</div>
       </button>
     </div>
 
     <div class="v2-co-rows" style="margin-top:12px;">
-      <div class="v2-co-row v2-co-total-row"><span id={`${id}-total-label`}>Total (pay at pickup)</span><span id={`${id}-total-final`}>₹0</span></div>
+      <div class="v2-co-row v2-co-total-row"><span id={`${id}-total-label`}>Total · Pay after seller confirms</span><span id={`${id}-total-final`}>₹0</span></div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
@@ -72,7 +82,7 @@ const { id = "v2-checkout" } = Astro.props;
       <button class="v2-btn v2-btn-primary v2-btn-md" style="flex:1;" id={`${id}-place-order`}>Place order</button>
     </div>
     <div style="font:400 10px Inter;color:var(--v2-ink-4);text-align:center;margin-top:8px;">
-      🔒 100% refund if seller cancels · Cash on delivery
+      🔒 100% refund if seller cancels · Upload payment proof when requested
     </div>
   </div>
 
@@ -119,19 +129,25 @@ const { id = "v2-checkout" } = Astro.props;
   }
 
   document.querySelectorAll("[data-co-next]").forEach(b => {
-    b.addEventListener("click", () => showStep(parseInt(b.dataset.coNext)));
+    b.addEventListener("click", () => {
+      const n = parseInt(b.dataset.coNext, 10);
+      if (n === 2) {
+        document.dispatchEvent(
+          new CustomEvent("v2-checkout-step2", { detail: { checkoutId: id } })
+        );
+      }
+      showStep(n);
+    });
   });
   document.querySelectorAll("[data-co-back]").forEach(b => {
     b.addEventListener("click", () => showStep(parseInt(b.dataset.coBack)));
   });
 
-  // Toggle address section + total label based on method
+  // Toggle address section based on method (total label stays the same for pickup vs delivery)
   document.querySelectorAll(`input[name="${id}-method"]`).forEach(r => {
     r.addEventListener("change", () => {
       const isDelivery = r.value === "delivery" && r.checked;
       document.getElementById(`${id}-address-section`).style.display = isDelivery ? "block" : "none";
-      const labelEl = document.getElementById(`${id}-total-label`);
-      if (labelEl) labelEl.textContent = isDelivery ? "Total (pay on delivery)" : "Total (pay at pickup)";
     });
   });
 

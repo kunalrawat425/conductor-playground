@@ -3,6 +3,7 @@ import "../../styles/tokens.css";
 import "../../styles/v2-components.css";
 import AppHeader from "./organisms/AppHeader.astro";
 import BottomNav from "./organisms/BottomNav.astro";
+import VercelAnalytics from "../VercelAnalytics.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/v2-components";
 
 interface Props {
@@ -19,7 +20,7 @@ interface Props {
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 const siteUrl = "https://www.relifish.store";
-const defaultDescription = "Order fresh fish from local Goa sellers. Pre-order tonight, pick up tomorrow morning.";
+const defaultDescription = "Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch — pomfret, surmai, bangda, prawns — pickup or delivery tomorrow morning.";
 const {
   title = brandName,
   description = defaultDescription,
@@ -78,6 +79,12 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body class:list={[!hideNav && "v2-has-bottom-nav"]}>
+    <!-- Web Push requires an active service worker; v1 registers from AppShell only -->
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      }
+    </script>
     <div class="v2-app">
       {!hideHeader && header && <AppHeader {...header} />}
       <main class="v2-main">
@@ -119,5 +126,6 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
     </script>
+    <VercelAnalytics />
   </body>
 </html>

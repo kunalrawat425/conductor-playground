@@ -51,6 +51,8 @@ export interface Seller {
   rating_avg: number;
   total_orders: number;
   has_delivery: boolean;
+  /** When false, buyers cannot choose pickup for this seller. Default true in DB. */
+  has_pickup?: boolean;
   delivery_rad: number | null;
   is_admin: boolean;
   flagged: boolean;
@@ -74,6 +76,10 @@ export interface Seller {
   preorder_days?: string[];
   /** Latest time buyer can place a pre-order for next day (HH:MM). Default 22:00. */
   preorder_cutoff_time?: string;
+  /** UPI ID shown to buyers on payment-pending orders. */
+  upi_id?: string | null;
+  /** Store cover photo URL. */
+  store_image_url?: string | null;
 }
 
 export interface FishListing {
@@ -95,10 +101,8 @@ export interface FishListing {
   oos_threshold?: number | null;
   /** Seller enables pre-orders for this listing independently of stock level */
   is_preorder_enabled?: boolean;
-  /** Minimum quantity buyer must pre-order */
-  preorder_min_qty?: number;
-  /** Maximum quantity per pre-order. null = uncapped. */
-  preorder_max_qty?: number | null;
+  /** When true, listing is hidden from same-day orders but visible in pre-order menu */
+  is_order_paused?: boolean;
   // joined
   seller?: Seller;
 }
@@ -513,7 +517,7 @@ export async function getSellersForSpecies(species: string) {
       "id, seller_id, pricing_options, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)"
     )
     .eq("species", species)
-    .eq("is_available", true)
+    .or("is_available.eq.true,is_preorder_enabled.eq.true")
     .order("created_at", { ascending: false });
 
   if (activeErr) throw activeErr;
@@ -592,7 +596,12 @@ export async function uploadFishPhoto(
     .from("fish-photos")
     .upload(path, file);
 
-  if (error) throw error;
+  if (error) {
+    if (/bucket.*not found|not found.*bucket/i.test(error.message)) {
+      throw new Error("Photo upload failed: 'fish-photos' storage bucket not found. Create a public bucket named 'fish-photos' in Supabase Dashboard → Storage.");
+    }
+    throw error;
+  }
 
   const {
     data: { publicUrl },
@@ -601,4 +610,26 @@ export async function uploadFishPhoto(
   });
 
   return publicUrl;
+}
+
+export async function uploadSellerStoreImage(
+  file: File,
+  sellerId: string
+): Promise<string> {
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `sellers/${sellerId}/store.${ext}`;
+
+  await supabase.storage.from("fish-photos").remove([path]);
+  const { error } = await supabase.storage
+    .from("fish-photos")
+    .upload(path, file, { upsert: true });
+
+  if (error) {
+    if (/bucket.*not found|not found.*bucket/i.test(error.message)) {
+      throw new Error("Photo upload failed: 'fish-photos' storage bucket not found. Create a public bucket named 'fish-photos' in Supabase Dashboard → Storage.");
+    }
+    throw error;
+  }
+
+  return supabase.storage.from("fish-photos").getPublicUrl(path).data.publicUrl;
 }

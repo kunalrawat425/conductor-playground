@@ -16,6 +16,7 @@ import {
   pricingOptionsUniformUnit,
   formatBundleSizeLead,
   formatPriceOptionDropdownLabel,
+  formatBuyerMenuUnitSuffix,
 } from "../../src/lib/listing-pricing";
 
 describe("canonicalPricingOptionsFromPayload", () => {
@@ -253,6 +254,21 @@ describe("menu bundle labels", () => {
     expect(s).toContain("3 pieces");
     expect(s).toContain("₹150");
     expect(s).toContain("Large");
+  });
+});
+
+describe("formatBuyerMenuUnitSuffix", () => {
+  it("piece per-base → /pc", () => {
+    expect(formatBuyerMenuUnitSuffix({ id: "a", label: "A", price: 10, unit: "piece", bundle_size: 1 })).toBe("/pc");
+  });
+  it("piece pack → /3pc", () => {
+    expect(formatBuyerMenuUnitSuffix({ id: "a", label: "A", price: 300, unit: "piece", bundle_size: 3 })).toBe("/3pc");
+  });
+  it("kg per-base → /kg", () => {
+    expect(formatBuyerMenuUnitSuffix({ id: "a", label: "A", price: 400, unit: "kg", bundle_size: 1 })).toBe("/kg");
+  });
+  it("kg fixed weight → /nkg", () => {
+    expect(formatBuyerMenuUnitSuffix({ id: "a", label: "A", price: 200, unit: "kg", bundle_size: 0.5 })).toBe("/0.5kg");
   });
 });
 

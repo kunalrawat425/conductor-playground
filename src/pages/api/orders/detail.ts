@@ -25,8 +25,8 @@ export const GET: APIRoute = async ({ url }) => {
       .from("orders")
       .select(`
         *,
-        listing:fish_listings ( id, species, photo_url, pricing_options,
-          seller:sellers ( id, name, phone, location, location_name, opens_at, closes_at )
+        listing:fish_listings ( id, species, photo_url, pricing_options, is_preorder_enabled,
+          seller:sellers ( id, name, phone, location, location_name, opens_at, closes_at, upi_id )
         )
       `)
       .eq("id", id)
@@ -57,13 +57,29 @@ export const GET: APIRoute = async ({ url }) => {
 
     const seller = order.listing?.seller || null;
 
+    const { data: feedback } = await sb
+      .from("order_feedback")
+      .select("rating, feedback, created_at, updated_at")
+      .eq("order_id", id)
+      .eq("buyer_id", buyer_id)
+      .maybeSingle();
+
     return new Response(
       JSON.stringify({
         order: {
           ...order,
+          buyer_feedback: feedback || null,
           seller,
           address,
-          listing: order.listing ? { species: order.listing.species, photo_url: order.listing.photo_url } : null,
+          listing: order.listing
+            ? {
+                species: order.listing.species,
+                photo_url: order.listing.photo_url,
+                is_preorder_enabled: (order.listing as any).is_preorder_enabled === true,
+                pricing_options: (order.listing as any).pricing_options || [],
+                seller_id: (order.listing as any).seller?.id || null,
+              }
+            : null,
         },
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }

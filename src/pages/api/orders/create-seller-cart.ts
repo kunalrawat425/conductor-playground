@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
-import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { capitalizeFishName, orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import type { OosPreorderLinePayload, StandardOrderLinePayload } from "../../../lib/server/resolve-listing-order-line";
 
@@ -12,18 +13,6 @@ export const prerender = false;
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const resendApiKey = import.meta.env.RESEND_API_KEY || "";
-
-function isSellerCurrentlyOpen(opensAt: string | null, closesAt: string | null): boolean {
-  if (!opensAt || !closesAt) return true;
-  const now = new Date();
-  const current = now.getHours() * 60 + now.getMinutes();
-  const [oh, om] = opensAt.split(":").map(Number);
-  const [ch, cm] = closesAt.split(":").map(Number);
-  const open = oh * 60 + (om || 0);
-  const close = ch * 60 + (cm || 0);
-  if (close > open) return current >= open && current < close;
-  return current >= open || current < close;
-}
 
 type CartLineInput = {
   listing_id: string;
@@ -93,7 +82,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const { data: seller } = await supabase
       .from("sellers")
       .select(
-        "opens_at, closes_at, accepts_preorder, has_delivery, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots"
+        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots"
       )
       .eq("id", clientSellerId)
       .single();
@@ -116,13 +105,12 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (order_type === "delivery" && !seller?.has_delivery) {
       return new Response(JSON.stringify({ error: "This seller does not offer delivery" }), { status: 400 });
     }
-
-    let status: "pending" | "pre_order" | "scheduled" = "pending";
-    if (scheduled_for) {
-      status = "scheduled";
-    } else if (seller && !isSellerCurrentlyOpen(seller.opens_at, seller.closes_at)) {
-      status = "pre_order";
+    if (order_type === "pickup" && seller?.has_pickup === false) {
+      return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
     }
+
+    // Pay-first: same-day and scheduled slots both start as pending_payment until proof is uploaded.
+    const status: "pending_payment" = "pending_payment";
 
     const orders: unknown[] = [];
 
@@ -142,7 +130,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             total_price: line.total_price,
             delivery_fee: 0,
             platform_fee: 0,
-            status: "pre_order",
+            // Pre-orders always require payment proof upload first.
+            status: "pending_payment",
             order_type,
             payment_type: "cod",
             paid_amount: amountDue,
@@ -173,10 +162,25 @@ export const POST: APIRoute = async ({ request, url }) => {
               quantity_unit: line.quantity_unit,
               buyer_phone,
               scheduled_for: scheduled_for || null,
+              order_id: preOrder.id,
             }),
           });
         } catch {
           /* non-blocking */
+        }
+
+        if (preOrder?.id) {
+          try {
+            await sendBuyerOrderPush({
+              buyer_id: buyer_id || null,
+              buyer_phone,
+              status: "placed",
+              species: line.species || "Fish",
+              order_id: preOrder.id,
+            });
+          } catch {
+            /* non-blocking */
+          }
         }
 
         if (resendApiKey && preOrder) {
@@ -188,7 +192,7 @@ export const POST: APIRoute = async ({ request, url }) => {
               quantity_unit: line.quantity_unit,
               total_price: line.total_price,
               delivery_fee: 0,
-              statusLabel: "Pre-order Placed",
+              statusLabel: "Pre-order placed (payment pending)",
               scheduled_for,
               buyer_id,
               buyer_phone,
@@ -245,15 +249,33 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity_unit: line.quantity_unit,
             buyer_phone,
             scheduled_for: scheduled_for || null,
+            order_id: fetchedOrder.id,
           }),
         });
       } catch {
         /* non-blocking */
       }
 
+      if (fetchedOrder?.id && (fetchedOrder.buyer_id || buyer_phone)) {
+        try {
+          const st = String(fetchedOrder.status || "") === "pending_payment" ? "placed" : "pending";
+          await sendBuyerOrderPush({
+            buyer_id: fetchedOrder.buyer_id,
+            buyer_phone,
+            status: st,
+            species: line.species || "Fish",
+            order_id: fetchedOrder.id,
+          });
+        } catch {
+          /* non-blocking */
+        }
+      }
+
       if (resendApiKey && fetchedOrder) {
         const stLabel =
-          status === "scheduled" ? "Order Scheduled 🗓️" : status === "pre_order" ? "Pre-order Placed" : "Order Placed";
+          scheduled_for
+            ? "Pickup scheduled — upload payment proof 🗓️"
+            : "Order placed — upload payment proof";
         try {
           await sendCartOrderEmail(supabase, resendApiKey, {
             order: fetchedOrder,
@@ -313,6 +335,7 @@ async function sendCartOrderEmail(
     orderId: args.order?.id,
     scheduled_for: scheduled_for || null,
   };
+  const speciesForEmail = capitalizeFishName(species || "Fish");
   if (buyer_id) {
     const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
     if (buyer?.email) {
@@ -322,7 +345,7 @@ async function sendCartOrderEmail(
         body: JSON.stringify({
           from: "Relifish <noreply@relifish.store>",
           to: buyer.email,
-          subject: `${statusLabel} — ${species || "Fish"}`,
+          subject: `${statusLabel} — ${speciesForEmail}`,
           html: orderEmailBuyer(emailArgs),
         }),
       });
@@ -336,7 +359,7 @@ async function sendCartOrderEmail(
       body: JSON.stringify({
         from: "Relifish <noreply@relifish.store>",
         to: sellerData.email,
-        subject: `New Order: ${species || "Fish"}`,
+        subject: `New Order: ${speciesForEmail}`,
         html: orderEmailSeller(emailArgs),
       }),
     });

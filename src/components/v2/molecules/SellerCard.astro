@@ -58,15 +58,30 @@ const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "ind
 
   {topItems.length > 0 && (
     <div class="v2-sc-menu">
-      {topItems.slice(0, 4).map((it) => (
-        <div class="v2-sc-chip">
-          <span class="v2-sc-m-emoji" aria-hidden="true">{it.emoji}</span>
-          <div>
-            <div class="v2-sc-m-name">{it.name}</div>
-            <div class="v2-sc-m-price">₹{it.price}/{it.unit}</div>
-          </div>
-        </div>
-      ))}
+      {topItems.length <= 2
+        ? topItems.map((it) => (
+            <div class="v2-sc-chip">
+              <span class="v2-sc-m-emoji" aria-hidden="true">{it.emoji}</span>
+              <div>
+                <div class="v2-sc-m-name">{it.name}</div>
+                <div class="v2-sc-m-price">₹{it.price}/{it.unit}</div>
+              </div>
+            </div>
+          ))
+        : (
+            <>
+              <div class="v2-sc-chip">
+                <span class="v2-sc-m-emoji" aria-hidden="true">{topItems[0].emoji}</span>
+                <div>
+                  <div class="v2-sc-m-name">{topItems[0].name}</div>
+                  <div class="v2-sc-m-price">₹{topItems[0].price}/{topItems[0].unit}</div>
+                </div>
+              </div>
+              <div class="v2-sc-chip v2-sc-chip-more">
+                <span class="v2-sc-m-more">+{topItems.length - 1}</span>
+              </div>
+            </>
+          )}
     </div>
   )}
 

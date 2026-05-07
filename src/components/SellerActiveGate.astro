@@ -18,11 +18,15 @@
     const active = seller.is_active !== false;
 
     if (!active) {
-      const allowed = path === "/dashboard/pending" || path.startsWith("/dashboard/listings");
+      const allowed =
+        path === "/dashboard/pending" ||
+        path.startsWith("/dashboard/listings") ||
+        path === "/dashboard/pending" ||
+        path.startsWith("/dashboard/listings");
       if (!allowed) {
         window.location.replace("/dashboard/pending");
       }
-    } else if (path === "/dashboard/pending") {
+    } else if (path === "/dashboard/pending" || path === "/dashboard/pending") {
       window.location.replace("/dashboard/orders");
     }
   } catch {
