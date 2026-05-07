@@ -19,7 +19,7 @@ const isPage = variant === "page";
     {isPage && backHref ? (
       <a href={backHref} class="v2-back" aria-label="Back">←</a>
     ) : (
-      <a href="/v2" class="v2-logo">{isPreorder ? "🌙 Relifish" : "🐟 Relifish"}</a>
+      <a href="/" class="v2-logo">{isPreorder ? "🌙 Relifish" : "🐟 Relifish"}</a>
     )}
 
     <div class:list={["v2-loc-wrap", !isPage && "v2-loc-tappable"]} id={isPage ? undefined : "v2-location-trigger"}>
@@ -47,7 +47,7 @@ const isPage = variant === "page";
         {cartCount > 0 && <span class="v2-cart-dot">{cartCount}</span>}
       </a>
     ) : (
-      <a href="/v2/me" class="v2-icon-btn v2-profile" aria-label="Account">👤</a>
+      <a href="/me" class="v2-icon-btn v2-profile" aria-label="Account">👤</a>
     )}
   </div>
 

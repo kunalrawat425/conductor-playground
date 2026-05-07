@@ -24,13 +24,13 @@ export const GET: APIRoute = async () => {
 
   const urls: { loc: string; changefreq: string; priority: string }[] = [
     // Use final destination URLs (no 302 chains)
-    { loc: "/v2", changefreq: "daily", priority: "1.0" },
-    { loc: "/v2/search", changefreq: "weekly", priority: "0.6" },
+    { loc: "/", changefreq: "daily", priority: "1.0" },
+    { loc: "/search", changefreq: "weekly", priority: "0.6" },
   ];
 
   for (const seller of sellers || []) {
     urls.push({
-      loc: `/v2/seller/${seller.id}`,
+      loc: `/seller/${seller.id}`,
       changefreq: "daily",
       priority: "0.8",
     });
@@ -38,7 +38,7 @@ export const GET: APIRoute = async () => {
 
   for (const sp of uniqueSpecies) {
     urls.push({
-      loc: `/v2/preorder/${encodeURIComponent(sp)}`,
+      loc: `/preorder/${encodeURIComponent(sp)}`,
       changefreq: "daily",
       priority: "0.7",
     });

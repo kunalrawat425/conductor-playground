@@ -97,9 +97,9 @@ export const POST: APIRoute = async ({ request }) => {
       title = scheduled_for ? "New Scheduled Order! 🗓️" : "New Order!";
     }
 
-    let dashboardUrl = absoluteUrl("/v2/dashboard/orders");
+    let dashboardUrl = absoluteUrl("/dashboard/orders");
     if (typeof order_id === "string" && /^[0-9a-f-]{36}$/i.test(order_id.trim())) {
-      dashboardUrl = absoluteUrl(`/v2/dashboard/orders?order=${encodeURIComponent(order_id.trim())}`);
+      dashboardUrl = absoluteUrl(`/dashboard/orders?order=${encodeURIComponent(order_id.trim())}`);
     }
 
     try {
