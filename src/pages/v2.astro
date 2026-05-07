@@ -15,8 +15,8 @@ const categories = [
 ];
 ---
 <AppShellV2
-  title="Relifish V2 — Fresh Fish, Direct from Sellers"
-  description="V2 preview. Pre-order tomorrow's catch from local Mumbai fish sellers."
+  title="Fresh Fish Delivery Mumbai — Order from Local Sellers | Relifish"
+  description="Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch — pomfret, surmai, bangda, prawns — delivered or pickup tomorrow morning."
   needsMap={true}
   header={{
     locationLabel: "Set location",
@@ -26,7 +26,45 @@ const categories = [
     cartCount: 0,
   }}
   nav={{ active: "home" }}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.relifish.store/#organization",
+        "name": "Relifish",
+        "url": "https://www.relifish.store",
+        "logo": "https://www.relifish.store/icon-192.svg",
+        "description": "Mumbai's fresh fish marketplace — order directly from local sellers, pre-order tonight's catch for morning pickup or delivery.",
+        "areaServed": { "@type": "City", "name": "Mumbai" },
+        "contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "availableLanguage": ["English", "Marathi"] }
+      },
+      {
+        "@type": "LocalBusiness",
+        "@id": "https://www.relifish.store/#localbusiness",
+        "name": "Relifish",
+        "url": "https://www.relifish.store",
+        "description": "Fresh fish marketplace connecting Mumbai buyers directly with local fish sellers. Pre-order pomfret, surmai, bangda, prawns and more.",
+        "image": "https://www.relifish.store/og-image.png",
+        "priceRange": "₹₹",
+        "servesCuisine": "Seafood",
+        "areaServed": { "@type": "City", "name": "Mumbai" },
+        "hasMap": "https://www.relifish.store/v2"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.relifish.store/#website",
+        "name": "Relifish",
+        "url": "https://www.relifish.store",
+        "potentialAction": { "@type": "SearchAction", "target": "https://www.relifish.store/v2/search?q={search_term_string}", "query-input": "required name=search_term_string" }
+      }
+    ]
+  }}
 >
+  <!-- SEO H1 — visually hidden on app, present for crawlers -->
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
+    Fresh Fish Delivery Mumbai — Order from Local Sellers
+  </h1>
   <Toast />
   <LocationPickerSheet />
 

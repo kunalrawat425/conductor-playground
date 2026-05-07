@@ -128,10 +128,27 @@ const tags = [
 ].filter(Boolean) as string[];
 ---
 <AppShellV2
-  title={`${sellerName} · ${brandName}`}
-  description={`Order fresh fish from ${sellerName} in ${sellerLocation}.`}
+  title={`${sellerName} — Fresh Fish${sellerLocation ? ` in ${sellerLocation}` : ''} | Relifish`}
+  description={`Buy fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ''}. Pre-order pomfret, surmai, bangda, prawns and more — pickup or delivery.`}
   hideHeader={true}
   nav={{ active: "home" }}
+  jsonLd={seller && !notFound ? {
+    "@context": "https://schema.org",
+    "@type": "FoodEstablishment",
+    "name": sellerName,
+    "description": `Fresh fish seller in ${sellerLocation || "Mumbai"}. Pre-order directly.`,
+    "url": `https://www.relifish.store/v2/seller/${id}`,
+    "image": seller.store_image_url || "https://www.relifish.store/og-image.png",
+    "priceRange": "₹₹",
+    "servesCuisine": "Seafood",
+    "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressCountry": "IN" },
+    "openingHours": seller.opens_at && seller.closes_at ? `Mo-Su ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}` : undefined,
+    "aggregateRating": seller.rating_avg && seller.total_orders > 0 ? {
+      "@type": "AggregateRating",
+      "ratingValue": seller.rating_avg,
+      "reviewCount": seller.total_orders
+    } : undefined
+  } : undefined}
 >
   <Toast />
   <Modal />
