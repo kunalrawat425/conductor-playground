@@ -23,14 +23,14 @@ export const GET: APIRoute = async () => {
   const uniqueSpecies = [...new Set((species || []).map((s) => s.species))];
 
   const urls: { loc: string; changefreq: string; priority: string }[] = [
-    { loc: "/", changefreq: "daily", priority: "1.0" },
-    { loc: "/buyer-banner.html", changefreq: "weekly", priority: "0.7" },
-    { loc: "/seller-banner.html", changefreq: "weekly", priority: "0.7" },
+    // Use final destination URLs (no 302 chains)
+    { loc: "/v2", changefreq: "daily", priority: "1.0" },
+    { loc: "/v2/search", changefreq: "weekly", priority: "0.6" },
   ];
 
   for (const seller of sellers || []) {
     urls.push({
-      loc: `/seller/${seller.id}`,
+      loc: `/v2/seller/${seller.id}`,
       changefreq: "daily",
       priority: "0.8",
     });
@@ -38,9 +38,9 @@ export const GET: APIRoute = async () => {
 
   for (const sp of uniqueSpecies) {
     urls.push({
-      loc: `/preorder/${encodeURIComponent(sp)}`,
+      loc: `/v2/preorder/${encodeURIComponent(sp)}`,
       changefreq: "daily",
-      priority: "0.6",
+      priority: "0.7",
     });
   }
 
