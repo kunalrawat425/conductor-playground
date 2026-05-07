@@ -7,6 +7,18 @@ export function buyerOrderPushNotification(
   final_price?: number | null
 ): { title: string; body: string } {
   const messages: Record<string, { title: string; body: string }> = {
+    placed: {
+      title: "Order placed",
+      body: species
+        ? `Open Relifish to upload UPI payment proof for your ${species} order.`
+        : "Open Relifish to upload payment proof for your order.",
+    },
+    payment_verified: {
+      title: "Payment verified",
+      body: species
+        ? `The seller verified your UPI payment for ${species}. Check your order for next steps.`
+        : "Your payment was verified. Check your order for next steps.",
+    },
     confirmed: {
       title: "Order Confirmed!",
       body: species
@@ -52,6 +64,24 @@ export function buyerOrderPushNotification(
     pending: {
       title: "Order received",
       body: species ? `Your ${species} order is pending seller action` : "Your order is pending seller action",
+    },
+    pending_payment: {
+      title: "Payment proof sent",
+      body: species
+        ? `We received your UPI screenshot for ${species}. The seller will verify shortly.`
+        : "We received your payment screenshot. The seller will verify shortly.",
+    },
+    payment_required: {
+      title: "Payment needed",
+      body: species ? `Complete payment for your ${species} order` : "Complete payment for your order",
+    },
+    ready_for_pickup: {
+      title: "Ready for pickup",
+      body: species ? `Your ${species} is ready for pickup` : "Your order is ready for pickup",
+    },
+    out_for_delivery: {
+      title: "Out for delivery",
+      body: species ? `Your ${species} order is on the way` : "Your order is out for delivery",
     },
     scheduled: {
       title: "Order Scheduled! 🗓️",

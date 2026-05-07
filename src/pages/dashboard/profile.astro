@@ -1,4 +1,532 @@
 ---
 export const prerender = false;
-return Astro.redirect("/v2/dashboard/profile", 302);
+import AppShellV2 from "../../components/v2/AppShellV2.astro";
+import Toast from "../../components/v2/atoms/Toast.astro";
+import Input from "../../components/v2/atoms/Input.astro";
 ---
+<style is:global>
+  .v2-day-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font: 600 12px Inter;
+    background: var(--v2-bg-3);
+    color: var(--v2-ink-2);
+    border: 1.5px solid var(--v2-border);
+    user-select: none;
+    transition: background .1s, color .1s, border-color .1s;
+  }
+  .v2-day-pill-on {
+    background: var(--v2-brand-l);
+    color: var(--v2-brand);
+    border-color: var(--v2-brand);
+  }
+</style>
+
+<AppShellV2
+  title="Profile · Seller Dashboard"
+  description="Edit your seller profile"
+  header={{ variant: "page", title: "My profile", backHref: "/dashboard/orders" }}
+  nav={{ active: "account", mode: "seller" }}
+>
+  <Toast />
+
+  <div id="v2-profile-loading" style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 12px Inter;">
+    <span class="v2-spinner v2-spinner-md"></span>
+    <div style="margin-top:8px;">Loading profile...</div>
+  </div>
+
+  <form id="v2-profile-form" style="display:none;padding:16px;">
+    <Input id="p-name" name="name" label="Business name" required={true} />
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">📍 Location</h3>
+    <Input id="p-location" name="location_name" label="Area / Neighborhood" />
+    <Input id="p-location-full" name="location" label="Full address / landmark" />
+    <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:16px;">
+      <div id="p-location-status" style="font:600 13px Inter;color:var(--v2-ink);margin-bottom:10px;">—</div>
+      <button type="button" id="p-use-location" class="v2-btn v2-btn-secondary v2-btn-sm v2-btn-full">
+        📍 Use my current location
+      </button>
+      <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:8px;">Sets your GPS coordinates so buyers can see distance</div>
+    </div>
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Owner contact</h3>
+    <div style="display:flex;gap:12px;">
+      <div style="flex:1;"><Input id="p-first-name" name="first_name" label="First name" /></div>
+      <div style="flex:1;"><Input id="p-last-name" name="last_name" label="Last name" /></div>
+    </div>
+    <Input id="p-email" name="email" label="Email (for order notifications)" type="email" />
+    <div id="p-email-verify-row" style="display:flex;align-items:center;gap:8px;margin:-8px 0 16px;">
+      <span id="p-email-status" style="font:600 11px Inter;"></span>
+      <button type="button" id="p-email-verify-btn" style="display:none;background:none;border:1px solid var(--v2-brand);color:var(--v2-brand);font:600 11px Inter;padding:4px 12px;border-radius:20px;cursor:pointer;">Send verification</button>
+    </div>
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Operating hours</h3>
+    <div style="display:flex;gap:12px;">
+      <div style="flex:1;"><Input id="p-opens" name="opens_at" label="Opens" type="time" /></div>
+      <div style="flex:1;"><Input id="p-closes" name="closes_at" label="Closes" type="time" /></div>
+    </div>
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Store photo</h3>
+    <div id="p-store-photo-section" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px;">
+      <div id="p-store-preview" style="display:none;position:relative;width:100%;max-width:240px;">
+        <img id="p-store-preview-img" src="" alt="Store photo" style="width:100%;border-radius:var(--v2-radius-sm);object-fit:cover;max-height:140px;" />
+        <button type="button" id="p-store-remove" style="position:absolute;top:6px;right:6px;background:#DC2626;color:#fff;border:none;border-radius:50%;width:24px;height:24px;font:700 14px Inter;cursor:pointer;line-height:24px;text-align:center;">×</button>
+      </div>
+      <label style="cursor:pointer;">
+        <div id="p-store-drop" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;text-align:center;font:500 12px Inter;color:var(--v2-ink-3);">📷 Upload store photo (max 5 MB)</div>
+        <input type="file" id="p-store-file" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+      </label>
+      <div id="p-store-error" style="display:none;font:500 11px Inter;color:var(--v2-red);"></div>
+    </div>
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Payment</h3>
+    <Input id="p-upi-id" name="upi_id" label="UPI ID (shown to buyers on payment page)" type="text" placeholder="e.g. 9876543210@upi or name@bank" />
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Order settings</h3>
+    <Input id="p-min-order" name="min_order_amount" label="Minimum order (₹)" type="number" />
+
+    <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:6px;">Order days</div>
+    <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Days you're open for same-day orders</div>
+    <div id="p-open-days" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:4px;">
+      <input type="checkbox" id="p-preorder" />
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Accept pre-orders 🌙</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyers can reserve tomorrow's catch tonight</div>
+      </div>
+    </label>
+    <div id="p-preorder-schedule" style="display:none;margin-left:16px;padding:12px;border-left:2px solid var(--v2-border);margin-bottom:12px;background:var(--v2-bg-2);border-radius:0 var(--v2-radius-sm) var(--v2-radius-sm) 0;">
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-order days <span style="font-weight:400;color:var(--v2-ink-3);">(which days buyers can pre-order for next-day catch)</span></div>
+      <div id="p-preorder-days" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px;"></div>
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Cutoff time <span style="font-weight:400;color:var(--v2-ink-3);">(no pre-orders after this time)</span></div>
+      <input type="time" id="p-preorder-cutoff" value="22:00" style="padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;" />
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+      <input type="checkbox" id="p-pickup" />
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Offer pickup 🏪</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyers collect orders at your location</div>
+      </div>
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+      <input type="checkbox" id="p-delivery" />
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Offer delivery 🚲</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Deliver to buyers within your radius</div>
+      </div>
+    </label>
+
+    <div id="p-delivery-settings" style="display:none;margin-left:16px;padding-left:12px;border-left:2px solid var(--v2-border);">
+      <Input id="p-delivery-rad" name="delivery_rad" label="Delivery radius (km)" type="number" />
+      <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+        <input type="checkbox" id="p-delivery-fee-enabled" />
+        <div>
+          <div style="font:700 13px Inter;color:var(--v2-ink);">Charge delivery fee 💰</div>
+          <div style="font:400 11px Inter;color:var(--v2-ink-3);">Charge buyers for delivery orders</div>
+        </div>
+      </label>
+      <div id="p-fee-settings" style="display:none;margin-left:16px;padding-left:12px;border-left:2px solid var(--v2-border);">
+        <Input id="p-delivery-fee" name="delivery_fee_amount" label="Delivery fee (₹)" type="number" />
+        <Input id="p-free-above" name="free_delivery_above" label="Free delivery above (₹)" type="number" />
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);margin:-8px 0 12px;">Leave 0 for no free delivery threshold</div>
+      </div>
+    </div>
+
+    <!-- Scheduled pickup — hidden for now
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Pickup settings</h3>
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+      <input type="checkbox" id="p-schedule-pickup" />
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Scheduled pickup slots 🗓️</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Let buyers choose a pickup time slot</div>
+      </div>
+    </label>
+    -->
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">🔔 Notifications</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Order notifications</div>
+        <div id="p-push-status" style="font:400 11px Inter;color:var(--v2-ink-3);">Get notified when orders come in</div>
+      </div>
+      <button type="button" id="p-push-toggle" style="background:var(--v2-bg-2);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 14px;font-size:20px;min-width:48px;min-height:44px;cursor:pointer;">🔕</button>
+    </div>
+
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Your phone</h3>
+    <div style="background:var(--v2-bg-2);padding:14px;border-radius:var(--v2-radius-sm);font:600 14px Inter;color:var(--v2-ink);margin-bottom:12px;">
+      <span id="p-phone">—</span>
+      <span style="font:400 11px Inter;color:var(--v2-ink-3);margin-left:8px;">(set at signup)</span>
+    </div>
+
+    <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id="p-save" style="margin-top:16px;">
+      Save changes
+    </button>
+
+    <button type="button" id="p-logout" style="width:100%;margin-top:16px;background:var(--v2-bg);border:1px solid var(--v2-red-l);color:var(--v2-red);padding:14px;border-radius:var(--v2-radius);font:700 13px Inter;cursor:pointer;">
+      Log out
+    </button>
+  </form>
+</AppShellV2>
+
+<script>
+  import { supabase } from "../../lib/supabase";
+  import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
+
+  function getSellerId() { try { return localStorage.getItem("zepto_seller_id"); } catch { return null; } }
+  const sellerId = getSellerId();
+  if (!sellerId) {
+    location.href = "/dashboard/login";
+  }
+
+  async function load() {
+    if (!sellerId) return;
+    const loading = document.getElementById("v2-profile-loading")!;
+    const form = document.getElementById("v2-profile-form") as HTMLFormElement;
+    try {
+      const { data: seller } = await supabase.from("sellers").select("*").eq("id", sellerId).single();
+      loading.style.display = "none";
+      form.style.display = "block";
+      (document.getElementById("p-name") as HTMLInputElement).value = seller?.name || "";
+      (document.getElementById("p-location") as HTMLInputElement).value = seller?.location_name || "";
+      (document.getElementById("p-location-full") as HTMLInputElement).value = seller?.location || "";
+      (document.getElementById("p-first-name") as HTMLInputElement).value = seller?.first_name || "";
+      (document.getElementById("p-last-name") as HTMLInputElement).value = seller?.last_name || "";
+      (document.getElementById("p-email") as HTMLInputElement).value = seller?.email || "";
+      (document.getElementById("p-opens") as HTMLInputElement).value = seller?.opens_at || "05:00";
+      (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
+      (document.getElementById("p-upi-id") as HTMLInputElement).value = seller?.upi_id || "";
+      // Store photo
+      if (seller?.store_image_url) {
+        const preview = document.getElementById("p-store-preview") as HTMLElement;
+        const img = document.getElementById("p-store-preview-img") as HTMLImageElement;
+        img.src = seller.store_image_url;
+        preview.style.display = "block";
+        document.getElementById("p-store-drop")!.textContent = "📷 Replace store photo";
+      }
+      (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
+      (document.getElementById("p-preorder") as HTMLInputElement).checked = !!seller?.accepts_preorder;
+      // Day schedule
+      const allDays = ['mon','tue','wed','thu','fri','sat','sun'];
+      const dayLabels = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+      const openDays: string[] = seller?.open_days ?? allDays;
+      const preorderDays: string[] = seller?.preorder_days ?? [];
+      renderDayPills("p-open-days", allDays, dayLabels, openDays, "open");
+      renderDayPills("p-preorder-days", allDays, dayLabels, preorderDays, "preorder");
+      (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value = seller?.preorder_cutoff_time?.slice(0,5) || "22:00";
+      document.getElementById("p-preorder-schedule")!.style.display = seller?.accepts_preorder ? "block" : "none";
+      (document.getElementById("p-pickup") as HTMLInputElement).checked = seller?.has_pickup !== false;
+      (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
+      (document.getElementById("p-delivery-rad") as HTMLInputElement).value = String(seller?.delivery_rad || 5);
+      (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked = !!seller?.delivery_fee_enabled;
+      (document.getElementById("p-delivery-fee") as HTMLInputElement).value = String(seller?.delivery_fee_amount || 0);
+      (document.getElementById("p-free-above") as HTMLInputElement).value = String(seller?.free_delivery_above || 0);
+      // schedule_pickup_slots hidden for now
+      // (document.getElementById("p-schedule-pickup") as HTMLInputElement).checked = !!seller?.schedule_pickup_slots;
+      document.getElementById("p-phone")!.textContent = seller?.phone || "—";
+      // Show delivery sub-settings if delivery enabled
+      document.getElementById("p-delivery-settings")!.style.display = seller?.has_delivery ? "block" : "none";
+      // Show fee sub-settings if fee enabled
+      document.getElementById("p-fee-settings")!.style.display = seller?.delivery_fee_enabled ? "block" : "none";
+      // Location status
+      document.getElementById("p-location-status")!.textContent =
+        seller?.lat && seller?.lng ? "✅ Location set" : "❌ Not set — buyers can't see distance";
+      // Push status
+      try {
+        const pushActive = await isSellerPushSubscribed();
+        document.getElementById("p-push-toggle")!.textContent = pushActive ? "🔔" : "🔕";
+        document.getElementById("p-push-status")!.textContent = pushActive ? "Notifications are on" : "Get notified when orders come in";
+      } catch {};
+      // Email verification status
+      const emailStatus = document.getElementById("p-email-status")!;
+      const emailVerifyBtn = document.getElementById("p-email-verify-btn")!;
+      if (seller?.email && seller.email.trim()) {
+        if (seller.email_verified) {
+          emailStatus.textContent = "✅ Verified";
+          emailStatus.style.color = "var(--v2-green)";
+          emailVerifyBtn.style.display = "none";
+        } else {
+          emailStatus.textContent = "❌ Not verified";
+          emailStatus.style.color = "var(--v2-orange)";
+          emailVerifyBtn.style.display = "inline-block";
+        }
+      } else {
+        emailStatus.textContent = "";
+        emailVerifyBtn.style.display = "none";
+      }
+    } catch (err: any) {
+      loading.innerHTML = `<div style="color:var(--v2-red);">Failed: ${err.message}</div>`;
+    }
+  }
+
+  document.getElementById("v2-profile-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("p-save") as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    const updates: any = {
+      name: (document.getElementById("p-name") as HTMLInputElement).value.trim(),
+      location_name: (document.getElementById("p-location") as HTMLInputElement).value.trim(),
+      location: (document.getElementById("p-location-full") as HTMLInputElement).value.trim(),
+      first_name: (document.getElementById("p-first-name") as HTMLInputElement).value.trim(),
+      last_name: (document.getElementById("p-last-name") as HTMLInputElement).value.trim(),
+      email: (document.getElementById("p-email") as HTMLInputElement).value.trim(),
+      opens_at: (document.getElementById("p-opens") as HTMLInputElement).value,
+      closes_at: (document.getElementById("p-closes") as HTMLInputElement).value,
+      upi_id: (document.getElementById("p-upi-id") as HTMLInputElement).value.trim() || null,
+      min_order_amount: parseInt((document.getElementById("p-min-order") as HTMLInputElement).value) || 0,
+      accepts_preorder: (document.getElementById("p-preorder") as HTMLInputElement).checked,
+      open_days: getCheckedDays("open"),
+      preorder_days: getCheckedDays("preorder"),
+      preorder_cutoff_time: (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value || "22:00",
+      has_pickup: (document.getElementById("p-pickup") as HTMLInputElement).checked,
+      has_delivery: (document.getElementById("p-delivery") as HTMLInputElement).checked,
+      delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
+      delivery_fee_enabled: (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked,
+      delivery_fee_amount: parseFloat((document.getElementById("p-delivery-fee") as HTMLInputElement).value) || 0,
+      free_delivery_above: parseFloat((document.getElementById("p-free-above") as HTMLInputElement).value) || 0,
+      // schedule_pickup_slots: hidden for now
+    };
+
+    // Validation — allow cross-midnight hours (e.g. 17:00 → 01:58 is valid for fish markets).
+    // Only reject if both are exactly the same.
+    function timeToMin(t: string): number {
+      const [h, m] = String(t || "").split(":").map(Number);
+      return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+    }
+    if (timeToMin(updates.opens_at) === timeToMin(updates.closes_at)) {
+      (window as any).v2Toast?.("error", "Invalid hours", "Open and close time can't be the same");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+    if (!updates.name) {
+      (window as any).v2Toast?.("error", "Name required", "Business name is required");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+    if (updates.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.email)) {
+      (window as any).v2Toast?.("error", "Invalid email", "Use a valid email address");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+    if (!updates.has_pickup && !updates.has_delivery) {
+      (window as any).v2Toast?.("error", "Pickup or delivery required", "Enable at least pickup or delivery so buyers can get orders");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+
+    try {
+      // Upload store photo if a new file was selected
+      const storeFile = (document.getElementById("p-store-file") as HTMLInputElement)?.files?.[0];
+      if (storeFile) {
+        if (storeFile.size > 5 * 1024 * 1024) {
+          (window as any).v2Toast?.("error", "File too large", "Store photo must be under 5 MB");
+          btn.disabled = false; btn.textContent = "Save changes"; return;
+        }
+        const storeErrEl = document.getElementById("p-store-error") as HTMLElement;
+        const form = new FormData();
+        form.append("seller_id", sellerId!);
+        form.append("file", storeFile);
+        const upRes = await fetch("/api/seller/upload-store-photo", { method: "POST", body: form });
+        const upData = await upRes.json();
+        if (!upRes.ok) {
+          storeErrEl.textContent = upData.error || "Store photo upload failed";
+          storeErrEl.style.display = "block";
+          btn.disabled = false; btn.textContent = "Save changes"; return;
+        }
+        storeErrEl.style.display = "none";
+      }
+
+      const res = await fetch("/api/seller/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seller_id: sellerId, updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      (window as any).v2Toast?.("success", "Profile saved", "Buyers see updated info");
+      btn.disabled = false; btn.textContent = "Save changes";
+      // Update email verify status (email change resets verified in DB)
+      const emailVal = updates.email;
+      const emailStatus = document.getElementById("p-email-status")!;
+      const emailVerifyBtn = document.getElementById("p-email-verify-btn")!;
+      if (emailVal) {
+        const verified = data.seller?.email_verified === true;
+        emailStatus.textContent = verified ? "✅ Verified" : "❌ Not verified";
+        emailStatus.style.color = verified ? "var(--v2-green)" : "var(--v2-orange)";
+        emailVerifyBtn.style.display = verified ? "none" : "inline-block";
+        emailVerifyBtn.disabled = false;
+        emailVerifyBtn.textContent = "Send verification";
+      } else {
+        emailStatus.textContent = "";
+        emailVerifyBtn.style.display = "none";
+      }
+    } catch (err: any) {
+      (window as any).v2Toast?.("error", "Save failed", err.message);
+      btn.disabled = false; btn.textContent = "Save changes";
+    }
+  });
+
+  // Day pill helpers
+  function renderDayPills(containerId: string, days: string[], labels: Record<string,string>, selected: string[], prefix: string) {
+    const el = document.getElementById(containerId)!;
+    el.innerHTML = days.map(d => {
+      const on = selected.includes(d);
+      return `<label style="cursor:pointer;">
+        <input type="checkbox" data-day-prefix="${prefix}" data-day="${d}" ${on ? 'checked' : ''} style="display:none;" />
+        <span class="v2-day-pill${on ? ' v2-day-pill-on' : ''}" data-day-prefix="${prefix}" data-day="${d}">${labels[d]}</span>
+      </label>`;
+    }).join("");
+    el.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener("change", () => {
+        const pill = el.querySelector(`span[data-day-prefix="${prefix}"][data-day="${(cb as HTMLInputElement).dataset.day}"]`);
+        if (pill) {
+          if ((cb as HTMLInputElement).checked) pill.classList.add("v2-day-pill-on");
+          else pill.classList.remove("v2-day-pill-on");
+        }
+      });
+    });
+  }
+  function getCheckedDays(prefix: string): string[] {
+    return Array.from(document.querySelectorAll(`input[data-day-prefix="${prefix}"]:checked`)).map((el: any) => el.dataset.day);
+  }
+
+  // Store photo file picker
+  document.getElementById("p-store-file")?.addEventListener("change", (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const drop = document.getElementById("p-store-drop")!;
+    const preview = document.getElementById("p-store-preview") as HTMLElement;
+    const img = document.getElementById("p-store-preview-img") as HTMLImageElement;
+    drop.textContent = file.name;
+    img.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  });
+  document.getElementById("p-store-remove")?.addEventListener("click", async () => {
+    if (!confirm("Remove store photo?")) return;
+    const form = new FormData();
+    form.append("seller_id", sellerId!);
+    form.append("remove", "1");
+    await fetch("/api/seller/upload-store-photo", { method: "POST", body: form });
+    (document.getElementById("p-store-preview") as HTMLElement).style.display = "none";
+    (document.getElementById("p-store-preview-img") as HTMLImageElement).src = "";
+    (document.getElementById("p-store-file") as HTMLInputElement).value = "";
+    document.getElementById("p-store-drop")!.textContent = "📷 Upload store photo (max 5 MB)";
+    (window as any).v2Toast?.("success", "Photo removed");
+  });
+
+  // Toggle preorder schedule sub-section
+  document.getElementById("p-preorder")?.addEventListener("change", (e) => {
+    document.getElementById("p-preorder-schedule")!.style.display = (e.target as HTMLInputElement).checked ? "block" : "none";
+  });
+
+  // Toggle delivery sub-settings visibility when checkbox changes
+  document.getElementById("p-delivery")?.addEventListener("change", (e) => {
+    const on = (e.target as HTMLInputElement).checked;
+    document.getElementById("p-delivery-settings")!.style.display = on ? "block" : "none";
+  });
+  // Toggle fee sub-settings visibility when fee checkbox changes
+  document.getElementById("p-delivery-fee-enabled")?.addEventListener("change", (e) => {
+    const on = (e.target as HTMLInputElement).checked;
+    document.getElementById("p-fee-settings")!.style.display = on ? "block" : "none";
+  });
+
+  // Geolocation — "Use my current location" button
+  document.getElementById("p-use-location")?.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      (window as any).v2Toast?.("error", "Not supported", "Geolocation not supported by your browser");
+      return;
+    }
+    const btn = document.getElementById("p-use-location") as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = "Getting location...";
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        try {
+          const res = await fetch("/api/seller/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ seller_id: sellerId, updates: { lat, lng } }),
+          });
+          if (!res.ok) throw new Error("Failed to save");
+          document.getElementById("p-location-status")!.textContent = "✅ Location set";
+          (window as any).v2Toast?.("success", "Location updated", "Buyers can now see distance");
+        } catch (err: any) {
+          (window as any).v2Toast?.("error", "Failed", err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "📍 Use my current location";
+        }
+      },
+      (err) => {
+        (window as any).v2Toast?.("error", "Location error", err.message);
+        btn.disabled = false;
+        btn.textContent = "📍 Use my current location";
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+
+  // Push notification toggle
+  document.getElementById("p-push-toggle")?.addEventListener("click", async () => {
+    const btn = document.getElementById("p-push-toggle") as HTMLButtonElement;
+    const statusEl = document.getElementById("p-push-status")!;
+    btn.disabled = true;
+    try {
+      const isSubscribed = await isSellerPushSubscribed();
+      if (isSubscribed) {
+        await unsubscribeSellerPush(sellerId!);
+        btn.textContent = "🔕";
+        statusEl.textContent = "Get notified when orders come in";
+        (window as any).v2Toast?.("success", "Notifications disabled");
+      } else {
+        const ok = await subscribeSellerPush(sellerId!);
+        if (ok) {
+          btn.textContent = "🔔";
+          statusEl.textContent = "Notifications are on";
+          (window as any).v2Toast?.("success", "Notifications enabled!", "You'll get alerts for new orders");
+        } else {
+          (window as any).v2Toast?.("error", "Permission denied", "Allow notifications in browser settings");
+        }
+      }
+    } catch (err: any) {
+      (window as any).v2Toast?.("error", "Failed", err.message || "Could not update notifications");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Email verify button
+  document.getElementById("p-email-verify-btn")?.addEventListener("click", async () => {
+    const email = (document.getElementById("p-email") as HTMLInputElement)?.value?.trim();
+    if (!email) { (window as any).v2Toast?.("error", "No email", "Enter email first"); return; }
+    const btn = document.getElementById("p-email-verify-btn") as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+    try {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "seller", id: sellerId, email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      (window as any).v2Toast?.("success", "Email sent", `Check ${email} for verification link`);
+      btn.textContent = "Sent ✓";
+    } catch (err: any) {
+      (window as any).v2Toast?.("error", "Failed", err.message);
+      btn.disabled = false;
+      btn.textContent = "Send verification";
+    }
+  });
+
+  // Logout
+  document.getElementById("p-logout")?.addEventListener("click", () => {
+    try {
+      localStorage.removeItem("zepto_seller_id");
+      localStorage.removeItem("zepto_seller_phone");
+    } catch {}
+    window.location.href = "/dashboard/login";
+  });
+
+  load();
+</script>

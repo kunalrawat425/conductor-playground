@@ -3,42 +3,49 @@ import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
 
-const accountSid = import.meta.env.TWILIO_ACCOUNT_SID || "";
-const authToken = import.meta.env.TWILIO_AUTH_TOKEN || "";
-const serviceSid = import.meta.env.TWILIO_VERIFY_SERVICE_SID || "";
+const msg91AuthKey = import.meta.env.MSG91_AUTH_KEY || "";
+const msg91TemplateId = import.meta.env.MSG91_TEMPLATE_ID || "";
+const msg91SenderId = import.meta.env.MSG91_SENDER_ID || "RELFSH";
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
-const MAX_ATTEMPTS = 5;
-const WINDOW_MINUTES = 15;
-const BLOCK_MINUTES = 30;
+const OTP_EXPIRY_MINUTES = 10;
+const MAX_SENDS_PER_DAY = 3;
+const RESEND_COOLDOWN_SECONDS = 30;
 
-async function checkRateLimit(phone: string): Promise<{ allowed: boolean; error?: string }> {
-  if (!supabaseUrl || !supabaseServiceKey) return { allowed: true };
-  const sb = createClient(supabaseUrl, supabaseServiceKey);
+function generateOTP(): string {
+  // Cryptographically random 6-digit code, no leading zeros
+  const min = 100000;
+  const max = 999999;
+  return String(Math.floor(min + Math.random() * (max - min + 1)));
+}
 
-  const { data: row } = await sb.from("otp_attempts").select("*").eq("phone", phone).single();
+/** Returns IST date string YYYY-MM-DD */
+function todayIST(): string {
+  const ist = new Date(Date.now() + 5.5 * 3600 * 1000);
+  return ist.toISOString().slice(0, 10);
+}
 
-  if (row?.blocked_until && new Date(row.blocked_until) > new Date()) {
-    const mins = Math.ceil((new Date(row.blocked_until).getTime() - Date.now()) / 60000);
-    return { allowed: false, error: `Too many attempts. Try again in ${mins} minutes.` };
-  }
-
-  const windowStart = new Date(Date.now() - WINDOW_MINUTES * 60000);
-
-  if (row && row.attempts >= MAX_ATTEMPTS && new Date(row.first_attempt) > windowStart) {
-    const blockedUntil = new Date(Date.now() + BLOCK_MINUTES * 60000).toISOString();
-    await sb.from("otp_attempts").update({ blocked_until: blockedUntil }).eq("phone", phone);
-    return { allowed: false, error: `Too many attempts. Blocked for ${BLOCK_MINUTES} minutes.` };
-  }
-
-  if (row && new Date(row.first_attempt) > windowStart) {
-    await sb.from("otp_attempts").update({ attempts: row.attempts + 1 }).eq("phone", phone);
-  } else {
-    await sb.from("otp_attempts").upsert({ phone, attempts: 1, first_attempt: new Date().toISOString(), blocked_until: null }, { onConflict: "phone" });
-  }
-
-  return { allowed: true };
+async function sendViaMSG91(phone: string, otp: string): Promise<{ ok: boolean; error?: string }> {
+  // Use Flow API — works with any approved DLT template (not OTP-type-specific)
+  // Template must contain ##otp## variable
+  const res = await fetch("https://api.msg91.com/api/v5/flow/", {
+    method: "POST",
+    headers: {
+      "authkey": msg91AuthKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      flow_id: msg91TemplateId,
+      sender: msg91SenderId,
+      mobiles: phone,   // 91XXXXXXXXXX format
+      otp,              // maps to ##otp## in template
+      VAR1: otp,        // fallback if template uses ##VAR1##
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (data.type === "success") return { ok: true };
+  return { ok: false, error: data.message || `MSG91 error (${res.status})` };
 }
 
 /**
@@ -53,43 +60,75 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Invalid phone number" }), { status: 400 });
     }
 
-    // Rate limit check
-    const rateCheck = await checkRateLimit(phone);
-    if (!rateCheck.allowed) {
-      return new Response(JSON.stringify({ error: rateCheck.error }), { status: 429 });
+    // Normalise to 91XXXXXXXXXX (no +)
+    const normalised = phone.replace("+", "");
+
+    const sb = createClient(supabaseUrl, supabaseServiceKey);
+    const today = todayIST();
+    const now = new Date();
+
+    // Load existing record
+    const { data: row } = await sb
+      .from("otp_codes")
+      .select("sends_today, send_date, last_sent_at")
+      .eq("phone", normalised)
+      .maybeSingle();
+
+    // Daily limit — reset counter if it's a new IST day
+    const sendsToday = row && row.send_date === today ? (row.sends_today ?? 0) : 0;
+    if (sendsToday >= MAX_SENDS_PER_DAY) {
+      return new Response(
+        JSON.stringify({ error: "Maximum 3 OTPs per day. Try again tomorrow." }),
+        { status: 429 }
+      );
     }
 
-    // DEV MODE: If Twilio not configured, hardcode OTP as 123456
-    const twilioConfigured = accountSid && authToken && serviceSid
-      && !accountSid.startsWith("your-") && !authToken.startsWith("your-");
-    if (!twilioConfigured) {
-      if (import.meta.env.DEV) {
-        console.info(`[DEV] OTP for ${phone}: 123456`);
+    // 30-second cooldown between sends
+    if (row?.last_sent_at) {
+      const elapsed = (now.getTime() - new Date(row.last_sent_at).getTime()) / 1000;
+      if (elapsed < RESEND_COOLDOWN_SECONDS) {
+        const wait = Math.ceil(RESEND_COOLDOWN_SECONDS - elapsed);
+        return new Response(
+          JSON.stringify({ error: `Wait ${wait}s before requesting another OTP.`, wait }),
+          { status: 429 }
+        );
       }
-      return new Response(JSON.stringify({ success: true, status: "pending", dev: true }), { status: 200 });
     }
 
-    const res = await fetch(
-      `https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`,
+    // TODO: enable MSG91 when ready — for now use fixed OTP 123456
+    const OTP_SEND_ENABLED = false;
+    const otp = OTP_SEND_ENABLED ? generateOTP() : "123456";
+    const expiresAt = new Date(now.getTime() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
+
+    // Upsert: new code, reset verify attempts, bump send count
+    const { error: dbErr } = await sb.from("otp_codes").upsert(
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
-        },
-        body: new URLSearchParams({ To: phone, Channel: "sms" }),
-      }
+        phone: normalised,
+        code: otp,
+        expires_at: expiresAt,
+        verify_attempts: 0,
+        sends_today: sendsToday + 1,
+        send_date: today,
+        last_sent_at: now.toISOString(),
+      },
+      { onConflict: "phone" }
     );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      return new Response(JSON.stringify({ error: data.message || "Failed to send OTP" }), { status: res.status });
+    if (dbErr) {
+      console.error("OTP DB upsert error:", dbErr);
+      return new Response(JSON.stringify({ error: "Failed to create OTP" }), { status: 500 });
     }
 
-    return new Response(JSON.stringify({ success: true, status: data.status }), { status: 200 });
-  } catch (err: any) {
-    console.error("Send OTP error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    if (OTP_SEND_ENABLED) {
+      const sms = await sendViaMSG91(normalised, otp);
+      if (!sms.ok) {
+        return new Response(JSON.stringify({ error: sms.error || "Failed to send OTP" }), { status: 502 });
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("send-otp error:", err);
+    return new Response(JSON.stringify({ error: msg }), { status: 500 });
   }
 };

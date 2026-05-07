@@ -59,6 +59,29 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    const touchesFulfillment =
+      Object.prototype.hasOwnProperty.call(updates, "has_pickup") ||
+      Object.prototype.hasOwnProperty.call(updates, "has_delivery");
+    if (touchesFulfillment) {
+      const { data: cur } = await supabase
+        .from("sellers")
+        .select("has_pickup, has_delivery")
+        .eq("id", seller_id)
+        .single();
+      const nextPickup =
+        updates.has_pickup !== undefined ? !!updates.has_pickup : cur?.has_pickup !== false;
+      const nextDelivery =
+        updates.has_delivery !== undefined ? !!updates.has_delivery : !!cur?.has_delivery;
+      if (!nextPickup && !nextDelivery) {
+        return new Response(
+          JSON.stringify({
+            error: "Enable at least pickup or delivery so buyers can receive orders.",
+          }),
+          { status: 400 }
+        );
+      }
+    }
+
     const { data, error } = await supabase
       .from("sellers")
       .update(updates)

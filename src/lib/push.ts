@@ -13,10 +13,19 @@ export async function subscribePush(): Promise<boolean> {
     const session = getSession();
     if (!session) return false;
 
+    await navigator.serviceWorker.register("/sw.js").catch(() => {});
+
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
 
     if (!subscription) {
+      if (typeof Notification !== "undefined") {
+        if (Notification.permission === "denied") return false;
+        if (Notification.permission === "default") {
+          const p = await Notification.requestPermission();
+          if (p !== "granted") return false;
+        }
+      }
       const vapidKey = (import.meta as any).env?.PUBLIC_VAPID_KEY;
       if (!vapidKey) {
         console.warn("VAPID public key not configured");
@@ -54,6 +63,9 @@ export async function subscribePush(): Promise<boolean> {
  * Unsubscribe from push notifications.
  */
 export async function unsubscribePush(): Promise<void> {
+  if ("serviceWorker" in navigator) {
+    await navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
   const registration = await navigator.serviceWorker?.ready;
   const subscription = await registration?.pushManager?.getSubscription();
   if (subscription) {
@@ -78,6 +90,7 @@ export async function unsubscribePush(): Promise<void> {
  */
 export async function isPushSubscribed(): Promise<boolean> {
   if (!("serviceWorker" in navigator)) return false;
+  await navigator.serviceWorker.register("/sw.js").catch(() => {});
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
   return !!subscription;

@@ -64,7 +64,7 @@ export async function resolveListingOrderLine(
 
   const { data: listing } = await supabase
     .from("fish_listings")
-    .select("pricing_options, seller_id, species, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold")
+    .select("pricing_options, seller_id, species, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold, is_preorder_enabled")
     .eq("id", listing_id)
     .single();
 
@@ -163,7 +163,8 @@ export async function resolveListingOrderLine(
   const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
   const speciesVal = (listing as { species?: string }).species ?? null;
 
-  if (!listing.is_available || availOk <= 0 || availOk < quantity) {
+  // Preorder-enabled listings are inventory-independent — always route to pre_order
+  if ((listing as any).is_preorder_enabled || !listing.is_available || availOk <= 0 || availOk < quantity) {
     if (scheduled_for) {
       const { data: schedSeller } = await supabase
         .from("sellers")

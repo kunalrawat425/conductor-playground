@@ -75,12 +75,13 @@ const { id = "v2-slot-picker", title = "Pickup time" } = Astro.props;
     }
     render();
 
-    window.v2ConfirmSlot = function() {
+    window.v2ConfirmSlot = function (sheetId) {
+      const sid = sheetId || id;
       if (!selectedSlot) return;
       document.dispatchEvent(new CustomEvent("v2-slot-confirmed", {
-        detail: { day: selectedDay, slot: selectedSlot }
+        detail: { day: selectedDay, slot: selectedSlot, sheetId: sid }
       }));
-      window.v2CloseSheet?.(id);
+      window.v2CloseSheet?.(sid);
     };
   }
 </script>

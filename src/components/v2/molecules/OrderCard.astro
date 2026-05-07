@@ -41,7 +41,7 @@ const acceptColor = isPreorder ? "#7C3AED" : "var(--v2-green)";
     <span class:list={["v2-oc-badge", badgeClass]}>{badgeText}</span>
   </div>
   <div class="v2-oc-items">{itemSummary}</div>
-  <div class="v2-oc-total">₹{total.toLocaleString("en-IN")} · {paymentStatus === "paid" ? "UPI paid" : "Pay at pickup"}</div>
+  <div class="v2-oc-total">₹{total.toLocaleString("en-IN")} · {paymentStatus === "paid" ? "UPI paid" : "Payment pending"}</div>
   <div class="v2-oc-actions">
     <button class="v2-btn v2-btn-ghost v2-btn-sm" style="flex:1;color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline" data-order-id={orderId}>Decline</button>
     <button class="v2-btn v2-btn-sm" style={`flex:1;background:${acceptColor};color:#fff;`} data-action="accept" data-order-id={orderId}>

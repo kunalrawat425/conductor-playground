@@ -77,7 +77,7 @@ describe("supabase queries", () => {
     const result = await getActiveListings();
 
     expect(mockFrom).toHaveBeenCalledWith("fish_listings");
-    expect(chain.eq).toHaveBeenCalledWith("is_available", true);
+    expect(chain.or).toHaveBeenCalledWith("is_available.eq.true,is_preorder_enabled.eq.true");
     expect(chain.order).toHaveBeenCalledWith("created_at", { ascending: false });
     expect(result).toEqual(mockListings);
   });

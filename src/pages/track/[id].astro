@@ -1,0 +1,1025 @@
+---
+export const prerender = false;
+import AppShellV2 from "../../components/v2/AppShellV2.astro";
+import Toast from "../../components/v2/atoms/Toast.astro";
+import EmptyState from "../../components/v2/molecules/EmptyState.astro";
+
+const { id } = Astro.params;
+---
+<AppShellV2
+  title="Order details | Relifish"
+  description="View order details, status, and seller contact."
+  header={{
+    variant: "page",
+    title: "Order details",
+    backHref: "/track",
+  }}
+  nav={{ active: "orders" }}
+>
+  <Toast />
+
+  <div id="v2-od-loading" style="padding:24px;text-align:center;">
+    <span class="v2-spinner v2-spinner-md"></span>
+  </div>
+
+  <div id="v2-od-not-found" style="display:none;padding:24px 16px;">
+    <EmptyState
+      variant="server-error"
+      title="Order not found"
+      description="This order doesn't exist or you don't have access."
+      ctaText="See all orders"
+      ctaHref="/track"
+    />
+  </div>
+
+  <div id="v2-od-content" style="display:none;padding:0 16px 24px;">
+    <!-- Status hero -->
+    <div class="v2-od-hero">
+      <div class="v2-od-status" id="v2-od-status">—</div>
+      <div class="v2-od-id">Order <span id="v2-od-shortid">—</span></div>
+      <div class="v2-od-time" id="v2-od-time">—</div>
+    </div>
+
+    <!-- Stepper -->
+    <div class="v2-od-section">
+      <div class="v2-od-stepper" id="v2-od-stepper"></div>
+      <div class="v2-od-steplabels">
+        <span>Placed</span><span>Confirmed</span><span>Ready</span><span>Done</span>
+      </div>
+    </div>
+
+    <!-- Seller -->
+    <div class="v2-od-section">
+      <div class="v2-od-section-h">From</div>
+      <div class="v2-od-row">
+        <div>
+          <div class="v2-od-seller" id="v2-od-seller">—</div>
+          <div class="v2-od-sub" id="v2-od-seller-loc">—</div>
+        </div>
+        <!-- Call option removed per user request -->
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="v2-od-section">
+      <div class="v2-od-section-h">Items</div>
+      <div id="v2-od-items"></div>
+    </div>
+
+    <!-- Pre-order info (shown only for pre_order status) -->
+    <div id="v2-od-preorder-info" style="display:none;"></div>
+
+    <!-- Delivery / Pickup -->
+    <div class="v2-od-section" id="v2-od-fulfill"></div>
+
+    <!-- Bill -->
+    <div class="v2-od-section">
+      <div class="v2-od-section-h">Bill summary</div>
+      <div class="v2-od-bill" id="v2-od-bill"></div>
+    </div>
+
+    <!-- Actions -->
+    <div id="v2-od-actions" style="margin-top:16px;"></div>
+    <!-- Optional payment proof (confirmed+); separate from #v2-od-actions so prefs form re-renders do not wipe it -->
+    <div id="v2-od-extra-payment"></div>
+  </div>
+</AppShellV2>
+
+<style is:global>
+  .v2-od-hero {
+    background: linear-gradient(135deg, var(--v2-brand), #3B82F6);
+    color: #fff;
+    padding: 20px 16px;
+    margin: 16px 0;
+    border-radius: var(--v2-radius-lg);
+    text-align: center;
+  }
+  .v2-od-status { font: 800 18px Inter; }
+  .v2-od-id { font: 600 12px Inter; opacity: .9; margin-top: 4px; }
+  .v2-od-time { font: 400 11px Inter; opacity: .8; margin-top: 2px; }
+  .v2-od-section {
+    background: var(--v2-bg);
+    border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .v2-od-section-h { font: 700 11px Inter; color: var(--v2-ink-3); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+  .v2-od-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .v2-od-seller { font: 700 14px Inter; color: var(--v2-ink); }
+  .v2-od-sub { font: 400 12px Inter; color: var(--v2-ink-2); margin-top: 2px; }
+  .v2-od-call {
+    background: var(--v2-green);
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 9999px;
+    font: 700 12px Inter;
+    flex-shrink: 0;
+  }
+  .v2-od-item-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--v2-border);
+    font: 500 13px Inter;
+  }
+  .v2-od-item-row:last-child { border-bottom: none; }
+  .v2-od-item-name { color: var(--v2-ink); font-weight: 600; }
+  .v2-od-item-qty { color: var(--v2-ink-3); font-size: 11px; margin-top: 2px; }
+  .v2-od-bill div { display: flex; justify-content: space-between; padding: 4px 0; font: 500 13px Inter; color: var(--v2-ink-2); }
+  .v2-od-bill .total { font: 800 15px Inter; color: var(--v2-ink); padding-top: 8px; border-top: 1px solid var(--v2-border); margin-top: 4px; }
+  .v2-od-stepper {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 6px;
+  }
+  .v2-od-stepper .dot {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--v2-ink-4); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font: 700 11px Inter; flex-shrink: 0;
+  }
+  .v2-od-stepper .dot.done { background: var(--v2-green); }
+  .v2-od-stepper .line { flex: 1; height: 2px; background: var(--v2-bg-3); }
+  .v2-od-stepper .line.done { background: var(--v2-green); }
+  .v2-od-steplabels {
+    display: flex; justify-content: space-between;
+    font: 500 9px Inter; color: var(--v2-ink-3);
+  }
+  .v2-od-cancel {
+    width: 100%;
+    background: var(--v2-bg);
+    color: var(--v2-red);
+    border: 1px solid var(--v2-red-l);
+    padding: 14px;
+    border-radius: var(--v2-radius);
+    font: 700 13px Inter;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  import { createClient } from "@supabase/supabase-js";
+  import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL || "",
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
+  );
+  // Extract order ID from URL path: /track/{id}
+  const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
+  function escape(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function stars(n) {
+    const rating = Math.max(0, Math.min(5, Number(n) || 0));
+    return [1, 2, 3, 4, 5].map(i => i <= rating ? "★" : "☆").join(" ");
+  }
+  function statusLabel(s, o) {
+    const proofOnFile = o && Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
+    return ({
+      pending: proofOnFile ? "Payment proof submitted" : "Upload payment proof",
+      pending_payment: proofOnFile ? "Payment proof submitted" : "Upload payment proof",
+      pre_order: "Pre-order placed",
+      scheduled: "Scheduled pickup",
+      confirmed: "Confirmed ✓",
+      paid: "Payment received",
+      payment_required: "Additional payment needed",
+      ready_for_pickup: "Ready for pickup",
+      out_for_delivery: "Out for delivery",
+      picked_up: "Picked up",
+      completed: "Completed",
+      declined: "Declined by seller",
+      cancelled: "Cancelled",
+      refunded: "Refund processed",
+    })[s] || s;
+  }
+  function billPaymentFootnote(o) {
+    const paidAmt = o.paid_amount ? Number(o.paid_amount) : 0;
+    const proofOnFile = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
+    if (paidAmt > 0 && proofOnFile) return "Paid via UPI · screenshot on file";
+    if (paidAmt > 0) return "Paid via UPI";
+    if (proofOnFile) return "Payment proof submitted — seller will verify shortly";
+    return "Payment proof pending";
+  }
+  function isCancellable(s) {
+    return s === "pending" || s === "pending_payment" || s === "pre_order";
+  }
+
+  let pollTimer = null;
+
+  async function load() {
+    const phone = (() => { try { return localStorage.getItem("zepto_phone") || ""; } catch { return ""; } })();
+    const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+    if (!phone || !buyerId) {
+      window.location.href = "/track";
+      return;
+    }
+    try {
+      const res = await fetch(`/api/orders/detail?id=${encodeURIComponent(orderId)}&buyer_id=${encodeURIComponent(buyerId)}`);
+      if (res.status === 404 || res.status === 403) {
+        document.getElementById("v2-od-loading").style.display = "none";
+        document.getElementById("v2-od-not-found").style.display = "block";
+        return;
+      }
+      if (!res.ok) throw new Error("Load failed");
+      const { order } = await res.json();
+      render(order);
+    } catch (err) {
+      document.getElementById("v2-od-loading").style.display = "none";
+      document.getElementById("v2-od-not-found").style.display = "block";
+    }
+  }
+
+  function render(o) {
+    document.getElementById("v2-od-loading").style.display = "none";
+    document.getElementById("v2-od-content").style.display = "block";
+    const extraPaySlot = document.getElementById("v2-od-extra-payment");
+    if (extraPaySlot) extraPaySlot.innerHTML = "";
+
+    document.getElementById("v2-od-status").textContent = statusLabel(o.status, o);
+    document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,6).toUpperCase();
+    document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    // Hero colour: green for confirmed/done, red for declined/cancelled, orange for payment actions
+    const hero = document.querySelector(".v2-od-hero");
+    if (hero) {
+      if (["confirmed","paid","ready_for_pickup","out_for_delivery","picked_up","completed"].includes(o.status)) {
+        hero.style.background = "linear-gradient(135deg,#059669,#10B981)";
+      } else if (["declined","cancelled"].includes(o.status)) {
+        hero.style.background = "linear-gradient(135deg,#DC2626,#EF4444)";
+      } else if (["pending_payment","payment_required"].includes(o.status)) {
+        hero.style.background = "linear-gradient(135deg,#D97706,#F59E0B)";
+      } else if (o.status === "refunded") {
+        hero.style.background = "linear-gradient(135deg,#6366F1,#818CF8)";
+      } else if (o.status === "pre_order") {
+        hero.style.background = "linear-gradient(135deg,#7C3AED,#A78BFA)";
+      }
+    }
+
+    // Stepper — simple (4) vs same-day UPI (5, no Price set) vs catch pre-order (5 + Price set)
+    const orderType = (o.order_type || "pickup") === "delivery" ? "delivery" : "pickup";
+    const { labels: stepLabels, step } = resolveBuyerStepper(o, orderType);
+    const stepper = document.getElementById("v2-od-stepper");
+    const stepLabelEl = document.querySelector(".v2-od-steplabels");
+    const isRefundStepper = ["declined","cancelled"].includes(o.status) && Number(o.paid_amount) > 0;
+    if (isRefundStepper) {
+      const refundStep = o.refund_sent_at ? 2 : 1;
+      const refundLabels = ["Placed", o.status === "declined" ? "Declined" : "Cancelled", "Refund"];
+      stepper.innerHTML = [0,1,2].map(i =>
+        `<div class="dot${i <= refundStep ? ' done' : ''}" style="${i === 1 ? 'background:var(--v2-red);' : ''}">${i <= refundStep ? '✓' : i+1}</div>` +
+        (i < 2 ? `<div class="line${i < refundStep ? ' done' : ''}"></div>` : '')
+      ).join("");
+      if (stepLabelEl) stepLabelEl.innerHTML = refundLabels.map(l => `<span>${l}</span>`).join("");
+    } else {
+      const terminalMeta = {
+        declined: { label: "Declined", color: "#DC2626", icon: "✕" },
+        cancelled: { label: "Cancelled", color: "#DC2626", icon: "✕" },
+      };
+      const terminal = terminalMeta[o.status];
+      if (terminal) {
+        stepper.innerHTML = `
+          <div class="dot done">✓</div>
+          <div class="line done"></div>
+          <div class="dot" style="background:${terminal.color};color:#fff;font-size:11px;">${terminal.icon}</div>
+        `;
+        if (stepLabelEl) stepLabelEl.innerHTML = `<span>Placed</span><span style="color:${terminal.color};font-weight:700;margin-left:auto;">${terminal.label}</span>`;
+      } else {
+        stepper.innerHTML = Array.from({ length: stepLabels.length }, (_, i) =>
+          `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
+          (i < stepLabels.length - 1 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
+        ).join("");
+        if (stepLabelEl) stepLabelEl.innerHTML = stepLabels.map(l => `<span>${l}</span>`).join("");
+      }
+    }
+
+    // Seller
+    const seller = o.seller || {};
+    document.getElementById("v2-od-seller").textContent = seller.name || "Seller";
+    document.getElementById("v2-od-seller-loc").textContent = seller.location_name || seller.location || "";
+    // Call option removed per user request
+
+    // Items
+    const items = (o.items && o.items.length > 0) ? o.items : [{
+      species: o.listing?.species || o.species,
+      quantity: o.quantity,
+      quantity_unit: o.quantity_unit,
+      total_price: o.total_price,
+    }];
+    // Cut style & notes (may be on order directly or on individual items)
+    const cutStyle = o.cut_style || "";
+    const buyerNotes = o.buyer_notes || "";
+
+    const pricingOpts = o.listing?.pricing_options || [];
+    const opt = pricingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
+    const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+    document.getElementById("v2-od-items").innerHTML = items.map(it => {
+      const unit = it.quantity_unit || 'kg';
+      const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(it.quantity) / bundle)} pack` : `${escape(it.quantity)} ${escape(unit)}`;
+      return `
+      <div class="v2-od-item-row">
+        <div>
+          <div class="v2-od-item-name" style="text-transform:capitalize;">${escape(it.species || "Fish")}</div>
+          <div class="v2-od-item-qty">${qtyLabel}</div>
+        </div>
+        <div style="font-weight:700;">₹${(it.total_price || 0).toLocaleString("en-IN")}</div>
+      </div>`;
+    }).join("")
+      + (cutStyle ? `<div style="font:600 12px Inter;color:var(--v2-ink-2);margin-top:8px;">✂️ ${escape(cutStyle.split(",").map(c => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : "")
+      + (buyerNotes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(buyerNotes)}</div>` : "");
+
+    // Fulfillment
+    const fulfillEl = document.getElementById("v2-od-fulfill");
+    if (o.order_type === "delivery" && o.address) {
+      const a = o.address;
+      const text = [a.flat, a.building, a.landmark, a.location_name].filter(Boolean).map(escape).join(", ");
+      fulfillEl.innerHTML = `
+        <div class="v2-od-section-h">Deliver to</div>
+        <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(a.label || "Address")}</div>
+        <div class="v2-od-sub">${text || "Saved address"}</div>`;
+    } else {
+      fulfillEl.innerHTML = `
+        <div class="v2-od-section-h">Pickup at</div>
+        <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(seller.location_name || seller.location || "Seller location")}</div>
+        ${o.scheduled_for ? `<div class="v2-od-sub">Scheduled: ${new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>` : ''}`;
+    }
+
+    // Pre-order info box
+    const preorderEl = document.getElementById("v2-od-preorder-info");
+    if (preorderEl) {
+      const awaitingFinal =
+        Number(o.paid_amount) > 0 &&
+        (o.final_price == null || o.final_price === "");
+      if (
+        isPreorderCatchFlow(o) &&
+        (["pending_payment", "payment_required", "pre_order"].includes(o.status) || awaitingFinal)
+      ) {
+        const amountDue = o.paid_amount ? `₹${Number(o.paid_amount).toLocaleString("en-IN")}` : "";
+        // Per-unit preorder range from pricing_options (matched by pricing_option_id used on this order)
+        const popts: any[] = o.listing?.pricing_options || [];
+        const matchedOpt = popts.find((p: any) => p?.id && p.id === o.pricing_option_id) || popts[0] || {};
+        const priceMin = matchedOpt.preorder_price_min;
+        const priceMax = matchedOpt.preorder_price_max;
+        const rangeHtml = priceMin && priceMax
+          ? `<div style="font:700 13px Inter;color:#7C3AED;margin:8px 0 4px;">Expected price range: ₹${Number(priceMin).toLocaleString("en-IN")} – ₹${Number(priceMax).toLocaleString("en-IN")}</div>`
+          : priceMin ? `<div style="font:700 13px Inter;color:#7C3AED;margin:8px 0 4px;">Min estimate: ₹${Number(priceMin).toLocaleString("en-IN")}</div>` : "";
+        preorderEl.innerHTML = `
+          <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
+            <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Next-day catch pre-order</div>
+            ${rangeHtml}
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">Pay and upload UPI screenshot so the seller can verify, then they’ll set the final price after the morning catch.${amountDue ? ` Amount: <strong>${amountDue}</strong>.` : ""}</div>
+            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → <strong>refund within 7 working days</strong>. If <strong>higher</strong> → you'll approve the difference.</div>
+          </div>`;
+        preorderEl.style.display = "block";
+      } else {
+        preorderEl.style.display = "none";
+        preorderEl.innerHTML = "";
+      }
+    }
+
+    // Bill
+    const subtotal = o.total_price || 0;
+    const delivery = o.delivery_fee || 0;
+    const grand = subtotal + delivery;
+    const finalPrice = o.final_price ? Number(o.final_price) : null;
+    const paidAmount = o.paid_amount ? Number(o.paid_amount) : null;
+    const balance = finalPrice && paidAmount ? finalPrice - paidAmount : null;
+    document.getElementById("v2-od-bill").innerHTML = `
+      <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
+      ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}
+      <div class="total"><span>Total</span><span>₹${grand.toLocaleString("en-IN")}</span></div>
+      ${finalPrice ? `<div style="padding-top:6px;border-top:1px solid var(--v2-border);margin-top:4px;"><span style="color:var(--v2-ink-2);">Final price (seller)</span><span style="font-weight:700;color:var(--v2-ink);">₹${finalPrice.toLocaleString("en-IN")}</span></div>` : ''}
+      ${paidAmount ? `<div><span style="color:var(--v2-ink-2);">You paid</span><span style="color:var(--v2-green);">₹${paidAmount.toLocaleString("en-IN")}</span></div>` : ''}
+      ${balance && balance > 0 ? `<div><span style="color:var(--v2-red);">Balance due</span><span style="font-weight:700;color:var(--v2-red);">₹${balance.toLocaleString("en-IN")}</span></div>` : ''}
+      ${balance && balance < 0 ? `<div><span style="color:var(--v2-green);">Refund</span><span style="font-weight:700;color:var(--v2-green);">₹${Math.abs(balance).toLocaleString("en-IN")}</span></div>` : ''}
+      <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;">${escape(billPaymentFootnote(o))}</div>`;
+
+    // Actions
+    const actions = document.getElementById("v2-od-actions");
+    if (o.status === "pending_payment" || o.status === "pending") {
+      // UPI screenshot upload — pending_payment is the normal pay-first flow;
+      // pending covers legacy orders created before the pending_payment migration.
+      renderPaymentUpload(o, "pending");
+      const pre = isPreorderCatchFlow(o);
+      const cancelLabel = pre ? "Cancel pre-order" : "Cancel order";
+      const cancelConfirm = pre ? "Cancel this pre-order?" : "Cancel this order?";
+      const cancelToast = pre ? "Pre-order cancelled" : "Order cancelled";
+      const cancelHtml = `<button class="v2-od-cancel" id="v2-od-cancel-btn" style="margin-top:8px;">${cancelLabel}</button>`;
+      // Don't use `innerHTML += ...` here. It re-parses the whole subtree and drops
+      // the event listeners we just attached inside renderPaymentUpload().
+      actions.insertAdjacentHTML("beforeend", cancelHtml);
+      document.getElementById("v2-od-cancel-btn")?.addEventListener("click", async () => {
+        if (!confirm(cancelConfirm)) return;
+        try {
+          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const res = await fetch("/api/orders/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Cancel failed");
+          window.v2Toast?.("success", cancelToast);
+          setTimeout(() => load(), 600);
+        } catch (err) {
+          window.v2Toast?.("error", "Failed", err.message);
+        }
+      });
+    } else if (isCancellable(o.status)) {
+      actions.innerHTML = `<button class="v2-od-cancel" id="v2-od-cancel-btn">Cancel order</button>`;
+      document.getElementById("v2-od-cancel-btn").addEventListener("click", async () => {
+        if (!confirm("Cancel this order? This cannot be undone.")) return;
+        try {
+          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const res = await fetch("/api/orders/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Cancel failed");
+          window.v2Toast?.("success", "Order cancelled");
+          setTimeout(() => load(), 600);
+        } catch (err) {
+          window.v2Toast?.("error", "Failed", err.message);
+        }
+      });
+    } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
+      // Finished/cancelled order — show refund notice if paid, ask rating for completed/picked_up, then offer re-order.
+      const paidForRefund = Number(o.paid_amount) || 0;
+      let refundHtml = "";
+      const isDelivered = ["completed", "picked_up"].includes(o.status);
+      const existingFeedback = o.buyer_feedback || null;
+      if (paidForRefund > 0 && ["cancelled", "declined"].includes(o.status)) {
+        const buyerSsPaths2: string[] = o.payment_screenshot_urls || [];
+        const buyerSsBtns2 = buyerSsPaths2.map((_, i) =>
+          `<button id="v2-od-refund-ss2-${i}" style="width:100%;margin-top:6px;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View my screenshot${buyerSsPaths2.length > 1 ? ' ' + (i+1) : ''}</button>`
+        ).join("");
+        const label = o.status === "declined" ? "Order declined by seller" : "Order cancelled";
+        const sellerRefundBtn = o.refund_screenshot_path
+          ? `<button id="v2-od-seller-refund-ss" style="width:100%;margin-top:6px;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🧾 View seller's refund proof</button>`
+          : "";
+        const sellerRefundNote = o.refund_sent_at
+          ? `<div style="font:500 11px Inter;color:#059669;margin-top:6px;">✓ Seller marked refund sent on ${new Date(o.refund_sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</div>`
+          : "";
+        const sellerNote = o.refund_note
+          ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;padding:6px 8px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(o.refund_note)}</div>`
+          : "";
+        refundHtml = `
+          <div style="background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius);padding:16px;margin-top:8px;margin-bottom:8px;">
+            <div style="font:800 14px Inter;color:#DC2626;margin-bottom:8px;">❌ ${label}</div>
+            <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Refund: ₹${paidForRefund.toLocaleString("en-IN")}</div>
+            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Your refund will be sent within <strong>7 working days</strong> via UPI. Check your UPI app.</div>
+            ${sellerRefundNote}${sellerNote}${sellerRefundBtn}${buyerSsBtns2}
+          </div>`;
+        // Wire screenshot buttons
+        setTimeout(() => {
+          const buyerIdForRef = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+          // Seller's refund screenshot
+          document.getElementById("v2-od-seller-refund-ss")?.addEventListener("click", async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true; btn.textContent = "Loading…";
+            try {
+              const res = await fetch(`/api/orders/refund-screenshot?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForRef)}`);
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed");
+              window.open(data.url, "_blank", "noopener");
+            } catch (err: any) { window.v2Toast?.("error", "Could not load", err.message); }
+            finally { btn.disabled = false; btn.textContent = "🧾 View seller's refund proof"; }
+          });
+          buyerSsPaths2.forEach((_, i) => {
+            document.getElementById(`v2-od-refund-ss2-${i}`)?.addEventListener("click", async (e) => {
+              const btn = e.currentTarget as HTMLButtonElement;
+              btn.disabled = true; btn.textContent = "Loading…";
+              try {
+                const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForRef)}`);
+                const data = await res.json();
+                const url = data.urls?.[i];
+                if (url) window.open(url, "_blank", "noopener");
+              } catch (err: any) { window.v2Toast?.("error", "Could not load", err.message); }
+              finally { btn.disabled = false; btn.textContent = `🖼 View my screenshot${buyerSsPaths2.length > 1 ? ' ' + (i+1) : ''}`; }
+            });
+          });
+        }, 0);
+      }
+      const feedbackHtml = isDelivered
+        ? `
+          <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:14px;margin-top:8px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+              <div style="font:700 13px Inter;color:var(--v2-ink);">⭐ Rate your order</div>
+              ${existingFeedback ? `<div style="font:700 12px Inter;color:#D97706;">${stars(existingFeedback.rating)}</div>` : ""}
+            </div>
+            <div id="v2-od-rate-stars" style="display:flex;gap:6px;margin-bottom:10px;">
+              ${[1, 2, 3, 4, 5].map((r) =>
+                `<button type="button" class="v2-od-rate-star" data-rating="${r}" aria-label="Rate ${r} star" style="border:1px solid var(--v2-border);background:${existingFeedback && Number(existingFeedback.rating) >= r ? "#FEF3C7" : "var(--v2-bg)"};color:${existingFeedback && Number(existingFeedback.rating) >= r ? "#D97706" : "var(--v2-ink-3)"};border-radius:8px;padding:6px 8px;font:700 14px Inter;cursor:pointer;">★</button>`
+              ).join("")}
+            </div>
+            <textarea id="v2-od-feedback" rows="2" placeholder="Share your feedback (optional)" style="width:100%;padding:10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);resize:vertical;outline:none;box-sizing:border-box;">${escape(existingFeedback?.feedback || "")}</textarea>
+            <button id="v2-od-feedback-save" class="v2-btn v2-btn-primary v2-btn-sm v2-btn-full" style="margin-top:10px;">${existingFeedback ? "Update rating" : "Submit rating"}</button>
+            ${existingFeedback ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-top:6px;">Thanks for your feedback on ${new Date(existingFeedback.updated_at || existingFeedback.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>` : ""}
+          </div>`
+        : "";
+      actions.innerHTML = refundHtml + feedbackHtml;
+      if (isDelivered) {
+        let selectedRating = Number(existingFeedback?.rating) || 0;
+        const paint = () => {
+          actions.querySelectorAll(".v2-od-rate-star").forEach((el) => {
+            const star = el as HTMLButtonElement;
+            const r = Number(star.dataset.rating || 0);
+            const on = r <= selectedRating;
+            star.style.background = on ? "#FEF3C7" : "var(--v2-bg)";
+            star.style.color = on ? "#D97706" : "var(--v2-ink-3)";
+            star.style.borderColor = on ? "#FCD34D" : "var(--v2-border)";
+          });
+        };
+        actions.querySelectorAll(".v2-od-rate-star").forEach((el) => {
+          el.addEventListener("click", () => {
+            selectedRating = Number((el as HTMLButtonElement).dataset.rating || 0);
+            paint();
+          });
+        });
+        paint();
+        document.getElementById("v2-od-feedback-save")?.addEventListener("click", async () => {
+          if (!selectedRating) {
+            window.v2Toast?.("error", "Please rate", "Tap 1-5 stars before submitting");
+            return;
+          }
+          const btn = document.getElementById("v2-od-feedback-save") as HTMLButtonElement;
+          const note = (document.getElementById("v2-od-feedback") as HTMLTextAreaElement)?.value?.trim() || "";
+          btn.disabled = true;
+          btn.textContent = "Saving...";
+          try {
+            const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+            const res = await fetch("/api/orders/feedback", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                order_id: o.id,
+                buyer_id: buyerId,
+                rating: selectedRating,
+                feedback: note,
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to save feedback");
+            window.v2Toast?.("success", "Thanks for rating", "Your feedback helps improve seller quality");
+            setTimeout(() => load(), 500);
+          } catch (err: any) {
+            window.v2Toast?.("error", "Failed", err.message || "Could not save feedback");
+            btn.disabled = false;
+            btn.textContent = existingFeedback ? "Update rating" : "Submit rating";
+          }
+        });
+      }
+      const sellerIdForReorder = o.seller?.id || o.listing?.seller_id || "";
+      if (sellerIdForReorder) {
+        // insertAdjacentHTML preserves existing nodes — innerHTML += re-parses the whole
+        // actions block and drops rating/submit listeners.
+        actions.insertAdjacentHTML(
+          "beforeend",
+          `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`
+        );
+        document.getElementById("v2-od-reorder-btn")?.addEventListener("click", () => {
+          const Cart = window.RelifishCart;
+          if (Cart) {
+            items.forEach((it) => {
+              Cart.addItem({
+                listing_id: o.listing_id || "",
+                seller_id: sellerIdForReorder,
+                seller_name: seller.name || "Seller",
+                name: it.species || "Fish",
+                qty_unit: it.quantity_unit || "kg",
+                price: it.total_price || 0,
+                qty: it.quantity || 1,
+              });
+            });
+          }
+          window.location.href = `/seller/${sellerIdForReorder}`;
+        });
+      }
+    } else if (o.status === "ready_for_pickup") {
+      // Form locked — show read-only preferences only
+      const savedCuts2 = (o.cut_style || "").split(",").filter(Boolean);
+      const cutLabels2: Record<string, string> = { whole: "🐟 Whole", cleaned: "✂️ Cleaned", cut: "🔪 Cut" };
+      const cutDisplay2 = savedCuts2.map(c => cutLabels2[c] || c).join(", ");
+      actions.innerHTML = `
+        <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
+          <div style="font:700 13px Inter;color:#059669;margin-bottom:6px;">✅ Order ready — preferences locked</div>
+          ${cutDisplay2 ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Cut: ${cutDisplay2}</div>` : ""}
+          ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);">📝 ${escape(o.buyer_notes)}</div>` : ""}
+          <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:8px;">No changes possible after this point.</div>
+        </div>`;
+    } else if (["confirmed", "paid", "out_for_delivery", "scheduled"].includes(o.status)) {
+      const hasCut = !!o.cut_style;
+      const hasNotes = !!o.buyer_notes;
+      const alreadySaved = hasCut || hasNotes;
+
+      const savedCuts = (o.cut_style || "").split(",").filter(Boolean);
+      const cutOptions = [
+        { value: "whole", label: "🐟 Whole" },
+        { value: "cleaned", label: "✂️ Cleaned" },
+        { value: "cut", label: "🔪 Cut" },
+      ];
+
+      if (alreadySaved) {
+        const cutDisplay = savedCuts.map(c => cutOptions.find(x => x.value === c)?.label || c).join(", ") || "Not set";
+        actions.innerHTML = `
+          <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div style="font:700 13px Inter;color:var(--v2-ink);">✅ Preferences saved</div>
+              <button id="v2-od-edit-prefs" type="button" style="background:none;border:none;font:600 12px Inter;color:var(--v2-brand);cursor:pointer;">Edit</button>
+            </div>
+            <div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">${cutDisplay}</div>
+            ${hasNotes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
+          </div>`;
+        document.getElementById("v2-od-edit-prefs")?.addEventListener("click", () => showPrefsForm(o));
+      } else {
+        showPrefsForm(o);
+      }
+
+      function showPrefsForm(o) {
+        const sc = (o.cut_style || "").split(",").filter(Boolean);
+        actions.innerHTML = `
+          <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
+            <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:10px;">✂️ Add preferences</div>
+            <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:12px;">Select how you want your fish prepared. You can choose multiple.</div>
+            <div style="margin-bottom:10px;">
+              <label style="font:600 12px Inter;color:var(--v2-ink-2);display:block;margin-bottom:6px;">Cut style</label>
+              <div style="display:flex;gap:8px;" id="v2-od-cut-opts">
+                ${cutOptions.map(opt => {
+                  const checked = sc.includes(opt.value);
+                  return `<label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid ${checked ? 'var(--v2-brand)' : 'var(--v2-border)'};border-radius:var(--v2-radius-sm);cursor:pointer;background:${checked ? 'var(--v2-brand-l)' : 'var(--v2-bg)'};font:500 12px Inter;color:var(--v2-ink);">
+                    <input type="checkbox" name="v2-od-cut" value="${opt.value}" ${checked ? 'checked' : ''} style="display:none;" /> ${opt.label}
+                  </label>`;
+                }).join("")}
+              </div>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font:600 12px Inter;color:var(--v2-ink-2);display:block;margin-bottom:6px;">Special request (optional)</label>
+              <textarea id="v2-od-notes" rows="2" placeholder="e.g. medium pieces, no head" style="width:100%;padding:10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);resize:vertical;outline:none;box-sizing:border-box;">${escape(o.buyer_notes || "")}</textarea>
+            </div>
+            <button id="v2-od-save-notes" class="v2-btn v2-btn-primary v2-btn-sm v2-btn-full">${alreadySaved ? 'Update preferences' : 'Save preferences'}</button>
+          </div>`;
+
+        actions.querySelectorAll('input[name="v2-od-cut"]').forEach(cb => {
+          cb.addEventListener("change", () => {
+            actions.querySelectorAll('#v2-od-cut-opts label').forEach(l => {
+              const inp = l.querySelector('input') as HTMLInputElement;
+              l.style.borderColor = inp?.checked ? 'var(--v2-brand)' : 'var(--v2-border)';
+              l.style.background = inp?.checked ? 'var(--v2-brand-l)' : 'var(--v2-bg)';
+            });
+          });
+        });
+
+        document.getElementById("v2-od-save-notes")?.addEventListener("click", async () => {
+          const checked = Array.from(actions.querySelectorAll('input[name="v2-od-cut"]:checked')).map((c: any) => c.value);
+          const cut = checked.join(",") || "";
+          const notes = (document.getElementById("v2-od-notes") as HTMLTextAreaElement)?.value?.trim() || "";
+          const btn = document.getElementById("v2-od-save-notes") as HTMLButtonElement;
+          btn.disabled = true;
+          btn.textContent = "Saving...";
+          try {
+            const res = await fetch("/api/orders/update-notes", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ order_id: o.id, buyer_id: localStorage.getItem("zepto_buyer_id"), cut_style: cut, buyer_notes: notes }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed");
+            window.v2Toast?.("success", "Preferences saved", "Seller will see your request");
+            load();
+          } catch (err) {
+            window.v2Toast?.("error", "Failed", err.message || "Could not save");
+            btn.disabled = false;
+            btn.textContent = "Save preferences";
+          }
+        });
+      }
+
+      const paySlot = document.getElementById("v2-od-extra-payment");
+      if (paySlot) {
+        if (o.status === "scheduled") {
+          paySlot.innerHTML = `<button type="button" class="v2-od-cancel" id="v2-od-cancel-sched" style="margin-bottom:10px;">Cancel order</button><div id="v2-od-opt-pay-host"></div>`;
+          document.getElementById("v2-od-cancel-sched")?.addEventListener("click", async () => {
+            if (!confirm("Cancel this scheduled order?")) return;
+            try {
+              const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+              const res = await fetch("/api/orders/cancel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Cancel failed");
+              window.v2Toast?.("success", "Order cancelled");
+              setTimeout(() => load(), 600);
+            } catch (err: any) {
+              window.v2Toast?.("error", "Failed", err.message);
+            }
+          });
+          const host = document.getElementById("v2-od-opt-pay-host");
+          if (host) renderPaymentUpload(o, "optional", host);
+        } else {
+          renderPaymentUpload(o, "optional", paySlot);
+        }
+      }
+    } else if (o.status === "payment_required") {
+      renderPaymentUpload(o, "balance");
+    } else if (o.status === "refunded") {
+      const paidAmt = Number(o.paid_amount) || 0;
+      const finalAmt = Number(o.final_price) || 0;
+      const refundAmt = finalAmt > 0 ? Math.max(0, paidAmt - finalAmt) : paidAmt;
+      const sentAt = o.refund_sent_at ? new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : null;
+      const note = o.refund_note || "";
+      const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+      // Buyer's own payment screenshots (to show alongside refund info)
+      const buyerSsPaths: string[] = o.payment_screenshot_urls || [];
+      const buyerSsSection = buyerSsPaths.length > 0
+        ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--v2-border);">
+            <div style="font:600 11px Inter;color:var(--v2-ink-3);margin-bottom:6px;">💳 Your uploaded payment proof</div>
+            <div id="v2-od-buyer-ss-list" style="display:flex;flex-direction:column;gap:6px;">
+              ${buyerSsPaths.map((_, i) => `<button id="v2-od-buyer-ss-${i}" style="width:100%;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}</button>`).join('')}
+            </div>
+          </div>`
+        : "";
+      if (sentAt) {
+        const screenshotBtn = o.refund_screenshot_path
+          ? `<button id="v2-od-refund-ss" style="margin-top:10px;width:100%;padding:10px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View seller's refund proof</button>`
+          : "";
+        actions.innerHTML = `
+          <div style="background:var(--v2-bg);border:1.5px solid #6366F1;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
+            <div style="font:700 10px Inter;color:#059669;background:#DCFCE7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">✅ Your order is confirmed — being prepared</div>
+            <div style="font:800 14px Inter;color:#6366F1;margin-bottom:6px;">↩ Refund: ₹${refundAmt.toLocaleString("en-IN")} sent back</div>
+            <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Sent on ${sentAt}</div>
+            ${note ? `<div style="font:500 12px Inter;color:var(--v2-ink-2);margin-top:6px;padding:8px 10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(note)}</div>` : ''}
+            <div style="font:600 11px Inter;color:#7C3AED;margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ UPI refunds reflect within <strong>7 working days</strong>. Check your UPI app.</div>
+            ${screenshotBtn}
+            ${buyerSsSection}
+          </div>`;
+        if (o.refund_screenshot_path) {
+          document.getElementById("v2-od-refund-ss")?.addEventListener("click", async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            btn.textContent = "Loading…";
+            try {
+              const res = await fetch(`/api/orders/refund-screenshot?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed");
+              window.open(data.url, "_blank", "noopener");
+            } catch (err: any) {
+              window.v2Toast?.("error", "Could not load", err.message);
+            } finally {
+              btn.disabled = false;
+              btn.textContent = "🖼 View seller's refund proof";
+            }
+          });
+        }
+        // Wire buyer's own screenshot buttons
+        buyerSsPaths.forEach((path, i) => {
+          document.getElementById(`v2-od-buyer-ss-${i}`)?.addEventListener("click", async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            btn.textContent = "Loading…";
+            try {
+              const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed");
+              const url = data.urls?.[i];
+              if (url) window.open(url, "_blank", "noopener");
+            } catch (err: any) {
+              window.v2Toast?.("error", "Could not load", err.message);
+            } finally {
+              btn.disabled = false;
+              btn.textContent = `🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}`;
+            }
+          });
+        });
+      } else {
+        actions.innerHTML = `
+          <div style="background:var(--v2-bg);border:1.5px solid #A78BFA;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
+            <div style="font:700 10px Inter;color:#059669;background:#DCFCE7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">✅ Your order is confirmed — being prepared</div>
+            <div style="font:800 14px Inter;color:#7C3AED;margin-bottom:6px;">↩ Refund ₹${refundAmt.toLocaleString("en-IN")} pending</div>
+            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Seller will send ₹${refundAmt.toLocaleString("en-IN")} back to your UPI within <strong>7 working days</strong>.</div>
+            ${buyerSsSection}
+          </div>`;
+        // Wire buyer screenshot buttons for "processing" state too
+        buyerSsPaths.forEach((path, i) => {
+          document.getElementById(`v2-od-buyer-ss-${i}`)?.addEventListener("click", async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            btn.textContent = "Loading…";
+            try {
+              const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed");
+              const url = data.urls?.[i];
+              if (url) window.open(url, "_blank", "noopener");
+            } catch (err: any) {
+              window.v2Toast?.("error", "Could not load", err.message);
+            } finally {
+              btn.disabled = false;
+              btn.textContent = `🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}`;
+            }
+          });
+        });
+      }
+    } else {
+      actions.innerHTML = "";
+    }
+
+    function renderPaymentUpload(o, kind, mountEl) {
+      const actionsRoot = document.getElementById("v2-od-actions");
+      const root = mountEl || actionsRoot;
+      if (!root) return;
+
+      const isBalance = kind === "balance";
+      const isOptional = kind === "optional";
+
+      const paidSoFar = Number(o.paid_amount) || 0;
+      const finalPrice = Number(o.final_price) || 0;
+      let balance = 0;
+      if (isBalance) {
+        balance = Math.max(0, finalPrice - paidSoFar);
+      } else if (!isOptional) {
+        balance = Number(o.total_price) + Number(o.delivery_fee || 0);
+      }
+
+      const alreadyUploaded = o.payment_screenshot_urls && o.payment_screenshot_urls.length > 0;
+      const orderTotalRef = Number(o.total_price) + Number(o.delivery_fee || 0);
+
+      const title = isOptional
+        ? "💳 Payment screenshot"
+        : isBalance
+          ? "💸 Additional payment needed"
+          : "💳 Upload payment proof";
+      const subtitle = isOptional
+        ? "Upload or replace your UPI payment photo. The seller is notified and can verify again if needed."
+        : isBalance
+          ? `Seller updated the final price. Please pay ₹${balance.toLocaleString("en-IN")} and upload the UPI screenshot.`
+          : `Pay ₹${balance.toLocaleString("en-IN")} via UPI and upload the screenshot below.`;
+      const amountBlock = isOptional
+        ? paidSoFar > 0
+          ? `<div style="font:600 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">Paid on record: ₹${paidSoFar.toLocaleString("en-IN")}</div>`
+          : `<div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">Order total (reference): ₹${orderTotalRef.toLocaleString("en-IN")}</div>`
+        : `<div style="font:800 16px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${balance.toLocaleString("en-IN")}</div>`;
+
+      const sellerUpi = o.seller?.upi_id || (o.listing?.seller as any)?.upi_id || null;
+      const upiCard = sellerUpi
+        ? `<div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:var(--v2-radius-sm);padding:12px;margin-bottom:12px;">
+            <div style="font:600 11px Inter;color:#92400E;margin-bottom:2px;">💳 Pay via UPI</div>
+            <div style="font:800 16px Inter;color:#78350F;letter-spacing:0.3px;">${sellerUpi}</div>
+            <div style="font:400 11px Inter;color:#92400E;margin-top:3px;">Copy this ID → open your UPI app → paste and pay</div>
+          </div>`
+        : "";
+
+      root.innerHTML = `
+        <div style="background:var(--v2-bg);border:1.5px solid var(--v2-brand);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
+          <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">${title}</div>
+          <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">${subtitle}</div>
+          ${upiCard}
+          ${amountBlock}
+          ${alreadyUploaded ? `<div id="v2-pay-ss-status" style="font:600 12px Inter;color:var(--v2-green);margin-bottom:6px;">✓ Screenshot uploaded — awaiting seller confirmation</div><div id="v2-pay-screenshots-list" style="margin-bottom:12px;font:400 11px Inter;color:var(--v2-ink-3);">Loading your screenshot...</div>` : ""}
+          <label style="display:block;cursor:pointer;">
+            <div id="v2-pay-drop" style="border:2px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:20px;text-align:center;font:500 13px Inter;color:var(--v2-ink-2);">
+              ${alreadyUploaded ? "📷 Replace screenshot" : "📷 Tap to select screenshot"}
+            </div>
+            <input type="file" id="v2-pay-file" accept="image/*" style="display:none;" />
+          </label>
+          <div id="v2-pay-preview" style="margin-top:10px;display:none;">
+            <img id="v2-pay-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);" />
+          </div>
+          <button type="button" id="v2-pay-submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" style="margin-top:12px;display:none;">Submit payment proof</button>
+          <div id="v2-pay-err" style="font:500 11px Inter;color:var(--v2-red);margin-top:8px;display:none;"></div>
+        </div>`;
+
+      const qs = (sel) => root.querySelector(sel);
+
+      if (alreadyUploaded) {
+        const buyerIdForSS = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+        fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForSS)}`)
+          .then(r => r.json())
+          .then(ssData => {
+            const list = qs("#v2-pay-screenshots-list");
+            const statusEl = qs("#v2-pay-ss-status");
+            if (!list) return;
+            if (ssData.verified && statusEl) {
+              statusEl.textContent = "✓ Payment verified by seller";
+              statusEl.style.fontWeight = "800";
+            }
+            if (ssData.urls && ssData.urls.length > 0) {
+              list.innerHTML = ssData.urls.map((url: string) =>
+                `<img src="${url}" onclick="window.open('${url}','_blank','noopener')" style="width:100%;max-height:200px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);margin-bottom:6px;cursor:pointer;" />`
+              ).join("") + `<div style="font:400 10px Inter;color:var(--v2-ink-3);">Tap image to open full size</div>`;
+            } else {
+              list.innerHTML = "";
+            }
+          })
+          .catch(() => {
+            const list = qs("#v2-pay-screenshots-list");
+            if (list) list.innerHTML = "";
+          });
+      }
+
+      const fileInput = qs("#v2-pay-file") as HTMLInputElement | null;
+      const dropZone = qs("#v2-pay-drop") as HTMLElement | null;
+      const preview = qs("#v2-pay-preview") as HTMLElement | null;
+      const previewImg = qs("#v2-pay-img") as HTMLImageElement | null;
+      const submitBtn = qs("#v2-pay-submit") as HTMLButtonElement | null;
+      const errEl = qs("#v2-pay-err") as HTMLElement | null;
+
+      fileInput?.addEventListener("change", () => {
+        const file = fileInput.files?.[0];
+        if (!file || !errEl || !preview || !dropZone || !previewImg || !submitBtn) return;
+        if (file.size > 5 * 1024 * 1024) {
+          errEl.style.display = "block";
+          errEl.textContent = "File too large (max 5 MB)";
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        previewImg.src = url;
+        preview.style.display = "block";
+        dropZone.textContent = file.name;
+        submitBtn.style.display = "block";
+        errEl.style.display = "none";
+      });
+
+      submitBtn?.addEventListener("click", async () => {
+        const file = fileInput?.files?.[0];
+        if (!file || !submitBtn || !errEl) return;
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Uploading...";
+        errEl.style.display = "none";
+        try {
+          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const form = new FormData();
+          form.append("order_id", o.id);
+          form.append("buyer_id", buyerId);
+          form.append("file", file);
+          const res = await fetch("/api/orders/upload-payment", { method: "POST", body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Upload failed");
+          if (data.url) {
+            const list = qs("#v2-pay-screenshots-list");
+            const statusEl = qs("#v2-pay-ss-status");
+            if (statusEl) statusEl.textContent = "✓ Screenshot uploaded — awaiting seller confirmation";
+            if (list) {
+              list.innerHTML = `<img src="${data.url}" onclick="window.open('${data.url}','_blank','noopener')" style="width:100%;max-height:200px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);margin-bottom:6px;cursor:pointer;" />`;
+            }
+          }
+          window.v2Toast?.(
+            "success",
+            isOptional ? "Payment proof updated" : "Payment proof submitted",
+            isOptional ? "The seller has been notified." : "Seller will confirm shortly"
+          );
+          // Realtime subscription handles re-render when DB updates — no manual load() needed here.
+        } catch (err) {
+          errEl.style.display = "block";
+          const msg = err.message || "Upload failed";
+          if (/bucket[_ ]missing|storage is not configured|bucket .*not found/i.test(msg)) {
+            errEl.textContent = "Payment upload is not configured yet. Ask admin to create private Supabase bucket `order-payments`.";
+          } else {
+            errEl.textContent = msg;
+          }
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit payment proof";
+        }
+      });
+    }
+  }
+
+  function initPage() {
+    load();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPage);
+  } else {
+    initPage();
+  }
+
+  // Supabase Realtime: instant order status updates
+  const terminalStatuses = ["picked_up", "completed", "cancelled", "declined", "refunded"];
+  const channel = supabase
+    .channel(`order-${orderId}`)
+    .on("postgres_changes", {
+      event: "UPDATE",
+      schema: "public",
+      table: "orders",
+      filter: `id=eq.${orderId}`,
+    }, (payload: any) => {
+      load(); // re-render with new data
+      const newStatus = payload.new?.status;
+      if (newStatus && terminalStatuses.includes(newStatus)) {
+        channel.unsubscribe();
+      }
+    })
+    .subscribe();
+
+  // Fallback poll every 30s in case realtime connection drops
+  pollTimer = setInterval(() => {
+    const statusEl = document.getElementById("v2-od-status");
+    const text = statusEl?.textContent || "";
+    if (text.includes("Picked up") || text.includes("Cancelled") || text.includes("Declined") || text.includes("Completed")) {
+      clearInterval(pollTimer);
+      return;
+    }
+    load();
+  }, 30000);
+</script>

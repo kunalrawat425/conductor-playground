@@ -109,7 +109,7 @@ const { id = "v2-cart-stack" } = Astro.props;
         <div class="v2-cs-avatar">🐟</div>
         <div class="v2-cs-info">
           <div class="v2-cs-seller">${escape(g.seller_name || "Seller")}</div>
-          <div class="v2-cs-meta">${itemLabel} · <a href="/v2/seller/${escape(g.seller_id)}">View Menu ›</a></div>
+          <div class="v2-cs-meta">${itemLabel} · <a href="/seller/${escape(g.seller_id)}">View Menu ›</a></div>
         </div>
         <button class="v2-cs-price-badge" data-cs-checkout="${escape(g.seller_id)}">
           ₹${g.subtotal.toLocaleString("en-IN")}
