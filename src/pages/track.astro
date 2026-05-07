@@ -1,4 +1,349 @@
 ---
 export const prerender = false;
-return Astro.redirect("/v2/track", 301);
+import AppShellV2 from "../components/v2/AppShellV2.astro";
+import EmptyState from "../components/v2/molecules/EmptyState.astro";
+import LoginSheet from "../components/v2/organisms/LoginSheet.astro";
+import Toast from "../components/v2/atoms/Toast.astro";
 ---
+<AppShellV2
+  title="Your Orders | Relifish"
+  description="Track your fish orders and reorder favorites."
+  header={{
+    variant: "page",
+    title: "Your Orders",
+    backHref: "/v2",
+  }}
+  nav={{ active: "orders" }}
+>
+  <Toast />
+  <LoginSheet id="v2-track-login" role="buyer" redirectTo="/track" />
+
+  <div id="v2-track-loading" style="padding:24px;text-align:center;">
+    <span class="v2-spinner v2-spinner-md"></span>
+    <div style="margin-top:8px;font:500 12px Inter;color:var(--v2-ink-3);">Loading your orders...</div>
+  </div>
+
+  <div id="v2-track-guest" style="display:none;padding:0 16px;margin-top:16px;">
+    <div class="v2-empty">
+      <div class="v2-empty-icon">📋</div>
+      <h3 class="v2-empty-title">Sign in to see your orders</h3>
+      <p class="v2-empty-desc">Use your phone number to view past orders and track current ones.</p>
+      <button id="v2-track-signin-btn" class="v2-btn v2-btn-primary v2-btn-md">Sign in</button>
+    </div>
+  </div>
+
+  <div id="v2-track-empty" style="display:none;padding:0 16px;margin-top:16px;">
+    <EmptyState
+      variant="no-orders"
+      ctaHref="/v2"
+    />
+  </div>
+
+  <div id="v2-track-active" style="padding:0 16px;"></div>
+</AppShellV2>
+
+<style is:global>
+  .v2-active-order {
+    margin: 16px 0;
+    background: linear-gradient(135deg, #E6F0FF, #DBEAFE);
+    border: 1px solid #93C5FD;
+    border-radius: var(--v2-radius-lg);
+    padding: 16px;
+  }
+  .v2-active-order .label {
+    font: 700 10px Inter;
+    color: #1D4ED8;
+    text-transform: uppercase; letter-spacing: .1em;
+    margin-bottom: 6px;
+  }
+  .v2-active-order .label .v2-badge { font-size: 10px; }
+  .v2-active-order h3 {
+    font: 800 16px Inter; color: #1E293B; margin: 0 0 4px;
+  }
+  .v2-active-order .sub {
+    font: 400 12px Inter; color: #475569; margin: 0 0 16px;
+  }
+  .v2-stepper {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .v2-stepper .dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #CBD5E1;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font: 700 11px Inter;
+    flex-shrink: 0;
+  }
+  .v2-stepper .dot.done { background: #059669; }
+  .v2-stepper .line { flex: 1; height: 2px; background: #CBD5E1; }
+  .v2-stepper .line.done { background: #059669; }
+  .v2-stepper-labels {
+    display: flex; justify-content: space-between;
+    margin-top: 6px;
+    font: 500 9px Inter; color: #64748B;
+  }
+
+  .v2-section-head-light {
+    padding: 16px 16px 8px;
+    font: 700 12px Inter;
+    color: var(--v2-ink-3);
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+
+  .v2-order-row {
+    margin-bottom: 12px;
+    background: var(--v2-bg);
+    border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius);
+    padding: 14px;
+    text-decoration: none; color: inherit;
+    display: block;
+    transition: box-shadow var(--v2-dur-fast) var(--v2-ease);
+  }
+  .v2-order-row:hover { box-shadow: var(--v2-shadow); }
+  .v2-or-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .v2-or-seller { font: 700 14px Inter; color: var(--v2-ink); }
+  .v2-or-meta { font: 400 11px Inter; color: var(--v2-ink-3); margin-top: 1px; }
+  .v2-or-items { font: 400 12px Inter; color: var(--v2-ink-2); margin-top: 6px; line-height: 1.4; }
+  .v2-or-bot {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--v2-border);
+  }
+  .v2-or-total { font: 800 14px Inter; color: var(--v2-ink); }
+  .v2-or-reorder {
+    background: var(--v2-bg); color: var(--v2-brand);
+    border: 1.5px solid var(--v2-brand);
+    font: 700 11px Inter;
+    padding: 6px 14px;
+    border-radius: var(--v2-radius-sm);
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  import { createClient } from "@supabase/supabase-js";
+  import { resolveBuyerStepper } from "../lib/buyer-order-stepper";
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL || "",
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
+  );
+
+  function getBuyerPhone(): string | null {
+    try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
+  }
+  // Orders may have phone stored with or without +91 prefix
+  function phoneVariants(phone: string): string[] {
+    const clean = phone.replace(/^\+91/, "").replace(/\D/g, "");
+    return [clean, `+91${clean}`];
+  }
+
+  function escapeHtml(s: string) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
+  }
+
+  function statusToTag(status: string, o?: { payment_screenshot_urls?: unknown }) {
+    const proofOnFile =
+      o &&
+      Array.isArray(o.payment_screenshot_urls) &&
+      (o.payment_screenshot_urls as unknown[]).length > 0;
+    if (status === "pending_payment" && proofOnFile) {
+      return `<span class="v2-badge v2-badge-tag v2-badge-brand v2-badge-size-md">${escapeHtml("Proof on file")}</span>`;
+    }
+    const map: Record<string, [string, string]> = {
+      "pending": ["Pending", "v2-badge-tag v2-badge-orange"],
+      "pending_payment": ["Payment pending", "v2-badge-tag v2-badge-orange"],
+      "confirmed": ["Confirmed", "v2-badge-tag v2-badge-brand"],
+      "paid": ["Paid", "v2-badge-tag v2-badge-brand"],
+      "ready_for_pickup": ["Ready for pickup", "v2-badge-tag v2-badge-green"],
+      "out_for_delivery": ["Out for delivery", "v2-badge-tag v2-badge-brand"],
+      "picked_up": ["Picked up", "v2-badge-tag v2-badge-green"],
+      "completed": ["Completed", "v2-badge-tag v2-badge-green"],
+      "declined": ["Declined", "v2-badge-tag v2-badge-red"],
+      "cancelled": ["Cancelled", "v2-badge-tag v2-badge-red"],
+      "refunded": ["Refunded", "v2-badge-tag v2-badge-red"],
+      "scheduled": ["Scheduled", "v2-badge-tag v2-badge-indigo"],
+      "pre_order": ["Pre-order", "v2-badge-tag v2-badge-indigo"],
+    };
+    const [text, cls] = map[status] || [status, "v2-badge-tag"];
+    return `<span class="v2-badge ${cls} v2-badge-size-md">${escapeHtml(text)}</span>`;
+  }
+
+  function isActive(status: string) {
+    return ["pending", "pending_payment", "payment_required", "confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled", "pre_order"].includes(status);
+  }
+  function isTerminated(status: string) {
+    return ["declined", "cancelled", "refunded"].includes(status);
+  }
+
+  function fmtDate(iso: string) {
+    const d = new Date(iso);
+    const today = new Date();
+    const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" });
+  }
+
+  const PAGE_SIZE = 10;
+  let currentPage = 1;
+
+  async function load() {
+    const phone = getBuyerPhone();
+    const loading = document.getElementById("v2-track-loading")!;
+    const guest = document.getElementById("v2-track-guest")!;
+    const empty = document.getElementById("v2-track-empty")!;
+    const active = document.getElementById("v2-track-active")!;
+
+    if (!phone) {
+      loading.style.display = "none";
+      guest.style.display = "block";
+      document.getElementById("v2-track-signin-btn")?.addEventListener("click", () => {
+        (window as any).v2OpenSheet?.("v2-track-login");
+      });
+      return;
+    }
+
+    try {
+      const offset = (currentPage - 1) * PAGE_SIZE;
+      const phones = phoneVariants(phone);
+      const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+      // Fetch all statuses — query by buyer_phone OR buyer_id
+      const phoneParts = phones.map(p => `buyer_phone.eq.${p}`).join(",");
+      const orFilter = buyerId ? `${phoneParts},buyer_id.eq.${buyerId}` : phoneParts;
+      const { data: allOrders, count } = await supabase
+        .from("orders")
+        .select("*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name))", { count: "exact" })
+        .or(orFilter)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+
+      loading.style.display = "none";
+      empty.style.display = "none";
+      const totalCount = count || 0;
+      const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+      if (!allOrders || allOrders.length === 0) {
+        active.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      active.innerHTML = allOrders.map(o => {
+        const seller = o.listing?.seller?.name || "Seller";
+        const isDelivery = o.order_type === "delivery";
+        const terminated = isTerminated(o.status);
+        const orderType = isDelivery ? "delivery" : "pickup";
+        const { labels, step: stepIdx } = resolveBuyerStepper(o, orderType);
+        const paidAmt = Number(o.paid_amount) || 0;
+
+        // Quantity label as packs when bundle_size > 1 (piece-based pricing).
+        const listingOpts = o.listing?.pricing_options || [];
+        const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
+        const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+        const unit = o.quantity_unit || "kg";
+        const qtyLabel = unit === "piece" && bundle > 1
+          ? `${Math.round(Number(o.quantity) / bundle)} pack`
+          : `${o.quantity}${unit}`;
+
+        const stepperHtml = terminated
+          ? `<div class="v2-stepper">
+              <div class="dot done">✓</div>
+              <div class="line done" style="background:#FCA5A5;"></div>
+              <div class="dot" style="background:#DC2626;color:#fff;">✕</div>
+            </div>
+            <div class="v2-stepper-labels" style="justify-content:space-between;">
+              <span>Placed</span>
+              <span style="color:#DC2626;font-weight:700;">${o.status === "declined" ? "Declined" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
+            </div>`
+          : `<div class="v2-stepper">
+              ${labels.map((_, i) => `
+                <div class="dot${i <= stepIdx ? ' done' : ''}">${i <= stepIdx ? '✓' : i + 1}</div>
+                ${i < labels.length - 1 ? `<div class="line${i < stepIdx ? ' done' : ''}"></div>` : ''}
+              `).join("")}
+            </div>
+            <div class="v2-stepper-labels">
+              ${labels.map(l => `<span>${l}</span>`).join("")}
+            </div>`;
+
+        const refundNote = terminated && paidAmt > 0
+          ? `<div style="margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:6px;font:600 11px Inter;color:#7C3AED;">⏱ Refund ₹${paidAmt.toLocaleString("en-IN")} within 7 working days via UPI</div>`
+          : "";
+
+        const cardStyle = terminated
+          ? `background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius-lg);padding:16px;margin-bottom:12px;width:100%;box-sizing:border-box;`
+          : ``;
+
+        return terminated
+          ? `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardStyle}">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined by seller" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
+                ${statusToTag(o.status, o)}
+              </div>
+              <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,6).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
+              ${stepperHtml}
+              ${refundNote}
+            </a>`
+          : `<a href="/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
+              <div class="label">Live · ${statusToTag(o.status, o)}</div>
+              <h3>${escapeHtml(seller)}</h3>
+              <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
+              ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
+              ${stepperHtml}
+            </a>`;
+      }).join("")
+      + (totalPages > 1 ? `
+        <div class="v2-pagination" style="padding:12px 0;">
+          <button class="v2-pg-btn" id="v2-track-prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+          <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
+          <button class="v2-pg-btn" id="v2-track-next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+        </div>` : '');
+
+      document.getElementById("v2-track-prev")?.addEventListener("click", () => { if (currentPage > 1) { currentPage--; load(); } });
+      document.getElementById("v2-track-next")?.addEventListener("click", () => { if (currentPage < totalPages) { currentPage++; load(); } });
+
+    } catch (err) {
+      console.error("track: load failed", err);
+      loading.innerHTML = `<div style="text-align:center;padding:40px;color:var(--v2-red);">Failed to load orders.</div>`;
+    }
+  }
+
+  function initTrack() {
+    load();
+
+    // Supabase Realtime
+    const buyerPhone = getBuyerPhone();
+    const rtBuyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+    if (buyerPhone) {
+      const pv = phoneVariants(buyerPhone);
+      pv.forEach(ph => {
+        supabase
+          .channel("buyer-orders-" + ph)
+          .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `buyer_phone=eq.${ph}` }, () => { load(); })
+          .subscribe();
+      });
+    }
+    if (rtBuyerId) {
+      supabase
+        .channel("buyer-orders-id-" + rtBuyerId)
+        .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `buyer_id=eq.${rtBuyerId}` }, () => { load(); })
+        .subscribe();
+    }
+
+    // Fallback poll every 30s
+    setInterval(() => {
+      const activeEl = document.getElementById("v2-track-active");
+      if (activeEl && activeEl.children.length > 0) load();
+    }, 30000);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initTrack);
+  } else {
+    initTrack();
+  }
+</script>

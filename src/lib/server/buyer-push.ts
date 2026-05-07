@@ -20,7 +20,7 @@ export type BuyerPushPayload = {
   status: string;
   species?: string | null;
   final_price?: number | null;
-  /** When set, notification opens this order on `/v2/track/[id]` (else track list). */
+  /** When set, notification opens this order on `/track/[id]` (else track list). */
   order_id?: string | null;
 };
 
@@ -62,7 +62,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
       ok: true,
       sent: false,
       reason:
-        "no buyer account for push — same phone must have signed in once (/v2/me) and enabled notifications",
+        "no buyer account for push — same phone must have signed in once (/me) and enabled notifications",
     };
   }
 
@@ -78,7 +78,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
       ok: true,
       sent: false,
       reason:
-        "no push subscription — open /v2/me, tap the bell, allow notifications, then try again",
+        "no push subscription — open /me, tap the bell, allow notifications, then try again",
     };
   }
 
@@ -93,7 +93,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
   }
 
   const notification = buyerOrderPushNotification(status, species, final_price);
-  const trackPath = order_id ? `/v2/track/${order_id}` : "/v2/track";
+  const trackPath = order_id ? `/track/${order_id}` : "/track";
   const openUrl = absoluteUrl(trackPath);
 
   try {
