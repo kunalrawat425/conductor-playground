@@ -134,20 +134,72 @@ const tags = [
   nav={{ active: "home" }}
   jsonLd={seller && !notFound ? {
     "@context": "https://schema.org",
-    "@type": "FoodEstablishment",
-    "name": sellerName,
-    "description": `Fresh fish seller in ${sellerLocation || "Mumbai"}. Pre-order directly.`,
-    "url": `https://www.relifish.store/v2/seller/${id}`,
-    "image": seller.store_image_url || "https://www.relifish.store/og-image.png",
-    "priceRange": "₹₹",
-    "servesCuisine": "Seafood",
-    "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressCountry": "IN" },
-    "openingHours": seller.opens_at && seller.closes_at ? `Mo-Su ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}` : undefined,
-    "aggregateRating": seller.rating_avg && seller.total_orders > 0 ? {
-      "@type": "AggregateRating",
-      "ratingValue": seller.rating_avg,
-      "reviewCount": seller.total_orders
-    } : undefined
+    "@graph": [
+      {
+        "@type": "FoodEstablishment",
+        "@id": `https://www.relifish.store/v2/seller/${id}#seller`,
+        "name": sellerName,
+        "description": `Fresh fish seller in ${sellerLocation || "Mumbai"}. Pre-order directly.`,
+        "url": `https://www.relifish.store/v2/seller/${id}`,
+        "image": seller.store_image_url || "https://www.relifish.store/og-image.png",
+        "priceRange": "₹₹",
+        "servesCuisine": "Seafood",
+        "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressCountry": "IN" },
+        "openingHours": seller.opens_at && seller.closes_at ? `Mo-Su ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}` : undefined,
+        "aggregateRating": seller.rating_avg && seller.total_orders > 0 ? {
+          "@type": "AggregateRating",
+          "ratingValue": seller.rating_avg,
+          "reviewCount": seller.total_orders
+        } : undefined,
+        "hasMenu": listings.length > 0 ? {
+          "@type": "Menu",
+          "name": isPreorderMode ? "Pre-order Menu" : "Today's Menu",
+          "hasMenuSection": {
+            "@type": "MenuSection",
+            "name": "Fresh Fish",
+            "hasMenuItem": listings.map((l: any) => {
+              const sp = speciesDisplayById[l.species] || l.species || "Fish";
+              const opts = l.pricing_options || [];
+              const firstOpt = opts[0];
+              return {
+                "@type": "MenuItem",
+                "name": sp,
+                "description": l.description || `Fresh ${sp} from ${sellerName}`,
+                "image": l.photo_url || undefined,
+                "offers": firstOpt ? {
+                  "@type": "Offer",
+                  "price": firstOpt.price,
+                  "priceCurrency": "INR",
+                  "availability": "https://schema.org/InStock"
+                } : undefined
+              };
+            })
+          }
+        } : undefined
+      },
+      listings.length > 0 ? {
+        "@type": "ItemList",
+        "name": `Fish available from ${sellerName}`,
+        "numberOfItems": listings.length,
+        "itemListElement": listings.map((l: any, i: number) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "item": {
+            "@type": "Product",
+            "name": speciesDisplayById[l.species] || l.species || "Fish",
+            "description": l.description || `Fresh ${l.species} from ${sellerName} in ${sellerLocation || "Mumbai"}`,
+            "image": l.photo_url || undefined,
+            "offers": (l.pricing_options || []).length > 0 ? {
+              "@type": "Offer",
+              "price": l.pricing_options[0].price,
+              "priceCurrency": "INR",
+              "seller": { "@type": "Organization", "name": sellerName },
+              "availability": "https://schema.org/InStock"
+            } : undefined
+          }
+        }))
+      } : undefined
+    ].filter(Boolean)
   } : undefined}
 >
   <Toast />
@@ -227,10 +279,48 @@ const tags = [
       ) : (
         <>
           <div style="padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">Today's Menu</h2>
+            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">{isPreorderMode ? "Pre-order Menu" : "Today's Menu"}</h2>
             <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
-          <div id="v2-menu-grid" class="v2-menu-grid"></div>
+          {/* SSR product cards — JS replaces with interactive version on load.
+              Crawlers read this; buyers see the JS-rendered interactive grid. */}
+          <div id="v2-menu-grid" class="v2-menu-grid">
+            {listings.map((l: any) => {
+              const sp = speciesDisplayById[l.species] || l.species || "Fish";
+              const opts = l.pricing_options || [];
+              const firstOpt = opts[0];
+              const priceText = firstOpt
+                ? (opts.length > 1
+                    ? `₹${firstOpt.price}–₹${opts[opts.length-1].price}`
+                    : `₹${firstOpt.price}`)
+                : "";
+              const suffixText = firstOpt?.buyer_menu_suffix || "";
+              const preorderRange = (() => {
+                if (!isPreorderMode) return null;
+                const mn = opts.find((o: any) => o.preorder_price_min)?.preorder_price_min;
+                const mx = opts.find((o: any) => o.preorder_price_max)?.preorder_price_max;
+                if (!mn && !mx) return null;
+                return mn && mx && mn !== mx ? `₹${mn}–₹${mx}` : `₹${mn || mx}`;
+              })();
+              return (
+                <article class="v2-item-card v2-ssr-card" data-listing-id={l.id}
+                  style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);overflow:hidden;display:flex;flex-direction:row;">
+                  {l.photo_url && (
+                    <img src={l.photo_url} alt={`${sp} from ${sellerName}`} width="100" height="90"
+                      loading="lazy" style="width:100px;height:90px;object-fit:cover;flex-shrink:0;" />
+                  )}
+                  <div class="v2-item-body" style="padding:12px;flex:1;min-width:0;">
+                    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:0 0 2px;">{sp}</h3>
+                    {l.size_label && <p style="font:400 11px Inter;color:var(--v2-ink-3);margin:0 0 4px;">{l.size_label}</p>}
+                    <p style="font:700 14px Inter;color:var(--v2-blue);margin:0;">
+                      {isPreorderMode && preorderRange ? `🌙 ${preorderRange}` : `${priceText}${suffixText}`}
+                    </p>
+                    {l.description && <p style="font:400 11px Inter;color:var(--v2-ink-3);margin:4px 0 0;line-height:1.4;">{l.description}</p>}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </>
       )}
     </>
