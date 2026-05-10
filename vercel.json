@@ -1,4 +1,16 @@
 {
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "app.relifish.store" }],
+      "destination": "/shop"
+    },
+    {
+      "source": "/((?!shop|seller|me|track|preorder|search|dashboard|api|_astro|privacy|sitemap|robots|favicon|manifest|icon|og-image|sw\\.js|workbox).*)",
+      "has": [{ "type": "host", "value": "app.relifish.store" }],
+      "destination": "/$1"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
