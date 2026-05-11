@@ -28,6 +28,14 @@ export const SPECIES: Record<string, Species> = {
   sole: { english: "Sole Fish", marathi: "लेप", defaultUnit: "piece" },
   hilsa: { english: "Hilsa", marathi: "पालवा", defaultUnit: "piece" },
   rohu: { english: "Rohu", marathi: "रोहू", defaultUnit: "piece" },
+  halwa: { english: "Halwa (Black Pomfret)", marathi: "हलवा", defaultUnit: "piece" },
+  katla: { english: "Katla", marathi: "कटला", defaultUnit: "kg" },
+  salmon: { english: "Salmon", marathi: "सॅलमन", defaultUnit: "kg" },
+  bhetki: { english: "Bhetki (Indian Basa)", marathi: "भेटकी", defaultUnit: "kg" },
+  ghol: { english: "Ghol", marathi: "घोळ", defaultUnit: "kg" },
+  basa: { english: "Basa", marathi: "बासा", defaultUnit: "kg" },
+  shark: { english: "Shark (Mushi)", marathi: "मुशी", defaultUnit: "kg" },
+  boi: { english: "Boi (Mullet)", marathi: "बोई", defaultUnit: "kg" },
 };
 
 export const SPECIES_LIST = Object.entries(SPECIES).map(([id, s]) => ({
