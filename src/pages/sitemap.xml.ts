@@ -26,6 +26,9 @@ export const GET: APIRoute = async () => {
     // Use final destination URLs (no 302 chains)
     { loc: "/", changefreq: "daily", priority: "1.0" },
     { loc: "/search", changefreq: "weekly", priority: "0.6" },
+    // Static marketing pages
+    { loc: "/buyer-detailed.html", changefreq: "monthly", priority: "0.9" },
+    { loc: "/seller-detailed.html", changefreq: "monthly", priority: "0.9" },
   ];
 
   for (const seller of sellers || []) {
@@ -61,7 +64,7 @@ ${urls
   return new Response(xml, {
     headers: {
       "Content-Type": "application/xml",
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
     },
   });
 };

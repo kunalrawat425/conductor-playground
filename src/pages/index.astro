@@ -1,859 +1,1568 @@
 ---
-import AppShellV2 from "../components/v2/AppShellV2.astro";
-import SellerCard from "../components/v2/molecules/SellerCard.astro";
-import PreorderBanner from "../components/v2/molecules/PreorderBanner.astro";
-import CategoryStrip from "../components/v2/molecules/CategoryStrip.astro";
-import EmptyState from "../components/v2/molecules/EmptyState.astro";
-import Skeleton from "../components/v2/atoms/Skeleton.astro";
-import Toast from "../components/v2/atoms/Toast.astro";
-import LocationPickerSheet from "../components/v2/organisms/LocationPickerSheet.astro";
-
-// Category strip is built dynamically from live listings data (see script below).
-// SSR renders only "All Fish" as a placeholder; JS fills the rest after data loads.
-const categories = [
-  { id: "all", name: "All Fish", emoji: "🐟", active: true },
-];
+export const prerender = true;
+const SITE = "https://www.relifish.store";
 ---
-<AppShellV2
-  title="Fresh Fish Delivery Mumbai — Order from Local Sellers | Relifish"
-  description="Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch — pomfret, surmai, bangda, prawns — delivered or pickup tomorrow morning."
-  needsMap={true}
-  header={{
-    locationLabel: "Set location",
-    locationSub: "Tap to choose your area",
-    showSearch: false,
-    showCart: false,
-    cartCount: 0,
-  }}
-  nav={{ active: "home" }}
-  jsonLd={{
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Relifish — Fresh Fish from Mumbai's Local Sellers</title>
+  <meta name="description" content="Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch, collect tomorrow morning. Pomfret, Surmai, Prawns — morning-fresh, no middleman." />
+  <link rel="canonical" href={SITE} />
+  <meta property="og:title" content="Relifish — Fresh Fish from Mumbai's Local Sellers" />
+  <meta property="og:description" content="Pre-order tonight's catch from local Mumbai fish sellers. Morning-fresh, direct from source." />
+  <meta property="og:image" content={`${SITE}/og-image.png`} />
+  <meta property="og:url" content={SITE} />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Relifish" />
+  <meta property="og:locale" content="en_IN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
+  <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "Organization",
-        "@id": "https://www.relifish.store/#organization",
-        "name": "Relifish",
-        "url": "https://www.relifish.store",
-        "logo": "https://www.relifish.store/icon-192.svg",
-        "description": "Mumbai's fresh fish marketplace — order directly from local sellers, pre-order tonight's catch for morning pickup or delivery.",
-        "areaServed": { "@type": "City", "name": "Mumbai" },
-        "contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "availableLanguage": ["English", "Marathi"] }
-      },
-      {
-        "@type": "LocalBusiness",
-        "@id": "https://www.relifish.store/#localbusiness",
-        "name": "Relifish",
-        "url": "https://www.relifish.store",
-        "description": "Fresh fish marketplace connecting Mumbai buyers directly with local fish sellers. Pre-order pomfret, surmai, bangda, prawns and more.",
-        "image": "https://www.relifish.store/og-image.png",
-        "priceRange": "₹₹",
-        "servesCuisine": "Seafood",
-        "areaServed": { "@type": "City", "name": "Mumbai" },
-        "hasMap": "https://www.relifish.store"
-      },
-      {
-        "@type": "WebSite",
-        "@id": "https://www.relifish.store/#website",
-        "name": "Relifish",
-        "url": "https://www.relifish.store",
-        "potentialAction": { "@type": "SearchAction", "target": "https://www.relifish.store/search?q={search_term_string}", "query-input": "required name=search_term_string" }
-      }
+      { "@type": "Organization", "@id": `${SITE}/#org`, "name": "Relifish", "url": SITE, "logo": `${SITE}/icon-192.svg`, "description": "Mumbai's fresh fish marketplace.", "areaServed": { "@type": "City", "name": "Mumbai" } },
+      { "@type": "WebSite", "@id": `${SITE}/#web`, "name": "Relifish", "url": SITE },
+      { "@type": "FAQPage", "mainEntity": [
+        { "@type": "Question", "name": "How does Relifish work?", "acceptedAnswer": { "@type": "Answer", "text": "Browse local fish sellers, pre-order tonight before the cutoff, collect fresh tomorrow morning or get home delivery." } },
+        { "@type": "Question", "name": "Is Relifish available in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Currently serving Versova, Andheri West and expanding across Mumbai. Join the waitlist for your area." } }
+      ]}
     ]
-  }}
->
-  <!-- SEO H1 — visually hidden on app, present for crawlers -->
-  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
-    Fresh Fish Delivery Mumbai — Order from Local Sellers
-  </h1>
-  <Toast />
-  <LocationPickerSheet />
+  })} />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --blue:#2563EB;--blue-dark:#1D4ED8;--blue-light:#60A5FA;--blue-dim:rgba(37,99,235,.12);--blue-glow:rgba(37,99,235,.3);
+      --teal:#2563EB; /* aliased to blue — no cyan anywhere */
+      --ink:#0A0F1E;--ink-2:#4A5568;--ink-3:#94A3B8;
+      --white:#fff;--bg:#F8FAFC;--border:rgba(10,15,30,.08);
+      --dark:#05091A;--dark-2:#0D1629;--dark-3:#1A2540;
+      --dark-border:rgba(255,255,255,.08);
+      --max:1160px;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
 
-  <!-- Sticky filter cluster — stays in view when scrolling cards -->
-  <div id="v2-sticky-cluster" class="v2-sticky-cluster">
-    <PreorderBanner variant="inline" />
+    /* grain */
+    body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+      opacity:.025;mix-blend-mode:overlay}
 
-    <div style="margin-top: 6px;">
-      <CategoryStrip items={categories} />
+    /* ── Nav ── */
+    .nav{position:fixed;top:0;left:0;right:0;z-index:200;transition:background .3s}
+    .nav.scrolled{background:rgba(5,9,26,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--dark-border)}
+    .nav-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 28px}
+    .logo{font:800 22px/1 Inter;color:#fff;letter-spacing:-.5px}
+    .logo span{color:var(--teal)}
+    .nav-links{display:flex;align-items:center;gap:2px}
+    .nl{font:500 14px Inter;color:rgba(255,255,255,.6);padding:8px 13px;border-radius:8px;transition:all .15s}
+    .nl:hover{color:#fff;background:rgba(255,255,255,.07)}
+    .btn-nav{display:inline-flex;align-items:center;gap:6px;font:700 14px Inter;padding:10px 20px;border-radius:10px;background:var(--blue);color:#fff;transition:all .15s;white-space:nowrap;border:none;cursor:pointer}
+    .btn-nav:hover{background:var(--blue-dark);transform:translateY(-1px)}
+    @media(max-width:760px){.nav-links .nl{display:none}}
+
+    /* ── Hero ── */
+    .hero{min-height:100svh;background:var(--dark);position:relative;display:flex;align-items:center;overflow:hidden;padding-top:72px}
+    .hero-orb1{position:absolute;width:600px;height:400px;top:-80px;left:-150px;background:radial-gradient(ellipse,rgba(37,99,235,.16) 0%,transparent 70%);pointer-events:none}
+    .hero-orb2{position:absolute;width:500px;height:350px;bottom:-40px;right:-80px;background:radial-gradient(ellipse,rgba(37,99,235,.1) 0%,transparent 70%);pointer-events:none}
+    .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:56px 56px;pointer-events:none}
+    .hero-inner{max-width:var(--max);margin:0 auto;padding:60px 28px 80px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;position:relative;z-index:2;width:100%}
+
+    h1{font:900 58px/1.04 Inter;color:#fff;letter-spacing:-2px;margin-bottom:20px}
+    h1 .blu{color:var(--blue-light)}
+    h1 .dim{color:rgba(255,255,255,.7)}
+    .hero-sub{font:400 18px/1.65 Inter;color:rgba(255,255,255,.52);max-width:440px;margin-bottom:28px}
+    .hero-sub strong{color:rgba(255,255,255,.82);font-weight:600}
+
+    /* fish chips */
+    .fish-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+    .ftag{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:6px 14px;font:500 13px Inter;color:rgba(255,255,255,.62)}
+
+    .hero-ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
+    .btn-primary{display:inline-flex;align-items:center;gap:8px;font:700 16px Inter;padding:14px 28px;border-radius:12px;background:var(--blue);color:#fff;box-shadow:0 8px 32px var(--blue-glow);transition:all .2s;border:none;cursor:pointer}
+    .btn-primary:hover{background:var(--blue-dark);transform:translateY(-2px);box-shadow:0 16px 48px var(--blue-glow)}
+    .btn-ghost{display:inline-flex;align-items:center;gap:8px;font:600 16px Inter;padding:13px 24px;border-radius:12px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.14);transition:all .2s}
+    .btn-ghost:hover{background:rgba(255,255,255,.09);color:#fff;border-color:rgba(255,255,255,.24)}
+
+    .hero-urgency{display:flex;align-items:center;gap:8px;font:500 13px Inter;color:rgba(255,255,255,.38)}
+    .udot{width:6px;height:6px;border-radius:50%;background:#F87171;animation:blink 1.5s infinite;flex-shrink:0}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--dark-border);border-radius:14px;overflow:hidden;border:1px solid var(--dark-border);margin-top:36px}
+    .hs{background:rgba(255,255,255,.03);padding:16px 12px;text-align:center}
+    .hs-n{font:800 24px Inter;color:#fff;letter-spacing:-1px}
+    .hs-l{font:400 11px Inter;color:rgba(255,255,255,.3);margin-top:2px}
+
+    @media(max-width:940px){.hero-inner{grid-template-columns:1fr}.hero-right{display:none}h1{font-size:42px}}
+    @media(max-width:480px){h1{font-size:34px;letter-spacing:-1.4px}.hero-sub{font-size:16px}}
+
+    /* ── Hero right — interactive phone demo ── */
+    .hero-right{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+
+    /* phone shell */
+    .demo-phone{
+      width:270px;
+      background:linear-gradient(175deg,#1E2D4A,#0D1629);
+      border-radius:44px;
+      border:2px solid rgba(255,255,255,.15);
+      box-shadow:0 48px 96px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.05),inset 0 1px 0 rgba(255,255,255,.08);
+      overflow:hidden;
+      position:relative;
+      cursor:pointer;
+      user-select:none;
+    }
+    .demo-notch{height:28px;background:#000;display:flex;align-items:center;justify-content:center}
+    .demo-pill{width:72px;height:9px;background:#111;border-radius:100px}
+
+    /* progress bar */
+    .demo-progress{height:2px;background:rgba(255,255,255,.08)}
+    .demo-progress-fill{height:100%;background:var(--blue);width:0%;transition:width .1s linear;border-radius:1px}
+
+    /* screen container */
+    .demo-screens{height:500px;overflow:hidden;position:relative}
+    .demo-screen{
+      position:absolute;inset:0;
+      opacity:0;
+      transform:translateX(24px);
+      transition:opacity .35s ease,transform .35s ease;
+      pointer-events:none;
+    }
+    .demo-screen.active{opacity:1;transform:translateX(0);pointer-events:auto}
+    .demo-screen.exit{opacity:0;transform:translateX(-24px)}
+
+    /* step dots */
+    .demo-dots{display:flex;align-items:center;gap:6px;justify-content:center}
+    .demo-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:all .2s}
+    .demo-dot.active{background:var(--blue);width:18px;border-radius:3px}
+
+    /* nav hint */
+    .demo-hint{font:500 11px Inter;color:rgba(255,255,255,.3);text-align:center}
+
+    /* ── Screen styles ── */
+    /* all screens share base bg */
+    .ds-light{background:#F7F8FC;height:100%}
+    .ds-dark{background:#050D1A;height:100%}
+
+    /* screen header */
+    .dh{background:#fff;border-bottom:1px solid #EAECF0;padding:10px 13px}
+    .dh-title{font:700 11px Inter;color:#0A0F1E}
+    .dh-sub{font:400 8px Inter;color:#9CA3AF;margin-top:1px}
+    .dh-back{font:500 8px Inter;color:var(--blue);margin-bottom:3px}
+    .dh-search{background:#F3F4F6;border-radius:7px;padding:6px 9px;font:400 8px Inter;color:#9CA3AF;margin-top:6px;display:flex;align-items:center;gap:4px}
+
+    /* screen 0 — welcome */
+    .d0-center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;text-align:center;padding:24px}
+    .d0-logo{font:800 20px Inter;color:#fff;letter-spacing:-.5px}
+    .d0-logo span{color:var(--teal)}
+    .d0-tagline{font:400 12px/1.5 Inter;color:rgba(255,255,255,.5)}
+    .d0-btn{background:var(--blue);color:#fff;font:700 11px Inter;padding:10px 24px;border-radius:10px;width:100%}
+
+    /* screen 1 — location */
+    .d1-area{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;border:1px solid #EAECF0;background:#fff;margin:0 10px 5px}
+    .d1-area.tap{border-color:var(--blue);background:#EFF6FF;animation:d1tap .4s ease}
+    @keyframes d1tap{0%,100%{transform:scale(1)}40%{transform:scale(.97)}}
+    .d1-icon{font-size:13px}
+    .d1-name{font:700 9px Inter;color:#0A0F1E}
+    .d1-dist{font:400 7px Inter;color:#9CA3AF}
+    .d1-check{width:14px;height:14px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;margin-left:auto}
+    .d1-btn{margin:6px 10px 0;background:var(--blue);border-radius:8px;padding:8px;text-align:center;font:700 9px Inter;color:#fff}
+
+    /* screen 2 — sellers */
+    .d2-tabs{display:flex;background:#fff;border-bottom:1px solid #EAECF0}
+    .d2t{font:600 8px Inter;padding:7px 10px;border-bottom:2px solid transparent;color:#9CA3AF}
+    .d2t.on{color:var(--blue);border-bottom-color:var(--blue)}
+    .d2-list{padding:7px 8px;display:flex;flex-direction:column;gap:6px}
+    .d2-card{background:#fff;border-radius:9px;border:1px solid #EAECF0;overflow:hidden}
+    .d2-card.tap{border-color:var(--blue);animation:d1tap .4s ease}
+    .d2-img{height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
+    .d2-badge{position:absolute;top:3px;right:4px;font:700 6px Inter;padding:1px 5px;border-radius:100px}
+    .d2-badge.op{background:#2563EB;color:#fff}
+    .d2-badge.pr{background:#7C3AED;color:#fff}
+    .d2-info{padding:5px 7px}
+    .d2-name{font:700 9px Inter;color:#0A0F1E}
+    .d2-sub{font:400 7px Inter;color:#9CA3AF;margin-top:1px}
+
+    /* screen 3 — fish menu */
+    .d3-item{display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#fff;border-bottom:1px solid #F3F4F6}
+    .d3-item.tap{background:#EFF6FF;animation:d1tap .4s ease}
+    .d3-emoji{font-size:18px;margin-right:6px}
+    .d3-name{font:700 9px Inter;color:#0A0F1E}
+    .d3-cut{font:400 7px Inter;color:#9CA3AF;margin-top:1px}
+    .d3-lock{font:600 7px Inter;color:var(--blue);display:flex;align-items:center;gap:2px}
+    .d3-add{background:var(--blue);color:#fff;font:700 7px Inter;padding:4px 8px;border-radius:6px}
+    .d3-add.added{background:#059669}
+    .d3-bar{position:absolute;bottom:0;left:0;right:0;background:var(--blue);padding:7px 10px;display:flex;justify-content:space-between;align-items:center}
+    .d3-bar-t{font:700 9px Inter;color:#fff}
+    .d3-bar-p{font:800 10px Inter;color:rgba(255,255,255,.8)}
+
+    /* screen 4 — cart */
+    .d4-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#fff;border-bottom:1px solid #F3F4F6}
+    .d4-name{font:600 9px Inter;color:#0A0F1E}
+    .d4-lock{font:500 7px Inter;color:var(--blue)}
+    .d4-qty{display:flex;align-items:center;gap:5px}
+    .d4-q{width:18px;height:18px;background:#EFF6FF;border-radius:5px;display:flex;align-items:center;justify-content:center;font:700 10px Inter;color:var(--blue)}
+    .d4-summary{margin:6px 9px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:8px 10px}
+    .d4-row{display:flex;justify-content:space-between;font:500 8px Inter;color:#1E40AF;margin-bottom:3px}
+    .d4-btn{margin:0 9px;background:var(--blue);border-radius:8px;padding:8px;text-align:center;font:700 9px Inter;color:#fff;animation:pulseblue 2s infinite}
+    @keyframes pulseblue{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.4)}50%{box-shadow:0 0 0 5px rgba(37,99,235,0)}}
+
+    /* screen 5 — payment */
+    .d5-amount{text-align:center;padding:16px 10px 10px}
+    .d5-to{font:400 8px Inter;color:#9CA3AF}
+    .d5-seller{font:700 11px Inter;color:#0A0F1E;margin:3px 0}
+    .d5-amt-label{font:400 9px Inter;color:#9CA3AF}
+    .d5-amt{font:800 22px Inter;color:#0A0F1E;letter-spacing:-1px}
+    .d5-amt span{font-size:14px;font-weight:500;color:#9CA3AF}
+    .d5-upi-apps{display:flex;justify-content:center;gap:8px;padding:6px 10px}
+    .d5-app{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px;border-radius:9px;background:#F3F4F6;border:1px solid #E5E7EB;width:52px}
+    .d5-app.tap{border-color:var(--blue);background:#EFF6FF;animation:d1tap .4s ease}
+    .d5-app-icon{font-size:18px}
+    .d5-app-name{font:600 7px Inter;color:#374151}
+    .d5-pay-btn{margin:0 10px;background:var(--blue);border-radius:9px;padding:9px;text-align:center;font:700 10px Inter;color:#fff}
+
+    /* screen 6 — confirmed */
+    .d6-center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:16px;text-align:center;gap:8px}
+    .d6-icon{width:52px;height:52px;border-radius:50%;background:#EFF6FF;border:2px solid #BFDBFE;display:flex;align-items:center;justify-content:center;font-size:26px;animation:popcheck .5s ease both}
+    @keyframes popcheck{0%{transform:scale(0)}80%{transform:scale(1.15)}100%{transform:scale(1)}}
+    .d6-title{font:800 13px Inter;color:#0A0F1E}
+    .d6-sub{font:400 9px/1.4 Inter;color:#6B7280}
+    .d6-eta{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 10px;width:100%}
+    .d6-eta-t{font:700 9px Inter;color:var(--blue)}
+    .d6-eta-s{font:400 7px Inter;color:#93C5FD;margin-top:1px}
+
+    /* screen 7 — tracking */
+    .d7-step{display:flex;align-items:flex-start;gap:10px;padding:8px 10px}
+    .d7-dot-wrap{display:flex;flex-direction:column;align-items:center}
+    .d7-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+    .d7-dot.done{background:var(--blue)}
+    .d7-dot.active{background:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.2);animation:trackpulse 1.5s infinite}
+    @keyframes trackpulse{0%,100%{box-shadow:0 0 0 3px rgba(37,99,235,.2)}50%{box-shadow:0 0 0 6px rgba(37,99,235,0)}}
+    .d7-dot.pending{background:#E5E7EB}
+    .d7-line{width:1px;height:20px;background:#E5E7EB;margin:2px 0}
+    .d7-line.done{background:var(--blue)}
+    .d7-label{font:700 9px Inter;color:#0A0F1E;margin-bottom:1px}
+    .d7-sub{font:400 7px Inter;color:#9CA3AF}
+    .d7-sub.blue{color:var(--blue)}
+
+    /* screen 8 — delivered */
+    .d8-center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:16px;text-align:center;gap:8px}
+    .d8-icon{font-size:48px;animation:wiggle 1s .2s ease both}
+    @keyframes wiggle{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+    .d8-title{font:800 14px Inter;color:#0A0F1E}
+    .d8-sub{font:400 9px/1.5 Inter;color:#6B7280}
+    .d8-rate{background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:7px 10px;width:100%}
+    .d8-rate-t{font:600 8px Inter;color:#92400E}
+    .d8-stars{font-size:14px;margin-top:3px}
+
+    /* floating fish badges */
+    .fish3d{
+      position:absolute;border-radius:14px;display:flex;align-items:center;gap:9px;padding:9px 13px;
+      background:rgba(13,22,41,.92);border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 36px rgba(0,0,0,.5);
+      backdrop-filter:blur(12px);z-index:10;animation:floatfish 4s ease-in-out infinite;
+    }
+    .fish3d:nth-child(1){top:20px;right:-10px;animation-delay:0s}
+    .fish3d:nth-child(2){bottom:80px;right:-20px;animation-delay:1.4s}
+    .fish3d:nth-child(3){top:180px;right:-15px;animation-delay:2.8s}
+    @keyframes floatfish{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+    .fish3d-e{font-size:28px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));transform:scaleX(-1)}
+    .fish3d-n{font:700 10px Inter;color:#fff}
+    .fish3d-t{font:400 8px Inter;color:rgba(255,255,255,.4);margin-top:1px}
+    .fish3d-f{font:700 7px Inter;color:var(--blue-light);background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);border-radius:100px;padding:2px 6px;margin-top:3px;display:inline-block}
+
+    /* ── Ticker ── */
+    .ticker{background:var(--dark-3);border-top:1px solid var(--dark-border);border-bottom:1px solid var(--dark-border);overflow:hidden;padding:10px 0}
+    .ticker-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
+    .ticker-track:hover{animation-play-state:paused}
+    @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    .ti{display:inline-flex;align-items:center;gap:8px;padding:0 20px;font:500 12px Inter;color:rgba(255,255,255,.45);white-space:nowrap}
+    .ti .fish{color:var(--blue-light);font-weight:700}
+    .ti .dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.15)}
+
+    /* ── Sections ── */
+    .sec{padding:96px 28px}
+    .sec-alt{background:var(--bg)}
+    .sec-dark{background:var(--dark)}
+    .sec-grad{background:linear-gradient(160deg,#050915,#0A1628,#050915)}
+    .wrap{max-width:var(--max);margin:0 auto}
+    .slabel{font:700 11px Inter;color:var(--blue-light);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px}
+    h2{font:800 42px/1.1 Inter;color:var(--ink);letter-spacing:-1.2px;margin-bottom:18px}
+    h2 .hl{color:var(--blue)}
+    .ssub{font:400 18px/1.65 Inter;color:var(--ink-2);max-width:520px}
+    .dk h2{color:#fff}
+    .dk .ssub{color:rgba(255,255,255,.5)}
+    .dk .slabel{color:var(--blue-light)}
+    .dk h2 .hl{color:var(--blue-light)}
+    @media(max-width:640px){h2{font-size:30px}.ssub{font-size:16px}.sec{padding:72px 20px}}
+
+    /* ── How it works — phone mockups ── */
+    /* ── How it works — phone mockups ── */
+    .flow-phones{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:56px;align-items:flex-start}
+    .flow-step{display:flex;flex-direction:column;align-items:center}
+    .flow-step-num{
+      width:36px;height:36px;border-radius:50%;
+      background:var(--blue);color:#fff;font:800 15px Inter;
+      display:flex;align-items:center;justify-content:center;
+      margin-bottom:14px;box-shadow:0 4px 14px var(--blue-glow);
+    }
+    .flow-step h3{font:700 15px Inter;color:var(--ink);margin:14px 0 5px;text-align:center}
+    .flow-step p{font:400 13px/1.55 Inter;color:var(--ink-2);text-align:center;max-width:175px}
+
+    /* ── phone shell — bigger & premium ── */
+    .fp{
+      width:100%;max-width:200px;
+      border-radius:34px;
+      background:linear-gradient(175deg,#1E2D4A,#0D1629);
+      border:1.5px solid rgba(255,255,255,.15);
+      box-shadow:0 32px 72px rgba(0,0,0,.32),0 0 0 1px rgba(255,255,255,.05),inset 0 1px 0 rgba(255,255,255,.08);
+      overflow:hidden;
+    }
+    .fp-notch{height:24px;background:#000;display:flex;align-items:center;justify-content:center}
+    .fp-pill{width:70px;height:8px;background:#191919;border-radius:100px}
+    .fp-screen{overflow:hidden;position:relative;height:360px;background:#F7F8FC}
+
+    /* status bar inside each screen */
+    .sbar{display:flex;justify-content:space-between;align-items:center;padding:5px 12px 4px;background:rgba(255,255,255,.98);border-bottom:1px solid rgba(0,0,0,.04)}
+    .sbar-t{font:700 8px Inter;color:#0A0F1E}
+    .sbar-i{display:flex;align-items:center;gap:3px;font-size:8px;color:#0A0F1E}
+
+    /* ─ Screen 1: location ─ */
+    .s1-hero{background:linear-gradient(135deg,#2563EB,#1D4ED8);padding:14px 13px 20px;position:relative;overflow:hidden}
+    .s1-hero::before{content:'';position:absolute;bottom:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06)}
+    .s1-hero-ttl{font:800 13px Inter;color:#fff;margin-bottom:2px}
+    .s1-hero-sub{font:400 9px Inter;color:rgba(255,255,255,.65)}
+    .s1-srch{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px 10px;font:400 9px Inter;color:rgba(255,255,255,.65);margin-top:9px;display:flex;align-items:center;gap:5px}
+    .s1-list{padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+    .s1-row{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;border:1px solid #E5E7EB;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .s1-row.sel{border-color:#2563EB;background:#EFF6FF;box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+    .s1-pin{width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+    .s1-row.sel .s1-pin{background:#DBEAFE}
+    .s1-rn{font:700 10px Inter;color:#0A0F1E}
+    .s1-rd{font:400 8px Inter;color:#9CA3AF;margin-top:1px}
+    .s1-ck{width:16px;height:16px;border-radius:50%;background:#2563EB;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;margin-left:auto;flex-shrink:0}
+    .s1-btn{margin:2px 10px 0;background:#2563EB;border-radius:10px;padding:10px;text-align:center;font:700 10px Inter;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.35)}
+    .s1-row.sel{animation:taprow .5s ease}
+    @keyframes taprow{0%,100%{transform:scale(1)}40%{transform:scale(.975)}}
+
+    /* ─ Screen 2: sellers ─ */
+    .s2-top{background:#fff;padding:9px 12px;border-bottom:1px solid #F0F0F0}
+    .s2-loc{display:flex;align-items:center;gap:3px;font:400 8px Inter;color:#6B7280}
+    .s2-area{font:700 10px Inter;color:#0A0F1E;margin-left:2px}
+    .s2-srch{background:#F3F4F6;border-radius:8px;padding:6px 9px;font:400 9px Inter;color:#9CA3AF;margin-top:7px;display:flex;align-items:center;gap:4px}
+    .s2-tabs{display:flex;background:#fff;border-bottom:1px solid #F0F0F0}
+    .s2t{font:600 9px Inter;padding:7px 11px;border-bottom:2px solid transparent;color:#9CA3AF}
+    .s2t.on{color:#2563EB;border-bottom-color:#2563EB}
+    .s2-list{padding:8px 9px;display:flex;flex-direction:column;gap:7px;animation:scrollup 5s ease-in-out 1s infinite}
+    @keyframes scrollup{0%,35%,100%{transform:translateY(0)}55%,80%{transform:translateY(-52px)}}
+    .s2-card{background:#fff;border-radius:10px;border:1px solid #EAECF0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);transition:all .2s}
+    .s2-card:first-child{border-color:#2563EB;box-shadow:0 0 0 1.5px rgba(37,99,235,.2),0 4px 12px rgba(37,99,235,.1)}
+    .s2-cover{height:46px;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative}
+    .s2-cover.g{background:linear-gradient(135deg,#0D3B2E,#0A5940)}
+    .s2-cover.p{background:linear-gradient(135deg,#1A0D4A,#2A3080)}
+    .s2-cover.t{background:linear-gradient(135deg,#002828,#004040)}
+    .s2-st{position:absolute;top:5px;right:6px;font:700 7px Inter;padding:2px 6px;border-radius:100px}
+    .s2-st.op{background:#2563EB;color:#fff}
+    .s2-st.pr{background:#7C3AED;color:#fff}
+    .s2-bd{padding:7px 9px}
+    .s2-nm{font:700 10px Inter;color:#0A0F1E}
+    .s2-sub{font:400 8px Inter;color:#9CA3AF;margin-top:1px}
+    .s2-chips{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+    .s2-chip{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:5px;padding:2px 6px;font:600 7px Inter;color:#2563EB}
+
+    /* ─ Screen 3: checkout ─ */
+    .s3-top{background:#fff;padding:9px 12px;border-bottom:1px solid #F0F0F0}
+    .s3-bk{font:500 8px Inter;color:#2563EB;margin-bottom:3px;display:flex;align-items:center;gap:2px}
+    .s3-ttl{font:800 12px Inter;color:#0A0F1E}
+    .s3-seller{display:flex;align-items:center;gap:7px;margin:8px 10px 6px;padding:7px 9px;background:#F8F9FA;border-radius:9px;border:1px solid #E5E7EB}
+    .s3-s-icon{width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,#0D3B2E,#0A5940);display:flex;align-items:center;justify-content:center;font-size:12px}
+    .s3-s-name{font:700 9px Inter;color:#0A0F1E}
+    .s3-s-sub{font:400 7px Inter;color:#9CA3AF}
+    .s3-items{margin:0 10px;background:#fff;border:1px solid #EAECF0;border-radius:10px;overflow:hidden}
+    .s3-item{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-bottom:1px solid #F3F4F6}
+    .s3-il{display:flex;align-items:center;gap:7px}
+    .s3-ie{width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font-size:13px}
+    .s3-in{font:700 9px Inter;color:#0A0F1E}
+    .s3-id{font:400 7px Inter;color:#9CA3AF;margin-top:1px}
+    .s3-lock{display:flex;align-items:center;gap:3px;font:600 8px Inter;color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:3px 7px}
+    .s3-tot{padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+    .s3-tot-l{font:700 10px Inter;color:#0A0F1E}
+    .s3-tot-r{font:600 9px Inter;color:#2563EB}
+    .s3-pay{margin:0 10px;background:#2563EB;border-radius:10px;padding:10px;text-align:center;font:700 10px Inter;color:#fff;display:flex;align-items:center;justify-content:center;gap:5px;animation:pulsebtn 2s infinite}
+    @keyframes pulsebtn{0%,100%{box-shadow:0 4px 14px rgba(37,99,235,.4)}50%{box-shadow:0 4px 28px rgba(37,99,235,.7)}}
+    .s3-nt{text-align:center;font:400 8px Inter;color:#9CA3AF;padding:6px}
+
+    /* ─ Screen 4: confirmed ─ */
+    .s4-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px 16px;text-align:center;gap:11px;background:#fff}
+    .s4-ring{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#1D4ED8);display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 8px 28px rgba(37,99,235,.45);animation:popscale .6s ease both}
+    @keyframes popscale{0%{transform:scale(0);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+    .s4-ttl{font:800 15px Inter;color:#0A0F1E;letter-spacing:-.3px}
+    .s4-sub{font:400 10px/1.5 Inter;color:#6B7280;max-width:155px}
+    .s4-eta{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1.5px solid #BFDBFE;border-radius:12px;padding:10px 14px;width:100%}
+    .s4-eta-m{font:800 11px Inter;color:#1D4ED8}
+    .s4-eta-s{font:400 8px Inter;color:#93C5FD;margin-top:2px}
+    .s4-stepper{display:flex;align-items:center;width:100%}
+    .s4st{display:flex;flex-direction:column;align-items:center;flex:1;gap:3px}
+    .s4st-d{width:11px;height:11px;border-radius:50%}
+    .s4st-d.dn{background:#2563EB}
+    .s4st-d.ac{background:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.2)}
+    .s4st-d.pe{background:#E5E7EB}
+    .s4st-ln{flex:1;height:1.5px;margin-top:-8px}
+    .s4st-ln.dn{background:#2563EB}
+    .s4st-ln.pe{background:#E5E7EB}
+    .s4st-lb{font:500 7px Inter;color:#9CA3AF}
+    .s4st-lb.ac{color:#2563EB;font-weight:700}
+
+    /* tap ripple */
+    .tap-zone{position:relative;overflow:hidden}
+    .tap-zone::after{content:'';position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,.2);transform:scale(0);animation:rpl 2.5s 1.5s ease-in-out infinite;pointer-events:none;top:50%;left:50%;margin:-16px 0 0 -16px}
+    @keyframes rpl{0%{transform:scale(0);opacity:1}100%{transform:scale(4);opacity:0}}
+
+    @media(max-width:960px){.flow-phones{grid-template-columns:1fr 1fr;gap:20px}}
+    @media(max-width:520px){.flow-phones{display:flex;overflow-x:auto;gap:14px;padding-bottom:10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}.flow-step{scroll-snap-align:start;flex-shrink:0;width:185px}.fp .fp-screen{height:320px}}
+
+    /* ── Fish grid ── */
+    .fish-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-top:48px}
+    .fish-card{background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .22s;cursor:pointer;position:relative}
+    .fish-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.1);border-color:rgba(37,99,235,.3)}
+    .fish-img{height:110px;display:flex;align-items:center;justify-content:center;font-size:56px;position:relative}
+    .fi1{background:linear-gradient(135deg,#0D3B2E,#0A5940)}
+    .fi2{background:linear-gradient(135deg,#1A0D4A,#2A3080)}
+    .fi3{background:linear-gradient(135deg,#0D2040,#1A3A5F)}
+    .fi4{background:linear-gradient(135deg,#2D1B00,#5C3800)}
+    .fi5{background:linear-gradient(135deg,#1A0020,#3A0050)}
+    .fi6{background:linear-gradient(135deg,#002020,#00403A)}
+    .fi7{background:linear-gradient(135deg,#200D00,#402000)}
+    .fi8{background:linear-gradient(135deg,#0A0A20,#1A1A40)}
+    .ftag-badge{position:absolute;top:8px;left:8px;font:600 8px Inter;padding:3px 8px;border-radius:100px}
+    .ftag-badge.in{background:rgba(37,99,235,.85);color:#000}
+    .ftag-badge.pre{background:rgba(124,58,237,.85);color:#fff}
+    .fish-body{padding:14px}
+    .fish-name{font:700 14px Inter;color:var(--ink);margin-bottom:2px}
+    .fish-marathi{font:400 11px Inter;color:var(--ink-3);margin-bottom:10px}
+    .fish-login{display:flex;align-items:center;gap:6px;background:var(--blue-dim);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:8px 10px;font:600 12px Inter;color:var(--blue)}
+    .fish-cta{display:block;margin-top:8px;background:#F8FAFC;border:1px solid var(--border);border-radius:9px;padding:7px;text-align:center;font:600 12px Inter;color:var(--ink-2);transition:all .15s}
+    .fish-card:hover .fish-cta{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+    /* ── Why ── */
+    .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:48px}
+    .why-card{background:rgba(255,255,255,.04);border:1px solid var(--dark-border);border-radius:20px;padding:24px;transition:all .25s}
+    .why-card:hover{background:rgba(255,255,255,.07);border-color:rgba(37,99,235,.3);transform:translateY(-3px)}
+    .why-icon{width:48px;height:48px;border-radius:13px;background:var(--blue-dim);border:1px solid rgba(37,99,235,.2);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+    .why-card h3{font:700 15px Inter;color:#fff;margin-bottom:8px}
+    .why-card p{font:400 13px/1.6 Inter;color:rgba(255,255,255,.44)}
+    .why-vs{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--dark-border)}
+    .wvg{font:600 11px Inter;color:var(--teal)}
+    .wvsep{width:1px;height:10px;background:var(--dark-border)}
+    .wvb{font:500 11px Inter;color:rgba(255,255,255,.2)}
+    @media(max-width:800px){.why-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:500px){.why-grid{grid-template-columns:1fr}}
+
+    /* ── Stats ── */
+    .stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--dark-border);border-radius:14px;overflow:hidden;border:1px solid var(--dark-border);margin-top:48px}
+    .sb{background:rgba(255,255,255,.03);padding:20px 14px;text-align:center}
+    .sb-n{font:800 32px Inter;color:#fff;letter-spacing:-1px}
+    .sb-n .a{color:var(--blue-light)}
+    .sb-l{font:400 12px Inter;color:rgba(255,255,255,.3);margin-top:3px}
+    @media(max-width:640px){.stats-bar{grid-template-columns:1fr 1fr}}
+
+    /* ── Testimonials ── */
+    .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+    .testi-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:22px;transition:all .2s}
+    .testi-card:hover{box-shadow:0 12px 40px rgba(0,0,0,.08);transform:translateY(-2px)}
+    .testi-stars{color:#FFD60A;font-size:13px;margin-bottom:10px;letter-spacing:2px}
+    .testi-text{font:400 14px/1.65 Inter;color:var(--ink-2);margin-bottom:14px}
+    .testi-text .hl{font-weight:700;color:var(--ink)}
+    .testi-author{display:flex;align-items:center;gap:10px}
+    .testi-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 15px Inter;flex-shrink:0;border:2px solid var(--border)}
+    .av1{background:linear-gradient(135deg,#0D3B2E,#0A5940);color:#fff}
+    .av2{background:linear-gradient(135deg,#1A0D4A,#2A3080);color:#fff}
+    .av3{background:linear-gradient(135deg,#2D1B00,#5C3800);color:#fff}
+    .av4{background:linear-gradient(135deg,#0D2040,#1A3A5F);color:#fff}
+    .av5{background:linear-gradient(135deg,#1A0020,#3A0050);color:#fff}
+    .av6{background:linear-gradient(135deg,#002020,#00403A);color:#fff}
+    .testi-name{font:700 13px Inter;color:var(--ink)}
+    .testi-loc{font:400 11px Inter;color:var(--ink-3)}
+    .testi-save{display:inline-flex;align-items:center;gap:4px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:100px;padding:3px 9px;font:600 11px Inter;color:var(--blue);margin-top:6px}
+    @media(max-width:800px){.testi-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:500px){.testi-grid{grid-template-columns:1fr}}
+
+    /* ── Waitlist (all blue) ── */
+    .wl-wrap{background:linear-gradient(135deg,#030820,#071235,#030820);border-radius:28px;border:1px solid rgba(37,99,235,.2);display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center;padding:56px 52px;position:relative;overflow:hidden}
+    .wl-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 400px 300px at 85% 50%,rgba(37,99,235,.07) 0%,transparent 70%);pointer-events:none}
+    .wl-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(37,99,235,.12);border:1px solid rgba(96,165,250,.2);border-radius:100px;padding:6px 16px;margin-bottom:18px}
+    .wl-badge-n{font:800 15px Inter;color:var(--blue-light)}
+    .wl-badge-t{font:500 12px Inter;color:rgba(255,255,255,.5)}
+    .wl-title{font:800 34px/1.1 Inter;color:#fff;letter-spacing:-1px;margin-bottom:12px}
+    .wl-sub{font:400 15px/1.6 Inter;color:rgba(255,255,255,.45);margin-bottom:22px}
+    .wl-perks{display:flex;flex-direction:column;gap:9px}
+    .wl-perk{display:flex;align-items:center;gap:10px;font:500 14px Inter;color:rgba(255,255,255,.62)}
+    .wl-pi{width:26px;height:26px;border-radius:7px;background:var(--blue-dim);border:1px solid rgba(37,99,235,.2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+    .wl-form{display:flex;flex-direction:column;gap:11px}
+    .wl-lbl{font:600 12px Inter;color:rgba(255,255,255,.5);margin-bottom:4px;display:block}
+    .wl-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(96,165,250,.18);border-radius:10px;padding:12px 15px;font:400 15px Inter;color:#fff;outline:none;transition:border-color .15s}
+    .wl-input::placeholder{color:rgba(255,255,255,.2)}
+    .wl-input:focus{border-color:var(--blue-light);background:rgba(37,99,235,.05)}
+    .wl-sel{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(96,165,250,.18);border-radius:10px;padding:12px 15px;font:400 15px Inter;color:rgba(255,255,255,.65);outline:none;appearance:none;cursor:pointer}
+    .wl-sel:focus{border-color:var(--blue-light)}
+    .wl-sel option{background:#0D1A3A;color:#fff}
+    .wl-2col{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+    .wl-btn{background:var(--blue);color:#fff;font:700 16px Inter;padding:14px;border:none;border-radius:12px;cursor:pointer;transition:all .2s;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+    .wl-btn:hover{background:var(--blue-dark);transform:translateY(-1px)}
+    .wl-btn:disabled{opacity:.6;cursor:wait}
+    .wl-note{font:400 11px Inter;color:rgba(255,255,255,.25);text-align:center}
+    .wl-success{display:none;text-align:center;padding:28px;flex-direction:column;align-items:center;gap:10px}
+    .wl-success.show{display:flex}
+    .wl-success-icon{font-size:44px}
+    .wl-success-title{font:800 20px Inter;color:#fff}
+    .wl-success-sub{font:400 14px/1.5 Inter;color:rgba(255,255,255,.45)}
+    @media(max-width:800px){.wl-wrap{grid-template-columns:1fr;gap:32px;padding:36px 24px}}
+
+    /* ── FAQ ── */
+    .faqs{display:flex;flex-direction:column;gap:8px;margin-top:48px}
+    .faq{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .15s}
+    .faq:hover{border-color:rgba(37,99,235,.3)}
+    .faq summary{font:600 15px Inter;color:var(--ink);padding:18px 22px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px}
+    .faq summary::-webkit-details-marker{display:none}
+    .faq-toggle{width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font:700 17px Inter;color:var(--ink-3);flex-shrink:0;transition:all .15s}
+    .faq[open] .faq-toggle{background:var(--blue-dim);color:var(--blue);transform:rotate(45deg)}
+    .faq p{font:400 14px/1.7 Inter;color:var(--ink-2);padding:0 22px 18px}
+    .faq-blue-bar{display:flex;align-items:center;gap:8px;background:rgba(37,99,235,.05);border:1px solid rgba(37,99,235,.15);border-radius:10px;padding:10px 14px;margin:0 22px 18px;font:500 13px Inter;color:var(--blue)}
+    .faq-blue-cta{font:700 13px Inter;color:var(--blue);text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+
+    /* ── Detail links ── */
+    .detail-links{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:36px}
+    .detail-link{border-radius:18px;border:1px solid var(--dark-border);display:flex;transition:all .2s}
+    .detail-link:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.2);border-color:rgba(37,99,235,.3)}
+    .dl-inner{background:linear-gradient(135deg,#0A1628,#1A2540);padding:22px 26px;display:flex;align-items:center;gap:16px;width:100%;border-radius:18px}
+    .dl-icon{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .dl-icon.buy{background:var(--blue-dim);border:1px solid rgba(37,99,235,.2)}
+    .dl-title{font:700 16px Inter;color:#fff;margin-bottom:3px}
+    .dl-sub{font:400 12px/1.5 Inter;color:rgba(255,255,255,.4)}
+    .dl-arrow{margin-left:auto;font:700 18px Inter;color:rgba(255,255,255,.25);flex-shrink:0}
+    .detail-link:hover .dl-arrow{color:var(--blue-light)}
+    @media(max-width:600px){.detail-links{grid-template-columns:1fr}}
+
+    /* ── Footer ── */
+    footer{background:#050911;padding:60px 28px 28px}
+    .ft{max-width:var(--max);margin:0 auto}
+    .ft-top{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:44px;margin-bottom:44px}
+    .ft-brand{font:800 22px Inter;color:#fff;margin-bottom:8px;letter-spacing:-.4px}
+    .ft-brand span{color:var(--teal)}
+    .ft-desc{font:400 13px/1.6 Inter;color:rgba(255,255,255,.28);max-width:220px}
+    .ft-col h4{font:600 11px Inter;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:13px}
+    .ft-col a{display:block;font:400 13px Inter;color:rgba(255,255,255,.28);margin-bottom:8px;transition:color .15s}
+    .ft-col a:hover{color:#fff}
+    .ft-bottom{border-top:1px solid rgba(255,255,255,.05);padding-top:22px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font:400 12px Inter;color:rgba(255,255,255,.18)}
+    @media(max-width:720px){.ft-top{grid-template-columns:1fr 1fr;gap:24px}}
+    @media(max-width:420px){.ft-top{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- NAV — no seller links -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="/" class="logo">Reli<span>fish</span></a>
+    <div class="nav-links">
+      <a href="#how" class="nl">How it works</a>
+      <a href="#fish" class="nl">Browse fish</a>
+      <a href="#waitlist" class="nl">Join waitlist</a>
+      <a href="/buyer-detailed.html" class="nl">Buyer guide</a>
     </div>
-
-    <!-- Filter chips: timing × fulfillment × top-rated -->
-    <div class="v2-filter-chips" id="v2-filter-chips" role="tablist" aria-label="Filter sellers">
-      <button type="button" class="v2-fchip v2-fchip-active" data-filter="all" data-group="all">All</button>
-      <button type="button" class="v2-fchip" data-filter="open" data-group="time">Open now</button>
-      <button type="button" class="v2-fchip" data-filter="preorder" data-group="time">Pre-order</button>
-      <span class="v2-fchip-sep" aria-hidden="true"></span>
-      <button type="button" class="v2-fchip" data-filter="pickup" data-group="fulfill">Pickup</button>
-      <button type="button" class="v2-fchip" data-filter="delivery" data-group="fulfill">Delivery</button>
-      <span class="v2-fchip-sep" aria-hidden="true"></span>
-      <button type="button" class="v2-fchip" data-filter="topRated" data-group="toggle">Top rated ★</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a href="/me" class="nl" style="color:rgba(255,255,255,.7)">Login</a>
+      <a href="/shop" class="btn-nav">Order now →</a>
     </div>
+    <a href="/shop" class="btn-nav" id="m-cta" style="display:none;font-size:13px;padding:9px 14px">Order →</a>
   </div>
-
-  <div class="v2-section-head">
-    <h2>Sellers near you</h2>
-    <span id="v2-seller-count" class="v2-count-badge">…</span>
-  </div>
-
-  <!-- Loading skeletons -->
-  <div id="v2-loading" class="v2-cards-grid">
-    <div class="v2-skel-card"><Skeleton shape="card" height="220px" /></div>
-    <div class="v2-skel-card"><Skeleton shape="card" height="220px" /></div>
-  </div>
-
-  <!-- Cards grid (filled by JS) -->
-  <div id="v2-sellers-grid" class="v2-cards-grid" style="display:none;"></div>
-
-  <!-- Empty -->
-  <div id="v2-empty" style="display:none;padding: 0 16px;">
-    <EmptyState variant="no-area" ctaHref="/buyer-banner.html#wl-form" ghostCtaHref="#" />
-  </div>
-
-  <!-- Markets closed -->
-  <div id="v2-closed" style="display:none;padding: 0 16px;">
-    <EmptyState variant="closed" ctaHref="/v2?mode=preorder" />
-  </div>
-
-  <!-- Sticky cart section (Swiggy-style, fixed above bottom nav) -->
-  <div id="v2-home-carts" style="display:none;position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:40;max-height:40vh;overflow-y:auto;background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.1);"></div>
-</AppShellV2>
-
-<style is:global>
-  .v2-section-head {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 20px 16px 10px;
-  }
-  .v2-section-head h2 {
-    font-family: var(--v2-font); font-weight: 800; font-size: 18px;
-    color: var(--v2-ink); margin: 0;
-  }
-  .v2-count-badge {
-    background: var(--v2-brand);
-    color: #fff;
-    font-family: var(--v2-font); font-weight: 700; font-size: 12px;
-    padding: 3px 10px;
-    border-radius: 9999px;
-  }
-  .v2-cards-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 0 16px;
-    animation: v2-fade-in var(--v2-dur) var(--v2-ease-out);
-  }
-  @media (min-width: 600px) {
-    .v2-cards-grid { grid-template-columns: 1fr 1fr; }
-  }
-  .v2-skel-card { border-radius: 12px; overflow: hidden; }
-  .v2-badge-bold { font-weight: 800 !important; }
-
-  /* Sticky filter cluster — pin nav controls below header */
-  .v2-sticky-cluster {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    background: var(--v2-bg-2);
-    padding: 8px 16px 4px;
-    border-bottom: 1px solid var(--v2-border);
-  }
-  .v2-sticky-cluster .v2-pb-inline { margin: 0 0 6px; }
-
-  /* Filter chips */
-  .v2-filter-chips {
-    display: flex; gap: 6px;
-    padding: 6px 16px 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    align-items: center;
-  }
-  .v2-filter-chips::-webkit-scrollbar { display: none; }
-  .v2-fchip {
-    padding: 7px 14px;
-    border: 1.5px solid var(--v2-border);
-    background: var(--v2-bg);
-    color: var(--v2-ink-2);
-    font: 600 12px Inter;
-    border-radius: 9999px;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background var(--v2-dur-fast) var(--v2-ease), color var(--v2-dur-fast) var(--v2-ease), border-color var(--v2-dur-fast) var(--v2-ease);
-  }
-  .v2-fchip:hover { border-color: var(--v2-brand-m); }
-  .v2-fchip-active {
-    background: var(--v2-brand);
-    color: #fff;
-    border-color: var(--v2-brand);
-  }
-  .v2-fchip-sep {
-    width: 1px; height: 20px;
-    background: var(--v2-border);
-    flex-shrink: 0;
-    margin: 0 2px;
-  }
-</style>
+</nav>
+<script>
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>40),{passive:true});
+  document.getElementById('m-cta').style.display = window.innerWidth<=760?'inline-flex':'none';
+</script>
 
 <script>
-  import { supabase } from "../lib/supabase";
-  import { getSession } from "../lib/auth";
-  import { subscribePush } from "../lib/push";
-  import { getSpeciesDisplay } from "../lib/species";
-  import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
-  import type { Seller, FishListing } from "../lib/supabase";
+(function(){
+  const TOTAL = 9;
+  const DURATION = 3200; // ms per step
+  let current = 0;
+  let timer = null;
+  let barTimer = null;
+  let barStart = null;
+  let paused = false;
 
-  type SellerHue = "sky" | "green" | "orange" | "indigo";
+  const screens = document.querySelectorAll('.demo-screen');
+  const dots = document.querySelectorAll('.demo-dot');
+  const bar = document.getElementById('demo-bar');
+  const phone = document.getElementById('demo-phone');
 
-  function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  function goTo(idx, direction) {
+    const prev = current;
+    current = ((idx % TOTAL) + TOTAL) % TOTAL;
+
+    // exit prev
+    screens[prev].classList.remove('active');
+    screens[prev].classList.add('exit');
+    setTimeout(() => screens[prev].classList.remove('exit'), 380);
+
+    // enter next — direction: 1=forward, -1=back
+    screens[current].style.transform = direction >= 0 ? 'translateX(24px)' : 'translateX(-24px)';
+    screens[current].classList.add('active');
+    // force reflow then animate
+    screens[current].getBoundingClientRect();
+    screens[current].style.transform = '';
+
+    // dots
+    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+
+    // restart progress bar
+    startBar();
   }
 
-  function isOpen(opens?: string | null, closes?: string | null) {
-    if (!opens || !closes) return true;
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
-    const [oh, om] = opens.split(":").map(Number);
-    const [ch, cm] = closes.split(":").map(Number);
-    const openMin = oh * 60 + om;
-    const closeMin = ch * 60 + cm;
-    // Handle cross-midnight ranges (e.g. 17:00 → 01:58)
-    if (openMin <= closeMin) return cur >= openMin && cur <= closeMin;
-    return cur >= openMin || cur <= closeMin;
-  }
-
-  const DAY_NAMES_SHORT = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-  function todayDayName() {
-    return DAY_NAMES_SHORT[new Date().getDay()];
-  }
-
-  function getBuyerLocation(): { lat: number; lng: number } | null {
-    try {
-      const lat = localStorage.getItem("zepto_buyer_lat");
-      const lng = localStorage.getItem("zepto_buyer_lng");
-      if (lat && lng) return { lat: parseFloat(lat), lng: parseFloat(lng) };
-    } catch {}
-    return null;
-  }
-
-  function getBuyerArea(): string {
-    try { return localStorage.getItem("zepto_buyer_location") || "Set location"; } catch { return "Set location"; }
-  }
-
-  function pickHue(seed: string): SellerHue {
-    const hues: SellerHue[] = ["sky", "green", "orange", "indigo"];
-    let h = 0;
-    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-    return hues[h % hues.length];
-  }
-
-  function escapeHtml(s: string) {
-    return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
-  }
-
-  function listingChipHtml(l: any): string {
-    const name = getSpeciesDisplay(l.species);
-    const opts = getListingPriceOptions(l);
-    const opt = opts[0];
-    const price = opt?.price ?? (l.pricing_options as any[])?.[0]?.price ?? 0;
-    const unitPart = opt
-      ? formatBuyerMenuUnitSuffix(opt).replace(/^\//, "")
-      : escapeHtml(String((l.pricing_options as any[])?.[0]?.unit_label || "kg"));
-    const emoji = (l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : "🐟";
-    return `<div class="v2-sc-chip"><span class="v2-sc-m-emoji">${emoji}</span><div><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${unitPart}</div></div></div>`;
-  }
-
-  /** At most 2 cells: two products, or first product + "+N" (N = number of additional listings). */
-  function sellerMenuChipsHtml(listings: any[] | undefined): string {
-    const lst = listings || [];
-    if (lst.length === 0) return "";
-    if (lst.length <= 2) return lst.map(listingChipHtml).join("");
-    return listingChipHtml(lst[0]) + `<div class="v2-sc-chip v2-sc-chip-more"><span class="v2-sc-m-more">+${lst.length - 1}</span></div>`;
-  }
-
-  async function loadSellers() {
-    const loading = document.getElementById("v2-loading")!;
-    const grid = document.getElementById("v2-sellers-grid")!;
-    const empty = document.getElementById("v2-empty")!;
-    const closed = document.getElementById("v2-closed")!;
-    const count = document.getElementById("v2-seller-count")!;
-
-    // Update header location label
-    const locMain = document.querySelector(".v2-loc-main");
-    const locSub = document.querySelector(".v2-loc-sub");
-    const area = getBuyerArea();
-    if (locMain && area && area !== "Set location") {
-      locMain.firstChild!.textContent = area + " ";
-    }
-
-    // First-visit location prompt — try geolocation API, fallback to manual on deny.
-    // Only auto-prompt if user has never set location and never dismissed prompt.
-    let promptedKey = "v2_loc_prompted";
-    let promptedThisSession = false;
-    try { promptedThisSession = sessionStorage.getItem(promptedKey) === "1"; } catch {}
-    const needsLocation = !getBuyerLocation();
-    if (needsLocation && !promptedThisSession && navigator.geolocation) {
-      try { sessionStorage.setItem(promptedKey, "1"); } catch {}
-      // Friendly delay so page paints first
-      setTimeout(() => {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            // Allowed: reverse geocode → save → reload data
-            const { latitude, longitude } = pos.coords;
-            try {
-              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-              const data = await r.json();
-              const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
-              try {
-                localStorage.setItem("zepto_buyer_location", a);
-                localStorage.setItem("zepto_buyer_lat", String(latitude));
-                localStorage.setItem("zepto_buyer_lng", String(longitude));
-              } catch {}
-              if (locMain) locMain.firstChild!.textContent = a + " ";
-              (window as any).v2Toast?.("success", "Location set", a);
-              loadSellers();
-            } catch {}
-          },
-          () => {
-            // Denied or failed: open manual picker after a beat (don't be pushy — just hint via subtitle)
-            if (locMain) locMain.firstChild!.textContent = "Set location ";
-            if (locSub) locSub.textContent = "Tap to choose your area";
-          },
-          { timeout: 7000, maximumAge: 60_000 * 5 }
-        );
-      }, 800);
-    }
-
-    try {
-      const [{ data: listingsData }, { data: sellersData }] = await Promise.all([
-        supabase
-          .from("fish_listings")
-          .select("*, seller:sellers(*)")
-          .or("is_available.eq.true,is_preorder_enabled.eq.true"),
-        supabase
-          .from("sellers")
-          .select("*")
-          .eq("is_active", true)
-          .neq("name", "New Seller"),
-      ]);
-
-      const listings = (listingsData || []) as (FishListing & { seller: Seller })[];
-      const sellers = (sellersData || []) as Seller[];
-
-      // Group listings by seller
-      const sellerListings = new Map<string, FishListing[]>();
-      for (const l of listings) {
-        const sid = (l as any).seller?.id;
-        if (!sid) continue;
-        if (!sellerListings.has(sid)) sellerListings.set(sid, []);
-        sellerListings.get(sid)!.push(l);
-      }
-
-      // Filter sellers: must have listings OR accept pre-orders
-      const filtered = sellers.filter(s => {
-        const hasListings = (sellerListings.get(s.id) || []).length > 0;
-        return hasListings || s.accepts_preorder === true;
-      });
-
-      const buyerLoc = getBuyerLocation();
-      const groups = filtered.map(s => {
-        const dist = buyerLoc && s.lat != null && s.lng != null
-          ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
-          : null;
-        const rawListings = sellerListings.get(s.id) || [];
-        const openDays: string[] = Array.isArray((s as any).open_days) ? (s as any).open_days : [];
-        const preorderDays: string[] = Array.isArray((s as any).preorder_days) ? (s as any).preorder_days : [];
-        const day = todayDayName();
-        const isTodayOrderDay = !openDays.length || openDays.includes(day);
-        const isTodayPreorderDay = preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder;
-        const openNow = isOpen(s.opens_at, s.closes_at) && isTodayOrderDay;
-        const preorderMode = !openNow && isTodayPreorderDay;
-        const listings = rawListings.filter((l: any) => preorderMode
-          ? (
-              l?.is_preorder_enabled === true &&
-              (Array.isArray(l?.pricing_options) ? l.pricing_options.some((o: any) => o?.preorder_price_min != null || o?.preorder_price_max != null) : true)
-            )
-          : l?.is_available === true
-        );
-        return {
-          seller: s,
-          listings,
-          dist,
-          open: openNow,
-          preorderMode,
-          preorderAvailableToday: isTodayPreorderDay,
-        };
-      });
-
-      // Sort: open first, then by distance, then rating
-      groups.sort((a, b) => {
-        if (a.open !== b.open) return a.open ? -1 : 1;
-        if (a.dist != null && b.dist != null) return a.dist - b.dist;
-        return (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0);
-      });
-
-      loading.style.display = "none";
-
-      // Cache for filter re-render
-      (window as any).__v2allGroups = groups;
-      if (getBuyerLocation()) {
-        buildCategoryStrip(groups);
+  function startBar() {
+    if (barTimer) cancelAnimationFrame(barTimer);
+    barStart = performance.now();
+    function tick(now) {
+      if (paused) { barTimer = requestAnimationFrame(tick); return; }
+      const pct = Math.min(((now - barStart) / DURATION) * 100, 100);
+      bar.style.width = pct + '%';
+      if (pct >= 100) {
+        goTo(current + 1, 1);
       } else {
-        buildCategoryStrip([]);
-      }
-      renderFiltered();
-    } catch (err) {
-      console.error("v2: load failed", err);
-      loading.innerHTML = `<div style="text-align:center;padding:40px;color:var(--v2-red);">Failed to load. Refresh to try again.</div>`;
-    }
-  }
-
-  // Filter state — seeded from URL params so deep-links and CTAs (e.g. EmptyState's
-  // "Pre-order tomorrow", search trending cards `?species=prawns`) actually filter.
-  const initialParams = new URLSearchParams(window.location.search);
-  const initialMode = initialParams.get("mode");
-  const initialCat = initialParams.get("species") || initialParams.get("cat");
-  const filterState = {
-    time: (initialMode === "preorder" || initialMode === "open" ? initialMode : null) as null | "open" | "preorder",
-    fulfill: null as null | "pickup" | "delivery",
-    topRated: false,
-    category: (initialCat || "all") as string, // category strip species filter
-    maxKm: 25, // distance cap (km) when buyer location available
-  };
-
-  // Species id → emoji for category strip tiles
-  const speciesEmoji: Record<string, string> = {
-    pomfret: "🐠", surmai: "🐟", rawas: "🐟", bangda: "🐟",
-    bombil: "🐡", prawns: "🦐", crab: "🦀", squid: "🦑",
-    lobster: "🦞", oyster: "🦪", clam: "🐚", sardine: "🐟",
-    sole: "🐟", hilsa: "🐟", rohu: "🐟",
-  };
-
-  // Species id → display name for category strip
-  const speciesLabel: Record<string, string> = {
-    pomfret: "Pomfret", surmai: "Surmai", rawas: "Rawas",
-    bangda: "Bangda", bombil: "Bombil", prawns: "Prawns",
-    crab: "Crab", squid: "Squid", lobster: "Lobster",
-    oyster: "Oyster", clam: "Clam", sardine: "Sardine",
-    sole: "Sole", hilsa: "Hilsa", rohu: "Rohu",
-  };
-
-  // Map category id → species substrings to match in listings
-  // Each species key matches its own name exactly; "all" matches everything.
-  const categorySpecies: Record<string, string[]> = { all: [] };
-  for (const id of Object.keys(speciesLabel)) {
-    categorySpecies[id] = [id];
-  }
-
-  // Build category strip from actual listings, sorted by listing count descending.
-  // Called once after data loads; ordering is fixed after that (doesn't re-sort on filter).
-  function buildCategoryStrip(groups: any[]) {
-    const counts: Record<string, number> = {};
-    for (const g of groups) {
-      for (const l of (g.listings || [])) {
-        const sp = (l.species || "").toLowerCase().trim();
-        if (sp && sp !== "all") counts[sp] = (counts[sp] || 0) + 1;
+        barTimer = requestAnimationFrame(tick);
       }
     }
-    // Priority species always first (if they have listings), then others by count
-    const priority = ["surmai", "prawns", "pomfret", "crab"];
-    const priorityWithListings = priority.filter(sp => counts[sp] > 0);
-    const rest = Object.entries(counts)
-      .filter(([id]) => !priority.includes(id))
-      .sort((a, b) => b[1] - a[1])
-      .map(([id]) => id);
-    const sorted = [...priorityWithListings, ...rest].slice(0, 7);
-
-    const strip = document.querySelector(".v2-cat-strip");
-    if (!strip) return;
-
-    const activeCat = filterState.category;
-    // Rebuild strip: All Fish first, then sorted species that have listings
-    const items = [
-      { id: "all", name: "All Fish", emoji: "🐟" },
-      ...sorted.map(id => ({
-        id,
-        name: speciesLabel[id] || id.charAt(0).toUpperCase() + id.slice(1),
-        emoji: speciesEmoji[id] || "🐟",
-      })),
-    ];
-
-    strip.innerHTML = items.map(item => {
-      const url = item.id === "all" ? "/v2" : `/v2?cat=${item.id}`;
-      const active = item.id === activeCat;
-      return `<a href="${url}" class="v2-cat-item${active ? " v2-cat-active" : ""}" role="tab" aria-selected="${active}">
-        <div class="v2-cat-tile"><span aria-hidden="true">${item.emoji}</span></div>
-        <div class="v2-cat-name">${item.name}</div>
-      </a>`;
-    }).join("");
-
-    // Re-wire click handlers for rebuilt strip
-    strip.querySelectorAll<HTMLAnchorElement>(".v2-cat-item").forEach(cat => {
-      cat.addEventListener("click", e => {
-        e.preventDefault();
-        const url = new URL((cat as HTMLAnchorElement).href, window.location.origin);
-        const catId = url.searchParams.get("cat") || "all";
-        filterState.category = catId;
-        strip.querySelectorAll(".v2-cat-item").forEach(c => c.classList.remove("v2-cat-active"));
-        cat.classList.add("v2-cat-active");
-        renderFiltered();
-      });
-    });
+    barTimer = requestAnimationFrame(tick);
   }
 
-  function applyFilters(groups: any[]) {
-    const buyerLoc = getBuyerLocation();
-    if (!buyerLoc) return [];
+  // tap phone to advance
+  phone.addEventListener('click', () => {
+    // reset bar and go forward
+    if (barTimer) cancelAnimationFrame(barTimer);
+    goTo(current + 1, 1);
+  });
 
-    return groups.filter((g) => {
-      const s = g.seller;
-      // Buyer has coordinates but seller missing map pin — cannot verify service area
-      if (g.dist == null) return false;
-
-      const rad = Number(s.delivery_rad);
-      const capKm =
-        rad > 0
-          ? rad
-          : s.has_delivery
-            ? Math.min(10, filterState.maxKm)
-            : filterState.maxKm;
-      if (g.dist > capKm) return false;
-
-      // Time
-      if (filterState.time === "open" && !g.open) return false;
-      if (filterState.time === "preorder" && !g.preorderAvailableToday) return false;
-      // Fulfill (delivery filter is the only meaningful one)
-      if (filterState.fulfill === "delivery" && !s.has_delivery) return false;
-      // Category — filter by species substrings in seller's listings
-      const cat = filterState.category;
-      if (cat && cat !== "all") {
-        const subs = categorySpecies[cat] || [];
-        const hasMatch = (g.listings || []).some((l: any) => {
-          const sp = (l.species || "").toLowerCase();
-          return subs.some((needle) => sp.includes(needle));
-        });
-        if (!hasMatch) return false;
-      }
-      return true;
-    });
-  }
-
-  function renderFiltered() {
-    const allGroups = (window as any).__v2allGroups || [];
-    const grid = document.getElementById("v2-sellers-grid")!;
-    const empty = document.getElementById("v2-empty")!;
-    const closed = document.getElementById("v2-closed")!;
-    const count = document.getElementById("v2-seller-count")!;
-    const sticky = document.getElementById("v2-sticky-cluster");
-    const sectionHead = document.querySelector(".v2-section-head") as HTMLElement | null;
-
-    empty.style.display = "none";
-    closed.style.display = "none";
-
-    if (!getBuyerLocation()) {
-      sticky?.style && (sticky.style.display = "none");
-      if (sectionHead) sectionHead.style.display = "none";
-      grid.style.display = "none";
-      grid.innerHTML = "";
-      empty.innerHTML = `
-<div style="padding:40px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;">
-  <div style="font-size:48px;margin-bottom:12px;">📍</div>
-  <div style="font:700 17px Inter;color:var(--v2-ink);margin-bottom:8px;">Set your location</div>
-  <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto;line-height:1.45;">
-    Choose your area to see sellers who deliver or offer pickup near you. We only show sellers that serve your distance.
-  </div>
-  <button type="button" id="v2-open-loc-empty" style="background:var(--v2-brand);color:#fff;border:none;font:700 14px Inter;padding:12px 28px;border-radius:var(--v2-radius-sm);cursor:pointer;">
-    Choose area
-  </button>
-</div>`;
-      empty.style.display = "block";
-      return;
-    }
-
-    sticky?.style && (sticky.style.display = "");
-    if (sectionHead) sectionHead.style.display = "";
-
-    let filtered = applyFilters(allGroups);
-    if (filterState.topRated) {
-      filtered = [...filtered].sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
-    }
-
-    if (allGroups.length === 0) {
-      count.textContent = "0";
-      empty.innerHTML = `<div style="padding:40px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:48px;margin-bottom:12px;">🐟</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers yet</div><div style="font:400 12px Inter;color:var(--v2-ink-3);">Check back soon.</div></div>`;
-      empty.style.display = "block";
-      grid.style.display = "none";
-      return;
-    }
-
-    if (filtered.length === 0) {
-      count.textContent = "0";
-      grid.style.display = "none";
-      grid.innerHTML = "";
-      const noMatch = `<div style="padding:40px 24px;text-align:center;background:#fff;border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:48px;margin-bottom:12px;">🎣</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers match these filters</div><div style="font:400 12px Inter;color:var(--v2-ink-3);">Tap All to see everyone.</div></div>`;
-      empty.innerHTML = noMatch;
-      empty.style.display = "block";
-      return;
-    }
-
-    count.textContent = String(filtered.length);
-    grid.style.display = "grid";
-
-    grid.innerHTML = filtered.map((g: any) => {
-        const s = g.seller;
-        const top = sellerMenuChipsHtml(g.listings);
-
-        const hue = pickHue(s.id);
-        const hueColors: Record<SellerHue, string> = {
-          sky: "linear-gradient(135deg,#E0F2FE,#BAE6FD)",
-          green: "linear-gradient(135deg,#ECFDF5,#D1FAE5)",
-          orange: "linear-gradient(135deg,#FFF7ED,#FED7AA)",
-          indigo: "linear-gradient(135deg,#EEF2FF,#E0E7FF)",
-        };
-
-        // Status: open / closed-preorder (still active for pre-orders) / closed / pre-order-only
-        const status = !g.open
-          ? (g.preorderAvailableToday ? "closed-preorder" : "closed")
-          : (g.listings.length === 0 && g.preorderAvailableToday ? "pre-order-only" : "open");
-
-        // ONE status tag per card — mutually exclusive states.
-        const statusBadge = status === "open"
-          ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md v2-badge-bold">Open now</span>`
-          : status === "closed-preorder"
-            ? `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-orders open</span>`
-            : status === "closed"
-              ? `<span class="v2-badge v2-badge-tag v2-badge-red v2-badge-size-md v2-badge-bold">Closed</span>`
-              : `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-order only</span>`;
-
-        const pickupTag = !s.has_delivery
-          ? `<span class="v2-badge v2-badge-tag v2-badge-size-md">Pickup only</span>` : "";
-
-        const rating = s.rating_avg ? Number(s.rating_avg).toFixed(1) : null;
-        const ratingBadge = rating ? `<span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">${rating} ★</span>` : "";
-
-        const distStr = g.dist != null ? `${g.dist.toFixed(1)} km` : "";
-        const subParts = [s.location_name || s.location || "", distStr].filter(Boolean).join(" · ");
-
-        // Offer badge logic — never show "Pre-order today" on a closed seller (confusing)
-        // Open + has items = Same-day catch (brand)
-        // Open + no items + accepts pre-order = Pre-order only (indigo)
-        // Closed + accepts pre-order = Pre-order available (indigo)
-        // Closed + no preorder = Closed (red)
-        let offerLabel = "", offerColor = "v2-badge-brand";
-        if (g.open && g.listings.length > 0) {
-          offerLabel = "Same-day catch";
-          offerColor = "v2-badge-brand";
-        } else if (g.open && g.preorderAvailableToday) {
-          offerLabel = "Pre-order only";
-          offerColor = "v2-badge-indigo";
-        } else if (!g.open && g.preorderAvailableToday) {
-          offerLabel = "Pre-order available";
-          offerColor = "v2-badge-indigo";
-        } else {
-          offerLabel = "Closed today";
-          offerColor = "v2-badge-red";
-        }
-        const offerBadge = `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
-
-        const deliveryBar = s.has_delivery
-          ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
-          : "";
-
-        const fullyClosed = status === "closed";
-
-        return `
-        <${fullyClosed ? 'div' : `a href="/seller/${s.id}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
-          <div class="v2-sc-img" style="background:${hueColors[hue]};">
-            ${offerBadge}
-            ${(s as any).store_image_url
-              ? `<img src="${escapeHtml((s as any).store_image_url)}" alt="${escapeHtml(s.name)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />`
-              : `<span class="v2-sc-emoji">🐟</span>`}
-          </div>
-          <div class="v2-sc-body">
-            <div class="v2-sc-top">
-              <div class="v2-sc-info">
-                <div class="v2-sc-name">${escapeHtml(s.name)}</div>
-                ${subParts ? `<div class="v2-sc-loc">${escapeHtml(subParts)}</div>` : ""}
-              </div>
-              ${ratingBadge}
-            </div>
-            <div class="v2-sc-tags">${statusBadge}${pickupTag}</div>
-          </div>
-          ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
-          ${deliveryBar}
-        </${fullyClosed ? 'div' : 'a'}>`;
-      }).join("");
-  }
-
-  // Wire filter chips
-  document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const filter = btn.dataset.filter!;
-      const group = btn.dataset.group!;
-
-      if (filter === "all") {
-        // Reset
-        filterState.time = null;
-        filterState.fulfill = null;
-        filterState.topRated = false;
-      } else if (group === "time") {
-        // Toggle off if active, else select
-        filterState.time = filterState.time === filter ? null : (filter as any);
-      } else if (group === "fulfill") {
-        filterState.fulfill = filterState.fulfill === filter ? null : (filter as any);
-      } else if (group === "toggle") {
-        filterState.topRated = !filterState.topRated;
-      }
-
-      // Update chip styles
-      const noFilters = !filterState.time && !filterState.fulfill && !filterState.topRated;
-      document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((b) => {
-        const f = b.dataset.filter!;
-        const g = b.dataset.group!;
-        let active = false;
-        if (f === "all") active = noFilters;
-        else if (g === "time") active = filterState.time === f;
-        else if (g === "fulfill") active = filterState.fulfill === f;
-        else if (g === "toggle") active = filterState.topRated;
-        b.classList.toggle("v2-fchip-active", active);
-      });
-
-      renderFiltered();
+  // dot clicks — jump to step
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (barTimer) cancelAnimationFrame(barTimer);
+      const dir = i >= current ? 1 : -1;
+      // update current before goTo so goTo can compute properly
+      goTo(i, dir);
     });
   });
 
-  // Category strip click handlers are wired inside buildCategoryStrip() after data loads.
+  // pause on hover
+  phone.addEventListener('mouseenter', () => { paused = true; });
+  phone.addEventListener('mouseleave', () => { paused = false; barStart = performance.now() - (parseFloat(bar.style.width || '0') / 100 * DURATION); });
 
-  // Sync visual state with URL-seeded filterState on first paint
-  function syncInitialChipState() {
-    const noFilters = !filterState.time && !filterState.fulfill && !filterState.topRated;
-    document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((b) => {
-      const f = b.dataset.filter!;
-      const g = b.dataset.group!;
-      let active = false;
-      if (f === "all") active = noFilters;
-      else if (g === "time") active = filterState.time === f;
-      else if (g === "fulfill") active = filterState.fulfill === f;
-      else if (g === "toggle") active = filterState.topRated;
-      b.classList.toggle("v2-fchip-active", active);
-    });
-    // Category strip active state is set inside buildCategoryStrip() after data loads.
-  }
-  syncInitialChipState();
-
-  loadSellers();
-
-  // After buyer accepts location (or after page paint), ask for notification permission
-  function maybeAskNotifications() {
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "default") return; // user already chose
-    let asked = false;
-    try { asked = sessionStorage.getItem("v2_notif_asked") === "1"; } catch {}
-    if (asked) return;
-    try { sessionStorage.setItem("v2_notif_asked", "1"); } catch {}
-    // Wait 5s after page settled — don't be pushy
-    setTimeout(async () => {
-      try {
-        const result = await Notification.requestPermission();
-        if (result === "granted") {
-          (window as any).v2Toast?.("success", "Notifications on", "We'll only ping for orders");
-          const session = getSession();
-          if (session) {
-            const ok = await subscribePush();
-            if (!ok) {
-              (window as any).v2Toast?.(
-                "error",
-                "Alerts not fully enabled",
-                "Open Account and tap Notifications, or check browser settings."
-              );
-            }
-          }
-        }
-      } catch {}
-    }, 5000);
-  }
-
-  // After location set or skipped, prompt notifications
-  document.addEventListener("v2-location-confirmed", () => {
-    loadSellers();
-    setTimeout(maybeAskNotifications, 2000);
-  });
-  // Also if user already has location, ask after page load
-  if (getBuyerLocation()) {
-    maybeAskNotifications();
-  }
-
-  // Open location picker bridge — V2 native sheet
-  document.addEventListener("relifish:open-location-picker", () => {
-    (window as any).v2OpenSheet?.("v2-loc-picker");
-  });
-
-  document.getElementById("v2-empty")?.addEventListener("click", (e) => {
-    if ((e.target as HTMLElement).closest("#v2-open-loc-empty")) {
-      e.preventDefault();
-      document.dispatchEvent(new CustomEvent("relifish:open-location-picker"));
+  // touch swipe
+  let touchStartX = 0;
+  phone.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+  phone.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 30) {
+      if (barTimer) cancelAnimationFrame(barTimer);
+      goTo(dx < 0 ? current + 1 : current - 1, dx < 0 ? 1 : -1);
     }
-  });
+  }, {passive:true});
 
-  // === Inline "Your Carts" section (Swiggy-style) ===
-  function renderHomeCarts() {
-    const el = document.getElementById("v2-home-carts");
-    if (!el) return;
-    const Cart = (window as any).RelifishCart;
-    if (!Cart) { el.style.display = "none"; return; }
-    const groups = Cart.groupBySeller();
-    if (groups.length === 0) { el.style.display = "none"; return; }
-
-    el.style.display = "block";
-    el.innerHTML = `
-      <div style="padding:8px 16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font:800 14px Inter;color:var(--v2-ink);">Your Carts</span>
-          <button id="v2-home-clear-all" type="button" style="background:none;border:none;font:600 12px Inter;color:var(--v2-red);cursor:pointer;">Clear All</button>
-        </div>
-        ${groups.map((g: any, i: number) => {
-          const itemCount = g.items.length;
-          const border = i < groups.length - 1 ? "border-bottom:1px solid var(--v2-border);" : "";
-          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;${border}">
-            <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🐟</div>
-            <div style="flex:1;min-width:0;">
-              <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.seller_name || "Seller")}</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/seller/${g.seller_id}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
-            </div>
-            <a href="/seller/${g.seller_id}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">
-              ₹${g.subtotal.toLocaleString("en-IN")}<br><span style="font:600 9px Inter;opacity:.85;">View Cart</span>
-            </a>
-            <button data-hc-remove="${g.seller_id}" style="background:none;border:none;color:var(--v2-ink-4);font-size:16px;cursor:pointer;padding:2px;flex-shrink:0;" aria-label="Remove">✕</button>
-          </div>`;
-        }).join("")}
-      </div>`;
-
-    // Wire remove buttons
-    el.querySelectorAll<HTMLButtonElement>("[data-hc-remove]").forEach(b => {
-      b.addEventListener("click", () => {
-        Cart.clearCart({ sellerId: b.dataset.hcRemove });
-        renderHomeCarts();
-        (window as any).v2Toast?.("success", "Cart removed");
-      });
-    });
-    // Wire clear all
-    document.getElementById("v2-home-clear-all")?.addEventListener("click", () => {
-      groups.forEach((g: any) => Cart.clearCart({ sellerId: g.seller_id }));
-      renderHomeCarts();
-      (window as any).v2Toast?.("success", "All carts cleared");
-    });
-  }
-
-  // Render carts on load and on changes
-  function initHomeCarts() {
-    if ((window as any).RelifishCart) {
-      renderHomeCarts();
-    }
-    document.addEventListener("v2-cart-ready", () => renderHomeCarts());
-    window.addEventListener("v2-cart-changed", () => renderHomeCarts());
-    window.addEventListener("storage", (e) => {
-      if (e.key === "v2_cart_global") renderHomeCarts();
-    });
-  }
-  initHomeCarts();
+  // start
+  startBar();
+})();
 </script>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-orb1"></div>
+  <div class="hero-orb2"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+
+    <!-- LEFT -->
+    <div>
+      <h1>
+        Fresh fish,<br/>
+        <span class="blu">direct from<br/>your seller.</span>
+      </h1>
+      <p class="hero-sub">
+        Pre-order tonight's catch from trusted Mumbai fish sellers.
+        <strong>Morning-fresh. No cold storage. No markup.</strong>
+      </p>
+      <div class="fish-tags">
+        {["🐟 Pomfret","🐠 Surmai","🦐 Prawns","🐡 Bangda","🐟 Rawas","🦀 Crab"].map(f=>(
+          <span class="ftag">{f}</span>
+        ))}
+      </div>
+      <div class="hero-ctas">
+        <a href="/shop" class="btn-primary">Order fresh fish →</a>
+        <a href="#waitlist" class="btn-ghost">Join waitlist</a>
+      </div>
+      <div class="hero-urgency">
+        <span class="udot"></span>
+        47 pre-orders placed in Mumbai tonight
+      </div>
+      <div class="hero-stats">
+        <div class="hs"><div class="hs-n">10+</div><div class="hs-l">Local sellers</div></div>
+        <div class="hs"><div class="hs-n">0%</div><div class="hs-l">Middleman</div></div>
+        <div class="hs"><div class="hs-n">&lt;24h</div><div class="hs-l">Catch to door</div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT — interactive phone demo -->
+    <div class="hero-right">
+      <!-- floating fish badges -->
+      <div class="fish3d"><span class="fish3d-e">🐟</span><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Morning catch</div></div></div>
+      <div class="fish3d"><span class="fish3d-e">🦐</span><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></div>
+      <div class="fish3d"><span class="fish3d-e">🐠</span><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Limited today</div></div></div>
+
+      <!-- phone -->
+      <div class="demo-phone" id="demo-phone">
+        <div class="demo-notch"><div class="demo-pill"></div></div>
+        <div class="demo-progress"><div class="demo-progress-fill" id="demo-bar"></div></div>
+        <div class="demo-screens" id="demo-screens">
+
+          <!-- Screen 0: Welcome -->
+          <div class="demo-screen active" data-screen="0">
+            <div class="ds-dark d0-center">
+              <div style="font-size:48px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.6))">🐟</div>
+              <div class="d0-logo">Reli<span>fish</span></div>
+              <div class="d0-tagline">Mumbai's fresh fish marketplace.<br/>Pre-order tonight, collect morning-fresh.</div>
+              <div class="d0-btn">Get started →</div>
+            </div>
+          </div>
+
+          <!-- Screen 1: Set location -->
+          <div class="demo-screen" data-screen="1">
+            <div class="ds-light">
+              <div class="dh">
+                <div class="dh-title">📍 Set your location</div>
+                <div class="dh-sub">Where should we look for sellers?</div>
+                <div class="dh-search">🔍&nbsp;Search area...</div>
+              </div>
+              <div style="padding:8px 0">
+                <div class="d1-area">
+                  <div class="d1-icon">📍</div>
+                  <div><div class="d1-name">Versova</div><div class="d1-dist">Andheri West · 3 sellers</div></div>
+                </div>
+                <div class="d1-area tap" id="d1-tap">
+                  <div class="d1-icon">📍</div>
+                  <div><div class="d1-name">Lokhandwala</div><div class="d1-dist">Andheri West · 2 sellers</div></div>
+                  <div class="d1-check">✓</div>
+                </div>
+                <div class="d1-area">
+                  <div class="d1-icon">📍</div>
+                  <div><div class="d1-name">Juhu</div><div class="d1-dist">Vile Parle West · 1 seller</div></div>
+                </div>
+                <div class="d1-area">
+                  <div class="d1-icon">📍</div>
+                  <div><div class="d1-name">Malad West</div><div class="d1-dist">Coming soon · Join waitlist</div></div>
+                </div>
+                <div class="d1-btn">Confirm — Lokhandwala →</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen 2: Sellers list -->
+          <div class="demo-screen" data-screen="2">
+            <div class="ds-light">
+              <div class="dh">
+                <div class="dh-title">🐟 Relifish</div>
+                <div class="dh-sub">📍 Lokhandwala, Andheri West</div>
+                <div class="dh-search">🔍&nbsp;Search fish or sellers...</div>
+              </div>
+              <div class="d2-tabs"><div class="d2t on">🌙 Pre-order</div><div class="d2t">⚡ Same Day</div></div>
+              <div class="d2-list">
+                <div class="d2-card tap">
+                  <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)">🐟<div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-info"><div class="d2-name">Versova Fresh Fish Co.</div><div class="d2-sub">Pomfret · Surmai · Prawns · +4 · Cutoff 11 PM</div></div>
+                </div>
+                <div class="d2-card">
+                  <div class="d2-img" style="background:linear-gradient(135deg,#1A0D4A,#2A1A6A)">🦐<div class="d2-badge pr">🌙 Pre-order</div></div>
+                  <div class="d2-info"><div class="d2-name">Andheri Sea Market</div><div class="d2-sub">Bangda · Rawas · Crab · Cutoff 10 PM</div></div>
+                </div>
+                <div class="d2-card">
+                  <div class="d2-img" style="background:linear-gradient(135deg,#002020,#00403A)">🦀<div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-info"><div class="d2-name">Juhu Catch Co.</div><div class="d2-sub">Crab · Halwa · Bombay Duck</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen 3: Fish menu -->
+          <div class="demo-screen" data-screen="3">
+            <div class="ds-light" style="position:relative">
+              <div class="dh">
+                <div class="dh-back">← Versova Fresh Fish Co.</div>
+                <div class="dh-title">🌙 Tonight's menu</div>
+              </div>
+              <div class="d3-item tap">
+                <div style="display:flex;align-items:center"><span class="d3-emoji">🐟</span><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">500g–800g · Cleaned on request</div></div></div>
+                <div style="text-align:right"><div class="d3-lock">🔒 Login</div><div class="d3-add added" style="margin-top:3px">✓ Added</div></div>
+              </div>
+              <div class="d3-item">
+                <div style="display:flex;align-items:center"><span class="d3-emoji">🐠</span><div><div class="d3-name">Surmai Fillet</div><div class="d3-cut">Per kg · Boneless</div></div></div>
+                <div style="text-align:right"><div class="d3-lock">🔒 Login</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
+              </div>
+              <div class="d3-item">
+                <div style="display:flex;align-items:center"><span class="d3-emoji">🦐</span><div><div class="d3-name">Jumbo Prawns</div><div class="d3-cut">Per kg · Deveined</div></div></div>
+                <div style="text-align:right"><div class="d3-lock">🔒 Login</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
+              </div>
+              <div class="d3-item">
+                <div style="display:flex;align-items:center"><span class="d3-emoji">🐡</span><div><div class="d3-name">Bangda (Mackerel)</div><div class="d3-cut">Per kg · Whole</div></div></div>
+                <div style="text-align:right"><div class="d3-lock">🔒 Login</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
+              </div>
+              <div class="d3-bar"><span class="d3-bar-t">🛒 1 item · Pomfret</span><span class="d3-bar-p">Login to see price</span></div>
+            </div>
+          </div>
+
+          <!-- Screen 4: Cart -->
+          <div class="demo-screen" data-screen="4">
+            <div class="ds-light">
+              <div class="dh"><div class="dh-back">← Menu</div><div class="dh-title">Your cart</div></div>
+              <div class="d4-item">
+                <div><div class="d4-name">🐟 Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Versova Fresh Fish Co.</div></div>
+                <div style="text-align:right"><div class="d4-lock">🔒 Login for price</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">1 kg</span><div class="d4-q">+</div></div></div>
+              </div>
+              <div class="d4-item">
+                <div><div class="d4-name">🐡 Bangda (Mackerel)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Versova Fresh Fish Co.</div></div>
+                <div style="text-align:right"><div class="d4-lock">🔒 Login for price</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">500g</span><div class="d4-q">+</div></div></div>
+              </div>
+              <div class="d4-summary">
+                <div class="d4-row"><span>Subtotal</span><span style="color:var(--blue)">Login to see →</span></div>
+                <div class="d4-row"><span>Delivery</span><span>by seller</span></div>
+                <div class="d4-row" style="font-weight:700"><span>Total</span><span style="color:var(--blue)">Login to see →</span></div>
+              </div>
+              <div class="d4-btn">Login & checkout →</div>
+            </div>
+          </div>
+
+          <!-- Screen 5: UPI Payment -->
+          <div class="demo-screen" data-screen="5">
+            <div class="ds-light">
+              <div class="d5-amount">
+                <div class="d5-to">Paying to</div>
+                <div class="d5-seller">Versova Fresh Fish Co.</div>
+                <div class="d5-amt-label">Amount</div>
+                <div class="d5-amt">₹<span style="font-size:28px;font-weight:900;color:#0A0F1E">—</span></div>
+                <div style="font:400 7px Inter;color:#9CA3AF;margin-top:2px">Login to confirm price · Pre-order 2 items</div>
+              </div>
+              <div class="d5-upi-apps">
+                <div class="d5-app tap">
+                  <div class="d5-app-icon">📱</div>
+                  <div class="d5-app-name">GPay</div>
+                </div>
+                <div class="d5-app">
+                  <div class="d5-app-icon">💰</div>
+                  <div class="d5-app-name">PhonePe</div>
+                </div>
+                <div class="d5-app">
+                  <div class="d5-app-icon">⚡</div>
+                  <div class="d5-app-name">Paytm</div>
+                </div>
+                <div class="d5-app">
+                  <div class="d5-app-icon">🏦</div>
+                  <div class="d5-app-name">UPI</div>
+                </div>
+              </div>
+              <div class="d5-pay-btn">Pay via UPI →</div>
+              <div style="text-align:center;font:400 7px Inter;color:#9CA3AF;padding:5px">Direct to seller · No platform fee</div>
+            </div>
+          </div>
+
+          <!-- Screen 6: Confirmed -->
+          <div class="demo-screen" data-screen="6">
+            <div class="ds-light d6-center">
+              <div class="d6-icon">✅</div>
+              <div class="d6-title">Order confirmed!</div>
+              <div class="d6-sub">Versova Fresh Fish is preparing your order from tomorrow's morning catch.</div>
+              <div class="d6-eta">
+                <div class="d6-eta-t">🌅 Ready for pickup by 7–9 AM</div>
+                <div class="d6-eta-s">Versova Fish Market · Gate 2</div>
+              </div>
+              <div style="background:#F3F4F6;border-radius:8px;padding:7px 10px;width:100%;font:400 8px Inter;color:#6B7280;text-align:center">
+                📲 You'll get a WhatsApp when it's ready
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen 7: Tracking -->
+          <div class="demo-screen" data-screen="7">
+            <div class="ds-light">
+              <div class="dh"><div class="dh-title">📦 Track order #RF2847</div><div class="dh-sub">Versova Fresh Fish Co.</div></div>
+              <div style="padding:8px 0">
+                <div class="d7-step">
+                  <div class="d7-dot-wrap"><div class="d7-dot done"></div><div class="d7-line done"></div></div>
+                  <div><div class="d7-label">Order placed</div><div class="d7-sub">Tonight, 10:24 PM</div></div>
+                </div>
+                <div class="d7-step">
+                  <div class="d7-dot-wrap"><div class="d7-dot done"></div><div class="d7-line done"></div></div>
+                  <div><div class="d7-label">Seller confirmed</div><div class="d7-sub">Tonight, 10:31 PM</div></div>
+                </div>
+                <div class="d7-step">
+                  <div class="d7-dot-wrap"><div class="d7-dot active"></div><div class="d7-line"></div></div>
+                  <div><div class="d7-label">Being prepared</div><div class="d7-sub blue">Morning catch · In progress</div></div>
+                </div>
+                <div class="d7-step">
+                  <div class="d7-dot-wrap"><div class="d7-dot pending"></div><div class="d7-line"></div></div>
+                  <div><div class="d7-label">Ready for pickup</div><div class="d7-sub">Expected by 7–9 AM</div></div>
+                </div>
+                <div class="d7-step">
+                  <div class="d7-dot-wrap"><div class="d7-dot pending"></div></div>
+                  <div><div class="d7-label">Delivered 🎉</div><div class="d7-sub">—</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen 8: Delivered -->
+          <div class="demo-screen" data-screen="8">
+            <div class="ds-light d8-center">
+              <div class="d8-icon">🐟</div>
+              <div class="d8-title">Fresh fish delivered!</div>
+              <div class="d8-sub">Your Pomfret and Bangda from Versova Fresh Fish Co. Morning-fresh, straight from the catch.</div>
+              <div class="d8-rate">
+                <div class="d8-rate-t">How was your order?</div>
+                <div class="d8-stars">⭐⭐⭐⭐⭐</div>
+              </div>
+              <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 10px;width:100%;font:600 8px Inter;color:var(--blue);text-align:center">
+                Order again next week →
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- dots + hint -->
+      <div class="demo-dots" id="demo-dots">
+        {Array.from({length:9}).map((_,i)=>(
+          <div class={`demo-dot${i===0?' active':''}`} data-i={i}></div>
+        ))}
+      </div>
+      <div class="demo-hint">Tap to advance · or wait for auto-play</div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    {[
+      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order tonight"],["🐡","Bangda","Zero middleman"],
+      ["🐟","Rawas","Limited daily"],["🦀","Crab","Seasonal catch"],["🐠","Halwa","Reserve yours"],["🐡","Bombay Duck","Fresh daily"],
+      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order tonight"],["🐡","Bangda","Zero middleman"],
+      ["🐟","Rawas","Limited daily"],["🦀","Crab","Seasonal catch"],["🐠","Halwa","Reserve yours"],["🐡","Bombay Duck","Fresh daily"],
+    ].map(([e,n,t])=>(
+      <div class="ti"><span class="fish">{e} {n}</span><span>{t}</span><span class="dot"></span></div>
+    ))}
+  </div>
+</div>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section class="sec sec-alt" id="how">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="slabel">How it works</div>
+      <h2>Order in <span class="hl">4 simple steps</span></h2>
+      <p class="ssub" style="margin:0 auto;text-align:center">No app download. Works on any phone. Takes 2 minutes.</p>
+    </div>
+
+    <div class="flow-phones">
+
+      <!-- STEP 1: Set location -->
+      <div class="flow-step">
+        <div class="flow-step-num">1</div>
+        <div class="fp">
+          <div class="fp-notch"><div class="fp-pill"></div></div>
+          <div class="fp-screen">
+            <div class="sbar"><span class="sbar-t">9:41</span><span class="sbar-i">●●● 🔋</span></div>
+            <div class="s1-hero">
+              <div class="s1-hero-ttl">📍 Set your location</div>
+              <div class="s1-hero-sub">Where should we find sellers for you?</div>
+              <div class="s1-srch">🔍&nbsp;Search your area in Mumbai...</div>
+            </div>
+            <div class="s1-list">
+              <div class="s1-row">
+                <div class="s1-pin">📍</div>
+                <div><div class="s1-rn">Versova</div><div class="s1-rd">Andheri West · 3 sellers open</div></div>
+              </div>
+              <div class="s1-row sel tap-zone">
+                <div class="s1-pin">📍</div>
+                <div><div class="s1-rn">Lokhandwala</div><div class="s1-rd">Andheri West · 2 sellers open</div></div>
+                <div class="s1-ck">✓</div>
+              </div>
+              <div class="s1-row">
+                <div class="s1-pin">📍</div>
+                <div><div class="s1-rn">Juhu</div><div class="s1-rd">Vile Parle West · 1 seller</div></div>
+              </div>
+              <div class="s1-row">
+                <div class="s1-pin">📍</div>
+                <div><div class="s1-rn">Malad West</div><div class="s1-rd">Waitlist · Coming soon</div></div>
+              </div>
+            </div>
+            <div style="padding:0 10px 10px"><div class="s1-btn">Confirm — Lokhandwala →</div></div>
+          </div>
+        </div>
+        <h3>Set your location</h3>
+        <p>Pick your Mumbai area once. We show sellers nearby with pickup or delivery.</p>
+      </div>
+
+      <!-- STEP 2: Browse sellers -->
+      <div class="flow-step">
+        <div class="flow-step-num">2</div>
+        <div class="fp">
+          <div class="fp-notch"><div class="fp-pill"></div></div>
+          <div class="fp-screen">
+            <div class="sbar"><span class="sbar-t">9:43</span><span class="sbar-i">●●● 🔋</span></div>
+            <div class="s2-top">
+              <div class="s2-loc">📍 <span class="s2-area">Lokhandwala, Andheri W</span></div>
+              <div class="s2-srch">🔍&nbsp;Search fish or sellers...</div>
+            </div>
+            <div class="s2-tabs">
+              <div class="s2t on">🌙 Pre-order</div>
+              <div class="s2t">⚡ Same Day</div>
+            </div>
+            <div class="s2-list">
+              <div class="s2-card">
+                <div class="s2-cover g">🐟<div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-bd">
+                  <div class="s2-nm">Versova Fresh Fish Co.</div>
+                  <div class="s2-sub">Cutoff 11 PM · 0.8 km away</div>
+                  <div class="s2-chips"><div class="s2-chip">Pomfret</div><div class="s2-chip">Surmai</div><div class="s2-chip">Prawns</div></div>
+                </div>
+              </div>
+              <div class="s2-card tap-zone">
+                <div class="s2-cover p">🦐<div class="s2-st pr">🌙 Pre-order</div></div>
+                <div class="s2-bd">
+                  <div class="s2-nm">Andheri Sea Market</div>
+                  <div class="s2-sub">Cutoff 10 PM · 1.2 km away</div>
+                  <div class="s2-chips"><div class="s2-chip">Bangda</div><div class="s2-chip">Rawas</div><div class="s2-chip">Crab</div></div>
+                </div>
+              </div>
+              <div class="s2-card">
+                <div class="s2-cover t">🦀<div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-bd">
+                  <div class="s2-nm">Juhu Catch Co.</div>
+                  <div class="s2-sub">Crab · Halwa · Bombay Duck</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h3>Browse & pick fish</h3>
+        <p>See sellers open tonight near you. Login to view prices and add fish.</p>
+      </div>
+
+      <!-- STEP 3: Checkout -->
+      <div class="flow-step">
+        <div class="flow-step-num">3</div>
+        <div class="fp">
+          <div class="fp-notch"><div class="fp-pill"></div></div>
+          <div class="fp-screen">
+            <div class="sbar"><span class="sbar-t">9:48</span><span class="sbar-i">●●● 🔋</span></div>
+            <div class="s3-top">
+              <div class="s3-bk">← Versova Fresh Fish Co.</div>
+              <div class="s3-ttl">Confirm your order</div>
+            </div>
+            <div class="s3-seller">
+              <div class="s3-s-icon">🐟</div>
+              <div><div class="s3-s-name">Versova Fresh Fish Co.</div><div class="s3-s-sub">🌙 Pre-order · Pickup 7–9 AM</div></div>
+            </div>
+            <div class="s3-items">
+              <div class="s3-item">
+                <div class="s3-il"><div class="s3-ie">🐟</div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">1 kg · Cleaned</div></div></div>
+                <div class="s3-lock">🔒 Login</div>
+              </div>
+              <div class="s3-item">
+                <div class="s3-il"><div class="s3-ie">🐡</div><div><div class="s3-in">Bangda (Mackerel)</div><div class="s3-id">500g · Whole</div></div></div>
+                <div class="s3-lock">🔒 Login</div>
+              </div>
+              <div class="s3-tot">
+                <div class="s3-tot-l">Total (2 items)</div>
+                <div class="s3-tot-r">Login to see →</div>
+              </div>
+            </div>
+            <div style="padding:0 10px"><div class="s3-pay tap-zone">⚡ Login & Pay via UPI →</div></div>
+            <div class="s3-nt">UPI direct to seller · No platform fee</div>
+          </div>
+        </div>
+        <h3>Pay directly</h3>
+        <p>UPI straight to your seller. Login to see price. Instant confirmation.</p>
+      </div>
+
+      <!-- STEP 4: Confirmed -->
+      <div class="flow-step">
+        <div class="flow-step-num">4</div>
+        <div class="fp">
+          <div class="fp-notch"><div class="fp-pill"></div></div>
+          <div class="fp-screen">
+            <div class="sbar"><span class="sbar-t">9:51</span><span class="sbar-i">●●● 🔋</span></div>
+            <div class="s4-wrap">
+              <div class="s4-ring">✅</div>
+              <div class="s4-ttl">Order confirmed!</div>
+              <div class="s4-sub">Versova Fresh Fish will prep from tomorrow's morning catch.</div>
+              <div class="s4-eta">
+                <div class="s4-eta-m">🌅 Ready for pickup by 7–9 AM</div>
+                <div class="s4-eta-s">Versova Fish Market · Gate 2</div>
+              </div>
+              <div class="s4-stepper">
+                <div class="s4st"><div class="s4st-d dn"></div><div class="s4st-lb ac">Placed</div></div>
+                <div class="s4st-ln dn"></div>
+                <div class="s4st"><div class="s4st-d ac"></div><div class="s4st-lb ac">Confirmed</div></div>
+                <div class="s4st-ln pe"></div>
+                <div class="s4st"><div class="s4st-d pe"></div><div class="s4st-lb">Preparing</div></div>
+                <div class="s4st-ln pe"></div>
+                <div class="s4st"><div class="s4st-d pe"></div><div class="s4st-lb">Delivered</div></div>
+              </div>
+              <div style="background:#F3F4F6;border-radius:9px;padding:8px 10px;width:100%;text-align:center;font:400 9px Inter;color:#6B7280">
+                📲 WhatsApp when it's ready
+              </div>
+            </div>
+          </div>
+        </div>
+        <h3>Fresh fish by morning</h3>
+        <p>Seller preps from the catch. Pickup or home delivery — your choice.</p>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:40px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="/shop" class="btn-primary" style="font-size:15px">Start ordering →</a>
+      <a href="/buyer-detailed.html" style="display:inline-flex;align-items:center;gap:6px;font:600 15px Inter;color:var(--blue);padding:13px 20px;border-radius:12px;border:1px solid rgba(37,99,235,.25);background:var(--blue-dim)">Full buyer guide →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FISH MENU ═══ -->
+<section class="sec" id="fish">
+  <div class="wrap">
+    <div class="slabel">What's on the menu</div>
+    <h2>Fresh fish, <span class="hl">every morning</span></h2>
+    <p class="ssub">Availability changes daily. Login to see today's prices and reserve your portion before it sells out.</p>
+    <div class="fish-grid">
+      {[
+        {e:"🐟",n:"Pomfret",m:"पापलेट",av:"in",bg:"fi1"},
+        {e:"🐠",n:"Surmai (Kingfish)",m:"सुरमई",av:"pre",bg:"fi2"},
+        {e:"🦐",n:"Jumbo Prawns",m:"कोळंबी",av:"pre",bg:"fi3"},
+        {e:"🐡",n:"Bangda (Mackerel)",m:"बांगडा",av:"in",bg:"fi4"},
+        {e:"🐟",n:"Rawas (Salmon)",m:"रावस",av:"pre",bg:"fi3"},
+        {e:"🦀",n:"Mud Crab",m:"खेकडा",av:"pre",bg:"fi5"},
+        {e:"🐠",n:"Halwa (Silver Pomfret)",m:"हलवा",av:"in",bg:"fi7"},
+        {e:"🐡",n:"Bombay Duck",m:"बोंबील",av:"in",bg:"fi8"},
+      ].map(f=>(
+        <a href="/me" class="fish-card">
+          <div class={`fish-img ${f.bg}`}>
+            {f.e}
+            <div class={`ftag-badge ${f.av}`}>{f.av==='in'?'✓ In stock':'🌙 Pre-order'}</div>
+          </div>
+          <div class="fish-body">
+            <div class="fish-name">{f.n}</div>
+            <div class="fish-marathi">{f.m}</div>
+            <div class="fish-login">🔒 Login to see price</div>
+            <div class="fish-cta">Pre-order tonight →</div>
+          </div>
+        </a>
+      ))}
+    </div>
+    <div style="text-align:center;margin-top:36px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="/me" class="btn-primary" style="font-size:15px">🔒 Login to see prices</a>
+      <a href="/shop" class="btn-ghost" style="font-size:15px;color:var(--ink-2);border-color:var(--border);background:transparent">Browse sellers →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WHY RELIFISH ═══ -->
+<section class="sec sec-grad dk">
+  <div class="wrap">
+    <div class="slabel">Why Relifish</div>
+    <h2>Your family deserves<br/><span class="hl">genuinely fresh fish.</span></h2>
+    <p class="ssub">Delivery apps stock fish 2–4 days old from cold-storage warehouses. Your local seller fills from last night's catch. We connect them directly.</p>
+    <div class="why-grid">
+      {[
+        {i:"💰",t:"Zero platform markup",d:"You pay the seller's own price. Delivery apps add 25–35% dark-store margin. We add nothing.",g:"₹0 platform fee",b:"Quick-commerce: +25–35%"},
+        {i:"🌊",t:"Morning-fresh catch",d:"Pre-orders fill from the very next morning's landing. Fish that hit the market hours ago — not 3-day cold storage.",g:"Caught overnight",b:"Apps: 2–4 days old"},
+        {i:"📍",t:"Your neighbourhood seller",d:"The fish seller your family has trusted for years, now online with pre-order convenience. Same quality, smarter system.",g:"Known local seller",b:"Anonymous warehouse"},
+        {i:"🌙",t:"Reserve before it sells out",d:"The best fish goes first. Pre-order tonight and your seller holds your portion from the morning landing.",g:"Reserved for you",b:"First come first served"},
+        {i:"🛵",t:"Pickup or home delivery",d:"Each seller sets their own delivery terms. Collect from the seller or get it delivered. Clear before you order.",g:"Your choice",b:"Fixed delivery windows"},
+        {i:"💬",t:"Direct contact",d:"WhatsApp your seller for cuts, special requests, freshness questions. Real people. You can't do that with Zepto.",g:"Direct WhatsApp",b:"Chatbot support"},
+      ].map(c=>(
+        <div class="why-card">
+          <div class="why-icon">{c.i}</div>
+          <h3>{c.t}</h3>
+          <p>{c.d}</p>
+          <div class="why-vs">
+            <span class="wvg">✓ {c.g}</span>
+            <span class="wvsep"></span>
+            <span class="wvb">✕ {c.b}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div class="stats-bar">
+      <div class="sb"><div class="sb-n">10<span class="a">+</span></div><div class="sb-l">Local sellers</div></div>
+      <div class="sb"><div class="sb-n"><span class="a">₹</span>0</div><div class="sb-l">Listing fee</div></div>
+      <div class="sb"><div class="sb-n">0<span class="a">%</span></div><div class="sb-l">Middleman cut</div></div>
+      <div class="sb"><div class="sb-n"><span class="a">&lt;</span>24h</div><div class="sb-l">Catch to door</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONIALS ═══ -->
+<section class="sec sec-alt">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="slabel">Real customers</div>
+      <h2>Mumbai families <span class="hl">love it</span></h2>
+      <p class="ssub" style="text-align:center;margin:0 auto">Real people who switched from delivery apps and never looked back.</p>
+    </div>
+    <div class="testi-grid">
+      {[
+        {av:"RN",cl:"av1",name:"Rekha Nair",loc:"Versova, Andheri West",stars:"★★★★★",
+          text:'Got Pomfret <span class="hl">far cheaper than Blinkit</span> — same fish, same seller I\'ve bought from for years. Pre-ordering at night just makes sense.',save:"Significant savings"},
+        {av:"RD",cl:"av2",name:"Rohan Desai",loc:"Juhu, Mumbai",stars:"★★★★★",
+          text:'The Surmai was <span class="hl">clearly morning catch</span>. When I buy from Zepto it\'s always a bit grey. This was bright, firm, beautiful fish. Night and day difference.',save:"Morning-fresh quality"},
+        {av:"SS",cl:"av3",name:"Sunita Sharma",loc:"Andheri West",stars:"★★★★★",
+          text:'Pre-ordering at night is a game changer. I place the order after dinner, husband picks it up on the way to office. <span class="hl">Whole routine sorted.</span>',save:"Orders 3× per week"},
+        {av:"VP",cl:"av4",name:"Vijay Patil",loc:"Goregaon West",stars:"★★★★★",
+          text:'My local market was always out of Pomfret by 7 AM. Now I pre-order at 10 PM and it\'s <span class="hl">held for me</span> at my favourite seller. Perfect.',save:"Never missed Pomfret"},
+        {av:"MI",cl:"av5",name:"Meera Iyer",loc:"Lokhandwala, Andheri",stars:"★★★★★",
+          text:'The prawns were <span class="hl">the freshest I\'ve ever had</span> at home. Completely different from any delivery app. The seller cleaned them exactly how I asked.',save:"Custom cleaned"},
+        {av:"AK",cl:"av6",name:"Amit Khandelwal",loc:"Malad West",stars:"★★★★★",
+          text:'I WhatsApp my seller for coconut-cut Pomfret on request. <span class="hl">Impossible on Blinkit.</span> These are real people who care about their craft.',save:"Custom cuts available"},
+      ].map(t=>(
+        <div class="testi-card">
+          <div class="testi-stars">{t.stars}</div>
+          <p class="testi-text" set:html={t.text}></p>
+          <div class="testi-author">
+            <div class={`testi-av ${t.cl}`}>{t.av}</div>
+            <div>
+              <div class="testi-name">{t.name}</div>
+              <div class="testi-loc">📍 {t.loc}</div>
+              <div class="testi-save">✓ {t.save}</div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WAITLIST ═══ -->
+<section class="sec" id="waitlist">
+  <div class="wrap">
+    <div class="wl-wrap">
+      <div>
+        <div class="wl-badge">
+          <span class="wl-badge-n">200+</span>
+          <span class="wl-badge-t">buyers on the waitlist</span>
+        </div>
+        <div class="wl-title">Get first access<br/>in your area</div>
+        <div class="wl-sub">We're expanding across Mumbai. Join the waitlist — be first when sellers go live near you.</div>
+        <div class="wl-perks">
+          {[
+            {i:"🎯",t:"Priority access before public launch"},
+            {i:"🐟",t:"Early pre-order window — best fish selection"},
+            {i:"📲",t:"WhatsApp ping the day we launch near you"},
+            {i:"💰",t:"Launch-day prices before anyone else"},
+          ].map(p=>(
+            <div class="wl-perk"><div class="wl-pi">{p.i}</div>{p.t}</div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <form class="wl-form" id="wl-form">
+          <div>
+            <label class="wl-lbl" for="wl-phone">WhatsApp number *</label>
+            <input class="wl-input" id="wl-phone" type="tel" placeholder="98765 43210" required maxlength="10" />
+          </div>
+          <div>
+            <label class="wl-lbl" for="wl-area">Your area in Mumbai *</label>
+            <input class="wl-input" id="wl-area" type="text" placeholder="e.g. Versova, Andheri West" required />
+          </div>
+          <div class="wl-2col">
+            <div>
+              <label class="wl-lbl">Fish you love most</label>
+              <select class="wl-sel" id="wl-fish">
+                <option value="">Select fish</option>
+                <option>Pomfret</option><option>Surmai</option><option>Prawns</option>
+                <option>Bangda</option><option>Rawas</option><option>Crab</option>
+                <option>All of the above</option>
+              </select>
+            </div>
+            <div>
+              <label class="wl-lbl">How often?</label>
+              <select class="wl-sel" id="wl-freq">
+                <option value="">Frequency</option>
+                <option>Daily</option><option>2–3× a week</option>
+                <option>Weekly</option><option>Occasionally</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="wl-btn" id="wl-btn">📋 Join the waitlist — free</button>
+          <div class="wl-note">No spam. WhatsApp only when we launch near you.</div>
+        </form>
+        <div class="wl-success" id="wl-success">
+          <div class="wl-success-icon">🎉</div>
+          <div class="wl-success-title">You're on the list!</div>
+          <div class="wl-success-sub" id="wl-msg">We'll WhatsApp you when sellers go live near you.</div>
+          <a href="/shop" class="btn-primary" style="width:100%;justify-content:center;margin-top:8px">Browse sellers now →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+(function(){
+  const form=document.getElementById('wl-form'),btn=document.getElementById('wl-btn'),
+        suc=document.getElementById('wl-success'),msg=document.getElementById('wl-msg');
+  if(!form)return;
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();btn.disabled=true;btn.textContent='Joining...';
+    const phone=document.getElementById('wl-phone').value,area=document.getElementById('wl-area').value,
+          fish_wanted=document.getElementById('wl-fish').value,frequency=document.getElementById('wl-freq').value;
+    try{
+      const res=await fetch('/api/waitlist/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,area,fish_wanted,frequency})});
+      const d=await res.json();
+      if(d.success||res.ok){
+        form.style.display='none';
+        if(d.area_count>1)msg.textContent=`${d.area_count} people near you are waiting. We'll WhatsApp you when we launch.`;
+        suc.classList.add('show');
+      }else{btn.disabled=false;btn.textContent="📋 Join the waitlist — free";alert(d.error||'Something went wrong.');}
+    }catch{btn.disabled=false;btn.textContent="📋 Join the waitlist — free";alert('Network error. Try again.');}
+  });
+})();
+</script>
+
+<!-- ═══ BUYER GUIDE LINKS ═══ -->
+<section class="sec sec-grad dk">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="slabel">Learn more</div>
+      <h2>Everything you need<br/>to <span class="hl">get started</span></h2>
+    </div>
+    <div class="detail-links">
+      <a href="/buyer-detailed.html" class="detail-link">
+        <div class="dl-inner">
+          <div class="dl-icon buy">🛒</div>
+          <div>
+            <div class="dl-title">Full buyer guide</div>
+            <div class="dl-sub">How pre-order works, payment, pickup, freshness, refunds and FAQs.</div>
+          </div>
+          <div class="dl-arrow">→</div>
+        </div>
+      </a>
+      <a href="/shop" class="detail-link">
+        <div class="dl-inner">
+          <div class="dl-icon buy">🐟</div>
+          <div>
+            <div class="dl-title">Browse sellers now</div>
+            <div class="dl-sub">See which sellers are open tonight near you. Login to view prices and pre-order.</div>
+          </div>
+          <div class="dl-arrow">→</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section class="sec sec-alt">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="slabel">FAQ</div>
+      <h2>Common <span class="hl">questions</span></h2>
+    </div>
+    <div class="faqs" style="max-width:680px;margin-left:auto;margin-right:auto">
+      {[
+        {q:"How does Relifish work?",a:"Browse local fish sellers near you, pre-order tonight's catch before the seller's cutoff, and collect it fresh tomorrow morning or receive home delivery. No subscription, no minimum."},
+        {q:"Why is the fish fresher than Blinkit or Zepto?",a:"Pre-orders fill from the very next morning's catch — fish that hit the landing hours ago. Delivery apps stock fish 2–4 days old from cold-storage warehouses. Your local seller's reputation depends on freshness."},
+        {q:"Why do I need to login to see prices?",a:"Prices vary by seller and change daily based on the morning catch. Login with your mobile number (OTP, no password) to see live prices from sellers near your area."},
+        {q:"What fish can I order?",a:"Pomfret, Surmai, Bangda, Prawns, Rawas, Crab, Halwa, Bombay Duck and more — updated daily based on what sellers bring from the morning landing."},
+        {q:"What if my order can't be fulfilled?",a:"If a seller can't fulfil your order, they decline with a note and you get a full refund within 7 days. Seller can also WhatsApp you directly before the morning pickup."},
+        {q:"Is there a minimum order?",a:"Each seller sets their own minimums. You'll see it clearly on the seller's page before ordering."},
+      ].map(item=>(
+        <details class="faq">
+          <summary>{item.q}<div class="faq-toggle">+</div></summary>
+          <p>{item.a}</p>
+        </details>
+      ))}
+      <details class="faq">
+        <summary>Relifish isn't available in my area yet?<div class="faq-toggle">+</div></summary>
+        <p>We're expanding across Mumbai fast. Join the waitlist and we'll WhatsApp you the moment sellers go live in your area.</p>
+        <div class="faq-blue-bar">📍 Not in your area yet? <a href="#waitlist" class="faq-blue-cta">Join the waitlist →</a></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="ft">
+    <div class="ft-top">
+      <div>
+        <div class="ft-brand">Reli<span>fish</span></div>
+        <div class="ft-desc">Mumbai's fresh fish marketplace. Direct from local sellers — no middleman, no cold storage.</div>
+      </div>
+      <div class="ft-col">
+        <h4>For buyers</h4>
+        <a href="/shop">Browse sellers</a>
+        <a href="/buyer-detailed.html">Buyer guide</a>
+        <a href="#waitlist">Join waitlist</a>
+        <a href="/me">My account</a>
+        <a href="/track">Track order</a>
+      </div>
+      <div class="ft-col">
+        <h4>Order</h4>
+        <a href="/shop">Order fish</a>
+        <a href="/search">Search fish</a>
+        <a href="#fish">Browse menu</a>
+        <a href="#how">How it works</a>
+      </div>
+      <div class="ft-col">
+        <h4>Company</h4>
+        <a href="/privacy">Privacy policy</a>
+        <a href="mailto:relifishstore@gmail.com">Contact us</a>
+      </div>
+    </div>
+    <div class="ft-bottom">
+      <div>© 2026 Relifish. Made with 🐟 in Mumbai.</div>
+      <div>Fresh fish · Direct source · No middleman</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ CHAT WIDGET ═══ (commented out — re-enable when ready)
+<style>
+  .chat-bubble{position:fixed;bottom:24px;right:24px;z-index:9000;width:52px;height:52px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,99,235,.5);transition:transform .2s,box-shadow .2s}
+  .chat-bubble:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(37,99,235,.6)}
+  .chat-bubble svg{width:22px;height:22px;fill:#fff}
+  .chat-panel{position:fixed;bottom:88px;right:24px;z-index:9000;width:340px;height:480px;background:#0D1629;border:1px solid rgba(255,255,255,.12);border-radius:20px;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6);overflow:hidden;opacity:0;pointer-events:none;transform:translateY(12px) scale(.97);transition:opacity .22s ease,transform .22s ease}
+  .chat-panel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+  .chat-header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .chat-header-left{display:flex;align-items:center;gap:10px}
+  .chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px}
+  .chat-title{font:700 13px Inter;color:#fff}
+  .chat-subtitle{font:400 11px Inter;color:rgba(255,255,255,.4)}
+  .chat-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:18px;padding:2px 6px;border-radius:6px;transition:color .15s}
+  .chat-close:hover{color:#fff}
+  .chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+  .chat-messages::-webkit-scrollbar{width:3px}
+  .chat-messages::-webkit-scrollbar-track{background:transparent}
+  .chat-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+  .chat-msg{max-width:88%;padding:9px 12px;border-radius:14px;font:400 13px/1.5 Inter;word-break:break-word}
+  .chat-msg.user{background:var(--blue);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+  .chat-msg.assistant{background:rgba(255,255,255,.07);color:rgba(255,255,255,.88);align-self:flex-start;border-bottom-left-radius:4px}
+  .chat-typing{display:flex;gap:4px;align-items:center;padding:10px 12px;background:rgba(255,255,255,.07);border-radius:14px;border-bottom-left-radius:4px;align-self:flex-start}
+  .chat-typing span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);animation:bounce 1.2s infinite}
+  .chat-typing span:nth-child(2){animation-delay:.2s}
+  .chat-typing span:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+  .chat-input-row{padding:10px 12px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:8px;flex-shrink:0}
+  .chat-input{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:9px 12px;font:400 13px Inter;color:#fff;outline:none;transition:border-color .15s}
+  .chat-input::placeholder{color:rgba(255,255,255,.3)}
+  .chat-input:focus{border-color:rgba(37,99,235,.6)}
+  .chat-send{background:var(--blue);border:none;border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s}
+  .chat-send:hover{background:#1D4ED8}
+  .chat-send:disabled{opacity:.4;cursor:not-allowed}
+  .chat-send svg{width:15px;height:15px;fill:#fff}
+  @media(max-width:400px){.chat-panel{width:calc(100vw - 24px);right:12px}}
+</style>
+
+<button class="chat-bubble" id="chat-bubble" aria-label="Ask about Relifish">
+  <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
+</button>
+
+<div class="chat-panel" id="chat-panel" role="dialog" aria-label="Relifish AI assistant">
+  <div class="chat-header">
+    <div class="chat-header-left">
+      <div class="chat-avatar">🐟</div>
+      <div>
+        <div class="chat-title">Relifish Assistant</div>
+        <div class="chat-subtitle">Ask anything about fresh fish</div>
+      </div>
+    </div>
+    <button class="chat-close" id="chat-close" aria-label="Close chat">✕</button>
+  </div>
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-msg assistant">Hi! I'm Relifish's AI. Ask me anything about ordering fresh fish, how the app works, or seafood in general. 🐠</div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chat-input" type="text" placeholder="Ask about Relifish…" maxlength="300" autocomplete="off"/>
+    <button class="chat-send" id="chat-send" aria-label="Send">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const bubble=document.getElementById('chat-bubble');
+    const panel=document.getElementById('chat-panel');
+    const closeBtn=document.getElementById('chat-close');
+    const input=document.getElementById('chat-input');
+    const send=document.getElementById('chat-send');
+    const msgs=document.getElementById('chat-messages');
+    const history=[];
+
+    bubble.addEventListener('click',()=>{panel.classList.toggle('open');if(panel.classList.contains('open'))input.focus()});
+    closeBtn.addEventListener('click',()=>panel.classList.remove('open'));
+
+    function addMsg(role,text){
+      const el=document.createElement('div');
+      el.className='chat-msg '+role;
+      el.textContent=text;
+      msgs.appendChild(el);
+      msgs.scrollTop=msgs.scrollHeight;
+      return el;
+    }
+
+    function showTyping(){
+      const el=document.createElement('div');
+      el.className='chat-typing';
+      el.innerHTML='<span></span><span></span><span></span>';
+      msgs.appendChild(el);
+      msgs.scrollTop=msgs.scrollHeight;
+      return el;
+    }
+
+    async function sendMessage(){
+      const text=input.value.trim();
+      if(!text)return;
+      input.value='';
+      send.disabled=true;
+      history.push({role:'user',content:text});
+      addMsg('user',text);
+      const typing=showTyping();
+      try{
+        const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
+        const data=await res.json();
+        typing.remove();
+        const reply=data.content||'Sorry, something went wrong.';
+        history.push({role:'assistant',content:reply});
+        addMsg('assistant',reply);
+      }catch{
+        typing.remove();
+        addMsg('assistant','Sorry, I couldn\'t connect. Please try again.');
+      }finally{
+        send.disabled=false;
+        input.focus();
+      }
+    }
+
+    send.addEventListener('click',sendMessage);
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});
+  })();
+</script>
+-->
+
+</body>
+</html>
