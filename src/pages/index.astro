@@ -18,20 +18,51 @@ const SITE = "https://www.relifish.store";
   <meta property="og:site_name" content="Relifish" />
   <meta property="og:locale" content="en_IN" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Relifish — Fresh Fish from Mumbai's Local Sellers" />
+  <meta name="twitter:description" content="Pre-order tonight's catch from local Mumbai fish sellers. Morning-fresh, direct from source." />
+  <meta name="twitter:image" content={`${SITE}/og-image.png`} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" /></noscript>
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "Organization", "@id": `${SITE}/#org`, "name": "Relifish", "url": SITE, "logo": `${SITE}/icon-192.svg`, "description": "Mumbai's fresh fish marketplace.", "areaServed": { "@type": "City", "name": "Mumbai" } },
-      { "@type": "WebSite", "@id": `${SITE}/#web`, "name": "Relifish", "url": SITE },
-      { "@type": "FAQPage", "mainEntity": [
-        { "@type": "Question", "name": "How does Relifish work?", "acceptedAnswer": { "@type": "Answer", "text": "Browse local fish sellers, pre-order tonight before the cutoff, collect fresh tomorrow morning or get home delivery." } },
-        { "@type": "Question", "name": "Is Relifish available in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Currently serving Versova, Andheri West and expanding across Mumbai. Join the waitlist for your area." } }
-      ]}
+      {
+        "@type": "Organization",
+        "@id": `${SITE}/#org`,
+        "name": "Relifish",
+        "url": SITE,
+        "logo": { "@type": "ImageObject", "url": `${SITE}/icon-192.svg` },
+        "description": "Mumbai's fresh fish marketplace — connecting buyers directly to local fish sellers.",
+        "areaServed": { "@type": "City", "name": "Mumbai" },
+        "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "email": "relifishstore@gmail.com" }
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE}/#web`,
+        "name": "Relifish",
+        "url": SITE,
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": { "@type": "EntryPoint", "urlTemplate": `${SITE}/search?q={search_term_string}` },
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "How does Relifish work?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish lets you browse local Mumbai fish sellers, compare prices, and pre-order tonight before the cutoff. Your order is confirmed by the seller and ready for morning pickup or delivery — fresh from the catch, not from cold storage." } },
+          { "@type": "Question", "name": "Is Relifish available in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish currently serves Versova and Andheri West in Mumbai, with expansion underway across the city. Join the waitlist to get notified when sellers go live in your area." } },
+          { "@type": "Question", "name": "Can I pre-order fish online in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is built for pre-orders. Browse sellers, choose your fish and quantity, place your order before the seller's cutoff time, and collect morning-fresh the next day. No app download needed." } },
+          { "@type": "Question", "name": "What fish species are available on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish sellers offer Surmai (सुरमई), Pomfret (पापलेट), Rawas (रावस), Bangda (बांगडा), Prawns (कोलंबी), Bombay Duck (बोंबील), Crab, and seasonal catch — availability varies by seller and season." } },
+          { "@type": "Question", "name": "How fresh is the fish on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Fish on Relifish is sourced from local sellers who buy from docks daily. It reaches you within 24 hours of the catch — no cold storage, no 2–4 day old supermarket fish. Sellers are vetted before listing on Relifish." } },
+          { "@type": "Question", "name": "How does fish pricing work on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Sellers set their own prices on Relifish. There is no platform markup — unlike delivery apps that add 25–35% to the seller's price. You pay what the seller charges, directly." } },
+          { "@type": "Question", "name": "What areas in Mumbai does Relifish serve?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish currently has active sellers in Versova and Andheri West, Mumbai. We are expanding to more neighbourhoods. Join the waitlist and we'll notify you when sellers are live in your area." } }
+        ]
+      }
     ]
   })} />
   <style>
@@ -80,6 +111,7 @@ const SITE = "https://www.relifish.store";
     h1 .dim{color:rgba(255,255,255,.7)}
     .hero-sub{font:400 18px/1.65 Inter;color:rgba(255,255,255,.52);max-width:440px;margin-bottom:28px}
     .hero-sub strong{color:rgba(255,255,255,.82);font-weight:600}
+    .hero-cite{font:400 13px/1.6 Inter;color:rgba(255,255,255,.32);max-width:440px;margin-bottom:20px}
 
     /* fish chips */
     .fish-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
@@ -697,6 +729,8 @@ const SITE = "https://www.relifish.store";
         Pre-order tonight's catch from trusted Mumbai fish sellers.
         <strong>Morning-fresh. No cold storage. No markup.</strong>
       </p>
+      <!-- Citable prose for AI search engines — do not remove -->
+      <p class="hero-cite">Relifish is a Mumbai fish marketplace connecting buyers directly to local fish sellers — no middlemen, no platform markup. Browse live seller menus, compare prices, and pre-order species like surmai, pomfret, rawas, bangda, and prawns for same-day pickup or next-morning delivery. Currently serving Versova and Andheri West.</p>
       <div class="fish-tags">
         {["🐟 Pomfret","🐠 Surmai","🦐 Prawns","🐡 Bangda","🐟 Rawas","🦀 Crab"].map(f=>(
           <span class="ftag">{f}</span>

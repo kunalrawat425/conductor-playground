@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 
-const INDEXNOW_KEY = "a1b2c3d4e5f6g7h8i9j0";
+const INDEXNOW_KEY = import.meta.env.INDEXNOW_KEY || "a1b2c3d4e5f6g7h8i9j0";
 const HOST = "https://www.relifish.store";
 
 export const POST: APIRoute = async ({ request }) => {
