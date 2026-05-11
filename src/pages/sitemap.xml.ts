@@ -23,12 +23,12 @@ export const GET: APIRoute = async () => {
   const uniqueSpecies = [...new Set((species || []).map((s) => s.species))];
 
   const urls: { loc: string; changefreq: string; priority: string }[] = [
-    // Use final destination URLs (no 302 chains)
+    // Core pages
     { loc: "/", changefreq: "daily", priority: "1.0" },
-    { loc: "/search", changefreq: "weekly", priority: "0.6" },
+    { loc: "/shop", changefreq: "daily", priority: "0.9" },
     // Static marketing pages
-    { loc: "/buyer-detailed.html", changefreq: "monthly", priority: "0.9" },
-    { loc: "/seller-detailed.html", changefreq: "monthly", priority: "0.9" },
+    { loc: "/buyer-detailed.html", changefreq: "monthly", priority: "0.6" },
+    { loc: "/seller-detailed.html", changefreq: "monthly", priority: "0.6" },
   ];
 
   for (const seller of sellers || []) {
