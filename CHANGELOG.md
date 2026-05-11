@@ -2,6 +2,16 @@
 
 All notable changes to Relifish are documented here.
 
+## [0.1.2.0] - 2026-05-11
+
+### Added
+- **Hero phone mockup** is taller and wider (270×500px, up from 240×360px) — fills the full-screen hero section better on all screens
+- **AI chat widget** (ready to enable): floating assistant powered by Claude Haiku via Vercel AI SDK, grounded in Relifish product knowledge — uncomment in `index.astro` and set `ANTHROPIC_API_KEY` to activate
+- **`/api/chat` endpoint**: POST handler accepting conversation history, returning Claude-generated responses about Relifish
+
+### Changed
+- Replaced direct `@anthropic-ai/sdk` with `@ai-sdk/anthropic` (Vercel AI SDK) for the chat endpoint — cleaner streaming support when the widget ships
+
 ## [0.1.1.0] - 2026-05-05
 
 ### Fixed
