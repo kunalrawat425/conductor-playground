@@ -2,6 +2,20 @@
 
 All notable changes to Relifish are documented here.
 
+## [0.1.3.0] - 2026-05-11
+
+### Added
+- **8 new fish species** in the species catalogue: Halwa (Black Pomfret), Katla, Salmon, Bhetki, Ghol, Basa, Shark (Mushi), Boi (Mullet) — all available in the listing form dropdown
+- **Jumbo size grade** — `fish_size` now supports `jumbo` in addition to small/medium/large (migration 053); Jumbo option added to listing form size dropdown
+- **Bombay Sea Food listings** — 21 clean fish listings seeded for seller `f3339b19` with images uploaded to `fish-photos` bucket and correct species IDs linked
+
+### Fixed
+- **Duplicate pre-order section** — listing form showed two identical "Pre-order settings" panels; removed the extra one
+- **Seller hero banner fade** — store banner image now fades smoothly into page content via gradient overlay; removed hardcoded blue background gradient
+
+### Changed
+- **robots.txt** — removed AI crawler (GPTBot, Bytespider) blocks to allow AI search indexing and citations
+
 ## [0.1.2.0] - 2026-05-11
 
 ### Added
