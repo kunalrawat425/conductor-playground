@@ -1,0 +1,859 @@
+---
+import AppShellV2 from "../components/v2/AppShellV2.astro";
+import SellerCard from "../components/v2/molecules/SellerCard.astro";
+import PreorderBanner from "../components/v2/molecules/PreorderBanner.astro";
+import CategoryStrip from "../components/v2/molecules/CategoryStrip.astro";
+import EmptyState from "../components/v2/molecules/EmptyState.astro";
+import Skeleton from "../components/v2/atoms/Skeleton.astro";
+import Toast from "../components/v2/atoms/Toast.astro";
+import LocationPickerSheet from "../components/v2/organisms/LocationPickerSheet.astro";
+
+// Category strip is built dynamically from live listings data (see script below).
+// SSR renders only "All Fish" as a placeholder; JS fills the rest after data loads.
+const categories = [
+  { id: "all", name: "All Fish", emoji: "🐟", active: true },
+];
+---
+<AppShellV2
+  title="Fresh Fish Delivery Mumbai — Order from Local Sellers | Relifish"
+  description="Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch — pomfret, surmai, bangda, prawns — delivered or pickup tomorrow morning."
+  needsMap={true}
+  header={{
+    locationLabel: "Set location",
+    locationSub: "Tap to choose your area",
+    showSearch: false,
+    showCart: false,
+    cartCount: 0,
+  }}
+  nav={{ active: "home" }}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.relifish.store/#organization",
+        "name": "Relifish",
+        "url": "https://www.relifish.store",
+        "logo": "https://www.relifish.store/icon-192.svg",
+        "description": "Mumbai's fresh fish marketplace — order directly from local sellers, pre-order tonight's catch for morning pickup or delivery.",
+        "areaServed": { "@type": "City", "name": "Mumbai" },
+        "contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "availableLanguage": ["English", "Marathi"] }
+      },
+      {
+        "@type": "LocalBusiness",
+        "@id": "https://www.relifish.store/#localbusiness",
+        "name": "Relifish",
+        "url": "https://www.relifish.store",
+        "description": "Fresh fish marketplace connecting Mumbai buyers directly with local fish sellers. Pre-order pomfret, surmai, bangda, prawns and more.",
+        "image": "https://www.relifish.store/og-image.png",
+        "priceRange": "₹₹",
+        "servesCuisine": "Seafood",
+        "areaServed": { "@type": "City", "name": "Mumbai" },
+        "hasMap": "https://www.relifish.store"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.relifish.store/#website",
+        "name": "Relifish",
+        "url": "https://www.relifish.store",
+        "potentialAction": { "@type": "SearchAction", "target": "https://www.relifish.store/search?q={search_term_string}", "query-input": "required name=search_term_string" }
+      }
+    ]
+  }}
+>
+  <!-- SEO H1 — visually hidden on app, present for crawlers -->
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
+    Fresh Fish Delivery Mumbai — Order from Local Sellers
+  </h1>
+  <Toast />
+  <LocationPickerSheet />
+
+  <!-- Sticky filter cluster — stays in view when scrolling cards -->
+  <div id="v2-sticky-cluster" class="v2-sticky-cluster">
+    <PreorderBanner variant="inline" />
+
+    <div style="margin-top: 6px;">
+      <CategoryStrip items={categories} />
+    </div>
+
+    <!-- Filter chips: timing × fulfillment × top-rated -->
+    <div class="v2-filter-chips" id="v2-filter-chips" role="tablist" aria-label="Filter sellers">
+      <button type="button" class="v2-fchip v2-fchip-active" data-filter="all" data-group="all">All</button>
+      <button type="button" class="v2-fchip" data-filter="open" data-group="time">Open now</button>
+      <button type="button" class="v2-fchip" data-filter="preorder" data-group="time">Pre-order</button>
+      <span class="v2-fchip-sep" aria-hidden="true"></span>
+      <button type="button" class="v2-fchip" data-filter="pickup" data-group="fulfill">Pickup</button>
+      <button type="button" class="v2-fchip" data-filter="delivery" data-group="fulfill">Delivery</button>
+      <span class="v2-fchip-sep" aria-hidden="true"></span>
+      <button type="button" class="v2-fchip" data-filter="topRated" data-group="toggle">Top rated ★</button>
+    </div>
+  </div>
+
+  <div class="v2-section-head">
+    <h2>Sellers near you</h2>
+    <span id="v2-seller-count" class="v2-count-badge">…</span>
+  </div>
+
+  <!-- Loading skeletons -->
+  <div id="v2-loading" class="v2-cards-grid">
+    <div class="v2-skel-card"><Skeleton shape="card" height="220px" /></div>
+    <div class="v2-skel-card"><Skeleton shape="card" height="220px" /></div>
+  </div>
+
+  <!-- Cards grid (filled by JS) -->
+  <div id="v2-sellers-grid" class="v2-cards-grid" style="display:none;"></div>
+
+  <!-- Empty -->
+  <div id="v2-empty" style="display:none;padding: 0 16px;">
+    <EmptyState variant="no-area" ctaHref="/buyer-banner.html#wl-form" ghostCtaHref="#" />
+  </div>
+
+  <!-- Markets closed -->
+  <div id="v2-closed" style="display:none;padding: 0 16px;">
+    <EmptyState variant="closed" ctaHref="/v2?mode=preorder" />
+  </div>
+
+  <!-- Sticky cart section (Swiggy-style, fixed above bottom nav) -->
+  <div id="v2-home-carts" style="display:none;position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:40;max-height:40vh;overflow-y:auto;background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.1);"></div>
+</AppShellV2>
+
+<style is:global>
+  .v2-section-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 16px 10px;
+  }
+  .v2-section-head h2 {
+    font-family: var(--v2-font); font-weight: 800; font-size: 18px;
+    color: var(--v2-ink); margin: 0;
+  }
+  .v2-count-badge {
+    background: var(--v2-brand);
+    color: #fff;
+    font-family: var(--v2-font); font-weight: 700; font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+  }
+  .v2-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 16px;
+    animation: v2-fade-in var(--v2-dur) var(--v2-ease-out);
+  }
+  @media (min-width: 600px) {
+    .v2-cards-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .v2-skel-card { border-radius: 12px; overflow: hidden; }
+  .v2-badge-bold { font-weight: 800 !important; }
+
+  /* Sticky filter cluster — pin nav controls below header */
+  .v2-sticky-cluster {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--v2-bg-2);
+    padding: 8px 16px 4px;
+    border-bottom: 1px solid var(--v2-border);
+  }
+  .v2-sticky-cluster .v2-pb-inline { margin: 0 0 6px; }
+
+  /* Filter chips */
+  .v2-filter-chips {
+    display: flex; gap: 6px;
+    padding: 6px 16px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    align-items: center;
+  }
+  .v2-filter-chips::-webkit-scrollbar { display: none; }
+  .v2-fchip {
+    padding: 7px 14px;
+    border: 1.5px solid var(--v2-border);
+    background: var(--v2-bg);
+    color: var(--v2-ink-2);
+    font: 600 12px Inter;
+    border-radius: 9999px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background var(--v2-dur-fast) var(--v2-ease), color var(--v2-dur-fast) var(--v2-ease), border-color var(--v2-dur-fast) var(--v2-ease);
+  }
+  .v2-fchip:hover { border-color: var(--v2-brand-m); }
+  .v2-fchip-active {
+    background: var(--v2-brand);
+    color: #fff;
+    border-color: var(--v2-brand);
+  }
+  .v2-fchip-sep {
+    width: 1px; height: 20px;
+    background: var(--v2-border);
+    flex-shrink: 0;
+    margin: 0 2px;
+  }
+</style>
+
+<script>
+  import { supabase } from "../lib/supabase";
+  import { getSession } from "../lib/auth";
+  import { subscribePush } from "../lib/push";
+  import { getSpeciesDisplay } from "../lib/species";
+  import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
+  import type { Seller, FishListing } from "../lib/supabase";
+
+  type SellerHue = "sky" | "green" | "orange" | "indigo";
+
+  function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function isOpen(opens?: string | null, closes?: string | null) {
+    if (!opens || !closes) return true;
+    const now = new Date();
+    const cur = now.getHours() * 60 + now.getMinutes();
+    const [oh, om] = opens.split(":").map(Number);
+    const [ch, cm] = closes.split(":").map(Number);
+    const openMin = oh * 60 + om;
+    const closeMin = ch * 60 + cm;
+    // Handle cross-midnight ranges (e.g. 17:00 → 01:58)
+    if (openMin <= closeMin) return cur >= openMin && cur <= closeMin;
+    return cur >= openMin || cur <= closeMin;
+  }
+
+  const DAY_NAMES_SHORT = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  function todayDayName() {
+    return DAY_NAMES_SHORT[new Date().getDay()];
+  }
+
+  function getBuyerLocation(): { lat: number; lng: number } | null {
+    try {
+      const lat = localStorage.getItem("zepto_buyer_lat");
+      const lng = localStorage.getItem("zepto_buyer_lng");
+      if (lat && lng) return { lat: parseFloat(lat), lng: parseFloat(lng) };
+    } catch {}
+    return null;
+  }
+
+  function getBuyerArea(): string {
+    try { return localStorage.getItem("zepto_buyer_location") || "Set location"; } catch { return "Set location"; }
+  }
+
+  function pickHue(seed: string): SellerHue {
+    const hues: SellerHue[] = ["sky", "green", "orange", "indigo"];
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    return hues[h % hues.length];
+  }
+
+  function escapeHtml(s: string) {
+    return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  }
+
+  function listingChipHtml(l: any): string {
+    const name = getSpeciesDisplay(l.species);
+    const opts = getListingPriceOptions(l);
+    const opt = opts[0];
+    const price = opt?.price ?? (l.pricing_options as any[])?.[0]?.price ?? 0;
+    const unitPart = opt
+      ? formatBuyerMenuUnitSuffix(opt).replace(/^\//, "")
+      : escapeHtml(String((l.pricing_options as any[])?.[0]?.unit_label || "kg"));
+    const emoji = (l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : "🐟";
+    return `<div class="v2-sc-chip"><span class="v2-sc-m-emoji">${emoji}</span><div><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${unitPart}</div></div></div>`;
+  }
+
+  /** At most 2 cells: two products, or first product + "+N" (N = number of additional listings). */
+  function sellerMenuChipsHtml(listings: any[] | undefined): string {
+    const lst = listings || [];
+    if (lst.length === 0) return "";
+    if (lst.length <= 2) return lst.map(listingChipHtml).join("");
+    return listingChipHtml(lst[0]) + `<div class="v2-sc-chip v2-sc-chip-more"><span class="v2-sc-m-more">+${lst.length - 1}</span></div>`;
+  }
+
+  async function loadSellers() {
+    const loading = document.getElementById("v2-loading")!;
+    const grid = document.getElementById("v2-sellers-grid")!;
+    const empty = document.getElementById("v2-empty")!;
+    const closed = document.getElementById("v2-closed")!;
+    const count = document.getElementById("v2-seller-count")!;
+
+    // Update header location label
+    const locMain = document.querySelector(".v2-loc-main");
+    const locSub = document.querySelector(".v2-loc-sub");
+    const area = getBuyerArea();
+    if (locMain && area && area !== "Set location") {
+      locMain.firstChild!.textContent = area + " ";
+    }
+
+    // First-visit location prompt — try geolocation API, fallback to manual on deny.
+    // Only auto-prompt if user has never set location and never dismissed prompt.
+    let promptedKey = "v2_loc_prompted";
+    let promptedThisSession = false;
+    try { promptedThisSession = sessionStorage.getItem(promptedKey) === "1"; } catch {}
+    const needsLocation = !getBuyerLocation();
+    if (needsLocation && !promptedThisSession && navigator.geolocation) {
+      try { sessionStorage.setItem(promptedKey, "1"); } catch {}
+      // Friendly delay so page paints first
+      setTimeout(() => {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            // Allowed: reverse geocode → save → reload data
+            const { latitude, longitude } = pos.coords;
+            try {
+              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+              const data = await r.json();
+              const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
+              try {
+                localStorage.setItem("zepto_buyer_location", a);
+                localStorage.setItem("zepto_buyer_lat", String(latitude));
+                localStorage.setItem("zepto_buyer_lng", String(longitude));
+              } catch {}
+              if (locMain) locMain.firstChild!.textContent = a + " ";
+              (window as any).v2Toast?.("success", "Location set", a);
+              loadSellers();
+            } catch {}
+          },
+          () => {
+            // Denied or failed: open manual picker after a beat (don't be pushy — just hint via subtitle)
+            if (locMain) locMain.firstChild!.textContent = "Set location ";
+            if (locSub) locSub.textContent = "Tap to choose your area";
+          },
+          { timeout: 7000, maximumAge: 60_000 * 5 }
+        );
+      }, 800);
+    }
+
+    try {
+      const [{ data: listingsData }, { data: sellersData }] = await Promise.all([
+        supabase
+          .from("fish_listings")
+          .select("*, seller:sellers(*)")
+          .or("is_available.eq.true,is_preorder_enabled.eq.true"),
+        supabase
+          .from("sellers")
+          .select("*")
+          .eq("is_active", true)
+          .neq("name", "New Seller"),
+      ]);
+
+      const listings = (listingsData || []) as (FishListing & { seller: Seller })[];
+      const sellers = (sellersData || []) as Seller[];
+
+      // Group listings by seller
+      const sellerListings = new Map<string, FishListing[]>();
+      for (const l of listings) {
+        const sid = (l as any).seller?.id;
+        if (!sid) continue;
+        if (!sellerListings.has(sid)) sellerListings.set(sid, []);
+        sellerListings.get(sid)!.push(l);
+      }
+
+      // Filter sellers: must have listings OR accept pre-orders
+      const filtered = sellers.filter(s => {
+        const hasListings = (sellerListings.get(s.id) || []).length > 0;
+        return hasListings || s.accepts_preorder === true;
+      });
+
+      const buyerLoc = getBuyerLocation();
+      const groups = filtered.map(s => {
+        const dist = buyerLoc && s.lat != null && s.lng != null
+          ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
+          : null;
+        const rawListings = sellerListings.get(s.id) || [];
+        const openDays: string[] = Array.isArray((s as any).open_days) ? (s as any).open_days : [];
+        const preorderDays: string[] = Array.isArray((s as any).preorder_days) ? (s as any).preorder_days : [];
+        const day = todayDayName();
+        const isTodayOrderDay = !openDays.length || openDays.includes(day);
+        const isTodayPreorderDay = preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder;
+        const openNow = isOpen(s.opens_at, s.closes_at) && isTodayOrderDay;
+        const preorderMode = !openNow && isTodayPreorderDay;
+        const listings = rawListings.filter((l: any) => preorderMode
+          ? (
+              l?.is_preorder_enabled === true &&
+              (Array.isArray(l?.pricing_options) ? l.pricing_options.some((o: any) => o?.preorder_price_min != null || o?.preorder_price_max != null) : true)
+            )
+          : l?.is_available === true
+        );
+        return {
+          seller: s,
+          listings,
+          dist,
+          open: openNow,
+          preorderMode,
+          preorderAvailableToday: isTodayPreorderDay,
+        };
+      });
+
+      // Sort: open first, then by distance, then rating
+      groups.sort((a, b) => {
+        if (a.open !== b.open) return a.open ? -1 : 1;
+        if (a.dist != null && b.dist != null) return a.dist - b.dist;
+        return (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0);
+      });
+
+      loading.style.display = "none";
+
+      // Cache for filter re-render
+      (window as any).__v2allGroups = groups;
+      if (getBuyerLocation()) {
+        buildCategoryStrip(groups);
+      } else {
+        buildCategoryStrip([]);
+      }
+      renderFiltered();
+    } catch (err) {
+      console.error("v2: load failed", err);
+      loading.innerHTML = `<div style="text-align:center;padding:40px;color:var(--v2-red);">Failed to load. Refresh to try again.</div>`;
+    }
+  }
+
+  // Filter state — seeded from URL params so deep-links and CTAs (e.g. EmptyState's
+  // "Pre-order tomorrow", search trending cards `?species=prawns`) actually filter.
+  const initialParams = new URLSearchParams(window.location.search);
+  const initialMode = initialParams.get("mode");
+  const initialCat = initialParams.get("species") || initialParams.get("cat");
+  const filterState = {
+    time: (initialMode === "preorder" || initialMode === "open" ? initialMode : null) as null | "open" | "preorder",
+    fulfill: null as null | "pickup" | "delivery",
+    topRated: false,
+    category: (initialCat || "all") as string, // category strip species filter
+    maxKm: 25, // distance cap (km) when buyer location available
+  };
+
+  // Species id → emoji for category strip tiles
+  const speciesEmoji: Record<string, string> = {
+    pomfret: "🐠", surmai: "🐟", rawas: "🐟", bangda: "🐟",
+    bombil: "🐡", prawns: "🦐", crab: "🦀", squid: "🦑",
+    lobster: "🦞", oyster: "🦪", clam: "🐚", sardine: "🐟",
+    sole: "🐟", hilsa: "🐟", rohu: "🐟",
+  };
+
+  // Species id → display name for category strip
+  const speciesLabel: Record<string, string> = {
+    pomfret: "Pomfret", surmai: "Surmai", rawas: "Rawas",
+    bangda: "Bangda", bombil: "Bombil", prawns: "Prawns",
+    crab: "Crab", squid: "Squid", lobster: "Lobster",
+    oyster: "Oyster", clam: "Clam", sardine: "Sardine",
+    sole: "Sole", hilsa: "Hilsa", rohu: "Rohu",
+  };
+
+  // Map category id → species substrings to match in listings
+  // Each species key matches its own name exactly; "all" matches everything.
+  const categorySpecies: Record<string, string[]> = { all: [] };
+  for (const id of Object.keys(speciesLabel)) {
+    categorySpecies[id] = [id];
+  }
+
+  // Build category strip from actual listings, sorted by listing count descending.
+  // Called once after data loads; ordering is fixed after that (doesn't re-sort on filter).
+  function buildCategoryStrip(groups: any[]) {
+    const counts: Record<string, number> = {};
+    for (const g of groups) {
+      for (const l of (g.listings || [])) {
+        const sp = (l.species || "").toLowerCase().trim();
+        if (sp && sp !== "all") counts[sp] = (counts[sp] || 0) + 1;
+      }
+    }
+    // Priority species always first (if they have listings), then others by count
+    const priority = ["surmai", "prawns", "pomfret", "crab"];
+    const priorityWithListings = priority.filter(sp => counts[sp] > 0);
+    const rest = Object.entries(counts)
+      .filter(([id]) => !priority.includes(id))
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => id);
+    const sorted = [...priorityWithListings, ...rest].slice(0, 7);
+
+    const strip = document.querySelector(".v2-cat-strip");
+    if (!strip) return;
+
+    const activeCat = filterState.category;
+    // Rebuild strip: All Fish first, then sorted species that have listings
+    const items = [
+      { id: "all", name: "All Fish", emoji: "🐟" },
+      ...sorted.map(id => ({
+        id,
+        name: speciesLabel[id] || id.charAt(0).toUpperCase() + id.slice(1),
+        emoji: speciesEmoji[id] || "🐟",
+      })),
+    ];
+
+    strip.innerHTML = items.map(item => {
+      const url = item.id === "all" ? "/v2" : `/v2?cat=${item.id}`;
+      const active = item.id === activeCat;
+      return `<a href="${url}" class="v2-cat-item${active ? " v2-cat-active" : ""}" role="tab" aria-selected="${active}">
+        <div class="v2-cat-tile"><span aria-hidden="true">${item.emoji}</span></div>
+        <div class="v2-cat-name">${item.name}</div>
+      </a>`;
+    }).join("");
+
+    // Re-wire click handlers for rebuilt strip
+    strip.querySelectorAll<HTMLAnchorElement>(".v2-cat-item").forEach(cat => {
+      cat.addEventListener("click", e => {
+        e.preventDefault();
+        const url = new URL((cat as HTMLAnchorElement).href, window.location.origin);
+        const catId = url.searchParams.get("cat") || "all";
+        filterState.category = catId;
+        strip.querySelectorAll(".v2-cat-item").forEach(c => c.classList.remove("v2-cat-active"));
+        cat.classList.add("v2-cat-active");
+        renderFiltered();
+      });
+    });
+  }
+
+  function applyFilters(groups: any[]) {
+    const buyerLoc = getBuyerLocation();
+    if (!buyerLoc) return [];
+
+    return groups.filter((g) => {
+      const s = g.seller;
+      // Buyer has coordinates but seller missing map pin — cannot verify service area
+      if (g.dist == null) return false;
+
+      const rad = Number(s.delivery_rad);
+      const capKm =
+        rad > 0
+          ? rad
+          : s.has_delivery
+            ? Math.min(10, filterState.maxKm)
+            : filterState.maxKm;
+      if (g.dist > capKm) return false;
+
+      // Time
+      if (filterState.time === "open" && !g.open) return false;
+      if (filterState.time === "preorder" && !g.preorderAvailableToday) return false;
+      // Fulfill (delivery filter is the only meaningful one)
+      if (filterState.fulfill === "delivery" && !s.has_delivery) return false;
+      // Category — filter by species substrings in seller's listings
+      const cat = filterState.category;
+      if (cat && cat !== "all") {
+        const subs = categorySpecies[cat] || [];
+        const hasMatch = (g.listings || []).some((l: any) => {
+          const sp = (l.species || "").toLowerCase();
+          return subs.some((needle) => sp.includes(needle));
+        });
+        if (!hasMatch) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderFiltered() {
+    const allGroups = (window as any).__v2allGroups || [];
+    const grid = document.getElementById("v2-sellers-grid")!;
+    const empty = document.getElementById("v2-empty")!;
+    const closed = document.getElementById("v2-closed")!;
+    const count = document.getElementById("v2-seller-count")!;
+    const sticky = document.getElementById("v2-sticky-cluster");
+    const sectionHead = document.querySelector(".v2-section-head") as HTMLElement | null;
+
+    empty.style.display = "none";
+    closed.style.display = "none";
+
+    if (!getBuyerLocation()) {
+      sticky?.style && (sticky.style.display = "none");
+      if (sectionHead) sectionHead.style.display = "none";
+      grid.style.display = "none";
+      grid.innerHTML = "";
+      empty.innerHTML = `
+<div style="padding:40px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;">
+  <div style="font-size:48px;margin-bottom:12px;">📍</div>
+  <div style="font:700 17px Inter;color:var(--v2-ink);margin-bottom:8px;">Set your location</div>
+  <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto;line-height:1.45;">
+    Choose your area to see sellers who deliver or offer pickup near you. We only show sellers that serve your distance.
+  </div>
+  <button type="button" id="v2-open-loc-empty" style="background:var(--v2-brand);color:#fff;border:none;font:700 14px Inter;padding:12px 28px;border-radius:var(--v2-radius-sm);cursor:pointer;">
+    Choose area
+  </button>
+</div>`;
+      empty.style.display = "block";
+      return;
+    }
+
+    sticky?.style && (sticky.style.display = "");
+    if (sectionHead) sectionHead.style.display = "";
+
+    let filtered = applyFilters(allGroups);
+    if (filterState.topRated) {
+      filtered = [...filtered].sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
+    }
+
+    if (allGroups.length === 0) {
+      count.textContent = "0";
+      empty.innerHTML = `<div style="padding:40px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:48px;margin-bottom:12px;">🐟</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers yet</div><div style="font:400 12px Inter;color:var(--v2-ink-3);">Check back soon.</div></div>`;
+      empty.style.display = "block";
+      grid.style.display = "none";
+      return;
+    }
+
+    if (filtered.length === 0) {
+      count.textContent = "0";
+      grid.style.display = "none";
+      grid.innerHTML = "";
+      const noMatch = `<div style="padding:40px 24px;text-align:center;background:#fff;border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:48px;margin-bottom:12px;">🎣</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers match these filters</div><div style="font:400 12px Inter;color:var(--v2-ink-3);">Tap All to see everyone.</div></div>`;
+      empty.innerHTML = noMatch;
+      empty.style.display = "block";
+      return;
+    }
+
+    count.textContent = String(filtered.length);
+    grid.style.display = "grid";
+
+    grid.innerHTML = filtered.map((g: any) => {
+        const s = g.seller;
+        const top = sellerMenuChipsHtml(g.listings);
+
+        const hue = pickHue(s.id);
+        const hueColors: Record<SellerHue, string> = {
+          sky: "linear-gradient(135deg,#E0F2FE,#BAE6FD)",
+          green: "linear-gradient(135deg,#ECFDF5,#D1FAE5)",
+          orange: "linear-gradient(135deg,#FFF7ED,#FED7AA)",
+          indigo: "linear-gradient(135deg,#EEF2FF,#E0E7FF)",
+        };
+
+        // Status: open / closed-preorder (still active for pre-orders) / closed / pre-order-only
+        const status = !g.open
+          ? (g.preorderAvailableToday ? "closed-preorder" : "closed")
+          : (g.listings.length === 0 && g.preorderAvailableToday ? "pre-order-only" : "open");
+
+        // ONE status tag per card — mutually exclusive states.
+        const statusBadge = status === "open"
+          ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md v2-badge-bold">Open now</span>`
+          : status === "closed-preorder"
+            ? `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-orders open</span>`
+            : status === "closed"
+              ? `<span class="v2-badge v2-badge-tag v2-badge-red v2-badge-size-md v2-badge-bold">Closed</span>`
+              : `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-order only</span>`;
+
+        const pickupTag = !s.has_delivery
+          ? `<span class="v2-badge v2-badge-tag v2-badge-size-md">Pickup only</span>` : "";
+
+        const rating = s.rating_avg ? Number(s.rating_avg).toFixed(1) : null;
+        const ratingBadge = rating ? `<span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">${rating} ★</span>` : "";
+
+        const distStr = g.dist != null ? `${g.dist.toFixed(1)} km` : "";
+        const subParts = [s.location_name || s.location || "", distStr].filter(Boolean).join(" · ");
+
+        // Offer badge logic — never show "Pre-order today" on a closed seller (confusing)
+        // Open + has items = Same-day catch (brand)
+        // Open + no items + accepts pre-order = Pre-order only (indigo)
+        // Closed + accepts pre-order = Pre-order available (indigo)
+        // Closed + no preorder = Closed (red)
+        let offerLabel = "", offerColor = "v2-badge-brand";
+        if (g.open && g.listings.length > 0) {
+          offerLabel = "Same-day catch";
+          offerColor = "v2-badge-brand";
+        } else if (g.open && g.preorderAvailableToday) {
+          offerLabel = "Pre-order only";
+          offerColor = "v2-badge-indigo";
+        } else if (!g.open && g.preorderAvailableToday) {
+          offerLabel = "Pre-order available";
+          offerColor = "v2-badge-indigo";
+        } else {
+          offerLabel = "Closed today";
+          offerColor = "v2-badge-red";
+        }
+        const offerBadge = `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
+
+        const deliveryBar = s.has_delivery
+          ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
+          : "";
+
+        const fullyClosed = status === "closed";
+
+        return `
+        <${fullyClosed ? 'div' : `a href="/seller/${s.id}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
+          <div class="v2-sc-img" style="background:${hueColors[hue]};">
+            ${offerBadge}
+            ${(s as any).store_image_url
+              ? `<img src="${escapeHtml((s as any).store_image_url)}" alt="${escapeHtml(s.name)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />`
+              : `<span class="v2-sc-emoji">🐟</span>`}
+          </div>
+          <div class="v2-sc-body">
+            <div class="v2-sc-top">
+              <div class="v2-sc-info">
+                <div class="v2-sc-name">${escapeHtml(s.name)}</div>
+                ${subParts ? `<div class="v2-sc-loc">${escapeHtml(subParts)}</div>` : ""}
+              </div>
+              ${ratingBadge}
+            </div>
+            <div class="v2-sc-tags">${statusBadge}${pickupTag}</div>
+          </div>
+          ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
+          ${deliveryBar}
+        </${fullyClosed ? 'div' : 'a'}>`;
+      }).join("");
+  }
+
+  // Wire filter chips
+  document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const filter = btn.dataset.filter!;
+      const group = btn.dataset.group!;
+
+      if (filter === "all") {
+        // Reset
+        filterState.time = null;
+        filterState.fulfill = null;
+        filterState.topRated = false;
+      } else if (group === "time") {
+        // Toggle off if active, else select
+        filterState.time = filterState.time === filter ? null : (filter as any);
+      } else if (group === "fulfill") {
+        filterState.fulfill = filterState.fulfill === filter ? null : (filter as any);
+      } else if (group === "toggle") {
+        filterState.topRated = !filterState.topRated;
+      }
+
+      // Update chip styles
+      const noFilters = !filterState.time && !filterState.fulfill && !filterState.topRated;
+      document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((b) => {
+        const f = b.dataset.filter!;
+        const g = b.dataset.group!;
+        let active = false;
+        if (f === "all") active = noFilters;
+        else if (g === "time") active = filterState.time === f;
+        else if (g === "fulfill") active = filterState.fulfill === f;
+        else if (g === "toggle") active = filterState.topRated;
+        b.classList.toggle("v2-fchip-active", active);
+      });
+
+      renderFiltered();
+    });
+  });
+
+  // Category strip click handlers are wired inside buildCategoryStrip() after data loads.
+
+  // Sync visual state with URL-seeded filterState on first paint
+  function syncInitialChipState() {
+    const noFilters = !filterState.time && !filterState.fulfill && !filterState.topRated;
+    document.querySelectorAll<HTMLButtonElement>("#v2-filter-chips .v2-fchip").forEach((b) => {
+      const f = b.dataset.filter!;
+      const g = b.dataset.group!;
+      let active = false;
+      if (f === "all") active = noFilters;
+      else if (g === "time") active = filterState.time === f;
+      else if (g === "fulfill") active = filterState.fulfill === f;
+      else if (g === "toggle") active = filterState.topRated;
+      b.classList.toggle("v2-fchip-active", active);
+    });
+    // Category strip active state is set inside buildCategoryStrip() after data loads.
+  }
+  syncInitialChipState();
+
+  loadSellers();
+
+  // After buyer accepts location (or after page paint), ask for notification permission
+  function maybeAskNotifications() {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "default") return; // user already chose
+    let asked = false;
+    try { asked = sessionStorage.getItem("v2_notif_asked") === "1"; } catch {}
+    if (asked) return;
+    try { sessionStorage.setItem("v2_notif_asked", "1"); } catch {}
+    // Wait 5s after page settled — don't be pushy
+    setTimeout(async () => {
+      try {
+        const result = await Notification.requestPermission();
+        if (result === "granted") {
+          (window as any).v2Toast?.("success", "Notifications on", "We'll only ping for orders");
+          const session = getSession();
+          if (session) {
+            const ok = await subscribePush();
+            if (!ok) {
+              (window as any).v2Toast?.(
+                "error",
+                "Alerts not fully enabled",
+                "Open Account and tap Notifications, or check browser settings."
+              );
+            }
+          }
+        }
+      } catch {}
+    }, 5000);
+  }
+
+  // After location set or skipped, prompt notifications
+  document.addEventListener("v2-location-confirmed", () => {
+    loadSellers();
+    setTimeout(maybeAskNotifications, 2000);
+  });
+  // Also if user already has location, ask after page load
+  if (getBuyerLocation()) {
+    maybeAskNotifications();
+  }
+
+  // Open location picker bridge — V2 native sheet
+  document.addEventListener("relifish:open-location-picker", () => {
+    (window as any).v2OpenSheet?.("v2-loc-picker");
+  });
+
+  document.getElementById("v2-empty")?.addEventListener("click", (e) => {
+    if ((e.target as HTMLElement).closest("#v2-open-loc-empty")) {
+      e.preventDefault();
+      document.dispatchEvent(new CustomEvent("relifish:open-location-picker"));
+    }
+  });
+
+  // === Inline "Your Carts" section (Swiggy-style) ===
+  function renderHomeCarts() {
+    const el = document.getElementById("v2-home-carts");
+    if (!el) return;
+    const Cart = (window as any).RelifishCart;
+    if (!Cart) { el.style.display = "none"; return; }
+    const groups = Cart.groupBySeller();
+    if (groups.length === 0) { el.style.display = "none"; return; }
+
+    el.style.display = "block";
+    el.innerHTML = `
+      <div style="padding:8px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font:800 14px Inter;color:var(--v2-ink);">Your Carts</span>
+          <button id="v2-home-clear-all" type="button" style="background:none;border:none;font:600 12px Inter;color:var(--v2-red);cursor:pointer;">Clear All</button>
+        </div>
+        ${groups.map((g: any, i: number) => {
+          const itemCount = g.items.length;
+          const border = i < groups.length - 1 ? "border-bottom:1px solid var(--v2-border);" : "";
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;${border}">
+            <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🐟</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.seller_name || "Seller")}</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/seller/${g.seller_id}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
+            </div>
+            <a href="/seller/${g.seller_id}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">
+              ₹${g.subtotal.toLocaleString("en-IN")}<br><span style="font:600 9px Inter;opacity:.85;">View Cart</span>
+            </a>
+            <button data-hc-remove="${g.seller_id}" style="background:none;border:none;color:var(--v2-ink-4);font-size:16px;cursor:pointer;padding:2px;flex-shrink:0;" aria-label="Remove">✕</button>
+          </div>`;
+        }).join("")}
+      </div>`;
+
+    // Wire remove buttons
+    el.querySelectorAll<HTMLButtonElement>("[data-hc-remove]").forEach(b => {
+      b.addEventListener("click", () => {
+        Cart.clearCart({ sellerId: b.dataset.hcRemove });
+        renderHomeCarts();
+        (window as any).v2Toast?.("success", "Cart removed");
+      });
+    });
+    // Wire clear all
+    document.getElementById("v2-home-clear-all")?.addEventListener("click", () => {
+      groups.forEach((g: any) => Cart.clearCart({ sellerId: g.seller_id }));
+      renderHomeCarts();
+      (window as any).v2Toast?.("success", "All carts cleared");
+    });
+  }
+
+  // Render carts on load and on changes
+  function initHomeCarts() {
+    if ((window as any).RelifishCart) {
+      renderHomeCarts();
+    }
+    document.addEventListener("v2-cart-ready", () => renderHomeCarts());
+    window.addEventListener("v2-cart-changed", () => renderHomeCarts());
+    window.addEventListener("storage", (e) => {
+      if (e.key === "v2_cart_global") renderHomeCarts();
+    });
+  }
+  initHomeCarts();
+</script>
