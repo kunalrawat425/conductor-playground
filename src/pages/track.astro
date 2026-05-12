@@ -135,6 +135,20 @@ import Toast from "../components/v2/atoms/Toast.astro";
   function getBuyerPhone(): string | null {
     try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
   }
+
+  // Immediately hide spinner and show guest if not logged in — don't wait for Supabase
+  (function earlyAuthCheck() {
+    if (getBuyerPhone()) return;
+    const loading = document.getElementById("v2-track-loading");
+    const guest = document.getElementById("v2-track-guest");
+    if (loading) loading.style.display = "none";
+    if (guest) {
+      guest.style.display = "block";
+      guest.querySelector<HTMLElement>("#v2-track-signin-btn")?.addEventListener("click", () => {
+        (window as any).v2OpenSheet?.("v2-track-login");
+      });
+    }
+  })();
   // Orders may have phone stored with or without +91 prefix
   function phoneVariants(phone: string): string[] {
     const clean = phone.replace(/^\+91/, "").replace(/\D/g, "");
@@ -342,9 +356,23 @@ import Toast from "../components/v2/atoms/Toast.astro";
     }, 30000);
   }
 
+  // Safety net: if load() never hides the spinner (e.g. script error), show guest after 3s
+  const safetyTimer = setTimeout(() => {
+    const loading = document.getElementById("v2-track-loading");
+    if (loading && loading.style.display !== "none") {
+      loading.style.display = "none";
+      const guest = document.getElementById("v2-track-guest");
+      if (guest) guest.style.display = "block";
+      document.getElementById("v2-track-signin-btn")?.addEventListener("click", () => {
+        (window as any).v2OpenSheet?.("v2-track-login");
+      });
+    }
+  }, 3000);
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initTrack);
+    document.addEventListener("DOMContentLoaded", () => { clearTimeout(safetyTimer); initTrack(); });
   } else {
+    clearTimeout(safetyTimer);
     initTrack();
   }
 </script>
