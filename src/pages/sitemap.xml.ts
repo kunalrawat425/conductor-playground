@@ -32,7 +32,6 @@ export const GET: APIRoute = async () => {
     { loc: "/buyer-detailed.html", changefreq: "monthly", priority: "0.6" },
     { loc: "/seller-detailed.html", changefreq: "monthly", priority: "0.6" },
     { loc: "/privacy", changefreq: "yearly", priority: "0.3" },
-    { loc: "/prices", changefreq: "daily", priority: "0.85" },
   ];
 
   for (const seller of sellers || []) {
