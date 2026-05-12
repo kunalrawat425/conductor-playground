@@ -8,14 +8,28 @@ import { supabase } from "../../lib/supabase";
 
 const { species } = Astro.params;
 const speciesNames: Record<string, { en: string; mr: string; emoji: string }> = {
-  surmai: { en: "Surmai", mr: "सुरमई", emoji: "🐟" },
-  rawas: { en: "Rawas", mr: "रावस", emoji: "🐟" },
+  surmai: { en: "Surmai (Kingfish)", mr: "सुरमई", emoji: "🐟" },
+  rawas: { en: "Rawas (Indian Salmon)", mr: "रावस", emoji: "🐟" },
   pomfret: { en: "Pomfret", mr: "पापलेट", emoji: "🐟" },
-  bangda: { en: "Bangda", mr: "बांगडा", emoji: "🐟" },
-  ghol: { en: "Ghol", mr: "घोल", emoji: "🐟" },
-  hilsa: { en: "Hilsa", mr: "पाला", emoji: "🐟" },
-  prawn: { en: "Prawns", mr: "कोलंबी", emoji: "🦐" },
+  silver_pomfret: { en: "Silver Pomfret", mr: "पापलेट (सिल्व्हर)", emoji: "🐟" },
+  bangda: { en: "Bangda (Mackerel)", mr: "बांगडा", emoji: "🐟" },
+  bombil: { en: "Bombil (Bombay Duck)", mr: "बोंबील", emoji: "🐟" },
+  ghol: { en: "Ghol", mr: "घोळ", emoji: "🐟" },
+  hilsa: { en: "Hilsa (Pala)", mr: "पाला", emoji: "🐟" },
+  halwa: { en: "Halwa (Black Pomfret)", mr: "हलवा", emoji: "🐟" },
+  prawns: { en: "Prawns", mr: "कोळंबी", emoji: "🦐" },
+  prawn: { en: "Prawns", mr: "कोळंबी", emoji: "🦐" },
   crab: { en: "Crab", mr: "खेकडा", emoji: "🦀" },
+  rohu: { en: "Rohu", mr: "रोहू", emoji: "🐟" },
+  katla: { en: "Katla", mr: "कटला", emoji: "🐟" },
+  sardine: { en: "Sardine (Tarali)", mr: "तारली", emoji: "🐟" },
+  squid: { en: "Squid", mr: "मांदेली", emoji: "🐙" },
+  lobster: { en: "Lobster", mr: "शेवंड", emoji: "🦞" },
+  salmon: { en: "Salmon", mr: "सॅलमन", emoji: "🐟" },
+  bhetki: { en: "Bhetki (Indian Basa)", mr: "भेटकी", emoji: "🐟" },
+  basa: { en: "Basa", mr: "बासा", emoji: "🐟" },
+  shark: { en: "Shark (Mushi)", mr: "मुशी", emoji: "🦈" },
+  boi: { en: "Boi (Mullet)", mr: "बोई", emoji: "🐟" },
 };
 const sp = speciesNames[species || ""] || { en: species || "Fish", mr: "", emoji: "🐟" };
 
