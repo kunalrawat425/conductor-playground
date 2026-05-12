@@ -8,19 +8,19 @@ const SITE = "https://www.relifish.store";
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Buy Fresh Fish Online Mumbai — Direct from Local Sellers | Relifish</title>
-  <meta name="description" content="Order fresh fish online in Mumbai — pomfret, surmai, rawas, bangda, prawns from local sellers. Pre-order by 11 PM, delivered or pickup next morning. No Swiggy markup, no cold storage." />
+  <title>Fresh Fish Delivery Mumbai — Pre-order from Local Sellers | Relifish</title>
+  <meta name="description" content="Order fresh pomfret, surmai, rawas, bangda from Versova, Kandivali, Thane &amp; Navi Mumbai sellers. Pre-order by 11 PM, morning-fresh next day. No Swiggy markup, no cold storage." />
   <link rel="canonical" href={SITE} />
-  <meta property="og:title" content="Relifish — Fresh Fish from Mumbai's Local Sellers" />
-  <meta property="og:description" content="Pre-order tonight's catch from local Mumbai fish sellers. Morning-fresh, direct from source." />
+  <meta property="og:title" content="Relifish — Fresh Fish Direct from Mumbai's Local Sellers" />
+  <meta property="og:description" content="Pre-order tonight's catch from Versova, Kandivali, Thane &amp; Navi Mumbai sellers. Morning-fresh, no middleman markup." />
   <meta property="og:image" content={`${SITE}/og-image.png`} />
   <meta property="og:url" content={SITE} />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Relifish" />
   <meta property="og:locale" content="en_IN" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Relifish — Fresh Fish from Mumbai's Local Sellers" />
-  <meta name="twitter:description" content="Pre-order tonight's catch from local Mumbai fish sellers. Morning-fresh, direct from source." />
+  <meta name="twitter:title" content="Relifish — Fresh Fish Direct from Mumbai's Local Sellers" />
+  <meta name="twitter:description" content="Pre-order tonight's catch from Versova, Kandivali, Thane &amp; Navi Mumbai sellers. Morning-fresh, no middleman markup." />
   <meta name="twitter:image" content={`${SITE}/og-image.png`} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="manifest" href="/manifest.json" />
@@ -613,13 +613,11 @@ const SITE = "https://www.relifish.store";
       <a href="/me" class="nl" style="color:rgba(255,255,255,.7)">Login</a>
       <a href="/shop" class="btn-nav">Order now →</a>
     </div>
-    <a href="/shop" class="btn-nav" id="m-cta" style="display:none;font-size:13px;padding:9px 14px">Order →</a>
   </div>
 </nav>
 <script>
   const nav = document.getElementById('nav');
   window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>40),{passive:true});
-  document.getElementById('m-cta').style.display = window.innerWidth<=760?'inline-flex':'none';
 </script>
 
 <script>
@@ -734,8 +732,8 @@ const SITE = "https://www.relifish.store";
       <!-- Citable prose for AI search engines — do not remove -->
       <p class="hero-cite">Relifish is a Mumbai fish marketplace where buyers order fresh fish online directly from local sellers — no middlemen, no Swiggy or Zomato markup. Browse live menus from verified sellers in South Mumbai, Kandivali East, Thane West, and Kamothe. Pre-order pomfret, surmai, rawas, bangda, prawns, and 15+ species by 11 PM; your fish is confirmed after the morning catch and delivered or ready for pickup — within 24 hours of landing, never cold-stored.</p>
       <div class="fish-tags">
-        {["🐟 Pomfret","🐠 Surmai","🦐 Prawns","🐡 Bangda","🐟 Rawas","🦀 Crab"].map(f=>(
-          <span class="ftag">{f}</span>
+        {[["🐟 Pomfret","pomfret"],["🐠 Surmai","surmai"],["🦐 Prawns","prawns"],["🐡 Bangda","bangda"],["🐟 Rawas","rawas"],["🦀 Crab","crab"]].map(([label,slug])=>(
+          <a href={`/preorder/${slug}`} class="ftag" style="text-decoration:none;color:inherit;">{label}</a>
         ))}
       </div>
       <div class="hero-ctas">
