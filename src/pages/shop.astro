@@ -71,7 +71,7 @@ const categories = [
 
   <!-- Sticky filter cluster — stays in view when scrolling cards -->
   <div id="v2-sticky-cluster" class="v2-sticky-cluster">
-    <PreorderBanner variant="inline" href="#preorder" />
+    <PreorderBanner variant="inline" href="javascript:void(0)" />
 
     <div style="margin-top: 6px;">
       <CategoryStrip items={categories} />
@@ -727,7 +727,7 @@ const categories = [
   // Category strip click handlers are wired inside buildCategoryStrip() after data loads.
 
   // PreorderBanner click — activate the preorder filter chip on this page
-  (document.querySelector('.v2-pb-inline[href="#preorder"]') as HTMLAnchorElement | null)?.addEventListener('click', (e) => {
+  (document.querySelector('.v2-pb-inline') as HTMLAnchorElement | null)?.addEventListener('click', (e) => {
     e.preventDefault();
     const preorderChip = document.querySelector('#v2-filter-chips .v2-fchip[data-filter="preorder"]') as HTMLButtonElement | null;
     if (preorderChip) preorderChip.click();
@@ -827,9 +827,9 @@ const categories = [
             <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🐟</div>
             <div style="flex:1;min-width:0;">
               <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.seller_name || "Seller")}</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/seller/${g.seller_id}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/s/${sellerNameToSlug(g.seller_name || "")}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
             </div>
-            <a href="/seller/${g.seller_id}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">
+            <a href="/s/${sellerNameToSlug(g.seller_name || "")}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">
               ₹${g.subtotal.toLocaleString("en-IN")}<br><span style="font:600 9px Inter;opacity:.85;">View Cart</span>
             </a>
             <button data-hc-remove="${g.seller_id}" style="background:none;border:none;color:var(--v2-ink-4);font-size:16px;cursor:pointer;padding:2px;flex-shrink:0;" aria-label="Remove">✕</button>
