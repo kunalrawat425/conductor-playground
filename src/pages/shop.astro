@@ -279,6 +279,8 @@ const categories = [
     const empty = document.getElementById("v2-empty")!;
     const closed = document.getElementById("v2-closed")!;
     const count = document.getElementById("v2-seller-count")!;
+    const sticky = document.getElementById("v2-sticky-cluster");
+    const sectionHead = document.querySelector(".v2-section-head") as HTMLElement | null;
 
     // Update header location label
     const locMain = document.querySelector(".v2-loc-main");
@@ -286,6 +288,57 @@ const categories = [
     const area = getBuyerArea();
     if (locMain && area && area !== "Set location") {
       locMain.firstChild!.textContent = area + " ";
+    }
+
+    // No location set — show prompt immediately, skip Supabase fetch entirely
+    if (!getBuyerLocation()) {
+      loading.style.display = "none";
+      grid.style.display = "none";
+      grid.innerHTML = "";
+      sticky?.style && (sticky.style.display = "none");
+      if (sectionHead) sectionHead.style.display = "none";
+      empty.innerHTML = `
+<div style="padding:40px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;">
+  <div style="font-size:48px;margin-bottom:12px;">📍</div>
+  <div style="font:700 17px Inter;color:var(--v2-ink);margin-bottom:8px;">Set your location</div>
+  <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto;line-height:1.45;">
+    Choose your area to see sellers who deliver or offer pickup near you.
+  </div>
+  <button type="button" id="v2-open-loc-empty" style="background:var(--v2-brand);color:#fff;border:none;font:700 14px Inter;padding:12px 28px;border-radius:var(--v2-radius-sm);cursor:pointer;">
+    Choose area
+  </button>
+</div>`;
+      empty.style.display = "block";
+      document.getElementById("v2-open-loc-empty")?.addEventListener("click", () => {
+        document.dispatchEvent(new CustomEvent("relifish:open-location-picker"));
+      });
+      // Still try geolocation silently in background
+      let promptedKey = "v2_loc_prompted";
+      let promptedThisSession = false;
+      try { promptedThisSession = sessionStorage.getItem(promptedKey) === "1"; } catch {}
+      if (!promptedThisSession && navigator.geolocation) {
+        try { sessionStorage.setItem(promptedKey, "1"); } catch {}
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            try {
+              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+              const data = await r.json();
+              const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
+              try {
+                localStorage.setItem("zepto_buyer_location", a);
+                localStorage.setItem("zepto_buyer_lat", String(latitude));
+                localStorage.setItem("zepto_buyer_lng", String(longitude));
+              } catch {}
+              if (locMain) locMain.firstChild!.textContent = a + " ";
+              loadSellers();
+            } catch {}
+          },
+          () => {},
+          { timeout: 7000, maximumAge: 60_000 * 5 }
+        );
+      }
+      return;
     }
 
     // First-visit location prompt — try geolocation API, fallback to manual on deny.
