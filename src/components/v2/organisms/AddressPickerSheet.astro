@@ -15,7 +15,24 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       <div style="margin-top:8px;">Loading addresses...</div>
     </div>
   </div>
-  <a href="/me" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" style="margin-top:8px;">+ Add new address</a>
+  <button id={`${id}-add-btn`} type="button" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" style="margin-top:8px;">+ Add new address</button>
+  <div id={`${id}-add-form`} style="display:none;margin-top:12px;padding:12px;background:var(--v2-bg-2);border-radius:var(--v2-radius);border:1px solid var(--v2-border);">
+    <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:10px;">New address</div>
+    <select id={`${id}-label`} style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);margin-bottom:8px;">
+      <option value="home">🏠 Home</option>
+      <option value="office">🏢 Office</option>
+      <option value="other">📍 Other</option>
+    </select>
+    <input id={`${id}-building`} type="text" placeholder="Building / Society *" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-flat`} type="text" placeholder="Flat / House no." style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-landmark`} type="text" placeholder="Landmark (optional)" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-location`} type="text" placeholder="Area / Locality *" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:10px;" />
+    <div style="display:flex;gap:8px;">
+      <button id={`${id}-add-cancel`} type="button" style="flex:1;padding:9px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:600 13px Inter;background:var(--v2-bg);color:var(--v2-ink-2);cursor:pointer;">Cancel</button>
+      <button id={`${id}-add-save`} type="button" style="flex:2;padding:9px;border:none;border-radius:var(--v2-radius-sm);font:600 13px Inter;background:var(--v2-brand);color:#fff;cursor:pointer;">Save address</button>
+    </div>
+    <div id={`${id}-add-err`} style="display:none;margin-top:8px;font:500 12px Inter;color:var(--v2-red);"></div>
+  </div>
 </BottomSheet>
 
 <script define:vars={{ id }}>
@@ -70,6 +87,69 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-red);font:500 13px Inter;">Failed to load addresses</div>';
     }
   }
+
+  // Add new address — inline form toggle
+  const addBtn = document.getElementById(`${id}-add-btn`);
+  const addForm = document.getElementById(`${id}-add-form`);
+  const addCancel = document.getElementById(`${id}-add-cancel`);
+  const addSave = document.getElementById(`${id}-add-save`);
+  const addErr = document.getElementById(`${id}-add-err`);
+
+  addBtn?.addEventListener("click", () => {
+    addForm.style.display = "block";
+    addBtn.style.display = "none";
+  });
+  addCancel?.addEventListener("click", () => {
+    addForm.style.display = "none";
+    addBtn.style.display = "";
+    addErr.style.display = "none";
+  });
+  addSave?.addEventListener("click", async () => {
+    const building = document.getElementById(`${id}-building`).value.trim();
+    const location_name = document.getElementById(`${id}-location`).value.trim();
+    if (!building || !location_name) {
+      addErr.textContent = "Building and area are required.";
+      addErr.style.display = "block";
+      return;
+    }
+    let buyerId = null;
+    try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+    if (!buyerId) { addErr.textContent = "Sign in to save addresses."; addErr.style.display = "block"; return; }
+    addSave.textContent = "Saving...";
+    addSave.disabled = true;
+    try {
+      const res = await fetch("/api/buyer/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyer_id: buyerId,
+          address: {
+            label: document.getElementById(`${id}-label`).value,
+            building,
+            flat: document.getElementById(`${id}-flat`).value.trim(),
+            landmark: document.getElementById(`${id}-landmark`).value.trim(),
+            location_name,
+          }
+        })
+      });
+      if (!res.ok) throw new Error("Save failed");
+      // reset form
+      addForm.style.display = "none";
+      addBtn.style.display = "";
+      document.getElementById(`${id}-building`).value = "";
+      document.getElementById(`${id}-flat`).value = "";
+      document.getElementById(`${id}-landmark`).value = "";
+      document.getElementById(`${id}-location`).value = "";
+      addErr.style.display = "none";
+      await load(); // reload address list
+    } catch {
+      addErr.textContent = "Failed to save. Try again.";
+      addErr.style.display = "block";
+    } finally {
+      addSave.textContent = "Save address";
+      addSave.disabled = false;
+    }
+  });
 
   // Auto-load on first open
   document.addEventListener("v2-sheet-opened", (e) => {
