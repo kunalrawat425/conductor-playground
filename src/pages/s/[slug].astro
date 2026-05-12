@@ -40,7 +40,6 @@ const SITE = "https://www.relifish.store";
 const canonicalSlug = sellerNameToSlug(seller?.name || "");
 const canonicalUrl = `${SITE}/s/${canonicalSlug}`;
 
-// Forward to the main seller page with the resolved ID
-// This keeps all the complex render logic in one place
-return Astro.redirect(`/seller/${seller.id}`, 301);
+// Rewrite to /seller/[id] — keeps slug URL in browser, no redirect
+return Astro.rewrite(`/seller/${seller.id}`);
 ---
