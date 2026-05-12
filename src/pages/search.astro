@@ -170,7 +170,7 @@ import EmptyState from "../components/v2/molecules/EmptyState.astro";
         const unitPart = opt
           ? formatBuyerMenuUnitSuffix(opt).replace(/^\//, "")
           : escape(String(rawOpt.unit_label || "kg"));
-        return `<a href="/seller/${l.seller?.id}" class="v2-search-result">
+        return `<a href="/s/${(l.seller?.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}" class="v2-search-result">
           <div class="emoji">${speciesEmoji(l.species)}</div>
           <div class="body">
             <div class="n" style="text-transform:capitalize;">${escape(l.species)}</div>
@@ -181,7 +181,7 @@ import EmptyState from "../components/v2/molecules/EmptyState.astro";
       }).join("");
 
       const sellersHtml = sel.map((s: any) => {
-        return `<a href="/seller/${s.id}" class="v2-search-result">
+        return `<a href="/s/${(s.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}" class="v2-search-result">
           <div class="emoji" style="background:var(--v2-green-l);">🐟</div>
           <div class="body">
             <div class="n">${escape(s.name)}</div>
