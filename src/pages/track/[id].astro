@@ -593,7 +593,8 @@ const { id } = Astro.params;
               });
             });
           }
-          window.location.href = `/seller/${sellerIdForReorder}`;
+          const sellerSlug = (seller.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+          window.location.href = `/s/${sellerSlug}`;
         });
       }
     } else if (o.status === "ready_for_pickup") {

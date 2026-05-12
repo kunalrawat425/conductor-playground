@@ -116,7 +116,7 @@ const species = [
       list.style.display = "block";
       list.innerHTML = sellers.map((s: any) => {
         const rating = s.rating_avg ? Number(s.rating_avg).toFixed(1) : null;
-        return `<a href="/seller/${s.id}" class="v2-seller-card" style="margin-bottom:12px;">
+        return `<a href="/s/${(s.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}" class="v2-seller-card" style="margin-bottom:12px;">
           <div class="v2-sc-img" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF);">
             <span class="v2-badge v2-badge-offer v2-badge-indigo v2-badge-size-md">🌙 Pre-order</span>
             <span class="v2-sc-emoji">🐟</span>
