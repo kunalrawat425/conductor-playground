@@ -132,7 +132,10 @@ const tags = [
 ---
 <AppShellV2
   title={`${sellerName} — Fresh Fish${sellerLocation ? ` in ${sellerLocation}` : ''} | Relifish`}
-  description={`Buy fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ''}. Pre-order pomfret, surmai, bangda, prawns and more — pickup or delivery.`}
+  description={(() => {
+    const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
+    return `Buy fresh ${speciesList || "fish"} from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"}. Pre-order directly from your local seller — no middleman, no markup.`;
+  })()}
   hideHeader={true}
   nav={{ active: "home" }}
   jsonLd={seller && !notFound ? {
@@ -142,25 +145,29 @@ const tags = [
         "@type": "FoodEstablishment",
         "@id": `https://www.relifish.store/seller/${id}#seller`,
         "name": sellerName,
-        "description": `Fresh fish seller in ${sellerLocation || "Mumbai"}. Pre-order directly.`,
+        "description": `Fresh fish seller in ${sellerLocation || "Mumbai"}. Pre-order directly — no middleman.`,
         "url": `https://www.relifish.store/seller/${id}`,
         "image": seller.store_image_url || "https://www.relifish.store/og-image.png",
         "priceRange": "₹₹",
         "servesCuisine": "Seafood",
-        "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressCountry": "IN" },
-        "openingHours": seller.opens_at && seller.closes_at ? `Mo-Su ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}` : undefined,
-        "aggregateRating": seller.rating_avg && seller.total_orders > 0 ? {
+        "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressRegion": "Maharashtra", "addressCountry": "IN" },
+        "openingHours": seller.opens_at && seller.closes_at
+          ? `${openDays.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 2)).join(",") || "Mo,Tu,We,Th,Fr,Sa,Su"} ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}`
+          : undefined,
+        "aggregateRating": seller.rating_avg && seller.rating_avg > 0 ? {
           "@type": "AggregateRating",
-          "ratingValue": seller.rating_avg,
-          "reviewCount": seller.total_orders
+          "ratingValue": Number(seller.rating_avg).toFixed(1),
+          "bestRating": "5",
+          "worstRating": "1",
+          "ratingCount": seller.total_orders || 1
         } : undefined,
-        "hasMenu": listings.length > 0 ? {
+        "hasMenu": seoListings.length > 0 ? {
           "@type": "Menu",
-          "name": isPreorderMode ? "Pre-order Menu" : "Today's Menu",
+          "name": "Fresh Fish Menu",
           "hasMenuSection": {
             "@type": "MenuSection",
             "name": "Fresh Fish",
-            "hasMenuItem": listings.map((l: any) => {
+            "hasMenuItem": seoListings.map((l: any) => {
               const sp = speciesDisplayById[l.species] || l.species || "Fish";
               const opts = l.pricing_options || [];
               const firstOpt = opts[0];
@@ -173,18 +180,18 @@ const tags = [
                   "@type": "Offer",
                   "price": firstOpt.price,
                   "priceCurrency": "INR",
-                  "availability": "https://schema.org/InStock"
+                  "availability": isPreorderMode ? "https://schema.org/PreOrder" : "https://schema.org/InStock"
                 } : undefined
               };
             })
           }
         } : undefined
       },
-      listings.length > 0 ? {
+      seoListings.length > 0 ? {
         "@type": "ItemList",
-        "name": `Fish available from ${sellerName}`,
-        "numberOfItems": listings.length,
-        "itemListElement": listings.map((l: any, i: number) => ({
+        "name": `Fresh fish available from ${sellerName}`,
+        "numberOfItems": seoListings.length,
+        "itemListElement": seoListings.map((l: any, i: number) => ({
           "@type": "ListItem",
           "position": i + 1,
           "item": {
@@ -192,16 +199,25 @@ const tags = [
             "name": speciesDisplayById[l.species] || l.species || "Fish",
             "description": l.description || `Fresh ${l.species} from ${sellerName} in ${sellerLocation || "Mumbai"}`,
             "image": l.photo_url || undefined,
+            "url": `https://www.relifish.store/seller/${id}`,
             "offers": (l.pricing_options || []).length > 0 ? {
               "@type": "Offer",
               "price": l.pricing_options[0].price,
               "priceCurrency": "INR",
               "seller": { "@type": "Organization", "name": sellerName },
-              "availability": "https://schema.org/InStock"
+              "availability": isPreorderMode ? "https://schema.org/PreOrder" : "https://schema.org/InStock"
             } : undefined
           }
         }))
-      } : undefined
+      } : undefined,
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.store/" },
+          { "@type": "ListItem", "position": 2, "name": "Browse Sellers", "item": "https://www.relifish.store/shop" },
+          { "@type": "ListItem", "position": 3, "name": sellerName, "item": `https://www.relifish.store/seller/${id}` }
+        ]
+      }
     ].filter(Boolean)
   } : undefined}
 >
