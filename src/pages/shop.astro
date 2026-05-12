@@ -7,6 +7,7 @@ import EmptyState from "../components/v2/molecules/EmptyState.astro";
 import Skeleton from "../components/v2/atoms/Skeleton.astro";
 import Toast from "../components/v2/atoms/Toast.astro";
 import LocationPickerSheet from "../components/v2/organisms/LocationPickerSheet.astro";
+import { sellerNameToSlug } from "../lib/supabase";
 
 // Category strip is built dynamically from live listings data (see script below).
 // SSR renders only "All Fish" as a placeholder; JS fills the rest after data loads.
@@ -70,7 +71,7 @@ const categories = [
 
   <!-- Sticky filter cluster — stays in view when scrolling cards -->
   <div id="v2-sticky-cluster" class="v2-sticky-cluster">
-    <PreorderBanner variant="inline" />
+    <PreorderBanner variant="inline" href="#preorder" />
 
     <div style="margin-top: 6px;">
       <CategoryStrip items={categories} />
@@ -192,7 +193,7 @@ const categories = [
 </style>
 
 <script>
-  import { supabase } from "../lib/supabase";
+  import { supabase, sellerNameToSlug } from "../lib/supabase";
   import { getSession } from "../lib/auth";
   import { subscribePush } from "../lib/push";
   import { getSpeciesDisplay } from "../lib/species";
@@ -661,8 +662,9 @@ const categories = [
 
         const fullyClosed = status === "closed";
 
+        const sellerSlug = sellerNameToSlug(s.name);
         return `
-        <${fullyClosed ? 'div' : `a href="/seller/${s.id}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
+        <${fullyClosed ? 'div' : `a href="/s/${sellerSlug}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
           <div class="v2-sc-img" style="background:${hueColors[hue]};">
             ${offerBadge}
             ${(s as any).store_image_url
@@ -723,6 +725,13 @@ const categories = [
   });
 
   // Category strip click handlers are wired inside buildCategoryStrip() after data loads.
+
+  // PreorderBanner click — activate the preorder filter chip on this page
+  (document.querySelector('.v2-pb-inline[href="#preorder"]') as HTMLAnchorElement | null)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const preorderChip = document.querySelector('#v2-filter-chips .v2-fchip[data-filter="preorder"]') as HTMLButtonElement | null;
+    if (preorderChip) preorderChip.click();
+  });
 
   // Sync visual state with URL-seeded filterState on first paint
   function syncInitialChipState() {
