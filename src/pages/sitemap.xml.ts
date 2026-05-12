@@ -16,13 +16,6 @@ export const GET: APIRoute = async () => {
     .order("name");
 
   // Fetch distinct species from active listings
-  const { data: species } = await supabase
-    .from("fish_listings")
-    .select("species")
-    .eq("is_available", true);
-
-  const uniqueSpecies = [...new Set((species || []).map((s) => s.species))];
-
   const urls: { loc: string; changefreq: string; priority: string }[] = [
     // Core pages
     { loc: "/", changefreq: "daily", priority: "1.0" },
@@ -40,14 +33,6 @@ export const GET: APIRoute = async () => {
       loc: `/s/${slug}`,
       changefreq: "daily",
       priority: "0.8",
-    });
-  }
-
-  for (const sp of uniqueSpecies) {
-    urls.push({
-      loc: `/preorder/${encodeURIComponent(sp)}`,
-      changefreq: "daily",
-      priority: "0.7",
     });
   }
 
