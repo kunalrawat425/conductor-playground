@@ -12,6 +12,7 @@ export const GET: APIRoute = async () => {
   const { data: sellers } = await supabase
     .from("sellers")
     .select("id, name")
+    .eq("is_active", true)
     .order("name");
 
   // Fetch distinct species from active listings
