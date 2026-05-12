@@ -1825,7 +1825,8 @@ body.v2-has-cart {
   border-radius: var(--v2-radius-lg) var(--v2-radius-lg) 0 0;
   width: 100%;
   max-width: var(--app-max-width);
-  max-height: 90vh;
+  max-height: calc(90vh - env(safe-area-inset-top, 0px));
+  margin-top: max(48px, env(safe-area-inset-top, 48px));
   overflow: hidden;
   display: flex;
   flex-direction: column;

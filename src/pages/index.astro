@@ -8,19 +8,19 @@ const SITE = "https://www.relifish.store";
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Relifish — Fresh Fish from Mumbai's Local Sellers</title>
-  <meta name="description" content="Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch, collect tomorrow morning. Pomfret, Surmai, Prawns — morning-fresh, no middleman." />
+  <title>Buy Fresh Fish Online in Mumbai | Local Fish Sellers | Relifish</title>
+  <meta name="description" content="Order fresh pomfret, surmai, rawas, bangda from Versova, Kandivali, Thane &amp; Navi Mumbai sellers. Pre-order by 11 PM, morning-fresh next day. No Swiggy markup, no cold storage." />
   <link rel="canonical" href={SITE} />
-  <meta property="og:title" content="Relifish — Fresh Fish from Mumbai's Local Sellers" />
-  <meta property="og:description" content="Pre-order tonight's catch from local Mumbai fish sellers. Morning-fresh, direct from source." />
+  <meta property="og:title" content="Relifish — Fresh Fish Direct from Mumbai's Local Sellers" />
+  <meta property="og:description" content="Pre-order tonight's catch from Versova, Kandivali, Thane &amp; Navi Mumbai sellers. Morning-fresh, no middleman markup." />
   <meta property="og:image" content={`${SITE}/og-image.png`} />
   <meta property="og:url" content={SITE} />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Relifish" />
   <meta property="og:locale" content="en_IN" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Relifish — Fresh Fish from Mumbai's Local Sellers" />
-  <meta name="twitter:description" content="Pre-order tonight's catch from local Mumbai fish sellers. Morning-fresh, direct from source." />
+  <meta name="twitter:title" content="Relifish — Fresh Fish Direct from Mumbai's Local Sellers" />
+  <meta name="twitter:description" content="Pre-order tonight's catch from Versova, Kandivali, Thane &amp; Navi Mumbai sellers. Morning-fresh, no middleman markup." />
   <meta name="twitter:image" content={`${SITE}/og-image.png`} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="manifest" href="/manifest.json" />
@@ -61,7 +61,8 @@ const SITE = "https://www.relifish.store";
           { "@type": "Question", "name": "What fish species are available on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish sellers offer Surmai (सुरमई), Pomfret (पापलेट), Rawas (रावस), Bangda (बांगडा), Prawns (कोलंबी), Bombay Duck (बोंबील), Crab, and seasonal catch — availability varies by seller and season." } },
           { "@type": "Question", "name": "How fresh is the fish on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Fish on Relifish is sourced from local sellers who buy from docks daily. It reaches you within 24 hours of the catch — no cold storage, no 2–4 day old supermarket fish. Sellers are vetted before listing on Relifish." } },
           { "@type": "Question", "name": "How does fish pricing work on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Sellers set their own prices on Relifish. There is no platform markup — unlike delivery apps that add 25–35% to the seller's price. You pay what the seller charges, directly." } },
-          { "@type": "Question", "name": "What areas in Mumbai does Relifish serve?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish currently has active sellers in Versova and Andheri West, Mumbai. We are expanding to more neighbourhoods. Join the waitlist and we'll notify you when sellers are live in your area." } }
+          { "@type": "Question", "name": "What areas in Mumbai does Relifish serve?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish has active sellers across Mumbai: South Mumbai (Bombay Sea Food), Kandivali East / Thakur Village (Ocean Lover Fish), Thane West / Jambli Naka (Fish Tokri), and Kamothe / Navi Mumbai (The Fishy Spot). More areas being added monthly." } },
+          { "@type": "Question", "name": "Is Relifish cheaper than Swiggy or Zomato for fish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish charges no platform commission, so you pay the seller's actual price. Swiggy and Zomato add 25–35% on top of the seller's price through commissions, packaging fees, and surge pricing. On Relifish, ₹400/kg pomfret stays ₹400/kg." } }
         ]
       }
     ]
@@ -612,13 +613,11 @@ const SITE = "https://www.relifish.store";
       <a href="/me" class="nl" style="color:rgba(255,255,255,.7)">Login</a>
       <a href="/shop" class="btn-nav">Order now →</a>
     </div>
-    <a href="/shop" class="btn-nav" id="m-cta" style="display:none;font-size:13px;padding:9px 14px">Order →</a>
   </div>
 </nav>
 <script>
   const nav = document.getElementById('nav');
   window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>40),{passive:true});
-  document.getElementById('m-cta').style.display = window.innerWidth<=760?'inline-flex':'none';
 </script>
 
 <script>
@@ -731,10 +730,10 @@ const SITE = "https://www.relifish.store";
         <strong>Morning-fresh. No cold storage. No markup.</strong>
       </p>
       <!-- Citable prose for AI search engines — do not remove -->
-      <p class="hero-cite">Relifish is a Mumbai fish marketplace connecting buyers directly to local fish sellers — no middlemen, no platform markup. Browse live seller menus, compare prices, and pre-order species like surmai, pomfret, rawas, bangda, and prawns for same-day pickup or next-morning delivery. Currently serving Versova and Andheri West.</p>
+      <p class="hero-cite">Relifish is a Mumbai fish marketplace where buyers order fresh fish online directly from local sellers — no middlemen, no Swiggy or Zomato markup. Browse live menus from verified sellers in South Mumbai, Kandivali East, Thane West, and Kamothe. Pre-order pomfret, surmai, rawas, bangda, prawns, and 15+ species by 11 PM; your fish is confirmed after the morning catch and delivered or ready for pickup — within 24 hours of landing, never cold-stored.</p>
       <div class="fish-tags">
-        {["🐟 Pomfret","🐠 Surmai","🦐 Prawns","🐡 Bangda","🐟 Rawas","🦀 Crab"].map(f=>(
-          <span class="ftag">{f}</span>
+        {[["🐟 Pomfret","pomfret"],["🐠 Surmai","surmai"],["🦐 Prawns","prawns"],["🐡 Bangda","bangda"],["🐟 Rawas","rawas"],["🦀 Crab","crab"]].map(([label,slug])=>(
+          <a href={`/preorder/${slug}`} class="ftag" style="text-decoration:none;color:inherit;">{label}</a>
         ))}
       </div>
       <div class="hero-ctas">
