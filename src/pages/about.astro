@@ -1,0 +1,91 @@
+---
+export const prerender = true;
+import AppShellV2 from "../components/v2/AppShellV2.astro";
+const SITE = "https://www.relifish.store";
+---
+<AppShellV2
+  title="About Relifish — Mumbai's Fresh Fish Marketplace"
+  description="Relifish connects Mumbai fish buyers directly to local sellers. No middleman, no cold storage, no platform markup. Pre-order tonight's catch from Versova, Kandivali, Thane and Kamothe."
+  nav={{ active: "home" }}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE}/#org`,
+        "name": "Relifish",
+        "url": SITE,
+        "logo": { "@type": "ImageObject", "url": `${SITE}/icon-192.svg` },
+        "foundingDate": "2025",
+        "description": "Mumbai's fresh fish marketplace — cutting out middlemen so buyers pay less and sellers earn more.",
+        "areaServed": { "@type": "City", "name": "Mumbai" },
+        "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "email": "relifishstore@gmail.com" },
+        "sameAs": []
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": SITE },
+          { "@type": "ListItem", "position": 2, "name": "About", "item": `${SITE}/about` }
+        ]
+      }
+    ]
+  }}
+>
+  <article style="max-width:680px;margin:0 auto;padding:32px 16px 64px;font-family:var(--v2-font,Inter);color:var(--v2-ink);">
+
+    <h1 style="font:800 28px/1.2 var(--v2-font,Inter);margin-bottom:8px;">About Relifish</h1>
+    <p style="font:400 15px/1.6 var(--v2-font,Inter);color:var(--v2-ink-2);margin-bottom:32px;">Mumbai's direct fish marketplace</p>
+
+    <section style="margin-bottom:32px;">
+      <h2 style="font:700 18px/1.3 var(--v2-font,Inter);margin-bottom:12px;">The problem we're solving</h2>
+      <p style="font:400 15px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">
+        When you order pomfret on Swiggy or Zomato, you pay ₹25–35% more than the seller's actual price.
+        The aggregator takes a cut, adds surge pricing, and the fish may have spent 2–3 days in cold storage before it reaches you.
+        Mumbai has incredible local fish sellers — Versova, Bhaucha Dhakka, Crawford Market — but they had no direct digital channel to reach buyers.
+      </p>
+    </section>
+
+    <section style="margin-bottom:32px;">
+      <h2 style="font:700 18px/1.3 var(--v2-font,Inter);margin-bottom:12px;">What Relifish does</h2>
+      <p style="font:400 15px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">
+        Relifish is a direct marketplace for fresh fish in Mumbai. Buyers browse real seller menus, compare prices for surmai, pomfret, rawas, bangda, prawns, and 15+ other species — then pre-order before the seller's nightly cutoff (11 PM). The seller confirms after the morning catch. Fish reaches you within 24 hours of landing — no cold storage, no middleman markup.
+      </p>
+    </section>
+
+    <section style="margin-bottom:32px;">
+      <h2 style="font:700 18px/1.3 var(--v2-font,Inter);margin-bottom:12px;">Our sellers</h2>
+      <p style="font:400 15px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">We currently work with four vetted sellers across Mumbai:</p>
+      <ul style="margin:12px 0 0 20px;font:400 15px/1.8 var(--v2-font,Inter);color:var(--v2-ink-2);">
+        <li><strong>Bombay Sea Food</strong> — South Mumbai · surmai, pomfret, prawns, salmon</li>
+        <li><strong>Ocean Lover Fish</strong> — Thakur Village, Kandivali East · 17+ species</li>
+        <li><strong>Fish Tokri</strong> — Jambli Naka, Thane West · sliced fillets, prawns</li>
+        <li><strong>The Fishy Spot</strong> — Kamothe, Navi Mumbai · local catch daily</li>
+      </ul>
+    </section>
+
+    <section style="margin-bottom:32px;">
+      <h2 style="font:700 18px/1.3 var(--v2-font,Inter);margin-bottom:12px;">For buyers</h2>
+      <p style="font:400 15px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">
+        No app download needed. Open relifish.store on your phone, set your Mumbai location, browse seller menus, and order. Pre-orders close at 11 PM each night. Pickup or home delivery available depending on the seller.
+      </p>
+    </section>
+
+    <section style="margin-bottom:32px;">
+      <h2 style="font:700 18px/1.3 var(--v2-font,Inter);margin-bottom:12px;">For fish sellers in Mumbai</h2>
+      <p style="font:400 15px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">
+        Join Relifish free. List your fish, set your prices, manage pre-orders from a mobile dashboard. No commission on sales. Relifish earns from premium seller features — not from taking a cut of every order.
+      </p>
+      <a href="/seller-detailed.html" style="display:inline-block;margin-top:12px;padding:10px 20px;background:var(--v2-brand,#2563eb);color:#fff;border-radius:8px;font:600 14px var(--v2-font,Inter);text-decoration:none;">List your fish business →</a>
+    </section>
+
+    <section style="margin-bottom:32px;">
+      <h2 style="font:700 18px/1.3 var(--v2-font,Inter);margin-bottom:12px;">Contact</h2>
+      <p style="font:400 15px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">
+        Email: <a href="mailto:relifishstore@gmail.com" style="color:var(--v2-brand,#2563eb);">relifishstore@gmail.com</a><br />
+        Based in Mumbai, Maharashtra, India.
+      </p>
+    </section>
+
+  </article>
+</AppShellV2>

@@ -206,6 +206,13 @@ export async function getListingById(id: string) {
   return data as FishListing;
 }
 
+export function sellerNameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export async function getSellerById(id: string) {
   const { data, error } = await supabase
     .from("sellers")
@@ -215,6 +222,16 @@ export async function getSellerById(id: string) {
 
   if (error) throw error;
   return data as Seller;
+}
+
+export async function getSellerBySlug(slug: string) {
+  // Fetch all active sellers and match by generated slug (no DB column needed)
+  const { data, error } = await supabase
+    .from("sellers")
+    .select("*")
+    .eq("is_active", true);
+  if (error) throw error;
+  return (data as Seller[]).find(s => sellerNameToSlug(s.name) === slug) || null;
 }
 
 export async function updateSellerProfile(

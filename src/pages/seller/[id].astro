@@ -10,7 +10,7 @@ import CartStackSheet from "../../components/v2/organisms/CartStackSheet.astro";
 import AddressPickerSheet from "../../components/v2/organisms/AddressPickerSheet.astro";
 import Toast from "../../components/v2/atoms/Toast.astro";
 import Modal from "../../components/v2/atoms/Modal.astro";
-import { getSellerById, getSellerListings } from "../../lib/supabase";
+import { getSellerById, getSellerListings, sellerNameToSlug } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
 
@@ -33,6 +33,9 @@ try {
 
 const sellerName = seller?.name || "Seller";
 const sellerLocation = seller?.location_name || "";
+const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
+const SITE = "https://www.relifish.store";
+const canonicalUrl = sellerSlug ? `${SITE}/s/${sellerSlug}` : `${SITE}/seller/${id}`;
 // IST time (servers run UTC; IST = UTC+5:30)
 const nowIST = new Date(Date.now() + 5.5 * 3600 * 1000);
 const curMin = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
@@ -136,6 +139,7 @@ const tags = [
     const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
     return `Buy fresh ${speciesList || "fish"} from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"}. Pre-order directly from your local seller — no middleman, no markup.`;
   })()}
+  canonical={canonicalUrl}
   hideHeader={true}
   nav={{ active: "home" }}
   jsonLd={seller && !notFound ? {
