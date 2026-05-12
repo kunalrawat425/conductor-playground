@@ -17,6 +17,7 @@ interface Props {
   hideHeader?: boolean;
   hideNav?: boolean;
   noindex?: boolean;
+  canonical?: string;
 }
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -33,8 +34,9 @@ const {
   hideHeader = false,
   hideNav = false,
   noindex = false,
+  canonical,
 } = Astro.props;
-const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
+const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
 ---
 
 <html lang="en">

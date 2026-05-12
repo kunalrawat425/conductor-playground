@@ -1,0 +1,157 @@
+---
+export const prerender = false;
+import AppShellV2 from "../components/v2/AppShellV2.astro";
+import { supabase, sellerNameToSlug } from "../lib/supabase";
+import { getSpeciesDisplay } from "../lib/species";
+
+const SITE = "https://www.relifish.store";
+const today = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+// Fetch active sellers + their live listings with prices
+const { data: sellers } = await supabase
+  .from("sellers")
+  .select("id, name, location_name")
+  .eq("is_active", true)
+  .order("name");
+
+const { data: listings } = await supabase
+  .from("fish_listings")
+  .select("seller_id, species, fish_size, pricing_options")
+  .eq("is_available", true)
+  .is("deleted_at", null);
+
+// Build: species → [{ seller, price, size }]
+const priceMap: Record<string, { sellerName: string; sellerId: string; price: number; size: string | null }[]> = {};
+for (const l of listings || []) {
+  const price = l.pricing_options?.[0]?.price;
+  if (!price) continue;
+  if (!priceMap[l.species]) priceMap[l.species] = [];
+  const seller = (sellers || []).find(s => s.id === l.seller_id);
+  if (!seller) continue;
+  priceMap[l.species].push({ sellerName: seller.name, sellerId: seller.id, price: Number(price), size: l.fish_size });
+}
+
+// Sort species alphabetically, sort prices low→high within each species
+const sortedSpecies = Object.keys(priceMap).sort();
+for (const sp of sortedSpecies) {
+  priceMap[sp].sort((a, b) => a.price - b.price);
+}
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": SITE },
+        { "@type": "ListItem", "position": 2, "name": "Fish Prices Mumbai Today", "item": `${SITE}/prices` }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the price of pomfret fish in Mumbai today?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": priceMap["pomfret"]?.length
+              ? `Pomfret price in Mumbai today starts from ₹${Math.min(...priceMap["pomfret"].map(p=>p.price))}/kg on Relifish. Prices vary by size and seller.`
+              : "Check live pomfret prices from Mumbai sellers on Relifish."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the price of surmai fish in Mumbai today?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": priceMap["surmai"]?.length
+              ? `Surmai (Kingfish) price in Mumbai today starts from ₹${Math.min(...priceMap["surmai"].map(p=>p.price))}/kg on Relifish.`
+              : "Check live surmai prices from Mumbai sellers on Relifish."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where to buy fresh fish online in Mumbai?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": `Buy fresh fish online in Mumbai from local sellers on Relifish — no cold storage, no Swiggy/Zomato markup. Sellers include ${(sellers||[]).map(s=>s.name).join(", ")}. Pre-order by 11 PM, delivered or pickup next morning.`
+          }
+        }
+      ]
+    }
+  ]
+};
+---
+<AppShellV2
+  title={`Fish Price Today Mumbai — Live Rates from Local Sellers | Relifish`}
+  description={`Check today's fresh fish prices in Mumbai — pomfret, surmai, rawas, bangda, prawns from local sellers. Updated daily. Pre-order at market rates, no platform markup.`}
+  canonical={`${SITE}/prices`}
+  nav={{ active: "home" }}
+  jsonLd={jsonLd}
+>
+  <div style="max-width:720px;margin:0 auto;padding:24px 16px 80px;font-family:var(--v2-font,Inter);">
+
+    <h1 style="font:800 24px/1.2 var(--v2-font,Inter);color:var(--v2-ink);margin-bottom:4px;">
+      Fish Prices in Mumbai Today
+    </h1>
+    <p style="font:400 13px/1.5 var(--v2-font,Inter);color:var(--v2-ink-3);margin-bottom:24px;">
+      Live rates from verified local sellers · {today} · Prices per kg
+    </p>
+
+    <!-- Price comparison table -->
+    {sortedSpecies.map(sp => {
+      const rows = priceMap[sp];
+      const displayName = getSpeciesDisplay(sp);
+      const lowestPrice = rows[0].price;
+      return (
+        <section style="margin-bottom:20px;background:var(--v2-bg-2,#f8fafc);border:1px solid var(--v2-border);border-radius:12px;overflow:hidden;">
+          <div style="padding:12px 16px;background:var(--v2-bg);border-bottom:1px solid var(--v2-border);display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <span style="font:700 15px var(--v2-font,Inter);color:var(--v2-ink);">{displayName}</span>
+            </div>
+            <span style="font:700 14px var(--v2-font,Inter);color:var(--v2-brand,#2563eb);">from ₹{lowestPrice}/kg</span>
+          </div>
+          <div>
+            {rows.map((row, i) => (
+              <a href={`/s/${sellerNameToSlug(row.sellerName)}`}
+                style={`display:flex;align-items:center;justify-content:space-between;padding:10px 16px;text-decoration:none;color:inherit;${i < rows.length-1 ? 'border-bottom:1px solid var(--v2-border);' : ''}`}>
+                <div>
+                  <div style="font:500 13px var(--v2-font,Inter);color:var(--v2-ink);">{row.sellerName}</div>
+                  {row.size && <div style="font:400 11px var(--v2-font,Inter);color:var(--v2-ink-3);text-transform:capitalize;">{row.size} size</div>}
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font:700 14px var(--v2-font,Inter);color:var(--v2-ink);">₹{row.price}/kg</span>
+                  {i === 0 && rows.length > 1 && <span style="font:600 10px var(--v2-font,Inter);padding:2px 6px;background:#dcfce7;color:#15803d;border-radius:4px;">LOWEST</span>}
+                  <span style="font:500 12px var(--v2-font,Inter);color:var(--v2-brand,#2563eb);">Order →</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      );
+    })}
+
+    {sortedSpecies.length === 0 && (
+      <div style="text-align:center;padding:48px 16px;color:var(--v2-ink-3);">
+        <div style="font-size:40px;margin-bottom:12px;">🐟</div>
+        <div style="font:500 15px var(--v2-font,Inter);">Prices loading — check back shortly</div>
+      </div>
+    )}
+
+    <!-- SEO prose — citable by AI -->
+    <div style="margin-top:32px;padding:20px;background:var(--v2-bg-2);border-radius:12px;border:1px solid var(--v2-border);">
+      <h2 style="font:700 16px/1.3 var(--v2-font,Inter);color:var(--v2-ink);margin-bottom:10px;">About these fish prices</h2>
+      <p style="font:400 13px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">
+        These are live prices set directly by local Mumbai fish sellers on Relifish — not supermarket prices, not cold-storage fish. Sellers update rates daily based on the morning catch from docks like Versova, Bhaucha Dhakka, and Sassoon Dock. On Relifish, you pay the seller's actual rate with no Swiggy or Zomato-style markup (typically 25–35% above market price on those apps). Pre-order any species by 11 PM and your fish is confirmed after the next morning's catch.
+      </p>
+    </div>
+
+    <div style="margin-top:20px;text-align:center;">
+      <a href="/shop" style="display:inline-block;padding:14px 32px;background:var(--v2-brand,#2563eb);color:#fff;border-radius:10px;font:700 15px var(--v2-font,Inter);text-decoration:none;">
+        Browse all sellers & pre-order →
+      </a>
+    </div>
+
+  </div>
+</AppShellV2>
