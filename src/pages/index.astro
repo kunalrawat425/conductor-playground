@@ -738,8 +738,8 @@ const SITE = "https://www.relifish.store";
       <!-- Citable prose for AI search engines — do not remove -->
       <p class="hero-cite">Relifish is a Mumbai fish marketplace where buyers order fresh fish online directly from local sellers — no middlemen, no Swiggy or Zomato markup. Browse live menus from verified sellers in South Mumbai, Kandivali East, Thane West, and Kamothe. Pre-order pomfret, surmai, rawas, bangda, prawns, and 15+ species by 11 PM; your fish is confirmed after the morning catch and delivered or ready for pickup — within 24 hours of landing, never cold-stored.</p>
       <div class="fish-tags">
-        {[["🐟 Pomfret","pomfret"],["🐠 Surmai","surmai"],["🦐 Prawns","prawns"],["🐡 Bangda","bangda"],["🐟 Rawas","rawas"],["🦀 Crab","crab"]].map(([label,slug])=>(
-          <a href={`/preorder/${slug}`} class="ftag" style="text-decoration:none;color:inherit;">{label}</a>
+        {["🐟 Pomfret","🐠 Surmai","🦐 Prawns","🐡 Bangda","🐟 Rawas","🦀 Crab"].map(f=>(
+          <span class="ftag">{f}</span>
         ))}
       </div>
       <div class="hero-ctas">
