@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { supabase } from "../lib/supabase";
+import { supabase, sellerNameToSlug } from "../lib/supabase";
 
 export const prerender = false;
 
@@ -32,11 +32,13 @@ export const GET: APIRoute = async () => {
     { loc: "/buyer-detailed.html", changefreq: "monthly", priority: "0.6" },
     { loc: "/seller-detailed.html", changefreq: "monthly", priority: "0.6" },
     { loc: "/privacy", changefreq: "yearly", priority: "0.3" },
+    { loc: "/prices", changefreq: "daily", priority: "0.85" },
   ];
 
   for (const seller of sellers || []) {
+    const slug = sellerNameToSlug(seller.name);
     urls.push({
-      loc: `/seller/${seller.id}`,
+      loc: `/s/${slug}`,
       changefreq: "daily",
       priority: "0.8",
     });
