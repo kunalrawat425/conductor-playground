@@ -193,7 +193,8 @@ const categories = [
 </style>
 
 <script>
-  import { supabase, sellerNameToSlug } from "../lib/supabase";
+  import { supabase } from "../lib/supabase";
+  const sellerNameToSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   import { getSession } from "../lib/auth";
   import { subscribePush } from "../lib/push";
   import { getSpeciesDisplay } from "../lib/species";
