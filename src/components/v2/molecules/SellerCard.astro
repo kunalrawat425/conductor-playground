@@ -32,7 +32,7 @@ const hueColors: Record<string, string> = {
 const cardImgBg = hueColors[imageHue] || hueColors.sky;
 const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "indigo" : "brand";
 ---
-<a href={`/seller/${id}`} class:list={["v2-seller-card", status === "closed" && "v2-seller-closed"]}>
+<a href={`/s/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`} class:list={["v2-seller-card", status === "closed" && "v2-seller-closed"]}>
   <div class="v2-sc-img" style={`background:${cardImgBg};`}>
     {offerLabel && <Badge variant="offer" color={offerColor}>{offerLabel}</Badge>}
     <span class="v2-sc-emoji" aria-hidden="true">🐟</span>
