@@ -14,177 +14,174 @@ body{
   flex-direction:column;
   align-items:center;
   padding:32px 24px;
-  gap:20px;
+  gap:28px;
   min-height:100vh;
 }
 .page-label{
-  font:700 11px Inter;
-  color:#64748b;
-  text-transform:uppercase;
-  letter-spacing:.1em;
-  align-self:flex-start;
-  margin-left:calc(50% - 198px);
+  font:700 10px Inter;color:#64748b;
+  text-transform:uppercase;letter-spacing:.12em;
+  background:#e2e8f0;padding:4px 14px;border-radius:100px;
 }
-/* A6: 397px × 559px */
+
+/* ── A5 portrait: 148mm × 210mm → 559px × 794px at 96dpi ── */
 .flyer{
-  width:397px;
-  height:559px;
+  width:559px;
+  height:794px;
   background:#fff;
-  border-radius:14px;
+  border-radius:16px;
   overflow:hidden;
   box-shadow:0 20px 60px rgba(0,0,0,.22);
   display:flex;
   flex-direction:column;
+  flex-shrink:0;
 }
 
-/* ════════════════════════════
-   FRONT — shared hero styles
-   ════════════════════════════ */
+/* ═══════════════════ FRONT ═══════════════════ */
+
 .hero{
-  position:relative;
-  height:148px;
-  flex-shrink:0;
-  overflow:hidden;
-  background:linear-gradient(170deg,#0a2472 0%,#1a56db 60%,#0e7490 100%);
+  position:relative;height:200px;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(160deg,#0a2472 0%,#1a56db 55%,#0e7490 100%);
 }
-.hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.35;}
-.hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,36,114,.45) 0%,rgba(10,36,114,.8) 100%);}
-.hero-content{
+.hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.3}
+.hero-ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,36,114,.35) 0%,rgba(10,36,114,.82) 100%)}
+.hero-body{
   position:absolute;inset:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:10px 16px;text-align:center;gap:3px;
+  padding:14px 20px;text-align:center;gap:5px;
 }
-.brand{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.3px;text-shadow:0 2px 8px rgba(0,0,0,.5);line-height:1}
-.brand span{color:#fbbf24}
-.brand-link{font-size:9.5px;color:rgba(255,255,255,.85);font-weight:700;letter-spacing:.02em}
-.hero-title{font-size:17px;font-weight:900;color:#fff;line-height:1.2;margin-top:4px}
-.hero-title em{color:#fbbf24;font-style:normal}
-.hero-tagline{font-size:9px;color:rgba(255,255,255,.85);font-weight:600;}
-.hero-badge{
-  margin-top:5px;display:inline-flex;align-items:center;gap:4px;
+.brand{font-size:30px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.brand b{color:#fbbf24}
+.brand-sub{font-size:11px;color:rgba(255,255,255,.82);font-weight:700;letter-spacing:.03em}
+.hero-title{font-size:24px;font-weight:900;color:#fff;line-height:1.2;margin-top:4px}
+.hero-title b{color:#fbbf24}
+.hero-tag{font-size:10.5px;color:rgba(255,255,255,.85);font-weight:600}
+.hero-pill{
+  margin-top:6px;display:inline-flex;align-items:center;gap:5px;
   background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
-  border-radius:100px;padding:3px 10px;
+  border-radius:100px;padding:4px 14px;
 }
-.hero-badge span{font-size:9px;font-weight:700;color:#fff}
+.hero-pill span{font-size:10px;font-weight:800;color:#fff}
 
-/* ── PRICE STRIP ── */
 .price-strip{
-  background:#fff7ed;border-top:2.5px solid #f97316;
-  padding:7px 14px;display:flex;align-items:center;
-  justify-content:space-between;flex-shrink:0;gap:8px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#fff7ed;border-top:3px solid #f97316;
+  padding:10px 18px;flex-shrink:0;gap:12px;
 }
-.p-them{font-size:10px;color:#9a3412;font-weight:600}
-.p-them s{font-weight:700}
-.p-us{font-size:11px;color:#065f46;font-weight:800}
-.p-badges{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
-.p-badge{background:#f97316;color:#fff;font-size:8px;font-weight:800;padding:3px 7px;border-radius:6px;text-align:center;line-height:1.3;white-space:nowrap}
-.p-badge.green{background:#059669}
+.p-old{font-size:11px;color:#9a3412;font-weight:600}
+.p-old s{font-weight:700}
+.p-new{font-size:12.5px;color:#065f46;font-weight:800;margin-top:2px}
+.p-badges{display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+.badge{font-size:9px;font-weight:800;color:#fff;padding:4px 10px;border-radius:7px;line-height:1.3;white-space:nowrap}
+.badge-or{background:#f97316}
+.badge-gr{background:#059669}
 
-/* ── FISH GRID ── */
-.fish-section{padding:7px 10px 4px;flex-shrink:0}
-.section-lbl{font-size:8.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#64748b;text-align:center;margin-bottom:5px}
-.fish-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
-.fc{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;text-align:center}
-.fc img{width:100%;height:46px;object-fit:cover;display:block}
-.fc-info{padding:3px 4px 5px}
-.fc .fn{font-size:9.5px;font-weight:800;color:#0f172a}
-.fc .mr{font-size:8px;color:#64748b}
+.fish-wrap{padding:12px 14px 8px;flex-shrink:0}
+.fish-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;text-align:center;margin-bottom:8px}
+.fish-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.fc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;text-align:center}
+.fc img{width:100%;height:62px;object-fit:cover;display:block}
+.fc-name{font-size:10.5px;font-weight:800;color:#0f172a;padding:4px 4px 1px}
+.fc-mr{font-size:9px;color:#94a3b8;padding:0 4px 5px}
 
-/* ── ORDER MODES ── */
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px 10px;flex-shrink:0}
-.mode{border-radius:8px;padding:6px 8px;text-align:center}
-.mode.same{background:#eff6ff;border:1.5px solid #bfdbfe}
-.mode.pre{background:#fdf4ff;border:1.5px solid #e9d5ff}
-.mode-icon{font-size:15px;margin-bottom:2px}
-.mode-title{font-size:10px;font-weight:800}
-.mode.same .mode-title{color:#1e40af}
-.mode.pre .mode-title{color:#7e22ce}
-.mode-desc{font-size:8px;line-height:1.4;margin-top:1px}
-.mode.same .mode-desc{color:#1d4ed8}
-.mode.pre .mode-desc{color:#6b21a8}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 14px;flex-shrink:0}
+.mode{border-radius:10px;padding:10px 12px}
+.mode-sd{background:#eff6ff;border:1px solid #bfdbfe}
+.mode-po{background:#fdf4ff;border:1px solid #e9d5ff}
+.mode-icon{font-size:20px;margin-bottom:3px}
+.mode-title{font-size:12px;font-weight:800}
+.mode-sd .mode-title{color:#1e40af}
+.mode-po .mode-title{color:#7e22ce}
+.mode-desc{font-size:9.5px;line-height:1.4;margin-top:2px}
+.mode-sd .mode-desc{color:#1d4ed8}
+.mode-po .mode-desc{color:#6b21a8}
 
-/* ── STEPS ── */
-.steps{padding:4px 10px 5px;flex-shrink:0}
-.steps-title{font-size:8.5px;font-weight:800;color:#0f172a;margin-bottom:5px;text-align:center;text-transform:uppercase;letter-spacing:.05em}
-.steps-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
-.step{display:flex;align-items:flex-start;gap:6px}
-.step-num{width:17px;height:17px;border-radius:50%;background:#1a56db;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.step-head{font-size:9px;font-weight:800;color:#0f172a;line-height:1.3}
-.step-desc{font-size:8px;color:#475569;line-height:1.35;margin-top:1px}
-
-/* ── BOTTOM ROW ── */
-.bottom-row{display:flex;align-items:stretch;border-top:1.5px solid #e2e8f0;flex-shrink:0;flex:1;min-height:0}
-.trust{display:flex;flex-direction:column;justify-content:space-around;padding:7px 6px;background:#f8fafc;border-right:1.5px solid #e2e8f0;flex-shrink:0;width:78px}
+.trust-strip{
+  display:flex;justify-content:space-around;align-items:center;
+  padding:10px 14px;background:#f8fafc;border-top:1px solid #e2e8f0;flex-shrink:0;
+}
 .ti{text-align:center}
-.ti-em{font-size:12px}
-.ti-lbl{font-size:7px;font-weight:700;color:#475569;margin-top:1px;text-transform:uppercase;letter-spacing:.03em;line-height:1.3}
-.qr-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 10px;text-align:center}
-.qr-title{font-size:11px;font-weight:900;color:#0f172a;margin-bottom:2px}
-.qr-sub{font-size:7.5px;color:#64748b;margin-bottom:6px;line-height:1.4}
-.qr-img-box{background:#fff;border:2px solid #1a56db;border-radius:10px;padding:5px;margin-bottom:5px}
-.qr-img-box img{display:block;width:68px;height:68px}
-.url-tag{display:inline-block;background:#1a56db;color:#fff;font-size:11px;font-weight:900;padding:4px 13px;border-radius:100px;letter-spacing:-.1px}
+.ti-icon{font-size:18px}
+.ti-lbl{font-size:8px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;line-height:1.3;margin-top:2px}
 
-/* ── FOOTER ── */
-.footer{background:#0f172a;padding:6px 14px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
-.f-brand{font-size:14px;font-weight:900;color:#fff}
-.f-brand span{color:#60a5fa}
-.f-tag{font-size:7px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.06em;text-align:right;line-height:1.4}
+/* Flip teaser — front bottom */
+.flip-front{
+  background:#1a56db;padding:9px 18px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.flip-front-text{font-size:11px;font-weight:700;color:rgba(255,255,255,.85)}
+.flip-front-cta{font-size:13px;font-weight:900;color:#fbbf24;letter-spacing:.01em}
 
-/* ════════════════════════════
-   BACK — unique styles
-   ════════════════════════════ */
-.back-hero{
+.footer{
+  background:#0f172a;padding:9px 18px;
+  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
+}
+.f-brand{font-size:17px;font-weight:900;color:#fff;letter-spacing:-.3px}
+.f-brand b{color:#60a5fa}
+.f-tag{font-size:8px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.06em;text-align:right;line-height:1.5}
+
+
+/* ═══════════════════ BACK ═══════════════════ */
+
+/* Flip teaser — back top */
+.flip-back{
+  background:#fbbf24;padding:9px 18px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.flip-back-cta{font-size:13px;font-weight:900;color:#0a2472}
+.flip-back-text{font-size:11px;font-weight:700;color:rgba(10,36,114,.75)}
+
+.back-header{
   background:linear-gradient(150deg,#0a2472 0%,#1e3a8a 50%,#1a56db 100%);
-  padding:22px 20px 18px;
-  text-align:center;
-  flex-shrink:0;
+  padding:22px 24px 18px;text-align:center;flex-shrink:0;
 }
-.back-brand{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.5px}
-.back-brand span{color:#fbbf24}
-.back-tagline{font-size:10px;color:rgba(255,255,255,.8);font-weight:600;margin-top:3px}
+.back-brand{font-size:34px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1}
+.back-brand b{color:#fbbf24}
+.back-sub{font-size:10.5px;color:rgba(255,255,255,.75);font-weight:600;margin-top:4px}
 
-.back-qr-section{
+.back-qr{
   display:flex;flex-direction:column;align-items:center;
-  padding:14px 20px 10px;flex-shrink:0;
+  padding:18px 24px 14px;flex-shrink:0;
 }
-.back-qr-box{background:#fff;border:3px solid #1a56db;border-radius:16px;padding:10px;margin-bottom:10px}
-.back-qr-box img{display:block;width:120px;height:120px}
-.back-url{font-size:20px;font-weight:900;color:#0a2472;letter-spacing:-.4px;margin-bottom:3px}
-.back-url-sub{font-size:9.5px;color:#64748b;font-weight:600}
+.qr-border{background:#fff;border:3.5px solid #1a56db;border-radius:18px;padding:12px;margin-bottom:12px}
+.qr-border img{display:block;width:140px;height:140px}
+.qr-url{font-size:24px;font-weight:900;color:#0a2472;letter-spacing:-.5px}
+.qr-hint{font-size:10px;color:#64748b;font-weight:600;margin-top:3px}
 
-.back-divider{height:1.5px;background:#e2e8f0;margin:0 16px;flex-shrink:0}
+.back-rule{height:1px;background:#e2e8f0;margin:0 18px;flex-shrink:0}
 
-.back-reasons{padding:10px 16px;flex-shrink:0}
-.back-reasons-title{font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;text-align:center}
-.reason-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:7px}
-.reason-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center}
-.reason-head{font-size:11px;font-weight:800;color:#0f172a}
-.reason-desc{font-size:9px;color:#475569;line-height:1.4;margin-top:1px}
-
-.back-upi{
-  margin:0 14px;padding:9px 12px;
-  background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;
-  flex-shrink:0;
+.back-steps{padding:14px 18px 10px;flex-shrink:0}
+.back-steps-title{font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;text-align:center}
+.step-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:9px}
+.step-n{
+  width:22px;height:22px;border-radius:50%;
+  background:#1a56db;color:#fff;
+  font-size:11px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
-.back-upi-title{font-size:9.5px;font-weight:800;color:#065f46;margin-bottom:5px}
-.upi-chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{background:#fff;border:1.5px solid #86efac;border-radius:6px;padding:4px 10px;font-size:9px;font-weight:700;color:#065f46}
+.step-head{font-size:12px;font-weight:800;color:#0f172a;line-height:1.3}
+.step-body{font-size:9.5px;color:#475569;line-height:1.45;margin-top:1px}
+
+.back-upi{margin:10px 16px 0;padding:11px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:11px;flex-shrink:0}
+.upi-title{font-size:10.5px;font-weight:800;color:#065f46;margin-bottom:7px}
+.upi-chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{background:#fff;border:1.5px solid #86efac;border-radius:7px;padding:4px 11px;font-size:9.5px;font-weight:700;color:#065f46}
 
 .back-waitlist{
-  margin:8px 14px 0;padding:8px 12px;
-  background:#fef3c7;border:1.5px solid #fcd34d;border-radius:10px;
-  flex-shrink:0;text-align:center;
+  margin:10px 16px 0;padding:9px 14px;
+  background:#fef3c7;border:1.5px solid #fcd34d;border-radius:11px;
+  text-align:center;flex-shrink:0;
 }
-.back-waitlist p{font-size:9px;color:#92400e;line-height:1.5}
+.back-waitlist p{font-size:10px;color:#92400e;line-height:1.5}
 .back-waitlist strong{font-weight:800}
 .back-waitlist a{color:#1d4ed8;font-weight:800;text-decoration:none}
+
+.f-spacer{flex:1;min-height:0}
 
 @media print{
   body{background:#fff;padding:0;gap:0;display:block}
   .page-label{display:none}
-  .flyer{width:105mm;height:148mm;border-radius:0;box-shadow:none;page-break-after:always}
-  @page{size:A6 portrait;margin:0}
+  .flyer{width:148mm;height:210mm;border-radius:0;box-shadow:none;page-break-after:always}
+  @page{size:A5 portrait;margin:0}
 }
 </style>
 </head>
@@ -193,168 +190,148 @@ body{
 <!-- ══════════ FRONT ══════════ -->
 <div class="page-label">▲ FRONT</div>
 <div class="flyer">
+
   <div class="hero">
     <img class="hero-img"
-      src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&h=300&fit=crop&crop=center"
+      src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&h=400&fit=crop&crop=center"
       alt="Fish market"/>
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-      <div class="brand">Reli<span>fish</span></div>
-      <div class="brand-link">relifish.store &nbsp;·&nbsp; relifish.store/shop</div>
-      <div class="hero-title">Fresh fish from<br/><em>your local seller</em></div>
-      <div class="hero-tagline">Better than market rates · Zero time wastage · Fresh at your door</div>
-      <div class="hero-badge"><span>✅ Hyperlocal Verified Sellers</span></div>
+    <div class="hero-ov"></div>
+    <div class="hero-body">
+      <div class="brand">Reli<b>fish</b></div>
+      <div class="brand-sub">relifish.store &nbsp;·&nbsp; relifish.store/shop</div>
+      <div class="hero-title">Fresh fish from<br/><b>your local seller</b></div>
+      <div class="hero-tag">Better than market rates &nbsp;·&nbsp; Zero time wastage &nbsp;·&nbsp; Fresh at your door</div>
+      <div class="hero-pill"><span>✅ Hyperlocal Verified Sellers</span></div>
     </div>
   </div>
 
   <div class="price-strip">
     <div>
-      <div class="p-them">Premium stores: <s>₹700–900/kg</s></div>
-      <div class="p-us">✅ Relifish: up to 30% less than premium prices</div>
+      <div class="p-old">Premium stores: <s>₹700–900/kg</s></div>
+      <div class="p-new">✅ Relifish: up to 30% less than premium prices</div>
     </div>
     <div class="p-badges">
-      <div class="p-badge">Zero time wastage ✓</div>
-      <div class="p-badge green">Transparent &amp; discounted rates ✓</div>
+      <div class="badge badge-or">Zero time wastage ✓</div>
+      <div class="badge badge-gr">Transparent &amp; discounted ✓</div>
+      <div class="badge" style="background:#7c3aed;">No quality compromise ✓</div>
     </div>
   </div>
 
-  <div class="fish-section">
-    <div class="section-lbl">Check live prices at relifish.store/shop</div>
+  <div class="fish-wrap">
+    <div class="fish-lbl">Live prices → relifish.store/shop</div>
     <div class="fish-grid">
       <div class="fc">
-        <img src="https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=200&h=96&fit=crop" alt="Pomfret" onerror="this.style.display='none'"/>
-        <div class="fc-info"><div class="fn">Pomfret</div><div class="mr">पापलेट</div></div>
+        <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=200&h=124&fit=crop" alt="Pomfret" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Pomfret</div><div class="fc-mr">पापलेट</div>
       </div>
       <div class="fc">
-        <img src="https://images.unsplash.com/photo-1559847844-5315695dadae?w=200&h=96&fit=crop" alt="Surmai" onerror="this.style.display='none'"/>
-        <div class="fc-info"><div class="fn">Surmai</div><div class="mr">सुरमई</div></div>
+        <img src="https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=200&h=124&fit=crop" alt="Surmai" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Surmai</div><div class="fc-mr">सुरमई</div>
       </div>
       <div class="fc">
-        <img src="https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=200&h=96&fit=crop" alt="Prawns" onerror="this.style.display='none'"/>
-        <div class="fc-info"><div class="fn">Prawns</div><div class="mr">कोळंबी</div></div>
+        <img src="https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=200&h=124&fit=crop" alt="Prawns" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Prawns</div><div class="fc-mr">कोळंबी</div>
       </div>
       <div class="fc">
-        <img src="https://images.unsplash.com/photo-1580476262798-bddd9f4b7369?w=200&h=96&fit=crop" alt="Bangda" onerror="this.style.display='none'"/>
-        <div class="fc-info"><div class="fn">Bangda</div><div class="mr">बांगडा</div></div>
+        <img src="https://images.unsplash.com/photo-1484557985045-edf25e08da73?w=200&h=124&fit=crop" alt="Bangda" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Bangda</div><div class="fc-mr">बांगडा</div>
       </div>
       <div class="fc">
-        <img src="https://images.unsplash.com/photo-1534766438357-2b270dbd1b40?w=200&h=96&fit=crop" alt="Rawas" onerror="this.style.display='none'"/>
-        <div class="fc-info"><div class="fn">Rawas</div><div class="mr">रावस</div></div>
+        <img src="https://images.unsplash.com/photo-1580476262798-bddd9f4b7369?w=200&h=124&fit=crop" alt="Rawas" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Rawas</div><div class="fc-mr">रावस</div>
       </div>
       <div class="fc">
-        <img src="https://images.unsplash.com/photo-1582489856135-e5fa93f01a36?w=200&h=96&fit=crop" alt="Crab" onerror="this.style.display='none'"/>
-        <div class="fc-info"><div class="fn">Crab</div><div class="mr">खेकडा</div></div>
+        <img src="https://images.unsplash.com/photo-1595456982104-14cc660c4d22?w=200&h=124&fit=crop" alt="Crab" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Crab</div><div class="fc-mr">खेकडा</div>
       </div>
     </div>
   </div>
 
   <div class="modes">
-    <div class="mode same">
+    <div class="mode mode-sd">
       <div class="mode-icon">☀️</div>
       <div class="mode-title">Same Day</div>
       <div class="mode-desc">Order while seller is open. Pickup or delivery today.</div>
     </div>
-    <div class="mode pre">
+    <div class="mode mode-po">
       <div class="mode-icon">🌙</div>
       <div class="mode-title">Pre-Order</div>
       <div class="mode-desc">Order by 11 PM. Morning-fresh from next day's catch.</div>
     </div>
   </div>
 
-  <div class="steps">
-    <div class="steps-title">How to order — 4 simple steps</div>
-    <div class="steps-grid">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div><div class="step-head">📍 Set Mumbai location</div><div class="step-desc">Open relifish.store — no app needed.</div></div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div><div class="step-head">🛒 Browse &amp; add to cart</div><div class="step-desc">Real market prices, no extra charges.</div></div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div><div class="step-head">💳 Pay via UPI</div><div class="step-desc">PhonePe / GPay / Paytm. Upload screenshot.</div></div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div><div class="step-head">✅ Confirmed — fresh fish</div><div class="step-desc">Reaches you within 2 hours. Never cold-stored.</div></div>
-      </div>
-    </div>
+  <div class="trust-strip">
+    <div class="ti"><div class="ti-icon">💸</div><div class="ti-lbl">Better<br/>rates</div></div>
+    <div class="ti"><div class="ti-icon">⚡</div><div class="ti-lbl">Zero<br/>wastage</div></div>
+    <div class="ti"><div class="ti-icon">🌊</div><div class="ti-lbl">Morning<br/>fresh</div></div>
+    <div class="ti"><div class="ti-icon">🚪</div><div class="ti-lbl">At your<br/>door</div></div>
+    <div class="ti"><div class="ti-icon">🤝</div><div class="ti-lbl">Verified<br/>seller</div></div>
   </div>
 
-  <div class="bottom-row">
-    <div class="trust">
-      <div class="ti"><div class="ti-em">💸</div><div class="ti-lbl">Better rates</div></div>
-      <div class="ti"><div class="ti-em">⚡</div><div class="ti-lbl">Zero wastage</div></div>
-      <div class="ti"><div class="ti-em">🌊</div><div class="ti-lbl">Morning fresh</div></div>
-      <div class="ti"><div class="ti-em">🚪</div><div class="ti-lbl">Doorstep</div></div>
-      <div class="ti"><div class="ti-em">🤝</div><div class="ti-lbl">Hyperlocal verified</div></div>
-    </div>
-    <div class="qr-col">
-      <div class="qr-title">Scan &amp; order now</div>
-      <div class="qr-sub">No login to browse · No app needed</div>
-      <div class="qr-img-box">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=68x68&data=https://relifish.store/shop&bgcolor=ffffff&color=0a2472&qzone=1&margin=1" alt="relifish.store/shop"/>
-      </div>
-      <div class="url-tag">relifish.store</div>
-    </div>
+  <div class="f-spacer"></div>
+
+  <!-- Flip teaser -->
+  <div class="flip-front">
+    <div class="flip-front-text">How to order · Scan &amp; pay · 4 simple steps</div>
+    <div class="flip-front-cta">Flip over →</div>
   </div>
 
   <div class="footer">
-    <div class="f-brand">Reli<span>fish</span></div>
+    <div class="f-brand">Reli<b>fish</b></div>
     <div class="f-tag">Mumbai's hyperlocal<br/>fish marketplace</div>
   </div>
+
 </div>
 
 <!-- ══════════ BACK ══════════ -->
-<div class="page-label">▼ BACK</div>
+<div class="page-label">▼ BACK — Scan &amp; Order</div>
 <div class="flyer">
 
-  <div class="back-hero">
-    <div class="back-brand">Reli<span>fish</span></div>
-    <div class="back-tagline">Mumbai's hyperlocal fish marketplace · relifish.store</div>
+  <!-- Flip teaser -->
+  <div class="flip-back">
+    <div class="flip-back-cta">← Flip over</div>
+    <div class="flip-back-text">Fish menu · Prices · Order modes</div>
   </div>
 
-  <div class="back-qr-section">
-    <div class="back-qr-box">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://relifish.store/shop&bgcolor=ffffff&color=0a2472&qzone=1&margin=1" alt="relifish.store/shop"/>
-    </div>
-    <div class="back-url">relifish.store/shop</div>
-    <div class="back-url-sub">Scan to browse live prices · No app · No login needed</div>
+  <div class="back-header">
+    <div class="back-brand">Reli<b>fish</b></div>
+    <div class="back-sub">Mumbai's hyperlocal fish marketplace &nbsp;·&nbsp; relifish.store</div>
   </div>
 
-  <div class="back-divider"></div>
+  <div class="back-qr">
+    <div class="qr-border">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://relifish.store/shop&bgcolor=ffffff&color=0a2472&qzone=1&margin=1" alt="relifish.store/shop"/>
+    </div>
+    <div class="qr-url">relifish.store/shop</div>
+    <div class="qr-hint">Scan to browse live prices · No app · No login needed</div>
+  </div>
 
-  <div class="back-reasons">
-    <div class="back-reasons-title">Why Relifish?</div>
-    <div class="reason-row">
-      <div class="reason-icon">💸</div>
-      <div>
-        <div class="reason-head">Up to 30% cheaper than premium stores</div>
-        <div class="reason-desc">Direct from local sellers — no Swiggy markup, no cold storage premium.</div>
-      </div>
+  <div class="back-rule"></div>
+
+  <div class="back-steps">
+    <div class="back-steps-title">How to order — 4 steps</div>
+    <div class="step-row">
+      <div class="step-n">1</div>
+      <div><div class="step-head">Set your Mumbai location</div><div class="step-body">Open relifish.store — no app needed. See nearby sellers with live prices.</div></div>
     </div>
-    <div class="reason-row">
-      <div class="reason-icon">⏱️</div>
-      <div>
-        <div class="reason-head">Zero time wastage — delivered in 2 hours</div>
-        <div class="reason-desc">No market trips, no haggling. Order online, fish at your door.</div>
-      </div>
+    <div class="step-row">
+      <div class="step-n">2</div>
+      <div><div class="step-head">Browse &amp; add fish to cart</div><div class="step-body">Real market prices. Same-day or pre-order. No extra charges.</div></div>
     </div>
-    <div class="reason-row">
-      <div class="reason-icon">🌊</div>
-      <div>
-        <div class="reason-head">Morning-fresh, never cold-stored</div>
-        <div class="reason-desc">Pre-order by 11 PM — seller confirms from next morning's catch.</div>
-      </div>
+    <div class="step-row">
+      <div class="step-n">3</div>
+      <div><div class="step-head">Pay via UPI to seller directly</div><div class="step-body">Seller's UPI ID shown in app. Pay via PhonePe / GPay / Paytm and upload screenshot.</div></div>
+    </div>
+    <div class="step-row">
+      <div class="step-n">4</div>
+      <div><div class="step-head">Fish delivered within 2 hours</div><div class="step-body">Never cold-stored. Seller confirms from morning's fresh catch.</div></div>
     </div>
   </div>
 
-  <div class="back-divider"></div>
+  <div class="back-rule"></div>
 
-  <div class="back-upi" style="margin-top:10px;">
-    <div class="back-upi-title">💳 Pay directly via UPI — safe &amp; instant</div>
+  <div class="back-upi">
+    <div class="upi-title">Pay directly to seller via UPI — safe &amp; instant</div>
     <div class="upi-chips">
       <span class="chip">PhonePe</span>
       <span class="chip">Google Pay</span>
@@ -367,12 +344,13 @@ body{
     <p>Not in your area yet? <strong>Join the waitlist</strong> at <a href="https://relifish.store/shop">relifish.store/shop</a> — we'll notify you when a seller goes live near you.</p>
   </div>
 
-  <div style="flex:1"></div>
+  <div class="f-spacer"></div>
 
   <div class="footer">
-    <div class="f-brand">Reli<span>fish</span></div>
+    <div class="f-brand">Reli<b>fish</b></div>
     <div class="f-tag">Fresh fish · Local sellers<br/>Mumbai &amp; Navi Mumbai</div>
   </div>
+
 </div>
 
 </body>
