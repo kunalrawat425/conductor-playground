@@ -34,7 +34,7 @@ body { font-family: Inter, sans-serif; background:#f1f5f9; }
 
 <div class="legend">
   <h2>Relifish — Seller Coverage</h2>
-  <p>Each dashed circle = 25 km service radius. Buyers inside see that seller on /shop.</p>
+  <p>Each dashed circle = seller's actual <b>delivery_rad</b> from DB. Buyers inside see that seller on /shop.</p>
   <div id="legend-sellers"><div id="loading">Loading sellers from DB...</div></div>
   <div class="formula">
     <h3>Haversine Distance (shop.astro)</h3>
@@ -45,7 +45,7 @@ body { font-family: Inter, sans-serif; background:#f1f5f9; }
       &nbsp;&nbsp;&nbsp;&nbsp;× cos(sellerLat) × sin²(dLng/2)<br/>
       dist = 6371 × 2 × atan2(√a, √(1−a))
     </code>
-    <div class="cap">Max shown: 25 km (maxKm cap in shop.astro)</div>
+    <div class="cap">Fallback: delivery_rad &gt; 0 → use it · has_delivery → min(10, 25) · else → 25 km</div>
   </div>
 </div>
 
@@ -57,15 +57,24 @@ const SUPABASE_URL = "https://witoghpdfocywiosmrzv.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpdG9naHBkZm9jeXdpb3Ntcnp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNDU3NzMsImV4cCI6MjA5MDkyMTc3M30.Hcopt8LHt9xh24Ckg9A9JaBy-BtVisAcj8NICaP8aIQ";
 
 const COLORS = ["#1d4ed8","#059669","#d97706","#7c3aed","#dc2626","#0891b2"];
+const MAX_KM = 25; // matches shop.astro filterState.maxKm
 
 const map = L.map("map").setView([19.1, 72.9], 11);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
+// Mirrors shop.astro applyFilters radius logic
+function effectiveRadiusKm(seller) {
+  const rad = parseFloat(seller.delivery_rad) || 0;
+  if (rad > 0) return rad;
+  if (seller.has_delivery) return Math.min(10, MAX_KM);
+  return MAX_KM;
+}
+
 async function loadSellers() {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/sellers?select=name,location_name,lat,lng&is_active=eq.true&name=neq.New+Seller&lat=not.is.null&lng=not.is.null`,
+    `${SUPABASE_URL}/rest/v1/sellers?select=name,location_name,lat,lng,delivery_rad,has_delivery,has_pickup&is_active=eq.true&name=neq.New+Seller&lat=not.is.null&lng=not.is.null`,
     { headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` } }
   );
   if (!res.ok) throw new Error(`Supabase ${res.status}`);
@@ -82,28 +91,36 @@ loadSellers().then(sellers => {
     const color = COLORS[i % COLORS.length];
     const lat = parseFloat(s.lat);
     const lng = parseFloat(s.lng);
+    const radiusKm = effectiveRadiusKm(s);
+    const dbRad = parseFloat(s.delivery_rad) || 0;
     bounds.push([lat, lng]);
 
-    // 25 km radius circle
+    // Draw circle using actual delivery_rad (in meters)
     L.circle([lat, lng], {
-      radius: 25000,
+      radius: radiusKm * 1000,
       color, fillColor: color,
-      fillOpacity: 0.07, weight: 2, dashArray: "6 4",
-    }).addTo(map).bindPopup(`<b>${s.name}</b><br/>${s.location_name || ""}<br/><small style="color:#64748b">25 km radius · lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}</small>`);
+      fillOpacity: 0.10, weight: 2, dashArray: "6 4",
+    }).addTo(map).bindPopup(
+      `<b>${s.name}</b><br/>${s.location_name || ""}<br/>`
+      + `<small style="color:#64748b">delivery_rad: <b>${dbRad || "not set"} km</b> (DB)</small><br/>`
+      + `<small style="color:#64748b">effective radius: <b>${radiusKm} km</b></small><br/>`
+      + `<small style="color:#64748b">has_delivery: ${s.has_delivery} · has_pickup: ${s.has_pickup}</small><br/>`
+      + `<small style="color:#94a3b8">lat ${lat.toFixed(6)}, lng ${lng.toFixed(6)}</small>`
+    );
 
     // Pin label
     const icon = L.divIcon({
-      html: `<div style="background:${color};color:#fff;font:800 11px Inter;padding:4px 9px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25);">📍 ${s.name}</div>`,
+      html: `<div style="background:${color};color:#fff;font:800 11px Inter;padding:4px 9px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25);">📍 ${s.name} <span style="opacity:.75;font-weight:600;">(${radiusKm}km)</span></div>`,
       className: "",
       iconAnchor: [0, 0],
     });
     L.marker([lat, lng], { icon }).addTo(map)
-      .bindPopup(`<b>${s.name}</b><br/>${s.location_name || ""}<br/><small>lat: ${lat}, lng: ${lng}</small>`);
+      .bindPopup(`<b>${s.name}</b><br/>${s.location_name || ""}<br/><small>lat: ${lat}, lng: ${lng}<br/>delivery_rad: ${dbRad || "–"} km</small>`);
 
     // Legend row
     const row = document.createElement("div");
     row.className = "seller-row";
-    row.innerHTML = `<div class="dot" style="background:${color}"></div><div><div class="seller-name">${s.name}</div><div class="seller-area">${s.location_name || ""}</div></div>`;
+    row.innerHTML = `<div class="dot" style="background:${color}"></div><div><div class="seller-name">${s.name} <span style="font-size:10px;color:#64748b;font-weight:600;">${radiusKm}km</span></div><div class="seller-area">${s.location_name || ""} · delivery_rad: ${dbRad || "–"}</div></div>`;
     legendEl.appendChild(row);
   });
 
