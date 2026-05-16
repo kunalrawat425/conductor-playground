@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Relifish — Seller Radius Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Inter, sans-serif; background:#f1f5f9; }
+#map { height: 100vh; width: 100%; }
+.legend {
+  position: fixed; top: 16px; left: 16px; z-index: 1000;
+  background: #fff; border-radius: 12px; padding: 16px 20px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.15); max-width: 260px;
+}
+.legend h2 { font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+.legend p { font-size: 11px; color: #64748b; margin-bottom: 12px; line-height: 1.5; }
+.seller-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.seller-name { font-size: 12px; font-weight: 700; color: #0f172a; }
+.seller-area { font-size: 10px; color: #64748b; }
+.formula {
+  margin-top: 12px; padding: 10px; background: #f8fafc;
+  border-radius: 8px; border: 1px solid #e2e8f0;
+}
+.formula h3 { font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+.formula code { font-size: 10px; color: #1d4ed8; line-height: 1.7; display: block; }
+.cap { margin-top: 8px; font-size: 10px; color: #dc2626; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="legend">
+  <h2>Relifish — Seller Coverage Map</h2>
+  <p>Each circle = 25 km service radius. Buyers inside the circle see that seller on /shop.</p>
+
+  <div class="seller-row">
+    <div class="dot" style="background:#1d4ed8;"></div>
+    <div><div class="seller-name">Bombay Sea Food</div><div class="seller-area">Versova / South Mumbai</div></div>
+  </div>
+  <div class="seller-row">
+    <div class="dot" style="background:#059669;"></div>
+    <div><div class="seller-name">Fish Tokri</div><div class="seller-area">Kandivali East</div></div>
+  </div>
+  <div class="seller-row">
+    <div class="dot" style="background:#d97706;"></div>
+    <div><div class="seller-name">Ocean Lover Fish</div><div class="seller-area">Thane West</div></div>
+  </div>
+  <div class="seller-row">
+    <div class="dot" style="background:#7c3aed;"></div>
+    <div><div class="seller-name">Priya Fish Corner</div><div class="seller-area">Kamothe, Navi Mumbai</div></div>
+  </div>
+
+  <div class="formula">
+    <h3>Haversine Distance Formula</h3>
+    <code>
+      dLat = (sellerLat − buyerLat) × π/180<br/>
+      dLng = (sellerLng − buyerLng) × π/180<br/>
+      a = sin²(dLat/2) + cos(buyerLat)<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;× cos(sellerLat) × sin²(dLng/2)<br/>
+      dist = 6371 × 2 × atan2(√a, √(1−a))
+    </code>
+    <div class="cap">⚠ Max shown: 25 km (maxKm cap in shop.astro)</div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const sellers = [
+  { name: "Bombay Sea Food",  area: "South Mumbai",                   lat: 18.9724356, lng: 72.8154089, color: "#1d4ed8" },
+  { name: "Ocean Lover Fish", area: "Thakur Village, Kandivali East", lat: 19.2105464, lng: 72.8753431, color: "#059669" },
+  { name: "Fish Tokri",       area: "Thane",                          lat: 19.1906444, lng: 72.9791824, color: "#d97706" },
+  { name: "The Fishy Spot",   area: "Kamothe",                        lat: 19.0222002, lng: 73.0889333, color: "#7c3aed" },
+];
+
+const map = L.map("map").setView([19.12, 72.93], 11);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+sellers.forEach(s => {
+  // 25 km radius circle
+  L.circle([s.lat, s.lng], {
+    radius: 25000,
+    color: s.color,
+    fillColor: s.color,
+    fillOpacity: 0.08,
+    weight: 2,
+    dashArray: "6 4",
+  }).addTo(map).bindPopup(`<b>${s.name}</b><br/>${s.area}<br/><span style="color:#64748b;font-size:12px;">25 km service radius</span>`);
+
+  // Seller pin
+  const icon = L.divIcon({
+    html: `<div style="background:${s.color};color:#fff;font-size:11px;font-weight:800;padding:5px 9px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25);">📍 ${s.name}</div>`,
+    className: "",
+    iconAnchor: [0, 0],
+  });
+  L.marker([s.lat, s.lng], { icon })
+    .addTo(map)
+    .bindPopup(`<b>${s.name}</b><br/>${s.area}<br/><small>lat: ${s.lat}, lng: ${s.lng}</small>`);
+});
+
+// Fit all markers
+const bounds = sellers.map(s => [s.lat, s.lng]);
+map.fitBounds(bounds, { padding: [80, 80] });
+</script>
+</body>
+</html>
