@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Relifish — Seller Radius Map</title>
+<title>Relifish — Seller Coverage Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -15,45 +15,29 @@ body { font-family: Inter, sans-serif; background:#f1f5f9; }
   box-shadow: 0 4px 24px rgba(0,0,0,.15); max-width: 260px;
 }
 .legend h2 { font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
-.legend p { font-size: 11px; color: #64748b; margin-bottom: 12px; line-height: 1.5; }
-.seller-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.legend p { font-size: 11px; color: #64748b; margin-bottom: 10px; line-height: 1.5; }
+.seller-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
 .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 .seller-name { font-size: 12px; font-weight: 700; color: #0f172a; }
 .seller-area { font-size: 10px; color: #64748b; }
 .formula {
-  margin-top: 12px; padding: 10px; background: #f8fafc;
+  margin-top: 10px; padding: 10px; background: #f8fafc;
   border-radius: 8px; border: 1px solid #e2e8f0;
 }
-.formula h3 { font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+.formula h3 { font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 5px; }
 .formula code { font-size: 10px; color: #1d4ed8; line-height: 1.7; display: block; }
-.cap { margin-top: 8px; font-size: 10px; color: #dc2626; font-weight: 700; }
+.cap { margin-top: 6px; font-size: 10px; color: #dc2626; font-weight: 700; }
+#loading { font: 600 12px Inter; color: #64748b; padding: 8px 0; }
 </style>
 </head>
 <body>
 
 <div class="legend">
-  <h2>Relifish — Seller Coverage Map</h2>
-  <p>Each circle = 25 km service radius. Buyers inside the circle see that seller on /shop.</p>
-
-  <div class="seller-row">
-    <div class="dot" style="background:#1d4ed8;"></div>
-    <div><div class="seller-name">Bombay Sea Food</div><div class="seller-area">Versova / South Mumbai</div></div>
-  </div>
-  <div class="seller-row">
-    <div class="dot" style="background:#059669;"></div>
-    <div><div class="seller-name">Fish Tokri</div><div class="seller-area">Kandivali East</div></div>
-  </div>
-  <div class="seller-row">
-    <div class="dot" style="background:#d97706;"></div>
-    <div><div class="seller-name">Ocean Lover Fish</div><div class="seller-area">Thane West</div></div>
-  </div>
-  <div class="seller-row">
-    <div class="dot" style="background:#7c3aed;"></div>
-    <div><div class="seller-name">Priya Fish Corner</div><div class="seller-area">Kamothe, Navi Mumbai</div></div>
-  </div>
-
+  <h2>Relifish — Seller Coverage</h2>
+  <p>Each dashed circle = 25 km service radius. Buyers inside see that seller on /shop.</p>
+  <div id="legend-sellers"><div id="loading">Loading sellers from DB...</div></div>
   <div class="formula">
-    <h3>Haversine Distance Formula</h3>
+    <h3>Haversine Distance (shop.astro)</h3>
     <code>
       dLat = (sellerLat − buyerLat) × π/180<br/>
       dLng = (sellerLng − buyerLng) × π/180<br/>
@@ -61,7 +45,7 @@ body { font-family: Inter, sans-serif; background:#f1f5f9; }
       &nbsp;&nbsp;&nbsp;&nbsp;× cos(sellerLat) × sin²(dLng/2)<br/>
       dist = 6371 × 2 × atan2(√a, √(1−a))
     </code>
-    <div class="cap">⚠ Max shown: 25 km (maxKm cap in shop.astro)</div>
+    <div class="cap">Max shown: 25 km (maxKm cap in shop.astro)</div>
   </div>
 </div>
 
@@ -69,44 +53,65 @@ body { font-family: Inter, sans-serif; background:#f1f5f9; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const sellers = [
-  { name: "Bombay Sea Food",  area: "South Mumbai",                   lat: 18.9724356, lng: 72.8154089, color: "#1d4ed8" },
-  { name: "Ocean Lover Fish", area: "Thakur Village, Kandivali East", lat: 19.2105464, lng: 72.8753431, color: "#059669" },
-  { name: "Fish Tokri",       area: "Thane",                          lat: 19.1906444, lng: 72.9791824, color: "#d97706" },
-  { name: "The Fishy Spot",   area: "Kamothe",                        lat: 19.0222002, lng: 73.0889333, color: "#7c3aed" },
-];
+const SUPABASE_URL = "https://witoghpdfocywiosmrzv.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpdG9naHBkZm9jeXdpb3Ntcnp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNDU3NzMsImV4cCI6MjA5MDkyMTc3M30.Hcopt8LHt9xh24Ckg9A9JaBy-BtVisAcj8NICaP8aIQ";
 
-const map = L.map("map").setView([19.12, 72.93], 11);
+const COLORS = ["#1d4ed8","#059669","#d97706","#7c3aed","#dc2626","#0891b2"];
 
+const map = L.map("map").setView([19.1, 72.9], 11);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-sellers.forEach(s => {
-  // 25 km radius circle
-  L.circle([s.lat, s.lng], {
-    radius: 25000,
-    color: s.color,
-    fillColor: s.color,
-    fillOpacity: 0.08,
-    weight: 2,
-    dashArray: "6 4",
-  }).addTo(map).bindPopup(`<b>${s.name}</b><br/>${s.area}<br/><span style="color:#64748b;font-size:12px;">25 km service radius</span>`);
+async function loadSellers() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/sellers?select=name,location_name,lat,lng&is_active=eq.true&name=neq.New+Seller&lat=not.is.null&lng=not.is.null`,
+    { headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` } }
+  );
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
+  return res.json();
+}
 
-  // Seller pin
-  const icon = L.divIcon({
-    html: `<div style="background:${s.color};color:#fff;font-size:11px;font-weight:800;padding:5px 9px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25);">📍 ${s.name}</div>`,
-    className: "",
-    iconAnchor: [0, 0],
+loadSellers().then(sellers => {
+  document.getElementById("loading").remove();
+
+  const legendEl = document.getElementById("legend-sellers");
+  const bounds = [];
+
+  sellers.forEach((s, i) => {
+    const color = COLORS[i % COLORS.length];
+    const lat = parseFloat(s.lat);
+    const lng = parseFloat(s.lng);
+    bounds.push([lat, lng]);
+
+    // 25 km radius circle
+    L.circle([lat, lng], {
+      radius: 25000,
+      color, fillColor: color,
+      fillOpacity: 0.07, weight: 2, dashArray: "6 4",
+    }).addTo(map).bindPopup(`<b>${s.name}</b><br/>${s.location_name || ""}<br/><small style="color:#64748b">25 km radius · lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}</small>`);
+
+    // Pin label
+    const icon = L.divIcon({
+      html: `<div style="background:${color};color:#fff;font:800 11px Inter;padding:4px 9px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25);">📍 ${s.name}</div>`,
+      className: "",
+      iconAnchor: [0, 0],
+    });
+    L.marker([lat, lng], { icon }).addTo(map)
+      .bindPopup(`<b>${s.name}</b><br/>${s.location_name || ""}<br/><small>lat: ${lat}, lng: ${lng}</small>`);
+
+    // Legend row
+    const row = document.createElement("div");
+    row.className = "seller-row";
+    row.innerHTML = `<div class="dot" style="background:${color}"></div><div><div class="seller-name">${s.name}</div><div class="seller-area">${s.location_name || ""}</div></div>`;
+    legendEl.appendChild(row);
   });
-  L.marker([s.lat, s.lng], { icon })
-    .addTo(map)
-    .bindPopup(`<b>${s.name}</b><br/>${s.area}<br/><small>lat: ${s.lat}, lng: ${s.lng}</small>`);
-});
 
-// Fit all markers
-const bounds = sellers.map(s => [s.lat, s.lng]);
-map.fitBounds(bounds, { padding: [80, 80] });
+  if (bounds.length) map.fitBounds(bounds, { padding: [80, 80] });
+}).catch(err => {
+  document.getElementById("loading").textContent = `Error: ${err.message}`;
+  console.error(err);
+});
 </script>
 </body>
 </html>
