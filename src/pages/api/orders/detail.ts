@@ -55,7 +55,12 @@ export const GET: APIRoute = async ({ url }) => {
       }
     }
 
-    const seller = order.listing?.seller || null;
+    const rawSeller = order.listing?.seller || null;
+    // Strip UPI ID from response when Razorpay is enabled — prevents client-side leak
+    const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
+    const seller = rawSeller
+      ? { ...rawSeller, upi_id: razorpayEnabled ? undefined : (rawSeller as any).upi_id }
+      : null;
 
     const { data: feedback } = await sb
       .from("order_feedback")
