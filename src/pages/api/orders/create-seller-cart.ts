@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
@@ -112,6 +113,9 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Pay-first: same-day and scheduled slots both start as pending_payment until proof is uploaded.
     const status: "pending_payment" = "pending_payment";
 
+    // One UUID shared across all order rows from this checkout — enables grouping in buyer/seller UI.
+    const checkout_session_id = randomUUID();
+
     const orders: unknown[] = [];
 
     for (const { line } of resolved) {
@@ -130,6 +134,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             total_price: line.total_price,
             delivery_fee: 0,
             platform_fee: 0,
+            checkout_session_id,
             // Pre-orders always require payment proof upload first.
             status: "pending_payment",
             order_type,
@@ -223,6 +228,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         p_schedule_slot_id: schedule_slot_id || null,
         p_pricing_option_id: line.pricing_option_id,
         p_pricing_label: line.pricing_label,
+        p_checkout_session_id: checkout_session_id,
       });
 
       if (rpcError) {

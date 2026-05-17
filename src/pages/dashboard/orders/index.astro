@@ -566,7 +566,100 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
 
   function renderOrders(ordersToShow: any[], totalPages: number) {
     const list = document.getElementById("v2-orders-list")!;
-    const orderHtml = ordersToShow.map((o: any) => {
+
+    // Group by checkout_session_id. NULL = each order is its own group.
+    const sessionMap = new Map<string, any[]>();
+    const sessionOrder: string[] = [];
+    for (const o of ordersToShow) {
+      const key: string = o.checkout_session_id ?? o.id;
+      if (!sessionMap.has(key)) { sessionMap.set(key, []); sessionOrder.push(key); }
+      sessionMap.get(key)!.push(o);
+    }
+
+    const orderHtml = sessionOrder.map((key: string) => {
+      const group = sessionMap.get(key)!;
+
+      // Multi-item session: render a grouped header + individual order cards below
+      if (group.length > 1) {
+        const first = group[0];
+        // Delivery fee is on first order only per session — avoid double-counting
+        const sessionTotal = group.reduce((s: number, o: any) => s + Number(o.total_price || 0), 0)
+          + Number(first.delivery_fee || 0);
+        const time = new Date(first.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+        const lineItems = group.map((o: any) => {
+          const listingOpts = o.listing?.pricing_options || [];
+          const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
+          const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+          const unit = o.quantity_unit || "kg";
+          const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(o.quantity) / bundle)} pack` : `${o.quantity}${escape(unit)}`;
+          return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--v2-border);">
+            <span style="font:500 12px Inter;color:var(--v2-ink);text-transform:capitalize;">🐟 ${escape(o.listing?.species || o.species || "Fish")} · ${qtyLabel}</span>
+            <span style="font:700 12px Inter;color:var(--v2-ink);">₹${Number(o.total_price).toLocaleString("en-IN")}</span>
+          </div>`;
+        }).join("");
+        const groupHeader = `<div style="background:var(--v2-bg-2);border-left:3px solid var(--v2-brand);border-top:1px solid var(--v2-border);border-right:1px solid var(--v2-border);border-bottom:1px solid var(--v2-border);border-radius:var(--v2-radius-lg);padding:12px 14px;margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div>
+              <div style="font:700 12px Inter;color:var(--v2-ink-2);text-transform:uppercase;letter-spacing:.06em;">Combined order · ${group.length} items</div>
+              <div style="font:500 12px Inter;color:var(--v2-ink-3);">${escape(time)} · ${first.buyer_phone ? `Buyer ···${escape(first.buyer_phone.slice(-4))}` : ''}</div>
+            </div>
+            <div style="font:800 14px Inter;color:var(--v2-ink);">₹${sessionTotal.toLocaleString("en-IN")}</div>
+          </div>
+          ${lineItems}
+        </div>`;
+        // Render each order card individually below the group header
+        return groupHeader + group.map((o: any) => renderSingleOrder(o)).join("");
+      }
+
+      // Single order — render as before
+      return renderSingleOrder(group[0]);
+    }).join("");
+
+    const pagerHtml = totalPages > 1 ? `
+      <div class="v2-pagination">
+        <button class="v2-pg-btn" data-pg="prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+        <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
+        <button class="v2-pg-btn" data-pg="next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+      </div>` : '';
+
+    list.innerHTML = orderHtml + pagerHtml;
+
+    // Pagination — use onclick to avoid duplicate listeners across reloads
+    const prevBtn = list.querySelector<HTMLButtonElement>('[data-pg="prev"]');
+    const nextBtn = list.querySelector<HTMLButtonElement>('[data-pg="next"]');
+    if (prevBtn) prevBtn.onclick = () => { currentPage = Math.max(1, currentPage - 1); loadOrders(); };
+    if (nextBtn) nextBtn.onclick = () => { currentPage = Math.min(totalPages, currentPage + 1); loadOrders(); };
+
+    // Action delegation for all order cards (including session group cards)
+    list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (btn.dataset.action === "view_screenshot") {
+          viewScreenshot(btn.dataset.orderId!, btn.dataset.path!, btn);
+        } else if (btn.dataset.action === "decline-show-reason") {
+          const orderId = btn.dataset.orderId!;
+          const noteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
+          const confirmBtn = document.getElementById(`decline-confirm-${orderId}`) as HTMLButtonElement | null;
+          if (noteInput) noteInput.style.display = "block";
+          if (confirmBtn) confirmBtn.style.display = "block";
+          btn.style.display = "none";
+        } else {
+          updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
+        }
+      });
+    });
+    // Refund file picker label updates
+    list.querySelectorAll<HTMLInputElement>("input[id^='refund-file-']").forEach((inp) => {
+      const orderId = inp.id.replace("refund-file-", "");
+      inp.addEventListener("change", () => {
+        const drop = document.getElementById(`refund-drop-${orderId}`);
+        if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload UPI screenshot (optional)";
+      });
+    });
+
+    tryFocusOrderFromQuery();
+  }
+
+  function renderSingleOrder(o: any) {
         const totalDue = Number(o.total_price || 0) + Number(o.delivery_fee || 0);
         const paidNum = Number(o.paid_amount);
         const partialCatch =
@@ -805,48 +898,6 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
           ${nextStepHint ? `<div class="v2-oc-next">${nextStepHint}</div>` : ""}
           ${actionsHtml}
         </div>`;
-      }).join("");
-
-      const pagerHtml = totalPages > 1 ? `
-        <div class="v2-pagination">
-          <button class="v2-pg-btn" data-pg="prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
-          <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
-          <button class="v2-pg-btn" data-pg="next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
-        </div>` : '';
-
-      list.innerHTML = orderHtml + pagerHtml;
-
-      // Wire pagination
-      list.querySelector('[data-pg="prev"]')?.addEventListener("click", () => { currentPage = Math.max(1, currentPage - 1); loadOrders(); });
-      list.querySelector('[data-pg="next"]')?.addEventListener("click", () => { currentPage = Math.min(totalPages, currentPage + 1); loadOrders(); });
-
-      // Wire actions
-      list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          if (btn.dataset.action === "view_screenshot") {
-            viewScreenshot(btn.dataset.orderId!, btn.dataset.path!, btn);
-          } else if (btn.dataset.action === "decline-show-reason") {
-            const orderId = btn.dataset.orderId!;
-            const noteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
-            const confirmBtn = document.getElementById(`decline-confirm-${orderId}`) as HTMLButtonElement | null;
-            if (noteInput) noteInput.style.display = "block";
-            if (confirmBtn) confirmBtn.style.display = "block";
-            btn.style.display = "none";
-          } else {
-            updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
-          }
-        });
-      });
-      // Wire refund file picker label updates
-      list.querySelectorAll<HTMLInputElement>("input[id^='refund-file-']").forEach((inp) => {
-        const orderId = inp.id.replace("refund-file-", "");
-        inp.addEventListener("change", () => {
-          const drop = document.getElementById(`refund-drop-${orderId}`);
-          if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload UPI screenshot (optional)";
-        });
-      });
-
-      tryFocusOrderFromQuery();
   }
 
   async function viewScreenshot(orderId: string, _pathFromDataset: string, btn: HTMLButtonElement) {

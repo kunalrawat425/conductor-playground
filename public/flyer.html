@@ -83,16 +83,10 @@ body{
 .fc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;text-align:center}
 .fc img{width:100%;height:52px;object-fit:cover;display:block}
 .fc-name{font-size:10px;font-weight:800;color:#0f172a;padding:3px 4px 1px}
-.fc-mr{font-size:8.5px;color:#94a3b8;padding:0 4px 4px}
+.fc-mr{font-size:8.5px;color:#94a3b8;padding:0 4px 2px}
+.fc-price{font-size:10px;font-weight:900;color:#059669;padding:0 4px 4px;min-height:14px}
+.fc-price.loading{color:#cbd5e1;font-weight:600}
 
-/* ── "Think Again" cognitive dissonance strip ── */
-.think-again{
-  background:#fef9c3;border-top:2px dashed #f97316;border-bottom:2px dashed #f97316;
-  padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;
-}
-.ta-emoji{font-size:22px;flex-shrink:0}
-.ta-q{font:800 11px/1.3 Inter;color:#92400e}
-.ta-cta{font:900 12px/1.3 Inter;color:#dc2626;margin-top:1px}
 
 .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px 14px;flex-shrink:0}
 .mode{border-radius:10px;padding:4px 10px}
@@ -284,37 +278,35 @@ body{
       <div class="fc">
         <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Pomfret</div><div class="fc-mr">पापलेट</div>
+        <div class="fc-price loading" id="price-pomfret">...</div>
       </div>
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Surmai</div><div class="fc-mr">सुरमई</div>
+        <div class="fc-price loading" id="price-surmai">...</div>
       </div>
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Prawns</div><div class="fc-mr">कोळंबी</div>
+        <div class="fc-price loading" id="price-prawns">...</div>
       </div>
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize" alt="Bangda" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Bangda</div><div class="fc-mr">बांगडा</div>
+        <div class="fc-price loading" id="price-bangda">...</div>
       </div>
       <div class="fc">
         <img src="https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0" alt="Rawas" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Rawas</div><div class="fc-mr">रावस</div>
+        <div class="fc-price loading" id="price-rawas">...</div>
       </div>
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline" alt="Crab" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Crab</div><div class="fc-mr">खेकडा</div>
+        <div class="fc-price loading" id="price-crab">...</div>
       </div>
     </div>
   </div>
-
-  <!-- Think Again cognitive dissonance pattern interrupt -->
-  <div class="think-again">
-    <div class="ta-emoji">🤔</div>
-    <div>
-      <div class="ta-q">Still overpaying at Le Marché or Reliance?</div>
-      <div class="ta-cta">Think again → Scan QR · Compare live prices · Same quality, fresher.</div>
-    </div>
   </div>
 
   <div class="modes">
@@ -453,6 +445,73 @@ body{
   </div>
 
 </div>
+
+
+<script>
+(async () => {
+  const SUPABASE_URL = "https://witoghpdfocywiosmrzv.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpdG9naHBkZm9jeXdpb3Ntcnp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNDU3NzMsImV4cCI6MjA5MDkyMTc3M30.Hcopt8LHt9xh24Ckg9A9JaBy-BtVisAcj8NICaP8aIQ";
+
+  const speciesMap = {
+    pomfret: ["pomfret", "paplet"],
+    surmai:  ["surmai", "kingfish"],
+    prawns:  ["prawn", "kolambi", "shrimp", "jhinga"],
+    bangda:  ["bangda", "mackerel"],
+    rawas:   ["rawas", "salmon"],
+    crab:    ["crab", "khekda", "dungeness"],
+  };
+
+  function clearLoading() {
+    document.querySelectorAll(".fc-price.loading").forEach(el => {
+      el.classList.remove("loading");
+      el.textContent = "";
+    });
+  }
+
+  function fmt(price, unit) {
+    const u = (unit || "kg").replace("gram", "g");
+    return "\u20B9" + Number(price).toLocaleString("en-IN") + "/" + u;
+  }
+
+  try {
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/fish_listings?select=species,pricing_options,is_deleted&is_deleted=eq.false",
+      { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } }
+    );
+    if (!res.ok) { clearLoading(); return; }
+    const listings = await res.json();
+
+    const priceMap = {};
+    for (const listing of listings) {
+      const species = (listing.species || "").toLowerCase();
+      const opts = Array.isArray(listing.pricing_options) ? listing.pricing_options : [];
+      let lowestPrice = null, lowestUnit = "kg";
+      for (const opt of opts) {
+        const p = Number(opt.price || opt.price_per_unit || 0);
+        if (p > 0 && (lowestPrice === null || p < lowestPrice)) {
+          lowestPrice = p;
+          lowestUnit = opt.unit || opt.quantity_unit || "kg";
+        }
+      }
+      if (lowestPrice !== null) priceMap[species] = { price: lowestPrice, unit: lowestUnit };
+    }
+
+    for (const [cardKey, keywords] of Object.entries(speciesMap)) {
+      const el = document.getElementById("price-" + cardKey);
+      if (!el) continue;
+      el.classList.remove("loading");
+      let matched = null;
+      for (const kw of keywords) {
+        for (const [species, data] of Object.entries(priceMap)) {
+          if (species.includes(kw) || kw.includes(species)) { matched = data; break; }
+        }
+        if (matched) break;
+      }
+      el.textContent = matched ? fmt(matched.price, matched.unit) : "";
+    }
+  } catch { clearLoading(); }
+})();
+</script>
 
 </body>
 </html>

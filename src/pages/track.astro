@@ -82,7 +82,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
   .v2-stepper-labels {
     display: flex; justify-content: space-between;
     margin-top: 6px;
-    font: 500 9px Inter; color: #64748B;
+    font: 500 11px Inter; color: #64748B;
   }
 
   .v2-section-head-light {
@@ -247,69 +247,131 @@ import Toast from "../components/v2/atoms/Toast.astro";
         return;
       }
 
-      active.innerHTML = allOrders.map(o => {
-        const seller = o.listing?.seller?.name || "Seller";
-        const isDelivery = o.order_type === "delivery";
-        const terminated = isTerminated(o.status);
-        const orderType = isDelivery ? "delivery" : "pickup";
-        const { labels, step: stepIdx } = resolveBuyerStepper(o, orderType);
-        const paidAmt = Number(o.paid_amount) || 0;
+      // Group orders by checkout_session_id. NULL = each order is its own group.
+      const sessionMap = new Map<string, typeof allOrders>();
+      const sessionOrder: string[] = [];
+      for (const o of allOrders) {
+        const key: string = (o as any).checkout_session_id ?? o.id;
+        if (!sessionMap.has(key)) { sessionMap.set(key, []); sessionOrder.push(key); }
+        sessionMap.get(key)!.push(o);
+      }
 
-        // Quantity label as packs when bundle_size > 1 (piece-based pricing).
-        const listingOpts = o.listing?.pricing_options || [];
-        const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
-        const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
-        const unit = o.quantity_unit || "kg";
-        const qtyLabel = unit === "piece" && bundle > 1
-          ? `${Math.round(Number(o.quantity) / bundle)} pack`
-          : `${o.quantity}${unit}`;
+      active.innerHTML = sessionOrder.map(key => {
+        const group = sessionMap.get(key)!;
+        const first = group[0];
+        const seller = first.listing?.seller?.name || "Seller";
+        const isDelivery = first.order_type === "delivery";
 
-        const stepperHtml = terminated
-          ? `<div class="v2-stepper">
-              <div class="dot done">✓</div>
-              <div class="line done" style="background:#FCA5A5;"></div>
-              <div class="dot" style="background:#DC2626;color:#fff;">✕</div>
-            </div>
-            <div class="v2-stepper-labels" style="justify-content:space-between;">
-              <span>Placed</span>
-              <span style="color:#DC2626;font-weight:700;">${o.status === "declined" ? "Declined" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
-            </div>`
-          : `<div class="v2-stepper">
-              ${labels.map((_, i) => `
-                <div class="dot${i <= stepIdx ? ' done' : ''}">${i <= stepIdx ? '✓' : i + 1}</div>
-                ${i < labels.length - 1 ? `<div class="line${i < stepIdx ? ' done' : ''}"></div>` : ''}
-              `).join("")}
-            </div>
-            <div class="v2-stepper-labels">
-              ${labels.map(l => `<span>${l}</span>`).join("")}
-            </div>`;
-
-        const refundNote = terminated && paidAmt > 0
-          ? `<div style="margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:6px;font:600 11px Inter;color:#7C3AED;">⏱ Refund ₹${paidAmt.toLocaleString("en-IN")} within 7 working days via UPI</div>`
-          : "";
-
-        const cardStyle = terminated
-          ? `background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius-lg);padding:16px;margin-bottom:12px;width:100%;box-sizing:border-box;`
-          : ``;
-
-        return terminated
-          ? `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardStyle}">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined by seller" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
-                ${statusToTag(o.status, o)}
+        if (group.length === 1) {
+          // Single order — existing card UI unchanged
+          const o = first;
+          const terminated = isTerminated(o.status);
+          const orderType = isDelivery ? "delivery" : "pickup";
+          const { labels, step: stepIdx } = resolveBuyerStepper(o, orderType);
+          const paidAmt = Number(o.paid_amount) || 0;
+          const listingOpts = o.listing?.pricing_options || [];
+          const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
+          const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+          const unit = o.quantity_unit || "kg";
+          const qtyLabel = unit === "piece" && bundle > 1
+            ? `${Math.round(Number(o.quantity) / bundle)} pack`
+            : `${o.quantity}${unit}`;
+          const stepperHtml = terminated
+            ? `<div class="v2-stepper">
+                <div class="dot done">✓</div>
+                <div class="line done" style="background:#FCA5A5;"></div>
+                <div class="dot" style="background:#DC2626;color:#fff;">✕</div>
               </div>
-              <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,6).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
-              ${stepperHtml}
-              ${refundNote}
-            </a>`
-          : `<a href="/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
-              <div class="label">Live · ${statusToTag(o.status, o)}</div>
-              <h3>${escapeHtml(seller)}</h3>
-              <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
-              ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
-              ${stepperHtml}
-            </a>`;
+              <div class="v2-stepper-labels" style="justify-content:space-between;">
+                <span>Placed</span>
+                <span style="color:#DC2626;font-weight:700;">${o.status === "declined" ? "Declined" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
+              </div>`
+            : `<div class="v2-stepper">
+                ${labels.map((_, i) => `
+                  <div class="dot${i <= stepIdx ? ' done' : ''}">${i <= stepIdx ? '✓' : i + 1}</div>
+                  ${i < labels.length - 1 ? `<div class="line${i < stepIdx ? ' done' : ''}"></div>` : ''}
+                `).join("")}
+              </div>
+              <div class="v2-stepper-labels">
+                ${labels.map(l => `<span>${l}</span>`).join("")}
+              </div>`;
+          const refundNote = terminated && paidAmt > 0
+            ? `<div style="margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:6px;font:600 11px Inter;color:#7C3AED;">⏱ Refund ₹${paidAmt.toLocaleString("en-IN")} within 7 working days via UPI</div>`
+            : "";
+          const cardStyle = terminated
+            ? `background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius-lg);padding:16px;margin-bottom:12px;width:100%;box-sizing:border-box;`
+            : ``;
+          return terminated
+            ? `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardStyle}">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined by seller" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
+                  ${statusToTag(o.status, o)}
+                </div>
+                <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
+                <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,6).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
+                ${stepperHtml}
+                ${refundNote}
+              </a>`
+            : `<a href="/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
+                <div class="label">Live · ${statusToTag(o.status, o)}</div>
+                <h3>${escapeHtml(seller)}</h3>
+                <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
+                ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
+                ${stepperHtml}
+              </a>`;
+        }
+
+        // Multi-item session — one grouped card
+        if (group.length === 0) return "";
+        const allTerminated = group.every(o => isTerminated(o.status));
+        const anyActive = group.some(o => isActive(o.status));
+        // Use lowest-progress status — unknown statuses treated as last (no override)
+        const statusPriority = ["declined","cancelled","refunded","pending_payment","pending","pre_order","scheduled","confirmed","paid","ready_for_pickup","out_for_delivery","picked_up","completed"];
+        const worstStatus = group.reduce((worst, o) => {
+          const oi = statusPriority.indexOf(o.status);
+          const wi = statusPriority.indexOf(worst);
+          const oIdx = oi === -1 ? statusPriority.length : oi;
+          const wIdx = wi === -1 ? statusPriority.length : wi;
+          return oIdx < wIdx ? o.status : worst;
+        }, group[0].status);
+        // Delivery fee is on first order only per session — avoid double-counting
+        const sessionTotal = group.reduce((s, o) => s + Number(o.total_price || 0), 0)
+          + Number(group[0].delivery_fee || 0);
+        const lineItems = group.map(o => {
+          const listingOpts = o.listing?.pricing_options || [];
+          const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
+          const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+          const unit = o.quantity_unit || "kg";
+          const qtyLabel = unit === "piece" && bundle > 1
+            ? `${Math.round(Number(o.quantity) / bundle)} pack`
+            : `${o.quantity}${unit}`;
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--v2-border);">
+            <span style="font:500 13px Inter;color:var(--v2-ink);">🐟 ${escapeHtml(o.species || "Fish")} · ${qtyLabel}</span>
+            <span style="font:700 13px Inter;color:var(--v2-ink);">₹${Number(o.total_price).toLocaleString("en-IN")}</span>
+          </div>`;
+        }).join("");
+        // Link to first order — buyer can navigate between them from there
+        const href = `/track/${first.id}`;
+        const cardBg = allTerminated
+          ? `background:var(--v2-bg);border:1.5px solid #FCA5A5;`
+          : anyActive
+          ? `background:linear-gradient(135deg,#E6F0FF,#DBEAFE);border:1px solid #93C5FD;`
+          : `background:var(--v2-bg);border:1px solid var(--v2-border);`;
+        return `<a href="${href}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardBg}border-radius:var(--v2-radius-lg);padding:16px;margin-bottom:12px;">
+          <div style="font:700 9px Inter;color:var(--v2-brand);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Combined order · ${group.length} items</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div>
+              <div style="font:800 15px Inter;color:var(--v2-ink);">${escapeHtml(seller)}</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${fmtDate(first.created_at)} · ${isDelivery ? "🚲 Delivery" : "Pickup"}</div>
+            </div>
+            ${statusToTag(worstStatus)}
+          </div>
+          <div style="margin:8px 0;">${lineItems}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <span style="font:400 11px Inter;color:var(--v2-ink-3);">Total</span>
+            <span style="font:800 15px Inter;color:var(--v2-ink);">₹${sessionTotal.toLocaleString("en-IN")}</span>
+          </div>
+        </a>`;
       }).join("")
       + (totalPages > 1 ? `
         <div class="v2-pagination" style="padding:12px 0;">
@@ -318,8 +380,11 @@ import Toast from "../components/v2/atoms/Toast.astro";
           <button class="v2-pg-btn" id="v2-track-next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
         </div>` : '');
 
-      document.getElementById("v2-track-prev")?.addEventListener("click", () => { if (currentPage > 1) { currentPage--; load(); } });
-      document.getElementById("v2-track-next")?.addEventListener("click", () => { if (currentPage < totalPages) { currentPage++; load(); } });
+      // Use onclick to prevent duplicate listeners accumulating across polling cycles
+      const prevEl = document.getElementById("v2-track-prev");
+      const nextEl = document.getElementById("v2-track-next");
+      if (prevEl) prevEl.onclick = () => { if (currentPage > 1) { currentPage--; load(); } };
+      if (nextEl) nextEl.onclick = () => { if (currentPage < totalPages) { currentPage++; load(); } };
 
     } catch (err) {
       console.error("track: load failed", err);
