@@ -15,7 +15,7 @@ async function run() {
     await page.pdf({
       path: path.resolve(__dirname, '../public/flyer.pdf'),
       printBackground: true,
-      format: 'A4',
+      format: 'A5',
     });
     await page.close();
     console.log('✓ flyer.pdf generated');
