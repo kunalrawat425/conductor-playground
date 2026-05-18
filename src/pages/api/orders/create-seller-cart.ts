@@ -112,6 +112,14 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Pay-first: same-day and scheduled slots both start as pending_payment until proof is uploaded.
     const status: "pending_payment" = "pending_payment";
 
+    // Fetch emails in parallel, non-blocking — resolved lazily when emails fire
+    const buyerEmailPromise = buyer_id
+      ? supabase.from("buyers").select("email").eq("id", buyer_id).single().then(r => r.data?.email || null).catch(() => null)
+      : Promise.resolve(null);
+    const sellerEmailPromise = clientSellerId
+      ? supabase.from("sellers").select("email").eq("id", clientSellerId).single().then(r => r.data?.email || null).catch(() => null)
+      : Promise.resolve(null);
+
     const orders: unknown[] = [];
 
     for (const { line } of resolved) {
@@ -184,9 +192,10 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
 
         if (resendApiKey && preOrder) {
-          try {
-            await sendCartOrderEmail(supabase, resendApiKey, {
-              order: preOrder,
+          const _po = preOrder;
+          Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) => {
+            sendCartOrderEmail(resendApiKey, {
+              order: _po,
               species: line.species,
               quantity: line.quantity,
               quantity_unit: line.quantity_unit,
@@ -194,13 +203,14 @@ export const POST: APIRoute = async ({ request, url }) => {
               delivery_fee: 0,
               statusLabel: "Pre-order placed (payment pending)",
               scheduled_for,
-              buyer_id,
               buyer_phone,
-              seller_id: line.seller_id,
+              buyerEmail: bEmail,
+              sellerEmail: sEmail,
+              isPreorder: true,
+              preorderMin: line.preorder_price_min,
+              preorderMax: line.preorder_price_max,
             });
-          } catch {
-            /* non-blocking */
-          }
+          }).catch(() => {});
         }
         continue;
       }
@@ -276,9 +286,10 @@ export const POST: APIRoute = async ({ request, url }) => {
           scheduled_for
             ? "Pickup scheduled — upload payment proof 🗓️"
             : "Order placed — upload payment proof";
-        try {
-          await sendCartOrderEmail(supabase, resendApiKey, {
-            order: fetchedOrder,
+        const _fo = fetchedOrder;
+        Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) => {
+          sendCartOrderEmail(resendApiKey, {
+            order: _fo,
             species: line.species,
             quantity: line.quantity,
             quantity_unit: line.quantity_unit,
@@ -286,13 +297,11 @@ export const POST: APIRoute = async ({ request, url }) => {
             delivery_fee,
             statusLabel: stLabel,
             scheduled_for,
-            buyer_id,
+            buyerEmail: bEmail,
             buyer_phone,
-            seller_id: line.seller_id,
+            sellerEmail: sEmail,
           });
-        } catch {
-          /* non-blocking */
-        }
+        }).catch(() => {});
       }
     }
 
@@ -305,7 +314,6 @@ export const POST: APIRoute = async ({ request, url }) => {
 };
 
 async function sendCartOrderEmail(
-  supabase: SupabaseClient,
   apiKey: string,
   args: {
     order: { id?: string };
@@ -316,14 +324,17 @@ async function sendCartOrderEmail(
     delivery_fee: number;
     statusLabel: string;
     scheduled_for: string | null | undefined;
-    buyer_id: string | null | undefined;
+    buyerEmail: string | null | undefined;
     buyer_phone: string;
-    seller_id: string;
+    sellerEmail: string | null | undefined;
+    isPreorder?: boolean;
+    preorderMin?: number | null;
+    preorderMax?: number | null;
   }
 ) {
   const {
     species, quantity, quantity_unit, total_price, delivery_fee,
-    statusLabel, scheduled_for, buyer_id, buyer_phone, seller_id,
+    statusLabel, scheduled_for, buyerEmail, sellerEmail, buyer_phone,
   } = args;
   const emailArgs = {
     statusLabel,
@@ -334,34 +345,37 @@ async function sendCartOrderEmail(
     deliveryFee: delivery_fee,
     orderId: args.order?.id,
     scheduled_for: scheduled_for || null,
+    isPreorder: args.isPreorder,
+    preorderMin: args.preorderMin,
+    preorderMax: args.preorderMax,
+  };
+  const emailArgsSeller = {
+    ...emailArgs,
+    buyerPhone: buyer_phone,
   };
   const speciesForEmail = capitalizeFishName(species || "Fish");
-  if (buyer_id) {
-    const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
-    if (buyer?.email) {
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: "Relifish <noreply@relifish.store>",
-          to: buyer.email,
-          subject: `${statusLabel} — ${speciesForEmail}`,
-          html: orderEmailBuyer(emailArgs),
-        }),
-      });
-    }
-  }
-  const { data: sellerData } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
-  if (sellerData?.email) {
-    await fetch("https://api.resend.com/emails", {
+  if (buyerEmail) {
+    fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: "Relifish <noreply@relifish.store>",
-        to: sellerData.email,
-        subject: `New Order: ${speciesForEmail}`,
-        html: orderEmailSeller(emailArgs),
+        to: buyerEmail,
+        subject: `${statusLabel} — ${speciesForEmail}`,
+        html: orderEmailBuyer(emailArgs),
       }),
-    });
+    }).catch(() => {});
+  }
+  if (sellerEmail) {
+    fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "Relifish <noreply@relifish.store>",
+        to: sellerEmail,
+        subject: `New Order: ${speciesForEmail}`,
+        html: orderEmailSeller(emailArgsSeller),
+      }),
+    }).catch(() => {});
   }
 }
