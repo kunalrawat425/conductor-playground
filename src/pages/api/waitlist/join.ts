@@ -105,7 +105,7 @@ export const POST: APIRoute = async ({ request }) => {
               subject: "You're on the Relifish waitlist!",
               html: `
                 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:500px;margin:0 auto;padding:24px;">
-                  <div style="margin:0 0 16px;"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" style="width:112px;height:112px;object-fit:cover;" /></div>
+                  <div style="margin:0 0 16px;"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:40px;width:auto;display:block;" /></div>
                   <h1 style="font-size:24px;margin:0 0 16px;">Welcome to Relifish!</h1>
                   <p style="font-size:16px;color:#333;line-height:1.6;margin:0 0 16px;">
                     You're officially on the waitlist. We're bringing the freshest fish from local sellers to <strong>${area}</strong>.
