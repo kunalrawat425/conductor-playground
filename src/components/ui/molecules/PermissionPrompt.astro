@@ -1,0 +1,51 @@
+---
+interface Props {
+  variant: "location" | "notifications";
+  benefits?: string[];
+  onAllowAction?: string; // optional inline JS to run
+}
+const { variant, benefits, onAllowAction } = Astro.props;
+
+const presets = {
+  location: {
+    icon: "📍",
+    color: "brand",
+    title: "Find sellers near you",
+    desc: "Allow location to see fresh fish from sellers in your area.",
+    benefits: ["Show sellers within 5 km", "Auto-fill delivery address", "Get accurate delivery time"],
+    allowText: "Allow location",
+    skipText: "Enter manually",
+  },
+  notifications: {
+    icon: "🔔",
+    color: "orange",
+    title: "Get notified about your fish",
+    desc: "We'll only ping you for things that matter.",
+    benefits: ["Order confirmation by seller", "Pre-order morning updates", "Price drops on favorite species"],
+    allowText: "Enable notifications",
+    skipText: "Maybe later",
+  },
+};
+const p = presets[variant];
+const finalBenefits = benefits || p.benefits;
+const allowBg = p.color === "orange" ? "var(--v2-orange)" : "var(--v2-brand)";
+const iconBg = p.color === "orange" ? "#FFF7ED" : "var(--v2-brand-l)";
+const iconColor = p.color === "orange" ? "var(--v2-orange)" : "var(--v2-brand)";
+---
+<div class="v2-prompt">
+  <div class="v2-prompt-icon" style={`background:${iconBg};color:${iconColor};`}>{p.icon}</div>
+  <h3 class="v2-prompt-title">{p.title}</h3>
+  <p class="v2-prompt-desc">{p.desc}</p>
+  <ul class="v2-prompt-benefits">
+    {finalBenefits.map((b) => <li>{b}</li>)}
+  </ul>
+  <div class="v2-prompt-actions">
+    <button
+      class="v2-btn v2-btn-md"
+      style={`background:${allowBg};color:#fff;width:100%;`}
+      data-permission-allow={variant}
+      data-onclick-action={onAllowAction || ""}
+    >{p.allowText}</button>
+    <button class="v2-btn v2-btn-ghost v2-btn-md" style="width:100%;" data-permission-skip={variant}>{p.skipText}</button>
+  </div>
+</div>

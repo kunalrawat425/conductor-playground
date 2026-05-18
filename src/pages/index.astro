@@ -187,7 +187,7 @@ const SITE = "https://www.relifish.store";
 
     /* ── Screen styles ── */
     /* all screens share base bg */
-    .ds-light{background:#F7F8FC;height:100%}
+    .ds-light{background:#F7F8FC;height:100%;position:relative}
     .ds-dark{background:#050D1A;height:100%}
 
     /* screen header */
@@ -265,7 +265,8 @@ const SITE = "https://www.relifish.store";
     .d5-app.tap{border-color:var(--blue);background:#EFF6FF;animation:d1tap .4s ease}
     .d5-app-icon{font-size:18px}
     .d5-app-name{font:600 7px Inter;color:#374151}
-    .d5-pay-btn{margin:0 10px;background:var(--blue);border-radius:9px;padding:9px;text-align:center;font:700 10px Inter;color:#fff}
+    .d5-pay-btn{background:var(--blue);border-radius:9px;padding:9px;text-align:center;font:700 10px Inter;color:#fff}
+    .d5-pay-sticky{position:absolute;bottom:0;left:0;right:0;padding:8px 10px 10px;background:#F7F8FC}
 
     /* screen 6 — confirmed */
     .d6-center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:16px;text-align:center;gap:8px}
@@ -433,7 +434,8 @@ const SITE = "https://www.relifish.store";
     .s3-tot{padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
     .s3-tot-l{font:700 10px Inter;color:#0A0F1E}
     .s3-tot-r{font:600 9px Inter;color:#2563EB}
-    .s3-pay{margin:0 10px;background:#2563EB;border-radius:10px;padding:10px;text-align:center;font:700 10px Inter;color:#fff;display:flex;align-items:center;justify-content:center;gap:5px;animation:pulsebtn 2s infinite}
+    .s3-pay{background:#2563EB;border-radius:10px;padding:10px;text-align:center;font:700 10px Inter;color:#fff;display:flex;align-items:center;justify-content:center;gap:5px;animation:pulsebtn 2s infinite}
+    .s3-pay-sticky{position:absolute;bottom:0;left:0;right:0;padding:8px 10px 10px;background:#fff}
     @keyframes pulsebtn{0%,100%{box-shadow:0 4px 14px rgba(37,99,235,.4)}50%{box-shadow:0 4px 28px rgba(37,99,235,.7)}}
     .s3-nt{text-align:center;font:400 8px Inter;color:#9CA3AF;padding:6px}
 
@@ -624,6 +626,21 @@ const SITE = "https://www.relifish.store";
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "wryvhcf3k8");
   </script>
+  <!-- Facebook Pixel -->
+  <script is:inline>
+    !function(f,b,e,v,n,t,s){
+      if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window,document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init','1197248829088195');
+    fbq('track','PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1197248829088195&ev=PageView&noscript=1"/></noscript>
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
@@ -634,7 +651,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- NAV — no seller links -->
 <nav class="nav" id="nav">
   <div class="nav-inner">
-    <a href="/" class="logo">Reli<span>fish</span></a>
+    <a href="/" class="logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:32px;width:auto;display:block;filter:brightness(0) invert(1);" /></a>
     <div class="nav-links">
       <a href="#how" class="nl">How it works</a>
       <a href="#fish" class="nl">Browse fish</a>
@@ -799,8 +816,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <!-- Screen 0: Welcome -->
           <div class="demo-screen active" data-screen="0">
             <div class="ds-dark d0-center">
-              <div style="font-size:48px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.6))">🐟</div>
-              <div class="d0-logo">Reli<span>fish</span></div>
+              <div style="filter:drop-shadow(0 8px 16px rgba(0,0,0,.6))"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="Relifish" style="width:64px;height:64px;object-fit:contain;" /></div>
+              <div class="d0-logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:22px;width:auto;display:block;margin:0 auto;" /></div>
               <div class="d0-tagline">Mumbai's fresh fish marketplace.<br/>Pre-order tonight, collect morning-fresh.</div>
               <div class="d0-btn">Get started →</div>
             </div>
@@ -841,14 +858,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div class="demo-screen" data-screen="2">
             <div class="ds-light">
               <div class="dh">
-                <div class="dh-title">🐟 Relifish</div>
+                <div class="dh-title"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:18px;width:auto;vertical-align:middle;" /></div>
                 <div class="dh-sub">📍 Lokhandwala, Andheri West</div>
                 <div class="dh-search">🔍&nbsp;Search fish or sellers...</div>
               </div>
               <div class="d2-tabs"><div class="d2t on">🌙 Pre-order</div><div class="d2t">⚡ Same Day</div></div>
               <div class="d2-list">
                 <div class="d2-card tap">
-                  <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)">🐟<div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="" style="width:28px;height:28px;object-fit:contain;" /><div class="d2-badge op">🟢 Open</div></div>
                   <div class="d2-info"><div class="d2-name">Versova Fresh Fish Co.</div><div class="d2-sub">Pomfret · Surmai · Prawns · +4 · Cutoff 11 PM</div></div>
                 </div>
                 <div class="d2-card">
@@ -939,8 +956,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   <div class="d5-app-name">UPI</div>
                 </div>
               </div>
-              <div class="d5-pay-btn">Pay via UPI →</div>
-              <div style="text-align:center;font:400 7px Inter;color:#9CA3AF;padding:5px">Direct to seller · No platform fee</div>
+              <div class="d5-pay-sticky">
+                <div class="d5-pay-btn">Pay via UPI →</div>
+                <div style="text-align:center;font:400 7px Inter;color:#9CA3AF;padding:4px 0 0">Direct to seller · No platform fee</div>
+              </div>
             </div>
           </div>
 
@@ -992,7 +1011,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <!-- Screen 8: Delivered -->
           <div class="demo-screen" data-screen="8">
             <div class="ds-light d8-center">
-              <div class="d8-icon">🐟</div>
+              <div class="d8-icon"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="" style="width:48px;height:48px;object-fit:contain;" /></div>
               <div class="d8-title">Fresh fish delivered!</div>
               <div class="d8-sub">Your Pomfret and Bangda from Versova Fresh Fish Co. Morning-fresh, straight from the catch.</div>
               <div class="d8-rate">
@@ -1099,7 +1118,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <div class="s2-list">
               <div class="s2-card">
-                <div class="s2-cover g">🐟<div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-cover g"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="" style="width:32px;height:32px;object-fit:contain;" /><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Versova Fresh Fish Co.</div>
                   <div class="s2-sub">Cutoff 11 PM · 0.8 km away</div>
@@ -1140,7 +1159,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <div class="s3-ttl">Confirm your order</div>
             </div>
             <div class="s3-seller">
-              <div class="s3-s-icon">🐟</div>
+              <div class="s3-s-icon"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="" style="width:36px;height:36px;object-fit:contain;" /></div>
               <div><div class="s3-s-name">Versova Fresh Fish Co.</div><div class="s3-s-sub">🌙 Pre-order · Pickup 7–9 AM</div></div>
             </div>
             <div class="s3-items">
@@ -1157,8 +1176,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="s3-tot-r">Login to see →</div>
               </div>
             </div>
-            <div style="padding:0 10px"><div class="s3-pay tap-zone">⚡ Login & Pay via UPI →</div></div>
-            <div class="s3-nt">UPI direct to seller · No platform fee</div>
+            <div class="s3-pay-sticky">
+              <div class="s3-pay tap-zone">⚡ Login & Pay via UPI →</div>
+              <div class="s3-nt" style="padding:4px 0 0">UPI direct to seller · No platform fee</div>
+            </div>
           </div>
         </div>
         <h3>Pay directly</h3>
@@ -1428,7 +1449,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </a>
       <a href="/shop" class="detail-link">
         <div class="dl-inner">
-          <div class="dl-icon buy">🐟</div>
+          <div class="dl-icon buy"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="" style="width:32px;height:32px;object-fit:contain;" /></div>
           <div>
             <div class="dl-title">Browse sellers now</div>
             <div class="dl-sub">See which sellers are open tonight near you. Login to view prices and pre-order.</div>
@@ -1475,7 +1496,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="ft">
     <div class="ft-top">
       <div>
-        <div class="ft-brand">Reli<span>fish</span></div>
+        <div class="ft-brand"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:36px;width:auto;display:block;filter:brightness(0) invert(1);" /></div>
         <div class="ft-desc">Mumbai's fresh fish marketplace. Direct from local sellers — no middleman, no cold storage.</div>
       </div>
       <div class="ft-col">
@@ -1500,7 +1521,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
     </div>
     <div class="ft-bottom">
-      <div>© 2026 Relifish. Made with 🐟 in Mumbai.</div>
+      <div>© 2026 Relifish. Made in Mumbai.</div>
       <div>Fresh fish · Direct source · No middleman</div>
     </div>
   </div>
@@ -1550,7 +1571,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div class="chat-panel" id="chat-panel" role="dialog" aria-label="Relifish AI assistant">
   <div class="chat-header">
     <div class="chat-header-left">
-      <div class="chat-avatar">🐟</div>
+      <div class="chat-avatar"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="" style="width:28px;height:28px;object-fit:contain;border-radius:50%;" /></div>
       <div>
         <div class="chat-title">Relifish Assistant</div>
         <div class="chat-subtitle">Ask anything about fresh fish</div>

@@ -1,0 +1,48 @@
+---
+interface Props {
+  id?: string;
+  name?: string;
+  label?: string;
+  helper?: string;
+  error?: string;
+  value?: string;
+  required?: boolean;
+  disabled?: boolean;
+}
+const {
+  id = "phone",
+  name = "phone",
+  label = "Phone number",
+  helper,
+  error,
+  value = "",
+  required = true,
+  disabled = false,
+} = Astro.props;
+---
+<div class="v2-field">
+  {label && <label for={id} class="v2-field-label">{label}{required && <span class="v2-field-req">*</span>}</label>}
+  <div class:list={["v2-input-wrap", "v2-input-with-prefix", error && "v2-input-error"]}>
+    <span class="v2-input-prefix">+91</span>
+    <input
+      id={id}
+      name={name}
+      type="tel"
+      inputmode="numeric"
+      pattern="[0-9]{10}"
+      maxlength={10}
+      autocomplete="tel-national"
+      placeholder="98706 19974"
+      value={value}
+      required={required}
+      disabled={disabled}
+      class="v2-input"
+      aria-invalid={!!error}
+    />
+  </div>
+  {(error || helper) && (
+    <div class:list={["v2-field-helper", error && "v2-helper-error"]}>
+      {error || helper}
+    </div>
+  )}
+</div>

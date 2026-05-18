@@ -1,0 +1,36 @@
+---
+import type { ButtonProps } from "../../../types/components";
+interface Props extends ButtonProps {}
+const {
+  variant = "primary",
+  size = "md",
+  loading = false,
+  disabled = false,
+  fullWidth = false,
+  iconLeft,
+  iconRight,
+  href,
+} = Astro.props;
+const Tag = href ? "a" : "button";
+const classes = [
+  "v2-btn",
+  `v2-btn-${variant}`,
+  `v2-btn-${size}`,
+  fullWidth && "v2-btn-full",
+  loading && "v2-btn-loading",
+].filter(Boolean).join(" ");
+---
+<Tag
+  class={classes}
+  href={href}
+  disabled={disabled || loading}
+  aria-disabled={disabled || loading}
+  aria-busy={loading}
+>
+  {loading && <span class="v2-btn-spinner" aria-hidden="true"></span>}
+  {iconLeft && <span class="v2-btn-icon" aria-hidden="true">{iconLeft}</span>}
+  <slot />
+  {iconRight && <span class="v2-btn-icon" aria-hidden="true">{iconRight}</span>}
+</Tag>
+
+<!-- styles in s../styles/components.css -->

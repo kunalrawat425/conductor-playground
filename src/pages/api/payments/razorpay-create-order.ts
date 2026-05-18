@@ -5,7 +5,7 @@ export const prerender = false;
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
-const RAZORPAY_KEY_ID = import.meta.env.RAZORPAY_KEY_ID || "";
+const RAZORPAY_KEY_ID = import.meta.env.PUBLIC_RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = import.meta.env.RAZORPAY_KEY_SECRET || "";
 
 export const POST: APIRoute = async ({ request }) => {
