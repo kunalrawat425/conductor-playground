@@ -8,6 +8,7 @@ import {
   type ListingPricingSource,
 } from "../listing-pricing";
 
+
 /** Resolved line that will use create_order_atomic / fallback insert (in-stock or low-stock path). */
 export type StandardOrderLinePayload = {
   kind: "standard";
@@ -33,6 +34,8 @@ export type OosPreorderLinePayload = {
   pricing_option_id: string | null;
   pricing_label: string | null;
   pre_order_reason: "unavailable" | "out_of_stock";
+  preorder_price_min?: number | null;
+  preorder_price_max?: number | null;
 };
 
 export type ResolveListingOrderLineResult =
@@ -72,9 +75,33 @@ export async function resolveListingOrderLine(
     return { ok: false, status: 404, error: "Listing not found" };
   }
 
-  const chosen = getListingOptionById(listing as ListingPricingSource, clientPricingOptionId);
+  let chosen = getListingOptionById(listing as ListingPricingSource, clientPricingOptionId);
   if (!chosen) {
     return { ok: false, status: 400, error: "Invalid price option for this listing" };
+  }
+  // If the resolved option is a bundle option whose bundle_size doesn't divide the
+  // requested quantity, try to find a better-matching option by quantity divisibility.
+  // This handles stale cart entries that stored "default" before the opt_N fix.
+  if (!isPerBaseUnitPricing(chosen)) {
+    const rawQty = typeof input.rawQuantity === "number" ? input.rawQuantity : parseFloat(String(input.rawQuantity));
+    if (Number.isFinite(rawQty) && rawQty > 0) {
+      const qFloor = Math.floor(rawQty);
+      const bAmt = optionBundleAmount(chosen);
+      const fails = chosen.unit === "kg"
+        ? Math.round(rawQty * 100) % Math.round(bAmt * 100) !== 0
+        : qFloor % bAmt !== 0;
+      if (fails) {
+        const allOpts = getListingPriceOptions(listing as ListingPricingSource);
+        const better = allOpts.find((o) => {
+          if (isPerBaseUnitPricing(o)) return false;
+          const b = optionBundleAmount(o);
+          return o.unit === "kg"
+            ? Math.round(rawQty * 100) % Math.round(b * 100) === 0
+            : qFloor % b === 0;
+        });
+        if (better) chosen = better;
+      }
+    }
   }
   const orderPricingOptionId = chosen.id;
   const orderPricingLabel = chosen.label;
@@ -179,8 +206,10 @@ export async function resolveListingOrderLine(
         };
       }
     }
-    const total_price = linePrice * bundleCount;
     const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
+    // For pre-orders, the backend should bill at the max estimated price (matches frontend logic)
+    const poPrice = chosen.preorder_price_max || chosen.preorder_price_min || chosen.price || 0;
+    const total_price = poPrice * bundleCount;
     return {
       ok: true,
       line: {
@@ -193,7 +222,11 @@ export async function resolveListingOrderLine(
         total_price,
         pricing_option_id: orderPricingOptionId,
         pricing_label: orderPricingLabel,
+        bundle_size: bundleAmount,
         pre_order_reason,
+        is_preorder_enabled: !!(listing as any).is_preorder_enabled,
+        preorder_price_min: chosen.preorder_price_min,
+        preorder_price_max: chosen.preorder_price_max,
       },
     };
   }
@@ -211,6 +244,7 @@ export async function resolveListingOrderLine(
       total_price,
       pricing_option_id: orderPricingOptionId,
       pricing_label: orderPricingLabel,
+      bundle_size: bundleAmount,
     },
   };
 }
