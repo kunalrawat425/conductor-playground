@@ -136,6 +136,31 @@ import Toast from "../components/ui/atoms/Toast.astro";
     try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
   }
 
+  function wasPreorderWindow(createdAt: string, seller: any): boolean {
+    if (!seller) return false;
+    const ist = new Date(new Date(createdAt).getTime() + 5.5 * 60 * 60 * 1000);
+    const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][ist.getUTCDay()];
+    const timeMin = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+    function toMin(t: string | null | undefined): number | null {
+      if (!t) return null;
+      const [h, m] = String(t).split(':').map(Number);
+      return h * 60 + (m || 0);
+    }
+    const preorderDays: string[] = seller.preorder_days || [];
+    const isPreorderDay = preorderDays.length > 0
+      ? preorderDays.includes(dayName)
+      : !!seller.accepts_preorder;
+    if (!isPreorderDay) return false;
+    const openMin = toMin(seller.opens_at);
+    const closeMin = toMin(seller.closes_at);
+    if (openMin !== null && closeMin !== null) {
+      return !(timeMin >= openMin && timeMin < closeMin);
+    }
+    const cutoffMin = toMin(seller.preorder_cutoff_time);
+    if (cutoffMin !== null) return timeMin >= cutoffMin;
+    return false;
+  }
+
   // Immediately hide spinner and show guest if not logged in — don't wait for Supabase
   (function earlyAuthCheck() {
     if (getBuyerPhone()) return;
@@ -231,7 +256,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
       const orFilter = buyerId ? `${phoneParts},buyer_id.eq.${buyerId}` : phoneParts;
       const { data: allOrders, count } = await supabase
         .from("orders")
-        .select("*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name))", { count: "exact" })
+        .select("*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name, opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, accepts_preorder))", { count: "exact" })
         .or(orFilter)
         .order("created_at", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
@@ -298,14 +323,18 @@ import Toast from "../components/ui/atoms/Toast.astro";
                 ${statusToTag(o.status, o)}
               </div>
               <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,6).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,8).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
               ${stepperHtml}
               ${refundNote}
             </a>`
           : `<a href="/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
-              <div class="label">Live · ${statusToTag(o.status, o)}</div>
+              <div class="label">
+                <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;${(o.is_preorder === true || o.status === "pre_order" || o.status === "payment_required") ? "background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;" : "background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;"}">${(o.is_preorder === true || o.status === "pre_order" || o.status === "payment_required") ? "Pre-order" : "Same-day"}</span>
+                <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;margin-left:4px;${isDelivery ? "background:#ecfeff;color:#0e7490;border:1px solid #a5f3fc;" : "background:#fffbeb;color:#b45309;border:1px solid #fde68a;"}">${isDelivery ? "Delivery" : "Pickup"}</span>
+                <span style="margin-left:4px;">${statusToTag(o.status, o)}</span>
+              </div>
               <h3>${escapeHtml(seller)}</h3>
-              <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
+              <div class="sub">Order #${o.id.slice(0, 8).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
               ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
               ${stepperHtml}
             </a>`;

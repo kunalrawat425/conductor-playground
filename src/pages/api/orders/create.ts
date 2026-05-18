@@ -277,10 +277,10 @@ export const POST: APIRoute = async ({ request, url }) => {
 
         // Send email for preorder path (was missing before)
         if (resendApiKey && preOrder) {
-          const isRealPreorder = !!(listing.is_preorder_enabled);
+          const isRealPreorder = preOrder.status === "pre_order";
           const poStatusLabel = isRealPreorder
             ? "Pre-order placed — catch reserved for tomorrow"
-            : "Order placed — upload payment proof";
+            : "Order placed — complete payment to confirm";
           const poEmailArgs = {
             statusLabel: poStatusLabel,
             species: species || "Fish",
@@ -348,6 +348,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // Pay-first: new orders are pending_payment until buyer uploads proof; seller confirms after verify.
     let status = "pending_payment";
+    let isPreorderBranch = false;
     let delivery_fee = 0;
     if (scheduled_for && !seller_id) {
       return new Response(JSON.stringify({ error: "Scheduled orders require a seller." }), { status: 400 });
@@ -424,7 +425,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
           // Pre-orders always require payment proof upload first.
           status = "pending_payment";
-        }
+          isPreorderBranch = true;        }
       }
 
       const minAmt = Number(seller?.min_order_amount) || 0;
@@ -501,6 +502,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
+            is_preorder: isPreorderBranch,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
             ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
@@ -522,6 +524,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
       }
       order = fetchedOrder;
+      // Patch is_preorder — RPC doesn't support it yet
+      if (isPreorderBranch) {
+        await supabase.from("orders").update({ is_preorder: true }).eq("id", orderId);
+        order = { ...order, is_preorder: true };
+      }
     }
 
     if (error) {
@@ -568,9 +575,11 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // Send emails non-blocking — fire and forget so order response is instant
     if (resendApiKey && order) {
-      const statusLabel =
-        status === "pre_order"
-          ? "Pre-order placed — upload payment proof"
+      const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
+      const statusLabel = isPreorderBranch
+        ? "Pre-order placed — catch reserved for tomorrow"
+        : RAZORPAY_ENABLED
+          ? "Order placed — complete payment to confirm"
           : "Order placed — upload payment proof";
       const emailArgs = {
         statusLabel,
@@ -581,10 +590,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         deliveryFee: delivery_fee,
         orderId: order.id,
         scheduled_for,
+        isPreorder: isPreorderBranch,
         buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
         cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
-        bundleSize: bundleAmount > 1 ? bundleAmount : null,
-        bundleCount: bundleAmount > 1 ? bundleCount : null,
+        bundleSize: typeof bundleAmount !== "undefined" && bundleAmount > 1 ? bundleAmount : null,
+        bundleCount: typeof bundleCount !== "undefined" && bundleAmount > 1 ? bundleCount : null,
         pricingLabel: orderPricingLabel || null,
       };
       const speciesForEmail = capitalizeFishName(species || "Fish");
