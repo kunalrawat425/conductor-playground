@@ -275,6 +275,50 @@ export const POST: APIRoute = async ({ request, url }) => {
           } catch (_) {}
         }
 
+        // Send email for preorder path (was missing before)
+        if (resendApiKey && preOrder) {
+          const isRealPreorder = !!(listing.is_preorder_enabled && scheduled_for);
+          const poStatusLabel = isRealPreorder
+            ? "Pre-order placed — catch reserved for tomorrow"
+            : "Order placed — upload payment proof";
+          const poEmailArgs = {
+            statusLabel: poStatusLabel,
+            species: species || "Fish",
+            quantity,
+            quantity_unit,
+            totalAmount: total_price,
+            deliveryFee: 0,
+            orderId: preOrder.id,
+            scheduled_for,
+            isPreorder: isRealPreorder,
+            preorderMin: chosen.preorder_price_min ?? null,
+            preorderMax: chosen.preorder_price_max ?? null,
+            bundleSize: bundleAmount > 1 ? bundleAmount : null,
+            bundleCount: bundleAmount > 1 ? bundleCount : null,
+            pricingLabel: orderPricingLabel || null,
+          };
+          if (buyer_id) {
+            supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: buyer }) => {
+              if (buyer?.email) {
+                fetch("https://api.resend.com/emails", {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+                  body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${poStatusLabel} — ${capitalizeFishName(species || "Fish")}`, html: orderEmailBuyer(poEmailArgs) }),
+                }).catch(() => {});
+              }
+            }).catch(() => {});
+          }
+          supabase.from("sellers").select("email").eq("id", listing.seller_id).single().then(({ data: sd }) => {
+            if (sd?.email) {
+              fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sd.email, subject: `New Order: ${capitalizeFishName(species || "Fish")}`, html: orderEmailSeller({ ...poEmailArgs, buyerPhone: buyer_phone }) }),
+              }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
+
         const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
         return new Response(JSON.stringify({ order: preOrder, pre_order_reason }), { status: 201 });
       }

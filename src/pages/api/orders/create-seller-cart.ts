@@ -201,12 +201,14 @@ export const POST: APIRoute = async ({ request, url }) => {
               quantity_unit: line.quantity_unit,
               total_price: line.total_price,
               delivery_fee: 0,
-              statusLabel: "Pre-order placed (payment pending)",
+              statusLabel: line.is_preorder_enabled && scheduled_for
+                ? "Pre-order placed — catch reserved for tomorrow"
+                : "Order placed — upload payment proof",
               scheduled_for,
               buyer_phone,
               buyerEmail: bEmail,
               sellerEmail: sEmail,
-              isPreorder: true,
+              isPreorder: !!(line.is_preorder_enabled && scheduled_for),
               preorderMin: line.preorder_price_min,
               preorderMax: line.preorder_price_max,
               bundleSize: (line as any).bundle_size || null,
