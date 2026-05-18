@@ -1,8 +1,8 @@
 ---
-import AppShellV2 from "../components/v2/AppShellV2.astro";
+import AppShell from "../components/ui/AppShell.astro";
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
-<AppShellV2
+<AppShell
   title={`Privacy Policy · ${brandName}`}
   description={`Privacy policy for ${brandName} — how we handle your data.`}
   header={{ variant: "page", title: "Privacy Policy", backHref: "/v2" }}
@@ -60,4 +60,4 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     .pp-content li { margin-bottom: 6px; }
     .pp-content a { color: var(--v2-brand); text-decoration: underline; }
   </style>
-</AppShellV2>
+</AppShell>

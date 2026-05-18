@@ -1,15 +1,15 @@
 ---
 export const prerender = false;
 
-import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import SellerHero from "../../components/v2/organisms/SellerHero.astro";
-import EmptyState from "../../components/v2/molecules/EmptyState.astro";
-import LoginSheet from "../../components/v2/organisms/LoginSheet.astro";
-import CheckoutSheet from "../../components/v2/organisms/CheckoutSheet.astro";
-import CartStackSheet from "../../components/v2/organisms/CartStackSheet.astro";
-import AddressPickerSheet from "../../components/v2/organisms/AddressPickerSheet.astro";
-import Toast from "../../components/v2/atoms/Toast.astro";
-import Modal from "../../components/v2/atoms/Modal.astro";
+import AppShell from "../../components/ui/AppShell.astro";
+import SellerHero from "../../components/ui/organisms/SellerHero.astro";
+import EmptyState from "../../components/ui/molecules/EmptyState.astro";
+import LoginSheet from "../../components/ui/organisms/LoginSheet.astro";
+import CheckoutSheet from "../../components/ui/organisms/CheckoutSheet.astro";
+import CartStackSheet from "../../components/ui/organisms/CartStackSheet.astro";
+import AddressPickerSheet from "../../components/ui/organisms/AddressPickerSheet.astro";
+import Toast from "../../components/ui/atoms/Toast.astro";
+import Modal from "../../components/ui/atoms/Modal.astro";
 import { getSellerById, getSellerListings, sellerNameToSlug } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
@@ -133,7 +133,7 @@ const tags = [
   // seller?.schedule_pickup_slots ? "Scheduled pickup" : null, // hidden for now
 ].filter(Boolean) as string[];
 ---
-<AppShellV2
+<AppShell
   title={`${sellerName} — Fresh Fish${sellerLocation ? ` in ${sellerLocation}` : ''} | Relifish`}
   description={(() => {
     const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
@@ -350,7 +350,7 @@ const tags = [
   )}
 
   <div id="v2-cart-bar-mount"></div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-menu-grid {

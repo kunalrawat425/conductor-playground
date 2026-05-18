@@ -101,7 +101,7 @@ export const GET: APIRoute = async ({ url }) => {
 
     const { data: order, error: orderErr } = await supabase
       .from("orders")
-      .select("listing_id, seller_id, payment_screenshot_urls")
+      .select("listing_id, payment_screenshot_urls")
       .eq("id", order_id)
       .maybeSingle();
 
@@ -124,8 +124,6 @@ export const GET: APIRoute = async ({ url }) => {
         .eq("id", resolvedOrder.listing_id)
         .maybeSingle();
       authorized = listing?.seller_id === seller_id;
-    } else if (resolvedOrder.seller_id) {
-      authorized = resolvedOrder.seller_id === seller_id;
     }
 
     if (!authorized) {

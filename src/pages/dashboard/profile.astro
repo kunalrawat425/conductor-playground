@@ -1,8 +1,8 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import Toast from "../../components/v2/atoms/Toast.astro";
-import Input from "../../components/v2/atoms/Input.astro";
+import AppShell from "../../components/ui/AppShell.astro";
+import Toast from "../../components/ui/atoms/Toast.astro";
+import Input from "../../components/ui/atoms/Input.astro";
 ---
 <style is:global>
   .v2-day-pill {
@@ -23,7 +23,7 @@ import Input from "../../components/v2/atoms/Input.astro";
   }
 </style>
 
-<AppShellV2
+<AppShell
   title="Profile · Seller Dashboard"
   description="Edit your seller profile"
   header={{ variant: "page", title: "My profile", backHref: "/dashboard/orders" }}
@@ -168,7 +168,7 @@ import Input from "../../components/v2/atoms/Input.astro";
       Log out
     </button>
   </form>
-</AppShellV2>
+</AppShell>
 
 <script>
   import { supabase } from "../../lib/supabase";
