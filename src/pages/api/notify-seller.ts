@@ -39,7 +39,17 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const kind = body.kind === "payment_proof" ? "payment_proof" : "new_order";
-    const { seller_id, species, quantity, quantity_unit, buyer_phone, scheduled_for, order_id_short, order_id } = body;
+    const {
+      seller_id,
+      species,
+      quantity,
+      quantity_unit,
+      buyer_phone,
+      scheduled_for,
+      placement_kind,
+      order_id_short,
+      order_id,
+    } = body;
 
     if (!seller_id) {
       return new Response(JSON.stringify({ error: "Missing seller_id" }), {
@@ -90,11 +100,12 @@ export const POST: APIRoute = async ({ request }) => {
         u === "piece" || u === "kg"
           ? priceUnitShortLabel(u as PriceUnit)
           : u;
-      const schedLabel = scheduled_for ? ` (Scheduled: ${fmtDateTimeFullIST(scheduled_for)})` : "";
+      const isPreorder = placement_kind === "preorder";
+      const schedLabel = scheduled_for ? ` (${fmtDateTimeFullIST(scheduled_for)})` : "";
       pushBody = species
-        ? `New${scheduled_for ? " scheduled" : ""} order: ${species} ${quantity || ""}${unitLabel}${schedLabel}`
-        : `You have a new${scheduled_for ? " scheduled" : ""} order${schedLabel}`;
-      title = scheduled_for ? "New Scheduled Order! 🗓️" : "New Order!";
+        ? `New${isPreorder ? " pre-order" : " order"}: ${species} ${quantity || ""}${unitLabel}${schedLabel}`
+        : `You have a new${isPreorder ? " pre-order" : " order"}${schedLabel}`;
+      title = isPreorder ? "New pre-order" : "New order";
     }
 
     let dashboardUrl = absoluteUrl("/dashboard/orders");

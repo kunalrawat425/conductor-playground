@@ -137,6 +137,8 @@ export interface Order {
   total_price: number;
   platform_fee: number;
   status: OrderStatus;
+  /** same_day = placed while seller open; preorder = placed in pre-order shopping window */
+  placement_kind?: "same_day" | "preorder" | null;
   order_type: OrderType;
   paid_amount: number | null;
   final_price: number | null;

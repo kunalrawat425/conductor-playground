@@ -1,16 +1,17 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
-import { capitalizeFishName, orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
-import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import {
-  getListingOptionById,
-  getListingPriceOptions,
-  optionBundleAmount,
-  isPerBaseUnitPricing,
-  minimumRequiredBuyerDailyCap,
-  type ListingPricingSource,
-} from "../../../lib/listing-pricing";
+  capitalizeFishName,
+  orderEmailBuyer,
+  orderEmailSeller,
+  type OrderEmailArgs,
+} from "../../../lib/email-templates";
+import { getListingOptionById, type ListingPricingSource } from "../../../lib/listing-pricing";
+import type { PlacementKind } from "../../../lib/order-timing";
+import { classifyPlacementAtOrderTime, closedSellerMessage } from "../../../lib/order-timing";
+import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
+import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 
 export const prerender = false;
 
@@ -18,25 +19,68 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
-function isSellerCurrentlyOpen(opensAt: string | null, closesAt: string | null): boolean {
-  if (!opensAt || !closesAt) return true;
-  // Use IST (UTC+5:30) — Vercel servers run UTC
-  const now = new Date(Date.now() + 5.5 * 3600 * 1000);
-  const current = now.getUTCHours() * 60 + now.getUTCMinutes();
-  const [oh, om] = opensAt.split(":").map(Number);
-  const [ch, cm] = closesAt.split(":").map(Number);
-  const open = oh * 60 + (om || 0);
-  const close = ch * 60 + (cm || 0);
-  if (close > open) return current >= open && current < close;
-  return current >= open || current < close;
+async function patchPlacementKind(
+  supabase: ReturnType<typeof createClient>,
+  orderId: string,
+  placement_kind: PlacementKind
+) {
+  await supabase.from("orders").update({ placement_kind }).eq("id", orderId);
+}
+
+async function sendOrderEmails(
+  supabase: ReturnType<typeof createClient>,
+  args: {
+    placement_kind: PlacementKind;
+    species: string;
+    emailArgs: OrderEmailArgs;
+    buyer_id?: string | null;
+    seller_id: string | null;
+  }
+) {
+  if (!resendApiKey) return;
+  const { placement_kind, species, emailArgs, buyer_id, seller_id } = args;
+  const speciesForEmail = capitalizeFishName(species);
+  const subjectPrefix =
+    placement_kind === "preorder" ? "Pre-order placed" : emailArgs.statusLabel;
+
+  if (buyer_id) {
+    const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
+    if (buyer?.email) {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Relifish <noreply@relifish.store>",
+          to: buyer.email,
+          subject: `${subjectPrefix} — ${speciesForEmail}`,
+          html: orderEmailBuyer(emailArgs),
+        }),
+      });
+    }
+  }
+  if (seller_id) {
+    const { data: sellerData } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
+    if (sellerData?.email) {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Relifish <noreply@relifish.store>",
+          to: sellerData.email,
+          subject:
+            placement_kind === "preorder"
+              ? `New pre-order: ${speciesForEmail}`
+              : `New order: ${speciesForEmail}`,
+          html: orderEmailSeller(emailArgs),
+        }),
+      });
+    }
+  }
 }
 
 /**
  * POST /api/orders/create
- * Body: { listing_id, species, quantity, quantity_unit, buyer_phone, buyer_id?, buyer_addr?, order_type, seller_id? }
- * - Validates stock before accepting
- * - Checks seller accepts_preorder if seller is closed
- * - Inventory: pay-first orders start as pending_payment; stock deducts on seller confirm (see migration 029).
+ * Placement kind = seller shopping hours + order time only (see order-timing.ts).
  */
 export const POST: APIRoute = async ({ request, url }) => {
   try {
@@ -52,11 +96,18 @@ export const POST: APIRoute = async ({ request, url }) => {
       order_type = "pickup",
       seller_id: clientSellerId,
       scheduled_for,
-      schedule_slot_id,
+      schedule_slot_id: _schedule_slot_id,
       pricing_option_id: clientPricingOptionId,
       buyer_notes,
       cut_style,
     } = body;
+
+    if (scheduled_for) {
+      return new Response(
+        JSON.stringify({ error: "Scheduled pickup slots are not available. Order for now or during pre-order hours." }),
+        { status: 400 }
+      );
+    }
 
     let quantity = typeof rawQuantity === "number" ? rawQuantity : parseFloat(String(rawQuantity));
     if (!Number.isFinite(quantity) || quantity <= 0) {
@@ -69,153 +120,49 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Determine price, seller, and validate stock
     let total_price = 0;
     let seller_id: string | null = clientSellerId || null;
-
     let orderPricingOptionId: string | null = null;
     let orderPricingLabel: string | null = null;
+    let placement_kind: PlacementKind = "same_day";
+    let listingPricingOptions: unknown = null;
 
     if (listing_id) {
-      const { data: listing } = await supabase
+      const resolved = await resolveListingOrderLine(supabase, {
+        listing_id,
+        pricing_option_id: clientPricingOptionId,
+        rawQuantity: quantity,
+        buyer_phone,
+        buyer_id,
+      });
+      if (!resolved.ok) {
+        return new Response(JSON.stringify({ error: resolved.error }), { status: resolved.status });
+      }
+
+      const line = resolved.line;
+      placement_kind = line.placement_kind;
+      total_price = line.total_price;
+      seller_id = line.seller_id;
+      quantity = line.quantity;
+      quantity_unit = line.quantity_unit;
+      orderPricingOptionId = line.pricing_option_id;
+      orderPricingLabel = line.pricing_label;
+      species = species || line.species;
+
+      const { data: listingRow } = await supabase
         .from("fish_listings")
-        .select("pricing_options, seller_id, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold, is_preorder_enabled")
+        .select("pricing_options")
         .eq("id", listing_id)
         .single();
+      listingPricingOptions = listingRow?.pricing_options;
 
-      if (!listing) {
-        return new Response(JSON.stringify({ error: "Listing not found" }), { status: 404 });
-      }
-
-      const chosen = getListingOptionById(
-        listing as ListingPricingSource,
-        clientPricingOptionId
-      );
-      if (!chosen) {
-        return new Response(JSON.stringify({ error: "Invalid price option for this listing" }), { status: 400 });
-      }
-      orderPricingOptionId = chosen.id;
-      orderPricingLabel = chosen.label;
-      quantity_unit = chosen.unit;
-
-      // Whole units for piece; 2 decimals for kg — matches inventory decrement in create_order_atomic
-      if (quantity_unit === "kg") {
-        quantity = Math.round(Number(quantity) * 100) / 100;
-      } else {
-        quantity = Math.floor(Number(quantity));
-      }
-      if (!Number.isFinite(quantity) || quantity <= 0) {
-        return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
-      }
-
-      const linePrice = chosen.price;
-      const bundleAmount = optionBundleAmount(chosen);
-      const perBase = isPerBaseUnitPricing(chosen);
-
-      // Skip bundle validation for pre-orders (OOS / unavailable listings)
-      const weightAvailCheck = Number(listing.weight_avail);
-      const isPreorderCandidate = !listing.is_available || !Number.isFinite(weightAvailCheck) || weightAvailCheck <= 0 || weightAvailCheck < quantity;
-
-      if (!perBase && !isPreorderCandidate) {
-        if (quantity_unit === "kg") {
-          const qCent = Math.round(quantity * 100);
-          const bCent = Math.round(bundleAmount * 100);
-          if (bCent < 1 || qCent % bCent !== 0) {
-            return new Response(
-              JSON.stringify({
-                error: `Quantity must be a multiple of ${bundleAmount} kg for this price line (e.g. ${bundleAmount}, ${bundleAmount * 2}, …).`,
-              }),
-              { status: 400 }
-            );
-          }
-        } else if (quantity % bundleAmount !== 0) {
-          return new Response(
-            JSON.stringify({
-              error: `Quantity must be a multiple of ${bundleAmount} ${quantity_unit} for this pack (e.g. ${bundleAmount}, ${bundleAmount * 2}, …).`,
-            }),
-            { status: 400 }
-          );
-        }
-      }
-
-      const bundleCount = isPreorderCandidate ? (perBase ? quantity : quantity / bundleAmount) : quantity / bundleAmount;
-      if (!Number.isFinite(bundleCount) || bundleCount <= 0) {
-        return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
-      }
-
-      const { data: sellerForLimits } = await supabase
-        .from("sellers")
-        .select("min_order_amount")
-        .eq("id", listing.seller_id)
-        .single();
-      const minOrderAmt = Number(sellerForLimits?.min_order_amount) || 0;
-      const pricingOpts = getListingPriceOptions(listing);
-      const dailyCapFloor = minimumRequiredBuyerDailyCap(pricingOpts, minOrderAmt);
-
-      // Daily qty limit applies to same-day orders only; pre-orders have no qty cap per spec
-      if (listing.buyer_daily_qty_limit != null && Number(listing.buyer_daily_qty_limit) > 0 && !isPreorderCandidate) {
-        const cap = Number(listing.buyer_daily_qty_limit);
-        if (cap < dailyCapFloor) {
-          return new Response(
-            JSON.stringify({
-              error: `Per-buyer daily limit must be at least ${dailyCapFloor} ${quantity_unit} (covers at least one smallest pack and your seller minimum order ₹${minOrderAmt || 0}). Raise the limit on the listing or adjust pricing.`,
-            }),
-            { status: 400 }
-          );
-        }
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const { data: dayOrders } = await supabase
-          .from("orders")
-          .select("quantity, buyer_phone, buyer_id, status")
-          .eq("listing_id", listing_id)
-          .gte("created_at", todayStart.toISOString());
-
-        let usedToday = 0;
-        for (const o of dayOrders || []) {
-          if (o.status === "cancelled" || o.status === "declined") continue;
-          const match = buyer_id
-            ? o.buyer_id === buyer_id || o.buyer_phone === buyer_phone
-            : o.buyer_phone === buyer_phone;
-          if (match) usedToday += Number(o.quantity);
-        }
-        if (usedToday + quantity > cap) {
-          return new Response(
-            JSON.stringify({
-              error: `Daily limit for this item is ${cap} ${quantity_unit} per buyer (you already have ${usedToday} today).`,
-            }),
-            { status: 400 }
-          );
-        }
-      }
-
-      // Single inventory number for the listing (`fish_listings.weight_avail`), in the chosen tier’s unit (pc / kg / g). DB `create_order_atomic` subtracts `quantity` from this field only — no per-tier stock.
-      const weightAvail = Number(listing.weight_avail);
-      const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
-      if (listing.is_preorder_enabled || !listing.is_available || availOk <= 0 || availOk < quantity) {
-        if (scheduled_for) {
-          const { data: schedSeller } = await supabase
-            .from("sellers")
-            .select("schedule_pickup_slots")
-            .eq("id", listing.seller_id)
-            .single();
-          if (!schedSeller?.schedule_pickup_slots) {
-            return new Response(
-              JSON.stringify({ error: "Pickup scheduling is not available for this seller." }),
-              { status: 400 }
-            );
-          }
-        }
-        // Always allow as pre-order — no stock deduction, no blocking
-        // Use preorder_price_max as the charge price (buyer pays max; seller reconciles after catch)
-        const preorderUnitPrice = chosen.preorder_price_max ?? chosen.preorder_price_min ?? linePrice;
-        total_price = preorderUnitPrice * bundleCount;
-        seller_id = listing.seller_id;
-        const amountDue = total_price;
+      if (line.kind === "preorder") {
+        const delivery_fee = 0;
+        const amountDue = total_price + delivery_fee;
         const { data: preOrder, error: preErr } = await supabase
           .from("orders")
           .insert({
-            listing_id: listing_id || null,
+            listing_id,
             species: species || null,
             buyer_phone,
             buyer_id: buyer_id || null,
@@ -223,15 +170,13 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity,
             quantity_unit,
             total_price,
-            delivery_fee: 0,
+            delivery_fee,
             platform_fee: 0,
-            // Pre-orders always require payment proof upload first.
             status: "pending_payment",
+            placement_kind: "preorder",
             order_type,
             payment_type: "cod",
             paid_amount: amountDue,
-            scheduled_for: scheduled_for || null,
-            schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
@@ -244,11 +189,9 @@ export const POST: APIRoute = async ({ request, url }) => {
           return new Response(JSON.stringify({ error: preErr.message }), { status: 500 });
         }
 
-        // Notify seller
         if (seller_id) {
           try {
-            const origin = url.origin;
-            await fetch(`${origin}/api/notify-seller`, {
+            await fetch(`${url.origin}/api/notify-seller`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -256,11 +199,13 @@ export const POST: APIRoute = async ({ request, url }) => {
                 species: species || "Fish",
                 quantity,
                 quantity_unit,
-                scheduled_for: scheduled_for || null,
+                placement_kind: "preorder",
                 order_id: preOrder.id,
               }),
             });
-          } catch {}
+          } catch {
+            /* non-blocking */
+          }
         }
 
         if (preOrder?.id) {
@@ -272,123 +217,74 @@ export const POST: APIRoute = async ({ request, url }) => {
               species: species || "Fish",
               order_id: preOrder.id,
             });
-          } catch (_) {}
+          } catch {
+            /* non-blocking */
+          }
         }
 
-        const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
-        return new Response(JSON.stringify({ order: preOrder, pre_order_reason }), { status: 201 });
-      }
+        const chosen = getListingOptionById(
+          { pricing_options: listingPricingOptions } as ListingPricingSource,
+          orderPricingOptionId
+        );
+        const emailArgs: OrderEmailArgs = {
+          statusLabel: "Pre-order placed — upload payment proof",
+          species: species || "Fish",
+          quantity,
+          quantity_unit,
+          totalAmount: amountDue,
+          deliveryFee: delivery_fee,
+          orderId: preOrder.id,
+          pricing_option_id: orderPricingOptionId,
+          pricing_label: orderPricingLabel,
+          pricing_options: listingPricingOptions,
+          bundle_size: chosen?.bundle_size,
+          buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
+          cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
+        };
+        await sendOrderEmails(supabase, {
+          placement_kind: "preorder",
+          species: species || "Fish",
+          emailArgs,
+          buyer_id,
+          seller_id,
+        });
 
-      total_price = linePrice * bundleCount;
-      seller_id = listing.seller_id;
+        return new Response(JSON.stringify({ order: preOrder, placement_kind: "preorder" }), { status: 201 });
+      }
     } else if (species) {
       const { data: range } = await supabase
         .from("species_ranges")
         .select("max_price")
         .eq("species", species)
         .single();
-
       total_price = (range?.max_price || 0) * quantity;
+    } else {
+      return new Response(JSON.stringify({ error: "listing_id or species required" }), { status: 400 });
     }
 
-    if (!listing_id) {
-      if (quantity_unit === "kg") {
-        quantity = Math.round(Number(quantity) * 100) / 100;
-      } else {
-        quantity = Math.floor(Number(quantity));
-      }
-      if (!Number.isFinite(quantity) || quantity <= 0) {
-        return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400 });
-      }
-    }
-
-    // Pay-first: new orders are pending_payment until buyer uploads proof; seller confirms after verify.
-    let status = "pending_payment";
+    const status = "pending_payment";
     let delivery_fee = 0;
-    if (scheduled_for && !seller_id) {
-      return new Response(JSON.stringify({ error: "Scheduled orders require a seller." }), { status: 400 });
-    }
+
     if (seller_id) {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots, preorder_cutoff_time, open_days, preorder_days"
+          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, preorder_cutoff_time, open_days, preorder_days"
         )
         .eq("id", seller_id)
         .single();
 
-      if (scheduled_for) {
-        if (!seller?.schedule_pickup_slots) {
-          return new Response(
-            JSON.stringify({ error: "Pickup scheduling is not available for this seller." }),
-            { status: 400 }
-          );
-        }
-        status = "pending_payment";
-      } else {
-        const DAY_NAMES = ['sun','mon','tue','wed','thu','fri','sat'];
-        const todayName = DAY_NAMES[new Date().getDay()];
-
-        // open_days: if set+non-empty, today must be in it (seller's day off otherwise)
-        const isTodayOrderDay = !seller?.open_days?.length || seller.open_days.includes(todayName);
-        // preorder_days: if set+non-empty use it; else fall back to accepts_preorder boolean
-        const isTodayPreorderDay = (seller?.preorder_days && seller.preorder_days.length > 0)
-          ? seller.preorder_days.includes(todayName)
-          : !!seller?.accepts_preorder;
-
-        const openByTime = seller ? isSellerCurrentlyOpen(seller.opens_at, seller.closes_at) : true;
-        const sellerEffectivelyOpen = isTodayOrderDay && openByTime;
-
-        if (!sellerEffectivelyOpen) {
-          // Seller closed or day-off — try pre_order path
-          if (!isTodayPreorderDay) {
-            const dayLabel = !isTodayOrderDay ? "not open today" : "closed now";
-            return new Response(
-              JSON.stringify({ error: `This seller is ${dayLabel} and does not accept pre-orders for next day. Check back when they open.` }),
-              { status: 400 }
-            );
-          }
-
-          // Per-listing preorder gate
-          if (listing_id) {
-            const { data: listingForPreorder } = await supabase
-              .from("fish_listings")
-              .select("is_preorder_enabled")
-              .eq("id", listing_id)
-              .single();
-            if (listingForPreorder?.is_preorder_enabled === false) {
-              return new Response(JSON.stringify({ error: "Pre-orders are not available for this item." }), { status: 400 });
-            }
-          } else if (!seller?.accepts_preorder && !isTodayPreorderDay) {
-            return new Response(JSON.stringify({ error: "This seller is not accepting pre-orders." }), { status: 400 });
-          }
-
-          // Enforce preorder cutoff time — compare in IST (UTC+5:30)
-          if (seller?.preorder_cutoff_time) {
-            const nowISTMs = Date.now() + 5.5 * 60 * 60 * 1000;
-            const nowIST = new Date(nowISTMs);
-            const nowMinutes = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
-            const [cutHour, cutMin] = (seller.preorder_cutoff_time as string).split(":").map(Number);
-            const cutoffMinutes = cutHour * 60 + cutMin;
-            if (nowMinutes >= cutoffMinutes) {
-              return new Response(
-                JSON.stringify({ error: `Pre-order cutoff time (${seller.preorder_cutoff_time} IST) has passed. Try again tomorrow.` }),
-                { status: 400 }
-              );
-            }
-          }
-
-          // Pre-orders always require payment proof upload first.
-          status = "pending_payment";
-        }
+      const placement = seller ? classifyPlacementAtOrderTime(seller) : "same_day";
+      if (placement === "closed") {
+        return new Response(JSON.stringify({ error: closedSellerMessage(seller!) }), { status: 400 });
       }
+      placement_kind = placement;
 
       const minAmt = Number(seller?.min_order_amount) || 0;
       if (minAmt > 0 && total_price < minAmt) {
-        return new Response(
-          JSON.stringify({ error: `Minimum order for this seller is ₹${minAmt}` }),
-          { status: 400 }
-        );
+        return new Response(JSON.stringify({ error: `Minimum order for this seller is ₹${minAmt}` }), {
+          status: 400,
+        });
       }
 
       if (order_type === "delivery" && !seller?.has_delivery) {
@@ -401,12 +297,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       delivery_fee = seller ? computeDeliveryFee(seller, total_price, order_type) : 0;
     }
 
-    const amountDue = total_price + delivery_fee;
-
-    // Try atomic order creation (DB function with row lock)
-    // Falls back to direct insert if function not available
-    let order: any = null;
-    let error: any = null;
+    let order: { id: string; buyer_id?: string | null; status?: string } | null = null;
 
     const { data: orderId, error: rpcError } = await supabase.rpc("create_order_atomic", {
       p_listing_id: listing_id || null,
@@ -420,22 +311,20 @@ export const POST: APIRoute = async ({ request, url }) => {
       p_delivery_fee: delivery_fee,
       p_status: status,
       p_order_type: order_type,
-      p_scheduled_for: scheduled_for || null,
-      p_schedule_slot_id: schedule_slot_id || null,
+      p_scheduled_for: null,
+      p_schedule_slot_id: null,
       p_pricing_option_id: orderPricingOptionId,
       p_pricing_label: orderPricingLabel,
     });
 
     if (rpcError) {
       const msg = rpcError.message || "";
-      // If function doesn't exist, overload is ambiguous (apply migration 025), or stock error, try direct insert as fallback
       if (
         msg.includes("could not find") ||
         msg.includes("does not exist") ||
         msg.includes("42883") ||
         msg.includes("Could not choose the best candidate function")
       ) {
-        // Function not created yet — use direct insert
         const { data: fallbackOrder, error: fallbackErr } = await supabase
           .from("orders")
           .insert({
@@ -450,11 +339,10 @@ export const POST: APIRoute = async ({ request, url }) => {
             delivery_fee,
             platform_fee: 0,
             status,
+            placement_kind,
             order_type,
             payment_type: "cod",
-            paid_amount: status === "pending_payment" ? total_price + delivery_fee : null,
-            scheduled_for: scheduled_for || null,
-            schedule_slot_id: schedule_slot_id || null,
+            paid_amount: total_price + delivery_fee,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
@@ -467,28 +355,29 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
         order = fallbackOrder;
       } else {
-        // Real stock error — surface to user
         const isStockError = msg.includes("in stock") || msg.includes("Listing not found");
         return new Response(JSON.stringify({ error: msg }), { status: isStockError ? 400 : 500 });
       }
     } else {
-      // RPC succeeded — fetch the order
-      const { data: fetchedOrder, error: fetchErr } = await supabase.from("orders").select().eq("id", orderId).single();
+      const { data: fetchedOrder, error: fetchErr } = await supabase
+        .from("orders")
+        .select()
+        .eq("id", orderId)
+        .single();
       if (fetchErr) {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
       }
       order = fetchedOrder;
+      await patchPlacementKind(supabase, orderId, placement_kind);
     }
 
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    if (!order) {
+      return new Response(JSON.stringify({ error: "Order creation failed" }), { status: 500 });
     }
 
-    // Notify seller via push notification
     if (seller_id) {
       try {
-        const origin = url.origin;
-        await fetch(`${origin}/api/notify-seller`, {
+        await fetch(`${url.origin}/api/notify-seller`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -496,24 +385,22 @@ export const POST: APIRoute = async ({ request, url }) => {
             species: species || "Fish",
             quantity,
             quantity_unit,
+            placement_kind,
             buyer_phone,
-            scheduled_for: scheduled_for || null,
             order_id: order.id,
           }),
         });
       } catch {
-        // Non-blocking — order still created even if notification fails
+        /* non-blocking */
       }
     }
 
-    if (order?.id && (order.buyer_id || buyer_phone)) {
+    if (order.id && (order.buyer_id || buyer_phone)) {
       try {
-        const pushStatus =
-          status === "pending_payment" ? "placed" : status === "pre_order" ? "pre_order" : "pending";
         await sendBuyerOrderPush({
           buyer_id: order.buyer_id,
           buyer_phone,
-          status: pushStatus,
+          status: "placed",
           species: species || "Fish",
           order_id: order.id,
         });
@@ -522,56 +409,39 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
 
-    // Send email on order creation
-    if (resendApiKey && order) {
-      try {
-        const statusLabel =
-          status === "pending_payment"
-            ? scheduled_for
-              ? "Pickup scheduled — upload payment proof"
-              : "Order placed — upload payment proof"
-            : "Order placed";
-        const emailArgs = {
-          statusLabel,
-          species: species || "Fish",
-          quantity,
-          quantity_unit,
-          totalAmount: total_price + delivery_fee,
-          deliveryFee: delivery_fee,
-          orderId: order.id,
-          scheduled_for,
-          buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
-          cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
-        };
-        const speciesForEmail = capitalizeFishName(species || "Fish");
-        // Email buyer
-        if (buyer_id) {
-          const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
-          if (buyer?.email) {
-            await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${statusLabel} — ${speciesForEmail}`, html: orderEmailBuyer(emailArgs) }),
-            });
-          }
-        }
-        // Email seller
-        if (seller_id) {
-          const { data: sellerData } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
-          if (sellerData?.email) {
-            await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${speciesForEmail}`, html: orderEmailSeller(emailArgs) }),
-            });
-          }
-        }
-      } catch (_) {}
-    }
+    const chosen = listing_id
+      ? getListingOptionById(
+          { pricing_options: listingPricingOptions } as ListingPricingSource,
+          orderPricingOptionId
+        )
+      : null;
+    const emailArgs: OrderEmailArgs = {
+      statusLabel: "Order placed — upload payment proof",
+      species: species || "Fish",
+      quantity,
+      quantity_unit,
+      totalAmount: total_price + delivery_fee,
+      deliveryFee: delivery_fee,
+      orderId: order.id,
+      pricing_option_id: orderPricingOptionId,
+      pricing_label: orderPricingLabel,
+      pricing_options: listingPricingOptions,
+      bundle_size: chosen?.bundle_size,
+      buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
+      cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
+    };
+    await sendOrderEmails(supabase, {
+      placement_kind,
+      species: species || "Fish",
+      emailArgs,
+      buyer_id,
+      seller_id,
+    });
 
-    return new Response(JSON.stringify({ order }), { status: 201 });
-  } catch (err: any) {
+    return new Response(JSON.stringify({ order, placement_kind }), { status: 201 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("Order create error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 };

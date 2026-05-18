@@ -11,13 +11,13 @@ export type BuyerStepperVariant = "simple" | "payment" | "preorder";
 
 export type BuyerStepperOrder = {
   status: string;
+  placement_kind?: "same_day" | "preorder" | null;
   paid_amount?: unknown;
   final_price?: unknown;
   total_price?: unknown;
   delivery_fee?: unknown;
   payment_screenshot_urls?: unknown;
   payment_verified_at?: unknown;
-  /** Joined listing (track list / detail) — used to show payment stepper for scheduled pre-order pickups. */
   listing?: { is_preorder_enabled?: boolean | null } | null;
 };
 
@@ -55,18 +55,14 @@ export function isPartialAdvanceCatch(o: BuyerStepperOrder): boolean {
   return false;
 }
 
-function listingPreorderEnabled(o: BuyerStepperOrder): boolean {
-  return o.listing?.is_preorder_enabled === true;
-}
-
 /**
- * Next-day catch / OOS pre-order (includes morning **Price set** reconciliation).
+ * Pre-order placement (timing window) or legacy catch flow with price reconciliation.
  */
 export function isPreorderCatchFlow(o: BuyerStepperOrder): boolean {
+  if (o.placement_kind === "preorder") return true;
   const st = o.status;
   if (st === "pre_order") return true;
   if (st === "payment_required") return true;
-  // refunded only comes from reconcile_preorder_price RPC — always a preorder
   if (st === "refunded") return true;
   if (isPartialAdvanceCatch(o)) return true;
   const paid = Number(o.paid_amount);
@@ -90,7 +86,6 @@ export function isPreorderCatchFlow(o: BuyerStepperOrder): boolean {
   ) {
     return true;
   }
-  if (st === "scheduled" && listingPreorderEnabled(o)) return true;
   return false;
 }
 

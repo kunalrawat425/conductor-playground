@@ -3,6 +3,12 @@
  * All templates produce inline-styled HTML compatible with major email clients.
  */
 import { fmtDateTimeFullIST } from "./format-ist";
+import {
+  getListingOptionById,
+  optionBundleAmount,
+  isPerBaseUnitPricing,
+  type ListingPricingSource,
+} from "./listing-pricing";
 
 const BRAND_BLUE = "#0066cc";
 const BRAND_DARK = "#0a0f1a";
@@ -51,12 +57,54 @@ export function capitalizeFishName(name: string): string {
     .join(" ");
 }
 
-function formatQtyForEmail(quantity: number, quantityUnit: string): string {
-  const unit = String(quantityUnit || "").toLowerCase();
-  if (unit.includes("piece") || unit === "pc" || unit === "pcs") {
-    return `${quantity} pack`;
+/** Bundle-aware quantity lines for order emails (pack count, pieces/kg, line total). */
+export function formatOrderQuantityEmailRows(args: {
+  quantity: number;
+  quantity_unit: string;
+  totalAmount: number;
+  deliveryFee?: number;
+  pricing_option_id?: string | null;
+  pricing_label?: string | null;
+  pricing_options?: unknown;
+  bundle_size?: number | null;
+}): string[] {
+  const unit = String(args.quantity_unit || "piece").toLowerCase();
+  const deliveryFee = args.deliveryFee ?? 0;
+  const lineTotal = args.totalAmount - deliveryFee;
+
+  let bundleSize = args.bundle_size != null ? Number(args.bundle_size) : NaN;
+  if (!Number.isFinite(bundleSize) || bundleSize <= 0) {
+    const opt = getListingOptionById(
+      { pricing_options: args.pricing_options } as ListingPricingSource,
+      args.pricing_option_id
+    );
+    bundleSize = opt ? optionBundleAmount(opt) : 1;
   }
-  return `${quantity} ${quantityUnit || "kg"}`;
+  const perBase = (() => {
+    const opt = getListingOptionById(
+      { pricing_options: args.pricing_options } as ListingPricingSource,
+      args.pricing_option_id
+    );
+    return opt ? isPerBaseUnitPricing(opt) : bundleSize <= 1;
+  })();
+
+  const rows: string[] = [];
+  if (unit.includes("piece") || unit === "pc" || unit === "pcs") {
+    if (!perBase && bundleSize > 1) {
+      const packCount = Math.round(args.quantity / bundleSize);
+      rows.push(summaryRow("Packs", String(packCount)));
+      rows.push(summaryRow("Pieces", `${args.quantity} pc`));
+    } else {
+      rows.push(summaryRow("Quantity", `${args.quantity} pc`));
+    }
+  } else {
+    rows.push(summaryRow("Quantity", `${args.quantity} ${args.quantity_unit || "kg"}`));
+  }
+  if (args.pricing_label) {
+    rows.push(summaryRow("Price line", args.pricing_label));
+  }
+  rows.push(summaryRow("Line total", `₹${lineTotal.toLocaleString("en-IN")}`, true));
+  return rows;
 }
 
 function summaryRow(label: string, value: string, isTotal = false): string {
@@ -134,6 +182,10 @@ export type OrderEmailArgs = {
   scheduled_for?: string | null;
   buyerNotes?: string | null;
   cutStyle?: string | null;
+  pricing_option_id?: string | null;
+  pricing_label?: string | null;
+  pricing_options?: unknown;
+  bundle_size?: number | null;
 };
 
 function statusColor(label: string): string {
@@ -147,21 +199,41 @@ function statusColor(label: string): string {
 
 export function orderEmailBuyer(args: OrderEmailArgs): string {
   const {
-    statusLabel, species, quantity, quantity_unit,
-    totalAmount, deliveryFee = 0, orderId, scheduled_for,
-    buyerNotes, cutStyle,
+    statusLabel,
+    species,
+    quantity,
+    quantity_unit,
+    totalAmount,
+    deliveryFee = 0,
+    orderId,
+    scheduled_for,
+    buyerNotes,
+    cutStyle,
+    pricing_option_id,
+    pricing_label,
+    pricing_options,
+    bundle_size,
   } = args;
 
   const fishName = capitalizeFishName(species);
-  const subtotal = totalAmount - deliveryFee;
   const orderIdShort = orderId ? orderId.substring(0, 8) : "";
-  const qtyText = formatQtyForEmail(quantity, quantity_unit);
+  const qtyRows = formatOrderQuantityEmailRows({
+    quantity,
+    quantity_unit,
+    totalAmount,
+    deliveryFee,
+    pricing_option_id,
+    pricing_label,
+    pricing_options,
+    bundle_size,
+  });
   const rows = [
     summaryRow("Fish", fishName),
-    summaryRow("Quantity", qtyText),
-    deliveryFee > 0 ? summaryRow("Subtotal", `₹${subtotal.toLocaleString("en-IN")}`) : "",
+    ...qtyRows,
     deliveryFee > 0 ? summaryRow("Delivery fee", `₹${deliveryFee.toLocaleString("en-IN")}`) : "",
-    summaryRow("Total", `₹${totalAmount.toLocaleString("en-IN")}`, true),
+    deliveryFee > 0
+      ? summaryRow("Total due", `₹${totalAmount.toLocaleString("en-IN")}`, true)
+      : "",
     scheduled_for ? summaryRow("Scheduled for", fmtDateTimeFullIST(scheduled_for)) : "",
     orderIdShort ? summaryRow("Order ID", `#${orderIdShort.toUpperCase()}`) : "",
   ].join("");
@@ -171,7 +243,7 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     ${orderStatusHeader(statusLabel)}
     ${orderIntro(
       `${fishName} order update`,
-      "Your order status has changed. You can track every step in the app with live updates."
+      "Your order status has changed. Track progress anytime in the app."
     )}
     ${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}
@@ -206,21 +278,42 @@ export function paymentProofReceivedEmailSeller(args: {
 
 export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string }): string {
   const {
-    statusLabel, species, quantity, quantity_unit,
-    totalAmount, deliveryFee = 0, orderId, scheduled_for,
-    buyerNotes, cutStyle, buyerPhone,
+    statusLabel,
+    species,
+    quantity,
+    quantity_unit,
+    totalAmount,
+    deliveryFee = 0,
+    orderId,
+    scheduled_for,
+    buyerNotes,
+    cutStyle,
+    buyerPhone,
+    pricing_option_id,
+    pricing_label,
+    pricing_options,
+    bundle_size,
   } = args;
 
   const fishName = capitalizeFishName(species);
-  const subtotal = totalAmount - deliveryFee;
   const orderIdShort = orderId ? orderId.substring(0, 8) : "";
-  const qtyText = formatQtyForEmail(quantity, quantity_unit);
+  const qtyRows = formatOrderQuantityEmailRows({
+    quantity,
+    quantity_unit,
+    totalAmount,
+    deliveryFee,
+    pricing_option_id,
+    pricing_label,
+    pricing_options,
+    bundle_size,
+  });
   const rows = [
     summaryRow("Fish", fishName),
-    summaryRow("Quantity", qtyText),
-    deliveryFee > 0 ? summaryRow("Subtotal", `₹${subtotal.toLocaleString("en-IN")}`) : "",
+    ...qtyRows,
     deliveryFee > 0 ? summaryRow("Delivery fee", `₹${deliveryFee.toLocaleString("en-IN")}`) : "",
-    summaryRow("Order value", `₹${totalAmount.toLocaleString("en-IN")}`, true),
+    deliveryFee > 0
+      ? summaryRow("Total due", `₹${totalAmount.toLocaleString("en-IN")}`, true)
+      : "",
     scheduled_for ? summaryRow("Scheduled for", fmtDateTimeFullIST(scheduled_for)) : "",
     orderIdShort ? summaryRow("Order ID", `#${orderIdShort.toUpperCase()}`) : "",
     buyerPhone ? summaryRow("Buyer", `***${String(buyerPhone).slice(-4)}`) : "",

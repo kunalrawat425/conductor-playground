@@ -193,6 +193,13 @@ import Toast from "../components/v2/atoms/Toast.astro";
     return ["declined", "cancelled", "refunded"].includes(status);
   }
 
+  function orderKindLabel(o: { placement_kind?: string | null; status?: string }) {
+    if (o.placement_kind === "preorder") return "Pre-order";
+    if (o.placement_kind === "same_day") return "Order";
+    if (o.status === "pre_order" || o.status === "payment_required") return "Pre-order";
+    return "Order";
+  }
+
   function fmtDate(iso: string) {
     const d = new Date(iso);
     const today = new Date();
@@ -231,7 +238,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
       const orFilter = buyerId ? `${phoneParts},buyer_id.eq.${buyerId}` : phoneParts;
       const { data: allOrders, count } = await supabase
         .from("orders")
-        .select("*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name))", { count: "exact" })
+        .select("*, listing:fish_listings(species, pricing_options, seller:sellers(name))", { count: "exact" })
         .or(orFilter)
         .order("created_at", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
@@ -304,7 +311,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
               ${refundNote}
             </a>`
           : `<a href="/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
-              <div class="label">Live · ${statusToTag(o.status, o)}</div>
+              <div class="label">${orderKindLabel(o)} · ${statusToTag(o.status, o)}</div>
               <h3>${escapeHtml(seller)}</h3>
               <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
               ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
