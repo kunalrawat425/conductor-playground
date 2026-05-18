@@ -1,0 +1,52 @@
+---
+interface Props {
+  id?: string;
+  name?: string;
+  label?: string;
+  helper?: string;
+  error?: string;
+  required?: boolean;
+  value?: string;
+  placeholder?: string;
+  rows?: number;
+  maxlength?: number;
+  disabled?: boolean;
+}
+const {
+  id,
+  name,
+  label,
+  helper,
+  error,
+  required = false,
+  value = "",
+  placeholder,
+  rows = 4,
+  maxlength,
+  disabled = false,
+} = Astro.props;
+---
+<div class="v2-field">
+  {label && (
+    <label for={id} class="v2-field-label">
+      {label}
+      {required && <span class="v2-field-req">*</span>}
+    </label>
+  )}
+  <textarea
+    id={id}
+    name={name}
+    rows={rows}
+    placeholder={placeholder}
+    maxlength={maxlength}
+    disabled={disabled}
+    required={required}
+    class:list={["v2-textarea", error && "v2-input-error"]}
+    aria-invalid={!!error}
+  >{value}</textarea>
+  {(error || helper) && (
+    <div class:list={["v2-field-helper", error && "v2-helper-error"]}>
+      {error || helper}
+    </div>
+  )}
+</div>

@@ -1,10 +1,10 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import PreorderBanner from "../../components/v2/molecules/PreorderBanner.astro";
-import EmptyState from "../../components/v2/molecules/EmptyState.astro";
-import Skeleton from "../../components/v2/atoms/Skeleton.astro";
-import Toast from "../../components/v2/atoms/Toast.astro";
+import AppShell from "../../components/ui/AppShell.astro";
+import PreorderBanner from "../../components/ui/molecules/PreorderBanner.astro";
+import EmptyState from "../../components/ui/molecules/EmptyState.astro";
+import Skeleton from "../../components/ui/atoms/Skeleton.astro";
+import Toast from "../../components/ui/atoms/Toast.astro";
 
 const species = [
   { id: "surmai", name: "Surmai", emoji: "🐟", marathi: "सुरमई" },
@@ -17,7 +17,7 @@ const species = [
   { id: "crab", name: "Crab", emoji: "🦀", marathi: "खेकडा" },
 ];
 ---
-<AppShellV2
+<AppShell
   title="Pre-order · Relifish"
   description="Pre-order tomorrow's catch from Mumbai sellers"
   header={{ variant: "preorder", locationLabel: "Pre-order mode", locationSub: "Tomorrow's catch, reserved tonight" }}
@@ -51,7 +51,7 @@ const species = [
       <EmptyState variant="no-results" title="No pre-order sellers in your area" description="Be the first to know when sellers go live for pre-orders." ctaText="Join waitlist" ctaHref="/buyer-banner.html" />
     </div>
   </div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-species-grid {
@@ -119,7 +119,7 @@ const species = [
         return `<a href="/s/${(s.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}" class="v2-seller-card" style="margin-bottom:12px;">
           <div class="v2-sc-img" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF);">
             <span class="v2-badge v2-badge-offer v2-badge-indigo v2-badge-size-md">🌙 Pre-order</span>
-            <span class="v2-sc-emoji">🐟</span>
+            <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="" class="v2-sc-emoji" style="width:36px;height:36px;object-fit:contain;" />
           </div>
           <div class="v2-sc-body">
             <div class="v2-sc-top">

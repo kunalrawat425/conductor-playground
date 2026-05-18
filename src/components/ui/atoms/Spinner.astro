@@ -1,0 +1,8 @@
+---
+import type { SpinnerProps } from "../../../types/components";
+interface Props extends SpinnerProps {}
+const { size = "md", color = "brand" } = Astro.props;
+---
+<span class={`v2-spinner v2-spinner-${size} v2-spinner-${color}`} role="status" aria-label="Loading"></span>
+
+<!-- styles in s../styles/components.css -->

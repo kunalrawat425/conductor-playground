@@ -1,0 +1,95 @@
+---
+import type { SellerCardProps } from "../../../types/components";
+import Badge from "../atoms/Badge.astro";
+interface Props extends SellerCardProps {}
+const {
+  id,
+  name,
+  location,
+  distanceKm,
+  deliveryEtaMin,
+  rating,
+  status,
+  acceptsPreorder,
+  hasDelivery,
+  deliveryFreeAbove,
+  itemCount,
+  topItems = [],
+  imageHue = "sky",
+  offerLabel,
+} = Astro.props;
+
+const distance = distanceKm != null ? `${distanceKm.toFixed(1)} km` : null;
+const eta = deliveryEtaMin != null ? `${deliveryEtaMin} min` : null;
+const subParts = [location, distance, eta].filter(Boolean).join(" · ");
+
+const hueColors: Record<string, string> = {
+  sky: "linear-gradient(135deg,#E0F2FE,#BAE6FD)",
+  green: "linear-gradient(135deg,#ECFDF5,#D1FAE5)",
+  orange: "linear-gradient(135deg,#FFF7ED,#FED7AA)",
+  indigo: "linear-gradient(135deg,#EEF2FF,#E0E7FF)",
+};
+const cardImgBg = hueColors[imageHue] || hueColors.sky;
+const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "indigo" : "brand";
+---
+<a href={`/s/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`} class:list={["v2-seller-card", status === "closed" && "v2-seller-closed"]}>
+  <div class="v2-sc-img" style={`background:${cardImgBg};`}>
+    {offerLabel && <Badge variant="offer" color={offerColor}>{offerLabel}</Badge>}
+    <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="" aria-hidden="true" class="v2-sc-emoji" style="width:40px;height:40px;object-fit:contain;" />
+  </div>
+
+  <div class="v2-sc-body">
+    <div class="v2-sc-top">
+      <div class="v2-sc-info">
+        <div class="v2-sc-name">{name}</div>
+        {subParts && <div class="v2-sc-loc">{subParts}</div>}
+      </div>
+      {rating > 0 && <Badge variant="rating" color="green">{rating.toFixed(1)} ★</Badge>}
+    </div>
+
+    <div class="v2-sc-tags">
+      {status === "open" && <Badge variant="tag" color="green">Open now</Badge>}
+      {status === "closed" && <Badge variant="tag" color="red">Closed</Badge>}
+      {status === "pre-order-only" && <Badge variant="tag" color="indigo">Pre-order only</Badge>}
+      {status === "closed-preorder" && <Badge variant="tag" color="indigo">Pre-orders open</Badge>}
+      {!hasDelivery && <Badge variant="tag">Pickup only</Badge>}
+    </div>
+  </div>
+
+  {topItems.length > 0 && (
+    <div class="v2-sc-menu">
+      {topItems.length <= 2
+        ? topItems.map((it) => (
+            <div class="v2-sc-chip">
+              <span class="v2-sc-m-emoji" aria-hidden="true">{it.emoji}</span>
+              <div>
+                <div class="v2-sc-m-name">{it.name}</div>
+                <div class="v2-sc-m-price">₹{it.price}/{it.unit}</div>
+              </div>
+            </div>
+          ))
+        : (
+            <>
+              <div class="v2-sc-chip">
+                <span class="v2-sc-m-emoji" aria-hidden="true">{topItems[0].emoji}</span>
+                <div>
+                  <div class="v2-sc-m-name">{topItems[0].name}</div>
+                  <div class="v2-sc-m-price">₹{topItems[0].price}/{topItems[0].unit}</div>
+                </div>
+              </div>
+              <div class="v2-sc-chip v2-sc-chip-more">
+                <span class="v2-sc-m-more">+{topItems.length - 1}</span>
+              </div>
+            </>
+          )}
+    </div>
+  )}
+
+  {hasDelivery && (
+    <div class="v2-sc-delivery">
+      🚲 Delivery available{deliveryFreeAbove ? ` · Free above ₹${deliveryFreeAbove}` : ''}
+    </div>
+  )}
+</a>
+
+<!-- styles in s../styles/components.css -->

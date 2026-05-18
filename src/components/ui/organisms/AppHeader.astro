@@ -1,0 +1,88 @@
+---
+import type { AppHeaderProps } from "../../../types/components";
+interface Props extends AppHeaderProps {}
+const {
+  variant = "default",
+  locationLabel = "Set location",
+  locationSub = "Tap to choose your area",
+  showSearch = false,
+  showCart = false,
+  cartCount = 0,
+  backHref,
+  title,
+} = Astro.props;
+const isPreorder = variant === "preorder";
+const isPage = variant === "page";
+---
+<header class:list={["v2-header", isPreorder && "v2-header-preorder", showSearch && "v2-header-tall"]}>
+  <div class="v2-header-row">
+    {isPage && backHref ? (
+      <a href={backHref} class="v2-back" aria-label="Back">←</a>
+    ) : (
+      <a href="/" class="v2-logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-logo-img" />{isPreorder ? " 🌙" : ""}</a>
+    )}
+
+    <div class:list={["v2-loc-wrap", !isPage && "v2-loc-tappable"]} id={isPage ? undefined : "v2-location-trigger"}>
+      <div class="v2-loc-main">
+        {isPage && title ? title : locationLabel}
+        {!isPage && <span class="v2-loc-arrow">▼</span>}
+      </div>
+      {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
+    </div>
+
+    <button
+      type="button"
+      class="v2-icon-btn"
+      id="v2-header-theme-toggle"
+      aria-label="Toggle theme"
+      title="Toggle dark/light mode"
+    >
+      <span class="v2-theme-sun">☀️</span>
+      <span class="v2-theme-moon">🌙</span>
+    </button>
+
+    {showCart ? (
+      <a href="/cart" class="v2-icon-btn v2-cart-icon" aria-label={`Cart with ${cartCount} items`}>
+        🛒
+        {cartCount > 0 && <span class="v2-cart-dot">{cartCount}</span>}
+      </a>
+    ) : (
+      <a href="/me" class="v2-icon-btn v2-profile" aria-label="Account">👤</a>
+    )}
+  </div>
+
+  {showSearch && (
+    <a href="/search" class="v2-search-card" aria-label="Search">
+      <span class="v2-s-icon" aria-hidden="true">🔍</span>
+      <span>Search "Surmai", "Pomfret", sellers...</span>
+    </a>
+  )}
+</header>
+
+<!-- All styles in s../styles/components.css to avoid duplicate-rule overrides -->
+
+<script>
+  // Wire up location trigger
+  const trigger = document.getElementById('v2-location-trigger');
+  trigger?.addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('relifish:open-location-picker'));
+  });
+
+  // Auto-prompt location picker after first login if no location saved
+  try {
+    if (localStorage.getItem("v2_prompt_location") === "1" && trigger) {
+      localStorage.removeItem("v2_prompt_location");
+      setTimeout(() => { trigger.click(); }, 400);
+    }
+  } catch {}
+
+  // Theme toggle in header (works on every page)
+  document.getElementById('v2-header-theme-toggle')?.addEventListener('click', () => {
+    const root = document.documentElement;
+    const current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('v2_theme', next); } catch {}
+  });
+</script>

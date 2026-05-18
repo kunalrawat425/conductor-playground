@@ -11,7 +11,7 @@ const BRAND_ORANGE = "#ff6b35";
 const BRAND_SURFACE = "#f8fafc";
 
 const SUPPORT_EMAIL = "relifishstore@gmail.com";
-const SUPPORT_PHONE = "9152207607";
+const SUPPORT_PHONE = "+91 9152207607";
 
 function shell(content: string): string {
   return `<!DOCTYPE html>
@@ -25,8 +25,8 @@ function shell(content: string): string {
         <!-- HEADER -->
         <tr>
           <td style="background:linear-gradient(135deg,${BRAND_DARK},#111a2a);padding:24px 28px;text-align:center;">
-            <div style="font-size:26px;font-weight:900;color:${BRAND_LIGHT_BLUE};letter-spacing:-0.5px;">Relifish</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:5px;">Fresh local seafood</div>
+            <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo.png" alt="Relifish" style="width:56px;height:56px;object-fit:contain;display:block;margin:0 auto;border-radius:12px;" />
+            <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;">Fresh local seafood</div>
           </td>
         </tr>
         <!-- BODY -->
@@ -42,7 +42,7 @@ function shell(content: string): string {
             <div style="font-size:12px;color:#475569;line-height:1.8;">
               📧 <a href="mailto:${SUPPORT_EMAIL}" style="color:#0066cc;text-decoration:none;">${SUPPORT_EMAIL}</a>
               &nbsp;&nbsp;·&nbsp;&nbsp;
-              📞 <a href="tel:${SUPPORT_PHONE}" style="color:#0066cc;text-decoration:none;">${SUPPORT_PHONE}</a>
+              📞 <a href="tel:+919152207607" style="color:#0066cc;text-decoration:none;">${SUPPORT_PHONE}</a>
             </div>
             <div style="font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.6;">
               <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a>
@@ -123,12 +123,6 @@ function orderStatusHeader(statusLabel: string): string {
     </div>`;
 }
 
-function footerSafetyText(): string {
-  return `<div style="font-size:12px;color:#667085;line-height:1.8;margin-top:16px;text-align:center;">
-    Questions? Email <a href="mailto:${SUPPORT_EMAIL}" style="color:#0066cc;text-decoration:none;">${SUPPORT_EMAIL}</a>
-    or call <a href="tel:${SUPPORT_PHONE}" style="color:#0066cc;text-decoration:none;">${SUPPORT_PHONE}</a>
-  </div>`;
-}
 
 function ctaButton(text: string, href: string): string {
   return `<a href="${href}" style="display:inline-block;background:${BRAND_BLUE};color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:14px;letter-spacing:0.2px;">${text}</a>`;
@@ -195,7 +189,6 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     <div style="text-align:center;margin-top:18px;">
       ${ctaButton("Track Order →", "https://www.relifish.store/v2/track")}
     </div>
-    ${footerSafetyText()}
   `);
 }
 
@@ -217,7 +210,6 @@ export function paymentProofReceivedEmailSeller(args: {
     <div style="text-align:center;margin-top:18px;">
       ${ctaButton("Review in dashboard →", "https://www.relifish.store/v2/dashboard/orders")}
     </div>
-    ${footerSafetyText()}
   `);
 }
 
@@ -255,7 +247,6 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
     <div style="text-align:center;margin-top:18px;">
       ${ctaButton("View Orders →", "https://www.relifish.store/v2/dashboard/orders")}
     </div>
-    ${footerSafetyText()}
   `);
 }
 
@@ -276,7 +267,6 @@ export function verifyEmailTemplate(email: string, verifyUrl: string): string {
       "If you did not request this, you can ignore this message. The link only applies to the address shown above.",
       "note"
     )}
-    ${footerSafetyText()}
   `);
 }
 
@@ -455,9 +445,7 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
     </div>
 
     <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:18px;line-height:1.8;">
-      This is a payment receipt, not a tax invoice.<br/>
-      Questions? <a href="mailto:${SUPPORT_EMAIL}" style="color:#0066cc;text-decoration:none;">${SUPPORT_EMAIL}</a>
-      &nbsp;·&nbsp; <a href="tel:${SUPPORT_PHONE}" style="color:#0066cc;text-decoration:none;">${SUPPORT_PHONE}</a>
+      This is a payment receipt, not a tax invoice.
     </div>
   `);
 }

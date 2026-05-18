@@ -1,0 +1,55 @@
+---
+interface SlotItem {
+  id: string;
+  time: string; // "7-9am"
+  label?: string; // "Morning"
+  fee?: number; // ₹ surcharge
+  disabled?: boolean;
+  selected?: boolean;
+}
+interface Props {
+  slots: SlotItem[];
+  groupTitle?: string;
+  name?: string;
+}
+const { slots, groupTitle, name = "slot" } = Astro.props;
+---
+{groupTitle && <h4 class="v2-slot-group-title">{groupTitle}</h4>}
+<div class="v2-slot-grid">
+  {slots.map((s) => (
+    <button
+      type="button"
+      class:list={["v2-slot", s.selected && "v2-slot-selected", s.disabled && "v2-slot-disabled"]}
+      data-slot-id={s.id}
+      data-slot-name={name}
+      disabled={s.disabled}
+      aria-pressed={s.selected}
+    >
+      <div class="v2-slot-time">{s.time}</div>
+      {s.label && <div class="v2-slot-label">{s.disabled ? "Sold out" : s.label}</div>}
+      {s.fee != null && s.fee > 0 && !s.disabled && <div class="v2-slot-fee">+₹{s.fee}</div>}
+      {s.fee === 0 && !s.disabled && <div class="v2-slot-fee">No fee</div>}
+    </button>
+  ))}
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>(".v2-slot").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.disabled) return;
+      const name = btn.dataset.slotName || "slot";
+      // Toggle: deselect siblings with same name, select this one
+      document.querySelectorAll<HTMLButtonElement>(`.v2-slot[data-slot-name="${name}"]`).forEach((s) => {
+        s.classList.remove("v2-slot-selected");
+        s.setAttribute("aria-pressed", "false");
+      });
+      btn.classList.add("v2-slot-selected");
+      btn.setAttribute("aria-pressed", "true");
+      // Dispatch event with slot id
+      btn.dispatchEvent(new CustomEvent("v2-slot-pick", {
+        bubbles: true,
+        detail: { name, slotId: btn.dataset.slotId },
+      }));
+    });
+  });
+</script>
