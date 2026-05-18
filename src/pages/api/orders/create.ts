@@ -277,7 +277,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
         // Send email for preorder path (was missing before)
         if (resendApiKey && preOrder) {
-          const isRealPreorder = !!(listing.is_preorder_enabled && scheduled_for);
+          const isRealPreorder = !!(listing.is_preorder_enabled);
           const poStatusLabel = isRealPreorder
             ? "Pre-order placed — catch reserved for tomorrow"
             : "Order placed — upload payment proof";
