@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and guard against replay
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, status, total_price, delivery_fee, species, quantity, quantity_unit, order_type, seller:sellers(id, name, email, location_name), buyer_id, scheduled_for, listing:fish_listings(species)")
+    .select("id, buyer_id, status, total_price, delivery_fee, species, quantity, quantity_unit, order_type, razorpay_order_id, seller:sellers(id, name, email, location_name), scheduled_for, listing:fish_listings(species)")
     .eq("id", order_id)
     .single();
 
@@ -59,6 +59,12 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
   if (order.buyer_id !== buyer_id) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403 });
+  }
+  // Cross-check: razorpay_order_id must match what was stored when the order was created.
+  // Prevents replay: attacker paying ₹1 on a real Razorpay order and replaying the valid
+  // signature against a different (higher-value) order_id they own as buyer.
+  if ((order as any).razorpay_order_id !== razorpay_order_id) {
+    return new Response(JSON.stringify({ error: "Payment does not match this order" }), { status: 400 });
   }
   // Replay guard — already confirmed orders must not be re-confirmed
   if (!["pending", "pending_payment"].includes(order.status)) {
@@ -73,7 +79,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 
   // Atomically confirm the order
-  const { error: updateErr } = await supabase
+  const { error: updateErr, count: updatedCount } = await supabase
     .from("orders")
     .update({
       status: "confirmed",
@@ -83,10 +89,16 @@ export const POST: APIRoute = async ({ request, url }) => {
       payment_verified_by: null, // null = system auto-verified
     })
     .eq("id", order_id)
-    .in("status", ["pending", "pending_payment"]); // double-check — only update if still payable
+    .in("status", ["pending", "pending_payment"]) // double-check — only update if still payable
+    .select();
 
   if (updateErr) {
     return new Response(JSON.stringify({ error: "Failed to confirm order" }), { status: 500 });
+  }
+  // Race guard: if count is 0 another concurrent request already confirmed — return idempotent
+  // success without re-firing push/email notifications.
+  if (!updatedCount || updatedCount === 0) {
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
   // Fire buyer push notification (non-blocking)
