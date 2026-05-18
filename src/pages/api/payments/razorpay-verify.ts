@@ -113,62 +113,52 @@ export const POST: APIRoute = async ({ request, url }) => {
     });
   } catch { /* non-blocking */ }
 
-  // Send Razorpay receipt email to buyer (non-blocking)
+  // Send Razorpay receipt email to buyer — truly non-blocking
   if (resendApiKey) {
-    try {
-      const { data: buyer } = await supabase
-        .from("buyers")
-        .select("email")
-        .eq("id", buyer_id)
-        .single();
-
-      if (buyer?.email) {
-        const { razorpayReceiptEmail } = await import("../../../lib/email-templates");
-        const seller = (order as any).seller;
-        const html = razorpayReceiptEmail({
-          line_items: [{
-            species: (order as any).listing?.species || (order as any).species || "Fish",
-            quantity: Number((order as any).quantity) || 1,
-            quantity_unit: (order as any).quantity_unit || "kg",
-            total_price: Number((order as any).total_price) || 0,
-            cut_style: null,
-            buyer_notes: null,
-            order_id,
-          }],
-          delivery_fee: Number((order as any).delivery_fee) || 0,
-          order_type: ((order as any).order_type === "delivery" ? "delivery" : "pickup") as "pickup" | "delivery",
-          seller_name: seller?.name || "Your seller",
-          seller_location: seller?.location_name || null,
-          buyer_addr: null,
-          scheduled_for: (order as any).scheduled_for || null,
-          razorpay_payment_id,
-          paid_at: new Date().toISOString(),
-          primary_order_id: order_id,
-        });
-
-        if (html) {
-          await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${resendApiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: "Relifish <noreply@relifish.store>",
-              to: buyer.email,
-              subject: "Payment confirmed — your Relifish order is set ✓",
-              html,
-            }),
-          });
-        }
+    const _order = order;
+    supabase.from("buyers").select("email").eq("id", buyer_id).single().then(async ({ data: buyer }) => {
+      if (!buyer?.email) return;
+      const { razorpayReceiptEmail } = await import("../../../lib/email-templates");
+      const seller = (_order as any).seller;
+      const html = razorpayReceiptEmail({
+        line_items: [{
+          species: (_order as any).listing?.species || (_order as any).species || "Fish",
+          quantity: Number((_order as any).quantity) || 1,
+          quantity_unit: (_order as any).quantity_unit || "kg",
+          total_price: Number((_order as any).total_price) || 0,
+          cut_style: null,
+          buyer_notes: null,
+          order_id,
+        }],
+        delivery_fee: Number((_order as any).delivery_fee) || 0,
+        order_type: ((_order as any).order_type === "delivery" ? "delivery" : "pickup") as "pickup" | "delivery",
+        seller_name: seller?.name || "Your seller",
+        seller_location: seller?.location_name || null,
+        buyer_addr: null,
+        scheduled_for: (_order as any).scheduled_for || null,
+        razorpay_payment_id,
+        paid_at: new Date().toISOString(),
+        primary_order_id: order_id,
+      });
+      if (html) {
+        fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: "Relifish <noreply@relifish.store>",
+            to: buyer.email,
+            subject: "Payment confirmed — your Relifish order is set ✓",
+            html,
+          }),
+        }).catch(() => {});
       }
-    } catch { /* non-blocking */ }
+    }).catch(() => {});
   }
 
-  // Notify seller (non-blocking)
-  try {
-    const seller = (order as any).seller;
-    if (seller?.email && resendApiKey) {
+  // Notify seller — truly non-blocking
+  const _sellerForEmail = (order as any).seller;
+  if (_sellerForEmail?.email && resendApiKey) {
+    (async () => {
       const { orderEmailSeller, capitalizeFishName } = await import("../../../lib/email-templates");
       const species = (order as any).listing?.species || (order as any).species || "Fish";
       const html = orderEmailSeller({
@@ -182,21 +172,18 @@ export const POST: APIRoute = async ({ request, url }) => {
         scheduled_for: (order as any).scheduled_for || null,
         buyerPhone: undefined,
       });
-      await fetch("https://api.resend.com/emails", {
+      fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           from: "Relifish <noreply@relifish.store>",
-          to: seller.email,
+          to: _sellerForEmail.email,
           subject: `New order paid: ${capitalizeFishName(species)}`,
           html,
         }),
-      });
-    }
-  } catch { /* non-blocking */ }
+      }).catch(() => {});
+    })().catch(() => {});
+  }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200 });
 };

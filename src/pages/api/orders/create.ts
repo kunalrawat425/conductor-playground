@@ -522,51 +522,51 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
 
-    // Send email on order creation
+    // Send emails non-blocking — fire and forget so order response is instant
     if (resendApiKey && order) {
-      try {
-        const statusLabel =
-          status === "pending_payment"
-            ? scheduled_for
-              ? "Pickup scheduled — upload payment proof"
-              : "Order placed — upload payment proof"
-            : "Order placed";
-        const emailArgs = {
-          statusLabel,
-          species: species || "Fish",
-          quantity,
-          quantity_unit,
-          totalAmount: total_price + delivery_fee,
-          deliveryFee: delivery_fee,
-          orderId: order.id,
-          scheduled_for,
-          buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
-          cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
-        };
-        const speciesForEmail = capitalizeFishName(species || "Fish");
-        // Email buyer
-        if (buyer_id) {
-          const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
+      const statusLabel =
+        status === "pre_order"
+          ? "Pre-order placed — upload payment proof"
+          : "Order placed — upload payment proof";
+      const emailArgs = {
+        statusLabel,
+        species: species || "Fish",
+        quantity,
+        quantity_unit,
+        totalAmount: total_price + delivery_fee,
+        deliveryFee: delivery_fee,
+        orderId: order.id,
+        scheduled_for,
+        buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
+        cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
+      };
+      const speciesForEmail = capitalizeFishName(species || "Fish");
+
+      // Buyer email — async, does not block response
+      if (buyer_id) {
+        supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: buyer }) => {
           if (buyer?.email) {
-            await fetch("https://api.resend.com/emails", {
+            fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
               body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${statusLabel} — ${speciesForEmail}`, html: orderEmailBuyer(emailArgs) }),
-            });
+            }).catch(() => {});
           }
-        }
-        // Email seller
-        if (seller_id) {
-          const { data: sellerData } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
+        }).catch(() => {});
+      }
+
+      // Seller email — async, does not block response
+      if (seller_id) {
+        supabase.from("sellers").select("email").eq("id", seller_id).single().then(({ data: sellerData }) => {
           if (sellerData?.email) {
-            await fetch("https://api.resend.com/emails", {
+            fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
               body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${speciesForEmail}`, html: orderEmailSeller(emailArgs) }),
-            });
+            }).catch(() => {});
           }
-        }
-      } catch (_) {}
+        }).catch(() => {});
+      }
     }
 
     return new Response(JSON.stringify({ order }), { status: 201 });
