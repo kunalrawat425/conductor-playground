@@ -209,6 +209,8 @@ export const POST: APIRoute = async ({ request, url }) => {
               isPreorder: true,
               preorderMin: line.preorder_price_min,
               preorderMax: line.preorder_price_max,
+              bundleSize: (line as any).bundle_size || null,
+              pricingLabel: line.pricing_label || null,
             });
           }).catch(() => {});
         }
@@ -300,6 +302,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             buyerEmail: bEmail,
             buyer_phone,
             sellerEmail: sEmail,
+            bundleSize: (line as any).bundle_size || null,
+            pricingLabel: line.pricing_label || null,
           });
         }).catch(() => {});
       }
@@ -330,12 +334,17 @@ async function sendCartOrderEmail(
     isPreorder?: boolean;
     preorderMin?: number | null;
     preorderMax?: number | null;
+    bundleSize?: number | null;
+    pricingLabel?: string | null;
   }
 ) {
   const {
     species, quantity, quantity_unit, total_price, delivery_fee,
     statusLabel, scheduled_for, buyerEmail, sellerEmail, buyer_phone,
+    bundleSize, pricingLabel,
   } = args;
+  const bs = bundleSize && bundleSize > 1 ? bundleSize : null;
+  const bc = bs ? Math.round(quantity / bs) : null;
   const emailArgs = {
     statusLabel,
     species: species || "Fish",
@@ -348,6 +357,9 @@ async function sendCartOrderEmail(
     isPreorder: args.isPreorder,
     preorderMin: args.preorderMin,
     preorderMax: args.preorderMax,
+    bundleSize: bs,
+    bundleCount: bc,
+    pricingLabel: pricingLabel || null,
   };
   const emailArgsSeller = {
     ...emailArgs,

@@ -68,12 +68,19 @@ export function capitalizeFishName(name: string): string {
     .join(" ");
 }
 
-function formatQtyForEmail(quantity: number, quantityUnit: string): string {
-  const unit = String(quantityUnit || "").toLowerCase();
-  if (unit.includes("piece") || unit === "pc" || unit === "pcs") {
-    return `${quantity} pack`;
+function formatQtyForEmail(quantity: number, quantityUnit: string, bundleSize?: number | null, bundleCount?: number | null): string {
+  const unit = quantityUnit || "kg";
+  const bs = bundleSize && bundleSize > 1 ? Math.floor(bundleSize) : null;
+  const bc = bundleCount && bundleCount > 0 ? Math.round(bundleCount) : null;
+  if (bs && bc && bc > 1) {
+    // e.g. "2 packs × 3 pieces = 6 pieces"
+    return `${bc} pack${bc > 1 ? "s" : ""} × ${bs} ${unit} = ${quantity} ${unit}`;
   }
-  return `${quantity} ${quantityUnit || "kg"}`;
+  if (bs && bc === 1) {
+    // single pack — "1 pack of 3 pieces"
+    return `1 pack of ${bs} ${unit}`;
+  }
+  return `${quantity} ${unit}`;
 }
 
 function summaryRow(label: string, value: string, isTotal = false): string {
@@ -145,6 +152,12 @@ export type OrderEmailArgs = {
   scheduled_for?: string | null;
   buyerNotes?: string | null;
   cutStyle?: string | null;
+  isPreorder?: boolean;
+  preorderMin?: number | null;
+  preorderMax?: number | null;
+  bundleSize?: number | null;
+  bundleCount?: number | null;
+  pricingLabel?: string | null;
 };
 
 function statusColor(label: string): string {
@@ -160,19 +173,23 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
   const {
     statusLabel, species, quantity, quantity_unit,
     totalAmount, deliveryFee = 0, orderId, scheduled_for,
-    buyerNotes, cutStyle,
+    buyerNotes, cutStyle, bundleSize, bundleCount, pricingLabel,
   } = args;
 
   const fishName = capitalizeFishName(species);
   const subtotal = totalAmount - deliveryFee;
   const orderIdShort = orderId ? orderId.substring(0, 8) : "";
-  const qtyText = formatQtyForEmail(quantity, quantity_unit);
+  const qtyText = formatQtyForEmail(quantity, quantity_unit, bundleSize, bundleCount);
   const rows = [
     summaryRow("Fish", fishName),
     summaryRow("Quantity", qtyText),
+    pricingLabel ? summaryRow("Pack", pricingLabel) : "",
+    args.isPreorder && args.preorderMin && args.preorderMax && args.preorderMin !== args.preorderMax
+      ? summaryRow("Price estimate", `₹${args.preorderMin.toLocaleString("en-IN")}–₹${args.preorderMax.toLocaleString("en-IN")}`)
+      : "",
     deliveryFee > 0 ? summaryRow("Subtotal", `₹${subtotal.toLocaleString("en-IN")}`) : "",
     deliveryFee > 0 ? summaryRow("Delivery fee", `₹${deliveryFee.toLocaleString("en-IN")}`) : "",
-    summaryRow("Total", `₹${totalAmount.toLocaleString("en-IN")}`, true),
+    summaryRow(args.isPreorder ? "Est. Max Total" : "Total", `₹${totalAmount.toLocaleString("en-IN")}`, true),
     scheduled_for ? summaryRow("Scheduled for", fmtDateTimeFullIST(scheduled_for)) : "",
     orderIdShort ? summaryRow("Order ID", `#${orderIdShort.toUpperCase()}`) : "",
   ].join("");
@@ -181,13 +198,15 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
   return shell(`
     ${orderStatusHeader(statusLabel)}
     ${orderIntro(
-      `${fishName} order update`,
-      "Your order status has changed. You can track every step in the app with live updates."
+      args.isPreorder ? `${fishName} pre-order` : `${fishName} order update`,
+      args.isPreorder
+        ? "Your pre-order has been placed. The final price will depend on tomorrow's catch and you will only be charged up to the max estimate."
+        : "Your order status has changed. You can track every step in the app with live updates."
     )}
     ${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}
     <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("Track Order →", "https://www.relifish.store/v2/track")}
+      ${ctaButton("Track Order →", "https://www.relifish.store/track")}
     </div>
   `);
 }
@@ -208,7 +227,7 @@ export function paymentProofReceivedEmailSeller(args: {
       `${greet} a buyer uploaded UPI payment proof for <strong>${fishName}</strong> (order <strong>#${id}</strong>). Open your dashboard to verify payment before confirming.`
     )}
     <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("Review in dashboard →", "https://www.relifish.store/v2/dashboard/orders")}
+      ${ctaButton("Review in dashboard →", "https://www.relifish.store/dashboard/orders")}
     </div>
   `);
 }
@@ -217,19 +236,23 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
   const {
     statusLabel, species, quantity, quantity_unit,
     totalAmount, deliveryFee = 0, orderId, scheduled_for,
-    buyerNotes, cutStyle, buyerPhone,
+    buyerNotes, cutStyle, buyerPhone, bundleSize, bundleCount, pricingLabel,
   } = args;
 
   const fishName = capitalizeFishName(species);
   const subtotal = totalAmount - deliveryFee;
   const orderIdShort = orderId ? orderId.substring(0, 8) : "";
-  const qtyText = formatQtyForEmail(quantity, quantity_unit);
+  const qtyText = formatQtyForEmail(quantity, quantity_unit, bundleSize, bundleCount);
   const rows = [
     summaryRow("Fish", fishName),
     summaryRow("Quantity", qtyText),
+    pricingLabel ? summaryRow("Pack", pricingLabel) : "",
+    args.isPreorder && args.preorderMin && args.preorderMax && args.preorderMin !== args.preorderMax
+      ? summaryRow("Price estimate", `₹${args.preorderMin.toLocaleString("en-IN")}–₹${args.preorderMax.toLocaleString("en-IN")}`)
+      : "",
     deliveryFee > 0 ? summaryRow("Subtotal", `₹${subtotal.toLocaleString("en-IN")}`) : "",
     deliveryFee > 0 ? summaryRow("Delivery fee", `₹${deliveryFee.toLocaleString("en-IN")}`) : "",
-    summaryRow("Order value", `₹${totalAmount.toLocaleString("en-IN")}`, true),
+    summaryRow(args.isPreorder ? "Max Order value" : "Order value", `₹${totalAmount.toLocaleString("en-IN")}`, true),
     scheduled_for ? summaryRow("Scheduled for", fmtDateTimeFullIST(scheduled_for)) : "",
     orderIdShort ? summaryRow("Order ID", `#${orderIdShort.toUpperCase()}`) : "",
     buyerPhone ? summaryRow("Buyer", `***${String(buyerPhone).slice(-4)}`) : "",
@@ -239,13 +262,15 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
   return shell(`
     ${orderStatusHeader(statusLabel)}
     ${orderIntro(
-      `${fishName} order needs attention`,
-      "A customer order moved to a new state. Review the card below and take the next action from your dashboard."
+      args.isPreorder ? `${fishName} pre-order needs attention` : `${fishName} order needs attention`,
+      args.isPreorder 
+        ? "A customer placed a pre-order. Review the card below and update the final price in your dashboard once the catch arrives."
+        : "A customer order moved to a new state. Review the card below and take the next action from your dashboard."
     )}
     ${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}
     <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("View Orders →", "https://www.relifish.store/v2/dashboard/orders")}
+      ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
     </div>
   `);
 }
@@ -267,6 +292,111 @@ export function verifyEmailTemplate(email: string, verifyUrl: string): string {
       "If you did not request this, you can ignore this message. The link only applies to the address shown above.",
       "note"
     )}
+  `);
+}
+
+// ── Proof uploaded — buyer confirmation ───────────────────────────────
+
+export function proofUploadedEmailBuyer(args: {
+  species: string;
+  orderId?: string;
+}): string {
+  const fishName = capitalizeFishName(args.species);
+  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+  return shell(`
+    ${orderStatusHeader("Proof received")}
+    ${orderIntro(
+      `${fishName} — payment proof received`,
+      "Your payment screenshot was uploaded successfully. The seller will verify and confirm your order shortly."
+    )}
+    ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:var(--v2-ink-3);">Order #${orderIdShort}</div>` : ""}
+    <div style="text-align:center;margin-top:18px;">
+      ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
+    </div>
+  `);
+}
+
+// ── Payment verified — buyer confirmation ──────────────────────────────
+
+export function paymentVerifiedEmailBuyer(args: {
+  species: string;
+  orderId?: string;
+}): string {
+  const fishName = capitalizeFishName(args.species);
+  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+  return shell(`
+    ${orderStatusHeader("Payment Verified")}
+    ${orderIntro(
+      `${fishName} — payment verified & confirmed`,
+      "The seller has verified your payment. Your order is confirmed and being prepared."
+    )}
+    ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:var(--v2-ink-3);">Order #${orderIdShort}</div>` : ""}
+    <div style="text-align:center;margin-top:18px;">
+      ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
+    </div>
+  `);
+}
+
+export function paymentVerifiedEmailSeller(args: {
+  species: string;
+  orderId?: string;
+  sellerName?: string | null;
+}): string {
+  const fishName = capitalizeFishName(args.species);
+  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+  const greet = args.sellerName ? `Hi ${String(args.sellerName).trim()},` : "Hi,";
+  return shell(`
+    ${transactionIntro(
+      "Payment Verified",
+      "Order confirmed",
+      `${greet} you verified the payment for <strong>${fishName}</strong>${orderIdShort ? ` (order <strong>#${orderIdShort}</strong>)` : ""}. The order is now confirmed — prepare and fulfill when ready.`
+    )}
+    <div style="text-align:center;margin-top:18px;">
+      ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
+    </div>
+  `);
+}
+
+// ── Refund sent notifications ──────────────────────────────────────────
+
+export function refundSentEmailBuyer(args: {
+  species: string;
+  orderId?: string;
+  refundNote?: string | null;
+}): string {
+  const fishName = capitalizeFishName(args.species);
+  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+  return shell(`
+    ${orderStatusHeader("Refund Sent")}
+    ${orderIntro(
+      `${fishName} — refund on the way`,
+      "The seller has marked your refund as sent via UPI. It typically reflects within 1–3 business days."
+    )}
+    ${args.refundNote ? calloutBox(`Seller note: ${args.refundNote}`, "note") : ""}
+    ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:var(--v2-ink-3);">Order #${orderIdShort}</div>` : ""}
+    <div style="text-align:center;margin-top:18px;">
+      ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
+    </div>
+  `);
+}
+
+export function refundSentEmailSeller(args: {
+  species: string;
+  orderId?: string;
+  sellerName?: string | null;
+}): string {
+  const fishName = capitalizeFishName(args.species);
+  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+  const greet = args.sellerName ? `Hi ${String(args.sellerName).trim()},` : "Hi,";
+  return shell(`
+    ${transactionIntro(
+      "Refund Marked Sent",
+      "Refund confirmation",
+      `${greet} you marked the refund for <strong>${fishName}</strong>${orderIdShort ? ` (order <strong>#${orderIdShort}</strong>)` : ""} as sent. The buyer will receive it within 1–3 business days.`
+    )}
+    <div style="text-align:center;margin-top:18px;">
+      ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
+    </div>
   `);
 }
 
