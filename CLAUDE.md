@@ -1,4 +1,13 @@
 
+## Order vs pre-order (source of truth)
+
+- **Module:** `src/lib/order-timing.ts` — `classifyPlacementAtOrderTime()`, `isSellerEffectivelyOpen()`, `isPreorderShoppingWindow()`.
+- **Resolver:** `src/lib/server/resolve-listing-order-line.ts` — used by `POST /api/orders/create` and `create-seller-cart`.
+- **Persistence:** `orders.placement_kind` = `same_day` | `preorder` (migration `051_orders_placement_kind.sql`).
+- **Not used for placement:** `is_preorder_enabled`, `scheduled_for`, OOS alone (OOS while open → 400; OOS while in pre-order window → pre-order line).
+- **Emails:** `formatOrderQuantityEmailRows()` in `email-templates.ts` — packs, pieces, line total for bundles.
+- **Buyer track list:** label is `Order` or `Pre-order` from `placement_kind`, not “Live”.
+
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill

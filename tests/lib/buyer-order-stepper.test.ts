@@ -120,11 +120,11 @@ describe("isPreorderCatchFlow", () => {
     ).toBe(true);
   });
 
-  it("returns true for scheduled pickup on pre-order-enabled listing", () => {
+  it("returns true when placement_kind is preorder", () => {
     expect(
       isPreorderCatchFlow({
-        status: "scheduled",
-        listing: { is_preorder_enabled: true },
+        status: "pending_payment",
+        placement_kind: "preorder",
       })
     ).toBe(true);
   });
@@ -267,10 +267,10 @@ describe("resolveBuyerStepper", () => {
     expect(after.step).toBe(1);
   });
 
-  it("preorder track advances proof step for scheduled + preorder listing", () => {
+  it("preorder track advances proof step for placement_kind preorder", () => {
     const o = {
-      status: "scheduled" as const,
-      listing: { is_preorder_enabled: true },
+      status: "pending_payment" as const,
+      placement_kind: "preorder" as const,
       payment_screenshot_urls: [] as string[],
     };
     const r0 = resolveBuyerStepper(o, "pickup");
