@@ -244,7 +244,7 @@ const { id } = Astro.params;
     if (extraPaySlot) extraPaySlot.innerHTML = "";
 
     document.getElementById("v2-od-status").textContent = statusLabel(o.status, o);
-    document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,6).toUpperCase();
+    document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,8).toUpperCase();
     document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     // Hero colour: green for confirmed/done, red for declined/cancelled, orange for payment actions
     const hero = document.querySelector(".v2-od-hero");
@@ -1087,7 +1087,7 @@ const { id } = Astro.params;
         amount: createData.amount,
         currency: createData.currency,
         name: "Relifish",
-        description: `Order #${String(o.id).slice(0, 6).toUpperCase()}`,
+        description: `Order #${String(o.id).slice(0, 8).toUpperCase()}`,
         theme: { color: "#0066FF" },
         prefill: {
           contact: (() => { try { return localStorage.getItem("zepto_phone") || ""; } catch { return ""; } })(),

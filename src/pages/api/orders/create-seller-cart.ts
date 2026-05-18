@@ -147,6 +147,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: line.pricing_option_id,
             pricing_label: line.pricing_label,
+            is_preorder: true,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
             ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
@@ -201,14 +202,12 @@ export const POST: APIRoute = async ({ request, url }) => {
               quantity_unit: line.quantity_unit,
               total_price: line.total_price,
               delivery_fee: 0,
-              statusLabel: line.is_preorder_enabled
-                ? "Pre-order placed — catch reserved for tomorrow"
-                : "Order placed — upload payment proof",
+              statusLabel: "Pre-order placed — catch reserved for tomorrow",
               scheduled_for,
               buyer_phone,
               buyerEmail: bEmail,
               sellerEmail: sEmail,
-              isPreorder: !!line.is_preorder_enabled,
+              isPreorder: true,
               preorderMin: line.preorder_price_min,
               preorderMax: line.preorder_price_max,
               bundleSize: (line as any).bundle_size || null,
@@ -286,10 +285,13 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       if (resendApiKey && fetchedOrder) {
+        const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
         const stLabel =
           scheduled_for
-            ? "Pickup scheduled — upload payment proof 🗓️"
-            : "Order placed — upload payment proof";
+            ? "Pickup scheduled — complete payment to confirm 🗓️"
+            : RAZORPAY_ENABLED
+              ? "Order placed — complete payment to confirm"
+              : "Order placed — upload payment proof";
         const _fo = fetchedOrder;
         Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) => {
           sendCartOrderEmail(resendApiKey, {

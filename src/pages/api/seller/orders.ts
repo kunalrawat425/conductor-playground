@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
-import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { orderEmailBuyer, orderEmailSeller, paymentVerifiedEmailBuyer, paymentVerifiedEmailSeller, refundSentEmailBuyer, refundSentEmailSeller } from "../../../lib/email-templates";
 
 function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify order belongs to this seller's listings
     const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
-      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, payment_screenshot_urls")
+      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, payment_screenshot_urls, payment_method, payment_verified_at")
       .eq("id", order_id)
       .single();
 
@@ -173,6 +173,20 @@ export const POST: APIRoute = async ({ request }) => {
           });
         } catch (_) {}
       }
+      // Email buyer + seller on refund sent
+      try {
+        const species = capitalizeFishName(order.species || "Fish");
+        if (order.buyer_id) {
+          const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
+          if (buyer?.email) {
+            await sendResendEmail(buyer.email, `Refund sent — ${species}`, refundSentEmailBuyer({ species, orderId: order_id, refundNote: refund_note || null }));
+          }
+        }
+        const { data: sellerRow } = await supabase.from("sellers").select("email, name").eq("id", seller_id).single();
+        if (sellerRow?.email) {
+          await sendResendEmail(sellerRow.email, `Refund marked sent — ${species}`, refundSentEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
+        }
+      } catch (_) {}
       return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
@@ -180,13 +194,14 @@ export const POST: APIRoute = async ({ request }) => {
     if (action === "verify_payment") {
       const { data: currentForVerify } = await supabase
         .from("orders")
-        .select("status, payment_screenshot_urls")
+        .select("status, payment_screenshot_urls, payment_method, payment_verified_at")
         .eq("id", order_id)
         .single();
+      const isRazorpayOrder = currentForVerify?.payment_method === "razorpay" || !!currentForVerify?.payment_verified_at;
       const proofUrls = Array.isArray(currentForVerify?.payment_screenshot_urls)
         ? currentForVerify.payment_screenshot_urls
         : [];
-      if (proofUrls.length === 0) {
+      if (!isRazorpayOrder && proofUrls.length === 0) {
         return new Response(
           JSON.stringify({ error: "Buyer has not uploaded payment proof yet. Ask them to upload a screenshot on Track order." }),
           { status: 400 }
@@ -222,6 +237,20 @@ export const POST: APIRoute = async ({ request }) => {
           });
         } catch (_) {}
       }
+      // Email buyer + seller on payment verified
+      try {
+        const species = capitalizeFishName(order.species || "Fish");
+        if (order.buyer_id) {
+          const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
+          if (buyer?.email) {
+            await sendResendEmail(buyer.email, `Payment verified — ${species}`, paymentVerifiedEmailBuyer({ species, orderId: order_id }));
+          }
+        }
+        const { data: sellerRow } = await supabase.from("sellers").select("email, name").eq("id", seller_id).single();
+        if (sellerRow?.email) {
+          await sendResendEmail(sellerRow.email, `Payment verified — ${species}`, paymentVerifiedEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
+        }
+      } catch (_) {}
       return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
@@ -240,7 +269,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
     const { data: currentOrder } = await supabase
       .from("orders")
-      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee")
+      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at")
       .eq("id", order_id)
       .single();
     const currentStatus = currentOrder?.status;
@@ -249,8 +278,9 @@ export const POST: APIRoute = async ({ request }) => {
       const proofUrls = Array.isArray(currentOrder?.payment_screenshot_urls)
         ? currentOrder!.payment_screenshot_urls
         : [];
+      const isRazorpay = (currentOrder as any)?.payment_method === "razorpay" || !!(currentOrder as any)?.payment_verified_at;
       const mustHaveProof = ["pending", "pending_payment", "scheduled", "pre_order"].includes(String(currentStatus || ""));
-      if (mustHaveProof && proofUrls.length === 0) {
+      if (mustHaveProof && !isRazorpay && proofUrls.length === 0) {
         return new Response(
           JSON.stringify({
             error: "Confirm only after the buyer uploads payment proof. Use Verify payment once their screenshot is visible.",
