@@ -1,8 +1,8 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../../components/v2/AppShellV2.astro";
+import AppShell from "../../../components/ui/AppShell.astro";
 import ListingForm from "../../../components/ListingForm.astro";
-import Toast from "../../../components/v2/atoms/Toast.astro";
+import Toast from "../../../components/ui/atoms/Toast.astro";
 import { getListingById } from "../../../lib/supabase";
 
 const { id } = Astro.params;
@@ -10,7 +10,7 @@ let listing: any = null;
 try { listing = await getListingById(id!); } catch {}
 const speciesName = listing?.species || "Listing";
 ---
-<AppShellV2
+<AppShell
   title={`Edit ${speciesName} · Seller Dashboard`}
   description="Edit your fish listing"
   header={{ variant: "page", title: `Edit ${speciesName}`, backHref: "/dashboard/listings" }}
@@ -318,4 +318,4 @@ const speciesName = listing?.species || "Listing";
       color: var(--v2-ink-3) !important;
     }
   </style>
-</AppShellV2>
+</AppShell>

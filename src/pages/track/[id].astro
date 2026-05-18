@@ -1,12 +1,12 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import Toast from "../../components/v2/atoms/Toast.astro";
-import EmptyState from "../../components/v2/molecules/EmptyState.astro";
+import AppShell from "../../components/ui/AppShell.astro";
+import Toast from "../../components/ui/atoms/Toast.astro";
+import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 
 const { id } = Astro.params;
 ---
-<AppShellV2
+<AppShell
   noindex={true}
   title="Order details | Relifish"
   description="View order details, status, and seller contact."
@@ -84,7 +84,7 @@ const { id } = Astro.params;
     <!-- Optional payment proof (confirmed+); separate from #v2-od-actions so prefs form re-renders do not wipe it -->
     <div id="v2-od-extra-payment"></div>
   </div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-od-hero {

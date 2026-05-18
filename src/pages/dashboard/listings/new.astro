@@ -1,10 +1,10 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../../components/v2/AppShellV2.astro";
+import AppShell from "../../../components/ui/AppShell.astro";
 import ListingForm from "../../../components/ListingForm.astro";
-import Toast from "../../../components/v2/atoms/Toast.astro";
+import Toast from "../../../components/ui/atoms/Toast.astro";
 ---
-<AppShellV2
+<AppShell
   title="Add Listing · Seller Dashboard"
   description="Add a new fish listing"
   header={{ variant: "page", title: "Add listing", backHref: "/dashboard/listings" }}
@@ -292,4 +292,4 @@ import Toast from "../../../components/v2/atoms/Toast.astro";
       color: var(--v2-ink-3) !important;
     }
   </style>
-</AppShellV2>
+</AppShell>

@@ -1,13 +1,13 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../components/v2/AppShellV2.astro";
-import ThemeToggle from "../components/v2/atoms/ThemeToggle.astro";
-import LoginSheet from "../components/v2/organisms/LoginSheet.astro";
-import AddressPickerSheet from "../components/v2/organisms/AddressPickerSheet.astro";
-import BottomSheet from "../components/v2/organisms/BottomSheet.astro";
-import Toast from "../components/v2/atoms/Toast.astro";
+import AppShell from "../components/ui/AppShell.astro";
+import ThemeToggle from "../components/ui/atoms/ThemeToggle.astro";
+import LoginSheet from "../components/ui/organisms/LoginSheet.astro";
+import AddressPickerSheet from "../components/ui/organisms/AddressPickerSheet.astro";
+import BottomSheet from "../components/ui/organisms/BottomSheet.astro";
+import Toast from "../components/ui/atoms/Toast.astro";
 ---
-<AppShellV2
+<AppShell
   noindex={true}
   title="Account | Relifish"
   description="Manage your profile, addresses, and notifications."
@@ -105,7 +105,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
 
     <div class="v2-me-version">Made in Mumbai · v2.0</div>
   </div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-me-hero {
