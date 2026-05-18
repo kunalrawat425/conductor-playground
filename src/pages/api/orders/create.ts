@@ -539,6 +539,9 @@ export const POST: APIRoute = async ({ request, url }) => {
         scheduled_for,
         buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
         cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
+        bundleSize: bundleAmount > 1 ? bundleAmount : null,
+        bundleCount: bundleAmount > 1 ? bundleCount : null,
+        pricingLabel: orderPricingLabel || null,
       };
       const speciesForEmail = capitalizeFishName(species || "Fish");
 
