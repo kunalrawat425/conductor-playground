@@ -60,17 +60,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     const list = document.getElementById("v2-listings-list")!;
     const empty = document.getElementById("v2-listings-empty")!;
 
-    if (!sellerId) {
-      loading.style.display = "none";
-      document.getElementById("v2-listings-list")!.innerHTML = `
-        <div style="text-align:center;padding:40px 16px;">
-          <div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:8px;">Sign in required</div>
-          <div style="font:400 13px Inter;color:var(--v2-ink-3);margin-bottom:20px;">Please sign in to manage your listings.</div>
-          <a href="/dashboard/login" class="v2-btn v2-btn-primary v2-btn-md" style="display:inline-block;text-decoration:none;">Sign in →</a>
-        </div>`;
-      document.getElementById("v2-listings-list")!.style.display = "block";
-      return;
-    }
+    if (!sellerId) { window.location.replace("/dashboard/login"); return; }
 
     try {
       if (!_sellerTiming) {
