@@ -496,3 +496,133 @@ preorder_cutoff_time: '22:00'
 | Bottom sheet primary CTA (e.g. **Deliver here →**) did nothing | `BottomSheet` wires `button[data-sheet-action]` → `window[action](sheetId)` once globally; address + slot confirm pass sheet id |
 | Same-day orders showed pre-order stepper (Price set / Payment proof labels) | `isPreorderCatchFlow()` replaces broad `paid_amount \|\| final_price` heuristic |
 | Bill said “Payment proof pending” when proof already on order | Footnote + hero status copy consider `payment_screenshot_urls`; track list badge **Proof on file** for `pending_payment` + proof |
+
+---
+
+## Session: office-hours branch (2026-05-19)
+
+### Branch: `kunalrawat425/office-hours` · PR #11
+
+---
+
+### Feature: Razorpay Payment Integration
+
+**Toggle:** `PUBLIC_ENABLE_RAZORPAY=true` env var. When false, COD/upload-proof flow unchanged.
+
+| File | Role |
+|---|---|
+| `src/pages/api/payments/razorpay-create-order.ts` | Creates Razorpay order server-side. Idempotent: returns existing `razorpay_order_id` if already created. |
+| `src/pages/api/payments/razorpay-verify.ts` | HMAC-SHA256 verify (`razorpay_order_id|razorpay_payment_id`). Replay guard: asserts `order.razorpay_order_id === razorpay_order_id`. Race guard: checks `updatedRows.length` (NOT `count` — Supabase returns `count:null` without `{ count:'exact' }`). Sends buyer receipt email + seller notification non-blocking after confirm. |
+| `src/pages/track/[id].astro` | Fetches buyer profile email before opening Razorpay modal → prefills email → passes `buyer_email` to verify endpoint as fallback when `buyers.email` is null in DB. Also patches `buyers.email` in DB for future. |
+| Migrations 056 | Adds `razorpay_order_id`, `razorpay_payment_id`, `payment_method` columns to orders |
+
+**Business logic:**
+- Inventory decrements at order INSERT (DB trigger), not at payment confirmation.
+- If payment fails/abandoned: order stays `pending_payment`, seller can decline → stock restores.
+- Razorpay confirm → `status: confirmed`, `payment_verified_at`, `payment_method: razorpay`.
+- Buyer receipt email: subject "Payment confirmed — your Relifish order is set ✓".
+- Seller gets order email with "Paid via Razorpay — auto-confirmed" label.
+
+**Critical bug fixed (race guard):**
+`supabase.update().select()` returns `count: null` unless `{ count: 'exact' }` passed. Original code checked `!updatedCount` → always `true` → always early-returned before email/push. Fixed to `updatedRows.length === 0`.
+
+---
+
+### Feature: Pre-order vs Order — Timing-Only Determination
+
+**Principle:** Pre-order = order placed when store is closed (outside `opens_at`/`closes_at`) AND within preorder cutoff time. No `is_preorder_enabled` flag, no `scheduled_for` dependency.
+
+| File | Key change |
+|---|---|
+| `src/lib/order-timing.ts` | Single source of truth. `classifyPlacementAtOrderTime(seller)` → `"same_day" | "preorder" | "closed"`. `isSellerEffectivelyOpen`, `isPreorderShoppingWindow`, `isPastPreorderCutoffIST` all in IST (UTC+5:30). |
+| `src/lib/server/resolve-listing-order-line.ts` | Fetches seller timing fields, calls `classifyPlacementAtOrderTime`. Replaced undefined `placement`/`seller` vars. Fixed same-day price bug (was using `preorder_price_max` for same-day orders). |
+| `src/pages/api/orders/create.ts` | Replaced undefined `isSellerCurrentlyOpen` call with `classifyPlacementAtOrderTime`. Removed dead `patchPlacementKind` and `sendOrderEmails` helpers. Writes both `placement_kind` + `is_preorder` to DB for every order. |
+| `src/pages/api/orders/create-seller-cart.ts` | Same timing logic via resolver. Preorder insert has `is_preorder: true`. Same-day patches `is_preorder: false`. Fixed `sendCartOrderEmail` closure bug (`line.species` out of scope → now uses destructured `species`). |
+| Migration 057 | Adds `is_preorder boolean` column to orders |
+
+**DB columns (both always written):**
+- `placement_kind`: `"same_day"` | `"preorder"`
+- `is_preorder`: `true` | `false`
+
+**UI reads (single expression, no status-based hacks):**
+```js
+// buyer track.astro + seller dashboard/orders/index.astro
+const isPreorder = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
+```
+`status === "pre_order"` kept only as fallback for pre-migration orders.
+
+---
+
+### Feature: Email System Overhaul
+
+**Principle:** All emails are fire-and-forget (non-blocking). Response returns immediately; emails resolve in background via `.then().catch()`.
+
+| Email event | Buyer subject | Seller subject |
+|---|---|---|
+| Pre-order placed | `Pre-order placed — {Species}` | `New pre-order: {Species}` |
+| Same-day order placed | `Order placed — upload payment proof — {Species}` | `New order: {Species}` |
+| Proof uploaded | `Proof received — awaiting verification · {Species}` | `Payment screenshot received — {Species}` |
+| Seller verifies (COD) | `Payment verified — {Species}` | `Payment verified — {Species}` |
+| Razorpay confirmed | `Payment confirmed — your Relifish order is set ✓` | `New order paid: {Species}` |
+| Refund sent | `Refund sent — {Species}` | `Refund marked sent — {Species}` |
+| Status update | `{StatusLabel} — {Species}` | `Order Update: {StatusLabel} — {Species}` |
+
+**Email body differentiation (`isPreorder` flag):**
+- `true`: purple badge, "PRE-ORDER PLACED — CATCH RESERVED FOR TOMORROW", "Est. Max Total" label
+- `false`: green/blue badge, "ORDER PLACED", "Total" label
+
+**Bundle quantity display:**
+- Format: `3 packs × 3 pieces` (removed "= 9 pieces" total count)
+- `formatQtyForEmail(qty, unit, bundleSize, bundleCount)` in `src/lib/email-templates.ts`
+- Razorpay receipt email now derives bundle info from `listing.pricing_options` via `pricing_option_id`
+
+**Seller name in Razorpay receipt:**
+- Orders have no direct `seller_id` FK. Must join via listing: `listing:fish_listings(species, pricing_options, seller:sellers(id, name, email, location_name))`
+
+---
+
+### Feature: Brand Logo Rollout
+
+- All fish emoji and text logos replaced with `logo_horizontal.png`
+- Dark backgrounds: `filter: brightness(0) invert(1)` (white wordmark)
+- Favicon: `favicon.png` (R icon mark)
+- Email header: horizontal logo on dark gradient (CSS filter not supported in Gmail — shows blue, acceptable)
+
+---
+
+### Feature: Bundle Tier Fix
+
+**Bug:** All pricing tiers got `optId = "default"` → server fell back to `opts[0]` (first/wrong tier).
+
+**Fix 1 (frontend):** `src/pages/seller/[id].astro` — `o.id || \`opt_${i}\`` instead of `o.id || "default"`. Matches server's `canonicalPricingOptionsFromPayload`.
+
+**Fix 2 (server fallback):** `resolve-listing-order-line.ts` — if resolved option fails divisibility check, auto-selects correct option by quantity divisibility. Handles stale cart entries from before the frontend fix.
+
+---
+
+### Migrations Required (apply in Supabase SQL editor)
+
+| Migration | Adds |
+|---|---|
+| `051_orders_placement_kind.sql` | `placement_kind` column on orders |
+| `056_*` | `razorpay_order_id`, `razorpay_payment_id`, `payment_method` columns |
+| `057_*` | `is_preorder boolean` column on orders |
+
+---
+
+### Bugs Fixed This Session
+
+| Bug | File | Root Cause | Fix |
+|---|---|---|---|
+| Razorpay receipt email never sent | `razorpay-verify.ts` | Race guard used `count:null` → always early-returned | Check `updatedRows.length` |
+| "Your seller" in receipt email | `razorpay-verify.ts` | Orders have no `seller_id` FK; join `seller:sellers(...)` returned null | Chain via `listing:fish_listings(seller:sellers(...))` |
+| Preorder email always false | `create.ts` | `isRealPreorder = order.status === "pre_order"` — status is now `pending_payment` | Use `placement_kind === "preorder"` |
+| ReferenceError on order create | `create.ts` | Called `isSellerCurrentlyOpen` — never defined/imported | Replaced with `classifyPlacementAtOrderTime` |
+| Undefined vars in resolver | `resolve-listing-order-line.ts` | `placement` and `seller` used but never declared | Added seller fetch + `classifyPlacementAtOrderTime` |
+| Seller email subject always "New Order:" | `create.ts`, `create-seller-cart.ts` | Hardcoded regardless of preorder | Use `isPreorderBranch` / `args.isPreorder` to differentiate |
+| Cart email closure bug | `create-seller-cart.ts` `sendCartOrderEmail` | Used `line.species/quantity/etc.` from outer scope — not in function scope | Use destructured args (`species`, `quantity`, etc.) |
+| `payment_required` → pre-order tag | `track.astro`, `dashboard/orders/index.astro` | Status `payment_required` incorrectly implied preorder | Removed; use `is_preorder === true \|\| placement_kind === "preorder"` |
+| Buyer push/email skipped after Razorpay | `razorpay-verify.ts` | `!updatedCount` (`null`) always true | `updatedRows.length === 0` |
+| Buyer email null → no receipt | `razorpay-verify.ts` | `buyer?.email` null if not set in profile | Fallback to `buyer_email` from frontend; patch DB |
+| Same-day priced at preorder_price_max | `resolve-listing-order-line.ts` | Wrong price branch in `same_day` return | Use `chosen.price` for same-day |
+| `placement_kind = placement` (undefined) | `create.ts` | `placement` not declared in scope | `placement_kind = placementKind as PlacementKind` |

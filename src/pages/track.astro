@@ -133,7 +133,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
   );
 
   function getBuyerPhone(): string | null {
-    try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
+    try { return localStorage.getItem("rlf_phone") || null; } catch { return null; }
   }
 
   function wasPreorderWindow(createdAt: string, seller: any): boolean {
@@ -256,7 +256,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
     try {
       const offset = (currentPage - 1) * PAGE_SIZE;
       const phones = phoneVariants(phone);
-      const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+      const buyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
       // Fetch all statuses — query by buyer_phone OR buyer_id
       const phoneParts = phones.map(p => `buyer_phone.eq.${p}`).join(",");
       const orFilter = buyerId ? `${phoneParts},buyer_id.eq.${buyerId}` : phoneParts;
@@ -369,7 +369,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
     // Supabase Realtime
     const buyerPhone = getBuyerPhone();
-    const rtBuyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+    const rtBuyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
     if (buyerPhone) {
       const pv = phoneVariants(buyerPhone);
       pv.forEach(ph => {

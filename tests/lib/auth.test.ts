@@ -43,13 +43,13 @@ describe("auth", () => {
     const { verifyOtp } = await import("../../src/lib/auth");
     const data = await verifyOtp("+919876543210", "123456");
     expect(data.buyer_id).toBe("b1");
-    expect(store.zepto_buyer_id).toBe("b1");
-    expect(store.zepto_phone).toBe("9876543210");
+    expect(store.rlf_buyer_id).toBe("b1");
+    expect(store.rlf_phone).toBe("9876543210");
   });
 
   it("getSession returns session from localStorage", async () => {
-    store.zepto_buyer_id = "b1";
-    store.zepto_phone = "9876543210";
+    store.rlf_buyer_id = "b1";
+    store.rlf_phone = "9876543210";
     const { getSession } = await import("../../src/lib/auth");
     const session = getSession();
     expect(session?.buyer_id).toBe("b1");
@@ -62,12 +62,12 @@ describe("auth", () => {
   });
 
   it("signOut clears localStorage", async () => {
-    store.zepto_buyer_id = "b1";
-    store.zepto_phone = "9876543210";
+    store.rlf_buyer_id = "b1";
+    store.rlf_phone = "9876543210";
     const { signOut } = await import("../../src/lib/auth");
     signOut();
-    expect(store.zepto_buyer_id).toBeUndefined();
-    expect(store.zepto_phone).toBeUndefined();
+    expect(store.rlf_buyer_id).toBeUndefined();
+    expect(store.rlf_phone).toBeUndefined();
   });
 
   it("getBuyerAddressFromStorage returns null when unset", async () => {
@@ -76,7 +76,7 @@ describe("auth", () => {
   });
 
   it("getBuyerAddressFromStorage returns area name without coordinates", async () => {
-    store.zepto_location = JSON.stringify({
+    store.rlf_location = JSON.stringify({
       name: "Andheri West",
       lat: 19.123456789,
       lng: 72.987654321,
@@ -86,14 +86,14 @@ describe("auth", () => {
   });
 
   it("getBuyerAddressFromStorage returns placeholder when only coords", async () => {
-    store.zepto_location = JSON.stringify({ lat: 19.1, lng: 72.8 });
+    store.rlf_location = JSON.stringify({ lat: 19.1, lng: 72.8 });
     const { getBuyerAddressFromStorage } = await import("../../src/lib/auth");
     expect(getBuyerAddressFromStorage()).toBe("Selected area");
   });
 
   it("formatNewCheckoutAddress merges address detail and map area from storage", async () => {
-    store.zepto_location = JSON.stringify({ name: "Bandra", lat: 19.06, lng: 72.83 });
-    store.zepto_address_detail = JSON.stringify({
+    store.rlf_location = JSON.stringify({ name: "Bandra", lat: 19.06, lng: 72.83 });
+    store.rlf_address_detail = JSON.stringify({
       flat: "402 A",
       building: "Ocean View",
       landmark: "Near station",
@@ -106,12 +106,12 @@ describe("auth", () => {
   });
 
   it("saveBuyerAddressDetailToStorage clears when all empty", async () => {
-    store.zepto_address_detail = "{}";
+    store.rlf_address_detail = "{}";
     const { saveBuyerAddressDetailToStorage, getBuyerAddressDetailFromStorage } = await import(
       "../../src/lib/auth"
     );
     saveBuyerAddressDetailToStorage({ flat: "  ", building: "", landmark: "" });
-    expect(store.zepto_address_detail).toBeUndefined();
+    expect(store.rlf_address_detail).toBeUndefined();
     expect(Object.keys(getBuyerAddressDetailFromStorage()).length).toBe(0);
   });
 });

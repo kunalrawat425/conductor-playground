@@ -182,9 +182,31 @@ export const POST: APIRoute = async ({ request }) => {
             await sendResendEmail(buyer.email, `Refund sent — ${species}`, refundSentEmailBuyer({ species, orderId: order_id, refundNote: refund_note || null }));
           }
         }
-        const { data: sellerRow } = await supabase.from("sellers").select("email, name").eq("id", seller_id).single();
+        const { data: sellerRow } = await supabase.from("sellers").select("email, name, push_subscription, push_enabled").eq("id", seller_id).single();
         if (sellerRow?.email) {
           await sendResendEmail(sellerRow.email, `Refund marked sent — ${species}`, refundSentEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
+        }
+        // Seller push confirmation that refund was recorded
+        if (sellerRow?.push_subscription) {
+          try {
+            const { loadWebPush } = await import("../../../lib/server/load-web-push");
+            const { normalizeVapidKeyForWebPush, trimVapidKey } = await import("../../../lib/server/vapid-env");
+            const { absoluteUrl } = await import("../../../lib/server/site-origin");
+            const vapidPub = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
+            const vapidPriv = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
+            const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
+            if (vapidPub && vapidPriv) {
+              const sub = typeof sellerRow.push_subscription === "string" ? JSON.parse(sellerRow.push_subscription) : sellerRow.push_subscription;
+              const wp = await loadWebPush();
+              wp.setVapidDetails(vapidContact, vapidPub, vapidPriv);
+              await wp.sendNotification(sub, JSON.stringify({
+                title: "Refund recorded",
+                body: `Refund for ${species} order #${String(order_id).slice(0, 8).toUpperCase()} has been marked as sent.`,
+                url: absoluteUrl(`/dashboard/orders?order=${order_id}`),
+                tag: `seller-refund-${Date.now()}`,
+              }));
+            }
+          } catch (_) {}
         }
       } catch (_) {}
       return new Response(JSON.stringify({ order: data }), { status: 200 });
@@ -402,9 +424,32 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       // Email seller
-      const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
+      const { data: seller } = await supabase.from("sellers").select("email, push_subscription, push_enabled").eq("id", seller_id).single();
       if (seller?.email) {
         await sendResendEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, orderEmailSeller(emailArgs));
+      }
+
+      // Seller push for cancelled/declined (seller needs confirmation their action was processed)
+      if (["cancelled", "declined"].includes(status) && seller?.push_subscription) {
+        try {
+          const { loadWebPush } = await import("../../../lib/server/load-web-push");
+          const { normalizeVapidKeyForWebPush, trimVapidKey } = await import("../../../lib/server/vapid-env");
+          const { absoluteUrl } = await import("../../../lib/server/site-origin");
+          const vapidPub = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
+          const vapidPriv = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
+          const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
+          if (vapidPub && vapidPriv) {
+            const sub = typeof seller.push_subscription === "string" ? JSON.parse(seller.push_subscription) : seller.push_subscription;
+            const wp = await loadWebPush();
+            wp.setVapidDetails(vapidContact, vapidPub, vapidPriv);
+            await wp.sendNotification(sub, JSON.stringify({
+              title: status === "declined" ? "Order declined" : "Order cancelled",
+              body: `${species} order #${String(order_id).slice(0, 8).toUpperCase()} has been ${status}.`,
+              url: absoluteUrl(`/dashboard/orders?order=${order_id}`),
+              tag: `seller-${status}-${Date.now()}`,
+            }));
+          }
+        } catch (_) {}
       }
     } catch (_) {}
 

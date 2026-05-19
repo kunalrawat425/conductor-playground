@@ -1,6 +1,6 @@
 /**
  * Auth module — uses Twilio Verify via server API routes.
- * Buyer session stored in localStorage (zepto_buyer_id, zepto_phone).
+ * Buyer session stored in localStorage (rlf_buyer_id, rlf_phone).
  */
 
 import type { BuyerAddressDetail } from "./buyer-address";
@@ -28,25 +28,46 @@ export async function verifyOtp(phone: string, token: string) {
   if (!res.ok) throw new Error(data.error || "Invalid OTP");
 
   // Store session in localStorage
-  localStorage.setItem("zepto_buyer_id", data.buyer_id);
-  localStorage.setItem("zepto_phone", data.phone);
+  localStorage.setItem("rlf_buyer_id", data.buyer_id);
+  localStorage.setItem("rlf_phone", data.phone);
 
   return data;
 }
 
+/** Migrate old zepto_* keys to rlf_* once — runs only when old keys still exist. */
+function migrateStorageKeys() {
+  const migrations: [string, string][] = [
+    ["zepto_buyer_id", "rlf_buyer_id"],
+    ["zepto_phone", "rlf_phone"],
+    ["zepto_buyer_first_name", "rlf_buyer_first_name"],
+    ["zepto_buyer_last_name", "rlf_buyer_last_name"],
+    ["zepto_buyer_location", "rlf_buyer_location"],
+    ["zepto_buyer_lat", "rlf_buyer_lat"],
+    ["zepto_buyer_lng", "rlf_buyer_lng"],
+    ["zepto_location", "rlf_location"],
+    ["zepto_address_detail", "rlf_address_detail"],
+    ["zepto_checkout_address_selection", "rlf_checkout_address_selection"],
+  ];
+  for (const [old, next] of migrations) {
+    const val = localStorage.getItem(old);
+    if (val !== null) { localStorage.setItem(next, val); localStorage.removeItem(old); }
+  }
+}
+
 export function getSession(): { buyer_id: string; phone: string } | null {
-  const buyer_id = localStorage.getItem("zepto_buyer_id");
-  const phone = localStorage.getItem("zepto_phone");
+  try { migrateStorageKeys(); } catch {}
+  const buyer_id = localStorage.getItem("rlf_buyer_id");
+  const phone = localStorage.getItem("rlf_phone");
   if (!buyer_id || !phone) return null;
   return { buyer_id, phone };
 }
 
-const ADDRESS_DETAIL_KEY = "zepto_address_detail";
+const ADDRESS_DETAIL_KEY = "rlf_address_detail";
 
-/** Area from LocationPicker (`zepto_location`) — never shows raw coordinates. */
+/** Area from LocationPicker (`rlf_location`) — never shows raw coordinates. */
 export function getBuyerAddressFromStorage(): string | null {
   try {
-    const raw = localStorage.getItem("zepto_location");
+    const raw = localStorage.getItem("rlf_location");
     if (!raw) return null;
     const loc = JSON.parse(raw) as { lat?: number; lng?: number; name?: string };
     const name = typeof loc.name === "string" ? loc.name.trim() : "";
@@ -83,6 +104,6 @@ export function saveBuyerAddressDetailToStorage(detail: BuyerAddressDetail) {
 }
 
 export function signOut() {
-  localStorage.removeItem("zepto_buyer_id");
-  localStorage.removeItem("zepto_phone");
+  localStorage.removeItem("rlf_buyer_id");
+  localStorage.removeItem("rlf_phone");
 }

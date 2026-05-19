@@ -939,7 +939,7 @@ const tags = [
 
       // Pre-flight: must be signed in
       let buyerId = null, buyerPhone = null;
-      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
       if (!buyerId || !buyerPhone) {
         window.v2OpenSheet?.("seller-login-sheet");
         return;
@@ -1069,7 +1069,7 @@ const tags = [
 
     async function preloadAddress() {
       let buyerId = null;
-      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
       if (!buyerId) return;
       try {
         const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
@@ -1094,7 +1094,7 @@ const tags = [
       selectedAddressId = e.detail?.addressId;
       // Refresh address card UI from API
       let buyerId = null;
-      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
       if (buyerId && selectedAddressId) {
         try {
           const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
@@ -1132,7 +1132,7 @@ const tags = [
       }
 
       let buyerId = null, buyerPhone = null;
-      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
       if (!buyerId || !buyerPhone) { window.v2OpenSheet?.("seller-login-sheet"); return; }
 
       const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');

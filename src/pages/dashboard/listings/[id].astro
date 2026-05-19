@@ -36,7 +36,7 @@ const speciesName = listing?.species || "Listing";
   <script define:vars={{ ownerId: listing?.seller_id || "", listingId: listing?.id || "" }}>
     // Ownership gate
     try {
-      const me = localStorage.getItem("zepto_seller_id");
+      const me = localStorage.getItem("rlf_seller_id");
       const form = document.getElementById("listing-form");
       const denied = document.getElementById("v2-edit-denied");
       if (!me) {
@@ -52,7 +52,7 @@ const speciesName = listing?.species || "Listing";
     import { validateSellerListingForm, focusListingField } from "../../../lib/listing-form-validation";
     import { supabase } from "../../../lib/supabase";
 
-    const sellerId = localStorage.getItem("zepto_seller_id");
+    const sellerId = localStorage.getItem("rlf_seller_id");
     if (sellerId) {
       const form = document.getElementById("listing-form") as HTMLFormElement | null;
       if (form) {

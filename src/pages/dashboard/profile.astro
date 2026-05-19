@@ -175,7 +175,7 @@ import Input from "../../components/ui/atoms/Input.astro";
   import { supabase } from "../../lib/supabase";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
 
-  function getSellerId() { try { return localStorage.getItem("zepto_seller_id"); } catch { return null; } }
+  function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
   const sellerId = getSellerId();
   if (!sellerId) {
     location.href = "/dashboard/login";
@@ -539,8 +539,8 @@ import Input from "../../components/ui/atoms/Input.astro";
   // Logout
   document.getElementById("p-logout")?.addEventListener("click", () => {
     try {
-      localStorage.removeItem("zepto_seller_id");
-      localStorage.removeItem("zepto_seller_phone");
+      localStorage.removeItem("rlf_seller_id");
+      localStorage.removeItem("rlf_seller_phone");
     } catch {}
     window.location.href = "/dashboard/login";
   });
