@@ -60,10 +60,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     const list = document.getElementById("v2-listings-list")!;
     const empty = document.getElementById("v2-listings-empty")!;
 
-    if (!sellerId) {
-      loading.innerHTML = `<div style="color:var(--v2-red);">Sign in required. <a href="/dashboard/login" style="color:var(--v2-brand);">Sign in →</a></div>`;
-      return;
-    }
+    if (!sellerId) { window.location.replace("/dashboard/login"); return; }
 
     try {
       if (!_sellerTiming) {
