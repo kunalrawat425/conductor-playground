@@ -4,6 +4,7 @@ import {
   isPastPreorderCutoffIST,
   isPreorderShoppingWindow,
   isSellerEffectivelyOpen,
+  isAfterCloseTimeIST,
   todayDayName,
 } from "../../src/lib/order-timing";
 
@@ -24,12 +25,30 @@ describe("order-timing", () => {
     expect(classifyPlacementAtOrderTime(seller, now)).toBe("same_day");
   });
 
-  it("preorder when closed but before cutoff", () => {
-    // UTC 16:00 = IST 21:30 — after close, before 22:00 cutoff
+  it("preorder when after close time and before cutoff", () => {
+    // UTC 16:00 = IST 21:30 — after closes_at 14:00, before 22:00 cutoff
     const now = Date.UTC(2024, 0, 15, 16, 0, 0);
     expect(isSellerEffectivelyOpen(seller, now)).toBe(false);
+    expect(isAfterCloseTimeIST(seller, now)).toBe(true);
     expect(isPreorderShoppingWindow(seller, now)).toBe(true);
     expect(classifyPlacementAtOrderTime(seller, now)).toBe("preorder");
+  });
+
+  it("NOT preorder before store opens (same order day, before opens_at)", () => {
+    // UTC 00:00 = IST 05:30 — before opens_at 06:00 on an order day
+    const now = Date.UTC(2024, 0, 15, 0, 0, 0);
+    expect(isSellerEffectivelyOpen(seller, now)).toBe(false);
+    expect(isAfterCloseTimeIST(seller, now)).toBe(false); // not past close time
+    // preorder window should NOT be active before store opens on an order day
+    expect(isPreorderShoppingWindow(seller, now)).toBe(false);
+    expect(classifyPlacementAtOrderTime(seller, now)).toBe("closed");
+  });
+
+  it("NOT preorder between opens_at and closes_at", () => {
+    // UTC 04:00 = IST 09:30 — during open hours
+    const now = Date.UTC(2024, 0, 15, 4, 0, 0);
+    expect(isSellerEffectivelyOpen(seller, now)).toBe(true);
+    expect(isPreorderShoppingWindow(seller, now)).toBe(false);
   });
 
   it("closed after preorder cutoff", () => {
