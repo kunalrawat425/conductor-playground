@@ -1,12 +1,12 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import Toast from "../../components/v2/atoms/Toast.astro";
-import EmptyState from "../../components/v2/molecules/EmptyState.astro";
+import AppShell from "../../components/ui/AppShell.astro";
+import Toast from "../../components/ui/atoms/Toast.astro";
+import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 
 const { id } = Astro.params;
 ---
-<AppShellV2
+<AppShell
   noindex={true}
   title="Order details | Relifish"
   description="View order details, status, and seller contact."
@@ -84,7 +84,7 @@ const { id } = Astro.params;
     <!-- Optional payment proof (confirmed+); separate from #v2-od-actions so prefs form re-renders do not wipe it -->
     <div id="v2-od-extra-payment"></div>
   </div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-od-hero {
@@ -166,6 +166,8 @@ const { id } = Astro.params;
     import.meta.env.PUBLIC_SUPABASE_URL || "",
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
   );
+  const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
+  const RAZORPAY_KEY_ID  = import.meta.env.PUBLIC_RAZORPAY_KEY_ID  || "";
   // Extract order ID from URL path: /track/{id}
   const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
   function escape(s) {
@@ -177,9 +179,12 @@ const { id } = Astro.params;
   }
   function statusLabel(s, o) {
     const proofOnFile = o && Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
+    const pendingLabel = RAZORPAY_ENABLED
+      ? "Complete payment"
+      : (proofOnFile ? "Payment proof submitted" : "Upload payment proof");
     return ({
-      pending: proofOnFile ? "Payment proof submitted" : "Upload payment proof",
-      pending_payment: proofOnFile ? "Payment proof submitted" : "Upload payment proof",
+      pending: pendingLabel,
+      pending_payment: pendingLabel,
       pre_order: "Pre-order placed",
       scheduled: "Scheduled pickup",
       confirmed: "Confirmed ✓",
@@ -195,12 +200,13 @@ const { id } = Astro.params;
     })[s] || s;
   }
   function billPaymentFootnote(o) {
+    if (o.payment_method === "razorpay") return "Paid via Razorpay";
     const paidAmt = o.paid_amount ? Number(o.paid_amount) : 0;
     const proofOnFile = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
     if (paidAmt > 0 && proofOnFile) return "Paid via UPI · screenshot on file";
     if (paidAmt > 0) return "Paid via UPI";
     if (proofOnFile) return "Payment proof submitted — seller will verify shortly";
-    return "Payment proof pending";
+    return RAZORPAY_ENABLED ? "Payment pending" : "Payment proof pending";
   }
   function isCancellable(s) {
     return s === "pending" || s === "pending_payment" || s === "pre_order";
@@ -209,8 +215,8 @@ const { id } = Astro.params;
   let pollTimer = null;
 
   async function load() {
-    const phone = (() => { try { return localStorage.getItem("zepto_phone") || ""; } catch { return ""; } })();
-    const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+    const phone = (() => { try { return localStorage.getItem("rlf_phone") || ""; } catch { return ""; } })();
+    const buyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
     if (!phone || !buyerId) {
       window.location.href = "/track";
       return;
@@ -238,7 +244,7 @@ const { id } = Astro.params;
     if (extraPaySlot) extraPaySlot.innerHTML = "";
 
     document.getElementById("v2-od-status").textContent = statusLabel(o.status, o);
-    document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,6).toUpperCase();
+    document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,8).toUpperCase();
     document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     // Hero colour: green for confirmed/done, red for declined/cancelled, orange for payment actions
     const hero = document.querySelector(".v2-od-hero");
@@ -410,7 +416,7 @@ const { id } = Astro.params;
       document.getElementById("v2-od-cancel-btn")?.addEventListener("click", async () => {
         if (!confirm(cancelConfirm)) return;
         try {
-          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const buyerId = localStorage.getItem("rlf_buyer_id") || "";
           const res = await fetch("/api/orders/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -429,7 +435,7 @@ const { id } = Astro.params;
       document.getElementById("v2-od-cancel-btn").addEventListener("click", async () => {
         if (!confirm("Cancel this order? This cannot be undone.")) return;
         try {
-          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const buyerId = localStorage.getItem("rlf_buyer_id") || "";
           const res = await fetch("/api/orders/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -473,7 +479,7 @@ const { id } = Astro.params;
           </div>`;
         // Wire screenshot buttons
         setTimeout(() => {
-          const buyerIdForRef = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+          const buyerIdForRef = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
           // Seller's refund screenshot
           document.getElementById("v2-od-seller-refund-ss")?.addEventListener("click", async (e) => {
             const btn = e.currentTarget as HTMLButtonElement;
@@ -548,7 +554,7 @@ const { id } = Astro.params;
           btn.disabled = true;
           btn.textContent = "Saving...";
           try {
-            const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+            const buyerId = localStorage.getItem("rlf_buyer_id") || "";
             const res = await fetch("/api/orders/feedback", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -682,7 +688,7 @@ const { id } = Astro.params;
             const res = await fetch("/api/orders/update-notes", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ order_id: o.id, buyer_id: localStorage.getItem("zepto_buyer_id"), cut_style: cut, buyer_notes: notes }),
+              body: JSON.stringify({ order_id: o.id, buyer_id: localStorage.getItem("rlf_buyer_id"), cut_style: cut, buyer_notes: notes }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed");
@@ -703,7 +709,7 @@ const { id } = Astro.params;
           document.getElementById("v2-od-cancel-sched")?.addEventListener("click", async () => {
             if (!confirm("Cancel this scheduled order?")) return;
             try {
-              const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+              const buyerId = localStorage.getItem("rlf_buyer_id") || "";
               const res = await fetch("/api/orders/cancel", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -731,7 +737,7 @@ const { id } = Astro.params;
       const refundAmt = finalAmt > 0 ? Math.max(0, paidAmt - finalAmt) : paidAmt;
       const sentAt = o.refund_sent_at ? new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : null;
       const note = o.refund_note || "";
-      const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+      const buyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
       // Buyer's own payment screenshots (to show alongside refund info)
       const buyerSsPaths: string[] = o.payment_screenshot_urls || [];
       const buyerSsSection = buyerSsPaths.length > 0
@@ -835,6 +841,13 @@ const { id } = Astro.params;
       const isBalance = kind === "balance";
       const isOptional = kind === "optional";
 
+      // Razorpay branch — replaces UPI card + screenshot upload for primary payment
+      if (RAZORPAY_ENABLED && !isOptional && !isBalance) {
+        const balance = Number(o.total_price) + Number(o.delivery_fee || 0);
+        renderRazorpayButton(o, balance, root);
+        return;
+      }
+
       const paidSoFar = Number(o.paid_amount) || 0;
       const finalPrice = Number(o.final_price) || 0;
       let balance = 0;
@@ -895,7 +908,7 @@ const { id } = Astro.params;
       const qs = (sel) => root.querySelector(sel);
 
       if (alreadyUploaded) {
-        const buyerIdForSS = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+        const buyerIdForSS = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
         fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForSS)}`)
           .then(r => r.json())
           .then(ssData => {
@@ -950,7 +963,7 @@ const { id } = Astro.params;
         submitBtn.textContent = "Uploading...";
         errEl.style.display = "none";
         try {
-          const buyerId = localStorage.getItem("zepto_buyer_id") || "";
+          const buyerId = localStorage.getItem("rlf_buyer_id") || "";
           const form = new FormData();
           form.append("order_id", o.id);
           form.append("buyer_id", buyerId);
@@ -985,6 +998,169 @@ const { id } = Astro.params;
         }
       });
     }
+  }
+
+  // ── Razorpay payment UI ────────────────────────────────────────────
+
+  function loadRazorpayScript(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if ((window as any).Razorpay) { resolve(); return; }
+      const s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Payment SDK failed to load. Check your internet connection."));
+      document.head.appendChild(s);
+    });
+  }
+
+  function renderRazorpayButton(o: any, balance: number, root: HTMLElement) {
+    const fmt = (n: number) => n.toLocaleString("en-IN");
+    root.innerHTML = `
+      <div style="background:var(--v2-bg);border:1.5px solid var(--v2-brand);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
+        <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">💳 Complete payment</div>
+        <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">
+          Pay securely via Razorpay (UPI, cards, netbanking). Your order confirms instantly.
+        </div>
+        <div style="font:900 22px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${fmt(balance)}</div>
+        <button type="button" id="v2-rzp-pay-btn" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">
+          Pay ₹${fmt(balance)} →
+        </button>
+        <div id="v2-rzp-loading" style="display:none;text-align:center;padding:12px;font:500 12px Inter;color:var(--v2-ink-3);">
+          <span class="v2-spinner v2-spinner-sm"></span> Opening payment...
+        </div>
+        <div id="v2-rzp-err" style="font:500 11px Inter;color:var(--v2-red);margin-top:8px;display:none;"></div>
+        <div style="font:400 10px Inter;color:var(--v2-ink-3);text-align:center;margin-top:10px;">
+          🔒 Secured by Razorpay
+        </div>
+      </div>`;
+
+    const btn = root.querySelector<HTMLButtonElement>("#v2-rzp-pay-btn")!;
+    const loadingEl = root.querySelector<HTMLElement>("#v2-rzp-loading")!;
+    const errEl = root.querySelector<HTMLElement>("#v2-rzp-err")!;
+
+    function showErr(msg: string) {
+      errEl.textContent = msg;
+      errEl.style.display = "block";
+      btn.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = `Pay ₹${fmt(balance)} →`;
+      loadingEl.style.display = "none";
+    }
+
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.style.display = "none";
+      loadingEl.style.display = "block";
+      errEl.style.display = "none";
+
+      const buyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
+
+      // Fetch buyer email for prefill + receipt (non-blocking, best-effort)
+      let buyerEmail = "";
+      if (buyerId) {
+        try {
+          const pRes = await fetch(`/api/buyer/profile?buyer_id=${encodeURIComponent(buyerId)}`);
+          if (pRes.ok) { const pd = await pRes.json(); buyerEmail = pd.profile?.email || ""; }
+        } catch { /* ignore */ }
+      }
+
+      // Step 1: Create Razorpay order server-side
+      let createData: any;
+      try {
+        const createRes = await fetch("/api/payments/razorpay-create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_id: o.id, buyer_id: buyerId }),
+        });
+        createData = await createRes.json();
+        if (!createRes.ok) throw new Error(createData.error || "Could not initiate payment");
+      } catch (err: any) {
+        showErr(err.message || "Payment failed to start. Please try again.");
+        return;
+      }
+
+      // Step 2: Load Razorpay SDK
+      try {
+        await loadRazorpayScript();
+      } catch (err: any) {
+        showErr(err.message || "Could not load payment SDK. Check your internet connection.");
+        return;
+      }
+
+      loadingEl.style.display = "none";
+
+      // Step 3: Open Razorpay modal
+      const rzp = new (window as any).Razorpay({
+        key: RAZORPAY_KEY_ID,
+        order_id: createData.razorpay_order_id,
+        amount: createData.amount,
+        currency: createData.currency,
+        name: "Relifish",
+        description: `Order #${String(o.id).slice(0, 8).toUpperCase()}`,
+        theme: { color: "#0066FF" },
+        prefill: {
+          contact: (() => { try { return localStorage.getItem("rlf_phone") || ""; } catch { return ""; } })(),
+          email: buyerEmail,
+        },
+        handler: async function(response: any) {
+          // Step 4: Verify payment server-side
+          btn.disabled = true;
+          btn.style.display = "none";
+          loadingEl.style.display = "block";
+          loadingEl.innerHTML = `<span class="v2-spinner v2-spinner-sm"></span> Confirming payment...`;
+          errEl.style.display = "none";
+
+          try {
+            const verifyRes = await fetch("/api/payments/razorpay-verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id:  response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature:  response.razorpay_signature,
+                order_id: o.id,
+                buyer_id: buyerId,
+                buyer_email: buyerEmail || undefined,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) throw new Error(verifyData.error || "Payment verification failed");
+
+            // Success — show confirmation and reload
+            root.innerHTML = `
+              <div style="background:#f0fdf4;border:1.5px solid #86EFAC;border-radius:var(--v2-radius);padding:16px;margin-top:8px;text-align:center;">
+                <div style="font-size:32px;margin-bottom:8px;">✅</div>
+                <div style="font:800 15px Inter;color:#15803d;margin-bottom:4px;">Payment confirmed!</div>
+                <div style="font:400 12px Inter;color:#166534;">Your order is confirmed. The seller has been notified.</div>
+              </div>`;
+            (window as any).v2Toast?.("success", "Payment confirmed!", "Your order is confirmed.");
+            setTimeout(() => load(), 1200);
+
+          } catch (err: any) {
+            // Verify failed — show payment ID so buyer can contact support
+            const payId = response.razorpay_payment_id || "";
+            root.innerHTML = `
+              <div style="background:var(--v2-bg);border:1.5px solid var(--v2-red);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
+                <div style="font:800 14px Inter;color:var(--v2-red);margin-bottom:6px;">⚠️ Payment received but confirmation failed</div>
+                <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:8px;">Your money was deducted. Please contact us immediately and share your payment ID.</div>
+                ${payId ? `<div style="font:600 11px Inter;color:var(--v2-ink-3);background:var(--v2-bg-2);padding:8px;border-radius:var(--v2-radius-sm);margin-bottom:8px;word-break:break-all;">Payment ID: ${payId}</div>` : ""}
+                <div style="font:500 12px Inter;color:var(--v2-ink);">📞 9152207607 &nbsp;·&nbsp; ✉️ relifishstore@gmail.com</div>
+              </div>`;
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            // User closed modal without paying — restore button
+            btn.disabled = false;
+            btn.style.display = "block";
+            btn.textContent = `Pay ₹${fmt(balance)} →`;
+            loadingEl.style.display = "none";
+          },
+        },
+      });
+
+      rzp.open();
+    });
   }
 
   function initPage() {

@@ -13,7 +13,7 @@ import VercelAnalytics from "./VercelAnalytics.astro";
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 const siteUrl = "https://www.relifish.store";
-const defaultDescription = "Order fresh fish from local Goa sellers. Pre-order tonight, pick up tomorrow morning.";
+const defaultDescription = "Hyperlocal. Fresh. Affordable. Order fresh fish from verified local sellers in Mumbai — delivered to your doorstep in 2 hours.";
 const { title = brandName, description = defaultDescription, ogImage = "/og-image.png", activeTab = "home", showLocationBadge = true, needsMap = false, jsonLd } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
 ---
@@ -39,18 +39,33 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
     <link rel="canonical" href={canonicalUrl} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/favicon.png" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    <!-- Facebook Pixel -->
+    <script is:inline>
+      !function(f,b,e,v,n,t,s){
+        if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window,document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init','1197248829088195');
+      fbq('track','PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=1197248829088195&ev=PageView&noscript=1"/></noscript>
   </head>
   <body>
     <div class="app-shell">
       <!-- Fixed header -->
       <header class="app-header">
         <div class="app-header-top">
-          <a href="/" class="app-logo">🐟 {brandName}</a>
+          <a href="/" class="app-logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt={brandName} style="height:40px;width:auto;display:block;" /></a>
           {showLocationBadge && (
             <button class="location-badge" id="location-badge" aria-label="Change location">
               <span id="location-text">Set location</span>
@@ -100,7 +115,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
       const locationText = document.getElementById("location-text");
 
       function updateLocationBadge() {
-        const saved = localStorage.getItem("zepto_location");
+        const saved = localStorage.getItem("rlf_location");
         if (saved) {
           try {
             const loc = JSON.parse(saved);

@@ -1,12 +1,12 @@
 ---
-import AppShellV2 from "../components/v2/AppShellV2.astro";
-import SellerCard from "../components/v2/molecules/SellerCard.astro";
-import PreorderBanner from "../components/v2/molecules/PreorderBanner.astro";
-import CategoryStrip from "../components/v2/molecules/CategoryStrip.astro";
-import EmptyState from "../components/v2/molecules/EmptyState.astro";
-import Skeleton from "../components/v2/atoms/Skeleton.astro";
-import Toast from "../components/v2/atoms/Toast.astro";
-import LocationPickerSheet from "../components/v2/organisms/LocationPickerSheet.astro";
+import AppShell from "../components/ui/AppShell.astro";
+import SellerCard from "../components/ui/molecules/SellerCard.astro";
+import PreorderBanner from "../components/ui/molecules/PreorderBanner.astro";
+import CategoryStrip from "../components/ui/molecules/CategoryStrip.astro";
+import EmptyState from "../components/ui/molecules/EmptyState.astro";
+import Skeleton from "../components/ui/atoms/Skeleton.astro";
+import Toast from "../components/ui/atoms/Toast.astro";
+import LocationPickerSheet from "../components/ui/organisms/LocationPickerSheet.astro";
 import { sellerNameToSlug } from "../lib/supabase";
 
 // Category strip is built dynamically from live listings data (see script below).
@@ -15,7 +15,7 @@ const categories = [
   { id: "all", name: "All Fish", emoji: "🐟", active: true },
 ];
 ---
-<AppShellV2
+<AppShell
   title="Fresh Fish Delivery Mumbai — Order from Local Sellers | Relifish"
   description="Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch — pomfret, surmai, bangda, prawns — delivered or pickup tomorrow morning."
   needsMap={true}
@@ -116,7 +116,7 @@ const categories = [
 
   <!-- Sticky cart section (Swiggy-style, fixed above bottom nav) -->
   <div id="v2-home-carts" style="display:none;position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:40;max-height:40vh;overflow-y:auto;background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.1);"></div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-section-head {
@@ -231,15 +231,15 @@ const categories = [
 
   function getBuyerLocation(): { lat: number; lng: number } | null {
     try {
-      const lat = localStorage.getItem("zepto_buyer_lat");
-      const lng = localStorage.getItem("zepto_buyer_lng");
+      const lat = localStorage.getItem("rlf_buyer_lat");
+      const lng = localStorage.getItem("rlf_buyer_lng");
       if (lat && lng) return { lat: parseFloat(lat), lng: parseFloat(lng) };
     } catch {}
     return null;
   }
 
   function getBuyerArea(): string {
-    try { return localStorage.getItem("zepto_buyer_location") || "Set location"; } catch { return "Set location"; }
+    try { return localStorage.getItem("rlf_buyer_location") || "Set location"; } catch { return "Set location"; }
   }
 
   function pickHue(seed: string): SellerHue {
@@ -326,9 +326,9 @@ const categories = [
               const data = await r.json();
               const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
               try {
-                localStorage.setItem("zepto_buyer_location", a);
-                localStorage.setItem("zepto_buyer_lat", String(latitude));
-                localStorage.setItem("zepto_buyer_lng", String(longitude));
+                localStorage.setItem("rlf_buyer_location", a);
+                localStorage.setItem("rlf_buyer_lat", String(latitude));
+                localStorage.setItem("rlf_buyer_lng", String(longitude));
               } catch {}
               if (locMain) locMain.firstChild!.textContent = a + " ";
               loadSellers();
@@ -360,9 +360,9 @@ const categories = [
               const data = await r.json();
               const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
               try {
-                localStorage.setItem("zepto_buyer_location", a);
-                localStorage.setItem("zepto_buyer_lat", String(latitude));
-                localStorage.setItem("zepto_buyer_lng", String(longitude));
+                localStorage.setItem("rlf_buyer_location", a);
+                localStorage.setItem("rlf_buyer_lat", String(latitude));
+                localStorage.setItem("rlf_buyer_lng", String(longitude));
               } catch {}
               if (locMain) locMain.firstChild!.textContent = a + " ";
               (window as any).v2Toast?.("success", "Location set", a);
@@ -636,7 +636,7 @@ const categories = [
 
     if (allGroups.length === 0) {
       count.textContent = "0";
-      empty.innerHTML = `<div style="padding:32px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:44px;margin-bottom:12px;">🐟</div><div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers in your area yet</div><div style="font:400 13px Inter;color:var(--v2-ink-3);margin-bottom:18px;line-height:1.5;">We're expanding fast. Join the waitlist and we'll notify you when a seller goes live near you.</div><a href="/buyer-banner.html" style="display:inline-block;background:var(--v2-brand);color:#fff;font:700 14px Inter;padding:12px 28px;border-radius:100px;text-decoration:none;">Join waitlist →</a></div>`;
+      empty.innerHTML = `<div style="padding:32px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="margin-bottom:12px;"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:40px;width:auto;display:block;margin:8px auto;" /></div><div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers in your area yet</div><div style="font:400 13px Inter;color:var(--v2-ink-3);margin-bottom:18px;line-height:1.5;">We're expanding fast. Join the waitlist and we'll notify you when a seller goes live near you.</div><a href="/buyer-banner.html" style="display:inline-block;background:var(--v2-brand);color:#fff;font:700 14px Inter;padding:12px 28px;border-radius:100px;text-decoration:none;">Join waitlist →</a></div>`;
       empty.style.display = "block";
       grid.style.display = "none";
       return;
@@ -724,7 +724,7 @@ const categories = [
             ${offerBadge}
             ${(s as any).store_image_url
               ? `<img src="${escapeHtml((s as any).store_image_url)}" alt="${escapeHtml(s.name)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />`
-              : `<span class="v2-sc-emoji">🐟</span>`}
+              : `<img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-sc-emoji" style="height:36px;width:auto;display:block;" />`}
           </div>
           <div class="v2-sc-body">
             <div class="v2-sc-top">
@@ -879,7 +879,7 @@ const categories = [
           const itemCount = g.items.length;
           const border = i < groups.length - 1 ? "border-bottom:1px solid var(--v2-border);" : "";
           return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;${border}">
-            <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🐟</div>
+            <div style="width:50px;height:50px;border-radius:10px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:28px;width:auto;display:block;" /></div>
             <div style="flex:1;min-width:0;">
               <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.seller_name || "Seller")}</div>
               <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/s/${sellerNameToSlug(g.seller_name || "")}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>

@@ -10,7 +10,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
 const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
 /** mailto: or https: URL required by web-push (see VAPID_CONTACT in .env.example) */
-const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@relifish.app";
+const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
 
 export type BuyerPushPayload = {
   /** Prefer UUID from orders.buyer_id */

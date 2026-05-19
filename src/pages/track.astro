@@ -1,11 +1,11 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../components/v2/AppShellV2.astro";
-import EmptyState from "../components/v2/molecules/EmptyState.astro";
-import LoginSheet from "../components/v2/organisms/LoginSheet.astro";
-import Toast from "../components/v2/atoms/Toast.astro";
+import AppShell from "../components/ui/AppShell.astro";
+import EmptyState from "../components/ui/molecules/EmptyState.astro";
+import LoginSheet from "../components/ui/organisms/LoginSheet.astro";
+import Toast from "../components/ui/atoms/Toast.astro";
 ---
-<AppShellV2
+<AppShell
   noindex={true}
   title="Your Orders | Relifish"
   description="Track your fish orders and reorder favorites."
@@ -41,7 +41,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
   </div>
 
   <div id="v2-track-active" style="padding:12px 16px 0;"></div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-active-order {
@@ -82,7 +82,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
   .v2-stepper-labels {
     display: flex; justify-content: space-between;
     margin-top: 6px;
-    font: 500 9px Inter; color: #64748B;
+    font: 500 11px Inter; color: #64748B;
   }
 
   .v2-section-head-light {
@@ -133,7 +133,32 @@ import Toast from "../components/v2/atoms/Toast.astro";
   );
 
   function getBuyerPhone(): string | null {
-    try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
+    try { return localStorage.getItem("rlf_phone") || null; } catch { return null; }
+  }
+
+  function wasPreorderWindow(createdAt: string, seller: any): boolean {
+    if (!seller) return false;
+    const ist = new Date(new Date(createdAt).getTime() + 5.5 * 60 * 60 * 1000);
+    const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][ist.getUTCDay()];
+    const timeMin = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+    function toMin(t: string | null | undefined): number | null {
+      if (!t) return null;
+      const [h, m] = String(t).split(':').map(Number);
+      return h * 60 + (m || 0);
+    }
+    const preorderDays: string[] = seller.preorder_days || [];
+    const isPreorderDay = preorderDays.length > 0
+      ? preorderDays.includes(dayName)
+      : !!seller.accepts_preorder;
+    if (!isPreorderDay) return false;
+    const openMin = toMin(seller.opens_at);
+    const closeMin = toMin(seller.closes_at);
+    if (openMin !== null && closeMin !== null) {
+      return !(timeMin >= openMin && timeMin < closeMin);
+    }
+    const cutoffMin = toMin(seller.preorder_cutoff_time);
+    if (cutoffMin !== null) return timeMin >= cutoffMin;
+    return false;
   }
 
   // Immediately hide spinner and show guest if not logged in — don't wait for Supabase
@@ -193,10 +218,9 @@ import Toast from "../components/v2/atoms/Toast.astro";
     return ["declined", "cancelled", "refunded"].includes(status);
   }
 
-  function orderKindLabel(o: { placement_kind?: string | null; status?: string }) {
-    if (o.placement_kind === "preorder") return "Pre-order";
-    if (o.placement_kind === "same_day") return "Order";
-    if (o.status === "pre_order" || o.status === "payment_required") return "Pre-order";
+  function orderKindLabel(o: { is_preorder?: boolean | null; placement_kind?: string | null; status?: string }) {
+    if (o.is_preorder === true || o.placement_kind === "preorder") return "Pre-order";
+    if (o.status === "pre_order") return "Pre-order";
     return "Order";
   }
 
@@ -232,13 +256,13 @@ import Toast from "../components/v2/atoms/Toast.astro";
     try {
       const offset = (currentPage - 1) * PAGE_SIZE;
       const phones = phoneVariants(phone);
-      const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+      const buyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
       // Fetch all statuses — query by buyer_phone OR buyer_id
       const phoneParts = phones.map(p => `buyer_phone.eq.${p}`).join(",");
       const orFilter = buyerId ? `${phoneParts},buyer_id.eq.${buyerId}` : phoneParts;
       const { data: allOrders, count } = await supabase
         .from("orders")
-        .select("*, listing:fish_listings(species, pricing_options, seller:sellers(name))", { count: "exact" })
+        .select("*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name, opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, accepts_preorder))", { count: "exact" })
         .or(orFilter)
         .order("created_at", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
@@ -262,7 +286,6 @@ import Toast from "../components/v2/atoms/Toast.astro";
         const { labels, step: stepIdx } = resolveBuyerStepper(o, orderType);
         const paidAmt = Number(o.paid_amount) || 0;
 
-        // Quantity label as packs when bundle_size > 1 (piece-based pricing).
         const listingOpts = o.listing?.pricing_options || [];
         const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
         const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
@@ -306,14 +329,18 @@ import Toast from "../components/v2/atoms/Toast.astro";
                 ${statusToTag(o.status, o)}
               </div>
               <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,6).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,8).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
               ${stepperHtml}
               ${refundNote}
             </a>`
           : `<a href="/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
-              <div class="label">${orderKindLabel(o)} · ${statusToTag(o.status, o)}</div>
+              <div class="label">
+                <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;${orderKindLabel(o) === "Pre-order" ? "background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;" : "background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;"}">${orderKindLabel(o)}</span>
+                <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;margin-left:4px;${isDelivery ? "background:#ecfeff;color:#0e7490;border:1px solid #a5f3fc;" : "background:#fffbeb;color:#b45309;border:1px solid #fde68a;"}">${isDelivery ? "Delivery" : "Pickup"}</span>
+                <span style="margin-left:4px;">${statusToTag(o.status, o)}</span>
+              </div>
               <h3>${escapeHtml(seller)}</h3>
-              <div class="sub">Order #${o.id.slice(0, 6).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
+              <div class="sub">Order #${o.id.slice(0, 8).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
               ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
               ${stepperHtml}
             </a>`;
@@ -325,8 +352,11 @@ import Toast from "../components/v2/atoms/Toast.astro";
           <button class="v2-pg-btn" id="v2-track-next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
         </div>` : '');
 
-      document.getElementById("v2-track-prev")?.addEventListener("click", () => { if (currentPage > 1) { currentPage--; load(); } });
-      document.getElementById("v2-track-next")?.addEventListener("click", () => { if (currentPage < totalPages) { currentPage++; load(); } });
+      // Use onclick to prevent duplicate listeners accumulating across polling cycles
+      const prevEl = document.getElementById("v2-track-prev");
+      const nextEl = document.getElementById("v2-track-next");
+      if (prevEl) prevEl.onclick = () => { if (currentPage > 1) { currentPage--; load(); } };
+      if (nextEl) nextEl.onclick = () => { if (currentPage < totalPages) { currentPage++; load(); } };
 
     } catch (err) {
       console.error("track: load failed", err);
@@ -339,7 +369,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
 
     // Supabase Realtime
     const buyerPhone = getBuyerPhone();
-    const rtBuyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
+    const rtBuyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
     if (buyerPhone) {
       const pv = phoneVariants(buyerPhone);
       pv.forEach(ph => {

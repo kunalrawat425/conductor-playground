@@ -1,8 +1,8 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import Toast from "../../components/v2/atoms/Toast.astro";
-import Input from "../../components/v2/atoms/Input.astro";
+import AppShell from "../../components/ui/AppShell.astro";
+import Toast from "../../components/ui/atoms/Toast.astro";
+import Input from "../../components/ui/atoms/Input.astro";
 ---
 <style is:global>
   .v2-day-pill {
@@ -23,7 +23,7 @@ import Input from "../../components/v2/atoms/Input.astro";
   }
 </style>
 
-<AppShellV2
+<AppShell
   title="Profile · Seller Dashboard"
   description="Edit your seller profile"
   header={{ variant: "page", title: "My profile", backHref: "/dashboard/orders" }}
@@ -43,7 +43,8 @@ import Input from "../../components/v2/atoms/Input.astro";
     <Input id="p-location" name="location_name" label="Area / Neighborhood" />
     <Input id="p-location-full" name="location" label="Full address / landmark" />
     <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:16px;">
-      <div id="p-location-status" style="font:600 13px Inter;color:var(--v2-ink);margin-bottom:10px;">—</div>
+      <div id="p-location-status" style="font:600 13px Inter;color:var(--v2-ink);margin-bottom:4px;">—</div>
+      <div id="p-location-coords" style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;display:none;"></div>
       <button type="button" id="p-use-location" class="v2-btn v2-btn-secondary v2-btn-sm v2-btn-full">
         📍 Use my current location
       </button>
@@ -168,13 +169,13 @@ import Input from "../../components/v2/atoms/Input.astro";
       Log out
     </button>
   </form>
-</AppShellV2>
+</AppShell>
 
 <script>
   import { supabase } from "../../lib/supabase";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
 
-  function getSellerId() { try { return localStorage.getItem("zepto_seller_id"); } catch { return null; } }
+  function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
   const sellerId = getSellerId();
   if (!sellerId) {
     location.href = "/dashboard/login";
@@ -230,8 +231,19 @@ import Input from "../../components/v2/atoms/Input.astro";
       // Show fee sub-settings if fee enabled
       document.getElementById("p-fee-settings")!.style.display = seller?.delivery_fee_enabled ? "block" : "none";
       // Location status
-      document.getElementById("p-location-status")!.textContent =
-        seller?.lat && seller?.lng ? "✅ Location set" : "❌ Not set — buyers can't see distance";
+      const locStatusEl = document.getElementById("p-location-status")!;
+      const locCoordsEl = document.getElementById("p-location-coords")!;
+      if (seller?.lat && seller?.lng) {
+        locStatusEl.textContent = "✅ Location set";
+        locStatusEl.style.color = "var(--v2-green, #16a34a)";
+        const locName = seller?.location_name ? `${seller.location_name} · ` : "";
+        locCoordsEl.textContent = `${locName}${Number(seller.lat).toFixed(5)}, ${Number(seller.lng).toFixed(5)}`;
+        locCoordsEl.style.display = "block";
+      } else {
+        locStatusEl.textContent = "❌ Not set — buyers can't see distance";
+        locStatusEl.style.color = "var(--v2-red, #dc2626)";
+        locCoordsEl.style.display = "none";
+      }
       // Push status
       try {
         const pushActive = await isSellerPushSubscribed();
@@ -448,7 +460,12 @@ import Input from "../../components/v2/atoms/Input.astro";
             body: JSON.stringify({ seller_id: sellerId, updates: { lat, lng } }),
           });
           if (!res.ok) throw new Error("Failed to save");
-          document.getElementById("p-location-status")!.textContent = "✅ Location set";
+          const locSt = document.getElementById("p-location-status")!;
+          const locCo = document.getElementById("p-location-coords")!;
+          locSt.textContent = "✅ Location set";
+          locSt.style.color = "var(--v2-green, #16a34a)";
+          locCo.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+          locCo.style.display = "block";
           (window as any).v2Toast?.("success", "Location updated", "Buyers can now see distance");
         } catch (err: any) {
           (window as any).v2Toast?.("error", "Failed", err.message);
@@ -522,8 +539,8 @@ import Input from "../../components/v2/atoms/Input.astro";
   // Logout
   document.getElementById("p-logout")?.addEventListener("click", () => {
     try {
-      localStorage.removeItem("zepto_seller_id");
-      localStorage.removeItem("zepto_seller_phone");
+      localStorage.removeItem("rlf_seller_id");
+      localStorage.removeItem("rlf_seller_phone");
     } catch {}
     window.location.href = "/dashboard/login";
   });

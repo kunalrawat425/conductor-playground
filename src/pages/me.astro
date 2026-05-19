@@ -1,13 +1,13 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../components/v2/AppShellV2.astro";
-import ThemeToggle from "../components/v2/atoms/ThemeToggle.astro";
-import LoginSheet from "../components/v2/organisms/LoginSheet.astro";
-import AddressPickerSheet from "../components/v2/organisms/AddressPickerSheet.astro";
-import BottomSheet from "../components/v2/organisms/BottomSheet.astro";
-import Toast from "../components/v2/atoms/Toast.astro";
+import AppShell from "../components/ui/AppShell.astro";
+import ThemeToggle from "../components/ui/atoms/ThemeToggle.astro";
+import LoginSheet from "../components/ui/organisms/LoginSheet.astro";
+import AddressPickerSheet from "../components/ui/organisms/AddressPickerSheet.astro";
+import BottomSheet from "../components/ui/organisms/BottomSheet.astro";
+import Toast from "../components/ui/atoms/Toast.astro";
 ---
-<AppShellV2
+<AppShell
   noindex={true}
   title="Account | Relifish"
   description="Manage your profile, addresses, and notifications."
@@ -28,7 +28,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
       <input id="v2-me-fn" class="v2-input" type="text" placeholder="Your first name" />
       <label class="v2-label" style="margin-top:12px;">Last name</label>
       <input id="v2-me-ln" class="v2-input" type="text" placeholder="Your last name" />
-      <label class="v2-label" style="margin-top:12px;">Email (optional)</label>
+      <label class="v2-label" style="margin-top:12px;">Email <span style="color:#0066cc;font-weight:700;">— add to receive order emails</span></label>
       <input id="v2-me-em" class="v2-input" type="email" placeholder="you@example.com" />
       <div id="v2-me-email-verify" style="display:flex;align-items:center;gap:8px;margin-top:6px;">
         <span id="v2-me-email-status" style="font:600 11px Inter;"></span>
@@ -58,6 +58,12 @@ import Toast from "../components/v2/atoms/Toast.astro";
       <div class="v2-me-name" id="v2-me-name">—</div>
       <div class="v2-me-phone" id="v2-me-phone">—</div>
       <button id="v2-me-edit-name" class="v2-me-edit-btn">✎ Edit profile</button>
+    </div>
+
+    <!-- Email missing banner -->
+    <div id="v2-me-email-banner" style="display:none;margin:0 16px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font:500 12px Inter;color:#1d4ed8;">
+      📧 <strong>Add your email</strong> to receive order confirmations, payment receipts, and updates.
+      <button type="button" onclick="(window as any).v2OpenSheet?.('v2-me-name-sheet')" style="display:block;margin-top:6px;background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font:600 12px Inter;cursor:pointer;">Add email →</button>
     </div>
 
     <!-- Quick actions -->
@@ -105,7 +111,7 @@ import Toast from "../components/v2/atoms/Toast.astro";
 
     <div class="v2-me-version">Made in Mumbai · v2.0</div>
   </div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-me-hero {
@@ -249,16 +255,16 @@ import Toast from "../components/v2/atoms/Toast.astro";
 <script>
   // If user is a seller, redirect to seller profile instead
   try {
-    if (localStorage.getItem("zepto_seller_id")) {
+    if (localStorage.getItem("rlf_seller_id")) {
       window.location.href = "/dashboard/profile";
     }
   } catch {}
 
   function getBuyerId(): string | null {
-    try { return localStorage.getItem("zepto_buyer_id") || null; } catch { return null; }
+    try { return localStorage.getItem("rlf_buyer_id") || null; } catch { return null; }
   }
   function getBuyerPhone(): string | null {
-    try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
+    try { return localStorage.getItem("rlf_phone") || null; } catch { return null; }
   }
   function escape(s: any) {
     return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
@@ -284,8 +290,8 @@ import Toast from "../components/v2/atoms/Toast.astro";
 
   async function initSignedIn(buyerId: string, phone: string) {
     // Hydrate name from local cache instantly
-    const fnLocal = localStorage.getItem("zepto_buyer_first_name") || "";
-    const lnLocal = localStorage.getItem("zepto_buyer_last_name") || "";
+    const fnLocal = localStorage.getItem("rlf_buyer_first_name") || "";
+    const lnLocal = localStorage.getItem("rlf_buyer_last_name") || "";
     const fullLocal = `${fnLocal} ${lnLocal}`.trim();
     document.getElementById("v2-me-name")!.textContent = fullLocal || "Welcome";
     document.getElementById("v2-me-phone")!.textContent = phone;
@@ -301,8 +307,8 @@ import Toast from "../components/v2/atoms/Toast.astro";
         const full = `${fn} ${ln}`.trim();
         document.getElementById("v2-me-name")!.textContent = full || "Welcome";
         try {
-          if (fn) localStorage.setItem("zepto_buyer_first_name", fn);
-          if (ln) localStorage.setItem("zepto_buyer_last_name", ln);
+          if (fn) localStorage.setItem("rlf_buyer_first_name", fn);
+          if (ln) localStorage.setItem("rlf_buyer_last_name", ln);
         } catch {}
         (document.getElementById("v2-me-fn") as HTMLInputElement).value = fn;
         (document.getElementById("v2-me-ln") as HTMLInputElement).value = ln;
@@ -321,6 +327,9 @@ import Toast from "../components/v2/atoms/Toast.astro";
             emailBtn.style.display = "inline-block";
           }
         }
+        // Prompt to add email if missing
+        const emailBanner = document.getElementById("v2-me-email-banner");
+        if (emailBanner) emailBanner.style.display = !em ? "block" : "none";
       }
     } catch {}
 
@@ -344,8 +353,8 @@ import Toast from "../components/v2/atoms/Toast.astro";
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Save failed");
         try {
-          localStorage.setItem("zepto_buyer_first_name", first_name);
-          localStorage.setItem("zepto_buyer_last_name", last_name);
+          localStorage.setItem("rlf_buyer_first_name", first_name);
+          localStorage.setItem("rlf_buyer_last_name", last_name);
         } catch {}
         const full = `${first_name} ${last_name}`.trim();
         document.getElementById("v2-me-name")!.textContent = full || "Welcome";
@@ -397,10 +406,10 @@ import Toast from "../components/v2/atoms/Toast.astro";
     // Logout
     document.getElementById("v2-me-logout")?.addEventListener("click", () => {
       try {
-        localStorage.removeItem("zepto_buyer_id");
-        localStorage.removeItem("zepto_phone");
-        localStorage.removeItem("zepto_buyer_first_name");
-        localStorage.removeItem("zepto_buyer_last_name");
+        localStorage.removeItem("rlf_buyer_id");
+        localStorage.removeItem("rlf_phone");
+        localStorage.removeItem("rlf_buyer_first_name");
+        localStorage.removeItem("rlf_buyer_last_name");
         localStorage.removeItem("v2_cart_global");
       } catch {}
       window.location.href = "/";

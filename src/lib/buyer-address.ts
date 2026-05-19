@@ -75,7 +75,7 @@ export function hasDeliveryUnitDetail(flat: string, building: string): boolean {
 
 export function parseZeptoLocation(): { name?: string; lat?: number; lng?: number } | null {
   try {
-    const raw = localStorage.getItem("zepto_location");
+    const raw = localStorage.getItem("rlf_location");
     if (!raw) return null;
     return JSON.parse(raw) as { name?: string; lat?: number; lng?: number };
   } catch {

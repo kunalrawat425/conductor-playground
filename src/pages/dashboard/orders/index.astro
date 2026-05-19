@@ -1,10 +1,10 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../../components/v2/AppShellV2.astro";
-import Toast from "../../../components/v2/atoms/Toast.astro";
-import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
+import AppShell from "../../../components/ui/AppShell.astro";
+import Toast from "../../../components/ui/atoms/Toast.astro";
+import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 ---
-<AppShellV2
+<AppShell
   title="Orders · Seller Dashboard"
   description="Manage today's orders"
   hideHeader={true}
@@ -96,7 +96,7 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
       ctaHref="/dashboard/login"
     />
   </div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-dash-sticky-controls {
@@ -220,6 +220,28 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
     border-radius: 999px;
     padding: 3px 8px;
   }
+  /* Order type pill — blue for same-day, purple for pre-order */
+  .v2-oc-meta-pill-order {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+  .v2-oc-meta-pill-preorder {
+    color: #7c3aed;
+    background: #f5f3ff;
+    border-color: #ddd6fe;
+  }
+  /* Delivery/pickup pill — teal for delivery, amber for pickup */
+  .v2-oc-meta-pill-delivery {
+    color: #0e7490;
+    background: #ecfeff;
+    border-color: #a5f3fc;
+  }
+  .v2-oc-meta-pill-pickup {
+    color: #b45309;
+    background: #fffbeb;
+    border-color: #fde68a;
+  }
   .v2-oc-sub {
     font: 500 11px Inter;
     color: var(--v2-ink-3);
@@ -260,6 +282,8 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
 <script>
   import { supabase } from "../../../lib/supabase";
 
+  const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
+
   let sellerId: string | null = null;
   let sellerData: any = null;
   let currentTab: "pending" | "accepted" | "completed" = "pending";
@@ -268,6 +292,31 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
   let searchQuery = "";
   let currentType: "all" | "order" | "preorder" = "all";
   const PAGE_SIZE = 10;
+
+  function wasPreorderWindow(createdAt: string, seller: any): boolean {
+    if (!seller) return false;
+    const ist = new Date(new Date(createdAt).getTime() + 5.5 * 60 * 60 * 1000);
+    const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][ist.getUTCDay()];
+    const timeMin = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+    function toMin(t: string | null | undefined): number | null {
+      if (!t) return null;
+      const [h, m] = String(t).split(':').map(Number);
+      return h * 60 + (m || 0);
+    }
+    const preorderDays: string[] = seller.preorder_days || [];
+    const isPreorderDay = preorderDays.length > 0
+      ? preorderDays.includes(dayName)
+      : !!seller.accepts_preorder;
+    if (!isPreorderDay) return false;
+    const openMin = toMin(seller.opens_at);
+    const closeMin = toMin(seller.closes_at);
+    if (openMin !== null && closeMin !== null) {
+      return !(timeMin >= openMin && timeMin < closeMin);
+    }
+    const cutoffMin = toMin(seller.preorder_cutoff_time);
+    if (cutoffMin !== null) return timeMin >= cutoffMin;
+    return false;
+  }
   let pollTimer: any;
   /** One-shot scroll/highlight from `?order=<uuid>` (e.g. seller Web Push deep link). */
   let didFocusFromOrderQuery = false;
@@ -292,7 +341,7 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
   }
 
   function getSellerId() {
-    try { return localStorage.getItem("zepto_seller_id"); } catch { return null; }
+    try { return localStorage.getItem("rlf_seller_id"); } catch { return null; }
   }
 
   function renderProfileCompletion(s: any) {
@@ -566,7 +615,54 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
 
   function renderOrders(ordersToShow: any[], totalPages: number) {
     const list = document.getElementById("v2-orders-list")!;
-    const orderHtml = ordersToShow.map((o: any) => {
+
+    const orderHtml = ordersToShow.map((o: any) => renderSingleOrder(o)).join("");
+
+    const pagerHtml = totalPages > 1 ? `
+      <div class="v2-pagination">
+        <button class="v2-pg-btn" data-pg="prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+        <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
+        <button class="v2-pg-btn" data-pg="next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+      </div>` : '';
+
+    list.innerHTML = orderHtml + pagerHtml;
+
+    // Pagination — use onclick to avoid duplicate listeners across reloads
+    const prevBtn = list.querySelector<HTMLButtonElement>('[data-pg="prev"]');
+    const nextBtn = list.querySelector<HTMLButtonElement>('[data-pg="next"]');
+    if (prevBtn) prevBtn.onclick = () => { currentPage = Math.max(1, currentPage - 1); loadOrders(); };
+    if (nextBtn) nextBtn.onclick = () => { currentPage = Math.min(totalPages, currentPage + 1); loadOrders(); };
+
+    // Action delegation for all order cards (including session group cards)
+    list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (btn.dataset.action === "view_screenshot") {
+          viewScreenshot(btn.dataset.orderId!, btn.dataset.path!, btn);
+        } else if (btn.dataset.action === "decline-show-reason") {
+          const orderId = btn.dataset.orderId!;
+          const noteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
+          const confirmBtn = document.getElementById(`decline-confirm-${orderId}`) as HTMLButtonElement | null;
+          if (noteInput) noteInput.style.display = "block";
+          if (confirmBtn) confirmBtn.style.display = "block";
+          btn.style.display = "none";
+        } else {
+          updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
+        }
+      });
+    });
+    // Refund file picker label updates
+    list.querySelectorAll<HTMLInputElement>("input[id^='refund-file-']").forEach((inp) => {
+      const orderId = inp.id.replace("refund-file-", "");
+      inp.addEventListener("change", () => {
+        const drop = document.getElementById(`refund-drop-${orderId}`);
+        if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload UPI screenshot (optional)";
+      });
+    });
+
+    tryFocusOrderFromQuery();
+  }
+
+  function renderSingleOrder(o: any) {
         const totalDue = Number(o.total_price || 0) + Number(o.delivery_fee || 0);
         const paidNum = Number(o.paid_amount);
         const partialCatch =
@@ -578,8 +674,7 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
           (o.final_price === null || o.final_price === undefined) &&
           ["confirmed", "paid"].includes(o.status) &&
           partialCatch;
-        const isPreorder =
-          partialCatch || o.status === "pre_order" || o.status === "payment_required";
+        const isPreorder = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
         const hasPaymentProof = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
         const time = o.scheduled_for
@@ -587,7 +682,7 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
           : new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
         const cls = isUrgent ? "v2-order-urgent" : "";
         const total = o.total_price || o.final_price || 0;
-        const id6 = String(o.id || "").slice(0, 6).toUpperCase();
+        const id6 = String(o.id || "").slice(0, 8).toUpperCase();
 
         // Badge per status
         const statusBadges: Record<string, [string, string]> = {
@@ -611,7 +706,26 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
         // Actions based on status (not tab — so search results also show actions)
         let actionsHtml = "";
         const isDelivery = o.order_type === "delivery";
+        const isPaidViaRazorpay = o.payment_method === "razorpay" || !!o.payment_verified_at;
         if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
+          // Razorpay-paid orders: skip screenshot flow entirely — show fulfillment actions directly
+          if (isPaidViaRazorpay) {
+            const fulfill = isDelivery
+              ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="out_for_delivery" data-order-id="${o.id}">🚲 Out for delivery</button>`
+              : `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="ready" data-order-id="${o.id}">📦 Ready for pickup</button>`;
+            actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Paid via Razorpay — auto-confirmed</div>
+              <div class="v2-oc-actions">${fulfill}</div>`;
+          } else if (RAZORPAY_ENABLED && !isPaidViaRazorpay) {
+            // Razorpay is active but buyer hasn't completed payment yet
+            actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
+              <div style="font:500 11px Inter;color:var(--v2-ink-3);">⏳ Waiting for buyer to complete Razorpay payment. No action needed.</div>
+              <div style="display:flex;gap:8px;">
+                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline-show-reason" data-order-id="${o.id}">Can't fulfill</button>
+              </div>
+              <input type="text" placeholder="Decline reason (shown to buyer, optional)" id="decline-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;display:none;" />
+              <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Confirm — refund buyer</button>
+            </div>`;
+          } else {
           const proofPending = paymentProofHtml(o.id, o.payment_screenshot_urls, "Buyer uploaded payment proof");
           const awaitingNote = proofPending
             ? ""
@@ -638,6 +752,7 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
             </div>
             <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Confirm — refund buyer</button>
           </div>`;
+          }
         } else if (o.status === "confirmed" || o.status === "paid") {
           const preorderPriceBlock = needsFinalPrice
             ? (() => {
@@ -762,7 +877,11 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
         const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(o.quantity) / bundle)} pack` : `${o.quantity}${escape(unit)}`;
         let nextStepHint = "";
         if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
-          nextStepHint = "Next: Wait for payment screenshot, then verify and confirm.";
+          nextStepHint = isPaidViaRazorpay
+            ? (isDelivery ? "Next: Mark as out for delivery." : "Next: Mark as ready for pickup.")
+            : RAZORPAY_ENABLED
+              ? "Waiting for buyer to complete Razorpay payment."
+              : "Next: Wait for payment screenshot, then verify and confirm.";
         } else if ((o.status === "confirmed" || o.status === "paid") && needsFinalPrice) {
           nextStepHint = "Next: Set final price before delivery or pickup.";
         } else if (o.status === "confirmed" || o.status === "paid") {
@@ -794,8 +913,8 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
           </div>
           <div class="v2-oc-items" style="text-transform:capitalize;">${escape(o.listing?.species || o.species || "")} · ${qtyLabel}</div>
           <div class="v2-oc-meta">
-            <span class="v2-oc-meta-pill">${isPreorder ? "Pre-order" : "Order"}</span>
-            <span class="v2-oc-meta-pill">${isDelivery ? "Delivery" : "Pickup"}</span>
+            <span class="v2-oc-meta-pill ${isPreorder ? "v2-oc-meta-pill-preorder" : "v2-oc-meta-pill-order"}">${isPreorder ? "Pre-order" : "Order"}</span>
+            <span class="v2-oc-meta-pill ${isDelivery ? "v2-oc-meta-pill-delivery" : "v2-oc-meta-pill-pickup"}">${isDelivery ? "Delivery" : "Pickup"}</span>
           </div>
           ${o.cut_style ? `<div style="font:600 11px Inter;color:var(--v2-ink-2);margin-top:4px;">✂️ ${escape(o.cut_style.split(",").map((c: string) => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : ''}
           ${o.buyer_notes ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
@@ -805,48 +924,6 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
           ${nextStepHint ? `<div class="v2-oc-next">${nextStepHint}</div>` : ""}
           ${actionsHtml}
         </div>`;
-      }).join("");
-
-      const pagerHtml = totalPages > 1 ? `
-        <div class="v2-pagination">
-          <button class="v2-pg-btn" data-pg="prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
-          <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
-          <button class="v2-pg-btn" data-pg="next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
-        </div>` : '';
-
-      list.innerHTML = orderHtml + pagerHtml;
-
-      // Wire pagination
-      list.querySelector('[data-pg="prev"]')?.addEventListener("click", () => { currentPage = Math.max(1, currentPage - 1); loadOrders(); });
-      list.querySelector('[data-pg="next"]')?.addEventListener("click", () => { currentPage = Math.min(totalPages, currentPage + 1); loadOrders(); });
-
-      // Wire actions
-      list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          if (btn.dataset.action === "view_screenshot") {
-            viewScreenshot(btn.dataset.orderId!, btn.dataset.path!, btn);
-          } else if (btn.dataset.action === "decline-show-reason") {
-            const orderId = btn.dataset.orderId!;
-            const noteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
-            const confirmBtn = document.getElementById(`decline-confirm-${orderId}`) as HTMLButtonElement | null;
-            if (noteInput) noteInput.style.display = "block";
-            if (confirmBtn) confirmBtn.style.display = "block";
-            btn.style.display = "none";
-          } else {
-            updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
-          }
-        });
-      });
-      // Wire refund file picker label updates
-      list.querySelectorAll<HTMLInputElement>("input[id^='refund-file-']").forEach((inp) => {
-        const orderId = inp.id.replace("refund-file-", "");
-        inp.addEventListener("change", () => {
-          const drop = document.getElementById(`refund-drop-${orderId}`);
-          if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload UPI screenshot (optional)";
-        });
-      });
-
-      tryFocusOrderFromQuery();
   }
 
   async function viewScreenshot(orderId: string, _pathFromDataset: string, btn: HTMLButtonElement) {
@@ -1086,8 +1163,8 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
       el.addEventListener("click", (e) => {
         e.preventDefault();
         try {
-          localStorage.removeItem("zepto_seller_id");
-          localStorage.removeItem("zepto_seller_phone");
+          localStorage.removeItem("rlf_seller_id");
+          localStorage.removeItem("rlf_seller_phone");
         } catch {}
         window.location.href = "/dashboard/login";
       });

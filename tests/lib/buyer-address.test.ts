@@ -58,8 +58,8 @@ describe("buyer-address", () => {
     expect(hasDeliveryUnitDetail("1", "")).toBe(true);
   });
 
-  it("formatNewCheckoutAddress reads zepto_location", () => {
-    store.zepto_location = JSON.stringify({ name: "Andheri", lat: 19.1, lng: 72.8 });
+  it("formatNewCheckoutAddress reads rlf_location", () => {
+    store.rlf_location = JSON.stringify({ name: "Andheri", lat: 19.1, lng: 72.8 });
     expect(
       formatNewCheckoutAddress({ flat: "2", building: "Y", landmark: "" })
     ).toBe("2, Y — Andheri");

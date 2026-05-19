@@ -72,7 +72,7 @@
     }).addTo(pickerMap);
 
     // Check if we have a saved location
-    const saved = localStorage.getItem("zepto_location");
+    const saved = localStorage.getItem("rlf_location");
     if (saved) {
       try {
         const loc = JSON.parse(saved);
@@ -115,7 +115,7 @@
 
   function saveLocation(lat: number, lng: number, name: string) {
     localStorage.setItem(
-      "zepto_location",
+      "rlf_location",
       JSON.stringify({ lat, lng, name })
     );
     window.dispatchEvent(new CustomEvent("location-updated"));

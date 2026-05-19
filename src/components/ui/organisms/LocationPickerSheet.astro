@@ -1,0 +1,116 @@
+---
+import BottomSheet from "./BottomSheet.astro";
+interface Props {
+  id?: string;
+}
+const { id = "v2-loc-picker" } = Astro.props;
+---
+<BottomSheet id={id} title="Set your location" showClose={true}>
+  <div id={`${id}-map`} style="height:240px;border-radius:12px;background:var(--v2-bg-3);margin-bottom:16px;"></div>
+
+  <div class="v2-field">
+    <label class="v2-field-label">Or type your area</label>
+    <div class="v2-input-wrap">
+      <input
+        type="text"
+        id={`${id}-area-input`}
+        placeholder="e.g. Bandra West, Versova, Worli"
+        class="v2-input"
+        autocomplete="off"
+      />
+    </div>
+  </div>
+
+  <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-use-current`} style="margin-bottom:8px;">
+    📍 Use my current location
+  </button>
+  <button class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" id={`${id}-confirm`}>
+    Confirm location
+  </button>
+</BottomSheet>
+
+<script define:vars={{ id }}>
+  let map, marker, selectedLat, selectedLng, selectedArea;
+
+  async function initMap() {
+    if (typeof L === "undefined") return;
+    if (map) return;
+    const mumbai = [19.07, 72.87];
+    map = L.map(`${id}-map`).setView(mumbai, 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(map);
+    marker = L.marker(mumbai, { draggable: true }).addTo(map);
+    selectedLat = mumbai[0]; selectedLng = mumbai[1];
+    marker.on("dragend", async () => {
+      const ll = marker.getLatLng();
+      selectedLat = ll.lat; selectedLng = ll.lng;
+      await reverseGeocode(ll.lat, ll.lng);
+    });
+    map.on("click", (e) => {
+      marker.setLatLng(e.latlng);
+      selectedLat = e.latlng.lat; selectedLng = e.latlng.lng;
+      reverseGeocode(e.latlng.lat, e.latlng.lng);
+    });
+    setTimeout(() => map.invalidateSize(), 100);
+  }
+
+  async function reverseGeocode(lat, lng) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      const area = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Selected location";
+      selectedArea = area;
+      const input = document.getElementById(`${id}-area-input`);
+      if (input) input.value = area;
+    } catch {}
+  }
+
+  document.getElementById(`${id}-use-current`)?.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      window.v2Toast?.("error", "Geolocation not supported", "Type your area instead");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      selectedLat = latitude; selectedLng = longitude;
+      if (map && marker) {
+        map.setView([latitude, longitude], 14);
+        marker.setLatLng([latitude, longitude]);
+      }
+      await reverseGeocode(latitude, longitude);
+    }, () => {
+      window.v2Toast?.("error", "Location denied", "Allow location or type manually");
+    });
+  });
+
+  document.getElementById(`${id}-area-input`)?.addEventListener("change", (e) => {
+    selectedArea = e.target.value;
+  });
+
+  document.getElementById(`${id}-confirm`)?.addEventListener("click", () => {
+    const input = document.getElementById(`${id}-area-input`);
+    selectedArea = input?.value?.trim() || selectedArea || "Mumbai";
+    try {
+      localStorage.setItem("rlf_buyer_location", selectedArea);
+      if (selectedLat) localStorage.setItem("rlf_buyer_lat", String(selectedLat));
+      if (selectedLng) localStorage.setItem("rlf_buyer_lng", String(selectedLng));
+    } catch {}
+    document.dispatchEvent(new CustomEvent("v2-location-confirmed", {
+      detail: { area: selectedArea, lat: selectedLat, lng: selectedLng }
+    }));
+    window.v2CloseSheet?.(id);
+    window.v2Toast?.("success", "Location set", selectedArea);
+    setTimeout(() => location.reload(), 800);
+  });
+
+  // Init map when sheet opens (Leaflet is lazy)
+  document.addEventListener("relifish:open-location-picker", () => {
+    window.v2OpenSheet?.(id);
+    setTimeout(initMap, 200);
+  });
+  document.querySelector(`[data-sheet-backdrop="${id}"]`)?.addEventListener("transitionend", initMap);
+
+  // Initial init if open
+  if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) {
+    initMap();
+  }
+</script>

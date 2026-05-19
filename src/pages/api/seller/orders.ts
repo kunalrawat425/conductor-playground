@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
-import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { orderEmailBuyer, orderEmailSeller, paymentVerifiedEmailBuyer, paymentVerifiedEmailSeller, refundSentEmailBuyer, refundSentEmailSeller } from "../../../lib/email-templates";
 
 function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify order belongs to this seller's listings
     const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
-      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, payment_screenshot_urls")
+      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, payment_screenshot_urls, payment_method, payment_verified_at")
       .eq("id", order_id)
       .single();
 
@@ -173,6 +173,42 @@ export const POST: APIRoute = async ({ request }) => {
           });
         } catch (_) {}
       }
+      // Email buyer + seller on refund sent
+      try {
+        const species = capitalizeFishName(order.species || "Fish");
+        if (order.buyer_id) {
+          const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
+          if (buyer?.email) {
+            await sendResendEmail(buyer.email, `Refund sent — ${species}`, refundSentEmailBuyer({ species, orderId: order_id, refundNote: refund_note || null }));
+          }
+        }
+        const { data: sellerRow } = await supabase.from("sellers").select("email, name, push_subscription, push_enabled").eq("id", seller_id).single();
+        if (sellerRow?.email) {
+          await sendResendEmail(sellerRow.email, `Refund marked sent — ${species}`, refundSentEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
+        }
+        // Seller push confirmation that refund was recorded
+        if (sellerRow?.push_subscription) {
+          try {
+            const { loadWebPush } = await import("../../../lib/server/load-web-push");
+            const { normalizeVapidKeyForWebPush, trimVapidKey } = await import("../../../lib/server/vapid-env");
+            const { absoluteUrl } = await import("../../../lib/server/site-origin");
+            const vapidPub = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
+            const vapidPriv = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
+            const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
+            if (vapidPub && vapidPriv) {
+              const sub = typeof sellerRow.push_subscription === "string" ? JSON.parse(sellerRow.push_subscription) : sellerRow.push_subscription;
+              const wp = await loadWebPush();
+              wp.setVapidDetails(vapidContact, vapidPub, vapidPriv);
+              await wp.sendNotification(sub, JSON.stringify({
+                title: "Refund recorded",
+                body: `Refund for ${species} order #${String(order_id).slice(0, 8).toUpperCase()} has been marked as sent.`,
+                url: absoluteUrl(`/dashboard/orders?order=${order_id}`),
+                tag: `seller-refund-${Date.now()}`,
+              }));
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
       return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
@@ -180,13 +216,14 @@ export const POST: APIRoute = async ({ request }) => {
     if (action === "verify_payment") {
       const { data: currentForVerify } = await supabase
         .from("orders")
-        .select("status, payment_screenshot_urls")
+        .select("status, payment_screenshot_urls, payment_method, payment_verified_at")
         .eq("id", order_id)
         .single();
+      const isRazorpayOrder = currentForVerify?.payment_method === "razorpay" || !!currentForVerify?.payment_verified_at;
       const proofUrls = Array.isArray(currentForVerify?.payment_screenshot_urls)
         ? currentForVerify.payment_screenshot_urls
         : [];
-      if (proofUrls.length === 0) {
+      if (!isRazorpayOrder && proofUrls.length === 0) {
         return new Response(
           JSON.stringify({ error: "Buyer has not uploaded payment proof yet. Ask them to upload a screenshot on Track order." }),
           { status: 400 }
@@ -222,6 +259,20 @@ export const POST: APIRoute = async ({ request }) => {
           });
         } catch (_) {}
       }
+      // Email buyer + seller on payment verified
+      try {
+        const species = capitalizeFishName(order.species || "Fish");
+        if (order.buyer_id) {
+          const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
+          if (buyer?.email) {
+            await sendResendEmail(buyer.email, `Payment verified — ${species}`, paymentVerifiedEmailBuyer({ species, orderId: order_id }));
+          }
+        }
+        const { data: sellerRow } = await supabase.from("sellers").select("email, name").eq("id", seller_id).single();
+        if (sellerRow?.email) {
+          await sendResendEmail(sellerRow.email, `Payment verified — ${species}`, paymentVerifiedEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
+        }
+      } catch (_) {}
       return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
@@ -240,7 +291,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
     const { data: currentOrder } = await supabase
       .from("orders")
-      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee")
+      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
       .eq("id", order_id)
       .single();
     const currentStatus = currentOrder?.status;
@@ -249,8 +300,9 @@ export const POST: APIRoute = async ({ request }) => {
       const proofUrls = Array.isArray(currentOrder?.payment_screenshot_urls)
         ? currentOrder!.payment_screenshot_urls
         : [];
+      const isRazorpay = (currentOrder as any)?.payment_method === "razorpay" || !!(currentOrder as any)?.payment_verified_at;
       const mustHaveProof = ["pending", "pending_payment", "scheduled", "pre_order"].includes(String(currentStatus || ""));
-      if (mustHaveProof && proofUrls.length === 0) {
+      if (mustHaveProof && !isRazorpay && proofUrls.length === 0) {
         return new Response(
           JSON.stringify({
             error: "Confirm only after the buyer uploads payment proof. Use Verify payment once their screenshot is visible.",
@@ -331,17 +383,36 @@ export const POST: APIRoute = async ({ request }) => {
       const statusLabel = STATUS_LABELS[status] || status;
       const species = capitalizeFishName(order.species || "Fish");
       const totalAmount = final_price ? Number(final_price) : Number(data.total_price) || 0;
+      const isPreorder = (currentOrder as any)?.is_preorder === true || (currentOrder as any)?.placement_kind === "preorder";
+      const qty = Number(data.quantity) || 0;
+      const qtyUnit = data.quantity_unit || "piece";
+      const pricingOptionId = (currentOrder as any)?.pricing_option_id;
+      const pricingOptions = (currentOrder as any)?.listing?.pricing_options;
+      let bundleSize: number | null = null;
+      let bundleCount: number | null = null;
+      if (Array.isArray(pricingOptions) && pricingOptions.length > 0) {
+        const opt = pricingOptionId
+          ? pricingOptions.find((o: any, i: number) => o.id === pricingOptionId || `opt_${i}` === pricingOptionId)
+          : pricingOptions[0];
+        if (opt?.bundle_size && Number(opt.bundle_size) > 1) {
+          bundleSize = Number(opt.bundle_size);
+          bundleCount = Math.round(qty / bundleSize);
+        }
+      }
       const emailArgs = {
         statusLabel,
         species,
-        quantity: data.quantity || 0,
-        quantity_unit: data.quantity_unit || "piece",
+        quantity: qty,
+        quantity_unit: qtyUnit,
         totalAmount: totalAmount + (Number(data.delivery_fee) || 0),
         deliveryFee: Number(data.delivery_fee) || 0,
         orderId: order_id,
         scheduled_for: data.scheduled_for || null,
         buyerNotes: data.buyer_notes || null,
         cutStyle: data.cut_style || null,
+        isPreorder,
+        bundleSize,
+        bundleCount,
       };
 
       // Email buyer (if they have email)
@@ -353,9 +424,32 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       // Email seller
-      const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
+      const { data: seller } = await supabase.from("sellers").select("email, push_subscription, push_enabled").eq("id", seller_id).single();
       if (seller?.email) {
         await sendResendEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, orderEmailSeller(emailArgs));
+      }
+
+      // Seller push for cancelled/declined (seller needs confirmation their action was processed)
+      if (["cancelled", "declined"].includes(status) && seller?.push_subscription) {
+        try {
+          const { loadWebPush } = await import("../../../lib/server/load-web-push");
+          const { normalizeVapidKeyForWebPush, trimVapidKey } = await import("../../../lib/server/vapid-env");
+          const { absoluteUrl } = await import("../../../lib/server/site-origin");
+          const vapidPub = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
+          const vapidPriv = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
+          const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
+          if (vapidPub && vapidPriv) {
+            const sub = typeof seller.push_subscription === "string" ? JSON.parse(seller.push_subscription) : seller.push_subscription;
+            const wp = await loadWebPush();
+            wp.setVapidDetails(vapidContact, vapidPub, vapidPriv);
+            await wp.sendNotification(sub, JSON.stringify({
+              title: status === "declined" ? "Order declined" : "Order cancelled",
+              body: `${species} order #${String(order_id).slice(0, 8).toUpperCase()} has been ${status}.`,
+              url: absoluteUrl(`/dashboard/orders?order=${order_id}`),
+              tag: `seller-${status}-${Date.now()}`,
+            }));
+          }
+        } catch (_) {}
       }
     } catch (_) {}
 

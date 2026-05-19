@@ -1,15 +1,15 @@
 ---
 export const prerender = false;
 
-import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import SellerHero from "../../components/v2/organisms/SellerHero.astro";
-import EmptyState from "../../components/v2/molecules/EmptyState.astro";
-import LoginSheet from "../../components/v2/organisms/LoginSheet.astro";
-import CheckoutSheet from "../../components/v2/organisms/CheckoutSheet.astro";
-import CartStackSheet from "../../components/v2/organisms/CartStackSheet.astro";
-import AddressPickerSheet from "../../components/v2/organisms/AddressPickerSheet.astro";
-import Toast from "../../components/v2/atoms/Toast.astro";
-import Modal from "../../components/v2/atoms/Modal.astro";
+import AppShell from "../../components/ui/AppShell.astro";
+import SellerHero from "../../components/ui/organisms/SellerHero.astro";
+import EmptyState from "../../components/ui/molecules/EmptyState.astro";
+import LoginSheet from "../../components/ui/organisms/LoginSheet.astro";
+import CheckoutSheet from "../../components/ui/organisms/CheckoutSheet.astro";
+import CartStackSheet from "../../components/ui/organisms/CartStackSheet.astro";
+import AddressPickerSheet from "../../components/ui/organisms/AddressPickerSheet.astro";
+import Toast from "../../components/ui/atoms/Toast.astro";
+import Modal from "../../components/ui/atoms/Modal.astro";
 import { getSellerById, getSellerListings, sellerNameToSlug } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
@@ -133,7 +133,7 @@ const tags = [
   // seller?.schedule_pickup_slots ? "Scheduled pickup" : null, // hidden for now
 ].filter(Boolean) as string[];
 ---
-<AppShellV2
+<AppShell
   title={`${sellerName} — Fresh Fish${sellerLocation ? ` in ${sellerLocation}` : ''} | Relifish`}
   description={(() => {
     const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
@@ -350,7 +350,7 @@ const tags = [
   )}
 
   <div id="v2-cart-bar-mount"></div>
-</AppShellV2>
+</AppShell>
 
 <style is:global>
   .v2-menu-grid {
@@ -388,7 +388,7 @@ const tags = [
   }
   .v2-item-tier-label {
     flex: 1;
-    font: 500 11px Inter;
+    font: 500 12px Inter;
     color: var(--v2-ink-2);
     min-width: 0;
     overflow: hidden;
@@ -396,7 +396,7 @@ const tags = [
     white-space: nowrap;
   }
   .v2-item-tier-price {
-    font: 800 12px Inter;
+    font: 800 16px Inter;
     color: var(--v2-ink);
     white-space: nowrap;
   }
@@ -547,53 +547,78 @@ const tags = [
       const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
 
       // Pre-order price range (shown on preorder listings, per pricing tier)
-      const preorderRangeHtml = isListingPreorder
-        ? opts.map((opt) => {
-            const pmn = opt.preorder_price_min;
-            const pmx = opt.preorder_price_max;
-            if (!pmn && !pmx) return "";
-            const mnStr = pmn ? `₹${Number(pmn).toLocaleString("en-IN")}` : "";
-            const mxStr = pmx ? `₹${Number(pmx).toLocaleString("en-IN")}` : "";
-            const range = mnStr && mxStr && mnStr !== mxStr ? `${mnStr}–${mxStr}` : mnStr || mxStr;
-            const unitSuffix = opt.buyer_menu_suffix || (opt.unit === "kg" ? "/kg" : "/pc");
-            return `<div style="font:600 11px Inter;color:#7C3AED;margin-top:2px;">🌙 ${range}${unitSuffix}</div>`;
-          }).join("")
-        : "";
+      const preorderRangeHtml = ""; // Deprecated: we now render ranges inside pricingHtml tiers directly
 
       // Preorder listings: show per-tier min–max range + add button per tier (no discount shown)
       // Regular listings: show exact pricing_options tiers as normal
       const pricingHtml = isListingPreorder && canAddItem
-        ? (() => {
-            const unit = resolveUnit(firstOpt);
-            // Use preorder_price_max as the add-to-cart price (buyer pays max, seller reconciles later)
-            const poPrice = firstOpt.preorder_price_max || firstOpt.preorder_price_min || firstOpt.price || 0;
-            const pmnStr = firstOpt.preorder_price_min ? `₹${Number(firstOpt.preorder_price_min).toLocaleString("en-IN")}` : "";
-            const pmxStr = firstOpt.preorder_price_max ? `₹${Number(firstOpt.preorder_price_max).toLocaleString("en-IN")}` : "";
-            const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${firstOpt.price}`;
-            const optId = firstOpt.id || "default";
-            const key = ck(l.id, optId);
-            const inCart = sellerItems[key]?.qty || 0;
-            return `<div class="v2-item-bottom">
-              <div class="v2-item-price" style="color:#7C3AED;">${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
-              ${inCart > 0
-                ? (() => {
-                    const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
-                    const packLabel = counterQtyLabel(inCart, unit, bs);
-                    return `<div class="v2-item-counter" data-id="${key}">
-                     <button class="v2-item-dec" aria-label="Decrease">−</button>
-                     <span class="v2-item-count">${packLabel}</span>
-                     <button class="v2-item-inc" aria-label="Increase">+</button>
-                   </div>`;
-                  })()
-                : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
-            </div>`;
-          })()
+        ? (opts.length <= 1
+            ? (() => {
+                const unit = resolveUnit(firstOpt);
+                const poPrice = firstOpt.preorder_price_max || firstOpt.preorder_price_min || firstOpt.price || 0;
+                const pmnStr = firstOpt.preorder_price_min ? `₹${Number(firstOpt.preorder_price_min).toLocaleString("en-IN")}` : "";
+                const pmxStr = firstOpt.preorder_price_max ? `₹${Number(firstOpt.preorder_price_max).toLocaleString("en-IN")}` : "";
+                const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${firstOpt.price}`;
+                const optId = firstOpt.id || "opt_0";
+                const key = ck(l.id, optId);
+                const inCart = sellerItems[key]?.qty || 0;
+                return `<div class="v2-item-bottom">
+                  <div class="v2-item-price" style="color:#7C3AED;">🌙 ${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
+                  ${inCart > 0
+                    ? (() => {
+                        const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
+                        const packLabel = counterQtyLabel(inCart, unit, bs);
+                        return `<div class="v2-item-counter" data-id="${key}">
+                         <button class="v2-item-dec" aria-label="Decrease">−</button>
+                         <span class="v2-item-count">${packLabel}</span>
+                         <button class="v2-item-inc" aria-label="Increase">+</button>
+                       </div>`;
+                      })()
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+                </div>`;
+              })()
+            : (() => {
+                return `<div class="v2-item-tiers">
+                  ${opts.map((o, i) => {
+                    const label = o.label || o.unit_label || o.unit || "unit";
+                    const tierUnit = resolveUnit(o);
+                    const optId = o.id || `opt_${i}`;
+                    const key = ck(l.id, optId);
+                    const tierQty = sellerItems[key]?.qty || 0;
+                    const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
+
+                    const poPrice = o.preorder_price_max || o.preorder_price_min || o.price || 0;
+                    const pmnStr = o.preorder_price_min ? `₹${Number(o.preorder_price_min).toLocaleString("en-IN")}` : "";
+                    const pmxStr = o.preorder_price_max ? `₹${Number(o.preorder_price_max).toLocaleString("en-IN")}` : "";
+                    const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${o.price}`;
+
+                    return `<div class="v2-item-tier">
+                      <div style="flex:1; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                        <span class="v2-item-tier-label" style="flex:none;">${escape(label)}${bSize}</span>
+                        <span class="v2-item-tier-price" style="color:#7C3AED;margin-right:0;">🌙 ${rangeDisplay}</span>
+                      </div>
+                      ${tierQty > 0
+                        ? (() => {
+                            const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
+                            const packLabel = counterQtyLabel(tierQty, tierUnit, bs);
+                            return `<div class="v2-item-counter" data-id="${key}">
+                             <button class="v2-item-dec" aria-label="Decrease">−</button>
+                             <span class="v2-item-count">${packLabel}</span>
+                             <button class="v2-item-inc" aria-label="Increase">+</button>
+                           </div>`;
+                          })()
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                    </div>`;
+                  }).join("")}
+                </div>`;
+              })()
+        )
         : canAddItem && hasStock
           ? (opts.length <= 1
             ? (() => {
                 const price = firstOpt.price || 0;
                 const unit = resolveUnit(firstOpt);
-                const optId = firstOpt.id || "default";
+                const optId = firstOpt.id || "opt_0";
                 const key = ck(l.id, optId);
                 const inCart = sellerItems[key]?.qty || 0;
                 const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
@@ -614,28 +639,32 @@ const tags = [
               })()
             : (() => {
                 return `<div class="v2-item-tiers">
-                  ${opts.map((o) => {
+                  ${opts.map((o, i) => {
                     const label = o.label || o.unit_label || o.unit || "unit";
                     const tierUnit = resolveUnit(o);
-                    const optId = o.id || "default";
+                    const optId = o.id || `opt_${i}`;
                     const key = ck(l.id, optId);
                     const tierQty = sellerItems[key]?.qty || 0;
                     const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
                     const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
                     return `<div class="v2-item-tier">
-                      <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
-                      <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
+                      <div style="flex:1; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                        <span class="v2-item-tier-label" style="flex:none;">${escape(label)}${bSize}</span>
+                        <span class="v2-item-tier-price" style="margin-right:0;">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
+                      </div>
                       ${tierQty > 0
                         ? (() => {
                             const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
                             const packLabel = counterQtyLabel(tierQty, tierUnit, bs);
-                            return `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
+                            const avail = l.weight_avail != null ? Number(l.weight_avail) : Infinity;
+                            const atMax = Number.isFinite(avail) && tierQty + bs > avail;
+                            return `<div class="v2-item-counter" data-id="${key}">
                              <button class="v2-item-dec" aria-label="Decrease">−</button>
                              <span class="v2-item-count">${packLabel}</span>
-                             <button class="v2-item-inc" aria-label="Increase">+</button>
+                             <button class="v2-item-inc" aria-label="Increase" ${atMax ? 'disabled style="opacity:.35;cursor:not-allowed;"' : ''}>+</button>
                            </div>`;
                           })()
-                        : `<button class="v2-item-add v2-item-add-sm" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
                     </div>`;
                   }).join("")}
                 </div>`;
@@ -717,7 +746,7 @@ const tags = [
           const name = escape(getName(l?.species || "Fish"));
           const unit = escape(firstOpt.unit_label || firstOpt.label || firstOpt.unit || "kg");
           const price = Number(firstOpt.price) || 0;
-          const optId = firstOpt.id || "default";
+          const optId = firstOpt.id || "opt_0";
           const priceSuf = escape(String(firstOpt.buyer_menu_suffix || "/pc"));
           return `<div class="v2-item-card" data-listing-id="${l?.id || ""}">
             <div class="v2-item-body">
@@ -829,7 +858,7 @@ const tags = [
 
     // Publish per-seller min-order hints so CartStackSheet can show "Add ₹X more"
     // without needing its own DB query.
-    (function publishMinOrder() {
+    ;(function publishMinOrder() {
       window.__relifishMinOrders = window.__relifishMinOrders || {};
       window.__relifishMinOrders[sellerId] = minOrder || 0;
     })();
@@ -910,7 +939,7 @@ const tags = [
 
       // Pre-flight: must be signed in
       let buyerId = null, buyerPhone = null;
-      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
       if (!buyerId || !buyerPhone) {
         window.v2OpenSheet?.("seller-login-sheet");
         return;
@@ -1040,7 +1069,7 @@ const tags = [
 
     async function preloadAddress() {
       let buyerId = null;
-      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
       if (!buyerId) return;
       try {
         const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
@@ -1065,7 +1094,7 @@ const tags = [
       selectedAddressId = e.detail?.addressId;
       // Refresh address card UI from API
       let buyerId = null;
-      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
       if (buyerId && selectedAddressId) {
         try {
           const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
@@ -1103,7 +1132,7 @@ const tags = [
       }
 
       let buyerId = null, buyerPhone = null;
-      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
       if (!buyerId || !buyerPhone) { window.v2OpenSheet?.("seller-login-sheet"); return; }
 
       const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');
@@ -1116,6 +1145,9 @@ const tags = [
       const btn = document.getElementById("seller-checkout-place-order");
       btn.disabled = true;
       btn.textContent = "Placing order...";
+      // Disable back buttons and sheet close during order placement
+      document.querySelectorAll("[data-co-back]").forEach((b) => { b.disabled = true; b.style.opacity = "0.4"; b.style.pointerEvents = "none"; });
+      document.querySelectorAll(".v2-sheet-close").forEach((b) => { b.disabled = true; b.style.opacity = "0.4"; b.style.pointerEvents = "none"; });
 
       try {
         const lines = group.items.map(i => ({
@@ -1161,6 +1193,9 @@ const tags = [
         window.v2Toast?.("error", "Failed", err.message || "Try again");
         btn.disabled = false;
         btn.textContent = "Place order";
+        // Re-enable back buttons and sheet close on error
+        document.querySelectorAll("[data-co-back]").forEach((b) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
+        document.querySelectorAll(".v2-sheet-close").forEach((b) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
       }
     });
 
@@ -1187,32 +1222,35 @@ const tags = [
       render();
     }
     // Inc/dec by bundle_size so qty stays a valid multiple
+    function getBundleStep(cartItem) {
+      const listing = listings.find(l => l.id === cartItem.listing_id);
+      const opts = listing?.pricing_options || [];
+      const opt = opts.find(o => o.id === cartItem.pricing_option_id);
+      return (opt?.bundle_size && opt.bundle_size > 1) ? Number(opt.bundle_size) : 1;
+    }
     function dec(id) {
       const c = Cart(); if (!c) return;
       const cart = c.getCart();
-      const key = Object.keys(cart).find(k => k === id || k.startsWith(id + ":") || cart[k]?.listing_id === id);
-      if (!key || !cart[key]) return;
-      // Determine bundle step from the item's pricing option
-      const item = cart[key];
-      const listing = listings.find(l => l.id === item.listing_id);
-      const opts0 = listing?.pricing_options || [];
-      const opt = opts0.find(o => o.id === item.pricing_option_id) || opts0[0];
-      const step = (opt?.bundle_size && opt.bundle_size > 1) ? Number(opt.bundle_size) : 1;
-      const newQty = item.qty - step;
-      c.setQty(key, newQty);
+      // Use exact key — counter data-id already matches cart key precisely
+      const item = cart[id];
+      if (!item) return;
+      c.setQty(id, item.qty - getBundleStep(item));
       render();
     }
     function inc(id) {
       const c = Cart(); if (!c) return;
       const cart = c.getCart();
-      const key = Object.keys(cart).find(k => k === id || k.startsWith(id + ":") || cart[k]?.listing_id === id);
-      if (!key || !cart[key]) return;
-      const item = cart[key];
+      const item = cart[id];
+      if (!item) return;
+      const step = getBundleStep(item);
+      // Stock cap: don't exceed weight_avail
       const listing = listings.find(l => l.id === item.listing_id);
-      const opts1 = listing?.pricing_options || [];
-      const opt = opts1.find(o => o.id === item.pricing_option_id) || opts1[0];
-      const step = (opt?.bundle_size && opt.bundle_size > 1) ? Number(opt.bundle_size) : 1;
-      c.setQty(key, item.qty + step);
+      const avail = listing?.weight_avail != null ? Number(listing.weight_avail) : Infinity;
+      if (Number.isFinite(avail) && item.qty + step > avail) {
+        window.v2Toast?.("info", "Stock limit", `Only ${avail} ${item.qty_unit || "kg"} available`);
+        return;
+      }
+      c.setQty(id, item.qty + step);
       render();
     }
 
