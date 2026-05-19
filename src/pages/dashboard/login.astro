@@ -17,12 +17,15 @@ import Toast from "../../components/ui/atoms/Toast.astro";
     <p style="font:400 14px Inter;opacity:.9;margin:0;">Sign in to manage your fish listings and orders</p>
   </div>
 
-  <div style="padding:24px 16px;">
+  <!-- Spacer so content doesn't hide behind fixed footer -->
+  <div style="height:120px;"></div>
+
+  <!-- Sticky CTA — pinned to bottom, works on mobile -->
+  <div style="position:fixed;bottom:0;left:0;right:0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:var(--v2-bg);border-top:1px solid var(--v2-border);">
     <button id="open-login-sheet" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">
       Sign in with phone
     </button>
-
-    <div style="margin-top:24px;text-align:center;">
+    <div style="margin-top:12px;text-align:center;">
       <a href="/" style="font:600 13px Inter;color:var(--v2-ink-3);text-decoration:none;">← Back to buyer app</a>
     </div>
   </div>
