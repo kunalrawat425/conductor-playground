@@ -14,7 +14,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
 const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
 const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
-const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@zepto.in";
+const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:hello@relifish.store";
 
 function normalizePushSubscription(raw: unknown): { endpoint: string; keys?: { p256dh: string; auth: string } } | null {
   if (!raw) return null;

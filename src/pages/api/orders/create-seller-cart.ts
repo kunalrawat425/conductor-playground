@@ -280,18 +280,13 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       if (fetchedOrder?.id && (fetchedOrder.buyer_id || buyer_phone)) {
-        try {
-          const st = String(fetchedOrder.status || "") === "pending_payment" ? "placed" : "pending";
-          await sendBuyerOrderPush({
-            buyer_id: fetchedOrder.buyer_id,
-            buyer_phone,
-            status: st,
-            species: line.species || "Fish",
-            order_id: fetchedOrder.id,
-          });
-        } catch {
-          /* non-blocking */
-        }
+        sendBuyerOrderPush({
+          buyer_id: fetchedOrder.buyer_id,
+          buyer_phone,
+          status: "placed",
+          species: line.species || "Fish",
+          order_id: fetchedOrder.id,
+        }).catch(() => {});
       }
 
       if (resendApiKey && fetchedOrder) {
