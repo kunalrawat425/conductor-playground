@@ -79,25 +79,24 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 
   // Atomically confirm the order
-  const { error: updateErr, count: updatedCount } = await supabase
+  const { data: updatedRows, error: updateErr } = await supabase
     .from("orders")
     .update({
       status: "confirmed",
       payment_method: "razorpay",
       razorpay_payment_id,
       payment_verified_at: new Date().toISOString(),
-      payment_verified_by: null, // null = system auto-verified
+      payment_verified_by: null,
     })
     .eq("id", order_id)
-    .in("status", ["pending", "pending_payment"]) // double-check — only update if still payable
-    .select();
+    .in("status", ["pending", "pending_payment"])
+    .select("id");
 
   if (updateErr) {
     return new Response(JSON.stringify({ error: "Failed to confirm order" }), { status: 500 });
   }
-  // Race guard: if count is 0 another concurrent request already confirmed — return idempotent
-  // success without re-firing push/email notifications.
-  if (!updatedCount || updatedCount === 0) {
+  // Race guard: if 0 rows updated, another concurrent request already confirmed — idempotent OK.
+  if (!updatedRows || updatedRows.length === 0) {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
