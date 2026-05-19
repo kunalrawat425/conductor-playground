@@ -35,7 +35,5 @@ if (notFound) {
   return Astro.redirect("/shop", 302);
 }
 
-// Flag so /seller/[id].astro knows this is a rewrite, not direct access
-Astro.locals.fromSlugRoute = true;
 return Astro.rewrite(`/seller/${seller.id}`);
 ---
