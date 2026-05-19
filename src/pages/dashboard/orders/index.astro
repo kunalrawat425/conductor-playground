@@ -296,7 +296,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   function wasPreorderWindow(createdAt: string, seller: any): boolean {
     if (!seller) return false;
     const ist = new Date(new Date(createdAt).getTime() + 5.5 * 60 * 60 * 1000);
-    const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][ist.getUTCDay()];
+    const DAY_NAMES = ['sun','mon','tue','wed','thu','fri','sat'];
+    const dayName = DAY_NAMES[ist.getUTCDay()];
     const timeMin = ist.getUTCHours() * 60 + ist.getUTCMinutes();
     function toMin(t: string | null | undefined): number | null {
       if (!t) return null;
@@ -304,18 +305,21 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       return h * 60 + (m || 0);
     }
     const preorderDays: string[] = seller.preorder_days || [];
+    const openDays: string[] = seller.open_days || [];
     const isPreorderDay = preorderDays.length > 0
       ? preorderDays.includes(dayName)
       : !!seller.accepts_preorder;
     if (!isPreorderDay) return false;
-    const openMin = toMin(seller.opens_at);
-    const closeMin = toMin(seller.closes_at);
-    if (openMin !== null && closeMin !== null) {
-      return !(timeMin >= openMin && timeMin < closeMin);
-    }
+    // Must be before cutoff
     const cutoffMin = toMin(seller.preorder_cutoff_time);
-    if (cutoffMin !== null) return timeMin >= cutoffMin;
-    return false;
+    if (cutoffMin !== null && timeMin >= cutoffMin) return false;
+    // On order days: window only starts after store closes (same rule as order-timing.ts)
+    const isOrderDay = openDays.length === 0 || openDays.includes(dayName);
+    if (isOrderDay) {
+      const closeMin = toMin(seller.closes_at);
+      if (closeMin !== null && timeMin < closeMin) return false;
+    }
+    return true;
   }
   let pollTimer: any;
   /** One-shot scroll/highlight from `?order=<uuid>` (e.g. seller Web Push deep link). */

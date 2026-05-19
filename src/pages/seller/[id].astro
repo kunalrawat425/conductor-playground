@@ -265,7 +265,9 @@ const tags = [
         {preorderDaysLabel && (
           <div style="font:500 11px Inter;color:#7C3AED;">
             🌙 <strong>Pre-orders</strong> (next-day catch): {preorderDaysLabel}
-            {cutoffLabel && ` · cutoff ${cutoffLabel}`}
+            {seller?.closes_at && cutoffLabel
+              ? ` · ${seller.closes_at.slice(0,5)}–${cutoffLabel}`
+              : cutoffLabel ? ` · cutoff ${cutoffLabel}` : ""}
           </div>
         )}
       </div>
@@ -277,8 +279,11 @@ const tags = [
           <div>
             <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              Items added today will be reserved from tomorrow's fresh catch.
-              {cutoffLabel && ` Place before ${cutoffLabel}.`}
+              {seller?.closes_at && cutoffLabel
+                ? `Pre-order window: ${seller.closes_at.slice(0,5)} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
+                : cutoffLabel
+                  ? `Place before ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
+                  : "Your order is reserved from tomorrow's fresh catch."}
             </div>
           </div>
         </div>
