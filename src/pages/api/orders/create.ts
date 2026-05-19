@@ -19,65 +19,6 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
-async function patchPlacementKind(
-  supabase: ReturnType<typeof createClient>,
-  orderId: string,
-  placement_kind: PlacementKind
-) {
-  await supabase.from("orders").update({ placement_kind }).eq("id", orderId);
-}
-
-async function sendOrderEmails(
-  supabase: ReturnType<typeof createClient>,
-  args: {
-    placement_kind: PlacementKind;
-    species: string;
-    emailArgs: OrderEmailArgs;
-    buyer_id?: string | null;
-    seller_id: string | null;
-  }
-) {
-  if (!resendApiKey) return;
-  const { placement_kind, species, emailArgs, buyer_id, seller_id } = args;
-  const speciesForEmail = capitalizeFishName(species);
-  const subjectPrefix =
-    placement_kind === "preorder" ? "Pre-order placed" : emailArgs.statusLabel;
-
-  if (buyer_id) {
-    const { data: buyer } = await supabase.from("buyers").select("email").eq("id", buyer_id).single();
-    if (buyer?.email) {
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: "Relifish <noreply@relifish.store>",
-          to: buyer.email,
-          subject: `${subjectPrefix} — ${speciesForEmail}`,
-          html: orderEmailBuyer(emailArgs),
-        }),
-      });
-    }
-  }
-  if (seller_id) {
-    const { data: sellerData } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
-    if (sellerData?.email) {
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: "Relifish <noreply@relifish.store>",
-          to: sellerData.email,
-          subject:
-            placement_kind === "preorder"
-              ? `New pre-order: ${speciesForEmail}`
-              : `New order: ${speciesForEmail}`,
-          html: orderEmailSeller(emailArgs),
-        }),
-      });
-    }
-  }
-}
-
 /**
  * POST /api/orders/create
  * Placement kind = seller shopping hours + order time only (see order-timing.ts).
@@ -157,8 +98,6 @@ export const POST: APIRoute = async ({ request, url }) => {
       listingPricingOptions = listingRow?.pricing_options;
 
       if (line.kind === "preorder") {
-        const delivery_fee = 0;
-        const amountDue = total_price + delivery_fee;
         const { data: preOrder, error: preErr } = await supabase
           .from("orders")
           .insert({
@@ -170,13 +109,14 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity,
             quantity_unit,
             total_price,
-            delivery_fee,
+            delivery_fee: 0,
             platform_fee: 0,
             status: "pending_payment",
             placement_kind: "preorder",
+            is_preorder: true,
             order_type,
             payment_type: "cod",
-            paid_amount: amountDue,
+            paid_amount: total_price,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
@@ -190,79 +130,42 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
 
         if (seller_id) {
-          try {
-            await fetch(`${url.origin}/api/notify-seller`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                seller_id,
-                species: species || "Fish",
-                quantity,
-                quantity_unit,
-                placement_kind: "preorder",
-                order_id: preOrder.id,
-              }),
-            });
-          } catch {
-            /* non-blocking */
-          }
+          fetch(`${url.origin}/api/notify-seller`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, placement_kind: "preorder", order_id: preOrder.id }),
+          }).catch(() => {});
         }
 
-        if (preOrder?.id) {
-          try {
-            await sendBuyerOrderPush({
-              buyer_id: buyer_id || null,
-              buyer_phone,
-              status: "placed",
-              species: species || "Fish",
-              order_id: preOrder.id,
-            });
-          } catch {
-            /* non-blocking */
-          }
-        }
+        sendBuyerOrderPush({ buyer_id: buyer_id || null, buyer_phone, status: "placed", species: species || "Fish", order_id: preOrder.id }).catch(() => {});
 
-        // Send email for preorder path (was missing before)
-        if (resendApiKey && preOrder) {
-          const isRealPreorder = preOrder.status === "pre_order";
-          const poStatusLabel = isRealPreorder
-            ? "Pre-order placed — catch reserved for tomorrow"
-            : "Order placed — complete payment to confirm";
-          const poEmailArgs = {
-            statusLabel: poStatusLabel,
+        if (resendApiKey) {
+          const pLine = line as import("../../../lib/server/resolve-listing-order-line").PreorderLinePayload;
+          const bs = (line as any).bundle_size > 1 ? (line as any).bundle_size : null;
+          const poEmailArgs: OrderEmailArgs = {
+            statusLabel: "Pre-order placed — catch reserved for tomorrow",
             species: species || "Fish",
             quantity,
             quantity_unit,
             totalAmount: total_price,
             deliveryFee: 0,
             orderId: preOrder.id,
-            scheduled_for,
-            isPreorder: isRealPreorder,
-            preorderMin: chosen.preorder_price_min ?? null,
-            preorderMax: chosen.preorder_price_max ?? null,
-            bundleSize: bundleAmount > 1 ? bundleAmount : null,
-            bundleCount: bundleAmount > 1 ? bundleCount : null,
+            scheduled_for: null,
+            isPreorder: true,
+            preorderMin: pLine.preorder_price_min ?? null,
+            preorderMax: pLine.preorder_price_max ?? null,
+            bundleSize: bs,
+            bundleCount: bs ? Math.round(quantity / bs) : null,
             pricingLabel: orderPricingLabel || null,
           };
+          const speciesLabel = capitalizeFishName(species || "Fish");
           if (buyer_id) {
-            supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: buyer }) => {
-              if (buyer?.email) {
-                fetch("https://api.resend.com/emails", {
-                  method: "POST",
-                  headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-                  body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${poStatusLabel} — ${capitalizeFishName(species || "Fish")}`, html: orderEmailBuyer(poEmailArgs) }),
-                }).catch(() => {});
-              }
+            supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: b }) => {
+              if (b?.email) fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: b.email, subject: `Pre-order placed — ${speciesLabel}`, html: orderEmailBuyer(poEmailArgs) }) }).catch(() => {});
             }).catch(() => {});
           }
-          supabase.from("sellers").select("email").eq("id", listing.seller_id).single().then(({ data: sd }) => {
-            if (sd?.email) {
-              fetch("https://api.resend.com/emails", {
-                method: "POST",
-                headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sd.email, subject: `New Order: ${capitalizeFishName(species || "Fish")}`, html: orderEmailSeller({ ...poEmailArgs, buyerPhone: buyer_phone }) }),
-              }).catch(() => {});
-            }
+          supabase.from("sellers").select("email").eq("id", seller_id).single().then(({ data: sd }) => {
+            if (sd?.email) fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sd.email, subject: `New pre-order: ${speciesLabel}`, html: orderEmailSeller({ ...poEmailArgs, buyerPhone: buyer_phone }) }) }).catch(() => {});
           }).catch(() => {});
         }
 
@@ -338,7 +241,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           isPreorderBranch = true;
         }
       }
-      placement_kind = placement;
+      placement_kind = placementKind as PlacementKind;
 
       const minAmt = Number(seller?.min_order_amount) || 0;
       if (minAmt > 0 && total_price < minAmt) {
@@ -429,11 +332,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
       }
       order = fetchedOrder;
-      // Patch is_preorder — RPC doesn't support it yet
-      if (isPreorderBranch) {
-        await supabase.from("orders").update({ is_preorder: true }).eq("id", orderId);
-        order = { ...order, is_preorder: true };
-      }
+      await supabase.from("orders").update({ placement_kind, is_preorder: isPreorderBranch }).eq("id", orderId);
+      order = { ...order, placement_kind, is_preorder: isPreorderBranch };
     }
 
     if (!order) {
@@ -494,8 +394,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         isPreorder: isPreorderBranch,
         buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
         cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
-        bundleSize: typeof bundleAmount !== "undefined" && bundleAmount > 1 ? bundleAmount : null,
-        bundleCount: typeof bundleCount !== "undefined" && bundleAmount > 1 ? bundleCount : null,
+        bundleSize: null,
+        bundleCount: null,
         pricingLabel: orderPricingLabel || null,
       };
       const speciesForEmail = capitalizeFishName(species || "Fish");
@@ -520,7 +420,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: `New Order: ${speciesForEmail}`, html: orderEmailSeller(emailArgs) }),
+              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: isPreorderBranch ? `New pre-order: ${speciesForEmail}` : `New order: ${speciesForEmail}`, html: orderEmailSeller(emailArgs) }),
             }).catch(() => {});
           }
         }).catch(() => {});
