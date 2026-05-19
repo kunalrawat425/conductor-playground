@@ -434,7 +434,14 @@ const categories = [
         const isTodayOrderDay = !openDays.length || openDays.includes(day);
         const isTodayPreorderDay = preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder;
         const openNow = isOpen(s.opens_at, s.closes_at) && isTodayOrderDay;
-        const preorderMode = !openNow && isTodayPreorderDay && !isPastCutoff((s as any).preorder_cutoff_time);
+        const isAfterClose = (() => {
+          if (!s.closes_at) return true;
+          const cur = minutesNowIST();
+          const [ch, cm] = (s.closes_at as string).split(":").map(Number);
+          return cur >= ch * 60 + cm;
+        })();
+        const preorderMode = !openNow && isTodayPreorderDay && !isPastCutoff((s as any).preorder_cutoff_time)
+          && (!isTodayOrderDay || isAfterClose);
         const listings = rawListings.filter((l: any) =>
           preorderMode
             ? Array.isArray(l?.pricing_options) &&
