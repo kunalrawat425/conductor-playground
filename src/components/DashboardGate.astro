@@ -9,10 +9,10 @@
 <script is:inline>
   (function () {
     try {
-      var sid = localStorage.getItem("zepto_seller_id");
-      var sphone = localStorage.getItem("zepto_seller_phone");
+      var sid = localStorage.getItem("rlf_seller_id");
+      var sphone = localStorage.getItem("rlf_seller_phone");
       if (sid && sphone) return;
-      if (localStorage.getItem("zepto_buyer_id") && localStorage.getItem("zepto_phone")) {
+      if (localStorage.getItem("rlf_buyer_id") && localStorage.getItem("rlf_phone")) {
         window.location.replace("/");
         return;
       }

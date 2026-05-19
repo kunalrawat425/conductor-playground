@@ -127,7 +127,7 @@ export const GET: APIRoute = async ({ url }) => {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 
-    return new Response(JSON.stringify({ buyer: data }), { status: 200 });
+    return new Response(JSON.stringify({ profile: data }), { status: 200 });
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }

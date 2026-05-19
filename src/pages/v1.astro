@@ -41,7 +41,7 @@ import LoginModal from "../components/LoginModal.astro";
   <script is:inline>
     (function () {
       try {
-        if (localStorage.getItem("zepto_seller_id") && localStorage.getItem("zepto_seller_phone")) {
+        if (localStorage.getItem("rlf_seller_id") && localStorage.getItem("rlf_seller_phone")) {
           window.location.replace("/dashboard/orders");
         }
       } catch (e) {}
@@ -115,7 +115,7 @@ import LoginModal from "../components/LoginModal.astro";
       <div class="ns-flow">
         <div class="ns-flow-step"><div class="ns-flow-num">1</div><div class="ns-flow-icon">📍</div><div class="ns-flow-label">You tell us<br/>your area</div></div>
         <div class="ns-flow-arrow">→</div>
-        <div class="ns-flow-step"><div class="ns-flow-num">2</div><div class="ns-flow-icon">🐟</div><div class="ns-flow-label">We bring<br/>sellers to you</div></div>
+        <div class="ns-flow-step"><div class="ns-flow-num">2</div><div class="ns-flow-icon"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:28px;width:auto;display:block;" /></div><div class="ns-flow-label">We bring<br/>sellers to you</div></div>
         <div class="ns-flow-arrow">→</div>
         <div class="ns-flow-step"><div class="ns-flow-num">3</div><div class="ns-flow-icon">🔔</div><div class="ns-flow-label">You get<br/>notified</div></div>
         <div class="ns-flow-arrow">→</div>
@@ -615,7 +615,7 @@ import LoginModal from "../components/LoginModal.astro";
 
     function getBuyerLocation(): { lat: number; lng: number; name: string } | null {
       try {
-        const saved = localStorage.getItem("zepto_location");
+        const saved = localStorage.getItem("rlf_location");
         if (saved) return JSON.parse(saved);
       } catch {}
       return null;
@@ -910,7 +910,7 @@ import LoginModal from "../components/LoginModal.astro";
               : !g.inServiceArea ? ""
               : `<div class="seller-hours-tag">🕐 ${opensAt} – ${closesAt}</div>`}
             <div class="seller-card-header">
-              <div class="seller-avatar">🐟</div>
+              <div class="seller-avatar"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
               <div class="seller-info">
                 <div class="seller-name">${esc(s.name)}</div>
                 <div class="seller-location">${esc(s.location_name || s.location || "")}</div>
@@ -1006,7 +1006,7 @@ import LoginModal from "../components/LoginModal.astro";
 
     // Location
     function checkLocation() {
-      const saved = localStorage.getItem("zepto_location");
+      const saved = localStorage.getItem("rlf_location");
       if (!saved) {
         if ("geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition(
@@ -1015,11 +1015,11 @@ import LoginModal from "../components/LoginModal.astro";
                 const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&zoom=14`);
                 const data = await resp.json();
                 const name = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || "Your location";
-                localStorage.setItem("zepto_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name }));
+                localStorage.setItem("rlf_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name }));
                 window.dispatchEvent(new CustomEvent("location-updated"));
                 renderSellers();
               } catch {
-                localStorage.setItem("zepto_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your location" }));
+                localStorage.setItem("rlf_location", JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your location" }));
                 window.dispatchEvent(new CustomEvent("location-updated"));
               }
             },
@@ -1098,7 +1098,7 @@ import LoginModal from "../components/LoginModal.astro";
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              buyer_id: localStorage.getItem("zepto_buyer_id") || null,
+              buyer_id: localStorage.getItem("rlf_buyer_id") || null,
               phone, area,
               fish_wanted: fishReq,
               frequency: freq, preference: pref, budget: budget,

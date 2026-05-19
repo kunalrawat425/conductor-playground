@@ -1,18 +1,18 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../components/v2/AppShellV2.astro";
-import LoginSheet from "../../components/v2/organisms/LoginSheet.astro";
-import Toast from "../../components/v2/atoms/Toast.astro";
+import AppShell from "../../components/ui/AppShell.astro";
+import LoginSheet from "../../components/ui/organisms/LoginSheet.astro";
+import Toast from "../../components/ui/atoms/Toast.astro";
 ---
-<AppShellV2
+<AppShell
   title="Seller Sign In · Relifish"
   description="Sign in to your seller dashboard"
   hideNav={true}
   hideHeader={true}
 >
   <Toast />
-  <div style="background:linear-gradient(135deg,var(--v2-green),#10B981);padding:48px 16px 32px;color:#fff;text-align:center;">
-    <div style="font-size:64px;margin-bottom:12px;">🐟</div>
+  <div style="background:linear-gradient(135deg,var(--v2-green),#10B981);padding:24px 16px 20px;color:#fff;text-align:center;">
+    <div style="margin-bottom:12px;"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:72px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" /></div>
     <h1 style="font:900 24px Inter;margin:0 0 6px;letter-spacing:-.02em;">Seller dashboard</h1>
     <p style="font:400 14px Inter;opacity:.9;margin:0;">Sign in to manage your fish listings and orders</p>
   </div>
@@ -36,4 +36,4 @@ import Toast from "../../components/v2/atoms/Toast.astro";
     // Auto-open sheet on page load for faster flow
     setTimeout(() => (window as any).v2OpenSheet?.("seller-login-sheet"), 300);
   </script>
-</AppShellV2>
+</AppShell>

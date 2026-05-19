@@ -39,7 +39,7 @@ body{
 /* ═══════════════════ FRONT ═══════════════════ */
 
 .hero{
-  position:relative;height:200px;flex-shrink:0;overflow:hidden;
+  position:relative;height:175px;flex-shrink:0;overflow:hidden;
   background:linear-gradient(160deg,#0a2472 0%,#1a56db 55%,#0e7490 100%);
 }
 .hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.3}
@@ -47,82 +47,103 @@ body{
 .hero-body{
   position:absolute;inset:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:14px 20px;text-align:center;gap:5px;
+  padding:12px 20px;text-align:center;gap:4px;
 }
-.brand{font-size:30px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.brand{font-size:28px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.5);margin-top:12px}
 .brand b{color:#fbbf24}
-.brand-sub{font-size:11px;color:rgba(255,255,255,.82);font-weight:700;letter-spacing:.03em}
-.hero-title{font-size:24px;font-weight:900;color:#fff;line-height:1.2;margin-top:4px}
+.hero-title{font-size:20px;font-weight:900;color:#fff;line-height:1.2;margin-top:2px}
 .hero-title b{color:#fbbf24}
-.hero-tag{font-size:10.5px;color:rgba(255,255,255,.85);font-weight:600}
+.hero-tag{font-size:10px;color:rgba(255,255,255,.85);font-weight:600}
 .hero-pill{
-  margin-top:6px;display:inline-flex;align-items:center;gap:5px;
+  margin-top:5px;display:inline-flex;align-items:center;gap:5px;
   background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
-  border-radius:100px;padding:4px 14px;
+  border-radius:100px;padding:3px 12px;
 }
-.hero-pill span{font-size:10px;font-weight:800;color:#fff}
+.hero-pill span{font-size:9.5px;font-weight:800;color:#fff}
+.hero-social{font-size:9px;color:rgba(255,255,255,.75);font-weight:600;margin-top:1px}
 
 .price-strip{
   display:flex;align-items:center;justify-content:space-between;
   background:#fff7ed;border-top:3px solid #f97316;
-  padding:10px 18px;flex-shrink:0;gap:12px;
+  padding:8px 18px;flex-shrink:0;gap:12px;
 }
-.p-old{font-size:11px;color:#9a3412;font-weight:600}
+.p-anchor{font-size:10px;color:#b45309;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.p-old{font-size:10.5px;color:#9a3412;font-weight:600}
 .p-old s{font-weight:700}
-.p-new{font-size:12.5px;color:#065f46;font-weight:800;margin-top:2px}
-.p-badges{display:flex;flex-direction:column;gap:5px;flex-shrink:0}
-.badge{font-size:9px;font-weight:800;color:#fff;padding:4px 10px;border-radius:7px;line-height:1.3;white-space:nowrap}
+.p-loss{font-size:11px;color:#dc2626;font-weight:800;margin-top:1px}
+.p-new{font-size:12px;color:#065f46;font-weight:800;margin-top:2px}
+.p-badges{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.badge{font-size:9px;font-weight:800;color:#fff;padding:3px 9px;border-radius:7px;line-height:1.3;white-space:nowrap}
 .badge-or{background:#f97316}
 .badge-gr{background:#059669}
 
-.fish-wrap{padding:12px 14px 8px;flex-shrink:0}
-.fish-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;text-align:center;margin-bottom:8px}
-.fish-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.fish-wrap{padding:8px 14px 6px;flex-shrink:0}
+.fish-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;text-align:center;margin-bottom:6px}
+.fish-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .fc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;text-align:center}
-.fc img{width:100%;height:62px;object-fit:cover;display:block}
-.fc-name{font-size:10.5px;font-weight:800;color:#0f172a;padding:4px 4px 1px}
-.fc-mr{font-size:9px;color:#94a3b8;padding:0 4px 5px}
+.fc img{width:100%;height:52px;object-fit:cover;display:block}
+.fc-name{font-size:10px;font-weight:800;color:#0f172a;padding:3px 4px 1px}
+.fc-mr{font-size:8.5px;color:#94a3b8;padding:0 4px 2px}
+.fc-price{font-size:8.5px;font-weight:700;color:#1d4ed8;padding:0 4px 4px;min-height:14px;text-align:center;line-height:1.3}
 
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 14px;flex-shrink:0}
-.mode{border-radius:10px;padding:10px 12px}
+
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px 14px;flex-shrink:0}
+.mode{border-radius:10px;padding:4px 10px}
 .mode-sd{background:#eff6ff;border:1px solid #bfdbfe}
 .mode-po{background:#fdf4ff;border:1px solid #e9d5ff}
-.mode-icon{font-size:20px;margin-bottom:3px}
-.mode-title{font-size:12px;font-weight:800}
+.mode-icon{font-size:14px;margin-bottom:1px;line-height:1}
+.mode-title{font-size:11px;font-weight:800;line-height:1.2}
 .mode-sd .mode-title{color:#1e40af}
 .mode-po .mode-title{color:#7e22ce}
-.mode-desc{font-size:9.5px;line-height:1.4;margin-top:2px}
+.mode-desc{font-size:8.5px;line-height:1.35;margin-top:0}
 .mode-sd .mode-desc{color:#1d4ed8}
 .mode-po .mode-desc{color:#6b21a8}
 
-.buyer-inst{padding:6px 14px 4px;flex-shrink:0}
-.buyer-inst-lbl{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;text-align:center;margin-bottom:6px}
-.inst-chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.buyer-inst{padding:5px 14px 4px;flex-shrink:0}
+.buyer-inst-lbl{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;text-align:center;margin-bottom:5px}
+.inst-chips{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
 .inst-chip{
   background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;
-  padding:4px 10px;font-size:9.5px;font-weight:700;color:#065f46;
-  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;font-size:9px;font-weight:700;color:#065f46;
+  display:inline-flex;align-items:center;gap:3px;
 }
-.inst-chip-icon{font-size:12px}
+.inst-chip-icon{font-size:11px}
 
-.trust-strip{
+/* ── Social proof strip (replaces trust strip) ── */
+.social-strip{
   display:flex;justify-content:space-around;align-items:center;
-  padding:10px 14px;background:#f8fafc;border-top:1px solid #e2e8f0;flex-shrink:0;
+  padding:8px 14px;background:#f8fafc;border-top:1px solid #e2e8f0;
+  border-bottom:1px solid #e2e8f0;flex-shrink:0;
 }
-.ti{text-align:center}
-.ti-icon{font-size:18px}
-.ti-lbl{font-size:8px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;line-height:1.3;margin-top:2px}
+.si{text-align:center}
+.si-num{font:800 14px/1 Inter;color:#0a2472}
+.si-lbl{font-size:8px;font-weight:600;color:#64748b;margin-top:2px}
+
+/* ── First order reciprocity strip ── */
+.fresh-strip{
+  background:#f0fdf4;border-top:2px solid #22c55e;
+  padding:7px 14px;display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.fresh-left{display:flex;align-items:center;gap:8px}
+.fresh-emoji{font-size:20px}
+.fresh-title{font:800 11.5px/1.3 Inter;color:#065f46}
+.fresh-sub{font:600 9px/1.3 Inter;color:#16a34a;margin-top:1px}
+.fresh-code{
+  background:#065f46;color:#fff;font:900 12px/1 Inter;
+  padding:5px 12px;border-radius:8px;letter-spacing:.05em;flex-shrink:0;
+}
 
 /* Flip teaser — front bottom */
 .flip-front{
-  background:#1a56db;padding:9px 18px;
+  background:#1a56db;padding:8px 18px;
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
 }
-.flip-front-text{font-size:11px;font-weight:700;color:rgba(255,255,255,.85)}
-.flip-front-cta{font-size:13px;font-weight:900;color:#fbbf24;letter-spacing:.01em}
+.flip-front-text{font-size:10.5px;font-weight:700;color:rgba(255,255,255,.85)}
+.flip-front-cta{font-size:12px;font-weight:900;color:#fbbf24;letter-spacing:.01em}
 
 .footer{
-  background:#0f172a;padding:9px 18px;
+  background:#0f172a;padding:8px 18px;
   display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
 }
 .f-brand{font-size:17px;font-weight:900;color:#fff;letter-spacing:-.3px}
@@ -134,56 +155,80 @@ body{
 
 /* Flip teaser — back top */
 .flip-back{
-  background:#fbbf24;padding:9px 18px;
+  background:#fbbf24;padding:8px 18px;
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
 }
-.flip-back-cta{font-size:13px;font-weight:900;color:#0a2472}
-.flip-back-text{font-size:11px;font-weight:700;color:rgba(10,36,114,.75)}
+.flip-back-cta{font-size:12px;font-weight:900;color:#0a2472}
+.flip-back-text{font-size:10.5px;font-weight:700;color:rgba(10,36,114,.75)}
 
 .back-header{
   background:linear-gradient(150deg,#0a2472 0%,#1e3a8a 50%,#1a56db 100%);
-  padding:22px 24px 18px;text-align:center;flex-shrink:0;
+  padding:14px 24px 12px;text-align:center;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;
 }
-.back-brand{font-size:34px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1}
+.back-brand{font-size:30px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1}
 .back-brand b{color:#fbbf24}
-.back-sub{font-size:10.5px;color:rgba(255,255,255,.75);font-weight:600;margin-top:4px}
+.back-sub{font-size:10px;color:rgba(255,255,255,.75);font-weight:600;margin-top:3px}
 
 .back-qr{
   display:flex;flex-direction:column;align-items:center;
-  padding:18px 24px 14px;flex-shrink:0;
+  padding:12px 24px 10px;flex-shrink:0;
 }
-.qr-border{background:#fff;border:3.5px solid #1a56db;border-radius:18px;padding:12px;margin-bottom:12px}
-.qr-border img{display:block;width:140px;height:140px}
-.qr-url{font-size:24px;font-weight:900;color:#0a2472;letter-spacing:-.5px}
-.qr-hint{font-size:10px;color:#64748b;font-weight:600;margin-top:3px}
+.qr-border{background:#fff;border:3.5px solid #1a56db;border-radius:16px;padding:10px;margin-bottom:8px}
+.qr-border img{display:block;width:120px;height:120px}
+.qr-url{font-size:22px;font-weight:900;color:#0a2472;letter-spacing:-.5px}
+.qr-hint{font-size:9.5px;color:#64748b;font-weight:600;margin-top:2px}
+.qr-reward{font-size:10px;font-weight:800;color:#dc2626;margin-top:3px}
 
 .back-rule{height:1px;background:#e2e8f0;margin:0 18px;flex-shrink:0}
 
-.back-steps{padding:14px 18px 10px;flex-shrink:0}
-.back-steps-title{font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;text-align:center}
-.step-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:9px}
+.back-steps{padding:10px 18px 8px;flex-shrink:0}
+.back-steps-title{font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;text-align:center}
+.step-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:7px}
 .step-n{
-  width:22px;height:22px;border-radius:50%;
+  width:20px;height:20px;border-radius:50%;
   background:#1a56db;color:#fff;
-  font-size:11px;font-weight:800;
+  font-size:10px;font-weight:800;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
-.step-head{font-size:12px;font-weight:800;color:#0f172a;line-height:1.3}
-.step-body{font-size:9.5px;color:#475569;line-height:1.45;margin-top:1px}
+.step-head{font-size:11px;font-weight:800;color:#0f172a;line-height:1.3}
+.step-body{font-size:9px;color:#475569;line-height:1.4;margin-top:1px}
 
-.back-upi{margin:10px 16px 0;padding:11px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:11px;flex-shrink:0}
-.upi-title{font-size:10.5px;font-weight:800;color:#065f46;margin-bottom:7px}
-.upi-chips{display:flex;gap:7px;flex-wrap:wrap}
-.chip{background:#fff;border:1.5px solid #86efac;border-radius:7px;padding:4px 11px;font-size:9.5px;font-weight:700;color:#065f46}
+.back-upi{margin:4px 16px 0;padding:7px 12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:11px;flex-shrink:0}
+.upi-title{font-size:10px;font-weight:800;color:#065f46;margin-bottom:6px}
+.upi-chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:#fff;border:1.5px solid #86efac;border-radius:7px;padding:3px 10px;font-size:9px;font-weight:700;color:#065f46}
+
+/* ── Paisa vasool money math callout ── */
+.money-math{
+  margin:4px 16px 0;padding:9px 12px;
+  background:#1e3a8a;border-radius:11px;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.mm-emoji{font-size:22px;flex-shrink:0}
+.mm-num{font:900 18px/1 Inter;color:#fbbf24}
+.mm-label{font:800 10px/1.3 Inter;color:#fff;margin-top:2px}
+.mm-calc{font:600 8.5px/1.3 Inter;color:rgba(255,255,255,.65);margin-top:2px}
 
 .back-waitlist{
-  margin:10px 16px 0;padding:9px 14px;
+  margin:4px 16px 0;padding:8px 12px;
   background:#fef3c7;border:1.5px solid #fcd34d;border-radius:11px;
   text-align:center;flex-shrink:0;
 }
-.back-waitlist p{font-size:10px;color:#92400e;line-height:1.5}
+.back-waitlist p{font-size:9.5px;color:#92400e;line-height:1.5}
 .back-waitlist strong{font-weight:800}
 .back-waitlist a{color:#1d4ed8;font-weight:800;text-decoration:none}
+
+/* ── Support contact card ── */
+.support-card{
+  margin:5px 16px 0;
+  background:#0f172a;padding:10px 14px;border-radius:11px;
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;
+  flex-shrink:0;
+}
+.sc-label{color:#fbbf24;font:900 9.5px/1.3 Inter;text-transform:uppercase;letter-spacing:.1em}
+.sc-contact{color:#fff;font:800 12px/1 Inter}
+.sc-sub{color:rgba(255,255,255,.65);font:600 8.5px/1.3 Inter;margin-top:3px}
 
 .f-spacer{flex:1;min-height:0}
 
@@ -207,23 +252,23 @@ body{
       alt="Fish market"/>
     <div class="hero-ov"></div>
     <div class="hero-body">
-      <div class="brand">Reli<b>fish</b></div>
-      <div class="brand-sub">relifish.store &nbsp;·&nbsp; relifish.store/shop</div>
-      <div class="hero-title">Fresh fish from<br/><b>your local verified seller</b></div>
-      <div class="hero-tag">Better than market rates &nbsp;·&nbsp; Zero time wastage &nbsp;·&nbsp; Fresh at your door</div>
-      <div class="hero-pill"><span>✅ Hyperlocal Verified Sellers</span></div>
+      <div class="brand"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:36px;width:auto;filter:brightness(0) invert(1);display:block;" /></div>
+      <div class="hero-title">Fresh fish from <b>your local seller</b><br/><b>Best prices</b> in your area</div>
+      <div class="hero-tag">Verified Mumbai sellers &nbsp;·&nbsp; 2 hr delivery &nbsp;·&nbsp; Morning-fresh catch</div>
+      <div class="hero-pill"><span>✅ Hyperlocal Verified Sellers · FSSAI-compliant</span></div>
+      <div class="hero-social">🔥 4 verified sellers live near you — 100+ families already ordering</div>
     </div>
   </div>
 
   <div class="price-strip">
     <div>
-      <div class="p-old">Premium stores: <s>₹700–900/kg</s></div>
-      <div class="p-new">✅ Relifish: up to 30% less than premium prices</div>
+      <div class="p-anchor">📱 Live prices · Direct from seller</div>
+      <div class="p-new">✅ Best prices in your area · No platform fee · No markup</div>
+      <div class="p-loss" style="margin-top:3px;">✨ Same quality as premium stores · Morning-fresh, never cold-stored</div>
     </div>
     <div class="p-badges">
-      <div class="badge badge-or">Zero time wastage ✓</div>
-      <div class="badge badge-gr">Transparent &amp; discounted ✓</div>
-      <div class="badge" style="background:#7c3aed;">No quality compromise ✓</div>
+      <div class="badge badge-or">Best in area ✓</div>
+      <div class="badge badge-gr">Zero markup ✓</div>
     </div>
   </div>
 
@@ -233,26 +278,32 @@ body{
       <div class="fc">
         <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Pomfret</div><div class="fc-mr">पापलेट</div>
+        <div class="fc-price" id="price-pomfret">Check live prices →</div>
       </div>
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Surmai</div><div class="fc-mr">सुरमई</div>
+        <div class="fc-price" id="price-surmai">Check live prices →</div>
       </div>
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Prawns</div><div class="fc-mr">कोळंबी</div>
+        <div class="fc-price" id="price-prawns">Check live prices →</div>
       </div>
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize" alt="Bangda" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Bangda</div><div class="fc-mr">बांगडा</div>
+        <div class="fc-price" id="price-bangda">Check live prices →</div>
       </div>
       <div class="fc">
         <img src="https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0" alt="Rawas" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Rawas</div><div class="fc-mr">रावस</div>
+        <div class="fc-price" id="price-rawas">Check live prices →</div>
       </div>
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline" alt="Crab" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Crab</div><div class="fc-mr">खेकडा</div>
+        <div class="fc-price" id="price-crab">Check live prices →</div>
       </div>
     </div>
   </div>
@@ -271,34 +322,34 @@ body{
   </div>
 
   <div class="buyer-inst">
-    <div class="buyer-inst-lbl">🔪 Add instructions while ordering</div>
+    <div class="buyer-inst-lbl">🔪 Add cutting instructions after payment</div>
     <div class="inst-chips">
       <span class="inst-chip"><span class="inst-chip-icon">🧹</span> Clean</span>
       <span class="inst-chip"><span class="inst-chip-icon">🦐</span> Peeled</span>
       <span class="inst-chip"><span class="inst-chip-icon">🔪</span> Cut Pieces</span>
-      <span class="inst-chip"><span class="inst-chip-icon">🐟</span> Head Off</span>
+      <span class="inst-chip"><span class="inst-chip-icon">🗡️</span> Head Off</span>
       <span class="inst-chip"><span class="inst-chip-icon">✅</span> Whole</span>
     </div>
   </div>
 
-  <div class="trust-strip">
-    <div class="ti"><div class="ti-icon">💸</div><div class="ti-lbl">Better<br/>rates</div></div>
-    <div class="ti"><div class="ti-icon">⚡</div><div class="ti-lbl">Zero<br/>wastage</div></div>
-    <div class="ti"><div class="ti-icon">🌊</div><div class="ti-lbl">Morning<br/>fresh</div></div>
-    <div class="ti"><div class="ti-icon">🚪</div><div class="ti-lbl">At your<br/>door</div></div>
-    <div class="ti"><div class="ti-icon">🤝</div><div class="ti-lbl">Verified<br/>seller</div></div>
+  <!-- NEW: Social proof strip (replaces trust icons) -->
+  <div class="social-strip">
+    <div class="si"><div class="si-num">4</div><div class="si-lbl">Verified sellers<br/>near you</div></div>
+    <div class="si"><div class="si-num">100+</div><div class="si-lbl">Orders<br/>completed</div></div>
+    <div class="si"><div class="si-num">4.7 ⭐</div><div class="si-lbl">Avg seller<br/>rating</div></div>
+    <div class="si"><div class="si-num">2 hr</div><div class="si-lbl">Avg delivery<br/>time</div></div>
+    <div class="si"><div class="si-num">₹0</div><div class="si-lbl">Platform<br/>fee</div></div>
   </div>
 
   <div class="f-spacer"></div>
 
-  <!-- Flip teaser -->
   <div class="flip-front">
-    <div class="flip-front-text">How to order · Scan &amp; pay · 4 simple steps</div>
+    <div class="flip-front-text">Scan &amp; order · Live prices · 4 simple steps</div>
     <div class="flip-front-cta">Flip over →</div>
   </div>
 
   <div class="footer">
-    <div class="f-brand">Reli<b>fish</b></div>
+    <div class="f-brand"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);display:block;" /></div>
     <div class="f-tag">Mumbai's hyperlocal<br/>fish marketplace</div>
   </div>
 
@@ -308,36 +359,37 @@ body{
 <div class="page-label">▼ BACK — Scan &amp; Order</div>
 <div class="flyer">
 
-  <!-- Flip teaser -->
   <div class="flip-back">
     <div class="flip-back-cta">← Flip over</div>
     <div class="flip-back-text">Fish menu · Prices · Order modes</div>
   </div>
 
   <div class="back-header">
-    <div class="back-brand">Reli<b>fish</b></div>
+    <div class="back-brand"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:40px;width:auto;filter:brightness(0) invert(1);display:block;" /></div>
     <div class="back-sub">Mumbai's hyperlocal fish marketplace &nbsp;·&nbsp; relifish.store</div>
   </div>
 
   <div class="back-qr">
     <div class="qr-border">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://relifish.store/shop&bgcolor=ffffff&color=0a2472&qzone=1&margin=1" alt="relifish.store/shop"/>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://relifish.store/shop&bgcolor=ffffff&color=0a2472&qzone=1&margin=1" alt="relifish.store/shop"/>
     </div>
     <div class="qr-url">relifish.store/shop</div>
     <div class="qr-hint">Scan to browse live prices · No app · No login needed</div>
+    <!-- Hyperbolic discounting: immediate reward -->
+    <div class="qr-reward">📱 Fish at your door in 2 hours</div>
   </div>
 
   <div class="back-rule"></div>
 
   <div class="back-steps">
-    <div class="back-steps-title">How to order — 4 steps</div>
+    <div class="back-steps-title">How to order — 4 steps · 2 minutes</div>
     <div class="step-row">
       <div class="step-n">1</div>
-      <div><div class="step-head">Set your Mumbai location</div><div class="step-body">Open relifish.store — no app needed. See nearby sellers with live prices.</div></div>
+      <div><div class="step-head">Set your Mumbai location</div><div class="step-body">Open relifish.store — no app needed. See YOUR nearby sellers with live prices.</div></div>
     </div>
     <div class="step-row">
       <div class="step-n">2</div>
-      <div><div class="step-head">Browse &amp; add fish to cart</div><div class="step-body">Real market prices. Same-day or pre-order. No extra charges.</div></div>
+      <div><div class="step-head">Browse &amp; add fish to cart</div><div class="step-body">Real market prices. Same-day or pre-order by 11 PM. No extra charges.</div></div>
     </div>
     <div class="step-row">
       <div class="step-n">3</div>
@@ -361,18 +413,38 @@ body{
     </div>
   </div>
 
+  <!-- Paisa vasool callout — no rates, just value -->
+  <div class="money-math">
+    <div class="mm-emoji">💰</div>
+    <div>
+      <div class="mm-num">Best price · Best quality</div>
+      <div class="mm-label">in your area — guaranteed</div>
+      <div class="mm-calc">Direct from local seller · No platform fee · No middleman markup</div>
+    </div>
+  </div>
+
   <div class="back-waitlist">
     <p>Not in your area yet? <strong>Join the waitlist</strong> at <a href="https://relifish.store/shop">relifish.store/shop</a> — we'll notify you when a seller goes live near you.</p>
+  </div>
+
+  <!-- NEW: Support contact — peak-end strong close -->
+  <div class="support-card">
+    <div class="sc-label">Need<br/>Help?</div>
+    <div>
+      <div class="sc-contact">📞 9152207607 &nbsp;·&nbsp; 📧 relifishstore@gmail.com</div>
+      <div class="sc-sub">Call or WhatsApp · We answer within 5 minutes</div>
+    </div>
   </div>
 
   <div class="f-spacer"></div>
 
   <div class="footer">
-    <div class="f-brand">Reli<b>fish</b></div>
+    <div class="f-brand"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);display:block;" /></div>
     <div class="f-tag">Fresh fish · Local sellers<br/>Mumbai &amp; Navi Mumbai</div>
   </div>
 
 </div>
+
 
 </body>
 </html>

@@ -1,0 +1,179 @@
+---
+import "../../styles/tokens.css";
+import "../../styles/components.css";
+import AppHeader from "./organisms/AppHeader.astro";
+import BottomNav from "./organisms/BottomNav.astro";
+import VercelAnalytics from "../VercelAnalytics.astro";
+import type { AppHeaderProps, BottomNavProps } from "../../types/components";
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  needsMap?: boolean;
+  jsonLd?: Record<string, unknown>;
+  header?: AppHeaderProps;
+  nav?: BottomNavProps;
+  hideHeader?: boolean;
+  hideNav?: boolean;
+  noindex?: boolean;
+  canonical?: string;
+}
+
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+const siteUrl = "https://www.relifish.store";
+const defaultDescription = "Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch — pomfret, surmai, bangda, prawns — pickup or delivery tomorrow morning.";
+const {
+  title = brandName,
+  description = defaultDescription,
+  ogImage = "/og-image.png",
+  needsMap = false,
+  jsonLd,
+  header,
+  nav,
+  hideHeader = false,
+  hideNav = false,
+  noindex = false,
+  canonical,
+} = Astro.props;
+const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0066FF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Apply theme before paint to prevent FOUC -->
+    <script is:inline>
+      (function() {
+        try {
+          var t = localStorage.getItem("v2_theme");
+          if (t === "dark" || t === "light") {
+            document.documentElement.setAttribute("data-theme", t);
+          }
+        } catch(e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" /></noscript>
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={`${siteUrl}${ogImage}`} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={brandName} />
+    <meta property="og:locale" content="en_IN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/png" href="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/favicon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
+    {needsMap && <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    <!-- Google Tag Manager (head) -->
+    <script is:inline>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-JG2ZTX3F');</script>
+    <!-- Google Analytics (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DGS7557PZ6"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-DGS7557PZ6');
+    </script>
+    <!-- Microsoft Clarity -->
+    <script is:inline type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "wryvhcf3k8");
+    </script>
+    <!-- Facebook Pixel -->
+    <script is:inline>
+      !function(f,b,e,v,n,t,s){
+        if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window,document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init','1197248829088195');
+      fbq('track','PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=1197248829088195&ev=PageView&noscript=1"/></noscript>
+  </head>
+  <body class:list={[!hideNav && "v2-has-bottom-nav"]}>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-JG2ZTX3F"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Web Push requires an active service worker; v1 registers from AppShell only -->
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      }
+    </script>
+    <div class="v2-app">
+      {!hideHeader && header && <AppHeader {...header} />}
+      <main class="v2-main">
+        <slot />
+      </main>
+      {!hideNav && nav && <BottomNav {...nav} />}
+    </div>
+    <style is:global>
+      body.v2-has-bottom-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0)); }
+    </style>
+
+    <style is:global>
+      html, body {
+        margin: 0; padding: 0;
+        font-family: var(--v2-font);
+        background: var(--v2-bg-2);
+        color: var(--v2-ink);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        /* `clip` (not `hidden`) avoids creating a scroll container that breaks
+           position:sticky on descendants. */
+        overflow-x: clip;
+        width: 100%;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      .v2-app { min-height: 100vh; }
+      .v2-main {
+        max-width: var(--app-max-width, 800px);
+        margin: 0 auto;
+        padding-bottom: 16px;
+      }
+      a { color: inherit; }
+      :root { --app-max-width: 800px; }
+    </style>
+
+    <!-- Global cart module — exposed on window for inline scripts (define:vars) -->
+    <script>
+      import * as Cart from "../../lib/cart";
+      (window as any).RelifishCart = Cart;
+      document.dispatchEvent(new CustomEvent("v2-cart-ready"));
+    </script>
+    <VercelAnalytics />
+  </body>
+</html>

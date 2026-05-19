@@ -1,0 +1,132 @@
+---
+interface Props {
+  id?: string;
+  forceShow?: boolean;
+}
+const { id = "v2-onboarding", forceShow = false } = Astro.props;
+---
+<div class="v2-onb-backdrop" id={`${id}-backdrop`} data-force-show={forceShow}>
+  <div class="v2-onb-card">
+    <!-- Step 1 -->
+    <div id={`${id}-step1`} class="v2-onb-step">
+      <div class="v2-onb-illust"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:80px;width:auto;display:block;margin:0 auto;" /></div>
+      <h2 class="v2-onb-title">Fresh fish, direct from sellers</h2>
+      <p class="v2-onb-desc">Skip the supermarket. Order from local Mumbai fishermen with same-day catch.</p>
+    </div>
+    <!-- Step 2 -->
+    <div id={`${id}-step2`} class="v2-onb-step" style="display:none;">
+      <div class="v2-onb-illust">🌙</div>
+      <h2 class="v2-onb-title">Tomorrow's catch, reserved tonight</h2>
+      <p class="v2-onb-desc">Pre-order tonight. Confirmed in the morning. Fresh fish guaranteed.</p>
+    </div>
+    <!-- Step 3 -->
+    <div id={`${id}-step3`} class="v2-onb-step" style="display:none;">
+      <div class="v2-onb-illust">📍</div>
+      <h2 class="v2-onb-title">Find sellers near you</h2>
+      <p class="v2-onb-desc">Allow location to see fresh fish from your neighborhood. Or enter manually.</p>
+    </div>
+
+    <div class="v2-onb-dots">
+      <div class="v2-onb-dot v2-onb-active" data-dot="1"></div>
+      <div class="v2-onb-dot" data-dot="2"></div>
+      <div class="v2-onb-dot" data-dot="3"></div>
+    </div>
+
+    <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-next`}>Next →</button>
+    <button class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-skip`} style="margin-top:8px;">Skip</button>
+  </div>
+</div>
+
+<script define:vars={{ id }}>
+  let step = 1;
+  const root = document.getElementById(`${id}-backdrop`);
+  const nextBtn = document.getElementById(`${id}-next`);
+  const skipBtn = document.getElementById(`${id}-skip`);
+  const force = root?.dataset.forceShow === "true";
+
+  // Show only if not seen + not forced
+  function shouldShow() {
+    if (force) return true;
+    try { return localStorage.getItem("v2_onb_seen") !== "1"; } catch { return false; }
+  }
+
+  function setStep(n) {
+    step = n;
+    [1, 2, 3].forEach(i => {
+      const stepEl = document.getElementById(`${id}-step${i}`);
+      if (stepEl) stepEl.style.display = i === n ? "block" : "none";
+      const dot = document.querySelector(`.v2-onb-dot[data-dot="${i}"]`);
+      if (dot) dot.classList.toggle("v2-onb-active", i === n);
+    });
+    if (nextBtn) nextBtn.textContent = n === 3 ? "Get started" : "Next →";
+  }
+
+  function close() {
+    try { localStorage.setItem("v2_onb_seen", "1"); } catch {}
+    if (root) root.style.display = "none";
+  }
+
+  if (root && shouldShow()) {
+    root.style.display = "flex";
+  } else if (root) {
+    root.style.display = "none";
+  }
+
+  nextBtn?.addEventListener("click", () => {
+    if (step < 3) setStep(step + 1);
+    else close();
+  });
+  skipBtn?.addEventListener("click", close);
+</script>
+
+<style is:global>
+  .v2-onb-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, .6);
+    z-index: var(--v2-z-modal);
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 16px;
+    animation: v2-fade-in 200ms var(--v2-ease-out);
+  }
+  .v2-onb-card {
+    background: var(--v2-bg);
+    border-radius: var(--v2-radius-lg);
+    padding: 32px 24px;
+    width: 100%; max-width: 360px;
+    text-align: center;
+    box-shadow: var(--v2-shadow-lg);
+  }
+  .v2-onb-step {}
+  .v2-onb-illust {
+    font-size: 80px;
+    margin-bottom: 20px;
+  }
+  .v2-onb-title {
+    font: 900 22px Inter;
+    color: var(--v2-ink);
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  .v2-onb-desc {
+    font: 400 14px Inter;
+    color: var(--v2-ink-2);
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+  .v2-onb-dots {
+    display: flex; justify-content: center; gap: 6px;
+    margin-bottom: 20px;
+  }
+  .v2-onb-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--v2-bg-3);
+    transition: width var(--v2-dur-fast) var(--v2-ease), background var(--v2-dur-fast) var(--v2-ease);
+  }
+  .v2-onb-active {
+    background: var(--v2-brand);
+    width: 18px;
+    border-radius: 3px;
+  }
+</style>

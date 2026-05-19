@@ -10,7 +10,7 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
 const OTP_EXPIRY_MINUTES = 10;
-const MAX_SENDS_PER_DAY = 3;
+const MAX_SENDS_PER_DAY = 30;
 const RESEND_COOLDOWN_SECONDS = 30;
 
 function generateOTP(): string {

@@ -2,6 +2,29 @@
 
 All notable changes to Relifish are documented here.
 
+## [0.2.0.0] - 2026-05-18
+
+### Added
+- **Razorpay payment integration** — buyers can pay for orders via Razorpay checkout (toggle with `PUBLIC_ENABLE_RAZORPAY=true`); old UPI screenshot flow remains the default when flag is off
+- **Razorpay security hardening** — payment verification cross-checks `razorpay_order_id` against DB to prevent replay attacks; race condition guard checks update row count before firing notifications
+- **Payment confirmation emails** — buyer receives a styled receipt email after Razorpay payment; seller receives a new-order notification
+- **Relifish brand logos** — replaced all fish emoji brand marks across the app with the official `logo_horizontal.png` wordmark; favicon updated to `favicon.png` (R icon mark) via direct PNG link
+- **Flyer redesign** — A5 print flyer with psychology-optimised layout: anchoring, loss aversion, and social proof; live prices from DB; front + back pages
+- **Seller map** — interactive map showing seller locations with real coordinates from DB
+- **Facebook Pixel** — event tracking integrated on landing and order flows
+- **Google Analytics, Clarity, and Google Tag Manager** — analytics stack wired up across all pages
+- **Checkout session grouping** — migrations 054/055 add `checkout_session` table for atomic multi-item cart checkout
+
+### Changed
+- **Component directory rename** — `src/components/v2/` → `src/components/ui/` for cleaner imports; all page references updated
+- **Email templates overhauled** — full Relifish branding, dark header with white logo, itemised order summary, refund and receipt templates added
+- **manifest.json** — icons updated to `favicon.png` replacing old SVG icon-192/icon-512 references
+- **buyer-banner.html / seller-banner.html** — Relifish logo header strip added to top of each page
+
+### Fixed
+- **Flyer live prices** — corrected `deleted_at` filter so only active listings appear in price grid
+- **Logo rendering on dark backgrounds** — `filter:brightness(0) invert(1)` applied wherever logo appears on dark/coloured backgrounds; `object-fit:cover` used to eliminate letterbox padding from landscape canvas
+
 ## [0.1.3.0] - 2026-05-11
 
 ### Added

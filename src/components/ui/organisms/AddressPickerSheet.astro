@@ -1,0 +1,171 @@
+---
+import BottomSheet from "./BottomSheet.astro";
+interface Props {
+  id?: string;
+  title?: string;
+  /** When true, stacks above checkout / other sheets (fixed z-index lift). */
+  elevated?: boolean;
+}
+const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Astro.props;
+---
+<BottomSheet id={id} title={title} ctaText="Deliver here →" ctaAction="v2ConfirmAddress" elevated={elevated}>
+  <div id={`${id}-list`}>
+    <div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 12px Inter;">
+      <span class="v2-spinner v2-spinner-md" style="border-top-color:var(--v2-brand);"></span>
+      <div style="margin-top:8px;">Loading addresses...</div>
+    </div>
+  </div>
+  <button id={`${id}-add-btn`} type="button" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" style="margin-top:8px;">+ Add new address</button>
+  <div id={`${id}-add-form`} style="display:none;margin-top:12px;padding:12px;background:var(--v2-bg-2);border-radius:var(--v2-radius);border:1px solid var(--v2-border);">
+    <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:10px;">New address</div>
+    <select id={`${id}-label`} style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);margin-bottom:8px;">
+      <option value="home">🏠 Home</option>
+      <option value="office">🏢 Office</option>
+      <option value="other">📍 Other</option>
+    </select>
+    <input id={`${id}-building`} type="text" placeholder="Building / Society *" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-flat`} type="text" placeholder="Flat / House no." style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-landmark`} type="text" placeholder="Landmark (optional)" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-location`} type="text" placeholder="Area / Locality *" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:10px;" />
+    <div style="display:flex;gap:8px;">
+      <button id={`${id}-add-cancel`} type="button" style="flex:1;padding:9px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:600 13px Inter;background:var(--v2-bg);color:var(--v2-ink-2);cursor:pointer;">Cancel</button>
+      <button id={`${id}-add-save`} type="button" style="flex:2;padding:9px;border:none;border-radius:var(--v2-radius-sm);font:600 13px Inter;background:var(--v2-brand);color:#fff;cursor:pointer;">Save address</button>
+    </div>
+    <div id={`${id}-add-err`} style="display:none;margin-top:8px;font:500 12px Inter;color:var(--v2-red);"></div>
+  </div>
+</BottomSheet>
+
+<script define:vars={{ id }}>
+  const list = document.getElementById(`${id}-list`);
+
+  async function load() {
+    if (!list) return;
+    let buyerId = null;
+    try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
+    if (!buyerId) {
+      list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 13px Inter;">Sign in to manage addresses</div>';
+      return;
+    }
+    try {
+      const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+      const data = await res.json();
+      const addrs = data.addresses || [];
+      if (addrs.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 13px Inter;">No saved addresses yet</div>';
+        return;
+      }
+      function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+      const fromSession = sessionStorage.getItem(`${id}-selected`);
+      const defaultAddr = addrs.find((a) => a.is_default) || addrs[0];
+      const selectedId =
+        fromSession && addrs.some((a) => a.id === fromSession) ? fromSession : defaultAddr?.id || null;
+      if (selectedId) sessionStorage.setItem(`${id}-selected`, selectedId);
+      list.innerHTML = addrs.map(a => {
+        const text = [a.flat, a.building, a.landmark, a.location_name].filter(Boolean).join(", ");
+        const icon = a.label === "office" ? "🏢" : a.label === "home" ? "🏠" : "📍";
+        const sel = selectedId === a.id;
+        return `<div class="v2-addr-card${sel ? " v2-addr-selected" : ""}" data-addr-id="${a.id}">
+          <div class="v2-addr-icon">${icon}</div>
+          <div class="v2-addr-body">
+            <div class="v2-addr-top">
+              <span class="v2-addr-label">${escape(a.label || "Address")}</span>
+              ${a.is_default ? '<span class="v2-addr-default">Default</span>' : ''}
+            </div>
+            <div class="v2-addr-text">${escape(text)}</div>
+          </div>
+          <div class="v2-addr-radio"></div>
+        </div>`;
+      }).join("");
+      list.querySelectorAll(".v2-addr-card").forEach(card => {
+        card.addEventListener("click", () => {
+          list.querySelectorAll(".v2-addr-card").forEach(c => c.classList.remove("v2-addr-selected"));
+          card.classList.add("v2-addr-selected");
+          sessionStorage.setItem(`${id}-selected`, card.dataset.addrId);
+        });
+      });
+    } catch (err) {
+      list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-red);font:500 13px Inter;">Failed to load addresses</div>';
+    }
+  }
+
+  // Add new address — inline form toggle
+  const addBtn = document.getElementById(`${id}-add-btn`);
+  const addForm = document.getElementById(`${id}-add-form`);
+  const addCancel = document.getElementById(`${id}-add-cancel`);
+  const addSave = document.getElementById(`${id}-add-save`);
+  const addErr = document.getElementById(`${id}-add-err`);
+
+  addBtn?.addEventListener("click", () => {
+    addForm.style.display = "block";
+    addBtn.style.display = "none";
+  });
+  addCancel?.addEventListener("click", () => {
+    addForm.style.display = "none";
+    addBtn.style.display = "";
+    addErr.style.display = "none";
+  });
+  addSave?.addEventListener("click", async () => {
+    const building = document.getElementById(`${id}-building`).value.trim();
+    const location_name = document.getElementById(`${id}-location`).value.trim();
+    if (!building || !location_name) {
+      addErr.textContent = "Building and area are required.";
+      addErr.style.display = "block";
+      return;
+    }
+    let buyerId = null;
+    try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
+    if (!buyerId) { addErr.textContent = "Sign in to save addresses."; addErr.style.display = "block"; return; }
+    addSave.textContent = "Saving...";
+    addSave.disabled = true;
+    try {
+      const res = await fetch("/api/buyer/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyer_id: buyerId,
+          address: {
+            label: document.getElementById(`${id}-label`).value,
+            building,
+            flat: document.getElementById(`${id}-flat`).value.trim(),
+            landmark: document.getElementById(`${id}-landmark`).value.trim(),
+            location_name,
+          }
+        })
+      });
+      if (!res.ok) throw new Error("Save failed");
+      // reset form
+      addForm.style.display = "none";
+      addBtn.style.display = "";
+      document.getElementById(`${id}-building`).value = "";
+      document.getElementById(`${id}-flat`).value = "";
+      document.getElementById(`${id}-landmark`).value = "";
+      document.getElementById(`${id}-location`).value = "";
+      addErr.style.display = "none";
+      await load(); // reload address list
+    } catch {
+      addErr.textContent = "Failed to save. Try again.";
+      addErr.style.display = "block";
+    } finally {
+      addSave.textContent = "Save address";
+      addSave.disabled = false;
+    }
+  });
+
+  // Auto-load on first open
+  document.addEventListener("v2-sheet-opened", (e) => {
+    if (e.detail?.id === id) load();
+  });
+
+  // Initial load if visible at mount
+  if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) {
+    load();
+  }
+
+  window.v2ConfirmAddress = function (sheetId) {
+    const sid = sheetId || id;
+    const selectedId = sessionStorage.getItem(`${sid}-selected`);
+    if (!selectedId) return;
+    document.dispatchEvent(new CustomEvent("v2-address-confirmed", { detail: { addressId: selectedId, sheetId: sid } }));
+    window.v2CloseSheet?.(sid);
+  };
+</script>

@@ -34,7 +34,7 @@ const KEY = "v2_cart_global";
 const LEGACY_PREFIX = "v2_cart_"; // old per-seller keys
 
 function getBuyerId(): string | null {
-  try { return localStorage.getItem("zepto_buyer_id"); } catch { return null; }
+  try { return localStorage.getItem("rlf_buyer_id"); } catch { return null; }
 }
 
 export function getCart(): CartMap {

@@ -1,10 +1,10 @@
 ---
 export const prerender = false;
-import AppShellV2 from "../../../components/v2/AppShellV2.astro";
-import Toast from "../../../components/v2/atoms/Toast.astro";
-import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
+import AppShell from "../../../components/ui/AppShell.astro";
+import Toast from "../../../components/ui/atoms/Toast.astro";
+import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 ---
-<AppShellV2
+<AppShell
   title="Listings · Seller Dashboard"
   description="Manage your fish listings"
   header={{ variant: "page", title: "My listings", backHref: "/dashboard/orders" }}
@@ -34,7 +34,7 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
       />
     </div>
   </div>
-</AppShellV2>
+</AppShell>
 
 <script>
   import { supabase } from "../../../lib/supabase";
@@ -43,7 +43,7 @@ import EmptyState from "../../../components/v2/molecules/EmptyState.astro";
     isPreorderShoppingWindow,
   } from "../../../lib/order-timing";
 
-  function getSellerId() { try { return localStorage.getItem("zepto_seller_id"); } catch { return null; } }
+  function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
   function escape(s: string) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!)); }
 
   let _sellerTiming: Record<string, unknown> | null = null;

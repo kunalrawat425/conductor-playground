@@ -14,7 +14,8 @@ import {
   type PlacementKind,
 } from "../order-timing";
 
-/** Resolved line that will use create_order_atomic / fallback insert (in-stock same-day path). */
+
+/** Resolved line that will use create_order_atomic / fallback insert (in-stock or low-stock path). */
 export type StandardOrderLinePayload = {
   kind: "standard";
   placement_kind: PlacementKind;
@@ -40,6 +41,9 @@ export type PreorderLinePayload = {
   total_price: number;
   pricing_option_id: string | null;
   pricing_label: string | null;
+  pre_order_reason: "unavailable" | "out_of_stock";
+  preorder_price_min?: number | null;
+  preorder_price_max?: number | null;
 };
 
 export type ResolveListingOrderLineResult =
@@ -83,24 +87,43 @@ export async function resolveListingOrderLine(
 
   const { data: seller } = await supabase
     .from("sellers")
-    .select(
-      "opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, min_order_amount"
-    )
+    .select("opens_at, closes_at, accepts_preorder, min_order_amount, open_days, preorder_days, preorder_cutoff_time")
     .eq("id", listing.seller_id)
     .single();
 
-  if (!seller) {
-    return { ok: false, status: 404, error: "Seller not found" };
+  const placementResult = seller ? classifyPlacementAtOrderTime(seller, nowMs) : "same_day";
+  if (placementResult === "closed") {
+    return { ok: false, status: 400, error: seller ? closedSellerMessage(seller) : "Seller is not available." };
   }
+  const placement: PlacementKind = placementResult;
 
-  const placement = classifyPlacementAtOrderTime(seller, nowMs);
-  if (placement === "closed") {
-    return { ok: false, status: 400, error: closedSellerMessage(seller) };
-  }
-
-  const chosen = getListingOptionById(listing as ListingPricingSource, clientPricingOptionId);
+  let chosen = getListingOptionById(listing as ListingPricingSource, clientPricingOptionId);
   if (!chosen) {
     return { ok: false, status: 400, error: "Invalid price option for this listing" };
+  }
+  // If the resolved option is a bundle option whose bundle_size doesn't divide the
+  // requested quantity, try to find a better-matching option by quantity divisibility.
+  // This handles stale cart entries that stored "default" before the opt_N fix.
+  if (!isPerBaseUnitPricing(chosen)) {
+    const rawQty = typeof input.rawQuantity === "number" ? input.rawQuantity : parseFloat(String(input.rawQuantity));
+    if (Number.isFinite(rawQty) && rawQty > 0) {
+      const qFloor = Math.floor(rawQty);
+      const bAmt = optionBundleAmount(chosen);
+      const fails = chosen.unit === "kg"
+        ? Math.round(rawQty * 100) % Math.round(bAmt * 100) !== 0
+        : qFloor % bAmt !== 0;
+      if (fails) {
+        const allOpts = getListingPriceOptions(listing as ListingPricingSource);
+        const better = allOpts.find((o) => {
+          if (isPerBaseUnitPricing(o)) return false;
+          const b = optionBundleAmount(o);
+          return o.unit === "kg"
+            ? Math.round(rawQty * 100) % Math.round(b * 100) === 0
+            : qFloor % b === 0;
+        });
+        if (better) chosen = better;
+      }
+    }
   }
   const orderPricingOptionId = chosen.id;
   const orderPricingLabel = chosen.label;
@@ -148,7 +171,7 @@ export async function resolveListingOrderLine(
     return { ok: false, status: 400, error: "Invalid quantity" };
   }
 
-  const minOrderAmt = Number(seller.min_order_amount) || 0;
+  const minOrderAmt = Number(seller?.min_order_amount) || 0;
   const pricingOpts = getListingPriceOptions(listing);
   const dailyCapFloor = minimumRequiredBuyerDailyCap(pricingOpts, minOrderAmt);
 
@@ -193,7 +216,7 @@ export async function resolveListingOrderLine(
   const weightAvail = Number(listing.weight_avail);
   const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
   const speciesVal = (listing as { species?: string }).species ?? null;
-  const sellerOpen = isSellerEffectivelyOpen(seller, nowMs);
+  const sellerOpen = seller ? isSellerEffectivelyOpen(seller, nowMs) : false;
 
   if (placement === "same_day") {
     if (!listing.is_available || availOk <= 0 || availOk < quantity) {
@@ -203,7 +226,8 @@ export async function resolveListingOrderLine(
         error: `Only ${availOk} ${quantity_unit} in stock. Reduce quantity or try again later.`,
       };
     }
-    const total_price = linePrice * bundleCount;
+    const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
+    const total_price = (chosen.price || 0) * bundleCount;
     return {
       ok: true,
       line: {
@@ -217,6 +241,11 @@ export async function resolveListingOrderLine(
         total_price,
         pricing_option_id: orderPricingOptionId,
         pricing_label: orderPricingLabel,
+        bundle_size: bundleAmount,
+        pre_order_reason,
+        is_preorder_enabled: !!(listing as any).is_preorder_enabled,
+        preorder_price_min: chosen.preorder_price_min,
+        preorder_price_max: chosen.preorder_price_max,
       },
     };
   }
@@ -240,6 +269,7 @@ export async function resolveListingOrderLine(
       total_price,
       pricing_option_id: orderPricingOptionId,
       pricing_label: orderPricingLabel,
+      bundle_size: bundleAmount,
     },
   };
 }
