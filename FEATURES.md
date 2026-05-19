@@ -1,7 +1,7 @@
 # Relifish — Feature Reference
 
 Buyer and seller flows in parallel, module by module.
-Last updated: 2026-04-26
+Last updated: 2026-05-19
 
 ---
 
@@ -66,7 +66,7 @@ All HTML transactional email bodies share one design system in **`src/lib/email-
 | | Buyer | Seller |
 |---|---|---|
 | **Entry** | Phone OTP at `/v2/me` or any checkout gate | Phone OTP at `/v2/dashboard/login` |
-| **Identity stored** | `localStorage: zepto_buyer_id`, `zepto_phone` | `localStorage: zepto_seller_id`, `zepto_seller_phone` |
+| **Identity stored** | `localStorage: rlf_buyer_id`, `rlf_phone` | `localStorage: rlf_seller_id`, `rlf_seller_phone` |
 | **Session check** | Client-side on every protected page | Client-side; redirects to `/v2/dashboard/login` |
 | **Account state** | Auto-created on first OTP verify | Must be activated by admin (`is_active = true`) |
 | **Email** | Optional, for order notifications | Optional, verified via magic link |
@@ -186,7 +186,7 @@ Legacy rows may still have `status = pre_order` or missing `placement_kind`; UI 
 **Components:** `CheckoutSheet` (embedded on seller page and similar), `AddressPickerSheet`, `BottomSheet` (shared shell).
 
 ### Steps (typical)
-1. Buyer taps checkout from cart bar / stack sheet → **LoginSheet** if not authenticated (`zepto_buyer_id` / phone).
+1. Buyer taps checkout from cart bar / stack sheet → **LoginSheet** if not authenticated (`rlf_buyer_id` / phone).
 2. **Step 1 — Cart review:** line items, subtotal, delivery row, **Next: Delivery →**.
 3. **Step 2 — Delivery + place:**
    - **Pickup vs delivery** radio (delivery hidden if seller has no delivery).
@@ -626,3 +626,65 @@ const isPreorder = o.is_preorder === true || o.placement_kind === "preorder" || 
 | Buyer email null → no receipt | `razorpay-verify.ts` | `buyer?.email` null if not set in profile | Fallback to `buyer_email` from frontend; patch DB |
 | Same-day priced at preorder_price_max | `resolve-listing-order-line.ts` | Wrong price branch in `same_day` return | Use `chosen.price` for same-day |
 | `placement_kind = placement` (undefined) | `create.ts` | `placement` not declared in scope | `placement_kind = placementKind as PlacementKind` |
+
+---
+
+## Session update (2026-05-19) — office-hours branch
+
+### Shipped features
+| Feature | Status | Key files |
+|---|---|---|
+| Razorpay payment integration | ✅ Done | `api/payments/razorpay-create-order.ts`, `razorpay-verify.ts` |
+| Pre-order determination — timing-only | ✅ Done | `lib/order-timing.ts`, `resolve-listing-order-line.ts` |
+| `is_preorder` + `placement_kind` always written to DB | ✅ Done | `orders/create.ts`, `create-seller-cart.ts` |
+| Email overhaul — non-blocking, preorder/order distinction | ✅ Done | `lib/email-templates.ts`, all order APIs |
+| Bundle display: "3 packs × 3 pieces" (no total count) | ✅ Done | `formatQtyForEmail` in `email-templates.ts` |
+| Brand logo — `logo_horizontal.png` everywhere | ✅ Done | All pages, emails, flyers |
+| Favicon — `favicon.png` PNG from Supabase CDN | ✅ Done | `AppShell.astro`, `index.astro` |
+| Seller push on Razorpay confirm | ✅ Done | `razorpay-verify.ts` → `notify-seller` |
+| Seller push on cancelled/declined/refund | ✅ Done | `api/seller/orders.ts` |
+| Seller email subject: "New pre-order:" vs "New order:" | ✅ Done | All order APIs |
+| `isPreorder` + bundle in status update emails | ✅ Done | `api/seller/orders.ts` |
+| Buyer email prompt banner in `/me` profile | ✅ Done | `pages/me.astro` |
+| localStorage keys: `zepto_*` → `rlf_*` with migration | ✅ Done | `lib/auth.ts`, `lib/seller-auth.ts` |
+| VAPID contact: `relifishstore@gmail.com` | ✅ Done | `buyer-push.ts`, `notify-seller.ts` |
+| GBrain embedding provider: Voyage AI | ✅ Done | `gbrain config set embedding_provider voyage` |
+
+### Outstanding (not yet done)
+| Gap | Notes |
+|---|---|
+| Store images (`store_image_url`) | Needs migration + seller profile upload UI + SellerCard |
+| Supabase migrations 051, 056, 057 | Must apply in Supabase SQL editor before deploying |
+
+### localStorage key reference (current)
+| Key | Value |
+|---|---|
+| `rlf_buyer_id` | Buyer UUID from Supabase |
+| `rlf_phone` | Buyer phone (+91...) |
+| `rlf_buyer_first_name` | First name |
+| `rlf_buyer_last_name` | Last name |
+| `rlf_location` | JSON `{lat, lng, name}` |
+| `rlf_buyer_location` | Location area name |
+| `rlf_buyer_lat` / `rlf_buyer_lng` | Coordinates |
+| `rlf_address_detail` | JSON address detail |
+| `rlf_checkout_address_selection` | Checkout address state |
+| `rlf_seller_id` | Seller UUID |
+| `rlf_seller_phone` | Seller phone |
+| `rlf_seller_name` | Seller display name |
+| `rlf_seller_is_active` | "1" / "0" |
+
+Migration: old `zepto_*` keys auto-migrate to `rlf_*` on first `getSession()` call.
+
+### Notification matrix (complete)
+| Event | Buyer email | Buyer push | Seller email | Seller push |
+|---|---|---|---|---|
+| Order placed (same-day) | ✅ | ✅ | ✅ | ✅ |
+| Order placed (preorder) | ✅ | ✅ | ✅ | ✅ |
+| Proof uploaded | ✅ | ✅ | ✅ | ✅ |
+| Razorpay confirmed | ✅ receipt | ✅ | ✅ | ✅ |
+| Seller verifies (COD) | ✅ | ✅ | ✅ | — |
+| Status transition | ✅ | ✅ | ✅ | — |
+| Cancelled / Declined | ✅ | ✅ | ✅ | ✅ |
+| Refund sent | ✅ | ✅ | ✅ | ✅ |
+
+Push requires: buyer enabled notifications at `/me` · seller enabled in dashboard · VAPID keys set in Vercel env.
