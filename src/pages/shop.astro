@@ -681,7 +681,7 @@ const categories = [
 
         // Status: open / closed-preorder (still active for pre-orders) / closed / pre-order-only
         const status = !g.open
-          ? (g.preorderAvailableToday ? "closed-preorder" : "closed")
+          ? (g.preorderMode ? "closed-preorder" : "closed")
           : (g.listings.length === 0 && g.preorderAvailableToday ? "pre-order-only" : "open");
 
         // ONE status tag per card — mutually exclusive states.

@@ -17,7 +17,10 @@ export type PlacementKind = "same_day" | "preorder";
 const DAY_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 export function todayDayName(d = new Date()): string {
-  return DAY_NAMES[d.getDay()];
+  // Extract day in IST — server runs UTC, so d.getDay() returns wrong day
+  // between 18:30–23:59 UTC (= 00:00–05:30 IST next day).
+  const istMs = d.getTime() + 5.5 * 60 * 60 * 1000;
+  return DAY_NAMES[new Date(istMs).getUTCDay()];
 }
 
 /** Minutes since midnight in IST (UTC+5:30). */
