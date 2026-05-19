@@ -1,12 +1,20 @@
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { computeDeliveryFee } from "../../../lib/order-pricing";
-import { capitalizeFishName, orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import {
+  capitalizeFishName,
+  orderEmailBuyer,
+  orderEmailSeller,
+  type OrderEmailArgs,
+} from "../../../lib/email-templates";
+import { getListingOptionById, type ListingPricingSource } from "../../../lib/listing-pricing";
+import type { PlacementKind } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
-import type { OosPreorderLinePayload, StandardOrderLinePayload } from "../../../lib/server/resolve-listing-order-line";
 
-type ResolvedRow = { line: StandardOrderLinePayload | OosPreorderLinePayload };
+type ResolvedRow = Awaited<ReturnType<typeof resolveListingOrderLine>> extends { ok: true; line: infer L }
+  ? { line: L }
+  : never;
 
 export const prerender = false;
 
@@ -24,8 +32,7 @@ type CartLineInput = {
 
 /**
  * POST /api/orders/create-seller-cart
- * Multi-line checkout for one seller: validates minimum order against cart subtotal (not each line).
- * Body: { seller_id, lines: CartLineInput[], buyer_phone, buyer_id?, buyer_addr?, order_type?, scheduled_for?, schedule_slot_id? }
+ * Multi-line checkout for one seller. Placement kind = shopping hours + order time only.
  */
 export const POST: APIRoute = async ({ request, url }) => {
   try {
@@ -38,10 +45,16 @@ export const POST: APIRoute = async ({ request, url }) => {
       order_type = "pickup",
       seller_id: clientSellerId,
       scheduled_for,
-      schedule_slot_id,
       buyer_notes,
       cut_style,
     } = body;
+
+    if (scheduled_for) {
+      return new Response(
+        JSON.stringify({ error: "Scheduled pickup slots are not available. Order for now or during pre-order hours." }),
+        { status: 400 }
+      );
+    }
 
     if (!buyer_phone) {
       return new Response(JSON.stringify({ error: "Phone number required" }), { status: 400 });
@@ -66,7 +79,6 @@ export const POST: APIRoute = async ({ request, url }) => {
         rawQuantity: raw.quantity,
         buyer_phone,
         buyer_id,
-        scheduled_for: scheduled_for || null,
       });
       if (!r.ok) {
         return new Response(JSON.stringify({ error: r.error }), { status: r.status });
@@ -78,21 +90,17 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     const cartSubtotal = resolved.reduce((s, x) => s + x.line.total_price, 0);
+    const placement_kind: PlacementKind = resolved.some((x) => x.line.placement_kind === "preorder")
+      ? "preorder"
+      : "same_day";
 
     const { data: seller } = await supabase
       .from("sellers")
       .select(
-        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, schedule_pickup_slots"
+        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above"
       )
       .eq("id", clientSellerId)
       .single();
-
-    if (scheduled_for && !seller) {
-      return new Response(JSON.stringify({ error: "Scheduled orders require a seller." }), { status: 400 });
-    }
-    if (scheduled_for && !seller?.schedule_pickup_slots) {
-      return new Response(JSON.stringify({ error: "Pickup scheduling is not available for this seller." }), { status: 400 });
-    }
 
     const minAmt = Number(seller?.min_order_amount) || 0;
     if (minAmt > 0 && cartSubtotal < minAmt) {
@@ -109,7 +117,6 @@ export const POST: APIRoute = async ({ request, url }) => {
       return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
     }
 
-    // Pay-first: same-day and scheduled slots both start as pending_payment until proof is uploaded.
     const status: "pending_payment" = "pending_payment";
 
     // Fetch emails in parallel, non-blocking — resolved lazily when emails fire
@@ -123,7 +130,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const orders: unknown[] = [];
 
     for (const { line } of resolved) {
-      if (line.kind === "oos_preorder") {
+      if (line.kind === "preorder") {
         const amountDue = line.total_price;
         const { data: preOrder, error: preErr } = await supabase
           .from("orders")
@@ -138,13 +145,11 @@ export const POST: APIRoute = async ({ request, url }) => {
             total_price: line.total_price,
             delivery_fee: 0,
             platform_fee: 0,
-            // Pre-orders always require payment proof upload first.
             status: "pending_payment",
+            placement_kind: "preorder",
             order_type,
             payment_type: "cod",
             paid_amount: amountDue,
-            scheduled_for: scheduled_for || null,
-            schedule_slot_id: schedule_slot_id || null,
             pricing_option_id: line.pricing_option_id,
             pricing_label: line.pricing_label,
             is_preorder: true,
@@ -232,8 +237,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         p_delivery_fee: delivery_fee,
         p_status: status,
         p_order_type: order_type,
-        p_scheduled_for: scheduled_for || null,
-        p_schedule_slot_id: schedule_slot_id || null,
+        p_scheduled_for: null,
+        p_schedule_slot_id: null,
         p_pricing_option_id: line.pricing_option_id,
         p_pricing_label: line.pricing_label,
       });
@@ -244,10 +249,15 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: msg }), { status: isStockError ? 400 : 500 });
       }
 
-      const { data: fetchedOrder, error: fetchErr } = await supabase.from("orders").select().eq("id", orderId).single();
+      const { data: fetchedOrder, error: fetchErr } = await supabase
+        .from("orders")
+        .select()
+        .eq("id", orderId)
+        .single();
       if (fetchErr) {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
       }
+      await supabase.from("orders").update({ placement_kind: "same_day" }).eq("id", orderId);
       orders.push(fetchedOrder);
 
       try {
@@ -313,7 +323,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
 
-    return new Response(JSON.stringify({ orders, cart_subtotal: cartSubtotal }), { status: 201 });
+    return new Response(JSON.stringify({ orders, cart_subtotal: cartSubtotal, placement_kind }), { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("create-seller-cart error:", err);
@@ -351,10 +361,10 @@ async function sendCartOrderEmail(
   const bc = bs ? Math.round(quantity / bs) : null;
   const emailArgs = {
     statusLabel,
-    species: species || "Fish",
-    quantity,
-    quantity_unit,
-    totalAmount: total_price + delivery_fee,
+    species: line.species || "Fish",
+    quantity: line.quantity,
+    quantity_unit: line.quantity_unit,
+    totalAmount: line.total_price + delivery_fee,
     deliveryFee: delivery_fee,
     orderId: args.order?.id,
     scheduled_for: scheduled_for || null,
@@ -373,7 +383,7 @@ async function sendCartOrderEmail(
   if (buyerEmail) {
     fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: "Relifish <noreply@relifish.store>",
         to: buyerEmail,

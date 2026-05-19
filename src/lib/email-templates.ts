@@ -177,7 +177,6 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
   } = args;
 
   const fishName = capitalizeFishName(species);
-  const subtotal = totalAmount - deliveryFee;
   const orderIdShort = orderId ? orderId.substring(0, 8) : "";
   const qtyText = formatQtyForEmail(quantity, quantity_unit, bundleSize, bundleCount);
   const rows = [
@@ -240,7 +239,6 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
   } = args;
 
   const fishName = capitalizeFishName(species);
-  const subtotal = totalAmount - deliveryFee;
   const orderIdShort = orderId ? orderId.substring(0, 8) : "";
   const qtyText = formatQtyForEmail(quantity, quantity_unit, bundleSize, bundleCount);
   const rows = [

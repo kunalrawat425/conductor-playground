@@ -7,11 +7,18 @@ import {
   minimumRequiredBuyerDailyCap,
   type ListingPricingSource,
 } from "../listing-pricing";
+import {
+  classifyPlacementAtOrderTime,
+  closedSellerMessage,
+  isSellerEffectivelyOpen,
+  type PlacementKind,
+} from "../order-timing";
 
 
 /** Resolved line that will use create_order_atomic / fallback insert (in-stock or low-stock path). */
 export type StandardOrderLinePayload = {
   kind: "standard";
+  placement_kind: PlacementKind;
   listing_id: string;
   species: string | null;
   seller_id: string;
@@ -22,9 +29,10 @@ export type StandardOrderLinePayload = {
   pricing_label: string | null;
 };
 
-/** OOS / unavailable → pre_order insert (no stock decrement). */
-export type OosPreorderLinePayload = {
-  kind: "oos_preorder";
+/** Pre-order window placement (no stock decrement at create). */
+export type PreorderLinePayload = {
+  kind: "preorder";
+  placement_kind: "preorder";
   listing_id: string;
   species: string | null;
   seller_id: string;
@@ -40,11 +48,11 @@ export type OosPreorderLinePayload = {
 
 export type ResolveListingOrderLineResult =
   | { ok: false; status: number; error: string }
-  | { ok: true; line: StandardOrderLinePayload | OosPreorderLinePayload };
+  | { ok: true; line: StandardOrderLinePayload | PreorderLinePayload };
 
 /**
  * Validates one listing line for checkout (same rules as POST /api/orders/create).
- * Does not enforce seller minimum order — caller sums `total_price` across lines first.
+ * Placement kind follows seller hours + order time only (see order-timing.ts).
  */
 export async function resolveListingOrderLine(
   supabase: SupabaseClient,
@@ -54,10 +62,10 @@ export async function resolveListingOrderLine(
     rawQuantity: number;
     buyer_phone: string;
     buyer_id?: string | null;
-    scheduled_for?: string | null;
+    nowMs?: number;
   }
 ): Promise<ResolveListingOrderLineResult> {
-  const { listing_id, pricing_option_id: clientPricingOptionId, rawQuantity, buyer_phone, buyer_id, scheduled_for } =
+  const { listing_id, pricing_option_id: clientPricingOptionId, rawQuantity, buyer_phone, buyer_id, nowMs } =
     input;
 
   let quantity = typeof rawQuantity === "number" ? rawQuantity : parseFloat(String(rawQuantity));
@@ -67,7 +75,9 @@ export async function resolveListingOrderLine(
 
   const { data: listing } = await supabase
     .from("fish_listings")
-    .select("pricing_options, seller_id, species, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold, is_preorder_enabled")
+    .select(
+      "pricing_options, seller_id, species, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold"
+    )
     .eq("id", listing_id)
     .single();
 
@@ -116,11 +126,15 @@ export async function resolveListingOrderLine(
     return { ok: false, status: 400, error: "Invalid quantity" };
   }
 
-  const linePrice = chosen.price;
+  const linePrice =
+    placement === "preorder"
+      ? chosen.preorder_price_max ?? chosen.preorder_price_min ?? chosen.price
+      : chosen.price;
   const bundleAmount = optionBundleAmount(chosen);
   const perBase = isPerBaseUnitPricing(chosen);
 
-  if (!perBase) {
+  const skipBundleCheck = placement === "preorder";
+  if (!perBase && !skipBundleCheck) {
     if (quantity_unit === "kg") {
       const qCent = Math.round(quantity * 100);
       const bCent = Math.round(bundleAmount * 100);
@@ -140,21 +154,20 @@ export async function resolveListingOrderLine(
     }
   }
 
-  const bundleCount = quantity / bundleAmount;
+  const bundleCount = perBase ? quantity : quantity / bundleAmount;
   if (!Number.isFinite(bundleCount) || bundleCount <= 0) {
     return { ok: false, status: 400, error: "Invalid quantity" };
   }
 
-  const { data: sellerForLimits } = await supabase
-    .from("sellers")
-    .select("min_order_amount")
-    .eq("id", listing.seller_id)
-    .single();
-  const minOrderAmt = Number(sellerForLimits?.min_order_amount) || 0;
+  const minOrderAmt = Number(seller.min_order_amount) || 0;
   const pricingOpts = getListingPriceOptions(listing);
   const dailyCapFloor = minimumRequiredBuyerDailyCap(pricingOpts, minOrderAmt);
 
-  if (listing.buyer_daily_qty_limit != null && Number(listing.buyer_daily_qty_limit) > 0) {
+  if (
+    placement === "same_day" &&
+    listing.buyer_daily_qty_limit != null &&
+    Number(listing.buyer_daily_qty_limit) > 0
+  ) {
     const cap = Number(listing.buyer_daily_qty_limit);
     if (cap < dailyCapFloor) {
       return {
@@ -174,7 +187,9 @@ export async function resolveListingOrderLine(
     let usedToday = 0;
     for (const o of dayOrders || []) {
       if (o.status === "cancelled" || o.status === "declined") continue;
-      const match = buyer_id ? o.buyer_id === buyer_id || o.buyer_phone === buyer_phone : o.buyer_phone === buyer_phone;
+      const match = buyer_id
+        ? o.buyer_id === buyer_id || o.buyer_phone === buyer_phone
+        : o.buyer_phone === buyer_phone;
       if (match) usedToday += Number(o.quantity);
     }
     if (usedToday + quantity > cap) {
@@ -189,22 +204,15 @@ export async function resolveListingOrderLine(
   const weightAvail = Number(listing.weight_avail);
   const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
   const speciesVal = (listing as { species?: string }).species ?? null;
+  const sellerOpen = isSellerEffectivelyOpen(seller, nowMs);
 
-  // Preorder-enabled listings are inventory-independent — always route to pre_order
-  if ((listing as any).is_preorder_enabled || !listing.is_available || availOk <= 0 || availOk < quantity) {
-    if (scheduled_for) {
-      const { data: schedSeller } = await supabase
-        .from("sellers")
-        .select("schedule_pickup_slots")
-        .eq("id", listing.seller_id)
-        .single();
-      if (!schedSeller?.schedule_pickup_slots) {
-        return {
-          ok: false,
-          status: 400,
-          error: "Pickup scheduling is not available for this seller.",
-        };
-      }
+  if (placement === "same_day") {
+    if (!listing.is_available || availOk <= 0 || availOk < quantity) {
+      return {
+        ok: false,
+        status: 400,
+        error: `Only ${availOk} ${quantity_unit} in stock. Reduce quantity or try again later.`,
+      };
     }
     const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
     // For pre-orders, the backend should bill at the max estimated price (matches frontend logic)
@@ -213,7 +221,8 @@ export async function resolveListingOrderLine(
     return {
       ok: true,
       line: {
-        kind: "oos_preorder",
+        kind: "standard",
+        placement_kind: "same_day",
         listing_id,
         species: speciesVal,
         seller_id: listing.seller_id,
@@ -231,11 +240,17 @@ export async function resolveListingOrderLine(
     };
   }
 
+  // Pre-order shopping window — inventory-independent; sellerOpen should be false here
+  if (sellerOpen) {
+    return { ok: false, status: 400, error: "Use same-day checkout while the seller is open." };
+  }
+
   const total_price = linePrice * bundleCount;
   return {
     ok: true,
     line: {
-      kind: "standard",
+      kind: "preorder",
+      placement_kind: "preorder",
       listing_id,
       species: speciesVal,
       seller_id: listing.seller_id,
@@ -248,3 +263,6 @@ export async function resolveListingOrderLine(
     },
   };
 }
+
+/** @deprecated Use PreorderLinePayload */
+export type OosPreorderLinePayload = PreorderLinePayload & { pre_order_reason?: string };

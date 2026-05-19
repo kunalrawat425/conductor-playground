@@ -159,13 +159,15 @@ CartStackSheet — if multiple sellers have items, shows each seller's subtotal 
 
 ### Status determination (server-side)
 
-Pay-first is the default for listing-backed orders (`POST /api/orders/create`):
+**Placement kind** (`orders.placement_kind`) is set from **seller shopping hours + order time only** (`src/lib/order-timing.ts`). Listing `is_preorder_enabled` and pickup **scheduling** do not decide order vs pre-order.
 
-- **`pending_payment`** — default when seller is open for same-day, for **scheduled** slots, and for **next-day pre-order** after gates pass. Buyer must upload UPI proof; seller verifies before `confirmed`.
-- **`pre_order`** — only on the dedicated pre-order insert path when the listing is unavailable / out of stock but pre-order is enabled (legacy transition state).
-- Seller **closed** without a valid pre-order path → **400** with a readable reason (no silent `pending`).
+- **`same_day`** — seller is open (order day + `opens_at`–`closes_at` window) and line has stock → live price, stock checked at confirm.
+- **`preorder`** — seller is closed but in the pre-order window (`preorder_days` + before `preorder_cutoff_time` IST) → pre-order price range, no stock decrement at create.
+- **`pending_payment`** — pay-first for both kinds until UPI proof is uploaded.
+- Pickup **scheduled slots** are disabled (API returns 400 if `scheduled_for` is sent).
+- Seller **closed** outside the pre-order window → **400** with a readable reason.
 
-There is no longer a separate **`pending`** “seller accept first” step for normal open-seller checkout; legacy rows may still show `pending`.
+Legacy rows may still have `status = pre_order` or missing `placement_kind`; UI infers from status when needed.
 
 ### Inventory
 - **`create_order_atomic`** (with deferred-stock migrations): stock is **not** held at `pending_payment` for same-day pay-first; it commits on seller confirm and restores on cancel before confirm (row-lock RPC).
