@@ -34,6 +34,13 @@ const { id = "v2-cart-stack" } = Astro.props;
     display: flex; align-items: center; justify-content: center;
     font-size: 22px;
     flex-shrink: 0;
+    overflow: hidden;
+  }
+  .v2-cs-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .v2-cs-info { flex: 1; min-width: 0; }
   .v2-cs-seller { font: 700 14px Inter; color: var(--v2-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -83,6 +90,25 @@ const { id = "v2-cart-stack" } = Astro.props;
     return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
 
+  function sellerImageForGroup(g) {
+    if (g.seller_image_url) return g.seller_image_url;
+    const allGroups = window.__v2allGroups;
+    if (Array.isArray(allGroups)) {
+      const match = allGroups.find((row) => row?.seller?.id === g.seller_id);
+      if (match?.seller?.store_image_url) return match.seller.store_image_url;
+    }
+    return null;
+  }
+
+  function avatarHtml(g) {
+    const img = sellerImageForGroup(g);
+    const alt = escape(g.seller_name || "Seller");
+    if (img) {
+      return `<div class="v2-cs-avatar"><img src="${escape(img)}" alt="${alt}" loading="lazy" /></div>`;
+    }
+    return `<div class="v2-cs-avatar" aria-hidden="true">🐟</div>`;
+  }
+
   function render() {
     const body = document.getElementById(`${id}-body`);
     const header = document.getElementById(`${id}-header`);
@@ -106,7 +132,7 @@ const { id = "v2-cart-stack" } = Astro.props;
       const itemCount = g.items.length;
       const itemLabel = `${itemCount} item${itemCount !== 1 ? "s" : ""}`;
       return `<div class="v2-cs-row" data-seller-id="${escape(g.seller_id)}">
-        <div class="v2-cs-avatar"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:24px;width:auto;display:block;" /></div>
+        ${avatarHtml(g)}
         <div class="v2-cs-info">
           <div class="v2-cs-seller">${escape(g.seller_name || "Seller")}</div>
           <div class="v2-cs-meta">${itemLabel} · <a href="/s/${(g.seller_name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}">View Menu ›</a></div>
