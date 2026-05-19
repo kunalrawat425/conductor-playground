@@ -188,7 +188,7 @@ const SITE = "https://www.relifish.store";
     /* ── Screen styles ── */
     /* all screens share base bg */
     .ds-light{background:#F7F8FC;height:100%;position:relative}
-    .ds-dark{background:#050D1A;height:100%}
+    .ds-dark{background:#050D1A;height:100%;position:relative}
 
     /* screen header */
     .dh{background:#fff;border-bottom:1px solid #EAECF0;padding:10px 13px}
@@ -202,7 +202,8 @@ const SITE = "https://www.relifish.store";
     .d0-logo{font:800 20px Inter;color:#fff;letter-spacing:-.5px}
     .d0-logo span{color:var(--teal)}
     .d0-tagline{font:400 12px/1.5 Inter;color:rgba(255,255,255,.5)}
-    .d0-btn{background:var(--blue);color:#fff;font:700 11px Inter;padding:10px 24px;border-radius:10px;width:100%}
+    .d0-btn{background:var(--blue);color:#fff;font:700 11px Inter;padding:10px 24px;border-radius:10px;width:100%;box-sizing:border-box}
+    .d0-sticky{position:absolute;bottom:0;left:0;right:0;padding:9px 10px 12px;background:rgba(13,17,23,.95)}
 
     /* screen 1 — location */
     .d1-area{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;border:1px solid #EAECF0;background:#fff;margin:0 10px 5px}
@@ -212,7 +213,7 @@ const SITE = "https://www.relifish.store";
     .d1-name{font:700 9px Inter;color:#0A0F1E}
     .d1-dist{font:400 7px Inter;color:#9CA3AF}
     .d1-check{width:14px;height:14px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;margin-left:auto}
-    .d1-btn{margin:6px 10px 0;background:var(--blue);border-radius:8px;padding:8px;text-align:center;font:700 9px Inter;color:#fff}
+    .d1-btn{position:absolute;bottom:0;left:0;right:0;background:var(--blue);padding:8px 10px 10px;text-align:center;font:700 9px Inter;color:#fff}
 
     /* screen 2 — sellers */
     .d2-tabs{display:flex;background:#fff;border-bottom:1px solid #EAECF0}
@@ -250,7 +251,7 @@ const SITE = "https://www.relifish.store";
     .d4-q{width:18px;height:18px;background:#EFF6FF;border-radius:5px;display:flex;align-items:center;justify-content:center;font:700 10px Inter;color:var(--blue)}
     .d4-summary{margin:6px 9px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:8px 10px}
     .d4-row{display:flex;justify-content:space-between;font:500 8px Inter;color:#1E40AF;margin-bottom:3px}
-    .d4-btn{margin:0 9px;background:var(--blue);border-radius:8px;padding:8px;text-align:center;font:700 9px Inter;color:#fff;animation:pulseblue 2s infinite}
+    .d4-btn{position:absolute;bottom:0;left:0;right:0;background:var(--blue);padding:8px 9px 10px;text-align:center;font:700 9px Inter;color:#fff;animation:pulseblue 2s infinite}
     @keyframes pulseblue{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.4)}50%{box-shadow:0 0 0 5px rgba(37,99,235,0)}}
 
     /* screen 5 — payment */
@@ -387,7 +388,7 @@ const SITE = "https://www.relifish.store";
     .s1-rn{font:700 10px Inter;color:#0A0F1E}
     .s1-rd{font:400 8px Inter;color:#9CA3AF;margin-top:1px}
     .s1-ck{width:16px;height:16px;border-radius:50%;background:#2563EB;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;margin-left:auto;flex-shrink:0}
-    .s1-btn{margin:2px 10px 0;background:#2563EB;border-radius:10px;padding:10px;text-align:center;font:700 10px Inter;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.35)}
+    .s1-btn{position:absolute;bottom:0;left:0;right:0;background:#2563EB;padding:10px;text-align:center;font:700 10px Inter;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.35)}
     .s1-row.sel{animation:taprow .5s ease}
     @keyframes taprow{0%,100%{transform:scale(1)}40%{transform:scale(.975)}}
 
@@ -469,10 +470,11 @@ const SITE = "https://www.relifish.store";
     @media(max-width:520px){.flow-phones{display:flex;overflow-x:auto;gap:14px;padding-bottom:10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}.flow-step{scroll-snap-align:start;flex-shrink:0;width:185px}.fp .fp-screen{height:320px}}
 
     /* ── Fish grid ── */
-    .fish-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-top:48px}
+    .fish-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:48px}
     .fish-card{background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .22s;cursor:pointer;position:relative}
     .fish-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.1);border-color:rgba(37,99,235,.3)}
-    .fish-img{height:110px;display:flex;align-items:center;justify-content:center;font-size:56px;position:relative}
+    .fish-img{height:220px;display:flex;align-items:center;justify-content:center;font-size:56px;position:relative}
+    .fish-img img{width:100%;height:100%;object-fit:cover;display:block}
     .fi1{background:linear-gradient(135deg,#0D3B2E,#0A5940)}
     .fi2{background:linear-gradient(135deg,#1A0D4A,#2A3080)}
     .fi3{background:linear-gradient(135deg,#0D2040,#1A3A5F)}
@@ -484,11 +486,11 @@ const SITE = "https://www.relifish.store";
     .ftag-badge{position:absolute;top:8px;left:8px;font:600 8px Inter;padding:3px 8px;border-radius:100px}
     .ftag-badge.in{background:rgba(37,99,235,.85);color:#000}
     .ftag-badge.pre{background:rgba(124,58,237,.85);color:#fff}
-    .fish-body{padding:14px}
-    .fish-name{font:700 14px Inter;color:var(--ink);margin-bottom:2px}
-    .fish-marathi{font:400 11px Inter;color:var(--ink-3);margin-bottom:10px}
-    .fish-login{display:flex;align-items:center;gap:6px;background:var(--blue-dim);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:8px 10px;font:600 12px Inter;color:var(--blue)}
-    .fish-cta{display:block;margin-top:8px;background:#F8FAFC;border:1px solid var(--border);border-radius:9px;padding:7px;text-align:center;font:600 12px Inter;color:var(--ink-2);transition:all .15s}
+    .fish-body{padding:8px 14px 10px}
+    .fish-name{font:700 14px Inter;color:var(--ink);margin-bottom:1px}
+    .fish-marathi{font:400 11px Inter;color:var(--ink-3);margin-bottom:6px}
+    .fish-login{display:flex;align-items:center;gap:6px;background:var(--blue-dim);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:6px 10px;font:600 12px Inter;color:var(--blue)}
+    .fish-cta{display:block;margin-top:6px;background:#F8FAFC;border:1px solid var(--border);border-radius:9px;padding:5px;text-align:center;font:600 12px Inter;color:var(--ink-2);transition:all .15s}
     .fish-card:hover .fish-cta{background:var(--blue);color:#fff;border-color:var(--blue)}
 
     /* ── Why ── */
@@ -816,9 +818,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <!-- Screen 0: Welcome -->
           <div class="demo-screen active" data-screen="0">
             <div class="ds-dark d0-center">
-              
               <div class="d0-logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:56px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" /></div>
               <div class="d0-tagline">Mumbai's fresh fish marketplace.<br/>Pre-order tonight, collect morning-fresh.</div>
+            </div>
+            <div class="d0-sticky">
               <div class="d0-btn">Get started →</div>
             </div>
           </div>
@@ -1018,9 +1021,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="d8-rate-t">How was your order?</div>
                 <div class="d8-stars">⭐⭐⭐⭐⭐</div>
               </div>
-              <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 10px;width:100%;font:600 8px Inter;color:var(--blue);text-align:center">
-                Order again next week →
-              </div>
+            </div>
+            <div class="d0-sticky" style="background:rgba(255,255,255,.95)">
+              <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 10px;font:600 8px Inter;color:var(--blue);text-align:center">Order again next week →</div>
             </div>
           </div>
 
@@ -1094,7 +1097,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div><div class="s1-rn">Malad West</div><div class="s1-rd">Waitlist · Coming soon</div></div>
               </div>
             </div>
-            <div style="padding:0 10px 10px"><div class="s1-btn">Confirm — Lokhandwala →</div></div>
+            <div class="s1-btn">Confirm — Lokhandwala →</div>
           </div>
         </div>
         <h3>Set your location</h3>
@@ -1237,18 +1240,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <p class="ssub">Availability changes daily. Login to see today's prices and reserve your portion before it sells out.</p>
     <div class="fish-grid">
       {[
-        {e:"🐟",n:"Pomfret",m:"पापलेट",av:"in",bg:"fi1"},
-        {e:"🐠",n:"Surmai (Kingfish)",m:"सुरमई",av:"pre",bg:"fi2"},
-        {e:"🦐",n:"Jumbo Prawns",m:"कोळंबी",av:"pre",bg:"fi3"},
-        {e:"🐡",n:"Bangda (Mackerel)",m:"बांगडा",av:"in",bg:"fi4"},
-        {e:"🐟",n:"Rawas (Salmon)",m:"रावस",av:"pre",bg:"fi3"},
-        {e:"🦀",n:"Mud Crab",m:"खेकडा",av:"pre",bg:"fi5"},
-        {e:"🐠",n:"Halwa (Silver Pomfret)",m:"हलवा",av:"in",bg:"fi7"},
-        {e:"🐡",n:"Bombay Duck",m:"बोंबील",av:"in",bg:"fi8"},
+        {e:"🐟",n:"Pomfret",m:"पापलेट",av:"in",bg:"fi1",p:"https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0"},
+        {e:"🐠",n:"Surmai (Kingfish)",m:"सुरमई",av:"pre",bg:"fi2",p:"https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline"},
+        {e:"🦐",n:"Jumbo Prawns",m:"कोळंबी",av:"pre",bg:"fi3",p:"https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize"},
+        {e:"🐡",n:"Bangda (Mackerel)",m:"बांगडा",av:"in",bg:"fi4",p:"https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize"},
+        {e:"🐟",n:"Rawas (Salmon)",m:"रावस",av:"pre",bg:"fi3",p:"https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0"},
+        {e:"🦀",n:"Crab",m:"खेकडा",av:"pre",bg:"fi5",p:"https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline"},
+        // {e:"🐠",n:"Halwa (Silver Pomfret)",m:"हलवा",av:"in",bg:"fi7"},
+        // {e:"🐡",n:"Bombay Duck",m:"बोंबील",av:"in",bg:"fi8"},
       ].map(f=>(
         <a href="/me" class="fish-card">
           <div class={`fish-img ${f.bg}`}>
-            {f.e}
+            {f.p ? <img src={f.p} alt={f.n} /> : f.e}
             <div class={`ftag-badge ${f.av}`}>{f.av==='in'?'✓ In stock':'🌙 Pre-order'}</div>
           </div>
           <div class="fish-body">
