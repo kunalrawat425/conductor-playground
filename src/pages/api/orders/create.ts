@@ -266,10 +266,6 @@ export const POST: APIRoute = async ({ request, url }) => {
           }).catch(() => {});
         }
 
-        const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
-        return new Response(JSON.stringify({ order: preOrder, pre_order_reason }), { status: 201 });
-      }
-
         return new Response(JSON.stringify({ order: preOrder, placement_kind: "preorder" }), { status: 201 });
       }
     } else if (species) {
@@ -317,29 +313,16 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
         status = "pending_payment";
       } else {
-        const DAY_NAMES = ['sun','mon','tue','wed','thu','fri','sat'];
-        const todayName = DAY_NAMES[new Date().getDay()];
+        const placementKind = seller ? classifyPlacementAtOrderTime(seller) : "same_day";
 
-        // open_days: if set+non-empty, today must be in it (seller's day off otherwise)
-        const isTodayOrderDay = !seller?.open_days?.length || seller.open_days.includes(todayName);
-        // preorder_days: if set+non-empty use it; else fall back to accepts_preorder boolean
-        const isTodayPreorderDay = (seller?.preorder_days && seller.preorder_days.length > 0)
-          ? seller.preorder_days.includes(todayName)
-          : !!seller?.accepts_preorder;
+        if (placementKind === "closed") {
+          return new Response(
+            JSON.stringify({ error: closedSellerMessage(seller!) }),
+            { status: 400 }
+          );
+        }
 
-        const openByTime = seller ? isSellerCurrentlyOpen(seller.opens_at, seller.closes_at) : true;
-        const sellerEffectivelyOpen = isTodayOrderDay && openByTime;
-
-        if (!sellerEffectivelyOpen) {
-          // Seller closed or day-off — try pre_order path
-          if (!isTodayPreorderDay) {
-            const dayLabel = !isTodayOrderDay ? "not open today" : "closed now";
-            return new Response(
-              JSON.stringify({ error: `This seller is ${dayLabel} and does not accept pre-orders for next day. Check back when they open.` }),
-              { status: 400 }
-            );
-          }
-
+        if (placementKind === "preorder") {
           // Per-listing preorder gate
           if (listing_id) {
             const { data: listingForPreorder } = await supabase
@@ -350,28 +333,10 @@ export const POST: APIRoute = async ({ request, url }) => {
             if (listingForPreorder?.is_preorder_enabled === false) {
               return new Response(JSON.stringify({ error: "Pre-orders are not available for this item." }), { status: 400 });
             }
-          } else if (!seller?.accepts_preorder && !isTodayPreorderDay) {
-            return new Response(JSON.stringify({ error: "This seller is not accepting pre-orders." }), { status: 400 });
           }
-
-          // Enforce preorder cutoff time — compare in IST (UTC+5:30)
-          if (seller?.preorder_cutoff_time) {
-            const nowISTMs = Date.now() + 5.5 * 60 * 60 * 1000;
-            const nowIST = new Date(nowISTMs);
-            const nowMinutes = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
-            const [cutHour, cutMin] = (seller.preorder_cutoff_time as string).split(":").map(Number);
-            const cutoffMinutes = cutHour * 60 + cutMin;
-            if (nowMinutes >= cutoffMinutes) {
-              return new Response(
-                JSON.stringify({ error: `Pre-order cutoff time (${seller.preorder_cutoff_time} IST) has passed. Try again tomorrow.` }),
-                { status: 400 }
-              );
-            }
-          }
-
-          // Pre-orders always require payment proof upload first.
           status = "pending_payment";
-          isPreorderBranch = true;        }
+          isPreorderBranch = true;
+        }
       }
       placement_kind = placement;
 
