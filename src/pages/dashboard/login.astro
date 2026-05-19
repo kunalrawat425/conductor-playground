@@ -13,14 +13,12 @@ import Toast from "../../components/ui/atoms/Toast.astro";
   <Toast />
 
   <style>
-    /* Break the green hero out of the AppShell max-width container */
     .dl-hero-wrap {
-      margin: 0 calc(50% - 50vw);
-      width: 100vw;
       background: linear-gradient(135deg, var(--v2-green), #10B981);
       padding: 32px 24px 28px;
       color: #fff;
       text-align: center;
+      border-radius: 16px;
     }
   </style>
 
@@ -36,12 +34,14 @@ import Toast from "../../components/ui/atoms/Toast.astro";
   <div style="height:120px;"></div>
 
   <!-- Sticky CTA — pinned to bottom, works on mobile -->
-  <div style="position:fixed;bottom:0;left:0;right:0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:var(--v2-bg);border-top:1px solid var(--v2-border);">
-    <button id="open-login-sheet" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">
-      Sign in with phone
-    </button>
-    <div style="margin-top:12px;text-align:center;">
-      <a href="/" style="font:600 13px Inter;color:var(--v2-ink-3);text-decoration:none;">← Back to buyer app</a>
+  <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;">
+    <div style="width:100%;max-width:800px;background:var(--v2-bg);border-top:1px solid var(--v2-border);padding:16px 16px calc(16px + env(safe-area-inset-bottom));pointer-events:auto;">
+      <button id="open-login-sheet" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">
+        Sign in with phone
+      </button>
+      <div style="margin-top:12px;text-align:center;">
+        <a href="/" style="font:600 13px Inter;color:var(--v2-ink-3);text-decoration:none;">← Back to buyer app</a>
+      </div>
     </div>
   </div>
 
