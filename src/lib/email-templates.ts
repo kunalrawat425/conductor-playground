@@ -72,13 +72,8 @@ function formatQtyForEmail(quantity: number, quantityUnit: string, bundleSize?: 
   const unit = quantityUnit || "kg";
   const bs = bundleSize && bundleSize > 1 ? Math.floor(bundleSize) : null;
   const bc = bundleCount && bundleCount > 0 ? Math.round(bundleCount) : null;
-  if (bs && bc && bc > 1) {
-    // e.g. "2 packs × 3 pieces = 6 pieces"
-    return `${bc} pack${bc > 1 ? "s" : ""} × ${bs} ${unit} = ${quantity} ${unit}`;
-  }
-  if (bs && bc === 1) {
-    // single pack — "1 pack of 3 pieces"
-    return `1 pack of ${bs} ${unit}`;
+  if (bs && bc) {
+    return `${bc} pack${bc > 1 ? "s" : ""} × ${bs} ${unit}`;
   }
   return `${quantity} ${unit}`;
 }
@@ -408,6 +403,8 @@ export type ReceiptLineItem = {
   cut_style?: string | null;
   buyer_notes?: string | null;
   order_id: string;
+  bundle_size?: number | null;
+  bundle_count?: number | null;
 };
 
 export type RazorpayReceiptArgs = {
@@ -466,7 +463,7 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
   // Line item rows
   const itemRows = safeItems.map((item) => {
     const name = capitalizeFishName(item.species);
-    const qty = formatQtyForEmail(Number(item.quantity) || 0, item.quantity_unit || "kg");
+    const qty = formatQtyForEmail(Number(item.quantity) || 0, item.quantity_unit || "kg", item.bundle_size, item.bundle_count);
     const price = Math.max(0, Number(item.total_price) || 0);
     const extras: string[] = [];
     if (item.cut_style) extras.push(`✂️ ${String(item.cut_style).trim()}`);

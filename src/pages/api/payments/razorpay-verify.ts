@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and guard against replay
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, status, total_price, delivery_fee, species, quantity, quantity_unit, order_type, razorpay_order_id, scheduled_for, listing:fish_listings(species, seller:sellers(id, name, email, location_name))")
+    .select("id, buyer_id, status, total_price, delivery_fee, species, quantity, quantity_unit, order_type, razorpay_order_id, scheduled_for, pricing_option_id, listing:fish_listings(species, pricing_options, seller:sellers(id, name, email, location_name))")
     .eq("id", order_id)
     .single();
 
@@ -124,15 +124,33 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
       const { razorpayReceiptEmail } = await import("../../../lib/email-templates");
       const seller = (_order as any).listing?.seller;
+      const qty = Number((_order as any).quantity) || 1;
+      const qtyUnit = (_order as any).quantity_unit || "kg";
+      const pricingOptionId = (_order as any).pricing_option_id || null;
+      const pricingOptions = (_order as any).listing?.pricing_options;
+      let bundleSize: number | null = null;
+      let bundleCount: number | null = null;
+      if (Array.isArray(pricingOptions) && pricingOptions.length > 0) {
+        // Find option by id or by canonical opt_N index
+        const opt = pricingOptionId
+          ? pricingOptions.find((o: any, i: number) => o.id === pricingOptionId || `opt_${i}` === pricingOptionId)
+          : pricingOptions[0];
+        if (opt?.bundle_size && Number(opt.bundle_size) > 1) {
+          bundleSize = Number(opt.bundle_size);
+          bundleCount = Math.round(qty / bundleSize);
+        }
+      }
       const html = razorpayReceiptEmail({
         line_items: [{
           species: (_order as any).listing?.species || (_order as any).species || "Fish",
-          quantity: Number((_order as any).quantity) || 1,
-          quantity_unit: (_order as any).quantity_unit || "kg",
+          quantity: qty,
+          quantity_unit: qtyUnit,
           total_price: Number((_order as any).total_price) || 0,
           cut_style: null,
           buyer_notes: null,
           order_id,
+          bundle_size: bundleSize,
+          bundle_count: bundleCount,
         }],
         delivery_fee: Number((_order as any).delivery_fee) || 0,
         order_type: ((_order as any).order_type === "delivery" ? "delivery" : "pickup") as "pickup" | "delivery",
