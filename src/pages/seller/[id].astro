@@ -58,7 +58,7 @@ const isOpenByTime = (() => {
   const [ch, cm] = seller.closes_at.split(":").map(Number);
   const openMin = oh * 60 + om;
   const closeMin = ch * 60 + cm;
-  if (openMin <= closeMin) return curMin >= openMin && curMin <= closeMin;
+  if (openMin <= closeMin) return curMin >= openMin && curMin < closeMin;
   return curMin >= openMin || curMin <= closeMin; // overnight e.g. 17:00–02:59
 })();
 const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
@@ -74,7 +74,14 @@ const isBeforeCutoff = (() => {
   const [ch, cm] = seller.preorder_cutoff_time.split(":").map(Number);
   return curMin < ch * 60 + cm;
 })();
-const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isTodayPreorderDay && isBeforeCutoff;
+// Preorder window only starts after store closes on order days (not before store opens)
+const isAfterCloseTime = (() => {
+  if (!seller?.closes_at) return true;
+  const [ch, cm] = seller.closes_at.split(":").map(Number);
+  return curMin >= ch * 60 + cm;
+})();
+const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isTodayPreorderDay && isBeforeCutoff
+  && (!isTodayOrderDay || isAfterCloseTime);
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
