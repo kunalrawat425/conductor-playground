@@ -2,6 +2,26 @@
 
 All notable changes to Relifish are documented here.
 
+## [0.2.1.0] - 2026-05-20
+
+### Fixed
+- Seller pages (`/s/seller-name`) returning 404 — `Astro.locals` is not preserved across `Astro.rewrite()`, so the guard was blocking all visits. Removed guard; SEO dedup handled by canonical tag + `Disallow: /seller/` in robots.txt
+- Buyer "Account" tab in bottom nav now correctly links sellers to `/dashboard/profile` instead of the buyer profile page
+- Shop page "Pre-orders open" badge now checks cutoff time — was showing pre-orders open even after cutoff had passed (the Fishthokri bug)
+- `order-timing.ts` `todayDayName()` was using UTC server time (`d.getDay()`). Between 18:30–23:59 UTC (midnight–5:30 IST), the wrong day was returned, causing orders to be misclassified
+- Shop page timing now uses IST instead of browser local time
+- `sellers/nearby` API rewired to use `isSellerEffectivelyOpen` from `order-timing.ts`
+- "Browse other sellers" CTA on closed seller page now links to `/shop`
+- Cart bottom sheet now shows seller store photo instead of fish icon when localStorage has a stale null image
+- Buyer profile page orders no longer instantiate Supabase directly in the browser — now uses `/api/buyer/orders` server-side endpoint
+- Landing page carousel bottom buttons now clear the phone mockup border radius (padding-bottom was 10–12px, now 20px)
+- UTM params from flyer QR codes now tracked via `utm_landing` GA4 event and sessionStorage
+
+### Added
+- `/api/buyer/orders` — paginated past order history endpoint with UUID validation, phone normalisation, and RLS-safe anon key
+- `STANDARDS.md`, `ARCHITECTURE.md`, `SECURITY.md` — enterprise reference docs for coding standards, domain architecture, and security rules
+- Regression tests for `todayDayName()` IST midnight boundary (4 test cases covering the UTC/IST crossover window)
+
 ## [0.2.0.1] - 2026-05-19
 
 ### Changed

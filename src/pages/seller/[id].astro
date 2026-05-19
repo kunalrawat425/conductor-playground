@@ -37,11 +37,9 @@ const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
 const SITE = "https://www.relifish.store";
 const canonicalUrl = sellerSlug ? `${SITE}/s/${sellerSlug}` : `${SITE}/seller/${id}`;
 
-// Block direct /seller/[id] access — only /s/[slug] is the public route.
-// Astro.rewrite() from /s/[slug].astro keeps Astro.url.pathname as /s/..., so rewrites pass through.
-if (Astro.url.pathname.startsWith('/seller/')) {
-  return new Response(null, { status: 404 });
-}
+// /seller/[id] is internal — canonical always points to /s/[slug].
+// robots.txt blocks Googlebot from crawling /seller/ paths.
+// No 404 guard needed — Astro.locals is not preserved across rewrites.
 // IST time (servers run UTC; IST = UTC+5:30)
 const nowIST = new Date(Date.now() + 5.5 * 3600 * 1000);
 const curMin = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
