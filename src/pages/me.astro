@@ -28,7 +28,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
       <input id="v2-me-fn" class="v2-input" type="text" placeholder="Your first name" />
       <label class="v2-label" style="margin-top:12px;">Last name</label>
       <input id="v2-me-ln" class="v2-input" type="text" placeholder="Your last name" />
-      <label class="v2-label" style="margin-top:12px;">Email (optional)</label>
+      <label class="v2-label" style="margin-top:12px;">Email <span style="color:#0066cc;font-weight:700;">— add to receive order emails</span></label>
       <input id="v2-me-em" class="v2-input" type="email" placeholder="you@example.com" />
       <div id="v2-me-email-verify" style="display:flex;align-items:center;gap:8px;margin-top:6px;">
         <span id="v2-me-email-status" style="font:600 11px Inter;"></span>
@@ -58,6 +58,12 @@ import Toast from "../components/ui/atoms/Toast.astro";
       <div class="v2-me-name" id="v2-me-name">—</div>
       <div class="v2-me-phone" id="v2-me-phone">—</div>
       <button id="v2-me-edit-name" class="v2-me-edit-btn">✎ Edit profile</button>
+    </div>
+
+    <!-- Email missing banner -->
+    <div id="v2-me-email-banner" style="display:none;margin:0 16px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font:500 12px Inter;color:#1d4ed8;">
+      📧 <strong>Add your email</strong> to receive order confirmations, payment receipts, and updates.
+      <button type="button" onclick="(window as any).v2OpenSheet?.('v2-me-name-sheet')" style="display:block;margin-top:6px;background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font:600 12px Inter;cursor:pointer;">Add email →</button>
     </div>
 
     <!-- Quick actions -->
@@ -321,6 +327,9 @@ import Toast from "../components/ui/atoms/Toast.astro";
             emailBtn.style.display = "inline-block";
           }
         }
+        // Prompt to add email if missing
+        const emailBanner = document.getElementById("v2-me-email-banner");
+        if (emailBanner) emailBanner.style.display = !em ? "block" : "none";
       }
     } catch {}
 

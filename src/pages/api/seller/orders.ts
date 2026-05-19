@@ -269,7 +269,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
     const { data: currentOrder } = await supabase
       .from("orders")
-      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at")
+      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
       .eq("id", order_id)
       .single();
     const currentStatus = currentOrder?.status;
@@ -361,17 +361,36 @@ export const POST: APIRoute = async ({ request }) => {
       const statusLabel = STATUS_LABELS[status] || status;
       const species = capitalizeFishName(order.species || "Fish");
       const totalAmount = final_price ? Number(final_price) : Number(data.total_price) || 0;
+      const isPreorder = (currentOrder as any)?.is_preorder === true || (currentOrder as any)?.placement_kind === "preorder";
+      const qty = Number(data.quantity) || 0;
+      const qtyUnit = data.quantity_unit || "piece";
+      const pricingOptionId = (currentOrder as any)?.pricing_option_id;
+      const pricingOptions = (currentOrder as any)?.listing?.pricing_options;
+      let bundleSize: number | null = null;
+      let bundleCount: number | null = null;
+      if (Array.isArray(pricingOptions) && pricingOptions.length > 0) {
+        const opt = pricingOptionId
+          ? pricingOptions.find((o: any, i: number) => o.id === pricingOptionId || `opt_${i}` === pricingOptionId)
+          : pricingOptions[0];
+        if (opt?.bundle_size && Number(opt.bundle_size) > 1) {
+          bundleSize = Number(opt.bundle_size);
+          bundleCount = Math.round(qty / bundleSize);
+        }
+      }
       const emailArgs = {
         statusLabel,
         species,
-        quantity: data.quantity || 0,
-        quantity_unit: data.quantity_unit || "piece",
+        quantity: qty,
+        quantity_unit: qtyUnit,
         totalAmount: totalAmount + (Number(data.delivery_fee) || 0),
         deliveryFee: Number(data.delivery_fee) || 0,
         orderId: order_id,
         scheduled_for: data.scheduled_for || null,
         buyerNotes: data.buyer_notes || null,
         cutStyle: data.cut_style || null,
+        isPreorder,
+        bundleSize,
+        bundleCount,
       };
 
       // Email buyer (if they have email)
