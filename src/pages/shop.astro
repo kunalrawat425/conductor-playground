@@ -231,15 +231,15 @@ const categories = [
 
   function getBuyerLocation(): { lat: number; lng: number } | null {
     try {
-      const lat = localStorage.getItem("zepto_buyer_lat");
-      const lng = localStorage.getItem("zepto_buyer_lng");
+      const lat = localStorage.getItem("rlf_buyer_lat");
+      const lng = localStorage.getItem("rlf_buyer_lng");
       if (lat && lng) return { lat: parseFloat(lat), lng: parseFloat(lng) };
     } catch {}
     return null;
   }
 
   function getBuyerArea(): string {
-    try { return localStorage.getItem("zepto_buyer_location") || "Set location"; } catch { return "Set location"; }
+    try { return localStorage.getItem("rlf_buyer_location") || "Set location"; } catch { return "Set location"; }
   }
 
   function pickHue(seed: string): SellerHue {
@@ -326,9 +326,9 @@ const categories = [
               const data = await r.json();
               const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
               try {
-                localStorage.setItem("zepto_buyer_location", a);
-                localStorage.setItem("zepto_buyer_lat", String(latitude));
-                localStorage.setItem("zepto_buyer_lng", String(longitude));
+                localStorage.setItem("rlf_buyer_location", a);
+                localStorage.setItem("rlf_buyer_lat", String(latitude));
+                localStorage.setItem("rlf_buyer_lng", String(longitude));
               } catch {}
               if (locMain) locMain.firstChild!.textContent = a + " ";
               loadSellers();
@@ -360,9 +360,9 @@ const categories = [
               const data = await r.json();
               const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
               try {
-                localStorage.setItem("zepto_buyer_location", a);
-                localStorage.setItem("zepto_buyer_lat", String(latitude));
-                localStorage.setItem("zepto_buyer_lng", String(longitude));
+                localStorage.setItem("rlf_buyer_location", a);
+                localStorage.setItem("rlf_buyer_lat", String(latitude));
+                localStorage.setItem("rlf_buyer_lng", String(longitude));
               } catch {}
               if (locMain) locMain.firstChild!.textContent = a + " ";
               (window as any).v2Toast?.("success", "Location set", a);

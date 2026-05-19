@@ -1,6 +1,6 @@
 /**
  * Seller auth — uses same OTP API routes as buyer, with role=seller.
- * Session stored in localStorage (zepto_seller_id, zepto_seller_phone, zepto_seller_name).
+ * Session stored in localStorage (rlf_seller_id, rlf_seller_phone, rlf_seller_name).
  */
 
 export async function sendOtp(phone: string) {
@@ -24,25 +24,39 @@ export async function verifyOtp(phone: string, token: string) {
   if (!res.ok) throw new Error(data.error || "Invalid OTP");
 
   // Store seller session in localStorage
-  localStorage.setItem("zepto_seller_id", data.seller_id);
-  localStorage.setItem("zepto_seller_phone", data.phone);
-  localStorage.setItem("zepto_seller_name", data.name || "");
-  localStorage.setItem("zepto_seller_is_active", data.is_active === false ? "0" : "1");
+  localStorage.setItem("rlf_seller_id", data.seller_id);
+  localStorage.setItem("rlf_seller_phone", data.phone);
+  localStorage.setItem("rlf_seller_name", data.name || "");
+  localStorage.setItem("rlf_seller_is_active", data.is_active === false ? "0" : "1");
 
   return data;
 }
 
+function migrateSellerStorageKeys() {
+  const migrations: [string, string][] = [
+    ["zepto_seller_id", "rlf_seller_id"],
+    ["zepto_seller_phone", "rlf_seller_phone"],
+    ["zepto_seller_name", "rlf_seller_name"],
+    ["zepto_seller_is_active", "rlf_seller_is_active"],
+  ];
+  for (const [old, next] of migrations) {
+    const val = localStorage.getItem(old);
+    if (val !== null) { localStorage.setItem(next, val); localStorage.removeItem(old); }
+  }
+}
+
 export function getSession(): { seller_id: string; phone: string; name: string } | null {
-  const seller_id = localStorage.getItem("zepto_seller_id");
-  const phone = localStorage.getItem("zepto_seller_phone");
-  const name = localStorage.getItem("zepto_seller_name") || "";
+  try { migrateSellerStorageKeys(); } catch {}
+  const seller_id = localStorage.getItem("rlf_seller_id");
+  const phone = localStorage.getItem("rlf_seller_phone");
+  const name = localStorage.getItem("rlf_seller_name") || "";
   if (!seller_id || !phone) return null;
   return { seller_id, phone, name };
 }
 
 export function signOut() {
-  localStorage.removeItem("zepto_seller_id");
-  localStorage.removeItem("zepto_seller_phone");
-  localStorage.removeItem("zepto_seller_name");
-  localStorage.removeItem("zepto_seller_is_active");
+  localStorage.removeItem("rlf_seller_id");
+  localStorage.removeItem("rlf_seller_phone");
+  localStorage.removeItem("rlf_seller_name");
+  localStorage.removeItem("rlf_seller_is_active");
 }

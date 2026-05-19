@@ -41,7 +41,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
   async function load() {
     if (!list) return;
     let buyerId = null;
-    try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+    try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
     if (!buyerId) {
       list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-ink-3);font:500 13px Inter;">Sign in to manage addresses</div>';
       return;
@@ -113,7 +113,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       return;
     }
     let buyerId = null;
-    try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+    try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
     if (!buyerId) { addErr.textContent = "Sign in to save addresses."; addErr.style.display = "block"; return; }
     addSave.textContent = "Saving...";
     addSave.disabled = true;

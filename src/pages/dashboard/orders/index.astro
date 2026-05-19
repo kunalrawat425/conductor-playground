@@ -341,7 +341,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   }
 
   function getSellerId() {
-    try { return localStorage.getItem("zepto_seller_id"); } catch { return null; }
+    try { return localStorage.getItem("rlf_seller_id"); } catch { return null; }
   }
 
   function renderProfileCompletion(s: any) {
@@ -1163,8 +1163,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       el.addEventListener("click", (e) => {
         e.preventDefault();
         try {
-          localStorage.removeItem("zepto_seller_id");
-          localStorage.removeItem("zepto_seller_phone");
+          localStorage.removeItem("rlf_seller_id");
+          localStorage.removeItem("rlf_seller_phone");
         } catch {}
         window.location.href = "/dashboard/login";
       });

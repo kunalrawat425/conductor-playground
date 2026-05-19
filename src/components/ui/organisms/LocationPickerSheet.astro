@@ -90,9 +90,9 @@ const { id = "v2-loc-picker" } = Astro.props;
     const input = document.getElementById(`${id}-area-input`);
     selectedArea = input?.value?.trim() || selectedArea || "Mumbai";
     try {
-      localStorage.setItem("zepto_buyer_location", selectedArea);
-      if (selectedLat) localStorage.setItem("zepto_buyer_lat", String(selectedLat));
-      if (selectedLng) localStorage.setItem("zepto_buyer_lng", String(selectedLng));
+      localStorage.setItem("rlf_buyer_location", selectedArea);
+      if (selectedLat) localStorage.setItem("rlf_buyer_lat", String(selectedLat));
+      if (selectedLng) localStorage.setItem("rlf_buyer_lng", String(selectedLng));
     } catch {}
     document.dispatchEvent(new CustomEvent("v2-location-confirmed", {
       detail: { area: selectedArea, lat: selectedLat, lng: selectedLng }

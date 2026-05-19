@@ -592,7 +592,7 @@
   import { formatDetailLine } from "../lib/buyer-address";
   import type { BuyerAddressRow } from "../lib/buyer-address";
 
-  const LS_SELECTION = "zepto_checkout_address_selection";
+  const LS_SELECTION = "rlf_checkout_address_selection";
 
   const overlay = document.getElementById("order-address-overlay")!;
   const bg = document.getElementById("order-address-overlay-bg")!;
@@ -1038,7 +1038,7 @@
       if (session && saveBookCb.checked) {
         let loc: { name?: string; lat?: number; lng?: number } | null = null;
         try {
-          loc = JSON.parse(localStorage.getItem("zepto_location") || "null");
+          loc = JSON.parse(localStorage.getItem("rlf_location") || "null");
         } catch {
           loc = null;
         }

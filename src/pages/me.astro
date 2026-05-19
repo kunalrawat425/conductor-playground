@@ -255,16 +255,16 @@ import Toast from "../components/ui/atoms/Toast.astro";
 <script>
   // If user is a seller, redirect to seller profile instead
   try {
-    if (localStorage.getItem("zepto_seller_id")) {
+    if (localStorage.getItem("rlf_seller_id")) {
       window.location.href = "/dashboard/profile";
     }
   } catch {}
 
   function getBuyerId(): string | null {
-    try { return localStorage.getItem("zepto_buyer_id") || null; } catch { return null; }
+    try { return localStorage.getItem("rlf_buyer_id") || null; } catch { return null; }
   }
   function getBuyerPhone(): string | null {
-    try { return localStorage.getItem("zepto_phone") || null; } catch { return null; }
+    try { return localStorage.getItem("rlf_phone") || null; } catch { return null; }
   }
   function escape(s: any) {
     return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
@@ -290,8 +290,8 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
   async function initSignedIn(buyerId: string, phone: string) {
     // Hydrate name from local cache instantly
-    const fnLocal = localStorage.getItem("zepto_buyer_first_name") || "";
-    const lnLocal = localStorage.getItem("zepto_buyer_last_name") || "";
+    const fnLocal = localStorage.getItem("rlf_buyer_first_name") || "";
+    const lnLocal = localStorage.getItem("rlf_buyer_last_name") || "";
     const fullLocal = `${fnLocal} ${lnLocal}`.trim();
     document.getElementById("v2-me-name")!.textContent = fullLocal || "Welcome";
     document.getElementById("v2-me-phone")!.textContent = phone;
@@ -307,8 +307,8 @@ import Toast from "../components/ui/atoms/Toast.astro";
         const full = `${fn} ${ln}`.trim();
         document.getElementById("v2-me-name")!.textContent = full || "Welcome";
         try {
-          if (fn) localStorage.setItem("zepto_buyer_first_name", fn);
-          if (ln) localStorage.setItem("zepto_buyer_last_name", ln);
+          if (fn) localStorage.setItem("rlf_buyer_first_name", fn);
+          if (ln) localStorage.setItem("rlf_buyer_last_name", ln);
         } catch {}
         (document.getElementById("v2-me-fn") as HTMLInputElement).value = fn;
         (document.getElementById("v2-me-ln") as HTMLInputElement).value = ln;
@@ -353,8 +353,8 @@ import Toast from "../components/ui/atoms/Toast.astro";
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Save failed");
         try {
-          localStorage.setItem("zepto_buyer_first_name", first_name);
-          localStorage.setItem("zepto_buyer_last_name", last_name);
+          localStorage.setItem("rlf_buyer_first_name", first_name);
+          localStorage.setItem("rlf_buyer_last_name", last_name);
         } catch {}
         const full = `${first_name} ${last_name}`.trim();
         document.getElementById("v2-me-name")!.textContent = full || "Welcome";
@@ -406,10 +406,10 @@ import Toast from "../components/ui/atoms/Toast.astro";
     // Logout
     document.getElementById("v2-me-logout")?.addEventListener("click", () => {
       try {
-        localStorage.removeItem("zepto_buyer_id");
-        localStorage.removeItem("zepto_phone");
-        localStorage.removeItem("zepto_buyer_first_name");
-        localStorage.removeItem("zepto_buyer_last_name");
+        localStorage.removeItem("rlf_buyer_id");
+        localStorage.removeItem("rlf_phone");
+        localStorage.removeItem("rlf_buyer_first_name");
+        localStorage.removeItem("rlf_buyer_last_name");
         localStorage.removeItem("v2_cart_global");
       } catch {}
       window.location.href = "/";

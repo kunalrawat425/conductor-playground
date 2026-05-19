@@ -1,0 +1,845 @@
+  function withCart(fn) {
+    if (window.RelifishCart) return fn(window.RelifishCart);
+    document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });
+  }
+
+  const grid = document.getElementById("v2-menu-grid");
+  const cartMount = document.getElementById("v2-cart-bar-mount");
+  if (grid && listings) {
+    function Cart() { return window.RelifishCart; }
+
+    function getSellerItems() {
+      const c = Cart();
+      if (!c) return {};
+      const cart = c.getCart();
+      const out = {};
+      for (const lid of Object.keys(cart)) {
+        if (cart[lid].seller_id === sellerId) out[lid] = cart[lid];
+      }
+      return out;
+    }
+
+    function speciesEmoji(sp) {
+      if (!sp) return "🐟";
+      const s = sp.toLowerCase();
+      if (s.includes("prawn")) return "🦐";
+      if (s.includes("crab")) return "🦀";
+      if (s.includes("squid") || s.includes("octopus")) return "🦑";
+      return "🐟";
+    }
+    function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+    function titleCaseWords(s) {
+      return String(s || "").trim().split(/\s+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+    }
+    function getName(sp) {
+      const id = String(sp || "").trim();
+      if (!id) return "Fish";
+      if (speciesDisplayById && speciesDisplayById[id]) return speciesDisplayById[id];
+      return id.charAt(0).toUpperCase() + id.slice(1);
+    }
+    function bundleStepFromOpt(opt) {
+      const n = Number(opt?.bundle_size);
+      return Number.isFinite(n) && n > 1 ? n : 1;
+    }
+    function isGenericTierLabel(lab) {
+      const s = String(lab || "").trim();
+      if (!s) return true;
+      if (/^option$/i.test(s) || /^unit$/i.test(s)) return true;
+      if (/^per\s*piece$/i.test(s) || /^per\s*kg$/i.test(s)) return true;
+      return false;
+    }
+    /** Checkout subtitle: e.g. "4 pack · Medium" or "1.5 kg" (no bogus "× Option"). */
+    function checkoutLineMeta(i) {
+      const listing = listings.find((l) => l.id === i.listing_id);
+      const opts = listing?.pricing_options || [];
+      const wantId = i.pricing_option_id && i.pricing_option_id !== "default" ? i.pricing_option_id : null;
+      const opt =
+        (wantId && opts.find((o) => (o.id || "default") === wantId)) ||
+        opts[0] ||
+        null;
+      if (!opt) {
+        const pl = String(i.pricing_label || i.qty_unit || "").trim();
+        const qtyPart = `${fmtQty(i.qty)} ${i.qty_unit || "kg"}`;
+        if (!pl || isGenericTierLabel(pl)) return escape(qtyPart);
+        return `${escape(qtyPart)} · ${escape(titleCaseWords(pl))}`;
+      }
+      const unit = resolveUnit(opt);
+      const bs = bundleStepFromOpt(opt);
+      const qtyPart = counterQtyLabel(i.qty, unit, bs);
+      const lab = String(opt.label || opt.unit_label || "").trim();
+      const stored = String(i.pricing_label || "").trim();
+      const tierCandidate = !isGenericTierLabel(lab) ? lab : !isGenericTierLabel(stored) ? stored : "";
+      const tierPretty = tierCandidate ? titleCaseWords(tierCandidate) : "";
+      const multi = opts.length > 1;
+      if (tierPretty && multi) return `${escape(qtyPart)} · ${escape(tierPretty)}`;
+      if (tierPretty && tierPretty.toLowerCase() !== String(unit).toLowerCase() && !/^piece|kg|pc|pcs$/i.test(tierPretty)) {
+        return `${escape(qtyPart)} · ${escape(tierPretty)}`;
+      }
+      return escape(qtyPart);
+    }
+    function checkoutFishTitle(i) {
+      const listing = listings.find((l) => l.id === i.listing_id);
+      const sp = listing?.species;
+      if (sp && speciesDisplayById && speciesDisplayById[sp]) return escape(speciesDisplayById[sp]);
+      return escape(titleCaseWords(i.name || "Item"));
+    }
+    function resolveUnit(opt) {
+      const raw = String(opt?.unit || opt?.price_unit || opt?.unit_label || opt?.label || "").toLowerCase();
+      if (raw.includes("piece") || raw.includes("pc")) return "piece";
+      if (raw.includes("kg")) return "kg";
+      return String(opt?.unit || "kg").toLowerCase();
+    }
+    function fmtQty(v) {
+      const n = Number(v) || 0;
+      return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+    }
+    function counterQtyLabel(qty, unit, bundleSize) {
+      const u = String(unit || "").toLowerCase();
+      const bs = bundleSize && bundleSize > 1 ? Number(bundleSize) : 1;
+      if (u === "piece" || u === "pc" || u === "pcs") {
+        const packs = bs > 1 ? Math.round(Number(qty) / bs) : Number(qty);
+        return `${fmtQty(packs)} pack`;
+      }
+      return `${fmtQty(qty)} ${unit || "kg"}`;
+    }
+
+    // Build composite cart key matching cart.ts logic
+    function ck(listingId, optId) {
+      return optId && optId !== "default" ? listingId + ":" + optId : listingId;
+    }
+
+    function renderItem(l) {
+      const opts = l.pricing_options || [];
+      const firstOpt = opts[0] || {};
+      const name = getName(l.species);
+      const sellerItems = getSellerItems();
+      const emoji = speciesEmoji(l.species);
+      // Menu mode is timing-first:
+      // - pre-order mode: only listing-level pre-order enabled items
+      // - order mode: only in-stock inventory items (not paused for same-day)
+      const isListingPreorder = isPreorderMode && l.is_preorder_enabled === true;
+      // weight_avail null = seller hasn't set it, treat as in stock; 0 = out of stock
+      const weightOk = l.weight_avail == null || Number(l.weight_avail) > 0;
+      const hasStock = l.is_available === true && !l.is_order_paused && weightOk;
+      const canAddItem = !sellerFullyClosed && (isPreorderMode ? isListingPreorder : hasStock);
+      const unavailableReason = (() => {
+        if (sellerFullyClosed) return "Seller closed today";
+        if (canAddItem) return null;
+        if (!l.is_available) return "Out of stock";
+        if (!weightOk) return "Out of stock";
+        if (!isPreorderMode) return "Out of stock";
+        return "Unavailable";
+      })();
+
+      // Total qty across all tiers for this listing (for incart highlight)
+      const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
+
+      // Pre-order price range (shown on preorder listings, per pricing tier)
+      const preorderRangeHtml = isListingPreorder
+        ? opts.map((opt) => {
+            const pmn = opt.preorder_price_min;
+            const pmx = opt.preorder_price_max;
+            if (!pmn && !pmx) return "";
+            const mnStr = pmn ? `₹${Number(pmn).toLocaleString("en-IN")}` : "";
+            const mxStr = pmx ? `₹${Number(pmx).toLocaleString("en-IN")}` : "";
+            const range = mnStr && mxStr && mnStr !== mxStr ? `${mnStr}–${mxStr}` : mnStr || mxStr;
+            const unitSuffix = opt.buyer_menu_suffix || (opt.unit === "kg" ? "/kg" : "/pc");
+            return `<div style="font:600 11px Inter;color:#7C3AED;margin-top:2px;">🌙 ${range}${unitSuffix}</div>`;
+          }).join("")
+        : "";
+
+      // Preorder listings: show per-tier min–max range + add button per tier (no discount shown)
+      // Regular listings: show exact pricing_options tiers as normal
+      const pricingHtml = isListingPreorder && canAddItem
+        ? (() => {
+            const unit = resolveUnit(firstOpt);
+            // Use preorder_price_max as the add-to-cart price (buyer pays max, seller reconciles later)
+            const poPrice = firstOpt.preorder_price_max || firstOpt.preorder_price_min || firstOpt.price || 0;
+            const pmnStr = firstOpt.preorder_price_min ? `₹${Number(firstOpt.preorder_price_min).toLocaleString("en-IN")}` : "";
+            const pmxStr = firstOpt.preorder_price_max ? `₹${Number(firstOpt.preorder_price_max).toLocaleString("en-IN")}` : "";
+            const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${firstOpt.price}`;
+            const optId = firstOpt.id || "default";
+            const key = ck(l.id, optId);
+            const inCart = sellerItems[key]?.qty || 0;
+            return `<div class="v2-item-bottom">
+              <div class="v2-item-price" style="color:#7C3AED;">${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
+              ${inCart > 0
+                ? (() => {
+                    const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
+                    const packLabel = counterQtyLabel(inCart, unit, bs);
+                    return `<div class="v2-item-counter" data-id="${key}">
+                     <button class="v2-item-dec" aria-label="Decrease">−</button>
+                     <span class="v2-item-count">${packLabel}</span>
+                     <button class="v2-item-inc" aria-label="Increase">+</button>
+                   </div>`;
+                  })()
+                : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+            </div>`;
+          })()
+        : canAddItem && hasStock
+          ? (opts.length <= 1
+            ? (() => {
+                const price = firstOpt.price || 0;
+                const unit = resolveUnit(firstOpt);
+                const optId = firstOpt.id || "default";
+                const key = ck(l.id, optId);
+                const inCart = sellerItems[key]?.qty || 0;
+                const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
+                return `<div class="v2-item-bottom">
+                  <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
+                  ${inCart > 0
+                    ? (() => {
+                        const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
+                        const packLabel = counterQtyLabel(inCart, unit, bs);
+                        return `<div class="v2-item-counter" data-id="${key}">
+                         <button class="v2-item-dec" aria-label="Decrease">−</button>
+                         <span class="v2-item-count">${packLabel}</span>
+                         <button class="v2-item-inc" aria-label="Increase">+</button>
+                       </div>`;
+                      })()
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+                </div>`;
+              })()
+            : (() => {
+                return `<div class="v2-item-tiers">
+                  ${opts.map((o) => {
+                    const label = o.label || o.unit_label || o.unit || "unit";
+                    const tierUnit = resolveUnit(o);
+                    const optId = o.id || "default";
+                    const key = ck(l.id, optId);
+                    const tierQty = sellerItems[key]?.qty || 0;
+                    const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.bundle_size}${o.unit === 'kg' ? 'kg' : 'pc'})` : '';
+                    const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
+                    return `<div class="v2-item-tier">
+                      <span class="v2-item-tier-label">${escape(label)}${bSize}</span>
+                      <span class="v2-item-tier-price">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
+                      ${tierQty > 0
+                        ? (() => {
+                            const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
+                            const packLabel = counterQtyLabel(tierQty, tierUnit, bs);
+                            const avail = l.weight_avail != null ? Number(l.weight_avail) : Infinity;
+                            const atMax = Number.isFinite(avail) && tierQty + bs > avail;
+                            return `<div class="v2-item-counter" data-id="${key}" style="transform:scale(0.85);">
+                             <button class="v2-item-dec" aria-label="Decrease">−</button>
+                             <span class="v2-item-count">${packLabel}</span>
+                             <button class="v2-item-inc" aria-label="Increase" ${atMax ? 'disabled style="opacity:.35;cursor:not-allowed;"' : ''}>+</button>
+                           </div>`;
+                          })()
+                        : `<button class="v2-item-add v2-item-add-sm" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                    </div>`;
+                  }).join("")}
+                </div>`;
+              })())
+          : `<div class="v2-item-bottom" style="opacity:.85;">
+              <div class="v2-item-price" style="color:var(--v2-ink-3);">—</div>
+              <button class="v2-item-add" type="button" disabled aria-disabled="true"
+                style="background:var(--v2-bg-3);color:var(--v2-ink-4);cursor:not-allowed;"
+                title="${escape(unavailableReason || 'Unavailable')}">
+                +
+              </button>
+            </div>
+            <div style="font:600 11px Inter;color:var(--v2-ink-3);margin-top:6px;text-align:right;">
+              ${escape(unavailableReason || 'Unavailable')}
+            </div>`;
+
+      // Fish size badge
+      const sizeMap = { small: "S", medium: "M", large: "L" };
+      const sizeBadge = l.fish_size && sizeMap[l.fish_size] ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;">${sizeMap[l.fish_size]}</span>` : '';
+
+      // Low stock warning (oos_threshold)
+      const stockWarn = l.oos_threshold && l.weight_avail > 0 && l.weight_avail <= l.oos_threshold
+        ? `<div style="font:600 10px Inter;color:var(--v2-orange);margin-top:2px;">⚡ Stock clearing soon</div>` : '';
+
+      // Daily limit hint
+      const limitHint = l.buyer_daily_qty_limit
+        ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:1px;">Max ${l.buyer_daily_qty_limit} per buyer/day</div>` : '';
+
+      // Compare-at-price (discount) — hide on pre-order cards; final price is set after catch, list/was pricing is misleading.
+      const hasDiscount =
+        !isListingPreorder &&
+        !!(firstOpt.compare_at_price && firstOpt.compare_at_price > firstOpt.price);
+      const discountBadge = hasDiscount
+        ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-red);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
+
+      // Image: use photo if available, else emoji
+      const imgContent = l.photo_url
+        ? `<img src="${escape(l.photo_url)}" alt="${escape(name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />`
+        : `<span class="v2-item-emoji">${emoji}</span>`;
+
+      return `
+        <div class="v2-item-card${totalInCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
+          <div class="v2-item-img" style="background:${isListingPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};position:relative;overflow:hidden;">
+            ${imgContent}
+            ${isListingPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
+            ${discountBadge}
+          </div>
+          <div class="v2-item-body">
+            <div class="v2-item-name">${escape(name)}${sizeBadge}</div>
+            ${preorderRangeHtml}
+            ${stockWarn}${limitHint}
+            ${pricingHtml}
+          </div>
+        </div>`;
+    }
+
+    function render() {
+      // In pre-order mode, only show items with is_preorder_enabled=true
+      const visibleListings = isPreorderMode
+        ? listings.filter((l) => l.is_preorder_enabled === true)
+        : listings;
+
+      if (isPreorderMode && visibleListings.length === 0 && !sellerFullyClosed) {
+        grid.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--v2-ink-3);">
+          <div style="font:700 20px Inter;margin-bottom:8px;">🌙</div>
+          <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:4px;">Pre-order menu unavailable</div>
+          <div style="font:400 12px Inter;color:var(--v2-ink-3);">This seller hasn't set up pre-orders for any items yet.</div>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = visibleListings.map((l) => {
+        try {
+          return renderItem(l);
+        } catch (err) {
+          // Keep menu functional even if one listing payload is malformed.
+          console.error("seller menu renderItem failed", err, l);
+          const firstOpt = (l?.pricing_options || [])[0] || {};
+          const name = escape(getName(l?.species || "Fish"));
+          const unit = escape(firstOpt.unit_label || firstOpt.label || firstOpt.unit || "kg");
+          const price = Number(firstOpt.price) || 0;
+          const optId = firstOpt.id || "default";
+          const priceSuf = escape(String(firstOpt.buyer_menu_suffix || "/pc"));
+          return `<div class="v2-item-card" data-listing-id="${l?.id || ""}">
+            <div class="v2-item-body">
+              <div class="v2-item-name">${name}</div>
+              <div class="v2-item-bottom">
+                <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${priceSuf}</span></div>
+                <button class="v2-item-add" data-id="${l?.id || ""}" data-price="${price}" data-name="${name}" data-unit="${unit}" data-opt-id="${optId}" data-opt-label="${unit}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${name}">+</button>
+              </div>
+            </div>
+          </div>`;
+        }
+      }).join("");
+      // If seller is fully closed (closed + no preorder), disable all add buttons and grey out items
+      if (sellerFullyClosed) {
+        grid.style.opacity = "0.5";
+        grid.style.pointerEvents = "none";
+        // Show closed banner above menu
+        if (!document.getElementById("v2-closed-banner")) {
+          const banner = document.createElement("div");
+          banner.id = "v2-closed-banner";
+          banner.style.cssText = "margin:0 16px 12px;padding:14px 16px;background:var(--v2-red-l);border:1px solid var(--v2-red);border-radius:var(--v2-radius);text-align:center;";
+          banner.innerHTML = `<div style="font:700 13px Inter;color:var(--v2-red);">🚫 Not available today</div><div style="font:400 11px Inter;color:var(--v2-ink-2);margin-top:4px;">No orders or pre-orders available today. Check back on an order day.</div>`;
+          grid.parentElement?.insertBefore(banner, grid);
+        }
+      }
+      renderCart();
+    }
+
+    let selectedAddressId = null;
+    // Remember which seller's cart we're currently checking out (set when user
+    // taps Checkout on a CartStackSheet card, OR defaults to this page's sellerId
+    // when only one seller has items).
+    let activeCheckoutSellerId = sellerId;
+
+    async function fetchSellerFulfillment(sellerSid) {
+      try {
+        const res = await fetch(
+          `/api/seller/fulfillment?seller_id=${encodeURIComponent(sellerSid)}`
+        );
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
+
+    /**
+     * Show/hide pickup vs delivery from live API flags. `fromRefetch` preserves a valid
+     * buyer choice when step 2 loads; initial open defaults to pickup when both exist.
+     */
+    function applyCheckoutFulfillment(sid, fulfill, fromRefetch) {
+      if (!fulfill) return;
+      const has_pickup = fulfill.has_pickup !== false;
+      const has_delivery = !!fulfill.has_delivery;
+      const preorderHere = isPreorderMode && sid === sellerId;
+      const canDeliver = sid === sellerId && has_delivery && !preorderHere;
+      const showPickup = has_pickup;
+      const showDelivery = canDeliver;
+
+      const pickupOpt = document.getElementById("seller-checkout-pickup-opt");
+      const delivOpt = document.getElementById("seller-checkout-delivery-opt");
+      const noDelivNote = document.getElementById("seller-checkout-no-delivery-note");
+      const noPickupNote = document.getElementById("seller-checkout-no-pickup-note");
+
+      if (pickupOpt) pickupOpt.style.display = showPickup ? "flex" : "none";
+      if (delivOpt) delivOpt.style.display = showDelivery ? "flex" : "none";
+      if (noDelivNote) noDelivNote.style.display = showPickup && !showDelivery ? "block" : "none";
+      if (noPickupNote) noPickupNote.style.display = !showPickup && showDelivery ? "block" : "none";
+
+      const pickupRadio = document.querySelector(
+        'input[name="seller-checkout-method"][value="pickup"]'
+      );
+      const delivRadio = document.querySelector(
+        'input[name="seller-checkout-method"][value="delivery"]'
+      );
+
+      let next = "pickup";
+      if (fromRefetch) {
+        const curDel = !!(delivRadio && delivRadio.checked);
+        const curPick = !!(pickupRadio && pickupRadio.checked);
+        if (curDel && showDelivery) next = "delivery";
+        else if (curPick && showPickup) next = "pickup";
+        else if (showDelivery) next = "delivery";
+        else if (showPickup) next = "pickup";
+      } else {
+        if (showPickup && showDelivery) next = "pickup";
+        else if (showDelivery) next = "delivery";
+        else if (showPickup) next = "pickup";
+      }
+
+      if (next === "delivery" && delivRadio) {
+        delivRadio.checked = true;
+        delivRadio.dispatchEvent(new Event("change", { bubbles: true }));
+      } else if (pickupRadio) {
+        pickupRadio.checked = true;
+        pickupRadio.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+
+    document.addEventListener("v2-checkout-step2", (e) => {
+      if (e.detail?.checkoutId !== "seller-checkout") return;
+      const sid = activeCheckoutSellerId;
+      if (!sid) return;
+      fetchSellerFulfillment(sid).then((f) => {
+        if (f) applyCheckoutFulfillment(sid, f, true);
+        else window.v2Toast?.("error", "Couldn't load options", "Check connection and try again");
+      });
+    });
+
+    // Publish per-seller min-order hints so CartStackSheet can show "Add ₹X more"
+    // without needing its own DB query.
+    ;(function publishMinOrder() {
+      window.__relifishMinOrders = window.__relifishMinOrders || {};
+      window.__relifishMinOrders[sellerId] = minOrder || 0;
+    })();
+
+    function renderCart() {
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const totalQty = c.totalQty(cart);
+
+      // Single-seller cart: all items belong to one seller.
+      const sellerItems = Object.values(getSellerItems());
+      const sellerQty = sellerItems.reduce((s, i) => s + i.qty, 0);
+      const sellerSubtotal = sellerItems.reduce((s, i) => s + i.qty * i.price, 0);
+
+      if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
+      document.body.classList.add("v2-has-cart");
+
+      const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
+      const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
+
+      // Status line (pre-order window is pickup-only — don't imply a delivery savings perk)
+      let statusLine = `${sellerQty} item${sellerQty !== 1 ? "s" : ""}`;
+      let statusColor = "var(--v2-ink-3)";
+      if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
+      else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
+      else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
+
+      cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>
+            <div style="font:800 16px Inter;color:var(--v2-ink);">₹${sellerSubtotal.toLocaleString("en-IN")}</div>
+            <div style="font:500 11px Inter;color:${statusColor};margin-top:2px;">${statusLine}</div>
+          </div>
+          <button id="v2-cart-clear" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;" aria-label="Clear cart">✕</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
+          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.4;pointer-events:none;' : ''}">Checkout →</button>
+        </div>
+      </div>`;
+
+      document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
+      document.getElementById("v2-cart-manage")?.addEventListener("click", () => {
+        window.v2OpenSheet?.("seller-cart-stack");
+      });
+      document.getElementById("v2-cart-clear")?.addEventListener("click", () => {
+        const c = Cart(); if (!c) return;
+        c.clearCart({ sellerId });
+        render();
+        window.v2Toast?.("success", "Cart cleared");
+      });
+    }
+
+    // Toast when cart switches seller (user added item from different seller page)
+    window.addEventListener("v2-cart-seller-switched", () => {
+      window.v2Toast?.("success", "Cart updated", "Previous seller's items cleared");
+    });
+
+    // Single-seller checkout. `targetSellerId` is the seller whose cart we're placing.
+    // Defaults to this page's sellerId but CartStackSheet may pass any seller_id from
+    // the global cart.
+    async function openCheckout(targetSellerId) {
+      const c = Cart(); if (!c) return;
+      const sid = targetSellerId || sellerId;
+      activeCheckoutSellerId = sid;
+
+      if (sellerFullyClosed && sid === sellerId) {
+        window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
+        return;
+      }
+
+      const groups = c.groupBySeller();
+      const group = groups.find((g) => g.seller_id === sid);
+      if (!group || group.items.length === 0) {
+        window.v2Toast?.("error", "Cart empty", "Add items before checkout");
+        return;
+      }
+
+      // Pre-flight: must be signed in
+      let buyerId = null, buyerPhone = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      if (!buyerId || !buyerPhone) {
+        window.v2OpenSheet?.("seller-login-sheet");
+        return;
+      }
+
+      const fulfill = await fetchSellerFulfillment(sid);
+      if (!fulfill) {
+        window.v2Toast?.("error", "Couldn't load checkout", "Try again in a moment");
+        return;
+      }
+      if (!fulfill.has_pickup && !fulfill.has_delivery) {
+        window.v2Toast?.("error", "Unavailable", "This seller has no pickup or delivery enabled");
+        return;
+      }
+
+      // Min-order gate for the active seller (the one we're checking out).
+      // Only enforce for THIS page's seller since we only have minOrder for them.
+      if (sid === sellerId && minOrder && group.subtotal < minOrder) {
+        window.v2Toast?.("error", "Below min order", `Add ₹${minOrder - group.subtotal} more to checkout`);
+        return;
+      }
+
+      // Populate cart items in CheckoutSheet step 1 — single seller only
+      const cartItemsEl = document.getElementById("seller-checkout-cart-items");
+      if (cartItemsEl) {
+        cartItemsEl.innerHTML = `
+          <div style="font:700 11px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">From ${escape(group.seller_name || "Seller")}</div>
+          ${group.items.map(i => `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--v2-border);">
+              <div style="flex:1;min-width:0;">
+                <div style="font:700 15px Inter;color:var(--v2-ink);letter-spacing:-0.02em;line-height:1.25;">${checkoutFishTitle(i)}</div>
+                <div style="margin-top:8px;">
+                  <span style="display:inline-block;font:600 11px Inter;line-height:1.35;color:var(--v2-brand);background:var(--v2-brand-l);padding:5px 11px;border-radius:999px;max-width:100%;">${checkoutLineMeta(i)}</span>
+                </div>
+              </div>
+              <div style="font:800 15px Inter;color:var(--v2-ink);flex-shrink:0;white-space:nowrap;padding-top:1px;">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
+            </div>`).join("")}`;
+      }
+      const subtotal = group.subtotal;
+      document.getElementById("seller-checkout-subtotal").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+      // Total = subtotal (delivery fee shows up in the Delivery row below only if user picks delivery).
+      document.getElementById("seller-checkout-total").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+      document.getElementById("seller-checkout-total-final").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+
+      // Free delivery banner + delivery hint in checkout step 1 (omit for pre-order window on this seller)
+      const hideDeliverySavingsUi = isPreorderMode && sid === sellerId;
+      const freeDelivBanner = document.getElementById("seller-checkout-free-delivery-banner");
+      const delivHint = document.getElementById("seller-checkout-delivery-hint");
+      if (hideDeliverySavingsUi) {
+        if (freeDelivBanner) freeDelivBanner.style.display = "none";
+        if (delivHint) delivHint.style.display = "none";
+      } else if (deliveryFeeEnabled && deliveryFeeAmount > 0) {
+        if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
+          if (freeDelivBanner) freeDelivBanner.style.display = "block";
+          if (delivHint) delivHint.style.display = "none";
+        } else {
+          if (freeDelivBanner) freeDelivBanner.style.display = "none";
+          if (delivHint) {
+            delivHint.style.display = "block";
+            if (deliveryFreeAbove > 0) {
+              const remaining = deliveryFreeAbove - subtotal;
+              delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee · Add ₹${remaining.toLocaleString("en-IN")} more for free delivery`;
+            } else {
+              delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee applies for delivery orders`;
+            }
+          }
+        }
+      } else {
+        if (freeDelivBanner) freeDelivBanner.style.display = "none";
+        if (delivHint) {
+          if (hasDelivery) {
+            delivHint.style.display = "block";
+            delivHint.textContent = "🚲 Free delivery available";
+          } else {
+            delivHint.style.display = "none";
+          }
+        }
+      }
+
+      // Reset delivery fee preview — method radio click will repopulate.
+      const delivRow = document.getElementById("seller-checkout-delivery-row");
+      if (delivRow) delivRow.style.display = "none";
+
+      // Fulfillment options from API (pickup toggle in seller settings).
+      applyCheckoutFulfillment(sid, fulfill, false);
+
+      // Update delivery fee description in checkout sheet
+      const delivDescEl = document.getElementById("seller-checkout-delivery-desc");
+      if (delivDescEl && deliveryFeeEnabled && deliveryFeeAmount > 0) {
+        const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
+        delivDescEl.textContent = `To your address · ₹${deliveryFeeAmount} fee${freeNote}`;
+      } else if (delivDescEl) {
+        delivDescEl.textContent = "To your address · Free delivery";
+      }
+
+      // Auto-load default address when sheet opens
+      preloadAddress();
+
+      window.v2OpenSheet?.("seller-checkout");
+    }
+
+    // When user toggles method to delivery, show the fee preview row with a client-side
+    // estimate. Real fee is computed server-side at place-order time via computeDeliveryFee.
+    document.querySelectorAll('input[name="seller-checkout-method"]').forEach((r) => {
+      r.addEventListener("change", () => {
+        const isDelivery = r.value === "delivery" && r.checked;
+        const delivRow = document.getElementById("seller-checkout-delivery-row");
+        const delivEl = document.getElementById("seller-checkout-delivery");
+        const totalEl = document.getElementById("seller-checkout-total");
+        const totalFinal = document.getElementById("seller-checkout-total-final");
+        const subEl = document.getElementById("seller-checkout-subtotal");
+        const subtotalText = (subEl?.textContent || "").replace(/[^\d]/g, "");
+        const subtotal = parseInt(subtotalText) || 0;
+        // Use actual seller config — matches server-side computeDeliveryFee logic.
+        let fee = 0;
+        if (isDelivery && deliveryFeeEnabled) {
+          if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) fee = 0;
+          else fee = deliveryFeeAmount;
+        }
+        if (delivRow) delivRow.style.display = isDelivery ? "flex" : "none";
+        if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : "FREE";
+        const total = subtotal + fee;
+        if (totalEl) totalEl.textContent = `₹${total.toLocaleString("en-IN")}`;
+        if (totalFinal) totalFinal.textContent = `₹${total.toLocaleString("en-IN")}`;
+      });
+    });
+
+    async function preloadAddress() {
+      let buyerId = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      if (!buyerId) return;
+      try {
+        const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+        const data = await res.json();
+        const addrs = data.addresses || [];
+        const def = addrs.find((a) => a.is_default) || addrs[0];
+        if (def) {
+          selectedAddressId = def.id;
+          const labelEl = document.getElementById("seller-checkout-addr-label");
+          const textEl = document.getElementById("seller-checkout-addr-text");
+          if (labelEl) labelEl.textContent = (def.label || "Address") + (def.is_default ? " · Default" : "");
+          if (textEl) {
+            const text = [def.flat, def.building, def.landmark, def.location_name].filter(Boolean).join(", ");
+            textEl.textContent = text || "Saved address";
+          }
+        }
+      } catch {}
+    }
+
+    // Listen for address picker selection
+    document.addEventListener("v2-address-confirmed", async (e) => {
+      selectedAddressId = e.detail?.addressId;
+      // Refresh address card UI from API
+      let buyerId = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); } catch {}
+      if (buyerId && selectedAddressId) {
+        try {
+          const res = await fetch(`/api/buyer/addresses?buyer_id=${buyerId}`);
+          const data = await res.json();
+          const addr = (data.addresses || []).find((a) => a.id === selectedAddressId);
+          if (addr) {
+            const labelEl = document.getElementById("seller-checkout-addr-label");
+            const textEl = document.getElementById("seller-checkout-addr-text");
+            if (labelEl) labelEl.textContent = addr.label || "Address";
+            if (textEl) {
+              const text = [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ");
+              textEl.textContent = text || "Saved address";
+            }
+          }
+        } catch {}
+      }
+      window.v2Toast?.("success", "Address selected", "Continue to payment");
+    });
+
+    // Address card opens picker above checkout (AddressPickerSheet is after CheckoutSheet in DOM).
+    document.getElementById("seller-checkout-current-address")?.addEventListener("click", () => {
+      try {
+        if (selectedAddressId) sessionStorage.setItem("seller-addr-sheet-selected", selectedAddressId);
+      } catch {}
+      window.v2OpenSheet?.("seller-addr-sheet");
+    });
+
+    // Place order — single seller only (the activeCheckoutSellerId)
+    document.addEventListener("v2-checkout-place-order", async () => {
+      const c = Cart(); if (!c) return;
+      const group = c.groupBySeller().find((g) => g.seller_id === activeCheckoutSellerId);
+      if (!group || group.items.length === 0) {
+        window.v2Toast?.("error", "Cart empty", "Add items before checkout");
+        return;
+      }
+
+      let buyerId = null, buyerPhone = null;
+      try { buyerId = localStorage.getItem("zepto_buyer_id"); buyerPhone = localStorage.getItem("zepto_phone"); } catch {}
+      if (!buyerId || !buyerPhone) { window.v2OpenSheet?.("seller-login-sheet"); return; }
+
+      const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');
+      const orderType = methodEl?.value === "delivery" ? "delivery" : "pickup";
+      if (orderType === "delivery" && !selectedAddressId) {
+        window.v2Toast?.("error", "Address needed", "Pick a delivery address");
+        return;
+      }
+
+      const btn = document.getElementById("seller-checkout-place-order");
+      btn.disabled = true;
+      btn.textContent = "Placing order...";
+      // Disable back buttons and sheet close during order placement
+      document.querySelectorAll("[data-co-back]").forEach((b: any) => { b.disabled = true; b.style.opacity = "0.4"; b.style.pointerEvents = "none"; });
+      document.querySelectorAll(".v2-sheet-close").forEach((b: any) => { b.disabled = true; b.style.opacity = "0.4"; b.style.pointerEvents = "none"; });
+
+      try {
+        const lines = group.items.map(i => ({
+          listing_id: i.listing_id,
+          quantity: i.qty,
+          quantity_unit: i.qty_unit,
+          pricing_option_id: i.pricing_option_id || null,
+        }));
+        const res = await fetch("/api/orders/create-seller-cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seller_id: activeCheckoutSellerId,
+            lines,
+            buyer_phone: buyerPhone,
+            buyer_id: buyerId,
+            buyer_addr: selectedAddressId,
+            order_type: orderType,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+
+        // Success: clear cart, show fullscreen success animation, redirect
+        c.clearCart({ sellerId: activeCheckoutSellerId });
+        window.v2CloseSheet?.("seller-checkout");
+
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:var(--v2-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:v2-fade-in 300ms ease-out;";
+        overlay.innerHTML = `
+          <div style="width:80px;height:80px;border-radius:50%;background:var(--v2-green);display:flex;align-items:center;justify-content:center;font-size:40px;animation:v2-slide-up 400ms ease-out;">✓</div>
+          <div style="font:800 22px Inter;color:var(--v2-ink);margin-top:20px;">Order placed!</div>
+          <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-top:8px;">${group.items.length} item${group.items.length !== 1 ? "s" : ""} confirmed</div>
+          <div style="margin-top:24px;"><span class="v2-spinner v2-spinner-sm"></span></div>
+          <div style="font:500 12px Inter;color:var(--v2-ink-4);margin-top:8px;">Redirecting to your orders...</div>
+        `;
+        document.body.appendChild(overlay);
+        const firstOrderId = Array.isArray(data.orders) && data.orders[0]?.id ? String(data.orders[0].id) : "";
+        setTimeout(() => {
+          window.location.href = firstOrderId ? `/track/${encodeURIComponent(firstOrderId)}` : "/track";
+        }, 2000);
+      } catch (err) {
+        window.v2Toast?.("error", "Failed", err.message || "Try again");
+        btn.disabled = false;
+        btn.textContent = "Place order";
+        // Re-enable back buttons and sheet close on error
+        document.querySelectorAll("[data-co-back]").forEach((b: any) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
+        document.querySelectorAll(".v2-sheet-close").forEach((b: any) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
+      }
+    });
+
+    function add(id, price, name, unit, optId, optLabel, bundleSize) {
+      if (sellerFullyClosed) {
+        window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
+        return;
+      }
+      const c = Cart(); if (!c) return;
+      const bs = parseFloat(bundleSize) || 1;
+      // Store price per base unit so qty × price always gives correct total
+      const pricePerUnit = bs > 0 ? price / bs : price;
+      c.addItem({
+        listing_id: id,
+        seller_id: sellerId,
+        seller_name: sellerName,
+        name,
+        qty_unit: unit,
+        price: pricePerUnit,
+        pricing_option_id: optId || "default",
+        pricing_label: optLabel || unit,
+        qty: bs, // add one pack (= bundle_size base units)
+      });
+      render();
+    }
+    // Inc/dec by bundle_size so qty stays a valid multiple
+    function getBundleStep(cartItem) {
+      const listing = listings.find(l => l.id === cartItem.listing_id);
+      const opts = listing?.pricing_options || [];
+      const opt = opts.find(o => o.id === cartItem.pricing_option_id);
+      return (opt?.bundle_size && opt.bundle_size > 1) ? Number(opt.bundle_size) : 1;
+    }
+    function dec(id) {
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      // Use exact key — counter data-id already matches cart key precisely
+      const item = cart[id];
+      if (!item) return;
+      c.setQty(id, item.qty - getBundleStep(item));
+      render();
+    }
+    function inc(id) {
+      const c = Cart(); if (!c) return;
+      const cart = c.getCart();
+      const item = cart[id];
+      if (!item) return;
+      const step = getBundleStep(item);
+      // Stock cap: don't exceed weight_avail
+      const listing = listings.find(l => l.id === item.listing_id);
+      const avail = listing?.weight_avail != null ? Number(listing.weight_avail) : Infinity;
+      if (Number.isFinite(avail) && item.qty + step > avail) {
+        window.v2Toast?.("info", "Stock limit", `Only ${avail} ${item.qty_unit || "kg"} available`);
+        return;
+      }
+      c.setQty(id, item.qty + step);
+      render();
+    }
+
+    grid.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.classList.contains("v2-item-add")) {
+        add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit, t.dataset.optId, t.dataset.optLabel, t.dataset.bundleSize);
+      } else if (t.classList.contains("v2-item-inc")) {
+        inc(t.closest(".v2-item-counter")?.dataset.id);
+      } else if (t.classList.contains("v2-item-dec")) {
+        dec(t.closest(".v2-item-counter")?.dataset.id);
+      }
+    });
+
+    // Re-render if cart changes from another tab/window or hydration completes
+    window.addEventListener("v2-cart-changed", () => render());
+    window.addEventListener("storage", (e) => {
+      if (e.key === "v2_cart_global") render();
+    });
+
+    // First paint: render whatever we know (works even before cart module loads)
+    render();
+
+    // Once cart module loads: migrate legacy + hydrate from server, then re-render
+    withCart((c) => {
+      c.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
+      c.hydrateFromServer().then(() => render());
+      render();
+    });
+  }

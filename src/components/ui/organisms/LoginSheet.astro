@@ -139,8 +139,8 @@ const MAX_ATTEMPTS = 3;
     // Already logged in?
     try {
       const alreadyIn = role === "seller"
-        ? localStorage.getItem("zepto_seller_id")
-        : localStorage.getItem("zepto_buyer_id");
+        ? localStorage.getItem("rlf_seller_id")
+        : localStorage.getItem("rlf_buyer_id");
       if (alreadyIn) {
         window.location.href = redirectTo;
         return;
@@ -240,11 +240,11 @@ const MAX_ATTEMPTS = 3;
 
       try {
         if (role === "seller") {
-          localStorage.setItem("zepto_seller_id", data.seller_id);
-          localStorage.setItem("zepto_seller_phone", currentPhone);
+          localStorage.setItem("rlf_seller_id", data.seller_id);
+          localStorage.setItem("rlf_seller_phone", currentPhone);
         } else {
-          localStorage.setItem("zepto_buyer_id", data.buyer_id);
-          localStorage.setItem("zepto_phone", currentPhone);
+          localStorage.setItem("rlf_buyer_id", data.buyer_id);
+          localStorage.setItem("rlf_phone", currentPhone);
         }
       } catch {}
 

@@ -25,7 +25,7 @@ import Toast from "../../../components/ui/atoms/Toast.astro";
     import { validateSellerListingForm, focusListingField } from "../../../lib/listing-form-validation";
     import { supabase } from "../../../lib/supabase";
 
-    const sellerId = localStorage.getItem("zepto_seller_id");
+    const sellerId = localStorage.getItem("rlf_seller_id");
     if (!sellerId) {
       location.href = "/dashboard/login";
     } else {

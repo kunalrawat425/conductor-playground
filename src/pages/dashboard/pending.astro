@@ -22,7 +22,7 @@ import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 
     // If seller is already active, redirect to dashboard (don't trap them here)
     async function checkActive() {
-      const sid = localStorage.getItem("zepto_seller_id");
+      const sid = localStorage.getItem("rlf_seller_id");
       if (!sid) {
         location.href = "/dashboard/login";
         return;
@@ -46,7 +46,7 @@ import EmptyState from "../../components/ui/molecules/EmptyState.astro";
       if (text.includes("Sign out")) {
         el.addEventListener("click", (e) => {
           e.preventDefault();
-          try { localStorage.removeItem("zepto_seller_id"); localStorage.removeItem("zepto_seller_phone"); } catch {}
+          try { localStorage.removeItem("rlf_seller_id"); localStorage.removeItem("rlf_seller_phone"); } catch {}
           location.href = "/dashboard/login";
         });
       }
