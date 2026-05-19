@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ url }) => {
         price_snapshot,
         created_at,
         updated_at,
-        listing:fish_listings ( id, species, photo_url, weight_avail, is_available, pricing_options, seller_id, seller:sellers ( id, name, is_active, opens_at, closes_at, has_delivery, accepts_preorder, min_order_amount ) )
+        listing:fish_listings ( id, species, photo_url, weight_avail, is_available, pricing_options, seller_id, seller:sellers ( id, name, store_image_url, is_active, opens_at, closes_at, has_delivery, accepts_preorder, min_order_amount ) )
       `)
       .eq("buyer_id", buyer_id)
       .order("updated_at", { ascending: false });
@@ -45,6 +45,7 @@ export const GET: APIRoute = async ({ url }) => {
       updated_at: r.updated_at,
       seller_id: r.listing?.seller_id,
       seller_name: r.listing?.seller?.name || "",
+      seller_image_url: r.listing?.seller?.store_image_url || null,
       seller_active: !!r.listing?.seller?.is_active,
       species: r.listing?.species,
       species_display: r.listing?.species,
