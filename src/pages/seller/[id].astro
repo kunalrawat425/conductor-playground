@@ -36,6 +36,12 @@ const sellerLocation = seller?.location_name || "";
 const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
 const SITE = "https://www.relifish.store";
 const canonicalUrl = sellerSlug ? `${SITE}/s/${sellerSlug}` : `${SITE}/seller/${id}`;
+
+// Block direct /seller/[id] access — only /s/[slug] is the public route.
+// Astro.rewrite() from /s/[slug].astro keeps Astro.url.pathname as /s/..., so rewrites pass through.
+if (Astro.url.pathname.startsWith('/seller/')) {
+  return new Response(null, { status: 404 });
+}
 // IST time (servers run UTC; IST = UTC+5:30)
 const nowIST = new Date(Date.now() + 5.5 * 3600 * 1000);
 const curMin = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
@@ -287,7 +293,7 @@ const tags = [
           <div style="font:400 13px Inter;color:var(--v2-ink-3);line-height:1.6;">
             {seller?.opens_at ? `Opens at ${seller.opens_at.slice(0,5)}` : "Check back during opening hours"}
           </div>
-          <a href="/" class="v2-btn v2-btn-secondary v2-btn-md" style="display:inline-block;margin-top:16px;">← Browse other sellers</a>
+          <a href="/shop" class="v2-btn v2-btn-secondary v2-btn-md" style="display:inline-block;margin-top:16px;">← Browse other sellers</a>
         </div>
       ) : itemCount === 0 ? (
         <div style="padding:0 16px;margin-top:16px;">
@@ -410,6 +416,9 @@ const tags = [
 </style>
 
 <script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode }}>
+  // Expose current seller image so CartStackSheet can use fresh DB value even when localStorage is stale
+  window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl };
+
   function withCart(fn) {
     if (window.RelifishCart) return fn(window.RelifishCart);
     document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });

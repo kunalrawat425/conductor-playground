@@ -96,6 +96,16 @@ const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-DGS7557PZ6');
+      (function() {
+        var p = new URLSearchParams(location.search);
+        var src = p.get('utm_source'), med = p.get('utm_medium'), cam = p.get('utm_campaign');
+        if (src) {
+          sessionStorage.setItem('rf_utm_source', src);
+          sessionStorage.setItem('rf_utm_medium', med || '');
+          sessionStorage.setItem('rf_utm_campaign', cam || '');
+          gtag('event', 'utm_landing', { utm_source: src, utm_medium: med, utm_campaign: cam });
+        }
+      })();
     </script>
     <!-- Microsoft Clarity -->
     <script is:inline type="text/javascript">
