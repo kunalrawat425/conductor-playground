@@ -35,6 +35,7 @@ if (notFound) {
   return Astro.redirect("/shop", 302);
 }
 
-// Rewrite to /seller/[id] — keeps /s/[slug] in browser, canonical set inside /seller/[id].astro
+// Flag so /seller/[id].astro knows this is a rewrite, not direct access
+Astro.locals.fromSlugRoute = true;
 return Astro.rewrite(`/seller/${seller.id}`);
 ---

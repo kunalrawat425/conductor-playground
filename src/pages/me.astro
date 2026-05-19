@@ -14,7 +14,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
   header={{
     variant: "page",
     title: "Account",
-    backHref: "/v2",
+    backHref: "/shop",
   }}
   nav={{ active: "account" }}
 >
@@ -54,28 +54,53 @@ import Toast from "../components/ui/atoms/Toast.astro";
   <div id="v2-me-content" style="display:none;">
     <!-- Profile hero -->
     <div class="v2-me-hero">
-      <div class="v2-me-avatar">👤</div>
-      <div class="v2-me-name" id="v2-me-name">—</div>
+      <div class="v2-me-avatar">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <div class="v2-me-name" id="v2-me-name">Welcome</div>
       <div class="v2-me-phone" id="v2-me-phone">—</div>
-      <button id="v2-me-edit-name" class="v2-me-edit-btn">✎ Edit profile</button>
+      <button id="v2-me-edit-name" class="v2-me-edit-btn">Edit profile</button>
     </div>
 
-    <!-- Email missing banner -->
-    <div id="v2-me-email-banner" style="display:none;margin:0 16px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font:500 12px Inter;color:#1d4ed8;">
-      📧 <strong>Add your email</strong> to receive order confirmations, payment receipts, and updates.
-      <button type="button" onclick="(window as any).v2OpenSheet?.('v2-me-name-sheet')" style="display:block;margin-top:6px;background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font:600 12px Inter;cursor:pointer;">Add email →</button>
-    </div>
-
-    <!-- Quick actions -->
+    <!-- Quick actions — overlaps hero bottom -->
     <div class="v2-me-quick">
-      <button type="button" class="v2-me-qa" data-action="addresses"><div class="v2-me-qa-icon">📍</div><div class="v2-me-qa-lbl">Addresses</div></button>
-      <a href="/track" class="v2-me-qa"><div class="v2-me-qa-icon">📋</div><div class="v2-me-qa-lbl">Orders</div></a>
-      <button type="button" class="v2-me-qa" data-action="notifications"><div class="v2-me-qa-icon">🔔</div><div class="v2-me-qa-lbl">Notifications</div></button>
-      <a href="mailto:relifishstore@gmail.com" class="v2-me-qa"><div class="v2-me-qa-icon">💬</div><div class="v2-me-qa-lbl">Help</div></a>
+      <button type="button" class="v2-me-qa" data-action="addresses">
+        <div class="v2-me-qa-icon" style="background:#EFF6FF;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        </div>
+        <div class="v2-me-qa-lbl">Addresses</div>
+      </button>
+      <a href="/track" class="v2-me-qa">
+        <div class="v2-me-qa-icon" style="background:#F0FDF4;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+        </div>
+        <div class="v2-me-qa-lbl">Orders</div>
+      </a>
+      <button type="button" class="v2-me-qa" data-action="notifications">
+        <div class="v2-me-qa-icon" style="background:#FFF7ED;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        </div>
+        <div class="v2-me-qa-lbl">Alerts</div>
+      </button>
+      <a href="mailto:relifishstore@gmail.com" class="v2-me-qa">
+        <div class="v2-me-qa-icon" style="background:#F5F3FF;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <div class="v2-me-qa-lbl">Help</div>
+      </a>
+    </div>
+
+    <!-- Email missing banner — after quick actions so it's never sandwiched -->
+    <div id="v2-me-email-banner" style="display:none;margin:0 16px 8px;background:var(--v2-brand-l);border:1px solid #bfdbfe;border-radius:var(--v2-radius);padding:12px 14px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+        <span style="font:600 12px Inter;color:#1d4ed8;flex:1;">Add email for order updates</span>
+        <button type="button" id="v2-me-banner-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 12px;font:600 11px Inter;cursor:pointer;white-space:nowrap;">Add →</button>
+      </div>
     </div>
 
     <!-- Saved addresses block -->
-    <div class="v2-me-section-head">Saved addresses</div>
+    <div class="v2-me-section-head">Saved Addresses</div>
     <div id="v2-me-addr-list" style="margin: 0 16px 16px;">
       <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
         <span class="v2-spinner v2-spinner-sm"></span>
@@ -86,7 +111,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
     </div>
 
     <!-- Past orders -->
-    <div class="v2-me-section-head">Order history</div>
+    <div class="v2-me-section-head">Order History</div>
     <div id="v2-me-orders" style="margin:0 16px 16px;">
       <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
         <span class="v2-spinner v2-spinner-sm"></span>
@@ -95,6 +120,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
     <!-- Settings list -->
     <div class="v2-me-section-head">Preferences</div>
+
 
     <!-- Theme toggle -->
     <div style="margin: 0 16px 16px;">
@@ -115,104 +141,131 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
 <style is:global>
   .v2-me-hero {
-    background: linear-gradient(135deg, var(--v2-brand), #3B82F6);
-    padding: 32px 16px 60px;
+    background: linear-gradient(145deg, #1d4ed8, #3B82F6);
+    padding: 28px 16px 56px;
     color: #fff;
     text-align: center;
     position: relative;
   }
   .v2-me-avatar {
-    width: 80px; height: 80px;
+    width: 72px; height: 72px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, .2);
+    background: rgba(255,255,255,.18);
+    border: 2px solid rgba(255,255,255,.3);
     display: flex; align-items: center; justify-content: center;
-    font-size: 40px;
-    margin: 0 auto 12px;
+    margin: 0 auto 10px;
   }
-  .v2-me-name { font: 800 22px Inter; }
-  .v2-me-phone { font: 400 12px Inter; opacity: .85; margin-top: 2px; }
+  .v2-me-name { font: 800 20px Inter; letter-spacing: -.3px; }
+  .v2-me-phone { font: 400 12px Inter; opacity: .8; margin-top: 3px; }
   .v2-me-edit-btn {
-    margin-top: 8px;
-    background: rgba(255,255,255,0.2);
+    margin-top: 10px;
+    background: rgba(255,255,255,.18);
     color: #fff;
-    border: none;
-    padding: 6px 14px;
+    border: 1px solid rgba(255,255,255,.3);
+    padding: 6px 16px;
     border-radius: 9999px;
-    font: 600 12px Inter;
+    font: 600 11px Inter;
     cursor: pointer;
+    transition: background .15s;
   }
+  .v2-me-edit-btn:hover { background: rgba(255,255,255,.28); }
+
+  /* Quick actions — floats up over hero bottom */
   .v2-me-quick {
-    margin: -40px 16px 16px;
+    margin: -36px 16px 12px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    gap: 4px;
     background: var(--v2-bg);
     border-radius: var(--v2-radius-lg);
-    padding: 16px 8px;
-    box-shadow: var(--v2-shadow-md);
+    padding: 14px 6px 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.10);
+    border: 1px solid var(--v2-border);
     position: relative;
     z-index: 2;
   }
   .v2-me-qa {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-decoration: none;
     color: inherit;
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
-  }
-  .v2-me-qa-icon {
-    width: 44px; height: 44px;
+    padding: 4px 2px;
+    gap: 5px;
     border-radius: var(--v2-radius);
-    background: var(--v2-bg-3);
+    transition: background .12s;
+  }
+  .v2-me-qa:active { background: var(--v2-bg-3); }
+  .v2-me-qa-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    margin: 0 auto 4px;
+    flex-shrink: 0;
   }
-  .v2-me-qa-lbl { font: 600 10px Inter; color: var(--v2-ink); }
+  .v2-me-qa-lbl { font: 600 10px Inter; color: var(--v2-ink-2); }
+
+  /* Section headers */
   .v2-me-section-head {
-    padding: 16px 16px 8px;
-    font: 700 12px Inter;
-    color: var(--v2-ink-3);
-    text-transform: uppercase; letter-spacing: .05em;
+    padding: 20px 16px 8px;
+    font: 700 13px Inter;
+    color: var(--v2-ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+  .v2-me-section-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--v2-border);
+  }
+
+  /* List items (Terms, etc.) */
   .v2-me-list-item {
     margin: 0 16px 1px;
     background: var(--v2-bg);
-    padding: 14px 16px;
+    padding: 13px 16px;
     display: flex; align-items: center; gap: 12px;
     text-decoration: none;
     color: inherit;
     border-radius: var(--v2-radius);
+    border: 1px solid var(--v2-border);
   }
   .v2-me-li-icon {
-    width: 32px; height: 32px;
+    width: 30px; height: 30px;
     border-radius: 8px;
     background: var(--v2-bg-3);
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
+    font-size: 15px;
     flex-shrink: 0;
   }
   .v2-me-li-name { flex: 1; font: 600 13px Inter; color: var(--v2-ink); }
-  .v2-me-li-arrow { color: var(--v2-ink-4); font-size: 20px; }
+  .v2-me-li-arrow { color: var(--v2-ink-4); font-size: 18px; }
+
+  /* Logout */
   .v2-me-logout {
-    margin: 8px 16px;
-    background: var(--v2-bg);
-    border: 1px solid var(--v2-red-l);
+    margin: 8px 16px 4px;
+    background: none;
+    border: 1px solid var(--v2-border);
     color: var(--v2-red);
-    padding: 14px;
+    padding: 13px;
     border-radius: var(--v2-radius);
     font: 700 13px Inter;
     text-align: center;
     width: calc(100% - 32px);
     cursor: pointer;
+    transition: background .15s;
   }
+  .v2-me-logout:hover { background: #FEE2E2; }
+
   .v2-me-version {
     text-align: center;
     font: 400 10px Inter;
     color: var(--v2-ink-4);
-    padding: 16px;
+    padding: 12px 16px 24px;
   }
   .v2-me-addr-card {
     background: var(--v2-bg);
@@ -329,9 +382,14 @@ import Toast from "../components/ui/atoms/Toast.astro";
         }
         // Prompt to add email if missing
         const emailBanner = document.getElementById("v2-me-email-banner");
-        if (emailBanner) emailBanner.style.display = !em ? "block" : "none";
+        if (emailBanner) emailBanner.style.display = !em ? "flex" : "none";
       }
     } catch {}
+
+    // Email banner → open edit sheet
+    document.getElementById("v2-me-banner-btn")?.addEventListener("click", () => {
+      (window as any).v2OpenSheet?.("v2-me-name-sheet");
+    });
 
     // Edit name button
     document.getElementById("v2-me-edit-name")?.addEventListener("click", () => {
@@ -546,29 +604,22 @@ import Toast from "../components/ui/atoms/Toast.astro";
     async function loadOrders() {
       const el = document.getElementById("v2-me-orders")!;
       try {
-        const { createClient } = await import("@supabase/supabase-js");
-        const supabaseUrl = (import.meta as any).env?.PUBLIC_SUPABASE_URL || "";
-        const supabaseKey = (import.meta as any).env?.PUBLIC_SUPABASE_ANON_KEY || "";
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        const pastStatuses = ["picked_up", "completed", "declined", "cancelled", "refunded"];
-        const offset = (orderPage - 1) * ORDER_PAGE_SIZE;
-        const phoneNorm = `+91${phone.replace(/^\+91/, "").replace(/\D/g, "")}`;
-        // Match by buyer_id OR buyer_phone (orders may have either)
-        const { data: orders, count } = await supabase
-          .from("orders")
-          .select("*, listing:fish_listings(species, seller:sellers(name))", { count: "exact" })
-          .or(`buyer_id.eq.${buyerId},buyer_phone.eq.${phone},buyer_phone.eq.${phoneNorm}`)
-          .in("status", pastStatuses)
-          .order("created_at", { ascending: false })
-          .range(offset, offset + ORDER_PAGE_SIZE - 1);
+        const params = new URLSearchParams({
+          buyer_id: buyerId,
+          phone: phone || "",
+          page: String(orderPage),
+          page_size: String(ORDER_PAGE_SIZE),
+        });
+        const r = await fetch(`/api/buyer/orders?${params}`);
+        const json = await r.json().catch(() => ({}));
+        const orders = json.orders || null;
+        const count = json.total || 0;
+        const totalPages = json.total_pages || 1;
 
         if (!orders || orders.length === 0) {
           el.innerHTML = `<div class="v2-me-addr-empty">No past orders yet.</div>`;
           return;
         }
-
-        const total = count || 0;
-        const totalPages = Math.ceil(total / ORDER_PAGE_SIZE);
 
         el.innerHTML = orders.map((o: any) => {
           const seller = o.listing?.seller?.name || "Seller";

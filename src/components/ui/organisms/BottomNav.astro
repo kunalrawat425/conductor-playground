@@ -34,3 +34,12 @@ const items = mode === "seller" ? sellerItems : buyerItems;
 </nav>
 
 <!-- All styles in s../styles/components.css -->
+<script>
+  // Seller logged in on a buyer page → swap account link to dashboard/profile
+  try {
+    if (localStorage.getItem("rlf_seller_id")) {
+      const accountLink = document.querySelector('.v2-nav-item[href="/me"]') as HTMLAnchorElement | null;
+      if (accountLink) accountLink.href = "/dashboard/profile";
+    }
+  } catch {}
+</script>
