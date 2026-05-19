@@ -211,22 +211,34 @@ const categories = [
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
-  function isOpen(opens?: string | null, closes?: string | null) {
+  const DAY_NAMES_SHORT = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+  function minutesNowIST(): number {
+    const nowIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+    return nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
+  }
+
+  function todayDayName(): string {
+    const nowIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+    return DAY_NAMES_SHORT[nowIST.getUTCDay()];
+  }
+
+  function isOpen(opens?: string | null, closes?: string | null): boolean {
     if (!opens || !closes) return true;
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
+    const cur = minutesNowIST();
     const [oh, om] = opens.split(":").map(Number);
     const [ch, cm] = closes.split(":").map(Number);
     const openMin = oh * 60 + om;
     const closeMin = ch * 60 + cm;
-    // Handle cross-midnight ranges (e.g. 17:00 → 01:58)
-    if (openMin <= closeMin) return cur >= openMin && cur <= closeMin;
-    return cur >= openMin || cur <= closeMin;
+    if (openMin <= closeMin) return cur >= openMin && cur < closeMin;
+    return cur >= openMin || cur < closeMin;
   }
 
-  const DAY_NAMES_SHORT = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-  function todayDayName() {
-    return DAY_NAMES_SHORT[new Date().getDay()];
+  function isPastCutoff(cutoffTime?: string | null): boolean {
+    if (!cutoffTime) return false;
+    const cur = minutesNowIST();
+    const [ch, cm] = cutoffTime.split(":").map(Number);
+    return cur >= ch * 60 + cm;
   }
 
   function getBuyerLocation(): { lat: number; lng: number } | null {
@@ -422,7 +434,7 @@ const categories = [
         const isTodayOrderDay = !openDays.length || openDays.includes(day);
         const isTodayPreorderDay = preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder;
         const openNow = isOpen(s.opens_at, s.closes_at) && isTodayOrderDay;
-        const preorderMode = !openNow && isTodayPreorderDay;
+        const preorderMode = !openNow && isTodayPreorderDay && !isPastCutoff((s as any).preorder_cutoff_time);
         const listings = rawListings.filter((l: any) =>
           preorderMode
             ? Array.isArray(l?.pricing_options) &&
@@ -669,7 +681,7 @@ const categories = [
 
         // Status: open / closed-preorder (still active for pre-orders) / closed / pre-order-only
         const status = !g.open
-          ? (g.preorderAvailableToday ? "closed-preorder" : "closed")
+          ? (g.preorderMode ? "closed-preorder" : "closed")
           : (g.listings.length === 0 && g.preorderAvailableToday ? "pre-order-only" : "open");
 
         // ONE status tag per card — mutually exclusive states.

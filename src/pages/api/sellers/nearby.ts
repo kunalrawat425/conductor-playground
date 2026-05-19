@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { supabase } from "../../../lib/supabase";
+import { isSellerEffectivelyOpen, isPreorderShoppingWindow } from "../../../lib/order-timing";
 
 // Aggregate seller status for empty-state messaging on V2 home.
 // Returns: open_count, closed_count, preorder_count, opening_in_minutes (next opener)
@@ -11,7 +12,7 @@ export const GET: APIRoute = async ({ url }) => {
   try {
     const { data: sellers, error } = await supabase
       .from("sellers")
-      .select("id, name, lat, lng, opens_at, closes_at, accepts_preorder, has_delivery, delivery_rad")
+      .select("id, name, lat, lng, opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, has_delivery, delivery_rad")
       .eq("is_active", true)
       .neq("name", "New Seller");
 
@@ -27,30 +28,22 @@ export const GET: APIRoute = async ({ url }) => {
       return km <= radius;
     });
 
-    // Status check
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
-    function parseTime(t: string) {
-      const [h, m] = (t || "00:00").split(":").map(Number);
-      return h * 60 + m;
-    }
-    function isOpen(s: any) {
-      if (!s.opens_at || !s.closes_at) return true;
-      const o = parseTime(s.opens_at);
-      const c = parseTime(s.closes_at);
-      return cur >= o && cur <= c;
-    }
-    function minsUntilOpen(s: any) {
+    // Status check — all using IST via order-timing.ts
+    const nowMs = Date.now();
+    function minsUntilOpen(s: any): number {
       if (!s.opens_at) return Infinity;
-      const o = parseTime(s.opens_at);
+      const nowISTMs = nowMs + 5.5 * 60 * 60 * 1000;
+      const nowIST = new Date(nowISTMs);
+      const cur = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
+      const [h, m] = s.opens_at.split(":").map(Number);
+      const o = h * 60 + m;
       if (o > cur) return o - cur;
-      // tomorrow
-      return (24 * 60) - cur + o;
+      return 24 * 60 - cur + o;
     }
 
-    const open = inRange.filter(isOpen);
-    const closed = inRange.filter((s: any) => !isOpen(s));
-    const preorderAvailable = inRange.filter((s: any) => s.accepts_preorder);
+    const open = inRange.filter((s: any) => isSellerEffectivelyOpen(s, nowMs));
+    const closed = inRange.filter((s: any) => !isSellerEffectivelyOpen(s, nowMs));
+    const preorderAvailable = inRange.filter((s: any) => isPreorderShoppingWindow(s, nowMs));
 
     const nextOpener = closed.reduce((min: number, s: any) => Math.min(min, minsUntilOpen(s)), Infinity);
 
