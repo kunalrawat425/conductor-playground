@@ -92,11 +92,15 @@ const { id = "v2-cart-stack" } = Astro.props;
 
   function sellerImageForGroup(g) {
     if (g.seller_image_url) return g.seller_image_url;
+    // Shop page seller grid data
     const allGroups = window.__v2allGroups;
     if (Array.isArray(allGroups)) {
       const match = allGroups.find((row) => row?.seller?.id === g.seller_id);
       if (match?.seller?.store_image_url) return match.seller.store_image_url;
     }
+    // Current seller page fresh DB value (covers stale localStorage)
+    const pageData = window.__sellerPageData;
+    if (pageData?.id === g.seller_id && pageData?.imageUrl) return pageData.imageUrl;
     return null;
   }
 

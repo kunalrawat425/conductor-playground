@@ -416,6 +416,9 @@ const tags = [
 </style>
 
 <script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode }}>
+  // Expose current seller image so CartStackSheet can use fresh DB value even when localStorage is stale
+  window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl };
+
   function withCart(fn) {
     if (window.RelifishCart) return fn(window.RelifishCart);
     document.addEventListener("v2-cart-ready", () => fn(window.RelifishCart), { once: true });
