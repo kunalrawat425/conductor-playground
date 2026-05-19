@@ -35,11 +35,6 @@ if (notFound) {
   return Astro.redirect("/shop", 302);
 }
 
-// Canonical URL is /s/[slug]
-const SITE = "https://www.relifish.store";
-const canonicalSlug = sellerNameToSlug(seller?.name || "");
-const canonicalUrl = `${SITE}/s/${canonicalSlug}`;
-
-// Rewrite to /seller/[id] — keeps slug URL in browser, no redirect
+// Rewrite to /seller/[id] — keeps /s/[slug] in browser, canonical set inside /seller/[id].astro
 return Astro.rewrite(`/seller/${seller.id}`);
 ---
