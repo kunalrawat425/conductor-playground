@@ -204,6 +204,23 @@ export const POST: APIRoute = async ({ request, url }) => {
           html,
         }),
       }).catch(() => {});
+
+      // Seller push — new order paid
+      const sellerId = (order as any).listing?.seller?.id;
+      if (sellerId) {
+        fetch(`${url.origin}/api/notify-seller`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seller_id: sellerId,
+            species: (order as any).listing?.species || (order as any).species || "Fish",
+            quantity: (order as any).quantity,
+            quantity_unit: (order as any).quantity_unit,
+            placement_kind: (order as any).placement_kind || "same_day",
+            order_id,
+          }),
+        }).catch(() => {});
+      }
     })().catch(() => {});
   }
 
