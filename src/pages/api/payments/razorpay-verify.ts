@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and guard against replay
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, status, total_price, delivery_fee, species, quantity, quantity_unit, order_type, razorpay_order_id, seller:sellers(id, name, email, location_name), scheduled_for, listing:fish_listings(species)")
+    .select("id, buyer_id, status, total_price, delivery_fee, species, quantity, quantity_unit, order_type, razorpay_order_id, scheduled_for, listing:fish_listings(species, seller:sellers(id, name, email, location_name))")
     .eq("id", order_id)
     .single();
 
@@ -123,7 +123,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         supabase.from("buyers").update({ email: emailTo }).eq("id", buyer_id).then(() => {}).catch(() => {});
       }
       const { razorpayReceiptEmail } = await import("../../../lib/email-templates");
-      const seller = (_order as any).seller;
+      const seller = (_order as any).listing?.seller;
       const html = razorpayReceiptEmail({
         line_items: [{
           species: (_order as any).listing?.species || (_order as any).species || "Fish",
@@ -160,7 +160,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 
   // Notify seller — truly non-blocking
-  const _sellerForEmail = (order as any).seller;
+  const _sellerForEmail = (order as any).listing?.seller;
   if (_sellerForEmail?.email && resendApiKey) {
     (async () => {
       const { orderEmailSeller, capitalizeFishName } = await import("../../../lib/email-templates");
