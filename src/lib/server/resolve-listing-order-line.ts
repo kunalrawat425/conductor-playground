@@ -85,6 +85,18 @@ export async function resolveListingOrderLine(
     return { ok: false, status: 404, error: "Listing not found" };
   }
 
+  const { data: seller } = await supabase
+    .from("sellers")
+    .select("opens_at, closes_at, accepts_preorder, min_order_amount, open_days, preorder_days, preorder_cutoff_time")
+    .eq("id", listing.seller_id)
+    .single();
+
+  const placementResult = seller ? classifyPlacementAtOrderTime(seller, nowMs) : "same_day";
+  if (placementResult === "closed") {
+    return { ok: false, status: 400, error: seller ? closedSellerMessage(seller) : "Seller is not available." };
+  }
+  const placement: PlacementKind = placementResult;
+
   let chosen = getListingOptionById(listing as ListingPricingSource, clientPricingOptionId);
   if (!chosen) {
     return { ok: false, status: 400, error: "Invalid price option for this listing" };
@@ -159,7 +171,7 @@ export async function resolveListingOrderLine(
     return { ok: false, status: 400, error: "Invalid quantity" };
   }
 
-  const minOrderAmt = Number(seller.min_order_amount) || 0;
+  const minOrderAmt = Number(seller?.min_order_amount) || 0;
   const pricingOpts = getListingPriceOptions(listing);
   const dailyCapFloor = minimumRequiredBuyerDailyCap(pricingOpts, minOrderAmt);
 
@@ -204,7 +216,7 @@ export async function resolveListingOrderLine(
   const weightAvail = Number(listing.weight_avail);
   const availOk = Number.isFinite(weightAvail) ? weightAvail : 0;
   const speciesVal = (listing as { species?: string }).species ?? null;
-  const sellerOpen = isSellerEffectivelyOpen(seller, nowMs);
+  const sellerOpen = seller ? isSellerEffectivelyOpen(seller, nowMs) : false;
 
   if (placement === "same_day") {
     if (!listing.is_available || availOk <= 0 || availOk < quantity) {
@@ -215,9 +227,7 @@ export async function resolveListingOrderLine(
       };
     }
     const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
-    // For pre-orders, the backend should bill at the max estimated price (matches frontend logic)
-    const poPrice = chosen.preorder_price_max || chosen.preorder_price_min || chosen.price || 0;
-    const total_price = poPrice * bundleCount;
+    const total_price = (chosen.price || 0) * bundleCount;
     return {
       ok: true,
       line: {
