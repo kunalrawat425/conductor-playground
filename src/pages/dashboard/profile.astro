@@ -43,7 +43,8 @@ import Input from "../../components/ui/atoms/Input.astro";
     <Input id="p-location" name="location_name" label="Area / Neighborhood" />
     <Input id="p-location-full" name="location" label="Full address / landmark" />
     <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:16px;">
-      <div id="p-location-status" style="font:600 13px Inter;color:var(--v2-ink);margin-bottom:10px;">—</div>
+      <div id="p-location-status" style="font:600 13px Inter;color:var(--v2-ink);margin-bottom:4px;">—</div>
+      <div id="p-location-coords" style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;display:none;"></div>
       <button type="button" id="p-use-location" class="v2-btn v2-btn-secondary v2-btn-sm v2-btn-full">
         📍 Use my current location
       </button>
@@ -230,8 +231,19 @@ import Input from "../../components/ui/atoms/Input.astro";
       // Show fee sub-settings if fee enabled
       document.getElementById("p-fee-settings")!.style.display = seller?.delivery_fee_enabled ? "block" : "none";
       // Location status
-      document.getElementById("p-location-status")!.textContent =
-        seller?.lat && seller?.lng ? "✅ Location set" : "❌ Not set — buyers can't see distance";
+      const locStatusEl = document.getElementById("p-location-status")!;
+      const locCoordsEl = document.getElementById("p-location-coords")!;
+      if (seller?.lat && seller?.lng) {
+        locStatusEl.textContent = "✅ Location set";
+        locStatusEl.style.color = "var(--v2-green, #16a34a)";
+        const locName = seller?.location_name ? `${seller.location_name} · ` : "";
+        locCoordsEl.textContent = `${locName}${Number(seller.lat).toFixed(5)}, ${Number(seller.lng).toFixed(5)}`;
+        locCoordsEl.style.display = "block";
+      } else {
+        locStatusEl.textContent = "❌ Not set — buyers can't see distance";
+        locStatusEl.style.color = "var(--v2-red, #dc2626)";
+        locCoordsEl.style.display = "none";
+      }
       // Push status
       try {
         const pushActive = await isSellerPushSubscribed();
@@ -448,7 +460,12 @@ import Input from "../../components/ui/atoms/Input.astro";
             body: JSON.stringify({ seller_id: sellerId, updates: { lat, lng } }),
           });
           if (!res.ok) throw new Error("Failed to save");
-          document.getElementById("p-location-status")!.textContent = "✅ Location set";
+          const locSt = document.getElementById("p-location-status")!;
+          const locCo = document.getElementById("p-location-coords")!;
+          locSt.textContent = "✅ Location set";
+          locSt.style.color = "var(--v2-green, #16a34a)";
+          locCo.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+          locCo.style.display = "block";
           (window as any).v2Toast?.("success", "Location updated", "Buyers can now see distance");
         } catch (err: any) {
           (window as any).v2Toast?.("error", "Failed", err.message);
