@@ -35,7 +35,7 @@ const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "ind
 <a href={`/s/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`} class:list={["v2-seller-card", status === "closed" && "v2-seller-closed"]}>
   <div class="v2-sc-img" style={`background:${cardImgBg};`}>
     {offerLabel && <Badge variant="offer" color={offerColor}>{offerLabel}</Badge>}
-    <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:36px;width:auto;display:block;" />
+    <span style="font-size:32px;line-height:1;">🐟</span>
   </div>
 
   <div class="v2-sc-body">
