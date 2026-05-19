@@ -11,6 +11,8 @@ export type CartItem = {
   listing_id: string;
   seller_id: string;
   seller_name: string;
+  /** Store photo from sellers.store_image_url */
+  seller_image_url?: string | null;
   name: string;
   qty: number;
   qty_unit: string;
@@ -25,6 +27,7 @@ export type CartMap = Record<string, CartItem>;
 export type SellerGroup = {
   seller_id: string;
   seller_name: string;
+  seller_image_url?: string | null;
   items: CartItem[];
   subtotal: number;
   total_qty: number;
@@ -228,10 +231,13 @@ export function groupBySeller(cart: CartMap = getCart()): SellerGroup[] {
       groups[item.seller_id] = {
         seller_id: item.seller_id,
         seller_name: item.seller_name,
+        seller_image_url: item.seller_image_url ?? null,
         items: [],
         subtotal: 0,
         total_qty: 0,
       };
+    } else if (!groups[item.seller_id].seller_image_url && item.seller_image_url) {
+      groups[item.seller_id].seller_image_url = item.seller_image_url;
     }
     groups[item.seller_id].items.push(item);
     groups[item.seller_id].subtotal += item.qty * item.price;
@@ -267,6 +273,10 @@ export async function hydrateFromServer(): Promise<void> {
         listing_id: it.listing_id,
         seller_id: it.seller_id,
         seller_name: it.seller_name || local[it.listing_id]?.seller_name || "",
+        seller_image_url:
+          it.seller_image_url
+          ?? local[it.listing_id]?.seller_image_url
+          ?? null,
         name: it.species_display || it.name || local[it.listing_id]?.name || "",
         qty: Number(it.qty) || 0,
         qty_unit: it.qty_unit || "kg",
