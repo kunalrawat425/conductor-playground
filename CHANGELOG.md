@@ -2,6 +2,19 @@
 
 All notable changes to Relifish are documented here.
 
+## [0.2.0.1] - 2026-05-19
+
+### Changed
+- Landing page fish grid now uses real food photography (Pomfret, Surmai, Prawns, Bangda, Rawas, Crab) from hosted URLs; Halwa and Bombay Duck hidden pending photos
+- Fish card image height increased to 220px; text area padding tightened for better image-to-text ratio
+- Fish grid columns widened (minmax 280px) for a cleaner 2-column layout on mobile
+- "Mud Crab" renamed to "Crab" across landing page and flyer
+- Surmai image URL corrected (fr4-z prefix)
+- Flyer fish card images enlarged (52px → 96px) with tighter text padding
+- Seller dashboard login hero constrained to AppShell max-width (800px) with border-radius; removed full-bleed breakout
+- Sticky "Sign in with phone" footer now respects 800px max-width, matching the hero card width
+- All demo carousel CTAs (d1 location, d4 cart, s1 seller location) now `position:absolute;bottom:0` matching the d5 reference design
+
 ## [0.2.0.0] - 2026-05-18
 
 ### Added
