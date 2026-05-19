@@ -674,7 +674,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           (o.final_price === null || o.final_price === undefined) &&
           ["confirmed", "paid"].includes(o.status) &&
           partialCatch;
-        const isPreorder = o.is_preorder === true || o.status === "pre_order" || o.status === "payment_required";
+        const isPreorder = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
         const hasPaymentProof = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
         const time = o.scheduled_for

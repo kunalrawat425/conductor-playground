@@ -257,7 +257,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (fetchErr) {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
       }
-      await supabase.from("orders").update({ placement_kind: "same_day" }).eq("id", orderId);
+      await supabase.from("orders").update({ placement_kind: "same_day", is_preorder: false }).eq("id", orderId);
       orders.push(fetchedOrder);
 
       try {
@@ -361,10 +361,10 @@ async function sendCartOrderEmail(
   const bc = bs ? Math.round(quantity / bs) : null;
   const emailArgs = {
     statusLabel,
-    species: line.species || "Fish",
-    quantity: line.quantity,
-    quantity_unit: line.quantity_unit,
-    totalAmount: line.total_price + delivery_fee,
+    species: species || "Fish",
+    quantity,
+    quantity_unit,
+    totalAmount: total_price + delivery_fee,
     deliveryFee: delivery_fee,
     orderId: args.order?.id,
     scheduled_for: scheduled_for || null,
@@ -375,11 +375,8 @@ async function sendCartOrderEmail(
     bundleCount: bc,
     pricingLabel: pricingLabel || null,
   };
-  const emailArgsSeller = {
-    ...emailArgs,
-    buyerPhone: buyer_phone,
-  };
   const speciesForEmail = capitalizeFishName(species || "Fish");
+  const sellerSubject = args.isPreorder ? `New pre-order: ${speciesForEmail}` : `New order: ${speciesForEmail}`;
   if (buyerEmail) {
     fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -399,8 +396,8 @@ async function sendCartOrderEmail(
       body: JSON.stringify({
         from: "Relifish <noreply@relifish.store>",
         to: sellerEmail,
-        subject: `New Order: ${speciesForEmail}`,
-        html: orderEmailSeller(emailArgsSeller),
+        subject: sellerSubject,
+        html: orderEmailSeller({ ...emailArgs, buyerPhone: buyer_phone }),
       }),
     }).catch(() => {});
   }
