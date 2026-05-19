@@ -7,29 +7,35 @@ export const prerender = false;
  * GET /api/buyer/orders?buyer_id=<id>&phone=<phone>&page=1&page_size=10
  * Returns paginated past orders for a buyer (completed, declined, cancelled, refunded, picked_up).
  */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const GET: APIRoute = async ({ url }) => {
   const buyer_id = url.searchParams.get("buyer_id");
-  const phone = url.searchParams.get("phone") || "";
+  const phone = (url.searchParams.get("phone") || "").trim();
   const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
   const page_size = Math.min(20, Math.max(1, parseInt(url.searchParams.get("page_size") || "10")));
 
-  if (!buyer_id) {
-    return new Response(JSON.stringify({ error: "buyer_id required" }), { status: 400 });
+  if (!buyer_id || !UUID_RE.test(buyer_id)) {
+    return new Response(JSON.stringify({ error: "valid buyer_id required" }), { status: 400 });
   }
 
   try {
+    // Use anon key so Supabase RLS is enforced — service key bypasses RLS.
+    // Orders table RLS allows read where buyer_id matches or buyer_phone matches.
     const sb = createClient(
       import.meta.env.PUBLIC_SUPABASE_URL || "",
-      import.meta.env.SUPABASE_SERVICE_KEY || ""
+      import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
     );
 
     const pastStatuses = ["picked_up", "completed", "declined", "cancelled", "refunded"];
     const offset = (page - 1) * page_size;
 
+    // Only include phone clauses when phone is non-empty and normalises to something real
     const phoneNorm = phone ? `+91${phone.replace(/^\+91/, "").replace(/\D/g, "")}` : "";
-    const orClause = phoneNorm && phoneNorm !== "+91"
-      ? `buyer_id.eq.${buyer_id},buyer_phone.eq.${phone},buyer_phone.eq.${phoneNorm}`
-      : `buyer_id.eq.${buyer_id}`;
+    const phoneClauses = phoneNorm.length > 3
+      ? `,buyer_phone.eq.${phone},buyer_phone.eq.${phoneNorm}`
+      : "";
+    const orClause = `buyer_id.eq.${buyer_id}${phoneClauses}`;
 
     const { data: orders, count, error } = await sb
       .from("orders")

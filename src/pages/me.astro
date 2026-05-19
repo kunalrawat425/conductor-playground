@@ -611,6 +611,10 @@ import Toast from "../components/ui/atoms/Toast.astro";
           page_size: String(ORDER_PAGE_SIZE),
         });
         const r = await fetch(`/api/buyer/orders?${params}`);
+        if (!r.ok) {
+          el.innerHTML = `<div class="v2-me-addr-empty" style="color:var(--v2-red);">Could not load orders. Try again.</div>`;
+          return;
+        }
         const json = await r.json().catch(() => ({}));
         const orders = json.orders || null;
         const count = json.total || 0;
