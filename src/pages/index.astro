@@ -202,7 +202,8 @@ const SITE = "https://www.relifish.store";
     .d0-logo{font:800 20px Inter;color:#fff;letter-spacing:-.5px}
     .d0-logo span{color:var(--teal)}
     .d0-tagline{font:400 12px/1.5 Inter;color:rgba(255,255,255,.5)}
-    .d0-btn{background:var(--blue);color:#fff;font:700 11px Inter;padding:10px 24px;border-radius:10px;width:100%}
+    .d0-btn{background:var(--blue);color:#fff;font:700 11px Inter;padding:10px 24px;border-radius:10px;width:100%;box-sizing:border-box}
+    .d0-sticky{position:absolute;bottom:0;left:0;right:0;padding:9px 10px 12px;background:rgba(13,17,23,.95)}
 
     /* screen 1 — location */
     .d1-area{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;border:1px solid #EAECF0;background:#fff;margin:0 10px 5px}
@@ -816,9 +817,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <!-- Screen 0: Welcome -->
           <div class="demo-screen active" data-screen="0">
             <div class="ds-dark d0-center">
-              
               <div class="d0-logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:56px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" /></div>
               <div class="d0-tagline">Mumbai's fresh fish marketplace.<br/>Pre-order tonight, collect morning-fresh.</div>
+            </div>
+            <div class="d0-sticky">
               <div class="d0-btn">Get started →</div>
             </div>
           </div>
@@ -1018,9 +1020,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="d8-rate-t">How was your order?</div>
                 <div class="d8-stars">⭐⭐⭐⭐⭐</div>
               </div>
-              <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 10px;width:100%;font:600 8px Inter;color:var(--blue);text-align:center">
-                Order again next week →
-              </div>
+            </div>
+            <div class="d0-sticky" style="background:rgba(255,255,255,.95)">
+              <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 10px;font:600 8px Inter;color:var(--blue);text-align:center">Order again next week →</div>
             </div>
           </div>
 
