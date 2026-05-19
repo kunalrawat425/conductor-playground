@@ -218,6 +218,13 @@ import Toast from "../components/ui/atoms/Toast.astro";
     return ["declined", "cancelled", "refunded"].includes(status);
   }
 
+  function orderKindLabel(o: { placement_kind?: string | null; status?: string }) {
+    if (o.placement_kind === "preorder") return "Pre-order";
+    if (o.placement_kind === "same_day") return "Order";
+    if (o.status === "pre_order" || o.status === "payment_required") return "Pre-order";
+    return "Order";
+  }
+
   function fmtDate(iso: string) {
     const d = new Date(iso);
     const today = new Date();

@@ -423,12 +423,13 @@ const categories = [
         const isTodayPreorderDay = preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder;
         const openNow = isOpen(s.opens_at, s.closes_at) && isTodayOrderDay;
         const preorderMode = !openNow && isTodayPreorderDay;
-        const listings = rawListings.filter((l: any) => preorderMode
-          ? (
-              l?.is_preorder_enabled === true &&
-              (Array.isArray(l?.pricing_options) ? l.pricing_options.some((o: any) => o?.preorder_price_min != null || o?.preorder_price_max != null) : true)
-            )
-          : l?.is_available === true
+        const listings = rawListings.filter((l: any) =>
+          preorderMode
+            ? Array.isArray(l?.pricing_options) &&
+              l.pricing_options.some(
+                (o: any) => o?.preorder_price_min != null || o?.preorder_price_max != null
+              )
+            : l?.is_available === true
         );
         return {
           seller: s,
