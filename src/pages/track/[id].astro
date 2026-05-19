@@ -1055,6 +1055,15 @@ const { id } = Astro.params;
 
       const buyerId = (() => { try { return localStorage.getItem("zepto_buyer_id") || ""; } catch { return ""; } })();
 
+      // Fetch buyer email for prefill + receipt (non-blocking, best-effort)
+      let buyerEmail = "";
+      if (buyerId) {
+        try {
+          const pRes = await fetch(`/api/buyer/profile?buyer_id=${encodeURIComponent(buyerId)}`);
+          if (pRes.ok) { const pd = await pRes.json(); buyerEmail = pd.profile?.email || ""; }
+        } catch { /* ignore */ }
+      }
+
       // Step 1: Create Razorpay order server-side
       let createData: any;
       try {
@@ -1091,6 +1100,7 @@ const { id } = Astro.params;
         theme: { color: "#0066FF" },
         prefill: {
           contact: (() => { try { return localStorage.getItem("zepto_phone") || ""; } catch { return ""; } })(),
+          email: buyerEmail,
         },
         handler: async function(response: any) {
           // Step 4: Verify payment server-side
@@ -1110,6 +1120,7 @@ const { id } = Astro.params;
                 razorpay_signature:  response.razorpay_signature,
                 order_id: o.id,
                 buyer_id: buyerId,
+                buyer_email: buyerEmail || undefined,
               }),
             });
             const verifyData = await verifyRes.json();

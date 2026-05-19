@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 });
   }
 
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id, buyer_id } = body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id, buyer_id, buyer_email: clientBuyerEmail } = body;
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !order_id || !buyer_id) {
     return new Response(JSON.stringify({ error: "All payment fields required" }), { status: 400 });
@@ -117,7 +117,12 @@ export const POST: APIRoute = async ({ request, url }) => {
   if (resendApiKey) {
     const _order = order;
     supabase.from("buyers").select("email").eq("id", buyer_id).single().then(async ({ data: buyer }) => {
-      if (!buyer?.email) return;
+      const emailTo = buyer?.email || (clientBuyerEmail && typeof clientBuyerEmail === "string" ? clientBuyerEmail.trim() : null);
+      if (!emailTo) return;
+      // Patch email to buyers table if they don't have one yet
+      if (!buyer?.email && emailTo) {
+        supabase.from("buyers").update({ email: emailTo }).eq("id", buyer_id).then(() => {}).catch(() => {});
+      }
       const { razorpayReceiptEmail } = await import("../../../lib/email-templates");
       const seller = (_order as any).seller;
       const html = razorpayReceiptEmail({
@@ -146,7 +151,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             from: "Relifish <noreply@relifish.store>",
-            to: buyer.email,
+            to: emailTo,
             subject: "Payment confirmed — your Relifish order is set ✓",
             html,
           }),
