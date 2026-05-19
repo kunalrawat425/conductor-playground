@@ -58,7 +58,7 @@ const isOpenByTime = (() => {
   const [ch, cm] = seller.closes_at.split(":").map(Number);
   const openMin = oh * 60 + om;
   const closeMin = ch * 60 + cm;
-  if (openMin <= closeMin) return curMin >= openMin && curMin <= closeMin;
+  if (openMin <= closeMin) return curMin >= openMin && curMin < closeMin;
   return curMin >= openMin || curMin <= closeMin; // overnight e.g. 17:00–02:59
 })();
 const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
@@ -74,7 +74,14 @@ const isBeforeCutoff = (() => {
   const [ch, cm] = seller.preorder_cutoff_time.split(":").map(Number);
   return curMin < ch * 60 + cm;
 })();
-const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isTodayPreorderDay && isBeforeCutoff;
+// Preorder window only starts after store closes on order days (not before store opens)
+const isAfterCloseTime = (() => {
+  if (!seller?.closes_at) return true;
+  const [ch, cm] = seller.closes_at.split(":").map(Number);
+  return curMin >= ch * 60 + cm;
+})();
+const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isTodayPreorderDay && isBeforeCutoff
+  && (!isTodayOrderDay || isAfterCloseTime);
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
@@ -265,7 +272,9 @@ const tags = [
         {preorderDaysLabel && (
           <div style="font:500 11px Inter;color:#7C3AED;">
             🌙 <strong>Pre-orders</strong> (next-day catch): {preorderDaysLabel}
-            {cutoffLabel && ` · cutoff ${cutoffLabel}`}
+            {seller?.closes_at && cutoffLabel
+              ? ` · ${seller.closes_at.slice(0,5)}–${cutoffLabel}`
+              : cutoffLabel ? ` · cutoff ${cutoffLabel}` : ""}
           </div>
         )}
       </div>
@@ -277,8 +286,11 @@ const tags = [
           <div>
             <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              Items added today will be reserved from tomorrow's fresh catch.
-              {cutoffLabel && ` Place before ${cutoffLabel}.`}
+              {seller?.closes_at && cutoffLabel
+                ? `Pre-order window: ${seller.closes_at.slice(0,5)} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
+                : cutoffLabel
+                  ? `Place before ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
+                  : "Your order is reserved from tomorrow's fresh catch."}
             </div>
           </div>
         </div>

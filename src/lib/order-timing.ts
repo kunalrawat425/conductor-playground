@@ -77,11 +77,24 @@ export function isSellerEffectivelyOpen(seller: SellerTimingInput, nowMs?: numbe
   );
 }
 
-/** Closed now but still accepting pre-orders for next catch (day + before cutoff). */
+/** True when IST time has passed the store's closes_at for today. */
+export function isAfterCloseTimeIST(seller: SellerTimingInput, nowMs?: number): boolean {
+  if (!seller.closes_at) return true; // no close time = treat as always past close
+  const cur = minutesNowIST(nowMs);
+  const [ch, cm] = seller.closes_at.split(":").map(Number);
+  return cur >= ch * 60 + (cm || 0);
+}
+
+/**
+ * Preorder window: store has CLOSED for today (past closes_at) AND before cutoff.
+ * On non-order-days the whole day is the preorder window (no close time constraint).
+ */
 export function isPreorderShoppingWindow(seller: SellerTimingInput, nowMs?: number): boolean {
   if (isSellerEffectivelyOpen(seller, nowMs)) return false;
   if (!isTodayPreorderDay(seller)) return false;
   if (isPastPreorderCutoffIST(seller.preorder_cutoff_time, nowMs)) return false;
+  // On order days: window only opens after store closes (not before it opens)
+  if (isTodayOrderDay(seller) && !isAfterCloseTimeIST(seller, nowMs)) return false;
   return true;
 }
 
@@ -102,6 +115,11 @@ export function closedSellerMessage(seller: SellerTimingInput): string {
   if (isPastPreorderCutoffIST(seller.preorder_cutoff_time)) {
     const t = seller.preorder_cutoff_time || "cutoff";
     return `Pre-order cutoff (${t} IST) has passed. Try again tomorrow.`;
+  }
+  // Before store closes on an order day — same-day window not yet open, preorder not yet open
+  if (isTodayOrderDay(seller) && !isAfterCloseTimeIST(seller)) {
+    const opens = seller.opens_at ? ` Opens at ${seller.opens_at}.` : "";
+    return `Store not yet open for orders.${opens}`;
   }
   return "This seller is closed now and is not accepting pre-orders.";
 }
