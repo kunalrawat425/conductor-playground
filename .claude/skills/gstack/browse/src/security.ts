@@ -24,6 +24,7 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { writeSecureFile, appendSecureFile, mkdirSecure } from './file-permissions';
 
 // ─── Thresholds + verdict types ──────────────────────────────
 
@@ -34,8 +35,20 @@ import * as os from 'os';
  */
 export const THRESHOLDS = {
   BLOCK: 0.85,
-  WARN: 0.60,
+  WARN: 0.75,
   LOG_ONLY: 0.40,
+  // Single-layer BLOCK threshold for content classifiers (testsavant, deberta)
+  // — intentionally HIGHER than BLOCK because these layers are label-less and
+  // cannot distinguish "this is an injection" from "this looks like phishing
+  // aimed at the user." On the 500-case BrowseSafe-Bench smoke, testsavant
+  // alone at >= 0.85 generated 34+ false positives on benign phishing-flavored
+  // content. At 0.92 the FP rate drops below the 25% ceiling while detection
+  // stays above the 55% floor (v2 measured 56.2% / 22.9%).
+  // The transcript_classifier keeps a separate, label-gated solo path that
+  // requires meta.verdict === 'block' + confidence >= BLOCK (0.85). It
+  // doesn't need the higher threshold because Haiku's block label is
+  // inherently more selective than testsavant's raw confidence.
+  SOLO_CONTENT_BLOCK: 0.92,
 } as const;
 
 export type Verdict = 'safe' | 'log_only' | 'warn' | 'block' | 'user_overrode';
@@ -72,36 +85,80 @@ export interface StatusDetail {
   lastUpdated: string;
 }
 
-// ─── Verdict combiner (ensemble rule) ────────────────────────
+// ─── Verdict combiner (ensemble rule, label-first for transcript) ────
 
 /**
- * Combine per-layer signals into a single verdict. Implements the post-Gate-3
- * ensemble rule: BLOCK only when the ML content classifier AND the transcript
- * classifier BOTH score >= WARN. Single-layer high confidence degrades to WARN
- * to avoid false-positives from any one classifier killing sessions.
+ * Combine per-layer signals into a single verdict. Post-v2 ensemble rule
+ * (v1.5.2.0+) is label-first for the transcript layer: Haiku's verdict
+ * label is the primary signal, not its self-reported confidence. Other ML
+ * layers (testsavant_content, deberta_content) remain confidence-based
+ * because they emit only a scalar.
+ *
+ * BLOCK requires 2 block-votes across testsavant + deberta + transcript.
+ * Vote rules:
+ *   - testsavant_content / deberta_content: block-vote iff confidence >= WARN
+ *   - transcript_classifier + meta.verdict === 'block' + confidence >= LOG_ONLY:
+ *     block-vote (label-first; LOG_ONLY floor is the hallucination guard —
+ *     a block label with confidence < 0.40 is treated as a warn-vote because
+ *     it likely signals model breakage, not a real block decision)
+ *   - transcript_classifier + meta.verdict === 'warn': warn-vote only
+ *   - transcript_classifier + missing meta.verdict (backward-compat): warn-vote
+ *     only when confidence >= WARN; missing meta NEVER block-votes
+ *
+ * Warn-votes are soft signals: retained in the signals array for surfacing
+ * in the review banner, but they do NOT count toward the 2-of-N block count.
  *
  * Canary leak (confidence >= 1.0 on 'canary' layer) always BLOCKs — it's
- * deterministic, not a confidence signal.
+ * deterministic, not a probabilistic signal.
+ *
+ * toolOutput branch: single-layer BLOCK (confidence >= 0.85) on any ML layer
+ * kills the session even without cross-confirm. Tool outputs aren't
+ * user-authored, so the SO-FP mitigation that motivated the 2-of-N rule
+ * for user input doesn't apply.
  */
 export interface CombineVerdictOpts {
-  /**
-   * When true, a single ML classifier at >= BLOCK threshold blocks even if
-   * no other classifier confirms. Used for tool-output scans where the
-   * content was not authored by the user, so the Stack-Overflow-FP risk
-   * that motivated the 2-of-N rule for user input doesn't apply.
-   */
   toolOutput?: boolean;
 }
 
-export function combineVerdict(signals: LayerSignal[], opts: CombineVerdictOpts = {}): SecurityResult {
-  const byLayer: Record<string, number> = {};
-  for (const s of signals) {
-    byLayer[s.layer] = Math.max(byLayer[s.layer] ?? 0, s.confidence);
+type VoteStrength = 'block' | 'warn' | 'none';
+
+function classifyTranscript(signal: LayerSignal): VoteStrength {
+  const verdict = signal.meta?.verdict as string | undefined;
+  const confidence = signal.confidence;
+
+  if (verdict === 'block') {
+    // Hallucination guard: verdict=block with confidence < LOG_ONLY drops
+    // to warn-vote. Prevents a malformed low-confidence block from becoming
+    // authoritative.
+    return confidence >= THRESHOLDS.LOG_ONLY ? 'block' : 'warn';
   }
-  const content = byLayer.testsavant_content ?? 0;
-  const deberta = byLayer.deberta_content ?? 0;
-  const transcript = byLayer.transcript_classifier ?? 0;
-  const canary = byLayer.canary ?? 0;
+  if (verdict === 'warn') {
+    return 'warn';
+  }
+  if (verdict === 'safe') {
+    return 'none';
+  }
+  // Backward-compat: signal with no meta.verdict (old tests, pre-v2 cached
+  // signals). Confidence-only fallback: warn-vote when >= WARN, else no vote.
+  // Missing meta NEVER block-votes — the old confidence-only block-vote rule
+  // is deprecated for the transcript layer.
+  if (confidence >= THRESHOLDS.WARN) return 'warn';
+  return 'none';
+}
+
+export function combineVerdict(signals: LayerSignal[], opts: CombineVerdictOpts = {}): SecurityResult {
+  // Reduce to the strongest signal per layer. For transcript, we'll re-derive
+  // the label below; for scalar layers, max confidence is the layer signal.
+  const byLayerMax: Record<string, number> = {};
+  const transcriptSignals: LayerSignal[] = [];
+  for (const s of signals) {
+    byLayerMax[s.layer] = Math.max(byLayerMax[s.layer] ?? 0, s.confidence);
+    if (s.layer === 'transcript_classifier') transcriptSignals.push(s);
+  }
+  const content = byLayerMax.testsavant_content ?? 0;
+  const deberta = byLayerMax.deberta_content ?? 0;
+  const transcriptMax = byLayerMax.transcript_classifier ?? 0;
+  const canary = byLayerMax.canary ?? 0;
 
   // Canary leak is deterministic. Never gated through ensemble.
   if (canary >= 1.0) {
@@ -113,34 +170,61 @@ export function combineVerdict(signals: LayerSignal[], opts: CombineVerdictOpts 
     };
   }
 
-  // ML signals at >= WARN. Count how many agree.
-  const mlHighSignals = [content, deberta, transcript].filter(c => c >= THRESHOLDS.WARN);
-  const hasDebertaSignal = deberta > 0;
+  // Transcript vote: pick the strongest signal (block > warn > none).
+  let transcriptVote: VoteStrength = 'none';
+  for (const s of transcriptSignals) {
+    const v = classifyTranscript(s);
+    if (v === 'block') { transcriptVote = 'block'; break; }
+    if (v === 'warn' && transcriptVote !== 'block') transcriptVote = 'warn';
+  }
 
-  // Ensemble rule: cross-model agreement is what upgrades from WARN to BLOCK.
-  // Requires >= 2 ML classifiers at WARN regardless of whether DeBERTa is
-  // in the pool (hasDebertaSignal kept in scope for future threshold tuning,
-  // but today the count-based rule is 2 in both configurations).
-  void hasDebertaSignal;
-  const requiredForBlock = 2;
-  if (mlHighSignals.length >= requiredForBlock) {
+  // Scalar-layer votes.
+  const contentBlockVote = content >= THRESHOLDS.WARN;
+  const debertaBlockVote = deberta >= THRESHOLDS.WARN;
+
+  let blockVotes = 0;
+  if (contentBlockVote) blockVotes++;
+  if (debertaBlockVote) blockVotes++;
+  if (transcriptVote === 'block') blockVotes++;
+
+  // Ensemble: 2-of-N block-votes trigger BLOCK.
+  if (blockVotes >= 2) {
+    // Report confidence as the min of the contributing signals (weakest link),
+    // matching v1 behavior for consistency with the review banner.
+    const contributing: number[] = [];
+    if (contentBlockVote) contributing.push(content);
+    if (debertaBlockVote) contributing.push(deberta);
+    if (transcriptVote === 'block') contributing.push(transcriptMax);
     return {
       verdict: 'block',
       reason: 'ensemble_agreement',
       signals,
-      confidence: Math.min(...mlHighSignals),
+      confidence: Math.min(...contributing),
     };
   }
 
-  // Single layer >= BLOCK (no cross-confirm).
-  // For user-input: degrade to WARN (Stack Overflow FP mitigation).
-  // For tool-output (opts.toolOutput): BLOCK directly — the content wasn't
-  // user-authored, so the "it might be a developer asking about injection"
-  // concern doesn't apply. The transcript classifier may have degraded
-  // (timeout, Haiku unavailable) and should not be a get-out-of-jail card
-  // for a hostile page.
-  const maxMl = Math.max(content, deberta, transcript);
-  if (maxMl >= THRESHOLDS.BLOCK) {
+  // Single-layer BLOCK. For tool-output, BLOCK directly; for user-input,
+  // degrade to WARN (SO-FP mitigation).
+  //
+  // Asymmetric thresholds (v1.5.2.0+):
+  //  - Content classifiers (testsavant, deberta): require confidence
+  //    >= THRESHOLDS.SOLO_CONTENT_BLOCK (0.92). These are label-less so the
+  //    bar is higher — pattern-matching on "suspicious text" alone isn't
+  //    enough to kill a session. On the 500-case bench, testsavant at >=
+  //    0.85 solo'd 34+ false positives on benign phishing-flavored content;
+  //    0.92 threads 56.2% detection / 22.9% FP.
+  //  - Transcript classifier (Haiku): requires meta.verdict === 'block' AND
+  //    confidence >= THRESHOLDS.BLOCK (0.85). The block label gates solo
+  //    firing; Haiku frequently returns high-confidence `warn` verdicts on
+  //    phishing aimed at the user, and we don't want those to kill sessions.
+  //    In the bench: Haiku block-label solos had 100% precision (25 TPs, 0
+  //    FPs); Haiku warn-label solos had 41% precision (24 TPs, 34 FPs).
+  const maxContentLayer = Math.max(content, deberta);
+  const contentSoloBlock = maxContentLayer >= THRESHOLDS.SOLO_CONTENT_BLOCK;
+  const transcriptSoloBlock = transcriptVote === 'block' && transcriptMax >= THRESHOLDS.BLOCK;
+  const singleLayerBlockReached = contentSoloBlock || transcriptSoloBlock;
+  const maxMl = Math.max(content, deberta, transcriptMax);
+  if (singleLayerBlockReached) {
     if (opts.toolOutput) {
       return {
         verdict: 'block',
@@ -157,7 +241,7 @@ export function combineVerdict(signals: LayerSignal[], opts: CombineVerdictOpts 
     };
   }
 
-  if (maxMl >= THRESHOLDS.WARN) {
+  if (maxMl >= THRESHOLDS.WARN || transcriptVote === 'warn') {
     return {
       verdict: 'warn',
       reason: 'single_layer_medium',
@@ -261,11 +345,11 @@ function getDeviceSalt(): string {
     // fall through to generate
   }
   try {
-    fs.mkdirSync(SECURITY_DIR, { recursive: true, mode: 0o700 });
+    mkdirSecure(SECURITY_DIR);
   } catch {}
   cachedSalt = randomBytes(16).toString('hex');
   try {
-    fs.writeFileSync(SALT_FILE, cachedSalt, { mode: 0o600 });
+    writeSecureFile(SALT_FILE, cachedSalt);
   } catch {
     // Can't persist (read-only fs, disk full). Keep the in-memory salt
     // for this process so cross-log correlation still works within a
@@ -331,6 +415,61 @@ function findTelemetryBinary(): string | null {
 }
 
 /**
+ * Resolve a bash binary for invoking shebang scripts on Windows. Mirrors the
+ * GSTACK_*_BIN override pattern from `browse/src/claude-bin.ts:resolveClaudeCommand`
+ * (introduced in v1.24.0.0 #1252) so users on WSL/MSYS2/non-default Git Bash
+ * installs can redirect.
+ *
+ * Override precedence:
+ *   1. GSTACK_BASH_BIN (or BASH_BIN) — absolute path or PATH-resolvable command.
+ *   2. Plain Bun.which('bash') — finds Git Bash on the standard Windows install.
+ *
+ * Returns null if nothing resolves; callers must degrade gracefully (telemetry
+ * already swallows spawn errors, so a null here means the local attempts.jsonl
+ * audit trail keeps working without surfacing a Windows-only failure).
+ */
+export function resolveBashBinary(env: NodeJS.ProcessEnv = process.env): string | null {
+  const PATH = env.PATH ?? env.Path ?? '';
+  const override = (env.GSTACK_BASH_BIN ?? env.BASH_BIN)?.trim();
+  if (override) {
+    const trimmed = override.replace(/^"(.*)"$/, '$1');
+    return path.isAbsolute(trimmed) ? trimmed : (Bun.which(trimmed, { PATH }) ?? null);
+  }
+  return Bun.which('bash', { PATH }) ?? null;
+}
+
+/**
+ * Build the [cmd, args] tuple for invoking a bash-script telemetry binary
+ * in a way that works on both POSIX and Windows.
+ *
+ * POSIX: returns [bin, args] unchanged — shebang gets honored by execve.
+ * Win32: wraps in bash explicitly. `gstack-telemetry-log` is a shell script
+ * (`#!/usr/bin/env bash`) and Windows `CreateProcess` can't dispatch on a
+ * shebang — it tries to load the file as a PE image, fails with ENOEXEC,
+ * and our 'error' handler silently swallows it. Resolves bash via the same
+ * Bun.which + GSTACK_*_BIN override pattern as claude-bin.ts.
+ *
+ * Returns null when bash can't be resolved on Windows (rare — Git Bash ships
+ * with the standard gstack install path). Caller skips spawn; the local
+ * attempts.jsonl write still gives the audit trail.
+ *
+ * Exported for testability — resolution is a pure function of (platform,
+ * env, bin, args) so we can assert on it without actually spawning.
+ */
+export function buildTelemetrySpawnCommand(
+  bin: string,
+  args: string[],
+  env: NodeJS.ProcessEnv = process.env,
+): { cmd: string; cmdArgs: string[] } | null {
+  if (process.platform === 'win32') {
+    const bashPath = resolveBashBinary(env);
+    if (!bashPath) return null;
+    return { cmd: bashPath, cmdArgs: [bin, ...args] };
+  }
+  return { cmd: bin, cmdArgs: args };
+}
+
+/**
  * Fire-and-forget subprocess invocation of gstack-telemetry-log with the
  * attack_attempt event type. The binary handles tier gating internally
  * (community → upload, anonymous → local only, off → no-op), so we don't
@@ -343,14 +482,16 @@ function reportAttemptTelemetry(record: AttemptRecord): void {
   const bin = findTelemetryBinary();
   if (!bin) return;
   try {
-    const child = spawn(bin, [
+    const result = buildTelemetrySpawnCommand(bin, [
       '--event-type', 'attack_attempt',
       '--url-domain', record.urlDomain || '',
       '--payload-hash', record.payloadHash,
       '--confidence', String(record.confidence),
       '--layer', record.layer,
       '--verdict', record.verdict,
-    ], {
+    ]);
+    if (!result) return;
+    const child = spawn(result.cmd, result.cmdArgs, {
       stdio: 'ignore',
       detached: true,
     });
@@ -373,10 +514,10 @@ export function logAttempt(record: AttemptRecord): boolean {
   // the event reported (it goes to a different directory anyway).
   reportAttemptTelemetry(record);
   try {
-    fs.mkdirSync(SECURITY_DIR, { recursive: true, mode: 0o700 });
+    mkdirSecure(SECURITY_DIR);
     rotateIfNeeded();
     const line = JSON.stringify(record) + '\n';
-    fs.appendFileSync(ATTEMPTS_LOG, line, { mode: 0o600 });
+    appendSecureFile(ATTEMPTS_LOG, line);
     return true;
   } catch (err) {
     // Non-fatal. Log to stderr for debugging but don't block.
@@ -406,9 +547,9 @@ export interface SessionState {
  */
 export function writeSessionState(state: SessionState): void {
   try {
-    fs.mkdirSync(SECURITY_DIR, { recursive: true, mode: 0o700 });
+    mkdirSecure(SECURITY_DIR);
     const tmp = `${STATE_FILE}.tmp.${process.pid}`;
-    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { mode: 0o600 });
+    writeSecureFile(tmp, JSON.stringify(state, null, 2));
     fs.renameSync(tmp, STATE_FILE);
   } catch (err) {
     console.error('[security] writeSessionState failed:', (err as Error).message);
@@ -449,10 +590,10 @@ export interface DecisionRecord {
 
 export function writeDecision(record: DecisionRecord): void {
   try {
-    fs.mkdirSync(DECISIONS_DIR, { recursive: true, mode: 0o700 });
+    mkdirSecure(DECISIONS_DIR);
     const file = decisionFileForTab(record.tabId);
     const tmp = `${file}.tmp.${process.pid}`;
-    fs.writeFileSync(tmp, JSON.stringify(record), { mode: 0o600 });
+    writeSecureFile(tmp, JSON.stringify(record));
     fs.renameSync(tmp, file);
   } catch (err) {
     console.error('[security] writeDecision failed:', (err as Error).message);
