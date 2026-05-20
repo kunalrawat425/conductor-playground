@@ -9,34 +9,99 @@ const jsonLd = {
       "@type": "WebPage",
       "@id": "https://www.relifish.store/for-sellers",
       "url": "https://www.relifish.store/for-sellers",
-      "name": "Sell on Relifish — Grow Your Fish Business Online",
-      "description": "List your daily catch, accept pre-orders, manage delivery, and get paid. Join fish sellers on Relifish — no commission, no middleman.",
-      "isPartOf": { "@id": "https://www.relifish.store" }
+      "name": "Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish",
+      "description": "Start selling fish online in Mumbai in under 5 minutes. Free to list, zero commission. Accept orders, pre-orders, UPI payments. Relifish is the online fish selling platform built for Mumbai fish sellers.",
+      "inLanguage": "en-IN",
+      "about": { "@id": "https://www.relifish.store#service" },
+      "isPartOf": { "@id": "https://www.relifish.store" },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.store" },
+          { "@type": "ListItem", "position": 2, "name": "Sell on Relifish", "item": "https://www.relifish.store/for-sellers" }
+        ]
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://www.relifish.store#service",
+      "name": "Sell Fish Online — Relifish Seller Platform",
+      "description": "Relifish is a free online fish selling platform for fish sellers in Mumbai, Thane, and Navi Mumbai. List your daily catch, accept pre-orders, manage home delivery, and collect UPI payments. Zero commission on every sale.",
+      "provider": { "@id": "https://www.relifish.store#org" },
+      "serviceType": "Online Fish Selling Platform",
+      "areaServed": [
+        { "@type": "City", "name": "Mumbai" },
+        { "@type": "City", "name": "Thane" },
+        { "@type": "City", "name": "Navi Mumbai" }
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR",
+        "description": "Free to list. Zero commission on every sale.",
+        "availability": "https://schema.org/InStock"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Seller Features",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Free fish listing and online store" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pre-order management for fish sellers" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "UPI payment collection" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fish home delivery management" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Push and email order alerts" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fish inventory management" } }
+        ]
+      }
     },
     {
       "@type": "Organization",
       "@id": "https://www.relifish.store#org",
       "name": "Relifish",
       "url": "https://www.relifish.store",
-      "description": "Online marketplace for fresh fish in Mumbai. Connects local fish sellers with buyers for same-day and pre-order delivery.",
-      "areaServed": { "@type": "City", "name": "Mumbai" }
+      "logo": "https://www.relifish.store/favicon.png",
+      "description": "Online marketplace for fresh fish in Mumbai. Connects local fish sellers with buyers for same-day pickup and pre-order delivery.",
+      "areaServed": [
+        { "@type": "City", "name": "Mumbai" },
+        { "@type": "City", "name": "Thane" },
+        { "@type": "City", "name": "Navi Mumbai" }
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "@id": "https://www.relifish.store/for-sellers#howto",
+      "name": "How to start selling fish online on Relifish",
+      "description": "Set up your online fish store in Mumbai on Relifish in under 5 minutes. Accept orders, pre-orders, and UPI payments. Free to list, zero commission.",
+      "totalTime": "PT5M",
+      "estimatedCost": { "@type": "MonetaryAmount", "currency": "INR", "value": "0" },
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "Create your free seller account", "text": "Sign up with your phone number in 30 seconds. No tech skills needed. Your online fish store is created instantly." },
+        { "@type": "HowToStep", "position": 2, "name": "Add your fish inventory", "text": "Upload photos, set prices, quantity, and shop hours. Your live fish catalogue goes live instantly for buyers in your area." },
+        { "@type": "HowToStep", "position": 3, "name": "Share your store link", "text": "Share relifish.store/s/your-store on WhatsApp, Instagram bio, or print a QR code on your flyer. Buyers click and order." },
+        { "@type": "HowToStep", "position": 4, "name": "Accept orders and get paid", "text": "Buyers order directly from your store. You get an instant push notification and email. Confirm with one tap and collect payment via UPI or COD." }
+      ]
     },
     {
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "Is Relifish free to use for sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is free to list your products. We charge zero commission on every sale." } },
-        { "@type": "Question", "name": "How do I get orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Create your seller page, add your listings, and share your link on WhatsApp and Instagram. Buyers in your area can browse and order directly." } },
-        { "@type": "Question", "name": "Can I accept pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set pre-order windows (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Advance payment is collected automatically." } },
-        { "@type": "Question", "name": "Does Relifish support delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set a delivery radius, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address." } },
-        { "@type": "Question", "name": "How do I get notified about new orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order triggers an instant push notification to your phone and an email. You can confirm, reject, or mark orders as ready directly from your dashboard." } }
+        { "@type": "Question", "name": "Is Relifish free for fish sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is 100% free to list your fish products. We charge zero commission on every sale — you keep 100% of every rupee. No hidden fees, no monthly charges, no percentage cuts." } },
+        { "@type": "Question", "name": "How do I sell fish online in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Sign up on Relifish, add your fish inventory with photos and prices, and share your store link on WhatsApp and Instagram. Buyers in your area find you, browse your live catalogue, and order directly. Most sellers get their first order within 24 hours." } },
+        { "@type": "Question", "name": "Can I accept fish pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set a pre-order window (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Demand is locked in advance — you buy exactly what's needed at the docks, reducing wastage and eliminating cold storage costs." } },
+        { "@type": "Question", "name": "Does Relifish support fish home delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set a delivery radius in km, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address to your location. Buyers outside your serviceable radius see pickup only." } },
+        { "@type": "Question", "name": "How do I get notified about new fish orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order sends an instant push notification to your phone and an email. Confirm, reject, or mark orders ready from your dashboard — no calls, no WhatsApp back-and-forth." } },
+        { "@type": "Question", "name": "What payments do fish buyers use?", "acceptedAnswer": { "@type": "Answer", "text": "Buyers pay via UPI or cash on delivery (COD). They upload UPI payment proof; you confirm and fulfill. Relifish takes zero commission on any payment." } },
+        { "@type": "Question", "name": "How fast can I start selling fish online?", "acceptedAnswer": { "@type": "Answer", "text": "Your online fish store goes live in under 5 minutes. Sign up, add inventory, share your link — first orders typically arrive the same day." } },
+        { "@type": "Question", "name": "Can I manage my fish store from my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The Relifish seller dashboard is fully mobile-first. Manage orders, inventory, delivery settings, shop hours, and notifications from your smartphone." } },
+        { "@type": "Question", "name": "How does Relifish reduce fish wastage?", "acceptedAnswer": { "@type": "Answer", "text": "Pre-orders let you know tomorrow's demand tonight. You buy exactly the right quantity at the docks — no excess, no cold storage costs, no panic selling. Sellers report significantly less wastage after enabling pre-orders." } },
+        { "@type": "Question", "name": "Which areas of Mumbai does Relifish serve?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish is available across Mumbai, Thane, and Navi Mumbai. You set your own delivery radius — buyers within your chosen area see your store and can order directly from you." } }
       ]
     }
   ]
 };
 ---
 <AppShell
-  title="Sell on Relifish — Grow Your Fish Business Online"
-  description="List your daily catch, accept pre-orders, set delivery fees, and manage all orders in one place. Join Mumbai fish sellers on Relifish — free, no commission, instant push and email notifications."
+  title="Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish"
+  description="Start selling fish online in Mumbai in 5 minutes. Free to list, zero commission. Accept orders, pre-orders, UPI payments in your serviceable area. Mumbai fish sellers keep 100% of every sale."
   hideNav={true}
   hideHeader={true}
   jsonLd={jsonLd}
@@ -69,16 +134,17 @@ const jsonLd = {
   .fs-hero-copy h1 { font: 900 52px/1.0 Inter, sans-serif; color: #fff; margin: 0 0 20px; letter-spacing: -2px; }
   .fs-hero-copy h1 span { color: #0066FF; }
   .fs-hero-copy p { font: 400 17px/1.6 Inter, sans-serif; color: rgba(255,255,255,0.55); margin: 0 0 32px; max-width: 440px; }
-  .fs-cta-form { display: flex; background: rgba(255,255,255,0.95); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.4); max-width: 400px; }
+  .fs-cta-form { display: flex; background: rgba(255,255,255,0.95); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.4); max-width: 400px; margin-top: 8px; }
   .fs-cta-form input { flex: 1; padding: 14px 16px; border: none; outline: none; font: 500 14px Inter, sans-serif; color: #0F172A; background: transparent; min-width: 0; }
   .fs-cta-form a { background: #0066FF; color: #fff; font: 700 14px Inter, sans-serif; padding: 14px 20px; text-decoration: none; white-space: nowrap; display: flex; align-items: center; }
-  .fs-cta-note { font: 400 11px Inter, sans-serif; color: rgba(255,255,255,0.3); margin: 10px 0 0; }
+  .fs-cta-note { font: 400 11px Inter, sans-serif; color: rgba(255,255,255,0.3); margin: 16px 0 0; }
   .fs-cta-sub { margin-top: 14px; font: 500 13px Inter, sans-serif; color: rgba(255,255,255,0.4); }
   .fs-cta-sub a { color: rgba(255,255,255,0.65); text-decoration: underline; text-underline-offset: 3px; }
 
   /* ─── Phone mockup (matches landing page .demo-phone style) ─── */
   .fs-phone {
-    width: 240px;
+    width: 270px;
+    min-height: 520px;
     background: linear-gradient(175deg, #1E2D4A, #0D1629);
     border-radius: 44px;
     border: 2px solid rgba(255,255,255,0.15);
@@ -207,8 +273,7 @@ const jsonLd = {
   </a>
   <div style="display:flex;gap:8px;align-items:center;">
     <a href="/shop" style="font:500 13px Inter;color:rgba(255,255,255,0.5);text-decoration:none;padding:8px 12px;display:none;" class="fs-desktop-link">Browse sellers</a>
-    <a href="/dashboard/login" style="font:600 13px Inter;color:rgba(255,255,255,0.65);text-decoration:none;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);">Log in</a>
-    <a href="/dashboard/login" style="font:700 13px Inter;color:#fff;text-decoration:none;padding:8px 16px;border-radius:8px;background:#0066FF;">Get started</a>
+    <a href="/dashboard/login" style="font:700 13px Inter;color:#fff;text-decoration:none;padding:8px 16px;border-radius:8px;background:#0066FF;">Get started free</a>
   </div>
 </nav>
 
@@ -221,14 +286,14 @@ const jsonLd = {
   <div class="fs-hero-inner">
     <div class="fs-hero-copy">
       <h1>Built For<br/><span>Fish Sellers</span></h1>
-      <p>The platform built for daily catch volume, slim margins, and fresh fish at scale — trusted by sellers across Mumbai. Improve your customer experience with one link, one click, instant order confirmation. No middleman. No commission.</p>
+      <p>Start accepting orders in your serviceable area — one link, one click, instant confirmation. Built for daily catch volume, slim margins, and fresh fish at scale. No middleman. No commission.</p>
       <form onsubmit="return false;">
         <div class="fs-cta-form">
           <input type="tel" placeholder="Your phone number" />
           <a href="/dashboard/login">Get Started</a>
         </div>
       </form>
-      <p class="fs-cta-note">Free to list · ₹0 commission · Improve customer experience with every order</p>
+      <p class="fs-cta-note" style="margin-top:20px;">Free to list · ₹0 commission · Improve customer experience with every order</p>
       <p class="fs-cta-sub">New seller? <a href="/dashboard/login">Start free →</a></p>
     </div>
 
@@ -244,12 +309,18 @@ const jsonLd = {
               <div class="fs-phone-header-label">Today's orders</div>
               <div class="fs-phone-header-val">18 <span>orders · ₹12,450</span></div>
             </div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट) × 2kg</div><div class="fs-order-sub">Confirmed · 8:14am</div></div><span class="fs-badge fs-badge-green">✓ Done</span></div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई) × 1kg</div><div class="fs-order-sub">Incoming · 8:22am</div></div><span class="fs-badge fs-badge-blue">New</span></div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Prawns (कोळंबी)</div><div class="fs-order-sub">Pre-order · Tomorrow</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा) × 1kg</div><div class="fs-order-sub">Incoming · 9:05am</div></div><span class="fs-badge fs-badge-blue">New</span></div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Rawas (रावस) × 500g</div><div class="fs-order-sub">Delivery order</div></div><span class="fs-badge fs-badge-orange">Delivery</span></div>
-            <div class="fs-phone-nav"><span>Orders</span><span class="active">Dashboard</span><span>Listings</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट) × 2kg</div><div class="fs-order-sub">Confirmed · 8:14am · UPI</div></div><span class="fs-badge fs-badge-green">✓ Done</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई) × 1kg</div><div class="fs-order-sub">Incoming · 8:22am · UPI</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Prawns (कोळंबी)</div><div class="fs-order-sub">Pre-order · Tomorrow · ₹680</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा) × 1kg</div><div class="fs-order-sub">Incoming · 9:05am · COD</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Rawas (रावस) × 500g</div><div class="fs-order-sub">Delivery · 5.2km · Paid</div></div><span class="fs-badge fs-badge-orange">Delivery</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Halwa (हलवा) × 1kg</div><div class="fs-order-sub">Pre-order · Tomorrow</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
+            <!-- Revenue summary row -->
+            <div style="background:rgba(5,150,105,0.12);border:1px solid rgba(5,150,105,0.2);border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
+              <span style="font:600 9px Inter;color:#34d399;">Today's revenue</span>
+              <span style="font:800 12px Inter;color:#fff;">₹12,450</span>
+            </div>
+            <div class="fs-phone-nav"><span>Orders</span><span class="active">Dashboard</span><span>Inventory</span></div>
             <div class="fs-phone-bar"></div>
           </div>
         </div>
@@ -265,9 +336,9 @@ const jsonLd = {
 <!-- ─── PROBLEM → SOLUTION ────────────────────────────────────────── -->
 <section class="fs-section fs-section-light">
   <div class="fs-wrap">
-    <p class="fs-eyebrow" style="color:#DC2626;">The problem every fish seller faces</p>
+    <p class="fs-eyebrow" style="color:#DC2626;">Why Mumbai fish sellers switch to online</p>
     <h2 class="fs-h2" style="color:#0F172A;">WhatsApp + Excel + Missed calls.<br/>That's not a business — that's chaos.</h2>
-    <p class="fs-lead">Before Relifish, managing orders meant juggling multiple channels, losing track of stock, and constantly missing orders.</p>
+    <p class="fs-lead">Every fish seller in Mumbai faces the same problem: orders on WhatsApp, stock in your head, customers calling at 6am. Relifish gives you a proper online fish store — free, live in 5 minutes.</p>
 
     <div style="display:grid;grid-template-columns:1fr;gap:16px;">
       <div class="fs-problem-box">
@@ -318,9 +389,9 @@ const jsonLd = {
         <div class="fs-trust-desc">Keep 100% of every sale</div>
       </div>
       <div class="fs-trust-item">
-        <div class="fs-trust-icon" style="background:#EEF2FF;font-size:22px;">📊</div>
-        <div class="fs-trust-title">Analytics</div>
-        <div class="fs-trust-desc">Track views, orders, earnings</div>
+        <div class="fs-trust-icon" style="background:#EEF2FF;font:700 10px Inter;color:#4F46E5;text-align:center;letter-spacing:-0.2px;">UPI<br/>COD</div>
+        <div class="fs-trust-title">Payments</div>
+        <div class="fs-trust-desc">UPI · Cash on delivery</div>
       </div>
     </div>
   </div>
@@ -329,7 +400,7 @@ const jsonLd = {
 <!-- ─── BUSINESS TYPES ─────────────────────────────────────────────── -->
 <section class="fs-section fs-section-light" style="padding-bottom:0;">
   <div class="fs-wrap">
-    <p class="fs-eyebrow" style="color:#0066FF;">Works for every seller</p>
+    <p class="fs-eyebrow" style="color:#0066FF;">Online fish store for every seller type</p>
     <h2 class="fs-h2" style="color:#0F172A;">Daily stall, home delivery,<br/>or catch pre-orders.</h2>
   </div>
   <div style="border-bottom:2px solid #F1F5F9;margin-top:24px;">
@@ -412,7 +483,7 @@ const jsonLd = {
           <li><span style="color:#059669;font-weight:700;">→</span> Buyers outside radius auto-shown pickup only</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Distance shown to buyer at checkout (e.g. 5.2 km)</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Enable pickup, delivery, or both — your choice</li>
-          <li><span style="color:#059669;font-weight:700;">→</span> Accept UPI · Razorpay · Cash on delivery</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Accept UPI · Cash on delivery</li>
         </ul>
         <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#059669;text-decoration:none;">Enable delivery →</a>
       </div>
@@ -461,7 +532,7 @@ const jsonLd = {
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
         <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">💳</div>
         <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Payments</div>
-        <div style="font:400 12px/1.5 Inter;color:#64748B;">Accept UPI (enter your UPI ID), Razorpay, or cash on delivery. Buyers upload proof — you confirm.</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Enter your UPI ID. Buyers pay and upload proof — you confirm. COD also supported.</div>
       </div>
 
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
@@ -477,7 +548,7 @@ const jsonLd = {
       </div>
 
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
-        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">₹</div>
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font:900 18px Inter;color:#EA580C;margin-bottom:12px;">₹</div>
         <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Minimum Order</div>
         <div style="font:400 12px/1.5 Inter;color:#64748B;">Set a minimum order amount. Orders below the threshold are blocked at checkout — no small orders you can't fulfill.</div>
       </div>
@@ -564,6 +635,210 @@ const jsonLd = {
   </div>
 </section>
 
+<!-- ─── OPERATING SYSTEM / PIPELINE ──────────────────────────────── -->
+<section class="fs-section fs-section-light">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#0066FF;">The Relifish operating system</p>
+    <h2 class="fs-h2" style="color:#0F172A;">From zero to predictable revenue.<br/>This is what you actually get.</h2>
+    <p class="fs-lead">Not a feature list. An outcome pipeline. Every step has a timeline. Every step compounds into the next.</p>
+
+    <!-- Pipeline diagram -->
+    <div style="display:flex;flex-direction:column;gap:0;position:relative;">
+
+      <!-- Step 1 — Day 1 -->
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#0066FF;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">1</div>
+          <div style="width:2px;flex:1;background:linear-gradient(to bottom,#0066FF,#4F46E5);margin:4px 0;min-height:32px;"></div>
+        </div>
+        <div style="flex:1;padding:0 0 28px 16px;">
+          <div style="background:#E6F0FF;border:1px solid #CCE0FF;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+              <span style="font:700 12px Inter;color:#0066FF;text-transform:uppercase;letter-spacing:0.5px;">Visibility</span>
+              <span style="font:700 10px Inter;color:#fff;background:#0066FF;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Day 1</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">You're live. Discoverable. Forever.</span>
+            </div>
+            <p style="font:600 14px/1.5 Inter;color:#1E3A5F;margin:0 0 8px;"><strong>Outcome:</strong> Buyers find you on Google, your WhatsApp status link, Instagram bio, and a QR on your flyer — all pointing to your live store. You go from invisible to searchable in one link.</p>
+            <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 10px;">Your catalogue is always live — 24/7. Every share is a permanent referral. You stop explaining stock over WhatsApp calls and start sending a link.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#0066FF;background:#fff;border:1px solid #CCE0FF;padding:4px 10px;border-radius:999px;">Instagram bio link</span>
+              <span style="font:600 11px Inter;color:#0066FF;background:#fff;border:1px solid #CCE0FF;padding:4px 10px;border-radius:999px;">WhatsApp status</span>
+              <span style="font:600 11px Inter;color:#0066FF;background:#fff;border:1px solid #CCE0FF;padding:4px 10px;border-radius:999px;">Flyer QR code</span>
+              <span style="font:600 11px Inter;color:#0066FF;background:#fff;border:1px solid #CCE0FF;padding:4px 10px;border-radius:999px;">Google search</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 — Day 1–3 -->
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#4F46E5;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">2</div>
+          <div style="width:2px;flex:1;background:linear-gradient(to bottom,#4F46E5,#059669);margin:4px 0;min-height:32px;"></div>
+        </div>
+        <div style="flex:1;padding:0 0 28px 16px;">
+          <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+              <span style="font:700 12px Inter;color:#4F46E5;text-transform:uppercase;letter-spacing:0.5px;">Order</span>
+              <span style="font:700 10px Inter;color:#fff;background:#4F46E5;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Day 1–3</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">First orders arrive. No calls needed.</span>
+            </div>
+            <p style="font:600 14px/1.5 Inter;color:#2D2A6E;margin:0 0 8px;"><strong>Outcome:</strong> Buyer browses, picks, pays via UPI · COD. You get a push notification + email. One tap to confirm. You just took an order without speaking to anyone.</p>
+            <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 10px;">No more missed calls. No order written on paper. Every order is digital, tracked, and confirmed — with payment already collected. This is what running a business feels like.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Instant push alert</span>
+              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Email confirmation</span>
+              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">UPI · COD</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 — Week 1 -->
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">3</div>
+          <div style="width:2px;flex:1;background:linear-gradient(to bottom,#059669,#EA580C);margin:4px 0;min-height:32px;"></div>
+        </div>
+        <div style="flex:1;padding:0 0 28px 16px;">
+          <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+              <span style="font:700 12px Inter;color:#059669;text-transform:uppercase;letter-spacing:0.5px;">Fulfill</span>
+              <span style="font:700 10px Inter;color:#fff;background:#059669;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Week 1</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">Buyers trust you. They come back.</span>
+            </div>
+            <p style="font:600 14px/1.5 Inter;color:#064E3B;margin:0 0 8px;"><strong>Outcome:</strong> You confirm orders, mark ready or out for delivery — buyer gets notified at every stage. They feel in control. That transparency = trust = repeat order next week.</p>
+            <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 10px;">Every fulfilled order is a brand moment. No missed updates, no "kahan hai mera order" calls. Professionalism becomes your default — without extra staff or effort.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#059669;background:#fff;border:1px solid #A7F3D0;padding:4px 10px;border-radius:999px;">Mark ready / Delivered</span>
+              <span style="font:600 11px Inter;color:#059669;background:#fff;border:1px solid #A7F3D0;padding:4px 10px;border-radius:999px;">Buyer notified live</span>
+              <span style="font:600 11px Inter;color:#059669;background:#fff;border:1px solid #A7F3D0;padding:4px 10px;border-radius:999px;">Zero missed orders</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 — Week 2 -->
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#EA580C;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">4</div>
+          <div style="width:2px;flex:1;background:linear-gradient(to bottom,#EA580C,#0066FF);margin:4px 0;min-height:32px;"></div>
+        </div>
+        <div style="flex:1;padding:0 0 28px 16px;">
+          <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+              <span style="font:700 12px Inter;color:#EA580C;text-transform:uppercase;letter-spacing:0.5px;">Revenue</span>
+              <span style="font:700 10px Inter;color:#fff;background:#EA580C;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Week 2</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">₹0 commission. Tomorrow's money, tonight.</span>
+            </div>
+            <p style="font:600 14px/1.5 Inter;color:#7C2D12;margin:0 0 8px;"><strong>Outcome:</strong> Every rupee is yours — zero commission, zero middleman cut. Pre-orders taken 8pm tonight = you know exactly what to buy at the docks tomorrow morning. Stock is funded by orders already placed. You invest in fish that's already sold.</p>
+            <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 12px;">Pre-orders transform your entire supply chain. You know the quantity, the species, the demand window before you touch a rupee. Calculated logistics — exactly how much to transport, exactly what vehicle size, no excess weight. No cold storage costs. No panic-pricing leftover stock at a loss. No calls to relatives to "buy some pomfret before it goes bad."</p>
+            <!-- Supply chain comparison -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:10px 12px;">
+                <div style="font:700 11px Inter;color:#DC2626;margin-bottom:5px;">Without pre-orders</div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Guess tomorrow's demand</span>
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Over-buy at docks</span>
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Cold storage cost ₹200–800/day</span>
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Panic pricing → margin loss</span>
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Unsold stock = pure loss</span>
+                </div>
+              </div>
+              <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:10px 12px;">
+                <div style="font:700 11px Inter;color:#059669;margin-bottom:5px;">With Relifish pre-orders</div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Demand locked by 10pm</span>
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Buy exact quantity needed</span>
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Zero cold storage spend</span>
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Full-price sale, always</span>
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Revenue predictable, daily</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">₹0 commission always</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Zero cold storage cost</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Calculated logistics</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">↑ Margins every week</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 — Compounds: existing + new customers -->
+      <div style="display:flex;gap:0;align-items:flex-start;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#0066FF;border:3px solid #60a5fa;display:flex;align-items:center;justify-content:center;font:800 12px Inter;color:#fff;flex-shrink:0;">↩</div>
+        </div>
+        <div style="flex:1;padding:0 0 0 16px;">
+          <div style="background:#0F172A;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+              <span style="font:700 12px Inter;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">Compounds</span>
+              <span style="font:700 10px Inter;color:#0F172A;background:#60a5fa;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Month 1+</span>
+              <span style="font:400 11px Inter;color:rgba(255,255,255,0.35);">Flywheel. Zero acquisition cost.</span>
+            </div>
+            <p style="font:600 14px/1.5 Inter;color:rgba(255,255,255,0.9);margin:0 0 12px;"><strong>Outcome:</strong> Two things happen in parallel — your existing customers lock in as weekly repeat buyers, and new buyers find you for the first time. Your data tells you what to stock, when to open, which fish to push. You know your business better than anyone.</p>
+
+            <!-- Existing vs New customers — deep tracks -->
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
+
+              <!-- Track A: Existing customers -->
+              <div style="background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.18);border-radius:12px;padding:14px 16px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <span style="font:800 10px Inter;color:#0F172A;background:#60a5fa;border-radius:999px;padding:3px 10px;">Week 1</span>
+                  <span style="font:700 12px Inter;color:#60a5fa;">Your existing customers — migrate them first</span>
+                </div>
+                <p style="font:500 12px/1.6 Inter;color:rgba(255,255,255,0.65);margin:0 0 10px;">You already have customers on WhatsApp. Send them one message: <em style="color:#fff;">"Ab yahan order karo →"</em> with your Relifish link. They trust you — they just needed a better way to order. Within 2–3 days, your regulars are ordering digitally. No more calls. No more screenshots. No more "kal bata dena".</p>
+                <p style="font:400 11px/1.5 Inter;color:rgba(255,255,255,0.4);margin:0 0 10px;">Their experience changes completely: they see live stock, pick exactly what they want, pay in 30 seconds, and get a confirmation + status update at every step. They feel like your best customer every time they order — because your system treats them that way automatically.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                  <div style="background:rgba(96,165,250,0.08);border-radius:8px;padding:8px 10px;">
+                    <div style="font:700 10px Inter;color:#60a5fa;margin-bottom:4px;">Their experience</div>
+                    <div style="font:400 10px/1.4 Inter;color:rgba(255,255,255,0.45);">Live catalogue → order in 30s → get push confirmation → track status → repeat weekly</div>
+                  </div>
+                  <div style="background:rgba(96,165,250,0.08);border-radius:8px;padding:8px 10px;">
+                    <div style="font:700 10px Inter;color:#60a5fa;margin-bottom:4px;">Your operations</div>
+                    <div style="font:400 10px/1.4 Inter;color:rgba(255,255,255,0.45);">Orders come in digitally → confirm with 1 tap → pre-orders lock tomorrow's stock → zero missed orders</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Track B: New customers -->
+              <div style="background:rgba(79,70,229,0.06);border:1px solid rgba(79,70,229,0.2);border-radius:12px;padding:14px 16px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <span style="font:800 10px Inter;color:#fff;background:#4F46E5;border-radius:999px;padding:3px 10px;">Week 2–3</span>
+                  <span style="font:700 12px Inter;color:#818cf8;">New customers — they find you, you don't find them</span>
+                </div>
+                <p style="font:500 12px/1.6 Inter;color:rgba(255,255,255,0.65);margin:0 0 10px;">New buyers land on your page from Google search ("fresh pomfret near me"), a friend's share, or your Instagram bio link. They've never heard of you — but your live catalogue, store photo, open hours, and payment options make you instantly credible. First order placed. That's momentum.</p>
+                <p style="font:400 11px/1.5 Inter;color:rgba(255,255,255,0.4);margin:0 0 10px;">Their engagement deepens over weeks: first order → push notifications bring them back → pre-order the night before becomes habit → they share your link with their building WhatsApp group. One new buyer becomes 5. That's how your customer base compounds without any ad spend.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                  <div style="background:rgba(79,70,229,0.08);border-radius:8px;padding:8px 10px;">
+                    <div style="font:700 10px Inter;color:#818cf8;margin-bottom:4px;">Discovery</div>
+                    <div style="font:400 10px/1.4 Inter;color:rgba(255,255,255,0.45);">Google → Instagram → friend share → Relifish nearby feed</div>
+                  </div>
+                  <div style="background:rgba(79,70,229,0.08);border-radius:8px;padding:8px 10px;">
+                    <div style="font:700 10px Inter;color:#818cf8;margin-bottom:4px;">Engagement timeline</div>
+                    <div style="font:400 10px/1.4 Inter;color:rgba(255,255,255,0.45);">Week 2: first order → Week 3: pre-order → Week 4: refer a neighbour → Month 2: loyal repeat</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p style="font:400 11px Inter;color:rgba(255,255,255,0.2);margin:0 0 10px;">* Timelines are estimates. Performance depends on store activity and local area — some sellers see results faster, some slower.</p>
+            <p style="font:400 12px/1.5 Inter;color:rgba(255,255,255,0.4);margin:0 0 12px;">You don't lose a single customer — every order is tracked, every feedback visible, every service gap measurable. Revenue becomes predictable. Growth becomes a system, not luck. <span style="color:#60a5fa;font-weight:700;">That's the Relifish operating system.</span></p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#60a5fa;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);padding:4px 10px;border-radius:999px;">Existing buyers migrate Week 1</span>
+              <span style="font:600 11px Inter;color:#818cf8;background:rgba(79,70,229,0.1);border:1px solid rgba(79,70,229,0.2);padding:4px 10px;border-radius:999px;">New buyers Week 2–3</span>
+              <span style="font:600 11px Inter;color:#34d399;background:rgba(5,150,105,0.1);border:1px solid rgba(5,150,105,0.2);padding:4px 10px;border-radius:999px;">Revenue compounds Month 1+</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- ─── SEGMENT PILLS ─────────────────────────────────────────────── -->
 <section class="fs-section fs-section-dark">
   <div class="fs-wrap">
@@ -588,7 +863,7 @@ const jsonLd = {
     <div class="fs-steps">
       {[
         {n:"1", title:"Create your seller account", desc:"Sign up with your phone number. 30 seconds.", c:"#0066FF"},
-        {n:"2", title:"Add your listings", desc:"Photo, name, price, quantity, hours. Your page goes live instantly.", c:"#0066FF"},
+        {n:"2", title:"Add your inventory", desc:"Photo, name, price, quantity, hours. Your page goes live instantly.", c:"#0066FF"},
         {n:"3", title:"Share your link", desc:"Post relifish.store/s/your-store on WhatsApp and Instagram.", c:"#0066FF"},
         {n:"✓", title:"Start getting orders", desc:"Buyers order directly. You get a push notification + email. Confirm and go.", c:"#059669"},
       ].map((s, i, arr) => (
@@ -602,11 +877,85 @@ const jsonLd = {
   </div>
 </section>
 
+<!-- ─── BRING YOUR CUSTOMERS / GAIN NEW ───────────────────────────── -->
+<section class="fs-section fs-section-dark">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#60a5fa;">Two engines. One platform.</p>
+    <h2 class="fs-h2" style="color:#fff;">Bring your customers.<br/>Gain new ones.</h2>
+    <p style="font:400 15px/1.6 Inter;color:rgba(255,255,255,0.5);margin:0 0 40px;max-width:600px;">Most sellers think going digital means starting from zero. It doesn't. You already have customers. Relifish digitises those relationships first — then adds new ones on top. Two parallel engines, both running from Day 1.</p>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:24px;" class="fs-customer-grid">
+
+      <!-- Engine 1: Existing -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(96,165,250,0.2);border-radius:20px;padding:28px 28px 24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(96,165,250,0.15);display:flex;align-items:center;justify-content:center;font:700 14px Inter;color:#60a5fa;flex-shrink:0;">1</div>
+          <div>
+            <div style="font:800 16px Inter;color:#fff;margin-bottom:2px;">Bring your existing customers</div>
+            <div style="font:600 11px Inter;color:#60a5fa;letter-spacing:0.5px;">Week 1 — Done in one WhatsApp message</div>
+          </div>
+        </div>
+        <p style="font:400 14px/1.7 Inter;color:rgba(255,255,255,0.55);margin:14px 0 18px;">Your WhatsApp regulars already know you, trust you, and want to order from you. The problem isn't relationship — it's friction. They have to call, message, wait for replies. On Relifish, they tap your link, see your stock, order in 30 seconds. Same seller, zero friction.</p>
+        <p style="font:400 14px/1.7 Inter;color:rgba(255,255,255,0.55);margin:0 0 20px;">Send one broadcast message with your link. Within 48 hours, your regulars are ordering digitally. You stop managing order intake manually. Your operations free up. Your per-order time drops from 5 minutes of back-and-forth to 10 seconds of confirmation.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
+          <div style="text-align:center;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#60a5fa;">Day 1</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">Send your link to WhatsApp regulars</div>
+          </div>
+          <div style="text-align:center;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#60a5fa;">Day 2–3</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">First digital orders from known buyers</div>
+          </div>
+          <div style="text-align:center;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#60a5fa;">Week 1</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">All regulars on digital. Pre-orders nightly.</div>
+          </div>
+        </div>
+        <p style="font:400 11px Inter;color:rgba(255,255,255,0.25);margin:0 0 14px;">* Timelines are indicative. Results depend on your store activity, how actively you share your link, and your local area demand.</p>
+        <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#60a5fa;text-decoration:none;border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:10px 18px;">Add your customers →</a>
+      </div>
+
+      <!-- Engine 2: New customers -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(79,70,229,0.25);border-radius:20px;padding:28px 28px 24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(79,70,229,0.2);display:flex;align-items:center;justify-content:center;font:700 14px Inter;color:#818cf8;flex-shrink:0;">2</div>
+          <div>
+            <div style="font:800 16px Inter;color:#fff;margin-bottom:2px;">Gain new customers automatically</div>
+            <div style="font:600 11px Inter;color:#818cf8;letter-spacing:0.5px;">Week 2–3 — No ads. No effort. Organic momentum.</div>
+          </div>
+        </div>
+        <p style="font:400 14px/1.7 Inter;color:rgba(255,255,255,0.55);margin:14px 0 18px;">When you go live on Relifish, your store appears on Google search results for "fresh fish near me", on the Relifish shop page for buyers in your area, and wherever your link gets shared. New buyers who've never heard of you discover you — because your digital storefront does the marketing you never had time to do.</p>
+        <p style="font:400 14px/1.7 Inter;color:rgba(255,255,255,0.55);margin:0 0 20px;">Every new buyer who orders once gets push notifications. They come back for their next purchase. They pre-order from you the night before. They tell their building WhatsApp group. One new customer in Week 2 becomes five regular customers by Month 2 — with zero ad spend on your part.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
+          <div style="text-align:center;background:rgba(79,70,229,0.08);border:1px solid rgba(79,70,229,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#818cf8;">Week 2</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">First new buyers from search & shares</div>
+          </div>
+          <div style="text-align:center;background:rgba(79,70,229,0.08);border:1px solid rgba(79,70,229,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#818cf8;">Week 3</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">New buyers pre-order. Referrals start.</div>
+          </div>
+          <div style="text-align:center;background:rgba(79,70,229,0.08);border:1px solid rgba(79,70,229,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#818cf8;">Month 2</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">5× customer base. Zero ad spend.</div>
+          </div>
+        </div>
+        <p style="font:400 11px Inter;color:rgba(255,255,255,0.25);margin:0 0 14px;">* New customer timelines vary by location, how actively you share your link, and local competition. Some stores see new buyers in days; others in weeks.</p>
+        <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#818cf8;text-decoration:none;border:1px solid rgba(79,70,229,0.3);border-radius:8px;padding:10px 18px;">Get new customers →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+<style>
+  @media (min-width: 768px) { .fs-customer-grid { grid-template-columns: 1fr 1fr !important; } }
+</style>
+
 <!-- ─── TESTIMONIALS ───────────────────────────────────────────────── -->
 <section class="fs-section fs-section-tinted">
   <div class="fs-wrap">
     <p class="fs-eyebrow" style="color:#0F172A;">Seller stories</p>
-    <h2 class="fs-h2" style="color:#0F172A;">Real sellers. Real problems solved.</h2>
+    <h2 class="fs-h2" style="color:#0F172A;">Real sellers. Real problems solving.</h2>
     <p class="fs-lead">From WhatsApp chaos to a running digital business.</p>
     <div class="fs-testimonials">
       <div class="fs-tcard">
@@ -651,10 +1000,10 @@ const jsonLd = {
     <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid #E2E8F0;">
       {[
         {q:"Is Relifish free to use?", a:"Yes. Free to list your products. We charge zero commission on every sale — you keep 100%."},
-        {q:"Do I need a smartphone or computer?", a:"Just a smartphone. Your dashboard is mobile-first. Manage orders, listings, and notifications all from your phone."},
+        {q:"Do I need a smartphone or computer?", a:"Just a smartphone. Your dashboard is mobile-first. Manage orders, inventory, and notifications all from your phone."},
         {q:"How do buyers find my store?", a:"Share your link (relifish.store/s/your-store) on WhatsApp and Instagram. Buyers can also find you on the Relifish shop page."},
         {q:"Can I set my own shop hours?", a:"Yes. Set your open/close times, which days you operate, and your pre-order window. Orders are blocked when your shop is closed."},
-        {q:"How does payment work?", a:"Buyers pay via UPI, Razorpay, or COD. They upload payment proof; you confirm and fulfill. Relifish takes no commission."},
+        {q:"How does payment work?", a:"Buyers pay via UPI or COD. They upload UPI payment proof; you confirm and fulfill. Relifish takes no commission."},
         {q:"What if I run out of stock?", a:"Set a quantity limit on each listing. When it hits zero, the item auto-shows as sold out and buyers can't order more."},
       ].map(f => (
         <div style="border-bottom:1px solid #E2E8F0;padding:20px 0;">

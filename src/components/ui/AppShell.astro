@@ -77,7 +77,8 @@ const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
     <link rel="canonical" href={canonicalUrl} />
-    <link rel="icon" type="image/png" href="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/favicon.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
@@ -170,8 +171,8 @@ const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
       *, *::before, *::after { box-sizing: border-box; }
       .v2-app { min-height: 100vh; }
       .v2-main {
-        max-width: var(--app-max-width, 800px);
-        margin: 0 auto;
+        width: 100%;
+        margin: 0;
         padding-bottom: 16px;
       }
       a { color: inherit; }
