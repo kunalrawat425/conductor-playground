@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { computeDeliveryFee } from "../../../lib/order-pricing";
+import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
   capitalizeFishName,
   orderEmailBuyer,
@@ -97,7 +97,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const { data: seller } = await supabase
       .from("sellers")
       .select(
-        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above"
+        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, lat, lng"
       )
       .eq("id", clientSellerId)
       .single();
@@ -118,6 +118,22 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     const status: "pending_payment" = "pending_payment";
+
+    // For per-km delivery fee: resolve buyer address coordinates once.
+    let deliveryDistanceKm: number | undefined = undefined;
+    if (order_type === "delivery" && buyer_addr && seller?.lat != null && seller?.lng != null) {
+      const { data: addrRow } = await supabase
+        .from("buyer_addresses")
+        .select("lat, lng")
+        .eq("id", buyer_addr)
+        .single();
+      if (addrRow?.lat != null && addrRow?.lng != null) {
+        deliveryDistanceKm = haversineKm(
+          Number(seller.lat), Number(seller.lng),
+          Number(addrRow.lat), Number(addrRow.lng)
+        );
+      }
+    }
 
     // Fetch emails in parallel, non-blocking — resolved lazily when emails fire
     const buyerEmailPromise = buyer_id
@@ -223,7 +239,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         continue;
       }
 
-      const delivery_fee = seller ? computeDeliveryFee(seller, line.total_price, order_type) : 0;
+      const delivery_fee = seller ? computeDeliveryFee(seller, line.total_price, order_type, deliveryDistanceKm) : 0;
 
       const { data: orderId, error: rpcError } = await supabase.rpc("create_order_atomic", {
         p_listing_id: line.listing_id,
