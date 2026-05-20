@@ -28,7 +28,7 @@ const jsonLd = {
         { "@type": "Question", "name": "How do I get orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Create your seller page, add your listings, and share your link on WhatsApp and Instagram. Buyers in your area can browse and order directly." } },
         { "@type": "Question", "name": "Can I accept pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set pre-order windows (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Advance payment is collected automatically." } },
         { "@type": "Question", "name": "Does Relifish support delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set a delivery radius, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address." } },
-        { "@type": "Question", "name": "How do I get notified about new orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order triggers an instant WhatsApp notification to you. You can confirm, reject, or mark orders as ready from your dashboard." } }
+        { "@type": "Question", "name": "How do I get notified about new orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order triggers an instant push notification to your phone and an email. You can confirm, reject, or mark orders as ready directly from your dashboard." } }
       ]
     }
   ]
@@ -36,7 +36,7 @@ const jsonLd = {
 ---
 <AppShell
   title="Sell on Relifish — Grow Your Fish Business Online"
-  description="List your daily catch, accept pre-orders, set delivery fees, and manage all orders in one place. Join Mumbai fish sellers on Relifish — free, no commission, instant WhatsApp alerts."
+  description="List your daily catch, accept pre-orders, set delivery fees, and manage all orders in one place. Join Mumbai fish sellers on Relifish — free, no commission, instant push and email notifications."
   hideNav={true}
   hideHeader={true}
   jsonLd={jsonLd}
@@ -218,7 +218,7 @@ const jsonLd = {
       <p>The platform built for daily catch volume, slim margins, and fresh fish at scale — trusted by sellers across Mumbai. Improve your customer experience with one link, one click, instant order confirmation. No middleman. No commission.</p>
       <form onsubmit="return false;">
         <div class="fs-cta-form">
-          <input type="tel" placeholder="Your WhatsApp number" />
+          <input type="tel" placeholder="Your phone number" />
           <a href="/dashboard/login">Get Started</a>
         </div>
       </form>
@@ -303,8 +303,8 @@ const jsonLd = {
       </div>
       <div class="fs-trust-item">
         <div class="fs-trust-icon" style="background:#ECFDF5;font-size:22px;">💬</div>
-        <div class="fs-trust-title">WhatsApp Alerts</div>
-        <div class="fs-trust-desc">Every order pings you instantly</div>
+        <div class="fs-trust-title">Push & Email Alerts</div>
+        <div class="fs-trust-desc">Every order pings your phone + email</div>
       </div>
       <div class="fs-trust-item">
         <div class="fs-trust-icon" style="background:#E6F0FF;font:700 17px Inter;color:#0066FF;">₹0</div>
@@ -346,7 +346,7 @@ const jsonLd = {
           <li><span style="color:#0066FF;font-weight:700;">→</span> Set quantity limits — auto-stops when sold out</li>
           <li><span style="color:#0066FF;font-weight:700;">→</span> Bundle pricing: 3pc pack, 5pc pack, per-kg options</li>
           <li><span style="color:#0066FF;font-weight:700;">→</span> Set shop open/close hours + order days</li>
-          <li><span style="color:#0066FF;font-weight:700;">→</span> WhatsApp notification every new order</li>
+          <li><span style="color:#0066FF;font-weight:700;">→</span> Push notification + email on every new order</li>
           <li><span style="color:#0066FF;font-weight:700;">→</span> Confirm, reject, mark ready — all from phone</li>
         </ul>
         <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#0066FF;text-decoration:none;">Start listing →</a>
@@ -403,8 +403,10 @@ const jsonLd = {
           <li><span style="color:#059669;font-weight:700;">→</span> Flat fee (₹X) or per-km rate (₹X/km)</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Free delivery threshold (e.g. free above ₹500)</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Set delivery radius in km from your location</li>
-          <li><span style="color:#059669;font-weight:700;">→</span> Buyers outside radius auto see pickup only</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Buyers outside radius auto-shown pickup only</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Distance shown to buyer at checkout (e.g. 5.2 km)</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Enable pickup, delivery, or both — your choice</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Accept UPI · Razorpay · Cash on delivery</li>
         </ul>
         <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#059669;text-decoration:none;">Enable delivery →</a>
       </div>
@@ -419,6 +421,71 @@ const jsonLd = {
           <span style="font:400 12px Inter;color:#34d399;">Buyer address saved · Distance auto-calculated</span>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STORE SETUP ────────────────────────────────────────────────── -->
+<section class="fs-section fs-section-light">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#0066FF;">Setup in minutes</p>
+    <h2 class="fs-h2" style="color:#0F172A;">Everything you need to run<br/>your store from your phone.</h2>
+    <p class="fs-lead">Your seller profile controls how buyers see you — location, hours, pickup vs delivery, minimum order, and payments. All from one screen.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E6F0FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">📍</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Location & Radius</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Pin your store location. Buyers nearby see you in their feed. Set your delivery radius in km.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🕐</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Shop Hours & Days</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Set open/close times and which days you operate. Orders are blocked when your shop is closed.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🧊</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Pickup & Delivery</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Enable pickup, delivery, or both. Buyers see only what you offer. No delivery staff needed for pickup-only.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">💳</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Payments</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Accept UPI (enter your UPI ID), Razorpay, or cash on delivery. Buyers upload proof — you confirm.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E6F0FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">📸</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Store Photo & Name</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Upload your store photo. Shown in buyer feeds, cart, and order confirmations. Your brand, your identity.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🔔</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Push & Email Notifications</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Enable push alerts on your phone for every new order. Order emails sent to buyers and you automatically.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">₹</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Minimum Order</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Set a minimum order amount. Orders below the threshold are blocked at checkout — no small orders you can't fulfill.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🌙</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Pre-Order Window</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Set the hours buyers can pre-order (e.g. 8pm–10pm). Automatic cutoff so you're never overwhelmed.</div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:24px;">
+      <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 14px Inter;color:#0066FF;text-decoration:none;">Set up your store →</a>
     </div>
   </div>
 </section>
@@ -469,7 +536,7 @@ const jsonLd = {
         {n:"1", title:"Create your seller account", desc:"Sign up with your phone number. 30 seconds.", c:"#0066FF"},
         {n:"2", title:"Add your listings", desc:"Photo, name, price, quantity, hours. Your page goes live instantly.", c:"#0066FF"},
         {n:"3", title:"Share your link", desc:"Post relifish.store/s/your-store on WhatsApp and Instagram.", c:"#0066FF"},
-        {n:"✓", title:"Start getting orders", desc:"Buyers order directly. You get a WhatsApp ping. Confirm and go.", c:"#059669"},
+        {n:"✓", title:"Start getting orders", desc:"Buyers order directly. You get a push notification + email. Confirm and go.", c:"#059669"},
       ].map((s, i, arr) => (
         <div class="fs-step">
           <div class="fs-step-num" style={`background:${s.c}`}>{s.n}</div>
