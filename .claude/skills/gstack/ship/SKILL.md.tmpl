@@ -268,22 +268,22 @@ If multiple suites need to run, run them sequentially (each needs a test lane). 
 > {{PLAN_COMPLETION_AUDIT_SHIP}}
 >
 > After your analysis, output a single JSON object on the LAST LINE of your response (no other text after it):
-> `{"total_items":N,"done":N,"changed":N,"deferred":N,"summary":"<markdown checklist for PR body>"}`
+> `{"total_items":N,"done":N,"changed":N,"deferred":N,"unverifiable":N,"summary":"<markdown checklist for PR body>"}`
 
 **Parent processing:**
 
 1. Parse the LAST line of the subagent's output as JSON.
-2. Store `done`, `deferred` for Step 20 metrics; use `summary` in PR body.
-3. If `deferred > 0` and no user override, present the deferred items via AskUserQuestion before continuing.
-4. Embed `summary` in PR body's `## Plan Completion` section (Step 19).
+2. Store `done`, `deferred`, `unverifiable` for Step 20 metrics; use `summary` in PR body.
+3. If `deferred > 0` or `unverifiable > 0` and no user override, present the items via the appropriate AskUserQuestion (see Gate Logic priority order above) before continuing.
+4. Embed `summary` in PR body's `## Plan Completion` section (Step 19). If `unverifiable > 0` and the user picked option A in the UNVERIFIABLE gate, also embed `## Plan Completion — Manual Verifications` listing each user-confirmed item.
 
-**If the subagent fails or returns invalid JSON:** Fall back to running the audit inline. Never block /ship on subagent failure.
+**If the subagent fails or returns invalid JSON:** Fall back to running the audit inline (parent processes the same plan-extraction + classification logic). If the inline fallback also fails (e.g., plan file unreadable, parser error), do NOT silently pass — surface the failure as an explicit AskUserQuestion: "Plan Completion audit could not run ({reason}). Options: (A) Skip audit and ship anyway — record that the audit was skipped in PR body and Step 20 metrics; (B) Stop and fix the audit." Default and recommended option is (B). Silent fail-open is the failure shape that VAS-449 surfaced.
 
 ---
 
 {{PLAN_VERIFICATION_EXEC}}
 
-{{LEARNINGS_SEARCH}}
+{{LEARNINGS_SEARCH:query=release ship version changelog merge pr}}
 
 {{SCOPE_DRIFT}}
 
@@ -401,11 +401,30 @@ For each comment in `comments`:
 
 {{GBRAIN_SAVE_RESULTS}}
 
+### Refresh learnings for the headline feature on this branch
+
+The top-of-skill learnings pull was keyed to "release ship" broadly. Before the VERSION/CHANGELOG step, re-pull learnings keyed to THIS branch's headline feature so any prior version-bump or CHANGELOG pitfalls for similar features surface.
+
+Pick ONE keyword that names the headline feature you're shipping. The keyword should be a noun: the primary skill or module name, the central feature noun, or the binary you changed. The keyword MUST be alphanumeric or hyphen only — no quotes, slashes, dots, colons, or whitespace. If your candidate has any of those, simplify to just the alphanumeric stem.
+
+Worked examples (ship-specific): good keywords are `learnings-search`, `pacing`, `worktree-ship`. Bad: `the branch headline`, `v1.31.1.0`, `feat: token-or search`.
+
+```bash
+~/.claude/skills/gstack/bin/gstack-learnings-search --query "<your-keyword>" --limit 5 2>/dev/null || true
+```
+
+If any learnings come back, name which one applies to the version bump or CHANGELOG framing in one sentence. If none come back, continue without reference — the absence is itself useful information.
+
 ## Step 12: Version bump (auto-decide)
 
 **Idempotency check:** Before bumping, classify the state by comparing `VERSION` against the base branch AND against `package.json`'s `version` field. Four states: FRESH (do bump), ALREADY_BUMPED (skip bump), DRIFT_STALE_PKG (sync pkg only, no re-bump), DRIFT_UNEXPECTED (stop and ask).
 
 ```bash
+if ! git rev-parse --verify origin/<base> >/dev/null 2>&1; then
+  echo "ERROR: Unable to resolve origin/<base>. Run 'git fetch origin' or verify the base branch exists."
+  exit 1
+fi
+
 BASE_VERSION=$(git show origin/<base>:VERSION 2>/dev/null | tr -d '\r\n[:space:]' || echo "0.0.0.0")
 CURRENT_VERSION=$(cat VERSION 2>/dev/null | tr -d '\r\n[:space:]' || echo "0.0.0.0")
 [ -z "$BASE_VERSION" ] && BASE_VERSION="0.0.0.0"
@@ -451,8 +470,8 @@ fi
 Read the `STATE:` line and dispatch:
 
 - **FRESH** → proceed with the bump action below (steps 1–4).
-- **ALREADY_BUMPED** → skip the bump. Reuse `CURRENT_VERSION` for CHANGELOG and PR body. Continue to the next step.
-- **DRIFT_STALE_PKG** → a prior `/ship` bumped `VERSION` but failed to update `package.json`. Run the sync-only repair block below (after step 4). Do NOT re-bump. Reuse `CURRENT_VERSION` for CHANGELOG and PR body.
+- **ALREADY_BUMPED** → skip the bump by default, BUT check for queue drift first: call `bin/gstack-next-version` with the implied bump level (derived from `CURRENT_VERSION` vs `BASE_VERSION`), compare its `.version` against `CURRENT_VERSION`. If they differ (queue moved since last ship), use **AskUserQuestion**: "VERSION drift detected: you claim v<CURRENT> but next available is v<NEW> (queue moved). A) Rebump to v<NEW> and rewrite CHANGELOG header + PR title (recommended), B) Keep v<CURRENT> — will be rejected by CI version-gate until resolved." If A, treat this as FRESH with `NEW_VERSION=<new>` and run steps 1-4 (which will also trigger Step 13 CHANGELOG header rewrite and Step 19 PR title rewrite). If B, reuse `CURRENT_VERSION` and warn that CI will likely reject. If util is offline, warn and reuse `CURRENT_VERSION`.
+- **DRIFT_STALE_PKG** → a prior `/ship` bumped `VERSION` but failed to update `package.json`. Run the sync-only repair block below (after step 4). Do NOT re-bump. Reuse `CURRENT_VERSION` for CHANGELOG and PR body. (Queue check still runs in ALREADY_BUMPED terms after repair.)
 - **DRIFT_UNEXPECTED** → `/ship` has halted (exit 1). Resolve manually; /ship cannot tell which file is authoritative.
 
 1. Read the current `VERSION` file (4-digit format: `MAJOR.MINOR.PATCH.MICRO`)
@@ -465,9 +484,33 @@ Read the `STATE:` line and dispatch:
    - **MINOR** (2nd digit): **ASK the user** if ANY feature signal is detected, OR 500+ lines changed, OR new modules/packages added
    - **MAJOR** (1st digit): **ASK the user** — only for milestones or breaking changes
 
-3. Compute the new version:
-   - Bumping a digit resets all digits to its right to 0
-   - Example: `0.19.1.0` + PATCH → `0.19.2.0`
+   Save the chosen level as `BUMP_LEVEL` (one of `major`, `minor`, `patch`, `micro`). This is the user-intended level. The next step decides *placement* — the level stays the same even if queue-aware allocation has to advance past a claimed slot.
+
+3. **Queue-aware version pick (workspace-aware ship, v1.6.4.0+).** Call `bin/gstack-next-version` to see what's already claimed by open PRs + active sibling Conductor worktrees, then render the queue state to the user:
+
+   ```bash
+   QUEUE_JSON=$(bun run bin/gstack-next-version \
+     --base <base> \
+     --bump "$BUMP_LEVEL" \
+     --current-version "$BASE_VERSION" 2>/dev/null || echo '{"offline":true}')
+   NEW_VERSION=$(echo "$QUEUE_JSON" | jq -r '.version // empty')
+   CLAIMED_COUNT=$(echo "$QUEUE_JSON" | jq -r '.claimed | length')
+   ACTIVE_SIBLING_COUNT=$(echo "$QUEUE_JSON" | jq -r '.active_siblings | length')
+   OFFLINE=$(echo "$QUEUE_JSON" | jq -r '.offline // false')
+   REASON=$(echo "$QUEUE_JSON" | jq -r '.reason // ""')
+   ```
+
+   - If `OFFLINE=true` or the util fails (auth expired, no `gh`/`glab`, network): fall back to local `BUMP_LEVEL` arithmetic (bump `BASE_VERSION` at the chosen level). Print `⚠ workspace-aware ship offline — using local bump only`. Continue.
+   - If `CLAIMED_COUNT > 0`: render the queue table to the user so they can see landing order at a glance:
+     ```
+     Queue on <base> (vBASE_VERSION):
+       #<pr> <branch> → v<version>   [⚠ collision with #<other>]
+     Active sibling workspaces (WIP, not yet PR'd):
+       <path> → v<version> (committed Nh ago)
+     Your branch will claim: vNEW_VERSION  (<reason>)
+     ```
+   - If `ACTIVE_SIBLING_COUNT > 0` and any active sibling's VERSION is `>= NEW_VERSION`, use **AskUserQuestion**: "Sibling workspace <path> has v<X> committed <N>h ago but hasn't PR'd yet. Wait for them to ship first, or advance past? A) Advance past (recommended for unrelated work), B) Abort /ship and sync up with sibling first."
+   - Validate `NEW_VERSION` matches `MAJOR.MINOR.PATCH.MICRO`. If util returns an empty or malformed version, fall back to local bump.
 
 4. **Validate** `NEW_VERSION` and write it to **both** `VERSION` and `package.json`. This block runs only when `STATE: FRESH`.
 
@@ -768,7 +811,18 @@ gh pr view --json url,number,state -q 'if .state == "OPEN" then "PR #\(.number):
 glab mr view -F json 2>/dev/null | jq -r 'if .state == "opened" then "MR_EXISTS" else "NO_MR" end' 2>/dev/null || echo "NO_MR"
 ```
 
-If an **open** PR/MR already exists: **update** the PR body using `gh pr edit --body "..."` (GitHub) or `glab mr update -d "..."` (GitLab). Always regenerate the PR body from scratch using this run's fresh results (test output, coverage audit, review findings, adversarial review, TODOS summary, documentation_section from Step 18). Never reuse stale PR body content from a prior run. Print the existing URL and continue to Step 20.
+If an **open** PR/MR already exists: **update** the PR body using `gh pr edit --body "..."` (GitHub) or `glab mr update -d "..."` (GitLab). Always regenerate the PR body from scratch using this run's fresh results (test output, coverage audit, review findings, adversarial review, TODOS summary, documentation_section from Step 18). Never reuse stale PR body content from a prior run.
+
+**Always update the PR title to start with `v$NEW_VERSION`.** PR titles use the workspace-aware format `v<NEW_VERSION> <type>: <summary>` — version ALWAYS first, no exceptions, no "custom title kept intentionally" escape hatch. The shared helper `bin/gstack-pr-title-rewrite.sh` is the single source of truth for the rule.
+
+1. Read the current title: `CURRENT=$(gh pr view --json title -q .title)` (or `glab mr view -F json | jq -r .title`).
+2. Compute the corrected title: `NEW_TITLE=$(~/.claude/skills/gstack/bin/gstack-pr-title-rewrite.sh "$NEW_VERSION" "$CURRENT")`. The helper handles three cases: title already correct (no-op), title has a different `v<X.Y.Z.W>` prefix (replace it), or title has no version prefix (prepend one).
+3. If `NEW_TITLE` differs from `CURRENT`, run `gh pr edit --title "$NEW_TITLE"` (or `glab mr update -t "$NEW_TITLE"`).
+4. **Self-check:** re-fetch the title and assert it starts with `v$NEW_VERSION `. If it does not, retry the edit once. If still wrong, surface the failure to the user.
+
+This keeps the title truthful when Step 12's queue-drift detection rebumps a stale version, and forces the format on PRs that were created without it.
+
+Print the existing URL and continue to Step 20.
 
 If no PR/MR exists: create a pull request (GitHub) or merge request (GitLab) using the platform detected in Step 0.
 
@@ -836,7 +890,9 @@ you missed it.>
 **If GitHub:**
 
 ```bash
-gh pr create --base <base> --title "<type>: <summary>" --body "$(cat <<'EOF'
+# PR title MUST start with v$NEW_VERSION — enforced on every run, no exceptions.
+# (See Step 19 idempotency block + bin/gstack-pr-title-rewrite.sh for the rule.)
+gh pr create --base <base> --title "v$NEW_VERSION <type>: <summary>" --body "$(cat <<'EOF'
 <PR body from above>
 EOF
 )"
@@ -845,7 +901,9 @@ EOF
 **If GitLab:**
 
 ```bash
-glab mr create -b <base> -t "<type>: <summary>" -d "$(cat <<'EOF'
+# MR title MUST start with v$NEW_VERSION — enforced on every run, no exceptions.
+# (See Step 19 idempotency block + bin/gstack-pr-title-rewrite.sh for the rule.)
+glab mr create -b <base> -t "v$NEW_VERSION <type>: <summary>" -d "$(cat <<'EOF'
 <MR body from above>
 EOF
 )"

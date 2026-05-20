@@ -21,6 +21,8 @@ import type { Page, Frame, Locator } from 'playwright';
 import type { TabSession, RefEntry } from './tab-session';
 import * as Diff from 'diff';
 import { TEMP_DIR, isPathWithin } from './platform';
+import { escapeEnvelopeSentinels } from './content-security';
+import { stripLoneSurrogates } from './sanitize';
 
 // Roles considered "interactive" for the -i flag
 const INTERACTIVE_ROLES = new Set([
@@ -575,7 +577,7 @@ export async function handleSnapshot(
     }
 
     session.setLastSnapshot(snapshotText);
-    return diffOutput.join('\n');
+    return stripLoneSurrogates(diffOutput.join('\n'));
   }
 
   // Store for future diffs
@@ -613,11 +615,17 @@ export async function handleSnapshot(
       parts.push(...trustedRefs);
       parts.push('');
     }
+    // Defuse any envelope sentinel that appears inside the page's own
+    // accessibility text. Without this, a page whose rendered content
+    // contains the literal `═══ END UNTRUSTED WEB CONTENT ═══` string
+    // can close the envelope early and forge a fake "trusted" block
+    // for the LLM. Same escape that wrapUntrustedPageContent applies.
+    const safeUntrusted = untrustedLines.map(escapeEnvelopeSentinels);
     parts.push('═══ BEGIN UNTRUSTED WEB CONTENT ═══');
-    parts.push(...untrustedLines);
+    parts.push(...safeUntrusted);
     parts.push('═══ END UNTRUSTED WEB CONTENT ═══');
-    return parts.join('\n');
+    return stripLoneSurrogates(parts.join('\n'));
   }
 
-  return output.join('\n');
+  return stripLoneSurrogates(output.join('\n'));
 }

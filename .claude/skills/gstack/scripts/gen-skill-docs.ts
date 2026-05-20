@@ -12,6 +12,7 @@
 import { COMMAND_DESCRIPTIONS } from '../browse/src/commands';
 import { SNAPSHOT_FLAGS } from '../browse/src/snapshot';
 import { discoverTemplates } from './discover-skills';
+import { writeLlmsTxt } from './gen-llms-txt';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { Host, TemplateContext } from './resolvers/types';
@@ -425,7 +426,11 @@ function processTemplate(tmplPath: string, host: Host = 'claude'): { outputPath:
   const tierMatch = tmplContent.match(/^preamble-tier:\s*(\d+)$/m);
   const preambleTier = tierMatch ? parseInt(tierMatch[1], 10) : undefined;
 
-  const ctx: TemplateContext = { skillName, tmplPath, benefitsFrom, host, paths: HOST_PATHS[host], preambleTier, model: MODEL_ARG_VAL };
+  // Extract interactive flag from frontmatter (generator-only; controls plan-mode handshake inclusion)
+  const interactiveMatch = tmplContent.match(/^interactive:\s*(true|false)\s*$/m);
+  const interactive = interactiveMatch ? interactiveMatch[1] === 'true' : undefined;
+
+  const ctx: TemplateContext = { skillName, tmplPath, benefitsFrom, host, paths: HOST_PATHS[host], preambleTier, model: MODEL_ARG_VAL, interactive };
 
   // Replace placeholders (supports parameterized: {{NAME:arg1:arg2}})
   // Config-driven: suppressedResolvers return empty string for this host
@@ -657,4 +662,26 @@ if (!DRY_RUN) {
       }
     }
   } catch { /* non-fatal */ }
+}
+
+// Regenerate gstack/llms.txt — single-file capability index for AI agents.
+// Runs after SKILL.md generation so it sees current skill descriptions and
+// browse command list. Wrapped in an IIFE so the await-import doesn't make
+// this module async (test/gen-skill-docs.test.ts uses require() to pull
+// extractVoiceTriggers/processVoiceTriggers, which fails on async modules).
+// Freshness is asserted in test/llms-txt-shape.test.ts.
+if (!DRY_RUN) {
+  void (async () => {
+    try {
+      const result = await writeLlmsTxt();
+      if (result.warnings.length > 0) {
+        for (const w of result.warnings) console.error(`[gen-llms-txt] WARN: ${w}`);
+      } else {
+        console.log(`[gen-llms-txt] gstack/llms.txt: ${result.skills.length} skills, ${result.browseCommands.length} browse commands`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[gen-llms-txt] FAILED: ${msg}`);
+    }
+  })();
 }
