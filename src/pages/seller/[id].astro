@@ -929,7 +929,7 @@ const tags = [
       const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
 
       // Status line (pre-order window is pickup-only — don't imply a delivery savings perk)
-      let statusLine = `${sellerPackCount} pack${sellerPackCount !== 1 ? "s" : ""}`;
+      let statusLine = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""}`;
       let statusColor = "var(--v2-ink-3)";
       if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
