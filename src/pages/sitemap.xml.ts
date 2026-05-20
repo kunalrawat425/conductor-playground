@@ -20,11 +20,15 @@ export const GET: APIRoute = async () => {
     // Core pages
     { loc: "/", changefreq: "daily", priority: "1.0" },
     { loc: "/shop", changefreq: "daily", priority: "0.9" },
-    // Static marketing pages
+    // Marketing pages
+    { loc: "/for-sellers", changefreq: "weekly", priority: "0.8" },
     { loc: "/about", changefreq: "monthly", priority: "0.7" },
-    { loc: "/buyer-detailed.html", changefreq: "monthly", priority: "0.6" },
-    { loc: "/seller-detailed.html", changefreq: "monthly", priority: "0.6" },
     { loc: "/privacy", changefreq: "yearly", priority: "0.3" },
+    // Area pages
+    { loc: "/area/thane", changefreq: "weekly", priority: "0.7" },
+    { loc: "/area/kandivali", changefreq: "weekly", priority: "0.7" },
+    { loc: "/area/tardeo", changefreq: "weekly", priority: "0.7" },
+    { loc: "/area/kamothe", changefreq: "weekly", priority: "0.7" },
   ];
 
   for (const seller of sellers || []) {
