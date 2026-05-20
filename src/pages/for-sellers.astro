@@ -53,7 +53,7 @@ const jsonLd = {
   }
 
   /* ─── Layout containers ──────────────── */
-  .fs-wrap { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  .fs-wrap { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
   .fs-section { padding: 64px 0; }
   .fs-section-light { background: #fff; }
   .fs-section-tinted { background: #F8FAFC; border-top: 1px solid #E2E8F0; }
@@ -65,7 +65,7 @@ const jsonLd = {
   .fs-hero-bg { position: absolute; inset: 0; background-image: url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=70&fit=crop'); background-size: cover; background-position: center; opacity: 0.15; }
   .fs-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,12,22,0.5) 0%, rgba(8,12,22,0.9) 70%, #080c16 100%); }
   .fs-hero-glow { position: absolute; top: -80px; right: -60px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,102,255,0.18) 0%, transparent 65%); pointer-events: none; }
-  .fs-hero-inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr; gap: 48px; align-items: center; padding: 100px 24px 60px; width: 100%; max-width: 1100px; margin: 0 auto; }
+  .fs-hero-inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr; gap: 48px; align-items: center; padding: 100px 24px 60px; width: 100%; max-width: 1280px; margin: 0 auto; }
   .fs-hero-copy h1 { font: 900 52px/1.0 Inter, sans-serif; color: #fff; margin: 0 0 20px; letter-spacing: -2px; }
   .fs-hero-copy h1 span { color: #0066FF; }
   .fs-hero-copy p { font: 400 17px/1.6 Inter, sans-serif; color: rgba(255,255,255,0.55); margin: 0 0 32px; max-width: 440px; }
@@ -174,7 +174,7 @@ const jsonLd = {
 
   /* ─── Desktop breakpoint ─────────────── */
   @media (min-width: 768px) {
-    .fs-hero-inner { grid-template-columns: 1fr 280px; padding: 120px 48px 80px; }
+    .fs-hero-inner { grid-template-columns: 1fr 300px; padding: 120px 48px 80px; }
     .fs-hero-copy h1 { font-size: 72px; }
     .fs-trust { grid-template-columns: repeat(4, 1fr); }
     .fs-panel { flex-direction: row; }
@@ -186,10 +186,14 @@ const jsonLd = {
     .fs-section { padding: 80px 0; }
     .fs-steps { max-width: 560px; }
     .fs-hero-phone-wrap { display: flex; justify-content: center; align-items: flex-end; }
+    .fs-store-grid { grid-template-columns: repeat(4, 1fr); }
   }
 
   @media (min-width: 1100px) {
     .fs-hero-copy h1 { font-size: 80px; }
+    .fs-hero-inner { grid-template-columns: 1fr 320px; }
+    .fs-testimonials { grid-template-columns: repeat(3, 1fr); }
+    .fs-store-grid { grid-template-columns: repeat(4, 1fr); }
   }
 </style>
 
@@ -432,7 +436,7 @@ const jsonLd = {
     <h2 class="fs-h2" style="color:#0F172A;">Everything you need to run<br/>your store from your phone.</h2>
     <p class="fs-lead">Your seller profile controls how buyers see you — location, hours, pickup vs delivery, minimum order, and payments. All from one screen.</p>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="fs-store-grid">
 
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
         <div style="width:40px;height:40px;border-radius:10px;background:#E6F0FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">📍</div>
