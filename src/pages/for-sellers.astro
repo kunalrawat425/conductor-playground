@@ -26,10 +26,10 @@ const jsonLd = {
       "mainEntity": [
         { "@type": "Question", "name": "Is Relifish free to use for sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is free to list your products. We charge zero commission on every sale — you keep 100% of every rupee." } },
         { "@type": "Question", "name": "How do I get orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Create your seller page, add your listings, and share your link on WhatsApp and Instagram. Buyers in your area can browse and order directly. Most sellers get their first order within 24 hours of going live." } },
-        { "@type": "Question", "name": "Can I accept pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set pre-order windows (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Advance payment is collected automatically via UPI, Razorpay, or COD." } },
+        { "@type": "Question", "name": "Can I accept pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set pre-order windows (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Advance payment is collected automatically via UPI or COD." } },
         { "@type": "Question", "name": "Does Relifish support delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set a delivery radius, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address to your location. Buyers outside your radius automatically see pickup only." } },
         { "@type": "Question", "name": "How do I get notified about new orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order triggers an instant push notification to your phone and an email alert. You can confirm, reject, or mark orders as ready directly from your dashboard — no calls, no WhatsApp chaos." } },
-        { "@type": "Question", "name": "What payment methods do buyers use?", "acceptedAnswer": { "@type": "Answer", "text": "Buyers pay via UPI, Razorpay (card/netbanking/wallet), or cash on delivery. They upload payment proof; you confirm and fulfill. Relifish takes zero commission on any payment." } },
+        { "@type": "Question", "name": "What payment methods do buyers use?", "acceptedAnswer": { "@type": "Answer", "text": "Buyers pay via UPI or cash on delivery (COD). They upload UPI payment proof; you confirm and fulfill. Relifish takes zero commission on any payment." } },
         { "@type": "Question", "name": "How quickly can I start selling?", "acceptedAnswer": { "@type": "Answer", "text": "Sign up, add your listings, and your store goes live in under 5 minutes. Share your link on WhatsApp and Instagram. First orders typically arrive same day." } }
       ],
       "step": [
@@ -44,7 +44,7 @@ const jsonLd = {
 ---
 <AppShell
   title="Sell on Relifish — Free to List, Zero Commission, Grow Your Fish Business Online"
-  description="List your daily catch, accept pre-orders, get paid via UPI · Razorpay · COD. Manage all orders in one place. Mumbai fish sellers on Relifish keep 100% of every sale. Free to start, live in 5 minutes."
+  description="List your daily catch, accept pre-orders, get paid via UPI · COD. Start accepting orders in your serviceable area. Mumbai fish sellers on Relifish keep 100% of every sale. Free to start, live in 5 minutes."
   hideNav={true}
   hideHeader={true}
   jsonLd={jsonLd}
@@ -229,7 +229,7 @@ const jsonLd = {
   <div class="fs-hero-inner">
     <div class="fs-hero-copy">
       <h1>Built For<br/><span>Fish Sellers</span></h1>
-      <p>The platform built for daily catch volume, slim margins, and fresh fish at scale — trusted by sellers across Mumbai. Improve your customer experience with one link, one click, instant order confirmation. No middleman. No commission.</p>
+      <p>Start accepting orders in your serviceable area — one link, one click, instant confirmation. Built for daily catch volume, slim margins, and fresh fish at scale. No middleman. No commission.</p>
       <form onsubmit="return false;">
         <div class="fs-cta-form">
           <input type="tel" placeholder="Your phone number" />
@@ -253,7 +253,7 @@ const jsonLd = {
               <div class="fs-phone-header-val">18 <span>orders · ₹12,450</span></div>
             </div>
             <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट) × 2kg</div><div class="fs-order-sub">Confirmed · 8:14am · UPI</div></div><span class="fs-badge fs-badge-green">✓ Done</span></div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई) × 1kg</div><div class="fs-order-sub">Incoming · 8:22am · Razorpay</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई) × 1kg</div><div class="fs-order-sub">Incoming · 8:22am · UPI</div></div><span class="fs-badge fs-badge-blue">New</span></div>
             <div class="fs-order-card"><div><div class="fs-order-name">Prawns (कोळंबी)</div><div class="fs-order-sub">Pre-order · Tomorrow · ₹680</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
             <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा) × 1kg</div><div class="fs-order-sub">Incoming · 9:05am · COD</div></div><span class="fs-badge fs-badge-blue">New</span></div>
             <div class="fs-order-card"><div><div class="fs-order-name">Rawas (रावस) × 500g</div><div class="fs-order-sub">Delivery · 5.2km · Paid</div></div><span class="fs-badge fs-badge-orange">Delivery</span></div>
@@ -332,9 +332,9 @@ const jsonLd = {
         <div class="fs-trust-desc">Keep 100% of every sale</div>
       </div>
       <div class="fs-trust-item">
-        <div class="fs-trust-icon" style="background:#EEF2FF;font:600 9px Inter;color:#4F46E5;text-align:center;letter-spacing:-0.3px;">UPI<br/>Razorpay<br/>COD</div>
+        <div class="fs-trust-icon" style="background:#EEF2FF;font:700 10px Inter;color:#4F46E5;text-align:center;letter-spacing:-0.2px;">UPI<br/>COD</div>
         <div class="fs-trust-title">Payments</div>
-        <div class="fs-trust-desc">UPI · Razorpay · Cash on delivery</div>
+        <div class="fs-trust-desc">UPI · Cash on delivery</div>
       </div>
     </div>
   </div>
@@ -426,7 +426,7 @@ const jsonLd = {
           <li><span style="color:#059669;font-weight:700;">→</span> Buyers outside radius auto-shown pickup only</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Distance shown to buyer at checkout (e.g. 5.2 km)</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Enable pickup, delivery, or both — your choice</li>
-          <li><span style="color:#059669;font-weight:700;">→</span> Accept UPI · Razorpay · Cash on delivery</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Accept UPI · Cash on delivery</li>
         </ul>
         <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#059669;text-decoration:none;">Enable delivery →</a>
       </div>
@@ -475,7 +475,7 @@ const jsonLd = {
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
         <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">💳</div>
         <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Payments</div>
-        <div style="font:400 12px/1.5 Inter;color:#64748B;">Accept UPI (enter your UPI ID), Razorpay, or cash on delivery. Buyers upload proof — you confirm.</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Enter your UPI ID. Buyers pay and upload proof — you confirm. COD also supported.</div>
       </div>
 
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
@@ -626,12 +626,12 @@ const jsonLd = {
               <span style="font:700 10px Inter;color:#fff;background:#4F46E5;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Day 1–3</span>
               <span style="font:400 11px Inter;color:#94A3B8;">First orders arrive. No calls needed.</span>
             </div>
-            <p style="font:600 14px/1.5 Inter;color:#2D2A6E;margin:0 0 8px;"><strong>Outcome:</strong> Buyer browses, picks, pays via UPI · Razorpay · COD. You get a push notification + email. One tap to confirm. You just took an order without speaking to anyone.</p>
+            <p style="font:600 14px/1.5 Inter;color:#2D2A6E;margin:0 0 8px;"><strong>Outcome:</strong> Buyer browses, picks, pays via UPI · COD. You get a push notification + email. One tap to confirm. You just took an order without speaking to anyone.</p>
             <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 10px;">No more missed calls. No order written on paper. Every order is digital, tracked, and confirmed — with payment already collected. This is what running a business feels like.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Instant push alert</span>
               <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Email confirmation</span>
-              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">UPI · Razorpay · COD</span>
+              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">UPI · COD</span>
             </div>
           </div>
         </div>
@@ -767,6 +767,7 @@ const jsonLd = {
               </div>
             </div>
 
+            <p style="font:400 11px Inter;color:rgba(255,255,255,0.2);margin:0 0 10px;">* Timelines are estimates. Performance depends on store activity and local area — some sellers see results faster, some slower.</p>
             <p style="font:400 12px/1.5 Inter;color:rgba(255,255,255,0.4);margin:0 0 12px;">You don't lose a single customer — every order is tracked, every feedback visible, every service gap measurable. Revenue becomes predictable. Growth becomes a system, not luck. <span style="color:#60a5fa;font-weight:700;">That's the Relifish operating system.</span></p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <span style="font:600 11px Inter;color:#60a5fa;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);padding:4px 10px;border-radius:999px;">Existing buyers migrate Week 1</span>
@@ -853,6 +854,7 @@ const jsonLd = {
             <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">All regulars on digital. Pre-orders nightly.</div>
           </div>
         </div>
+        <p style="font:400 11px Inter;color:rgba(255,255,255,0.25);margin:0 0 14px;">* Timelines are indicative. Results depend on your store activity, how actively you share your link, and your local area demand.</p>
         <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#60a5fa;text-decoration:none;border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:10px 18px;">Add your customers →</a>
       </div>
 
@@ -881,6 +883,7 @@ const jsonLd = {
             <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">5× customer base. Zero ad spend.</div>
           </div>
         </div>
+        <p style="font:400 11px Inter;color:rgba(255,255,255,0.25);margin:0 0 14px;">* New customer timelines vary by location, how actively you share your link, and local competition. Some stores see new buyers in days; others in weeks.</p>
         <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#818cf8;text-decoration:none;border:1px solid rgba(79,70,229,0.3);border-radius:8px;padding:10px 18px;">Get new customers →</a>
       </div>
 
@@ -895,7 +898,7 @@ const jsonLd = {
 <section class="fs-section fs-section-tinted">
   <div class="fs-wrap">
     <p class="fs-eyebrow" style="color:#0F172A;">Seller stories</p>
-    <h2 class="fs-h2" style="color:#0F172A;">Real sellers. Real problems solved.</h2>
+    <h2 class="fs-h2" style="color:#0F172A;">Real sellers. Real problems solving.</h2>
     <p class="fs-lead">From WhatsApp chaos to a running digital business.</p>
     <div class="fs-testimonials">
       <div class="fs-tcard">
@@ -943,7 +946,7 @@ const jsonLd = {
         {q:"Do I need a smartphone or computer?", a:"Just a smartphone. Your dashboard is mobile-first. Manage orders, inventory, and notifications all from your phone."},
         {q:"How do buyers find my store?", a:"Share your link (relifish.store/s/your-store) on WhatsApp and Instagram. Buyers can also find you on the Relifish shop page."},
         {q:"Can I set my own shop hours?", a:"Yes. Set your open/close times, which days you operate, and your pre-order window. Orders are blocked when your shop is closed."},
-        {q:"How does payment work?", a:"Buyers pay via UPI, Razorpay, or COD. They upload payment proof; you confirm and fulfill. Relifish takes no commission."},
+        {q:"How does payment work?", a:"Buyers pay via UPI or COD. They upload UPI payment proof; you confirm and fulfill. Relifish takes no commission."},
         {q:"What if I run out of stock?", a:"Set a quantity limit on each listing. When it hits zero, the item auto-shows as sold out and buyers can't order more."},
       ].map(f => (
         <div style="border-bottom:1px solid #E2E8F0;padding:20px 0;">
