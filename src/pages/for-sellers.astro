@@ -216,8 +216,7 @@ const jsonLd = {
   </a>
   <div style="display:flex;gap:8px;align-items:center;">
     <a href="/shop" style="font:500 13px Inter;color:rgba(255,255,255,0.5);text-decoration:none;padding:8px 12px;display:none;" class="fs-desktop-link">Browse sellers</a>
-    <a href="/dashboard/login" style="font:600 13px Inter;color:rgba(255,255,255,0.65);text-decoration:none;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);">Log in</a>
-    <a href="/dashboard/login" style="font:700 13px Inter;color:#fff;text-decoration:none;padding:8px 16px;border-radius:8px;background:#0066FF;">Get started</a>
+    <a href="/dashboard/login" style="font:700 13px Inter;color:#fff;text-decoration:none;padding:8px 16px;border-radius:8px;background:#0066FF;">Get started free</a>
   </div>
 </nav>
 
@@ -675,18 +674,42 @@ const jsonLd = {
               <span style="font:700 10px Inter;color:#fff;background:#EA580C;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Week 2</span>
               <span style="font:400 11px Inter;color:#94A3B8;">₹0 commission. Tomorrow's money, tonight.</span>
             </div>
-            <p style="font:600 14px/1.5 Inter;color:#7C2D12;margin:0 0 8px;"><strong>Outcome:</strong> Every rupee is yours. No middleman cut. Pre-orders taken 8pm tonight = cash in hand before you even go to the docks tomorrow. You stop guessing. You stop over-buying. Wastage drops.</p>
-            <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 10px;">Pre-orders lock demand. You buy exactly what's needed. You make better decisions. Your margins improve — not because prices went up, but because waste went down.</p>
+            <p style="font:600 14px/1.5 Inter;color:#7C2D12;margin:0 0 8px;"><strong>Outcome:</strong> Every rupee is yours — zero commission, zero middleman cut. Pre-orders taken 8pm tonight = you know exactly what to buy at the docks tomorrow morning. Stock is funded by orders already placed. You invest in fish that's already sold.</p>
+            <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 12px;">Pre-orders transform your entire supply chain. You know the quantity, the species, the demand window before you touch a rupee. Calculated logistics — exactly how much to transport, exactly what vehicle size, no excess weight. No cold storage costs. No panic-pricing leftover stock at a loss. No calls to relatives to "buy some pomfret before it goes bad."</p>
+            <!-- Supply chain comparison -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:10px 12px;">
+                <div style="font:700 11px Inter;color:#DC2626;margin-bottom:5px;">Without pre-orders</div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Guess tomorrow's demand</span>
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Over-buy at docks</span>
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Cold storage cost ₹200–800/day</span>
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Panic pricing → margin loss</span>
+                  <span style="font:400 10px/1.4 Inter;color:#92400E;">→ Unsold stock = pure loss</span>
+                </div>
+              </div>
+              <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:10px 12px;">
+                <div style="font:700 11px Inter;color:#059669;margin-bottom:5px;">With Relifish pre-orders</div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Demand locked by 10pm</span>
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Buy exact quantity needed</span>
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Zero cold storage spend</span>
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Full-price sale, always</span>
+                  <span style="font:400 10px/1.4 Inter;color:#064E3B;">→ Revenue predictable, daily</span>
+                </div>
+              </div>
+            </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">₹0 commission always</span>
-              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Pre-order revenue locked</span>
-              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">↓ Wastage ↑ Margins</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Zero cold storage cost</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Calculated logistics</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">↑ Margins every week</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Step 5 — Month 1+ -->
+      <!-- Step 5 — Compounds: existing + new customers -->
       <div style="display:flex;gap:0;align-items:flex-start;">
         <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
           <div style="width:40px;height:40px;border-radius:50%;background:#0066FF;border:3px solid #60a5fa;display:flex;align-items:center;justify-content:center;font:800 12px Inter;color:#fff;flex-shrink:0;">↩</div>
@@ -698,12 +721,57 @@ const jsonLd = {
               <span style="font:700 10px Inter;color:#0F172A;background:#60a5fa;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Month 1+</span>
               <span style="font:400 11px Inter;color:rgba(255,255,255,0.35);">Flywheel. Zero acquisition cost.</span>
             </div>
-            <p style="font:600 14px/1.5 Inter;color:rgba(255,255,255,0.9);margin:0 0 8px;"><strong>Outcome:</strong> Repeat buyers order every week without you doing anything. Your data tells you what to stock, when to open, which fish to push. You know your business better than anyone.</p>
-            <p style="font:400 12px/1.5 Inter;color:rgba(255,255,255,0.5);margin:0 0 12px;">You don't lose a single customer — every order is tracked, every complaint is visible, every improvement is measurable. Growth becomes a system, not luck. <span style="color:#60a5fa;font-weight:700;">That's the Relifish operating system.</span></p>
+            <p style="font:600 14px/1.5 Inter;color:rgba(255,255,255,0.9);margin:0 0 12px;"><strong>Outcome:</strong> Two things happen in parallel — your existing customers lock in as weekly repeat buyers, and new buyers find you for the first time. Your data tells you what to stock, when to open, which fish to push. You know your business better than anyone.</p>
+
+            <!-- Existing vs New customers — deep tracks -->
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
+
+              <!-- Track A: Existing customers -->
+              <div style="background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.18);border-radius:12px;padding:14px 16px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <span style="font:800 10px Inter;color:#0F172A;background:#60a5fa;border-radius:999px;padding:3px 10px;">Week 1</span>
+                  <span style="font:700 12px Inter;color:#60a5fa;">Your existing customers — migrate them first</span>
+                </div>
+                <p style="font:500 12px/1.6 Inter;color:rgba(255,255,255,0.65);margin:0 0 10px;">You already have customers on WhatsApp. Send them one message: <em style="color:#fff;">"Ab yahan order karo →"</em> with your Relifish link. They trust you — they just needed a better way to order. Within 2–3 days, your regulars are ordering digitally. No more calls. No more screenshots. No more "kal bata dena".</p>
+                <p style="font:400 11px/1.5 Inter;color:rgba(255,255,255,0.4);margin:0 0 10px;">Their experience changes completely: they see live stock, pick exactly what they want, pay in 30 seconds, and get a confirmation + status update at every step. They feel like your best customer every time they order — because your system treats them that way automatically.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                  <div style="background:rgba(96,165,250,0.08);border-radius:8px;padding:8px 10px;">
+                    <div style="font:700 10px Inter;color:#60a5fa;margin-bottom:4px;">Their experience</div>
+                    <div style="font:400 10px/1.4 Inter;color:rgba(255,255,255,0.45);">Live catalogue → order in 30s → get push confirmation → track status → repeat weekly</div>
+                  </div>
+                  <div style="background:rgba(96,165,250,0.08);border-radius:8px;padding:8px 10px;">
+                    <div style="font:700 10px Inter;color:#60a5fa;margin-bottom:4px;">Your operations</div>
+                    <div style="font:400 10px/1.4 Inter;color:rgba(255,255,255,0.45);">Orders come in digitally → confirm with 1 tap → pre-orders lock tomorrow's stock → zero missed orders</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Track B: New customers -->
+              <div style="background:rgba(79,70,229,0.06);border:1px solid rgba(79,70,229,0.2);border-radius:12px;padding:14px 16px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <span style="font:800 10px Inter;color:#fff;background:#4F46E5;border-radius:999px;padding:3px 10px;">Week 2–3</span>
+                  <span style="font:700 12px Inter;color:#818cf8;">New customers — they find you, you don't find them</span>
+                </div>
+                <p style="font:500 12px/1.6 Inter;color:rgba(255,255,255,0.65);margin:0 0 10px;">New buyers land on your page from Google search ("fresh pomfret near me"), a friend's share, or your Instagram bio link. They've never heard of you — but your live catalogue, store photo, open hours, and payment options make you instantly credible. First order placed. That's momentum.</p>
+                <p style="font:400 11px/1.5 Inter;color:rgba(255,255,255,0.4);margin:0 0 10px;">Their engagement deepens over weeks: first order → push notifications bring them back → pre-order the night before becomes habit → they share your link with their building WhatsApp group. One new buyer becomes 5. That's how your customer base compounds without any ad spend.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                  <div style="background:rgba(79,70,229,0.08);border-radius:8px;padding:8px 10px;">
+                    <div style="font:700 10px Inter;color:#818cf8;margin-bottom:4px;">Discovery</div>
+                    <div style="font:400 10px/1.4 Inter;color:rgba(255,255,255,0.45);">Google → Instagram → friend share → Relifish nearby feed</div>
+                  </div>
+                  <div style="background:rgba(79,70,229,0.08);border-radius:8px;padding:8px 10px;">
+                    <div style="font:700 10px Inter;color:#818cf8;margin-bottom:4px;">Engagement timeline</div>
+                    <div style="font:400 10px/1.4 Inter;color:rgba(255,255,255,0.45);">Week 2: first order → Week 3: pre-order → Week 4: refer a neighbour → Month 2: loyal repeat</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p style="font:400 12px/1.5 Inter;color:rgba(255,255,255,0.4);margin:0 0 12px;">You don't lose a single customer — every order is tracked, every feedback visible, every service gap measurable. Revenue becomes predictable. Growth becomes a system, not luck. <span style="color:#60a5fa;font-weight:700;">That's the Relifish operating system.</span></p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <span style="font:600 11px Inter;color:#60a5fa;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);padding:4px 10px;border-radius:999px;">Repeat buyers weekly</span>
-              <span style="font:600 11px Inter;color:#60a5fa;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);padding:4px 10px;border-radius:999px;">Data-driven stocking</span>
-              <span style="font:600 11px Inter;color:#60a5fa;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);padding:4px 10px;border-radius:999px;">Predictable revenue</span>
+              <span style="font:600 11px Inter;color:#60a5fa;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);padding:4px 10px;border-radius:999px;">Existing buyers migrate Week 1</span>
+              <span style="font:600 11px Inter;color:#818cf8;background:rgba(79,70,229,0.1);border:1px solid rgba(79,70,229,0.2);padding:4px 10px;border-radius:999px;">New buyers Week 2–3</span>
+              <span style="font:600 11px Inter;color:#34d399;background:rgba(5,150,105,0.1);border:1px solid rgba(5,150,105,0.2);padding:4px 10px;border-radius:999px;">Revenue compounds Month 1+</span>
             </div>
           </div>
         </div>
@@ -750,6 +818,78 @@ const jsonLd = {
     </div>
   </div>
 </section>
+
+<!-- ─── BRING YOUR CUSTOMERS / GAIN NEW ───────────────────────────── -->
+<section class="fs-section fs-section-dark">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#60a5fa;">Two engines. One platform.</p>
+    <h2 class="fs-h2" style="color:#fff;">Bring your customers.<br/>Gain new ones.</h2>
+    <p style="font:400 15px/1.6 Inter;color:rgba(255,255,255,0.5);margin:0 0 40px;max-width:600px;">Most sellers think going digital means starting from zero. It doesn't. You already have customers. Relifish digitises those relationships first — then adds new ones on top. Two parallel engines, both running from Day 1.</p>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:24px;" class="fs-customer-grid">
+
+      <!-- Engine 1: Existing -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(96,165,250,0.2);border-radius:20px;padding:28px 28px 24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(96,165,250,0.15);display:flex;align-items:center;justify-content:center;font:700 14px Inter;color:#60a5fa;flex-shrink:0;">1</div>
+          <div>
+            <div style="font:800 16px Inter;color:#fff;margin-bottom:2px;">Bring your existing customers</div>
+            <div style="font:600 11px Inter;color:#60a5fa;letter-spacing:0.5px;">Week 1 — Done in one WhatsApp message</div>
+          </div>
+        </div>
+        <p style="font:400 14px/1.7 Inter;color:rgba(255,255,255,0.55);margin:14px 0 18px;">Your WhatsApp regulars already know you, trust you, and want to order from you. The problem isn't relationship — it's friction. They have to call, message, wait for replies. On Relifish, they tap your link, see your stock, order in 30 seconds. Same seller, zero friction.</p>
+        <p style="font:400 14px/1.7 Inter;color:rgba(255,255,255,0.55);margin:0 0 20px;">Send one broadcast message with your link. Within 48 hours, your regulars are ordering digitally. You stop managing order intake manually. Your operations free up. Your per-order time drops from 5 minutes of back-and-forth to 10 seconds of confirmation.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
+          <div style="text-align:center;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#60a5fa;">Day 1</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">Send your link to WhatsApp regulars</div>
+          </div>
+          <div style="text-align:center;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#60a5fa;">Day 2–3</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">First digital orders from known buyers</div>
+          </div>
+          <div style="text-align:center;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#60a5fa;">Week 1</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">All regulars on digital. Pre-orders nightly.</div>
+          </div>
+        </div>
+        <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#60a5fa;text-decoration:none;border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:10px 18px;">Add your customers →</a>
+      </div>
+
+      <!-- Engine 2: New customers -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(79,70,229,0.25);border-radius:20px;padding:28px 28px 24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(79,70,229,0.2);display:flex;align-items:center;justify-content:center;font:700 14px Inter;color:#818cf8;flex-shrink:0;">2</div>
+          <div>
+            <div style="font:800 16px Inter;color:#fff;margin-bottom:2px;">Gain new customers automatically</div>
+            <div style="font:600 11px Inter;color:#818cf8;letter-spacing:0.5px;">Week 2–3 — No ads. No effort. Organic momentum.</div>
+          </div>
+        </div>
+        <p style="font:400 14px/1.7 Inter;color:rgba(255,255,255,0.55);margin:14px 0 18px;">When you go live on Relifish, your store appears on Google search results for "fresh fish near me", on the Relifish shop page for buyers in your area, and wherever your link gets shared. New buyers who've never heard of you discover you — because your digital storefront does the marketing you never had time to do.</p>
+        <p style="font:400 14px/1.7 Inter;color:rgba(255,255,255,0.55);margin:0 0 20px;">Every new buyer who orders once gets push notifications. They come back for their next purchase. They pre-order from you the night before. They tell their building WhatsApp group. One new customer in Week 2 becomes five regular customers by Month 2 — with zero ad spend on your part.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
+          <div style="text-align:center;background:rgba(79,70,229,0.08);border:1px solid rgba(79,70,229,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#818cf8;">Week 2</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">First new buyers from search & shares</div>
+          </div>
+          <div style="text-align:center;background:rgba(79,70,229,0.08);border:1px solid rgba(79,70,229,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#818cf8;">Week 3</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">New buyers pre-order. Referrals start.</div>
+          </div>
+          <div style="text-align:center;background:rgba(79,70,229,0.08);border:1px solid rgba(79,70,229,0.15);border-radius:10px;padding:12px 8px;">
+            <div style="font:800 18px Inter;color:#818cf8;">Month 2</div>
+            <div style="font:400 10px Inter;color:rgba(255,255,255,0.4);margin-top:3px;">5× customer base. Zero ad spend.</div>
+          </div>
+        </div>
+        <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#818cf8;text-decoration:none;border:1px solid rgba(79,70,229,0.3);border-radius:8px;padding:10px 18px;">Get new customers →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+<style>
+  @media (min-width: 768px) { .fs-customer-grid { grid-template-columns: 1fr 1fr !important; } }
+</style>
 
 <!-- ─── TESTIMONIALS ───────────────────────────────────────────────── -->
 <section class="fs-section fs-section-tinted">
