@@ -168,15 +168,19 @@ const tags = [
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "FoodEstablishment",
-        "@id": `https://www.relifish.store/seller/${id}#seller`,
+        "@type": ["FoodEstablishment", "LocalBusiness"],
+        "@id": `${canonicalUrl}#seller`,
         "name": sellerName,
-        "description": `Fresh fish seller in ${sellerLocation || "Mumbai"}. Pre-order directly — no middleman.`,
-        "url": `https://www.relifish.store/seller/${id}`,
+        "description": (() => { const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 5).join(", "); return `Buy fresh ${speciesList || "fish"} from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"}. Pre-order directly from your local fish seller — no middleman, no markup.`; })(),
+        "url": canonicalUrl,
         "image": seller.store_image_url || "https://www.relifish.store/og-image.png",
         "priceRange": "₹₹",
         "servesCuisine": "Seafood",
+        "currenciesAccepted": "INR",
+        "paymentAccepted": "Cash, UPI, Credit Card",
         "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressRegion": "Maharashtra", "addressCountry": "IN" },
+        "geo": seller.lat && seller.lng ? { "@type": "GeoCoordinates", "latitude": seller.lat, "longitude": seller.lng } : undefined,
+        "potentialAction": { "@type": "OrderAction", "target": { "@type": "EntryPoint", "urlTemplate": canonicalUrl, "actionPlatform": ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"] }, "deliveryMethod": ["http://purl.org/goodrelations/v1#DeliveryModePickUp", "http://purl.org/goodrelations/v1#DeliveryModeDirectDownload"] },
         "openingHours": seller.opens_at && seller.closes_at
           ? `${openDays.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 2)).join(",") || "Mo,Tu,We,Th,Fr,Sa,Su"} ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}`
           : undefined,
@@ -225,7 +229,7 @@ const tags = [
             "name": speciesDisplayById[l.species] || l.species || "Fish",
             "description": l.description || `Fresh ${l.species} from ${sellerName} in ${sellerLocation || "Mumbai"}`,
             "image": l.photo_url || undefined,
-            "url": `https://www.relifish.store/seller/${id}`,
+            "url": canonicalUrl,
             "offers": (l.pricing_options || []).length > 0 ? {
               "@type": "Offer",
               "price": l.pricing_options[0].price,
@@ -241,7 +245,7 @@ const tags = [
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.store/" },
           { "@type": "ListItem", "position": 2, "name": "Browse Sellers", "item": "https://www.relifish.store/shop" },
-          { "@type": "ListItem", "position": 3, "name": sellerName, "item": `https://www.relifish.store/seller/${id}` }
+          { "@type": "ListItem", "position": 3, "name": sellerName, "item": canonicalUrl }
         ]
       }
     ].filter(Boolean)
@@ -377,6 +381,18 @@ const tags = [
   )}
 
   <div id="v2-cart-bar-mount"></div>
+
+  <!-- Hyperlocal footer + cross-link to for-sellers -->
+  {!notFound && (
+    <div style="background:var(--v2-bg-2);border-top:1px solid var(--v2-border);padding:20px 16px;text-align:center;">
+      <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 6px;">
+        {sellerName} · {sellerLocation || "Mumbai"} · Hyperlocal fish delivery within {seller?.delivery_rad || 5}km
+      </p>
+      <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0;">
+        Are you a fish seller? <a href="/for-sellers" style="color:var(--v2-brand);text-decoration:none;font-weight:600;">Sell on Relifish →</a>
+      </p>
+    </div>
+  )}
 </AppShell>
 
 <style is:global>

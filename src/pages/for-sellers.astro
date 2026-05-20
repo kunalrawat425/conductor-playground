@@ -46,7 +46,7 @@ const jsonLd = {
 <style>
   /* ─── Reset ──────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; }
-  body { margin: 0; padding: 0; }
+  body { margin: 0 !important; padding: 0 !important; max-width: none !important; }
   @keyframes scroll-cue {
     0%,100%{opacity:.3;transform:scaleY(1);}
     50%{opacity:.7;transform:scaleY(1.15);}
@@ -187,6 +187,8 @@ const jsonLd = {
     .fs-steps { max-width: 560px; }
     .fs-hero-phone-wrap { display: flex; justify-content: center; align-items: flex-end; }
     .fs-store-grid { grid-template-columns: repeat(4, 1fr); }
+    .fs-hyperlocal-grid { grid-template-columns: 1fr 260px; }
+    .fs-analytics-grid { grid-template-columns: 1fr 1fr; }
   }
 
   @media (min-width: 1100px) {
@@ -490,6 +492,54 @@ const jsonLd = {
 
     <div style="margin-top:24px;">
       <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 14px Inter;color:#0066FF;text-decoration:none;">Set up your store →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HYPERLOCAL ────────────────────────────────────────────────── -->
+<section class="fs-section fs-section-dark">
+  <div class="fs-wrap">
+    <div style="display:grid;grid-template-columns:1fr;gap:36px;align-items:center;" class="fs-hyperlocal-grid">
+      <div>
+        <p class="fs-eyebrow" style="color:#60a5fa;">Hyperlocal by design</p>
+        <h2 class="fs-h2" style="color:#fff;">Your store. Your area.<br/>Your customers.</h2>
+        <p style="font:400 15px/1.6 Inter;color:rgba(255,255,255,0.5);margin:0 0 28px;">Relifish is built hyperlocal — not for all of India, but for your 5km radius. Buyers near you find you. You serve them. That's it. No competing with far-off sellers. No irrelevant traffic. Just your neighbourhood customers ordering from you directly.</p>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:28px;">
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,102,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font:700 13px Inter;color:#60a5fa;">5km</div>
+            <div><div style="font:700 14px Inter;color:#fff;margin-bottom:3px;">Your delivery radius = your territory</div><div style="font:400 13px Inter;color:rgba(255,255,255,0.45);">Set a 5km radius. Only buyers within that range see your store. No wasted reach.</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(5,150,105,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font:700 13px Inter;color:#34d399;">📍</div>
+            <div><div style="font:700 14px Inter;color:#fff;margin-bottom:3px;">Pin your location once</div><div style="font:400 13px Inter;color:rgba(255,255,255,0.45);">Set your store location. Buyers nearby automatically see you in their feed — no ads, no marketing.</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(79,70,229,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font:700 13px Inter;color:#818cf8;">🏘️</div>
+            <div><div style="font:700 14px Inter;color:#fff;margin-bottom:3px;">Build a loyal neighbourhood base</div><div style="font:400 13px Inter;color:rgba(255,255,255,0.45);">Same buyers order every week. You know them. They trust you. Predictable demand, zero acquisition cost.</div></div>
+          </div>
+        </div>
+        <a href="/shop" style="display:inline-flex;align-items:center;gap:6px;font:600 13px Inter;color:rgba(255,255,255,0.6);text-decoration:none;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 16px;">See sellers near you →</a>
+      </div>
+      <!-- Hyperlocal map visual -->
+      <div style="background:rgba(0,102,255,0.06);border:1px solid rgba(0,102,255,0.15);border-radius:20px;padding:28px;text-align:center;">
+        <div style="position:relative;width:200px;height:200px;margin:0 auto 20px;">
+          <!-- Radius circles -->
+          <div style="position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(0,102,255,0.2);"></div>
+          <div style="position:absolute;inset:20px;border-radius:50%;border:1px dashed rgba(0,102,255,0.3);"></div>
+          <div style="position:absolute;inset:40px;border-radius:50%;border:1px dashed rgba(0,102,255,0.4);background:rgba(0,102,255,0.05);"></div>
+          <!-- Center pin -->
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#0066FF;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 8px rgba(0,102,255,0.2);">
+            <span style="font:700 18px Inter;color:#fff;">🏪</span>
+          </div>
+          <!-- Buyer dots -->
+          <div style="position:absolute;top:20%;left:65%;width:28px;height:28px;border-radius:50%;background:rgba(5,150,105,0.8);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid rgba(255,255,255,0.1);">👤</div>
+          <div style="position:absolute;top:65%;left:20%;width:28px;height:28px;border-radius:50%;background:rgba(5,150,105,0.8);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid rgba(255,255,255,0.1);">👤</div>
+          <div style="position:absolute;top:30%;left:15%;width:28px;height:28px;border-radius:50%;background:rgba(5,150,105,0.8);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid rgba(255,255,255,0.1);">👤</div>
+          <div style="position:absolute;top:72%;left:68%;width:28px;height:28px;border-radius:50%;background:rgba(5,150,105,0.8);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid rgba(255,255,255,0.1);">👤</div>
+        </div>
+        <div style="font:700 14px Inter;color:#fff;margin-bottom:6px;">Your 5km store radius</div>
+        <div style="font:400 12px Inter;color:rgba(255,255,255,0.4);">Buyers within range · Orders direct to you</div>
+      </div>
     </div>
   </div>
 </section>
