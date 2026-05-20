@@ -76,22 +76,33 @@ const jsonLd = {
   .fs-cta-sub { margin-top: 14px; font: 500 13px Inter, sans-serif; color: rgba(255,255,255,0.4); }
   .fs-cta-sub a { color: rgba(255,255,255,0.65); text-decoration: underline; text-underline-offset: 3px; }
 
-  /* ─── Phone mockup ───────────────────── */
-  .fs-phone { width: 220px; background: #0F172A; border-radius: 24px; padding: 14px; box-shadow: 0 28px 70px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08); flex-shrink: 0; }
-  .fs-phone-notch { width: 60px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 999px; margin: 0 auto 12px; }
-  .fs-phone-status { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 0 2px; font: 600 10px Inter, sans-serif; color: rgba(255,255,255,0.4); }
-  .fs-phone-header { background: rgba(0,102,255,0.15); border: 1px solid rgba(0,102,255,0.2); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
-  .fs-phone-header-label { font: 700 10px Inter, sans-serif; color: #60a5fa; margin-bottom: 2px; }
-  .fs-phone-header-val { font: 900 20px Inter, sans-serif; color: #fff; line-height: 1; }
-  .fs-phone-header-val span { font: 400 11px Inter, sans-serif; color: rgba(255,255,255,0.5); }
-  .fs-order-card { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  /* ─── Phone mockup (matches landing page .demo-phone style) ─── */
+  .fs-phone {
+    width: 240px;
+    background: linear-gradient(175deg, #1E2D4A, #0D1629);
+    border-radius: 44px;
+    border: 2px solid rgba(255,255,255,0.15);
+    box-shadow: 0 48px 96px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.08);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .fs-phone-notch { height: 28px; background: #000; display: flex; align-items: center; justify-content: center; }
+  .fs-phone-pill { width: 72px; height: 9px; background: #111; border-radius: 100px; }
+  .fs-phone-screen { padding: 12px; background: #050D1A; }
+  .fs-phone-sbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font: 600 9px Inter, sans-serif; color: rgba(255,255,255,0.4); }
+  .fs-phone-header { background: rgba(0,102,255,0.18); border: 1px solid rgba(0,102,255,0.25); border-radius: 12px; padding: 11px 13px; margin-bottom: 10px; }
+  .fs-phone-header-label { font: 700 9px Inter, sans-serif; color: #60a5fa; margin-bottom: 3px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .fs-phone-header-val { font: 900 22px Inter, sans-serif; color: #fff; line-height: 1; }
+  .fs-phone-header-val span { font: 400 10px Inter, sans-serif; color: rgba(255,255,255,0.45); }
+  .fs-order-card { background: rgba(255,255,255,0.06); border-radius: 9px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.04); }
   .fs-order-name { font: 600 10px Inter, sans-serif; color: #fff; }
-  .fs-order-sub { font: 400 9px Inter, sans-serif; color: #64748B; }
-  .fs-badge { font: 700 9px Inter, sans-serif; padding: 3px 7px; border-radius: 999px; }
+  .fs-order-sub { font: 400 9px Inter, sans-serif; color: #64748B; margin-top: 1px; }
+  .fs-badge { font: 700 9px Inter, sans-serif; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
   .fs-badge-green { background: #059669; color: #fff; }
-  .fs-badge-blue { background: rgba(0,102,255,0.2); color: #60a5fa; }
-  .fs-badge-indigo { background: rgba(79,70,229,0.2); color: #818cf8; }
-  .fs-phone-nav { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-around; font: 400 9px Inter, sans-serif; color: #64748B; }
+  .fs-badge-blue { background: rgba(0,102,255,0.25); color: #60a5fa; }
+  .fs-badge-indigo { background: rgba(79,70,229,0.25); color: #818cf8; }
+  .fs-badge-orange { background: rgba(234,88,12,0.25); color: #fb923c; }
+  .fs-phone-nav { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.07); display: flex; justify-content: space-around; font: 400 9px Inter, sans-serif; color: #64748B; }
   .fs-phone-nav span.active { color: #0066FF; font-weight: 700; }
   .fs-phone-bar { width: 50px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 999px; margin: 10px auto 0; }
 
@@ -220,18 +231,21 @@ const jsonLd = {
       <div>
         <p style="font:600 11px Inter;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin:0 0 14px;text-align:center;">Your seller dashboard</p>
         <div class="fs-phone">
-          <div class="fs-phone-notch"></div>
-          <div class="fs-phone-status"><span>9:41</span><span>●●●</span></div>
-          <div class="fs-phone-header">
-            <div class="fs-phone-header-label">Today's orders</div>
-            <div class="fs-phone-header-val">18 <span>orders · ₹12,450</span></div>
+          <div class="fs-phone-notch"><div class="fs-phone-pill"></div></div>
+          <div class="fs-phone-screen">
+            <div class="fs-phone-sbar"><span>9:41</span><span>●●● 100%</span></div>
+            <div class="fs-phone-header">
+              <div class="fs-phone-header-label">Today's orders</div>
+              <div class="fs-phone-header-val">18 <span>orders · ₹12,450</span></div>
+            </div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट) × 2kg</div><div class="fs-order-sub">Confirmed · 8:14am</div></div><span class="fs-badge fs-badge-green">✓ Done</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई) × 1kg</div><div class="fs-order-sub">Incoming · 8:22am</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Prawns (कोळंबी)</div><div class="fs-order-sub">Pre-order · Tomorrow</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा) × 1kg</div><div class="fs-order-sub">Incoming · 9:05am</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Rawas (रावस) × 500g</div><div class="fs-order-sub">Delivery order</div></div><span class="fs-badge fs-badge-orange">Delivery</span></div>
+            <div class="fs-phone-nav"><span>Orders</span><span class="active">Dashboard</span><span>Listings</span></div>
+            <div class="fs-phone-bar"></div>
           </div>
-          <div class="fs-order-card"><div><div class="fs-order-name">Pomfret × 2kg</div><div class="fs-order-sub">Buyer · 8:14am</div></div><span class="fs-badge fs-badge-green">✓ Done</span></div>
-          <div class="fs-order-card"><div><div class="fs-order-name">Surmai × 1kg</div><div class="fs-order-sub">Buyer · 8:22am</div></div><span class="fs-badge fs-badge-blue">New</span></div>
-          <div class="fs-order-card"><div><div class="fs-order-name">Prawns × 500g</div><div class="fs-order-sub">Pre-order</div></div><span class="fs-badge fs-badge-indigo">Tomorrow</span></div>
-          <div class="fs-order-card"><div><div class="fs-order-name">Bangda × 1kg</div><div class="fs-order-sub">Buyer · 9:05am</div></div><span class="fs-badge fs-badge-blue">New</span></div>
-          <div class="fs-phone-nav"><span>Orders</span><span class="active">Dashboard</span><span>Listings</span></div>
-          <div class="fs-phone-bar"></div>
         </div>
       </div>
     </div>
@@ -341,7 +355,7 @@ const jsonLd = {
         <div style="font:600 10px Inter;color:#64748B;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Today's Menu · Live</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
           <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट)</div><div class="fs-order-sub">₹540/3pc · 8 left</div></div><span class="fs-badge fs-badge-green">In stock</span></div>
-          <div class="fs-order-card"><div><div class="fs-order-name">Surmai (किंगफिश)</div><div class="fs-order-sub">₹1125/kg · 3kg left</div></div><span class="fs-badge fs-badge-green">In stock</span></div>
+          <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई)</div><div class="fs-order-sub">₹1125/kg · 3kg left</div></div><span class="fs-badge fs-badge-green">In stock</span></div>
           <div class="fs-order-card"><div><div class="fs-order-name">Prawns (कोळंबी)</div><div class="fs-order-sub">₹680/kg</div></div><span class="fs-badge" style="background:rgba(220,38,38,0.15);color:#f87171;">Sold out</span></div>
           <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा)</div><div class="fs-order-sub">₹380/kg · 5kg left</div></div><span class="fs-badge fs-badge-green">In stock</span></div>
         </div>
