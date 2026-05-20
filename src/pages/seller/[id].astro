@@ -919,6 +919,8 @@ const tags = [
       const sellerItems = Object.values(getSellerItems());
       const sellerQty = sellerItems.reduce((s, i) => s + i.qty, 0);
       const sellerSubtotal = sellerItems.reduce((s, i) => s + i.qty * i.price, 0);
+      // Pack count: sum qty/bundleStep per entry (4 packs × 3pc = qty 12, bundleStep 3 → 4 packs)
+      const sellerPackCount = sellerItems.reduce((s, i) => s + Math.round(i.qty / getBundleStep(i)), 0);
 
       if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
       document.body.classList.add("v2-has-cart");
@@ -927,7 +929,7 @@ const tags = [
       const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
 
       // Status line (pre-order window is pickup-only — don't imply a delivery savings perk)
-      let statusLine = `${sellerQty} item${sellerQty !== 1 ? "s" : ""}`;
+      let statusLine = `${sellerPackCount} pack${sellerPackCount !== 1 ? "s" : ""}`;
       let statusColor = "var(--v2-ink-3)";
       if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
