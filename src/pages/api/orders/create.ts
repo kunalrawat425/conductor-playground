@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import { computeDeliveryFee } from "../../../lib/order-pricing";
+import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
   capitalizeFishName,
   orderEmailBuyer,
@@ -202,7 +202,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, free_delivery_above, preorder_cutoff_time, open_days, preorder_days"
+          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, preorder_cutoff_time, open_days, preorder_days, lat, lng"
         )
         .eq("id", seller_id)
         .single();
@@ -257,7 +257,21 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
       }
 
-      delivery_fee = seller ? computeDeliveryFee(seller, total_price, order_type) : 0;
+      let deliveryDistanceKm: number | undefined = undefined;
+      if (order_type === "delivery" && buyer_addr && seller?.lat != null && seller?.lng != null) {
+        const { data: addrRow } = await supabase
+          .from("buyer_addresses")
+          .select("lat, lng")
+          .eq("id", buyer_addr)
+          .single();
+        if (addrRow?.lat != null && addrRow?.lng != null) {
+          deliveryDistanceKm = haversineKm(
+            Number(seller.lat), Number(seller.lng),
+            Number(addrRow.lat), Number(addrRow.lng)
+          );
+        }
+      }
+      delivery_fee = seller ? computeDeliveryFee(seller, total_price, order_type, deliveryDistanceKm) : 0;
     }
 
     let order: { id: string; buyer_id?: string | null; status?: string } | null = null;

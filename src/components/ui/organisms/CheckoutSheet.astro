@@ -22,7 +22,7 @@ const { id = "v2-checkout" } = Astro.props;
     <div id={`${id}-delivery-hint`} style="display:none;font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:8px;text-align:center;"></div>
     <div class="v2-co-rows">
       <div class="v2-co-row"><span>Subtotal</span><span id={`${id}-subtotal`}>₹0</span></div>
-      <div class="v2-co-row" id={`${id}-delivery-row`} style="display:none;"><span>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
+      <div class="v2-co-row" id={`${id}-delivery-row`} style="display:none;"><span id={`${id}-delivery-label`}>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
       <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total`}>₹0</span></div>
     </div>
     <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" data-co-next="2">Next: Delivery →</button>
