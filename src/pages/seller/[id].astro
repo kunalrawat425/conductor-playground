@@ -162,6 +162,7 @@ const tags = [
     return `Buy fresh ${speciesList || "fish"} from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"}. Pre-order directly from your local seller — no middleman, no markup.`;
   })()}
   canonical={canonicalUrl}
+  noindex={true}
   hideHeader={true}
   nav={{ active: "home" }}
   jsonLd={seller && !notFound ? {
