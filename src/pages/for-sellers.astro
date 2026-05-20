@@ -1,0 +1,709 @@
+---
+export const prerender = true;
+import AppShell from "../components/ui/AppShell.astro";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.relifish.store/for-sellers",
+      "url": "https://www.relifish.store/for-sellers",
+      "name": "Sell on Relifish — Grow Your Fish Business Online",
+      "description": "List your daily catch, accept pre-orders, manage delivery, and get paid. Join fish sellers on Relifish — no commission, no middleman.",
+      "isPartOf": { "@id": "https://www.relifish.store" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://www.relifish.store#org",
+      "name": "Relifish",
+      "url": "https://www.relifish.store",
+      "description": "Online marketplace for fresh fish in Mumbai. Connects local fish sellers with buyers for same-day and pre-order delivery.",
+      "areaServed": { "@type": "City", "name": "Mumbai" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Is Relifish free to use for sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is free to list your products. We charge zero commission on every sale." } },
+        { "@type": "Question", "name": "How do I get orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Create your seller page, add your listings, and share your link on WhatsApp and Instagram. Buyers in your area can browse and order directly." } },
+        { "@type": "Question", "name": "Can I accept pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set pre-order windows (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Advance payment is collected automatically." } },
+        { "@type": "Question", "name": "Does Relifish support delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set a delivery radius, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address." } },
+        { "@type": "Question", "name": "How do I get notified about new orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order triggers an instant push notification to your phone and an email. You can confirm, reject, or mark orders as ready directly from your dashboard." } }
+      ]
+    }
+  ]
+};
+---
+<AppShell
+  title="Sell on Relifish — Grow Your Fish Business Online"
+  description="List your daily catch, accept pre-orders, set delivery fees, and manage all orders in one place. Join Mumbai fish sellers on Relifish — free, no commission, instant push and email notifications."
+  hideNav={true}
+  hideHeader={true}
+  jsonLd={jsonLd}
+  canonical="https://www.relifish.store/for-sellers"
+>
+
+<style>
+  /* ─── Reset ──────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  @keyframes scroll-cue {
+    0%,100%{opacity:.3;transform:scaleY(1);}
+    50%{opacity:.7;transform:scaleY(1.15);}
+  }
+
+  /* ─── Layout containers ──────────────── */
+  .fs-wrap { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+  .fs-section { padding: 64px 0; }
+  .fs-section-light { background: #fff; }
+  .fs-section-tinted { background: #F8FAFC; border-top: 1px solid #E2E8F0; }
+  .fs-section-dark { background: #0F172A; }
+  .fs-section-ink { background: #080c16; }
+
+  /* ─── Hero ───────────────────────────── */
+  .fs-hero { position: relative; min-height: 100svh; background: #080c16; display: flex; align-items: center; overflow: hidden; }
+  .fs-hero-bg { position: absolute; inset: 0; background-image: url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=70&fit=crop'); background-size: cover; background-position: center; opacity: 0.15; }
+  .fs-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,12,22,0.5) 0%, rgba(8,12,22,0.9) 70%, #080c16 100%); }
+  .fs-hero-glow { position: absolute; top: -80px; right: -60px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,102,255,0.18) 0%, transparent 65%); pointer-events: none; }
+  .fs-hero-inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr; gap: 48px; align-items: center; padding: 100px 24px 60px; width: 100%; max-width: 1280px; margin: 0 auto; }
+  .fs-hero-copy h1 { font: 900 52px/1.0 Inter, sans-serif; color: #fff; margin: 0 0 20px; letter-spacing: -2px; }
+  .fs-hero-copy h1 span { color: #0066FF; }
+  .fs-hero-copy p { font: 400 17px/1.6 Inter, sans-serif; color: rgba(255,255,255,0.55); margin: 0 0 32px; max-width: 440px; }
+  .fs-cta-form { display: flex; background: rgba(255,255,255,0.95); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.4); max-width: 400px; }
+  .fs-cta-form input { flex: 1; padding: 14px 16px; border: none; outline: none; font: 500 14px Inter, sans-serif; color: #0F172A; background: transparent; min-width: 0; }
+  .fs-cta-form a { background: #0066FF; color: #fff; font: 700 14px Inter, sans-serif; padding: 14px 20px; text-decoration: none; white-space: nowrap; display: flex; align-items: center; }
+  .fs-cta-note { font: 400 11px Inter, sans-serif; color: rgba(255,255,255,0.3); margin: 10px 0 0; }
+  .fs-cta-sub { margin-top: 14px; font: 500 13px Inter, sans-serif; color: rgba(255,255,255,0.4); }
+  .fs-cta-sub a { color: rgba(255,255,255,0.65); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ─── Phone mockup (matches landing page .demo-phone style) ─── */
+  .fs-phone {
+    width: 240px;
+    background: linear-gradient(175deg, #1E2D4A, #0D1629);
+    border-radius: 44px;
+    border: 2px solid rgba(255,255,255,0.15);
+    box-shadow: 0 48px 96px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.08);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .fs-phone-notch { height: 28px; background: #000; display: flex; align-items: center; justify-content: center; }
+  .fs-phone-pill { width: 72px; height: 9px; background: #111; border-radius: 100px; }
+  .fs-phone-screen { padding: 12px; background: #050D1A; }
+  .fs-phone-sbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font: 600 9px Inter, sans-serif; color: rgba(255,255,255,0.4); }
+  .fs-phone-header { background: rgba(0,102,255,0.18); border: 1px solid rgba(0,102,255,0.25); border-radius: 12px; padding: 11px 13px; margin-bottom: 10px; }
+  .fs-phone-header-label { font: 700 9px Inter, sans-serif; color: #60a5fa; margin-bottom: 3px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .fs-phone-header-val { font: 900 22px Inter, sans-serif; color: #fff; line-height: 1; }
+  .fs-phone-header-val span { font: 400 10px Inter, sans-serif; color: rgba(255,255,255,0.45); }
+  .fs-order-card { background: rgba(255,255,255,0.06); border-radius: 9px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.04); }
+  .fs-order-name { font: 600 10px Inter, sans-serif; color: #fff; }
+  .fs-order-sub { font: 400 9px Inter, sans-serif; color: #64748B; margin-top: 1px; }
+  .fs-badge { font: 700 9px Inter, sans-serif; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .fs-badge-green { background: #059669; color: #fff; }
+  .fs-badge-blue { background: rgba(0,102,255,0.25); color: #60a5fa; }
+  .fs-badge-indigo { background: rgba(79,70,229,0.25); color: #818cf8; }
+  .fs-badge-orange { background: rgba(234,88,12,0.25); color: #fb923c; }
+  .fs-phone-nav { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.07); display: flex; justify-content: space-around; font: 400 9px Inter, sans-serif; color: #64748B; }
+  .fs-phone-nav span.active { color: #0066FF; font-weight: 700; }
+  .fs-phone-bar { width: 50px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 999px; margin: 10px auto 0; }
+
+  /* ─── Trust bar ──────────────────────── */
+  .fs-trust { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .fs-trust-item { text-align: center; }
+  .fs-trust-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 22px; }
+  .fs-trust-title { font: 700 14px Inter, sans-serif; color: #0F172A; margin-bottom: 4px; }
+  .fs-trust-desc { font: 400 12px Inter, sans-serif; color: #64748B; }
+
+  /* ─── Section headers ────────────────── */
+  .fs-eyebrow { font: 700 11px Inter, sans-serif; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 12px; }
+  .fs-h2 { font: 800 32px/1.2 Inter, sans-serif; letter-spacing: -0.5px; margin: 0 0 12px; }
+  .fs-lead { font: 400 15px/1.6 Inter, sans-serif; color: #64748B; margin: 0 0 28px; }
+
+  /* ─── Tabs ───────────────────────────── */
+  .fs-tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; border-bottom: 2px solid #F1F5F9; }
+  .fs-tabs::-webkit-scrollbar { display: none; }
+  .fs-tab { font: 700 13px Inter, sans-serif; padding: 12px 22px; border: none; background: transparent; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s, border-color 0.15s; }
+
+  /* ─── Feature panels ─────────────────── */
+  .fs-panel { display: none; flex-direction: column; gap: 28px; padding: 36px 0; }
+  .fs-panel.active { display: flex; }
+  .fs-panel-copy ul { list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; }
+  .fs-panel-copy li { display: flex; align-items: center; gap: 10px; font: 500 14px Inter, sans-serif; color: #334155; }
+  .fs-ui-card { border-radius: 16px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+
+  /* ─── Analytics cards ────────────────── */
+  .fs-insight { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+  .fs-insight-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font: 700 15px Inter, sans-serif; }
+  .fs-insight-title { font: 700 14px Inter, sans-serif; color: #0F172A; margin-bottom: 3px; }
+  .fs-insight-sub { font: 400 12px Inter, sans-serif; color: #64748B; }
+
+  /* ─── Testimonials ───────────────────── */
+  .fs-testimonials { display: flex; flex-direction: column; gap: 16px; }
+  .fs-tcard { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .fs-tcard-tag { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px; margin-bottom: 14px; }
+  .fs-tcard-tag-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .fs-tcard-tag span { font: 600 11px Inter, sans-serif; }
+  .fs-tcard p { font: 500 14px/1.6 Inter, sans-serif; color: #334155; margin: 0 0 16px; }
+  .fs-tcard-author { display: flex; align-items: center; gap: 10px; }
+  .fs-tcard-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 700 14px Inter, sans-serif; }
+  .fs-tcard-name { font: 700 12px Inter, sans-serif; color: #0F172A; }
+  .fs-tcard-role { font: 400 11px Inter, sans-serif; color: #94A3B8; }
+
+  /* ─── Steps ──────────────────────────── */
+  .fs-steps { display: flex; flex-direction: column; gap: 0; }
+  .fs-step { display: flex; gap: 16px; align-items: flex-start; position: relative; padding-bottom: 28px; }
+  .fs-step:last-child { padding-bottom: 0; }
+  .fs-step-num { width: 36px; height: 36px; border-radius: 50%; color: #fff; font: 800 14px Inter, sans-serif; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; z-index: 1; }
+  .fs-step-line { position: absolute; left: 17px; top: 36px; bottom: 0; width: 2px; background: #F1F5F9; z-index: 0; }
+  .fs-step-title { font: 700 15px Inter, sans-serif; color: #0F172A; margin-bottom: 4px; }
+  .fs-step-desc { font: 400 13px Inter, sans-serif; color: #64748B; }
+
+  /* ─── Segment pills ──────────────────── */
+  .fs-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+  .fs-pill { display: inline-flex; align-items: center; font: 600 13px Inter, sans-serif; color: rgba(255,255,255,0.8); text-decoration: none; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 10px 18px; transition: background 0.15s; }
+  .fs-pill:hover { background: rgba(255,255,255,0.12); }
+
+  /* ─── Problem/Solution callouts ─────── */
+  .fs-problem-box { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px; }
+  .fs-problem-title { font: 700 12px Inter, sans-serif; color: #DC2626; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px; }
+  .fs-problem-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .fs-problem-list li { font: 400 13px Inter, sans-serif; color: #7F1D1D; display: flex; gap: 8px; }
+  .fs-solution-box { background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 18px 20px; }
+  .fs-solution-title { font: 700 12px Inter, sans-serif; color: #059669; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px; }
+  .fs-solution-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .fs-solution-list li { font: 400 13px Inter, sans-serif; color: #064E3B; display: flex; gap: 8px; }
+
+  /* ─── Desktop breakpoint ─────────────── */
+  @media (min-width: 768px) {
+    .fs-hero-inner { grid-template-columns: 1fr 300px; padding: 120px 48px 80px; }
+    .fs-hero-copy h1 { font-size: 72px; }
+    .fs-trust { grid-template-columns: repeat(4, 1fr); }
+    .fs-panel { flex-direction: row; }
+    .fs-panel-copy { flex: 1; }
+    .fs-ui-card { flex: 1; }
+    .fs-testimonials { display: grid; grid-template-columns: 1fr 1fr; }
+    .fs-wrap { padding: 0 48px; }
+    .fs-h2 { font-size: 40px; }
+    .fs-section { padding: 80px 0; }
+    .fs-steps { max-width: 560px; }
+    .fs-hero-phone-wrap { display: flex; justify-content: center; align-items: flex-end; }
+    .fs-store-grid { grid-template-columns: repeat(4, 1fr); }
+    .fs-hyperlocal-grid { grid-template-columns: 1fr 260px; }
+    .fs-analytics-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (min-width: 1100px) {
+    .fs-hero-copy h1 { font-size: 80px; }
+    .fs-hero-inner { grid-template-columns: 1fr 320px; }
+    .fs-testimonials { grid-template-columns: repeat(3, 1fr); }
+    .fs-store-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>
+
+<!-- ─── NAV ───────────────────────────────────────────────────────── -->
+<nav style="position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(8,12,22,0.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.07);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;">
+  <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+    <img src="/logo-horizontal.png" alt="Relifish" style="height:26px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+    <span style="display:none;font:900 20px Inter;color:#fff;letter-spacing:-0.5px;">Relifish</span>
+  </a>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/shop" style="font:500 13px Inter;color:rgba(255,255,255,0.5);text-decoration:none;padding:8px 12px;display:none;" class="fs-desktop-link">Browse sellers</a>
+    <a href="/dashboard/login" style="font:600 13px Inter;color:rgba(255,255,255,0.65);text-decoration:none;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);">Log in</a>
+    <a href="/dashboard/login" style="font:700 13px Inter;color:#fff;text-decoration:none;padding:8px 16px;border-radius:8px;background:#0066FF;">Get started</a>
+  </div>
+</nav>
+
+<!-- ─── HERO ───────────────────────────────────────────────────────── -->
+<section class="fs-hero">
+  <div class="fs-hero-bg"></div>
+  <div class="fs-hero-overlay"></div>
+  <div class="fs-hero-glow"></div>
+
+  <div class="fs-hero-inner">
+    <div class="fs-hero-copy">
+      <h1>Built For<br/><span>Fish Sellers</span></h1>
+      <p>The platform built for daily catch volume, slim margins, and fresh fish at scale — trusted by sellers across Mumbai. Improve your customer experience with one link, one click, instant order confirmation. No middleman. No commission.</p>
+      <form onsubmit="return false;">
+        <div class="fs-cta-form">
+          <input type="tel" placeholder="Your phone number" />
+          <a href="/dashboard/login">Get Started</a>
+        </div>
+      </form>
+      <p class="fs-cta-note">Free to list · ₹0 commission · Improve customer experience with every order</p>
+      <p class="fs-cta-sub">New seller? <a href="/dashboard/login">Start free →</a></p>
+    </div>
+
+    <!-- Phone dashboard teaser -->
+    <div class="fs-hero-phone-wrap">
+      <div>
+        <p style="font:600 11px Inter;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin:0 0 14px;text-align:center;">Your seller dashboard</p>
+        <div class="fs-phone">
+          <div class="fs-phone-notch"><div class="fs-phone-pill"></div></div>
+          <div class="fs-phone-screen">
+            <div class="fs-phone-sbar"><span>9:41</span><span>●●● 100%</span></div>
+            <div class="fs-phone-header">
+              <div class="fs-phone-header-label">Today's orders</div>
+              <div class="fs-phone-header-val">18 <span>orders · ₹12,450</span></div>
+            </div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट) × 2kg</div><div class="fs-order-sub">Confirmed · 8:14am</div></div><span class="fs-badge fs-badge-green">✓ Done</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई) × 1kg</div><div class="fs-order-sub">Incoming · 8:22am</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Prawns (कोळंबी)</div><div class="fs-order-sub">Pre-order · Tomorrow</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा) × 1kg</div><div class="fs-order-sub">Incoming · 9:05am</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Rawas (रावस) × 500g</div><div class="fs-order-sub">Delivery order</div></div><span class="fs-badge fs-badge-orange">Delivery</span></div>
+            <div class="fs-phone-nav"><span>Orders</span><span class="active">Dashboard</span><span>Listings</span></div>
+            <div class="fs-phone-bar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);opacity:0.3;pointer-events:none;">
+    <div style="width:1px;height:28px;background:linear-gradient(to bottom,rgba(255,255,255,0.6),transparent);animation:scroll-cue 2s ease-in-out infinite;"></div>
+  </div>
+</section>
+
+<!-- ─── PROBLEM → SOLUTION ────────────────────────────────────────── -->
+<section class="fs-section fs-section-light">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#DC2626;">The problem every fish seller faces</p>
+    <h2 class="fs-h2" style="color:#0F172A;">WhatsApp + Excel + Missed calls.<br/>That's not a business — that's chaos.</h2>
+    <p class="fs-lead">Before Relifish, managing orders meant juggling multiple channels, losing track of stock, and constantly missing orders.</p>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:16px;">
+      <div class="fs-problem-box">
+        <div class="fs-problem-title">❌ Without Relifish</div>
+        <ul class="fs-problem-list">
+          <li><span>—</span>Orders on WhatsApp + Excel — still getting missed on calls</li>
+          <li><span>—</span>No inventory tracking — stock runs out, buyers left hanging</li>
+          <li><span>—</span>No digital presence — buyers don't know what's available or at what price</li>
+          <li><span>—</span>Can't tell who your loyal customers are or what they want</li>
+          <li><span>—</span>Unpredictable demand — overstock leads to wastage, understock loses sales</li>
+          <li><span>—</span>More staff and chaos needed just to manage basic order flow</li>
+          <li><span>—</span>No trust signal — buyers unsure if orders are confirmed</li>
+        </ul>
+      </div>
+      <div class="fs-solution-box">
+        <div class="fs-solution-title">✓ With Relifish</div>
+        <ul class="fs-solution-list">
+          <li><span>→</span>One link, all orders — share on WhatsApp + Instagram, orders flow in</li>
+          <li><span>→</span>Live inventory — auto-stops when stock runs out</li>
+          <li><span>→</span>Online catalogue with photos, prices, and availability — always live</li>
+          <li><span>→</span>Know your customers — repeat buyers, order history, peak times</li>
+          <li><span>→</span>Pre-orders the night before — predictable demand, less wastage</li>
+          <li><span>→</span>Immediate order confirmation — less staff, less chaos</li>
+          <li><span>→</span>Relifish badge = trust signal — buyers know orders are tracked</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TRUST BAR ─────────────────────────────────────────────────── -->
+<section class="fs-section fs-section-tinted" style="padding:40px 0;">
+  <div class="fs-wrap">
+    <div class="fs-trust">
+      <div class="fs-trust-item">
+        <div class="fs-trust-icon" style="background:#E6F0FF;font-size:22px;">📦</div>
+        <div class="fs-trust-title">Live Orders</div>
+        <div class="fs-trust-desc">Real-time orders to your dashboard</div>
+      </div>
+      <div class="fs-trust-item">
+        <div class="fs-trust-icon" style="background:#ECFDF5;font-size:22px;">💬</div>
+        <div class="fs-trust-title">Push & Email Alerts</div>
+        <div class="fs-trust-desc">Every order pings your phone + email</div>
+      </div>
+      <div class="fs-trust-item">
+        <div class="fs-trust-icon" style="background:#E6F0FF;font:700 17px Inter;color:#0066FF;">₹0</div>
+        <div class="fs-trust-title">Zero Commission</div>
+        <div class="fs-trust-desc">Keep 100% of every sale</div>
+      </div>
+      <div class="fs-trust-item">
+        <div class="fs-trust-icon" style="background:#EEF2FF;font-size:22px;">📊</div>
+        <div class="fs-trust-title">Analytics</div>
+        <div class="fs-trust-desc">Track views, orders, earnings</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── BUSINESS TYPES ─────────────────────────────────────────────── -->
+<section class="fs-section fs-section-light" style="padding-bottom:0;">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#0066FF;">Works for every seller</p>
+    <h2 class="fs-h2" style="color:#0F172A;">Daily stall, home delivery,<br/>or catch pre-orders.</h2>
+  </div>
+  <div style="border-bottom:2px solid #F1F5F9;margin-top:24px;">
+    <div class="fs-wrap">
+      <div class="fs-tabs" id="fs-tabs">
+        <button class="fs-tab" id="tab-daily" onclick="switchType('daily')" style="color:#0066FF;border-bottom-color:#0066FF;">Daily Catch</button>
+        <button class="fs-tab" id="tab-preorder" onclick="switchType('preorder')" style="color:#94A3B8;">Pre-Order</button>
+        <button class="fs-tab" id="tab-delivery" onclick="switchType('delivery')" style="color:#94A3B8;">Delivery</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fs-wrap">
+    <div class="fs-panel active" id="panel-daily">
+      <div class="fs-panel-copy">
+        <div class="fs-eyebrow" style="color:#0066FF;">Daily Catch Seller</div>
+        <h3 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 12px;">List today's stock.<br/>Sell by morning.</h3>
+        <p style="font:400 14px/1.6 Inter;color:#64748B;margin:0 0 20px;">Post your daily catch — pomfret, surmai, bangda, prawns — with live prices and photos. Set shop hours (e.g. 7am–2pm), your order days, and minimum order. Buyers nearby see it instantly and order in 30 seconds.</p>
+        <ul>
+          <li><span style="color:#0066FF;font-weight:700;">→</span> Set quantity limits — auto-stops when sold out</li>
+          <li><span style="color:#0066FF;font-weight:700;">→</span> Bundle pricing: 3pc pack, 5pc pack, per-kg options</li>
+          <li><span style="color:#0066FF;font-weight:700;">→</span> Set shop open/close hours + order days</li>
+          <li><span style="color:#0066FF;font-weight:700;">→</span> Push notification + email on every new order</li>
+          <li><span style="color:#0066FF;font-weight:700;">→</span> Confirm, reject, mark ready — all from phone</li>
+        </ul>
+        <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#0066FF;text-decoration:none;">Start listing →</a>
+      </div>
+      <div class="fs-ui-card" style="background:#0F172A;">
+        <div style="font:600 10px Inter;color:#64748B;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Today's Menu · Live</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट)</div><div class="fs-order-sub">₹540/3pc · 8 left</div></div><span class="fs-badge fs-badge-green">In stock</span></div>
+          <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई)</div><div class="fs-order-sub">₹1125/kg · 3kg left</div></div><span class="fs-badge fs-badge-green">In stock</span></div>
+          <div class="fs-order-card"><div><div class="fs-order-name">Prawns (कोळंबी)</div><div class="fs-order-sub">₹680/kg</div></div><span class="fs-badge" style="background:rgba(220,38,38,0.15);color:#f87171;">Sold out</span></div>
+          <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा)</div><div class="fs-order-sub">₹380/kg · 5kg left</div></div><span class="fs-badge fs-badge-green">In stock</span></div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;">
+          <span style="font:400 12px Inter;color:#64748B;">Today's orders</span>
+          <span style="font:700 13px Inter;color:#fff;">₹12,450 · 18 orders</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fs-panel" id="panel-preorder">
+      <div class="fs-panel-copy">
+        <div class="fs-eyebrow" style="color:#4F46E5;">Pre-Order Seller</div>
+        <h3 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 12px;">Take orders tonight.<br/>Fulfill tomorrow.</h3>
+        <p style="font:400 14px/1.6 Inter;color:#64748B;margin:0 0 20px;">Open your pre-order window from 8pm. Buyers reserve tomorrow's catch tonight. Wake up with confirmed orders — predictable demand, less wastage, no guesswork on how much to buy from the docks.</p>
+        <ul>
+          <li><span style="color:#4F46E5;font-weight:700;">→</span> Set pre-order window hours (e.g. 8pm–10pm)</li>
+          <li><span style="color:#4F46E5;font-weight:700;">→</span> Price range shown upfront, confirmed after catch</li>
+          <li><span style="color:#4F46E5;font-weight:700;">→</span> Advance payment collected automatically</li>
+          <li><span style="color:#4F46E5;font-weight:700;">→</span> Know tomorrow's demand tonight — buy exactly right</li>
+          <li><span style="color:#4F46E5;font-weight:700;">→</span> Reduce wastage and unsold stock</li>
+        </ul>
+        <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#4F46E5;text-decoration:none;">Set up pre-orders →</a>
+      </div>
+      <div class="fs-ui-card" style="background:#0d0d2b;">
+        <div style="font:600 10px Inter;color:#818cf8;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Pre-Orders · Tonight</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="fs-order-card"><div><div class="fs-order-name">Rawas (रावस)</div><div class="fs-order-sub" style="color:#818cf8;">₹1400–1600/kg · 6 reserved</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
+          <div class="fs-order-card"><div><div class="fs-order-name">Halwa (हलवा)</div><div class="fs-order-sub" style="color:#818cf8;">₹1400–1600/kg · 4 reserved</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
+          <div class="fs-order-card"><div><div class="fs-order-name">Pomfret Khapari</div><div class="fs-order-sub" style="color:#818cf8;">₹2400/kg · 2 reserved</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;">
+          <span style="font:400 12px Inter;color:#818cf8;">Tomorrow's demand locked in</span>
+          <span style="font:700 13px Inter;color:#fff;">12 pre-orders</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fs-panel" id="panel-delivery">
+      <div class="fs-panel-copy">
+        <div class="fs-eyebrow" style="color:#059669;">Delivery Seller</div>
+        <h3 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 12px;">Set your radius.<br/>Deliver at your price.</h3>
+        <p style="font:400 14px/1.6 Inter;color:#64748B;margin:0 0 20px;">Set a delivery radius in km, flat fee or per-km rate. Buyers within range see the delivery option at checkout. Distance is auto-calculated from their saved address to your location.</p>
+        <ul>
+          <li><span style="color:#059669;font-weight:700;">→</span> Flat fee (₹X) or per-km rate (₹X/km)</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Free delivery threshold (e.g. free above ₹500)</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Set delivery radius in km from your location</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Buyers outside radius auto-shown pickup only</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Distance shown to buyer at checkout (e.g. 5.2 km)</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Enable pickup, delivery, or both — your choice</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Accept UPI · Razorpay · Cash on delivery</li>
+        </ul>
+        <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#059669;text-decoration:none;">Enable delivery →</a>
+      </div>
+      <div class="fs-ui-card" style="background:#071a10;">
+        <div style="font:600 10px Inter;color:#34d399;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Checkout · Delivery</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="fs-order-card"><span style="font:500 13px Inter;color:#fff;">Subtotal</span><span style="font:700 13px Inter;color:#fff;">₹1,620</span></div>
+          <div class="fs-order-card"><span style="font:500 13px Inter;color:#fff;">Delivery fee</span><span style="font:700 13px Inter;color:#34d399;">5.2 km</span></div>
+          <div style="background:rgba(5,150,105,0.15);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;"><span style="font:800 13px Inter;color:#fff;">Total</span><span style="font:800 13px Inter;color:#fff;">Computed at order</span></div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);">
+          <span style="font:400 12px Inter;color:#34d399;">Buyer address saved · Distance auto-calculated</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STORE SETUP ────────────────────────────────────────────────── -->
+<section class="fs-section fs-section-light">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#0066FF;">Setup in minutes</p>
+    <h2 class="fs-h2" style="color:#0F172A;">Everything you need to run<br/>your store from your phone.</h2>
+    <p class="fs-lead">Your seller profile controls how buyers see you — location, hours, pickup vs delivery, minimum order, and payments. All from one screen.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="fs-store-grid">
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E6F0FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">📍</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Location & Radius</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Pin your store location. Buyers nearby see you in their feed. Set your delivery radius in km.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🕐</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Shop Hours & Days</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Set open/close times and which days you operate. Orders are blocked when your shop is closed.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🧊</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Pickup & Delivery</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Enable pickup, delivery, or both. Buyers see only what you offer. No delivery staff needed for pickup-only.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">💳</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Payments</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Accept UPI (enter your UPI ID), Razorpay, or cash on delivery. Buyers upload proof — you confirm.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E6F0FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">📸</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Store Photo & Name</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Upload your store photo. Shown in buyer feeds, cart, and order confirmations. Your brand, your identity.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🔔</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Push & Email Notifications</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Enable push alerts on your phone for every new order. Order emails sent to buyers and you automatically.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">₹</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Minimum Order</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Set a minimum order amount. Orders below the threshold are blocked at checkout — no small orders you can't fulfill.</div>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🌙</div>
+        <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Pre-Order Window</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Set the hours buyers can pre-order (e.g. 8pm–10pm). Automatic cutoff so you're never overwhelmed.</div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:24px;">
+      <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 14px Inter;color:#0066FF;text-decoration:none;">Set up your store →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HYPERLOCAL ────────────────────────────────────────────────── -->
+<section class="fs-section fs-section-dark">
+  <div class="fs-wrap">
+    <div style="display:grid;grid-template-columns:1fr;gap:36px;align-items:center;" class="fs-hyperlocal-grid">
+      <div>
+        <p class="fs-eyebrow" style="color:#60a5fa;">Hyperlocal by design</p>
+        <h2 class="fs-h2" style="color:#fff;">Your store. Your area.<br/>Your customers.</h2>
+        <p style="font:400 15px/1.6 Inter;color:rgba(255,255,255,0.5);margin:0 0 28px;">Relifish is built hyperlocal — not for all of India, but for your 5km radius. Buyers near you find you. You serve them. That's it. No competing with far-off sellers. No irrelevant traffic. Just your neighbourhood customers ordering from you directly.</p>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:28px;">
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,102,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font:700 13px Inter;color:#60a5fa;">5km</div>
+            <div><div style="font:700 14px Inter;color:#fff;margin-bottom:3px;">Your delivery radius = your territory</div><div style="font:400 13px Inter;color:rgba(255,255,255,0.45);">Set a 5km radius. Only buyers within that range see your store. No wasted reach.</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(5,150,105,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font:700 13px Inter;color:#34d399;">📍</div>
+            <div><div style="font:700 14px Inter;color:#fff;margin-bottom:3px;">Pin your location once</div><div style="font:400 13px Inter;color:rgba(255,255,255,0.45);">Set your store location. Buyers nearby automatically see you in their feed — no ads, no marketing.</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(79,70,229,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font:700 13px Inter;color:#818cf8;">🏘️</div>
+            <div><div style="font:700 14px Inter;color:#fff;margin-bottom:3px;">Build a loyal neighbourhood base</div><div style="font:400 13px Inter;color:rgba(255,255,255,0.45);">Same buyers order every week. You know them. They trust you. Predictable demand, zero acquisition cost.</div></div>
+          </div>
+        </div>
+        <a href="/shop" style="display:inline-flex;align-items:center;gap:6px;font:600 13px Inter;color:rgba(255,255,255,0.6);text-decoration:none;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 16px;">See sellers near you →</a>
+      </div>
+      <!-- Hyperlocal map visual -->
+      <div style="background:rgba(0,102,255,0.06);border:1px solid rgba(0,102,255,0.15);border-radius:20px;padding:28px;text-align:center;">
+        <div style="position:relative;width:200px;height:200px;margin:0 auto 20px;">
+          <!-- Radius circles -->
+          <div style="position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(0,102,255,0.2);"></div>
+          <div style="position:absolute;inset:20px;border-radius:50%;border:1px dashed rgba(0,102,255,0.3);"></div>
+          <div style="position:absolute;inset:40px;border-radius:50%;border:1px dashed rgba(0,102,255,0.4);background:rgba(0,102,255,0.05);"></div>
+          <!-- Center pin -->
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#0066FF;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 8px rgba(0,102,255,0.2);">
+            <span style="font:700 18px Inter;color:#fff;">🏪</span>
+          </div>
+          <!-- Buyer dots -->
+          <div style="position:absolute;top:20%;left:65%;width:28px;height:28px;border-radius:50%;background:rgba(5,150,105,0.8);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid rgba(255,255,255,0.1);">👤</div>
+          <div style="position:absolute;top:65%;left:20%;width:28px;height:28px;border-radius:50%;background:rgba(5,150,105,0.8);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid rgba(255,255,255,0.1);">👤</div>
+          <div style="position:absolute;top:30%;left:15%;width:28px;height:28px;border-radius:50%;background:rgba(5,150,105,0.8);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid rgba(255,255,255,0.1);">👤</div>
+          <div style="position:absolute;top:72%;left:68%;width:28px;height:28px;border-radius:50%;background:rgba(5,150,105,0.8);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid rgba(255,255,255,0.1);">👤</div>
+        </div>
+        <div style="font:700 14px Inter;color:#fff;margin-bottom:6px;">Your 5km store radius</div>
+        <div style="font:400 12px Inter;color:rgba(255,255,255,0.4);">Buyers within range · Orders direct to you</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ANALYTICS ─────────────────────────────────────────────────── -->
+<section class="fs-section fs-section-tinted">
+  <div class="fs-wrap">
+    <div style="display:grid;grid-template-columns:1fr;gap:36px;align-items:start;">
+      <div>
+        <p class="fs-eyebrow" style="color:#0066FF;">Analytics built in</p>
+        <h2 class="fs-h2" style="color:#0F172A;">Know your business<br/>better than anyone.</h2>
+        <p class="fs-lead">Collective order data helps you understand what's selling, when, and who's buying. Stop guessing. Start growing.</p>
+        <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 14px Inter;color:#0066FF;text-decoration:none;">See your dashboard →</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="fs-insight"><div class="fs-insight-icon" style="background:#E6F0FF;color:#0066FF;">↑12%</div><div><div class="fs-insight-title">Pomfret is your top seller</div><div class="fs-insight-sub">Up 12% this week · ₹8,400 revenue</div></div></div>
+        <div class="fs-insight"><div class="fs-insight-icon" style="background:#ECFDF5;color:#059669;font-size:13px;">7–9am</div><div><div class="fs-insight-title">Peak orders: 7am–9am</div><div class="fs-insight-sub">63% of daily orders arrive before 9am</div></div></div>
+        <div class="fs-insight"><div class="fs-insight-icon" style="background:#EEF2FF;color:#4F46E5;">8×</div><div><div class="fs-insight-title">8 repeat buyers this month</div><div class="fs-insight-sub">Loyal customers = predictable revenue</div></div></div>
+        <div class="fs-insight"><div class="fs-insight-icon" style="background:#FFF7ED;color:#EA580C;">↓34%</div><div><div class="fs-insight-title">Wastage down 34% since pre-orders</div><div class="fs-insight-sub">Know tomorrow's demand before buying</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SEGMENT PILLS ─────────────────────────────────────────────── -->
+<section class="fs-section fs-section-dark">
+  <div class="fs-wrap">
+    <h2 class="fs-h2" style="color:#fff;">Built for sellers of all sizes</h2>
+    <p class="fs-lead" style="color:rgba(255,255,255,0.5);">Personalised for any seller model or scale.</p>
+    <div class="fs-pills">
+      <a href="/dashboard/login" class="fs-pill">Single Stall Seller →</a>
+      <a href="/dashboard/login" class="fs-pill">Home Delivery Seller →</a>
+      <a href="/dashboard/login" class="fs-pill">Pre-Order Fisherman →</a>
+      <a href="/dashboard/login" class="fs-pill">Multi-Location Shop →</a>
+      <a href="/dashboard/login" class="fs-pill">New Seller →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ───────────────────────────────────────────────── -->
+<section class="fs-section fs-section-light">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#0066FF;">Get started</p>
+    <h2 class="fs-h2" style="color:#0F172A;">Up in 5 minutes</h2>
+    <p class="fs-lead">No tech skills needed. Just your phone.</p>
+    <div class="fs-steps">
+      {[
+        {n:"1", title:"Create your seller account", desc:"Sign up with your phone number. 30 seconds.", c:"#0066FF"},
+        {n:"2", title:"Add your listings", desc:"Photo, name, price, quantity, hours. Your page goes live instantly.", c:"#0066FF"},
+        {n:"3", title:"Share your link", desc:"Post relifish.store/s/your-store on WhatsApp and Instagram.", c:"#0066FF"},
+        {n:"✓", title:"Start getting orders", desc:"Buyers order directly. You get a push notification + email. Confirm and go.", c:"#059669"},
+      ].map((s, i, arr) => (
+        <div class="fs-step">
+          <div class="fs-step-num" style={`background:${s.c}`}>{s.n}</div>
+          {i < arr.length-1 && <div class="fs-step-line"></div>}
+          <div style="padding-top:4px;"><div class="fs-step-title">{s.title}</div><div class="fs-step-desc">{s.desc}</div></div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ───────────────────────────────────────────────── -->
+<section class="fs-section fs-section-tinted">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#0F172A;">Seller stories</p>
+    <h2 class="fs-h2" style="color:#0F172A;">Real sellers. Real problems solved.</h2>
+    <p class="fs-lead">From WhatsApp chaos to a running digital business.</p>
+    <div class="fs-testimonials">
+      <div class="fs-tcard">
+        <div class="fs-tcard-tag" style="background:#FEF2F2;"><span class="fs-tcard-tag-dot" style="background:#DC2626;"></span><span style="color:#DC2626;">Before Relifish</span></div>
+        <p>"WhatsApp pe orders aate the, Excel mein likhta tha — phir bhi orders miss ho jaate the. Call pe baat karte karte stock khatam ho jaata tha. Koi inventory tracking nahi thi. Roz chaos."</p>
+        <div class="fs-tcard-author"><div class="fs-tcard-avatar" style="background:#E6F0FF;color:#0066FF;">R</div><div><div class="fs-tcard-name">Ramesh Koli</div><div class="fs-tcard-role">Daily catch seller · Thane</div></div></div>
+      </div>
+      <div class="fs-tcard">
+        <div class="fs-tcard-tag" style="background:#E6F0FF;"><span class="fs-tcard-tag-dot" style="background:#0066FF;"></span><span style="color:#0066FF;">Visibility & Catalogue</span></div>
+        <p>"Ab mera online catalogue hai. Log directly link se dekhte hain kya available hai, price kya hai. Mujhe baar baar WhatsApp pe same cheez repeat nahi karni. Digital presence mili pehli baar."</p>
+        <div class="fs-tcard-author"><div class="fs-tcard-avatar" style="background:#E6F0FF;color:#0066FF;">S</div><div><div class="fs-tcard-name">Sunita Patil</div><div class="fs-tcard-role">Fish stall owner · Mumbai</div></div></div>
+      </div>
+      <div class="fs-tcard">
+        <div class="fs-tcard-tag" style="background:#EEF2FF;"><span class="fs-tcard-tag-dot" style="background:#4F46E5;"></span><span style="color:#4F46E5;">Customer Insight & Growth</span></div>
+        <p>"Pehle nahi pata tha kaun repeat customer hai. Ab data hai — konsi fish zyada bikti hai, peak time kab hai. Main business aur naye customers lene pe focus karta hoon."</p>
+        <div class="fs-tcard-author"><div class="fs-tcard-avatar" style="background:#EEF2FF;color:#4F46E5;">V</div><div><div class="fs-tcard-name">Vinod Koli</div><div class="fs-tcard-role">Pre-order seller · Navi Mumbai</div></div></div>
+      </div>
+      <div class="fs-tcard">
+        <div class="fs-tcard-tag" style="background:#ECFDF5;"><span class="fs-tcard-tag-dot" style="background:#059669;"></span><span style="color:#059669;">Less Chaos. More Control.</span></div>
+        <p>"Link share karo, order aaya, confirm ho gaya — bas itna. Pre-order se kal ka demand pehle se pata hai. Wastage kam hui, cost kam hua. Staff bhi kam chahiye."</p>
+        <div class="fs-tcard-author"><div class="fs-tcard-avatar" style="background:#ECFDF5;color:#059669;">A</div><div><div class="fs-tcard-name">Arun Nair</div><div class="fs-tcard-role">Delivery seller · Thane</div></div></div>
+      </div>
+      <div class="fs-tcard">
+        <div class="fs-tcard-tag" style="background:#FFF7ED;"><span class="fs-tcard-tag-dot" style="background:#EA580C;"></span><span style="color:#EA580C;">Business Clarity & Trust</span></div>
+        <p>"Ab main apna business zyada samajhta hoon. Koi bhi customer nahi jaata — har order track hota hai, har feedback milta hai. Service improve hui. Relifish ne professional bana diya."</p>
+        <div class="fs-tcard-author"><div class="fs-tcard-avatar" style="background:#FFF7ED;color:#EA580C;">M</div><div><div class="fs-tcard-name">Mahesh Surve</div><div class="fs-tcard-role">Fish shop · Bhandup</div></div></div>
+      </div>
+      <div class="fs-tcard">
+        <div class="fs-tcard-tag" style="background:#E6F0FF;"><span class="fs-tcard-tag-dot" style="background:#0066FF;"></span><span style="color:#0066FF;">Transparency & Loyalty</span></div>
+        <p>"Customers ko bhi pata hai ki order confirm hua, kab ready hoga. Trust badhta hai. Mujhe explain nahi karna — system sab handle karta hai. Relifish se credibility aati hai."</p>
+        <div class="fs-tcard-author"><div class="fs-tcard-avatar" style="background:#E6F0FF;color:#0066FF;">P</div><div><div class="fs-tcard-name">Priya Mhatre</div><div class="fs-tcard-role">Home delivery seller · Kurla</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FAQ ───────────────────────────────────────────────────────── -->
+<section class="fs-section fs-section-light">
+  <div class="fs-wrap" style="max-width:720px;">
+    <p class="fs-eyebrow" style="color:#0066FF;">FAQ</p>
+    <h2 class="fs-h2" style="color:#0F172A;">Common questions</h2>
+    <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid #E2E8F0;">
+      {[
+        {q:"Is Relifish free to use?", a:"Yes. Free to list your products. We charge zero commission on every sale — you keep 100%."},
+        {q:"Do I need a smartphone or computer?", a:"Just a smartphone. Your dashboard is mobile-first. Manage orders, listings, and notifications all from your phone."},
+        {q:"How do buyers find my store?", a:"Share your link (relifish.store/s/your-store) on WhatsApp and Instagram. Buyers can also find you on the Relifish shop page."},
+        {q:"Can I set my own shop hours?", a:"Yes. Set your open/close times, which days you operate, and your pre-order window. Orders are blocked when your shop is closed."},
+        {q:"How does payment work?", a:"Buyers pay via UPI, Razorpay, or COD. They upload payment proof; you confirm and fulfill. Relifish takes no commission."},
+        {q:"What if I run out of stock?", a:"Set a quantity limit on each listing. When it hits zero, the item auto-shows as sold out and buyers can't order more."},
+      ].map(f => (
+        <div style="border-bottom:1px solid #E2E8F0;padding:20px 0;">
+          <div style="font:700 15px Inter;color:#0F172A;margin-bottom:8px;">{f.q}</div>
+          <div style="font:400 14px/1.6 Inter;color:#64748B;">{f.a}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ─── FINAL CTA ─────────────────────────────────────────────────── -->
+<section class="fs-section fs-section-ink" style="text-align:center;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,102,255,0.12) 0%,transparent 65%);pointer-events:none;"></div>
+  <div style="position:relative;z-index:1;" class="fs-wrap">
+    <h2 style="font:900 44px/1.1 Inter;color:#fff;margin:0 0 14px;letter-spacing:-1.5px;">Start selling today</h2>
+    <p style="font:400 16px/1.6 Inter;color:rgba(255,255,255,0.45);margin:0 0 36px;max-width:440px;margin-left:auto;margin-right:auto;">Free to list. Zero commission. Your fish, your prices, your buyers.</p>
+    <a href="/dashboard/login" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#0066FF;color:#fff;font:800 16px Inter;padding:18px 48px;border-radius:14px;text-decoration:none;box-shadow:0 4px 32px rgba(0,102,255,0.4);">
+      Create Your Free Store →
+    </a>
+    <p style="font:400 12px Inter;color:rgba(255,255,255,0.2);margin-top:20px;">Already selling? <a href="/dashboard/login" style="color:rgba(255,255,255,0.4);text-decoration:underline;">Log in</a></p>
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────── -->
+<footer style="background:#080c16;border-top:1px solid rgba(255,255,255,0.05);padding:24px;text-align:center;">
+  <p style="font:400 12px Inter;color:rgba(255,255,255,0.2);margin:0;">
+    © 2025 Relifish ·
+    <a href="/privacy" style="color:rgba(255,255,255,0.3);text-decoration:none;">Privacy</a> ·
+    <a href="/shop" style="color:rgba(255,255,255,0.3);text-decoration:none;">Browse Sellers</a> ·
+    <a href="/" style="color:rgba(255,255,255,0.3);text-decoration:none;">Order Fish</a>
+  </p>
+</footer>
+
+<script is:inline>
+  function switchType(name) {
+    const types = ['daily','preorder','delivery'];
+    const colors = { daily:'#0066FF', preorder:'#4F46E5', delivery:'#059669' };
+    types.forEach(t => {
+      const panel = document.getElementById('panel-' + t);
+      const btn = document.getElementById('tab-' + t);
+      const active = t === name;
+      if (panel) { panel.classList.toggle('active', active); }
+      if (btn) {
+        btn.style.color = active ? colors[name] : '#94A3B8';
+        btn.style.borderBottomColor = active ? colors[name] : 'transparent';
+      }
+    });
+  }
+</script>
+
+</AppShell>
