@@ -1135,16 +1135,15 @@ const tags = [
         }
         if (delivRow) delivRow.style.display = isDelivery ? "flex" : "none";
         track("delivery_method_selected", { method: isDelivery ? "delivery" : "pickup" });
-        // Update delivery label to show distance when per_km
         const delivLabelEl = document.getElementById("seller-checkout-delivery-label");
-        if (delivLabelEl) {
-          if (isDelivery && deliveryFeeType === "per_km" && distKm != null) {
-            delivLabelEl.textContent = `Delivery (${distKm.toFixed(1)} km)`;
-          } else {
-            delivLabelEl.textContent = "Delivery fee";
-          }
+        if (delivLabelEl) delivLabelEl.textContent = "Delivery fee";
+        if (deliveryFeeType === "per_km" && isDelivery) {
+          // Show distance, not ₹ amount — fee computed server-side at order time
+          if (delivEl) delivEl.textContent = distKm != null ? `${distKm.toFixed(1)} km` : "By distance";
+          fee = 0; // don't add to total preview — amount unknown to client
+        } else {
+          if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : "FREE";
         }
-        if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : (isDelivery && deliveryFeeType === "per_km" && distKm == null ? "By distance" : "FREE");
         const total = subtotal + fee;
         if (totalEl) totalEl.textContent = `₹${total.toLocaleString("en-IN")}`;
         if (totalFinal) totalFinal.textContent = `₹${total.toLocaleString("en-IN")}`;
