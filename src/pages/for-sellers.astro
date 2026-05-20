@@ -9,42 +9,99 @@ const jsonLd = {
       "@type": "WebPage",
       "@id": "https://www.relifish.store/for-sellers",
       "url": "https://www.relifish.store/for-sellers",
-      "name": "Sell on Relifish — Grow Your Fish Business Online",
-      "description": "List your daily catch, accept pre-orders, manage delivery, and get paid. Join fish sellers on Relifish — no commission, no middleman.",
-      "isPartOf": { "@id": "https://www.relifish.store" }
+      "name": "Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish",
+      "description": "Start selling fish online in Mumbai in under 5 minutes. Free to list, zero commission. Accept orders, pre-orders, UPI payments. Relifish is the online fish selling platform built for Mumbai fish sellers.",
+      "inLanguage": "en-IN",
+      "about": { "@id": "https://www.relifish.store#service" },
+      "isPartOf": { "@id": "https://www.relifish.store" },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.store" },
+          { "@type": "ListItem", "position": 2, "name": "Sell on Relifish", "item": "https://www.relifish.store/for-sellers" }
+        ]
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://www.relifish.store#service",
+      "name": "Sell Fish Online — Relifish Seller Platform",
+      "description": "Relifish is a free online fish selling platform for fish sellers in Mumbai, Thane, and Navi Mumbai. List your daily catch, accept pre-orders, manage home delivery, and collect UPI payments. Zero commission on every sale.",
+      "provider": { "@id": "https://www.relifish.store#org" },
+      "serviceType": "Online Fish Selling Platform",
+      "areaServed": [
+        { "@type": "City", "name": "Mumbai" },
+        { "@type": "City", "name": "Thane" },
+        { "@type": "City", "name": "Navi Mumbai" }
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR",
+        "description": "Free to list. Zero commission on every sale.",
+        "availability": "https://schema.org/InStock"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Seller Features",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Free fish listing and online store" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pre-order management for fish sellers" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "UPI payment collection" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fish home delivery management" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Push and email order alerts" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fish inventory management" } }
+        ]
+      }
     },
     {
       "@type": "Organization",
       "@id": "https://www.relifish.store#org",
       "name": "Relifish",
       "url": "https://www.relifish.store",
-      "description": "Online marketplace for fresh fish in Mumbai. Connects local fish sellers with buyers for same-day and pre-order delivery.",
-      "areaServed": { "@type": "City", "name": "Mumbai" }
+      "logo": "https://www.relifish.store/favicon.png",
+      "description": "Online marketplace for fresh fish in Mumbai. Connects local fish sellers with buyers for same-day pickup and pre-order delivery.",
+      "areaServed": [
+        { "@type": "City", "name": "Mumbai" },
+        { "@type": "City", "name": "Thane" },
+        { "@type": "City", "name": "Navi Mumbai" }
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "@id": "https://www.relifish.store/for-sellers#howto",
+      "name": "How to start selling fish online on Relifish",
+      "description": "Set up your online fish store in Mumbai on Relifish in under 5 minutes. Accept orders, pre-orders, and UPI payments. Free to list, zero commission.",
+      "totalTime": "PT5M",
+      "estimatedCost": { "@type": "MonetaryAmount", "currency": "INR", "value": "0" },
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "Create your free seller account", "text": "Sign up with your phone number in 30 seconds. No tech skills needed. Your online fish store is created instantly." },
+        { "@type": "HowToStep", "position": 2, "name": "Add your fish inventory", "text": "Upload photos, set prices, quantity, and shop hours. Your live fish catalogue goes live instantly for buyers in your area." },
+        { "@type": "HowToStep", "position": 3, "name": "Share your store link", "text": "Share relifish.store/s/your-store on WhatsApp, Instagram bio, or print a QR code on your flyer. Buyers click and order." },
+        { "@type": "HowToStep", "position": 4, "name": "Accept orders and get paid", "text": "Buyers order directly from your store. You get an instant push notification and email. Confirm with one tap and collect payment via UPI or COD." }
+      ]
     },
     {
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "Is Relifish free to use for sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is free to list your products. We charge zero commission on every sale — you keep 100% of every rupee." } },
-        { "@type": "Question", "name": "How do I get orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Create your seller page, add your listings, and share your link on WhatsApp and Instagram. Buyers in your area can browse and order directly. Most sellers get their first order within 24 hours of going live." } },
-        { "@type": "Question", "name": "Can I accept pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set pre-order windows (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Advance payment is collected automatically via UPI or COD." } },
-        { "@type": "Question", "name": "Does Relifish support delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can set a delivery radius, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address to your location. Buyers outside your radius automatically see pickup only." } },
-        { "@type": "Question", "name": "How do I get notified about new orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order triggers an instant push notification to your phone and an email alert. You can confirm, reject, or mark orders as ready directly from your dashboard — no calls, no WhatsApp chaos." } },
-        { "@type": "Question", "name": "What payment methods do buyers use?", "acceptedAnswer": { "@type": "Answer", "text": "Buyers pay via UPI or cash on delivery (COD). They upload UPI payment proof; you confirm and fulfill. Relifish takes zero commission on any payment." } },
-        { "@type": "Question", "name": "How quickly can I start selling?", "acceptedAnswer": { "@type": "Answer", "text": "Sign up, add your listings, and your store goes live in under 5 minutes. Share your link on WhatsApp and Instagram. First orders typically arrive same day." } }
-      ],
-      "step": [
-        { "@type": "HowToStep", "name": "Create your seller account", "text": "Sign up with your phone number in 30 seconds. No tech skills needed." },
-        { "@type": "HowToStep", "name": "Add your inventory", "text": "Upload photo, name, price, quantity, and shop hours. Your page goes live instantly." },
-        { "@type": "HowToStep", "name": "Share your link", "text": "Post relifish.store/s/your-store on WhatsApp, Instagram bio, or print a QR on your flyer." },
-        { "@type": "HowToStep", "name": "Start getting orders", "text": "Buyers order directly. You get a push notification and email. Confirm with one tap and fulfill." }
+        { "@type": "Question", "name": "Is Relifish free for fish sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is 100% free to list your fish products. We charge zero commission on every sale — you keep 100% of every rupee. No hidden fees, no monthly charges, no percentage cuts." } },
+        { "@type": "Question", "name": "How do I sell fish online in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Sign up on Relifish, add your fish inventory with photos and prices, and share your store link on WhatsApp and Instagram. Buyers in your area find you, browse your live catalogue, and order directly. Most sellers get their first order within 24 hours." } },
+        { "@type": "Question", "name": "Can I accept fish pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set a pre-order window (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Demand is locked in advance — you buy exactly what's needed at the docks, reducing wastage and eliminating cold storage costs." } },
+        { "@type": "Question", "name": "Does Relifish support fish home delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set a delivery radius in km, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address to your location. Buyers outside your serviceable radius see pickup only." } },
+        { "@type": "Question", "name": "How do I get notified about new fish orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order sends an instant push notification to your phone and an email. Confirm, reject, or mark orders ready from your dashboard — no calls, no WhatsApp back-and-forth." } },
+        { "@type": "Question", "name": "What payments do fish buyers use?", "acceptedAnswer": { "@type": "Answer", "text": "Buyers pay via UPI or cash on delivery (COD). They upload UPI payment proof; you confirm and fulfill. Relifish takes zero commission on any payment." } },
+        { "@type": "Question", "name": "How fast can I start selling fish online?", "acceptedAnswer": { "@type": "Answer", "text": "Your online fish store goes live in under 5 minutes. Sign up, add inventory, share your link — first orders typically arrive the same day." } },
+        { "@type": "Question", "name": "Can I manage my fish store from my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The Relifish seller dashboard is fully mobile-first. Manage orders, inventory, delivery settings, shop hours, and notifications from your smartphone." } },
+        { "@type": "Question", "name": "How does Relifish reduce fish wastage?", "acceptedAnswer": { "@type": "Answer", "text": "Pre-orders let you know tomorrow's demand tonight. You buy exactly the right quantity at the docks — no excess, no cold storage costs, no panic selling. Sellers report significantly less wastage after enabling pre-orders." } },
+        { "@type": "Question", "name": "Which areas of Mumbai does Relifish serve?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish is available across Mumbai, Thane, and Navi Mumbai. You set your own delivery radius — buyers within your chosen area see your store and can order directly from you." } }
       ]
     }
   ]
 };
 ---
 <AppShell
-  title="Sell on Relifish — Free to List, Zero Commission, Grow Your Fish Business Online"
-  description="List your daily catch, accept pre-orders, get paid via UPI · COD. Start accepting orders in your serviceable area. Mumbai fish sellers on Relifish keep 100% of every sale. Free to start, live in 5 minutes."
+  title="Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish"
+  description="Start selling fish online in Mumbai in 5 minutes. Free to list, zero commission. Accept orders, pre-orders, UPI payments in your serviceable area. Mumbai fish sellers keep 100% of every sale."
   hideNav={true}
   hideHeader={true}
   jsonLd={jsonLd}
@@ -279,9 +336,9 @@ const jsonLd = {
 <!-- ─── PROBLEM → SOLUTION ────────────────────────────────────────── -->
 <section class="fs-section fs-section-light">
   <div class="fs-wrap">
-    <p class="fs-eyebrow" style="color:#DC2626;">The problem every fish seller faces</p>
+    <p class="fs-eyebrow" style="color:#DC2626;">Why Mumbai fish sellers switch to online</p>
     <h2 class="fs-h2" style="color:#0F172A;">WhatsApp + Excel + Missed calls.<br/>That's not a business — that's chaos.</h2>
-    <p class="fs-lead">Before Relifish, managing orders meant juggling multiple channels, losing track of stock, and constantly missing orders.</p>
+    <p class="fs-lead">Every fish seller in Mumbai faces the same problem: orders on WhatsApp, stock in your head, customers calling at 6am. Relifish gives you a proper online fish store — free, live in 5 minutes.</p>
 
     <div style="display:grid;grid-template-columns:1fr;gap:16px;">
       <div class="fs-problem-box">
@@ -343,7 +400,7 @@ const jsonLd = {
 <!-- ─── BUSINESS TYPES ─────────────────────────────────────────────── -->
 <section class="fs-section fs-section-light" style="padding-bottom:0;">
   <div class="fs-wrap">
-    <p class="fs-eyebrow" style="color:#0066FF;">Works for every seller</p>
+    <p class="fs-eyebrow" style="color:#0066FF;">Online fish store for every seller type</p>
     <h2 class="fs-h2" style="color:#0F172A;">Daily stall, home delivery,<br/>or catch pre-orders.</h2>
   </div>
   <div style="border-bottom:2px solid #F1F5F9;margin-top:24px;">
