@@ -69,7 +69,7 @@ const jsonLd = {
   .fs-hero-copy h1 { font: 900 52px/1.0 Inter, sans-serif; color: #fff; margin: 0 0 20px; letter-spacing: -2px; }
   .fs-hero-copy h1 span { color: #0066FF; }
   .fs-hero-copy p { font: 400 17px/1.6 Inter, sans-serif; color: rgba(255,255,255,0.55); margin: 0 0 32px; max-width: 440px; }
-  .fs-cta-form { display: flex; background: rgba(255,255,255,0.95); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.4); max-width: 400px; }
+  .fs-cta-form { display: flex; background: rgba(255,255,255,0.95); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.4); max-width: 400px; margin-top: 8px; }
   .fs-cta-form input { flex: 1; padding: 14px 16px; border: none; outline: none; font: 500 14px Inter, sans-serif; color: #0F172A; background: transparent; min-width: 0; }
   .fs-cta-form a { background: #0066FF; color: #fff; font: 700 14px Inter, sans-serif; padding: 14px 20px; text-decoration: none; white-space: nowrap; display: flex; align-items: center; }
   .fs-cta-note { font: 400 11px Inter, sans-serif; color: rgba(255,255,255,0.3); margin: 16px 0 0; }
@@ -79,6 +79,7 @@ const jsonLd = {
   /* ─── Phone mockup (matches landing page .demo-phone style) ─── */
   .fs-phone {
     width: 270px;
+    min-height: 520px;
     background: linear-gradient(175deg, #1E2D4A, #0D1629);
     border-radius: 44px;
     border: 2px solid rgba(255,255,255,0.15);
@@ -477,7 +478,7 @@ const jsonLd = {
       </div>
 
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
-        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">₹</div>
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font:900 18px Inter;color:#EA580C;margin-bottom:12px;">₹</div>
         <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Minimum Order</div>
         <div style="font:400 12px/1.5 Inter;color:#64748B;">Set a minimum order amount. Orders below the threshold are blocked at checkout — no small orders you can't fulfill.</div>
       </div>
@@ -560,6 +561,125 @@ const jsonLd = {
         <div class="fs-insight"><div class="fs-insight-icon" style="background:#EEF2FF;color:#4F46E5;">8×</div><div><div class="fs-insight-title">8 repeat buyers this month</div><div class="fs-insight-sub">Loyal customers = predictable revenue</div></div></div>
         <div class="fs-insight"><div class="fs-insight-icon" style="background:#FFF7ED;color:#EA580C;">↓34%</div><div><div class="fs-insight-title">Wastage down 34% since pre-orders</div><div class="fs-insight-sub">Know tomorrow's demand before buying</div></div></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── OPERATING SYSTEM / PIPELINE ──────────────────────────────── -->
+<section class="fs-section fs-section-light">
+  <div class="fs-wrap">
+    <p class="fs-eyebrow" style="color:#0066FF;">The Relifish operating system</p>
+    <h2 class="fs-h2" style="color:#0F172A;">More revenue. More traction.<br/>More visibility. On autopilot.</h2>
+    <p class="fs-lead">Relifish isn't just an order app — it's the full pipeline from visibility to cash in hand. Every step compounds.</p>
+
+    <!-- Pipeline diagram -->
+    <div style="display:flex;flex-direction:column;gap:0;position:relative;">
+
+      <!-- Step 1 -->
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#0066FF;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">1</div>
+          <div style="width:2px;flex:1;background:linear-gradient(to bottom,#0066FF,#4F46E5);margin:4px 0;min-height:32px;"></div>
+        </div>
+        <div style="flex:1;padding:0 0 28px 16px;">
+          <div style="background:#E6F0FF;border:1px solid #CCE0FF;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font:700 12px Inter;color:#0066FF;text-transform:uppercase;letter-spacing:0.5px;">Visibility</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">Your store goes live</span>
+            </div>
+            <p style="font:500 13px/1.5 Inter;color:#334155;margin:0 0 10px;">Share your link on Instagram, WhatsApp, print a QR on your flyer. Every share = new buyers finding your store. Your catalogue is always live — 24/7, no effort.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#0066FF;background:#fff;border:1px solid #CCE0FF;padding:4px 10px;border-radius:999px;">Instagram bio link</span>
+              <span style="font:600 11px Inter;color:#0066FF;background:#fff;border:1px solid #CCE0FF;padding:4px 10px;border-radius:999px;">WhatsApp status</span>
+              <span style="font:600 11px Inter;color:#0066FF;background:#fff;border:1px solid #CCE0FF;padding:4px 10px;border-radius:999px;">Flyer QR code</span>
+              <span style="font:600 11px Inter;color:#0066FF;background:#fff;border:1px solid #CCE0FF;padding:4px 10px;border-radius:999px;">Google search</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#4F46E5;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">2</div>
+          <div style="width:2px;flex:1;background:linear-gradient(to bottom,#4F46E5,#059669);margin:4px 0;min-height:32px;"></div>
+        </div>
+        <div style="flex:1;padding:0 0 28px 16px;">
+          <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font:700 12px Inter;color:#4F46E5;text-transform:uppercase;letter-spacing:0.5px;">Order</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">Buyer taps, selects, pays</span>
+            </div>
+            <p style="font:500 13px/1.5 Inter;color:#334155;margin:0 0 10px;">Buyer browses your live menu, picks what they want, selects pickup or delivery, pays via UPI or Razorpay. You get a push notification + email. One tap to confirm. No calls, no messages, no chaos.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Instant push alert</span>
+              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Email confirmation</span>
+              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">UPI · Razorpay · COD</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">3</div>
+          <div style="width:2px;flex:1;background:linear-gradient(to bottom,#059669,#EA580C);margin:4px 0;min-height:32px;"></div>
+        </div>
+        <div style="flex:1;padding:0 0 28px 16px;">
+          <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font:700 12px Inter;color:#059669;text-transform:uppercase;letter-spacing:0.5px;">Fulfill</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">Pickup or delivery</span>
+            </div>
+            <p style="font:500 13px/1.5 Inter;color:#334155;margin:0 0 10px;">Confirm the order. Mark ready for pickup, or out for delivery. Buyer gets notified at every stage. You build trust with every fulfillment — consistent, transparent, professional.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#059669;background:#fff;border:1px solid #A7F3D0;padding:4px 10px;border-radius:999px;">Mark ready</span>
+              <span style="font:600 11px Inter;color:#059669;background:#fff;border:1px solid #A7F3D0;padding:4px 10px;border-radius:999px;">Out for delivery</span>
+              <span style="font:600 11px Inter;color:#059669;background:#fff;border:1px solid #A7F3D0;padding:4px 10px;border-radius:999px;">Buyer notified</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#EA580C;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">4</div>
+          <div style="width:2px;flex:1;background:linear-gradient(to bottom,#EA580C,#0066FF);margin:4px 0;min-height:32px;"></div>
+        </div>
+        <div style="flex:1;padding:0 0 28px 16px;">
+          <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font:700 12px Inter;color:#EA580C;text-transform:uppercase;letter-spacing:0.5px;">Revenue</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">₹0 commission. 100% yours.</span>
+            </div>
+            <p style="font:500 13px/1.5 Inter;color:#334155;margin:0 0 10px;">Every rupee goes to you. No middleman, no commission cut. Set your own prices. Pre-orders lock in tomorrow's revenue tonight — predictable income, less wastage, better buying decisions at the docks.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">₹0 commission</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Pre-order revenue locked</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Less wastage</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 — compounds back -->
+      <div style="display:flex;gap:0;align-items:flex-start;">
+        <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#0066FF;border:3px solid #60a5fa;display:flex;align-items:center;justify-content:center;font:800 14px Inter;color:#fff;flex-shrink:0;">↩</div>
+        </div>
+        <div style="flex:1;padding:0 0 0 16px;">
+          <div style="background:#0F172A;border-radius:14px;padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font:700 12px Inter;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">Compounds</span>
+              <span style="font:400 11px Inter;color:rgba(255,255,255,0.35);">Repeat buyers = zero acquisition cost</span>
+            </div>
+            <p style="font:500 13px/1.5 Inter;color:rgba(255,255,255,0.6);margin:0;">Satisfied buyer orders again next week. They share your link. New buyer comes in. Your data gets richer — you know what to stock, when to open, which items to push. The flywheel spins. <span style="color:#fff;font-weight:700;">That's the Relifish operating system.</span></p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
