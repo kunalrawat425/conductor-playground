@@ -1,0 +1,212 @@
+---
+export const prerender = false;
+
+import AppShell from "../../components/ui/AppShell.astro";
+import SellerCard from "../../components/ui/molecules/SellerCard.astro";
+import EmptyState from "../../components/ui/molecules/EmptyState.astro";
+import { createClient } from "@supabase/supabase-js";
+import { AREAS, getAreaBySlug } from "../../lib/areas";
+import { haversineKm } from "../../lib/order-pricing";
+
+const { city } = Astro.params;
+const area = getAreaBySlug(city || "");
+
+if (!area) {
+  return Astro.redirect("/shop", 404);
+}
+
+let sellers: any[] = [];
+try {
+  const url = new URL(Astro.request.url);
+  const sbUrl = url.origin.includes("localhost")
+    ? import.meta.env.SUPABASE_URL || ""
+    : "https://jzlfpyzxqykvzquheuvl.supabase.co";
+  const sbKey = import.meta.env.SUPABASE_ANON_KEY || "";
+
+  const supabase = createClient(sbUrl, sbKey);
+
+  const { data, error } = await supabase
+    .from("sellers")
+    .select("*")
+    .eq("is_active", true)
+    .neq("name", "New Seller");
+
+  if (data && !error) {
+    sellers = data
+      .filter((s: any) => s.lat != null && s.lng != null)
+      .map((s: any) => ({
+        ...s,
+        distanceKm: haversineKm(area.lat, area.lng, s.lat, s.lng),
+      }))
+      .filter((s: any) => s.distanceKm <= area.radius)
+      .sort((a: any, b: any) => a.distanceKm - b.distanceKm);
+  }
+} catch (err) {
+  console.error("Error fetching sellers for area:", err);
+}
+
+const areaTitle = `Buy Fresh Fish Online in ${area.name}`;
+const areaDescription = area.metaDescription;
+const canonicalUrl = `https://www.relifish.store/area/${area.slug}`;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${canonicalUrl}#webpage`,
+      "url": canonicalUrl,
+      "name": areaTitle,
+      "description": areaDescription,
+      "inLanguage": "en-IN",
+      "isPartOf": { "@id": "https://www.relifish.store" },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.store" },
+          { "@type": "ListItem", "position": 2, "name": "Shop", "item": "https://www.relifish.store/shop" },
+          { "@type": "ListItem", "position": 3, "name": area.name, "item": canonicalUrl }
+        ]
+      }
+    },
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://www.relifish.store/#org",
+      "name": "Relifish",
+      "url": "https://www.relifish.store",
+      "description": `Fresh fish delivery in ${area.name} — same-day & pre-order from local sellers`,
+      "areaServed": {
+        "@type": "City",
+        "name": area.name
+      },
+      "serviceArea": {
+        "@type": "GeoCircle",
+        "geoMidpoint": {
+          "@type": "GeoCoordinates",
+          "latitude": area.lat,
+          "longitude": area.lng
+        },
+        "geoRadius": `${area.radius}000m`
+      },
+      "servesCuisine": "Seafood",
+      "priceRange": "₹₹"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://www.relifish.store/#org",
+      "name": "Relifish",
+      "url": "https://www.relifish.store",
+      "logo": "https://www.relifish.store/favicon.png",
+      "description": "Mumbai's hyperlocal fresh fish marketplace"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": `Is there fresh fish delivery in ${area.name}?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": `Yes. Relifish connects you to ${sellers.length > 0 ? "local fish sellers" : "upcoming local fish sellers"} in ${area.name}. ${sellers.length > 0 ? "Browse their daily catch, pre-order for tomorrow, or pick up same-day." : "Join the waitlist to get notified when sellers launch in your area."}`
+          }
+        },
+        {
+          "@type": "Question",
+          "name": `How fast is fish delivery in ${area.name}?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Same-day pickup is available within 2-4 hours. Home delivery takes 30 minutes to 2 hours depending on distance. Pre-order tomorrow's catch tonight before 10pm for morning delivery/pickup."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": `What payment methods do sellers accept in ${area.name}?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "All sellers on Relifish accept UPI and cash on delivery (COD). Pay after confirming your order. No upfront payment needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": `Can I pre-order fish for tomorrow in ${area.name}?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": `Yes. Many sellers in ${area.name} accept pre-orders. Order tonight before cutoff (usually 10pm) to get tomorrow's fresh catch. Prices locked in advance — no surprises.`
+          }
+        }
+      ]
+    }
+  ]
+};
+---
+
+<AppShell
+  title={`${areaTitle} — Local Fish Sellers | Relifish`}
+  description={areaDescription}
+  needsMap={false}
+  jsonLd={jsonLd}
+  nav={{ active: "shop" }}
+>
+  <!-- Hero section -->
+  <div style="padding: 20px 16px; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); border-bottom: 1px solid var(--v2-border);">
+    <h1 style="font: 700 24px/1.3 Inter; margin: 0 0 6px 0; color: #1e40af;">{area.contentHeadline}</h1>
+    <p style="font: 500 14px/1.4 Inter; margin: 0; color: #1e5a96;">{area.contentSubheading}</p>
+  </div>
+
+  <!-- Content section -->
+  <div style="padding: 20px 16px; border-bottom: 1px solid var(--v2-border);">
+    <p style="font: 400 14px/1.6 Inter; margin: 0 0 12px 0; color: var(--v2-text-secondary);">
+      {sellers.length > 0
+        ? `Browse ${sellers.length} ${sellers.length === 1 ? "seller" : "sellers"} in ${area.name}. Order fresh fish with same-day pickup or home delivery. Pre-order tomorrow's catch tonight.`
+        : `Fresh fish coming soon to ${area.name}. Join the waitlist to get notified when sellers launch in your area.`
+      }
+    </p>
+  </div>
+
+  <!-- Sellers section -->
+  {sellers.length > 0 ? (
+    <>
+      <div class="v2-section-head" style="padding: 16px;">
+        <h2 style="font: 600 16px/1.3 Inter; margin: 0;">{sellers.length} {sellers.length === 1 ? "Seller" : "Sellers"} in {area.name}</h2>
+      </div>
+      <div class="v2-cards-grid" style="padding: 16px;">
+        {sellers.map((seller: any) => (
+          <SellerCard
+            id={seller.id}
+            name={seller.name}
+            location={seller.location_name || `${Math.round(seller.distanceKm)} km away`}
+            distanceKm={seller.distanceKm}
+            rating={seller.rating || 0}
+            status={seller.is_active ? "open" : "closed"}
+            acceptsPreorder={seller.accepts_preorder}
+            hasDelivery={seller.has_delivery}
+            itemCount={0}
+            imageHue="sky"
+          />
+        ))}
+      </div>
+    </>
+  ) : (
+    <div style="padding: 32px 16px; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 12px;">🌊</div>
+      <h2 style="font: 600 16px/1.3 Inter; margin: 0 0 8px 0;">No sellers yet in {area.name}</h2>
+      <p style="font: 400 14px/1.5 Inter; margin: 0 0 16px 0; color: var(--v2-text-secondary);">
+        Fresh fish delivery is coming soon. Be first to know when sellers launch.
+      </p>
+      <a href="/#waitlist" style="display: inline-block; padding: 10px 20px; background: var(--v2-brand, #2563eb); color: white; border-radius: 8px; text-decoration: none; font: 500 14px Inter; transition: opacity 0.2s;">
+        Join Waitlist
+      </a>
+    </div>
+  )}
+
+  <!-- FAQ section (hidden from main view, but indexed by search engines) -->
+  <div style="padding: 0; visibility: hidden; position: absolute; width: 0; height: 0; overflow: hidden;">
+    <h2>Frequently Asked Questions</h2>
+    {jsonLd["@graph"][3].mainEntity.map((faq: any) => (
+      <div>
+        <h3>{faq.name}</h3>
+        <p>{faq.acceptedAnswer.text}</p>
+      </div>
+    ))}
+  </div>
+</AppShell>
