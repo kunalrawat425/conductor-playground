@@ -129,7 +129,30 @@ import Input from "../../components/ui/atoms/Input.astro";
         </div>
       </label>
       <div id="p-fee-settings" style="display:none;margin-left:16px;padding-left:12px;border-left:2px solid var(--v2-border);">
-        <Input id="p-delivery-fee" name="delivery_fee_amount" label="Delivery fee (₹)" type="number" />
+        <!-- Fee type toggle -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;" id="p-fee-type-fixed-label">
+            <input type="radio" name="p-fee-type" id="p-fee-type-fixed" value="fixed" checked style="accent-color:var(--v2-brand);" />
+            <div>
+              <div style="font:700 12px Inter;color:var(--v2-ink);">Flat fee</div>
+              <div style="font:400 10px Inter;color:var(--v2-ink-3);">Same for all</div>
+            </div>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;" id="p-fee-type-perkm-label">
+            <input type="radio" name="p-fee-type" id="p-fee-type-perkm" value="per_km" style="accent-color:var(--v2-brand);" />
+            <div>
+              <div style="font:700 12px Inter;color:var(--v2-ink);">Per km</div>
+              <div style="font:400 10px Inter;color:var(--v2-ink-3);">By distance</div>
+            </div>
+          </label>
+        </div>
+        <div id="p-fee-fixed-fields">
+          <Input id="p-delivery-fee" name="delivery_fee_amount" label="Delivery fee (₹)" type="number" />
+        </div>
+        <div id="p-fee-perkm-fields" style="display:none;">
+          <Input id="p-delivery-fee-perkm" name="delivery_fee_per_km" label="Rate per km (₹/km)" type="number" />
+          <div style="font:400 11px Inter;color:var(--v2-ink-3);margin:-8px 0 12px;">e.g. ₹10/km → 5 km = ₹50</div>
+        </div>
         <Input id="p-free-above" name="free_delivery_above" label="Free delivery above (₹)" type="number" />
         <div style="font:400 11px Inter;color:var(--v2-ink-3);margin:-8px 0 12px;">Leave 0 for no free delivery threshold</div>
       </div>
@@ -222,7 +245,14 @@ import Input from "../../components/ui/atoms/Input.astro";
       (document.getElementById("p-delivery-rad") as HTMLInputElement).value = String(seller?.delivery_rad || 5);
       (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked = !!seller?.delivery_fee_enabled;
       (document.getElementById("p-delivery-fee") as HTMLInputElement).value = String(seller?.delivery_fee_amount || 0);
+      (document.getElementById("p-delivery-fee-perkm") as HTMLInputElement).value = String(seller?.delivery_fee_per_km || 0);
       (document.getElementById("p-free-above") as HTMLInputElement).value = String(seller?.free_delivery_above || 0);
+      // Fee type radio
+      const feeType = seller?.delivery_fee_type || "fixed";
+      (document.getElementById("p-fee-type-fixed") as HTMLInputElement).checked = feeType === "fixed";
+      (document.getElementById("p-fee-type-perkm") as HTMLInputElement).checked = feeType === "per_km";
+      document.getElementById("p-fee-fixed-fields")!.style.display = feeType === "fixed" ? "block" : "none";
+      document.getElementById("p-fee-perkm-fields")!.style.display = feeType === "per_km" ? "block" : "none";
       // schedule_pickup_slots hidden for now
       // (document.getElementById("p-schedule-pickup") as HTMLInputElement).checked = !!seller?.schedule_pickup_slots;
       document.getElementById("p-phone")!.textContent = seller?.phone || "—";
@@ -297,6 +327,8 @@ import Input from "../../components/ui/atoms/Input.astro";
       delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
       delivery_fee_enabled: (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked,
       delivery_fee_amount: parseFloat((document.getElementById("p-delivery-fee") as HTMLInputElement).value) || 0,
+      delivery_fee_type: (document.querySelector('input[name="p-fee-type"]:checked') as HTMLInputElement)?.value || "fixed",
+      delivery_fee_per_km: parseFloat((document.getElementById("p-delivery-fee-perkm") as HTMLInputElement).value) || 0,
       free_delivery_above: parseFloat((document.getElementById("p-free-above") as HTMLInputElement).value) || 0,
       // schedule_pickup_slots: hidden for now
     };
@@ -438,6 +470,14 @@ import Input from "../../components/ui/atoms/Input.astro";
   document.getElementById("p-delivery-fee-enabled")?.addEventListener("change", (e) => {
     const on = (e.target as HTMLInputElement).checked;
     document.getElementById("p-fee-settings")!.style.display = on ? "block" : "none";
+  });
+  // Toggle flat vs per-km fields
+  document.querySelectorAll('input[name="p-fee-type"]').forEach((r) => {
+    r.addEventListener("change", () => {
+      const isPerKm = (document.getElementById("p-fee-type-perkm") as HTMLInputElement).checked;
+      document.getElementById("p-fee-fixed-fields")!.style.display = isPerKm ? "none" : "block";
+      document.getElementById("p-fee-perkm-fields")!.style.display = isPerKm ? "block" : "none";
+    });
   });
 
   // Geolocation — "Use my current location" button

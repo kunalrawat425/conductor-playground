@@ -136,10 +136,21 @@ const tags = [
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
   seller?.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null,
-  seller?.delivery_fee_enabled && seller?.delivery_fee_amount > 0
-    ? (seller?.free_delivery_above > 0
-        ? `₹${seller.delivery_fee_amount} delivery · Free above ₹${seller.free_delivery_above}`
-        : `₹${seller.delivery_fee_amount} delivery fee`)
+  seller?.delivery_fee_enabled
+    ? (() => {
+        const feeType = seller.delivery_fee_type || "fixed";
+        if (feeType === "per_km" && seller.delivery_fee_per_km > 0) {
+          return seller.free_delivery_above > 0
+            ? `₹${seller.delivery_fee_per_km}/km · Free above ₹${seller.free_delivery_above}`
+            : `₹${seller.delivery_fee_per_km}/km delivery`;
+        }
+        if (seller.delivery_fee_amount > 0) {
+          return seller.free_delivery_above > 0
+            ? `₹${seller.delivery_fee_amount} delivery · Free above ₹${seller.free_delivery_above}`
+            : `₹${seller.delivery_fee_amount} delivery fee`;
+        }
+        return null;
+      })()
     : null,
   // seller?.schedule_pickup_slots ? "Scheduled pickup" : null, // hidden for now
 ].filter(Boolean) as string[];
@@ -425,7 +436,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode }}>
+<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode }}>
   // Expose current seller image so CartStackSheet can use fresh DB value even when localStorage is stale
   window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl };
 
@@ -795,6 +806,23 @@ const tags = [
     }
 
     let selectedAddressId = null;
+    let selectedAddressLat = null;
+    let selectedAddressLng = null;
+
+    // Analytics helper — fire-and-forget, never throws
+    function track(event, params) {
+      try {
+        if (typeof gtag === "function") gtag("event", event, { seller_id: sellerId, seller_name: sellerName, ...params });
+      } catch {}
+      try {
+        if (typeof fbq === "function" && event === "purchase") fbq("track", "Purchase", { value: params?.value, currency: "INR" });
+        if (typeof fbq === "function" && event === "checkout_started") fbq("track", "InitiateCheckout");
+        if (typeof fbq === "function" && event === "add_to_cart") fbq("track", "AddToCart", { content_name: params?.item_name, value: params?.price, currency: "INR" });
+      } catch {}
+    }
+
+    // Seller page view
+    track("seller_page_view", { seller_slug: window.location.pathname });
     // Remember which seller's cart we're currently checking out (set when user
     // taps Checkout on a CartStackSheet card, OR defaults to this page's sellerId
     // when only one seller has items).
@@ -891,6 +919,8 @@ const tags = [
       const sellerItems = Object.values(getSellerItems());
       const sellerQty = sellerItems.reduce((s, i) => s + i.qty, 0);
       const sellerSubtotal = sellerItems.reduce((s, i) => s + i.qty * i.price, 0);
+      // Unique item count: distinct listings in cart (4 packs of Pomfret = 1 item)
+      const sellerPackCount = new Set(sellerItems.map(i => i.listing_id)).size;
 
       if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
       document.body.classList.add("v2-has-cart");
@@ -899,7 +929,7 @@ const tags = [
       const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
 
       // Status line (pre-order window is pickup-only — don't imply a delivery savings perk)
-      let statusLine = `${sellerQty} item${sellerQty !== 1 ? "s" : ""}`;
+      let statusLine = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""}`;
       let statusColor = "var(--v2-ink-3)";
       if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
@@ -1058,6 +1088,17 @@ const tags = [
       preloadAddress();
 
       window.v2OpenSheet?.("seller-checkout");
+
+      // Track: checkout initiated
+      const c2 = Cart();
+      const g2 = c2?.groupBySeller().find((g) => g.seller_id === targetSellerId);
+      if (g2) {
+        track("checkout_started", {
+          item_count: g2.items.length,
+          subtotal: g2.items.reduce((s, i) => s + i.qty * i.price, 0),
+          items: g2.items.map((i) => i.name).join(","),
+        });
+      }
     }
 
     // When user toggles method to delivery, show the fee preview row with a client-side
@@ -1074,12 +1115,36 @@ const tags = [
         const subtotal = parseInt(subtotalText) || 0;
         // Use actual seller config — matches server-side computeDeliveryFee logic.
         let fee = 0;
+        let distKm = null;
         if (isDelivery && deliveryFeeEnabled) {
-          if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) fee = 0;
-          else fee = deliveryFeeAmount;
+          if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
+            fee = 0;
+          } else if (deliveryFeeType === "per_km") {
+            if (sellerLat != null && sellerLng != null && selectedAddressLat != null && selectedAddressLng != null) {
+              // Haversine client-side for preview
+              const R = 6371;
+              const dLat = (selectedAddressLat - sellerLat) * Math.PI / 180;
+              const dLng = (selectedAddressLng - sellerLng) * Math.PI / 180;
+              const a = Math.sin(dLat / 2) ** 2 + Math.cos(sellerLat * Math.PI / 180) * Math.cos(selectedAddressLat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+              distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              fee = Math.ceil(distKm * deliveryFeePerKm);
+            }
+          } else {
+            fee = deliveryFeeAmount;
+          }
         }
         if (delivRow) delivRow.style.display = isDelivery ? "flex" : "none";
-        if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : "FREE";
+        track("delivery_method_selected", { method: isDelivery ? "delivery" : "pickup" });
+        // Update delivery label to show distance when per_km
+        const delivLabelEl = document.getElementById("seller-checkout-delivery-label");
+        if (delivLabelEl) {
+          if (isDelivery && deliveryFeeType === "per_km" && distKm != null) {
+            delivLabelEl.textContent = `Delivery (${distKm.toFixed(1)} km)`;
+          } else {
+            delivLabelEl.textContent = "Delivery fee";
+          }
+        }
+        if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : (isDelivery && deliveryFeeType === "per_km" && distKm == null ? "By distance" : "FREE");
         const total = subtotal + fee;
         if (totalEl) totalEl.textContent = `₹${total.toLocaleString("en-IN")}`;
         if (totalFinal) totalFinal.textContent = `₹${total.toLocaleString("en-IN")}`;
@@ -1097,6 +1162,8 @@ const tags = [
         const def = addrs.find((a) => a.is_default) || addrs[0];
         if (def) {
           selectedAddressId = def.id;
+          selectedAddressLat = def.lat != null ? Number(def.lat) : null;
+          selectedAddressLng = def.lng != null ? Number(def.lng) : null;
           const labelEl = document.getElementById("seller-checkout-addr-label");
           const textEl = document.getElementById("seller-checkout-addr-text");
           if (labelEl) labelEl.textContent = (def.label || "Address") + (def.is_default ? " · Default" : "");
@@ -1120,6 +1187,8 @@ const tags = [
           const data = await res.json();
           const addr = (data.addresses || []).find((a) => a.id === selectedAddressId);
           if (addr) {
+            selectedAddressLat = addr.lat != null ? Number(addr.lat) : null;
+            selectedAddressLng = addr.lng != null ? Number(addr.lng) : null;
             const labelEl = document.getElementById("seller-checkout-addr-label");
             const textEl = document.getElementById("seller-checkout-addr-text");
             if (labelEl) labelEl.textContent = addr.label || "Address";
@@ -1191,6 +1260,14 @@ const tags = [
         if (!res.ok) throw new Error(data.error || "Failed");
 
         // Success: clear cart, show fullscreen success animation, redirect
+        const orderTotal = (data.orders || []).reduce((s, o) => s + (Number(o.total_price) || 0) + (Number(o.delivery_fee) || 0), 0);
+        track("purchase", {
+          value: orderTotal,
+          order_type: orderType,
+          item_count: group.items.length,
+          placement_kind: data.placement_kind || "same_day",
+          transaction_id: data.orders?.[0]?.id || "",
+        });
         c.clearCart({ sellerId: activeCheckoutSellerId });
         window.v2CloseSheet?.("seller-checkout");
 
@@ -1209,6 +1286,7 @@ const tags = [
           window.location.href = firstOrderId ? `/track/${encodeURIComponent(firstOrderId)}` : "/track";
         }, 2000);
       } catch (err) {
+        track("order_failed", { error: err?.message || "unknown" });
         window.v2Toast?.("error", "Failed", err.message || "Try again");
         btn.disabled = false;
         btn.textContent = "Place order";
@@ -1237,8 +1315,9 @@ const tags = [
         price: pricePerUnit,
         pricing_option_id: optId || "default",
         pricing_label: optLabel || unit,
-        qty: bs, // add one pack (= bundle_size base units)
+        qty: bs,
       });
+      track("add_to_cart", { item_name: name, item_id: id, price, quantity: bs, price_unit: unit });
       render();
     }
     // Inc/dec by bundle_size so qty stays a valid multiple
