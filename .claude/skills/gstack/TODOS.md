@@ -1,5 +1,380 @@
 # TODOS
 
+## /sync-gbrain memory stage perf follow-up
+
+### P2: Investigate `gbrain import` perf on large staging dirs
+
+**What:** Cold-run time on a 5131-file staging dir is >10 min in `gbrain import`
+alone (after gstack's prepare phase, which is now <10s after dropping per-file
+gitleaks). On 501 files it took 10s. The scaling is worse than linear and the
+bottleneck is inside gbrain, not the gstack orchestrator.
+
+**Why:** With memory-ingest's prepare phase now fast, the remaining cold-run cost
+is entirely on the gbrain side. Users with large corpora (5K+ files) currently pay
+~15-30 min on first ingest. Likely culprits in `~/git/gbrain/src/core/import-file.ts`:
+
+- N+1 SQL queries: `engine.getPage(slug)` for each file's content_hash check
+  (line 242 + 478) — should be batched into a single query
+- Per-page auto-link reconciliation that fires even for unchanged content
+- FTS / vector index updates without batching transactions
+
+**Pros:** Lives in gbrain (cleaner separation). Fix in gbrain benefits other
+gbrain callers too (`gbrain sync`, MCP `put_page` workflows). Likely 10-50x
+speedup from batched queries alone.
+
+**Cons:** Cross-repo change, requires gbrain test coverage for the new batched
+path. Not on the gstack critical path; gstack's architecture is already correct.
+
+**Context:** Verified on real corpus 2026-05-10. gstack-side prepare with
+`--scan-secrets` off runs in <10s. The full gbrain import on the same staged
+dir consumes 100% CPU for >10 min. Both observations from
+`bin/gstack-memory-ingest.ts:ingestPass` reaching the `runGbrainImport` call
+quickly, then the child process taking the bulk of the wall time.
+
+**Depends on:** None — gstack's batch-ingest architecture (D1-D8 in
+`docs/designs/SYNC_GBRAIN_BATCH_INGEST.md`) is already shipped and correct.
+
+---
+
+### P3: Cache "no changes since last import" at the prepare-batch level
+
+**What:** Even with the prepare phase fast (<10s for 5135 files), walking and
+mtime-stat'ing every file on a true no-op run adds a few seconds and creates
+spurious staging dirs. Cache the most-recent-source-mtime per-source in the
+state file; if no source dir has a newer mtime, skip the walk + stage + import
+entirely.
+
+**Why:** Most `/sync-gbrain` invocations have nothing new to ingest. The
+fastest path is "do nothing, fast." `gbrain doctor` should still report state,
+but the actual ingest pipeline can short-circuit when last_full_walk is recent
+and no source-tree mtime has moved.
+
+**Pros:** Trivial implementation (~20 lines in `ingestPass`). Makes the
+incremental fast-path actually live up to "<30s" in the original plan.
+
+**Cons:** Adds a cache invalidation surface. If a user edits a file but its
+parent dir's mtime doesn't update (rare on macOS APFS), changes get missed.
+Mitigation: only short-circuit when last_full_walk is recent (e.g. <1 min ago).
+
+**Context:** Filed during 2026-05-10 perf testing after `--scan-secrets` was
+made opt-in. Lower priority than the gbrain-side perf issue above.
+
+---
+
+## Browser-skills follow-on (Phases 2-4)
+
+### P1: Browser-skills Phase 2 — `/scrape` and `/skillify` skill templates
+
+**What:** Phase 2a of the browser-skills design (`docs/designs/BROWSER_SKILLS_V1.md`). Two new gstack skills: `/scrape <intent>` (read-only) is the single entry point for pulling page data — first call prototypes via `$B` primitives, subsequent calls on a matching intent route to a codified browser-skill in ~200ms. `/skillify` codifies the most recent successful prototype into a permanent browser-skill on disk: synthesizes `script.ts` + `script.test.ts` + fixture from the agent's own context (final-attempt $B calls only), runs the test in a temp dir, asks before committing, atomic rename to `~/.gstack/browser-skills/<name>/`. The mutating-flow sibling `/automate` is split out as its own P0 (below) — same skillify pattern, different trust profile.
+
+**Why:** Phase 1 shipped the runtime — humans can hand-write deterministic browser scripts that gstack runs. Phase 2a unlocks the productivity gain: an agent that gets a flow right once via 20+ `$B` commands says `/skillify` and the script becomes a 200ms call forever after. Same skillify pattern Garry's articles describe, applied to the read-only browser activity (scraping) most amenable to deterministic compression. Mutating actions ship next as `/automate` because the failure mode (unintended writes) needs stronger gates.
+
+**Pros:** The 100x productivity gain lives here. Closes the loop: agents prototype, codify, then reach for the codified skill in future sessions instead of re-exploring. Replaces the original "self-authoring `$B` commands" P1 — same user-visible goal, no in-daemon isolation problem (skill scripts run as standalone Bun processes, never imported into the daemon). Synthesis question (Codex finding #6) is resolved by re-prompting from the agent's own conversation context (option b in the design doc), bounded to final-attempt `$B` calls per `/plan-eng-review` D2.
+
+**Cons:** **Bun runtime distribution** (Codex finding #7). Phase 1 sidesteps this because the bundled reference skill ships inside the gstack install. User-authored skills land on machines without Bun unless we ship a runtime alongside, compile to a self-contained binary, or use Node + the existing `cli.ts` pattern. Deferred to Phase 4 — `/skillify` documents the assumption that gstack is installed (which means Bun is on PATH).
+
+**Context:** The Phase 1 architecture (3-tier lookup, scoped tokens, sibling SDK, frontmatter contract) is locked and exercised by the bundled `hackernews-frontpage` reference skill. Phase 2a plugs `/scrape` and `/skillify` into that runtime via two skill templates plus one new helper (`browse/src/browser-skill-write.ts` for atomic temp-dir-then-rename per `/plan-eng-review` D3) — no new storage primitives.
+
+**Effort:** M (human: ~1 week / CC: ~1 day)
+**Priority:** P1 (this branch — `garrytan/browserharness` shipping as v1.19.0.0)
+**Depends on:** Phase 1 shipped (this branch).
+
+---
+
+### P2: Browser-skills Phase 3 — resolver injection at session start
+
+**What:** Mirror the domain-skill resolver at `browse/src/server.ts:722-743`. When a sidebar-agent session starts on a host with matching browser-skills, inject a list block telling the agent which skills exist for that host and how to invoke them (`$B skill run <name> --arg ...`). UNTRUSTED-wrapped via the existing L1-L6 security stack. Add `gstack-config browser_skillify_prompts` knob (default `off`) controlling end-of-task nudges in `/qa`, `/design-review`, etc. when activity feed shows ≥N commands on a single host AND no skill exists yet for that host+intent.
+
+**Why:** Without the resolver, browser-skills only work when the user explicitly types `$B skill run <name>`. With the resolver, agents auto-discover existing skills for the current host and reach for them instead of re-exploring. Same compounding pattern as domain-skills.
+
+**Pros:** Closes the discoverability gap. Agents that wouldn't know a skill exists now see it in their system prompt automatically. End-of-task nudges (opt-in via knob) catch the moments where skillify is most valuable.
+
+**Cons:** The resolver block lives in the system prompt and competes with other resolver blocks for prompt budget. Need to gate carefully so it doesn't fire on every host with a skill — only when the skill is plausibly relevant to the current task. v1.8.0.0 domain-skills handles this by only firing for the active tab's hostname; same pattern here.
+
+**Effort:** S (human: ~3 days / CC: ~4 hours)
+**Priority:** P2
+**Depends on:** Phase 2.
+
+---
+
+### P2: Browser-skills Phase 4 — eval infrastructure + fixture staleness + OS sandbox
+
+**What:** Three loosely-coupled extensions: (a) LLM-judge eval ("did the agent reach for the skill instead of re-exploring?"), classified `periodic` per `test/helpers/touchfiles.ts`. (b) Fixture-staleness detection — periodic comparison of bundled fixtures against live pages, flagging mismatches before they break tests silently. (c) OS-level FS sandbox for untrusted spawns: `sandbox-exec` profile on macOS, namespaces / seccomp on Linux. Drops in cleanly behind the existing trusted/untrusted contract (Phase 1 just stripped env; Phase 4 adds real FS isolation).
+
+**Why:** Phase 1's trust model has the daemon-side capability boundary right (scoped tokens) but the process-side env scrub is hygiene, not a sandbox (Codex finding #1). For genuinely untrusted skills (Phase 2 agent-authored), real FS isolation matters. Eval + fixture staleness keep the skill quality bar honest as flows drift.
+
+**Pros:** Closes the last credible attack surface from Codex finding #1 (FS read of `~/.ssh/id_rsa` etc.). Eval data tells us whether the resolver injection is actually working. Fixture staleness catches HTML drift before users.
+
+**Cons:** Three different concerns, three different design passes. Tempting to bundle. Resist: each can ship independently. OS sandbox is the hardest piece (macOS `sandbox-exec` is Apple-private but stable; Linux requires namespaces + bind mounts).
+
+**Effort:** L (human: ~2-3 weeks / CC: ~3-5 days)
+**Priority:** P2
+**Depends on:** Phase 2 (need agent-authored skills to motivate sandbox); Phase 3 (eval needs resolver injection).
+
+---
+
+### P2: Migrate `/learn` to SQLite
+
+**What:** The current `~/.gstack/projects/<slug>/learnings.jsonl` storage works (append-only, tolerant parser, idle compactor) but Codex outside-voice (T5) flagged JSONL as "the wrong primitive" for multi-writer canonical state: lost-update on rewrite, partial-line corruption on crash, no transactions. v1.8.0.0 hardened JSONL with flock + O_APPEND but the right long-term primitive is SQLite (which Bun has built in via `bun:sqlite`).
+
+**Why:** Domain skills now live in the same `learnings.jsonl` (per CEO D1 unification). As volume grows, the JSONL hardening compactor + tolerant parser approach becomes the long pole. SQLite gives atomic transactions, indexes (huge for hostname lookup), and crash-safety without a custom compactor.
+
+**Pros:** Atomic writes. Real schema. Fast indexed lookups by hostname/key/type. Crash-safe.
+
+**Cons:** Migration touches every consumer of `learnings.jsonl` — `/learn` scripts (`gstack-learnings-log`, `gstack-learnings-search`), domain-skills.ts read/write, gbrain-sync (which currently treats it as a flat file). Old `learnings.jsonl` files in the wild need a one-shot migration script.
+
+**Context:** The JSONL hardening in v1.8.0.0 was the right call for that release scope (preserve unification, not boil-the-ocean). But the failure modes are bounded, not eliminated. SQLite is the boil-the-ocean fix.
+
+**Effort:** M (human: ~1 week / CC: ~1 day)
+**Priority:** P2
+**Depends on:** v1.8.0.0 in production for ~1 month to measure JSONL pain (compactor frequency, partial-line drops, write contention).
+
+---
+
+### P2: Remove plan-mode handshake from `/plan-devex-review` SKILL.md.tmpl
+
+**What:** `/plan-devex-review` has a "Plan Mode Handshake" section at the top that contradicts the preamble's "Skill Invocation During Plan Mode" contract (which says AskUserQuestion satisfies plan mode's end-of-turn requirement). The handshake forces an extra exit-plan-mode step that no other interactive review skill needs. `/plan-ceo-review`, `/plan-eng-review`, `/plan-design-review` all run fine in plan mode without it.
+
+**Why:** Found during the v1.8.0.0 DevEx review. The inconsistency cost a turn and confused the flow. Either remove the handshake from `plan-devex-review` (clean fix, recommended) OR add it to every interactive skill for consistency.
+
+**Pros:** Fixes a real DX bug for anyone running `/plan-devex-review` in plan mode. Five-minute change.
+
+**Cons:** Need to think about WHY it was added in the first place — there may be context this TODO is missing.
+
+**Context:** The handshake section in `plan-devex-review/SKILL.md.tmpl` says it's needed because plan mode's "this supersedes any other instructions" warning could otherwise bypass the skill's per-finding STOP gates. But the same warning exists for the other review skills, and they all work fine because AskUserQuestion satisfies the end-of-turn contract.
+
+**Effort:** S (human: ~15 min / CC: ~5 min)
+**Priority:** P2
+**Depends on:** Nothing.
+
+---
+
+### P2: Bump gbrain install-pin in lockstep with gstack memory-feature releases (#1305 part 2)
+
+**What:** `bin/gstack-gbrain-install` pins gbrain to commit `08b3698` (v0.18.2). When gstack ships features that depend on newer gbrain ops or schema (e.g. v1.26.0 manifests + `code-def`/`code-refs`/`reindex-code`), the pin doesn't move with it. Fresh `/setup-gbrain` installs an old gbrain that fails `gbrain doctor` schema_version checks (24 vs latest 32+) until the user manually upgrades.
+
+**Why:** Filed in #1305 alongside the `put_page` CLI bug. Out of scope for the v1.26.5.0 fix wave (separate release-coordination concern: which gbrain version we install vs. how we call it). The install-pin should either (a) auto-bump whenever gstack releases features that need newer gbrain, or (b) detect a stale pin during preamble and either auto-upgrade gbrain or print a one-line FIX hint.
+
+**Pros:** Closes the "fresh-install paper-cut" path. New users land on a healthy schema. Reduces support noise on `/setup-gbrain` flows. Makes the gstack/gbrain release contract visible.
+
+**Cons:** Adds release-cadence coupling between gstack and gbrain. Needs a policy: pin = "minimum version that still works" vs "latest known good." If gbrain ships a breaking change to `put` shape and gstack doesn't update the pin, fresh installs break in a new way.
+
+**Context:** Issue #1305 part 1 (the `put_page` CLI verb bug) was handled in v1.26.5.0. Part 2 (this TODO) is the install-pin staleness. Pin lives in `bin/gstack-gbrain-install` near the top as a constant. Easiest minimal fix: ship the pin as a tracked release artifact (e.g. write it from `package.json` at build time) and add a doctor-style preamble check.
+
+**Effort:** S (human: ~2 days / CC: ~3 hours)
+**Priority:** P2
+**Depends on:** Nothing.
+
+---
+
+### P3: Source-id host-collision risk in `deriveCodeSourceId` (cross-host duplicate org/repo)
+
+**What:** v1.26.5.0's `deriveCodeSourceId` drops the host segment to fit gbrain's 32-char source-id budget. This means `github.com/acme/foo` and `gitlab.com/acme/foo` collapse to the same `gstack-code-acme-foo`. `ensureSourceRegisteredSync()` in `bin/gstack-gbrain-sync.ts:323` will silently re-register the source when `local_path` differs, evicting one side.
+
+**Why:** Vanishingly rare in practice — same `<org>/<repo>` shape across both github.com and gitlab.com on the same machine almost never happens. But the failure mode is silent (one repo evicts the other in the brain), and the user has no signal anything is wrong.
+
+**Pros:** Closes the silent-eviction edge. Two viable approaches: short host marker (`gh-` / `gl-` / `bb-`) eats 3 chars but keeps cross-host uniqueness; OR include a 3-char hash of the host alongside the org-repo.
+
+**Cons:** Source IDs change shape again — anyone with existing registrations on v1.26.5.0 gets a one-time re-register. Net break-even because the current scheme also changed from v1.26.4.0.
+
+**Context:** Filed in #1320 / #1322 / #1323 / #1331 (the underlying source-id validation bugs), addressed in v1.26.5.0 by dropping host segment + hash-truncating. Cross-host collision was a known accepted tradeoff in PR #1330's design ("vanishingly rare in practice"). Codex outside-voice plan review surfaced it as a long-tail concern; this TODO captures it for a future bump.
+
+**Effort:** XS (human: ~4 hours / CC: ~30 min)
+**Priority:** P3
+**Depends on:** Nothing.
+
+---
+
+### P3: GBrain skillpack publishing for domain skills
+
+**What:** Domain skills are agent-authored notes per hostname. Right now they're per-machine or per-agent-repo. The natural compounding extension: publish curated skill packs to GBrain (`gstack-brain-sync`) so others can subscribe. "Louise's LinkedIn skills" or "Garry's GitHub skills" become packs anyone can pull.
+
+**Why:** v1.8.0.0 gets us per-machine compounding. Cross-user compounding is the network effect — every user contributes, every user benefits.
+
+**Pros:** Massive compounding potential. Hard part is trust/moderation (existing problem GBrain-sync has thought through).
+
+**Cons:** Publishing infra, signature/redaction model, moderation when packs go bad. Real plan needed.
+
+**Context:** GBrain-sync infra (v1.7.0.0) already does private cross-machine sync for the user's own data. Skillpack publishing is the public/shared layer on top of that.
+
+**Effort:** M (human: ~1 week / CC: ~1 day)
+**Priority:** P3
+**Depends on:** GBrain-sync stable in production. Some user demand signal first.
+
+---
+
+### P3: Replay/record demonstrated flows to domain-skills
+
+**What:** Watch a human drive a site once (record DOM events + screenshots + nav), generalize to a domain-skill. "Teach by showing." Different research dream than v1.8.0.0's per-site notes.
+
+**Why:** The highest-quality skill content is one a human demonstrated, not one the agent figured out from scratch. Pairs with skillpack publishing — recorded flows are the most valuable packs.
+
+**Pros:** Skill quality jumps. Some sites are too complex for an agent to figure out alone (multi-step OAuth, captcha-gated forms).
+
+**Cons:** Record fidelity vs. selector stability over time. DOM changes break recordings. Real research needed.
+
+**Context:** Browser-use has experimented with this. Playwright has a recorder. Codeception/Cypress recorders exist. None of them do the "generalize the recording into a markdown note" step.
+
+**Effort:** L (human: ~2-3 weeks / CC: ~2-3 days)
+**Priority:** P3
+**Depends on:** Probably its own `/office-hours` session before committing eng time.
+
+---
+
+### P3: `$B commands review` batch-mode UX
+
+**What:** Originally an alternative for the inline-on-first-use approval gate (DevEx D6 alternative C). Instead of approving each agent-authored command at first invocation, batch them: agent scaffolds many, human reviews `$B commands review` at a convenient time, approves/rejects in one pass.
+
+**Why:** If self-authoring commands ever ships (the P1 above), the inline approval at first-use can interrupt the agent mid-task. Batch review is friendlier for the human.
+
+**Pros:** Reduces interrupt frequency. Lets humans review with full context.
+
+**Cons:** Defers approval — agent can't use the new command until the human comes back. If the agent needs the command immediately, this is worse than inline.
+
+**Context:** Tied to the P1 above. Won't ship before that does.
+
+**Effort:** S (human: ~half day / CC: ~30 min)
+**Priority:** P3
+**Depends on:** P1 self-authoring `$B` commands.
+
+---
+
+### P3: Heuristic command-gap watcher
+
+**What:** Sidebar-agent watches the activity feed; when an agent repeats a similar action 3+ times (e.g., calls `$B js` with structurally similar arguments), suggest scaffolding a command. From DevEx D4 alternative C.
+
+**Why:** Closes the discoverability loop on self-authoring commands. Agent is most likely to write a command when it just hit the same friction multiple times.
+
+**Pros:** Surgical. Fires only when a command would have demonstrably helped. Uses real telemetry, not heuristics.
+
+**Cons:** False positives (legitimate repeated actions) feel intrusive. Hard to design without telemetry first.
+
+**Context:** Telemetry from v1.8.0.0 (`cdp_method_called`, `cdp_method_denied` counters) gives us the data to design this well. Don't design until we have ~1 month of production data.
+
+**Effort:** M (human: ~1 week / CC: ~1 day)
+**Priority:** P3
+**Depends on:** v1.8.0.0 telemetry in production. P1 self-authoring commands.
+
+---
+## Sidebar Terminal (cc-pty-import follow-ups)
+
+### v1.1: PTY session survives sidebar reload
+
+**What:** Today the Terminal tab's PTY dies with the WebSocket — sidebar
+reload, side-panel close, even a quick navigate-away in another tab close
+the session. v1.1 should key the PTY on a tab/session id so a reload
+reattaches to the existing claude process and you keep `/resume` history.
+
+**Why:** Mid-task resilience. When you've been pair-programming with claude
+for 20 minutes and an accidental Cmd-R blows it away, the cost is real.
+
+**Pros:** Better UX, fewer interrupted sessions. **Cons:** Session-tracking
+state, ghost-process risk, lifecycle bugs (when DOES the PTY actually go
+away?). v1 chose the simple "PTY dies with WS" model deliberately.
+
+**Context:** /plan-eng-review Issue 1C decision (cc-pty-import branch,
+2026-04-25). v1 ships with phoenix's lifecycle. **Depends on:**
+cc-pty-import landed.
+
+**Priority:** P2 (nice-to-have).
+**Effort:** M. Likely needs a per-tab session map keyed by chrome.tabs.id
+plus a TTL so abandoned PTYs eventually exit.
+
+---
+
+### v1.1+: Audit `/health` token distribution
+
+**What:** Codex's outside-voice review on cc-pty-import flagged that
+`/health` already surfaces `AUTH_TOKEN` to any localhost caller in headed
+mode (`server.ts:1657`). That's a pre-existing soft leak — anything
+running on localhost gets the root token by hitting `/health`.
+
+**Why:** cc-pty-import sidesteps it by NOT putting the PTY token there
+(uses an HttpOnly cookie path instead). But the underlying leak is still
+shippable surface. A second extension or a localhost web app could
+currently scrape `AUTH_TOKEN` and hit any browse-server endpoint.
+
+**Pros:** Closes a real privilege-escalation path on multi-extension
+machines. **Cons:** Either we tighten the gate (Origin must be OUR
+extension id, not just any chrome-extension://) or we move bootstrap
+discovery off `/health` entirely. Either has migration cost for tests
+and the existing extension.
+
+**Context:** codex finding #2 on cc-pty-import plan-eng review. Not in
+scope of that PR; deliberately deferred to keep PTY-import small.
+
+**Priority:** P2.
+**Effort:** M.
+
+---
+
+## Testing
+
+## P2: Per-finding AskUserQuestion count assertion for /plan-ceo-review
+
+**What:** PTY E2E test that drives /plan-ceo-review through Step 0 with a stable fixture diff containing N known findings, asserts that exactly N distinct AskUserQuestions fire (one per finding) before plan_ready.
+
+**Why:** The skill template repeats "One issue = one AskUserQuestion call. Never combine multiple issues into one question." at every review checkpoint. No test enforces it. The current `skill-e2e-plan-ceo-plan-mode.test.ts` smoke (post-v1.21.1.0) only catches "agent skipped Step 0 entirely." Batching findings into one question slips through silently.
+
+**Pros:** Locks in the strongest contract the skill mandates. Catches a real failure mode (the original attachment showed 2 findings batched as 0 questions).
+**Cons:** Needs a stable fixture diff to keep finding count deterministic (~1 day human / ~30 min CC). Opus may reasonably consolidate two related findings, so the assertion needs a forgiving lower bound (e.g., `>= ceil(N * 0.6)`) rather than strict equality.
+
+**Context:** The PTY harness (`runPlanSkillObservation`) returns at first terminal outcome — for V2 we need a streaming variant that counts AskUserQuestions across the whole session up to `plan_ready`. Probably a new helper alongside `runPlanSkillObservation`.
+
+**Depends on:** Stable fixture diff (`test/fixtures/plans/multi-finding.diff` or similar) with a small known set of issues that triggers all 4 review sections.
+
+**Priority:** P2.
+**Effort:** S (CC: ~30 min once fixture exists). Captured from v1.21.1.0 plan-eng-review D2.
+
+---
+
+## P3: Honor env vars in gstack-config (so QUESTION_TUNING/EXPLAIN_LEVEL actually isolate tests)
+
+**What:** `gstack-config get <key>` reads `~/.gstack/config.yaml`. `runPlanSkillObservation` plumbs `env: { QUESTION_TUNING: 'false', EXPLAIN_LEVEL: 'default' }` through to the spawned `claude` process — but the skill preamble bash uses `gstack-config get question_tuning`, which never looks at env. The env passthrough is theater on current code.
+
+**Why:** Without env honoring, the v1.21.1.0 plan-ceo-review smoke is still flaky on machines with `question_tuning: true` set in YAML. AUTO_DECIDE preferences would skip the rendered AskUserQuestion list, masking the regression we want to catch.
+
+**Pros:** Makes the gate test hermetic across machines. The env wiring is already in place — only `gstack-config` needs to read env first, fall back to YAML.
+**Cons:** Touches the gstack-config binary across all 3 platforms (linux/darwin/windows). Cross-binary refactor.
+
+**Context:** Captured from v1.21.1.0 adversarial review. Documented honestly in the test docstring as a known limitation.
+
+**Priority:** P3.
+**Effort:** S. Single-file edit to `bin/gstack-config` (~10 LOC for env-first lookup).
+
+---
+
+## P3: Path-confusion hardening on SANCTIONED_WRITE_SUBSTRINGS
+
+**What:** `runPlanSkillObservation`'s silent-write detector uses substring matching on a few sanctioned paths (`.gstack/`, `CHANGELOG.md`, `TODOS.md`, etc). A write to `node_modules/some-pkg/CHANGELOG.md` or `src/foo/.gstack/leak.ts` is currently sanctioned because the substring matches anywhere in the path.
+
+**Why:** Defensive — no current bug exploits this, but a malicious skill or fixture could write to a path that happens to contain `.gstack/` or `CHANGELOG.md` and slip past silent-write detection.
+
+**Pros:** Hardens the harness against future skill misbehavior. Aligns substring rules with their intent.
+**Cons:** Need to anchor against absolute prefixes (`os.homedir() + '/.gstack/'`, worktree root) which makes the test less portable across machines.
+
+**Context:** Captured from v1.21.1.0 adversarial review (HIGH/FIXABLE finding, pre-existing). Refactored into a `SANCTIONED_WRITE_SUBSTRINGS` constant in v1.21.1.0 but the substring-includes logic is unchanged from before.
+
+**Priority:** P3.
+**Effort:** S.
+
+---
+
+## P1: Structural STOP-Ask forcing function across all skills
+
+**What:** Design and implement a structural forcing function that catches when a skill mandates per-issue AskUserQuestion but the model silently substitutes batch-synthesis. Candidate mechanisms: question-count assertion (skill declares expected question count in frontmatter; post-run audit logs if model fired <N), typed question templates (skill hands the model pre-built AskUserQuestion payloads rather than prose instructions), or a canUseTool-based post-run audit that compares declared-gates-fired vs expected.
+
+**Why:** The authoritative "Skill Invocation During Plan Mode" rule (hoisted to preamble position 1) tells the model AskUserQuestion satisfies plan mode's end-of-turn requirement. That fixes plan-mode entry, but NOT the broader class of failures: the model silently substitutes batch-synthesis for STOP-Ask loops whenever the skill's interactive contract collides with any other rule surface (auto mode, tool-count anxiety, cognitive load). Without structural enforcement, every skill with STOP-per-issue contracts remains vulnerable.
+
+**Pros:** Catches a class-of-bug, not an instance. Applies to every skill that declares STOP gates. Builds on `canUseTool` primitive in `test/helpers/agent-sdk-runner.ts`.
+
+**Cons:** Real design work. How does a skill declare expected question count — static value in frontmatter, or dynamic based on number of review sections that surface findings? Is the audit inline (blocking, same-turn) or post-hoc (after skill completion)? Calibration of expected-vs-actual thresholds depends on real V0 question-log data across skills.
+
+**Context:** Relevant files — `scripts/question-registry.ts` (typed question catalog), `scripts/resolvers/question-tuning.ts` (preference classification), `bin/gstack-question-log` (event log), `bin/gstack-question-preference` (read/write preferences), `test/helpers/agent-sdk-runner.ts` (canUseTool harness). Existing question-log already captures fire events; the gap is declaring expected counts and auditing against them.
+
+**Effort:** L (human: ~1-2 weeks / CC+gstack: ~2-3 hours for design doc + first-pass implementation).
+**Priority:** P1 if interactive-skill volume is growing; P2 otherwise.
+**Depends on / blocked by:** design doc — likely its own `docs/designs/STOP_ASK_ENFORCEMENT_V0.md`.
 ## Context skills
 
 ### `/context-save --lane` + `/context-restore --lane` for parallel workstreams
@@ -17,6 +392,24 @@
 **Effort:** M (human: ~1-2 days / CC: ~45-60 min)
 **Priority:** P3 (nice-to-have, not blocking anyone yet)
 **Depends on:** `/context-save` + `/context-restore` rename stable in production (v1.0.1.0+). Research: does Conductor expose a spawn-workspace CLI?
+
+## P0: Browser-skills Phase 2 follow-up — `/automate` skill
+
+**What:** The mutating-flow sibling of `/scrape` (Phase 2b). `/automate <intent>` codifies form fills, click sequences, and multi-step interactions into permanent browser-skills. Reuses Phase 2a's skillify machinery (`/skillify` is shared) and the D3 atomic-write helper. Adds: per-mutating-step UNTRUSTED-wrapped summary + `AskUserQuestion` confirmation gate when running non-codified (codified skills run unattended after the initial human approval). Defaults to `trusted: false` per Phase 1 — env-scrubbed spawn, scoped-token capability, no admin scope.
+
+**Why:** Read-only scraping is the safer wedge to validate the skillify pattern (failure mode: wrong data = benign). Mutating actions are the other half of the 100x productivity gain — agents that codify "log into example.com → click Settings → toggle X" save real time on every future session. Splitting from Phase 2a means we ship the productivity loop first, validate the architecture, then add the higher-trust surface with confidence.
+
+**Pros:** Unlocks deterministic automation authoring without self-authoring safety concerns — Phase 1's scoped-token model applies equally to mutating skills. The codified script enumerates exactly which `$B click`/`$B fill`/`$B type` calls run; nothing else is possible at runtime. Reuses 100% of `/skillify`, the D3 helper, and the storage tier. Per-step confirmation gate surfaces the actions to the user before they run for the first time.
+
+**Cons:** Mutating intents have higher blast radius (the wrong selector clicks "Delete Account" instead of "Delete Comment"). Phase 4 OS-level FS sandbox is a stronger answer; until then, the user trust burden is real. Confirmation-gate UX needs care — too many prompts and users hit "yes" reflexively. Mitigation: only gate first-run; after `/skillify` codifies, the skill runs unattended.
+
+**Context:** Original Phase 2 plan in `docs/designs/BROWSER_SKILLS_V1.md` bundled `/scrape` + `/automate`. Split during the v1.19.0.0 plan review (`/plan-eng-review` on `garrytan/browserharness`) — the user's source doc framed both as primary, but in practice scraping is where users start because the failure mode is benign. Ship `/scrape` + `/skillify` first (this branch), validate the skillify pattern works, then `/automate` lands on top of the same machinery.
+
+**Effort:** M (human: ~3-5 days / CC: ~1 day)
+**Priority:** P0 (next branch after v1.19.0.0)
+**Depends on:** Phase 2a (`/scrape` + `/skillify`) shipped at v1.19.0.0. The D3 atomic-write helper (`browse/src/browser-skill-write.ts`) and the bundled SDK pattern are reused as-is.
+
+---
 
 ## P0: PACING_UPDATES_V0 — Louise's fatigue root cause (V1.1)
 
@@ -241,7 +634,13 @@ defend the compiled-side ingress.
 
 ### ML Prompt Injection Classifier — v2 Follow-ups
 
-#### Cut Haiku false-positive rate from 44% toward ~15% (P0)
+#### ~~Cut Haiku false-positive rate from 44% toward ~15% (P0)~~ — SHIPPED in v1.5.2.0
+
+Measured result (500-case BrowseSafe-Bench smoke): detection 67.3% → **56.2%**, FP 44.1% → **22.9%**. Gate passes (detection ≥ 55%, FP ≤ 25%). Knobs that landed: label-first ensemble voting (verdict label trumps numeric confidence for transcript layer), hallucination guard (`verdict=block` at conf < 0.40 → warn-vote), new `THRESHOLDS.SOLO_CONTENT_BLOCK = 0.92` for label-less content classifiers, label-first extension to toolOutput path, tighter Haiku prompt + 8 few-shot exemplars, pinned Haiku model, `claude -p` spawn from `os.tmpdir()` so CLAUDE.md can't poison the classifier, timeout bumped 15s → 45s. CI gate: `browse/test/security-bench-ensemble.test.ts` replays fixture, fail-closed on missing fixture + security-layer diff. The original plan's stop-loss revert order didn't move the FP needle (FPs came from single-layer-BLOCK paths, not ensemble); the real levers turned out to be architectural (label-first) plus a new decoupled threshold.
+
+See CHANGELOG.md [1.5.2.0] for the full shipped summary.
+
+#### Original spec (pre-ship, retained for archive)
 
 **What:** v1 ships the Haiku transcript classifier on every tool output (Read/Grep/Bash/Glob/WebFetch). BrowseSafe-Bench smoke measured detection 67.3% + FP 44.1% — a 4.4x detection lift from L4-only, but FP tripled because Haiku is more aggressive than L4 on edge cases (phishing-style benign content, borderline social engineering). The review banner makes FPs recoverable but 44% is too high for a delightful default.
 
@@ -1224,7 +1623,7 @@ Shipped in v0.6.5. TemplateContext in gen-skill-docs.ts bakes skill name into pr
 
 **What:** Write a postinstall script that patches Playwright's CDP layer to suppress `Runtime.enable` and use `addBinding` for context ID discovery, same approach as rebrowser-patches. Eliminates the `navigator.webdriver`, `cdc_` markers, and other CDP artifacts that sites like Google use to detect automation.
 
-**Why:** Our current stealth patches (UA override, navigator.webdriver=false, fake plugins) work on most sites but Google still triggers captchas. The real detection is at the CDP protocol level. rebrowser-patches proved the approach works but their patches target Playwright 1.52.0 and don't apply to our 1.58.2. We need our own patcher using string matching instead of line-number diffs. 6 files, ~200 lines of patches total.
+**Why:** Our current stealth narrows to `navigator.webdriver` masking + ChromeDriver `cdc_` runtime cleanup + Permissions API patch (v1.28.0.0 narrowed it from also faking plugins/languages, since modern fingerprinters punish inconsistent fakes more than they punish admitted defaults). That's enough for most sites but Google still triggers captchas, because the real detection is at the CDP protocol level. rebrowser-patches proved the approach works but their patches target Playwright 1.52.0 and don't apply to our 1.58.2. We need our own patcher using string matching instead of line-number diffs. 6 files, ~200 lines of patches total.
 
 **Context:** Full analysis of rebrowser-patches source: patches 6 files in `playwright-core/lib/server/` (crConnection.js, crDevTools.js, crPage.js, crServiceWorker.js, frames.js, page.js). Key technique: suppress `Runtime.enable` (the main CDP detection vector), use `Runtime.addBinding` + `CustomEvent` trick to discover execution context IDs without it. Our extension communicates via Chrome extension APIs, not CDP Runtime, so it should be unaffected. Write E2E tests that verify: (1) extension still loads and connects, (2) Google.com loads without captcha, (3) sidebar chat still works.
 
@@ -1245,6 +1644,56 @@ Shipped in v0.6.5. TemplateContext in gen-skill-docs.ts bakes skill name into pr
 **Depends on:** CDP patches proving the value of anti-bot stealth first
 
 ## Completed
+
+### Slim preamble + real-PTY plan-mode E2E harness (v1.13.1.0)
+
+- Compressed 18 preamble resolvers; total `SKILL.md` corpus dropped from 3.08 MB to 2.30 MB across 47 outputs (-25.5%, ~196K tokens saved).
+- Built `test/helpers/claude-pty-runner.ts` — real-PTY harness using `Bun.spawn({terminal:})` (Bun 1.3.10+ has built-in PTY, no `node-pty` needed).
+- Rewrote 5 plan-mode E2E tests (`plan-ceo`, `plan-eng`, `plan-design`, `plan-devex`, `plan-mode-no-op`); all 5 pass for the first time ever (790s sequential).
+- Same tests were 0/5 on `origin/main`, on v1.0.0.0, and on this branch with the SDK harness — the SDK couldn't observe Claude's plan-mode confirmation UI.
+- Side fixes folded in: `scripts/skill-check.ts` sidecar-symlink helper, `test/skill-validation.test.ts` exemption for `browse/test/fixtures/security-bench-haiku-responses.json` (resolves the size-warning noise from main's warn-only conversion).
+
+**Completed:** v1.13.1.0 (2026-04-25)
+
+---
+
+### Pre-existing test failures surfaced during v1.12.0.0 ship — RESOLVED
+
+- `test/brain-sync.test.ts` GSTACK_HOME isolation fixed on main in v1.13.0.0.
+- `test/model-overlay-opus-4-7.test.ts` updated on main to match the new overlay content (the v1.10.1.0 removal of "Fan out explicitly" was correct — measured −60pp fanout vs baseline).
+
+**Completed:** v1.13.0.0 (2026-04-25, on main)
+
+---
+
+### `security-bench-haiku-responses.json` size gate — RESOLVED
+
+- Main converted the 2 MB tracked-file gate to warn-only in v1.13.0.0.
+- v1.13.1.0 added a `knownLargeFixtures` exemption to suppress the warning for this specific intentional fixture.
+
+**Completed:** v1.13.1.0 (2026-04-25)
+
+---
+
+### Bearer-token secret-scan regression fixed + E2E coverage added for privacy gate + gh auto-create (v1.12.0.0)
+
+- **Fixed the `bearer-token-json` regression in `bin/gstack-brain-sync`** — the value charset `[A-Za-z0-9_./+=-]{16,}` didn't permit spaces, so auth headers with the standard `Bearer <token>` form (literal space after the scheme name) slipped past the scanner. Added an optional `(Bearer |Basic |Token )?` prefix to the pattern. Validated against 5 positive cases (including the regression fixture) + 3 negative cases (short tokens, non-secret keys, random JSON). The 7-pattern secret scanner now passes all fixtures including bearer-json.
+- **Added `test/gstack-brain-init-gh-mock.test.ts`** — 8 tests exercising the `gh` CLI auto-create path that previously had zero coverage. Stubs `gh` on PATH to record every call, asserts `gh repo create --private --description "..." --source <GSTACK_HOME>` fires with the computed `gstack-brain-<user>` default name. Covers: happy path, fall-through-to-`gh repo view` when create hits already-exists, user-provided-URL-bypasses-gh, gh-not-on-path prompts for URL, gh-not-authed prompts for URL, idempotent `--remote` re-runs, conflicting-remote rejection.
+- **Added `test/skill-e2e-brain-privacy-gate.test.ts`** — periodic-tier E2E (~$0.30-$0.50/run). Stages a fake `gbrain` on PATH + `gbrain_sync_mode_prompted=false` in config, runs a real skill via `runAgentSdkTest`, intercepts tool-use via `canUseTool`, and asserts the preamble fires the 3-option privacy AskUserQuestion with canonical prose ("publish session memory" / "artifact" / "decline"). Second test asserts the gate is silent when `prompted=true` (idempotency-within-session).
+- **Registered `brain-privacy-gate` in `test/helpers/touchfiles.ts`** (periodic tier) with dependency tracking on `scripts/resolvers/preamble/generate-brain-sync-block.ts`, `bin/gstack-brain-sync`, `bin/gstack-brain-init`, `bin/gstack-config`, and the Agent SDK runner. Diff-based selection will re-run the E2E whenever any of those change.
+
+**Completed:** v1.12.0.0 (2026-04-24)
+
+---
+
+### Overlay efficacy harness + Opus 4.7 fanout nudge removal (v1.10.1.0)
+- Built `test/skill-e2e-overlay-harness.test.ts`, a parametric periodic-tier eval that drives `@anthropic-ai/claude-agent-sdk` and measures first-turn fanout rate (overlay-ON vs overlay-OFF) across registered fixtures
+- Measured the original "Fan out explicitly" overlay nudge: baseline Opus 4.7 = 70% first-turn fanout on toy prompt, with our nudge = 10%, with Anthropic's own canonical `<use_parallel_tool_calls>` text = 0%
+- Removed the counterproductive nudge from `model-overlays/opus-4-7.md`
+- Shipped 36-test free-tier unit suite for the SDK runner + strict fixture validator
+- Registered `overlay-harness-opus-4-7-fanout-{toy,realistic}` in E2E_TOUCHFILES and E2E_TIERS
+- Total investigation cost: ~$7 across 3 eval runs
+**Completed:** v1.10.1.0
 
 ### CI eval pipeline (v0.9.9.0)
 - GitHub Actions eval upload on Ubicloud runners ($0.006/run)

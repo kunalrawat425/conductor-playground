@@ -40,6 +40,35 @@ function extractDescription(content: string): string {
   return description;
 }
 
+function extractMarkdownSection(content: string, heading: string): string {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const startMatch = content.match(new RegExp(`^${escaped}.*$`, 'm'));
+  expect(startMatch?.index).toBeDefined();
+  const start = startMatch!.index!;
+  const afterHeading = start + startMatch![0].length;
+  const nextSection = content.slice(afterHeading).match(/\n## /);
+  const end = nextSection?.index === undefined
+    ? content.length
+    : afterHeading + nextSection.index;
+  return content.slice(start, end).trim();
+}
+
+function extractPreambleBeforeWorkflow(content: string, workflowMarkers: string[]): string {
+  const markerIndexes = workflowMarkers
+    .map(marker => content.indexOf(marker))
+    .filter(index => index >= 0);
+  expect(markerIndexes.length).toBeGreaterThan(0);
+  return content.slice(0, Math.min(...markerIndexes));
+}
+
+function isRepoRootSymlink(candidateDir: string): boolean {
+  try {
+    return fs.realpathSync(candidateDir) === fs.realpathSync(ROOT);
+  } catch {
+    return false;
+  }
+}
+
 // Dynamic template discovery — matches the generator's findTemplates() behavior.
 // New skills automatically get test coverage without updating a static list.
 const ALL_SKILLS = (() => {
@@ -55,6 +84,9 @@ const ALL_SKILLS = (() => {
   }
   return skills;
 })();
+
+const CLAUDE_SKIPPED_SKILL_DIRS = new Set(['claude']);
+const CLAUDE_GENERATED_SKILLS = ALL_SKILLS.filter(skill => !CLAUDE_SKIPPED_SKILL_DIRS.has(skill.dir));
 
 describe('gen-skill-docs', () => {
   test('generated SKILL.md contains all command categories', () => {
@@ -114,7 +146,7 @@ describe('gen-skill-docs', () => {
   });
 
   test('every skill has a generated SKILL.md with auto-generated header', () => {
-    for (const skill of ALL_SKILLS) {
+    for (const skill of CLAUDE_GENERATED_SKILLS) {
       const mdPath = path.join(ROOT, skill.dir, 'SKILL.md');
       expect(fs.existsSync(mdPath)).toBe(true);
       const content = fs.readFileSync(mdPath, 'utf-8');
@@ -124,7 +156,7 @@ describe('gen-skill-docs', () => {
   });
 
   test('every generated SKILL.md has valid YAML frontmatter', () => {
-    for (const skill of ALL_SKILLS) {
+    for (const skill of CLAUDE_GENERATED_SKILLS) {
       const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
       expect(content.startsWith('---\n')).toBe(true);
       expect(content).toContain('name:');
@@ -133,11 +165,16 @@ describe('gen-skill-docs', () => {
   });
 
   test(`every generated SKILL.md description stays within ${MAX_SKILL_DESCRIPTION_LENGTH} chars`, () => {
-    for (const skill of ALL_SKILLS) {
+    for (const skill of CLAUDE_GENERATED_SKILLS) {
       const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
       const description = extractDescription(content);
       expect(description.length).toBeLessThanOrEqual(MAX_SKILL_DESCRIPTION_LENGTH);
     }
+  });
+
+  test('Claude outside-voice skill is not generated for Claude host', () => {
+    expect(fs.existsSync(path.join(ROOT, 'claude', 'SKILL.md.tmpl'))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, 'claude', 'SKILL.md'))).toBe(false);
   });
 
   test(`every Codex SKILL.md description stays within ${MAX_SKILL_DESCRIPTION_LENGTH} chars`, () => {
@@ -186,7 +223,7 @@ describe('gen-skill-docs', () => {
     expect(result.exitCode).toBe(0);
     const output = result.stdout.toString();
     // Every skill should be FRESH
-    for (const skill of ALL_SKILLS) {
+    for (const skill of CLAUDE_GENERATED_SKILLS) {
       const file = skill.dir === '.' ? 'SKILL.md' : `${skill.dir}/SKILL.md`;
       expect(output).toContain(`FRESH: ${file}`);
     }
@@ -194,7 +231,7 @@ describe('gen-skill-docs', () => {
   });
 
   test('no generated SKILL.md contains unresolved placeholders', () => {
-    for (const skill of ALL_SKILLS) {
+    for (const skill of CLAUDE_GENERATED_SKILLS) {
       const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
       const unresolved = content.match(/\{\{[A-Z_]+\}\}/g);
       expect(unresolved).toBeNull();
@@ -241,11 +278,13 @@ describe('gen-skill-docs', () => {
     expect(content).toContain('git branch --show-current');
   });
 
-  test('tier 2+ skills contain ELI16 simplification rules (AskUserQuestion format)', () => {
+  test('tier 2+ skills contain ELI10 simplification rules (AskUserQuestion format)', () => {
     // Root SKILL.md is tier 1 (no AskUserQuestion format). Check a tier 2+ skill instead.
+    // v1.7.0.0 Pros/Cons format uses "ELI10 (ALWAYS)" rather than "Simplify (ELI10".
     const content = fs.readFileSync(path.join(ROOT, 'cso', 'SKILL.md'), 'utf-8');
-    expect(content).toContain('No raw function names');
+    expect(content).toContain('ELI10');
     expect(content).toContain('plain English');
+    expect(content).toContain('not function names');
   });
 
   test('tier 1 skills do NOT contain AskUserQuestion format', () => {
@@ -261,8 +300,59 @@ describe('gen-skill-docs', () => {
     expect(content).toContain('~/.gstack/analytics');
   });
 
+  test('plan-review generated preambles stay under the Option A budget', () => {
+    const reviewSkills = [
+      {
+        path: path.join(ROOT, 'plan-ceo-review', 'SKILL.md'),
+        markers: ['# Mega Plan Review Mode', '## Step 0: Detect platform and base branch'],
+      },
+      {
+        path: path.join(ROOT, 'plan-eng-review', 'SKILL.md'),
+        markers: ['# Plan Review Mode'],
+      },
+    ];
+
+    // Plan skills carry the same preamble surface as other tier-≥2 skills
+    // (Artifacts Sync, Context Recovery, Routing Injection are load-bearing
+    // functionality, not optional). Budget is set to current size + small
+    // headroom; ratchet down if a future slim trims real bytes.
+    // Ratcheted from 33000 → 35000 when the gbrain context-load block was
+    // added (per /sync-gbrain plan §4). Ratcheted 35000 → 36500 in v1.27.0.0
+    // when generate-brain-sync-block.ts gained the gbrain_mcp_mode probe +
+    // remote-mode ARTIFACTS_SYNC status line (Path 4 of /setup-gbrain).
+    // Ratcheted 36500 → 39000 in the contributor wave when #1205 added the
+    // \\u-escape CJK rule (rule 12 + self-check item) to the AskUserQuestion
+    // preamble.
+    for (const skill of reviewSkills) {
+      const content = fs.readFileSync(skill.path, 'utf-8');
+      const preamble = extractPreambleBeforeWorkflow(content, skill.markers);
+      expect(Buffer.byteLength(preamble, 'utf-8')).toBeLessThan(39_000);
+    }
+  });
+
+  test('voice and writing-style preamble sections stay compact', () => {
+    const content = fs.readFileSync(path.join(ROOT, 'plan-eng-review', 'SKILL.md'), 'utf-8');
+    const voice = extractMarkdownSection(content, '## Voice');
+    const writingStyle = extractMarkdownSection(content, '## Writing Style');
+
+    expect(Buffer.byteLength(voice, 'utf-8')).toBeLessThan(3_000);
+    expect(Buffer.byteLength(writingStyle, 'utf-8')).toBeLessThan(2_000);
+  });
+
+  test('slim voice section preserves the gstack voice contract', () => {
+    const content = fs.readFileSync(path.join(ROOT, 'plan-eng-review', 'SKILL.md'), 'utf-8');
+    const voice = extractMarkdownSection(content, '## Voice');
+
+    expect(voice).toMatch(/lead with the point|direct/i);
+    expect(voice).toMatch(/file|function|line|command|real numbers/i);
+    expect(voice).toMatch(/user.*outcome|user.*experience|real user/i);
+    expect(voice).toMatch(/corporate|academic|PR|hype/i);
+    expect(voice).toMatch(/AI vocabulary|delve|crucial|robust/i);
+    expect(voice).toMatch(/user decides|user.*context|sovereignty|recommendation, not a decision/i);
+  });
+
   test('preamble .pending-* glob is zsh-safe (uses find, not shell glob)', () => {
-    for (const skill of ALL_SKILLS) {
+    for (const skill of CLAUDE_GENERATED_SKILLS) {
       const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
       if (!content.includes('.pending-')) continue;
       // Must NOT have a bare shell glob ".pending-*" outside of find's -name argument
@@ -273,7 +363,7 @@ describe('gen-skill-docs', () => {
   });
 
   test('bash blocks with shell globs are zsh-safe (setopt guard or find)', () => {
-    for (const skill of ALL_SKILLS) {
+    for (const skill of CLAUDE_GENERATED_SKILLS) {
       const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
       const bashBlocks = [...content.matchAll(/```bash\n([\s\S]*?)```/g)].map(m => m[1]);
 
@@ -1000,14 +1090,36 @@ describe('Retro plan completion section', () => {
 // --- Plan status footer in preamble ---
 
 describe('Plan status footer in preamble', () => {
-  test('preamble contains plan status footer', () => {
+  test('preamble contains plan status footer as neutral forward reference to EXIT PLAN MODE GATE', () => {
     // Read any skill that uses PREAMBLE
     const content = fs.readFileSync(path.join(ROOT, 'office-hours', 'SKILL.md'), 'utf-8');
     expect(content).toContain('Plan Status Footer');
     expect(content).toContain('GSTACK REVIEW REPORT');
-    expect(content).toContain('gstack-review-read');
     expect(content).toContain('ExitPlanMode');
-    expect(content).toContain('NO REVIEWS YET');
+    expect(content).toContain('EXIT PLAN MODE GATE');
+    // The preamble must NOT impose review-report rules on operational skills
+    // that have no review report. It's a forward reference, not enforcement.
+    expect(content).not.toContain('NO REVIEWS YET');
+  });
+});
+
+// --- make-pdf setup ordering ---
+
+describe('make-pdf setup ordering', () => {
+  test('MAKE-PDF SETUP appears before generic preamble footer sections', () => {
+    const content = fs.readFileSync(path.join(ROOT, 'make-pdf', 'SKILL.md'), 'utf-8');
+    const preambleIdx = content.indexOf('## Preamble (run first)');
+    const setupIdx = content.indexOf('## MAKE-PDF SETUP');
+    const planModeIdx = content.indexOf('## Plan Mode Safe Operations');
+    const telemetryIdx = content.indexOf('## Telemetry (run last)');
+    const workflowIdx = content.indexOf('# make-pdf: publication-quality PDFs from markdown');
+
+    expect(preambleIdx).toBeGreaterThanOrEqual(0);
+    expect(setupIdx).toBeGreaterThan(preambleIdx);
+    expect(setupIdx).toBeLessThan(planModeIdx);
+    expect(setupIdx).toBeLessThan(telemetryIdx);
+    expect(setupIdx).toBeLessThan(workflowIdx);
+    expect(content.match(/^## MAKE-PDF SETUP/gm)?.length ?? 0).toBe(1);
   });
 });
 
@@ -1361,10 +1473,21 @@ describe('preamble routing injection', () => {
   });
 
   test('routing section content includes key routing rules', () => {
-    expect(shipContent).toContain('invoke office-hours');
-    expect(shipContent).toContain('invoke investigate');
-    expect(shipContent).toContain('invoke ship');
-    expect(shipContent).toContain('invoke qa');
+    expect(shipContent).toContain('invoke /office-hours');
+    expect(shipContent).toContain('invoke /investigate');
+    expect(shipContent).toContain('invoke /ship');
+    expect(shipContent).toContain('invoke /qa');
+  });
+
+  test('routing section uses renamed checkpoint skills (not stale /checkpoint)', () => {
+    expect(shipContent).toContain('invoke /context-save');
+    expect(shipContent).toContain('invoke /context-restore');
+    expect(shipContent).not.toContain('invoke checkpoint');
+  });
+
+  test('routing section uses soft "when in doubt" policy, not hard "ALWAYS invoke"', () => {
+    expect(shipContent).toContain('When in doubt, invoke the skill');
+    expect(shipContent).not.toContain('Do NOT answer directly');
   });
 });
 
@@ -1590,6 +1713,20 @@ describe('Codex generation (--host codex)', () => {
     expect(fs.existsSync(path.join(AGENTS_DIR, 'gstack-codex'))).toBe(false);
   });
 
+  test('Codex output includes Claude outside-voice skill with read-only boundary', () => {
+    const content = fs.readFileSync(path.join(AGENTS_DIR, 'gstack-claude', 'SKILL.md'), 'utf-8');
+    expect(content).toContain('claude -p');
+    expect(content).toContain('mktemp /tmp/gstack-claude-prompt-');
+    expect(content).toContain('mktemp /tmp/gstack-claude-diff-');
+    expect(content).not.toContain('/tmp/gstack-claude-diff-$$');
+    expect(content).toContain('cat "$PROMPT_FILE" | claude -p');
+    expect(content).toContain('--disable-slash-commands');
+    expect(content).toContain('--tools ""');
+    expect(content).toContain('--allowedTools Read,Grep,Glob');
+    expect(content).toContain('--disallowedTools Bash,Edit,Write');
+    expect(content).toContain('is_error');
+  });
+
   test('Codex review step stripped from Codex-host ship and review', () => {
     const shipContent = fs.readFileSync(path.join(AGENTS_DIR, 'gstack-ship', 'SKILL.md'), 'utf-8');
     expect(shipContent).not.toContain('codex review --base');
@@ -1760,7 +1897,7 @@ describe('Codex generation (--host codex)', () => {
   });
 
   test('Claude output unchanged: all Claude skills have zero Codex paths', () => {
-    for (const skill of ALL_SKILLS) {
+    for (const skill of CLAUDE_GENERATED_SKILLS) {
       const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
       // pair-agent legitimately documents how Codex agents store credentials.
       // codex + autoplan document the Codex CLI auth file (~/.codex/auth.json)
@@ -1951,13 +2088,13 @@ describe('Parameterized host smoke tests', () => {
         expect(skills.length).toBeGreaterThan(0);
       });
 
-      test('no .claude/skills path leakage in non-root skills', () => {
+      test('no .claude/skills path leakage outside repo-root sidecar symlinks', () => {
         if (!fs.existsSync(hostDir)) return; // skip if not generated
         const skills = fs.readdirSync(hostDir);
         for (const skill of skills) {
-          // Skip root gstack skill — it contains preamble with intentional .claude/skills
-          // fallback paths for binary lookup and skill prefix instructions
-          if (skill === 'gstack') continue;
+          // Dev installs may mount the repo root at host/skills/gstack as a runtime
+          // sidecar. The generator skips that symlink loop, so leakage checks should too.
+          if (isRepoRootSymlink(path.join(hostDir, skill))) continue;
           const skillMd = path.join(hostDir, skill, 'SKILL.md');
           if (!fs.existsSync(skillMd)) continue;
           const content = fs.readFileSync(skillMd, 'utf-8');
@@ -1981,6 +2118,16 @@ describe('Parameterized host smoke tests', () => {
           expect(content).toMatch(/^name:\s/m);
           expect(content).toMatch(/^description:\s/m);
         }
+      });
+
+      test('generates Claude outside-voice skill for external hosts', () => {
+        const skillMd = path.join(hostDir, 'gstack-claude', 'SKILL.md');
+        expect(fs.existsSync(skillMd)).toBe(true);
+        const content = fs.readFileSync(skillMd, 'utf-8');
+        expect(content).toContain('claude -p');
+        expect(content).toContain('--disable-slash-commands');
+        expect(content).toContain('--allowedTools Read,Grep,Glob');
+        expect(content).toContain('--disallowedTools Bash,Edit,Write');
       });
 
       test('--dry-run freshness check passes', () => {
@@ -2053,7 +2200,7 @@ describe('setup script validation', () => {
     expect(codexSection).toContain('create_codex_runtime_root');
     expect(codexSection).toContain('link_codex_skill_dirs');
     expect(codexSection).not.toContain('link_claude_skill_dirs');
-    expect(codexSection).not.toContain('ln -snf "$GSTACK_DIR" "$CODEX_GSTACK"');
+    expect(codexSection).not.toContain('_link_or_copy "$GSTACK_DIR" "$CODEX_GSTACK"');
   });
 
   test('Codex install prefers repo-local .agents/skills when setup runs from there', () => {
@@ -2093,7 +2240,8 @@ describe('setup script validation', () => {
     const fnEnd = setupContent.indexOf('}', setupContent.indexOf('linked[@]}', fnStart));
     const fnBody = setupContent.slice(fnStart, fnEnd);
     expect(fnBody).toContain('mkdir -p "$target"');
-    expect(fnBody).toContain('ln -snf "$gstack_dir/$dir_name/SKILL.md" "$target/SKILL.md"');
+    // v1.36.0.0: routes through _link_or_copy helper for Windows fallback (cp on MSYS2/Git Bash).
+    expect(fnBody).toContain('_link_or_copy "$gstack_dir/$dir_name/SKILL.md" "$target/SKILL.md"');
   });
 
   // REGRESSION: cleanup functions must handle both old symlinks AND new real-directory pattern
@@ -2200,7 +2348,7 @@ describe('setup script validation', () => {
     expect(fnBody).toContain('design-checklist.md');
     expect(fnBody).toContain('greptile-triage.md');
     expect(fnBody).toContain('TODOS-format.md');
-    expect(fnBody).not.toContain('ln -snf "$gstack_dir" "$codex_gstack"');
+    expect(fnBody).not.toContain('_link_or_copy "$gstack_dir" "$codex_gstack"');
   });
 
   test('direct Codex installs are migrated out of ~/.codex/skills/gstack', () => {
@@ -2759,5 +2907,221 @@ describe('voice-triggers processing', () => {
     const fmEnd = content.indexOf('\n---', 4);
     const frontmatter = content.slice(0, fmEnd);
     expect(frontmatter).not.toContain('voice-triggers:');
+  });
+});
+
+describe('plan-mode-info resolver (handshake-replacement)', () => {
+  const REVIEW_SKILLS = [
+    'plan-ceo-review',
+    'plan-eng-review',
+    'plan-design-review',
+    'plan-devex-review',
+  ];
+
+  // Header for the vestigial handshake that was removed. If it ever reappears,
+  // someone accidentally re-introduced the resolver.
+  const HANDSHAKE_MARKER = '## Plan Mode Handshake';
+  // Header for the new plan-mode-info section (previously lived at the tail
+  // of completion-status.ts; now hoisted to position 1 of the preamble).
+  const PLAN_MODE_INFO_MARKER = '## Skill Invocation During Plan Mode';
+
+  test('vestigial handshake is absent from all generated Claude SKILL.md files', () => {
+    // Scan every generated SKILL.md under ROOT (top-level directory per skill).
+    // Using fs.readdirSync + filter instead of a glob so we catch any skill
+    // that gets added later without updating this list.
+    const entries = fs.readdirSync(ROOT, { withFileTypes: true });
+    let checked = 0;
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const skillMd = path.join(ROOT, entry.name, 'SKILL.md');
+      if (!fs.existsSync(skillMd)) continue;
+      const content = fs.readFileSync(skillMd, 'utf-8');
+      expect(content, `handshake marker in ${entry.name}/SKILL.md`).not.toContain(HANDSHAKE_MARKER);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  test('vestigial handshake is absent from non-Claude host outputs when present on disk', () => {
+    // Non-Claude hosts render to hostSubdirs (.agents/, .openclaw/, etc). The
+    // plan-mode-info resolver has no host-scoping — all hosts get the new
+    // section, none get the old handshake. Scan all candidate host dirs.
+    const hostDirs = ['.agents', '.openclaw', '.opencode', '.factory', '.hermes', '.kiro', '.cursor', '.slate'];
+    let checked = 0;
+    for (const host of hostDirs) {
+      const skillsRoot = path.join(ROOT, host, 'skills');
+      if (!fs.existsSync(skillsRoot)) continue;
+      const entries = fs.readdirSync(skillsRoot, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const skillMd = path.join(skillsRoot, entry.name, 'SKILL.md');
+        if (!fs.existsSync(skillMd)) continue;
+        const content = fs.readFileSync(skillMd, 'utf-8');
+        expect(content, `handshake marker in ${host}/skills/${entry.name}/SKILL.md`).not.toContain(HANDSHAKE_MARKER);
+        checked++;
+      }
+    }
+    if (checked === 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        'plan-mode-info: no non-Claude host outputs found for cross-host absence check — ' +
+          'run `bun run gen:skill-docs --host all` to populate',
+      );
+    }
+  });
+
+  test.each(REVIEW_SKILLS)(
+    '%s/SKILL.md contains the new plan-mode-info section near the top',
+    (skill) => {
+      const content = fs.readFileSync(path.join(ROOT, skill, 'SKILL.md'), 'utf-8');
+      const idx = content.indexOf(PLAN_MODE_INFO_MARKER);
+      expect(idx).toBeGreaterThan(0);
+      // Position 1 in preamble composition = within the first ~300 lines.
+      // Roughly translates to first ~15KB of text.
+      expect(idx).toBeLessThan(15_000);
+    },
+  );
+
+  test('plan-mode-info is wired BEFORE generateUpgradeCheck in preamble', () => {
+    const content = fs.readFileSync(
+      path.join(ROOT, 'plan-ceo-review', 'SKILL.md'),
+      'utf-8',
+    );
+    const planModeIdx = content.indexOf(PLAN_MODE_INFO_MARKER);
+    const upgradeIdx = content.indexOf('UPGRADE_AVAILABLE');
+    expect(planModeIdx).toBeGreaterThan(0);
+    expect(upgradeIdx).toBeGreaterThan(0);
+    expect(planModeIdx).toBeLessThan(upgradeIdx);
+  });
+
+  test('0C-bis STOP block present in plan-ceo-review/SKILL.md', () => {
+    const content = fs.readFileSync(path.join(ROOT, 'plan-ceo-review', 'SKILL.md'), 'utf-8');
+    const presentIdx = content.indexOf('Present these approach options via AskUserQuestion');
+    const preludeIdx = content.indexOf('### 0D-prelude');
+    expect(presentIdx).toBeGreaterThan(0);
+    expect(preludeIdx).toBeGreaterThan(presentIdx);
+    const between = content.slice(presentIdx, preludeIdx);
+    expect(between).toContain('**STOP.**');
+    expect(between).toContain('Do NOT proceed to Step 0D or 0F until the user responds to 0C-bis');
+  });
+});
+
+// GSTACK REVIEW REPORT report-at-bottom contract — verifies the prompt-text
+// fix in scripts/resolvers/review.ts (the load-bearing change for the
+// "report not at bottom of plan in plan mode" bug). The bug is in the
+// prompt's contradictory write-flow instructions, not in observable
+// runtime behavior we can cheaply gate in CI. Verifying the prompt text
+// directly is the deterministic equivalent of the regression test the
+// PTY harness can't reliably drive (autoplan needs auto-progression of
+// AskUserQuestions to reach the report-write step, which the harness
+// doesn't support today).
+describe('GSTACK REVIEW REPORT delete-then-append flow', () => {
+  const PLAN_REVIEW_SKILLS = [
+    'plan-ceo-review',
+    'plan-design-review',
+    'plan-devex-review',
+    'plan-eng-review',
+  ];
+
+  for (const skill of PLAN_REVIEW_SKILLS) {
+    test(`${skill}/SKILL.md prescribes delete-then-append, not in-place replace`, () => {
+      const content = fs.readFileSync(path.join(ROOT, skill, 'SKILL.md'), 'utf-8');
+
+      // The new (correct) instruction must be present.
+      expect(content).toContain('delete-then-append flow');
+      expect(content).toContain('never mid-file');
+      expect(content).toContain('Do NOT replace the section in place');
+
+      // The old contradictory bullets must be gone. The signature phrase
+      // from the buggy prompt was 'replace it entirely using the Edit tool'
+      // which is what allowed mid-file reports to stay mid-file.
+      expect(content).not.toContain('replace it** entirely using the Edit tool');
+      expect(content).not.toContain('If it was found mid-file, move it');
+    });
+  }
+
+  test('scripts/resolvers/review.ts source has the rewritten flow', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts', 'resolvers', 'review.ts'), 'utf-8');
+    expect(src).toContain('delete-then-append flow');
+    expect(src).toContain('never mid-file');
+    expect(src).toContain('Do NOT replace the section in place');
+    // Old contradictory bullets are gone from the source resolver.
+    expect(src).not.toContain('replace it** entirely using the Edit tool');
+    expect(src).not.toContain('If it was found mid-file, move it');
+  });
+});
+
+describe('LEARNINGS_SEARCH resolver: query parameter', () => {
+  // Lazy-load resolver and types after describe block to keep test file self-contained.
+  const { generateLearningsSearch } = require('../scripts/resolvers/learnings');
+  const { HOST_PATHS } = require('../scripts/resolvers/types');
+
+  const claudeCtx = {
+    skillName: 'test',
+    tmplPath: 'test/SKILL.md.tmpl',
+    host: 'claude',
+    paths: HOST_PATHS.claude,
+  };
+  const codexCtx = { ...claudeCtx, host: 'codex', paths: HOST_PATHS.codex };
+
+  test('no args → bash does not contain --query (backwards-compat)', () => {
+    const out = generateLearningsSearch(claudeCtx);
+    expect(out).not.toContain('--query');
+  });
+
+  test('claude host + query=foo bar → both cross-project and project-scoped branches contain --query', () => {
+    const out = generateLearningsSearch(claudeCtx, ['query=foo bar']);
+    // Both branches of the if/else must carry the flag.
+    const lines = out.split('\n').filter(l => l.includes('gstack-learnings-search'));
+    expect(lines.length).toBeGreaterThanOrEqual(2);
+    for (const line of lines) {
+      expect(line).toContain('--query "foo bar"');
+    }
+  });
+
+  test('codex host + query=foo bar → codex bash variant contains --query', () => {
+    const out = generateLearningsSearch(codexCtx, ['query=foo bar']);
+    expect(out).toContain('--query "foo bar"');
+    expect(out).toContain('$GSTACK_BIN/gstack-learnings-search');
+  });
+
+  test('empty value query= → bash does not contain --query (locked semantics: falls through)', () => {
+    const claudeOut = generateLearningsSearch(claudeCtx, ['query=']);
+    expect(claudeOut).not.toContain('--query');
+    const codexOut = generateLearningsSearch(codexCtx, ['query=']);
+    expect(codexOut).not.toContain('--query');
+  });
+
+  test('shell-injection chars in query= → throws at gen-time (defense in depth)', () => {
+    for (const bad of ['$(whoami)', '`cmd`', 'a;b', 'a&b', 'a"b', 'a\\b', 'foo$x']) {
+      expect(() => generateLearningsSearch(claudeCtx, [`query=${bad}`])).toThrow(/alphanumeric/);
+    }
+  });
+});
+
+describe('EXIT PLAN MODE GATE placement', () => {
+  // Fresh skill list — do NOT reuse REVIEW_SKILLS upstream (3 entries, missing plan-devex).
+  const planSkills = ['plan-eng-review', 'plan-ceo-review', 'plan-design-review', 'plan-devex-review'];
+
+  // Strip fenced code blocks before matching headings — PLAN_FILE_REVIEW_REPORT
+  // already contains `## GSTACK REVIEW REPORT` inside a markdown example fence,
+  // and the gate text itself shows `## GSTACK REVIEW REPORT` inside a fence too.
+  const stripFences = (md: string) => md.replace(/```[\s\S]*?```/g, '');
+
+  test('gate is the terminal ## heading in every plan-* review SKILL.md', () => {
+    for (const skill of planSkills) {
+      const md = fs.readFileSync(path.join(ROOT, skill, 'SKILL.md'), 'utf-8');
+      const stripped = stripFences(md);
+      const headings = [...stripped.matchAll(/^## .+$/gm)].map(m => m[0]);
+      const lastH2 = headings.at(-1);
+      expect(lastH2, `${skill}/SKILL.md last ## heading (fences stripped)`).toBe('## EXIT PLAN MODE GATE (BLOCKING)');
+      expect(md, `${skill}/SKILL.md gate body`).toContain('Failing this gate and calling ExitPlanMode anyway is a contract violation');
+    }
+  });
+
+  test('codex/SKILL.md contains gate (mid-file per D5; Step 2B/2C follow)', () => {
+    const codex = fs.readFileSync(path.join(ROOT, 'codex', 'SKILL.md'), 'utf-8');
+    expect(codex).toContain('## EXIT PLAN MODE GATE (BLOCKING)');
+    expect(codex).toContain('Failing this gate and calling ExitPlanMode anyway is a contract violation');
   });
 });
