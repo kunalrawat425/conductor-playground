@@ -139,10 +139,10 @@ const tags = [
   seller?.delivery_fee_enabled
     ? (() => {
         const feeType = seller.delivery_fee_type || "fixed";
-        if (feeType === "per_km" && seller.delivery_fee_per_km > 0) {
+        if (feeType === "per_km") {
           return seller.free_delivery_above > 0
-            ? `₹${seller.delivery_fee_per_km}/km · Free above ₹${seller.free_delivery_above}`
-            : `₹${seller.delivery_fee_per_km}/km delivery`;
+            ? `Distance-based delivery · Free above ₹${seller.free_delivery_above}`
+            : `Distance-based delivery fee`;
         }
         if (seller.delivery_fee_amount > 0) {
           return seller.free_delivery_above > 0
