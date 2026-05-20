@@ -1,0 +1,397 @@
+---
+export const prerender = true;
+import AppShell from "../components/ui/AppShell.astro";
+---
+<AppShell
+  title="Sell on Relifish — Grow Your Fish Business Online"
+  description="List your daily catch, accept pre-orders, manage delivery, and get paid. Join fish sellers on Relifish — no commission, no middleman."
+  hideNav={true}
+  hideHeader={true}
+>
+
+<!-- ─── NAV ─────────────────────────────────────────────────────────── -->
+<nav style="position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(8,12,22,0.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.07);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;">
+  <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+    <span style="font:900 20px Inter;color:#fff;letter-spacing:-0.5px;">🐟 Relifish</span>
+  </a>
+  <div style="display:flex;gap:8px;">
+    <a href="/dashboard/login" style="font:600 13px Inter;color:rgba(255,255,255,0.65);text-decoration:none;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);">Log in</a>
+    <a href="/dashboard/login" style="font:700 13px Inter;color:#fff;text-decoration:none;padding:8px 16px;border-radius:8px;background:#FF4500;">Get started</a>
+  </div>
+</nav>
+
+<!-- ─── HERO (Toast-style dark full-height) ───────────────────────── -->
+<section style="position:relative;min-height:100svh;background:#080c16;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;">
+
+  <!-- Background gradient layers -->
+  <div style="position:absolute;inset:0;background:linear-gradient(160deg,#0d1420 0%,#080c16 55%,#0d1420 100%);"></div>
+  <!-- Orange glow top-right — like Toast's warm light -->
+  <div style="position:absolute;top:-80px;right:-60px;width:420px;height:420px;background:radial-gradient(circle,rgba(255,69,0,0.18) 0%,transparent 65%);pointer-events:none;"></div>
+  <!-- Blue glow bottom-left -->
+  <div style="position:absolute;bottom:60px;left:-40px;width:320px;height:320px;background:radial-gradient(circle,rgba(0,102,255,0.1) 0%,transparent 65%);pointer-events:none;"></div>
+
+  <!-- Atmospheric fish emoji art (like Toast's dark kitchen) -->
+  <div style="position:absolute;top:10%;right:-30px;font-size:220px;opacity:0.05;transform:rotate(-15deg);pointer-events:none;user-select:none;line-height:1;">🐟</div>
+  <div style="position:absolute;top:35%;right:30px;font-size:90px;opacity:0.04;transform:rotate(10deg);pointer-events:none;user-select:none;">🦐</div>
+
+  <!-- "How Relifish is Built For Sellers" pill — mirrors Toast "How Toast is Built For Busy" -->
+  <div style="position:absolute;top:80px;left:24px;z-index:2;">
+    <button style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:8px 14px;cursor:pointer;font:600 12px Inter;color:rgba(255,255,255,0.75);">
+      <span style="width:26px;height:26px;border-radius:50%;background:#FF4500;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">▶</span>
+      How Relifish is Built For Sellers
+    </button>
+  </div>
+
+  <!-- Main content -->
+  <div style="position:relative;z-index:2;padding:140px 24px 56px;max-width:100%;">
+    <h1 style="font:900 52px/1.0 Inter;color:#fff;margin:0 0 20px;letter-spacing:-2px;max-width:340px;">Built For<br/><span style="color:#FF4500;">Fish Sellers</span></h1>
+
+    <p style="font:400 16px/1.6 Inter;color:rgba(255,255,255,0.55);margin:0 0 32px;max-width:340px;">
+      The platform built for daily catch volume, slim margins, and fresh fish at scale — trusted by sellers in Mumbai.
+    </p>
+
+    <!-- Email CTA form — exactly like Toast -->
+    <form onsubmit="return false;" style="display:flex;flex-direction:column;gap:10px;max-width:340px;">
+      <div style="display:flex;background:rgba(255,255,255,0.95);border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.4);">
+        <input type="tel" placeholder="Your WhatsApp number" style="flex:1;padding:14px 16px;border:none;outline:none;font:500 14px Inter;color:#0F172A;background:transparent;min-width:0;" />
+        <a href="/dashboard/login" style="background:#FF4500;color:#fff;font:700 14px Inter;padding:14px 18px;text-decoration:none;white-space:nowrap;display:flex;align-items:center;">Get Started</a>
+      </div>
+      <p style="font:400 11px Inter;color:rgba(255,255,255,0.3);margin:0;text-align:center;">Free to list · ₹0 commission · Cancel anytime</p>
+    </form>
+
+    <!-- Under 10 employees link — mirroring Toast "Under 10 employees? Shop Now →" -->
+    <p style="margin-top:16px;font:500 13px Inter;color:rgba(255,255,255,0.4);">
+      Home seller? <a href="/dashboard/login" style="color:rgba(255,255,255,0.65);text-decoration:underline;text-underline-offset:3px;">Start free →</a>
+    </p>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0.3;pointer-events:none;">
+    <div style="width:1px;height:28px;background:linear-gradient(to bottom,rgba(255,255,255,0.6),transparent);animation:scroll-cue 2s ease-in-out infinite;"></div>
+  </div>
+</section>
+
+<!-- ─── BUSINESS TYPES (Toast sidebar tabs) ───────────────────────── -->
+<section style="background:#fff;padding:48px 0 0;">
+  <div style="padding:0 24px 16px;">
+    <h2 style="font:800 26px/1.2 Inter;color:#0F172A;margin:0 0 6px;letter-spacing:-0.5px;">Works for every seller</h2>
+    <p style="font:400 14px Inter;color:#64748B;margin:0;">Daily stall, home delivery, or catch pre-orders.</p>
+  </div>
+
+  <!-- Tab pills -->
+  <div style="display:flex;gap:0;padding:16px 24px;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid #F1F5F9;">
+    <button onclick="switchType('daily')" id="type-daily" style="font:700 13px Inter;padding:10px 20px;border:none;background:transparent;cursor:pointer;color:#FF4500;border-bottom:2px solid #FF4500;margin-bottom:-2px;white-space:nowrap;">🐟 Daily Catch</button>
+    <button onclick="switchType('preorder')" id="type-preorder" style="font:700 13px Inter;padding:10px 20px;border:none;background:transparent;cursor:pointer;color:#94A3B8;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;">🌙 Pre-Order</button>
+    <button onclick="switchType('delivery')" id="type-delivery" style="font:700 13px Inter;padding:10px 20px;border:none;background:transparent;cursor:pointer;color:#94A3B8;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;">🛵 Delivery</button>
+    <button onclick="switchType('home')" id="type-home" style="font:700 13px Inter;padding:10px 20px;border:none;background:transparent;cursor:pointer;color:#94A3B8;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;">🏠 Home Seller</button>
+  </div>
+
+  <!-- Content panels — left copy + right dark UI card (Toast pattern) -->
+  <div id="panel-daily" style="display:flex;flex-direction:column;gap:24px;padding:32px 24px;">
+    <div>
+      <div style="font:700 11px Inter;letter-spacing:1px;text-transform:uppercase;color:#FF4500;margin-bottom:12px;">Daily Catch Seller</div>
+      <h3 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 12px;">List today's stock.<br/>Sell by morning.</h3>
+      <p style="font:400 14px/1.6 Inter;color:#64748B;margin:0 0 20px;">Post your daily catch — pomfret, surmai, bangda, prawns — with live prices and photos. Buyers nearby see it instantly and order in 30 seconds.</p>
+      <ul style="list-style:none;padding:0;margin:0 0 24px;display:flex;flex-direction:column;gap:10px;">
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#FF4500;">→</span> Set quantity limits — auto-stops when sold out</li>
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#FF4500;">→</span> Bundle pricing: 3pc pack, 5pc pack, per-kg</li>
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#FF4500;">→</span> Orders via WhatsApp notification instantly</li>
+      </ul>
+      <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#FF4500;text-decoration:none;">Learn More <span>→</span></a>
+    </div>
+    <!-- Dark UI mock (like Toast's POS screenshot) -->
+    <div style="background:#0F172A;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="font:600 10px Inter;color:#64748B;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Today's Menu · Live</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div>
+            <div style="font:600 13px Inter;color:#fff;">Pomfret (पापलेट)</div>
+            <div style="font:400 11px Inter;color:#64748B;">₹540/3pc · 8 left</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font:700 13px Inter;color:#34d399;">In stock</span>
+            <span style="background:#34d399;width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div>
+            <div style="font:600 13px Inter;color:#fff;">Surmai (किंगफिश)</div>
+            <div style="font:400 11px Inter;color:#64748B;">₹1125/kg · 3kg left</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font:700 13px Inter;color:#34d399;">In stock</span>
+            <span style="background:#34d399;width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div>
+            <div style="font:600 13px Inter;color:#fff;">Prawns (कोळंबी)</div>
+            <div style="font:400 11px Inter;color:#64748B;">₹680/kg · Sold out</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font:700 13px Inter;color:#f87171;">Sold out</span>
+            <span style="background:#f87171;width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;">
+        <span style="font:400 12px Inter;color:#64748B;">Today's orders</span>
+        <span style="font:700 13px Inter;color:#fff;">₹12,450 · 18 orders</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-preorder" style="display:none;flex-direction:column;gap:24px;padding:32px 24px;">
+    <div>
+      <div style="font:700 11px Inter;letter-spacing:1px;text-transform:uppercase;color:#7C3AED;margin-bottom:12px;">Pre-Order Seller</div>
+      <h3 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 12px;">Take orders tonight.<br/>Fulfill tomorrow.</h3>
+      <p style="font:400 14px/1.6 Inter;color:#64748B;margin:0 0 20px;">Open your pre-order window from 8pm. Buyers reserve tomorrow's catch tonight. Wake up with confirmed orders — no guesswork on how much to buy.</p>
+      <ul style="list-style:none;padding:0;margin:0 0 24px;display:flex;flex-direction:column;gap:10px;">
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#7C3AED;">→</span> Set your pre-order hours (e.g. 8pm–10pm)</li>
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#7C3AED;">→</span> Price range shown upfront, confirmed after catch</li>
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#7C3AED;">→</span> Advance payment collected automatically</li>
+      </ul>
+      <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#7C3AED;text-decoration:none;">Learn More <span>→</span></a>
+    </div>
+    <div style="background:#1a0a3d;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="font:600 10px Inter;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Pre-Orders · Tonight</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;">
+          <div><div style="font:600 13px Inter;color:#fff;">Rawas (रावस)</div><div style="font:400 11px Inter;color:#a78bfa;">₹1400–1600/kg · 6 reserved</div></div>
+          <span style="font:700 12px Inter;color:#c4b5fd;">🌙 Pre-order</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;">
+          <div><div style="font:600 13px Inter;color:#fff;">Halwa (हलवा)</div><div style="font:400 11px Inter;color:#a78bfa;">₹1400–1600/kg · 4 reserved</div></div>
+          <span style="font:700 12px Inter;color:#c4b5fd;">🌙 Pre-order</span>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;">
+        <span style="font:400 12px Inter;color:#a78bfa;">Tomorrow's confirmed</span>
+        <span style="font:700 13px Inter;color:#fff;">10 pre-orders</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-delivery" style="display:none;flex-direction:column;gap:24px;padding:32px 24px;">
+    <div>
+      <div style="font:700 11px Inter;letter-spacing:1px;text-transform:uppercase;color:#EA580C;margin-bottom:12px;">Delivery Seller</div>
+      <h3 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 12px;">Set your radius.<br/>Deliver at your price.</h3>
+      <p style="font:400 14px/1.6 Inter;color:#64748B;margin:0 0 20px;">Set a delivery radius, flat fee or per-km rate. Buyers in range see delivery at checkout. Distance auto-calculated from their saved address.</p>
+      <ul style="list-style:none;padding:0;margin:0 0 24px;display:flex;flex-direction:column;gap:10px;">
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#EA580C;">→</span> Flat fee (₹X) or per-km rate (₹X/km)</li>
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#EA580C;">→</span> Free delivery threshold (e.g. free above ₹500)</li>
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#EA580C;">→</span> Set your own delivery radius in km</li>
+      </ul>
+      <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#EA580C;text-decoration:none;">Learn More <span>→</span></a>
+    </div>
+    <div style="background:#1a0a09;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="font:600 10px Inter;color:#fb923c;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Delivery · Checkout Preview</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;"><span style="font:500 13px Inter;color:#fff;">Subtotal</span><span style="font:700 13px Inter;color:#fff;">₹1,620</span></div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;"><span style="font:500 13px Inter;color:#fff;">Delivery fee</span><span style="font:700 13px Inter;color:#fb923c;">5.2 km</span></div>
+        <div style="background:rgba(234,88,12,0.2);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;"><span style="font:800 13px Inter;color:#fff;">Total</span><span style="font:800 13px Inter;color:#fff;">₹1,620 + delivery</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-home" style="display:none;flex-direction:column;gap:24px;padding:32px 24px;">
+    <div>
+      <div style="font:700 11px Inter;letter-spacing:1px;text-transform:uppercase;color:#059669;margin-bottom:12px;">Home Seller</div>
+      <h3 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 12px;">Sell from home.<br/>No stall needed.</h3>
+      <p style="font:400 14px/1.6 Inter;color:#64748B;margin:0 0 20px;">Run a home-based fish business. Share your page on WhatsApp groups, take orders, and deliver within your locality. Your phone is your store.</p>
+      <ul style="list-style:none;padding:0;margin:0 0 24px;display:flex;flex-direction:column;gap:10px;">
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#059669;">→</span> No physical shop required</li>
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#059669;">→</span> WhatsApp group sharing link</li>
+        <li style="display:flex;align-items:center;gap:10px;font:500 13px Inter;color:#334155;"><span style="color:#059669;">→</span> Mobile-first dashboard — manage from phone</li>
+      </ul>
+      <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#059669;text-decoration:none;">Learn More <span>→</span></a>
+    </div>
+    <div style="background:#051a0f;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="font:600 10px Inter;color:#34d399;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Your store link</div>
+      <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+        <div style="font:600 12px Inter;color:#fff;word-break:break-all;">relifish.store/s/your-store-name</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="font:600 11px Inter;color:#34d399;background:rgba(52,211,153,0.1);padding:5px 12px;border-radius:999px;">📱 WhatsApp status</span>
+        <span style="font:600 11px Inter;color:#60a5fa;background:rgba(96,165,250,0.1);padding:5px 12px;border-radius:999px;">📸 Instagram bio</span>
+        <span style="font:600 11px Inter;color:#fb923c;background:rgba(251,146,60,0.1);padding:5px 12px;border-radius:999px;">📄 Flyer QR</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TRUST BAR (Toast 4-icon row) ─────────────────────────────── -->
+<section style="background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;padding:32px 24px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:480px;">
+    <div style="text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">📦</div>
+      <div style="font:700 13px Inter;color:#0F172A;margin-bottom:4px;">Live Orders</div>
+      <div style="font:400 12px Inter;color:#64748B;">Orders flow in real-time to your dashboard</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">💬</div>
+      <div style="font:700 13px Inter;color:#0F172A;margin-bottom:4px;">WhatsApp Alerts</div>
+      <div style="font:400 12px Inter;color:#64748B;">Every order pings you on WhatsApp instantly</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">₹</div>
+      <div style="font:700 13px Inter;color:#0F172A;margin-bottom:4px;">Zero Commission</div>
+      <div style="font:400 12px Inter;color:#64748B;">You keep 100% of every sale. Always.</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">📊</div>
+      <div style="font:700 13px Inter;color:#0F172A;margin-bottom:4px;">Analytics</div>
+      <div style="font:400 12px Inter;color:#64748B;">Track views, orders, and earnings over time</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── INTELLIGENCE BUILT IN (Toast "Intelligence built in") ────── -->
+<section style="background:#fff;padding:48px 24px;border-top:1px solid #E2E8F0;">
+  <div style="max-width:480px;">
+    <p style="font:700 11px Inter;letter-spacing:1px;text-transform:uppercase;color:#0066FF;margin:0 0 12px;">Analytics built in</p>
+    <h2 style="font:800 28px/1.2 Inter;color:#0F172A;margin:0 0 16px;letter-spacing:-0.5px;">Your store data talks.<br/>What will it tell you?</h2>
+    <p style="font:400 14px/1.6 Inter;color:#64748B;margin:0 0 24px;">Know your top-selling fish, busiest order times, repeat customers, and revenue trends — all from your phone. Make better buying decisions every morning.</p>
+
+    <!-- Insight cards — like Toast IQ cards -->
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E6F0FF;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🐟</div>
+        <div>
+          <div style="font:700 13px Inter;color:#0F172A;">Pomfret is your top seller</div>
+          <div style="font:400 12px Inter;color:#64748B;">Up 12% this week · ₹8,400 revenue</div>
+        </div>
+      </div>
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">⏰</div>
+        <div>
+          <div style="font:700 13px Inter;color:#0F172A;">Peak orders: 7am–9am</div>
+          <div style="font:400 12px Inter;color:#64748B;">63% of daily orders arrive before 9am</div>
+        </div>
+      </div>
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🔁</div>
+        <div>
+          <div style="font:700 13px Inter;color:#0F172A;">8 repeat buyers this month</div>
+          <div style="font:400 12px Inter;color:#64748B;">Loyal customers = predictable revenue</div>
+        </div>
+      </div>
+    </div>
+    <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#0066FF;text-decoration:none;">See your dashboard <span>→</span></a>
+  </div>
+</section>
+
+<!-- ─── BUILDING CUSTOMIZABLE (Toast segment pills) ───────────────── -->
+<section style="background:#0F172A;padding:48px 24px;">
+  <div style="max-width:480px;">
+    <h2 style="font:800 28px/1.2 Inter;color:#fff;margin:0 0 10px;letter-spacing:-0.5px;">Built for sellers of all sizes</h2>
+    <p style="font:400 14px Inter;color:rgba(255,255,255,0.5);margin:0 0 28px;">See how we personalise for any seller model or scale.</p>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <a href="/dashboard/login" style="display:flex;align-items:center;gap:6px;font:600 13px Inter;color:rgba(255,255,255,0.8);text-decoration:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:10px 18px;">Single Stall Seller <span style="font-size:11px;opacity:0.6;">→</span></a>
+      <a href="/dashboard/login" style="display:flex;align-items:center;gap:6px;font:600 13px Inter;color:rgba(255,255,255,0.8);text-decoration:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:10px 18px;">Home Delivery Seller <span style="font-size:11px;opacity:0.6;">→</span></a>
+      <a href="/dashboard/login" style="display:flex;align-items:center;gap:6px;font:600 13px Inter;color:rgba(255,255,255,0.8);text-decoration:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:10px 18px;">Pre-Order Fisherman <span style="font-size:11px;opacity:0.6;">→</span></a>
+      <a href="/dashboard/login" style="display:flex;align-items:center;gap:6px;font:600 13px Inter;color:rgba(255,255,255,0.8);text-decoration:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:10px 18px;">Multi-Location Shop <span style="font-size:11px;opacity:0.6;">→</span></a>
+      <a href="/dashboard/login" style="display:flex;align-items:center;gap:6px;font:600 13px Inter;color:rgba(255,255,255,0.8);text-decoration:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:10px 18px;">New Seller <span style="font-size:11px;opacity:0.6;">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS (3-step) ─────────────────────────────────────── -->
+<section style="background:#fff;padding:48px 24px;border-top:1px solid #E2E8F0;">
+  <div style="max-width:480px;">
+    <h2 style="font:800 28px/1.2 Inter;color:#0F172A;margin:0 0 6px;letter-spacing:-0.5px;">Up in 5 minutes</h2>
+    <p style="font:400 14px Inter;color:#64748B;margin:0 0 32px;">No tech skills needed. Just your phone.</p>
+
+    <div style="display:flex;flex-direction:column;gap:0;">
+      {[
+        {n:"1",title:"Create your seller account",desc:"Sign up with your phone number. 30 seconds.",color:"#FF4500"},
+        {n:"2",title:"Add listings",desc:"Photo, name, price, quantity. Your page goes live instantly.",color:"#FF4500"},
+        {n:"3",title:"Share your link",desc:"Post relifish.store/s/your-store on WhatsApp + Instagram.",color:"#FF4500"},
+        {n:"✓",title:"Get orders",desc:"Buyers order directly. You get a WhatsApp ping. Confirm and go.",color:"#059669"},
+      ].map((s, i, arr) => (
+        <div style={`display:flex;gap:16px;align-items:flex-start;padding-bottom:${i < arr.length-1 ? '28px' : '0'};position:relative;`}>
+          <div style={`width:36px;height:36px;border-radius:50%;background:${s.color};color:#fff;font:800 14px Inter;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;z-index:1;`}>{s.n}</div>
+          {i < arr.length-1 && <div style="position:absolute;left:17px;top:36px;bottom:0;width:2px;background:#F1F5F9;z-index:0;"></div>}
+          <div style="padding-top:5px;">
+            <div style="font:700 15px Inter;color:#0F172A;margin-bottom:4px;">{s.title}</div>
+            <div style="font:400 13px Inter;color:#64748B;">{s.desc}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIAL (Toast-style video card) ─────────────────────── -->
+<section style="background:#F8FAFC;padding:48px 24px;border-top:1px solid #E2E8F0;">
+  <div style="max-width:480px;">
+    <h2 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 24px;letter-spacing:-0.5px;">Sellers love Relifish</h2>
+    <div style="background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+      <div style="display:flex;gap:2px;margin-bottom:12px;">
+        {"★★★★★".split("").map(s => <span style="color:#FF4500;font-size:16px;">{s}</span>)}
+      </div>
+      <p style="font:500 15px/1.6 Inter;color:#334155;margin:0 0 20px;">"Pehle WhatsApp pe manually message karna padta tha. Ab link share karo, orders automatically aate hain. Bahut easy hai!"</p>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#FF4500,#ff8c69);display:flex;align-items:center;justify-content:center;font:700 16px Inter;color:#fff;">R</div>
+        <div>
+          <div style="font:700 13px Inter;color:#0F172A;">Ramesh Koli</div>
+          <div style="font:400 12px Inter;color:#64748B;">Daily catch seller · Thane</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FINAL CTA ──────────────────────────────────────────────────── -->
+<section style="background:#080c16;padding:64px 24px;text-align:center;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,69,0,0.1) 0%,transparent 65%);pointer-events:none;"></div>
+  <div style="position:relative;z-index:1;max-width:400px;margin:0 auto;">
+    <div style="font-size:48px;margin-bottom:20px;">🐟</div>
+    <h2 style="font:900 36px/1.1 Inter;color:#fff;margin:0 0 14px;letter-spacing:-1px;">Start selling today</h2>
+    <p style="font:400 15px/1.6 Inter;color:rgba(255,255,255,0.45);margin:0 0 32px;">Free to list. Zero commission. Your fish, your prices, your buyers.</p>
+    <a href="/dashboard/login" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#FF4500;color:#fff;font:800 16px Inter;padding:18px 40px;border-radius:14px;text-decoration:none;box-shadow:0 4px 32px rgba(255,69,0,0.4);">
+      Create Your Free Store →
+    </a>
+    <p style="font:400 12px Inter;color:rgba(255,255,255,0.2);margin-top:16px;">Already selling? <a href="/dashboard/login" style="color:rgba(255,255,255,0.4);text-decoration:underline;">Log in</a></p>
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────── -->
+<footer style="background:#080c16;border-top:1px solid rgba(255,255,255,0.05);padding:20px 24px;text-align:center;">
+  <p style="font:400 12px Inter;color:rgba(255,255,255,0.2);margin:0;">
+    © 2025 Relifish ·
+    <a href="/privacy" style="color:rgba(255,255,255,0.3);text-decoration:none;">Privacy</a> ·
+    <a href="/shop" style="color:rgba(255,255,255,0.3);text-decoration:none;">Browse Sellers</a> ·
+    <a href="/" style="color:rgba(255,255,255,0.3);text-decoration:none;">Order Fish</a>
+  </p>
+</footer>
+
+<style>
+  @keyframes scroll-cue {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 0.7; transform: scaleY(1.15); }
+  }
+  body { margin:0;padding:0; }
+  * { box-sizing: border-box; }
+  #seller-tabs::-webkit-scrollbar { display: none; }
+</style>
+
+<script is:inline>
+  function switchType(name) {
+    const types = ['daily','preorder','delivery','home'];
+    const colors = { daily:'#FF4500', preorder:'#7C3AED', delivery:'#EA580C', home:'#059669' };
+    types.forEach(t => {
+      const panel = document.getElementById('panel-' + t);
+      const btn = document.getElementById('type-' + t);
+      const active = t === name;
+      if (panel) panel.style.display = active ? 'flex' : 'none';
+      if (btn) {
+        btn.style.color = active ? colors[name] : '#94A3B8';
+        btn.style.borderBottomColor = active ? colors[name] : 'transparent';
+      }
+    });
+  }
+</script>
+
+</AppShell>
