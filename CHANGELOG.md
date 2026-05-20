@@ -2,6 +2,28 @@
 
 All notable changes to Relifish are documented here.
 
+## [0.2.2.0] - 2026-05-20
+
+### Added
+- `/for-sellers` seller marketing landing page — OS pipeline diagram, timeline milestones (Day 1 / Week 1 / Week 2 / Month 1+), brutal outcome content, "Bring your customers. Gain new ones." growth section, deep Revenue and Compounds steps with before/after comparisons, 10-question FAQ, and structured JSON-LD (WebPage, Service, Organization, HowTo, FAQPage)
+- Preorder revenue model explainer — cold storage cost elimination, calculated logistics, predictable stock-fill comparison (before vs. with Relifish)
+- Two-engine customer growth section — Engine 1 (existing customers, Week 1 with Day 1/Day 2-3/Week 1 milestones) and Engine 2 (new customers, Week 2-3 with discovery → engagement momentum)
+
+### Changed
+- "Inventory" replaces "Listings" across all seller-facing UI labels (dashboard nav, page titles, empty states) — URLs unchanged
+- Favicon updated to local `/favicon.png` + `/favicon.svg` (was Supabase CDN URL, which could fail offline)
+- Seller UUID pages (`/seller/[id]`) now carry `noindex` — canonical URL is `/s/[slug]`
+- for-sellers SEO: title "Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish", expanded meta description, JSON-LD schema corrected (HowTo separated from FAQPage into proper @graph nodes)
+- Payments copy updated to UPI · COD — Razorpay removed from all marketing copy (payment processing code untouched)
+- Testimonials heading changed to "Real problems solving"
+- Hero updated: "Start accepting orders in your serviceable area"
+- Full-width layout restored — `.v2-main` max-width constraint removed
+- OS pipeline diagram with timeline markers and stage tooltips
+
+### Fixed
+- Phone mockup width increased to 270px
+- CTA note top margin corrected (20px)
+
 ## [0.2.1.0] - 2026-05-20
 
 ### Fixed

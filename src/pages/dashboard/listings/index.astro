@@ -5,9 +5,9 @@ import Toast from "../../../components/ui/atoms/Toast.astro";
 import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 ---
 <AppShell
-  title="Listings · Seller Dashboard"
-  description="Manage your fish listings"
-  header={{ variant: "page", title: "My listings", backHref: "/dashboard/orders" }}
+  title="Inventory · Seller Dashboard"
+  description="Manage your fish inventory"
+  header={{ variant: "page", title: "My inventory", backHref: "/dashboard/orders" }}
   nav={{ active: "listings" as any, mode: "seller" }}
 >
   <Toast />
@@ -27,9 +27,9 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     <div id="v2-listings-empty" style="display:none;">
       <EmptyState
         variant="no-orders"
-        title="No listings yet"
-        description="Add your first fish listing to start receiving orders."
-        ctaText="Add listing"
+        title="No inventory yet"
+        description="Add your first fish item to start receiving orders."
+        ctaText="Add item"
         ctaHref="/dashboard/listings/new"
       />
     </div>
