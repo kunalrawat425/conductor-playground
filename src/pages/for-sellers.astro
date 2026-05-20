@@ -23,19 +23,13 @@ import AppShell from "../components/ui/AppShell.astro";
 
 <!-- ─── HERO ───────────────────────────────────────────────────────── -->
 <section style="position:relative;min-height:100svh;background:#080c16;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;">
-  <div style="position:absolute;inset:0;background:linear-gradient(160deg,#0d1420 0%,#080c16 55%,#0d1420 100%);"></div>
+  <!-- Background photo: retailer managing business with phone/online tools -->
+  <div style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=900&q=70&fit=crop');background-size:cover;background-position:center;opacity:0.18;"></div>
+  <!-- Dark gradient overlay -->
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,12,22,0.6) 0%,rgba(8,12,22,0.85) 60%,#080c16 100%);"></div>
   <div style="position:absolute;top:-80px;right:-60px;width:420px;height:420px;background:radial-gradient(circle,rgba(0,102,255,0.15) 0%,transparent 65%);pointer-events:none;"></div>
-  <div style="position:absolute;bottom:60px;left:-40px;width:320px;height:320px;background:radial-gradient(circle,rgba(0,102,255,0.07) 0%,transparent 65%);pointer-events:none;"></div>
 
-  <!-- "How Relifish is Built For Sellers" pill -->
-  <div style="position:absolute;top:80px;left:24px;z-index:2;">
-    <button style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:8px 14px;cursor:pointer;font:600 12px Inter;color:rgba(255,255,255,0.75);">
-      <span style="width:26px;height:26px;border-radius:50%;background:#0066FF;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:#fff;">▶</span>
-      How Relifish is Built For Sellers
-    </button>
-  </div>
-
-  <div style="position:relative;z-index:2;padding:140px 24px 56px;max-width:100%;">
+  <div style="position:relative;z-index:2;padding:100px 24px 40px;max-width:100%;">
     <h1 style="font:900 52px/1.0 Inter;color:#fff;margin:0 0 20px;letter-spacing:-2px;max-width:340px;">Built For<br/><span style="color:#0066FF;">Fish Sellers</span></h1>
     <p style="font:400 16px/1.6 Inter;color:rgba(255,255,255,0.55);margin:0 0 32px;max-width:340px;">
       The platform built for daily catch volume, slim margins, and fresh fish at scale — trusted by sellers in Mumbai.
@@ -50,6 +44,60 @@ import AppShell from "../components/ui/AppShell.astro";
     <p style="margin-top:16px;font:500 13px Inter;color:rgba(255,255,255,0.4);">
       New seller? <a href="/dashboard/login" style="color:rgba(255,255,255,0.65);text-decoration:underline;text-underline-offset:3px;">Start free →</a>
     </p>
+
+    <!-- Dashboard device teaser -->
+    <div style="margin-top:40px;position:relative;">
+      <p style="font:600 11px Inter;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin:0 0 14px;">Your seller dashboard</p>
+      <!-- Phone frame -->
+      <div style="width:220px;background:#0F172A;border-radius:20px;padding:12px;box-shadow:0 24px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.08);position:relative;">
+        <!-- Phone notch -->
+        <div style="width:60px;height:5px;background:rgba(255,255,255,0.1);border-radius:999px;margin:0 auto 12px;"></div>
+        <!-- Status bar -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 2px;">
+          <span style="font:600 10px Inter;color:rgba(255,255,255,0.4);">9:41</span>
+          <span style="font:600 10px Inter;color:rgba(255,255,255,0.4);">●●●</span>
+        </div>
+        <!-- Dashboard header -->
+        <div style="background:rgba(0,102,255,0.15);border:1px solid rgba(0,102,255,0.2);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+          <div style="font:700 10px Inter;color:#60a5fa;margin-bottom:2px;">Today's orders</div>
+          <div style="font:900 20px Inter;color:#fff;line-height:1;">18 <span style="font:400 11px Inter;color:rgba(255,255,255,0.5);">orders · ₹12,450</span></div>
+        </div>
+        <!-- Order cards -->
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font:600 10px Inter;color:#fff;">Pomfret × 2kg</div>
+              <div style="font:400 9px Inter;color:#64748B;">Buyer · 8:14am</div>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <span style="background:#059669;color:#fff;font:700 9px Inter;padding:3px 7px;border-radius:999px;">✓</span>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font:600 10px Inter;color:#fff;">Surmai × 1kg</div>
+              <div style="font:400 9px Inter;color:#64748B;">Buyer · 8:22am</div>
+            </div>
+            <div style="background:rgba(0,102,255,0.2);color:#60a5fa;font:700 9px Inter;padding:3px 7px;border-radius:999px;">New</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font:600 10px Inter;color:#fff;">Prawns × 500g</div>
+              <div style="font:400 9px Inter;color:#64748B;">Pre-order</div>
+            </div>
+            <div style="background:rgba(79,70,229,0.2);color:#818cf8;font:700 9px Inter;padding:3px 7px;border-radius:999px;">Tomorrow</div>
+          </div>
+        </div>
+        <!-- Bottom bar -->
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-around;">
+          <span style="font:400 9px Inter;color:#64748B;">Orders</span>
+          <span style="font:400 9px Inter;color:#0066FF;font-weight:700;">Dashboard</span>
+          <span style="font:400 9px Inter;color:#64748B;">Listings</span>
+        </div>
+        <!-- Home bar -->
+        <div style="width:50px;height:4px;background:rgba(255,255,255,0.15);border-radius:999px;margin:10px auto 0;"></div>
+      </div>
+    </div>
   </div>
 
   <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);opacity:0.3;pointer-events:none;">
