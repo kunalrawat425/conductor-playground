@@ -599,6 +599,7 @@ const { id } = Astro.params;
               });
             });
           }
+          try { if (typeof gtag === "function") gtag("event", "reorder_clicked", { seller_id: sellerIdForReorder, seller_name: seller.name, order_id: o.id }); } catch {}
           const sellerSlug = (seller.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
           window.location.href = `/s/${sellerSlug}`;
         });
