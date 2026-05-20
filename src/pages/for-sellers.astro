@@ -258,22 +258,66 @@ import AppShell from "../components/ui/AppShell.astro";
   </div>
 </section>
 
-<!-- ─── TESTIMONIAL ───────────────────────────────────────────────── -->
+<!-- ─── TESTIMONIALS ───────────────────────────────────────────────── -->
 <section style="background:#F8FAFC;padding:48px 24px;border-top:1px solid #E2E8F0;">
   <div style="max-width:480px;">
-    <h2 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 24px;letter-spacing:-0.5px;">Sellers love Relifish</h2>
-    <div style="background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
-      <div style="display:flex;gap:2px;margin-bottom:12px;">
-        {"★★★★★".split("").map(s => <span style="color:#0066FF;font-size:16px;">{s}</span>)}
-      </div>
-      <p style="font:500 15px/1.6 Inter;color:#334155;margin:0 0 20px;">"Pehle WhatsApp pe manually message karna padta tha. Ab link share karo, orders automatically aate hain. Bahut easy hai!"</p>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0066FF,#0052CC);display:flex;align-items:center;justify-content:center;font:700 16px Inter;color:#fff;">R</div>
-        <div>
-          <div style="font:700 13px Inter;color:#0F172A;">Ramesh Koli</div>
-          <div style="font:400 12px Inter;color:#64748B;">Daily catch seller · Thane</div>
+    <h2 style="font:800 24px/1.2 Inter;color:#0F172A;margin:0 0 8px;letter-spacing:-0.5px;">Sellers love Relifish</h2>
+    <p style="font:400 14px Inter;color:#64748B;margin:0 0 28px;">Real sellers. Real problems solved.</p>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Before: missed orders on WhatsApp + no inventory -->
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#FEF2F2;border-radius:999px;padding:4px 10px;margin-bottom:14px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#DC2626;display:inline-block;"></span>
+          <span style="font:600 11px Inter;color:#DC2626;">Before Relifish</span>
+        </div>
+        <p style="font:500 14px/1.6 Inter;color:#334155;margin:0 0 16px;">"WhatsApp pe orders aate the, Excel mein likhta tha — phir bhi orders miss ho jaate the. Call pe baat karte karte stock khatam ho jaata tha. Koi inventory tracking nahi thi. Roz chaos."</p>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font:700 14px Inter;color:#64748B;">R</div>
+          <div><div style="font:700 12px Inter;color:#0F172A;">Ramesh Koli</div><div style="font:400 11px Inter;color:#94A3B8;">Daily catch seller · Thane</div></div>
         </div>
       </div>
+
+      <!-- Visibility + digital presence -->
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#E6F0FF;border-radius:999px;padding:4px 10px;margin-bottom:14px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#0066FF;display:inline-block;"></span>
+          <span style="font:600 11px Inter;color:#0066FF;">Visibility & Digital Presence</span>
+        </div>
+        <p style="font:500 14px/1.6 Inter;color:#334155;margin:0 0 16px;">"Ab mera online catalogue hai. Log directly link se dekhte hain kya available hai, price kya hai. Mujhe baar baar WhatsApp pe same cheez repeat nahi karni. Digital presence mili pehli baar."</p>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#E6F0FF;display:flex;align-items:center;justify-content:center;font:700 14px Inter;color:#0066FF;">S</div>
+          <div><div style="font:700 12px Inter;color:#0F172A;">Sunita Patil</div><div style="font:400 11px Inter;color:#94A3B8;">Fish stall owner · Mumbai</div></div>
+        </div>
+      </div>
+
+      <!-- Know customers + data + growth -->
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#EEF2FF;border-radius:999px;padding:4px 10px;margin-bottom:14px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#4F46E5;display:inline-block;"></span>
+          <span style="font:600 11px Inter;color:#4F46E5;">Customer Insight & Growth</span>
+        </div>
+        <p style="font:500 14px/1.6 Inter;color:#334155;margin:0 0 16px;">"Pehle nahi pata tha kaun repeat customer hai, kya chahiye unhe. Ab data hai — konsi fish zyada bikti hai, peak time kab hai. Main business aur naye customers lene pe focus karta hoon."</p>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font:700 14px Inter;color:#4F46E5;">V</div>
+          <div><div style="font:700 12px Inter;color:#0F172A;">Vinod Koli</div><div style="font:400 11px Inter;color:#94A3B8;">Pre-order seller · Navi Mumbai</div></div>
+        </div>
+      </div>
+
+      <!-- Less chaos + predictable demand + trust -->
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#ECFDF5;border-radius:999px;padding:4px 10px;margin-bottom:14px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#059669;display:inline-block;"></span>
+          <span style="font:600 11px Inter;color:#059669;">Less Chaos. More Control.</span>
+        </div>
+        <p style="font:500 14px/1.6 Inter;color:#334155;margin:0 0 16px;">"Link share karo, order aaya, confirm ho gaya — bas itna. Pre-order se kal ka demand pehle se pata hai. Wastage kam hui, cost kam hua. Staff bhi kam chahiye. Relifish se trust bhi aata hai customers mein."</p>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#ECFDF5;display:flex;align-items:center;justify-content:center;font:700 14px Inter;color:#059669;">A</div>
+          <div><div style="font:700 12px Inter;color:#0F172A;">Arun Nair</div><div style="font:400 11px Inter;color:#94A3B8;">Delivery seller · Thane</div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
