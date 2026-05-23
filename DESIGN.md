@@ -159,9 +159,27 @@ Implementation: **`src/lib/email-templates.ts`** (Resend sends HTML from these b
 - **Shared chrome:** every message uses the same `shell()` — gradient Relifish header, white card body, footer links — so verify, order updates, and payment alerts **look like one product**, not one-off HTML.
 - **Typography block:** `transactionIntro(eyebrow, title, subtitle)` (order emails use eyebrow **Order update**; verify uses **Account**; payment-proof seller alert uses **Action needed**).
 - **Components reused everywhere:** `ctaButton`, `orderSummaryTable` / `summaryRow` where applicable, `calloutBox`, `footerSafetyText`.
-- **Template inventory:** `orderEmailBuyer`, `orderEmailSeller` (status badge + line items), `verifyEmailTemplate` (magic link), `paymentProofReceivedEmailSeller` (after buyer uploads or replaces UPI screenshot).
-- Fish names are title-cased in subjects and bodies (`Pomfret`, `Surmai`).
-- Layout stays table-friendly and conservative spacing for major clients.
+- **Fish names:** All fish names are title-cased in subjects and bodies (e.g. `Pomfret`, `Surmai`) via the `capitalizeFishName` helper.
+- **Layout & Spacing:** Layout stays table-friendly and utilizes conservative spacing for major email client compatibility (using nested tables, margins, and inline styles).
+
+### Template, Trigger & Subject Matrix
+
+| Template Function | Trigger Event | Recipient | Subject Line Pattern |
+| :--- | :--- | :--- | :--- |
+| **`verifyEmailTemplate`** | Magic link request from profile page | Buyer or Seller | `Verify your email — Relifish` |
+| **`orderEmailBuyer`** | Order created (`pending_payment` / `pre_order`) | Buyer | `${statusLabel} — ${species}` (e.g. `Order placed — complete payment to confirm — Pomfret`) |
+| **`orderEmailSeller`** | Order created (`pending_payment` / `pre_order`) | Seller | `New order: ${species}` or `New pre-order: ${species}` |
+| **`proofUploadedEmailBuyer`**| UPI payment screenshot uploaded by buyer | Buyer | `Proof received — awaiting verification · ${species}` |
+| **`paymentProofReceivedEmailSeller`**| UPI payment screenshot uploaded by buyer | Seller | `Payment screenshot received — ${species}` |
+| **`paymentVerifiedEmailBuyer`** | Seller verifies payment in dashboard | Buyer | `Payment verified — ${species}` |
+| **`paymentVerifiedEmailSeller`**| Seller verifies payment in dashboard | Seller | `Payment verified — ${species}` |
+| **`refundSentEmailBuyer`** | Seller marks pre-order refund as sent | Buyer | `Refund sent — ${species}` |
+| **`refundSentEmailSeller`** | Seller marks pre-order refund as sent | Seller | `Refund marked sent — ${species}` |
+| **`razorpayReceiptEmail`** | Razorpay checkout session payment verified | Buyer | `Payment confirmed — your Relifish order is set ✓` |
+| **`orderEmailSeller`** (Razorpay auto-confirmed) | Razorpay checkout session payment verified | Seller | `New order paid: ${species}` |
+| **`orderEmailBuyer`** (Status update) | Seller updates order status in dashboard | Buyer | `${statusLabel} — ${species}` (e.g. `Out for Delivery — Pomfret`) |
+| **`orderEmailSeller`** (Status update) | Seller updates order status in dashboard | Seller | `Order Update: ${statusLabel} — ${species}` |
+
 
 ---
 
