@@ -2058,283 +2058,1086 @@
 <div class="section" id="email-templates">
   <div class="section-label">Email Templates</div>
   <div class="section-title">Transactional Emails</div>
-  <div class="section-sub">Branded inline-styled HTML emails sent via Resend from noreply@relifish.store.</div>
+  <div class="section-sub">Branded inline-styled HTML emails sent via Resend from noreply@relifish.store. Test all states, mocks, and conditions below.</div>
 
-  <div class="comp-grid" style="margin-bottom:32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
-    <!-- 1. Buyer Order Email -->
-    <div>
-      <h3 style="font:700 15px Inter;margin-bottom:12px">1. Buyer Order Email (Live Update)</h3>
-      <div style="background:#eef2f7;border-radius:var(--radius);padding:20px;max-width:440px;box-shadow:var(--shadow-sm);margin:0 auto;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
-          <!-- HEADER -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#0a0f1a,#111a2a);padding:24px 28px;text-align:center;">
-              <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
-              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
-            </td>
-          </tr>
-          <!-- BODY -->
-          <tr>
-            <td style="padding:26px 24px 20px;">
-              <!-- Status Header -->
-              <div style="text-align:center;margin-bottom:14px;">
-                <div style="display:inline-block;background:#28a745;color:#ffffff;padding:7px 16px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.35px;text-transform:uppercase;font-family:Inter,sans-serif;">✓ Confirmed</div>
-              </div>
-              <!-- Intro -->
-              <div style="margin-bottom:14px;font-family:Inter,sans-serif;">
-                <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">Order Update</div>
-                <h1 style="font-size:20px;line-height:1.25;margin:6px 0 6px;color:#0f172a;">Surmai order update</h1>
-                <p style="font-size:13px;line-height:1.55;color:#475467;margin:0;">Your order has been verified by the seller. You can track every step in the app with live updates.</p>
-              </div>
-              <!-- Summary Table -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e8edf5;border-radius:12px;background:#f8fafc;padding:14px 16px;font-family:Inter,sans-serif;">
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Fish</td>
-                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">Surmai (King Fish)</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Quantity</td>
-                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">1.5 kg</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Order ID</td>
-                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">#9B4D8D7F</td>
-                </tr>
-                <tr>
-                  <td style="padding:10px 0 0;font-size:13px;color:#0f172a;font-weight:700;">Total</td>
-                  <td align="right" style="padding:10px 0 0;font-size:14px;color:#0066cc;font-weight:800;">₹975</td>
-                </tr>
-              </table>
-              <!-- CutPreference Callout -->
-              <div style="background:#f5f8ff;border-left:3px solid #93c5fd;color:#1e3a8a;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:12px;font-size:12px;line-height:1.5;font-family:Inter,sans-serif;">
-                Cut preference: <strong>Steaks (sliced)</strong><br>Buyer notes: please send medium thick slices.
-              </div>
-              <!-- CTA -->
-              <div style="text-align:center;margin-top:18px;">
-                <a style="display:inline-block;background:#0066cc;color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;letter-spacing:0.2px;font-family:Inter,sans-serif;">Track Order →</a>
-              </div>
-            </td>
-          </tr>
-          <!-- FOOTER -->
-          <tr>
-            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;font-family:Inter,sans-serif;">
-              <div style="font-size:12px;color:#475569;line-height:1.8;">
-                📧 <a href="mailto:relifishstore@gmail.com" style="color:#0066cc;text-decoration:none;">relifishstore@gmail.com</a>
-              </div>
-              <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
-                <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a> · © 2026 Relifish
-              </div>
-            </td>
-          </tr>
-        </table>
+  <!-- Interactive Email Playground -->
+  <div class="email-playground-container" style="display: flex; gap: 24px; background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; margin-top: 16px; min-height: 780px;">
+    
+    <!-- Sidebar: Template Selector & Parameters -->
+    <div class="email-sidebar" style="width: 320px; background: #f8fafc; border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; flex-shrink: 0; max-height: 850px; overflow-y: auto;">
+      
+      <div>
+        <h3 style="font: 700 12px Inter; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;">1. Select Template</h3>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          
+          <div style="font: 700 10px Inter; color: var(--brand); text-transform: uppercase; margin: 8px 0 4px;">Order Status Flows</div>
+          <button class="email-type-btn active" data-template="buyer-order" onclick="setTemplate('buyer-order')">📱 Buyer Order Update</button>
+          <button class="email-type-btn" data-template="seller-order" onclick="setTemplate('seller-order')">🎣 Seller Order Alert</button>
+          
+          <div style="font: 700 10px Inter; color: var(--brand); text-transform: uppercase; margin: 8px 0 4px;">Proof & Verification</div>
+          <button class="email-type-btn" data-template="payment-proof-seller" onclick="setTemplate('payment-proof-seller')">📩 Proof Received (Seller)</button>
+          <button class="email-type-btn" data-template="proof-uploaded-buyer" onclick="setTemplate('proof-uploaded-buyer')">📤 Proof Uploaded (Buyer)</button>
+          <button class="email-type-btn" data-template="payment-verified-buyer" onclick="setTemplate('payment-verified-buyer')">✅ Verified Confirmed (Buyer)</button>
+          <button class="email-type-btn" data-template="payment-verified-seller" onclick="setTemplate('payment-verified-seller')">✅ Verified Alert (Seller)</button>
+          
+          <div style="font: 700 10px Inter; color: var(--brand); text-transform: uppercase; margin: 8px 0 4px;">UPI Refunds</div>
+          <button class="email-type-btn" data-template="refund-buyer" onclick="setTemplate('refund-buyer')">💸 Refund Sent (Buyer)</button>
+          <button class="email-type-btn" data-template="refund-seller" onclick="setTemplate('refund-seller')">💸 Refund Logged (Seller)</button>
+          
+          <div style="font: 700 10px Inter; color: var(--brand); text-transform: uppercase; margin: 8px 0 4px;">Receipts & Onboarding</div>
+          <button class="email-type-btn" data-template="razorpay-receipt" onclick="setTemplate('razorpay-receipt')">💳 Razorpay Receipt (Buyer)</button>
+          <button class="email-type-btn" data-template="verify-email" onclick="setTemplate('verify-email')">✉️ Email Verification</button>
+        </div>
       </div>
+      
+      <!-- Parameters Panel -->
+      <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+        <h3 style="font: 700 12px Inter; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">2. Mock Parameters</h3>
+        <div id="dynamic-params-container" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Populated dynamically via JS based on selected template -->
+        </div>
+      </div>
+      
     </div>
-
-    <!-- 2. Seller Alert Email -->
-    <div>
-      <h3 style="font:700 15px Inter;margin-bottom:12px">2. Seller Order Email (New Order Alert)</h3>
-      <div style="background:#eef2f7;border-radius:var(--radius);padding:20px;max-width:440px;box-shadow:var(--shadow-sm);margin:0 auto;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
-          <!-- HEADER -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#0a0f1a,#111a2a);padding:24px 28px;text-align:center;">
-              <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
-              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
-            </td>
-          </tr>
-          <!-- BODY -->
-          <tr>
-            <td style="padding:26px 24px 20px;">
-              <!-- Status Header -->
-              <div style="text-align:center;margin-bottom:14px;">
-                <div style="display:inline-block;background:#0066cc;color:#ffffff;padding:7px 16px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.35px;text-transform:uppercase;font-family:Inter,sans-serif;">New Pre-Order</div>
-              </div>
-              <!-- Intro -->
-              <div style="margin-bottom:14px;font-family:Inter,sans-serif;">
-                <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">Action Needed</div>
-                <h1 style="font-size:20px;line-height:1.25;margin:6px 0 6px;color:#0f172a;">Surmai pre-order needs attention</h1>
-                <p style="font-size:13px;line-height:1.55;color:#475467;margin:0;">Hi Kamla Tai, a customer placed a pre-order for tomorrow's catch. Review and confirm it in your dashboard.</p>
-              </div>
-              <!-- Summary Table -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e8edf5;border-radius:12px;background:#f8fafc;padding:14px 16px;font-family:Inter,sans-serif;">
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Fish</td>
-                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">Surmai (King Fish)</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Quantity</td>
-                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">1.5 kg</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Price range</td>
-                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">₹900–₹1,050</td>
-                </tr>
-                <tr>
-                  <td style="padding:10px 0 0;font-size:13px;color:#0f172a;font-weight:700;">Max value</td>
-                  <td align="right" style="padding:10px 0 0;font-size:14px;color:#7c4dff;font-weight:800;">₹1,050</td>
-                </tr>
-              </table>
-              <!-- CutPreference Callout -->
-              <div style="background:#fff7ed;border-left:3px solid #fb923c;color:#7c2d12;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:12px;font-size:12px;line-height:1.5;font-family:Inter,sans-serif;">
-                Cut preference: <strong>Steaks</strong><br>Notes: medium slices.
-              </div>
-              <!-- CTA -->
-              <div style="text-align:center;margin-top:18px;">
-                <a style="display:inline-block;background:#0066cc;color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;letter-spacing:0.2px;font-family:Inter,sans-serif;">View Orders →</a>
-              </div>
-            </td>
-          </tr>
-          <!-- FOOTER -->
-          <tr>
-            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;font-family:Inter,sans-serif;">
-              <div style="font-size:12px;color:#475569;line-height:1.8;">
-                📧 <a href="mailto:relifishstore@gmail.com" style="color:#0066cc;text-decoration:none;">relifishstore@gmail.com</a>
-              </div>
-              <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
-                <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a> · © 2026 Relifish
-              </div>
-            </td>
-          </tr>
-        </table>
+    
+    <!-- Main Pane: Responsive Live Preview Frame -->
+    <div class="email-preview-area" style="flex: 1; padding: 24px; display: flex; flex-direction: column; gap: 16px; background: #ffffff;">
+      
+      <!-- Preview Header Toolbar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h3 id="current-template-title" style="font: 800 18px Inter; color: var(--ink); margin-bottom: 2px;">Buyer Order Update</h3>
+          <p id="current-template-desc" style="font: 400 12px Inter; color: var(--ink3); margin: 0;">Buyer notification with custom status tags, cut preferences, notes, and pricing logic.</p>
+        </div>
+        
+        <div style="display: flex; gap: 8px;">
+          <button class="v2-btn v2-btn-outline v2-btn-sm" onclick="copyCompiledHTML()" style="display: flex; align-items: center; gap: 4px;">
+            <span>📋</span> Copy HTML
+          </button>
+          <button id="view-desktop-btn" class="v2-btn v2-btn-primary v2-btn-sm active" onclick="setPreviewSize(560)" style="font-weight: 700;">
+            🖥️ Desktop (560px)
+          </button>
+          <button id="view-mobile-btn" class="v2-btn v2-btn-outline v2-btn-sm" onclick="setPreviewSize(360)">
+            📱 Mobile (360px)
+          </button>
+        </div>
       </div>
-    </div>
-
-    <!-- 3. Razorpay Payment Receipt -->
-    <div>
-      <h3 style="font:700 15px Inter;margin-bottom:12px">3. Razorpay Receipt (Paid Buyer)</h3>
-      <div style="background:#eef2f7;border-radius:var(--radius);padding:20px;max-width:440px;box-shadow:var(--shadow-sm);margin:0 auto;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
-          <!-- HEADER -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#0a0f1a,#111a2a);padding:24px 28px;text-align:center;">
-              <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
-              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
-            </td>
-          </tr>
-          <!-- BODY -->
-          <tr>
-            <td style="padding:26px 24px 20px;">
-              <!-- Status Header -->
-              <div style="text-align:center;margin-bottom:16px;">
-                <div style="display:inline-block;background:#059669;color:#fff;padding:7px 18px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;font-family:Inter,sans-serif;">✓ Payment Confirmed</div>
-              </div>
-              <!-- Intro -->
-              <div style="margin-bottom:14px;font-family:Inter,sans-serif;">
-                <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">Payment Receipt</div>
-                <h1 style="font-size:20px;line-height:1.25;margin:0 0 4px;color:#0f172a;">Your order is confirmed</h1>
-                <p style="font-size:13px;line-height:1.55;color:#475467;margin:0 0 18px;">Here's your receipt. Track your order in the app for live updates.</p>
-              </div>
-              <!-- Order metadata strip -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-family:Inter,sans-serif;">
-                <tr>
-                  <td style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;">Order ID</td>
-                  <td style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;text-align:center;">Date &amp; Time</td>
-                  <td style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;text-align:right;">Type</td>
-                </tr>
-                <tr>
-                  <td style="font-size:12px;font-weight:700;color:#0f172a;">#ORD-8FB0D8</td>
-                  <td style="font-size:11px;font-weight:600;color:#0f172a;text-align:center;">23 May 2026, 12:00 PM</td>
-                  <td style="font-size:12px;font-weight:700;color:#0f172a;text-align:right;">🚲 Delivery</td>
-                </tr>
-              </table>
-              <!-- Seller details -->
-              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:Inter,sans-serif;">
-                <span style="font-size:18px;line-height:1;vertical-align:middle;">🎣</span>
-                <span style="font-size:13px;font-weight:700;color:#0f172a;vertical-align:middle;margin-left:8px;">Kamla Tai Fish Stall</span>
-                <div style="font-size:11px;color:#64748b;margin-top:4px;padding-left:26px;">📍 Sassoon Dock, Colaba</div>
-              </div>
-              <!-- Receipt list -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e8edf5;border-radius:12px;background:#f8fafc;padding:0 16px;font-family:Inter,sans-serif;">
-                <tr>
-                  <td style="padding:10px 0;border-bottom:1px solid #e8edf5;">
-                    <div style="font-size:13px;font-weight:700;color:#0f172a;">Surmai (King Fish)</div>
-                    <div style="font-size:11px;color:#64748b;margin-top:2px;">1.5 kg · Steaks</div>
-                  </td>
-                  <td align="right" style="padding:10px 0;border-bottom:1px solid #e8edf5;font-size:13px;font-weight:700;color:#0f172a;vertical-align:middle;white-space:nowrap;">₹975</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:12px;color:#64748b;">Delivery Fee</td>
-                  <td align="right" style="padding:6px 0;font-size:12px;color:#0f172a;font-weight:600;">₹50</td>
-                </tr>
-                <tr>
-                  <td style="padding:10px 0 0;font-size:13px;font-weight:800;color:#0f172a;border-top:2px solid #0066cc;">Total Paid</td>
-                  <td align="right" style="padding:10px 0 0;font-size:14px;font-weight:800;color:#0066cc;">₹1,025</td>
-                </tr>
-              </table>
-              <!-- Payment confirmation -->
-              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-top:16px;font-family:Inter,sans-serif;">
-                <span style="font-size:18px;line-height:1;vertical-align:middle;">✅</span>
-                <span style="font-size:12px;font-weight:700;color:#15803d;vertical-align:middle;margin-left:8px;">Paid via Razorpay</span>
-                <div style="font-size:10px;color:#64748b;font-family:monospace;margin-top:4px;padding-left:26px;">pay_P9F8D8J2D3</div>
-              </div>
-              <!-- CTA -->
-              <div style="text-align:center;margin-top:18px;">
-                <a style="display:inline-block;background:#0066cc;color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;letter-spacing:0.2px;font-family:Inter,sans-serif;">Track Order →</a>
-              </div>
-            </td>
-          </tr>
-          <!-- FOOTER -->
-          <tr>
-            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;font-family:Inter,sans-serif;">
-              <div style="font-size:12px;color:#475569;line-height:1.8;">
-                📧 <a href="mailto:relifishstore@gmail.com" style="color:#0066cc;text-decoration:none;">relifishstore@gmail.com</a>
-              </div>
-              <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
-                <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a> · © 2026 Relifish
-              </div>
-            </td>
-          </tr>
-        </table>
+      
+      <!-- Success Toast -->
+      <div id="copy-toast" style="display: none; background: var(--green); color: #fff; padding: 8px 16px; border-radius: var(--radius-sm); font: 600 12px Inter; text-align: center; margin-bottom: -8px; animation: slideDown 0.2s ease;">
+        ✓ HTML template code copied to clipboard successfully!
       </div>
-    </div>
-
-    <!-- 4. Verify Email -->
-    <div>
-      <h3 style="font:700 15px Inter;margin-bottom:12px">4. Verify Email (Account Setup)</h3>
-      <div style="background:#eef2f7;border-radius:var(--radius);padding:20px;max-width:440px;box-shadow:var(--shadow-sm);margin:0 auto;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
-          <!-- HEADER -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#0a0f1a,#111a2a);padding:24px 28px;text-align:center;">
-              <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
-              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
-            </td>
-          </tr>
-          <!-- BODY -->
-          <tr>
-            <td style="padding:26px 24px 20px;text-align:center;font-family:Inter,sans-serif;">
-              <div style="text-align:center;margin-bottom:8px;font-size:36px;line-height:1;">✉️</div>
-              <!-- Intro -->
-              <div style="margin-bottom:14px;text-align:left;">
-                <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">Account</div>
-                <h1 style="font-size:20px;line-height:1.25;margin:6px 0 6px;color:#0f172a;text-align:left;">Verify your email</h1>
-                <p style="font-size:13px;line-height:1.55;color:#475467;margin:0;text-align:left;">Use the button below to confirm <strong style="color:#0f172a;">priya@example.com</strong> on your Relifish profile. You will get order updates at this address when you opt in.</p>
-              </div>
-              <!-- CTA -->
-              <div style="text-align:center;margin:22px 0;">
-                <a style="display:inline-block;background:#0066cc;color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;letter-spacing:0.2px;font-family:Inter,sans-serif;">Verify email</a>
-              </div>
-              <!-- Callout -->
-              <div style="background:#f5f8ff;border-left:3px solid #93c5fd;color:#1e3a8a;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:12px;font-size:12px;line-height:1.5;text-align:left;">
-                If you did not request this, you can ignore this message. The link only applies to the address shown above.
-              </div>
-            </td>
-          </tr>
-          <!-- FOOTER -->
-          <tr>
-            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;font-family:Inter,sans-serif;">
-              <div style="font-size:12px;color:#475569;line-height:1.8;">
-                📧 <a href="mailto:relifishstore@gmail.com" style="color:#0066cc;text-decoration:none;">relifishstore@gmail.com</a>
-              </div>
-              <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
-                <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a> · © 2026 Relifish
-              </div>
-            </td>
-          </tr>
-        </table>
+      
+      <!-- Render Frame -->
+      <div style="flex: 1; background: #eef2f7; border: 1px solid var(--border); border-radius: var(--radius-lg); display: flex; justify-content: center; align-items: flex-start; padding: 24px; min-height: 600px; overflow-y: auto;">
+        <iframe id="email-preview-iframe" style="width: 100%; max-width: 560px; height: 680px; border: none; background: #ffffff; border-radius: 12px; box-shadow: var(--shadow-lg); transition: max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto;"></iframe>
       </div>
+      
     </div>
   </div>
+
+  <style>
+    .email-type-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      color: var(--ink2);
+      font: 600 12px/1.4 Inter, sans-serif;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .email-type-btn:hover {
+      background: var(--bg3);
+      color: var(--brand);
+    }
+    .email-type-btn.active {
+      background: var(--brand-l);
+      border-color: var(--brand-m);
+      color: var(--brand);
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+
+  <!-- client-side email compiler script -->
+  <script>
+    // ── Email Branded Templates Compiler (Browser Sandbox) ─────────────────
+    const BRAND_BLUE = "#0066cc";
+    const BRAND_DARK = "#0a0f1a";
+    const BRAND_LIGHT_BLUE = "#66b3ff";
+    const BRAND_ORANGE = "#ff6b35";
+    const BRAND_SURFACE = "#f8fafc";
+    const SUPPORT_EMAIL = "relifishstore@gmail.com";
+    const SUPPORT_PHONE = "+91 9152207607";
+
+    function capitalizeFishName(name) {
+      const value = String(name || "").trim();
+      if (!value) return "Fish";
+      return value
+        .toLowerCase()
+        .split(/\s+/)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+    }
+
+    function formatQtyForEmail(quantity, quantityUnit, bundleSize, bundleCount) {
+      const unit = quantityUnit || "kg";
+      const bs = bundleSize && bundleSize > 1 ? Math.floor(bundleSize) : null;
+      const bc = bundleCount && bundleCount > 0 ? Math.round(bundleCount) : null;
+      if (bs && bc) {
+        return `${bc} pack${bc > 1 ? "s" : ""} × ${bs} ${unit}`;
+      }
+      return `${quantity} ${unit}`;
+    }
+
+    function summaryRow(label, value, isTotal = false) {
+      return `<tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:${isTotal ? "#0f172a" : "#667085"};font-weight:${isTotal ? "700" : "500"};">${label}</td>
+        <td align="right" style="padding:10px 0;border-bottom:1px solid #e8edf5;font-size:14px;color:#0f172a;font-weight:${isTotal ? "800" : "600"};">${value}</td>
+      </tr>`;
+    }
+
+    function orderSummaryTable(rows) {
+      return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e8edf5;border-radius:12px;background:${BRAND_SURFACE};padding:14px 16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+        ${rows}
+      </table>`;
+    }
+
+    function calloutBox(content, tone = "note") {
+      const styles = tone === "warning"
+        ? "background:#fff7ed;border-left:3px solid #fb923c;color:#7c2d12;"
+        : "background:#f5f8ff;border-left:3px solid #93c5fd;color:#1e3a8a;";
+      return `<div style="${styles}border-radius:0 10px 10px 0;padding:12px 14px;margin-top:12px;font-size:13px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">${content}</div>`;
+    }
+
+    function noteLines(cutStyle, buyerNotes) {
+      const lines = [];
+      if (cutStyle) lines.push(`Cut preference: <strong>${cutStyle}</strong>`);
+      if (buyerNotes) lines.push(`Buyer notes: ${buyerNotes}`);
+      return lines.join("<br>");
+    }
+
+    function transactionIntro(eyebrow, title, subtitle) {
+      return `<div style="margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">${eyebrow}</div>
+        <h1 style="font-size:22px;line-height:1.25;margin:6px 0 6px;color:#0f172a;">${title}</h1>
+        <p style="font-size:14px;line-height:1.55;color:#475467;margin:0;">${subtitle}</p>
+      </div>`;
+    }
+
+    function orderIntro(title, subtitle) {
+      return transactionIntro("Order update", title, subtitle);
+    }
+
+    function orderStatusHeader(statusLabel) {
+      return `<div style="text-align:center;margin-bottom:14px;">
+          ${statusBadge(statusLabel, statusColor(statusLabel))}
+        </div>`;
+    }
+
+    function ctaButton(text, href) {
+      return `<a href="${href}" style="display:inline-block;background:${BRAND_BLUE};color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:14px;letter-spacing:0.2px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">${text}</a>`;
+    }
+
+    function statusBadge(label, color) {
+      return `<div style="display:inline-block;background:${color};color:#ffffff;padding:7px 16px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.35px;text-transform:uppercase;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">${label}</div>`;
+    }
+
+    function statusColor(label) {
+      if (label.includes("Declined") || label.includes("Cancelled")) return "#dc3545";
+      if (label.includes("Confirmed") || label.includes("Completed") || label.includes("Picked Up")) return "#28a745";
+      if (label.includes("Ready") || label.includes("Delivery")) return BRAND_ORANGE;
+      if (label.includes("Scheduled")) return "#1565c0";
+      if (label.includes("Pre-order")) return "#7c4dff";
+      return BRAND_BLUE;
+    }
+
+    const IST = { timeZone: "Asia/Kolkata" };
+    function fmtDateTimeFullIST(d) {
+      if (!d) return "";
+      try {
+        const dateObj = new Date(d);
+        const dateStr = dateObj.toLocaleDateString("en-IN", { ...IST, day: "numeric", month: "short" });
+        const timeStr = dateObj.toLocaleTimeString("en-IN", { ...IST, hour: "2-digit", minute: "2-digit" });
+        return `${dateStr} at ${timeStr}`;
+      } catch(e) {
+        return String(d);
+      }
+    }
+    
+    function fmtDateTimeIST(d) {
+      if (!d) return "";
+      try {
+        return new Date(d).toLocaleString("en-IN", { ...IST, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+      } catch(e) {
+        return String(d);
+      }
+    }
+
+    function shell(content) {
+      return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#eef2f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2f7;padding:20px 10px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="width:100%;max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
+        <!-- HEADER -->
+        <tr>
+          <td style="background:linear-gradient(135deg,${BRAND_DARK},#111a2a);padding:24px 28px;text-align:center;">
+            <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
+            <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
+          </td>
+        </tr>
+        <!-- BODY -->
+        <tr>
+          <td style="padding:26px 24px 20px;">
+            ${content}
+          </td>
+        </tr>
+        <!-- FOOTER -->
+        <tr>
+          <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;">
+            <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px;">Need help?</div>
+            <div style="font-size:12px;color:#475569;line-height:1.8;text-align:center;">
+              📧 <a href="mailto:${SUPPORT_EMAIL}" style="color:#0066cc;text-decoration:none;">${SUPPORT_EMAIL}</a>
+              &nbsp;&nbsp;·&nbsp;&nbsp;
+              📞 <a href="tel:+919152207607" style="color:#0066cc;text-decoration:none;">${SUPPORT_PHONE}</a>
+            </div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.6;text-align:center;">
+              <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a>
+              &nbsp;·&nbsp; © ${new Date().getFullYear()} Relifish. All rights reserved.
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+    }
+
+    // ── Template Generators ──────────────────────────────────────────────────
+    
+    function orderEmailBuyer(args) {
+      const {
+        statusLabel, species, quantity, quantity_unit,
+        totalAmount, deliveryFee = 0, orderId, scheduled_for,
+        buyerNotes, cutStyle, bundleSize, bundleCount, pricingLabel,
+      } = args;
+
+      const fishName = capitalizeFishName(species);
+      const orderIdShort = orderId ? orderId.substring(0, 8) : "";
+      const qtyText = formatQtyForEmail(quantity, quantity_unit, bundleSize, bundleCount);
+      const subtotal = Math.max(0, totalAmount - deliveryFee);
+      
+      const rows = [
+        summaryRow("Fish", fishName),
+        summaryRow("Quantity", qtyText),
+        pricingLabel ? summaryRow("Pack", pricingLabel) : "",
+        args.isPreorder && args.preorderMin && args.preorderMax && args.preorderMin !== args.preorderMax
+          ? summaryRow("Price estimate", `₹${args.preorderMin.toLocaleString("en-IN")}–₹${args.preorderMax.toLocaleString("en-IN")}`)
+          : "",
+        deliveryFee > 0 ? summaryRow("Subtotal", `₹${subtotal.toLocaleString("en-IN")}`) : "",
+        deliveryFee > 0 ? summaryRow("Delivery fee", `₹${deliveryFee.toLocaleString("en-IN")}`) : "",
+        summaryRow(args.isPreorder ? "Est. Max Total" : "Total", `₹${totalAmount.toLocaleString("en-IN")}`, true),
+        scheduled_for ? summaryRow("Scheduled for", fmtDateTimeFullIST(scheduled_for)) : "",
+        orderIdShort ? summaryRow("Order ID", `#${orderIdShort.toUpperCase()}`) : "",
+      ].join("");
+      
+      const notes = noteLines(cutStyle, buyerNotes);
+
+      return shell(`
+        ${orderStatusHeader(statusLabel)}
+        ${orderIntro(
+          args.isPreorder ? `${fishName} pre-order` : `${fishName} order update`,
+          args.isPreorder
+            ? "Your pre-order for tomorrow's catch has been placed. The final price depends on tomorrow's availability — you will only be charged up to the max estimate shown."
+            : "Your order status has changed. You can track every step in the app with live updates."
+        )}
+        ${orderSummaryTable(rows)}
+        ${notes ? calloutBox(notes, "warning") : ""}
+        <div style="text-align:center;margin-top:18px;">
+          ${ctaButton("Track Order →", "https://www.relifish.store/track")}
+        </div>
+      `);
+    }
+
+    function orderEmailSeller(args) {
+      const {
+        statusLabel, species, quantity, quantity_unit,
+        totalAmount, deliveryFee = 0, orderId, scheduled_for,
+        buyerNotes, cutStyle, buyerPhone, bundleSize, bundleCount, pricingLabel,
+      } = args;
+
+      const fishName = capitalizeFishName(species);
+      const orderIdShort = orderId ? orderId.substring(0, 8) : "";
+      const qtyText = formatQtyForEmail(quantity, quantity_unit, bundleSize, bundleCount);
+      const subtotal = Math.max(0, totalAmount - deliveryFee);
+
+      const rows = [
+        summaryRow("Fish", fishName),
+        summaryRow("Quantity", qtyText),
+        pricingLabel ? summaryRow("Pack", pricingLabel) : "",
+        args.isPreorder && args.preorderMin && args.preorderMax && args.preorderMin !== args.preorderMax
+          ? summaryRow("Price estimate", `₹${args.preorderMin.toLocaleString("en-IN")}–₹${args.preorderMax.toLocaleString("en-IN")}`)
+          : "",
+        deliveryFee > 0 ? summaryRow("Subtotal", `₹${subtotal.toLocaleString("en-IN")}`) : "",
+        deliveryFee > 0 ? summaryRow("Delivery fee", `₹${deliveryFee.toLocaleString("en-IN")}`) : "",
+        summaryRow(args.isPreorder ? "Max Order value" : "Order value", `₹${totalAmount.toLocaleString("en-IN")}`, true),
+        scheduled_for ? summaryRow("Scheduled for", fmtDateTimeFullIST(scheduled_for)) : "",
+        orderIdShort ? summaryRow("Order ID", `#${orderIdShort.toUpperCase()}`) : "",
+        buyerPhone ? summaryRow("Buyer", `***${String(buyerPhone).slice(-4)}`) : "",
+      ].join("");
+      
+      const notes = noteLines(cutStyle, buyerNotes);
+
+      return shell(`
+        ${orderStatusHeader(statusLabel)}
+        ${orderIntro(
+          args.isPreorder ? `${fishName} pre-order needs attention` : `${fishName} order needs attention`,
+          args.isPreorder 
+            ? "A customer placed a pre-order for tomorrow's catch. Confirm it in your dashboard — you can update the final price once the catch arrives tomorrow morning."
+            : "A customer order moved to a new state. Review the card below and take the next action from your dashboard."
+        )}
+        ${orderSummaryTable(rows)}
+        ${notes ? calloutBox(notes, "warning") : ""}
+        <div style="text-align:center;margin-top:18px;">
+          ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
+        </div>
+      `);
+    }
+
+    function paymentProofReceivedEmailSeller(args) {
+      const fishName = capitalizeFishName(args.species);
+      const id = args.orderIdShort.toUpperCase();
+      const greet = args.sellerName ? `Hi ${String(args.sellerName).trim()},` : "Hi,";
+      return shell(`
+        ${transactionIntro(
+          "Action needed",
+          "Payment screenshot received",
+          `${greet} a buyer uploaded UPI payment proof for <strong>${fishName}</strong> (order <strong>#${id}</strong>). Open your dashboard to verify payment before confirming.`
+        )}
+        <div style="text-align:center;margin-top:18px;">
+          ${ctaButton("Review in dashboard →", "https://www.relifish.store/dashboard/orders")}
+        </div>
+      `);
+    }
+
+    function verifyEmailTemplate(email, verifyUrl) {
+      return shell(`
+        <div style="text-align:center;margin-bottom:8px;font-size:36px;line-height:1;">✉️</div>
+        ${transactionIntro(
+          "Account",
+          "Verify your email",
+          `Use the button below to confirm <strong style="color:#0f172a;">${email}</strong> on your Relifish profile. You will get order updates at this address when you opt in.`
+        )}
+        <div style="text-align:center;margin:22px 0;">
+          ${ctaButton("Verify email", verifyUrl)}
+        </div>
+        ${calloutBox(
+          "If you did not request this, you can ignore this message. The link only applies to the address shown above.",
+          "note"
+        )}
+      `);
+    }
+
+    function proofUploadedEmailBuyer(args) {
+      const fishName = capitalizeFishName(args.species);
+      const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+      return shell(`
+        ${orderStatusHeader("Proof received")}
+        ${orderIntro(
+          `${fishName} — payment proof received`,
+          "Your payment screenshot was uploaded successfully. The seller will verify and confirm your order shortly."
+        )}
+        ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:#64748b;">Order #${orderIdShort}</div>` : ""}
+        <div style="text-align:center;margin-top:18px;">
+          ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
+        </div>
+      `);
+    }
+
+    function paymentVerifiedEmailBuyer(args) {
+      const fishName = capitalizeFishName(args.species);
+      const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+      return shell(`
+        ${orderStatusHeader("Payment Verified")}
+        ${orderIntro(
+          `${fishName} — payment verified & confirmed`,
+          "The seller has verified your payment. Your order is confirmed and being prepared."
+        )}
+        ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:#64748b;">Order #${orderIdShort}</div>` : ""}
+        <div style="text-align:center;margin-top:18px;">
+          ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
+        </div>
+      `);
+    }
+
+    function paymentVerifiedEmailSeller(args) {
+      const fishName = capitalizeFishName(args.species);
+      const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+      const greet = args.sellerName ? `Hi ${String(args.sellerName).trim()},` : "Hi,";
+      return shell(`
+        ${transactionIntro(
+          "Payment Verified",
+          "Order confirmed",
+          `${greet} you verified the payment for <strong>${fishName}</strong>${orderIdShort ? ` (order <strong>#${orderIdShort}</strong>)` : ""}. The order is now confirmed — prepare and fulfill when ready.`
+        )}
+        <div style="text-align:center;margin-top:18px;">
+          ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
+        </div>
+      `);
+    }
+
+    function refundSentEmailBuyer(args) {
+      const fishName = capitalizeFishName(args.species);
+      const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+      return shell(`
+        ${orderStatusHeader("Refund Sent")}
+        ${orderIntro(
+          `${fishName} — refund on the way`,
+          "The seller has marked your refund as sent via UPI. It typically reflects within 1–3 business days."
+        )}
+        ${args.refundNote ? calloutBox(`Seller note: ${args.refundNote}`, "note") : ""}
+        ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:#64748b;">Order #${orderIdShort}</div>` : ""}
+        <div style="text-align:center;margin-top:18px;">
+          ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
+        </div>
+      `);
+    }
+
+    function refundSentEmailSeller(args) {
+      const fishName = capitalizeFishName(args.species);
+      const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
+      const greet = args.sellerName ? `Hi ${String(args.sellerName).trim()},` : "Hi,";
+      return shell(`
+        ${transactionIntro(
+          "Refund Marked Sent",
+          "Refund confirmation",
+          `${greet} you marked the refund for <strong>${fishName}</strong>${orderIdShort ? ` (order <strong>#${orderIdShort}</strong>)` : ""} as sent. The buyer will receive it within 1–3 business days.`
+        )}
+        <div style="text-align:center;margin-top:18px;">
+          ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
+        </div>
+      `);
+    }
+
+    function razorpayReceiptEmail(args) {
+      const {
+        line_items,
+        delivery_fee,
+        order_type,
+        seller_name,
+        seller_location,
+        buyer_addr,
+        scheduled_for,
+        razorpay_payment_id,
+        paid_at,
+        primary_order_id,
+      } = args;
+
+      const safeItems = (Array.isArray(line_items) ? line_items : []).filter(
+        (i) => i && i.order_id && i.species
+      );
+      if (safeItems.length === 0) return "Empty receipt items!";
+
+      const safeSeller = String(seller_name || "Your seller").trim() || "Your seller";
+      const safeLocation = seller_location ? String(seller_location).trim() : null;
+      const safeDeliveryFee = Math.max(0, Number(delivery_fee) || 0);
+      const isDelivery = order_type === "delivery";
+      const safePaymentId = String(razorpay_payment_id || "").trim();
+      const safePaidAt = paid_at ? fmtDateTimeIST(paid_at) : fmtDateTimeIST(new Date());
+      const safeOrderId = String(primary_order_id || "").slice(0, 8).toUpperCase();
+      const safeScheduled = scheduled_for ? fmtDateTimeFullIST(scheduled_for) : null;
+      const safeBuyerAddr = buyer_addr ? String(buyer_addr).trim() : null;
+
+      const subtotal = safeItems.reduce((s, i) => s + Math.max(0, Number(i.total_price) || 0), 0);
+      const grandTotal = subtotal + safeDeliveryFee;
+
+      const itemRows = safeItems.map((item) => {
+        const name = capitalizeFishName(item.species);
+        const qty = formatQtyForEmail(Number(item.quantity) || 0, item.quantity_unit || "kg", item.bundle_size, item.bundle_count);
+        const price = Math.max(0, Number(item.total_price) || 0);
+        const extras = [];
+        if (item.cut_style) extras.push(`✂️ ${String(item.cut_style).trim()}`);
+        if (item.buyer_notes) extras.push(`📝 ${String(item.buyer_notes).slice(0, 120)}`);
+        return `<tr>
+          <td style="padding:10px 0;border-bottom:1px solid #e8edf5;vertical-align:top;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+            <div style="font-size:14px;font-weight:700;color:#0f172a;text-transform:capitalize;">${name}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;">${qty}</div>
+            ${extras.length ? `<div style="font-size:11px;color:#64748b;margin-top:3px;line-height:1.4;">${extras.join(" &nbsp;·&nbsp; ")}</div>` : ""}
+          </td>
+          <td align="right" style="padding:10px 0;border-bottom:1px solid #e8edf5;font-size:14px;font-weight:700;color:#0f172a;vertical-align:top;white-space:nowrap;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+            ₹${price.toLocaleString("en-IN")}
+          </td>
+        </tr>`;
+      }).join("");
+
+      const totalRows = [
+        safeDeliveryFee > 0
+          ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#64748b;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">Subtotal</td>
+              <td align="right" style="padding:6px 0;font-size:13px;color:#0f172a;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">₹${subtotal.toLocaleString("en-IN")}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#64748b;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">Delivery fee</td>
+              <td align="right" style="padding:6px 0;font-size:13px;color:#0f172a;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">₹${safeDeliveryFee.toLocaleString("en-IN")}</td>
+            </tr>`
+          : "",
+        `<tr>
+          <td style="padding:10px 0 0;font-size:15px;font-weight:800;color:#0f172a;border-top:2px solid #0066cc;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">Total Paid</td>
+          <td align="right" style="padding:10px 0 0;font-size:16px;font-weight:800;color:#0066cc;border-top:2px solid #0066cc;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">₹${grandTotal.toLocaleString("en-IN")}</td>
+        </tr>`,
+      ].join("");
+
+      const fulfilmentBlock = isDelivery
+        ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-top:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+            <div style="font-size:12px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🚲 Delivery Details</div>
+            ${safeBuyerAddr ? `<div style="font-size:13px;color:#1e40af;font-weight:600;margin-bottom:2px;">📍 ${safeBuyerAddr}</div>` : ""}
+            ${safeScheduled
+              ? `<div style="font-size:13px;color:#1e40af;">🕐 Scheduled: ${safeScheduled}</div>`
+              : `<div style="font-size:13px;color:#1e40af;">Your order will be delivered after the seller confirms.</div>`}
+          </div>`
+        : `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin-top:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+            <div style="font-size:12px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧊 Pickup Details</div>
+            <div style="font-size:13px;color:#166534;font-weight:600;margin-bottom:2px;">📍 ${safeSeller}${safeLocation ? ` — ${safeLocation}` : ""}</div>
+            ${safeScheduled
+              ? `<div style="font-size:13px;color:#166534;">🕐 Pickup slot: ${safeScheduled}</div>`
+              : `<div style="font-size:13px;color:#166534;">Seller will notify you when your order is ready for pickup.</div>`}
+          </div>`;
+
+      const orderMeta = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+        <tr>
+          <td style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;">Order ID</td>
+          <td style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;text-align:center;">Date &amp; Time</td>
+          <td style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;text-align:right;">Type</td>
+        </tr>
+        <tr>
+          <td style="font-size:13px;font-weight:700;color:#0f172a;">#${safeOrderId}</td>
+          <td style="font-size:12px;font-weight:600;color:#0f172a;text-align:center;">${safePaidAt}</td>
+          <td style="font-size:13px;font-weight:700;color:#0f172a;text-align:right;">${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</td>
+        </tr>
+      </table>`;
+
+      const sellerBlock = `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+        <span style="font-size:22px;line-height:1;vertical-align:middle;">🎣</span>
+        <span style="font-size:13px;font-weight:700;color:#0f172a;vertical-align:middle;margin-left:10px;">${safeSeller}</span>
+        ${safeLocation ? `<div style="font-size:11px;color:#64748b;margin-top:4px;padding-left:32px;">📍 ${safeLocation}</div>` : ""}
+      </div>`;
+
+      const paymentBlock = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-top:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+        <span style="font-size:22px;line-height:1;vertical-align:middle;">✅</span>
+        <span style="font-size:12px;font-weight:700;color:#15803d;vertical-align:middle;margin-left:10px;">Paid via Razorpay</span>
+        ${safePaymentId ? `<div style="font-size:10px;color:#64748b;font-family:monospace;margin-top:4px;padding-left:32px;">${safePaymentId}</div>` : ""}
+      </div>`;
+
+      return shell(`
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="display:inline-block;background:#059669;color:#fff;padding:7px 18px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">✓ Payment Confirmed</div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">Payment Receipt</div>
+        <h1 style="font-size:20px;line-height:1.25;margin:0 0 4px;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">Your order is confirmed</h1>
+        <p style="font-size:14px;line-height:1.55;color:#475467;margin:0 0 18px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">Here's your receipt. Track your order in the app for live updates.</p>
+
+        ${orderMeta}
+        ${sellerBlock}
+
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">Items Ordered</div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+          style="border:1px solid #e8edf5;border-radius:12px;background:#f8fafc;padding:0 16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+          ${itemRows}
+          <tr><td colspan="2" style="padding:10px 0 0;">${totalRows}</td></tr>
+        </table>
+
+        ${paymentBlock}
+        ${fulfilmentBlock}
+
+        <div style="text-align:center;margin-top:20px;">
+          ${ctaButton("Track Order →", `https://www.relifish.store/track/${primary_order_id}`)}
+        </div>
+
+        <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:18px;line-height:1.8;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+          This is a payment receipt, not a tax invoice.
+        </div>
+      `);
+    }
+
+    // ── State & Interactive Logic ───────────────────────────────────────────
+    const state = {
+      activeTemplate: 'buyer-order',
+      
+      // Values
+      species: 'Surmai (King Fish)',
+      quantity: 1.5,
+      quantityUnit: 'kg',
+      isPreorder: false,
+      preorderMin: 900,
+      preorderMax: 1050,
+      deliveryFee: 50,
+      totalAmount: 1025,
+      scheduledFor: '2026-05-24T10:30:00',
+      buyerNotes: 'Please send medium thick slices.',
+      cutStyle: 'Steaks (sliced)',
+      bundleSize: 0,
+      bundleCount: 0,
+      pricingLabel: '',
+      
+      statusLabel: 'Order Confirmed',
+      buyerPhone: '9876543210',
+      sellerName: 'Kamla Tai Fish Stall',
+      sellerLocation: 'Sassoon Dock, Colaba',
+      buyerAddr: 'Flat 402, Sea Breeze Apts, Bandra West',
+      refundNote: 'Adjusted for actual weight delivered (1.2 kg instead of 1.5 kg).',
+      razorpayPaymentId: 'pay_P9F8D8J2D3',
+      paidAt: '2026-05-23T12:00:00',
+      orderId: '9B4D8D7F',
+      verifyEmail: 'priya@example.com',
+      verifyUrl: 'https://www.relifish.store/verify?token=xyz123',
+      
+      receiptItemsType: 'single',
+      fulfillmentType: 'delivery',
+    };
+
+    const templateMeta = {
+      'buyer-order': {
+        title: "Buyer Order Update",
+        desc: "Interactive status updates sent to the buyer. Supports standard purchases, custom prep cuts, notes, or tomorrow's fresh catch pre-orders."
+      },
+      'seller-order': {
+        title: "Seller Order Alert",
+        desc: "Urgent alerts sent to the seller dashboard when new orders arrive, or when tomorrow's catch needs price adjustments."
+      },
+      'payment-proof-seller': {
+        title: "Payment Proof Received (Seller Alert)",
+        desc: "Notification alerting a seller when a buyer uploads an offline UPI payment proof screenshot so they can confirm verification."
+      },
+      'proof-uploaded-buyer': {
+        title: "Proof Uploaded Receipt (Buyer)",
+        desc: "Confirmation receipt delivered to the buyer right after uploading a payment proof image to reassure them."
+      },
+      'payment-verified-buyer': {
+        title: "Payment Verified (Buyer Confirmation)",
+        desc: "Sent to the buyer as soon as the seller approves payment, notifying them preparation is underway."
+      },
+      'payment-verified-seller': {
+        title: "Payment Verified Alert (Seller)",
+        desc: "Seller dashboard notification confirming verification status is finalized."
+      },
+      'refund-buyer': {
+        title: "Refund Sent Notification (Buyer)",
+        desc: "Sent to the buyer when a seller completes a partial or full UPI refund transaction, including specific seller notes."
+      },
+      'refund-seller': {
+        title: "Refund Processed Alert (Seller)",
+        desc: "Seller-facing summary confirming the UPI refund status is successfully tracked in the database."
+      },
+      'razorpay-receipt': {
+        title: "Razorpay Checkout Receipt (Buyer)",
+        desc: "Detailed transactional receipt sent upon Razorpay checkout. Supports multi-item shopping baskets, fulfillment options, slots, and fees."
+      },
+      'verify-email': {
+        title: "Verify Email (Account Verification)",
+        desc: "Double opt-in onboarding email verification button to secure buyer accounts."
+      }
+    };
+
+    function setTemplate(tpl) {
+      state.activeTemplate = tpl;
+      
+      // Update active nav class
+      document.querySelectorAll('.email-type-btn').forEach(btn => {
+        if (btn.getAttribute('data-template') === tpl) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      
+      // Update header
+      document.getElementById('current-template-title').textContent = templateMeta[tpl].title;
+      document.getElementById('current-template-desc').textContent = templateMeta[tpl].desc;
+      
+      // Build dynamic sidebar controls
+      buildControls();
+      
+      // Compile & render
+      render();
+    }
+
+    function handleFieldChange(field, val) {
+      if (field === 'isPreorder') {
+        state.isPreorder = !!val;
+        // Adjust status if needed
+        if (state.isPreorder && (state.statusLabel === 'Order Confirmed' || state.statusLabel === 'Order Placed')) {
+          state.statusLabel = 'Pre-order Placed';
+        }
+      } else {
+        state[field] = val;
+      }
+      
+      // If pre-order status is selected, auto check preorder checkbox if present
+      if (field === 'statusLabel') {
+        if (val.includes('Pre-order')) {
+          state.isPreorder = true;
+          const chk = document.getElementById('chk-isPreorder');
+          if (chk) chk.checked = true;
+        } else {
+          state.isPreorder = false;
+          const chk = document.getElementById('chk-isPreorder');
+          if (chk) chk.checked = false;
+        }
+        buildControls(); // rebuild parameters layout
+      }
+      
+      render();
+    }
+
+    function buildControls() {
+      const container = document.getElementById('dynamic-params-container');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      const tpl = state.activeTemplate;
+      
+      // Helper functions to generate fields
+      const input = (label, field, type="text", placeholder="") => `
+        <div class="param-group">
+          <label class="v2-label" style="font-size: 11px; margin-bottom: 2px;">${label}</label>
+          <input class="v2-input" type="${type}" style="padding: 6px 10px; font-size: 12px; border-radius: var(--radius-sm);" 
+            value="${state[field]}" placeholder="${placeholder}" oninput="handleFieldChange('${field}', this.value)">
+        </div>`;
+        
+      const select = (label, field, options) => {
+        const optionElems = options.map(o => `<option value="${o.value}" ${state[field] === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+        return `
+          <div class="param-group">
+            <label class="v2-label" style="font-size: 11px; margin-bottom: 2px;">${label}</label>
+            <select class="v2-select" style="padding: 6px 10px; font-size: 12px; border-radius: var(--radius-sm); height: 32px;" 
+              onchange="handleFieldChange('${field}', this.value)">
+              ${optionElems}
+            </select>
+          </div>`;
+      };
+      
+      const checkbox = (label, field, id="chk-" + field) => `
+        <div class="param-group" style="margin: 4px 0;">
+          <label class="param-checkbox" style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            <input type="checkbox" id="${id}" ${state[field] ? 'checked' : ''} 
+              onchange="handleFieldChange('${field}', this.checked)">
+            ${label}
+          </label>
+        </div>`;
+
+      // ── Build Inputs list based on template ──────────────────────────────
+      if (tpl === 'buyer-order' || tpl === 'seller-order') {
+        container.innerHTML += select("Fulfillment Status", "statusLabel", [
+          { value: "Pre-order Placed", label: "Pre-order Placed" },
+          { value: "Order Placed", label: "Order Placed" },
+          { value: "Order Confirmed", label: "✓ Order Confirmed" },
+          { value: "Ready for Pickup", label: "🧊 Ready for Pickup" },
+          { value: "Out for Delivery", label: "🚲 Out for Delivery" },
+          { value: "Completed", label: "✓ Completed" },
+          { value: "Picked Up", label: "🧊 Picked Up" },
+          { value: "Cancelled", label: "❌ Cancelled" },
+          { value: "Declined", label: "❌ Declined" },
+        ]);
+        container.innerHTML += checkbox("Is Pre-order tomorrow catch", "isPreorder");
+        
+        if (state.isPreorder) {
+          container.innerHTML += input("Pre-order Min Estimate (₹)", "preorderMin", "number");
+          container.innerHTML += input("Pre-order Max Estimate (₹)", "preorderMax", "number");
+        }
+        
+        container.innerHTML += input("Fish Name / Product", "species");
+        container.innerHTML += input("Quantity Value", "quantity", "number");
+        container.innerHTML += input("Quantity Unit (kg/pack)", "quantityUnit");
+        container.innerHTML += input("Pricing Pack / Bundle Label (optional)", "pricingLabel", "text", "e.g. 1 pack x 500g");
+        container.innerHTML += input("Subtotal / Total (₹)", "totalAmount", "number");
+        container.innerHTML += input("Delivery Fee (₹)", "deliveryFee", "number");
+        container.innerHTML += input("Scheduled Slots (e.g. DateTime)", "scheduledFor", "datetime-local");
+        container.innerHTML += input("Cut Preference", "cutStyle");
+        container.innerHTML += input("Notes / Instructions", "buyerNotes");
+        container.innerHTML += input("Order ID", "orderId");
+        
+        if (tpl === 'seller-order') {
+          container.innerHTML += input("Buyer Phone No", "buyerPhone");
+        }
+        
+      } else if (tpl === 'payment-proof-seller') {
+        container.innerHTML += input("Seller Name", "sellerName");
+        container.innerHTML += input("Fish Name / Product", "species");
+        container.innerHTML += input("Order ID", "orderId");
+        
+      } else if (tpl === 'proof-uploaded-buyer' || tpl === 'payment-verified-buyer') {
+        container.innerHTML += input("Fish Name / Product", "species");
+        container.innerHTML += input("Order ID", "orderId");
+        
+      } else if (tpl === 'payment-verified-seller') {
+        container.innerHTML += input("Seller Name", "sellerName");
+        container.innerHTML += input("Fish Name / Product", "species");
+        container.innerHTML += input("Order ID", "orderId");
+        
+      } else if (tpl === 'refund-buyer') {
+        container.innerHTML += input("Fish Name / Product", "species");
+        container.innerHTML += input("Order ID", "orderId");
+        container.innerHTML += input("Refund Note", "refundNote");
+        
+      } else if (tpl === 'refund-seller') {
+        container.innerHTML += input("Seller Name", "sellerName");
+        container.innerHTML += input("Fish Name / Product", "species");
+        container.innerHTML += input("Order ID", "orderId");
+        
+      } else if (tpl === 'razorpay-receipt') {
+        container.innerHTML += select("Basket Type", "receiptItemsType", [
+          { value: "single", label: "Single Item (Surmai)" },
+          { value: "multi", label: "Multi-item Basket (Surmai + Pomfret + Prawns)" }
+        ]);
+        container.innerHTML += select("Fulfillment Type", "fulfillmentType", [
+          { value: "delivery", label: "🚲 Delivery" },
+          { value: "pickup", label: "🧊 Pickup" }
+        ]);
+        container.innerHTML += input("Seller Name", "sellerName");
+        container.innerHTML += input("Seller Location", "sellerLocation");
+        
+        if (state.fulfillmentType === 'delivery') {
+          container.innerHTML += input("Buyer Delivery Address", "buyerAddr");
+          container.innerHTML += input("Delivery Fee (₹)", "deliveryFee", "number");
+        }
+        
+        container.innerHTML += input("Scheduled Time", "scheduledFor", "datetime-local");
+        container.innerHTML += input("Razorpay Payment ID", "razorpayPaymentId");
+        container.innerHTML += input("Paid At Timestamp", "paidAt", "datetime-local");
+        container.innerHTML += input("OrderId", "orderId");
+        
+      } else if (tpl === 'verify-email') {
+        container.innerHTML += input("Verify Target Email", "verifyEmail");
+        container.innerHTML += input("Verify URL", "verifyUrl");
+      }
+    }
+
+    function render() {
+      let html = '';
+      const qty = Number(state.quantity) || 0;
+      const isPre = !!state.isPreorder;
+
+      switch(state.activeTemplate) {
+        case 'buyer-order':
+          html = orderEmailBuyer({
+            statusLabel: state.statusLabel,
+            species: state.species,
+            quantity: qty,
+            quantity_unit: state.quantityUnit,
+            totalAmount: Number(state.totalAmount),
+            deliveryFee: Number(state.deliveryFee),
+            orderId: state.orderId,
+            scheduled_for: state.scheduledFor || null,
+            buyerNotes: state.buyerNotes || null,
+            cutStyle: state.cutStyle || null,
+            isPreorder: isPre,
+            preorderMin: isPre ? Number(state.preorderMin) : null,
+            preorderMax: isPre ? Number(state.preorderMax) : null,
+            bundleSize: Number(state.bundleSize) || null,
+            bundleCount: Number(state.bundleCount) || null,
+            pricingLabel: state.pricingLabel || null,
+          });
+          break;
+
+        case 'seller-order':
+          html = orderEmailSeller({
+            statusLabel: state.statusLabel,
+            species: state.species,
+            quantity: qty,
+            quantity_unit: state.quantityUnit,
+            totalAmount: Number(state.totalAmount),
+            deliveryFee: Number(state.deliveryFee),
+            orderId: state.orderId,
+            scheduled_for: state.scheduledFor || null,
+            buyerNotes: state.buyerNotes || null,
+            cutStyle: state.cutStyle || null,
+            isPreorder: isPre,
+            preorderMin: isPre ? Number(state.preorderMin) : null,
+            preorderMax: isPre ? Number(state.preorderMax) : null,
+            bundleSize: Number(state.bundleSize) || null,
+            bundleCount: Number(state.bundleCount) || null,
+            pricingLabel: state.pricingLabel || null,
+            buyerPhone: state.buyerPhone || null,
+          });
+          break;
+
+        case 'payment-proof-seller':
+          html = paymentProofReceivedEmailSeller({
+            species: state.species,
+            orderIdShort: state.orderId.substring(0, 8),
+            sellerName: state.sellerName,
+          });
+          break;
+
+        case 'proof-uploaded-buyer':
+          html = proofUploadedEmailBuyer({
+            species: state.species,
+            orderId: state.orderId,
+          });
+          break;
+
+        case 'payment-verified-buyer':
+          html = paymentVerifiedEmailBuyer({
+            species: state.species,
+            orderId: state.orderId,
+          });
+          break;
+
+        case 'payment-verified-seller':
+          html = paymentVerifiedEmailSeller({
+            species: state.species,
+            orderId: state.orderId,
+            sellerName: state.sellerName,
+          });
+          break;
+
+        case 'refund-buyer':
+          html = refundSentEmailBuyer({
+            species: state.species,
+            orderId: state.orderId,
+            refundNote: state.refundNote,
+          });
+          break;
+
+        case 'refund-seller':
+          html = refundSentEmailSeller({
+            species: state.species,
+            orderId: state.orderId,
+            sellerName: state.sellerName,
+          });
+          break;
+
+        case 'razorpay-receipt':
+          let lineItems = [];
+          if (state.receiptItemsType === 'single') {
+            lineItems = [{
+              species: state.species,
+              quantity: qty,
+              quantity_unit: state.quantityUnit,
+              total_price: Number(state.totalAmount) - Number(state.deliveryFee),
+              cut_style: state.cutStyle,
+              buyer_notes: state.buyerNotes,
+              order_id: state.orderId,
+              bundle_size: Number(state.bundleSize) || null,
+              bundle_count: Number(state.bundleCount) || null,
+            }];
+          } else {
+            lineItems = [
+              {
+                species: 'Surmai (King Fish)',
+                quantity: 1.5,
+                quantity_unit: 'kg',
+                total_price: 975,
+                cut_style: 'Steaks',
+                buyer_notes: 'Medium thick slices',
+                order_id: 'ORD-8FB0D8',
+              },
+              {
+                species: 'White Pomfret',
+                quantity: 2,
+                quantity_unit: 'kg',
+                total_price: 1300,
+                cut_style: 'Whole Cleaned',
+                buyer_notes: 'Fresh',
+                order_id: 'ORD-7FA1C9',
+              },
+              {
+                species: 'Tiger Prawns',
+                quantity: 1,
+                quantity_unit: 'pack',
+                total_price: 450,
+                cut_style: 'Peeled & Deveined',
+                buyer_notes: '',
+                order_id: 'ORD-4CB2A0',
+                bundle_size: 500,
+                bundle_count: 2,
+              }
+            ];
+          }
+          html = razorpayReceiptEmail({
+            line_items: lineItems,
+            delivery_fee: Number(state.deliveryFee),
+            order_type: state.fulfillmentType || 'delivery',
+            seller_name: state.sellerName,
+            seller_location: state.sellerLocation,
+            buyer_addr: state.buyerAddr,
+            scheduled_for: state.scheduledFor || null,
+            razorpay_payment_id: state.razorpayPaymentId,
+            paid_at: state.paidAt,
+            primary_order_id: state.orderId,
+          });
+          break;
+
+        case 'verify-email':
+          html = verifyEmailTemplate(state.verifyEmail, state.verifyUrl);
+          break;
+      }
+
+      // Render inside iframe
+      const iframe = document.getElementById('email-preview-iframe');
+      if (iframe) {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+      }
+      
+      // Store current compiled HTML globally for copy action
+      state.compiledHTML = html;
+    }
+
+    function setPreviewSize(width) {
+      const iframe = document.getElementById('email-preview-iframe');
+      const deskBtn = document.getElementById('view-desktop-btn');
+      const mobBtn = document.getElementById('view-mobile-btn');
+      
+      if (iframe && deskBtn && mobBtn) {
+        iframe.style.maxWidth = width + 'px';
+        if (width === 560) {
+          deskBtn.className = "v2-btn v2-btn-primary v2-btn-sm active";
+          mobBtn.className = "v2-btn v2-btn-outline v2-btn-sm";
+        } else {
+          deskBtn.className = "v2-btn v2-btn-outline v2-btn-sm";
+          mobBtn.className = "v2-btn v2-btn-primary v2-btn-sm active";
+        }
+      }
+    }
+
+    function copyCompiledHTML() {
+      if (state.compiledHTML) {
+        navigator.clipboard.writeText(state.compiledHTML).then(() => {
+          const toast = document.getElementById('copy-toast');
+          if (toast) {
+            toast.style.display = 'block';
+            setTimeout(() => {
+              toast.style.display = 'none';
+            }, 3000);
+          }
+        });
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      buildControls();
+      render();
+    });
+  </script>
 </div>
 
 <!-- Footer -->
