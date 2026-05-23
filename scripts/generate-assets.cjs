@@ -21,6 +21,21 @@ async function run() {
     console.log('✓ flyer.pdf generated');
   }
 
+  // 1b. Single Page Flyer → PDF
+  {
+    const page = await context.newPage();
+    const flyerPath = path.resolve(__dirname, '../public/single-page-flyer.html');
+    await page.goto(`file://${flyerPath}`);
+    await page.waitForLoadState('networkidle');
+    await page.pdf({
+      path: path.resolve(__dirname, '../public/single-page-flyer.pdf'),
+      printBackground: true,
+      format: 'A5',
+    });
+    await page.close();
+    console.log('✓ single-page-flyer.pdf generated');
+  }
+
   // 2. FB Cover image (820x312)
   {
     const page = await context.newPage();
