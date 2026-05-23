@@ -2123,7 +2123,11 @@
         </div>
       </div>
       
-      <!-- Success Toast -->
+      <!-- Subject Display Card -->
+      <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-family: Inter, sans-serif;">
+        <div style="background: var(--brand-l); color: var(--brand); font: 700 10px Inter; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0;">Subject Line</div>
+        <div id="email-subject-display" style="font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;"></div>
+      </div>
       <div id="copy-toast" style="display: none; background: var(--green); color: #fff; padding: 8px 16px; border-radius: var(--radius-sm); font: 600 12px Inter; text-align: center; margin-bottom: -8px; animation: slideDown 0.2s ease;">
         ✓ HTML template code copied to clipboard successfully!
       </div>
@@ -2674,6 +2678,56 @@
       `);
     }
 
+    function getCompiledSubject() {
+      const species = capitalizeFishName(state.species || "Fish");
+      const isPre = !!state.isPreorder;
+      const statusLabel = state.statusLabel;
+
+      switch(state.activeTemplate) {
+        case 'buyer-order':
+          if (isPre) {
+            return `Pre-order placed — ${species}`;
+          }
+          return `${statusLabel} — ${species}`;
+
+        case 'seller-order':
+          if (isPre) {
+            return `New pre-order: ${species}`;
+          }
+          if (statusLabel === 'Order Placed') {
+            return `New order: ${species}`;
+          }
+          return `Order Update: ${statusLabel} — ${species}`;
+
+        case 'payment-proof-seller':
+          return `Payment screenshot received — ${species}`;
+
+        case 'proof-uploaded-buyer':
+          return `Proof received — awaiting verification · ${species}`;
+
+        case 'payment-verified-buyer':
+          return `Payment verified — ${species}`;
+
+        case 'payment-verified-seller':
+          return `Payment verified — ${species}`;
+
+        case 'refund-buyer':
+          return `Refund sent — ${species}`;
+
+        case 'refund-seller':
+          return `Refund marked sent — ${species}`;
+
+        case 'razorpay-receipt':
+          return `Payment confirmed — your Relifish order is set ✓`;
+
+        case 'verify-email':
+          return `Verify your email — Relifish`;
+
+        default:
+          return '';
+      }
+    }
+
     // ── State & Interactive Logic ───────────────────────────────────────────
     const state = {
       activeTemplate: 'buyer-order',
@@ -3095,6 +3149,12 @@
         doc.open();
         doc.write(html);
         doc.close();
+      }
+      
+      // Update Subject display in parent UI
+      const subjectDisplay = document.getElementById('email-subject-display');
+      if (subjectDisplay) {
+        subjectDisplay.textContent = getCompiledSubject();
       }
       
       // Store current compiled HTML globally for copy action
