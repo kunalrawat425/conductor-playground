@@ -37,9 +37,15 @@ const { showDashboardLink = true } = Astro.props;
     align-items: center;
   }
   .logo-img {
-    height: 40px;
+    height: 44px;
     width: auto;
     display: block;
+    transition: height 0.15s ease;
+  }
+  @media (min-width: 769px) {
+    .logo-img {
+      height: 50px;
+    }
   }
 
   .logo:hover {
