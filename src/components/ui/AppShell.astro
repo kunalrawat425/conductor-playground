@@ -168,10 +168,16 @@ const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
         width: 100%;
       }
       *, *::before, *::after { box-sizing: border-box; }
-      .v2-app { min-height: 100vh; }
+      .v2-app {
+        min-height: 100vh;
+        width: 100%;
+        max-width: var(--app-max-width);
+        margin: 0 auto;
+      }
       .v2-main {
         width: 100%;
-        margin: 0;
+        max-width: 100%;
+        margin: 0 auto;
         padding-bottom: 16px;
       }
       a { color: inherit; }
