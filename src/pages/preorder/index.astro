@@ -18,15 +18,15 @@ const species = [
 ];
 ---
 <AppShell
-  title="Pre-order · Relifish"
-  description="Pre-order tomorrow's catch from Mumbai sellers"
-  header={{ variant: "preorder", locationLabel: "Pre-order mode", locationSub: "Tomorrow's catch, reserved tonight" }}
+  title="Same-Day & Pre-Order Catch · Relifish"
+  description="Order same-day morning-fresh catch or pre-order tomorrow's catch from local Mumbai sellers."
+  header={{ variant: "preorder", locationLabel: "Same-Day & Pre-orders", locationSub: "Order morning-fresh today or reserve tomorrow's catch" }}
   nav={{ active: "preorder" }}
 >
   <Toast />
 
   <div style="padding:16px;">
-    <PreorderBanner variant="hero" title="Order tomorrow's catch tonight" description="Pick species. Pick seller. We confirm in the morning." ctaText="" />
+    <PreorderBanner variant="hero" title="Order Same-Day or Tomorrow's Catch" description="Buy morning-fresh fish today or pre-order tomorrow's catch tonight from local sellers." ctaText="" />
   </div>
 
   <div style="padding:0 16px;">
@@ -118,7 +118,7 @@ const species = [
         const rating = s.rating_avg ? Number(s.rating_avg).toFixed(1) : null;
         return `<a href="/s/${(s.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}" class="v2-seller-card" style="margin-bottom:12px;">
           <div class="v2-sc-img" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF);">
-            <span class="v2-badge v2-badge-offer v2-badge-indigo v2-badge-size-md">🌙 Pre-order</span>
+            <span class="v2-badge v2-badge-offer v2-badge-indigo v2-badge-size-md">🌙 Same-Day & Pre-Orders</span>
             <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-sc-emoji" style="height:36px;width:auto;display:block;" />
           </div>
           <div class="v2-sc-body">
