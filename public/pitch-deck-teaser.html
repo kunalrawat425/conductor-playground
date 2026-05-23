@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — Teaser Deck</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+    --bg:#FFFFFF;--bg2:#F8FAFC;--blue:#2563EB;--blue-l:#EFF6FF;--blue-m:#DBEAFE;--border:#E2E8F0;
+  }
+  body{font-family:'Inter',system-ui,sans-serif;background:#000;overflow:hidden;height:100vh;width:100vw}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:64px 80px;background:var(--bg);overflow:hidden}
+  .slide.active{display:flex}
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--blue);z-index:100;transition:width .3s}
+  .counter{position:fixed;bottom:16px;right:24px;font:500 12px/1 Inter,sans-serif;color:var(--ink4);z-index:100}
+  .hint{position:fixed;bottom:16px;left:24px;font:400 11px/1 Inter,sans-serif;color:var(--ink4);z-index:100;opacity:.5}
+  .pdf-btn{position:fixed;top:12px;right:16px;z-index:200;background:var(--blue);color:#fff;border:0;border-radius:6px;padding:8px 14px;font:700 12px Inter;cursor:pointer}
+  .label{font:700 12px/1 Inter;text-transform:uppercase;letter-spacing:.14em;color:var(--blue);margin-bottom:16px}
+  h1{font-size:66px;font-weight:900;line-height:1.02;letter-spacing:-.04em;color:var(--ink);max-width:980px}
+  .line{font-size:28px;line-height:1.45;color:var(--ink2);max-width:900px;margin-top:28px}
+  .cover,.end{background:var(--ink);text-align:center;align-items:center}
+  .cover h1,.end h1{color:#fff}
+  .cover .line,.end .line{color:rgba(255,255,255,.75)}
+  .pre{font:700 12px Inter;letter-spacing:.15em;text-transform:uppercase;color:var(--blue);margin-bottom:14px}
+  .sub{font-size:15px;color:rgba(255,255,255,.4);margin-top:28px}
+  .card{background:var(--blue-l);border:1px solid var(--blue-m);border-radius:12px;padding:28px;margin-top:32px;max-width:860px}
+  .card p{font-size:20px;line-height:1.5;color:var(--ink2)}
+  .accent{color:var(--blue)}
+  @media print{
+    body{background:#fff;overflow:visible;height:auto;width:auto}
+    .progress,.counter,.hint,.pdf-btn{display:none!important}
+    .slide{position:relative!important;display:flex!important;width:100vw;height:100vh;page-break-after:always;page-break-inside:avoid}
+    .slide:last-child{page-break-after:auto}
+    @page{size:landscape;margin:0}
+  }
+  @media(max-width:900px){.slide{padding:40px}h1{font-size:42px}.line{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter"></div>
+<div class="hint">← → keys &middot; click to navigate</div>
+<button class="pdf-btn" onclick="window.print()">Save PDF</button>
+<div id="deck">
+
+<div class="slide cover active">
+  <div class="pre">Relifish Teaser</div>
+  <h1>Fresh fish delivered under 2 hours.</h1>
+  <div class="line">Direct from trusted local sellers, without the market walk-in or delivery-app markup.</div>
+  <div class="sub">relifish.store &middot; Kunal Rawat</div>
+</div>
+
+<div class="slide">
+  <div class="label">Product + Problem</div>
+  <h1>Relifish delivers fresh fish under 2 hours by connecting buyers directly with trusted local sellers.</h1>
+</div>
+
+<div class="slide">
+  <div class="label">Market + Positioning</div>
+  <h1>We are building the hyperlocal fresh fish marketplace for Mumbai, starting with dense seller-buyer clusters.</h1>
+</div>
+
+<div class="slide">
+  <div class="label">Monetisation Strategy</div>
+  <h1>Relifish will earn through transaction commission, delivery fees, and future seller growth tools after demand is validated.</h1>
+</div>
+
+<div class="slide">
+  <div class="label">Recent Traction</div>
+  <h1>The product is built, awareness is live, and <span class="accent">4 sellers</span> have already been acquired.</h1>
+</div>
+
+<div class="slide">
+  <div class="label">Why Me</div>
+  <h1>I built the product, seller tools, buyer flow, and launch assets before funding.</h1>
+</div>
+
+<div class="slide end">
+  <div class="pre">Close</div>
+  <h1>I’ll connect and explain the full strategy if you’re interested.</h1>
+  <div class="sub">relifish.store &middot; Kunal Rawat</div>
+</div>
+
+</div>
+<script>
+const S=document.querySelectorAll('.slide'),C=document.getElementById('counter'),P=document.getElementById('progress');
+let c=0;const T=S.length;
+function go(i){if(i<0||i>=T)return;S[c].classList.remove('active');c=i;S[c].classList.add('active');C.textContent=`${c+1} / ${T}`;P.style.width=`${((c+1)/T)*100}%`}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(c+1)}if(e.key==='ArrowLeft'){e.preventDefault();go(c-1)}if(e.key==='Home')go(0);if(e.key==='End')go(T-1)});
+document.addEventListener('click',e=>{if(e.target.closest('.pdf-btn'))return;e.clientX>window.innerWidth/2?go(c+1):go(c-1)});
+let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?go(c+1):go(c-1)}});
+go(0);
+</script>
+</body>
+</html>

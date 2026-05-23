@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — Pitch Deck V3 Final</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
+    --bg:#FFFFFF;--bg2:#F8FAFC;--bg3:#F1F5F9;
+    --blue:#2563EB;--blue-d:#1D4ED8;--blue-l:#EFF6FF;--blue-m:#DBEAFE;
+    --green:#059669;--green-l:#ECFDF5;
+    --orange:#EA580C;--orange-l:#FFF7ED;
+    --red:#DC2626;--red-l:#FEF2F2;
+    --border:#E2E8F0;
+  }
+  body{font-family:'Inter',system-ui,sans-serif;background:#000;overflow:hidden;height:100vh;width:100vw}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:52px 68px;background:var(--bg);overflow:hidden}
+  .slide.active{display:flex}
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--blue);z-index:100;transition:width .3s}
+  .counter{position:fixed;bottom:16px;right:24px;font:500 12px/1 Inter,sans-serif;color:var(--ink4);z-index:100}
+  .hint{position:fixed;bottom:16px;left:24px;font:400 11px/1 Inter,sans-serif;color:var(--ink4);z-index:100;opacity:.5}
+  .pdf-btn{position:fixed;top:12px;right:16px;z-index:200;background:var(--blue);color:#fff;border:none;padding:8px 16px;border-radius:6px;font:600 12px Inter;cursor:pointer;letter-spacing:.02em}
+  .pdf-btn:hover{background:var(--blue-d)}
+  .label{font:600 11px/1 Inter;text-transform:uppercase;letter-spacing:.12em;color:var(--blue);margin-bottom:10px}
+  h2{font-size:37px;font-weight:800;line-height:1.14;letter-spacing:-.02em;color:var(--ink)}
+  h3{font-size:20px;font-weight:700;color:var(--ink);line-height:1.3}
+  p,li{font-size:15px;line-height:1.58;color:var(--ink2)}
+  .sm{font-size:13px;color:var(--ink3)}
+  .xs{font-size:11px;color:var(--ink4)}
+  b{color:var(--ink)}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+  .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px}
+  .sp{height:22px}.sp2{height:14px}.sp3{height:30px}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .card h3{margin-bottom:6px;font-size:16px}
+  .card p{font-size:13px}
+  .card-b{background:var(--blue-l);border-color:var(--blue-m)}
+  .card-o{background:var(--orange-l);border-color:#FED7AA}
+  .card-g{background:var(--green-l);border-color:#A7F3D0}
+  .stat{text-align:center;padding:12px 0}
+  .stat .n{font-size:42px;font-weight:900;color:var(--blue);line-height:1;letter-spacing:-.02em}
+  .stat .u{font-size:12px;color:var(--ink3);margin-top:4px}
+  .stat .src{font-size:10px;color:var(--ink4);margin-top:2px}
+  .mbar{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:18px}
+  .mbar .m{padding:14px 0;border-top:3px solid var(--blue)}
+  .mbar .m .v{font-size:22px;font-weight:800;color:var(--ink)}
+  .mbar .m .d{font-size:11px;color:var(--ink3);margin-top:2px}
+  ul.bl{list-style:none;padding:0}
+  ul.bl li{padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;display:flex;align-items:baseline;gap:9px}
+  ul.bl li:last-child{border:none}
+  ul.bl li::before{content:'';width:6px;height:6px;background:var(--blue);border-radius:50%;flex-shrink:0;margin-top:7px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .tbl th{text-align:left;padding:9px 10px;font-weight:600;color:var(--ink3);font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border)}
+  .tbl td{padding:9px 10px;border-bottom:1px solid var(--bg3);color:var(--ink2)}
+  .tbl .hl{background:var(--blue-l);font-weight:600}
+  .tbl .hl td{color:var(--blue)}
+  .yes{color:var(--green);font-weight:700}.no{color:var(--red);font-weight:700}
+  .tl{display:flex;gap:0;margin-top:14px}
+  .tl .step{flex:1;padding:14px 16px;border-left:3px solid var(--blue);position:relative}
+  .tl .step::before{content:'';width:10px;height:10px;background:var(--blue);border-radius:50%;position:absolute;left:-6.5px;top:16px}
+  .tl .step .per{font:600 10px Inter;color:var(--blue);text-transform:uppercase;letter-spacing:.06em}
+  .tl .step .act{font-size:13px;color:var(--ink2);margin-top:4px;line-height:1.45}
+  .cover{background:var(--ink);color:#fff;text-align:center;align-items:center}
+  .cover h1{font-size:64px;font-weight:900;color:#fff;letter-spacing:-.03em}
+  .cover .tag{font-size:24px;color:rgba(255,255,255,.8);margin-top:20px;line-height:1.4;font-weight:400}
+  .cover .sub{font-size:15px;color:rgba(255,255,255,.4);margin-top:24px}
+  .cover .pre{font:700 12px Inter;letter-spacing:.15em;text-transform:uppercase;color:var(--blue);margin-bottom:12px}
+  .end{background:var(--ink);color:#fff;text-align:center;align-items:center}
+  .end h1{font-size:56px;font-weight:900;color:#fff}
+  .end p{color:rgba(255,255,255,.55)}
+  .end a{color:var(--blue);text-decoration:none;font-weight:600;font-size:18px}
+  .ask{background:var(--blue);border-radius:16px;padding:34px;color:#fff;text-align:center}
+  .ask .amt{font-size:48px;font-weight:900}
+  .ask .why{font-size:16px;color:rgba(255,255,255,.85);margin-top:8px}
+  .callout{background:var(--blue-l);border-left:4px solid var(--blue);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:14px}
+  .callout p{font-size:13px;margin:0;color:var(--ink2)}
+  @media print{
+    body{background:#fff;overflow:visible;height:auto;width:auto}
+    .progress,.counter,.hint,.pdf-btn{display:none!important}
+    .slide{position:relative!important;display:flex!important;page-break-after:always;page-break-inside:avoid;height:100vh;width:100vw;padding:52px 68px}
+    .slide:last-child{page-break-after:auto}
+    @page{size:landscape;margin:0}
+  }
+  @media(max-width:1024px){.slide{padding:32px 40px}h2{font-size:28px}.g2{gap:24px}.stat .n{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter"></div>
+<div class="hint">← → keys &middot; click to navigate</div>
+<button class="pdf-btn" onclick="window.print()">Save as PDF</button>
+<div id="deck">
+
+<div class="slide cover active">
+  <div class="pre">Pre-Seed &middot; V3 Final &middot; May 2026</div>
+  <h1>Relifish</h1>
+  <div class="tag">Fresh fish delivered under 2 hours.<br>Direct from trusted local sellers.<br>No warehouse. No middleman markup.</div>
+  <div class="sub">relifish.store &middot; Kunal Rawat, Founder</div>
+</div>
+
+<div class="slide">
+  <div class="label">Product + Problem</div>
+  <h2>Fish sellers still run on calls, WhatsApp,<br>guesswork, and walk-in demand.</h2>
+  <div class="sp"></div>
+  <div class="g2">
+    <div>
+      <h3 style="color:var(--orange)">Seller problem</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>No demand signal.</b> Sellers buy or hold fish before knowing what buyers want.</li>
+        <li><b>Operational chaos.</b> Orders sit across calls, WhatsApp, memory, and walk-ins.</li>
+        <li><b>No customer memory.</b> Repeat buyers, species demand, and peak times are invisible.</li>
+        <li><b>Growth is manual.</b> Every new buyer requires more coordination, not better systems.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color:var(--orange)">Buyer problem</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Fresh means inconvenient.</b> Buyers must walk into the market early.</li>
+        <li><b>Convenience means compromise.</b> Apps add markup and often sell older fish.</li>
+        <li><b>No easy comparison.</b> Price, seller trust, variety, and freshness are hard to see.</li>
+        <li><b>Weekly routine is broken.</b> A high-frequency habit still has low digital trust.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><p><b>Relifish answer:</b> Fresh fish delivered under 2 hours by connecting buyers directly with trusted local sellers.</p></div>
+</div>
+
+<div class="slide">
+  <div class="label">Market + Positioning</div>
+  <h2>A massive wet-market category needs<br>a hyperlocal digital layer.</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="stat"><div class="n">₹1.7L Cr</div><div class="u">India domestic fish market</div><div class="src">Large, frequent, perishable</div></div>
+    <div class="stat"><div class="n">71%</div><div class="u">Sold through wet markets</div><div class="src">Local sellers dominate trust</div></div>
+    <div class="stat"><div class="n">25M</div><div class="u">Fishermen and fish workers</div><div class="src">Undigitized supply base</div></div>
+  </div>
+  <div class="mbar">
+    <div class="m"><div class="v">Fresh</div><div class="d">Daily local supply</div></div>
+    <div class="m"><div class="v">&lt;2 hrs</div><div class="d">Simple buyer promise</div></div>
+    <div class="m"><div class="v">Direct</div><div class="d">No middleman markup</div></div>
+    <div class="m"><div class="v">Dense</div><div class="d">Cluster-by-cluster GTM</div></div>
+  </div>
+  <div class="callout"><p><b>Positioning:</b> Relifish is not a warehouse seafood brand; it is the hyperlocal marketplace for fresh fish from trusted sellers near you.</p></div>
+</div>
+
+<div class="slide">
+  <div class="label">What Relifish Does</div>
+  <h2>Seller ops first.<br>Buyer marketplace second.</h2>
+  <div class="sp"></div>
+  <div class="g2">
+    <div>
+      <h3>For Sellers</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Digital store.</b> Live catalog with photos, prices, bundles, and availability.</li>
+        <li><b>Order control.</b> Orders, pre-orders, UPI/COD, delivery radius, payment proof, and alerts.</li>
+        <li><b>Customer history.</b> Repeat buyers, order memory, peak demand, and species patterns.</li>
+        <li><b>Better decisions.</b> Know what to buy, when to stock, and which customers to serve.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>For Buyers</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Freshness.</b> Fish from nearby sellers, delivered under 2 hours.</li>
+        <li><b>Best prices.</b> Direct seller rates and no delivery-app markup.</li>
+        <li><b>Huge variety.</b> Compare species and sellers across the neighborhood.</li>
+        <li><b>Trusted experience.</b> Ratings, seller profiles, direct contact, and no market walk-in.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="label">Current Stage + Progress</div>
+  <h2>Product built. Awareness stage live.<br>4 sellers acquired.</h2>
+  <div class="sp"></div>
+  <div class="g4">
+    <div class="stat"><div class="n">Live</div><div class="u">Product shipped</div><div class="src">Buyer + seller flows</div></div>
+    <div class="stat"><div class="n">4</div><div class="u">Sellers acquired</div><div class="src">Milestone reached</div></div>
+    <div class="stat"><div class="n">Now</div><div class="u">Awareness stage</div><div class="src">Demand validation</div></div>
+    <div class="stat"><div class="n">Next</div><div class="u">Transactions</div><div class="src">Price + freshness conversion</div></div>
+  </div>
+  <div class="callout"><p><b>Stage honesty:</b> We have built the product and acquired initial sellers; the next proof is converting local awareness into repeat transactions.</p></div>
+</div>
+
+<div class="slide">
+  <div class="label">User Question</div>
+  <h2>Are we changing the internal customer<br>by solving seller operations first?</h2>
+  <div class="sp"></div>
+  <div class="g2">
+    <div class="card card-b"><h3>Answer</h3><p>Yes. The first internal customer is the seller's operating workflow: catalog, order confirmation, payments, delivery, customer memory, and service quality.</p></div>
+    <div class="card card-g"><h3>Why it matters</h3><p>If sellers cannot operate reliably, buyer demand breaks. Relifish makes sellers operationally ready before adding external buyer volume.</p></div>
+  </div>
+  <div class="callout"><p><b>Sequence:</b> Internal seller operations tested enough → external buyer demand comes through ads, seller sharing, and local density campaigns.</p></div>
+</div>
+
+<div class="slide">
+  <div class="label">Why Sellers Stick</div>
+  <h2>Different seller stages.<br>One goal: sell better.</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b"><h3>Service</h3><p>Orders are confirmed, tracked, and notified instead of getting lost in calls and WhatsApp.</p></div>
+    <div class="card card-b"><h3>Quality</h3><p>Ratings and repeat buyers reward sellers who consistently deliver fresh fish well.</p></div>
+    <div class="card card-b"><h3>Price</h3><p>Sellers control prices, delivery fees, radius, minimum order, and fulfillment promise.</p></div>
+    <div class="card card-o"><h3>Better decisions</h3><p>Customer history and demand patterns help sellers buy and sell with less guesswork.</p></div>
+    <div class="card card-o"><h3>Less chaos</h3><p>Live inventory, order alerts, UPI/COD proof, and order states reduce manual coordination.</p></div>
+    <div class="card card-g"><h3>Growth</h3><p>Relifish starts with existing regulars, then brings nearby buyers through density marketing.</p></div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="label">Why Buyers Stick</div>
+  <h2>Better price, better freshness,<br>better experience.</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card"><h3>Fresh under 2 hours</h3><p>The promise is easy to understand and easy to repeat.</p></div>
+    <div class="card"><h3>Best prices</h3><p>Direct seller pricing avoids delivery-app markup.</p></div>
+    <div class="card"><h3>Trusted sellers</h3><p>Seller profiles, ratings, order history, and WhatsApp make trust visible.</p></div>
+    <div class="card"><h3>Huge variety</h3><p>Multiple sellers create more choice than one stall.</p></div>
+    <div class="card"><h3>No walk-in market</h3><p>No early market trip, no haggling, no sold-out disappointment.</p></div>
+    <div class="card"><h3>Weekly habit</h3><p>Fish is bought often; a better routine can become repeat behavior quickly.</p></div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="label">User Acquisition + Market Acquisition</div>
+  <h2>Density with hyperlocal sellers,<br>ratings, and the right customers.</h2>
+  <div class="sp"></div>
+  <div class="tl">
+    <div class="step"><div class="per">Supply point</div><div class="act"><b>Existing seller.</b> Start around sellers already acquired and trusted locally.</div></div>
+    <div class="step"><div class="per">User acquisition</div><div class="act"><b>Nearby ads + flyers.</b> Create buyer awareness within the seller's delivery radius.</div></div>
+    <div class="step"><div class="per">Right customer</div><div class="act"><b>Freshness + price.</b> Target buyers who already buy fish and value delivery convenience.</div></div>
+    <div class="step"><div class="per">Density loop</div><div class="act"><b>Ratings + repeat.</b> Reviews build trust, repeat orders build the local playbook.</div></div>
+  </div>
+  <div class="callout"><p><b>Market acquisition strategy:</b> Seller location → marketing bundle → nearby ads/flyers → first orders → ratings → repeat buyers → more sellers in the same cluster.</p></div>
+</div>
+
+<div class="slide">
+  <div class="label">Capital Allocation + Output</div>
+  <h2>How the money gets invested,<br>and how output comes.</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b"><h3>Input</h3><p>New marketing bundles, flyers, QR standees, seller cards, WhatsApp creatives, and nearby ads around existing sellers.</p></div>
+    <div class="card card-o"><h3>Process</h3><p>Spread awareness, validate buyer interest, test seller service quality, and convert with better prices and freshness.</p></div>
+    <div class="card card-g"><h3>Output</h3><p>First transactions, ratings, repeat orders, seller confidence, delivery density, and a repeatable cluster playbook.</p></div>
+  </div>
+  <div class="callout"><p><b>Capital rule:</b> Spend close to supply, prove demand locally, and scale only where transactions and repeat orders appear.</p></div>
+</div>
+
+<div class="slide">
+  <div class="label">Monetisation Strategy</div>
+  <h2>Validate demand first.<br>Monetize transactions after liquidity.</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b" style="text-align:center"><div class="xs">AFTER VALIDATION</div><div style="font-size:36px;font-weight:900;color:var(--blue)">5-8%</div><div class="sm">Transaction take rate</div><div class="sp2"></div><p>Free to list while liquidity is forming; monetize when seller-buyer transactions are proven.</p></div>
+    <div class="card card-o" style="text-align:center"><div class="xs">DENSITY STAGE</div><div style="font-size:36px;font-weight:900;color:var(--orange)">₹30-79</div><div class="sm">Delivery fee</div><div class="sp2"></div><p>Delivery contribution improves as sellers and buyers cluster in the same area.</p></div>
+    <div class="card card-g" style="text-align:center"><div class="xs">FUTURE</div><div style="font-size:36px;font-weight:900;color:var(--green)">Growth</div><div class="sm">Seller tools + visibility</div><div class="sp2"></div><p>Promoted listings, analytics, buyer reactivation, B2B supply, and market data.</p></div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="label">Why Now &amp; Why Me</div>
+  <h2>The market is ready.<br>The product is already built.</h2>
+  <div class="sp"></div>
+  <div class="g2">
+    <div>
+      <h3>Why Now</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Online buying is accepted.</b> Customers already trust digital ordering for food and groceries.</li>
+        <li><b>Local sellers need tooling.</b> WhatsApp demand is real, but operations do not scale.</li>
+        <li><b>UPI is default.</b> Payments are no longer the adoption blocker.</li>
+        <li><b>Freshness gap is visible.</b> Buyers know the difference between market-fresh fish and warehouse stock.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Why Me</h3>
+      <div class="sp2"></div>
+      <ul class="bl">
+        <li><b>Full-stack builder.</b> Built the marketplace, seller tools, buyer flow, and launch assets.</li>
+        <li><b>Lean operator.</b> Product and marketing system shipped before funding.</li>
+        <li><b>Market-close execution.</b> Starting with seller operations, not abstract marketplace theory.</li>
+        <li><b>Clear next step.</b> Turn 4 sellers and awareness into localized transaction density.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="label">The Ask</div>
+  <h2>Pre-Seed Round</h2>
+  <div class="sp2"></div>
+  <div class="ask">
+    <div class="amt">₹25 Lakhs</div>
+    <div class="why">6 months runway &middot; Convert awareness to transactions &middot; Prove density playbook</div>
+  </div>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card"><h3>Current milestone</h3><ul class="bl"><li>Product built</li><li>Awareness stage live</li><li>4 sellers acquired</li><li>Seller ops testing underway</li></ul></div>
+    <div class="card"><h3>Use of funds</h3><ul class="bl"><li>New marketing bundles</li><li>Flyers and standees</li><li>Nearby ads around sellers</li><li>Delivery and ops validation</li></ul></div>
+    <div class="card"><h3>Next output</h3><ul class="bl"><li>First buyer clusters</li><li>Validated transactions</li><li>Ratings and repeat orders</li><li>Replicable local playbook</li></ul></div>
+  </div>
+</div>
+
+<div class="slide end">
+  <h1>Relifish</h1>
+  <div class="sp2"></div>
+  <p style="font-size:22px;color:rgba(255,255,255,.75)">Fresh fish delivered under 2 hours.<br>Trusted local sellers. Better prices. No market walk-in.</p>
+  <div class="sp3"></div>
+  <a href="https://relifish.store" target="_blank">relifish.store</a>
+  <div class="sp2"></div>
+  <p>Kunal Rawat &middot; Founder</p>
+  <p style="font-size:14px;margin-top:4px;color:rgba(255,255,255,.3)">I’ll connect and explain the full strategy if you’re interested.</p>
+</div>
+
+</div>
+<script>
+const S=document.querySelectorAll('.slide'),C=document.getElementById('counter'),P=document.getElementById('progress');
+let c=0;const T=S.length;
+function go(i){if(i<0||i>=T)return;S[c].classList.remove('active');c=i;S[c].classList.add('active');C.textContent=`${c+1} / ${T}`;P.style.width=`${((c+1)/T)*100}%`}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(c+1)}if(e.key==='ArrowLeft'){e.preventDefault();go(c-1)}if(e.key==='Home')go(0);if(e.key==='End')go(T-1)});
+document.addEventListener('click',e=>{if(e.target.closest('.pdf-btn'))return;e.clientX>window.innerWidth/2?go(c+1):go(c-1)});
+let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?go(c+1):go(c-1)}});
+go(0);
+</script>
+</body>
+</html>
