@@ -4,6 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Relifish — Investor Deck</title>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Relifish",
+      "url": "https://relifish.store",
+      "logo": "https://relifish.store/logo-512.png",
+      "image": "https://relifish.store/og-image.png",
+      "description": "Fresh fish delivered from hyper local verified sellers in Goa.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Goa",
+        "addressCountry": "IN"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "15.2993",
+        "longitude": "74.1240"
+      },
+      "telephone": "+91-XXXXXXXXXX",
+      "email": "contact@relifish.store",
+      "areaServed": {
+        "@type": "State",
+        "name": "Goa"
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "opens": "06:00",
+        "closes": "22:00"
+      }
+    }
+    </script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
@@ -24,6 +65,8 @@
   .progress{position:fixed;top:0;left:0;height:3px;background:var(--blue);z-index:100;transition:width .3s}
   .counter{position:fixed;bottom:16px;right:24px;font:500 12px/1 Inter,sans-serif;color:var(--ink4);z-index:100}
   .hint{position:fixed;bottom:16px;left:24px;font:400 11px/1 Inter,sans-serif;color:var(--ink4);z-index:100;opacity:.5}
+  .pdf-btn{position:fixed;top:12px;right:16px;z-index:200;background:var(--blue);color:#fff;border:none;padding:8px 16px;border-radius:6px;font:600 12px Inter;cursor:pointer;letter-spacing:.02em}
+  .pdf-btn:hover{background:var(--blue-d)}
 
   /* Typography */
   .label{font:600 11px/1 Inter;text-transform:uppercase;letter-spacing:.12em;color:var(--blue);margin-bottom:10px}
@@ -48,6 +91,9 @@
   .card-b{background:var(--blue-l);border-color:var(--blue-m)}
   .card-o{background:var(--orange-l);border-color:#FED7AA}
   .card-g{background:var(--green-l);border-color:#A7F3D0}
+  .glass-card{background:rgba(255,255,255,0.15);border-radius:12px;padding:24px;backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);color:var(--ink)}
+  .glass-card h3{font-size:18px;font-weight:600;margin-bottom:8px;}
+  .glass-card p{font-size:15px;line-height:1.5;}
 
   /* Stats */
   .stat{text-align:center;padding:16px 0}
@@ -117,6 +163,36 @@
   .fin td:first-child{text-align:left;font-weight:500;color:var(--ink)}
   .fin .pos{color:var(--green);font-weight:600}
 
+  .num-circle{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+  .num-blue{background:var(--blue)}.num-green{background:var(--green)}.num-orange{background:var(--orange)}
+  .step-flow{display:flex;align-items:flex-start;gap:0;justify-content:center}
+  .step-flow .sf-step{flex:1;text-align:center;padding:0 12px}
+  .step-flow .sf-step .num-circle{margin:0 auto}
+  .step-flow .sf-step h3{font-size:14px;font-weight:700;margin-top:10px;margin-bottom:8px}
+  .step-flow .sf-step p{font-size:12px;color:var(--ink3);line-height:1.45}
+  .step-flow .sf-arrow{display:flex;align-items:center;padding-top:8px;color:var(--ink4);font-size:20px;font-weight:700}
+  .adv-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .adv-card h3{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;margin-bottom:8px}
+  .adv-card p{font-size:13px;line-height:1.5;color:var(--ink2)}
+  .green-tag{background:#DCFCE7;color:var(--green);font-weight:700;font-size:12px;padding:8px 16px;border-radius:6px;display:inline-block;margin-top:12px}
+  .ue-table{width:100%;font-size:14px;border-collapse:collapse}
+  .ue-table tr{border-bottom:1px solid var(--border)}
+  .ue-table td{padding:10px 0}
+  .ue-table td:last-child{text-align:right;font-weight:600}
+  .ue-pos{color:var(--green)}.ue-neg{color:var(--red)}
+  .km-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .km-item .km-val{font-size:28px;font-weight:900;line-height:1.1}
+  .km-item .km-label{font-size:12px;color:var(--ink3);margin-top:2px}
+  .km-item .km-sub{font-size:10px;color:var(--ink4);font-style:italic}
+
+  @media print{
+    body{background:#fff;overflow:visible;height:auto;width:auto}
+    .progress,.counter,.hint,.pdf-btn{display:none!important}
+    .slide{position:relative!important;display:flex!important;page-break-after:always;page-break-inside:avoid;height:100vh;width:100vw;padding:56px 72px}
+    .slide:last-child{page-break-after:auto}
+    @page{size:landscape;margin:0}
+  }
+
   @media(max-width:1024px){
     .slide{padding:32px 40px}
     h2{font-size:28px}
@@ -130,6 +206,7 @@
 <div class="progress" id="progress"></div>
 <div class="counter" id="counter"></div>
 <div class="hint">← → keys &middot; click to navigate</div>
+<button class="pdf-btn" onclick="window.print()">Save as PDF</button>
 
 <div id="deck">
 
@@ -188,7 +265,7 @@
         <li><span class="emoji">⏱️</span><b>Shop timing control.</b> Configurable open/closed hours to control exactly when active buyers can place orders.</li>
         <li><span class="emoji">📅</span><b>Pre-order &amp; live support.</b> Dual support for instant same-day delivery and reserving tomorrow's catch the night before.</li>
         <li><span class="emoji">💸</span><b>Delivery fee &amp; radius config.</b> Granular settings for custom delivery charges, minimum order value, and geo-delivery radius.</li>
-        <li><span class="emoji">🛵</span><b>Pickup &amp; delivery routing.</b> Flexible settings for buyer self-pickup, seller-managed delivery, or localized delivery partner routing.</li>
+        
         <li><span class="emoji">📦</span><b>Order &amp; UPI management.</b> Track order lifecycle, verify digital payment UPI screenshot proof, and manage COD.</li>
         <li><span class="emoji">⭐</span><b>Customer ratings &amp; reviews.</b> Direct ratings feed to build trusted local reputation and reward high-quality service.</li>
       </ul>
@@ -204,6 +281,48 @@
         <li><span class="emoji">⭐</span><b>Trust &amp; quality.</b> View real seller profiles, ratings, and order history. Know your fishmonger by name.</li>
       </ul>
     </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="slide">
+  <div class="label">How It Works</div>
+  <h2>Commission protection is structural, not policy.</h2>
+  <div class="sp"></div>
+  <div class="step-flow">
+    <div class="sf-step">
+      <div class="num-circle num-blue">1</div>
+      <h3>Buyer Orders &amp; Pays</h3>
+      <p>Buyer selects seller, species, qty. Pays online via UPI/card upfront. No order placed without payment.</p>
+    </div>
+    <div class="sf-arrow">→</div>
+    <div class="sf-step">
+      <div class="num-circle num-blue">2</div>
+      <h3>Payment Held</h3>
+      <p>Platform holds payment in escrow. Seller sees payment confirmation — not buyer contact details.</p>
+    </div>
+    <div class="sf-arrow">→</div>
+    <div class="sf-step">
+      <div class="num-circle num-blue">3</div>
+      <h3>Seller Confirms</h3>
+      <p>Seller confirms availability and pickup/delivery slot. Order locked on both sides.</p>
+    </div>
+    <div class="sf-arrow">→</div>
+    <div class="sf-step">
+      <div class="num-circle num-blue">4</div>
+      <h3>Buyer Collects</h3>
+      <p>Pickup at stall or delivery by seller's own arrangement. No contact info ever shared.</p>
+    </div>
+    <div class="sf-arrow">→</div>
+    <div class="sf-step">
+      <div class="num-circle num-blue">5</div>
+      <h3>Commission Released</h3>
+      <p>Platform releases 93.5% to seller. 6.5% commission retained. Zero cash leakage possible.</p>
+    </div>
+  </div>
+  <div class="sp"></div>
+  <div class="callout">
+    <p><b>No phone numbers. No WhatsApp contacts. No cash-at-door. All communication through Relifish. Leakage = zero.</b></p>
   </div>
 </div>
 
@@ -311,6 +430,121 @@
   </div>
 </div>
 
+<!-- 5.4. WHY SELLERS STICK -->
+<div class="slide">
+  <div class="label">Why Sellers Stick</div>
+  <h2>The Zero-CAC Flywheel: Existing + New Buyers</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b">
+      <h3>1. Migrate Existing Buyers (Week 1)</h3>
+      <p>Sellers share their store link on WhatsApp. Regulars migrate to digital ordering in days—enjoying live catalogues and instant confirmation instead of chaotic calls.</p>
+    </div>
+    <div class="card card-o">
+      <h3>2. Acquire New Buyers (Week 2–3)</h3>
+      <p>New buyers discover the seller via search, social shares, or the Relifish feed. Live inventory, transparent pricing, and store photos build instant trust to drive first orders.</p>
+    </div>
+    <div class="card card-g">
+      <h3>3. Revenue Compounds (Month 1+)</h3>
+      <p>Push notifications bring buyers back. One new buyer refers five. Predictable demand, locked-in pre-orders, and zero cold storage costs mean margins compound every week.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 5.5. WHY BUYERS STICK -->
+<div class="slide">
+  <div class="label">Why Buyers Stick</div>
+  <h2>Three Macro Trends Driving Buyer Adoption</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b">
+      <h3>1. Hyperlocal is Booming</h3>
+      <p>India's hyperlocal delivery market is expanding rapidly, making neighborhood commerce more accessible and creating expectations for instant fulfillment.</p>
+    </div>
+    <div class="card card-o">
+      <h3>2. Digitized Consumer Behavior</h3>
+      <p>Consumers are increasingly comfortable with digital platforms and expect seamless online ordering for all their daily needs, including fresh produce.</p>
+    </div>
+    <div class="card card-g">
+      <h3>3. Better Rates & Convenience</h3>
+      <p>Incumbent brands pass heavy cold storage and supply chain costs to consumers. Relifish's optimized model eliminates these costs, offering significantly better rates and doorstep delivery while buyers escape market chaos.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 5.6. OPTIMIZED VS BRANDS -->
+<div class="slide">
+  <div class="label">Optimized vs. Incumbent Brands</div>
+  <h2>Why our model scales where D2C brands fail.</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b">
+      <h3>1. Zero Cold Storage</h3>
+      <p>No internal cold storage or supply chain overhead. Sellers act as our darkstores, completely eliminating massive inventory holding costs.</p>
+    </div>
+    <div class="card card-o">
+      <h3>2. Faster 5km Delivery</h3>
+      <p>Because supply is hyper-local, we serve buyers within 5km radii, guaranteeing unmatched delivery speed and peak freshness.</p>
+    </div>
+    <div class="card card-g">
+      <h3>3. Better Rates</h3>
+      <p>Buyers know market prices. D2C brands markup heavily to cover losses. Relifish offers the best rates directly from sellers.</p>
+    </div>
+    <div class="card card-b">
+      <h3>4. Quality & Density</h3>
+      <p>Our model thrives on local density and service quality. Close proximity means faster fulfillment and stronger word-of-mouth.</p>
+    </div>
+    <div class="card card-o">
+      <h3>5. Infinite Scaling</h3>
+      <p>Incumbent brands can't scale geographically without burning cash and are already in loss. Our asset-light software model scales infinitely.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 5.7. EXPONENTIAL FLYWHEEL -->
+<div class="slide">
+  <div class="label">The Exponential Flywheel</div>
+  <h2>How the Relifish Marketplace scales itself.</h2>
+  <div class="sp"></div>
+  <div style="display:flex;justify-content:center;align-items:center;gap:40px;margin-top:40px;">
+    
+    <!-- Sellers -->
+    <div style="width:240px;text-align:center;">
+      <div style="background:var(--blue-l);border:1px solid var(--blue);border-radius:16px;padding:24px;box-shadow:0 12px 24px rgba(0,102,255,0.1);">
+        <h3 style="color:var(--blue);margin-bottom:12px;font-size:20px;">1. Sellers</h3>
+        <p style="font-size:13px;color:var(--ink2);line-height:1.4;font-weight:700;margin-bottom:6px;">Our Internal Customer</p>
+        <p style="font-size:13px;color:var(--ink3);line-height:1.4;">Operations optimized for zero wastage and seamless digital ordering.</p>
+      </div>
+    </div>
+
+    <div style="font-size:40px;color:var(--ink4);">⇄</div>
+
+    <!-- Buyers -->
+    <div style="width:240px;text-align:center;">
+      <div style="background:var(--orange-l);border:1px solid var(--orange);border-radius:16px;padding:24px;box-shadow:0 12px 24px rgba(234,88,12,0.1);">
+        <h3 style="color:var(--orange);margin-bottom:12px;font-size:20px;">2. Buyers</h3>
+        <p style="font-size:13px;color:var(--ink2);line-height:1.4;font-weight:700;margin-bottom:6px;">Cheaper Cost & Trust</p>
+        <p style="font-size:13px;color:var(--ink3);line-height:1.4;">Better rates, high seller trust, and reliable 5km delivery.</p>
+      </div>
+    </div>
+
+    <div style="font-size:40px;color:var(--ink4);">⇄</div>
+
+    <!-- Marketplace -->
+    <div style="width:280px;text-align:center;">
+      <div style="background:var(--ink);border-radius:50%;width:240px;height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+        <h3 style="color:#fff;margin-bottom:8px;font-size:24px;">3. Relifish</h3>
+        <p style="font-size:13px;color:var(--blue-l);line-height:1.4;font-weight:700;margin-bottom:6px;">Better Profitability</p>
+        <p style="font-size:13px;color:var(--ink4);line-height:1.4;padding:0 20px;">Asset-light software scaling margins infinitely.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="callout" style="margin-top:60px;">
+    <p><b>The Loop:</b> Operation Optimization &rarr; Better Cost/Trust &rarr; Driving Sales &rarr; Sales Drive Growth &rarr; Better Profitability for Relifish.</p>
+  </div>
+</div>
+
 <!-- 6. COMPETITIVE LANDSCAPE -->
 <div class="slide">
   <div class="label">Competitive Landscape</div>
@@ -335,37 +569,40 @@
 <!-- 7. WHY RELIFISH WINS -->
 <div class="slide">
   <div class="label">Unfair Advantages</div>
-  <h2>Six structural reasons why this works<br>and why incumbents can't copy it</h2>
+  <h2>Six structural reasons this works —<br>and incumbents can't copy it.</h2>
   <div class="sp"></div>
   <div class="g3">
-    <div class="card card-b">
-      <h3>1. Asset-light marketplace</h3>
-      <p>We don't buy, store, or transport fish. Sellers handle fulfillment. Our gross margin = pure platform take rate. Infinitely scalable supply.</p>
+    <div class="adv-card">
+      <h3><span class="num-circle num-blue" style="width:30px;height:30px;font-size:12px">01</span> Asset‑Light Pure Marketplace</h3>
+      <p>No inventory, no delivery, no packaging. Sellers handle everything. Pure software take rate from Day 1.</p>
     </div>
-    <div class="card card-b">
-      <h3>2. Pre-orders (nobody else)</h3>
-      <p>Only platform where buyers order tonight and sellers reserve catch tomorrow. Reduces 25% waste. Guarantees species availability. Patent-worthy mechanic.</p>
+    <div class="adv-card">
+      <h3><span class="num-circle num-blue" style="width:30px;height:30px;font-size:12px">02</span> Pre‑Orders (Nobody Else)</h3>
+      <p>Buyer orders tonight, seller reserves catch. Reduces 25% waste. Fundamentally new behaviour in Indian fish retail.</p>
     </div>
-    <div class="card card-b">
-      <h3>3. Zero-CAC distribution</h3>
-      <p>Each seller has 50-200 regulars. Onboard 1 seller = acquire 50 buyers free. Sellers ARE the growth engine. Network effects from Day 1.</p>
+    <div class="adv-card">
+      <h3><span class="num-circle num-green" style="width:30px;height:30px;font-size:12px">03</span> Zero‑CAC Distribution</h3>
+      <p>1 seller = 50 regulars. Sellers ARE the growth engine. No paid ads needed for first 500 buyers.</p>
     </div>
-    <div class="card card-o">
-      <h3>4. WhatsApp-native</h3>
-      <p>500M+ Indians on WhatsApp. Fish sellers already use it informally. We formalize the workflow they already have. Zero behavior change = zero friction.</p>
+    <div class="adv-card">
+      <h3><span class="num-circle num-blue" style="width:30px;height:30px;font-size:12px">04</span> Commission Leakage = Zero</h3>
+      <p>Upfront online payment. No contact info shared. No cash-at-door. Structural protection, not a policy.</p>
     </div>
-    <div class="card card-o">
-      <h3>5. Hyperlocal trust moat</h3>
-      <p>When a buyer knows Kamla Tai by name, that trust doesn't transfer to a warehouse. We digitize the <em>relationship</em>, not replace it. Defensible by design.</p>
+    <div class="adv-card">
+      <h3><span class="num-circle num-orange" style="width:30px;height:30px;font-size:12px">05</span> WhatsApp‑Native Workflow</h3>
+      <p>500M+ on WhatsApp. Formalises the workflow sellers already run — but now with mandatory payment flow.</p>
     </div>
-    <div class="card card-o">
-      <h3>6. Category creation</h3>
-      <p>$930M+ funded warehouses. $0 funded the 25M fishermen. We're not competing for share in an existing category. We're creating the category.</p>
+    <div class="adv-card">
+      <h3><span class="num-circle num-orange" style="width:30px;height:30px;font-size:12px">06</span> Category Creation</h3>
+      <p>$930M funded warehouses. $0 funded fishermen. We own an entirely new category nobody has addressed.</p>
     </div>
+  </div>
+  <div class="callout">
+    <p><b>6 structural moats.</b> No delivery required. Pure platform. $930M+ proved the category exists — nobody built for the seller.</p>
   </div>
 </div>
 
-<!-- 8. BUSINESS MODEL -->
+<!-- 9. BUSINESS MODEL -->
 <div class="slide">
   <div class="label">Business Model</div>
   <h2>Platform take rate + 5 additional revenue streams</h2>
@@ -405,49 +642,39 @@
   </div>
 </div>
 
-<!-- 9. UNIT ECONOMICS -->
+<!-- UNIT ECONOMICS -->
 <div class="slide">
   <div class="label">Unit Economics</div>
-  <h2>Path to contribution-positive by Month 7</h2>
-  <div class="sp2"></div>
+  <h2>Clean from Day One — pure software margin.</h2>
+  <div class="sp"></div>
   <div class="g2">
     <div>
-      <table class="fin">
-        <thead><tr><th>Per Order (M6)</th><th>Amount</th></tr></thead>
-        <tbody>
-          <tr><td>GMV</td><td>₹820</td></tr>
-          <tr><td>Commission (6.5%)</td><td>₹53</td></tr>
-          <tr><td>Delivery fee (avg)</td><td>₹25</td></tr>
-          <tr><td><b>Gross revenue</b></td><td><b>₹78</b></td></tr>
-          <tr><td>Delivery cost</td><td>-₹45</td></tr>
-          <tr><td>Payment gateway (2%)</td><td>-₹16</td></tr>
-          <tr><td>Packaging</td><td>-₹12</td></tr>
-          <tr><td><b>Gross margin</b></td><td><b>₹5</b></td></tr>
-        </tbody>
-      </table>
+      <h3>Per Order Economics</h3>
       <div class="sp2"></div>
-      <div class="callout" style="margin-top:0">
-        <p><b>M12 target:</b> Gross margin ₹40/order (4.9%) as delivery density + ancillary revenue improve.</p>
-      </div>
+      <table class="ue-table">
+        <tr><td>GMV per order</td><td>Rs 820</td></tr>
+        <tr><td>Commission (6.5%)</td><td class="ue-pos">+ Rs 53</td></tr>
+        <tr><td>Payment gateway (2%)</td><td class="ue-neg">– Rs 16</td></tr>
+        <tr><td><b>Gross Margin / order</b></td><td><b>Rs 37</b></td></tr>
+        <tr><td><b>Gross Margin %</b></td><td><b>4.5%</b></td></tr>
+      </table>
+      <div class="green-tag">No delivery cost.  No packaging cost.  Pure software margin.</div>
     </div>
     <div>
-      <table class="fin">
-        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
-        <tbody>
-          <tr><td>Blended CAC</td><td>₹130</td></tr>
-          <tr><td>LTV (conservative)</td><td>₹2,657</td></tr>
-          <tr><td>LTV (target)</td><td>₹4,018</td></tr>
-          <tr><td><b>LTV:CAC ratio</b></td><td class="pos"><b>31:1</b></td></tr>
-          <tr><td>Payback period</td><td>3.7 months</td></tr>
-          <tr><td>D30 retention target</td><td>40%+</td></tr>
-          <tr><td>Orders/buyer/month</td><td>7</td></tr>
-        </tbody>
-      </table>
+      <h3>Key Metrics</h3>
       <div class="sp2"></div>
-      <div class="callout" style="margin-top:0">
-        <p><b>Why LTV:CAC is high:</b> Fish is a <b>non-discretionary, high-frequency</b> purchase. Buyers order 2-3x/week. The habit is pre-existing — we just redirect it.</p>
+      <div class="km-grid">
+        <div class="km-item"><div class="km-val" style="color:var(--blue)">Rs 130</div><div class="km-label">Blended CAC</div><div class="km-sub">Physical + digital</div></div>
+        <div class="km-item"><div class="km-val" style="color:var(--blue)">Rs 4,018</div><div class="km-label">LTV (target)</div><div class="km-sub">2–3x/wk, 6.5% take</div></div>
+        <div class="km-item"><div class="km-val" style="color:var(--green)">31 : 1</div><div class="km-label">LTV : CAC</div><div class="km-sub">Non-discretionary fish</div></div>
+        <div class="km-item"><div class="km-val" style="color:var(--green)">3.7 mo</div><div class="km-label">Payback period</div><div class="km-sub">Fast repeat purchases</div></div>
+        <div class="km-item"><div class="km-val" style="color:var(--green)">40%+ target</div><div class="km-label">D30 retention</div><div class="km-sub">High-frequency category</div></div>
+        <div class="km-item"><div class="km-val" style="color:var(--green)">7</div><div class="km-label">Orders/buyer/mo</div><div class="km-sub">2–3x/wk</div></div>
       </div>
     </div>
+  </div>
+  <div class="callout">
+    <p><b>₹37 gross margin per order from Day 1.</b> No delivery cost. No packaging cost. Expenses = staff + marketing + infra only.</p>
   </div>
 </div>
 
@@ -568,6 +795,49 @@
   </div>
 </div>
 
+<div class="slide">
+  <div class="label">Ordering &amp; Distribution Playbook</div>
+  <h2>Structured ordering, efficient delivery &amp; repeatable playbook</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b">
+      <h3>1. Ordering Workflow</h3>
+      <p>Buyer selects fish, confirms pre‑order, instant UPI verification, real‑time inventory lock.</p>
+    </div>
+    <div class="card card-o">
+      <h3>2. Distribution Model</h3>
+      <p>Hyper‑local hubs → rider network → 2‑hour delivery window, temperature‑controlled packaging.</p>
+    </div>
+    <div class="card card-g">
+      <h3>3. Playbook Milestones</h3>
+      <p>Day‑0 onboarding → Day‑3 first repeat → Day‑30 scaling to 2 km radius, KPI‑driven expansion.</p>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="label">Market Distribution</div>
+  <h2>Zero‑CAC Distribution via Sellers</h2>
+  <div class="sp"></div>
+  <ul class="bl">
+    <li><b>Seller‑first model.</b> Sellers bring their own customer base, acting as the distribution network.</li>
+    <li><b>Zero customer acquisition cost.</b> No paid ads needed initially; growth is organic through seller trust.</li>
+    <li><b>Scalable hyperlocal clusters.</b> Replicate the neighborhood‑by‑neighborhood playbook.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <div class="label">Marketing Playbook</div>
+  <h2>90‑Day Growth Playbook</h2>
+  <div class="sp"></div>
+  <ul class="bl">
+    <li><b>Weeks 1‑2:</b> Prove demand via manual WhatsApp ops, 1 seller, 20 buyers.</li>
+    <li><b>Weeks 3‑4:</b> Instrument with GA4, UTM tracking, streamline waitlist.</li>
+    <li><b>Weeks 5‑8:</b> Deploy standees, add ratings, launch daily catch broadcast.</li>
+    <li><b>Weeks 9‑12:</b> Scale to 5+ sellers, 100+ weekly orders, add payments, B2B outreach.</li>
+  </ul>
+</div>
+
 <!-- 14. CAPITAL ALLOCATION & OUTPUT -->
 <div class="slide">
   <div class="label">Capital Allocation + Output</div>
@@ -589,6 +859,26 @@
   </div>
   <div class="callout">
     <p><b>Our capital allocation rule:</b> Allocate capital close to supply. Build local transaction density first, prove the unit economics, and scale only where repeat customer loops are validated.</p>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="label">Ordering &amp; Distribution Playbook</div>
+  <h2>Structured ordering, efficient delivery &amp; repeatable playbook</h2>
+  <div class="sp"></div>
+  <div class="g3">
+    <div class="card card-b">
+      <h3>1. Ordering Workflow</h3>
+      <p>Buyer selects fish, confirms pre‑order, instant UPI verification, real‑time inventory lock.</p>
+    </div>
+    <div class="card card-o">
+      <h3>2. Distribution Model</h3>
+      <p>Hyper‑local hubs → rider network → 2‑hour delivery window, temperature‑controlled packaging.</p>
+    </div>
+    <div class="card card-g">
+      <h3>3. Playbook Milestones</h3>
+      <p>Day‑0 onboarding → Day‑3 first repeat → Day‑30 scaling to 2 km radius, KPI‑driven expansion.</p>
+    </div>
   </div>
 </div>
 
@@ -668,29 +958,6 @@
       </ul>
     </div>
   </div>
-</div>
-
-<!-- 17. END -->
-<div class="slide">
-  <div class="label">Market Distribution</div>
-  <h2>Zero‑CAC Distribution via Sellers</h2>
-  <div class="sp"></div>
-  <ul class="bl">
-    <li><b>Seller‑first model.</b> Sellers bring their own customer base, acting as the distribution network.</li>
-    <li><b>Zero customer acquisition cost.</b> No paid ads needed initially; growth is organic through seller trust.</li>
-    <li><b>Scalable hyperlocal clusters.</b> Replicate the neighborhood‑by‑neighborhood playbook.</li>
-  </ul>
-</div>
-<div class="slide">
-  <div class="label">Marketing Playbook</div>
-  <h2>90‑Day Growth Playbook</h2>
-  <div class="sp"></div>
-  <ul class="bl">
-    <li><b>Weeks 1‑2:</b> Prove demand via manual WhatsApp ops, 1 seller, 20 buyers.</li>
-    <li><b>Weeks 3‑4:</b> Instrument with GA4, UTM tracking, streamline waitlist.</li>
-    <li><b>Weeks 5‑8:</b> Deploy standees, add ratings, launch daily catch broadcast.</li>
-    <li><b>Weeks 9‑12:</b> Scale to 5+ sellers, 100+ weekly orders, add payments, B2B outreach.</li>
-  </ul>
 </div>
 <div class="slide end">
   <h1>Relifish</h1>
