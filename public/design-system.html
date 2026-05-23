@@ -2060,41 +2060,278 @@
   <div class="section-title">Transactional Emails</div>
   <div class="section-sub">Branded inline-styled HTML emails sent via Resend from noreply@relifish.store.</div>
 
-  <div class="comp-grid" style="margin-bottom:32px">
+  <div class="comp-grid" style="margin-bottom:32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+    <!-- 1. Buyer Order Email -->
     <div>
-      <h3 style="font:700 15px Inter;margin-bottom:12px">Buyer Order Email</h3>
-      <div style="background:#f0f2f5;border-radius:var(--radius);padding:16px;max-width:400px">
-        <div style="background:#0a0f1a;border-radius:16px 16px 0 0;padding:24px 28px;text-align:center">
-          <div style="font-size:28px;margin-bottom:4px">🐟</div>
-          <div style="font-size:22px;font-weight:800;color:#66b3ff;letter-spacing:-0.5px">Relifish</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;margin-top:2px">Mumbai's Fish Marketplace</div>
-        </div>
-        <div style="background:#fff;padding:28px;border-radius:0 0 16px 16px">
-          <div style="text-align:center;margin-bottom:20px"><span style="background:var(--brand);color:#fff;padding:6px 14px;border-radius:20px;font:700 13px Inter">Order Placed</span></div>
-          <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:16px">
-            <div style="font:700 18px Inter;color:#1a1a1a;margin-bottom:12px">🐟 Pomfret</div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f2f5;font:13px Inter"><span style="color:#888">Quantity</span><span style="font-weight:600;color:#1a1a1a">3 kg</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;font:13px Inter"><span style="color:#888">Total</span><span style="font-weight:600;color:#1a1a1a">₹1,800</span></div>
-          </div>
-          <div style="text-align:center"><a style="display:inline-block;background:var(--brand);color:#fff;padding:12px 32px;border-radius:10px;font:700 14px Inter;text-decoration:none">Track Order →</a></div>
-        </div>
+      <h3 style="font:700 15px Inter;margin-bottom:12px">1. Buyer Order Email (Live Update)</h3>
+      <div style="background:#eef2f7;border-radius:var(--radius);padding:20px;max-width:440px;box-shadow:var(--shadow-sm);margin:0 auto;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0a0f1a,#111a2a);padding:24px 28px;text-align:center;">
+              <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
+              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
+            </td>
+          </tr>
+          <!-- BODY -->
+          <tr>
+            <td style="padding:26px 24px 20px;">
+              <!-- Status Header -->
+              <div style="text-align:center;margin-bottom:14px;">
+                <div style="display:inline-block;background:#28a745;color:#ffffff;padding:7px 16px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.35px;text-transform:uppercase;font-family:Inter,sans-serif;">✓ Confirmed</div>
+              </div>
+              <!-- Intro -->
+              <div style="margin-bottom:14px;font-family:Inter,sans-serif;">
+                <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">Order Update</div>
+                <h1 style="font-size:20px;line-height:1.25;margin:6px 0 6px;color:#0f172a;">Surmai order update</h1>
+                <p style="font-size:13px;line-height:1.55;color:#475467;margin:0;">Your order has been verified by the seller. You can track every step in the app with live updates.</p>
+              </div>
+              <!-- Summary Table -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e8edf5;border-radius:12px;background:#f8fafc;padding:14px 16px;font-family:Inter,sans-serif;">
+                <tr>
+                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Fish</td>
+                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">Surmai (King Fish)</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Quantity</td>
+                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">1.5 kg</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Order ID</td>
+                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">#9B4D8D7F</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0 0;font-size:13px;color:#0f172a;font-weight:700;">Total</td>
+                  <td align="right" style="padding:10px 0 0;font-size:14px;color:#0066cc;font-weight:800;">₹975</td>
+                </tr>
+              </table>
+              <!-- CutPreference Callout -->
+              <div style="background:#f5f8ff;border-left:3px solid #93c5fd;color:#1e3a8a;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:12px;font-size:12px;line-height:1.5;font-family:Inter,sans-serif;">
+                Cut preference: <strong>Steaks (sliced)</strong><br>Buyer notes: please send medium thick slices.
+              </div>
+              <!-- CTA -->
+              <div style="text-align:center;margin-top:18px;">
+                <a style="display:inline-block;background:#0066cc;color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;letter-spacing:0.2px;font-family:Inter,sans-serif;">Track Order →</a>
+              </div>
+            </td>
+          </tr>
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;font-family:Inter,sans-serif;">
+              <div style="font-size:12px;color:#475569;line-height:1.8;">
+                📧 <a href="mailto:relifishstore@gmail.com" style="color:#0066cc;text-decoration:none;">relifishstore@gmail.com</a>
+              </div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
+                <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a> · © 2026 Relifish
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
+
+    <!-- 2. Seller Alert Email -->
     <div>
-      <h3 style="font:700 15px Inter;margin-bottom:12px">Verify Email</h3>
-      <div style="background:#f0f2f5;border-radius:var(--radius);padding:16px;max-width:400px">
-        <div style="background:#0a0f1a;border-radius:16px 16px 0 0;padding:24px 28px;text-align:center">
-          <div style="font-size:28px;margin-bottom:4px">🐟</div>
-          <div style="font-size:22px;font-weight:800;color:#66b3ff;letter-spacing:-0.5px">Relifish</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;margin-top:2px">Mumbai's Fish Marketplace</div>
-        </div>
-        <div style="background:#fff;padding:28px;border-radius:0 0 16px 16px;text-align:center">
-          <div style="font-size:40px;margin-bottom:8px">✉️</div>
-          <h1 style="font:800 20px Inter;color:#1a1a1a;margin:0 0 8px">Verify your email</h1>
-          <p style="font:400 14px Inter;color:#666;line-height:1.5">Click the button below to verify<br><strong style="color:#1a1a1a">kunal@example.com</strong></p>
-          <div style="margin:24px 0"><a style="display:inline-block;background:var(--brand);color:#fff;padding:12px 32px;border-radius:10px;font:700 14px Inter;text-decoration:none">Verify Email ✓</a></div>
-          <div style="background:#f8f9fa;border-radius:10px;padding:14px 16px;margin-top:20px"><p style="font:400 12px Inter;color:#999;margin:0;line-height:1.5">If you didn't request this, ignore this email.</p></div>
-        </div>
+      <h3 style="font:700 15px Inter;margin-bottom:12px">2. Seller Order Email (New Order Alert)</h3>
+      <div style="background:#eef2f7;border-radius:var(--radius);padding:20px;max-width:440px;box-shadow:var(--shadow-sm);margin:0 auto;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0a0f1a,#111a2a);padding:24px 28px;text-align:center;">
+              <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
+              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
+            </td>
+          </tr>
+          <!-- BODY -->
+          <tr>
+            <td style="padding:26px 24px 20px;">
+              <!-- Status Header -->
+              <div style="text-align:center;margin-bottom:14px;">
+                <div style="display:inline-block;background:#0066cc;color:#ffffff;padding:7px 16px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.35px;text-transform:uppercase;font-family:Inter,sans-serif;">New Pre-Order</div>
+              </div>
+              <!-- Intro -->
+              <div style="margin-bottom:14px;font-family:Inter,sans-serif;">
+                <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">Action Needed</div>
+                <h1 style="font-size:20px;line-height:1.25;margin:6px 0 6px;color:#0f172a;">Surmai pre-order needs attention</h1>
+                <p style="font-size:13px;line-height:1.55;color:#475467;margin:0;">Hi Kamla Tai, a customer placed a pre-order for tomorrow's catch. Review and confirm it in your dashboard.</p>
+              </div>
+              <!-- Summary Table -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e8edf5;border-radius:12px;background:#f8fafc;padding:14px 16px;font-family:Inter,sans-serif;">
+                <tr>
+                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Fish</td>
+                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">Surmai (King Fish)</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Quantity</td>
+                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">1.5 kg</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:12px;color:#667085;font-weight:500;">Price range</td>
+                  <td align="right" style="padding:8px 0;border-bottom:1px solid #e8edf5;font-size:13px;color:#0f172a;font-weight:600;">₹900–₹1,050</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0 0;font-size:13px;color:#0f172a;font-weight:700;">Max value</td>
+                  <td align="right" style="padding:10px 0 0;font-size:14px;color:#7c4dff;font-weight:800;">₹1,050</td>
+                </tr>
+              </table>
+              <!-- CutPreference Callout -->
+              <div style="background:#fff7ed;border-left:3px solid #fb923c;color:#7c2d12;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:12px;font-size:12px;line-height:1.5;font-family:Inter,sans-serif;">
+                Cut preference: <strong>Steaks</strong><br>Notes: medium slices.
+              </div>
+              <!-- CTA -->
+              <div style="text-align:center;margin-top:18px;">
+                <a style="display:inline-block;background:#0066cc;color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;letter-spacing:0.2px;font-family:Inter,sans-serif;">View Orders →</a>
+              </div>
+            </td>
+          </tr>
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;font-family:Inter,sans-serif;">
+              <div style="font-size:12px;color:#475569;line-height:1.8;">
+                📧 <a href="mailto:relifishstore@gmail.com" style="color:#0066cc;text-decoration:none;">relifishstore@gmail.com</a>
+              </div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
+                <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a> · © 2026 Relifish
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. Razorpay Payment Receipt -->
+    <div>
+      <h3 style="font:700 15px Inter;margin-bottom:12px">3. Razorpay Receipt (Paid Buyer)</h3>
+      <div style="background:#eef2f7;border-radius:var(--radius);padding:20px;max-width:440px;box-shadow:var(--shadow-sm);margin:0 auto;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0a0f1a,#111a2a);padding:24px 28px;text-align:center;">
+              <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
+              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
+            </td>
+          </tr>
+          <!-- BODY -->
+          <tr>
+            <td style="padding:26px 24px 20px;">
+              <!-- Status Header -->
+              <div style="text-align:center;margin-bottom:16px;">
+                <div style="display:inline-block;background:#059669;color:#fff;padding:7px 18px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;font-family:Inter,sans-serif;">✓ Payment Confirmed</div>
+              </div>
+              <!-- Intro -->
+              <div style="margin-bottom:14px;font-family:Inter,sans-serif;">
+                <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">Payment Receipt</div>
+                <h1 style="font-size:20px;line-height:1.25;margin:0 0 4px;color:#0f172a;">Your order is confirmed</h1>
+                <p style="font-size:13px;line-height:1.55;color:#475467;margin:0 0 18px;">Here's your receipt. Track your order in the app for live updates.</p>
+              </div>
+              <!-- Order metadata strip -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-family:Inter,sans-serif;">
+                <tr>
+                  <td style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;">Order ID</td>
+                  <td style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;text-align:center;">Date &amp; Time</td>
+                  <td style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:3px;text-align:right;">Type</td>
+                </tr>
+                <tr>
+                  <td style="font-size:12px;font-weight:700;color:#0f172a;">#ORD-8FB0D8</td>
+                  <td style="font-size:11px;font-weight:600;color:#0f172a;text-align:center;">23 May 2026, 12:00 PM</td>
+                  <td style="font-size:12px;font-weight:700;color:#0f172a;text-align:right;">🚲 Delivery</td>
+                </tr>
+              </table>
+              <!-- Seller details -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:Inter,sans-serif;">
+                <span style="font-size:18px;line-height:1;vertical-align:middle;">🎣</span>
+                <span style="font-size:13px;font-weight:700;color:#0f172a;vertical-align:middle;margin-left:8px;">Kamla Tai Fish Stall</span>
+                <div style="font-size:11px;color:#64748b;margin-top:4px;padding-left:26px;">📍 Sassoon Dock, Colaba</div>
+              </div>
+              <!-- Receipt list -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e8edf5;border-radius:12px;background:#f8fafc;padding:0 16px;font-family:Inter,sans-serif;">
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid #e8edf5;">
+                    <div style="font-size:13px;font-weight:700;color:#0f172a;">Surmai (King Fish)</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">1.5 kg · Steaks</div>
+                  </td>
+                  <td align="right" style="padding:10px 0;border-bottom:1px solid #e8edf5;font-size:13px;font-weight:700;color:#0f172a;vertical-align:middle;white-space:nowrap;">₹975</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:12px;color:#64748b;">Delivery Fee</td>
+                  <td align="right" style="padding:6px 0;font-size:12px;color:#0f172a;font-weight:600;">₹50</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0 0;font-size:13px;font-weight:800;color:#0f172a;border-top:2px solid #0066cc;">Total Paid</td>
+                  <td align="right" style="padding:10px 0 0;font-size:14px;font-weight:800;color:#0066cc;">₹1,025</td>
+                </tr>
+              </table>
+              <!-- Payment confirmation -->
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-top:16px;font-family:Inter,sans-serif;">
+                <span style="font-size:18px;line-height:1;vertical-align:middle;">✅</span>
+                <span style="font-size:12px;font-weight:700;color:#15803d;vertical-align:middle;margin-left:8px;">Paid via Razorpay</span>
+                <div style="font-size:10px;color:#64748b;font-family:monospace;margin-top:4px;padding-left:26px;">pay_P9F8D8J2D3</div>
+              </div>
+              <!-- CTA -->
+              <div style="text-align:center;margin-top:18px;">
+                <a style="display:inline-block;background:#0066cc;color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;letter-spacing:0.2px;font-family:Inter,sans-serif;">Track Order →</a>
+              </div>
+            </td>
+          </tr>
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;font-family:Inter,sans-serif;">
+              <div style="font-size:12px;color:#475569;line-height:1.8;">
+                📧 <a href="mailto:relifishstore@gmail.com" style="color:#0066cc;text-decoration:none;">relifishstore@gmail.com</a>
+              </div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
+                <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a> · © 2026 Relifish
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. Verify Email -->
+    <div>
+      <h3 style="font:700 15px Inter;margin-bottom:12px">4. Verify Email (Account Setup)</h3>
+      <div style="background:#eef2f7;border-radius:var(--radius);padding:20px;max-width:440px;box-shadow:var(--shadow-sm);margin:0 auto;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.08);">
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0a0f1a,#111a2a);padding:24px 28px;text-align:center;">
+              <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
+              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;text-align:center;">Fresh local seafood</div>
+            </td>
+          </tr>
+          <!-- BODY -->
+          <tr>
+            <td style="padding:26px 24px 20px;text-align:center;font-family:Inter,sans-serif;">
+              <div style="text-align:center;margin-bottom:8px;font-size:36px;line-height:1;">✉️</div>
+              <!-- Intro -->
+              <div style="margin-bottom:14px;text-align:left;">
+                <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;">Account</div>
+                <h1 style="font-size:20px;line-height:1.25;margin:6px 0 6px;color:#0f172a;text-align:left;">Verify your email</h1>
+                <p style="font-size:13px;line-height:1.55;color:#475467;margin:0;text-align:left;">Use the button below to confirm <strong style="color:#0f172a;">priya@example.com</strong> on your Relifish profile. You will get order updates at this address when you opt in.</p>
+              </div>
+              <!-- CTA -->
+              <div style="text-align:center;margin:22px 0;">
+                <a style="display:inline-block;background:#0066cc;color:#ffffff;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;letter-spacing:0.2px;font-family:Inter,sans-serif;">Verify email</a>
+              </div>
+              <!-- Callout -->
+              <div style="background:#f5f8ff;border-left:3px solid #93c5fd;color:#1e3a8a;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:12px;font-size:12px;line-height:1.5;text-align:left;">
+                If you did not request this, you can ignore this message. The link only applies to the address shown above.
+              </div>
+            </td>
+          </tr>
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;font-family:Inter,sans-serif;">
+              <div style="font-size:12px;color:#475569;line-height:1.8;">
+                📧 <a href="mailto:relifishstore@gmail.com" style="color:#0066cc;text-decoration:none;">relifishstore@gmail.com</a>
+              </div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
+                <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a> · © 2026 Relifish
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
   </div>
