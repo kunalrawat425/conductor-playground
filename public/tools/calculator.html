@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fresh‑Catch Calculator – Relifish</title>
+  <style>
+    body {font-family: 'Inter', sans-serif; background: #f9fafb; padding: 2rem; color: #0f172a;}
+    .container {max-width: 600px; margin: auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
+    label {display:block; margin-top:1rem;}
+    input, select, button {width:100%; padding:0.5rem; margin-top:0.5rem; border:1px solid #e2e8f0; border-radius:4px;}
+    button {background:#2563eb; color:#fff; border:none; cursor:pointer;}
+    button:hover {background:#1d4ed8;}
+    .result {margin-top:1.5rem; font-weight:600;}
+  </style>
+  <!-- GA4 Event tracking will be added via analytics‑tracking later -->
+</head>
+<body>
+  <div class="container">
+    <h1>Fresh‑Catch Calculator</h1>
+    <p>Estimate the price and freshness of today’s catch from local sellers.</p>
+    <label for="fish">Select Fish Type</label>
+    <select id="fish">
+      <option value="pomfret">Pomfret</option>
+      <option value="kingfish">Kingfish</option>
+      <option value="shrimp">Shrimp</option>
+    </select>
+    <label for="quantity">Quantity (kg)</label>
+    <input type="number" id="quantity" min="0.1" step="0.1" placeholder="e.g., 1.5"/>
+    <button id="calcBtn">Calculate</button>
+    <div id="result" class="result"></div>
+  </div>
+  <script>
+    document.getElementById('calcBtn').addEventListener('click', () => {
+      const fish = document.getElementById('fish').value;
+      const qty = parseFloat(document.getElementById('quantity').value) || 0;
+      const priceMap = {pomfret: 300, kingfish: 400, shrimp: 250}; // INR per kg (example)
+      const price = priceMap[fish] * qty;
+      const today = new Date().toLocaleDateString();
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = `You can order ${qty} kg of ${fish} for ₹${price.toFixed(2)}. Order today, pick up tomorrow (${today}).`;
+      // GA4 event (placeholder) – will be captured by analytics‑tracking module
+      if (window.gtag) {
+        gtag('event', 'calc_complete', {fish, qty, price});
+      }
+    });
+  </script>
+</body>
+</html>
