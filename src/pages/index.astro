@@ -23,7 +23,6 @@ const SITE = "https://www.relifish.store";
   <meta name="twitter:description" content="Order fresh pomfret, surmai, rawas &amp; prawns from verified local Mumbai fish sellers. Pre-order by 11 PM, morning-fresh next day. No Swiggy markup, no cold storage." />
   <meta name="twitter:image" content={`${SITE}/og-image.png`} />
   <link rel="icon" type="image/png" href="/favicon.png" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -101,6 +100,18 @@ const SITE = "https://www.relifish.store";
     .nav-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 28px}
     .logo{font:800 22px/1 Inter;color:#fff;letter-spacing:-.5px}
     .logo span{color:var(--teal)}
+    .logo-img {
+      height: 44px;
+      width: auto;
+      display: block;
+      filter: brightness(0) invert(1);
+      transition: height 0.15s ease;
+    }
+    @media (min-width: 768px) {
+      .logo-img {
+        height: 50px;
+      }
+    }
     .nav-links{display:flex;align-items:center;gap:2px}
     .nl{font:500 14px Inter;color:rgba(255,255,255,.6);padding:8px 13px;border-radius:8px;transition:all .15s}
     .nl:hover{color:#fff;background:rgba(255,255,255,.07)}
@@ -659,7 +670,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- NAV — no seller links -->
 <nav class="nav" id="nav">
   <div class="nav-inner">
-    <a href="/" class="logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:44px;width:auto;display:block;filter:brightness(0) invert(1);" /></a>
+    <a href="/" class="logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="logo-img" /></a>
     <div class="nav-links">
       <a href="#how" class="nl">How it works</a>
       <a href="#fish" class="nl">Browse fish</a>
