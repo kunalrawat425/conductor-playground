@@ -159,7 +159,7 @@ const tags = [
   title={`${sellerName} — Fresh Fish${sellerLocation ? ` in ${sellerLocation}` : ''} | Relifish`}
   description={(() => {
     const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
-    return `Buy fresh ${speciesList || "fish"} from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"}. Pre-order directly from your local seller — no middleman, no markup.`;
+    return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`;
   })()}
   canonical={canonicalUrl}
   noindex={true}
@@ -172,7 +172,7 @@ const tags = [
         "@type": ["FoodEstablishment", "LocalBusiness"],
         "@id": `${canonicalUrl}#seller`,
         "name": sellerName,
-        "description": (() => { const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 5).join(", "); return `Buy fresh ${speciesList || "fish"} from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"}. Pre-order directly from your local fish seller — no middleman, no markup.`; })(),
+        "description": (() => { const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 5).join(", "); return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`; })(),
         "url": canonicalUrl,
         "image": seller.store_image_url || "https://www.relifish.store/og-image.png",
         "priceRange": "₹₹",
