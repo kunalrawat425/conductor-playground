@@ -8,56 +8,82 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
   header={{ variant: "page", title: "Privacy Policy", backHref: "/v2" }}
   nav={{ active: "account" }}
 >
-  <div style="padding:16px;">
+  <div style="padding:16px; max-width:800px; margin:0 auto;">
     <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 16px;">Last updated: April 2026</p>
 
-    <div class="pp-content">
-      <h2>What we collect</h2>
-      <p>When you use {brandName}, we may collect:</p>
+    <div class="legal-content">
+      <h2>1. Introduction & Context</h2>
+      <p>At {brandName}, we value your trust and are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our hyperlocal fresh fish marketplace platform.</p>
+
+      <h2>2. What We Collect</h2>
+      <p>We only collect the minimum amount of information necessary to connect you with fish sellers near you and fulfill your orders:</p>
       <ul>
-        <li><strong>Phone number</strong> — to send order updates and OTP for sign-in</li>
-        <li><strong>Location</strong> — to show sellers near you (browser geolocation or manual input)</li>
-        <li><strong>Email + name</strong> — only if you provide them in your profile</li>
-        <li><strong>Saved addresses</strong> — to make checkout faster</li>
-        <li><strong>Order history</strong> — so you can re-order and we can resolve disputes</li>
+        <li><strong>Phone Number:</strong> Verified via One-Time Password (OTP) to securely sign you in, prevent spam accounts, and send you critical order status updates.</li>
+        <li><strong>Hyperlocal Location:</strong> Captured via browser geolocation (with your permission) or manual input, allowing us to filter and display independent fish sellers operating in your specific neighborhood in Mumbai.</li>
+        <li><strong>Saved Addresses:</strong> Stored on your account/device to enable faster checkouts for future deliveries or pickups.</li>
+        <li><strong>Order & Transaction History:</strong> Maintained so you can easily browse past purchases, re-order your favorite species, and resolve any disputes with sellers.</li>
+        <li><strong>Profile Information (Optional):</strong> Your email address and name, only if you choose to provide them to personalize your profile.</li>
       </ul>
 
-      <h2>How we use it</h2>
+      <h2>3. How We Use Your Information</h2>
       <ul>
-        <li>Connect you to nearby fish sellers</li>
-        <li>Process your orders and notify you of status changes</li>
-        <li>Send you push notifications (only with your permission)</li>
-        <li>Improve the marketplace based on aggregate usage</li>
+        <li>To verify your identity and secure your account access via SMS OTP.</li>
+        <li>To connect you with nearby fish sellers and enable hyperlocal menu displays.</li>
+        <li>To process and transmit your orders directly to the chosen independent sellers.</li>
+        <li>To send you transactional notifications (order confirmations, preparation updates, pickup availability, and WhatsApp order summaries).</li>
+        <li>To send you marketing updates or waitlist announcements, strictly with your opt-in consent.</li>
       </ul>
 
-      <h2>What we don't do</h2>
+      <h2>4. Data Sharing & Disclosure</h2>
+      <p>We believe in absolute transparency. Your trust is our biggest asset:</p>
       <ul>
-        <li>We don't sell your data</li>
-        <li>We don't share your phone number publicly</li>
-        <li>We don't track you across other apps or websites</li>
+        <li><strong>With Sellers:</strong> We share your name, phone number, and delivery/pickup address with the specific seller you order from so they can prepare, custom-cut, and fulfill your order, or contact you via phone/WhatsApp if a item is out of stock.</li>
+        <li><strong>No Selling of Data:</strong> We do not sell, trade, rent, or monetize your personal data or phone number to any third-party marketing companies.</li>
+        <li><strong>No Cross-App Tracking:</strong> We do not track your browsing activity across other apps or websites.</li>
       </ul>
 
-      <h2>Your rights</h2>
-      <p>You can request deletion of your data anytime by emailing <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a>.</p>
+      <h2>5. Data Security</h2>
+      <p>We implement industry-standard administrative, technical, and physical security measures to protect your phone number, order history, and address details. Because payments are made directly to sellers via cash or UPI, {brandName} does not collect, process, or store credit card details or bank account numbers.</p>
 
-      <h2>Contact</h2>
-      <p>{brandName} · Mumbai · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
+      <h2>6. Your Rights & Data Deletion</h2>
+      <p>Under applicable data protection laws, you have full control over your personal data. You have the right to access, correct, or delete your information at any time.</p>
+      <p>To request the permanent deletion of your account and associated personal data, simply email us at <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a>. We will process your request and purge your data within 30 days, subject to any legally mandated record-retention requirements.</p>
+
+      <h2>7. Changes to This Policy</h2>
+      <p>We may update this Privacy Policy periodically to reflect changes in our practices or legal obligations. We will notify you of any material changes by updating the "Last updated" date at the top of this page.</p>
+
+      <h2>8. Contact Us</h2>
+      <p>If you have any questions, concerns, or grievances regarding this Privacy Policy or our data practices, please contact our support team at:</p>
+      <p>{brandName} · Mumbai, India · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
     </div>
   </div>
 
   <style is:global>
-    .pp-content {
-      font: 400 14px Inter;
+    .legal-content {
+      font: 400 14px/1.6 Inter, system-ui, -apple-system, sans-serif;
       color: var(--v2-ink-2);
-      line-height: 1.6;
     }
-    .pp-content h2 {
+    .legal-content h2 {
       font: 700 16px Inter;
       color: var(--v2-ink);
-      margin: 24px 0 8px;
+      margin: 28px 0 10px;
     }
-    .pp-content ul { padding-left: 20px; margin-bottom: 16px; }
-    .pp-content li { margin-bottom: 6px; }
-    .pp-content a { color: var(--v2-brand); text-decoration: underline; }
+    .legal-content p {
+      margin-bottom: 14px;
+    }
+    .legal-content ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+    .legal-content li {
+      margin-bottom: 8px;
+    }
+    .legal-content a {
+      color: var(--v2-brand);
+      text-decoration: underline;
+    }
+    .legal-content strong {
+      color: var(--v2-ink);
+    }
   </style>
 </AppShell>

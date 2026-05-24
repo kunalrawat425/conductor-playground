@@ -1,0 +1,90 @@
+---
+import AppShell from "../components/ui/AppShell.astro";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+---
+<AppShell
+  title={`Terms of Service · ${brandName}`}
+  description={`Terms of Service for ${brandName} — terms and conditions for using our seafood marketplace.`}
+  header={{ variant: "page", title: "Terms of Service", backHref: "/v2" }}
+  nav={{ active: "account" }}
+>
+  <div style="padding:16px; max-width:800px; margin:0 auto;">
+    <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 16px;">Last updated: April 2026</p>
+
+    <div class="legal-content">
+      <h2>1. Introduction & Platform Nature</h2>
+      <p>Welcome to {brandName}. These Terms of Service ("Terms") govern your access to and use of the {brandName} website, mobile applications, and services. By using our platform, you agree to these Terms.</p>
+      <p><strong>{brandName} is a peer-to-peer marketplace platform.</strong> We are not a fish seller, merchant, middleman, or delivery provider. We do not source, store, clean, cut, or deliver seafood ourselves. Our service simply connects seafood buyers in Mumbai directly with independent, local fish sellers (such as fishermen, Koli women, and neighborhood fish stalls).</p>
+
+      <h2>2. User Accounts & Registration</h2>
+      <ul>
+        <li><strong>Verification:</strong> To browse specific pricing, place orders, or pre-order catch, you must register an account using a valid Indian mobile number verified via a One-Time Password (OTP).</li>
+        <li><strong>Accuracy:</strong> You agree to provide accurate, current, and complete location and profile details. Saved addresses are stored on your device/account solely to simplify checkout.</li>
+        <li><strong>Responsibility:</strong> You are responsible for all activities that occur under your verified phone number. Relifish reserves the right to suspend accounts displaying fraudulent behavior or spamming sellers.</li>
+      </ul>
+
+      <h2>3. Pricing & Catch Availability</h2>
+      <ul>
+        <li><strong>Daily Fluctuations:</strong> Daily fresh seafood pricing fluctuates dynamically based on weather conditions, dock landing volume, and seasonal catch availability. All listed prices are set directly by independent sellers, not by {brandName}.</li>
+        <li><strong>Pre-order Confirmations:</strong> When you pre-order tomorrow's catch, you reserve a portion from the seller's expected morning landing. Because the exact catch size and dock rate are unknown beforehand, the seller will confirm the final morning rate prior to preparation or dispatch. <strong>You have the right to cancel your pre-order with one tap if the morning price is unacceptable.</strong></li>
+        <li><strong>Out-of-Stock:</strong> Since seafood is subject to daily catch limits, a seller may cancel or decline any order if a specific species is unavailable or does not meet quality standards.</li>
+      </ul>
+
+      <h2>4. Payments & Transactions</h2>
+      <ul>
+        <li><strong>Direct to Seller:</strong> In our direct marketplace model, payments are completed directly from the buyer to the independent seller via cash, UPI, or card. {brandName} does not charge buyers a platform fee or transaction commission.</li>
+        <li><strong>Platform Responsibility:</strong> Relifish is not a payment gateway, payment custodian, or merchant of record. We do not hold, process, or escrow funds for cash or UPI payments completed directly to the seller.</li>
+      </ul>
+
+      <h2>5. Delivery, Pickup & Hyperlocal Shipping</h2>
+      <ul>
+        <li><strong>Fulfillment Options:</strong> Buyers can choose scheduled self-pickup from the seller's local market/stall location, or choose hyperlocal home delivery (where offered by the seller).</li>
+        <li><strong>Fulfillment Terms:</strong> Each seller defines their own pickup windows, delivery radius (typically up to 5km), delivery fees (fixed or distance-based), and free-delivery thresholds. These terms are presented transparently on each seller's page prior to order placement.</li>
+        <li><strong>Timeliness:</strong> While sellers aim to meet estimated slots (e.g., morning 7–9 AM), exact times are subject to morning catch landings and local logistics.</li>
+      </ul>
+
+      <h2>6. Quality & Inspection</h2>
+      <p>Seafood is highly perishable. Buyers are strongly encouraged to inspect all items immediately upon pickup or delivery. Any disputes regarding quality, freshness, weight, sizing, cleaning, or custom cuts must be raised directly with the seller at the time of receipt.</p>
+
+      <h2>7. Disclaimers & Limitation of Liability</h2>
+      <p><strong>THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE."</strong> TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, {brandName} DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.</p>
+      <p>{brandName} shall not be liable for the quality, safety, healthfulness, preparation, freshness, weight, or delivery of seafood listed by independent sellers. Any transactions, agreements, or disputes are strictly between you and the respective seller. In no event shall {brandName} be liable for any indirect, incidental, special, or consequential damages arising from the use of our marketplace.</p>
+
+      <h2>8. Changes to Terms</h2>
+      <p>We may update these Terms from time to time to reflect operational or regulatory changes. Any updates will be posted on this page with an updated "Last updated" date. Continued use of the platform after updates implies acceptance of the revised Terms.</p>
+
+      <h2>9. Contact & Support</h2>
+      <p>If you have questions about these Terms, please contact us at:</p>
+      <p>{brandName} · Mumbai, India · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
+    </div>
+  </div>
+
+  <style is:global>
+    .legal-content {
+      font: 400 14px/1.6 Inter, system-ui, -apple-system, sans-serif;
+      color: var(--v2-ink-2);
+    }
+    .legal-content h2 {
+      font: 700 16px Inter;
+      color: var(--v2-ink);
+      margin: 28px 0 10px;
+    }
+    .legal-content p {
+      margin-bottom: 14px;
+    }
+    .legal-content ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+    .legal-content li {
+      margin-bottom: 8px;
+    }
+    .legal-content a {
+      color: var(--v2-brand);
+      text-decoration: underline;
+    }
+    .legal-content strong {
+      color: var(--v2-ink);
+    }
+  </style>
+</AppShell>
