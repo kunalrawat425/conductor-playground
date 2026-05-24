@@ -1,0 +1,95 @@
+---
+import AppShell from "../components/ui/AppShell.astro";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+---
+<AppShell
+  title={`Refund & Cancellation Policy · ${brandName}`}
+  description={`Refund, return, and cancellation policy for ${brandName} — how we handle perishable seafood orders.`}
+  header={{ variant: "page", title: "Refund & Cancellation Policy", backHref: "/v2" }}
+  nav={{ active: "account" }}
+>
+  <div style="padding:16px; max-width:800px; margin:0 auto;">
+    <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 16px;">Last updated: April 2026</p>
+
+    <div class="legal-content">
+      <h2>1. Perishable Goods Policy</h2>
+      <p>At {brandName}, we and our independent sellers are committed to providing the freshest, morning-fresh seafood direct from the docks. <strong>Because fresh raw fish, shellfish, and seafood are highly perishable food items, standard e-commerce return policies do not apply.</strong></p>
+      <p>Once seafood is prepared (scaled, gutted, cleaned, or cut) and dispatched/ready for pickup, we cannot accept returns or support change-of-mind cancellations.</p>
+
+      <h2>2. Cancellation Policy</h2>
+      <h3>For Same-Day Orders</h3>
+      <ul>
+        <li>Same-day orders are prepared and dispatched/made ready for pickup immediately after the seller confirms the order.</li>
+        <li><strong>Cancellations are not permitted</strong> once the seller changes the order status to "Preparing" or "Ready."</li>
+      </ul>
+
+      <h3>For Pre-Orders (Tomorrow's Catch)</h3>
+      <ul>
+        <li><strong>Before Cutoff:</strong> You can cancel your pre-order freely at any time before the seller's daily cutoff window (e.g., 10 PM or 11 PM as shown on their shop page).</li>
+        <li><strong>Price Confirmation Window:</strong> Since pre-order prices depend on the morning landing, the seller will verify and update the final morning price once the catch is landed. <strong>You have a cancellation window to reject and cancel the pre-order with a single tap if you do not agree with the updated morning price.</strong></li>
+        <li><strong>After Cutoff & Preparation:</strong> Pre-orders cannot be cancelled after the morning cutoff/price acceptance has passed and preparation has commenced.</li>
+      </ul>
+
+      <h3>Seller Cancellations</h3>
+      <p>Sellers make every effort to fulfill all accepted pre-orders. However, because we rely on real daily catches, a seller may cancel your order if:</p>
+      <ul>
+        <li>The specific species of fish was not caught or landed that morning.</li>
+        <li>The morning landing fails to meet quality, freshness, or food safety standards.</li>
+        <li>Severe weather or sea conditions restrict fishermen from going out.</li>
+      </ul>
+      <p>If a seller cancels your order, you will be notified immediately via push notifications/WhatsApp, and any advance digital payments will be refunded in full.</p>
+
+      <h2>3. Quality, Weight & Freshness Disputes</h2>
+      <p>We pride ourselves on connects that bring you morning-fresh seafood. To ensure complete satisfaction, please adhere to the following:</p>
+      <ul>
+        <li><strong>Inspection at Receipt:</strong> Buyers must inspect the seafood's freshness, cuts, cleaning, and weight immediately upon home delivery or self-pickup.</li>
+        <li><strong>Immediate Reporting:</strong> If you receive the incorrect species, incorrect weight, poor cleaning, or are unsatisfied with the quality, you must notify the seller immediately upon receipt.</li>
+        <li><strong>Resolution:</strong> Because payments are completed directly to independent sellers (via cash or UPI), all refund resolutions, replacements, or credit adjustments are processed directly between the buyer and the seller. {brandName} does not intermediate payments but will assist by providing seller contact details and, if necessary, taking platform action against sellers who repeatedly fail to meet freshness standards.</li>
+      </ul>
+
+      <h2>4. Refund Processing (If Applicable)</h2>
+      <ul>
+        <li>In cases where a digital advance payment was processed and the seller has agreed to issue a refund due to cancellation or quality dispute, refunds are typically credited back to the buyer's original payment method (UPI account or card) directly by the seller.</li>
+        <li>No cash refunds will be issued for UPI payments unless mutually agreed upon by the seller.</li>
+      </ul>
+
+      <h2>5. Support & Assistance</h2>
+      <p>If you have any issues reaching your seller or resolving a dispute, our customer support team is here to help guide you. Contact us at:</p>
+      <p>{brandName} · Mumbai, India · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
+    </div>
+  </div>
+
+  <style is:global>
+    .legal-content {
+      font: 400 14px/1.6 Inter, system-ui, -apple-system, sans-serif;
+      color: var(--v2-ink-2);
+    }
+    .legal-content h2 {
+      font: 700 16px Inter;
+      color: var(--v2-ink);
+      margin: 28px 0 10px;
+    }
+    .legal-content h3 {
+      font: 700 15px Inter;
+      color: var(--v2-ink);
+      margin: 20px 0 8px;
+    }
+    .legal-content p {
+      margin-bottom: 14px;
+    }
+    .legal-content ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+    .legal-content li {
+      margin-bottom: 8px;
+    }
+    .legal-content a {
+      color: var(--v2-brand);
+      text-decoration: underline;
+    }
+    .legal-content strong {
+      color: var(--v2-ink);
+    }
+  </style>
+</AppShell>
