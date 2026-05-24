@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relifish – Campaign QR Code Generator & Collateral Center</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #070b19;
+      --bg-card: rgba(15, 23, 42, 0.45);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      
+      /* Relifish Brand Palette */
+      --brand-navy: #0a2472;
+      --brand-blue: #0066cc;
+      --brand-vibrant: #0066FF;
+      --brand-yellow: #fbbf24;
+      --brand-teal: #0e7490;
+      --brand-orange: #f97316;
+      --brand-green: #22c55e;
+      
+      --gradient-primary: linear-gradient(135deg, #0a2472 0%, #0066cc 50%, #0066FF 100%);
+      --gradient-glow: linear-gradient(135deg, rgba(10, 36, 114, 0.5) 0%, rgba(0, 102, 204, 0.3) 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(10, 36, 114, 0.3) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(0, 102, 204, 0.2) 0px, transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+      position: relative;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem 1.2rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .logo-badge img {
+      height: 18px;
+      width: auto;
+      filter: brightness(0) invert(1);
+    }
+
+    .logo-badge span {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--brand-yellow);
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.75rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      background: linear-gradient(to right, #ffffff, #93c5fd, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 650px;
+      margin: 0 auto;
+      font-weight: 400;
+    }
+
+    /* ── CAMPAIGN SELECTOR GRIDS ── */
+    .campaign-section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .campaign-section-title span.number {
+      background: var(--brand-blue);
+      color: white;
+      font-size: 0.95rem;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+    }
+
+    .campaign-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    /* ── CARD STYLING ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gradient-primary);
+      opacity: 0.8;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), 0 0 30px rgba(0, 102, 252, 0.15);
+    }
+
+    .card-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .card-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 100px;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-badge.flyer-badge {
+      background: rgba(10, 36, 114, 0.4);
+      border: 1px solid rgba(10, 36, 114, 0.8);
+      color: #93c5fd;
+    }
+
+    .card-badge.hanger-badge {
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.4);
+      color: #ff9d43;
+    }
+
+    .card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.45;
+    }
+
+    /* Mockup Display Box */
+    .mockup-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(7, 11, 25, 0.6);
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      height: 280px;
+      position: relative;
+    }
+
+    /* Flyer Preview Mockup */
+    .flyer-mock {
+      width: 140px;
+      height: 198px;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .flyer-mock-header {
+      height: 38px;
+      background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-blue) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2px;
+      color: white;
+    }
+
+    .flyer-mock-logo {
+      font-family: 'Outfit', sans-serif;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: -0.2px;
+    }
+
+    .flyer-mock-title {
+      font-size: 5px;
+      font-weight: 600;
+      transform: scale(0.9);
+    }
+
+    .flyer-mock-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      background: #f8fafc;
+    }
+
+    .flyer-mock-qr-wrap {
+      border: 2px solid var(--brand-navy);
+      border-radius: 6px;
+      padding: 3px;
+      background: white;
+      width: 64px;
+      height: 64px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .flyer-mock-qr-wrap img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .flyer-mock-text {
+      color: var(--brand-navy);
+      font-weight: 800;
+      font-size: 7px;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+
+    .flyer-mock-footer {
+      height: 14px;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .flyer-mock-footer-text {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 4px;
+    }
+
+    /* Hanger Preview Mockup */
+    .hanger-mock {
+      width: 110px;
+      height: 220px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Door Knob Cutout */
+    .hanger-mock-knob-hole {
+      width: 44px;
+      height: 44px;
+      background: rgba(7, 11, 25, 0.95);
+      border-radius: 50%;
+      margin: 14px auto 0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+      position: relative;
+    }
+
+    /* Cutline leading to knob hole */
+    .hanger-mock-slit {
+      width: 1px;
+      height: 14px;
+      background: rgba(7, 11, 25, 0.95);
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .hanger-mock-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 6px;
+      background: linear-gradient(to bottom, #ffffff 35%, #f1f5f9 100%);
+    }
+
+    .hanger-mock-logo {
+      color: var(--brand-blue);
+      font-family: 'Outfit', sans-serif;
+      font-size: 8px;
+      font-weight: 900;
+      margin-bottom: 2px;
+      line-height: 1;
+    }
+
+    .hanger-mock-badge {
+      background: var(--brand-orange);
+      color: white;
+      font-size: 4.5px;
+      padding: 1px 4px;
+      border-radius: 100px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .hanger-mock-qr-wrap {
+      border: 2px solid var(--brand-orange);
+      border-radius: 6px;
+      padding: 3px;
+      background: white;
+      width: 58px;
+      height: 58px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .hanger-mock-qr-wrap img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .hanger-mock-text {
+      color: var(--brand-orange);
+      font-weight: 800;
+      font-size: 6px;
+      margin-top: 4px;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .hanger-mock-cta {
+      color: #334155;
+      font-size: 4px;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    /* QR Info Details */
+    .qr-details {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.8rem;
+    }
+
+    .qr-detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+    }
+
+    .qr-detail-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .qr-detail-lbl {
+      color: var(--text-muted);
+    }
+
+    .qr-detail-val {
+      font-weight: 600;
+      color: #e2e8f0;
+      word-break: break-all;
+      text-align: right;
+      max-width: 65%;
+    }
+
+    .qr-detail-val code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.1rem 0.3rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: monospace;
+    }
+
+    /* Actions Button Container */
+    .card-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: auto;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--brand-blue);
+      color: white;
+      box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-vibrant);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 102, 204, 0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-accent {
+      background: var(--brand-orange);
+      color: white;
+      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+    }
+
+    .btn-accent:hover {
+      background: #ff841a;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(249, 115, 22, 0.45);
+    }
+
+    /* ── CUSTOM GENERATOR PANEL ── */
+    .customizer-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-top: 4rem;
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .customizer-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--brand-orange) 0%, var(--brand-yellow) 100%);
+      opacity: 0.8;
+    }
+
+    .customizer-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 3rem;
+    }
+
+    @media (max-width: 868px) {
+      .customizer-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .customizer-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    input[type="text"], select {
+      background: rgba(7, 11, 25, 0.6);
+      border: 1px solid var(--border-color);
+      color: white;
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+      width: 100%;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--brand-blue);
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+    }
+
+    .color-picker-group {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .color-swatch-list {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.25rem;
+    }
+
+    .color-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.15);
+    }
+
+    .color-swatch.active {
+      border-color: white;
+      box-shadow: 0 0 0 2px var(--brand-blue);
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border: 2px solid var(--border-color);
+      border-radius: 50%;
+    }
+
+    .customizer-preview-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7, 11, 25, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .qr-canvas-holder {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      margin-bottom: 1.5rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .qr-canvas-holder canvas {
+      display: block;
+      width: 200px;
+      height: 200px;
+    }
+
+    .qr-tip {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* ── SUCCESS TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      border-left: 4px solid var(--brand-green);
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 1000;
+      transform: translateY(150%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+    }
+
+    .toast-icon {
+      color: var(--brand-green);
+      font-size: 1.2rem;
+    }
+
+    /* Offline fallback placeholder */
+    .qr-placeholder-text {
+      color: #0f172a;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+    }
+  </style>
+
+  <!-- QRious QR Code generator library from Cloudflare CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+<body>
+
+  <!-- Background hidden canvas to generate ultra high resolution download images -->
+  <canvas id="hidden-qr-canvas" style="display: none;"></canvas>
+
+  <div class="container">
+    
+    <!-- ── HEADER ── -->
+    <header>
+      <div class="logo-badge">
+        <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish Logo">
+        <span>Campaign Center</span>
+      </div>
+      <h1>Print-Ready QR Code Center</h1>
+      <p class="subtitle">Generate, customize, and download high-resolution (300+ DPI) QR codes embedded with fully tagged UTM campaigns for our hyperlocal marketing assets.</p>
+    </header>
+
+    <!-- ── CAMPAIGN COLLATERAL GRIDS ── -->
+    <h2 class="campaign-section-title"><span class="number">1</span> Predefined Marketing Campaign Assets</h2>
+    
+    <div class="campaign-grid">
+      
+      <!-- CARD 1: FLYER / PAMPHLET -->
+      <div class="card" id="card-flyer">
+        <div class="card-header">
+          <span class="card-badge flyer-badge">Flyer / Pamphlet / Bi-fold</span>
+          <h3>1. Campaign Flyer & Pamphlet</h3>
+          <p class="card-desc">For our A5 double-sided or single-page flyer distributed via society drops, RWA reps, and local vendors.</p>
+        </div>
+
+        <div class="mockup-container">
+          <!-- A5 Flyer Mockup -->
+          <div class="flyer-mock">
+            <div class="flyer-mock-header">
+              <div class="flyer-mock-logo">Relifish</div>
+              <div class="flyer-mock-title">Verified Fresh Local Catch</div>
+            </div>
+            <div class="flyer-mock-body">
+              <div class="flyer-mock-qr-wrap">
+                <img class="flyer-qr-preview" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Frelifish.store%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dfold_brochure%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4" alt="Flyer QR Preview">
+              </div>
+              <div class="flyer-mock-text">Scan To Order</div>
+            </div>
+            <div class="flyer-mock-footer">
+              <div class="flyer-mock-footer-text">🛵 Same-Day Doorstep Delivery</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="qr-details">
+          <div class="qr-detail-row">
+            <span class="qr-detail-lbl">Target URL:</span>
+            <span class="qr-detail-val"><code>relifish.store/</code></span>
+          </div>
+          <div class="qr-detail-row">
+            <span class="qr-detail-lbl">Source / Medium:</span>
+            <span class="qr-detail-val"><code>offline_qr</code> / <code>fold_brochure</code></span>
+          </div>
+          <div class="qr-detail-row">
+            <span class="qr-detail-lbl">Campaign ID:</span>
+            <span class="qr-detail-val"><code>pomfret_cover</code></span>
+          </div>
+          <div class="qr-detail-row">
+            <span class="qr-detail-lbl">Content ID:</span>
+            <span class="qr-detail-val"><code>fish_fold_design</code></span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-primary" onclick="downloadCampaignQR('flyer')">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            Download PNG (Print High-Res)
+          </button>
+          <button class="btn btn-secondary" onclick="loadInCustomizer('flyer')">Customize</button>
+        </div>
+      </div>
+
+      <!-- CARD 2: DOOR HANGER -->
+      <div class="card" id="card-hanger">
+        <div class="card-header">
+          <span class="card-badge hanger-badge">Door Hanger / Tag / Giveaway</span>
+          <h3>2. Door Hanger Giveaway</h3>
+          <p class="card-desc">For die-cut door handle hangers dropped directly on apartment unit doors with introductory incentives.</p>
+        </div>
+
+        <div class="mockup-container">
+          <!-- Door Hanger Mockup -->
+          <div class="hanger-mock">
+            <div class="hanger-mock-knob-hole">
+              <div class="hanger-mock-slit"></div>
+            </div>
+            <div class="hanger-mock-body">
+              <div class="hanger-mock-logo">Relifish</div>
+              <span class="hanger-mock-badge">Free Delivery</span>
+              <div class="hanger-mock-qr-wrap">
+                <img class="hanger-qr-preview" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Frelifish.store%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dhanger%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4" alt="Hanger QR Preview">
+              </div>
+              <div class="hanger-mock-text">Scan QR For Discount</div>
+              <div class="hanger-mock-cta">Hang on Handle</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="qr-details">
+          <div class="qr-detail-row">
+            <span class="qr-detail-lbl">Target URL:</span>
+            <span class="qr-detail-val"><code>relifish.store/</code></span>
+          </div>
+          <div class="qr-detail-row">
+            <span class="qr-detail-lbl">Source / Medium:</span>
+            <span class="qr-detail-val"><code>offline_qr</code> / <code>hanger</code></span>
+          </div>
+          <div class="qr-detail-row">
+            <span class="qr-detail-lbl">Campaign ID:</span>
+            <span class="qr-detail-val"><code>pomfret_cover</code></span>
+          </div>
+          <div class="qr-detail-row">
+            <span class="qr-detail-lbl">Content ID:</span>
+            <span class="qr-detail-val"><code>fish_fold_design</code></span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-accent" onclick="downloadCampaignQR('hanger')">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            Download PNG (Print High-Res)
+          </button>
+          <button class="btn btn-secondary" onclick="loadInCustomizer('hanger')">Customize</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── CUSTOM GENERATOR PANEL ── -->
+    <h2 class="campaign-section-title"><span class="number">2</span> Advanced & Custom QR Builder</h2>
+    
+    <div class="customizer-panel" id="builder">
+      <div class="customizer-layout">
+        
+        <!-- Controls -->
+        <div class="customizer-form">
+          
+          <div class="form-group">
+            <label for="qr-data">Embed URL (Full link with UTM parameters)</label>
+            <input type="text" id="qr-data" value="https://relifish.store/?utm_source=offline_qr&utm_medium=fold_brochure&utm_campaign=pomfret_cover&utm_content=fish_fold_design" placeholder="e.g. https://relifish.store/shop">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="qr-ecc">Error Correction Level (ECC)</label>
+              <select id="qr-ecc">
+                <option value="L">Low (7% recovery - clean look)</option>
+                <option value="M">Medium (15% recovery)</option>
+                <option value="Q">Quartile (25% recovery)</option>
+                <option value="H" selected>High (30% recovery - best for paper flyers) ⭐️</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="qr-resolution">Download Image Size</label>
+              <select id="qr-resolution">
+                <option value="500">Standard Web (500 x 500 px)</option>
+                <option value="1000">Medium Print (1000 x 1000 px)</option>
+                <option value="2000" selected>High-Res Flyer (2000 x 2000 px - 300 DPI)</option>
+                <option value="4000">Ultra-Res Banner (4000 x 4000 px - Massive)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <!-- Foreground Color Picker -->
+            <div class="form-group">
+              <label>Foreground Color</label>
+              <div class="color-picker-group">
+                <input type="color" id="qr-fg-picker" value="#0a2472">
+                <input type="text" id="qr-fg-hex" value="#0a2472" style="max-width: 100px; text-transform: uppercase;">
+              </div>
+              <div class="color-swatch-list" id="fg-swatches">
+                <!-- Javascript will inject Relifish Brand Palette quick selection swatches -->
+              </div>
+            </div>
+
+            <!-- Background Color Picker -->
+            <div class="form-group">
+              <label>Background Color</label>
+              <div class="color-picker-group">
+                <input type="color" id="qr-bg-picker" value="#ffffff">
+                <input type="text" id="qr-bg-hex" value="#ffffff" style="max-width: 100px; text-transform: uppercase;">
+              </div>
+              <div class="color-swatch-list" id="bg-swatches">
+                <!-- Javascript will inject background swatches -->
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="qr-margin">White Margin Padding</label>
+              <select id="qr-margin">
+                <option value="0">No Border (0x)</option>
+                <option value="1" selected>Small Border (1x - Recommended)</option>
+                <option value="2">Medium Border (2x)</option>
+                <option value="4">Large Border (4x)</option>
+              </select>
+            </div>
+            
+            <div class="form-group" style="justify-content: flex-end;">
+              <button class="btn btn-primary" onclick="downloadCustomQR()" style="width: 100%; height: 50px;">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+                Download Custom QR (PNG)
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Custom Live Preview -->
+        <div class="customizer-preview-box">
+          <label style="margin-bottom: 1rem;">Live Vector Canvas</label>
+          <div class="qr-canvas-holder">
+            <canvas id="custom-qr-canvas"></canvas>
+          </div>
+          <div id="preview-url-tag" style="font-size: 0.85rem; font-weight: 700; color: white; word-break: break-all; margin-bottom: 0.5rem;">relifish.store/shop</div>
+          <div class="qr-tip">
+            💡 <strong>ECC High (Level H)</strong> allows up to 30% of the QR code to be damaged or dirty without breaking the scan. Highly recommended for physical flyer prints.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast-notif">
+    <span class="toast-icon">✓</span>
+    <span id="toast-text">QR Code downloaded successfully!</span>
+  </div>
+
+  <script>
+    // Campaign QR Presets data
+    const campaignPresets = {
+      flyer: {
+        url: "https://relifish.store/?utm_source=offline_qr&utm_medium=fold_brochure&utm_campaign=pomfret_cover&utm_content=fish_fold_design",
+        fg: "#0a2472",
+        bg: "#ffffff",
+        ecc: "H",
+        name: "relifish_flyer_qr"
+      },
+      hanger: {
+        url: "https://relifish.store/?utm_source=offline_qr&utm_medium=hanger&utm_campaign=pomfret_cover&utm_content=fish_fold_design",
+        fg: "#0a2472",
+        bg: "#ffffff",
+        ecc: "H",
+        name: "relifish_hanger_qr"
+      }
+    };
+
+    // Color Swatches definition
+    const brandColors = [
+      { name: "Relifish Navy", hex: "#0a2472" },
+      { name: "Relifish Blue", hex: "#0066cc" },
+      { name: "Vibrant Blue", hex: "#0066FF" },
+      { name: "Coral Orange", hex: "#f97316" },
+      { name: "Teal Blue", hex: "#0e7490" },
+      { name: "Dark Slate", hex: "#0f172a" }
+    ];
+
+    const bgColors = [
+      { name: "Pure White", hex: "#ffffff" },
+      { name: "Soft Cream", hex: "#fffdfa" },
+      { name: "Light Blue", hex: "#eff6ff" },
+      { name: "Soft Grey", hex: "#f8fafc" }
+    ];
+
+    let customQRGenerator = null;
+
+    // Initialize Page elements
+    window.addEventListener("DOMContentLoaded", () => {
+      // 1. Load swatches in Customizer
+      renderSwatches();
+
+      // 2. Initialize custom preview canvas
+      initCustomPreview();
+
+      // 3. Hook up live inputs
+      setupLiveListeners();
+    });
+
+    // Render Quick Selection Swatches
+    function renderSwatches() {
+      const fgContainer = document.getElementById("fg-swatches");
+      const bgContainer = document.getElementById("bg-swatches");
+
+      fgContainer.innerHTML = "";
+      bgContainer.innerHTML = "";
+
+      // Foreground Swatches
+      brandColors.forEach((color, idx) => {
+        const swatch = document.createElement("div");
+        swatch.className = `color-swatch ${color.hex === "#0a2472" ? "active" : ""}`;
+        swatch.style.backgroundColor = color.hex;
+        swatch.title = color.name;
+        swatch.onclick = () => {
+          document.querySelectorAll("#fg-swatches .color-swatch").forEach(s => s.classList.remove("active"));
+          swatch.classList.add("active");
+          document.getElementById("qr-fg-picker").value = color.hex;
+          document.getElementById("qr-fg-hex").value = color.hex;
+          updateCustomQR();
+        };
+        fgContainer.appendChild(swatch);
+      });
+
+      // Background Swatches
+      bgColors.forEach((color, idx) => {
+        const swatch = document.createElement("div");
+        swatch.className = `color-swatch ${color.hex === "#ffffff" ? "active" : ""}`;
+        swatch.style.backgroundColor = color.hex;
+        swatch.style.border = "1px solid rgba(255,255,255,0.2)";
+        swatch.title = color.name;
+        swatch.onclick = () => {
+          document.querySelectorAll("#bg-swatches .color-swatch").forEach(s => s.classList.remove("active"));
+          swatch.classList.add("active");
+          document.getElementById("qr-bg-picker").value = color.hex;
+          document.getElementById("qr-bg-hex").value = color.hex;
+          updateCustomQR();
+        };
+        bgContainer.appendChild(swatch);
+      });
+    }
+
+    // Initialize custom live preview canvas using QRious
+    function initCustomPreview() {
+      const liveCanvas = document.getElementById("custom-qr-canvas");
+      
+      customQRGenerator = new QRious({
+        element: liveCanvas,
+        value: document.getElementById("qr-data").value,
+        size: 400, // Large internal size for nice rendering
+        foreground: document.getElementById("qr-fg-picker").value,
+        background: document.getElementById("qr-bg-picker").value,
+        level: document.getElementById("qr-ecc").value,
+        padding: parseInt(document.getElementById("qr-margin").value) * 10
+      });
+
+      updatePreviewURLTag();
+    }
+
+    // Update custom QR parameters dynamically
+    function updateCustomQR() {
+      if (!customQRGenerator) return;
+
+      const data = document.getElementById("qr-data").value;
+      const fg = document.getElementById("qr-fg-picker").value;
+      const bg = document.getElementById("qr-bg-picker").value;
+      const ecc = document.getElementById("qr-ecc").value;
+      const marginFactor = parseInt(document.getElementById("qr-margin").value);
+
+      customQRGenerator.set({
+        value: data || "https://relifish.store",
+        foreground: fg,
+        background: bg,
+        level: ecc,
+        padding: marginFactor * 12 // scale margin appropriately
+      });
+
+      updatePreviewURLTag();
+    }
+
+    // Shorten preview text so it fits beautifully
+    function updatePreviewURLTag() {
+      const data = document.getElementById("qr-data").value;
+      const tag = document.getElementById("preview-url-tag");
+      try {
+        const url = new URL(data);
+        tag.textContent = url.hostname + url.pathname + (url.search ? url.search.substring(0, 15) + "..." : "");
+      } catch(e) {
+        tag.textContent = data.length > 35 ? data.substring(0, 35) + "..." : data;
+      }
+    }
+
+    // Setup interactive events for the builder controls
+    function setupLiveListeners() {
+      const qrData = document.getElementById("qr-data");
+      const qrEcc = document.getElementById("qr-ecc");
+      const qrMargin = document.getElementById("qr-margin");
+      const fgPicker = document.getElementById("qr-fg-picker");
+      const bgPicker = document.getElementById("qr-bg-picker");
+      const fgHex = document.getElementById("qr-fg-hex");
+      const bgHex = document.getElementById("qr-bg-hex");
+
+      // Live change events
+      qrData.addEventListener("input", updateCustomQR);
+      qrEcc.addEventListener("change", updateCustomQR);
+      qrMargin.addEventListener("change", updateCustomQR);
+
+      // Foreground picker hook
+      fgPicker.addEventListener("input", (e) => {
+        fgHex.value = e.target.value.toUpperCase();
+        // Deactivate swatches since color has diverged
+        document.querySelectorAll("#fg-swatches .color-swatch").forEach(s => s.classList.remove("active"));
+        updateCustomQR();
+      });
+      fgHex.addEventListener("input", (e) => {
+        let val = e.target.value;
+        if (!val.startsWith("#")) val = "#" + val;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          fgPicker.value = val;
+          updateCustomQR();
+        }
+      });
+
+      // Background picker hook
+      bgPicker.addEventListener("input", (e) => {
+        bgHex.value = e.target.value.toUpperCase();
+        document.querySelectorAll("#bg-swatches .color-swatch").forEach(s => s.classList.remove("active"));
+        updateCustomQR();
+      });
+      bgHex.addEventListener("input", (e) => {
+        let val = e.target.value;
+        if (!val.startsWith("#")) val = "#" + val;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          bgPicker.value = val;
+          updateCustomQR();
+        }
+      });
+    }
+
+    // Load campaign details directly into the Advanced Custom Builder panel
+    function loadInCustomizer(presetName) {
+      const preset = campaignPresets[presetName];
+      if (!preset) return;
+
+      // Set input values
+      document.getElementById("qr-data").value = preset.url;
+      document.getElementById("qr-fg-picker").value = preset.fg;
+      document.getElementById("qr-fg-hex").value = preset.fg.toUpperCase();
+      document.getElementById("qr-bg-picker").value = preset.bg;
+      document.getElementById("qr-bg-hex").value = preset.bg.toUpperCase();
+      document.getElementById("qr-ecc").value = preset.ecc;
+      document.getElementById("qr-margin").value = "1"; // Default 1x
+
+      // Update Swatches highlight
+      document.querySelectorAll("#fg-swatches .color-swatch").forEach(s => {
+        const bgVal = s.style.backgroundColor;
+        // Convert rgb to hex for comparison
+        if (s.title.toLowerCase().includes(presetName === 'flyer' ? 'navy' : 'coral')) {
+          s.classList.add("active");
+        } else {
+          s.classList.remove("active");
+        }
+      });
+
+      document.querySelectorAll("#bg-swatches .color-swatch").forEach(s => {
+        if (s.title.toLowerCase().includes("white")) {
+          s.classList.add("active");
+        } else {
+          s.classList.remove("active");
+        }
+      });
+
+      updateCustomQR();
+
+      // Smooth scroll to builder
+      document.getElementById("builder").scrollIntoView({ behavior: "smooth" });
+      showToast(`Loaded ${presetName === 'flyer' ? 'Campaign Flyer' : 'Door Hanger'} settings in Customizer!`);
+    }
+
+    // Download High-Resolution campaign QR code direct from pre-set
+    function downloadCampaignQR(presetName) {
+      const preset = campaignPresets[presetName];
+      if (!preset) return;
+
+      const size = 2000; // High resolution for print (300 DPI at ~6 inches)
+      const downloadCanvas = document.getElementById("hidden-qr-canvas");
+      
+      const printQR = new QRious({
+        element: downloadCanvas,
+        value: preset.url,
+        size: size,
+        foreground: preset.fg,
+        background: preset.bg,
+        level: preset.ecc,
+        padding: size * 0.05 // 5% margin
+      });
+
+      triggerDownload(downloadCanvas, `${preset.name}_2000px.png`);
+      showToast(`Downloading high-resolution ${presetName} QR code PNG...`);
+    }
+
+    // Download customizable QR Code at the selected size
+    function downloadCustomQR() {
+      const data = document.getElementById("qr-data").value || "https://relifish.store";
+      const fg = document.getElementById("qr-fg-picker").value;
+      const bg = document.getElementById("qr-bg-picker").value;
+      const ecc = document.getElementById("qr-ecc").value;
+      const marginFactor = parseInt(document.getElementById("qr-margin").value);
+      const targetSize = parseInt(document.getElementById("qr-resolution").value);
+
+      const downloadCanvas = document.getElementById("hidden-qr-canvas");
+
+      const printQR = new QRious({
+        element: downloadCanvas,
+        value: data,
+        size: targetSize,
+        foreground: fg,
+        background: bg,
+        level: ecc,
+        padding: targetSize * (marginFactor * 0.05) // Scale padding based on border size
+      });
+
+      const filename = `relifish_custom_qr_${targetSize}px.png`;
+      triggerDownload(downloadCanvas, filename);
+      showToast(`Downloading high-res custom QR code (${targetSize}x${targetSize} px)...`);
+    }
+
+    // Trigger HTML5 direct browser file download
+    function triggerDownload(canvas, filename) {
+      try {
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = canvas.toDataURL("image/png");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error("Download failed:", err);
+        // Backup: Open in new tab for user to right click save
+        const win = window.open();
+        win.document.write(`<iframe src="${canvas.toDataURL("image/png")}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+      }
+    }
+
+    // Show custom visual Toast notification
+    function showToast(message) {
+      const toast = document.getElementById("toast-notif");
+      const text = document.getElementById("toast-text");
+      text.textContent = message;
+      toast.classList.add("show");
+      
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

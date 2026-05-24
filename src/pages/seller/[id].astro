@@ -383,14 +383,11 @@ const tags = [
 
   <div id="v2-cart-bar-mount"></div>
 
-  <!-- Hyperlocal footer + cross-link to for-sellers -->
+  <!-- Hyperlocal footer -->
   {!notFound && (
     <div style="background:var(--v2-bg-2);border-top:1px solid var(--v2-border);padding:20px 16px;text-align:center;">
-      <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 6px;">
-        {sellerName} · {sellerLocation || "Mumbai"} · Hyperlocal fish delivery within {seller?.delivery_rad || 5}km
-      </p>
       <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0;">
-        Are you a fish seller? <a href="/for-sellers" style="color:var(--v2-brand);text-decoration:none;font-weight:600;">Sell on Relifish →</a>
+        {sellerName} · {sellerLocation || "Mumbai"} · Hyperlocal fish delivery within {seller?.delivery_rad || 5}km
       </p>
     </div>
   )}
