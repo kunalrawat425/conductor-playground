@@ -318,11 +318,17 @@
   gap: 4px;
 }
 .v2-logo-img {
-  height: 40px;
+  height: 44px;
   width: auto;
   display: block;
   object-fit: contain;
   filter: brightness(0) invert(1);
+  transition: height var(--v2-dur-fast) var(--v2-ease);
+}
+@media (min-width: 769px) {
+  .v2-logo-img {
+    height: 50px;
+  }
 }
 .v2-back {
   font-size: 22px;
@@ -400,8 +406,10 @@
 .v2-bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-max-width);
   z-index: var(--v2-z-bottom-nav);
   height: 64px;
   background: var(--v2-bg);

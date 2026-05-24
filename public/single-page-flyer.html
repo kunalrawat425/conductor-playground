@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Relifish Single Page Flyer — Order & Social Follow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<script>
+  // Dynamic injection to keep analytics 100% clean and only run on production environment
+  if (window.location.hostname === 'www.relifish.store' || window.location.hostname === 'relifish.store') {
+    // 1. Google Tag Manager (head)
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-JG2ZTX3F');
+
+    // 2. Google Analytics (gtag.js)
+    var gaScript = document.createElement('script');
+    gaScript.async = true;
+    gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-DGS7557PZ6';
+    document.head.appendChild(gaScript);
+    
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DGS7557PZ6');
+
+    // 3. Microsoft Clarity
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "wryvhcf3k8");
+
+    // 4. Facebook Pixel
+    !function(f,b,e,v,n,t,s){
+      if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window,document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init','1197248829088195');
+    fbq('track','PageView');
+
+    // 5. Vercel Web Analytics
+    var vaScript = document.createElement('script');
+    vaScript.defer = true;
+    vaScript.src = '/_vercel/insights/script.js';
+    document.head.appendChild(vaScript);
+  }
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Inter',sans-serif;
+  background:#c8d0e8;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:32px 24px;
+  justify-content:center;
+  min-height:100vh;
+}
+.page-label{
+  font:700 10px Inter;color:#64748b;
+  text-transform:uppercase;letter-spacing:.12em;
+  background:#e2e8f0;padding:4px 14px;border-radius:100px;
+  margin-bottom:12px;
+}
+
+/* ── A5 portrait: 148mm × 210mm → 559px × 794px at 96dpi ── */
+.flyer{
+  width:559px;
+  height:794px;
+  background:#ffffff;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 25px 70px rgba(0,0,0,.25);
+  display:flex;
+  flex-direction:column;
+  position:relative;
+}
+
+/* ── HEADER (Full Bleed Image Background to match double flyer) ── */
+.header{
+  position:relative;
+  height:190px;
+  flex-shrink:0;
+  overflow:hidden;
+  background:linear-gradient(135deg,#0a2472 0%,#1e3a8a 50%,#0066cc 100%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:16px 20px;
+  text-align:center;
+  border-bottom:4px solid #fbbf24;
+}
+.header-img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  opacity:.25;
+}
+.header-ov{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,rgba(10,36,114,.3) 0%,rgba(10,36,114,.88) 100%);
+}
+.header-body{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+.logo-container{
+  margin-bottom:2px;
+}
+.logo-img{
+  height:40px;
+  width:auto;
+  display:block;
+  filter:brightness(0) invert(1);
+}
+.tagline{
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:#60a5fa;
+}
+.headline{
+  font-size:18px;
+  font-weight:900;
+  line-height:1.2;
+  margin-top:2px;
+  letter-spacing:-0.5px;
+  color:#ffffff;
+}
+.headline span{
+  color:#fbbf24;
+}
+.hero-pill{
+  margin-top:4px;
+  display:inline-flex;
+  align-items:center;
+  background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:100px;
+  padding:2px 10px;
+}
+.hero-pill span{
+  font-size:9px;
+  font-weight:800;
+  color:#ffffff;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+}
+.hero-social{
+  font-size:9.5px;
+  color:rgba(255,255,255,.85);
+  font-weight:600;
+  margin-top:2px;
+}
+
+/* ── CENTER CORE GRID ── */
+.core-grid{
+  display:flex;
+  justify-content:center;
+  padding:12px 20px 8px;
+  flex-shrink:0;
+}
+
+/* Centered Card styles */
+.card{
+  border-radius:14px;
+  padding:12px 20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,0.03);
+  position:relative;
+  border:1px solid rgba(10,36,114,0.06);
+  background:#f8fafc;
+  border-top:5px solid #0066cc;
+  max-width:360px;
+  width:100%;
+}
+
+.card-title{
+  font-size:13.5px;
+  font-weight:800;
+  color:#0f172a;
+  margin-bottom:2px;
+}
+.card-subtitle{
+  font-size:9.5px;
+  color:#64748b;
+  font-weight:600;
+  margin-bottom:6px;
+}
+
+/* QR Code styling */
+.qr-container{
+  background:#ffffff;
+  padding:6px;
+  border-radius:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.04);
+  margin-bottom:5px;
+  border:2.5px solid #0066cc;
+}
+.qr-container img{
+  display:block;
+  width:96px;
+  height:96px;
+}
+
+.action-url{
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:-0.2px;
+  color:#0a2472;
+}
+
+.action-desc{
+  font-size:8.5px;
+  color:#475569;
+  font-weight:600;
+  line-height:1.35;
+  margin-top:3px;
+  max-width:280px;
+}
+
+/* ── DOORSTEP STRIP ── */
+.doorstep-strip {
+  background: #eff6ff;
+  border-top: 2px solid #0066cc;
+  border-bottom: 2px solid #0066cc;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: left;
+  flex-shrink:0;
+}
+.ds-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0a2472;
+}
+.ds-subtitle {
+  font-size: 8.5px;
+  color: #0066cc;
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+/* ── FISH GRID (ALL 6 FISH FROM flyer.html) ── */
+.fish-container{
+  padding:10px 20px 8px;
+  flex:1;
+}
+.fish-title{
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#94a3b8;
+  text-align:center;
+  margin-bottom:6px;
+}
+.fish-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:6px;
+}
+.fc{
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  border-radius:8px;
+  overflow:hidden;
+  text-align:center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.02);
+}
+.fc img{
+  width:100%;
+  height:44px;
+  object-fit:cover;
+  display:block;
+}
+.fc-name{
+  font-size:9.5px;
+  font-weight:800;
+  color:#0f172a;
+  padding:2px 4px 0;
+}
+.fc-mr{
+  font-size:8px;
+  color:#94a3b8;
+  padding:0 4px 1px;
+}
+.fc-price{
+  font-size:8px;
+  font-weight:700;
+  color:#1d4ed8;
+  padding:0 4px 3px;
+  text-decoration:none;
+}
+
+/* ── INSTAGRAM SMALL TEXT IN BOTTOM ── */
+.ig-small-text {
+  text-align: center;
+  font-size: 9.5px;
+  color: #475569;
+  font-weight: 600;
+  padding: 8px 20px;
+  background: #fffdfa;
+  border-top: 1px solid rgba(10,36,114,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink:0;
+}
+.ig-small-text span {
+  color: #bc1888;
+  font-weight: 800;
+}
+.ig-small-text b {
+  color: #0f172a;
+  font-weight: 800;
+  background: rgba(214,41,118,0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* ── FOOTER ── */
+.footer{
+  background:#0f172a;
+  padding:10px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:#ffffff;
+  flex-shrink:0;
+}
+.footer-left{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.footer-brand{
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:-0.3px;
+}
+.footer-brand span{
+  color:#60a5fa;
+}
+.footer-tag{
+  font-size:8px;
+  color:#94a3b8;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  font-weight:600;
+}
+.footer-right{
+  text-align:right;
+}
+.footer-phone{
+  font-size:10.5px;
+  font-weight:800;
+  color:#fbbf24;
+}
+.footer-sub{
+  font-size:8px;
+  color:#94a3b8;
+  font-weight:600;
+  margin-top:2px;
+}
+
+@media print {
+  body{
+    background:#ffffff;
+    padding:0;
+    display:block;
+  }
+  .page-label{
+    display:none;
+  }
+  .flyer{
+    width:148mm;
+    height:210mm;
+    border-radius:0;
+    box-shadow:none;
+  }
+  @page{
+    size:A5 portrait;
+    margin:0;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="page-label">A5 Single Page Flyer</div>
+
+<div class="flyer">
+  
+  <!-- HEADER -->
+  <div class="header">
+    <img class="header-img"
+      src="https://images.openai.com/static-rsc-4/pcNhug4rO9x_ni_69Nr0Dgw40dPUeWMV33u_T-V18tNbysad0ZLh_uNFsVRSg_tS1rPIcsak7Qfe06APPXrCV8JV84WJNU3JqLDArJsSbreK4x7wsHImIxByVmP1HIAljn01pH1hovgfs3jkCJUOOzg9Ke6ycQQ-kPH67VrHjvI?purpose=inline"
+      alt="Fish market"/>
+    <div class="header-ov"></div>
+    <div class="header-body">
+      <div class="logo-container">
+        <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish Logo" class="logo-img" />
+      </div>
+      <div class="tagline">Mumbai's Hyperlocal Fresh Fish Marketplace</div>
+      <h1 class="headline">Fresh Catch From <span>Verified Hyper Local Fish Sellers</span></h1>
+      <div class="hero-pill"><span>✅ Vetted Neighborhood Sellers · FSSAI-compliant</span></div>
+      <div class="hero-social">🔥 4 verified sellers live &nbsp;·&nbsp; 🛵 2 Hr Doorstep Delivery</div>
+    </div>
+  </div>
+
+  <!-- CENTER CORE: SCAN TO ORDER -->
+  <div class="core-grid">
+    <div class="card">
+      <h2 class="card-title">🛒 Scan to Order</h2>
+      <div class="card-subtitle">Check live prices &amp; get them now on your doorstep!</div>
+      <div class="qr-container">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://relifish.store/shop%3Futm_source%3Dflyer%26utm_medium%3Dprint%26utm_campaign%3Dsingle_page&bgcolor=ffffff&color=0a2472&qzone=1&margin=1" alt="Order QR Code" />
+      </div>
+      <div class="action-url">relifish.store/shop</div>
+      <div class="action-desc">Direct neighborhood sellers, live stock daily. No app download needed!</div>
+    </div>
+  </div>
+
+  <!-- DOORSTEP VALUE STRIP -->
+  <div class="doorstep-strip">
+    <span style="font-size: 24px; line-height: 1;">🛵</span>
+    <div>
+      <div class="ds-title">Delivered Straight to Your Doorstep in 2 Hours!</div>
+      <div class="ds-subtitle">Super fresh local catch from verified neighborhood sellers · Never cold-stored</div>
+    </div>
+  </div>
+
+  <!-- ALL 6 FISH GRIDS FROM double flyer.html (with Check live prices link to match) -->
+  <div class="fish-container">
+    <h3 class="fish-title">🐟 Popular Fresh Fish &amp; Seafood 🐟</h3>
+    <div class="fish-grid">
+      
+      <div class="fc">
+        <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Pomfret</div>
+        <div class="fc-mr">पापलेट</div>
+        <div class="fc-price">Check live prices →</div>
+      </div>
+      
+      <div class="fc">
+        <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Surmai</div>
+        <div class="fc-mr">सुरमई</div>
+        <div class="fc-price">Check live prices →</div>
+      </div>
+      
+      <div class="fc">
+        <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Prawns</div>
+        <div class="fc-mr">कोळंबी</div>
+        <div class="fc-price">Check live prices →</div>
+      </div>
+
+      <div class="fc">
+        <img src="https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize" alt="Bangda" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Bangda</div>
+        <div class="fc-mr">बांगडा</div>
+        <div class="fc-price">Check live prices →</div>
+      </div>
+
+      <div class="fc">
+        <img src="https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0" alt="Rawas" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Rawas</div>
+        <div class="fc-mr">रावस</div>
+        <div class="fc-price">Check live prices →</div>
+      </div>
+
+      <div class="fc">
+        <img src="https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline" alt="Crab" onerror="this.style.background='#f1f5f9'"/>
+        <div class="fc-name">Crab</div>
+        <div class="fc-mr">खेकडा</div>
+        <div class="fc-price">Check live prices →</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INSTAGRAM SMALL TEXT IN BOTTOM -->
+  <div class="ig-small-text">
+    <img src="https://img.icons8.com/color/48/instagram-new.png" width="12" height="12" style="vertical-align:middle;margin-right:2px;" />
+    <span>Follow Us For Updates on Instagram:</span> <b>relifish.store</b>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      <div class="footer-brand">Relifish<span>.store</span></div>
+      <div class="footer-tag">hyperlocal fish marketplace</div>
+    </div>
+    <div class="footer-right">
+      <div class="footer-phone">📞 9152207607</div>
+      <div class="footer-sub">Help/WhatsApp · Available 24/7</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
