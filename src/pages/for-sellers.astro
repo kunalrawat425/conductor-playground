@@ -26,7 +26,7 @@ const jsonLd = {
       "@type": "Service",
       "@id": "https://www.relifish.store#service",
       "name": "Sell Fish Online — Relifish Seller Platform",
-      "description": "Relifish is a free online fish selling platform for fish sellers in Mumbai, Thane, and Navi Mumbai. List your daily catch, accept pre-orders, manage home delivery, and collect UPI payments. Zero commission on every sale.",
+      "description": "Relifish is a free online fish selling platform for fish sellers in Tardeo, Kandivali, Thane, and Kamothe. List your daily catch, accept pre-orders, manage home delivery, and collect UPI payments. Zero commission on every sale.",
       "provider": { "@id": "https://www.relifish.store#org" },
       "serviceType": "Online Fish Selling Platform",
       "areaServed": [
@@ -59,7 +59,7 @@ const jsonLd = {
       "@id": "https://www.relifish.store#org",
       "name": "Relifish",
       "url": "https://www.relifish.store",
-      "logo": "https://www.relifish.store/favicon.png",
+      "logo": "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png",
       "description": "Online marketplace for fresh fish in Mumbai. Connects local fish sellers with buyers for same-day pickup and pre-order delivery.",
       "areaServed": [
         { "@type": "City", "name": "Mumbai" },
@@ -93,7 +93,7 @@ const jsonLd = {
         { "@type": "Question", "name": "How fast can I start selling fish online?", "acceptedAnswer": { "@type": "Answer", "text": "Your online fish store goes live in under 5 minutes. Sign up, add inventory, share your link — first orders typically arrive the same day." } },
         { "@type": "Question", "name": "Can I manage my fish store from my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The Relifish seller dashboard is fully mobile-first. Manage orders, inventory, delivery settings, shop hours, and notifications from your smartphone." } },
         { "@type": "Question", "name": "How does Relifish reduce fish wastage?", "acceptedAnswer": { "@type": "Answer", "text": "Pre-orders let you know tomorrow's demand tonight. You buy exactly the right quantity at the docks — no excess, no cold storage costs, no panic selling. Sellers report significantly less wastage after enabling pre-orders." } },
-        { "@type": "Question", "name": "Which areas of Mumbai does Relifish serve?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish is available across Mumbai, Thane, and Navi Mumbai. You set your own delivery radius — buyers within your chosen area see your store and can order directly from you." } }
+        { "@type": "Question", "name": "Which areas of Mumbai does Relifish serve?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish is available across Tardeo, Kandivali, Thane, and Kamothe. You set your own delivery radius — buyers within your chosen area see your store and can order directly from you." } }
       ]
     }
   ]
@@ -238,8 +238,38 @@ const jsonLd = {
   .fs-solution-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
   .fs-solution-list li { font: 400 13px Inter, sans-serif; color: #064E3B; display: flex; gap: 8px; }
 
+  /* ─── Navigation ─────────────────────── */
+  .fs-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: rgba(8, 12, 22, 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    transition: height 0.15s ease;
+  }
+  .fs-nav-logo {
+    height: 38px;
+    object-fit: contain;
+    transition: height 0.15s ease;
+  }
+
   /* ─── Desktop breakpoint ─────────────── */
   @media (min-width: 768px) {
+    .fs-nav {
+      height: 64px;
+    }
+    .fs-nav-logo {
+      height: 50px;
+    }
     .fs-hero-inner { grid-template-columns: 1fr 300px; padding: 120px 48px 80px; }
     .fs-hero-copy h1 { font-size: 72px; }
     .fs-trust { grid-template-columns: repeat(4, 1fr); }
@@ -266,9 +296,9 @@ const jsonLd = {
 </style>
 
 <!-- ─── NAV ───────────────────────────────────────────────────────── -->
-<nav style="position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(8,12,22,0.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.07);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;">
+<nav class="fs-nav">
   <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
-    <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:26px;object-fit:contain;" />
+    <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="fs-nav-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
     <span style="display:none;font:900 20px Inter;color:#fff;letter-spacing:-0.5px;">Relifish</span>
   </a>
   <div style="display:flex;gap:8px;align-items:center;">
@@ -971,7 +1001,7 @@ const jsonLd = {
       <div class="fs-tcard">
         <div class="fs-tcard-tag" style="background:#EEF2FF;"><span class="fs-tcard-tag-dot" style="background:#4F46E5;"></span><span style="color:#4F46E5;">Customer Insight & Growth</span></div>
         <p>"Pehle nahi pata tha kaun repeat customer hai. Ab data hai — konsi fish zyada bikti hai, peak time kab hai. Main business aur naye customers lene pe focus karta hoon."</p>
-        <div class="fs-tcard-author"><div class="fs-tcard-avatar" style="background:#EEF2FF;color:#4F46E5;">V</div><div><div class="fs-tcard-name">Vinod Koli</div><div class="fs-tcard-role">Pre-order seller · Navi Mumbai</div></div></div>
+        <div class="fs-tcard-author"><div class="fs-tcard-avatar" style="background:#EEF2FF;color:#4F46E5;">V</div><div><div class="fs-tcard-name">Vinod Koli</div><div class="fs-tcard-role">Pre-order seller · Kamothe</div></div></div>
       </div>
       <div class="fs-tcard">
         <div class="fs-tcard-tag" style="background:#ECFDF5;"><span class="fs-tcard-tag-dot" style="background:#059669;"></span><span style="color:#059669;">Less Chaos. More Control.</span></div>

@@ -22,7 +22,7 @@ interface Props {
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 const siteUrl = "https://www.relifish.store";
-const defaultDescription = "Order fresh fish directly from local Mumbai fish sellers. Pre-order tonight's catch — pomfret, surmai, bangda, prawns — pickup or delivery tomorrow morning.";
+const defaultDescription = "Order same-day fresh catch or pre-order tomorrow's catch directly from local Mumbai fish sellers — pomfret, surmai, bangda, prawns. Pickup or delivery with zero platform markup.";
 const {
   title = brandName,
   description = defaultDescription,
@@ -78,7 +78,6 @@ const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
     <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
@@ -169,10 +168,16 @@ const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
         width: 100%;
       }
       *, *::before, *::after { box-sizing: border-box; }
-      .v2-app { min-height: 100vh; }
+      .v2-app {
+        min-height: 100vh;
+        width: 100%;
+        max-width: var(--app-max-width);
+        margin: 0 auto;
+      }
       .v2-main {
         width: 100%;
-        margin: 0;
+        max-width: 100%;
+        margin: 0 auto;
         padding-bottom: 16px;
       }
       a { color: inherit; }
