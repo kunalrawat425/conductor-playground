@@ -16,8 +16,8 @@ const categories = [
 ];
 ---
 <AppShell
-  title="Fresh Fish Delivery Mumbai — Order from Local Sellers | Relifish"
-  description="Order same-day morning-fresh catch or pre-order tomorrow's catch from local Mumbai fish sellers. Buy fresh pomfret, surmai, rawas &amp; prawns directly from hyper-local sellers with zero platform markup."
+  title="Best Fish Shop Near Me — Order Fresh Fish | Relifish"
+  description="Looking for the best fish shop near me in Mumbai? Order same-day morning-fresh catch or pre-order tomorrow's catch from local sellers. Premium pomfret, surmai, rawas &amp; prawns."
   needsMap={true}
   header={{
     locationLabel: "Set location",
@@ -674,7 +674,7 @@ const categories = [
     count.textContent = String(filtered.length);
     grid.style.display = "grid";
 
-    grid.innerHTML = filtered.map((g: any) => {
+    grid.innerHTML = filtered.map((g: any, index: number) => {
         const s = g.seller;
         const top = sellerMenuChipsHtml(g.listings);
 
@@ -709,11 +709,7 @@ const categories = [
         const distStr = g.dist != null ? `${g.dist.toFixed(1)} km` : "";
         const subParts = [s.location_name || s.location || "", distStr].filter(Boolean).join(" · ");
 
-        // Offer badge logic — never show "Pre-order today" on a closed seller (confusing)
-        // Open + has items = Same-day catch (brand)
-        // Open + no items + accepts pre-order = Pre-order only (indigo)
-        // Closed + accepts pre-order = Pre-order available (indigo)
-        // Closed + no preorder = Closed (red)
+        // Offer badge logic
         let offerLabel = "", offerColor = "v2-badge-brand";
         if (g.open && g.listings.length > 0) {
           offerLabel = "Same-day catch";
@@ -730,6 +726,15 @@ const categories = [
         }
         const offerBadge = `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
 
+        // Sponsored Visual Pick
+        const isSponsored = index === 0 && !filterState.topRated;
+        const sponsoredBadge = isSponsored
+          ? `<span class="v2-badge v2-badge-tag v2-badge-bold" style="background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%); color: white; border: none; font-size: 10px; padding: 3px 8px; box-shadow: 0 2px 6px rgba(37,99,235,0.3); border-radius: 6px; display: inline-flex; align-items: center; margin-right: 4px;">★ Sponsored Choice</span>`
+          : "";
+        const sponsoredCardStyle = isSponsored
+          ? `style="border: 2.2px solid var(--v2-brand); box-shadow: 0 4px 20px rgba(37,99,235,0.12); transform: scale(1.01);"`
+          : "";
+
         const deliveryBar = s.has_delivery
           ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
           : "";
@@ -738,7 +743,7 @@ const categories = [
 
         const sellerSlug = sellerNameToSlug(s.name);
         return `
-        <${fullyClosed ? 'div' : `a href="/s/${sellerSlug}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
+        <${fullyClosed ? 'div' : `a href="/s/${sellerSlug}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''} ${sponsoredCardStyle}>
           <div class="v2-sc-img" style="background:${hueColors[hue]};">
             ${offerBadge}
             ${(s as any).store_image_url
@@ -753,7 +758,7 @@ const categories = [
               </div>
               ${ratingBadge}
             </div>
-            <div class="v2-sc-tags">${statusBadge}${pickupTag}</div>
+            <div class="v2-sc-tags">${sponsoredBadge}${statusBadge}${pickupTag}</div>
           </div>
           ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
           ${deliveryBar}

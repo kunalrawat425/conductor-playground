@@ -23,7 +23,11 @@ export const GET: APIRoute = async () => {
     // Marketing pages
     { loc: "/for-sellers", changefreq: "weekly", priority: "0.8" },
     { loc: "/about", changefreq: "monthly", priority: "0.7" },
+    { loc: "/pricing.md", changefreq: "weekly", priority: "0.5" },
+    { loc: "/llms.txt", changefreq: "weekly", priority: "0.5" },
     { loc: "/privacy", changefreq: "yearly", priority: "0.3" },
+    { loc: "/terms", changefreq: "yearly", priority: "0.3" },
+    { loc: "/refund-policy", changefreq: "yearly", priority: "0.3" },
     // Area pages
     { loc: "/area/thane", changefreq: "weekly", priority: "0.7" },
     { loc: "/area/kandivali", changefreq: "weekly", priority: "0.7" },

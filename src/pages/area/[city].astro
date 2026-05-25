@@ -16,6 +16,9 @@ if (!area) {
 }
 
 let sellers: any[] = [];
+let areaListings: any[] = [];
+const speciesMap = new Map<string, { min: number; max: number; count: number }>();
+
 try {
   const url = new URL(Astro.request.url);
   const sbUrl = url.origin.includes("localhost")
@@ -41,13 +44,78 @@ try {
       .filter((s: any) => s.distanceKm <= area.radius)
       .sort((a: any, b: any) => a.distanceKm - b.distanceKm);
   }
+
+  // Fetch listings for these active sellers in this location
+  const sellerIds = sellers.map(s => s.id);
+  if (sellerIds.length > 0) {
+    const { data: listData } = await supabase
+      .from("fish_listings")
+      .select("*, seller:sellers(*)")
+      .in("seller_id", sellerIds)
+      .or("is_available.eq.true,is_preorder_enabled.eq.true");
+    
+    if (listData) {
+      areaListings = listData.filter(l => l.seller?.is_active && l.seller?.name !== "New Seller");
+      
+      // Calculate dynamic price ranges per species
+      for (const l of areaListings) {
+        const species = (l.species || "").toLowerCase().trim();
+        if (!species) continue;
+
+        const rawOpts = Array.isArray(l.pricing_options) ? l.pricing_options : [];
+        let pMin = Number(l.price) || 0;
+        let pMax = Number(l.price) || 0;
+
+        if (rawOpts.length > 0) {
+          pMin = Infinity;
+          pMax = -Infinity;
+          for (const o of rawOpts) {
+            const p = Number(o?.price ?? o?.preorder_price_min ?? o?.preorder_price_max ?? l.price) || 0;
+            if (p < pMin) pMin = p;
+            if (p > pMax) pMax = p;
+          }
+        }
+
+        const exist = speciesMap.get(species);
+        if (exist) {
+          exist.min = Math.min(exist.min, pMin);
+          exist.max = Math.max(exist.max, pMax);
+          exist.count += 1;
+        } else {
+          speciesMap.set(species, { min: pMin, max: pMax, count: 1 });
+        }
+      }
+    }
+  }
 } catch (err) {
-  console.error("Error fetching sellers for area:", err);
+  console.error("Error fetching sellers and listings for area:", err);
 }
 
 const areaTitle = `Buy Fresh Fish Online in ${area.name}`;
 const areaDescription = area.metaDescription;
 const canonicalUrl = `https://www.relifish.store/area/${area.slug}`;
+
+const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) => {
+  const title = species.charAt(0).toUpperCase() + species.slice(1);
+  return {
+    "@type": "Product",
+    "@id": `${canonicalUrl}#product-${species}`,
+    "name": `Fresh ${title} in ${area.name}`,
+    "description": `Buy fresh ${title} in ${area.name}, Mumbai. Sourced direct from local fish stalls and sellers. Available same-day or pre-order with zero platform commission.`,
+    "category": "Seafood",
+    "brand": { "@type": "Brand", "name": "Relifish" },
+    "offers": {
+      "@type": "AggregateOffer",
+      "priceCurrency": "INR",
+      "lowPrice": String(data.min),
+      "highPrice": String(data.max),
+      "offerCount": String(data.count),
+      "priceValidUntil": "2027-12-31",
+      "availability": "https://schema.org/InStock",
+      "url": canonicalUrl
+    }
+  };
+});
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -135,7 +203,8 @@ const jsonLd = {
           }
         }
       ]
-    }
+    },
+    ...schemaProducts
   ]
 };
 ---
@@ -162,6 +231,28 @@ const jsonLd = {
       }
     </p>
   </div>
+
+  <!-- Live Products section -->
+  {areaListings.length > 0 && (
+    <div style="padding: 16px; border-bottom: 1px solid var(--v2-border); background: #f8fafc;">
+      <h2 style="font: 700 13px Inter; text-transform: uppercase; letter-spacing: 0.05em; color: var(--v2-ink-3); margin: 0 0 12px 0;">Live Products in {area.name}</h2>
+      <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
+        {Array.from(speciesMap.entries()).map(([species, data]) => {
+          const title = species.charAt(0).toUpperCase() + species.slice(1);
+          const emoji = species.includes("prawn") ? "🦐" : species.includes("crab") ? "🦀" : "🐟";
+          return (
+            <div style="background: white; border: 1px solid var(--v2-border); border-radius: 12px; padding: 10px 14px; flex-shrink: 0; min-width: 120px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <span style="font-size: 24px; display: block; margin-bottom: 4px;">{emoji}</span>
+              <span style="font: 700 12px Inter; color: var(--v2-ink); display: block; text-transform: capitalize;">{title}</span>
+              <span style="font: 600 11px Inter; color: var(--v2-brand); display: block; margin-top: 2px;">
+                {data.min === data.max ? `₹${data.min}` : `₹${data.min}-₹${data.max}`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
 
   <!-- Sellers section -->
   {sellers.length > 0 ? (
