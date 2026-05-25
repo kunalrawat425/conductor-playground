@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { supabase, sellerNameToSlug } from "../lib/supabase";
+import { AREAS } from "../lib/areas";
 
 export const prerender = false;
 
@@ -28,11 +29,12 @@ export const GET: APIRoute = async () => {
     { loc: "/privacy", changefreq: "yearly", priority: "0.3" },
     { loc: "/terms", changefreq: "yearly", priority: "0.3" },
     { loc: "/refund-policy", changefreq: "yearly", priority: "0.3" },
-    // Area pages
-    { loc: "/area/thane", changefreq: "weekly", priority: "0.7" },
-    { loc: "/area/kandivali", changefreq: "weekly", priority: "0.7" },
-    { loc: "/area/tardeo", changefreq: "weekly", priority: "0.7" },
-    { loc: "/area/kamothe", changefreq: "weekly", priority: "0.7" },
+    // Area pages dynamically populated from areas config
+    ...Object.keys(AREAS).map((key) => ({
+      loc: `/area/${key}`,
+      changefreq: "weekly",
+      priority: "0.7",
+    })),
   ];
 
   for (const seller of sellers || []) {
