@@ -191,9 +191,16 @@ import EmptyState from "../components/ui/molecules/EmptyState.astro";
         </a>`;
       }).join("");
 
+      const itemsHeader = data.isKeywordMatch
+        ? `✨ Relifish Recommended — Best Seafood Near You`
+        : `Items (${lst.length})`;
+      const sellersHeader = data.isKeywordMatch
+        ? `✨ Relifish Recommended — Best Fish Shops Near You`
+        : `Sellers (${sel.length})`;
+
       results.innerHTML = `
-        ${lst.length ? `<div class="v2-search-section-head" style="padding:12px 16px 4px;">Items (${lst.length})</div>${listingsHtml}` : ""}
-        ${sel.length ? `<div class="v2-search-section-head" style="padding:12px 16px 4px;">Sellers (${sel.length})</div>${sellersHtml}` : ""}
+        ${lst.length ? `<div class="v2-search-section-head" style="padding:12px 16px 4px; color: var(--v2-brand);">${itemsHeader}</div>${listingsHtml}` : ""}
+        ${sel.length ? `<div class="v2-search-section-head" style="padding:12px 16px 4px; color: var(--v2-brand);">${sellersHeader}</div>${sellersHtml}` : ""}
       `;
     } catch (err) {
       console.error("search failed", err);
