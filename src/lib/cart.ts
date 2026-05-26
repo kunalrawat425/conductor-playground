@@ -178,6 +178,21 @@ export function setQty(id: string, qty: number): void {
   });
 }
 
+export function updateItemPrice(id: string, price: number): void {
+  const cart = getCart();
+  const key = findCartKey(cart, id);
+  if (!key) return;
+  if (cart[key].price === price) return;
+  cart[key].price = price;
+  saveCart(cart);
+  syncMutation("upsert", {
+    listing_id: cart[key].listing_id,
+    qty: cart[key].qty,
+    qty_unit: cart[key].qty_unit,
+    price_snapshot: price,
+  });
+}
+
 export function incQty(id: string): void {
   const cart = getCart();
   const key = findCartKey(cart, id);
@@ -303,4 +318,54 @@ export async function pushLocalToServer(): Promise<void> {
       price_snapshot: item.price,
     });
   }
+}
+
+export async function validateCartLive(sellerId?: string): Promise<{ oosMessages: string[], priceChangedCount: number }> {
+  let oosMessages: string[] = [];
+  let priceChangedCount = 0;
+  try {
+    const cart = getCart();
+    const items = Object.values(cart).filter(i => !sellerId || i.seller_id === sellerId);
+    if (items.length === 0) return { oosMessages, priceChangedCount };
+    
+    const listingIds = items.map(i => i.listing_id);
+    const valRes = await fetch("/api/buyer/validate-cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listing_ids: listingIds })
+    });
+    
+    if (valRes.ok) {
+      const valData = await valRes.json();
+      for (const item of items) {
+        const live = valData.listings.find((l: any) => l.id === item.listing_id);
+        const keyToUse = item.pricing_option_id && item.pricing_option_id !== "default" ? item.listing_id + ":" + item.pricing_option_id : item.listing_id;
+        
+        if (!live || !live.is_available || (live.weight_avail != null && live.weight_avail < item.qty)) {
+           removeItem(keyToUse);
+           oosMessages.push(`"${item.name}" is out of stock and was removed.`);
+        } else {
+           const opts = live.pricing_options || [];
+           const opt = opts.find((o: any) => o.id === item.pricing_option_id) || opts[0];
+           if (opt) {
+             let poPrice = 0;
+             if (live.is_preorder_enabled) {
+               poPrice = opt.preorder_price_max || opt.preorder_price_min || opt.price || 0;
+             } else {
+               poPrice = opt.price || 0;
+             }
+             const bs = opt.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+             const pricePerUnit = poPrice / bs;
+             if (pricePerUnit !== item.price) {
+                updateItemPrice(keyToUse, pricePerUnit);
+                priceChangedCount++;
+             }
+           }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Cart validation failed", err);
+  }
+  return { oosMessages, priceChangedCount };
 }

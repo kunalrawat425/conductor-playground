@@ -6,10 +6,6 @@ interface Props {
 const { id = "v2-cart-stack" } = Astro.props;
 ---
 <BottomSheet id={id} title="Your Carts" showClose={true}>
-  <div id={`${id}-header`} style="display:none;padding:0 0 8px;">
-    <button id={`${id}-clear-all`} type="button" style="float:right;background:none;border:none;font:600 13px Inter;color:var(--v2-red);cursor:pointer;padding:4px 0;">Clear All</button>
-    <div style="clear:both;"></div>
-  </div>
   <div id={`${id}-body`}>
     <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
       <span class="v2-spinner v2-spinner-md"></span>
@@ -135,17 +131,34 @@ const { id = "v2-cart-stack" } = Astro.props;
     body.innerHTML = groups.map((g) => {
       const itemCount = g.items.length;
       const itemLabel = `${itemCount} item${itemCount !== 1 ? "s" : ""}`;
-      return `<div class="v2-cs-row" data-seller-id="${escape(g.seller_id)}">
-        ${avatarHtml(g)}
-        <div class="v2-cs-info">
-          <div class="v2-cs-seller">${escape(g.seller_name || "Seller")}</div>
-          <div class="v2-cs-meta">${itemLabel} · <a href="/s/${(g.seller_name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}">View Menu ›</a></div>
+      
+      const itemsHtml = g.items.map(item => {
+        const itemKey = item.pricing_option_id && item.pricing_option_id !== "default" ? item.listing_id + ":" + item.pricing_option_id : item.listing_id;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--v2-bg-3);margin-left:56px;">
+          <div style="flex:1;">
+            <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(item.name)}</div>
+            <div style="font:500 11px Inter;color:var(--v2-ink-3);">${item.qty} ${escape(item.pricing_label || item.qty_unit)} · ₹${(item.qty * item.price).toLocaleString("en-IN")}</div>
+          </div>
+          <button class="v2-cs-remove-item" data-item-key="${escape(itemKey)}" style="background:none;border:1px solid var(--v2-border);border-radius:4px;color:var(--v2-ink-3);font:500 11px Inter;padding:4px 8px;cursor:pointer;">Remove</button>
+        </div>`;
+      }).join("");
+
+      return `<div style="margin-bottom:16px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;padding:8px 12px;">
+        <div class="v2-cs-row" data-seller-id="${escape(g.seller_id)}" style="border-bottom:none;padding-bottom:4px;padding-top:4px;">
+          ${avatarHtml(g)}
+          <div class="v2-cs-info">
+            <div class="v2-cs-seller">${escape(g.seller_name || "Seller")}</div>
+            <div class="v2-cs-meta">${itemLabel} · <a href="/s/${(g.seller_name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}">View Menu ›</a></div>
+          </div>
+          <button class="v2-cs-price-badge" data-cs-checkout="${escape(g.seller_id)}" style="padding:6px 16px;">
+            ₹${g.subtotal.toLocaleString("en-IN")}
+            <span class="v2-cs-price-label">Checkout</span>
+          </button>
+          <button class="v2-cs-del" data-cs-remove="${escape(g.seller_id)}" aria-label="Remove seller cart" title="Remove seller">✕</button>
         </div>
-        <button class="v2-cs-price-badge" data-cs-checkout="${escape(g.seller_id)}">
-          ₹${g.subtotal.toLocaleString("en-IN")}
-          <span class="v2-cs-price-label">View Cart</span>
-        </button>
-        <button class="v2-cs-del" data-cs-remove="${escape(g.seller_id)}" aria-label="Remove cart" title="Remove cart">✕</button>
+        <div style="padding-bottom:4px;">
+          ${itemsHtml}
+        </div>
       </div>`;
     }).join("");
 
@@ -167,6 +180,15 @@ const { id = "v2-cart-stack" } = Astro.props;
         window.v2Toast?.("success", "Cart removed");
       });
     });
+
+    // Remove individual item
+    body.querySelectorAll(".v2-cs-remove-item").forEach((b) => {
+      b.addEventListener("click", () => {
+        const itemKey = b.getAttribute("data-item-key");
+        window.RelifishCart?.removeItem(itemKey);
+        render();
+      });
+    });
   }
 
   // Clear all
@@ -186,8 +208,19 @@ const { id = "v2-cart-stack" } = Astro.props;
   });
 
   // Render when sheet opens
-  document.addEventListener("v2-sheet-opened", (e) => {
-    if (e.detail?.id === id) render();
+  document.addEventListener("v2-sheet-opened", async (e) => {
+    if (e.detail?.id === id) {
+      if (window.RelifishCart && typeof window.RelifishCart.validateCartLive === "function") {
+        const { oosMessages, priceChangedCount } = await window.RelifishCart.validateCartLive();
+        if (oosMessages.length > 0 || priceChangedCount > 0) {
+          let msg = [];
+          if (oosMessages.length) msg.push(oosMessages.join("\\n"));
+          if (priceChangedCount) msg.push(`Prices updated for ${priceChangedCount} item(s)`);
+          window.v2Toast?.("info", "Cart updated", msg.join(" · "));
+        }
+      }
+      render();
+    }
   });
 
   if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) render();
