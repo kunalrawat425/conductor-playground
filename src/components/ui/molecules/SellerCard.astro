@@ -1,22 +1,38 @@
 ---
-import type { SellerCardProps } from "../../../types/components";
 import Badge from "../atoms/Badge.astro";
-interface Props extends SellerCardProps {}
+interface Props {
+  id: string;
+  name: string;
+  location: string;
+  distanceKm?: number | null;
+  deliveryEtaMin?: number | null;
+  rating?: number;
+  status: "open" | "closed" | "pre-order-only" | "closed-preorder";
+  acceptsPreorder?: boolean;
+  hasDelivery?: boolean;
+  deliveryFreeAbove?: number | null;
+  itemCount?: number;
+  topItems?: any[];
+  imageHue?: string;
+  offerLabel?: string;
+  storeImageUrl?: string | null;
+}
 const {
   id,
   name,
   location,
   distanceKm,
   deliveryEtaMin,
-  rating,
+  rating = 0,
   status,
   acceptsPreorder,
   hasDelivery,
   deliveryFreeAbove,
-  itemCount,
+  itemCount = 0,
   topItems = [],
   imageHue = "sky",
   offerLabel,
+  storeImageUrl,
 } = Astro.props;
 
 const distance = distanceKm != null ? `${distanceKm.toFixed(1)} km` : null;
@@ -35,7 +51,11 @@ const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "ind
 <a href={`/s/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`} class:list={["v2-seller-card", status === "closed" && "v2-seller-closed"]}>
   <div class="v2-sc-img" style={`background:${cardImgBg};`}>
     {offerLabel && <Badge variant="offer" color={offerColor}>{offerLabel}</Badge>}
-    <span style="font-size:32px;line-height:1;">🐟</span>
+    {storeImageUrl ? (
+      <img src={storeImageUrl} alt={name} style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />
+    ) : (
+      <span style="font-size:32px;line-height:1;position:relative;z-index:2;">🐟</span>
+    )}
   </div>
 
   <div class="v2-sc-body">
