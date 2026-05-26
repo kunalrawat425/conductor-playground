@@ -1,17 +1,13 @@
 ---
 export const prerender = false;
 import Analytics from "@vercel/analytics/astro";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
 const SITE = "https://www.relifish.store";
 
 let areaListings: any[] = [];
 const speciesMap = new Map<string, { min: number; max: number; count: number }>();
 
 try {
-  const sbUrl = "https://jzlfpyzxqykvzquheuvl.supabase.co";
-  const sbKey = import.meta.env.SUPABASE_ANON_KEY || "";
-  const supabase = createClient(sbUrl, sbKey);
-
   const { data: listData } = await supabase
     .from("fish_listings")
     .select("*, seller:sellers(*)")
