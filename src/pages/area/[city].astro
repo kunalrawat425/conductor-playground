@@ -4,7 +4,7 @@ export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import SellerCard from "../../components/ui/molecules/SellerCard.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../../lib/supabase";
 import { AREAS, getAreaBySlug } from "../../lib/areas";
 import { haversineKm } from "../../lib/order-pricing";
 
@@ -20,14 +20,6 @@ let areaListings: any[] = [];
 const speciesMap = new Map<string, { min: number; max: number; count: number }>();
 
 try {
-  const url = new URL(Astro.request.url);
-  const sbUrl = url.origin.includes("localhost")
-    ? import.meta.env.SUPABASE_URL || ""
-    : "https://jzlfpyzxqykvzquheuvl.supabase.co";
-  const sbKey = import.meta.env.SUPABASE_ANON_KEY || "";
-
-  const supabase = createClient(sbUrl, sbKey);
-
   const { data, error } = await supabase
     .from("sellers")
     .select("*")
