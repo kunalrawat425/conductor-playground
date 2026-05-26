@@ -907,6 +907,13 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                 ${fbRow.updated_at ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:4px;">${escape(new Date(fbRow.updated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }))}</div>` : ""}
               </div>`
             : "";
+        let payStatusText = "Payment pending";
+        if (o.status === 'refunded') payStatusText = "Refunded";
+        else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
+        else if (['declined', 'cancelled'].includes(o.status)) payStatusText = "Unpaid";
+        else if (['pending_payment', 'payment_required'].includes(o.status)) payStatusText = "Payment pending";
+        else if (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
+
         return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}" data-has-payment-proof="${hasPaymentProof ? "true" : "false"}">
           <div class="v2-oc-top">
             <div>
@@ -924,7 +931,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           ${o.buyer_notes ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
           ${buyerRatingHtml}
           <div class="v2-oc-total">₹${total.toLocaleString("en-IN")}</div>
-          <div class="v2-oc-sub">Payment status is managed in order details.</div>
+          <div class="v2-oc-sub">${payStatusText}</div>
           ${nextStepHint ? `<div class="v2-oc-next">${nextStepHint}</div>` : ""}
           ${actionsHtml}
         </div>`;
