@@ -842,8 +842,12 @@ const { id } = Astro.params;
       const isBalance = kind === "balance";
       const isOptional = kind === "optional";
 
+      if (RAZORPAY_ENABLED && isOptional) {
+        return;
+      }
+
       // Razorpay branch — replaces UPI card + screenshot upload for primary payment
-      if (RAZORPAY_ENABLED && !isOptional && !isBalance) {
+      if (RAZORPAY_ENABLED && !isBalance) {
         const balance = Number(o.total_price) + Number(o.delivery_fee || 0);
         renderRazorpayButton(o, balance, root);
         return;
