@@ -211,6 +211,22 @@ import Toast from "../components/ui/atoms/Toast.astro";
     return `<span class="v2-badge ${cls} v2-badge-size-md">${escapeHtml(text)}</span>`;
   }
 
+  function paymentPillHtml(o: any) {
+    const isPaidViaRazorpay = o.payment_method === 'razorpay' && o.razorpay_payment_id;
+    let payStatusText = "";
+    if (o.status === 'refunded') payStatusText = "Refunded";
+    else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
+    else if (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
+    
+    if (!payStatusText) return "";
+    
+    let bg = "#FFFBEB", color = "#B45309";
+    if (payStatusText === "Paid") { bg = "#DCFCE7"; color = "#059669"; }
+    else if (payStatusText.includes("Refund")) { bg = "#FEE2E2"; color = "#DC2626"; }
+    
+    return `<span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;margin-left:4px;background:${bg};color:${color};">${escapeHtml(payStatusText)}</span>`;
+  }
+
   function isActive(status: string) {
     return ["pending", "pending_payment", "payment_required", "confirmed", "paid", "ready_for_pickup", "out_for_delivery", "scheduled", "pre_order"].includes(status);
   }
@@ -326,7 +342,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
           ? `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardStyle}">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                 <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined by seller" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
-                ${statusToTag(o.status, o)}
+                <div>${paymentPillHtml(o)}${statusToTag(o.status, o)}</div>
               </div>
               <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
               <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,8).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
@@ -337,6 +353,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
               <div class="label">
                 <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;${orderKindLabel(o) === "Pre-order" ? "background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;" : "background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;"}">${orderKindLabel(o)}</span>
                 <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;margin-left:4px;${isDelivery ? "background:#ecfeff;color:#0e7490;border:1px solid #a5f3fc;" : "background:#fffbeb;color:#b45309;border:1px solid #fde68a;"}">${isDelivery ? "Delivery" : "Pickup"}</span>
+                ${paymentPillHtml(o)}
                 <span style="margin-left:4px;">${statusToTag(o.status, o)}</span>
               </div>
               <h3>${escapeHtml(seller)}</h3>

@@ -920,7 +920,10 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               <div class="v2-oc-id">${isPreorder ? "🌙 " : ""}#${id6}${o.buyer_phone ? ' · ' + escape(o.buyer_phone.slice(-4)) : ''}</div>
               <div class="v2-oc-time">${escape(time)}</div>
             </div>
-            <span class="v2-oc-badge ${badgeCls}">${badgeText}</span>
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+              <span class="v2-oc-badge" style="background:${payStatusText === 'Paid' ? '#dcfce7' : payStatusText.includes('Refund') ? '#fee2e2' : '#f3f4f6'};color:${payStatusText === 'Paid' ? '#059669' : payStatusText.includes('Refund') ? '#dc2626' : 'var(--v2-ink-3)'};">${payStatusText}</span>
+              <span class="v2-oc-badge ${badgeCls}">${badgeText}</span>
+            </div>
           </div>
           <div class="v2-oc-items" style="text-transform:capitalize;">${escape(o.listing?.species || o.species || "")} · ${qtyLabel}</div>
           <div class="v2-oc-meta">
@@ -931,7 +934,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           ${o.buyer_notes ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
           ${buyerRatingHtml}
           <div class="v2-oc-total">₹${total.toLocaleString("en-IN")}</div>
-          <div class="v2-oc-sub">${payStatusText}</div>
           ${nextStepHint ? `<div class="v2-oc-next">${nextStepHint}</div>` : ""}
           ${actionsHtml}
         </div>`;
