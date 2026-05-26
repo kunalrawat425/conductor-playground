@@ -726,15 +726,6 @@ const categories = [
         }
         const offerBadge = `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
 
-        // Sponsored Visual Pick
-        const isSponsored = index === 0 && !filterState.topRated;
-        const sponsoredBadge = isSponsored
-          ? `<span class="v2-badge v2-badge-tag v2-badge-bold" style="background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%); color: white; border: none; font-size: 10px; padding: 3px 8px; box-shadow: 0 2px 6px rgba(37,99,235,0.3); border-radius: 6px; display: inline-flex; align-items: center; margin-right: 4px;">★ Sponsored Choice</span>`
-          : "";
-        const sponsoredCardStyle = isSponsored
-          ? `style="border: 2.2px solid var(--v2-brand); box-shadow: 0 4px 20px rgba(37,99,235,0.12); transform: scale(1.01);"`
-          : "";
-
         const deliveryBar = s.has_delivery
           ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
           : "";
@@ -743,7 +734,7 @@ const categories = [
 
         const sellerSlug = sellerNameToSlug(s.name);
         return `
-        <${fullyClosed ? 'div' : `a href="/s/${sellerSlug}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''} ${sponsoredCardStyle}>
+        <${fullyClosed ? 'div' : `a href="/s/${sellerSlug}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
           <div class="v2-sc-img" style="background:${hueColors[hue]};">
             ${offerBadge}
             ${(s as any).store_image_url
@@ -758,7 +749,7 @@ const categories = [
               </div>
               ${ratingBadge}
             </div>
-            <div class="v2-sc-tags">${sponsoredBadge}${statusBadge}${pickupTag}</div>
+            <div class="v2-sc-tags">${statusBadge}${pickupTag}</div>
           </div>
           ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
           ${deliveryBar}
