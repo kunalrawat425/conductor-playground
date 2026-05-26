@@ -226,14 +226,14 @@ const jsonLd = {
 
   <!-- Live Products section -->
   {areaListings.length > 0 && (
-    <div style="padding: 16px; border-bottom: 1px solid var(--v2-border); background: #f8fafc;">
+    <div style="padding: 16px; border-bottom: 1px solid var(--v2-border); background: var(--v2-bg-2);">
       <h2 style="font: 700 13px Inter; text-transform: uppercase; letter-spacing: 0.05em; color: var(--v2-ink-3); margin: 0 0 12px 0;">Live Products in {area.name}</h2>
       <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
         {Array.from(speciesMap.entries()).map(([species, data]) => {
           const title = species.charAt(0).toUpperCase() + species.slice(1);
           const emoji = species.includes("prawn") ? "🦐" : species.includes("crab") ? "🦀" : "🐟";
           return (
-            <div style="background: white; border: 1px solid var(--v2-border); border-radius: 12px; padding: 10px 14px; flex-shrink: 0; min-width: 120px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+            <div style="background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: 12px; padding: 10px 14px; flex-shrink: 0; min-width: 120px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
               <span style="font-size: 24px; display: block; margin-bottom: 4px;">{emoji}</span>
               <span style="font: 700 12px Inter; color: var(--v2-ink); display: block; text-transform: capitalize;">{title}</span>
               <span style="font: 600 11px Inter; color: var(--v2-brand); display: block; margin-top: 2px;">
