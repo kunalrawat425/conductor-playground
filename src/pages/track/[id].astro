@@ -36,8 +36,11 @@ const { id } = Astro.params;
   <div id="v2-od-content" style="display:none;padding:0 16px 24px;">
     <!-- Status hero -->
     <div class="v2-od-hero">
-      <div class="v2-od-status" id="v2-od-status">—</div>
-      <div class="v2-od-id">Order <span id="v2-od-shortid">—</span></div>
+      <div style="display:flex; justify-content:center; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+        <div class="v2-od-status" id="v2-od-status" style="margin:0;">—</div>
+        <div id="v2-od-payment-pill" style="display:none; padding:3px 10px; border-radius:999px; font:700 11px Inter; text-transform:uppercase; letter-spacing:0.02em; background:#FFFBEB; color:#B45309;">—</div>
+      </div>
+      <div class="v2-od-id" style="margin-top:0;">Order <span id="v2-od-shortid">—</span></div>
       <div class="v2-od-time" id="v2-od-time">—</div>
     </div>
 
@@ -246,6 +249,34 @@ const { id } = Astro.params;
     document.getElementById("v2-od-status").textContent = statusLabel(o.status, o);
     document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,8).toUpperCase();
     document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    
+    // Payment Pill
+    const payPill = document.getElementById("v2-od-payment-pill");
+    const isPaidViaRazorpay = o.payment_method === 'razorpay' && o.razorpay_payment_id;
+    let payStatusText = "";
+    if (o.status === 'refunded') payStatusText = "Refunded";
+    else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
+    else if (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
+    
+    if (payPill) {
+      if (payStatusText) {
+        payPill.style.display = "inline-block";
+        payPill.textContent = payStatusText;
+        if (payStatusText === "Paid") {
+          payPill.style.background = "#DCFCE7";
+          payPill.style.color = "#059669";
+        } else if (payStatusText.includes("Refund")) {
+          payPill.style.background = "#FEE2E2";
+          payPill.style.color = "#DC2626";
+        } else {
+          payPill.style.background = "#FFFBEB";
+          payPill.style.color = "#B45309";
+        }
+      } else {
+        payPill.style.display = "none";
+      }
+    }
+
     // Hero colour: green for confirmed/done, red for declined/cancelled, orange for payment actions
     const hero = document.querySelector(".v2-od-hero");
     if (hero) {
