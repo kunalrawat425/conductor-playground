@@ -9,6 +9,7 @@ export const AREAS = {
     metaDescription: "Buy fresh fish online with same-day delivery in Thane. Direct from local sellers. No middleman, no cold storage.",
     contentHeadline: "Fresh Fish Delivery in Thane",
     contentSubheading: "Same-day & next-day pre-order from local Thane fish sellers",
+    keywords: ["thane"],
   },
   kandivali: {
     name: "Kandivali",
@@ -19,6 +20,7 @@ export const AREAS = {
     metaDescription: "Order fresh fish online in Kandivali, Mumbai. Same-day delivery from trusted local sellers. No cold storage.",
     contentHeadline: "Fresh Fish Delivery in Kandivali",
     contentSubheading: "Daily catch delivered to your door in Kandivali",
+    keywords: ["kandivali"],
   },
   tardeo: {
     name: "Tardeo",
@@ -29,6 +31,7 @@ export const AREAS = {
     metaDescription: "Buy fresh fish in Tardeo with fast delivery. Direct from local Mumbai fish sellers. Premium quality, best prices.",
     contentHeadline: "Fresh Fish Delivery in Tardeo",
     contentSubheading: "Quality fish from local sellers, delivered same-day in Tardeo",
+    keywords: ["tardeo", "tardeo", "south mumbai"],
   },
   kamothe: {
     name: "Kamothe",
@@ -39,6 +42,7 @@ export const AREAS = {
     metaDescription: "Fresh fish delivery in Kamothe, Navi Mumbai. Pre-order next-day catch. Direct from local sellers, no middleman.",
     contentHeadline: "Fresh Fish Delivery in Kamothe",
     contentSubheading: "Same-day & pre-order fish delivery in Kamothe, Navi Mumbai",
+    keywords: ["kamothe", "navi mumbai"],
   },
 } as const;
 

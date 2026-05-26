@@ -33,7 +33,13 @@ try {
         ...s,
         distanceKm: haversineKm(area.lat, area.lng, s.lat, s.lng),
       }))
-      .filter((s: any) => s.distanceKm <= area.radius)
+      .filter((s: any) => {
+        const matchesDistance = s.distanceKm <= area.radius;
+        const addressText = `${s.location || ""} ${s.location_name || ""}`.toLowerCase();
+        const keywords = (area as any).keywords || [];
+        const matchesKeyword = keywords.length === 0 || keywords.some((kw: string) => addressText.includes(kw.toLowerCase()));
+        return matchesDistance && matchesKeyword;
+      })
       .sort((a: any, b: any) => a.distanceKm - b.distanceKm);
   }
 
@@ -252,19 +258,20 @@ const jsonLd = {
       <div class="v2-section-head" style="padding: 16px;">
         <h2 style="font: 600 16px/1.3 Inter; margin: 0;">{sellers.length} {sellers.length === 1 ? "Seller" : "Sellers"} in {area.name}</h2>
       </div>
-      <div class="v2-cards-grid" style="padding: 16px;">
+      <div class="v2-cards-grid" style="padding: 16px; display: flex; flex-direction: column; gap: 20px;">
         {sellers.map((seller: any) => (
           <SellerCard
             id={seller.id}
             name={seller.name}
             location={seller.location_name || `${Math.round(seller.distanceKm)} km away`}
             distanceKm={seller.distanceKm}
-            rating={seller.rating || 0}
+            rating={seller.rating_avg || 0}
             status={seller.is_active ? "open" : "closed"}
             acceptsPreorder={seller.accepts_preorder}
             hasDelivery={seller.has_delivery}
             itemCount={0}
             imageHue="sky"
+            storeImageUrl={seller.store_image_url}
           />
         ))}
       </div>
