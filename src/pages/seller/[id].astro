@@ -994,10 +994,30 @@ const tags = [
       }
 
       const groups = c.groupBySeller();
-      const group = groups.find((g) => g.seller_id === sid);
+      let group = groups.find((g) => g.seller_id === sid);
       if (!group || group.items.length === 0) {
         window.v2Toast?.("error", "Cart empty", "Add items before checkout");
         return;
+      }
+
+      // -- LIVE VALIDATION --
+      if (typeof c.validateCartLive === "function") {
+        const { oosMessages, priceChangedCount } = await c.validateCartLive(sid);
+        if (oosMessages.length > 0 || priceChangedCount > 0) {
+          let msg = [];
+          if (oosMessages.length) msg.push(oosMessages.join("\\n"));
+          if (priceChangedCount) msg.push(`Prices updated for ${priceChangedCount} item(s)`);
+          window.v2Toast?.("info", "Cart updated", msg.join(" · "));
+          
+          // Wait briefly for storage event to propagate
+          await new Promise(r => setTimeout(r, 50));
+          
+          const groups2 = c.groupBySeller();
+          group = groups2.find((g) => g.seller_id === sid);
+          if (!group || group.items.length === 0) {
+            return;
+          }
+        }
       }
 
       // Pre-flight: must be signed in
@@ -1309,6 +1329,16 @@ const tags = [
       }
     });
 
+    function triggerBackgroundValidation(c) {
+      if (typeof c.validateCartLive === "function") {
+        c.validateCartLive(sellerId).then(({ oosMessages, priceChangedCount }) => {
+          if (oosMessages.length > 0 || priceChangedCount > 0) {
+            render();
+          }
+        });
+      }
+    }
+
     function add(id, price, name, unit, optId, optLabel, bundleSize) {
       if (sellerFullyClosed) {
         window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
@@ -1332,6 +1362,7 @@ const tags = [
       });
       track("add_to_cart", { item_name: name, item_id: id, price, quantity: bs, price_unit: unit });
       render();
+      triggerBackgroundValidation(c);
     }
     // Inc/dec by bundle_size so qty stays a valid multiple
     function getBundleStep(cartItem) {
@@ -1348,6 +1379,7 @@ const tags = [
       if (!item) return;
       c.setQty(id, item.qty - getBundleStep(item));
       render();
+      triggerBackgroundValidation(c);
     }
     function inc(id) {
       const c = Cart(); if (!c) return;
@@ -1364,6 +1396,7 @@ const tags = [
       }
       c.setQty(id, item.qty + step);
       render();
+      triggerBackgroundValidation(c);
     }
 
     grid.addEventListener("click", (e) => {
