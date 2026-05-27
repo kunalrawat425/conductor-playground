@@ -42,22 +42,30 @@ function todayIST(): string {
 
 async function sendViaMSG91(phone: string, otp: string): Promise<{ ok: boolean; error?: string }> {
   // Use Flow API — works with any approved DLT template (not OTP-type-specific)
-  // Template must contain ##otp## variable
+  const payload = {
+    flow_id: msg91TemplateId,
+    sender: msg91SenderId,
+    mobiles: phone,   // 91XXXXXXXXXX format
+    var: otp,         // maps to ##var## in template
+    otp,              // maps to ##otp## in template
+    VAR1: otp,        // fallback if template uses ##VAR1##
+  };
+
+  console.log("MSG91 Request Payload:", JSON.stringify(payload, null, 2));
+
   const res = await fetch("https://api.msg91.com/api/v5/flow/", {
     method: "POST",
     headers: {
       "authkey": msg91AuthKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      flow_id: msg91TemplateId,
-      sender: msg91SenderId,
-      mobiles: phone,   // 91XXXXXXXXXX format
-      otp,              // maps to ##otp## in template
-      VAR1: otp,        // fallback if template uses ##VAR1##
-    }),
+    body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
+  
+  console.log("MSG91 Response Status:", res.status);
+  console.log("MSG91 Response Data:", JSON.stringify(data, null, 2));
+
   if (data.type === "success") return { ok: true };
   return { ok: false, error: data.message || `MSG91 error (${res.status})` };
 }
