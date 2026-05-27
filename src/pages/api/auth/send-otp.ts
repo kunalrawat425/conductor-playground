@@ -14,10 +14,24 @@ const MAX_SENDS_PER_DAY = 30;
 const RESEND_COOLDOWN_SECONDS = 30;
 
 function generateOTP(): string {
-  // Cryptographically random 6-digit code, no leading zeros
-  const min = 100000;
-  const max = 999999;
-  return String(Math.floor(min + Math.random() * (max - min + 1)));
+  // Pattern friendly 6-digit code for easy typing
+  const getDigit = () => Math.floor(Math.random() * 10);
+  const getNonZeroDigit = () => Math.floor(Math.random() * 9) + 1;
+  
+  const a = getNonZeroDigit();
+  let b = getDigit();
+  while (b === a) b = getDigit();
+  let c = getDigit();
+  while (c === a || c === b) c = getDigit();
+
+  const patterns = [
+    `${a}${a}${a}${b}${b}${b}`, // AAABBB
+    `${a}${b}${a}${b}${a}${b}`, // ABABAB
+    `${a}${b}${c}${a}${b}${c}`, // ABCABC
+    `${a}${a}${b}${b}${c}${c}`, // AABBCC
+  ];
+
+  return patterns[Math.floor(Math.random() * patterns.length)];
 }
 
 /** Returns IST date string YYYY-MM-DD */
@@ -95,8 +109,8 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // TODO: enable MSG91 when ready — for now use fixed OTP 123456
-    const OTP_SEND_ENABLED = false;
+    // Enable MSG91 when ready
+    const OTP_SEND_ENABLED = true;
     const otp = OTP_SEND_ENABLED ? generateOTP() : "123456";
     const expiresAt = new Date(now.getTime() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
