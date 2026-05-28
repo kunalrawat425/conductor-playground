@@ -514,7 +514,11 @@ const tags = [
         null;
       if (!opt) {
         const pl = String(i.pricing_label || i.qty_unit || "").trim();
-        const qtyPart = `${fmtQty(i.qty)} ${i.qty_unit || "kg"}`;
+        const u = String(i.qty_unit || "kg").toLowerCase();
+        let qtyPart = `${fmtQty(i.qty)} ${i.qty_unit || "kg"}`;
+        if (u === "kg" && i.qty > 0 && i.qty < 1) {
+          qtyPart = `${Math.round(i.qty * 1000)} grams`;
+        }
         if (!pl || isGenericTierLabel(pl)) return escape(qtyPart);
         return `${escape(qtyPart)} · ${escape(titleCaseWords(pl))}`;
       }
@@ -554,6 +558,9 @@ const tags = [
       if (u === "piece" || u === "pc" || u === "pcs") {
         const packs = bs > 1 ? Math.round(Number(qty) / bs) : Number(qty);
         return `${fmtQty(packs)} pack`;
+      }
+      if (u === "kg" && qty > 0 && qty < 1) {
+        return `${Math.round(qty * 1000)} grams`;
       }
       return `${fmtQty(qty)} ${unit || "kg"}`;
     }
