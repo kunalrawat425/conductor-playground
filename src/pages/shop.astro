@@ -697,7 +697,7 @@ const categories = [
           : status === "closed-preorder"
             ? `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-orders open</span>`
             : status === "closed"
-              ? `<span class="v2-badge v2-badge-tag v2-badge-red v2-badge-size-md v2-badge-bold">Closed</span>`
+              ? (s.opens_at ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md v2-badge-bold">Opens at ${s.opens_at.slice(0, 5)}</span>` : ``)
               : `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-order only</span>`;
 
         const pickupTag = !s.has_delivery
@@ -724,17 +724,17 @@ const categories = [
           offerLabel = "Closed today";
           offerColor = "v2-badge-red";
         }
-        const offerBadge = `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
+        const offerBadge = status === "closed" ? "" : `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
 
         const deliveryBar = s.has_delivery
           ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
           : "";
 
-        const fullyClosed = status === "closed";
+        const fullyClosed = false; // We no longer grey out or disable the card
 
         const sellerSlug = sellerNameToSlug(s.name);
         return `
-        <${fullyClosed ? 'div' : `a href="/s/${sellerSlug}"`} class="v2-seller-card${fullyClosed ? " v2-seller-closed" : ""}" ${fullyClosed ? 'style="pointer-events:none;"' : ''}>
+        <a href="/s/${sellerSlug}" class="v2-seller-card">
           <div class="v2-sc-img" style="background:${hueColors[hue]};">
             ${offerBadge}
             ${(s as any).store_image_url
@@ -753,7 +753,7 @@ const categories = [
           </div>
           ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
           ${deliveryBar}
-        </${fullyClosed ? 'div' : 'a'}>`;
+        </a>`;
       }).join("");
   }
 

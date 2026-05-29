@@ -95,7 +95,7 @@ if (isEffectivelyOpen) {
 } else if (isPreorderMode) {
   listings = listings.filter((l: any) => l?.is_preorder_enabled === true);
 } else {
-  listings = [];
+  listings = listings.filter((l: any) => l?.is_available === true);
 }
 for (const l of seoListings) {
   const opts = getListingPriceOptions(l);
@@ -129,6 +129,28 @@ function fmtDays(days: string[]): string {
 const orderDaysLabel = fmtDays(openDays);
 const preorderDaysLabel = preorderDays.length ? fmtDays(preorderDays) : null;
 const cutoffLabel = seller?.preorder_cutoff_time ? seller.preorder_cutoff_time.slice(0,5) : null;
+
+// Calculate next opening time string for banner
+let nextOpenLabel = "soon";
+if (seller?.opens_at) {
+  let nextOpenDayIdx = nowIST.getUTCDay();
+  const openDaysSet = new Set(openDays);
+  const [oh, om] = seller.opens_at.split(":").map(Number);
+  const openMin = oh * 60 + om;
+  
+  if (openDaysSet.has(DAY_NAMES_SHORT[nextOpenDayIdx]) && openMin > curMin) {
+    nextOpenLabel = `today at ${seller.opens_at.slice(0,5)}`;
+  } else {
+    for (let i = 1; i <= 7; i++) {
+      const idx = (nextOpenDayIdx + i) % 7;
+      if (openDaysSet.has(DAY_NAMES_SHORT[idx])) {
+        const dayStr = i === 1 ? "tomorrow" : DAY_LABELS[DAY_NAMES_SHORT[idx]];
+        nextOpenLabel = `${dayStr} at ${seller.opens_at.slice(0,5)}`;
+        break;
+      }
+    }
+  }
+}
 
 const status: "open" | "closed" = isEffectivelyOpen ? "open" : "closed";
 const tags = [
@@ -311,16 +333,7 @@ const tags = [
         </div>
       )}
 
-      {isClosed ? (
-        <div style="padding:32px 16px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">🔒</div>
-          <div style="font:800 16px Inter;color:var(--v2-ink);margin-bottom:6px;">Closed right now</div>
-          <div style="font:400 13px Inter;color:var(--v2-ink-3);line-height:1.6;">
-            {seller?.opens_at ? `Opens at ${seller.opens_at.slice(0,5)}` : "Check back during opening hours"}
-          </div>
-          <a href="/shop" class="v2-btn v2-btn-secondary v2-btn-md" style="display:inline-block;margin-top:16px;">← Browse other sellers</a>
-        </div>
-      ) : itemCount === 0 ? (
+      {itemCount === 0 ? (
         <div style="padding:0 16px;margin-top:16px;">
           <EmptyState
             variant="no-results"
@@ -333,9 +346,20 @@ const tags = [
       ) : (
         <>
           <div style="padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">{isPreorderMode ? "Pre-order Menu" : "Today's Menu"}</h2>
+            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">{isClosed ? "Menu (Closed)" : (isPreorderMode ? "Pre-order Menu" : "Today's Menu")}</h2>
             <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
+          {isClosed && (
+            <div style="margin: 0 16px 16px; padding: 12px 14px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--v2-radius); display: flex; align-items: center; gap: 10px;">
+              <span style="font-size:20px;">🌅</span>
+              <div>
+                <div style="font:700 13px Inter; color: #166534;">Store Closed</div>
+                <div style="font:400 11px Inter; color: #15803D; margin-top: 2px;">
+                  {seller?.opens_at ? `Shop will open ${nextOpenLabel}.` : "Check back during opening hours."} Prices are estimates and may change.
+                </div>
+              </div>
+            </div>
+          )}
           {/* SSR product cards — JS replaces with interactive version on load.
               Crawlers read this; buyers see the JS-rendered interactive grid. */}
           <div id="v2-menu-grid" class="v2-menu-grid">
@@ -663,7 +687,7 @@ const tags = [
                 </div>`;
               })()
         )
-        : canAddItem && hasStock
+        : canAddItem && hasStock || sellerFullyClosed
           ? (opts.length <= 1
             ? (() => {
                 const price = firstOpt.price || 0;
@@ -674,7 +698,7 @@ const tags = [
                 const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
                 return `<div class="v2-item-bottom">
                   <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
-                  ${inCart > 0
+                  ${sellerFullyClosed ? '' : (inCart > 0
                     ? (() => {
                         const bs = firstOpt.bundle_size && firstOpt.bundle_size > 1 ? firstOpt.bundle_size : 1;
                         const packLabel = counterQtyLabel(inCart, unit, bs);
@@ -684,7 +708,7 @@ const tags = [
                          <button class="v2-item-inc" aria-label="Increase">+</button>
                        </div>`;
                       })()
-                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`)}
                 </div>`;
               })()
             : (() => {
@@ -702,7 +726,7 @@ const tags = [
                         <span class="v2-item-tier-label" style="flex:none;">${escape(label)}${bSize}</span>
                         <span class="v2-item-tier-price" style="margin-right:0;">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
                       </div>
-                      ${tierQty > 0
+                      ${sellerFullyClosed ? '' : (tierQty > 0
                         ? (() => {
                             const bs = o.bundle_size && o.bundle_size > 1 ? o.bundle_size : 1;
                             const packLabel = counterQtyLabel(tierQty, tierUnit, bs);
@@ -714,7 +738,7 @@ const tags = [
                              <button class="v2-item-inc" aria-label="Increase" ${atMax ? 'disabled style="opacity:.35;cursor:not-allowed;"' : ''}>+</button>
                            </div>`;
                           })()
-                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`)}
                     </div>`;
                   }).join("")}
                 </div>`;
@@ -803,25 +827,13 @@ const tags = [
               <div class="v2-item-name">${name}</div>
               <div class="v2-item-bottom">
                 <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${priceSuf}</span></div>
-                <button class="v2-item-add" data-id="${l?.id || ""}" data-price="${price}" data-name="${name}" data-unit="${unit}" data-opt-id="${optId}" data-opt-label="${unit}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${name}">+</button>
+                ${sellerFullyClosed ? '' : `<button class="v2-item-add" data-id="${l?.id || ""}" data-price="${price}" data-name="${name}" data-unit="${unit}" data-opt-id="${optId}" data-opt-label="${unit}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${name}">+</button>`}
               </div>
             </div>
           </div>`;
         }
       }).join("");
-      // If seller is fully closed (closed + no preorder), disable all add buttons and grey out items
-      if (sellerFullyClosed) {
-        grid.style.opacity = "0.5";
-        grid.style.pointerEvents = "none";
-        // Show closed banner above menu
-        if (!document.getElementById("v2-closed-banner")) {
-          const banner = document.createElement("div");
-          banner.id = "v2-closed-banner";
-          banner.style.cssText = "margin:0 16px 12px;padding:14px 16px;background:var(--v2-red-l);border:1px solid var(--v2-red);border-radius:var(--v2-radius);text-align:center;";
-          banner.innerHTML = `<div style="font:700 13px Inter;color:var(--v2-red);">🚫 Not available today</div><div style="font:400 11px Inter;color:var(--v2-ink-2);margin-top:4px;">No orders or pre-orders available today. Check back on an order day.</div>`;
-          grid.parentElement?.insertBefore(banner, grid);
-        }
-      }
+
       renderCart();
     }
 
