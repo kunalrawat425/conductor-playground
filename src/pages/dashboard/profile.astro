@@ -3,6 +3,8 @@ export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import Toast from "../../components/ui/atoms/Toast.astro";
 import Input from "../../components/ui/atoms/Input.astro";
+
+const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
 ---
 <style is:global>
   .v2-day-pill {
@@ -81,8 +83,10 @@ import Input from "../../components/ui/atoms/Input.astro";
       <div id="p-store-error" style="display:none;font:500 11px Inter;color:var(--v2-red);"></div>
     </div>
 
-    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Payment</h3>
-    <Input id="p-upi-id" name="upi_id" label="UPI ID (shown to buyers on payment page)" type="text" placeholder="e.g. 9876543210@upi or name@bank" />
+    <div style={razorpayEnabled ? "display:none;" : ""}>
+      <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Payment</h3>
+      <Input id="p-upi-id" name="upi_id" label="UPI ID (shown to buyers on payment page)" type="text" placeholder="e.g. 9876543210@upi or name@bank" />
+    </div>
 
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Order settings</h3>
     <Input id="p-min-order" name="min_order_amount" label="Minimum order (₹)" type="number" />

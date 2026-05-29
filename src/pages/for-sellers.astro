@@ -10,7 +10,7 @@ const jsonLd = {
       "@id": "https://www.relifish.store/for-sellers",
       "url": "https://www.relifish.store/for-sellers",
       "name": "Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish",
-      "description": "Start selling fish online in Mumbai in under 5 minutes. Free to list, zero commission. Accept orders, pre-orders, UPI payments. Relifish is the online fish selling platform built for Mumbai fish sellers.",
+      "description": "Start selling fish online in Mumbai in under 5 minutes. Free to list, zero commission. Accept orders, pre-orders, and online payments. Relifish is the online fish selling platform built for Mumbai fish sellers.",
       "inLanguage": "en-IN",
       "about": { "@id": "https://www.relifish.store#service" },
       "isPartOf": { "@id": "https://www.relifish.store" },
@@ -26,7 +26,7 @@ const jsonLd = {
       "@type": "Service",
       "@id": "https://www.relifish.store#service",
       "name": "Sell Fish Online — Relifish Seller Platform",
-      "description": "Relifish is a free online fish selling platform for fish sellers in Tardeo, Kandivali, Thane, and Kamothe. List your daily catch, accept pre-orders, manage home delivery, and collect UPI payments. Zero commission on every sale.",
+      "description": "Relifish is a free online fish selling platform for fish sellers in Tardeo, Kandivali, Thane, and Kamothe. List your daily catch, accept pre-orders, manage home delivery, and accept online payments. Zero commission on every sale.",
       "provider": { "@id": "https://www.relifish.store#org" },
       "serviceType": "Online Fish Selling Platform",
       "areaServed": [
@@ -47,7 +47,7 @@ const jsonLd = {
         "itemListElement": [
           { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Free fish listing and online store" } },
           { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pre-order management for fish sellers" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "UPI payment collection" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Secure online payment collection" } },
           { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fish home delivery management" } },
           { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Push and email order alerts" } },
           { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fish inventory management" } }
@@ -71,14 +71,14 @@ const jsonLd = {
       "@type": "HowTo",
       "@id": "https://www.relifish.store/for-sellers#howto",
       "name": "How to start selling fish online on Relifish",
-      "description": "Set up your online fish store in Mumbai on Relifish in under 5 minutes. Accept orders, pre-orders, and UPI payments. Free to list, zero commission.",
+      "description": "Set up your online fish store in Mumbai on Relifish in under 5 minutes. Accept orders, pre-orders, and online payments. Free to list, zero commission.",
       "totalTime": "PT5M",
       "estimatedCost": { "@type": "MonetaryAmount", "currency": "INR", "value": "0" },
       "step": [
         { "@type": "HowToStep", "position": 1, "name": "Create your free seller account", "text": "Sign up with your phone number in 30 seconds. No tech skills needed. Your online fish store is created instantly." },
         { "@type": "HowToStep", "position": 2, "name": "Add your fish inventory", "text": "Upload photos, set prices, quantity, and shop hours. Your live fish catalogue goes live instantly for buyers in your area." },
         { "@type": "HowToStep", "position": 3, "name": "Share your store link", "text": "Share relifish.store/s/your-store on WhatsApp, Instagram bio, or print a QR code on your flyer. Buyers click and order." },
-        { "@type": "HowToStep", "position": 4, "name": "Accept orders and get paid", "text": "Buyers order directly from your store. You get an instant push notification and email. Confirm with one tap and collect payment via UPI or COD." }
+        { "@type": "HowToStep", "position": 4, "name": "Accept orders and get paid", "text": "Buyers pay securely via Razorpay (UPI, cards, netbanking) when ordering. You get an instant notification and settle directly to your bank." }
       ]
     },
     {
@@ -89,7 +89,7 @@ const jsonLd = {
         { "@type": "Question", "name": "Can I accept fish pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set a pre-order window (e.g. 8pm–10pm) to take orders the night before for tomorrow's catch. Demand is locked in advance — you buy exactly what's needed at the docks, reducing wastage and eliminating cold storage costs." } },
         { "@type": "Question", "name": "Does Relifish support fish home delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set a delivery radius in km, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address to your location. Buyers outside your serviceable radius see pickup only." } },
         { "@type": "Question", "name": "How do I get notified about new fish orders?", "acceptedAnswer": { "@type": "Answer", "text": "Every new order sends an instant push notification to your phone and an email. Confirm, reject, or mark orders ready from your dashboard — no calls, no WhatsApp back-and-forth." } },
-        { "@type": "Question", "name": "What payments do fish buyers use?", "acceptedAnswer": { "@type": "Answer", "text": "Buyers pay via UPI or cash on delivery (COD). They upload UPI payment proof; you confirm and fulfill. Relifish takes zero commission on any payment." } },
+        { "@type": "Question", "name": "How do payments work?", "acceptedAnswer": { "@type": "Answer", "text": "Buyers pay securely via our integrated Razorpay checkout supporting UPI, cards, and net banking. Orders are auto-confirmed instantly, and payouts are settled directly to your bank." } },
         { "@type": "Question", "name": "How fast can I start selling fish online?", "acceptedAnswer": { "@type": "Answer", "text": "Your online fish store goes live in under 5 minutes. Sign up, add inventory, share your link — first orders typically arrive the same day." } },
         { "@type": "Question", "name": "Can I manage my fish store from my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The Relifish seller dashboard is fully mobile-first. Manage orders, inventory, delivery settings, shop hours, and notifications from your smartphone." } },
         { "@type": "Question", "name": "How does Relifish reduce fish wastage?", "acceptedAnswer": { "@type": "Answer", "text": "Pre-orders let you know tomorrow's demand tonight. You buy exactly the right quantity at the docks — no excess, no cold storage costs, no panic selling. Sellers report significantly less wastage after enabling pre-orders." } },
@@ -101,7 +101,7 @@ const jsonLd = {
 ---
 <AppShell
   title="Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish"
-  description="Start selling fish online in Mumbai in 5 minutes. Free to list, zero commission. Accept orders, pre-orders, UPI payments in your serviceable area. Mumbai fish sellers keep 100% of every sale."
+  description="Start selling fish online in Mumbai in 5 minutes. Free to list, zero commission. Accept orders, pre-orders, and online payments in your serviceable area. Mumbai fish sellers keep 100% of every sale."
   hideNav={true}
   hideHeader={true}
   jsonLd={jsonLd}
@@ -322,7 +322,7 @@ const jsonLd = {
         Stop paying 30% to delivery apps
       </div>
       <h1>Zomato takes 30%.<br/><span>We take 0%.</span></h1>
-      <p>Get your own online fish shop in under 2 minutes. Accept live orders, pre-orders, and UPI payments directly from buyers. You keep exactly 100% of your profits.</p>
+      <p>Get your own online fish shop in under 2 minutes. Accept live orders, pre-orders, and secure online payments directly from buyers. You keep exactly 100% of your profits.</p>
       <form onsubmit="return false;">
         <div class="fs-cta-form">
           <input type="tel" placeholder="Your phone number" />
@@ -345,10 +345,10 @@ const jsonLd = {
               <div class="fs-phone-header-label">Today's orders</div>
               <div class="fs-phone-header-val">18 <span>orders · ₹12,450</span></div>
             </div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट) × 2kg</div><div class="fs-order-sub">Confirmed · 8:14am · UPI</div></div><span class="fs-badge fs-badge-green">✓ Done</span></div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई) × 1kg</div><div class="fs-order-sub">Incoming · 8:22am · UPI</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Pomfret (पापलेट) × 2kg</div><div class="fs-order-sub">Confirmed · 8:14am · Online</div></div><span class="fs-badge fs-badge-green">✓ Done</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Surmai (सुरमई) × 1kg</div><div class="fs-order-sub">Incoming · 8:22am · Online</div></div><span class="fs-badge fs-badge-blue">New</span></div>
             <div class="fs-order-card"><div><div class="fs-order-name">Prawns (कोळंबी)</div><div class="fs-order-sub">Pre-order · Tomorrow · ₹680</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
-            <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा) × 1kg</div><div class="fs-order-sub">Incoming · 9:05am · COD</div></div><span class="fs-badge fs-badge-blue">New</span></div>
+            <div class="fs-order-card"><div><div class="fs-order-name">Bangda (बांगडा) × 1kg</div><div class="fs-order-sub">Incoming · 9:05am · Cash</div></div><span class="fs-badge fs-badge-blue">New</span></div>
             <div class="fs-order-card"><div><div class="fs-order-name">Rawas (रावस) × 500g</div><div class="fs-order-sub">Delivery · 5.2km · Paid</div></div><span class="fs-badge fs-badge-orange">Delivery</span></div>
             <div class="fs-order-card"><div><div class="fs-order-name">Halwa (हलवा) × 1kg</div><div class="fs-order-sub">Pre-order · Tomorrow</div></div><span class="fs-badge fs-badge-indigo">Pre-order</span></div>
             <!-- Revenue summary row -->
@@ -374,7 +374,7 @@ const jsonLd = {
   <div class="fs-wrap">
     <p class="fs-eyebrow" style="color:#DC2626;">The Old Way vs The Relifish Way</p>
     <h2 class="fs-h2" style="color:#0F172A;">Stop taking orders on WhatsApp.<br/>Start running a real business.</h2>
-    <p class="fs-lead">Missed calls at 6am, manual Excel sheets, and arguments over UPI screenshots. Relifish replaces the chaos with a professional online storefront. Free to use, live in 2 minutes.</p>
+    <p class="fs-lead">Missed calls at 6am, manual Excel sheets, and payment tracking chaos. Relifish replaces the chaos with a professional online storefront. Free to use, live in 2 minutes.</p>
 
     <div style="display:grid;grid-template-columns:1fr;gap:16px;">
       <div class="fs-problem-box">
@@ -425,9 +425,9 @@ const jsonLd = {
         <div class="fs-trust-desc">Keep 100% of every sale</div>
       </div>
       <div class="fs-trust-item">
-        <div class="fs-trust-icon" style="background:#EEF2FF;font:700 10px Inter;color:#4F46E5;text-align:center;letter-spacing:-0.2px;">UPI<br/>COD</div>
-        <div class="fs-trust-title">Payments</div>
-        <div class="fs-trust-desc">UPI · Cash on delivery</div>
+        <div class="fs-trust-icon" style="background:#EEF2FF;font-size:22px;">💳</div>
+        <div class="fs-trust-title">Secure Payments</div>
+        <div class="fs-trust-desc">Razorpay · Instant payouts</div>
       </div>
     </div>
   </div>
@@ -519,7 +519,7 @@ const jsonLd = {
           <li><span style="color:#059669;font-weight:700;">→</span> Buyers outside radius auto-shown pickup only</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Distance shown to buyer at checkout (e.g. 5.2 km)</li>
           <li><span style="color:#059669;font-weight:700;">→</span> Enable pickup, delivery, or both — your choice</li>
-          <li><span style="color:#059669;font-weight:700;">→</span> Accept UPI · Cash on delivery</li>
+          <li><span style="color:#059669;font-weight:700;">→</span> Settle securely with automated payouts</li>
         </ul>
         <a href="/dashboard/login" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Inter;color:#059669;text-decoration:none;">Enable delivery →</a>
       </div>
@@ -568,7 +568,7 @@ const jsonLd = {
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
         <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">💳</div>
         <div style="font:700 14px Inter;color:#0F172A;margin-bottom:6px;">Payments</div>
-        <div style="font:400 12px/1.5 Inter;color:#64748B;">Enter your UPI ID. Buyers pay and upload proof — you confirm. COD also supported.</div>
+        <div style="font:400 12px/1.5 Inter;color:#64748B;">Secure checkout via Razorpay (UPI, cards, net banking). Auto-confirmed orders settled straight to your bank account.</div>
       </div>
 
       <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:18px;">
@@ -719,12 +719,12 @@ const jsonLd = {
               <span style="font:700 10px Inter;color:#fff;background:#4F46E5;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Day 1–3</span>
               <span style="font:400 11px Inter;color:#94A3B8;">First orders arrive. No calls needed.</span>
             </div>
-            <p style="font:600 14px/1.5 Inter;color:#2D2A6E;margin:0 0 8px;"><strong>Outcome:</strong> Buyer browses, picks, pays via UPI · COD. You get a push notification + email. One tap to confirm. You just took an order without speaking to anyone.</p>
+            <p style="font:600 14px/1.5 Inter;color:#2D2A6E;margin:0 0 8px;"><strong>Outcome:</strong> Buyer browses, picks, pays securely online. You get a push notification + email. One tap to confirm. You just took an order without speaking to anyone.</p>
             <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 10px;">No more missed calls. No order written on paper. Every order is digital, tracked, and confirmed — with payment already collected. This is what running a business feels like.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Instant push alert</span>
               <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Email confirmation</span>
-              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">UPI · COD</span>
+              <span style="font:600 11px Inter;color:#4F46E5;background:#fff;border:1px solid #C7D2FE;padding:4px 10px;border-radius:999px;">Online Payment</span>
             </div>
           </div>
         </div>
@@ -1039,7 +1039,7 @@ const jsonLd = {
         {q:"Do I need a smartphone or computer?", a:"Just a smartphone. Your dashboard is mobile-first. Manage orders, inventory, and notifications all from your phone."},
         {q:"How do buyers find my store?", a:"Share your link (relifish.store/s/your-store) on WhatsApp and Instagram. Buyers can also find you on the Relifish shop page."},
         {q:"Can I set my own shop hours?", a:"Yes. Set your open/close times, which days you operate, and your pre-order window. Orders are blocked when your shop is closed."},
-        {q:"How does payment work?", a:"Buyers pay via UPI or COD. They upload UPI payment proof; you confirm and fulfill. Relifish takes no commission."},
+        {q:"How does payment work?", a:"Buyers pay securely online via Razorpay (supporting UPI, cards, and net banking). Orders are confirmed instantly and settled directly to your bank account."},
         {q:"What if I run out of stock?", a:"Set a quantity limit on each listing. When it hits zero, the item auto-shows as sold out and buyers can't order more."},
       ].map(f => (
         <div style="border-bottom:1px solid #E2E8F0;padding:20px 0;">
