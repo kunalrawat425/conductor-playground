@@ -211,13 +211,13 @@ export const GET: APIRoute = async ({ request }) => {
           // Case B: Location Set but No Nearby Active Sellers
           title = "Fresh Fish Coming Soon 🎣";
           const areaSuffix = buyer.location_name ? ` near ${buyer.location_name}` : "";
-          body = `We're expanding fast! Create an account and request your neighborhood${areaSuffix} on our waitlist to get area updates and be first to know when sellers go live near you.`;
+          body = `We're expanding fast! Request your neighborhood${areaSuffix} on our waitlist to get area updates and be first to know when sellers go live near you.`;
           urlPath = "/buyer-banner.html";
         }
       } else {
         // Case C: No Location Set
         title = "Discover Fresh Fish Rates 📍";
-        body = "Create an account and set your location in your profile to check live rates. Not live in your area yet? Request your neighborhood on the waitlist for updates!";
+        body = "Set your location in your profile to check today's fresh catch rates. Not live in your area yet? Request your neighborhood on our waitlist for updates!";
         urlPath = "/v2/me";
       }
 
