@@ -26,7 +26,7 @@ export async function subscribePush(): Promise<boolean> {
           if (p !== "granted") return false;
         }
       }
-      const vapidKey = (import.meta as any).env?.PUBLIC_VAPID_KEY;
+      const vapidKey = import.meta.env.PUBLIC_VAPID_KEY;
       if (!vapidKey) {
         console.warn("VAPID public key not configured");
         return false;

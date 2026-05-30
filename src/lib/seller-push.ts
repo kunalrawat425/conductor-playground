@@ -23,7 +23,7 @@ export async function subscribeSellerPush(sellerId: string): Promise<boolean> {
           if (p !== "granted") return false;
         }
       }
-      const vapidKey = (import.meta as any).env?.PUBLIC_VAPID_KEY;
+      const vapidKey = import.meta.env.PUBLIC_VAPID_KEY;
       if (!vapidKey) return false;
 
       const keyBytes = urlBase64ToUint8Array(vapidKey);
