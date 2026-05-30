@@ -2,14 +2,14 @@
  * Canonical public origin for absolute links in emails and Web Push payloads.
  */
 export function siteOriginFromEnv(): string {
+  const env = import.meta.env.VERCEL_ENV || process.env.VERCEL_ENV || "";
+  if (env === "production") {
+    return "https://relifish.store";
+  }
+
   const raw = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL;
   if (typeof raw === "string" && raw.trim()) {
     return raw.replace(/\/$/, "");
-  }
-
-  const vercelEnv = import.meta.env.VERCEL_ENV || process.env.VERCEL_ENV;
-  if (vercelEnv === "production") {
-    return "https://relifish.store";
   }
 
   const v = import.meta.env.VERCEL_URL || process.env.VERCEL_URL;
@@ -17,6 +17,7 @@ export function siteOriginFromEnv(): string {
     const host = v.replace(/^https?:\/\//, "");
     return `https://${host}`;
   }
+
   return "https://relifish.store";
 }
 
