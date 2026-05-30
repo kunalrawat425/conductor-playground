@@ -329,11 +329,10 @@ export async function validateCartLive(sellerId?: string): Promise<{ oosMessages
     if (items.length === 0) return { oosMessages, priceChangedCount };
     
     const listingIds = items.map(i => i.listing_id);
-    const cartSellerId = items.length > 0 ? items[0].seller_id : undefined;
     const valRes = await fetch("/api/buyer/validate-cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listing_ids: listingIds, seller_id: cartSellerId })
+      body: JSON.stringify({ listing_ids: listingIds })
     });
     
     if (valRes.ok) {
@@ -342,35 +341,9 @@ export async function validateCartLive(sellerId?: string): Promise<{ oosMessages
         const live = valData.listings.find((l: any) => l.id === item.listing_id);
         const keyToUse = item.pricing_option_id && item.pricing_option_id !== "default" ? item.listing_id + ":" + item.pricing_option_id : item.listing_id;
         
-        // valData also returns `is_preorder_mode` and `is_closed` for the seller.
-        const isPreorderMode = valData.seller_mode === "preorder";
-        const isClosed = valData.seller_mode === "closed";
-        
-        let shouldRemove = false;
-        let removeReason = "";
-        
-        if (isClosed) {
-           shouldRemove = true;
-           removeReason = `Store is currently closed. "${item.name}" was removed.`;
-        } else if (!live || !live.is_available || (live.weight_avail != null && live.weight_avail < item.qty)) {
-           shouldRemove = true;
-           removeReason = `"${item.name}" is out of stock and was removed.`;
-        } else if (isPreorderMode && !live.is_preorder_enabled) {
-           shouldRemove = true;
-           removeReason = `Store is in pre-order mode. Same-day item "${item.name}" was removed.`;
-        } else if (!isPreorderMode && live.is_preorder_enabled) {
-           // Actually, if store is open, can they order preorder-enabled items?
-           // The prompt said: "if preorder done, then those preo oder items hsould be visbile then".
-           // Pre-order items might still be valid when open, but let's strictly invalidate if it's meant to be order-only and vice versa.
-           // Actually, if open, preorder items are usually available if they are in stock.
-           // "should not happen the shopwith open time is palceing pre orders as carts where udapted at time of reorder and vicersea"
-           shouldRemove = true;
-           removeReason = `Store is now open for immediate orders. Pre-order item "${item.name}" was removed.`;
-        }
-        
-        if (shouldRemove) {
+        if (!live || !live.is_available || (live.weight_avail != null && live.weight_avail < item.qty)) {
            removeItem(keyToUse);
-           oosMessages.push(removeReason);
+           oosMessages.push(`"${item.name}" is out of stock and was removed.`);
         } else {
            const opts = live.pricing_options || [];
            const opt = opts.find((o: any) => o.id === item.pricing_option_id) || opts[0];
