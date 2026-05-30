@@ -37,6 +37,7 @@ const {
   canonical,
 } = Astro.props;
 const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
+const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 ---
 
 <html lang="en">
@@ -83,59 +84,68 @@ const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
     {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
     {needsMap && <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>}
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
-    <!-- Google Tag Manager (head) -->
-    <script is:inline>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-JG2ZTX3F');</script>
-    <!-- Google Analytics (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DGS7557PZ6"></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-DGS7557PZ6');
-      (function() {
-        var p = new URLSearchParams(location.search);
-        var src = p.get('utm_source'), med = p.get('utm_medium'), cam = p.get('utm_campaign');
-        if (src) {
-          sessionStorage.setItem('rf_utm_source', src);
-          sessionStorage.setItem('rf_utm_medium', med || '');
-          sessionStorage.setItem('rf_utm_campaign', cam || '');
-          gtag('event', 'utm_landing', { utm_source: src, utm_medium: med, utm_campaign: cam });
-        }
-      })();
-    </script>
-    <!-- Microsoft Clarity -->
-    <script is:inline type="text/javascript">
-      (function(c,l,a,r,i,t,y){
-          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "wryvhcf3k8");
-    </script>
-    <!-- Facebook Pixel -->
-    <script is:inline>
-      !function(f,b,e,v,n,t,s){
-        if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-        n.queue=[];t=b.createElement(e);t.async=!0;
-        t.src=v;s=b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t,s)}(window,document,'script',
-        'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init','1197248829088195');
-      fbq('track','PageView');
-    </script>
-    <noscript><img height="1" width="1" style="display:none"
-      src="https://www.facebook.com/tr?id=1197248829088195&ev=PageView&noscript=1"/></noscript>
+    
+    {enableTracking && (
+      <>
+        <!-- Google Tag Manager (head) -->
+        <script is:inline>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-JG2ZTX3F');</script>
+        <!-- Google Analytics (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-DGS7557PZ6"></script>
+        <script is:inline>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-DGS7557PZ6');
+          (function() {
+            var p = new URLSearchParams(location.search);
+            var src = p.get('utm_source'), med = p.get('utm_medium'), cam = p.get('utm_campaign');
+            if (src) {
+              sessionStorage.setItem('rf_utm_source', src);
+              sessionStorage.setItem('rf_utm_medium', med || '');
+              sessionStorage.setItem('rf_utm_campaign', cam || '');
+              gtag('event', 'utm_landing', { utm_source: src, utm_medium: med, utm_campaign: cam });
+            }
+          })();
+        </script>
+        <!-- Microsoft Clarity -->
+        <script is:inline type="text/javascript">
+          (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "wryvhcf3k8");
+        </script>
+        <!-- Facebook Pixel -->
+        <script is:inline>
+          !function(f,b,e,v,n,t,s){
+            if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window,document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init','1197248829088195');
+          fbq('track','PageView');
+        </script>
+        <noscript><img height="1" width="1" style="display:none"
+          src="https://www.facebook.com/tr?id=1197248829088195&ev=PageView&noscript=1"/></noscript>
+      </>
+    )}
   </head>
   <body class:list={[!hideNav && "v2-has-bottom-nav"]}>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-JG2ZTX3F"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
+    {enableTracking && (
+      <>
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-JG2ZTX3F"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <!-- End Google Tag Manager (noscript) -->
+      </>
+    )}
 
     <!-- Web Push requires an active service worker; v1 registers from AppShell only -->
     <script is:inline>
@@ -190,6 +200,6 @@ const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
     </script>
-    <VercelAnalytics />
+    {enableTracking && <VercelAnalytics />}
   </body>
 </html>
