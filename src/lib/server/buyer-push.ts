@@ -15,6 +15,30 @@ function getPushConfig() {
   return { supabaseUrl, supabaseServiceKey, vapidPublicKey, vapidPrivateKey, vapidContact };
 }
 
+async function logPushToDb(
+  supabase: any,
+  buyerId: string,
+  title: string,
+  body: string,
+  url: string,
+  status: "success" | "failed",
+  errorMessage?: string | null
+) {
+  try {
+    await supabase.from("push_notification_logs").insert({
+      buyer_id: buyerId,
+      title,
+      body,
+      url,
+      status,
+      error_message: errorMessage || null,
+    });
+  } catch (e) {
+    console.warn("Could not write to push_notification_logs table (migration may not be applied yet):", e);
+  }
+}
+
+
 
 
 export type BuyerPushPayload = {
@@ -114,10 +138,18 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
         tag: uniqueTag,
       })
     );
+    
+    // Log success in background (non-blocking)
+    logPushToDb(supabase, effectiveBuyerId, notification.title, notification.body, openUrl, "success");
+    
     return { ok: true, sent: true };
   } catch (err: any) {
     const msg = err?.message || String(err);
     console.error("buyer-push: failed:", msg);
+    
+    // Log failure in background (non-blocking)
+    logPushToDb(supabase, effectiveBuyerId, notification.title, notification.body, openUrl, "failed", msg);
+    
     return { ok: false, error: msg || "Push send failed" };
   }
 }
@@ -182,10 +214,17 @@ export async function sendCustomBuyerPush(
       console.warn("Could not update last_promo_push_sent_at (migration may not be applied yet):", e);
     }
 
+    // Log success in background (non-blocking)
+    logPushToDb(supabase, buyerId, notification.title, notification.body, openUrl, "success");
+
     return { ok: true, sent: true };
   } catch (err: any) {
     const msg = err?.message || String(err);
     console.error("buyer-push: custom failed:", msg);
+
+    // Log failure in background (non-blocking)
+    logPushToDb(supabase, buyerId, notification.title, notification.body, openUrl, "failed", msg);
+
     return { ok: false, error: msg || "Push send failed" };
   }
 }
