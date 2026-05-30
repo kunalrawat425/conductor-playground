@@ -56,20 +56,8 @@ const initialPricingJson = JSON.stringify(
     </div>
   </section>
 
-  <section class="listing-card listing-card--pricing" id="listing-section-pricing" aria-labelledby="listing-h-pricing">
-    <h2 class="listing-section-title" id="listing-h-pricing">Pricing</h2>
-    <p class="listing-section-intro">
-      Choose <strong>Sell by</strong> (pieces or kg). For each tier, type the <strong>amount</strong> first (e.g. <strong>3</strong> pieces, <strong>1</strong> kg or <strong>0.5</strong> kg), then <strong>Selling ₹</strong> for that amount. Add more tiers with <strong>+ Add another price</strong>. Optional <strong>Name on menu</strong> labels the option in the dropdown. Stock is only under <strong>Inventory</strong>. <strong>Deals</strong>: enter list ₹, choose <strong>% off</strong> <em>or</em> <strong>fixed ₹ off</strong> (one at a time), check the preview, then <strong>Apply discount → Selling ₹</strong>.
-    </p>
-    <div id="pricing-rows" class="pricing-rows"></div>
-    <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>
-    <p class="form-hint" style="margin-top:8px;font-size:12px;">Remove a tier with <strong>✕</strong> on the row (at least one tier required). All tiers share the same sell-by unit and one stock number.</p>
-    <input type="hidden" name="pricing_options_json" id="pricing_options_json" value="" />
-    <p id="listing-pricing-error" class="listing-inline-error" role="alert" style="display:none;"></p>
-  </section>
-
-  <section class="listing-card" id="stock-section" aria-labelledby="listing-h-stock">
-    <h2 class="listing-section-title" id="listing-h-stock">Inventory</h2>
+  <section class="listing-card" id="stock-section" aria-labelledby="listing-h-stock" style="border:2px solid var(--v2-brand, #0066cc); background:#f4f9ff; box-shadow:0 4px 12px rgba(0,102,204,0.1);">
+    <h2 class="listing-section-title" id="listing-h-stock" style="color:var(--v2-brand, #0066cc);">📦 Inventory Count</h2>
     <div class="listing-field">
       <label for="weight_avail"
         ><span id="stock-label">Stock quantity</span> <span class="listing-req" aria-hidden="true">*</span></label
@@ -94,6 +82,20 @@ const initialPricingJson = JSON.stringify(
       <p class="listing-stock-info" id="stock-info" aria-live="polite"></p>
     </div>
   </section>
+
+  <section class="listing-card listing-card--pricing" id="listing-section-pricing" aria-labelledby="listing-h-pricing">
+    <h2 class="listing-section-title" id="listing-h-pricing">Pricing</h2>
+    <p class="listing-section-intro">
+      Choose <strong>Sell by</strong> (pieces or kg). For each tier, type the <strong>amount</strong> first (e.g. <strong>3</strong> pieces, <strong>1</strong> kg or <strong>0.5</strong> kg), then <strong>Selling ₹</strong> for that amount. Add more tiers with <strong>+ Add another price</strong>. Optional <strong>Name on menu</strong> labels the option in the dropdown. Stock is only under <strong>Inventory</strong>. <strong>Deals</strong>: enter list ₹, choose <strong>% off</strong> <em>or</em> <strong>fixed ₹ off</strong> (one at a time), check the preview, then <strong>Apply discount → Selling ₹</strong>.
+    </p>
+    <div id="pricing-rows" class="pricing-rows"></div>
+    <button type="button" class="btn-add-price listing-add-price-btn" id="add-price-row">+ Add another price</button>
+    <p class="form-hint" style="margin-top:8px;font-size:12px;">Remove a tier with <strong>✕</strong> on the row (at least one tier required). All tiers share the same sell-by unit and one stock number.</p>
+    <input type="hidden" name="pricing_options_json" id="pricing_options_json" value="" />
+    <p id="listing-pricing-error" class="listing-inline-error" role="alert" style="display:none;"></p>
+  </section>
+
+
 
   <section class="listing-card" id="listing-section-photo" aria-labelledby="listing-h-photo">
     <h2 class="listing-section-title" id="listing-h-photo">Photo</h2>

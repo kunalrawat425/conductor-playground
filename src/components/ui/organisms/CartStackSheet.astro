@@ -134,10 +134,14 @@ const { id = "v2-cart-stack" } = Astro.props;
       
       const itemsHtml = g.items.map(item => {
         const itemKey = item.pricing_option_id && item.pricing_option_id !== "default" ? item.listing_id + ":" + item.pricing_option_id : item.listing_id;
+        let qtyDisplay = `${Math.round(item.qty * 100) / 100} ${escape(item.pricing_label || item.qty_unit)}`;
+        if ((item.qty_unit || "").toLowerCase() === "kg" && item.qty > 0 && item.qty < 1) {
+          qtyDisplay = `${Math.round(item.qty * 1000)} grams`;
+        }
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--v2-bg-3);margin-left:56px;">
           <div style="flex:1;">
             <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(item.name)}</div>
-            <div style="font:500 11px Inter;color:var(--v2-ink-3);">${item.qty} ${escape(item.pricing_label || item.qty_unit)} · ₹${(item.qty * item.price).toLocaleString("en-IN")}</div>
+            <div style="font:500 11px Inter;color:var(--v2-ink-3);">${qtyDisplay} · ₹${Math.round(item.qty * item.price).toLocaleString("en-IN")}</div>
           </div>
           <button class="v2-cs-remove-item" data-item-key="${escape(itemKey)}" style="background:none;border:1px solid var(--v2-border);border-radius:4px;color:var(--v2-ink-3);font:500 11px Inter;padding:4px 8px;cursor:pointer;">Remove</button>
         </div>`;
