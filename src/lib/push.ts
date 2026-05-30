@@ -18,6 +18,15 @@ export async function subscribePush(): Promise<boolean> {
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
 
+    if (subscription) {
+      try {
+        await subscription.unsubscribe();
+      } catch (unsubErr) {
+        console.warn("Failed to unsubscribe old push subscription:", unsubErr);
+      }
+      subscription = null;
+    }
+
     if (!subscription) {
       if (typeof Notification !== "undefined") {
         if (Notification.permission === "denied") return false;
