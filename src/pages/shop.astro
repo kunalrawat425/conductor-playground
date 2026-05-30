@@ -825,12 +825,19 @@ const categories = [
   // After buyer accepts location (or after page paint), ask for notification permission
   function maybeAskNotifications() {
     if (!("Notification" in window)) return;
-    if (Notification.permission !== "default") return; // user already chose
-    let asked = false;
-    try { asked = sessionStorage.getItem("v2_notif_asked") === "1"; } catch {}
-    if (asked) return;
-    try { sessionStorage.setItem("v2_notif_asked", "1"); } catch {}
-    // Wait 5s after page settled — don't be pushy
+    
+    // If permission is already granted and user is logged in, ensure subscription is registered/updated
+    if (Notification.permission === "granted") {
+      const session = getSession();
+      if (session) {
+        subscribePush().catch(() => {});
+      }
+      return;
+    }
+
+    if (Notification.permission !== "default") return; // user already chose or blocked
+
+    // Wait 3s after page settled — don't be pushy but be responsive
     setTimeout(async () => {
       try {
         const result = await Notification.requestPermission();
@@ -849,7 +856,7 @@ const categories = [
           }
         }
       } catch {}
-    }, 5000);
+    }, 3000);
   }
 
   // After location set or skipped, prompt notifications
