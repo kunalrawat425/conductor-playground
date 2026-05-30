@@ -5,12 +5,17 @@ import { absoluteUrl } from "./site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "./vapid-env";
 import { resolveBuyerIdForPush } from "./resolve-buyer-push-id";
 
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
-const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
-const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
-const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
-/** mailto: or https: URL required by web-push (see VAPID_CONTACT in .env.example) */
-const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
+function getPushConfig() {
+  const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || process.env.PUBLIC_SUPABASE_URL || "";
+  const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY || "";
+  const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || process.env.PUBLIC_VAPID_KEY || "");
+  const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || process.env.VAPID_PRIVATE_KEY || "");
+  const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || process.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
+
+  return { supabaseUrl, supabaseServiceKey, vapidPublicKey, vapidPrivateKey, vapidContact };
+}
+
+
 
 export type BuyerPushPayload = {
   /** Prefer UUID from orders.buyer_id */
@@ -55,6 +60,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
     return { ok: false, error: "Missing status" };
   }
 
+  const { supabaseUrl, supabaseServiceKey, vapidPublicKey, vapidPrivateKey, vapidContact } = getPushConfig();
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const effectiveBuyerId = await resolveBuyerIdForPush(supabase, buyer_id, buyer_phone);
   if (!effectiveBuyerId) {
@@ -115,6 +121,75 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
     return { ok: false, error: msg || "Push send failed" };
   }
 }
+
+/**
+ * Send a custom Web Push to a buyer (marketing/promotional/re-engagement).
+ * Updates `last_promo_push_sent_at` upon successful send.
+ */
+export async function sendCustomBuyerPush(
+  buyerId: string,
+  notification: { title: string; body: string },
+  urlPath: string
+): Promise<BuyerPushResult> {
+  const { supabaseUrl, supabaseServiceKey, vapidPublicKey, vapidPrivateKey, vapidContact } = getPushConfig();
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: buyer } = await supabase
+    .from("buyers")
+    .select("push_subscription, push_enabled")
+    .eq("id", buyerId)
+    .single();
+
+  const subscription = normalizeSubscription(buyer?.push_subscription);
+  if (!subscription?.endpoint) {
+    return {
+      ok: true,
+      sent: false,
+      reason: "no push subscription for buyer",
+    };
+  }
+
+  if (!buyer?.push_enabled) {
+    await supabase.from("buyers").update({ push_enabled: true }).eq("id", buyerId);
+  }
+
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    console.error("buyer-push: VAPID keys not configured");
+    return { ok: false, error: "VAPID keys not configured" };
+  }
+
+  const openUrl = absoluteUrl(urlPath);
+
+  try {
+    const webPush = await loadWebPush();
+    webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+    const uniqueTag = `custom-${buyerId}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    await webPush.sendNotification(
+      subscription,
+      JSON.stringify({
+        ...notification,
+        url: openUrl,
+        tag: uniqueTag,
+      })
+    );
+
+    // Update last_promo_push_sent_at upon successful delivery (gracefully catch if migration not applied yet)
+    try {
+      await supabase
+        .from("buyers")
+        .update({ last_promo_push_sent_at: new Date().toISOString() })
+        .eq("id", buyerId);
+    } catch (e) {
+      console.warn("Could not update last_promo_push_sent_at (migration may not be applied yet):", e);
+    }
+
+    return { ok: true, sent: true };
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    console.error("buyer-push: custom failed:", msg);
+    return { ok: false, error: msg || "Push send failed" };
+  }
+}
+
 
 /** Browser PushSubscriptionJSON shape (no DOM types in server lib). */
 type PushSubscriptionJSON = {
