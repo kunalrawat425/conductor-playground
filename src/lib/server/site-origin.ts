@@ -2,16 +2,22 @@
  * Canonical public origin for absolute links in emails and Web Push payloads.
  */
 export function siteOriginFromEnv(): string {
-  const raw = import.meta.env.PUBLIC_SITE_URL;
+  const raw = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL;
   if (typeof raw === "string" && raw.trim()) {
     return raw.replace(/\/$/, "");
   }
-  const v = import.meta.env.VERCEL_URL;
+
+  const vercelEnv = import.meta.env.VERCEL_ENV || process.env.VERCEL_ENV;
+  if (vercelEnv === "production") {
+    return "https://relifish.store";
+  }
+
+  const v = import.meta.env.VERCEL_URL || process.env.VERCEL_URL;
   if (typeof v === "string" && v.trim()) {
     const host = v.replace(/^https?:\/\//, "");
     return `https://${host}`;
   }
-  return "https://www.relifish.store";
+  return "https://relifish.store";
 }
 
 export function absoluteUrl(path: string): string {
