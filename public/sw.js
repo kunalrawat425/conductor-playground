@@ -61,7 +61,19 @@ self.addEventListener("push", (event) => {
 
   if (event.data) {
     try {
-      data = { ...data, ...event.data.json() };
+      const parsed = event.data.json();
+      // If it's a nested FCM payload from Firebase Console or Admin SDK
+      if (parsed && (parsed.notification || parsed.data)) {
+        data.title = parsed.notification?.title || parsed.data?.title || parsed.title || data.title;
+        data.body = parsed.notification?.body || parsed.data?.body || parsed.body || data.body;
+        data.url = parsed.data?.url || parsed.data?.path || parsed.notification?.url || parsed.url || data.url;
+        if (parsed.data?.tag || parsed.tag) {
+          data.tag = parsed.data?.tag || parsed.tag;
+        }
+      } else {
+        // Standard flat payload
+        data = { ...data, ...parsed };
+      }
     } catch {
       data.body = event.data.text();
     }
