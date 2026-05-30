@@ -36,8 +36,9 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Verification failed" }), { status: 500 });
     }
 
-    // MSG91 not configured → accept dev code 123456
-    const msg91Configured = !!(import.meta.env.MSG91_AUTH_KEY && import.meta.env.MSG91_TEMPLATE_ID);
+    // Toggle MSG91 via env variable
+    const OTP_SEND_ENABLED = import.meta.env.PUBLIC_ENABLE_MSG91 === "true";
+    const msg91Configured = OTP_SEND_ENABLED && !!(import.meta.env.MSG91_AUTH_KEY && import.meta.env.MSG91_TEMPLATE_ID);
     if (!msg91Configured) {
       if (code !== "123456") {
         return new Response(JSON.stringify({ error: "Invalid OTP (dev mode: use 123456)" }), { status: 401 });

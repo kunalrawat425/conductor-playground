@@ -94,7 +94,8 @@ export const GET: APIRoute = async ({ request }) => {
         const msg91TemplateId = import.meta.env.MSG91_REMINDER_TEMPLATE_ID || "";
         const msg91SenderId = import.meta.env.MSG91_SENDER_ID || "RELFSH";
         
-        if (msg91AuthKey && msg91TemplateId && seller.phone) {
+        const DISABLE_MSG91_LOCAL = true;
+        if (!DISABLE_MSG91_LOCAL && msg91AuthKey && msg91TemplateId && seller.phone) {
           try {
             const formattedPhone = seller.phone.replace(/[^0-9]/g, ""); // e.g. 919876543210
             

@@ -304,11 +304,11 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
         const listingOpts = o.listing?.pricing_options || [];
         const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
-        const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+        const bundle = opt?.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
         const unit = o.quantity_unit || "kg";
         const qtyLabel = unit === "piece" && bundle > 1
           ? `${Math.round(Number(o.quantity) / bundle)} pack`
-          : `${o.quantity}${unit}`;
+          : (unit === "kg" && Number(o.quantity) > 0 && Number(o.quantity) < 1 ? `${Math.round(Number(o.quantity) * 1000)} grams` : `${o.quantity}${unit}`);
 
         const stepperHtml = terminated
           ? `<div class="v2-stepper">

@@ -70,7 +70,10 @@ export function formatBuyerMenuUnitSuffix(opt: ListingPriceOption | undefined): 
     if (isPerBaseUnitPricing(opt)) return "/kg";
     const amt = optionBundleAmount(opt);
     const r = Math.round(amt * 100) / 100;
-    return `/${r}kg`;
+    if (r > 0 && r < 1) {
+      return `/${Math.round(r * 1000)} grams`;
+    }
+    return `/${r} kg`;
   }
   if (isPerBaseUnitPricing(opt)) return "/pc";
   const n = Math.floor(optionBundleAmount(opt));
@@ -412,6 +415,9 @@ export function formatBundleSizeLead(o: ListingPriceOption): string {
   }
   if (perBase) return "Per kg";
   const r = Math.round(amt * 100) / 100;
+  if (r > 0 && r < 1) {
+    return `${Math.round(r * 1000)} grams`;
+  }
   return `${r} kg`;
 }
 
