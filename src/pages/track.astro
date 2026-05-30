@@ -213,10 +213,12 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
   function paymentPillHtml(o: any) {
     const isPaidViaRazorpay = o.payment_method === 'razorpay' && o.razorpay_payment_id;
+    // Never show "Paid" pill on orders still awaiting payment — statusToTag handles those
+    const awaitingPayment = ['pending_payment', 'pending'].includes(o.status);
     let payStatusText = "";
     if (o.status === 'refunded') payStatusText = "Refunded";
     else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
-    else if (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
+    else if (!awaitingPayment && (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) payStatusText = "Paid";
     
     if (!payStatusText) return "";
     

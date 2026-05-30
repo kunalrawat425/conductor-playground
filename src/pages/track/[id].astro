@@ -253,10 +253,12 @@ const { id } = Astro.params;
     // Payment Pill
     const payPill = document.getElementById("v2-od-payment-pill");
     const isPaidViaRazorpay = o.payment_method === 'razorpay' && o.razorpay_payment_id;
+    // Never show "Paid" when order is still awaiting payment — statusLabel handles that
+    const awaitingPayment = ['pending_payment', 'pending'].includes(o.status);
     let payStatusText = "";
     if (o.status === 'refunded') payStatusText = "Refunded";
     else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
-    else if (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
+    else if (!awaitingPayment && (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) payStatusText = "Paid";
     
     if (payPill) {
       if (payStatusText) {
