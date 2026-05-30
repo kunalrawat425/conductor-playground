@@ -907,11 +907,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                 ${fbRow.updated_at ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:4px;">${escape(new Date(fbRow.updated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }))}</div>` : ""}
               </div>`
             : "";
-        let payStatusText = "Payment pending";
+        // Determine payment status badge — order matters: most specific first
+        let payStatusText = "Payment pending"; // default for new/awaiting orders
         if (o.status === 'refunded') payStatusText = "Refunded";
         else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
         else if (['declined', 'cancelled'].includes(o.status)) payStatusText = "Unpaid";
-        else if (['pending_payment', 'payment_required'].includes(o.status)) payStatusText = "Payment pending";
+        else if (['pending_payment', 'payment_required'].includes(o.status) && !isPaidViaRazorpay) payStatusText = "Payment pending";
         else if (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
 
         return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}" data-has-payment-proof="${hasPaymentProof ? "true" : "false"}">
