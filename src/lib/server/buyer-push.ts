@@ -6,11 +6,11 @@ import { normalizeVapidKeyForWebPush, trimVapidKey } from "./vapid-env";
 import { resolveBuyerIdForPush } from "./resolve-buyer-push-id";
 
 function getPushConfig() {
-  const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || process.env.PUBLIC_SUPABASE_URL || "";
-  const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY || "";
-  const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || process.env.PUBLIC_VAPID_KEY || "");
-  const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || process.env.VAPID_PRIVATE_KEY || "");
-  const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || process.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
+  const supabaseUrl = import.meta.env?.PUBLIC_SUPABASE_URL || process.env.PUBLIC_SUPABASE_URL || "";
+  const supabaseServiceKey = import.meta.env?.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY || "";
+  const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env?.PUBLIC_VAPID_KEY || process.env.PUBLIC_VAPID_KEY || "");
+  const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env?.VAPID_PRIVATE_KEY || process.env.VAPID_PRIVATE_KEY || "");
+  const vapidContact = trimVapidKey(import.meta.env?.VAPID_CONTACT || process.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
 
   return { supabaseUrl, supabaseServiceKey, vapidPublicKey, vapidPrivateKey, vapidContact };
 }
