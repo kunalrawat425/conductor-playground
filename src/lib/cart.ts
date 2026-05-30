@@ -354,7 +354,7 @@ export async function validateCartLive(sellerId?: string): Promise<{ oosMessages
              } else {
                poPrice = opt.price || 0;
              }
-             const bs = opt.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+             const bs = opt.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
              const pricePerUnit = poPrice / bs;
              if (pricePerUnit !== item.price) {
                 updateItemPrice(keyToUse, pricePerUnit);

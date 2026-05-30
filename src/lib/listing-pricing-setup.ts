@@ -255,7 +255,7 @@ export function setupListingPricingEditor(opts: {
       <p class="bundle-hint" style="font-size:11px;color:var(--gray-500);margin:0 0 10px;line-height:1.4;"></p>
       <div class="form-group" style="margin:0 0 8px;">
         <label style="font-size:12px;">Name on menu <span style="font-weight:400;color:var(--gray-500);">(optional)</span></label>
-        <input type="text" class="price-label-inp" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${labelEsc}" placeholder="e.g. Large, 6‑pc pack, 500g tray…" />
+        <input type="text" class="price-label-inp" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--gray-200);border-radius:8px;" value="${labelEsc}" placeholder="e.g. Large, 6‑pc pack, 500 grams tray…" />
       </div>
       <div class="pricing-row-deal" style="margin-top:8px;padding:12px 14px;background:var(--gray-50, #f9fafb);border-radius:10px;border:1px solid var(--gray-200, #e5e7eb);">
         <div style="font-size:12px;font-weight:700;margin-bottom:4px;color:var(--gray-800);">Deal (optional)</div>

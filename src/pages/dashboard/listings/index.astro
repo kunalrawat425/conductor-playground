@@ -109,7 +109,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         const bs = opt.bundle_size || 1;
         const stock = l.weight_avail || 0;
         const unitLabel = unit === "kg" ? "kg" : "pc";
-        const priceLabel = bs > 1 ? `₹${price}/${bs}${unitLabel}` : `₹${price}/${unitLabel}`;
+        let priceLabel = `₹${price}/${unitLabel}`;
+        if (unit === "kg" && bs > 0 && bs < 1) {
+          priceLabel = `₹${price}/${Math.round(bs * 1000)} grams`;
+        } else if (bs > 1) {
+          priceLabel = `₹${price}/${bs}${unitLabel}`;
+        }
         const tiersCount = opts.length;
         const stockColor = stock <= 0 ? "var(--v2-red)" : "var(--v2-green)";
         const stockIcon = stock <= 0 ? "⚠" : "✓";

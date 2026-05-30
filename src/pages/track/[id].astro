@@ -348,10 +348,10 @@ const { id } = Astro.params;
 
     const pricingOpts = o.listing?.pricing_options || [];
     const opt = pricingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
-    const bundle = opt?.bundle_size && opt.bundle_size > 1 ? Number(opt.bundle_size) : 1;
+    const bundle = opt?.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
     document.getElementById("v2-od-items").innerHTML = items.map(it => {
       const unit = it.quantity_unit || 'kg';
-      const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(it.quantity) / bundle)} pack` : `${escape(it.quantity)} ${escape(unit)}`;
+      const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(it.quantity) / bundle)} pack` : (unit === "kg" && Number(it.quantity) > 0 && Number(it.quantity) < 1 ? `${Math.round(Number(it.quantity) * 1000)} grams` : `${escape(it.quantity)} ${escape(unit)}`);
       return `
       <div class="v2-od-item-row">
         <div>

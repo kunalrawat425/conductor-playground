@@ -117,8 +117,8 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Enable MSG91 when ready
-    const OTP_SEND_ENABLED = true;
+    // Toggle MSG91 via env variable
+    const OTP_SEND_ENABLED = import.meta.env.PUBLIC_ENABLE_MSG91 === "true";
     const otp = OTP_SEND_ENABLED ? generateOTP() : "123456";
     const expiresAt = new Date(now.getTime() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
 

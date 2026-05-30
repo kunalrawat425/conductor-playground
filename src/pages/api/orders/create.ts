@@ -141,7 +141,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
         if (resendApiKey) {
           const pLine = line as import("../../../lib/server/resolve-listing-order-line").PreorderLinePayload;
-          const bs = (line as any).bundle_size > 1 ? (line as any).bundle_size : null;
+          const bs = (line as any).bundle_size && (line as any).bundle_size > 0 && (line as any).bundle_size !== 1 ? (line as any).bundle_size : null;
           const poEmailArgs: OrderEmailArgs = {
             statusLabel: "Pre-order placed — catch reserved for tomorrow",
             species: species || "Fish",
