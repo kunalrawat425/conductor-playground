@@ -42,7 +42,7 @@ function shell(content: string): string {
             <div style="font-size:12px;color:#475569;line-height:1.8;">
               📧 <a href="mailto:${SUPPORT_EMAIL}" style="color:#0066cc;text-decoration:none;">${SUPPORT_EMAIL}</a>
               &nbsp;&nbsp;·&nbsp;&nbsp;
-              📞 <a href="tel:+919152207607" style="color:#0066cc;text-decoration:none;">${SUPPORT_PHONE}</a>
+              📞 <a href="tel:+919152207607" style="color:#0066cc;text-decoration:none;">${SUPPORT_PHONE}</a> (10:30 AM – 7:30 PM)
             </div>
             <div style="font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.6;">
               <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a>
