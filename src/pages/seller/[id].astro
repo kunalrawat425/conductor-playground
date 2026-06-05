@@ -1139,7 +1139,7 @@ const tags = [
       if (hideDeliverySavingsUi) {
         if (freeDelivBanner) freeDelivBanner.style.display = "none";
         if (delivHint) delivHint.style.display = "none";
-      } else if (deliveryFeeEnabled && deliveryFeeAmount > 0) {
+      } else if (deliveryFeeEnabled && (deliveryFeeAmount > 0 || deliveryFeeType === "per_km")) {
         if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
           if (freeDelivBanner) freeDelivBanner.style.display = "block";
           if (delivHint) delivHint.style.display = "none";
@@ -1147,7 +1147,10 @@ const tags = [
           if (freeDelivBanner) freeDelivBanner.style.display = "none";
           if (delivHint) {
             delivHint.style.display = "block";
-            if (deliveryFreeAbove > 0) {
+            if (deliveryFeeType === "per_km") {
+              const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
+              delivHint.textContent = `🚲 ₹${deliveryFeePerKm}/km distance-based delivery fee${freeNote}`;
+            } else if (deliveryFreeAbove > 0) {
               const remaining = deliveryFreeAbove - subtotal;
               delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee · Add ₹${remaining.toLocaleString("en-IN")} more for free delivery`;
             } else {
@@ -1176,9 +1179,16 @@ const tags = [
 
       // Update delivery fee description in checkout sheet
       const delivDescEl = document.getElementById("seller-checkout-delivery-desc");
-      if (delivDescEl && deliveryFeeEnabled && deliveryFeeAmount > 0) {
-        const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
-        delivDescEl.textContent = `To your address · ₹${deliveryFeeAmount} fee${freeNote}`;
+      if (delivDescEl && deliveryFeeEnabled) {
+        if (deliveryFeeType === "per_km") {
+          const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
+          delivDescEl.textContent = `To your address · ₹${deliveryFeePerKm}/km (distance-based)${freeNote}`;
+        } else if (deliveryFeeAmount > 0) {
+          const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
+          delivDescEl.textContent = `To your address · ₹${deliveryFeeAmount} fee${freeNote}`;
+        } else {
+          delivDescEl.textContent = "To your address · Free delivery";
+        }
       } else if (delivDescEl) {
         delivDescEl.textContent = "To your address · Free delivery";
       }
@@ -1237,9 +1247,15 @@ const tags = [
         const delivLabelEl = document.getElementById("seller-checkout-delivery-label");
         if (delivLabelEl) delivLabelEl.textContent = "Delivery fee";
         if (deliveryFeeType === "per_km" && isDelivery) {
-          // Show distance, not ₹ amount — fee computed server-side at order time
-          if (delivEl) delivEl.textContent = distKm != null ? `${distKm.toFixed(1)} km` : "By distance";
-          fee = 0; // don't add to total preview — amount unknown to client
+          // Show distance + rate — fee computed server-side at order time
+          if (distKm != null) {
+            const estFee = Math.ceil(distKm * deliveryFeePerKm);
+            if (delivEl) delivEl.textContent = `${distKm.toFixed(1)} km · ₹${estFee} est.`;
+            fee = estFee; // include estimate in total preview
+          } else {
+            if (delivEl) delivEl.textContent = "Select address to see fee";
+            fee = 0;
+          }
         } else {
           if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : "FREE";
         }
