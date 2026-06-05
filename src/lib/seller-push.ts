@@ -15,6 +15,15 @@ export async function subscribeSellerPush(sellerId: string): Promise<boolean> {
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
 
+    if (subscription) {
+      try {
+        await subscription.unsubscribe();
+      } catch (unsubErr) {
+        console.warn("Failed to unsubscribe old push subscription:", unsubErr);
+      }
+      subscription = null;
+    }
+
     if (!subscription) {
       if (typeof Notification !== "undefined") {
         if (Notification.permission === "denied") return false;
@@ -23,7 +32,7 @@ export async function subscribeSellerPush(sellerId: string): Promise<boolean> {
           if (p !== "granted") return false;
         }
       }
-      const vapidKey = (import.meta as any).env?.PUBLIC_VAPID_KEY;
+      const vapidKey = import.meta.env.PUBLIC_VAPID_KEY;
       if (!vapidKey) return false;
 
       const keyBytes = urlBase64ToUint8Array(vapidKey);

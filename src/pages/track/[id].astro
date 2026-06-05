@@ -165,6 +165,7 @@ const { id } = Astro.params;
 <script>
   import { createClient } from "@supabase/supabase-js";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
+  import { cleanSellerName } from "../../lib/seller-display";
   const supabase = createClient(
     import.meta.env.PUBLIC_SUPABASE_URL || "",
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
@@ -333,7 +334,7 @@ const { id } = Astro.params;
 
     // Seller
     const seller = o.seller || {};
-    document.getElementById("v2-od-seller").textContent = seller.name || "Seller";
+    document.getElementById("v2-od-seller").textContent = cleanSellerName(seller.name) || "Seller";
     document.getElementById("v2-od-seller-loc").textContent = seller.location_name || seller.location || "";
     // Call option removed per user request
 
@@ -421,13 +422,16 @@ const { id } = Astro.params;
     const grand = subtotal + delivery;
     const finalPrice = o.final_price ? Number(o.final_price) : null;
     const paidAmount = o.paid_amount ? Number(o.paid_amount) : null;
-    const balance = finalPrice && paidAmount ? finalPrice - paidAmount : null;
+    // Only show "You paid" after actual payment — not for pending_payment (paid_amount is pre-set at creation)
+    const paymentConfirmed = o.status !== "pending_payment" && o.status !== "pending" && o.payment_verified_at;
+    const showPaidAmount = paidAmount && paymentConfirmed;
+    const balance = finalPrice && showPaidAmount ? finalPrice - paidAmount : null;
     document.getElementById("v2-od-bill").innerHTML = `
       <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
       ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}
       <div class="total"><span>Total</span><span>₹${grand.toLocaleString("en-IN")}</span></div>
       ${finalPrice ? `<div style="padding-top:6px;border-top:1px solid var(--v2-border);margin-top:4px;"><span style="color:var(--v2-ink-2);">Final price (seller)</span><span style="font-weight:700;color:var(--v2-ink);">₹${finalPrice.toLocaleString("en-IN")}</span></div>` : ''}
-      ${paidAmount ? `<div><span style="color:var(--v2-ink-2);">You paid</span><span style="color:var(--v2-green);">₹${paidAmount.toLocaleString("en-IN")}</span></div>` : ''}
+      ${showPaidAmount ? `<div><span style="color:var(--v2-ink-2);">You paid</span><span style="color:var(--v2-green);">₹${paidAmount.toLocaleString("en-IN")}</span></div>` : ''}
       ${balance && balance > 0 ? `<div><span style="color:var(--v2-red);">Balance due</span><span style="font-weight:700;color:var(--v2-red);">₹${balance.toLocaleString("en-IN")}</span></div>` : ''}
       ${balance && balance < 0 ? `<div><span style="color:var(--v2-green);">Refund</span><span style="font-weight:700;color:var(--v2-green);">₹${Math.abs(balance).toLocaleString("en-IN")}</span></div>` : ''}
       <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;">${escape(billPaymentFootnote(o))}</div>`;
@@ -615,7 +619,7 @@ const { id } = Astro.params;
         // actions block and drops rating/submit listeners.
         actions.insertAdjacentHTML(
           "beforeend",
-          `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`
+          `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(cleanSellerName(seller.name) || "this seller")}</button>`
         );
         document.getElementById("v2-od-reorder-btn")?.addEventListener("click", () => {
           const Cart = window.RelifishCart;
@@ -624,7 +628,7 @@ const { id } = Astro.params;
               Cart.addItem({
                 listing_id: o.listing_id || "",
                 seller_id: sellerIdForReorder,
-                seller_name: seller.name || "Seller",
+                seller_name: cleanSellerName(seller.name) || "Seller",
                 name: it.species || "Fish",
                 qty_unit: it.quantity_unit || "kg",
                 price: it.total_price || 0,
@@ -1182,7 +1186,7 @@ const { id } = Astro.params;
                 <div style="font:800 14px Inter;color:var(--v2-red);margin-bottom:6px;">⚠️ Payment received but confirmation failed</div>
                 <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:8px;">Your money was deducted. Please contact us immediately and share your payment ID.</div>
                 ${payId ? `<div style="font:600 11px Inter;color:var(--v2-ink-3);background:var(--v2-bg-2);padding:8px;border-radius:var(--v2-radius-sm);margin-bottom:8px;word-break:break-all;">Payment ID: ${payId}</div>` : ""}
-                <div style="font:500 12px Inter;color:var(--v2-ink);">📞 9152207607 &nbsp;·&nbsp; ✉️ relifishstore@gmail.com</div>
+                <div style="font:500 12px Inter;color:var(--v2-ink);">📞 9152207607 (10:30 AM – 7:30 PM) &nbsp;·&nbsp; ✉️ relifishstore@gmail.com</div>
               </div>`;
           }
         },

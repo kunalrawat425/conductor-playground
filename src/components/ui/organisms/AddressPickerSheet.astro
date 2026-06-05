@@ -15,9 +15,46 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       <div style="margin-top:8px;">Loading addresses...</div>
     </div>
   </div>
+  <!-- Edit address inline form (hidden until edit clicked) -->
+  <div id={`${id}-edit-form`} style="display:none;margin-top:12px;padding:12px;background:var(--v2-bg-2);border-radius:var(--v2-radius);border:1px solid var(--v2-border);">
+    <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:10px;">Edit address</div>
+    <input type="hidden" id={`${id}-edit-id`} />
+    <div style="font:600 11px Inter;color:var(--v2-ink-2);margin-bottom:6px;">📍 Update pin location</div>
+    <div id={`${id}-edit-map`} style="height:200px;border-radius:8px;background:var(--v2-bg-3);margin-bottom:6px;position:relative;overflow:hidden;"></div>
+    <button id={`${id}-edit-use-gps`} type="button" style="width:100%;padding:7px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 12px Inter;background:var(--v2-bg);color:var(--v2-ink-2);cursor:pointer;margin-bottom:10px;">📍 Use my current location</button>
+    <input type="hidden" id={`${id}-edit-lat`} />
+    <input type="hidden" id={`${id}-edit-lng`} />
+    <select id={`${id}-edit-label`} style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);margin-bottom:8px;">
+      <option value="home">🏠 Home</option>
+      <option value="office">🏢 Office</option>
+      <option value="other">📍 Other</option>
+    </select>
+    <input id={`${id}-edit-building`} type="text" placeholder="Building / Society *" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-edit-flat`} type="text" placeholder="Flat / House no." style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-edit-landmark`} type="text" placeholder="Landmark (optional)" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
+    <input id={`${id}-edit-location`} type="text" placeholder="Area / Locality *" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:10px;" />
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;">
+      <input type="checkbox" id={`${id}-edit-default`} style="width:16px;height:16px;accent-color:var(--v2-brand);" />
+      <span style="font:500 12px Inter;color:var(--v2-ink-2);">Set as default address</span>
+    </label>
+    <div style="display:flex;gap:8px;">
+      <button id={`${id}-edit-cancel`} type="button" style="flex:1;padding:9px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:600 13px Inter;background:var(--v2-bg);color:var(--v2-ink-2);cursor:pointer;">Cancel</button>
+      <button id={`${id}-edit-save`} type="button" style="flex:2;padding:9px;border:none;border-radius:var(--v2-radius-sm);font:600 13px Inter;background:var(--v2-brand);color:#fff;cursor:pointer;">Update address</button>
+    </div>
+    <div id={`${id}-edit-err`} style="display:none;margin-top:8px;font:500 12px Inter;color:var(--v2-red);"></div>
+  </div>
+
   <button id={`${id}-add-btn`} type="button" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" style="margin-top:8px;">+ Add new address</button>
   <div id={`${id}-add-form`} style="display:none;margin-top:12px;padding:12px;background:var(--v2-bg-2);border-radius:var(--v2-radius);border:1px solid var(--v2-border);">
     <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:10px;">New address</div>
+
+    <!-- Map pin -->
+    <div style="font:600 11px Inter;color:var(--v2-ink-2);margin-bottom:6px;">📍 Pin your exact location</div>
+    <div id={`${id}-add-map`} style="height:220px;border-radius:8px;background:var(--v2-bg-3);margin-bottom:6px;position:relative;overflow:hidden;"></div>
+    <button id={`${id}-use-gps`} type="button" style="width:100%;padding:7px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 12px Inter;background:var(--v2-bg);color:var(--v2-ink-2);cursor:pointer;margin-bottom:10px;">📍 Use my current location</button>
+    <input type="hidden" id={`${id}-add-lat`} />
+    <input type="hidden" id={`${id}-add-lng`} />
+
     <select id={`${id}-label`} style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);margin-bottom:8px;">
       <option value="home">🏠 Home</option>
       <option value="office">🏢 Office</option>
@@ -64,16 +101,24 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
         const text = [a.flat, a.building, a.landmark, a.location_name].filter(Boolean).join(", ");
         const icon = a.label === "office" ? "🏢" : a.label === "home" ? "🏠" : "📍";
         const sel = selectedId === a.id;
-        return `<div class="v2-addr-card${sel ? " v2-addr-selected" : ""}" data-addr-id="${a.id}">
-          <div class="v2-addr-icon">${icon}</div>
-          <div class="v2-addr-body">
-            <div class="v2-addr-top">
-              <span class="v2-addr-label">${escape(a.label || "Address")}</span>
-              ${a.is_default ? '<span class="v2-addr-default">Default</span>' : ''}
+        const hasCoords = a.lat && a.lng;
+        return `<div style="margin-bottom:8px;">
+          <div class="v2-addr-card${sel ? " v2-addr-selected" : ""}" data-addr-id="${a.id}" style="margin-bottom:0;border-radius:var(--v2-radius) var(--v2-radius) 0 0;">
+            <div class="v2-addr-icon">${icon}</div>
+            <div class="v2-addr-body">
+              <div class="v2-addr-top">
+                <span class="v2-addr-label">${escape(a.label || "Address")}</span>
+                ${a.is_default ? '<span class="v2-addr-default">Default</span>' : ''}
+                ${hasCoords ? '' : '<span style="font:400 10px Inter;color:var(--v2-orange);margin-left:4px;">No pin</span>'}
+              </div>
+              <div class="v2-addr-text">${escape(text)}</div>
             </div>
-            <div class="v2-addr-text">${escape(text)}</div>
+            <div class="v2-addr-radio"></div>
           </div>
-          <div class="v2-addr-radio"></div>
+          <div style="display:flex;border:1px solid var(--v2-border);border-top:none;border-radius:0 0 var(--v2-radius) var(--v2-radius);overflow:hidden;">
+            <button class="v2-addr-edit-btn" data-addr-id="${a.id}" data-addr-building="${escape(a.building||'')}" data-addr-flat="${escape(a.flat||'')}" data-addr-landmark="${escape(a.landmark||'')}" data-addr-location="${escape(a.location_name||'')}" data-addr-label="${escape(a.label||'home')}" data-addr-lat="${a.lat||''}" data-addr-lng="${a.lng||''}" data-addr-default="${a.is_default ? '1' : ''}" style="flex:1;padding:7px 10px;font:600 11px Inter;color:var(--v2-brand);background:var(--v2-bg);border:none;border-right:1px solid var(--v2-border);cursor:pointer;">✏️ Edit</button>
+            <button class="v2-addr-del-btn" data-addr-id="${a.id}" style="padding:7px 14px;font:600 11px Inter;color:var(--v2-red);background:var(--v2-bg);border:none;cursor:pointer;">🗑</button>
+          </div>
         </div>`;
       }).join("");
       list.querySelectorAll(".v2-addr-card").forEach(card => {
@@ -83,10 +128,231 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
           sessionStorage.setItem(`${id}-selected`, card.dataset.addrId);
         });
       });
+
+      // Edit buttons
+      list.querySelectorAll(".v2-addr-edit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const b = btn;
+          document.getElementById(`${id}-edit-id`).value = b.dataset.addrId;
+          document.getElementById(`${id}-edit-building`).value = b.dataset.addrBuilding || "";
+          document.getElementById(`${id}-edit-flat`).value = b.dataset.addrFlat || "";
+          document.getElementById(`${id}-edit-landmark`).value = b.dataset.addrLandmark || "";
+          document.getElementById(`${id}-edit-location`).value = b.dataset.addrLocation || "";
+          document.getElementById(`${id}-edit-lat`).value = b.dataset.addrLat || "";
+          document.getElementById(`${id}-edit-lng`).value = b.dataset.addrLng || "";
+          const labelEl = document.getElementById(`${id}-edit-label`);
+          if (labelEl) labelEl.value = b.dataset.addrLabel || "home";
+          const defaultEl = document.getElementById(`${id}-edit-default`);
+          if (defaultEl) defaultEl.checked = !!b.dataset.addrDefault;
+          document.getElementById(`${id}-edit-form`).style.display = "block";
+          document.getElementById(`${id}-add-btn`).style.display = "none";
+          setCtaEnabled(false);
+          setTimeout(() => initEditMap(
+            b.dataset.addrLat ? parseFloat(b.dataset.addrLat) : null,
+            b.dataset.addrLng ? parseFloat(b.dataset.addrLng) : null
+          ), 100);
+        });
+      });
+
+      // Delete buttons
+      list.querySelectorAll(".v2-addr-del-btn").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (!confirm("Delete this address?")) return;
+          let buyerId = null;
+          try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
+          if (!buyerId) return;
+          try {
+            await fetch("/api/buyer/addresses", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ buyer_id: buyerId, id: btn.dataset.addrId })
+            });
+            await load();
+          } catch { window.v2Toast?.("error", "Delete failed", "Try again"); }
+        });
+      });
+
     } catch (err) {
       list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-red);font:500 13px Inter;">Failed to load addresses</div>';
     }
   }
+
+  function setCtaEnabled(enabled) {
+    const cta = document.querySelector(`[data-sheet-cta="${id}"]`);
+    if (!cta) return;
+    cta.disabled = !enabled;
+    cta.style.opacity = enabled ? "" : "0.35";
+    cta.style.pointerEvents = enabled ? "" : "none";
+  }
+
+  // --- Map for add-new-address ---
+  let addrMap = null, addrMarker = null;
+  const latInput = document.getElementById(`${id}-add-lat`);
+  const lngInput = document.getElementById(`${id}-add-lng`);
+  const locationInput = document.getElementById(`${id}-location`);
+
+  async function reverseGeocodeAddr(lat, lng) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      const area = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.town || data.address?.city || data.display_name?.split(",")[0] || "";
+      if (area && locationInput && !locationInput.value) locationInput.value = area;
+    } catch {}
+  }
+
+  function initAddrMap() {
+    if (addrMap) { setTimeout(() => addrMap.invalidateSize(), 100); return; }
+    if (typeof L === "undefined") return;
+    const mumbai = [19.07, 72.87];
+    addrMap = L.map(`${id}-add-map`).setView(mumbai, 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(addrMap);
+    addrMarker = L.marker(mumbai, { draggable: true }).addTo(addrMap);
+
+    function setCoords(lat, lng) {
+      if (latInput) latInput.value = lat;
+      if (lngInput) lngInput.value = lng;
+    }
+
+    addrMarker.on("dragend", () => {
+      const ll = addrMarker.getLatLng();
+      setCoords(ll.lat, ll.lng);
+      reverseGeocodeAddr(ll.lat, ll.lng);
+    });
+
+    addrMap.on("click", (e) => {
+      addrMarker.setLatLng(e.latlng);
+      setCoords(e.latlng.lat, e.latlng.lng);
+      reverseGeocodeAddr(e.latlng.lat, e.latlng.lng);
+    });
+
+    setTimeout(() => addrMap.invalidateSize(), 150);
+  }
+
+  // --- Edit map ---
+  let editMap = null, editMarker = null;
+  const editLatInput = document.getElementById(`${id}-edit-lat`);
+  const editLngInput = document.getElementById(`${id}-edit-lng`);
+  const editLocationInput = document.getElementById(`${id}-edit-location`);
+
+  function initEditMap(lat, lng) {
+    const center = lat && lng ? [lat, lng] : [19.07, 72.87];
+    const zoom = lat && lng ? 15 : 12;
+    if (editMap) {
+      editMap.setView(center, zoom);
+      if (editMarker) editMarker.setLatLng(center);
+      [100, 400].forEach(t => setTimeout(() => editMap.invalidateSize(), t));
+      return;
+    }
+    if (typeof L === "undefined") { console.warn("Leaflet not loaded"); return; }
+    editMap = L.map(`${id}-edit-map`).setView(center, zoom);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(editMap);
+    editMarker = L.marker(center, { draggable: true }).addTo(editMap);
+    if (lat && lng) { if (editLatInput) editLatInput.value = lat; if (editLngInput) editLngInput.value = lng; }
+
+    function setEditCoords(la, ln) {
+      if (editLatInput) editLatInput.value = la;
+      if (editLngInput) editLngInput.value = ln;
+    }
+    editMarker.on("dragend", () => {
+      const ll = editMarker.getLatLng();
+      setEditCoords(ll.lat, ll.lng);
+      reverseGeocodeEdit(ll.lat, ll.lng);
+    });
+    editMap.on("click", (e) => {
+      editMarker.setLatLng(e.latlng);
+      setEditCoords(e.latlng.lat, e.latlng.lng);
+      reverseGeocodeEdit(e.latlng.lat, e.latlng.lng);
+    });
+    [150, 400, 800].forEach(t => setTimeout(() => editMap.invalidateSize(), t));
+  }
+
+  async function reverseGeocodeEdit(lat, lng) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      const area = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.town || data.address?.city || "";
+      if (area && editLocationInput && !editLocationInput.value) editLocationInput.value = area;
+    } catch {}
+  }
+
+  document.getElementById(`${id}-edit-use-gps`)?.addEventListener("click", () => {
+    if (!navigator.geolocation) { window.v2Toast?.("error", "GPS not supported"); return; }
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude, longitude } = pos.coords;
+      if (editLatInput) editLatInput.value = latitude;
+      if (editLngInput) editLngInput.value = longitude;
+      if (editMap && editMarker) { editMap.setView([latitude, longitude], 15); editMarker.setLatLng([latitude, longitude]); }
+      reverseGeocodeEdit(latitude, longitude);
+    }, () => { window.v2Toast?.("error", "Location denied"); });
+  });
+
+  document.getElementById(`${id}-edit-cancel`)?.addEventListener("click", () => {
+    document.getElementById(`${id}-edit-form`).style.display = "none";
+    document.getElementById(`${id}-add-btn`).style.display = "";
+    document.getElementById(`${id}-edit-err`).style.display = "none";
+    setCtaEnabled(true);
+  });
+
+  document.getElementById(`${id}-edit-save`)?.addEventListener("click", async () => {
+    const building = document.getElementById(`${id}-edit-building`).value.trim();
+    const location_name = document.getElementById(`${id}-edit-location`).value.trim();
+    const addrId = document.getElementById(`${id}-edit-id`).value;
+    if (!building || !location_name) {
+      document.getElementById(`${id}-edit-err`).textContent = "Building and area are required.";
+      document.getElementById(`${id}-edit-err`).style.display = "block";
+      return;
+    }
+    let buyerId = null;
+    try { buyerId = localStorage.getItem("rlf_buyer_id"); } catch {}
+    if (!buyerId || !addrId) return;
+    const saveBtn = document.getElementById(`${id}-edit-save`);
+    saveBtn.textContent = "Saving..."; saveBtn.disabled = true;
+    const lat = editLatInput?.value ? parseFloat(editLatInput.value) : null;
+    const lng = editLngInput?.value ? parseFloat(editLngInput.value) : null;
+    try {
+      const res = await fetch("/api/buyer/addresses", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyer_id: buyerId, id: addrId,
+          address: {
+            label: document.getElementById(`${id}-edit-label`).value,
+            building,
+            flat: document.getElementById(`${id}-edit-flat`).value.trim(),
+            landmark: document.getElementById(`${id}-edit-landmark`).value.trim(),
+            location_name, lat, lng,
+            is_default: !!(document.getElementById(`${id}-edit-default`)?.checked),
+          }
+        })
+      });
+      if (!res.ok) throw new Error("Update failed");
+      document.getElementById(`${id}-edit-form`).style.display = "none";
+      document.getElementById(`${id}-add-btn`).style.display = "";
+      document.getElementById(`${id}-edit-err`).style.display = "none";
+      setCtaEnabled(true);
+      await load();
+    } catch {
+      document.getElementById(`${id}-edit-err`).textContent = "Failed to update. Try again.";
+      document.getElementById(`${id}-edit-err`).style.display = "block";
+    } finally { saveBtn.textContent = "Update address"; saveBtn.disabled = false; }
+  });
+
+  // GPS button (add form)
+  document.getElementById(`${id}-use-gps`)?.addEventListener("click", () => {
+    if (!navigator.geolocation) { window.v2Toast?.("error", "GPS not supported", "Type your area instead"); return; }
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude, longitude } = pos.coords;
+      if (latInput) latInput.value = latitude;
+      if (lngInput) lngInput.value = longitude;
+      if (addrMap && addrMarker) {
+        addrMap.setView([latitude, longitude], 15);
+        addrMarker.setLatLng([latitude, longitude]);
+      }
+      reverseGeocodeAddr(latitude, longitude);
+    }, () => { window.v2Toast?.("error", "Location denied", "Drag the pin instead"); });
+  });
 
   // Add new address — inline form toggle
   const addBtn = document.getElementById(`${id}-add-btn`);
@@ -98,11 +364,14 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
   addBtn?.addEventListener("click", () => {
     addForm.style.display = "block";
     addBtn.style.display = "none";
+    setCtaEnabled(false);
+    setTimeout(initAddrMap, 100);
   });
   addCancel?.addEventListener("click", () => {
     addForm.style.display = "none";
     addBtn.style.display = "";
     addErr.style.display = "none";
+    setCtaEnabled(true);
   });
   addSave?.addEventListener("click", async () => {
     const building = document.getElementById(`${id}-building`).value.trim();
@@ -117,6 +386,8 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
     if (!buyerId) { addErr.textContent = "Sign in to save addresses."; addErr.style.display = "block"; return; }
     addSave.textContent = "Saving...";
     addSave.disabled = true;
+    const lat = latInput?.value ? parseFloat(latInput.value) : null;
+    const lng = lngInput?.value ? parseFloat(lngInput.value) : null;
     try {
       const res = await fetch("/api/buyer/addresses", {
         method: "POST",
@@ -129,6 +400,8 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
             flat: document.getElementById(`${id}-flat`).value.trim(),
             landmark: document.getElementById(`${id}-landmark`).value.trim(),
             location_name,
+            lat,
+            lng,
           }
         })
       });
@@ -136,10 +409,13 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       // reset form
       addForm.style.display = "none";
       addBtn.style.display = "";
+      setCtaEnabled(true);
       document.getElementById(`${id}-building`).value = "";
       document.getElementById(`${id}-flat`).value = "";
       document.getElementById(`${id}-landmark`).value = "";
       document.getElementById(`${id}-location`).value = "";
+      if (latInput) latInput.value = "";
+      if (lngInput) lngInput.value = "";
       addErr.style.display = "none";
       await load(); // reload address list
     } catch {

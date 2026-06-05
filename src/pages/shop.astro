@@ -199,6 +199,7 @@ const categories = [
   import { subscribePush } from "../lib/push";
   import { getSpeciesDisplay } from "../lib/species";
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
+  import { cleanSellerName } from "../lib/seller-display";
   import type { Seller, FishListing } from "../lib/supabase";
 
   type SellerHue = "sky" | "green" | "orange" | "indigo";
@@ -263,6 +264,28 @@ const categories = [
 
   function escapeHtml(s: string) {
     return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  }
+  const DOMAIN_TLD = "(com|in|net|org|store|shop|co|io|biz|info|fish)";
+  const DOMAIN_RE = new RegExp(`\\b([\\w-]+)\\.(?:[\\w-]+\\.)?${DOMAIN_TLD}\\b`, "i");
+  const DOMAIN_STRIP_RE = new RegExp(`(?:www\\.|[\\w-]+\\.)*[\\w-]+\\.${DOMAIN_TLD}\\b`, "gi");
+  function stripContactInfo(raw: string): string {
+    return raw
+      .replace(/\b\d{10,}\b/g, "")
+      .replace(/\bhttps?:\/\/\S+/gi, "")
+      .replace(DOMAIN_STRIP_RE, "")
+      .replace(/[·•|,\s]+$/, "").replace(/^[·•|,\s]+/, "")
+      .replace(/([·•|])\s*[·•|]/g, "$1").trim();
+  }
+  function cleanDisplayName(raw: string): string {
+    const domainMatch = raw.match(DOMAIN_RE);
+    const candidate = domainMatch?.[1];
+    const skip = new Set(["www", "shop", "store", "mail", "app", "web", "m", "api"]);
+    const nameBeforeDomain = candidate && !skip.has(candidate.toLowerCase()) ? candidate : null;
+    const cleaned = stripContactInfo(raw);
+    if (!cleaned && nameBeforeDomain) {
+      return nameBeforeDomain.charAt(0).toUpperCase() + nameBeforeDomain.slice(1).toLowerCase();
+    }
+    return cleaned;
   }
 
   function listingChipHtml(l: any): string {
@@ -707,7 +730,7 @@ const categories = [
         const ratingBadge = rating ? `<span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">${rating} ★</span>` : "";
 
         const distStr = g.dist != null ? `${g.dist.toFixed(1)} km` : "";
-        const subParts = [s.location_name || s.location || "", distStr].filter(Boolean).join(" · ");
+        const subParts = [stripContactInfo(s.location_name || s.location || ""), distStr].filter(Boolean).join(" · ");
 
         // Offer badge logic
         let offerLabel = "", offerColor = "v2-badge-brand";
@@ -739,12 +762,12 @@ const categories = [
             ${offerBadge}
             ${(s as any).store_image_url
               ? `<img src="${escapeHtml((s as any).store_image_url)}" alt="${escapeHtml(s.name)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />`
-              : `<img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-sc-emoji" style="height:36px;width:auto;display:block;" />`}
+              : `<img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-sc-emoji" style="height:36px;width:auto;display:block;filter:brightness(0) invert(1);opacity:0.6;" />`}
           </div>
           <div class="v2-sc-body">
             <div class="v2-sc-top">
               <div class="v2-sc-info">
-                <div class="v2-sc-name">${escapeHtml(s.name)}</div>
+                <div class="v2-sc-name">${escapeHtml(cleanDisplayName(s.name))}</div>
                 ${subParts ? `<div class="v2-sc-loc">${escapeHtml(subParts)}</div>` : ""}
               </div>
               ${ratingBadge}
@@ -825,12 +848,19 @@ const categories = [
   // After buyer accepts location (or after page paint), ask for notification permission
   function maybeAskNotifications() {
     if (!("Notification" in window)) return;
-    if (Notification.permission !== "default") return; // user already chose
-    let asked = false;
-    try { asked = sessionStorage.getItem("v2_notif_asked") === "1"; } catch {}
-    if (asked) return;
-    try { sessionStorage.setItem("v2_notif_asked", "1"); } catch {}
-    // Wait 5s after page settled — don't be pushy
+    
+    // If permission is already granted and user is logged in, ensure subscription is registered/updated
+    if (Notification.permission === "granted") {
+      const session = getSession();
+      if (session) {
+        subscribePush().catch(() => {});
+      }
+      return;
+    }
+
+    if (Notification.permission !== "default") return; // user already chose or blocked
+
+    // Wait 3s after page settled — don't be pushy but be responsive
     setTimeout(async () => {
       try {
         const result = await Notification.requestPermission();
@@ -849,7 +879,7 @@ const categories = [
           }
         }
       } catch {}
-    }, 5000);
+    }, 3000);
   }
 
   // After location set or skipped, prompt notifications
@@ -902,12 +932,12 @@ const categories = [
             }
           }
           const avatarInner = storeImg
-            ? `<img src="${escapeHtml(storeImg)}" alt="${escapeHtml(g.seller_name || "Seller")}" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" />`
+            ? `<img src="${escapeHtml(storeImg)}" alt="${escapeHtml(cleanSellerName(g.seller_name) || "Seller")}" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" />`
             : `<span style="font-size:26px;line-height:1;">🐟</span>`;
           return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;${border}">
             <div style="width:50px;height:50px;border-radius:10px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">${avatarInner}</div>
             <div style="flex:1;min-width:0;">
-              <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.seller_name || "Seller")}</div>
+              <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(cleanSellerName(g.seller_name) || "Seller")}</div>
               <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/s/${sellerNameToSlug(g.seller_name || "")}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
             </div>
             <a href="/s/${sellerNameToSlug(g.seller_name || "")}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">

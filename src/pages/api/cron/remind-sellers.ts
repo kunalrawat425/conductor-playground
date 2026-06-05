@@ -1,13 +1,58 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { loadWebPush } from "../../../lib/server/load-web-push";
+import { absoluteUrl } from "../../../lib/server/site-origin";
+import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../../lib/server/vapid-env";
 
 export const prerender = false;
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
+const vapidPublicKey = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
+const vapidPrivateKey = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
+const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
+
 function client() {
   return createClient(supabaseUrl, supabaseServiceKey);
+}
+
+function normalizePushSubscription(raw: unknown): { endpoint: string; keys?: { p256dh: string; auth: string } } | null {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as { endpoint: string; keys?: { p256dh: string; auth: string } };
+    } catch {
+      return null;
+    }
+  }
+  if (typeof raw === "object" && raw !== null && "endpoint" in raw) {
+    return raw as { endpoint: string; keys?: { p256dh: string; auth: string } };
+  }
+  return null;
+}
+
+async function logSellerPushToDb(
+  supabase: any,
+  sellerId: string,
+  title: string,
+  body: string,
+  url: string,
+  status: "success" | "failed",
+  errorMessage?: string | null
+) {
+  try {
+    await supabase.from("push_notification_logs").insert({
+      seller_id: sellerId,
+      title,
+      body,
+      url,
+      status,
+      error_message: errorMessage || null,
+    });
+  } catch (e) {
+    console.warn("Could not write to push_notification_logs table (migration may not be applied yet):", e);
+  }
 }
 
 // Ensure the endpoint is secured. Use a CRON_SECRET or rely on edge security.
@@ -29,7 +74,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     let query = supabase
       .from("sellers")
-      .select("id, name, opens_at, open_days, phone")
+      .select("id, name, opens_at, open_days, phone, push_subscription, push_enabled")
       .eq("is_active", true)
       .not("opens_at", "is", null);
       
@@ -128,6 +173,50 @@ export const GET: APIRoute = async ({ request }) => {
           }
         } else {
           console.log(`[MSG91 Reminder - Missing Env or Phone] Would send to ${seller.name} (${seller.phone}):\n${message}`);
+        }
+
+        // Web Push Notification Reminder (Only 60 min reminder / 1 hour before opening)
+        if (is60MinReminder) {
+          const subscription = normalizePushSubscription(seller.push_subscription);
+          if (subscription?.endpoint) {
+            // Heal push_enabled flag when a subscription exists
+            if (!seller.push_enabled) {
+              await supabase.from("sellers").update({ push_enabled: true }).eq("id", seller.id);
+            }
+
+            const pushTitle = "Update pricing & inventory";
+            const pushBody = `Hello ${seller.name}, your shop opens in 1 hour. Please update your pricing and stock to avoid service or pricing issues.`;
+            const dashboardUrl = absoluteUrl("/dashboard/inventory");
+
+            if (vapidPublicKey && vapidPrivateKey) {
+              try {
+                const webPush = await loadWebPush();
+                webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+                await webPush.sendNotification(
+                  subscription,
+                  JSON.stringify({
+                    title: pushTitle,
+                    body: pushBody,
+                    url: dashboardUrl,
+                    tag: `seller-reminder-60min-${seller.id}-${Date.now()}`,
+                  })
+                );
+
+                // Log success in DB (non-blocking)
+                logSellerPushToDb(supabase, seller.id, pushTitle, pushBody, dashboardUrl, "success");
+                console.log(`[Web Push Reminder] Sent successfully to ${seller.name}`);
+              } catch (pushErr: any) {
+                const msg = pushErr?.message || String(pushErr);
+                console.error(`[Web Push Reminder] Failed to send to ${seller.name}:`, msg);
+                // Log failure in DB (non-blocking)
+                logSellerPushToDb(supabase, seller.id, pushTitle, pushBody, dashboardUrl, "failed", msg);
+              }
+            } else {
+              console.error("[Web Push Reminder] VAPID keys not configured in environment");
+            }
+          } else {
+            console.log(`[Web Push Reminder - Skipped] No push subscription on file for ${seller.name}`);
+          }
         }
         
         remindersLog.push({

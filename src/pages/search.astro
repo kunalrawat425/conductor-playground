@@ -122,6 +122,7 @@ import EmptyState from "../components/ui/molecules/EmptyState.astro";
 
 <script>
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
+  import { cleanSellerName, stripContactInfo } from "../lib/seller-display";
   const input = document.getElementById("v2-search-q") as HTMLInputElement;
   const clear = document.getElementById("v2-search-clear")!;
   const trending = document.getElementById("v2-search-trending")!;
@@ -174,7 +175,7 @@ import EmptyState from "../components/ui/molecules/EmptyState.astro";
           <div class="emoji">${speciesEmoji(l.species)}</div>
           <div class="body">
             <div class="n" style="text-transform:capitalize;">${escape(l.species)}</div>
-            <div class="sub">${escape(l.seller?.name || "")} · ${escape(l.seller?.location_name || "")}</div>
+            <div class="sub">${escape(cleanSellerName(l.seller?.name) || "")} · ${escape(stripContactInfo(l.seller?.location_name) || "")}</div>
           </div>
           <div class="price">₹${price}/${unitPart}</div>
         </a>`;
@@ -184,8 +185,8 @@ import EmptyState from "../components/ui/molecules/EmptyState.astro";
         return `<a href="/s/${(s.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}" class="v2-search-result">
           <div class="emoji" style="background:var(--v2-green-l);">🐟</div>
           <div class="body">
-            <div class="n">${escape(s.name)}</div>
-            <div class="sub">${escape(s.location_name || "")} · ${s.rating_avg ? Number(s.rating_avg).toFixed(1) + " ★" : "New seller"}</div>
+            <div class="n">${escape(cleanSellerName(s.name))}</div>
+            <div class="sub">${escape(stripContactInfo(s.location_name) || "")} · ${s.rating_avg ? Number(s.rating_avg).toFixed(1) + " ★" : "New seller"}</div>
           </div>
           <div class="price" style="color:var(--v2-brand);font-size:11px;">View →</div>
         </a>`;
