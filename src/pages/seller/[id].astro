@@ -147,8 +147,14 @@ for (const l of listings) {
 }
 
 // Schedule display strings
+const ALL_DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun'];
 function fmtDays(days: string[]): string {
   if (!days.length || days.length === 7) return "Every day";
+  const closedDays = ALL_DAY_NAMES.filter(d => !days.includes(d));
+  // Show whichever list is shorter — fewer words
+  if (closedDays.length < days.length) {
+    return `Closed ${closedDays.map(d => DAY_LABELS[d] || d).join(", ")}`;
+  }
   return days.map(d => DAY_LABELS[d] || d).join(", ");
 }
 function fmtTime12(t: string | undefined | null): string {
@@ -336,19 +342,20 @@ const tags = [
       />
 
       {/* Schedule strip */}
-      <div style="padding:10px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:10px;">
-        <div style="font:500 12px Inter;color:var(--v2-ink-2);">
-          🗓 <strong>Orders:</strong> {orderDaysLabel}
-          {opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
-        </div>
-        {preorderDaysLabel && (
-          <div style="font:500 12px Inter;color:#7C3AED;">
-            🌙 <strong>Pre-orders:</strong> {preorderDaysLabel}
-            {closesAtFmt && cutoffLabel
-              ? ` · ${closesAtFmt}–${cutoffLabel}`
-              : cutoffLabel ? ` · cutoff ${cutoffLabel}` : ""}
-          </div>
-        )}
+      <div style="padding:8px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:6px;">
+        <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
+          🗓 {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
+        </span>
+        {preorderDaysLabel && (() => {
+          const sameDays = orderDaysLabel === preorderDaysLabel;
+          const showCutoff = cutoffLabel && cutoffLabel !== closesAtFmt;
+          return (
+            <span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md" style="font-weight:500;">
+              🌙 {sameDays ? "Same days" : preorderDaysLabel}
+              {showCutoff ? ` · cutoff ${cutoffLabel}` : (closesAtFmt && cutoffLabel ? ` · from ${closesAtFmt}` : "")}
+            </span>
+          );
+        })()}
       </div>
 
       {/* Pre-order context banner */}
