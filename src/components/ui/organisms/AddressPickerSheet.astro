@@ -33,6 +33,10 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
     <input id={`${id}-edit-flat`} type="text" placeholder="Flat / House no." style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
     <input id={`${id}-edit-landmark`} type="text" placeholder="Landmark (optional)" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:8px;" />
     <input id={`${id}-edit-location`} type="text" placeholder="Area / Locality *" style="width:100%;padding:8px 10px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;background:var(--v2-bg);color:var(--v2-ink);box-sizing:border-box;margin-bottom:10px;" />
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;">
+      <input type="checkbox" id={`${id}-edit-default`} style="width:16px;height:16px;accent-color:var(--v2-brand);" />
+      <span style="font:500 12px Inter;color:var(--v2-ink-2);">Set as default address</span>
+    </label>
     <div style="display:flex;gap:8px;">
       <button id={`${id}-edit-cancel`} type="button" style="flex:1;padding:9px;border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:600 13px Inter;background:var(--v2-bg);color:var(--v2-ink-2);cursor:pointer;">Cancel</button>
       <button id={`${id}-edit-save`} type="button" style="flex:2;padding:9px;border:none;border-radius:var(--v2-radius-sm);font:600 13px Inter;background:var(--v2-brand);color:#fff;cursor:pointer;">Update address</button>
@@ -112,7 +116,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
             <div class="v2-addr-radio"></div>
           </div>
           <div style="display:flex;border:1px solid var(--v2-border);border-top:none;border-radius:0 0 var(--v2-radius) var(--v2-radius);overflow:hidden;">
-            <button class="v2-addr-edit-btn" data-addr-id="${a.id}" data-addr-building="${escape(a.building||'')}" data-addr-flat="${escape(a.flat||'')}" data-addr-landmark="${escape(a.landmark||'')}" data-addr-location="${escape(a.location_name||'')}" data-addr-label="${escape(a.label||'home')}" data-addr-lat="${a.lat||''}" data-addr-lng="${a.lng||''}" style="flex:1;padding:7px 10px;font:600 11px Inter;color:var(--v2-brand);background:var(--v2-bg);border:none;border-right:1px solid var(--v2-border);cursor:pointer;">✏️ Edit</button>
+            <button class="v2-addr-edit-btn" data-addr-id="${a.id}" data-addr-building="${escape(a.building||'')}" data-addr-flat="${escape(a.flat||'')}" data-addr-landmark="${escape(a.landmark||'')}" data-addr-location="${escape(a.location_name||'')}" data-addr-label="${escape(a.label||'home')}" data-addr-lat="${a.lat||''}" data-addr-lng="${a.lng||''}" data-addr-default="${a.is_default ? '1' : ''}" style="flex:1;padding:7px 10px;font:600 11px Inter;color:var(--v2-brand);background:var(--v2-bg);border:none;border-right:1px solid var(--v2-border);cursor:pointer;">✏️ Edit</button>
             <button class="v2-addr-del-btn" data-addr-id="${a.id}" style="padding:7px 14px;font:600 11px Inter;color:var(--v2-red);background:var(--v2-bg);border:none;cursor:pointer;">🗑</button>
           </div>
         </div>`;
@@ -139,6 +143,8 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
           document.getElementById(`${id}-edit-lng`).value = b.dataset.addrLng || "";
           const labelEl = document.getElementById(`${id}-edit-label`);
           if (labelEl) labelEl.value = b.dataset.addrLabel || "home";
+          const defaultEl = document.getElementById(`${id}-edit-default`);
+          if (defaultEl) defaultEl.checked = !!b.dataset.addrDefault;
           document.getElementById(`${id}-edit-form`).style.display = "block";
           document.getElementById(`${id}-add-btn`).style.display = "none";
           setCtaEnabled(false);
@@ -317,6 +323,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
             flat: document.getElementById(`${id}-edit-flat`).value.trim(),
             landmark: document.getElementById(`${id}-edit-landmark`).value.trim(),
             location_name, lat, lng,
+            is_default: !!(document.getElementById(`${id}-edit-default`)?.checked),
           }
         })
       });
