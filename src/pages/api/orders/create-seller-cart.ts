@@ -257,6 +257,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         p_schedule_slot_id: null,
         p_pricing_option_id: line.pricing_option_id,
         p_pricing_label: line.pricing_label,
+        p_checkout_session_id: null,
       });
 
       if (rpcError) {

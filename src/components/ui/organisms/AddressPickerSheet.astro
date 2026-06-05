@@ -227,10 +227,10 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
     if (editMap) {
       editMap.setView(center, zoom);
       if (editMarker) editMarker.setLatLng(center);
-      setTimeout(() => editMap.invalidateSize(), 100);
+      [100, 400].forEach(t => setTimeout(() => editMap.invalidateSize(), t));
       return;
     }
-    if (typeof L === "undefined") return;
+    if (typeof L === "undefined") { console.warn("Leaflet not loaded"); return; }
     editMap = L.map(`${id}-edit-map`).setView(center, zoom);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(editMap);
     editMarker = L.marker(center, { draggable: true }).addTo(editMap);
@@ -250,7 +250,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       setEditCoords(e.latlng.lat, e.latlng.lng);
       reverseGeocodeEdit(e.latlng.lat, e.latlng.lng);
     });
-    setTimeout(() => editMap.invalidateSize(), 150);
+    [150, 400, 800].forEach(t => setTimeout(() => editMap.invalidateSize(), t));
   }
 
   async function reverseGeocodeEdit(lat, lng) {
