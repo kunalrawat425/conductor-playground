@@ -10,6 +10,7 @@ const {
   cartCount = 0,
   backHref,
   title,
+  hideLocation = false,
 } = Astro.props;
 const isPreorder = variant === "preorder";
 const isPage = variant === "page";
@@ -19,16 +20,18 @@ const isPage = variant === "page";
     {isPage && backHref ? (
       <a href={backHref} class="v2-back" aria-label="Back">←</a>
     ) : (
-      <a href="/" class="v2-logo">Relifish{isPreorder ? " 🌙" : ""}</a>
+      <a href="/shop" class="v2-logo">Relifish{isPreorder ? " 🌙" : ""}</a>
     )}
 
-    <div class:list={["v2-loc-wrap", !isPage && "v2-loc-tappable"]} id={isPage ? undefined : "v2-location-trigger"}>
-      <div class="v2-loc-main">
-        {isPage && title ? title : locationLabel}
-        {!isPage && <span class="v2-loc-arrow">▼</span>}
+    {!hideLocation && (
+      <div class:list={["v2-loc-wrap", !isPage && "v2-loc-tappable"]} id={isPage ? undefined : "v2-location-trigger"}>
+        <div class="v2-loc-main">
+          {isPage && title ? title : locationLabel}
+          {!isPage && <span class="v2-loc-arrow">▼</span>}
+        </div>
+        {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
       </div>
-      {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
-    </div>
+    )}
 
     <button
       type="button"

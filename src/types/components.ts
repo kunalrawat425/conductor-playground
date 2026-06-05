@@ -151,6 +151,7 @@ export interface AppHeaderProps {
   cartCount?: number;
   backHref?: string;
   title?: string;
+  hideLocation?: boolean;
 }
 
 export interface BottomNavProps {
