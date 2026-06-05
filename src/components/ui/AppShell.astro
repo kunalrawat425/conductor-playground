@@ -203,6 +203,11 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
         max-width: var(--app-max-width);
         margin: 0 auto;
       }
+      @media (min-width: 600px) {
+        .v2-app {
+          box-shadow: 0 0 0 1px var(--v2-border, #e5e7eb), 0 4px 32px rgba(0,0,0,0.06);
+        }
+      }
       .v2-main {
         width: 100%;
         max-width: 100%;

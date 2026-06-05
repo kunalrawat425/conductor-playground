@@ -323,14 +323,14 @@ const tags = [
       />
 
       {/* Schedule strip */}
-      <div style="padding:10px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:12px;">
-        <div style="font:500 11px Inter;color:var(--v2-ink-2);">
+      <div style="padding:10px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:10px;">
+        <div style="font:500 12px Inter;color:var(--v2-ink-2);">
           🗓 <strong>Orders:</strong> {orderDaysLabel}
           {opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
         </div>
         {preorderDaysLabel && (
-          <div style="font:500 11px Inter;color:#7C3AED;">
-            🌙 <strong>Pre-orders</strong> (next-day catch): {preorderDaysLabel}
+          <div style="font:500 12px Inter;color:#7C3AED;">
+            🌙 <strong>Pre-orders:</strong> {preorderDaysLabel}
             {closesAtFmt && cutoffLabel
               ? ` · ${closesAtFmt}–${cutoffLabel}`
               : cutoffLabel ? ` · cutoff ${cutoffLabel}` : ""}
