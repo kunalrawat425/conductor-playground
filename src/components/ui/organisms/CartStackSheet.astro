@@ -82,6 +82,34 @@ const { id = "v2-cart-stack" } = Astro.props;
 </style>
 
 <script define:vars={{ id }}>
+  const DOMAIN_TLD = "(com|in|net|org|store|shop|co|io|biz|info|fish)";
+  const DOMAIN_RE = new RegExp(`\\b([\\w-]+)\\.(?:[\\w-]+\\.)?${DOMAIN_TLD}\\b`, "i");
+  const DOMAIN_STRIP_RE = new RegExp(`(?:www\\.|[\\w-]+\\.)*[\\w-]+\\.${DOMAIN_TLD}\\b`, "gi");
+  const GENERIC_SUBDOMAINS = new Set(["www", "shop", "store", "mail", "app", "web", "m", "api"]);
+
+  function stripContactInfo(raw) {
+    if (!raw) return "";
+    return raw
+      .replace(/\b\d{10,}\b/g, "")
+      .replace(/\bhttps?:\/\/\S+/gi, "")
+      .replace(DOMAIN_STRIP_RE, "")
+      .replace(/[·•|,\s]+$/, "").replace(/^[·•|,\s]+/, "")
+      .replace(/([·•|])\s*[·•|]/g, "$1")
+      .trim();
+  }
+
+  function cleanSellerName(raw) {
+    if (!raw) return "";
+    const domainMatch = raw.match(DOMAIN_RE);
+    const candidate = domainMatch?.[1];
+    const nameBeforeDomain = candidate && !GENERIC_SUBDOMAINS.has(candidate.toLowerCase()) ? candidate : null;
+    const cleaned = stripContactInfo(raw);
+    if (!cleaned && nameBeforeDomain) {
+      return nameBeforeDomain.charAt(0).toUpperCase() + nameBeforeDomain.slice(1).toLowerCase();
+    }
+    return cleaned;
+  }
+
   function escape(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
@@ -102,7 +130,7 @@ const { id = "v2-cart-stack" } = Astro.props;
 
   function avatarHtml(g) {
     const img = sellerImageForGroup(g);
-    const alt = escape(g.seller_name || "Seller");
+    const alt = escape(cleanSellerName(g.seller_name) || "Seller");
     if (img) {
       return `<div class="v2-cs-avatar"><img src="${escape(img)}" alt="${alt}" loading="lazy" /></div>`;
     }
@@ -151,7 +179,7 @@ const { id = "v2-cart-stack" } = Astro.props;
         <div class="v2-cs-row" data-seller-id="${escape(g.seller_id)}" style="border-bottom:none;padding-bottom:4px;padding-top:4px;">
           ${avatarHtml(g)}
           <div class="v2-cs-info">
-            <div class="v2-cs-seller">${escape(g.seller_name || "Seller")}</div>
+            <div class="v2-cs-seller">${escape(cleanSellerName(g.seller_name) || "Seller")}</div>
             <div class="v2-cs-meta">${itemLabel} · <a href="/s/${(g.seller_name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}">View Menu ›</a></div>
           </div>
           <button class="v2-cs-price-badge" data-cs-checkout="${escape(g.seller_id)}" style="padding:6px 16px;">
