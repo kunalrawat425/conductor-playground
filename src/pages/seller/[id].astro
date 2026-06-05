@@ -350,7 +350,7 @@ const tags = [
           const sameDays = orderDaysLabel === preorderDaysLabel;
           const showCutoff = cutoffLabel && cutoffLabel !== closesAtFmt;
           return (
-            <span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md" style="font-weight:500;">
+            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
               🌙 Pre-orders (next day) · {sameDays ? "Same days" : preorderDaysLabel}
               {showCutoff ? ` · cutoff ${cutoffLabel}` : (closesAtFmt && cutoffLabel ? ` · from ${closesAtFmt}` : "")}
             </span>
