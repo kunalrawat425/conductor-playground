@@ -13,6 +13,7 @@ import Modal from "../../components/ui/atoms/Modal.astro";
 import { getSellerById, getSellerListings, sellerNameToSlug } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
+import { cleanSellerName, stripContactInfo } from "../../lib/seller-display";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -31,36 +32,7 @@ try {
   } else notFound = true;
 } catch { notFound = true; }
 
-const DOMAIN_TLD = "(com|in|net|org|store|shop|co|io|biz|info|fish)";
-const DOMAIN_RE = new RegExp(`\\b([\\w-]+)\\.(?:[\\w-]+\\.)?${DOMAIN_TLD}\\b`, "i");
-const DOMAIN_STRIP_RE = new RegExp(`(?:www\\.|[\\w-]+\\.)*[\\w-]+\\.${DOMAIN_TLD}\\b`, "gi");
-
-// Strip phone numbers, URLs, domains from display strings
-function stripContactInfo(raw: string | null | undefined): string {
-  if (!raw) return "";
-  return raw
-    .replace(/\b\d{10,}\b/g, "")           // 10+ digit phones
-    .replace(/\bhttps?:\/\/\S+/gi, "")     // full URLs with protocol
-    .replace(DOMAIN_STRIP_RE, "")          // bare domains (fishtokri.com, www.x.co.in, etc.)
-    .replace(/[·•|,\s]+$/, "").replace(/^[·•|,\s]+/, "")
-    .replace(/([·•|])\s*[·•|]/g, "$1")
-    .trim();
-}
-// For names: preserve brand before TLD — "Fishtokri.com · 9220200100" → "Fishtokri"
-function cleanDisplayName(raw: string | null | undefined): string {
-  if (!raw) return "";
-  const domainMatch = raw.match(DOMAIN_RE);
-  // domainMatch[1] = first meaningful word (skip common subdomains)
-  const candidate = domainMatch?.[1];
-  const skip = new Set(["www", "shop", "store", "mail", "app", "web", "m", "api"]);
-  const nameBeforeDomain = candidate && !skip.has(candidate.toLowerCase()) ? candidate : null;
-  const cleaned = stripContactInfo(raw);
-  if (!cleaned && nameBeforeDomain) {
-    return nameBeforeDomain.charAt(0).toUpperCase() + nameBeforeDomain.slice(1).toLowerCase();
-  }
-  return cleaned;
-}
-const sellerName = cleanDisplayName(seller?.name) || "Seller";
+const sellerName = cleanSellerName(seller?.name) || "Seller";
 const sellerLocation = stripContactInfo(seller?.location_name) || "";
 const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
 const SITE = "https://www.relifish.store";
@@ -229,7 +201,7 @@ const tags = [
     return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`;
   })()}
   canonical={canonicalUrl}
-  header={{ variant: "default", hideLocation: true }}
+  header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
   nav={{ active: "home" }}
   jsonLd={seller && !notFound ? {
     "@context": "https://schema.org",
@@ -553,6 +525,35 @@ const tags = [
       return "🐟";
     }
     function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+    const DOMAIN_TLD = "(com|in|net|org|store|shop|co|io|biz|info|fish)";
+    const DOMAIN_RE = new RegExp(`\\b([\\w-]+)\\.(?:[\\w-]+\\.)?${DOMAIN_TLD}\\b`, "i");
+    const DOMAIN_STRIP_RE = new RegExp(`(?:www\\.|[\\w-]+\\.)*[\\w-]+\\.${DOMAIN_TLD}\\b`, "gi");
+    const GENERIC_SUBDOMAINS = new Set(["www", "shop", "store", "mail", "app", "web", "m", "api"]);
+
+    function stripContactInfo(raw) {
+      if (!raw) return "";
+      return raw
+        .replace(/\b\d{10,}\b/g, "")
+        .replace(/\bhttps?:\/\/\S+/gi, "")
+        .replace(DOMAIN_STRIP_RE, "")
+        .replace(/[·•|,\s]+$/, "").replace(/^[·•|,\s]+/, "")
+        .replace(/([·•|])\s*[·•|]/g, "$1")
+        .trim();
+    }
+
+    function cleanSellerName(raw) {
+      if (!raw) return "";
+      const domainMatch = raw.match(DOMAIN_RE);
+      const candidate = domainMatch?.[1];
+      const nameBeforeDomain = candidate && !GENERIC_SUBDOMAINS.has(candidate.toLowerCase()) ? candidate : null;
+      const cleaned = stripContactInfo(raw);
+      if (!cleaned && nameBeforeDomain) {
+        return nameBeforeDomain.charAt(0).toUpperCase() + nameBeforeDomain.slice(1).toLowerCase();
+      }
+      return cleaned;
+    }
+
     function titleCaseWords(s) {
       return String(s || "").trim().split(/\s+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
     }
@@ -1113,7 +1114,7 @@ const tags = [
       const cartItemsEl = document.getElementById("seller-checkout-cart-items");
       if (cartItemsEl) {
         cartItemsEl.innerHTML = `
-          <div style="font:700 11px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">From ${escape(group.seller_name || "Seller")}</div>
+          <div style="font:700 11px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">From ${escape(cleanSellerName(group.seller_name) || "Seller")}</div>
           ${group.items.map(i => `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--v2-border);">
               <div style="flex:1;min-width:0;">

@@ -3,6 +3,7 @@
  * All templates produce inline-styled HTML compatible with major email clients.
  */
 import { fmtDateTimeFullIST, fmtDateTimeIST } from "./format-ist";
+import { cleanSellerName, stripContactInfo } from "./seller-display";
 
 const BRAND_BLUE = "#0066cc";
 const BRAND_DARK = "#0a0f1a";
@@ -215,7 +216,7 @@ export function paymentProofReceivedEmailSeller(args: {
 }): string {
   const fishName = capitalizeFishName(args.species);
   const id = args.orderIdShort.toUpperCase();
-  const greet = args.sellerName ? `Hi ${String(args.sellerName).trim()},` : "Hi,";
+  const greet = args.sellerName ? `Hi ${cleanSellerName(args.sellerName)},` : "Hi,";
   return shell(`
     ${transactionIntro(
       "Action needed",
@@ -339,7 +340,7 @@ export function paymentVerifiedEmailSeller(args: {
 }): string {
   const fishName = capitalizeFishName(args.species);
   const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
-  const greet = args.sellerName ? `Hi ${String(args.sellerName).trim()},` : "Hi,";
+  const greet = args.sellerName ? `Hi ${cleanSellerName(args.sellerName)},` : "Hi,";
   return shell(`
     ${transactionIntro(
       "Payment Verified",
@@ -382,7 +383,7 @@ export function refundSentEmailSeller(args: {
 }): string {
   const fishName = capitalizeFishName(args.species);
   const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
-  const greet = args.sellerName ? `Hi ${String(args.sellerName).trim()},` : "Hi,";
+  const greet = args.sellerName ? `Hi ${cleanSellerName(args.sellerName)},` : "Hi,";
   return shell(`
     ${transactionIntro(
       "Refund Marked Sent",
@@ -448,8 +449,8 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
   );
   if (safeItems.length === 0) return ""; // nothing to send
 
-  const safeSeller = String(seller_name || "Your seller").trim() || "Your seller";
-  const safeLocation = seller_location ? String(seller_location).trim() : null;
+  const safeSeller = cleanSellerName(seller_name) || "Your seller";
+  const safeLocation = seller_location ? stripContactInfo(seller_location) : null;
   const safeDeliveryFee = Math.max(0, Number(delivery_fee) || 0);
   const isDelivery = order_type === "delivery";
   const safePaymentId = String(razorpay_payment_id || "").trim();
