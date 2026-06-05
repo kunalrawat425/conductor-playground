@@ -1285,6 +1285,9 @@ const tags = [
             const text = [def.flat, def.building, def.landmark, def.location_name].filter(Boolean).join(", ");
             textEl.textContent = text || "Saved address";
           }
+          // Re-trigger delivery fee calculation now that we have address coords
+          const checkedMethod = document.querySelector('input[name="seller-checkout-method"]:checked');
+          if (checkedMethod) checkedMethod.dispatchEvent(new Event("change", { bubbles: true }));
         }
       } catch {}
     }
@@ -1310,6 +1313,9 @@ const tags = [
               const text = [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ");
               textEl.textContent = text || "Saved address";
             }
+            // Recalculate delivery fee with new address coords
+            const checkedMethod = document.querySelector('input[name="seller-checkout-method"]:checked');
+            if (checkedMethod) checkedMethod.dispatchEvent(new Event("change", { bubbles: true }));
           }
         } catch {}
       }
