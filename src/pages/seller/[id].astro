@@ -1232,10 +1232,11 @@ const tags = [
         } else {
           if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : "FREE";
         }
-        // Show hint at step 2 when delivery is selected
+        // Show hint only when step 2 is visible (not during auto-select at step 1 open)
         const freeDelivBanner2 = document.getElementById("seller-checkout-free-delivery-banner");
         const delivHint2 = document.getElementById("seller-checkout-delivery-hint");
-        if (isDelivery && !isPreorderMode) {
+        const step2Visible = document.getElementById("seller-checkout-step2")?.offsetParent !== null;
+        if (isDelivery && !isPreorderMode && step2Visible) {
           if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
             if (freeDelivBanner2) freeDelivBanner2.style.display = "block";
             if (delivHint2) delivHint2.style.display = "none";
