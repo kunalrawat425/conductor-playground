@@ -141,6 +141,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
           if (labelEl) labelEl.value = b.dataset.addrLabel || "home";
           document.getElementById(`${id}-edit-form`).style.display = "block";
           document.getElementById(`${id}-add-btn`).style.display = "none";
+          setCtaEnabled(false);
           setTimeout(() => initEditMap(
             b.dataset.addrLat ? parseFloat(b.dataset.addrLat) : null,
             b.dataset.addrLng ? parseFloat(b.dataset.addrLng) : null
@@ -170,6 +171,14 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
     } catch (err) {
       list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--v2-red);font:500 13px Inter;">Failed to load addresses</div>';
     }
+  }
+
+  function setCtaEnabled(enabled) {
+    const cta = document.querySelector(`[data-sheet-cta="${id}"]`);
+    if (!cta) return;
+    cta.disabled = !enabled;
+    cta.style.opacity = enabled ? "" : "0.35";
+    cta.style.pointerEvents = enabled ? "" : "none";
   }
 
   // --- Map for add-new-address ---
@@ -277,6 +286,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
     document.getElementById(`${id}-edit-form`).style.display = "none";
     document.getElementById(`${id}-add-btn`).style.display = "";
     document.getElementById(`${id}-edit-err`).style.display = "none";
+    setCtaEnabled(true);
   });
 
   document.getElementById(`${id}-edit-save`)?.addEventListener("click", async () => {
@@ -314,6 +324,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       document.getElementById(`${id}-edit-form`).style.display = "none";
       document.getElementById(`${id}-add-btn`).style.display = "";
       document.getElementById(`${id}-edit-err`).style.display = "none";
+      setCtaEnabled(true);
       await load();
     } catch {
       document.getElementById(`${id}-edit-err`).textContent = "Failed to update. Try again.";
@@ -346,13 +357,14 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
   addBtn?.addEventListener("click", () => {
     addForm.style.display = "block";
     addBtn.style.display = "none";
-    // Init map lazily when form opens
+    setCtaEnabled(false);
     setTimeout(initAddrMap, 100);
   });
   addCancel?.addEventListener("click", () => {
     addForm.style.display = "none";
     addBtn.style.display = "";
     addErr.style.display = "none";
+    setCtaEnabled(true);
   });
   addSave?.addEventListener("click", async () => {
     const building = document.getElementById(`${id}-building`).value.trim();
@@ -390,6 +402,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       // reset form
       addForm.style.display = "none";
       addBtn.style.display = "";
+      setCtaEnabled(true);
       document.getElementById(`${id}-building`).value = "";
       document.getElementById(`${id}-flat`).value = "";
       document.getElementById(`${id}-landmark`).value = "";
