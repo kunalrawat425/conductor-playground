@@ -31,20 +31,33 @@ try {
   } else notFound = true;
 } catch { notFound = true; }
 
-// Strip embedded phone numbers and URLs from display name (e.g. "Shop · 9220200100 · site.com")
-function cleanDisplayName(raw: string | null | undefined): string {
+// Strip phone numbers, URLs, domains from display strings
+function stripContactInfo(raw: string | null | undefined): string {
   if (!raw) return "";
   return raw
-    .replace(/\b\d{10,}\b/g, "")          // 10+ digit phone numbers
-    .replace(/\bhttps?:\/\/\S+/gi, "")    // URLs with protocol
-    .replace(/\b[\w.-]+\.(com|in|net|org|store|shop)\b/gi, "") // bare domains
-    .replace(/[·•|,\s]+$/, "")            // trailing separators
-    .replace(/^[·•|,\s]+/, "")            // leading separators
-    .replace(/\s*[·•|]\s*[·•|,\s]*/g, " · ") // clean up double separators
+    .replace(/\b\d{10,}\b/g, "")                                          // 10+ digit phones
+    .replace(/\bhttps?:\/\/\S+/gi, "")                                    // full URLs
+    .replace(/\bwww\.\S+/gi, "")                                          // www.* URLs
+    .replace(/\b[\w-]+\.(com|in|net|org|store|shop|co)\b/gi, "")         // bare domains (TLD only)
+    .replace(/[·•|,\s]+$/, "").replace(/^[·•|,\s]+/, "")                 // trim separators
+    .replace(/([·•|])\s*[·•|]/g, "$1")                                    // collapse double separators
     .trim();
 }
+// For names: if the name itself is a domain (e.g. "fishtokri.com"), keep the domain label part
+function cleanDisplayName(raw: string | null | undefined): string {
+  if (!raw) return "";
+  // Extract meaningful name before TLD: "Fishtokri.com · 9220200100" → "Fishtokri"
+  const domainMatch = raw.match(/\b([\w-]+)\.(com|in|net|org|store|shop|co)\b/i);
+  const nameBeforeDomain = domainMatch ? domainMatch[1] : null;
+  const cleaned = stripContactInfo(raw);
+  // If stripping leaves empty but we had a domain label, use that
+  if (!cleaned && nameBeforeDomain) {
+    return nameBeforeDomain.charAt(0).toUpperCase() + nameBeforeDomain.slice(1).toLowerCase();
+  }
+  return cleaned;
+}
 const sellerName = cleanDisplayName(seller?.name) || "Seller";
-const sellerLocation = seller?.location_name || "";
+const sellerLocation = stripContactInfo(seller?.location_name) || "";
 const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
 const SITE = "https://www.relifish.store";
 const canonicalUrl = sellerSlug ? `${SITE}/s/${sellerSlug}` : `${SITE}/seller/${id}`;

@@ -264,13 +264,22 @@ const categories = [
   function escapeHtml(s: string) {
     return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
   }
-  function cleanDisplayName(raw: string): string {
+  function stripContactInfo(raw: string): string {
     return raw
       .replace(/\b\d{10,}\b/g, "")
-      .replace(/\bhttps?:\/\/\S+/gi, "")
-      .replace(/\b[\w.-]+\.(com|in|net|org|store|shop)\b/gi, "")
+      .replace(/\bhttps?:\/\/\S+/gi, "").replace(/\bwww\.\S+/gi, "")
+      .replace(/\b[\w-]+\.(com|in|net|org|store|shop|co)\b/gi, "")
       .replace(/[·•|,\s]+$/, "").replace(/^[·•|,\s]+/, "")
-      .replace(/\s*[·•|]\s*[·•|,\s]*/g, " · ").trim();
+      .replace(/([·•|])\s*[·•|]/g, "$1").trim();
+  }
+  function cleanDisplayName(raw: string): string {
+    const domainMatch = raw.match(/\b([\w-]+)\.(com|in|net|org|store|shop|co)\b/i);
+    const nameBeforeDomain = domainMatch ? domainMatch[1] : null;
+    const cleaned = stripContactInfo(raw);
+    if (!cleaned && nameBeforeDomain) {
+      return nameBeforeDomain.charAt(0).toUpperCase() + nameBeforeDomain.slice(1).toLowerCase();
+    }
+    return cleaned;
   }
 
   function listingChipHtml(l: any): string {
@@ -715,7 +724,7 @@ const categories = [
         const ratingBadge = rating ? `<span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">${rating} ★</span>` : "";
 
         const distStr = g.dist != null ? `${g.dist.toFixed(1)} km` : "";
-        const subParts = [s.location_name || s.location || "", distStr].filter(Boolean).join(" · ");
+        const subParts = [stripContactInfo(s.location_name || s.location || ""), distStr].filter(Boolean).join(" · ");
 
         // Offer badge logic
         let offerLabel = "", offerColor = "v2-badge-brand";
