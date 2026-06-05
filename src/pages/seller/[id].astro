@@ -344,14 +344,14 @@ const tags = [
       {/* Schedule strip */}
       <div style="padding:8px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:6px;">
         <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
-          🗓 {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
+          🗓 Same day orders · {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
         </span>
         {preorderDaysLabel && (() => {
           const sameDays = orderDaysLabel === preorderDaysLabel;
           const showCutoff = cutoffLabel && cutoffLabel !== closesAtFmt;
           return (
             <span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md" style="font-weight:500;">
-              🌙 {sameDays ? "Same days" : preorderDaysLabel}
+              🌙 Pre-orders (next day) · {sameDays ? "Same days" : preorderDaysLabel}
               {showCutoff ? ` · cutoff ${cutoffLabel}` : (closesAtFmt && cutoffLabel ? ` · from ${closesAtFmt}` : "")}
             </span>
           );
