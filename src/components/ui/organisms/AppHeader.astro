@@ -10,6 +10,7 @@ const {
   cartCount = 0,
   backHref,
   title,
+  hideLocation = false,
 } = Astro.props;
 const isPreorder = variant === "preorder";
 const isPage = variant === "page";
@@ -19,16 +20,26 @@ const isPage = variant === "page";
     {isPage && backHref ? (
       <a href={backHref} class="v2-back" aria-label="Back">←</a>
     ) : (
-      <a href="/" class="v2-logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-logo-img" />{isPreorder ? " 🌙" : ""}</a>
+      <a href="/shop" class="v2-logo">Relifish{isPreorder ? " 🌙" : ""}</a>
     )}
 
-    <div class:list={["v2-loc-wrap", !isPage && "v2-loc-tappable"]} id={isPage ? undefined : "v2-location-trigger"}>
-      <div class="v2-loc-main">
-        {isPage && title ? title : locationLabel}
-        {!isPage && <span class="v2-loc-arrow">▼</span>}
+    {hideLocation ? (
+      <div></div>
+    ) : (
+      <div class:list={["v2-loc-wrap", !isPage && "v2-loc-tappable"]} id={isPage ? undefined : "v2-location-trigger"}>
+        <div class="v2-loc-main">
+          {isPage && title ? (
+            title === "Relifish" ? (
+              <a href="/shop" class="v2-logo" style="font-size: 16px;">Relifish</a>
+            ) : (
+              title
+            )
+          ) : locationLabel}
+          {!isPage && <span class="v2-loc-arrow">▼</span>}
+        </div>
+        {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
       </div>
-      {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
-    </div>
+    )}
 
     <button
       type="button"

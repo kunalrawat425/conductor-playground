@@ -21,7 +21,7 @@ const {
 function fmtTime(t: string | undefined | null): string {
   if (!t) return "";
   const [h, m] = String(t).split(":").map(Number);
-  if (Number.isNaN(h)) return t;
+  if (Number.isNaN(h)) return String(t).slice(0, 5);
   const period = h >= 12 ? "PM" : "AM";
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
   return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")} ${period}` : `${h12} ${period}`;
@@ -42,7 +42,7 @@ const subParts = [
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,var(--v2-bg-2,#f8fafc) 100%);"></div>
     </div>
   )}
-  <a href="/shop" class="v2-sh-back" aria-label="Back to sellers">← Back</a>
+
 
   <div class="v2-sh-top">
     <div class="v2-sh-avatar" aria-hidden="true">
@@ -54,16 +54,25 @@ const subParts = [
       <h1 class="v2-sh-name">{name}</h1>
       {subParts && <div class="v2-sh-sub">{subParts}</div>}
     </div>
-    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
       {rating > 0 && (
         <span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">{rating.toFixed(1)} ★</span>
       )}
-      {phone && (
-        <a href={`tel:${phone}`} aria-label="Call Seller" style="display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--v2-green); color:#fff; text-decoration:none; box-shadow:var(--v2-shadow-sm); transition:transform 0.1s ease-out;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      {phone && status === "open" && (
+        <a href={`tel:${phone}`} aria-label="Call seller" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:var(--v2-green);color:#fff;text-decoration:none;border-radius:20px;box-shadow:var(--v2-shadow-sm);white-space:nowrap;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
           </svg>
+          <span style="font:600 10px Inter;color:#fff;">For enquiries {opensAt}–{closesAt}</span>
         </a>
+      )}
+      {phone && status === "closed" && (
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:var(--v2-bg-3);color:var(--v2-ink-4);border-radius:20px;box-shadow:var(--v2-shadow-sm);white-space:nowrap;cursor:not-allowed;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <span style="font:600 10px Inter;">For enquiries {opensAt}–{closesAt}</span>
+        </span>
       )}
     </div>
   </div>
@@ -77,18 +86,24 @@ const subParts = [
   )}
 
   <div class="v2-sh-stats">
-    <div class="v2-sh-stat">
-      <div class="v2-sh-v">{totalOrders ?? "—"}</div>
-      <div class="v2-sh-l">Orders</div>
-    </div>
-    <div class="v2-sh-stat">
-      <div class="v2-sh-v">{itemCount ?? "—"}</div>
-      <div class="v2-sh-l">Items</div>
-    </div>
-    <div class="v2-sh-stat">
-      <div class="v2-sh-v">{catchTime ?? "—"}</div>
-      <div class="v2-sh-l">Catch</div>
-    </div>
+    {totalOrders != null && (
+      <div class="v2-sh-stat">
+        <div class="v2-sh-v">{totalOrders}</div>
+        <div class="v2-sh-l">Orders</div>
+      </div>
+    )}
+    {itemCount != null && (
+      <div class="v2-sh-stat">
+        <div class="v2-sh-v">{itemCount}</div>
+        <div class="v2-sh-l">Items</div>
+      </div>
+    )}
+    {catchTime && (
+      <div class="v2-sh-stat">
+        <div class="v2-sh-v">{catchTime}</div>
+        <div class="v2-sh-l">Catch</div>
+      </div>
+    )}
     <div class="v2-sh-stat">
       <div class:list={["v2-sh-v", status === "open" && "v2-sh-live"]}>
         {status === "open" ? "Open" : "Closed"}
@@ -96,7 +111,6 @@ const subParts = [
       <div class="v2-sh-l">{status === "open" ? `Until ${closesAt}` : `Opens ${opensAt}`}</div>
     </div>
   </div>
-
 
 </section>
 

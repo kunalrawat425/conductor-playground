@@ -13,6 +13,7 @@ import Modal from "../../components/ui/atoms/Modal.astro";
 import { getSellerById, getSellerListings, sellerNameToSlug } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
+import { cleanSellerName, stripContactInfo } from "../../lib/seller-display";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -31,8 +32,8 @@ try {
   } else notFound = true;
 } catch { notFound = true; }
 
-const sellerName = seller?.name || "Seller";
-const sellerLocation = seller?.location_name || "";
+const sellerName = cleanSellerName(seller?.name) || "Seller";
+const sellerLocation = stripContactInfo(seller?.location_name) || "";
 const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
 const SITE = "https://www.relifish.store";
 const canonicalUrl = sellerSlug ? `${SITE}/s/${sellerSlug}` : `${SITE}/seller/${id}`;
@@ -122,13 +123,29 @@ for (const l of listings) {
 }
 
 // Schedule display strings
+const ALL_DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun'];
 function fmtDays(days: string[]): string {
   if (!days.length || days.length === 7) return "Every day";
+  const closedDays = ALL_DAY_NAMES.filter(d => !days.includes(d));
+  // Show whichever list is shorter — fewer words
+  if (closedDays.length < days.length) {
+    return `Closed ${closedDays.map(d => DAY_LABELS[d] || d).join(", ")}`;
+  }
   return days.map(d => DAY_LABELS[d] || d).join(", ");
+}
+function fmtTime12(t: string | undefined | null): string {
+  if (!t) return "";
+  const [h, m] = String(t).split(":").map(Number);
+  if (Number.isNaN(h)) return String(t).slice(0, 5);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")} ${period}` : `${h12} ${period}`;
 }
 const orderDaysLabel = fmtDays(openDays);
 const preorderDaysLabel = preorderDays.length ? fmtDays(preorderDays) : null;
-const cutoffLabel = seller?.preorder_cutoff_time ? seller.preorder_cutoff_time.slice(0,5) : null;
+const cutoffLabel = seller?.preorder_cutoff_time ? fmtTime12(seller.preorder_cutoff_time) : null;
+const opensAtFmt = fmtTime12(seller?.opens_at);
+const closesAtFmt = fmtTime12(seller?.closes_at);
 
 // Calculate next opening time string for banner
 let nextOpenLabel = "soon";
@@ -139,13 +156,13 @@ if (seller?.opens_at) {
   const openMin = oh * 60 + om;
   
   if (openDaysSet.has(DAY_NAMES_SHORT[nextOpenDayIdx]) && openMin > curMin) {
-    nextOpenLabel = `today at ${seller.opens_at.slice(0,5)}`;
+    nextOpenLabel = `today at ${fmtTime12(seller.opens_at)}`;
   } else {
     for (let i = 1; i <= 7; i++) {
       const idx = (nextOpenDayIdx + i) % 7;
       if (openDaysSet.has(DAY_NAMES_SHORT[idx])) {
         const dayStr = i === 1 ? "tomorrow" : DAY_LABELS[DAY_NAMES_SHORT[idx]];
-        nextOpenLabel = `${dayStr} at ${seller.opens_at.slice(0,5)}`;
+        nextOpenLabel = `${dayStr} at ${fmtTime12(seller.opens_at)}`;
         break;
       }
     }
@@ -184,7 +201,7 @@ const tags = [
     return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`;
   })()}
   canonical={canonicalUrl}
-  hideHeader={true}
+  header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
   nav={{ active: "home" }}
   jsonLd={seller && !notFound ? {
     "@context": "https://schema.org",
@@ -296,24 +313,25 @@ const tags = [
         closesAt={seller?.closes_at}
         itemCount={itemCount}
         tags={tags}
-        phone={seller.phone}
+        phone={seller?.phone}
         storeImageUrl={seller?.store_image_url}
       />
 
       {/* Schedule strip */}
-      <div style="padding:10px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:12px;">
-        <div style="font:500 11px Inter;color:var(--v2-ink-2);">
-          🗓 <strong>Orders:</strong> {orderDaysLabel}
-          {seller?.opens_at && seller?.closes_at && ` · ${seller.opens_at.slice(0,5)}–${seller.closes_at.slice(0,5)}`}
-        </div>
-        {preorderDaysLabel && (
-          <div style="font:500 11px Inter;color:#7C3AED;">
-            🌙 <strong>Pre-orders</strong> (next-day catch): {preorderDaysLabel}
-            {seller?.closes_at && cutoffLabel
-              ? ` · ${seller.closes_at.slice(0,5)}–${cutoffLabel}`
-              : cutoffLabel ? ` · cutoff ${cutoffLabel}` : ""}
-          </div>
-        )}
+      <div style="padding:8px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:6px;">
+        <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
+          🗓 Same day orders · {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
+        </span>
+        {preorderDaysLabel && (() => {
+          const sameDays = orderDaysLabel === preorderDaysLabel;
+          const showCutoff = cutoffLabel && cutoffLabel !== closesAtFmt;
+          return (
+            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
+              🌙 Pre-orders (next day) · {sameDays ? "Same days" : preorderDaysLabel}
+              {showCutoff ? ` · cutoff ${cutoffLabel}` : (closesAtFmt && cutoffLabel ? ` · from ${closesAtFmt}` : "")}
+            </span>
+          );
+        })()}
       </div>
 
       {/* Pre-order context banner */}
@@ -323,8 +341,8 @@ const tags = [
           <div>
             <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              {seller?.closes_at && cutoffLabel
-                ? `Pre-order window: ${seller.closes_at.slice(0,5)} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
+              {closesAtFmt && cutoffLabel
+                ? `Pre-order window: ${closesAtFmt} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
                 : cutoffLabel
                   ? `Place before ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
                   : "Your order is reserved from tomorrow's fresh catch."}
@@ -507,6 +525,35 @@ const tags = [
       return "🐟";
     }
     function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+    const DOMAIN_TLD = "(com|in|net|org|store|shop|co|io|biz|info|fish)";
+    const DOMAIN_RE = new RegExp(`\\b([\\w-]+)\\.(?:[\\w-]+\\.)?${DOMAIN_TLD}\\b`, "i");
+    const DOMAIN_STRIP_RE = new RegExp(`(?:www\\.|[\\w-]+\\.)*[\\w-]+\\.${DOMAIN_TLD}\\b`, "gi");
+    const GENERIC_SUBDOMAINS = new Set(["www", "shop", "store", "mail", "app", "web", "m", "api"]);
+
+    function stripContactInfo(raw) {
+      if (!raw) return "";
+      return raw
+        .replace(/\b\d{10,}\b/g, "")
+        .replace(/\bhttps?:\/\/\S+/gi, "")
+        .replace(DOMAIN_STRIP_RE, "")
+        .replace(/[·•|,\s]+$/, "").replace(/^[·•|,\s]+/, "")
+        .replace(/([·•|])\s*[·•|]/g, "$1")
+        .trim();
+    }
+
+    function cleanSellerName(raw) {
+      if (!raw) return "";
+      const domainMatch = raw.match(DOMAIN_RE);
+      const candidate = domainMatch?.[1];
+      const nameBeforeDomain = candidate && !GENERIC_SUBDOMAINS.has(candidate.toLowerCase()) ? candidate : null;
+      const cleaned = stripContactInfo(raw);
+      if (!cleaned && nameBeforeDomain) {
+        return nameBeforeDomain.charAt(0).toUpperCase() + nameBeforeDomain.slice(1).toLowerCase();
+      }
+      return cleaned;
+    }
+
     function titleCaseWords(s) {
       return String(s || "").trim().split(/\s+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
     }
@@ -1020,7 +1067,7 @@ const tags = [
 
       // -- LIVE VALIDATION --
       if (typeof c.validateCartLive === "function") {
-        const { oosMessages, priceChangedCount } = await c.validateCartLive(sid);
+        const { oosMessages, priceChangedCount } = await c.validateCartLive(sid, isPreorderMode);
         if (oosMessages.length > 0 || priceChangedCount > 0) {
           let msg = [];
           if (oosMessages.length) msg.push(oosMessages.join("\\n"));
@@ -1067,7 +1114,7 @@ const tags = [
       const cartItemsEl = document.getElementById("seller-checkout-cart-items");
       if (cartItemsEl) {
         cartItemsEl.innerHTML = `
-          <div style="font:700 11px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">From ${escape(group.seller_name || "Seller")}</div>
+          <div style="font:700 11px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">From ${escape(cleanSellerName(group.seller_name) || "Seller")}</div>
           ${group.items.map(i => `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--v2-border);">
               <div style="flex:1;min-width:0;">
@@ -1349,7 +1396,7 @@ const tags = [
 
     function triggerBackgroundValidation(c) {
       if (typeof c.validateCartLive === "function") {
-        c.validateCartLive(sellerId).then(({ oosMessages, priceChangedCount }) => {
+        c.validateCartLive(sellerId, isPreorderMode).then(({ oosMessages, priceChangedCount }) => {
           if (oosMessages.length > 0 || priceChangedCount > 0) {
             render();
           }

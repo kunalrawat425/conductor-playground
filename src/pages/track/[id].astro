@@ -165,6 +165,7 @@ const { id } = Astro.params;
 <script>
   import { createClient } from "@supabase/supabase-js";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
+  import { cleanSellerName } from "../../lib/seller-display";
   const supabase = createClient(
     import.meta.env.PUBLIC_SUPABASE_URL || "",
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
@@ -333,7 +334,7 @@ const { id } = Astro.params;
 
     // Seller
     const seller = o.seller || {};
-    document.getElementById("v2-od-seller").textContent = seller.name || "Seller";
+    document.getElementById("v2-od-seller").textContent = cleanSellerName(seller.name) || "Seller";
     document.getElementById("v2-od-seller-loc").textContent = seller.location_name || seller.location || "";
     // Call option removed per user request
 
@@ -615,7 +616,7 @@ const { id } = Astro.params;
         // actions block and drops rating/submit listeners.
         actions.insertAdjacentHTML(
           "beforeend",
-          `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(seller.name || "this seller")}</button>`
+          `<button class="v2-od-cancel" id="v2-od-reorder-btn" style="background:var(--v2-brand);color:#fff;border:none;">Re-order from ${escape(cleanSellerName(seller.name) || "this seller")}</button>`
         );
         document.getElementById("v2-od-reorder-btn")?.addEventListener("click", () => {
           const Cart = window.RelifishCart;
@@ -624,7 +625,7 @@ const { id } = Astro.params;
               Cart.addItem({
                 listing_id: o.listing_id || "",
                 seller_id: sellerIdForReorder,
-                seller_name: seller.name || "Seller",
+                seller_name: cleanSellerName(seller.name) || "Seller",
                 name: it.species || "Fish",
                 qty_unit: it.quantity_unit || "kg",
                 price: it.total_price || 0,

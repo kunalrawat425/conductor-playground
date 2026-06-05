@@ -1,5 +1,6 @@
 ---
 import Badge from "../atoms/Badge.astro";
+import { cleanSellerName, stripContactInfo } from "../../../lib/seller-display";
 interface Props {
   id: string;
   name: string;
@@ -19,8 +20,8 @@ interface Props {
 }
 const {
   id,
-  name,
-  location,
+  name: rawName,
+  location: rawLocation,
   distanceKm,
   deliveryEtaMin,
   rating = 0,
@@ -34,6 +35,9 @@ const {
   offerLabel,
   storeImageUrl,
 } = Astro.props;
+
+const name = cleanSellerName(rawName);
+const location = stripContactInfo(rawLocation);
 
 const distance = distanceKm != null ? `${distanceKm.toFixed(1)} km` : null;
 const eta = deliveryEtaMin != null ? `${deliveryEtaMin} min` : null;
