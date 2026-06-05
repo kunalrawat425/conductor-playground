@@ -28,9 +28,10 @@ self.addEventListener("activate", (event) => {
 
 // Fetch: network-first, fall back to cache for app shell
 self.addEventListener("fetch", (event) => {
-  // Skip non-GET and API/Supabase requests
+  // Skip non-GET, cross-origin, and API/Supabase requests
   if (
     event.request.method !== "GET" ||
+    !event.request.url.startsWith(self.location.origin) ||
     event.request.url.includes("supabase") ||
     event.request.url.includes("/api/")
   ) {
@@ -47,7 +48,12 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() =>
+        caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          throw new Error("Offline and not cached");
+        })
+      )
   );
 });
 
