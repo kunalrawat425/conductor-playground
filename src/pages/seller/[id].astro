@@ -179,10 +179,9 @@ const tags = [
     ? (() => {
         const feeType = seller.delivery_fee_type || "fixed";
         if (feeType === "per_km") {
-          const rate = `₹${seller.delivery_fee_per_km}/km`;
           return seller.free_delivery_above > 0
-            ? `${rate} delivery · Free above ₹${seller.free_delivery_above}`
-            : `${rate} delivery fee`;
+            ? `Distance-based delivery · Free above ₹${seller.free_delivery_above}`
+            : `Distance-based delivery fee`;
         }
         if (seller.delivery_fee_amount > 0) {
           return seller.free_delivery_above > 0
