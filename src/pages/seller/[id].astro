@@ -31,7 +31,19 @@ try {
   } else notFound = true;
 } catch { notFound = true; }
 
-const sellerName = seller?.name || "Seller";
+// Strip embedded phone numbers and URLs from display name (e.g. "Shop · 9220200100 · site.com")
+function cleanDisplayName(raw: string | null | undefined): string {
+  if (!raw) return "";
+  return raw
+    .replace(/\b\d{10,}\b/g, "")          // 10+ digit phone numbers
+    .replace(/\bhttps?:\/\/\S+/gi, "")    // URLs with protocol
+    .replace(/\b[\w.-]+\.(com|in|net|org|store|shop)\b/gi, "") // bare domains
+    .replace(/[·•|,\s]+$/, "")            // trailing separators
+    .replace(/^[·•|,\s]+/, "")            // leading separators
+    .replace(/\s*[·•|]\s*[·•|,\s]*/g, " · ") // clean up double separators
+    .trim();
+}
+const sellerName = cleanDisplayName(seller?.name) || "Seller";
 const sellerLocation = seller?.location_name || "";
 const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
 const SITE = "https://www.relifish.store";
@@ -126,9 +138,19 @@ function fmtDays(days: string[]): string {
   if (!days.length || days.length === 7) return "Every day";
   return days.map(d => DAY_LABELS[d] || d).join(", ");
 }
+function fmtTime12(t: string | undefined | null): string {
+  if (!t) return "";
+  const [h, m] = String(t).split(":").map(Number);
+  if (Number.isNaN(h)) return String(t).slice(0, 5);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")} ${period}` : `${h12} ${period}`;
+}
 const orderDaysLabel = fmtDays(openDays);
 const preorderDaysLabel = preorderDays.length ? fmtDays(preorderDays) : null;
-const cutoffLabel = seller?.preorder_cutoff_time ? seller.preorder_cutoff_time.slice(0,5) : null;
+const cutoffLabel = seller?.preorder_cutoff_time ? fmtTime12(seller.preorder_cutoff_time) : null;
+const opensAtFmt = fmtTime12(seller?.opens_at);
+const closesAtFmt = fmtTime12(seller?.closes_at);
 
 // Calculate next opening time string for banner
 let nextOpenLabel = "soon";
@@ -139,13 +161,13 @@ if (seller?.opens_at) {
   const openMin = oh * 60 + om;
   
   if (openDaysSet.has(DAY_NAMES_SHORT[nextOpenDayIdx]) && openMin > curMin) {
-    nextOpenLabel = `today at ${seller.opens_at.slice(0,5)}`;
+    nextOpenLabel = `today at ${fmtTime12(seller.opens_at)}`;
   } else {
     for (let i = 1; i <= 7; i++) {
       const idx = (nextOpenDayIdx + i) % 7;
       if (openDaysSet.has(DAY_NAMES_SHORT[idx])) {
         const dayStr = i === 1 ? "tomorrow" : DAY_LABELS[DAY_NAMES_SHORT[idx]];
-        nextOpenLabel = `${dayStr} at ${seller.opens_at.slice(0,5)}`;
+        nextOpenLabel = `${dayStr} at ${fmtTime12(seller.opens_at)}`;
         break;
       }
     }
@@ -296,7 +318,7 @@ const tags = [
         closesAt={seller?.closes_at}
         itemCount={itemCount}
         tags={tags}
-        phone={seller.phone}
+        phone={seller?.phone}
         storeImageUrl={seller?.store_image_url}
       />
 
@@ -304,13 +326,13 @@ const tags = [
       <div style="padding:10px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:12px;">
         <div style="font:500 11px Inter;color:var(--v2-ink-2);">
           🗓 <strong>Orders:</strong> {orderDaysLabel}
-          {seller?.opens_at && seller?.closes_at && ` · ${seller.opens_at.slice(0,5)}–${seller.closes_at.slice(0,5)}`}
+          {opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
         </div>
         {preorderDaysLabel && (
           <div style="font:500 11px Inter;color:#7C3AED;">
             🌙 <strong>Pre-orders</strong> (next-day catch): {preorderDaysLabel}
-            {seller?.closes_at && cutoffLabel
-              ? ` · ${seller.closes_at.slice(0,5)}–${cutoffLabel}`
+            {closesAtFmt && cutoffLabel
+              ? ` · ${closesAtFmt}–${cutoffLabel}`
               : cutoffLabel ? ` · cutoff ${cutoffLabel}` : ""}
           </div>
         )}
@@ -323,8 +345,8 @@ const tags = [
           <div>
             <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              {seller?.closes_at && cutoffLabel
-                ? `Pre-order window: ${seller.closes_at.slice(0,5)} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
+              {closesAtFmt && cutoffLabel
+                ? `Pre-order window: ${closesAtFmt} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
                 : cutoffLabel
                   ? `Place before ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
                   : "Your order is reserved from tomorrow's fresh catch."}

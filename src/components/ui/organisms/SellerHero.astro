@@ -21,7 +21,7 @@ const {
 function fmtTime(t: string | undefined | null): string {
   if (!t) return "";
   const [h, m] = String(t).split(":").map(Number);
-  if (Number.isNaN(h)) return t;
+  if (Number.isNaN(h)) return String(t).slice(0, 5);
   const period = h >= 12 ? "PM" : "AM";
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
   return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")} ${period}` : `${h12} ${period}`;
@@ -58,13 +58,6 @@ const subParts = [
       {rating > 0 && (
         <span class="v2-badge v2-badge-rating v2-badge-green v2-badge-size-md">{rating.toFixed(1)} ★</span>
       )}
-      {phone && (
-        <a href={`tel:${phone}`} aria-label="Call Seller" style="display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--v2-green); color:#fff; text-decoration:none; box-shadow:var(--v2-shadow-sm); transition:transform 0.1s ease-out;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-          </svg>
-        </a>
-      )}
     </div>
   </div>
 
@@ -97,6 +90,26 @@ const subParts = [
     </div>
   </div>
 
+  {phone && status === "open" && (
+    <a href={`tel:${phone}`} style="margin:10px 0 0;padding:10px 14px;background:var(--v2-green-l,#ECFDF5);border:1px solid var(--v2-green);border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;text-decoration:none;">
+      <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--v2-green);color:#fff;flex-shrink:0;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+      </span>
+      <span style="font:500 12px Inter;color:var(--v2-green);">For any enquiries, call</span>
+    </a>
+  )}
+  {phone && status === "closed" && (
+    <div style="margin:10px 0 0;padding:10px 14px;background:var(--v2-bg-2);border:1px solid var(--v2-border);border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;">
+      <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--v2-bg-3);color:var(--v2-ink-4);flex-shrink:0;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+      </span>
+      <span style="font:400 11px Inter;color:var(--v2-ink-3);">For any enquiries, call during shop hours: <strong style="color:var(--v2-ink-2);">{opensAt} – {closesAt}</strong></span>
+    </div>
+  )}
 
 </section>
 
