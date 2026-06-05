@@ -229,7 +229,7 @@ const tags = [
     return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`;
   })()}
   canonical={canonicalUrl}
-  hideHeader={true}
+  header={{ variant: "page", backHref: "/shop", title: sellerName }}
   nav={{ active: "home" }}
   jsonLd={seller && !notFound ? {
     "@context": "https://schema.org",
@@ -1066,7 +1066,7 @@ const tags = [
 
       // -- LIVE VALIDATION --
       if (typeof c.validateCartLive === "function") {
-        const { oosMessages, priceChangedCount } = await c.validateCartLive(sid);
+        const { oosMessages, priceChangedCount } = await c.validateCartLive(sid, isPreorderMode);
         if (oosMessages.length > 0 || priceChangedCount > 0) {
           let msg = [];
           if (oosMessages.length) msg.push(oosMessages.join("\\n"));
@@ -1395,7 +1395,7 @@ const tags = [
 
     function triggerBackgroundValidation(c) {
       if (typeof c.validateCartLive === "function") {
-        c.validateCartLive(sellerId).then(({ oosMessages, priceChangedCount }) => {
+        c.validateCartLive(sellerId, isPreorderMode).then(({ oosMessages, priceChangedCount }) => {
           if (oosMessages.length > 0 || priceChangedCount > 0) {
             render();
           }

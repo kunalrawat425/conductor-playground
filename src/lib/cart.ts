@@ -320,7 +320,7 @@ export async function pushLocalToServer(): Promise<void> {
   }
 }
 
-export async function validateCartLive(sellerId?: string): Promise<{ oosMessages: string[], priceChangedCount: number }> {
+export async function validateCartLive(sellerId?: string, isPreorderMode?: boolean): Promise<{ oosMessages: string[], priceChangedCount: number }> {
   let oosMessages: string[] = [];
   let priceChangedCount = 0;
   try {
@@ -349,7 +349,7 @@ export async function validateCartLive(sellerId?: string): Promise<{ oosMessages
            const opt = opts.find((o: any) => o.id === item.pricing_option_id) || opts[0];
            if (opt) {
              let poPrice = 0;
-             if (live.is_preorder_enabled) {
+             if (live.is_preorder_enabled && isPreorderMode) {
                poPrice = opt.preorder_price_max || opt.preorder_price_min || opt.price || 0;
              } else {
                poPrice = opt.price || 0;
