@@ -240,7 +240,7 @@ describe("menu bundle labels", () => {
   it("formatBundleSizeLead matches pack vs per-base", () => {
     expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "piece", bundle_size: 3 })).toBe("3 pieces");
     expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "piece", bundle_size: 1 })).toBe("Per piece");
-    expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "kg", bundle_size: 0.5 })).toBe("0.5 kg");
+    expect(formatBundleSizeLead({ id: "a", label: "x", price: 1, unit: "kg", bundle_size: 0.5 })).toBe("500 grams");
   });
 
   it("formatPriceOptionDropdownLabel includes lead and label", () => {
@@ -268,7 +268,7 @@ describe("formatBuyerMenuUnitSuffix", () => {
     expect(formatBuyerMenuUnitSuffix({ id: "a", label: "A", price: 400, unit: "kg", bundle_size: 1 })).toBe("/kg");
   });
   it("kg fixed weight → /nkg", () => {
-    expect(formatBuyerMenuUnitSuffix({ id: "a", label: "A", price: 200, unit: "kg", bundle_size: 0.5 })).toBe("/0.5kg");
+    expect(formatBuyerMenuUnitSuffix({ id: "a", label: "A", price: 200, unit: "kg", bundle_size: 0.5 })).toBe("/500 grams");
   });
 });
 
