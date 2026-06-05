@@ -264,6 +264,14 @@ const categories = [
   function escapeHtml(s: string) {
     return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
   }
+  function cleanDisplayName(raw: string): string {
+    return raw
+      .replace(/\b\d{10,}\b/g, "")
+      .replace(/\bhttps?:\/\/\S+/gi, "")
+      .replace(/\b[\w.-]+\.(com|in|net|org|store|shop)\b/gi, "")
+      .replace(/[·•|,\s]+$/, "").replace(/^[·•|,\s]+/, "")
+      .replace(/\s*[·•|]\s*[·•|,\s]*/g, " · ").trim();
+  }
 
   function listingChipHtml(l: any): string {
     const name = getSpeciesDisplay(l.species);
@@ -744,7 +752,7 @@ const categories = [
           <div class="v2-sc-body">
             <div class="v2-sc-top">
               <div class="v2-sc-info">
-                <div class="v2-sc-name">${escapeHtml(s.name)}</div>
+                <div class="v2-sc-name">${escapeHtml(cleanDisplayName(s.name))}</div>
                 ${subParts ? `<div class="v2-sc-loc">${escapeHtml(subParts)}</div>` : ""}
               </div>
               ${ratingBadge}
