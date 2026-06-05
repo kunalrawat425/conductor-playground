@@ -23,10 +23,18 @@ const isPage = variant === "page";
       <a href="/shop" class="v2-logo">Relifish{isPreorder ? " 🌙" : ""}</a>
     )}
 
-    {!hideLocation && (
+    {hideLocation ? (
+      <div></div>
+    ) : (
       <div class:list={["v2-loc-wrap", !isPage && "v2-loc-tappable"]} id={isPage ? undefined : "v2-location-trigger"}>
         <div class="v2-loc-main">
-          {isPage && title ? title : locationLabel}
+          {isPage && title ? (
+            title === "Relifish" ? (
+              <a href="/shop" class="v2-logo" style="font-size: 16px;">Relifish</a>
+            ) : (
+              title
+            )
+          ) : locationLabel}
           {!isPage && <span class="v2-loc-arrow">▼</span>}
         </div>
         {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
