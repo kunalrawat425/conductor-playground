@@ -179,9 +179,10 @@ const tags = [
     ? (() => {
         const feeType = seller.delivery_fee_type || "fixed";
         if (feeType === "per_km") {
+          const rate = `₹${seller.delivery_fee_per_km}/km`;
           return seller.free_delivery_above > 0
-            ? `Distance-based delivery · Free above ₹${seller.free_delivery_above}`
-            : `Distance-based delivery fee`;
+            ? `${rate} delivery · Free above ₹${seller.free_delivery_above}`
+            : `${rate} delivery fee`;
         }
         if (seller.delivery_fee_amount > 0) {
           return seller.free_delivery_above > 0
@@ -201,6 +202,7 @@ const tags = [
     return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`;
   })()}
   canonical={canonicalUrl}
+  needsMap={true}
   header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
   nav={{ active: "home" }}
   jsonLd={seller && !notFound ? {
@@ -1132,43 +1134,12 @@ const tags = [
       document.getElementById("seller-checkout-total").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
       document.getElementById("seller-checkout-total-final").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
 
-      // Free delivery banner + delivery hint in checkout step 1 (omit for pre-order window on this seller)
-      const hideDeliverySavingsUi = isPreorderMode && sid === sellerId;
+      // Delivery hint shown only at step 2 (when buyer picks delivery method)
       const freeDelivBanner = document.getElementById("seller-checkout-free-delivery-banner");
       const delivHint = document.getElementById("seller-checkout-delivery-hint");
-      if (hideDeliverySavingsUi) {
-        if (freeDelivBanner) freeDelivBanner.style.display = "none";
-        if (delivHint) delivHint.style.display = "none";
-      } else if (deliveryFeeEnabled && (deliveryFeeAmount > 0 || deliveryFeeType === "per_km")) {
-        if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
-          if (freeDelivBanner) freeDelivBanner.style.display = "block";
-          if (delivHint) delivHint.style.display = "none";
-        } else {
-          if (freeDelivBanner) freeDelivBanner.style.display = "none";
-          if (delivHint) {
-            delivHint.style.display = "block";
-            if (deliveryFeeType === "per_km") {
-              const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
-              delivHint.textContent = `🚲 ₹${deliveryFeePerKm}/km distance-based delivery fee${freeNote}`;
-            } else if (deliveryFreeAbove > 0) {
-              const remaining = deliveryFreeAbove - subtotal;
-              delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee · Add ₹${remaining.toLocaleString("en-IN")} more for free delivery`;
-            } else {
-              delivHint.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee applies for delivery orders`;
-            }
-          }
-        }
-      } else {
-        if (freeDelivBanner) freeDelivBanner.style.display = "none";
-        if (delivHint) {
-          if (hasDelivery) {
-            delivHint.style.display = "block";
-            delivHint.textContent = "🚲 Free delivery available";
-          } else {
-            delivHint.style.display = "none";
-          }
-        }
-      }
+      // Always hide at step 1 open — the delivery radio change handler shows them at step 2
+      if (freeDelivBanner) freeDelivBanner.style.display = "none";
+      if (delivHint) delivHint.style.display = "none";
 
       // Reset delivery fee preview — method radio click will repopulate.
       const delivRow = document.getElementById("seller-checkout-delivery-row");
@@ -1247,17 +1218,48 @@ const tags = [
         const delivLabelEl = document.getElementById("seller-checkout-delivery-label");
         if (delivLabelEl) delivLabelEl.textContent = "Delivery fee";
         if (deliveryFeeType === "per_km" && isDelivery) {
-          // Show distance + rate — fee computed server-side at order time
-          if (distKm != null) {
+          if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
+            if (delivEl) delivEl.textContent = "FREE";
+            fee = 0;
+          } else if (distKm != null) {
             const estFee = Math.ceil(distKm * deliveryFeePerKm);
             if (delivEl) delivEl.textContent = `${distKm.toFixed(1)} km · ₹${estFee} est.`;
-            fee = estFee; // include estimate in total preview
+            fee = estFee;
           } else {
             if (delivEl) delivEl.textContent = "Select address to see fee";
             fee = 0;
           }
         } else {
           if (delivEl) delivEl.textContent = fee > 0 ? `₹${fee}` : "FREE";
+        }
+        // Show hint at step 2 when delivery is selected
+        const freeDelivBanner2 = document.getElementById("seller-checkout-free-delivery-banner");
+        const delivHint2 = document.getElementById("seller-checkout-delivery-hint");
+        if (isDelivery && !isPreorderMode) {
+          if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
+            if (freeDelivBanner2) freeDelivBanner2.style.display = "block";
+            if (delivHint2) delivHint2.style.display = "none";
+          } else if (deliveryFeeEnabled && (deliveryFeeAmount > 0 || deliveryFeeType === "per_km")) {
+            if (freeDelivBanner2) freeDelivBanner2.style.display = "none";
+            if (delivHint2) {
+              delivHint2.style.display = "block";
+              if (deliveryFeeType === "per_km") {
+                const freeNote = deliveryFreeAbove > 0 ? ` · Free above ₹${deliveryFreeAbove}` : "";
+                delivHint2.textContent = `🚲 ₹${deliveryFeePerKm}/km delivery fee${freeNote}`;
+              } else if (deliveryFreeAbove > 0) {
+                const remaining = deliveryFreeAbove - subtotal;
+                delivHint2.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee · Add ₹${remaining.toLocaleString("en-IN")} more for free delivery`;
+              } else {
+                delivHint2.textContent = `🚲 ₹${deliveryFeeAmount} delivery fee`;
+              }
+            }
+          } else if (hasDelivery) {
+            if (freeDelivBanner2) freeDelivBanner2.style.display = "none";
+            if (delivHint2) { delivHint2.style.display = "block"; delivHint2.textContent = "🚲 Free delivery"; }
+          }
+        } else {
+          if (freeDelivBanner2) freeDelivBanner2.style.display = "none";
+          if (delivHint2) delivHint2.style.display = "none";
         }
         const total = subtotal + fee;
         if (totalEl) totalEl.textContent = `₹${total.toLocaleString("en-IN")}`;
