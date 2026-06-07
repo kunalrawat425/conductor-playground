@@ -100,7 +100,7 @@ export const POST: APIRoute = async ({ request }) => {
     const sendsToday = row && row.send_date === today ? (row.sends_today ?? 0) : 0;
     if (sendsToday >= MAX_SENDS_PER_DAY) {
       return new Response(
-        JSON.stringify({ error: "Maximum 3 OTPs per day. Try again tomorrow." }),
+        JSON.stringify({ error: "Daily OTP limit reached. Try again tomorrow." }),
         { status: 429 }
       );
     }

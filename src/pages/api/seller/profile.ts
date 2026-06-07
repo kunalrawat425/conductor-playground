@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { verifyToken } from "../../../lib/server/auth-token";
 
 export const prerender = false;
 
@@ -17,6 +18,24 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!seller_id || !updates) {
       return new Response(JSON.stringify({ error: "seller_id and updates required" }), { status: 400 });
+    }
+    if (!verifyToken(request.headers.get("x-seller-token"), seller_id, "seller")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    }
+
+    // Validate optional fields before touching the DB
+    if (updates.upi_id !== undefined && updates.upi_id !== null && updates.upi_id !== "") {
+      const upi = String(updates.upi_id).trim();
+      // UPI ID: alphanumeric/dots/hyphens @ bank code
+      if (!/^[\w.\-]{2,256}@[a-zA-Z]{2,64}$/.test(upi)) {
+        return new Response(JSON.stringify({ error: "Invalid UPI ID format (e.g. 9876543210@upi)" }), { status: 400 });
+      }
+    }
+    if (updates.min_order_amount !== undefined && updates.min_order_amount !== null) {
+      const amt = Number(updates.min_order_amount);
+      if (!Number.isFinite(amt) || amt < 0) {
+        return new Response(JSON.stringify({ error: "Minimum order amount must be 0 or more" }), { status: 400 });
+      }
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

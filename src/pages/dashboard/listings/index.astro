@@ -44,6 +44,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   } from "../../../lib/order-timing";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
+  function getSellerHeaders() {
+    try {
+      const token = localStorage.getItem("rlf_seller_token") || "";
+      return token ? { "x-seller-token": token } : {};
+    } catch { return {}; }
+  }
   function escape(s: string) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!)); }
 
   let _sellerTiming: Record<string, unknown> | null = null;
@@ -198,9 +204,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             l.is_available = next;
             rerenderOne(lid);
             try {
-              const res = await fetch("/api/seller/listings", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+              const res = await fetch("/api/seller/listings", { method: "POST",
+                headers: { ...getSellerHeaders(), "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "update", seller_id: sellerId, listing_id: lid, updates: { is_available: next } }),
               });
               const data = await res.json();
@@ -222,9 +227,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             btn.disabled = true;
             btn.textContent = "…";
             try {
-              const res = await fetch("/api/seller/listings", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+              const res = await fetch("/api/seller/listings", { method: "POST",
+                headers: { ...getSellerHeaders(), "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "delete", seller_id: sellerId, listing_id: lid }),
               });
               const data = await res.json();

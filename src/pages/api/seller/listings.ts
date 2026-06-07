@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { canonicalPricingOptionsFromPayload, pricingOptionsUniformUnit } from "../../../lib/listing-pricing";
+import { verifyToken } from "../../../lib/server/auth-token";
 
 export const prerender = false;
 
@@ -19,6 +20,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!seller_id) {
       return new Response(JSON.stringify({ error: "seller_id required" }), { status: 400 });
+    }
+    if (!verifyToken(request.headers.get("x-seller-token"), seller_id, "seller")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

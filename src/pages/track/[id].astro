@@ -207,8 +207,10 @@ const { id } = Astro.params;
     if (o.payment_method === "razorpay") return "Paid via Razorpay";
     const paidAmt = o.paid_amount ? Number(o.paid_amount) : 0;
     const proofOnFile = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
-    if (paidAmt > 0 && proofOnFile) return "Paid via UPI · screenshot on file";
-    if (paidAmt > 0) return "Paid via UPI";
+    const verified = !!o.payment_verified_at;
+    // Only say "Paid" when payment is actually verified — paid_amount is pre-set at order creation
+    if (paidAmt > 0 && proofOnFile && verified) return "Paid via UPI · screenshot on file";
+    if (paidAmt > 0 && verified) return "Paid via UPI";
     if (proofOnFile) return "Payment proof submitted — seller will verify shortly";
     return RAZORPAY_ENABLED ? "Payment pending" : "Payment proof pending";
   }

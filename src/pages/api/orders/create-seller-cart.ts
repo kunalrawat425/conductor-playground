@@ -10,11 +10,9 @@ import {
 import { getListingOptionById, type ListingPricingSource } from "../../../lib/listing-pricing";
 import type { PlacementKind } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
-import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
+import { resolveListingOrderLine, type StandardOrderLinePayload, type PreorderLinePayload } from "../../../lib/server/resolve-listing-order-line";
 
-type ResolvedRow = Awaited<ReturnType<typeof resolveListingOrderLine>> extends { ok: true; line: infer L }
-  ? { line: L }
-  : never;
+type ResolvedRow = { line: StandardOrderLinePayload | PreorderLinePayload };
 
 export const prerender = false;
 
@@ -113,6 +111,9 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (order_type === "delivery" && !seller?.has_delivery) {
       return new Response(JSON.stringify({ error: "This seller does not offer delivery" }), { status: 400 });
     }
+    if (order_type === "delivery" && !buyer_addr) {
+      return new Response(JSON.stringify({ error: "Delivery address required" }), { status: 400 });
+    }
     if (order_type === "pickup" && seller?.has_pickup === false) {
       return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
     }
@@ -147,7 +148,8 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     for (const { line } of resolved) {
       if (line.kind === "preorder") {
-        const amountDue = line.total_price;
+        const preorder_delivery_fee = seller ? computeDeliveryFee(seller, line.total_price, order_type, deliveryDistanceKm) : 0;
+        const amountDue = line.total_price + preorder_delivery_fee;
         const { data: preOrder, error: preErr } = await supabase
           .from("orders")
           .insert({
@@ -159,7 +161,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity: line.quantity,
             quantity_unit: line.quantity_unit,
             total_price: line.total_price,
-            delivery_fee: 0,
+            delivery_fee: preorder_delivery_fee,
             platform_fee: 0,
             status: "pending_payment",
             placement_kind: "preorder",
@@ -222,7 +224,7 @@ export const POST: APIRoute = async ({ request, url }) => {
               quantity: line.quantity,
               quantity_unit: line.quantity_unit,
               total_price: line.total_price,
-              delivery_fee: 0,
+              delivery_fee: preorder_delivery_fee,
               statusLabel: "Pre-order placed — catch reserved for tomorrow",
               scheduled_for,
               buyer_phone,

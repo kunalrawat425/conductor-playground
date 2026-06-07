@@ -382,7 +382,8 @@ export function getListingOptionById(
   const opts = getListingPriceOptions(listing);
   if (opts.length === 0) return undefined;
   if (!optionId) return opts[0];
-  return opts.find((o) => o.id === optionId) ?? opts[0];
+  // Return undefined (not a fallback) so callers can reject unknown option IDs.
+  return opts.find((o) => o.id === optionId);
 }
 
 /** True when menu should show strikethrough list price + badge. */

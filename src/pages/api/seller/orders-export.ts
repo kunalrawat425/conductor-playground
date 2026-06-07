@@ -1,19 +1,23 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { fmtDateLongIST } from "../../../lib/format-ist";
+import { verifyToken } from "../../../lib/server/auth-token";
 
 export const prerender = false;
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
     const sellerId = url.searchParams.get("seller_id");
     const dateFilter = url.searchParams.get("date_filter") || "30d";
 
     if (!sellerId) {
       return new Response("seller_id required", { status: 400 });
+    }
+    if (!verifyToken(request.headers.get("x-seller-token"), sellerId, "seller")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     const sb = createClient(supabaseUrl, supabaseServiceKey);

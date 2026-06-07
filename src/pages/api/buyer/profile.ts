@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { verifyToken } from "../../../lib/server/auth-token";
 
 export const prerender = false;
 
@@ -19,6 +20,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!buyer_id || !updates || typeof updates !== "object") {
       return new Response(JSON.stringify({ error: "buyer_id and updates required" }), { status: 400 });
+    }
+    if (!verifyToken(request.headers.get("x-buyer-token"), buyer_id, "buyer")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     const sanitized: Record<string, string | null> = {};
