@@ -25,7 +25,13 @@ import Toast from "../../../components/ui/atoms/Toast.astro";
     import { validateSellerListingForm, focusListingField } from "../../../lib/listing-form-validation";
     import { supabase } from "../../../lib/supabase";
 
-    const sellerId = localStorage.getItem("rlf_seller_id");
+    const sellerId = localStorage.getItem("rlf_seller_id")
+  function getSellerHeaders() {
+    try {
+      const token = localStorage.getItem("rlf_seller_token") || "";
+      return token ? { "x-seller-token": token } : {};
+    } catch { return {}; }
+  };
     if (!sellerId) {
       location.href = "/dashboard/login";
     } else {
@@ -77,7 +83,7 @@ import Toast from "../../../components/ui/atoms/Toast.astro";
               const upForm = new FormData();
               upForm.append("seller_id", sellerId);
               upForm.append("file", photoFile);
-              const upRes = await fetch("/api/seller/upload-listing-photo", { method: "POST", body: upForm });
+              const upRes = await fetch("/api/seller/upload-listing-photo", { headers: getSellerHeaders(), method: "POST", body: upForm });
               const upData = await upRes.json();
               if (!upRes.ok) {
                 (window as any).v2Toast?.("error", "Photo upload failed", upData.error || "Unknown error");

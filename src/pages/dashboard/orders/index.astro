@@ -348,6 +348,13 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     try { return localStorage.getItem("rlf_seller_id"); } catch { return null; }
   }
 
+  function getSellerHeaders() {
+    try {
+      const token = localStorage.getItem("rlf_seller_token") || "";
+      return token ? { "x-seller-token": token } : {};
+    } catch { return {}; }
+  }
+
   function renderProfileCompletion(s: any) {
     const steps = [
       { label: "Business name", done: !!(s.name && s.name.trim() && s.name !== "New Seller") },
@@ -956,7 +963,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     btn.disabled = true;
     btn.textContent = "Loading…";
     try {
-      const res = await fetch(`/api/seller/payment-screenshot?order_id=${encodeURIComponent(orderId)}&seller_id=${encodeURIComponent(sellerId!)}&path=${encodeURIComponent(path)}`);
+      const res = await fetch(`/api/seller/payment-screenshot?order_id=${encodeURIComponent(orderId)}&seller_id=${encodeURIComponent(sellerId!)}&path=${encodeURIComponent(path)}`, { headers: getSellerHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       window.open(data.url, "_blank", "noopener");
@@ -1033,7 +1040,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             form.append("order_id", orderId);
             form.append("seller_id", sellerId!);
             form.append("file", file);
-            const uploadRes = await fetch("/api/seller/upload-refund", { method: "POST", body: form });
+            const uploadRes = await fetch("/api/seller/upload-refund", { headers: getSellerHeaders(), method: "POST", body: form });
             const uploadData = await uploadRes.json();
             if (uploadRes.ok && uploadData.path) {
               body.refund_screenshot_path = uploadData.path;
@@ -1048,9 +1055,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           if (note) body.refund_note = note;
         }
       }
-      const res = await fetch("/api/seller/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch("/api/seller/orders", { method: "POST",
+        headers: { ...getSellerHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -1058,9 +1064,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 
       // Pre-order verify: chain set_final_price if price entered
       if (action === "verify_payment" && Number.isFinite(body._preOrderPrice) && body._preOrderPrice > 0) {
-        await fetch("/api/seller/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        await fetch("/api/seller/orders", { method: "POST",
+          headers: { ...getSellerHeaders(), "Content-Type": "application/json" },
           body: JSON.stringify({ seller_id: sellerId, order_id: orderId, action: "set_final_price", final_price: body._preOrderPrice }),
         });
       }
@@ -1151,9 +1156,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     btn.textContent = `Verifying ${ids.length}…`;
     const results = await Promise.all(ids.map(async (id) => {
       try {
-        const res = await fetch("/api/seller/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const res = await fetch("/api/seller/orders", { method: "POST",
+          headers: { ...getSellerHeaders(), "Content-Type": "application/json" },
           body: JSON.stringify({ seller_id: sellerId, order_id: id, action: "verify_payment" }),
         });
         return res.ok;

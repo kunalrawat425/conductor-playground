@@ -7,6 +7,8 @@ function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
 }
 
+import { verifyToken } from "../../../lib/server/auth-token";
+
 export const prerender = false;
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
@@ -54,6 +56,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!seller_id || !order_id) {
       return new Response(JSON.stringify({ error: "seller_id and order_id required" }), { status: 400 });
+    }
+    if (!verifyToken(request.headers.get("x-seller-token"), seller_id, "seller")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
     if (!action && !status) {
       return new Response(JSON.stringify({ error: "action or status required" }), { status: 400 });
@@ -285,7 +290,7 @@ export const POST: APIRoute = async ({ request }) => {
       confirmed: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       paid: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       payment_required: ["confirmed", "cancelled"],
-      refunded: ["ready_for_pickup", "out_for_delivery"],
+      refunded: [],
       ready_for_pickup: ["completed", "cancelled"],
       out_for_delivery: ["completed", "cancelled"],
     };

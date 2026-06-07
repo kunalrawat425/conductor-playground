@@ -203,6 +203,12 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
+  function getSellerHeaders() {
+    try {
+      const token = localStorage.getItem("rlf_seller_token") || "";
+      return token ? { "x-seller-token": token } : {};
+    } catch { return {}; }
+  }
   const sellerId = getSellerId();
   if (!sellerId) {
     location.href = "/dashboard/login";
@@ -372,7 +378,7 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
         const form = new FormData();
         form.append("seller_id", sellerId!);
         form.append("file", storeFile);
-        const upRes = await fetch("/api/seller/upload-store-photo", { method: "POST", body: form });
+        const upRes = await fetch("/api/seller/upload-store-photo", { headers: getSellerHeaders(), method: "POST", body: form });
         const upData = await upRes.json();
         if (!upRes.ok) {
           storeErrEl.textContent = upData.error || "Store photo upload failed";
@@ -382,9 +388,8 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
         storeErrEl.style.display = "none";
       }
 
-      const res = await fetch("/api/seller/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch("/api/seller/profile", { method: "POST",
+        headers: { ...getSellerHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ seller_id: sellerId, updates }),
       });
       const data = await res.json();
@@ -452,7 +457,7 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
     const form = new FormData();
     form.append("seller_id", sellerId!);
     form.append("remove", "1");
-    await fetch("/api/seller/upload-store-photo", { method: "POST", body: form });
+    await fetch("/api/seller/upload-store-photo", { headers: getSellerHeaders(), method: "POST", body: form });
     (document.getElementById("p-store-preview") as HTMLElement).style.display = "none";
     (document.getElementById("p-store-preview-img") as HTMLImageElement).src = "";
     (document.getElementById("p-store-file") as HTMLInputElement).value = "";
@@ -498,9 +503,8 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         try {
-          const res = await fetch("/api/seller/profile", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          const res = await fetch("/api/seller/profile", { method: "POST",
+            headers: { ...getSellerHeaders(), "Content-Type": "application/json" },
             body: JSON.stringify({ seller_id: sellerId, updates: { lat, lng } }),
           });
           if (!res.ok) throw new Error("Failed to save");
@@ -566,7 +570,7 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
     try {
       const res = await fetch("/api/auth/verify-email", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...getSellerHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ role: "seller", id: sellerId, email }),
       });
       const data = await res.json();

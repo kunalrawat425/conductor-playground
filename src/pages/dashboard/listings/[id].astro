@@ -53,6 +53,12 @@ const speciesName = listing?.species || "Listing";
     import { supabase } from "../../../lib/supabase";
 
     const sellerId = localStorage.getItem("rlf_seller_id");
+  function getSellerHeaders() {
+    try {
+      const token = localStorage.getItem("rlf_seller_token") || "";
+      return token ? { "x-seller-token": token } : {};
+    } catch { return {}; }
+  }
     if (sellerId) {
       const form = document.getElementById("listing-form") as HTMLFormElement | null;
       if (form) {
@@ -101,7 +107,7 @@ const speciesName = listing?.species || "Listing";
                 const upForm = new FormData();
                 upForm.append("seller_id", sellerId);
                 upForm.append("file", photoFile);
-                const upRes = await fetch("/api/seller/upload-listing-photo", { method: "POST", body: upForm });
+                const upRes = await fetch("/api/seller/upload-listing-photo", { headers: getSellerHeaders(), method: "POST", body: upForm });
                 const upData = await upRes.json();
                 if (!upRes.ok) {
                   (window as any).v2Toast?.("error", "Photo upload failed", upData.error || "Unknown error");

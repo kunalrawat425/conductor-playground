@@ -352,7 +352,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
     // Fetch profile from server (truth)
     try {
-      const r = await fetch(`/api/buyer/profile?buyer_id=${buyerId}`);
+      const r = await fetch(`/api/buyer/profile?buyer_id=${buyerId}`, { headers: getBuyerHeaders() });
       const d = await r.json();
       if (r.ok && d.profile) {
         const fn = d.profile.first_name || "";
@@ -406,7 +406,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
       try {
         const res = await fetch("/api/buyer/profile", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...getBuyerHeaders(), "Content-Type": "application/json" },
           body: JSON.stringify({ buyer_id: buyerId, updates: { first_name, last_name, email } }),
         });
         const data = await res.json();

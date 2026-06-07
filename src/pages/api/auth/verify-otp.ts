@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { generateToken } from "../../../lib/server/auth-token";
 
 export const prerender = false;
 
@@ -92,8 +93,9 @@ export const POST: APIRoute = async ({ request }) => {
         .maybeSingle();
 
       if (existing) {
+        const seller_token = generateToken(existing.id, "seller");
         return new Response(
-          JSON.stringify({ success: true, seller_id: existing.id, name: existing.name, is_active: existing.is_active !== false }),
+          JSON.stringify({ success: true, seller_id: existing.id, name: existing.name, is_active: existing.is_active !== false, seller_token }),
           { status: 200 }
         );
       }
@@ -109,8 +111,9 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: "Failed to create seller: " + error.message }), { status: 500 });
       }
 
+      const seller_token = generateToken(newSeller.id, "seller");
       return new Response(
-        JSON.stringify({ success: true, seller_id: newSeller.id, name: newSeller.name, is_active: newSeller.is_active !== false }),
+        JSON.stringify({ success: true, seller_id: newSeller.id, name: newSeller.name, is_active: newSeller.is_active !== false, seller_token }),
         { status: 200 }
       );
     }
@@ -142,7 +145,8 @@ export const POST: APIRoute = async ({ request }) => {
       is_active = newBuyer.is_active !== false;
     }
 
-    return new Response(JSON.stringify({ success: true, buyer_id, is_active }), { status: 200 });
+    const buyer_token = generateToken(buyer_id, "buyer");
+    return new Response(JSON.stringify({ success: true, buyer_id, is_active, buyer_token }), { status: 200 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("verify-otp error:", err);

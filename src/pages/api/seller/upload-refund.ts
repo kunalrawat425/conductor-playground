@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 
+import { verifyToken } from "../../../lib/server/auth-token";
+
 export const prerender = false;
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
@@ -20,6 +22,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!order_id || !seller_id || !file) {
       return new Response(JSON.stringify({ error: "order_id, seller_id, and file required" }), { status: 400 });
+    }
+    if (!verifyToken(request.headers.get("x-seller-token"), seller_id, "seller")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
