@@ -298,8 +298,8 @@ const categories = [
       ? formatBuyerMenuUnitSuffix(opt).replace(/^\//, "")
       : escapeHtml(String((l.pricing_options as any[])?.[0]?.unit_label || "kg"));
     const sp = (l.species || "").toLowerCase();
-    // Always use species stock photo for consistency — never seller's listing photo
-    const chipPhoto = speciesPhotos[sp] || speciesPhotos["all"] || "";
+    // Seller's own listing photo first; fall back to species stock photo (never another seller's photo)
+    const chipPhoto = l.photo_url || speciesPhotos[sp] || speciesPhotos["all"] || "";
     const chipImg = chipPhoto
       ? `<img src="${escapeHtml(chipPhoto)}" alt="${escapeHtml(name)}" loading="lazy" class="v2-sc-m-img" />`
       : `<span class="v2-sc-m-emoji">${(sp.includes("prawn") ? "🦐" : sp.includes("crab") ? "🦀" : "🐟")}</span>`;
