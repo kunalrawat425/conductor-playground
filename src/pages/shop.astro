@@ -329,11 +329,12 @@ const categories = [
     const sectionHead = document.querySelector(".v2-section-head") as HTMLElement | null;
 
     // Update header location label
-    const locMain = document.querySelector(".v2-loc-main");
-    const locSub = document.querySelector(".v2-loc-sub");
+    const locText = document.querySelector(".v2-loc-text") as HTMLElement | null;
+    const locSub = document.getElementById("v2-loc-sub") as HTMLElement | null;
     const area = getBuyerArea();
-    if (locMain && area && area !== "Set location") {
-      locMain.firstChild!.textContent = area + " ";
+    if (locText && area && area !== "Set location") {
+      locText.textContent = area;
+      if (locSub) locSub.style.display = "none";
     }
 
     // No location set — show prompt immediately, skip Supabase fetch entirely
@@ -376,7 +377,7 @@ const categories = [
                 localStorage.setItem("rlf_buyer_lat", String(latitude));
                 localStorage.setItem("rlf_buyer_lng", String(longitude));
               } catch {}
-              if (locMain) locMain.firstChild!.textContent = a + " ";
+              if (locText) { locText.textContent = a; if (locSub) locSub.style.display = "none"; }
               loadSellers();
             } catch {}
           },
@@ -410,15 +411,15 @@ const categories = [
                 localStorage.setItem("rlf_buyer_lat", String(latitude));
                 localStorage.setItem("rlf_buyer_lng", String(longitude));
               } catch {}
-              if (locMain) locMain.firstChild!.textContent = a + " ";
+              if (locText) { locText.textContent = a; if (locSub) locSub.style.display = "none"; }
               (window as any).v2Toast?.("success", "Location set", a);
               loadSellers();
             } catch {}
           },
           () => {
-            // Denied or failed: open manual picker after a beat (don't be pushy — just hint via subtitle)
-            if (locMain) locMain.firstChild!.textContent = "Set location ";
-            if (locSub) locSub.textContent = "Tap to choose your area";
+            // Denied: reset to prompt state
+            if (locText) locText.textContent = "Set location";
+            if (locSub) { locSub.textContent = "Tap to choose your area"; locSub.style.display = ""; }
           },
           { timeout: 7000, maximumAge: 60_000 * 5 }
         );
