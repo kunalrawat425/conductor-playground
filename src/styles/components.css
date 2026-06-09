@@ -503,7 +503,7 @@
   font-size: 14px;
 }
 
-/* === BottomNav === */
+/* === BottomNav — modern pill-active style === */
 .v2-bottom-nav {
   position: fixed;
   bottom: 0;
@@ -515,7 +515,7 @@
   height: 64px;
   background: var(--v2-bg);
   border-top: 1px solid var(--v2-border);
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
   display: flex;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -525,7 +525,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   text-decoration: none;
   color: var(--v2-ink-4);
   font-family: var(--v2-font);
@@ -535,22 +535,25 @@
   min-height: 44px;
   transition: color var(--v2-dur-fast) var(--v2-ease);
 }
-.v2-nav-item::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 24px;
-  height: 2px;
-  background: var(--v2-brand);
-  border-radius: 0 0 2px 2px;
-  opacity: 0;
-  transition: opacity var(--v2-dur-fast) var(--v2-ease);
-}
+/* Remove old top-bar indicator — replaced by pill */
+.v2-nav-item::before { display: none; }
 .v2-nav-active {
   color: var(--v2-brand);
+  font-weight: 700;
 }
-.v2-nav-active::before {
-  opacity: 1;
+/* Pill wrap around icon */
+.v2-nav-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  transition: background var(--v2-dur-fast) var(--v2-ease), transform var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-nav-active .v2-nav-icon-wrap {
+  background: var(--v2-brand-l);
+  transform: scale(1.05);
 }
 .v2-nav-icon {
   display: flex;
@@ -559,20 +562,27 @@
   width: 22px;
   height: 22px;
   line-height: 1;
+  flex-shrink: 0;
 }
 .v2-nav-icon svg {
   width: 22px;
   height: 22px;
   stroke: currentColor;
-  transition: stroke var(--v2-dur-fast) var(--v2-ease);
+  transition: all var(--v2-dur-fast) var(--v2-ease);
+}
+/* Filled icons don't use stroke */
+.v2-nav-active .v2-nav-icon svg {
+  stroke: none;
+  fill: var(--v2-brand);
 }
 .v2-nav-label {
   line-height: 1;
+  letter-spacing: 0.01em;
 }
 .v2-nav-badge {
   position: absolute;
-  top: 10px;
-  right: 28%;
+  top: 8px;
+  right: 26%;
   background: var(--v2-red);
   color: #fff;
   font-weight: 700;
