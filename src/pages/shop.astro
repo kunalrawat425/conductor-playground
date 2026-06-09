@@ -153,15 +153,16 @@ const categories = [
     top: 0;
     z-index: 30;
     background: var(--v2-bg-2);
-    padding: 8px 16px 4px;
+    padding: 8px 0 4px;
     border-bottom: 1px solid var(--v2-border);
   }
-  .v2-sticky-cluster .v2-pb-inline { margin: 0 0 6px; }
+  /* PreorderBanner needs its own horizontal margin since cluster has no h-padding */
+  .v2-sticky-cluster .v2-pb-inline { margin: 0 16px 0; }
 
   /* Filter chips */
   .v2-filter-chips {
     display: flex; gap: 6px;
-    padding: 6px 16px 0;
+    padding: 6px 16px 8px;
     overflow-x: auto;
     scrollbar-width: none;
     align-items: center;
@@ -296,16 +297,26 @@ const categories = [
     const unitPart = opt
       ? formatBuyerMenuUnitSuffix(opt).replace(/^\//, "")
       : escapeHtml(String((l.pricing_options as any[])?.[0]?.unit_label || "kg"));
-    const emoji = (l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : "🐟";
-    return `<div class="v2-sc-chip"><span class="v2-sc-m-emoji">${emoji}</span><div><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${unitPart}</div></div></div>`;
+    const sp = (l.species || "").toLowerCase();
+    // Always use species stock photo for consistency — never seller's listing photo
+    const chipPhoto = speciesPhotos[sp] || speciesPhotos["all"] || "";
+    const chipImg = chipPhoto
+      ? `<img src="${escapeHtml(chipPhoto)}" alt="${escapeHtml(name)}" loading="lazy" class="v2-sc-m-img" />`
+      : `<span class="v2-sc-m-emoji">${(sp.includes("prawn") ? "🦐" : sp.includes("crab") ? "🦀" : "🐟")}</span>`;
+    return `<div class="v2-sc-chip">${chipImg}<div class="v2-sc-m-text"><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${unitPart}</div></div></div>`;
   }
 
-  /** At most 2 cells: two products, or first product + "+N" (N = number of additional listings). */
+  /** 1 → 1 chip full-width. 2 → 2 chips. 3+ → first + "+N more". */
   function sellerMenuChipsHtml(listings: any[] | undefined): string {
     const lst = listings || [];
     if (lst.length === 0) return "";
-    if (lst.length <= 2) return lst.map(listingChipHtml).join("");
-    return listingChipHtml(lst[0]) + `<div class="v2-sc-chip v2-sc-chip-more"><span class="v2-sc-m-more">+${lst.length - 1}</span></div>`;
+    const count = lst.length === 1 ? 1 : 2;
+    const inner = lst.length === 1
+      ? listingChipHtml(lst[0])
+      : lst.length === 2
+        ? lst.map(listingChipHtml).join("")
+        : listingChipHtml(lst[0]) + `<div class="v2-sc-chip v2-sc-chip-more"><span class="v2-sc-m-more">+${lst.length - 1} more</span></div>`;
+    return `<div class="v2-sc-menu" data-chips="${count}">${inner}</div>`;
   }
 
   async function loadSellers() {
@@ -476,6 +487,7 @@ const categories = [
         return {
           seller: s,
           listings,
+          allListings: rawListings,
           dist,
           open: openNow,
           preorderMode,
@@ -519,7 +531,29 @@ const categories = [
     maxKm: 25, // distance cap (km) when buyer location available
   };
 
-  // Species id → emoji for category strip tiles
+  // Species photos — same images as the landing page flyer (index.astro). No seller-specific photos.
+  const BASE_P = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
+  const FLYER_POMFRET = "https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0";
+  const speciesPhotos: Record<string, string> = {
+    all:     FLYER_POMFRET,
+    pomfret: FLYER_POMFRET,
+    surmai:  "https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline",
+    prawns:  "https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize",
+    bangda:  "https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize",
+    rawas:   "https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0",
+    crab:    "https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline",
+    bombil:  BASE_P + "/ocean/11_bombil.jpg",
+    shark:   BASE_P + "/bombay/shark.webp",
+    salmon:  BASE_P + "/bombay/salmon.webp",
+    halwa:   BASE_P + "/bombay/halwa.jpg",
+    rohu:    BASE_P + "/bombay/rohu.jpg",
+    basa:    BASE_P + "/bombay/basa.jpg",
+    bhetki:  BASE_P + "/bombay/bhetki.avif",
+    ghol:    BASE_P + "/bombay/ghol.png",
+    boi:     BASE_P + "/bombay/boi.jpg",
+  };
+
+  // Fallback emoji for species not in photos map
   const speciesEmoji: Record<string, string> = {
     pomfret: "🐠", surmai: "🐟", rawas: "🐟", bangda: "🐟",
     bombil: "🐡", prawns: "🦐", crab: "🦀", squid: "🦑",
@@ -568,32 +602,37 @@ const categories = [
     const activeCat = filterState.category;
     // Rebuild strip: All Fish first, then sorted species that have listings
     const items = [
-      { id: "all", name: "All Fish", emoji: "🐟" },
+      { id: "all", name: "All Fish", photo: speciesPhotos["all"] || "", emoji: "🐟" },
       ...sorted.map(id => ({
         id,
         name: speciesLabel[id] || id.charAt(0).toUpperCase() + id.slice(1),
+        photo: speciesPhotos[id] || "",
         emoji: speciesEmoji[id] || "🐟",
       })),
     ];
 
     strip.innerHTML = items.map(item => {
-      const url = item.id === "all" ? "/v2" : `/v2?cat=${item.id}`;
       const active = item.id === activeCat;
-      return `<a href="${url}" class="v2-cat-item${active ? " v2-cat-active" : ""}" role="tab" aria-selected="${active}">
-        <div class="v2-cat-tile"><span aria-hidden="true">${item.emoji}</span></div>
+      const tileContent = item.photo
+        ? `<img src="${item.photo}" alt="${item.name}" loading="lazy" decoding="async" />`
+        : `<span class="v2-cat-emoji-fallback" aria-hidden="true">${item.emoji}</span>`;
+      return `<button type="button" class="v2-cat-item${active ? " v2-cat-active" : ""}" data-cat="${item.id}" role="tab" aria-selected="${active}">
+        <div class="v2-cat-tile">${tileContent}</div>
         <div class="v2-cat-name">${item.name}</div>
-      </a>`;
+      </button>`;
     }).join("");
 
     // Re-wire click handlers for rebuilt strip
-    strip.querySelectorAll<HTMLAnchorElement>(".v2-cat-item").forEach(cat => {
-      cat.addEventListener("click", e => {
-        e.preventDefault();
-        const url = new URL((cat as HTMLAnchorElement).href, window.location.origin);
-        const catId = url.searchParams.get("cat") || "all";
+    strip.querySelectorAll<HTMLElement>(".v2-cat-item").forEach(cat => {
+      cat.addEventListener("click", () => {
+        const catId = cat.dataset.cat || "all";
         filterState.category = catId;
-        strip.querySelectorAll(".v2-cat-item").forEach(c => c.classList.remove("v2-cat-active"));
+        strip.querySelectorAll(".v2-cat-item").forEach(c => {
+          c.classList.remove("v2-cat-active");
+          c.setAttribute("aria-selected", "false");
+        });
         cat.classList.add("v2-cat-active");
+        cat.setAttribute("aria-selected", "true");
         renderFiltered();
       });
     });
@@ -699,7 +738,7 @@ const categories = [
 
     grid.innerHTML = filtered.map((g: any, index: number) => {
         const s = g.seller;
-        const top = sellerMenuChipsHtml(g.listings);
+        const top = sellerMenuChipsHtml((g as any).allListings || g.listings);
 
         const hue = pickHue(s.id);
         const hueColors: Record<SellerHue, string> = {
@@ -756,25 +795,31 @@ const categories = [
         const fullyClosed = false; // We no longer grey out or disable the card
 
         const sellerSlug = sellerNameToSlug(s.name);
+
+        // Card hero: store image if available, otherwise blue gradient + logo
+        const cardPhoto: string | null = (s as any).store_image_url || null;
+
         return `
         <a href="/s/${sellerSlug}" class="v2-seller-card">
           <div class="v2-sc-img" style="background:${hueColors[hue]};">
-            ${offerBadge}
-            ${(s as any).store_image_url
-              ? `<img src="${escapeHtml((s as any).store_image_url)}" alt="${escapeHtml(s.name)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />`
-              : `<img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-sc-emoji" style="height:36px;width:auto;display:block;filter:brightness(0) invert(1);opacity:0.6;" />`}
-          </div>
-          <div class="v2-sc-body">
-            <div class="v2-sc-top">
-              <div class="v2-sc-info">
-                <div class="v2-sc-name">${escapeHtml(cleanDisplayName(s.name))}</div>
-                ${subParts ? `<div class="v2-sc-loc">${escapeHtml(subParts)}</div>` : ""}
-              </div>
+            ${cardPhoto
+              ? `<img src="${escapeHtml(cardPhoto as string)}" alt="" loading="lazy" decoding="async" /><div class="v2-sc-img-overlay"></div>`
+              : `<img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-sc-relifish-logo" />`
+            }
+            <div class="v2-sc-img-badges">
+              ${offerBadge}
               ${ratingBadge}
             </div>
-            <div class="v2-sc-tags">${statusBadge}${pickupTag}</div>
           </div>
-          ${top ? `<div class="v2-sc-menu">${top}</div>` : ""}
+          <div class="v2-sc-body">
+            <div class="v2-sc-name-row">
+              <div class="v2-sc-name">${escapeHtml(cleanDisplayName(s.name))}</div>
+              ${statusBadge}
+            </div>
+            ${subParts ? `<div class="v2-sc-loc">${escapeHtml(subParts)}</div>` : ""}
+            ${pickupTag ? `<div style="margin-top:5px;">${pickupTag}</div>` : ""}
+          </div>
+          ${top || ""}
           ${deliveryBar}
         </a>`;
       }).join("");

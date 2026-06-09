@@ -306,6 +306,7 @@ export function setupListingPricingEditor(opts: {
       if (container.querySelectorAll(".pricing-row").length <= 1) return;
       wrap.remove();
       syncHidden();
+      syncAddButton();
     });
     wrap.querySelectorAll("input").forEach((el) => {
       el.addEventListener("input", syncHidden);
@@ -350,9 +351,24 @@ export function setupListingPricingEditor(opts: {
   initial.forEach((o) => renderRow(o));
   syncHidden();
 
+  const MAX_TIERS = 3;
+
+  function syncAddButton() {
+    const count = container.querySelectorAll(".pricing-row").length;
+    const disabled = count >= MAX_TIERS;
+    (addButton as HTMLButtonElement).disabled = disabled;
+    addButton.setAttribute("aria-disabled", String(disabled));
+    addButton.title = disabled ? "Maximum 3 price tiers allowed" : "";
+    addButton.style.opacity = disabled ? "0.4" : "";
+    addButton.style.cursor = disabled ? "not-allowed" : "";
+  }
+
   function addRow() {
+    const count = container.querySelectorAll(".pricing-row").length;
+    if (count >= MAX_TIERS) return;
     renderRow({ id: `opt_${Date.now()}`, label: "", price: 0, unit: resolvedUnit() });
     syncHidden();
+    syncAddButton();
   }
 
   addButton.addEventListener(
@@ -363,6 +379,9 @@ export function setupListingPricingEditor(opts: {
     },
     { capture: true }
   );
+
+  // Sync button state after initial rows render
+  syncAddButton();
 
   return { sync: syncHidden, addRow };
 }
