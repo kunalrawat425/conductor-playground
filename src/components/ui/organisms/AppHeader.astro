@@ -30,13 +30,7 @@ const SVG_CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="
       <a href={backHref} class="v2-back" aria-label="Back" set:html={SVG_BACK} />
     ) : (
       <a href="/shop" class="v2-logo" aria-label="Relifish home">
-        <img
-          src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png"
-          alt="Relifish"
-          class="v2-logo-img"
-          width="120" height="44"
-        />
-        {isPreorder && <span style="font-size:16px;line-height:1;margin-left:2px;">🌙</span>}
+        Relifish{isPreorder && <span style="font-size:14px;margin-left:4px;opacity:.85;">🌙</span>}
       </a>
     )}
 
@@ -47,10 +41,7 @@ const SVG_CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="
         <div class="v2-loc-main">
           {isPage && title ? (
             title === "Relifish" ? (
-              <a href="/shop" class="v2-logo" aria-label="Relifish home" style="font-size:16px;">
-                <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png"
-                  alt="Relifish" class="v2-logo-img" width="90" height="32" style="height:32px;" />
-              </a>
+              <a href="/shop" class="v2-logo" aria-label="Relifish home">Relifish</a>
             ) : (
               title
             )
