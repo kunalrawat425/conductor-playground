@@ -38,6 +38,34 @@ const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
 const SITE = "https://www.relifish.store";
 const canonicalUrl = sellerSlug ? `${SITE}/s/${sellerSlug}` : `${SITE}/seller/${id}`;
 
+// Server-side species photo map — same images as flyer (index.astro). Used in SSR cards.
+const _SB = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
+const ssrSpeciesPhotos: Record<string, string> = {
+  pomfret: "https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0",
+  surmai:  "https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline",
+  prawns:  "https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize",
+  bangda:  "https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize",
+  rawas:   "https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0",
+  crab:    "https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline",
+  bombil:  _SB + "/ocean/11_bombil.jpg",
+  shark:   _SB + "/bombay/shark.webp",
+  salmon:  _SB + "/bombay/salmon.webp",
+  halwa:   _SB + "/bombay/halwa.jpg",
+  rohu:    _SB + "/bombay/rohu.jpg",
+  basa:    _SB + "/bombay/basa.jpg",
+  bhetki:  _SB + "/bombay/bhetki.avif",
+  ghol:    _SB + "/bombay/ghol.png",
+  boi:     _SB + "/bombay/boi.jpg",
+};
+function getSsrSpeciesPhoto(species: string): string | null {
+  if (!species) return null;
+  const s = species.toLowerCase().trim();
+  return ssrSpeciesPhotos[s]
+    || (s.includes("prawn") ? ssrSpeciesPhotos.prawns : null)
+    || (s.includes("crab") ? ssrSpeciesPhotos.crab : null)
+    || null;
+}
+
 // /seller/[id] is internal — canonical always points to /s/[slug].
 // robots.txt blocks Googlebot from crawling /seller/ paths.
 // No 404 guard needed — Astro.locals is not preserved across rewrites.
@@ -399,12 +427,13 @@ const tags = [
                 if (!mn && !mx) return null;
                 return mn && mx && mn !== mx ? `₹${mn}–₹${mx}` : `₹${mn || mx}`;
               })();
+              const ssrImg = l.photo_url || getSsrSpeciesPhoto(l.species);
               return (
                 <article class="v2-item-card v2-ssr-card" data-listing-id={l.id}
                   style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);overflow:hidden;display:flex;flex-direction:row;">
-                  {l.photo_url && (
-                    <img src={l.photo_url} alt={`${sp} from ${sellerName}`} width="100" height="90"
-                      loading="lazy" style="width:100px;height:90px;object-fit:cover;flex-shrink:0;" />
+                  {ssrImg && (
+                    <img src={ssrImg} alt={`${sp} from ${sellerName}`} width="90" height="90"
+                      loading="lazy" style="width:90px;height:90px;object-fit:cover;flex-shrink:0;" />
                   )}
                   <div class="v2-item-body" style="padding:12px;flex:1;min-width:0;">
                     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:0 0 2px;">{sp}</h3>
@@ -524,6 +553,32 @@ const tags = [
       if (s.includes("crab")) return "🦀";
       if (s.includes("squid") || s.includes("octopus")) return "🦑";
       return "🐟";
+    }
+
+    // Generic species stock photos — same images as landing page flyer. No seller-specific photos.
+    const _BP = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
+    const _FP = "https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0";
+    const speciesPhotos = {
+      pomfret: _FP,
+      surmai:  "https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline",
+      prawns:  "https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize",
+      bangda:  "https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize",
+      rawas:   "https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0",
+      crab:    "https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline",
+      bombil:  _BP + "/ocean/11_bombil.jpg",
+      shark:   _BP + "/bombay/shark.webp",
+      salmon:  _BP + "/bombay/salmon.webp",
+      halwa:   _BP + "/bombay/halwa.jpg",
+      rohu:    _BP + "/bombay/rohu.jpg",
+      basa:    _BP + "/bombay/basa.jpg",
+      bhetki:  _BP + "/bombay/bhetki.avif",
+      ghol:    _BP + "/bombay/ghol.png",
+      boi:     _BP + "/bombay/boi.jpg",
+    };
+    function getSpeciesPhoto(sp) {
+      if (!sp) return null;
+      const s = sp.toLowerCase().trim();
+      return speciesPhotos[s] || (s.includes("prawn") ? speciesPhotos.prawns : s.includes("crab") ? speciesPhotos.crab : null);
     }
     function escape(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
@@ -822,10 +877,13 @@ const tags = [
       const discountBadge = hasDiscount
         ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-red);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
 
-      // Image: use photo if available, else emoji
+      // Image: seller's own photo → species stock photo → emoji
+      const stockPhoto = getSpeciesPhoto(l.species);
       const imgContent = l.photo_url
         ? `<img src="${escape(l.photo_url)}" alt="${escape(name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />`
-        : `<span class="v2-item-emoji">${emoji}</span>`;
+        : stockPhoto
+          ? `<img src="${escape(stockPhoto)}" alt="${escape(name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />`
+          : `<span class="v2-item-emoji">${emoji}</span>`;
 
       return `
         <div class="v2-item-card${totalInCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
