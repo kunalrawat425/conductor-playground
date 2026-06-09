@@ -48,12 +48,12 @@ const SVG_CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="
           ) : (
             <>
               <span class="v2-loc-pin" aria-hidden="true" set:html={SVG_PIN} />
-              {locationLabel}
+              <span class="v2-loc-text">{locationLabel}</span>
             </>
           )}
           {!isPage && <span class="v2-loc-arrow" aria-hidden="true" set:html={SVG_CHEVRON_DOWN} />}
         </div>
-        {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
+        {!isPage && <div class="v2-loc-sub" id="v2-loc-sub">{locationSub}</div>}
       </div>
     )}
 
