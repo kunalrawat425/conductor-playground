@@ -407,11 +407,6 @@
   text-overflow: ellipsis;
 }
 .v2-logo {
-  font-family: var(--v2-font);
-  font-weight: 800;
-  font-size: 18px;
-  color: #fff;
-  letter-spacing: -0.02em;
   text-decoration: none;
   flex-shrink: 0;
   display: flex;
@@ -419,48 +414,58 @@
   gap: 4px;
 }
 .v2-logo-img {
-  height: 44px;
+  height: 28px;
   width: auto;
   display: block;
   object-fit: contain;
   filter: brightness(0) invert(1);
-  transition: height var(--v2-dur-fast) var(--v2-ease);
 }
-@media (min-width: 769px) {
-  .v2-logo-img {
-    height: 50px;
-  }
-}
+/* Back button — SVG arrow, circular hit target */
 .v2-back {
-  font-size: 22px;
   color: #fff;
   text-decoration: none;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.v2-icon-btn {
-  width: 36px;
-  height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255,255,255,0.12);
+  transition: background var(--v2-dur-fast) var(--v2-ease);
+  flex-shrink: 0;
+}
+.v2-back:hover { background: rgba(255,255,255,0.22); }
+.v2-back svg { display: block; }
+/* Location pin dot */
+.v2-loc-pin {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.v2-loc-pin svg { display: block; }
+.v2-loc-arrow svg { display: block; }
+.v2-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255,255,255,0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
   color: #fff;
   text-decoration: none;
   flex-shrink: 0;
   position: relative;
-  transition: background var(--v2-dur-fast) var(--v2-ease);
-  border: none;
+  transition: background var(--v2-dur-fast) var(--v2-ease), border-color var(--v2-dur-fast) var(--v2-ease);
   cursor: pointer;
 }
 .v2-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255,255,255,0.3);
 }
+.v2-icon-btn svg { display: block; }
 .v2-cart-dot {
   position: absolute;
   top: -2px;
@@ -500,8 +505,12 @@
   z-index: 5;
 }
 .v2-search-card .v2-s-icon {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  color: var(--v2-ink-4);
+  flex-shrink: 0;
 }
+.v2-search-card .v2-s-icon svg { display: block; }
 
 /* === BottomNav — modern pill-active style === */
 .v2-bottom-nav {
@@ -2170,25 +2179,16 @@ body.v2-has-cart {
 }
 .v2-theme-sun,
 .v2-theme-moon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
-.v2-theme-sun {
-  display: inline;
-}
-.v2-theme-moon {
-  display: none;
-}
-[data-theme="dark"] .v2-theme-sun {
-  display: none;
-}
-[data-theme="dark"] .v2-theme-moon {
-  display: inline;
-}
+.v2-theme-sun { display: flex; }
+.v2-theme-moon { display: none; }
+[data-theme="dark"] .v2-theme-sun { display: none; }
+[data-theme="dark"] .v2-theme-moon { display: flex; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .v2-theme-sun {
-    display: none;
-  }
-  :root:not([data-theme="light"]) .v2-theme-moon {
-    display: inline;
-  }
+  :root:not([data-theme="light"]) .v2-theme-sun { display: none; }
+  :root:not([data-theme="light"]) .v2-theme-moon { display: flex; }
 }
