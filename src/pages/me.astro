@@ -535,7 +535,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
               <div class="v2-me-addr-text">${[a.flat, a.building, a.landmark, a.location_name].filter(Boolean).map(escape).join(", ")}</div>
             </div>
             <div class="v2-me-addr-actions">
-              ${!a.is_default ? `<button class="v2-me-addr-btn" data-act="default" data-id="${a.id}" aria-label="Set default">⭐</button>` : ''}
+              ${!a.is_default ? `<button class="v2-me-addr-btn" data-act="default" data-id="${a.id}" aria-label="Set as default address" title="Set as default" style="font:600 10px Inter;color:var(--v2-ink-3);padding:4px 7px;border:1px solid var(--v2-border);border-radius:6px;background:var(--v2-bg-2);">Default</button>` : ''}
               <button class="v2-me-addr-btn v2-me-addr-btn-del" data-act="delete" data-id="${a.id}" aria-label="Delete">🗑</button>
             </div>
           </div>`).join("");
