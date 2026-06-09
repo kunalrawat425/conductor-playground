@@ -14,13 +14,30 @@ const {
 } = Astro.props;
 const isPreorder = variant === "preorder";
 const isPage = variant === "page";
+
+const SVG_BACK = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`;
+const SVG_SUN  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+const SVG_MOON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+const SVG_USER = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+const SVG_CART = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`;
+const SVG_SEARCH = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>`;
+const SVG_PIN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>`;
+const SVG_CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
 ---
 <header class:list={["v2-header", isPreorder && "v2-header-preorder", showSearch && "v2-header-tall"]}>
   <div class="v2-header-row">
     {isPage && backHref ? (
-      <a href={backHref} class="v2-back" aria-label="Back">←</a>
+      <a href={backHref} class="v2-back" aria-label="Back" set:html={SVG_BACK} />
     ) : (
-      <a href="/shop" class="v2-logo">Relifish{isPreorder ? " 🌙" : ""}</a>
+      <a href="/shop" class="v2-logo" aria-label="Relifish home">
+        <img
+          src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png"
+          alt="Relifish"
+          class="v2-logo-img"
+          width="120" height="44"
+        />
+        {isPreorder && <span style="font-size:16px;line-height:1;margin-left:2px;">🌙</span>}
+      </a>
     )}
 
     {hideLocation ? (
@@ -30,12 +47,20 @@ const isPage = variant === "page";
         <div class="v2-loc-main">
           {isPage && title ? (
             title === "Relifish" ? (
-              <a href="/shop" class="v2-logo" style="font-size: 16px;">Relifish</a>
+              <a href="/shop" class="v2-logo" aria-label="Relifish home" style="font-size:16px;">
+                <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png"
+                  alt="Relifish" class="v2-logo-img" width="90" height="32" style="height:32px;" />
+              </a>
             ) : (
               title
             )
-          ) : locationLabel}
-          {!isPage && <span class="v2-loc-arrow">▼</span>}
+          ) : (
+            <>
+              <span class="v2-loc-pin" aria-hidden="true" set:html={SVG_PIN} />
+              {locationLabel}
+            </>
+          )}
+          {!isPage && <span class="v2-loc-arrow" aria-hidden="true" set:html={SVG_CHEVRON_DOWN} />}
         </div>
         {!isPage && locationSub && <div class="v2-loc-sub">{locationSub}</div>}
       </div>
@@ -48,24 +73,21 @@ const isPage = variant === "page";
       aria-label="Toggle theme"
       title="Toggle dark/light mode"
     >
-      <span class="v2-theme-sun">☀️</span>
-      <span class="v2-theme-moon">🌙</span>
+      <span class="v2-theme-sun" aria-hidden="true" set:html={SVG_SUN} />
+      <span class="v2-theme-moon" aria-hidden="true" set:html={SVG_MOON} />
     </button>
 
     {showCart ? (
-      <a href="/cart" class="v2-icon-btn v2-cart-icon" aria-label={`Cart with ${cartCount} items`}>
-        🛒
-        {cartCount > 0 && <span class="v2-cart-dot">{cartCount}</span>}
-      </a>
+      <a href="/cart" class="v2-icon-btn v2-cart-icon" aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? "s" : ""}`} set:html={SVG_CART + (cartCount > 0 ? `<span class="v2-cart-dot">${cartCount}</span>` : "")} />
     ) : (
-      <a href="/me" class="v2-icon-btn v2-profile" aria-label="Account">👤</a>
+      <a href="/me" class="v2-icon-btn v2-profile" aria-label="Account" set:html={SVG_USER} />
     )}
   </div>
 
   {showSearch && (
-    <a href="/search" class="v2-search-card" aria-label="Search">
-      <span class="v2-s-icon" aria-hidden="true">🔍</span>
-      <span>Search "Surmai", "Pomfret", sellers...</span>
+    <a href="/search" class="v2-search-card" aria-label="Search listings">
+      <span class="v2-s-icon" aria-hidden="true" set:html={SVG_SEARCH} />
+      <span>Search "Surmai", "Pomfret", sellers…</span>
     </a>
   )}
 </header>
