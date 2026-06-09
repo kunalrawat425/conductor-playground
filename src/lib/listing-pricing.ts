@@ -307,6 +307,9 @@ export function validateListingPricingJson(json: string): PricingJsonValidation 
       message: "Add at least one price with a positive ₹ amount (minimum ₹1 per tier).",
     };
   }
+  if (opts.length > 3) {
+    return { ok: false, message: "Maximum 3 price tiers allowed per listing." };
+  }
   for (const o of opts) {
     if (o.price < 1) {
       return { ok: false, message: "Each price must be at least ₹1." };

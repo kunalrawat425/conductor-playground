@@ -50,6 +50,12 @@ export const POST: APIRoute = async ({ request }) => {
           { status: 400 }
         );
       }
+      if (tiers.length > 3) {
+        return new Response(
+          JSON.stringify({ error: "Maximum 3 price tiers allowed per listing." }),
+          { status: 400 }
+        );
+      }
       if (!pricingOptionsUniformUnit(tiers)) {
         return new Response(
           JSON.stringify({

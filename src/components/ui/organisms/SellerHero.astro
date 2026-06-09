@@ -36,13 +36,21 @@ const subParts = [
 ].filter(Boolean).join(" · ");
 ---
 <section class="v2-sh-hero">
-  {storeImageUrl && (
-    <div style="position:relative;margin:-16px -16px 0 -16px;height:160px;overflow:hidden;">
-      <img src={storeImageUrl} alt={name} style="width:100%;height:100%;object-fit:cover;" loading="lazy" />
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,var(--v2-bg-2,#f8fafc) 100%);"></div>
-    </div>
-  )}
-
+  <!-- Hero banner: seller's store photo OR branded Relifish gradient fallback -->
+  <div style="position:relative;margin:-16px -16px 0 -16px;height:200px;overflow:hidden;">
+    {storeImageUrl
+      ? <>
+          <img src={storeImageUrl} alt={name} style="width:100%;height:100%;object-fit:cover;object-position:center;" loading="eager" />
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.55) 100%);"></div>
+        </>
+      : <>
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#0052CC,#0066FF 60%,#3b82f6);"></div>
+          <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png"
+            alt="Relifish"
+            style="position:absolute;bottom:14px;right:16px;height:28px;width:auto;filter:brightness(0) invert(1);opacity:0.6;pointer-events:none;" />
+        </>
+    }
+  </div>
 
   <div class="v2-sh-top">
     <div class="v2-sh-avatar" aria-hidden="true">
