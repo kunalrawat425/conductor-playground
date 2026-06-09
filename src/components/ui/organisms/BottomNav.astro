@@ -3,16 +3,21 @@ import type { BottomNavProps } from "../../../types/components";
 interface Props extends BottomNavProps {}
 const { active, ordersCount = 0, mode = "buyer" } = Astro.props;
 
+const SVG_HOME = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
+const SVG_ORDERS = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>`;
+const SVG_ACCOUNT = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+const SVG_INVENTORY = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+
 const buyerItems = [
-  { id: "home", label: "Home", icon: "🏠", href: "/shop" },
-  { id: "orders", label: "Orders", icon: "📋", href: "/track" },
-  { id: "account", label: "Account", icon: "👤", href: "/me" },
+  { id: "home", label: "Home", svg: SVG_HOME, href: "/shop" },
+  { id: "orders", label: "Orders", svg: SVG_ORDERS, href: "/track" },
+  { id: "account", label: "Account", svg: SVG_ACCOUNT, href: "/me" },
 ];
 
 const sellerItems = [
-  { id: "orders", label: "Orders", icon: "📋", href: "/dashboard/orders" },
-  { id: "listings", label: "Inventory", icon: "📦", href: "/dashboard/listings" },
-  { id: "account", label: "Profile", icon: "👤", href: "/dashboard/profile" },
+  { id: "orders", label: "Orders", svg: SVG_ORDERS, href: "/dashboard/orders" },
+  { id: "listings", label: "Inventory", svg: SVG_INVENTORY, href: "/dashboard/listings" },
+  { id: "account", label: "Profile", svg: SVG_ACCOUNT, href: "/dashboard/profile" },
 ];
 
 const items = mode === "seller" ? sellerItems : buyerItems;
@@ -24,7 +29,7 @@ const items = mode === "seller" ? sellerItems : buyerItems;
       class:list={["v2-nav-item", active === item.id && "v2-nav-active"]}
       aria-current={active === item.id ? "page" : undefined}
     >
-      <span class="v2-nav-icon" aria-hidden="true">{item.icon}</span>
+      <span class="v2-nav-icon" aria-hidden="true" set:html={item.svg} />
       <span class="v2-nav-label">{item.label}</span>
       {item.id === "orders" && ordersCount > 0 && (
         <span class="v2-nav-badge">{ordersCount}</span>
