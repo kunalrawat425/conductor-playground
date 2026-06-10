@@ -1,142 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Molecule — Validation States</title>
-<link rel="stylesheet" href="../_shared.css">
-<style>
-  .field{width:320px;margin-bottom:16px}
-  .field label{display:block;font:600 12px Inter;color:var(--ink2);margin-bottom:6px}
-  .field input{width:100%;padding:12px 14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);font:400 14px Inter;color:var(--ink);outline:none}
-  .field input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,102,255,.1)}
-  .field input.valid{border-color:var(--green);padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M13.485 4.515a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L6.778 9.808l5.293-5.293a1 1 0 011.414 0z' fill='%23059669'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
-  .field input.error{border-color:var(--red);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M8 1a7 7 0 100 14A7 7 0 008 1zm0 4v4m0 2v.01' stroke='%23DC2626' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
-  .helper{font:400 11px Inter;margin-top:4px;display:flex;align-items:center;gap:4px}
-  .helper.error{color:var(--red)}
-  .helper.success{color:var(--green)}
-  .helper.hint{color:var(--ink4)}
-
-  .strength{display:flex;gap:3px;margin-top:6px}
-  .strength .bar{flex:1;height:3px;background:var(--bg3);border-radius:2px}
-  .strength.weak .bar:nth-child(1){background:var(--red)}
-  .strength.medium .bar:nth-child(-n+2){background:var(--orange)}
-  .strength.strong .bar{background:var(--green)}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V3 Validation States — Relifish Design System</title>
+  <link rel="stylesheet" href="../_shared.css" />
 </head>
 <body>
-<div class="figma-page">
+<div class="ds-page">
   <h1>Validation States</h1>
-  <p class="sub">Inline validation. Real-time feedback. Helpful errors.</p>
+  <p class="ds-sub">Input field in 4 states: default, focused, error, success.</p>
 
-  <div class="component" data-name="Validation · Phone Number">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">empty / hint</span>
-        <div class="field">
-          <label>Phone number</label>
-          <input placeholder="98706 19974">
-          <div class="helper hint">10-digit Indian mobile number</div>
+  <div class="ds-component" data-name="Validation States">
+    <div class="ds-variants">
+
+      <!-- State 1: Default -->
+      <div class="ds-variant">
+        <div class="ds-label">Default</div>
+        <div style="max-width:260px;">
+          <label style="font:600 12px var(--v3-font);color:var(--v3-ink-2);display:block;margin-bottom:4px;">Phone number</label>
+          <input
+            placeholder="98706 19974"
+            style="width:100%;padding:10px 14px;border:1.5px solid var(--v3-border);border-radius:var(--v3-radius-sm);font:400 14px var(--v3-font);color:var(--v3-ink);background:var(--v3-bg);outline:none;"
+          />
+          <div style="font:400 11px var(--v3-font);color:var(--v3-ink-4);margin-top:4px;">10-digit Indian mobile number</div>
         </div>
       </div>
-      <div class="variant"><span class="variant-label">typing</span>
-        <div class="field">
-          <label>Phone number</label>
-          <input value="987" autofocus>
-          <div class="helper hint">7 more digits</div>
+
+      <!-- State 2: Focused -->
+      <div class="ds-variant">
+        <div class="ds-label">Focused</div>
+        <div style="max-width:260px;">
+          <label style="font:600 12px var(--v3-font);color:var(--v3-brand);display:block;margin-bottom:4px;">Phone number</label>
+          <input
+            value="9870"
+            style="width:100%;padding:10px 14px;border:2px solid var(--v3-brand);border-radius:var(--v3-radius-sm);font:400 14px var(--v3-font);color:var(--v3-ink);background:var(--v3-bg);outline:none;box-shadow:0 0 0 3px var(--v3-brand-l);"
+          />
+          <div style="font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:4px;">6 more digits</div>
         </div>
       </div>
-      <div class="variant"><span class="variant-label">valid</span>
-        <div class="field">
-          <label>Phone number</label>
-          <input class="valid" value="98706 19974">
-          <div class="helper success">✓ We'll send OTP here</div>
+
+      <!-- State 3: Error -->
+      <div class="ds-variant">
+        <div class="ds-label">Error</div>
+        <div style="max-width:260px;">
+          <label style="font:600 12px var(--v3-font);color:var(--v3-red);display:block;margin-bottom:4px;">Phone number</label>
+          <input
+            value="123"
+            style="width:100%;padding:10px 14px;border:2px solid var(--v3-red);border-radius:var(--v3-radius-sm);font:400 14px var(--v3-font);color:var(--v3-ink);background:var(--v3-red-l);outline:none;"
+          />
+          <div style="font:400 11px var(--v3-font);color:var(--v3-red);margin-top:4px;">Enter a valid 10-digit number</div>
         </div>
       </div>
-      <div class="variant"><span class="variant-label">error · too short</span>
-        <div class="field">
-          <label>Phone number</label>
-          <input class="error" value="9870">
-          <div class="helper error">⚠ Too short. Phone must be 10 digits.</div>
+
+      <!-- State 4: Success -->
+      <div class="ds-variant">
+        <div class="ds-label">Success</div>
+        <div style="max-width:260px;">
+          <label style="font:600 12px var(--v3-font);color:var(--v3-green);display:block;margin-bottom:4px;">Phone number</label>
+          <div style="position:relative;">
+            <input
+              value="9876019974"
+              style="width:100%;padding:10px 36px 10px 14px;border:2px solid var(--v3-green);border-radius:var(--v3-radius-sm);font:400 14px var(--v3-font);color:var(--v3-ink);background:var(--v3-green-l);outline:none;"
+            />
+            <!-- Checkmark icon -->
+            <svg style="position:absolute;right:10px;top:50%;transform:translateY(-50%);" viewBox="0 0 16 16" width="16" height="16"><path d="M13.485 4.515a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L6.778 9.808l5.293-5.293a1 1 0 011.414 0z" fill="#059669"/></svg>
+          </div>
+          <div style="font:400 11px var(--v3-font);color:var(--v3-green);margin-top:4px;">We'll send OTP here</div>
         </div>
       </div>
-      <div class="variant"><span class="variant-label">error · invalid format</span>
-        <div class="field">
-          <label>Phone number</label>
-          <input class="error" value="abc123">
-          <div class="helper error">⚠ Numbers only please</div>
-        </div>
-      </div>
+
+    </div><!-- /ds-variants -->
+
+    <div class="ds-spec">
+      <b>Default:</b> border: 1.5px solid var(--v3-border); background: var(--v3-bg); hint text in var(--v3-ink-4).<br/>
+      <b>Focused:</b> border: 2px solid var(--v3-brand); box-shadow: 0 0 0 3px var(--v3-brand-l); label color: var(--v3-brand).<br/>
+      <b>Error:</b> border: 2px solid var(--v3-red); background: var(--v3-red-l); label + helper color: var(--v3-red).<br/>
+      <b>Success:</b> border: 2px solid var(--v3-green); background: var(--v3-green-l); checkmark icon; label + helper: var(--v3-green).<br/>
+      <b>Validation timing:</b> show hint while typing → success on valid → error after blur if invalid.
     </div>
-    <div class="spec"><b>Real-time validation:</b> hint while typing → success on valid → error after blur if invalid · always show what's expected</div>
   </div>
 
-  <div class="component" data-name="Validation · Email (Optional)">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">valid</span>
-        <div class="field">
-          <label>Email <span style="color:var(--ink4);font-weight:400">(optional)</span></label>
-          <input class="valid" value="priya@example.com">
-          <div class="helper success">✓ Looks good</div>
-        </div>
-      </div>
-      <div class="variant"><span class="variant-label">error</span>
-        <div class="field">
-          <label>Email <span style="color:var(--ink4);font-weight:400">(optional)</span></label>
-          <input class="error" value="priya@">
-          <div class="helper error">⚠ Missing the part after @</div>
-        </div>
-      </div>
-    </div>
-    <div class="spec"><b>Specific errors</b> · "missing part after @" not "invalid email"</div>
-  </div>
-
-  <div class="component" data-name="Validation · Address Fields">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">incomplete</span>
-        <div class="field">
-          <label>Flat / House no.</label>
-          <input class="error" value="">
-          <div class="helper error">⚠ Required for delivery</div>
-        </div>
-        <div class="field">
-          <label>Building name</label>
-          <input class="valid" value="Sagar Mahal">
-        </div>
-        <div class="field">
-          <label>Pincode</label>
-          <input class="error" value="40005">
-          <div class="helper error">⚠ Pincode must be 6 digits</div>
-        </div>
-      </div>
-    </div>
-    <div class="spec"><b>Error on submit attempt</b> · don't error on blank/typing · clear required vs optional</div>
-  </div>
-
-  <div class="component" data-name="Validation · OTP Input">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">success</span>
-        <div class="field">
-          <label>Enter OTP</label>
-          <div style="display:flex;gap:6px"><input class="valid" value="9" style="width:44px;text-align:center"><input class="valid" value="8" style="width:44px;text-align:center"><input class="valid" value="7" style="width:44px;text-align:center"><input class="valid" value="0" style="width:44px;text-align:center"><input class="valid" value="6" style="width:44px;text-align:center"><input class="valid" value="3" style="width:44px;text-align:center"></div>
-          <div class="helper success">✓ Verified · Logging you in...</div>
-        </div>
-      </div>
-      <div class="variant"><span class="variant-label">wrong</span>
-        <div class="field">
-          <label>Enter OTP</label>
-          <div style="display:flex;gap:6px"><input class="error" value="1" style="width:44px;text-align:center"><input class="error" value="2" style="width:44px;text-align:center"><input class="error" value="3" style="width:44px;text-align:center"><input class="error" value="4" style="width:44px;text-align:center"><input class="error" value="5" style="width:44px;text-align:center"><input class="error" value="6" style="width:44px;text-align:center"></div>
-          <div class="helper error">⚠ Incorrect OTP. 2 tries left.</div>
-        </div>
-      </div>
-      <div class="variant"><span class="variant-label">expired</span>
-        <div class="field">
-          <label>Enter OTP</label>
-          <div style="display:flex;gap:6px"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"><input style="width:44px;text-align:center"></div>
-          <div class="helper error">⚠ OTP expired. <a href="#" style="color:var(--brand)">Resend</a></div>
-        </div>
-      </div>
-    </div>
-    <div class="spec"><b>Track tries left</b> · 3 attempts then rate-limit · resend always available · auto-submit on 6th digit</div>
-  </div>
 </div>
 </body>
 </html>

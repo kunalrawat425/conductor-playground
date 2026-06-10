@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Screen 09 — Seller Listing Form (Seller Persona)</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+/* ── Header ── */
+.seller-header{
+  background:var(--v3-brand);padding:10px 16px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:var(--v3-z-header);
+}
+.hdr-back{font-size:18px;color:#fff;cursor:pointer;flex-shrink:0}
+.hdr-title{flex:1;font:700 16px var(--v3-font);color:#fff;text-align:center}
+.hdr-action{font:600 13px var(--v3-font);color:rgba(255,255,255,.8);cursor:pointer;flex-shrink:0}
+
+/* ── Form sections ── */
+.form-section{padding:16px 16px 0}
+.form-label{font:700 12px var(--v3-font);color:var(--v3-ink-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.form-select{
+  width:100%;padding:12px 14px;border:1.5px solid var(--v3-border);
+  border-radius:var(--v3-radius);font:600 14px var(--v3-font);color:var(--v3-ink);
+  background:var(--v3-bg);cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;
+}
+.form-select:focus{outline:none;border-color:var(--v3-brand)}
+
+/* ── Photo upload ── */
+.photo-upload{
+  width:120px;height:120px;border:2px dashed var(--v3-border);border-radius:var(--v3-radius);
+  background:var(--v3-bg-2);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;
+}
+.photo-upload .icon{font-size:24px;color:var(--v3-ink-3)}
+.photo-upload span{font:600 11px var(--v3-font);color:var(--v3-ink-3)}
+.photo-uploaded{
+  width:120px;height:120px;border-radius:var(--v3-radius);overflow:hidden;
+  position:relative;
+}
+.photo-uploaded img{width:100%;height:100%;object-fit:cover}
+.photo-edit-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;
+}
+
+/* ── Price tiers ── */
+.tiers-section{
+  margin:0 16px;background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);overflow:hidden;
+}
+.tier-row{
+  display:flex;align-items:center;gap:8px;padding:11px 14px;
+  border-bottom:1px solid var(--v3-border);
+}
+.tier-row:last-child{border-bottom:none}
+.tier-weight{font:600 12px var(--v3-font);color:var(--v3-ink-2);width:36px;flex-shrink:0}
+.tier-price-input{
+  flex:1;padding:8px 10px;border:1.5px solid var(--v3-border);
+  border-radius:var(--v3-radius-sm);font:700 14px var(--v3-font);color:var(--v3-ink);
+  background:var(--v3-bg-2);
+}
+.tier-price-input:focus{outline:none;border-color:var(--v3-brand)}
+.tier-delete{
+  font-size:14px;color:var(--v3-red);cursor:pointer;padding:4px;
+  border:none;background:none;flex-shrink:0;line-height:1;
+}
+
+/* ── Add tier button ── */
+.add-tier-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px;margin:8px 16px;
+  border:1.5px dashed var(--v3-brand);border-radius:var(--v3-radius);
+  font:700 12px var(--v3-font);color:var(--v3-brand);cursor:pointer;background:var(--v3-brand-l);
+}
+.add-tier-btn.disabled{
+  opacity:0.4;cursor:not-allowed;
+  border-color:var(--v3-border);background:var(--v3-bg-3);color:var(--v3-ink-4);
+}
+
+/* ── Max hint ── */
+.max-hint{
+  margin:0 16px 10px;padding:6px 12px;
+  background:var(--v3-green-l);border-radius:var(--v3-radius-sm);
+  display:flex;align-items:center;gap:6px;
+}
+.max-hint span{font:600 11px var(--v3-font);color:var(--v3-green)}
+
+/* ── Status toggle tabs ── */
+.status-tabs{
+  display:flex;gap:4px;
+  background:var(--v3-bg-3);border-radius:var(--v3-radius-full);
+  padding:3px;
+}
+.status-tab{
+  flex:1;padding:7px 10px;text-align:center;border-radius:var(--v3-radius-full);
+  font:600 11px var(--v3-font);cursor:pointer;white-space:nowrap;
+  color:var(--v3-ink-3);transition:all .15s;
+}
+.status-tab.active{background:var(--v3-bg);color:var(--v3-ink);box-shadow:var(--v3-shadow-sm)}
+
+/* ── Toggle switch ── */
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;padding:12px 0;
+  border-bottom:1px solid var(--v3-border);
+}
+.toggle-label{font:600 13px var(--v3-font);color:var(--v3-ink)}
+.toggle-sub{font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:2px}
+.toggle-switch{
+  width:44px;height:24px;border-radius:12px;background:var(--v3-indigo);
+  position:relative;flex-shrink:0;cursor:pointer;
+}
+.toggle-switch::after{
+  content:'';position:absolute;top:2px;right:2px;
+  width:20px;height:20px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.toggle-switch.off{background:var(--v3-border)}
+.toggle-switch.off::after{left:2px;right:auto}
+
+/* ── Input field ── */
+.form-input{
+  width:100%;padding:12px 14px;border:1.5px solid var(--v3-border);
+  border-radius:var(--v3-radius);font:600 14px var(--v3-font);color:var(--v3-ink);
+  background:var(--v3-bg);
+}
+.form-input:focus{outline:none;border-color:var(--v3-brand)}
+
+/* ── Save CTA (fixed bottom) ── */
+.save-cta-wrap{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:12px 16px;background:var(--v3-bg);border-top:1px solid var(--v3-border);
+}
+.save-cta{
+  display:block;width:100%;padding:14px;
+  background:var(--v3-brand);color:#fff;border:none;
+  border-radius:var(--v3-radius-full);font:700 14px var(--v3-font);
+  text-align:center;cursor:pointer;box-shadow:var(--v3-shadow-md);
+}
+</style>
+</head>
+<body>
+<div class="ds-page">
+  <h1>Screen 09 — Seller Listing Form (Seller Persona)</h1>
+  <p class="ds-sub">Three frames: new listing with 1 tier, max-3 tier enforcement UI, and edit existing listing with image + status toggle + pre-order settings.</p>
+
+  <div style="display:flex;gap:32px;flex-wrap:wrap;">
+
+    <!-- ═════════════════════════════════
+         Frame 1: New listing — 1 tier
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 1 — New Listing (1 Tier)">
+      <p class="ds-label" style="margin-bottom:12px">New Listing · Add Form</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="hdr-back">←</span>
+            <span class="hdr-title">Add Listing</span>
+          </div>
+
+          <!-- Species dropdown -->
+          <div class="form-section">
+            <div class="form-label">Species</div>
+            <select class="form-select">
+              <option selected>Pomfret (पापलेट)</option>
+              <option>Surmai (Kingfish)</option>
+              <option>Prawns (कोलंबी)</option>
+              <option>Bangda (Mackerel)</option>
+            </select>
+          </div>
+
+          <!-- Photo upload -->
+          <div class="form-section">
+            <div class="form-label">Photo</div>
+            <div class="photo-upload">
+              <div class="icon">📷</div>
+              <span>Add photo</span>
+            </div>
+          </div>
+
+          <!-- Price tiers -->
+          <div class="form-section" style="padding-bottom:8px">
+            <div class="form-label">Price Tiers</div>
+          </div>
+          <div class="tiers-section">
+            <div class="tier-row">
+              <span class="tier-weight">250g</span>
+              <input type="text" class="tier-price-input" value="₹449">
+              <button class="tier-delete">✕</button>
+            </div>
+          </div>
+
+          <!-- Add tier button (active) -->
+          <div class="add-tier-btn">
+            <span>+</span>
+            <span>Add another price tier</span>
+          </div>
+
+          <div style="height:70px"></div>
+
+          <!-- Save CTA fixed bottom -->
+          <div class="save-cta-wrap">
+            <button class="save-cta">Save listing</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════
+         Frame 2: Max 3 tiers reached
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 2 — Max 3 Tiers">
+      <p class="ds-label" style="margin-bottom:12px">Max 3 Tiers · Disabled State</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="hdr-back">←</span>
+            <span class="hdr-title">Add Listing</span>
+          </div>
+
+          <!-- Species -->
+          <div class="form-section">
+            <div class="form-label">Species</div>
+            <select class="form-select">
+              <option selected>Surmai (Kingfish)</option>
+            </select>
+          </div>
+
+          <!-- Price tiers section -->
+          <div class="form-section" style="padding-bottom:8px">
+            <div class="form-label">Price Tiers</div>
+          </div>
+          <div class="tiers-section">
+            <div class="tier-row">
+              <span class="tier-weight">250g</span>
+              <input type="text" class="tier-price-input" value="₹449">
+              <button class="tier-delete">✕</button>
+            </div>
+            <div class="tier-row">
+              <span class="tier-weight">500g</span>
+              <input type="text" class="tier-price-input" value="₹799">
+              <button class="tier-delete">✕</button>
+            </div>
+            <div class="tier-row">
+              <span class="tier-weight">1kg</span>
+              <input type="text" class="tier-price-input" value="₹1499">
+              <button class="tier-delete">✕</button>
+            </div>
+          </div>
+
+          <!-- Disabled add button -->
+          <div class="add-tier-btn disabled" title="Maximum 3 price tiers allowed">
+            <span>+</span>
+            <span>Add another price tier</span>
+          </div>
+
+          <!-- Max hint badge -->
+          <div class="max-hint">
+            <span style="font-size:14px">✓</span>
+            <span>Max 3 tiers — enforced in UI, validation &amp; API</span>
+          </div>
+
+          <div style="height:70px"></div>
+
+          <div class="save-cta-wrap">
+            <button class="save-cta">Save listing</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════
+         Frame 3: Edit existing listing
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 3 — Edit Listing">
+      <p class="ds-label" style="margin-bottom:12px">Edit Existing Listing</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="hdr-back">←</span>
+            <span class="hdr-title">Edit Listing</span>
+          </div>
+
+          <!-- Species (locked on edit) -->
+          <div class="form-section">
+            <div class="form-label">Species</div>
+            <select class="form-select">
+              <option selected>Pomfret (पापलेट)</option>
+            </select>
+          </div>
+
+          <!-- Photo uploaded -->
+          <div class="form-section">
+            <div class="form-label">Photo</div>
+            <div class="photo-uploaded">
+              <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret photo">
+              <div class="photo-edit-overlay">✏️</div>
+            </div>
+          </div>
+
+          <!-- Status toggle tabs -->
+          <div class="form-section">
+            <div class="form-label">Availability Status</div>
+            <div class="status-tabs">
+              <div class="status-tab active">Available</div>
+              <div class="status-tab">Paused</div>
+              <div class="status-tab">Out of stock</div>
+            </div>
+          </div>
+
+          <!-- Pre-order settings -->
+          <div class="form-section">
+            <div class="form-label">Pre-order Settings</div>
+            <div style="background:var(--v3-bg);border-radius:var(--v3-radius);box-shadow:var(--v3-shadow);padding:0 14px">
+              <!-- Pre-order toggle ON -->
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Enable pre-orders</div>
+                  <div class="toggle-sub">Buyers can reserve this for tomorrow</div>
+                </div>
+                <div class="toggle-switch"></div>
+              </div>
+              <!-- Cutoff time -->
+              <div class="toggle-row" style="border-bottom:none">
+                <div>
+                  <div class="toggle-label">Cutoff time</div>
+                  <div class="toggle-sub">Last time to accept orders</div>
+                </div>
+                <input type="time" value="22:00" style="border:1.5px solid var(--v3-indigo);border-radius:var(--v3-radius-sm);padding:5px 8px;font:600 12px var(--v3-font);color:var(--v3-indigo);background:var(--v3-indigo-l)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Weight available -->
+          <div class="form-section" style="padding-bottom:12px">
+            <div class="form-label">Weight Available (kg)</div>
+            <input type="text" class="form-input" value="2.5" placeholder="e.g. 2.5">
+          </div>
+
+          <div style="height:70px"></div>
+
+          <div class="save-cta-wrap">
+            <button class="save-cta">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

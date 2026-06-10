@@ -2,128 +2,128 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Organism — App Header</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V3 App Header — Relifish Design System</title>
 <link rel="stylesheet" href="../_shared.css">
 <style>
-  .header{width:360px;padding:12px 16px;background:var(--brand);display:flex;align-items:center;gap:12px}
-  .logo{font:800 18px Inter;color:#fff;letter-spacing:-.02em}
-  .loc-wrap{flex:1;min-width:0}
-  .loc-main{font:700 14px Inter;color:#fff;display:flex;align-items:center;gap:4px}
-  .loc-sub{font:400 11px Inter;color:rgba(255,255,255,.75);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .loc-arrow{font-size:10px}
-  .profile{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer}
-  .cart-icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;position:relative}
-  .cart-icon .dot{position:absolute;top:-2px;right:-2px;background:var(--orange);color:#fff;font:700 9px Inter;min-width:16px;height:16px;border-radius:9999px;display:flex;align-items:center;justify-content:center;padding:0 4px}
-
-  .search-card{width:336px;margin-top:-14px;margin-left:12px;padding:14px 16px;background:#fff;border-radius:var(--radius);font:400 13px Inter;color:var(--ink4);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px;position:relative;z-index:10}
+  .v3-header-container {
+    width: 360px;
+    overflow: hidden;
+    border-radius: var(--v3-radius);
+    box-shadow: var(--v3-shadow-md);
+  }
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>App Header</h1>
-  <p class="sub">Top-of-app header. Brand presence + location + actions.</p>
+<div class="ds-page">
+  <h1>V3 App Header</h1>
+  <p class="ds-sub">Top-of-app header — brand presence, location, and quick actions. Three variants shown in 360px containers.</p>
 
-  <div class="component" data-name="AppHeader · Default">
-    <div class="component-variants">
-      <div>
-        <div class="header">
-          <span class="logo">relifish</span>
-          <div class="loc-wrap">
-            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
-            <div class="loc-sub">Deliver in 45 min · 3 sellers nearby</div>
-          </div>
-          <div class="profile">👤</div>
+  <!-- Variant 1: Default (home page) -->
+  <div class="ds-component" data-name="AppHeader / Default (Home)">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <span class="ds-label">Default — Home page</span>
+        <div class="v3-header-container">
+          <header style="background:var(--v3-brand);padding:12px 16px 8px;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:8px;">
+            <!-- Logo -->
+            <a href="#" style="font:800 19px var(--v3-font);color:#fff;text-decoration:none;letter-spacing:-.03em;line-height:1;">Relifish</a>
+            <!-- Location -->
+            <div style="min-width:0;cursor:pointer;">
+              <div style="font:700 14px var(--v3-font);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;">
+                <svg viewBox="0 0 24 24" fill="#fff" width="14" height="14" style="flex-shrink:0;opacity:.85;"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+                <span>Andheri West</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div style="font:400 11px var(--v3-font);color:rgba(255,255,255,.7);white-space:nowrap;">Tap to change area</div>
+            </div>
+            <!-- Theme toggle -->
+            <button style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
+            <!-- Profile -->
+            <a href="#" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </a>
+          </header>
+        </div>
+        <div class="ds-spec">
+          <b>Grid:</b> auto / 1fr / 34px / 34px · <b>Height:</b> ~58px<br>
+          <b>Logo:</b> 800/19px, letter-spacing −0.03em · <b>bg:</b> var(--v3-brand)<br>
+          <b>Action buttons:</b> 34px circle, rgba(255,255,255,.15) bg + .18 border
         </div>
       </div>
-    </div>
-    <div class="spec">
-      <b>Height:</b> 56px (content) · <b>bg:</b> #0066FF · <b>sticky top</b><br>
-      <b>Logo:</b> 800/18px lowercase · <b>Location:</b> 700/14 + 400/11 subtitle<br>
-      <b>Profile:</b> 32px circle · rgba(255,255,255,.2) bg
     </div>
   </div>
 
-  <div class="component" data-name="AppHeader · With Search (Home)">
-    <div class="component-variants">
-      <div>
-        <div class="header" style="padding-bottom:20px">
-          <span class="logo">relifish</span>
-          <div class="loc-wrap">
-            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
-            <div class="loc-sub">Deliver in 45 min</div>
-          </div>
-          <div class="cart-icon">🛒<span class="dot">2</span></div>
+  <!-- Variant 2: Page header with back button -->
+  <div class="ds-component" data-name="AppHeader / Page (Back Button)">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <span class="ds-label">Page header — back arrow + title</span>
+        <div class="v3-header-container">
+          <header style="background:var(--v3-brand);padding:12px 16px 8px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;">
+            <!-- Back button -->
+            <a href="#" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.12);border:none;display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            </a>
+            <!-- Page title -->
+            <div style="min-width:0;padding:0 4px;">
+              <div style="font:700 16px var(--v3-font);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;">Fish Tokri</div>
+              <div style="font:400 11px var(--v3-font);color:rgba(255,255,255,.7);white-space:nowrap;">Thane · 12.2 km away</div>
+            </div>
+            <!-- More options -->
+            <button style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.12);border:none;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+          </header>
         </div>
-        <div class="search-card">
-          <span>🔍</span> Search "Surmai", "Pomfret", sellers...
+        <div class="ds-spec">
+          <b>Grid:</b> 34px / 1fr / 34px · back arrow is 2.5 stroke-width<br>
+          <b>Sub-text:</b> seller location + distance · truncates on long names<br>
+          <b>Right:</b> overflow menu (share, report, etc.)
         </div>
       </div>
-    </div>
-    <div class="spec">
-      <b>Search overlap:</b> margin-top -14px · floats on brand bg<br>
-      <b>Cart icon:</b> badge shows cart count · orange dot for visibility
     </div>
   </div>
 
-  <div class="component" data-name="AppHeader · With Back">
-    <div class="component-variants">
-      <div class="header">
-        <span style="font:700 20px Inter;color:#fff;cursor:pointer">←</span>
-        <div class="loc-wrap">
-          <div class="loc-main">Kamla Tai Fish Stall</div>
-          <div class="loc-sub">Sassoon Dock · 1.2 km</div>
+  <!-- Variant 3: Set location state -->
+  <div class="ds-component" data-name="AppHeader / Set Location (No location set)">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <span class="ds-label">No location set</span>
+        <div class="v3-header-container">
+          <header style="background:var(--v3-brand);padding:12px 16px 8px;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:8px;">
+            <!-- Logo -->
+            <a href="#" style="font:800 19px var(--v3-font);color:#fff;text-decoration:none;letter-spacing:-.03em;line-height:1;">Relifish</a>
+            <!-- Set location CTA -->
+            <div style="min-width:0;cursor:pointer;">
+              <div style="font:700 14px var(--v3-font);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;">
+                <svg viewBox="0 0 24 24" fill="#fff" width="14" height="14" style="flex-shrink:0;opacity:.85;"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+                <span style="color:rgba(255,255,255,.9);">Set location</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div style="font:400 11px var(--v3-font);color:rgba(255,255,255,.7);white-space:nowrap;">Tap to choose your area</div>
+            </div>
+            <!-- Theme toggle -->
+            <button style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
+            <!-- Profile -->
+            <a href="#" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </a>
+          </header>
         </div>
-        <div class="profile">⋯</div>
-      </div>
-    </div>
-    <div class="spec"><b>Page-level header:</b> back arrow + page title · ⋯ menu right</div>
-  </div>
-
-  <div class="component" data-name="AppHeader · With Theme Toggle">
-    <div class="component-variants">
-      <div>
-        <div class="header">
-          <span class="logo">relifish</span>
-          <div class="loc-wrap">
-            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
-            <div class="loc-sub">Deliver in 45 min · 3 sellers nearby</div>
-          </div>
-          <div class="cart-icon" style="font-size:18px" title="Toggle theme">☀️</div>
-          <div class="profile">👤</div>
-        </div>
-      </div>
-      <div>
-        <div class="header" style="background:#1E293B">
-          <span class="logo">relifish</span>
-          <div class="loc-wrap">
-            <div class="loc-main">Bandra West <span class="loc-arrow">▼</span></div>
-            <div class="loc-sub">Deliver in 45 min · 3 sellers nearby</div>
-          </div>
-          <div class="cart-icon" style="font-size:18px" title="Toggle theme">🌙</div>
-          <div class="profile">👤</div>
+        <div class="ds-spec">
+          <b>Location label:</b> "Set location" at reduced opacity (.9) · sub: "Tap to choose your area"<br>
+          <b>Usage:</b> first-launch or after location permission denied<br>
+          <b>Tapping location area:</b> opens location picker bottom sheet
         </div>
       </div>
-    </div>
-    <div class="spec">
-      <b>Theme toggle:</b> 32px circle button · sun icon (light mode) / moon icon (dark mode)<br>
-      <b>Position:</b> left of profile avatar · same row as other action icons<br>
-      <b>Tap:</b> toggles between light and dark theme · persists in localStorage
     </div>
   </div>
 
-  <div class="component" data-name="AppHeader · Pre-order Mode">
-    <div class="component-variants">
-      <div class="header" style="background:#4F46E5">
-        <span class="logo">🌙 relifish</span>
-        <div class="loc-wrap">
-          <div class="loc-main">Pre-order mode</div>
-          <div class="loc-sub">Tomorrow 7am · Bandra West</div>
-        </div>
-        <div class="profile">👤</div>
-      </div>
-    </div>
-    <div class="spec"><b>Pre-order variant:</b> indigo bg · moon prefix · differentiates context</div>
-  </div>
 </div>
 </body>
 </html>

@@ -1,65 +1,158 @@
-/* Relifish V2 Design System — Shared Tokens */
+/* Relifish V3 Design System — Shared Tokens
+   Single source of truth for all design HTML files.
+   Token names mirror src/styles/tokens.css with --v3- prefix.
+   ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 *{margin:0;padding:0;box-sizing:border-box}
 
 :root{
   /* Ink / Neutrals */
-  --ink:#0F172A;--ink2:#334155;--ink3:#64748B;--ink4:#94A3B8;
-  --bg:#FFFFFF;--bg2:#F8FAFC;--bg3:#F1F5F9;
+  --v3-ink:#0F172A;       --v3-ink-2:#334155;
+  --v3-ink-3:#64748B;     --v3-ink-4:#94A3B8;
+
+  /* Surfaces */
+  --v3-bg:#FFFFFF;        --v3-bg-2:#F8FAFC;    --v3-bg-3:#F1F5F9;
 
   /* Brand */
-  --brand:#0066FF;--brand-d:#0052CC;--brand-l:#E6F0FF;--brand-m:#CCE0FF;
+  --v3-brand:#0066FF;     --v3-brand-d:#0052CC;
+  --v3-brand-l:#E6F0FF;   --v3-brand-m:#CCE0FF;
 
-  /* Status */
-  --green:#059669;--green-l:#ECFDF5;--green-bg:#D1FAE5;
-  --orange:#EA580C;--orange-l:#FFF7ED;
-  --red:#DC2626;--red-l:#FEF2F2;
+  /* Status — Green */
+  --v3-green:#059669;     --v3-green-l:#ECFDF5;  --v3-green-bg:#D1FAE5;
 
-  /* Indigo (pre-order accent) */
-  --indigo:#4F46E5;--indigo-l:#EEF2FF;--indigo-m:#E0E7FF;--indigo-d:#3730A3;
+  /* Status — Orange */
+  --v3-orange:#EA580C;    --v3-orange-l:#FFF7ED;
 
-  /* Borders + Shadows */
-  --border:#E2E8F0;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
-  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
-  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
-  --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+  /* Status — Red */
+  --v3-red:#DC2626;       --v3-red-l:#FEF2F2;
+
+  /* Status — Indigo (pre-order accent) */
+  --v3-indigo:#4F46E5;    --v3-indigo-l:#EEF2FF;
+  --v3-indigo-m:#E0E7FF;  --v3-indigo-d:#3730A3;
+
+  /* Border */
+  --v3-border:#E2E8F0;
+
+  /* Shadows */
+  --v3-shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --v3-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --v3-shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+  --v3-shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
 
   /* Radius scale */
-  --radius-xs:4px;--radius-sm:8px;--radius:12px;--radius-lg:16px;--radius-xl:20px;--radius-full:9999px;
+  --v3-radius-xs:4px;   --v3-radius-sm:8px;   --v3-radius:12px;
+  --v3-radius-lg:16px;  --v3-radius-xl:20px;  --v3-radius-full:9999px;
 
-  /* Spacing scale (4pt grid) */
-  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;--s-8:32px;--s-10:40px;--s-12:48px;
+  /* Spacing 4pt grid */
+  --v3-s-1:4px;  --v3-s-2:8px;   --v3-s-3:12px; --v3-s-4:16px;
+  --v3-s-5:20px; --v3-s-6:24px;  --v3-s-8:32px;
+  --v3-s-10:40px;--v3-s-12:48px;
+
+  /* Font */
+  --v3-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
 
   /* Motion */
-  --ease:cubic-bezier(.4,0,.2,1);--ease-out:cubic-bezier(0,0,.2,1);
-  --dur-fast:150ms;--dur:250ms;--dur-slow:400ms;
+  --v3-ease:cubic-bezier(.4,0,.2,1);  --v3-ease-out:cubic-bezier(0,0,.2,1);
+  --v3-dur-fast:150ms;  --v3-dur:250ms;  --v3-dur-slow:400ms;
 
   /* Z-layers */
-  --z-header:50;--z-bottom-nav:40;--z-cart-bar:45;--z-modal:100;--z-toast:200;
+  --v3-z-header:50;      --v3-z-bottom-nav:40;  --v3-z-cart-bar:45;
+  --v3-z-modal:100;      --v3-z-sheet-elevated:110;  --v3-z-toast:200;
+
+  /* App max width */
+  --app-max-width:480px;
 }
 
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg2);color:var(--ink);line-height:1.5;padding:32px}
+/* === Dark mode token overrides === */
+:root[data-theme="dark"],html[data-theme="dark"]{
+  --v3-ink:#F1F5F9;     --v3-ink-2:#CBD5E1;
+  --v3-ink-3:#94A3B8;   --v3-ink-4:#64748B;
+  --v3-bg:#0F172A;      --v3-bg-2:#1E293B;    --v3-bg-3:#334155;
+  --v3-border:#334155;
+  --v3-brand-l:rgba(0,102,255,.18);   --v3-brand-m:rgba(0,102,255,.35);
+  --v3-green-l:rgba(5,150,105,.18);   --v3-green-bg:rgba(5,150,105,.25);
+  --v3-orange-l:rgba(234,88,12,.18);  --v3-red-l:rgba(220,38,38,.18);
+  --v3-indigo-l:rgba(79,70,229,.18);  --v3-indigo-m:rgba(79,70,229,.25);
+  --v3-shadow-sm:0 1px 2px rgba(0,0,0,.25);
+  --v3-shadow:0 1px 3px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2);
+  --v3-shadow-md:0 4px 6px rgba(0,0,0,.35),0 2px 4px rgba(0,0,0,.2);
+  --v3-shadow-lg:0 10px 15px rgba(0,0,0,.4),0 4px 6px rgba(0,0,0,.25);
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --v3-ink:#F1F5F9;     --v3-ink-2:#CBD5E1;
+    --v3-ink-3:#94A3B8;   --v3-ink-4:#64748B;
+    --v3-bg:#0F172A;      --v3-bg-2:#1E293B;    --v3-bg-3:#334155;
+    --v3-border:#334155;
+    --v3-brand-l:rgba(0,102,255,.18);   --v3-brand-m:rgba(0,102,255,.35);
+    --v3-green-l:rgba(5,150,105,.18);   --v3-green-bg:rgba(5,150,105,.25);
+    --v3-orange-l:rgba(234,88,12,.18);  --v3-red-l:rgba(220,38,38,.18);
+    --v3-indigo-l:rgba(79,70,229,.18);  --v3-indigo-m:rgba(79,70,229,.25);
+    --v3-shadow-sm:0 1px 2px rgba(0,0,0,.25);
+    --v3-shadow:0 1px 3px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2);
+    --v3-shadow-md:0 4px 6px rgba(0,0,0,.35),0 2px 4px rgba(0,0,0,.2);
+    --v3-shadow-lg:0 10px 15px rgba(0,0,0,.4),0 4px 6px rgba(0,0,0,.25);
+  }
+}
 
-/* Figma-export-friendly container */
-.figma-page{max-width:1440px;margin:0 auto}
-.figma-page h1{font-size:24px;font-weight:800;margin-bottom:8px}
-.figma-page .sub{font-size:14px;color:var(--ink3);margin-bottom:32px}
+/* === Animations === */
+@keyframes v3-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes v3-spin{to{transform:rotate(360deg)}}
+@keyframes v3-fade-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes v3-slide-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes v3-pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* Component section — each exportable separately */
-.component{background:#fff;border:1px dashed var(--border);border-radius:var(--radius);padding:32px;margin-bottom:24px;position:relative}
-.component::before{content:attr(data-name);position:absolute;top:-10px;left:16px;background:var(--brand);color:#fff;font:700 10px Inter;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:4px}
+/* === Base === */
+body{font-family:var(--v3-font);background:var(--v3-bg-2);color:var(--v3-ink);line-height:1.5;padding:32px}
 
-.component-variants{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
-.variant{display:flex;flex-direction:column;gap:8px}
-.variant-label{font:500 11px Inter;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em}
+/* === Design canvas wrapper === */
+.ds-page{max-width:1440px;margin:0 auto}
+.ds-page h1{font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-.03em}
+.ds-page .ds-sub{font-size:14px;color:var(--v3-ink-3);margin-bottom:40px}
 
-.spec{margin-top:16px;padding:12px 16px;background:var(--bg3);border-radius:var(--radius-sm);font:400 12px/1.6 'SF Mono',Menlo,monospace;color:var(--ink2)}
-.spec b{color:var(--ink);font-weight:700}
+/* === Component section === */
+.ds-component{
+  background:var(--v3-bg);
+  border:1px dashed var(--v3-border);
+  border-radius:var(--v3-radius);
+  padding:32px;
+  margin-bottom:28px;
+  position:relative;
+}
+.ds-component::before{
+  content:attr(data-name);
+  position:absolute;top:-10px;left:16px;
+  background:var(--v3-brand);color:#fff;
+  font:700 10px var(--v3-font);text-transform:uppercase;letter-spacing:.08em;
+  padding:3px 8px;border-radius:4px;
+}
 
-/* Phone frame (for screens) */
-.phone{width:360px;height:720px;border-radius:36px;border:8px solid #1E293B;background:#fff;overflow:hidden;position:relative;box-shadow:var(--shadow-lg);margin:0 auto}
-.phone-status{height:44px;background:#fff;display:flex;align-items:center;justify-content:center;font:600 13px Inter}
-.phone-body{height:calc(100% - 44px);overflow-y:auto;overflow-x:hidden}
+.ds-variants{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.ds-variant{display:flex;flex-direction:column;gap:8px}
+.ds-label{font:500 11px var(--v3-font);color:var(--v3-ink-4);text-transform:uppercase;letter-spacing:.08em}
+
+.ds-spec{
+  margin-top:16px;padding:12px 16px;
+  background:var(--v3-bg-3);border-radius:var(--v3-radius-sm);
+  font:400 12px/1.6 'SF Mono',Menlo,monospace;color:var(--v3-ink-2)
+}
+.ds-spec b{color:var(--v3-ink);font-weight:700}
+
+/* === Phone frame (360×780 — modern) === */
+.phone{
+  width:360px;height:780px;
+  border-radius:40px;border:8px solid #1E293B;
+  background:var(--v3-bg);overflow:hidden;
+  position:relative;box-shadow:var(--v3-shadow-lg);
+  margin:0 auto;
+}
+.phone-status{
+  height:44px;background:var(--v3-brand);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  font:600 12px var(--v3-font);color:#fff;
+}
+.phone-time{font-weight:700}
+.phone-body{height:calc(100% - 44px);overflow-y:auto;overflow-x:hidden;background:var(--v3-bg-2)}
 .phone-body::-webkit-scrollbar{display:none}

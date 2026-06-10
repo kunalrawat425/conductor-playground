@@ -2,123 +2,412 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Screen 07 — Seller Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Screen 07 — Seller Dashboard (Seller Persona)</title>
 <link rel="stylesheet" href="../_shared.css">
-<link rel="stylesheet" href="_screen-shared.css">
 <style>
-  .dash-header{background:linear-gradient(135deg,#059669,#10B981);padding:16px;color:#fff}
-  .dash-greet{font:400 12px Inter;opacity:.9}
-  .dash-name{font:800 20px Inter;margin-top:2px}
-  .today-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
-  .ts{background:rgba(255,255,255,.15);border-radius:10px;padding:10px;text-align:center;backdrop-filter:blur(10px)}
-  .ts .v{font:800 18px Inter;color:#fff}
-  .ts .l{font:500 10px Inter;color:rgba(255,255,255,.9);margin-top:1px}
+/* ── Seller header (brand blue, seller mode) ── */
+.seller-header{
+  background:var(--v3-brand);padding:10px 16px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:var(--v3-z-header);
+}
+.seller-hdr-back{font-size:18px;color:#fff;cursor:pointer;flex-shrink:0}
+.seller-hdr-title{flex:1;font:700 16px var(--v3-font);color:#fff;text-align:center}
+.seller-hdr-icons{display:flex;gap:6px;flex-shrink:0}
+.seller-avatar-sm{
+  width:32px;height:32px;border-radius:var(--v3-radius-full);
+  background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);
+  display:flex;align-items:center;justify-content:center;
+  font:700 11px var(--v3-font);color:#fff;
+}
+.hdr-icon-sm{
+  width:32px;height:32px;border-radius:var(--v3-radius-full);
+  background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;
+}
 
-  .action-row{display:flex;gap:8px;padding:16px;background:#fff;border-bottom:1px solid #E2E8F0}
-  .action{flex:1;padding:10px;background:#F1F5F9;border:none;border-radius:10px;font:700 12px Inter;color:#0F172A;display:flex;align-items:center;justify-content:center;gap:6px}
-  .action.primary{background:#0066FF;color:#fff}
+/* ── Section header ── */
+.section-hdr{
+  padding:12px 16px 8px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-hdr h3{font:700 13px var(--v3-font);color:var(--v3-ink-2);text-transform:uppercase;letter-spacing:.06em}
+.new-badge{
+  background:var(--v3-brand);color:#fff;
+  font:700 10px var(--v3-font);padding:2px 8px;border-radius:var(--v3-radius-full);
+}
 
-  .tabs{display:flex;background:#fff;border-bottom:1px solid #E2E8F0}
-  .tab{flex:1;padding:12px;font:600 12px Inter;color:#64748B;text-align:center;position:relative}
-  .tab.active{color:#0066FF}
-  .tab.active::after{content:'';position:absolute;bottom:0;left:16px;right:16px;height:2px;background:#0066FF}
-  .tab .count{font-size:10px;margin-left:4px;background:#DC2626;color:#fff;padding:1px 6px;border-radius:9999px}
+/* ── Order card ── */
+.order-card{
+  margin:0 16px 10px;background:var(--v3-bg);
+  border-radius:var(--v3-radius);box-shadow:var(--v3-shadow);
+  overflow:hidden;
+}
+.oc-header{
+  padding:10px 14px;border-bottom:1px solid var(--v3-border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.oc-phone{font:700 13px var(--v3-font);color:var(--v3-ink)}
+.oc-total{font:700 14px var(--v3-font);color:var(--v3-green)}
+.oc-body{padding:8px 14px 10px}
+.oc-species{font:600 12px var(--v3-font);color:var(--v3-ink-2);margin-bottom:8px}
+.oc-footer{
+  padding:8px 14px 10px;border-top:1px solid var(--v3-border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.badge{display:inline-flex;align-items:center;font:700 10px var(--v3-font);border-radius:var(--v3-radius-full);padding:3px 8px;white-space:nowrap}
+.badge-orange{background:var(--v3-orange-l);color:var(--v3-orange)}
+.badge-green{background:var(--v3-green-l);color:var(--v3-green)}
+.badge-indigo{background:var(--v3-indigo-l);color:var(--v3-indigo)}
+.confirm-btn{
+  padding:8px 16px;background:var(--v3-green);color:#fff;
+  border:none;border-radius:var(--v3-radius-full);
+  font:700 12px var(--v3-font);cursor:pointer;flex-shrink:0;
+}
 
-  .order-card{margin:12px 16px 0;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px;position:relative}
-  .order-card.urgent{border-color:#EA580C;background:#FFF7ED}
-  .oc-top{display:flex;justify-content:space-between;align-items:flex-start}
-  .oc-id{font:700 13px Inter;color:#0F172A}
-  .oc-time{font:400 11px Inter;color:#64748B;margin-top:1px}
-  .oc-badge{font:700 10px Inter;padding:3px 8px;border-radius:20px;background:#E6F0FF;color:#0066FF;text-transform:uppercase}
-  .oc-badge.urgent{background:#FED7AA;color:#EA580C}
-  .oc-items{font:400 12px Inter;color:#334155;margin-top:8px;padding:8px 10px;background:#F8FAFC;border-radius:8px}
-  .oc-bot{display:flex;gap:8px;margin-top:10px}
-  .oc-btn{flex:1;padding:10px;font:700 12px Inter;border-radius:8px;border:none;cursor:pointer}
-  .oc-btn.accept{background:#059669;color:#fff}
-  .oc-btn.reject{background:#fff;color:#DC2626;border:1.5px solid #FEE2E2}
-  .oc-total{font:800 14px Inter;color:#0F172A;margin-top:6px}
+/* ── Payment proof review ── */
+.screenshot-box{
+  margin:0 16px 10px;
+  height:160px;background:var(--v3-bg-3);border-radius:var(--v3-radius);
+  border:2px dashed var(--v3-border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+}
+.screenshot-box .icon{font-size:36px;opacity:.4}
+.screenshot-box p{font:500 12px var(--v3-font);color:var(--v3-ink-4)}
+.action-row{
+  margin:0 16px 8px;display:flex;gap:8px;
+}
+.verify-btn{
+  flex:1;padding:11px;background:var(--v3-brand);color:#fff;
+  border:none;border-radius:var(--v3-radius-full);
+  font:700 12px var(--v3-font);cursor:pointer;
+}
+.reject-btn{
+  flex:1;padding:11px;background:transparent;color:var(--v3-red);
+  border:1.5px solid var(--v3-red);border-radius:var(--v3-radius-full);
+  font:700 12px var(--v3-font);cursor:pointer;
+}
+
+/* ── Price input ── */
+.price-input-row{
+  margin:0 16px 10px;display:flex;align-items:center;gap:10px;
+}
+.price-input-field{
+  flex:1;padding:11px 14px;border:1.5px solid var(--v3-border);
+  border-radius:var(--v3-radius);font:700 16px var(--v3-font);color:var(--v3-ink);
+  background:var(--v3-bg);
+}
+.price-unit{font:400 12px var(--v3-font);color:var(--v3-ink-3);flex-shrink:0}
+
+/* ── Fulfillment status chain ── */
+.status-chain{
+  margin:0 16px;display:flex;flex-direction:column;gap:8px;
+}
+.status-btn{
+  padding:12px 16px;border-radius:var(--v3-radius);
+  font:700 13px var(--v3-font);cursor:pointer;text-align:left;
+  display:flex;align-items:center;gap:8px;
+}
+.status-btn.green-outline{background:var(--v3-green-l);color:var(--v3-green);border:1.5px solid var(--v3-green)}
+.status-btn.orange-outline{background:var(--v3-orange-l);color:var(--v3-orange);border:1.5px solid var(--v3-orange)}
+.status-btn.brand-fill{background:var(--v3-brand);color:#fff;border:1.5px solid var(--v3-brand)}
+
+/* ── Refund section ── */
+.refund-section{
+  margin:12px 16px;padding:12px 14px;
+  background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);
+}
+.refund-note-input{
+  width:100%;padding:8px 10px;border:1px solid var(--v3-border);
+  border-radius:var(--v3-radius-sm);font:400 12px var(--v3-font);
+  color:var(--v3-ink);background:var(--v3-bg-2);resize:none;height:48px;
+}
+.refund-ghost-btn{
+  display:block;width:100%;margin-top:8px;padding:10px;
+  background:transparent;color:var(--v3-ink-2);
+  border:1px solid var(--v3-border);border-radius:var(--v3-radius-full);
+  font:600 12px var(--v3-font);cursor:pointer;text-align:center;
+}
+
+/* ── Bottom nav seller ── */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;height:60px;
+  background:var(--v3-bg);border-top:1px solid var(--v3-border);
+  display:flex;z-index:var(--v3-z-bottom-nav);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;font:500 10px var(--v3-font);color:var(--v3-ink-4);cursor:pointer;
+}
+.nav-item.active{color:var(--v3-brand)}
+.nav-icon{font-size:18px}
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Screen 07 — Seller Dashboard</h1>
-  <p class="sub">Seller-facing ops. Swipe-to-accept. Today summary.</p>
+<div class="ds-page">
+  <h1>Screen 07 — Seller Dashboard (Seller Persona)</h1>
+  <p class="ds-sub">Four seller views: orders list with new orders, payment proof review, pre-order price setting, and fulfillment status chain.</p>
 
-  <div class="phone">
-    <div class="phone-status" style="background:#059669;color:#fff">9:41</div>
-    <div class="phone-body with-nav">
-      <div class="dash-header">
-        <div class="dash-greet">Good morning, Kamla Tai</div>
-        <div class="dash-name">Today's pipeline</div>
-        <div class="today-summary">
-          <div class="ts"><div class="v">5</div><div class="l">New orders</div></div>
-          <div class="ts"><div class="v">₹4,280</div><div class="l">Today's GMV</div></div>
-          <div class="ts"><div class="v">12</div><div class="l">Pre-orders</div></div>
-        </div>
-      </div>
+  <div style="display:flex;gap:32px;flex-wrap:wrap;">
 
-      <div class="action-row">
-        <button class="action primary">✓ Mark all ready</button>
-        <button class="action">📤 Export</button>
-        <button class="action">➕ Listing</button>
-      </div>
+    <!-- ═════════════════════════════════
+         Frame 1: Orders list — new orders
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 1 — Orders List">
+      <p class="ds-label" style="margin-bottom:12px">Today · 3 New Orders</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="seller-hdr-back">←</span>
+            <span class="seller-hdr-title">Orders</span>
+            <div class="seller-hdr-icons">
+              <div class="hdr-icon-sm">🌙</div>
+              <div class="seller-avatar-sm">FT</div>
+            </div>
+          </div>
 
-      <div class="tabs">
-        <div class="tab active">Pending <span class="count">5</span></div>
-        <div class="tab">Accepted</div>
-        <div class="tab">Completed</div>
-      </div>
+          <!-- Section header -->
+          <div class="section-hdr">
+            <h3>Today</h3>
+            <span class="new-badge">3 new</span>
+          </div>
 
-      <div class="order-card urgent">
-        <div class="oc-top">
-          <div><div class="oc-id">#RF238 · Priya D.</div><div class="oc-time">7:00am pickup · in 25 min</div></div>
-          <span class="oc-badge urgent">Urgent</span>
-        </div>
-        <div class="oc-items">🐟 Surmai (1kg, whole) · 🦐 Prawns (500g, medium)</div>
-        <div class="oc-total">₹905 · UPI paid</div>
-        <div class="oc-bot">
-          <button class="oc-btn reject">Decline</button>
-          <button class="oc-btn accept">✓ Accept</button>
-        </div>
-      </div>
+          <!-- Order 1: clean confirm -->
+          <div class="order-card">
+            <div class="oc-header">
+              <span class="oc-phone">+91 98××× ×9974</span>
+              <span class="oc-total">₹2400</span>
+            </div>
+            <div class="oc-body">
+              <div class="oc-species">🐟 Pomfret · 1 kg &nbsp;|&nbsp; 🦐 Prawns · 500g</div>
+            </div>
+            <div class="oc-footer">
+              <span class="badge badge-green">New order</span>
+              <button class="confirm-btn">Confirm</button>
+            </div>
+          </div>
 
-      <div class="order-card">
-        <div class="oc-top">
-          <div><div class="oc-id">#RF239 · Rahul M.</div><div class="oc-time">8:30am pickup</div></div>
-          <span class="oc-badge">New</span>
-        </div>
-        <div class="oc-items">🐟 Rawas (1kg, cleaned)</div>
-        <div class="oc-total">₹820 · UPI paid</div>
-        <div class="oc-bot">
-          <button class="oc-btn reject">Decline</button>
-          <button class="oc-btn accept">✓ Accept</button>
-        </div>
-      </div>
+          <!-- Order 2: payment proof pending -->
+          <div class="order-card">
+            <div class="oc-header">
+              <span class="oc-phone">+91 91××× ×2211</span>
+              <span class="oc-total">₹1200</span>
+            </div>
+            <div class="oc-body">
+              <div class="oc-species">🐟 Surmai · 500g</div>
+              <div style="margin-top:4px"><span class="badge badge-orange">Payment proof pending</span></div>
+            </div>
+            <div class="oc-footer">
+              <span style="font:400 11px var(--v3-font);color:var(--v3-ink-3)">Uploaded 2 min ago</span>
+              <button class="confirm-btn">Review</button>
+            </div>
+          </div>
 
-      <div class="order-card">
-        <div class="oc-top">
-          <div><div class="oc-id">🌙 #RF241 · Amit S. (Pre-order)</div><div class="oc-time">Tomorrow 7am · IST</div></div>
-          <span class="oc-badge" style="background:#EDE9FE;color:#5B21B6">Confirmed</span>
-        </div>
-        <div class="oc-items">🐟 Ghol (2kg, whole) · 🐟 Surmai (1kg, cut)</div>
-        <div class="oc-total">₹1,550 advance received (UPI)</div>
-        <div style="margin-top:8px;padding:8px 10px;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:8px;font:500 11px Inter;color:#475569">💳 Buyer uploaded payment proof</div>
-        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-          <button class="oc-btn" style="flex:0;background:#fff;color:#4F46E5;border:1px solid #C7D2FE;font:700 11px Inter">🖼 View proof</button>
-        </div>
-        <div style="margin-top:8px;font:500 11px Inter;color:#64748B">Set final price after catch; pickup/delivery unlocks only after.</div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <input type="text" placeholder="Final price ₹" style="flex:1;padding:8px;border:1px solid #E2E8F0;border-radius:8px;font:600 12px Inter" />
-          <button class="oc-btn accept" style="flex:0;background:#7C3AED">Set price</button>
+          <!-- Order 3: another new -->
+          <div class="order-card">
+            <div class="oc-header">
+              <span class="oc-phone">+91 77××× ×5566</span>
+              <span class="oc-total">₹3600</span>
+            </div>
+            <div class="oc-body">
+              <div class="oc-species">🦐 Prawns · 1 kg &nbsp;|&nbsp; 🦀 Crab · 1pc</div>
+            </div>
+            <div class="oc-footer">
+              <span class="badge badge-green">New order</span>
+              <button class="confirm-btn">Confirm</button>
+            </div>
+          </div>
+
+          <div style="height:64px"></div>
+
+          <div class="bottom-nav">
+            <div class="nav-item active"><span class="nav-icon">📋</span>Orders</div>
+            <div class="nav-item"><span class="nav-icon">🐟</span>Inventory</div>
+            <div class="nav-item"><span class="nav-icon">👤</span>Profile</div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="bottom-nav">
-      <div class="n-item active"><span class="icon">📋</span>Orders</div>
-      <div class="n-item"><span class="icon">🐟</span>Listings</div>
-      <div class="n-item"><span class="icon">📊</span>Stats</div>
-      <div class="n-item"><span class="icon">👤</span>Profile</div>
+
+    <!-- ═════════════════════════════════
+         Frame 2: Payment proof review
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 2 — Payment Proof Review">
+      <p class="ds-label" style="margin-bottom:12px">Verify Payment Screenshot</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="seller-hdr-back">←</span>
+            <span class="seller-hdr-title">Order Detail</span>
+            <div class="seller-hdr-icons">
+              <div class="seller-avatar-sm">FT</div>
+            </div>
+          </div>
+
+          <!-- Order info -->
+          <div class="order-card" style="margin-top:12px">
+            <div class="oc-header">
+              <span class="oc-phone">+91 91××× ×2211</span>
+              <span class="oc-total">₹1200</span>
+            </div>
+            <div class="oc-body">
+              <div class="oc-species">🐟 Surmai · 500g</div>
+              <div style="margin-top:4px"><span class="badge badge-orange">Payment proof pending</span></div>
+            </div>
+          </div>
+
+          <!-- Info label -->
+          <div style="padding:0 16px 8px">
+            <div style="font:700 13px var(--v3-font);color:var(--v3-ink)">Buyer uploaded payment screenshot</div>
+            <div style="font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:2px">Uploaded 2 min ago</div>
+          </div>
+
+          <!-- Screenshot placeholder -->
+          <div class="screenshot-box">
+            <div class="icon">🖼️</div>
+            <p>Payment screenshot</p>
+          </div>
+
+          <!-- Action row -->
+          <div class="action-row">
+            <button class="verify-btn">Verify &amp; Confirm</button>
+            <button class="reject-btn">Reject</button>
+          </div>
+
+          <div style="padding:0 16px">
+            <p style="font:400 11px var(--v3-font);color:var(--v3-ink-3)">Rejecting will notify the buyer and hold the order.</p>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- ═════════════════════════════════
+         Frame 3: Pre-order — set final price
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 3 — Set Final Price">
+      <p class="ds-label" style="margin-bottom:12px">Pre-order · Set Final Price</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="seller-hdr-back">←</span>
+            <span class="seller-hdr-title">Pre-order Detail</span>
+            <div class="seller-hdr-icons">
+              <div class="seller-avatar-sm">FT</div>
+            </div>
+          </div>
+
+          <!-- Order card with indigo badge -->
+          <div class="order-card" style="margin-top:12px">
+            <div class="oc-header">
+              <span class="oc-phone">+91 98××× ×9974</span>
+              <span class="oc-total" style="color:var(--v3-indigo)">Pre-order</span>
+            </div>
+            <div class="oc-body">
+              <div class="oc-species">🐟 Surmai · 1 kg</div>
+              <div style="margin-top:6px">
+                <span class="badge badge-indigo">Pre-order</span>
+              </div>
+              <div style="font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:6px">
+                Estimated: <strong style="color:var(--v3-indigo)">₹1800–₹2400/kg</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Price setting section -->
+          <div style="padding:12px 16px 8px">
+            <div style="font:700 13px var(--v3-font);color:var(--v3-ink)">Enter final price</div>
+            <div style="font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:2px">Buyer will be notified and must confirm before payment.</div>
+          </div>
+
+          <div class="price-input-row">
+            <input type="text" class="price-input-field" placeholder="₹ ___ " value="₹ 2200">
+            <span class="price-unit">/ kg</span>
+          </div>
+
+          <!-- Note about buyer confirmation -->
+          <div style="margin:0 16px 12px;padding:8px 12px;background:var(--v3-indigo-l);border-radius:var(--v3-radius-sm);border-left:3px solid var(--v3-indigo)">
+            <p style="font:400 11px var(--v3-font);color:var(--v3-indigo-d)">Buyer has 2 hours to accept. Order auto-cancels if they reject or don't respond.</p>
+          </div>
+
+          <!-- CTA -->
+          <button style="display:block;margin:0 16px;padding:14px;background:var(--v3-brand);color:#fff;border:none;border-radius:var(--v3-radius-full);font:700 14px var(--v3-font);text-align:center;cursor:pointer;box-shadow:var(--v3-shadow-md)">Confirm with price</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════
+         Frame 4: Fulfillment status chain
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 4 — Fulfillment Status">
+      <p class="ds-label" style="margin-bottom:12px">Confirmed Order · Status Chain</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="seller-hdr-back">←</span>
+            <span class="seller-hdr-title">Order Detail</span>
+            <div class="seller-hdr-icons">
+              <div class="seller-avatar-sm">FT</div>
+            </div>
+          </div>
+
+          <!-- Order card: confirmed -->
+          <div class="order-card" style="margin-top:12px">
+            <div class="oc-header">
+              <span class="oc-phone">+91 98××× ×9974</span>
+              <span class="oc-total">₹2400</span>
+            </div>
+            <div class="oc-body">
+              <div class="oc-species">🐟 Pomfret · 1 kg</div>
+              <div style="margin-top:4px"><span class="badge badge-green">Confirmed</span></div>
+            </div>
+          </div>
+
+          <!-- Status chain buttons -->
+          <div style="padding:0 16px 10px">
+            <div style="font:700 13px var(--v3-font);color:var(--v3-ink);margin-bottom:10px">Update order status</div>
+          </div>
+          <div class="status-chain">
+            <button class="status-btn green-outline">
+              <span style="font-size:16px">✅</span>
+              Mark Ready for Pickup
+            </button>
+            <button class="status-btn orange-outline">
+              <span style="font-size:16px">🛵</span>
+              Out for Delivery
+            </button>
+            <button class="status-btn brand-fill">
+              <span style="font-size:16px">📦</span>
+              Mark Delivered
+            </button>
+          </div>
+
+          <!-- Refund section -->
+          <div class="refund-section">
+            <div style="font:700 12px var(--v3-font);color:var(--v3-ink);margin-bottom:8px">Issue refund</div>
+            <textarea class="refund-note-input" placeholder="Add a note for the buyer…"></textarea>
+            <button class="refund-ghost-btn">Mark refund sent</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 </body>

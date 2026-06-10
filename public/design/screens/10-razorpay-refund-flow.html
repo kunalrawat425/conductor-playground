@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Screen 10 — Razorpay Refund Flow</title>
+<link rel="stylesheet" href="../_shared.css">
+<style>
+/* ── Headers ── */
+.seller-header{
+  background:var(--v3-brand);padding:10px 16px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:var(--v3-z-header);
+}
+.hdr-back{font-size:18px;color:#fff;cursor:pointer;flex-shrink:0}
+.hdr-title{flex:1;font:700 16px var(--v3-font);color:#fff;text-align:center}
+
+/* ── Order detail card ── */
+.order-card{
+  margin:12px 16px;background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);overflow:hidden;
+}
+.oc-header{
+  padding:10px 14px;border-bottom:1px solid var(--v3-border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.oc-phone{font:700 13px var(--v3-font);color:var(--v3-ink)}
+.badge{display:inline-flex;align-items:center;font:700 10px var(--v3-font);border-radius:var(--v3-radius-full);padding:3px 8px;white-space:nowrap}
+.badge-red{background:var(--v3-red-l);color:var(--v3-red)}
+.badge-green{background:var(--v3-green-l);color:var(--v3-green)}
+.oc-body{padding:10px 14px}
+.oc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.oc-label{font:400 12px var(--v3-font);color:var(--v3-ink-3)}
+.oc-value{font:600 12px var(--v3-font);color:var(--v3-ink)}
+
+/* ── Upload area ── */
+.upload-area{
+  border:2px dashed var(--v3-border);border-radius:var(--v3-radius);
+  height:120px;background:var(--v3-bg-2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;
+}
+.upload-area .icon{font-size:28px;opacity:.4}
+.upload-area p{font:600 12px var(--v3-font);color:var(--v3-ink-3)}
+
+/* ── Note input ── */
+.note-input{
+  width:100%;padding:10px 12px;border:1.5px solid var(--v3-border);
+  border-radius:var(--v3-radius-sm);font:400 12px var(--v3-font);color:var(--v3-ink);
+  background:var(--v3-bg);resize:none;height:56px;
+}
+.note-input:focus{outline:none;border-color:var(--v3-brand)}
+
+/* ── CTAs ── */
+.cta-btn{
+  display:block;padding:13px;text-align:center;
+  border:none;border-radius:var(--v3-radius-full);
+  font:700 13px var(--v3-font);cursor:pointer;
+}
+.cta-btn.green{background:var(--v3-green);color:#fff}
+.cta-btn.brand{background:var(--v3-brand);color:#fff}
+
+/* ── Email card ── */
+.email-card{
+  margin:12px 16px;background:#fff;border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow-md);overflow:hidden;border:1px solid var(--v3-border);
+}
+.email-header{
+  background:var(--v3-brand-l);padding:10px 14px;border-bottom:1px solid var(--v3-border);
+}
+.email-subject{font:700 13px var(--v3-font);color:var(--v3-ink)}
+.email-from{font:400 10px var(--v3-font);color:var(--v3-ink-3);margin-top:2px}
+.email-body{padding:12px 14px}
+.email-body p{font:400 12px var(--v3-font);color:var(--v3-ink-2);line-height:1.6;margin-bottom:8px}
+.email-body .note-box{
+  background:var(--v3-bg-3);border-radius:var(--v3-radius-sm);padding:8px 10px;
+  border-left:3px solid var(--v3-border);
+  font:400 11px var(--v3-font);color:var(--v3-ink-3);
+  margin-bottom:10px;
+}
+.email-cta{
+  display:inline-block;padding:10px 20px;
+  background:var(--v3-brand);color:#fff;
+  border-radius:var(--v3-radius-full);font:700 12px var(--v3-font);
+  text-decoration:none;
+}
+.email-footer{
+  background:var(--v3-bg-3);padding:8px 14px;border-top:1px solid var(--v3-border);
+  text-align:center;
+}
+.email-footer span{font:400 10px var(--v3-font);color:var(--v3-ink-4)}
+
+/* ── Webhook status banner ── */
+.webhook-banner{
+  margin:12px 16px;padding:10px 14px;border-radius:var(--v3-radius);
+  display:flex;align-items:flex-start;gap:10px;
+}
+.webhook-banner.green{background:var(--v3-green-l);border:1px solid var(--v3-green-bg)}
+.webhook-banner.red{background:var(--v3-red-l);border:1px solid rgba(220,38,38,.2)}
+.wb-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.wb-text h4{font:700 12px var(--v3-font)}
+.wb-text .green-txt{color:var(--v3-green)}
+.wb-text .red-txt{color:var(--v3-red)}
+.wb-text p{font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:2px;line-height:1.4}
+
+/* ── Detail rows ── */
+.detail-card{
+  margin:0 16px 10px;padding:12px 14px;
+  background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);
+}
+.d-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.d-row:last-child{margin-bottom:0}
+.d-label{font:400 12px var(--v3-font);color:var(--v3-ink-3)}
+.d-value{font:600 12px var(--v3-font);color:var(--v3-ink)}
+.d-value.green{color:var(--v3-green)}
+.d-value.mono{font-family:'SF Mono',Menlo,monospace;font-size:11px;color:var(--v3-ink-2)}
+
+/* ── Alert card (refund failed) ── */
+.alert-card{
+  margin:0 16px 10px;padding:12px 14px;
+  background:var(--v3-red-l);border-radius:var(--v3-radius);
+  border:1.5px solid rgba(220,38,38,.3);
+}
+.alert-card h4{font:700 13px var(--v3-font);color:var(--v3-red);display:flex;align-items:center;gap:6px}
+.alert-card p{font:400 12px var(--v3-font);color:var(--v3-red);opacity:.85;margin-top:6px;line-height:1.5}
+.alert-refund-id{font:600 11px var(--v3-font);color:var(--v3-red);opacity:.7;margin-top:6px;font-family:'SF Mono',Menlo,monospace}
+
+/* ── Notified row ── */
+.notified-row{
+  display:flex;align-items:center;gap:12px;
+  margin:0 16px 10px;
+}
+.notified-chip{
+  display:flex;align-items:center;gap:4px;padding:4px 10px;
+  background:var(--v3-green-l);border-radius:var(--v3-radius-full);
+  font:600 10px var(--v3-font);color:var(--v3-green);
+}
+
+/* ── Tech note ── */
+.tech-note{
+  margin:0 16px 10px;padding:8px 12px;
+  background:var(--v3-bg-3);border-radius:var(--v3-radius-sm);
+  border-left:3px solid var(--v3-border);
+}
+.tech-note code{font-size:10px;font-family:'SF Mono',Menlo,monospace;color:var(--v3-ink-2)}
+</style>
+</head>
+<body>
+<div class="ds-page">
+  <h1>Screen 10 — Razorpay Refund Flow</h1>
+  <p class="ds-sub">Four frames: seller marks refund manually, buyer email preview, webhook refund.processed (auto-updated), webhook refund.failed (seller alert).</p>
+
+  <div style="display:flex;gap:32px;flex-wrap:wrap;">
+
+    <!-- ═════════════════════════════════
+         Frame 1: Seller marks refund manually
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 1 — Seller Marks Refund">
+      <p class="ds-label" style="margin-bottom:12px">Seller Dashboard · Manual Refund</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="hdr-back">←</span>
+            <span class="hdr-title">Order Detail</span>
+          </div>
+
+          <!-- Order card: Refunded status -->
+          <div class="order-card">
+            <div class="oc-header">
+              <span class="oc-phone">+91 98××× ×9974</span>
+              <span class="badge badge-red">Refunded</span>
+            </div>
+            <div class="oc-body">
+              <div class="oc-row">
+                <span class="oc-label">Species</span>
+                <span class="oc-value">🐟 Pomfret (पापलेट)</span>
+              </div>
+              <div class="oc-row">
+                <span class="oc-label">Amount</span>
+                <span class="oc-value" style="color:var(--v3-red)">₹2400 refunded</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Refund Details section -->
+          <div style="padding:0 16px 10px">
+            <div style="font:700 13px var(--v3-font);color:var(--v3-ink);margin-bottom:10px">Refund Details</div>
+
+            <!-- Upload area -->
+            <div class="upload-area" style="margin-bottom:10px">
+              <div class="icon">📸</div>
+              <p>Upload UPI transfer screenshot</p>
+            </div>
+
+            <!-- Note field -->
+            <textarea class="note-input" placeholder="Add a note for buyer…"></textarea>
+          </div>
+
+          <!-- CTA -->
+          <button class="cta-btn green" style="margin:0 16px 12px">Mark refund as sent</button>
+
+          <div class="tech-note">
+            <code>POST /api/orders/:id/refund-manual</code>
+            <br><code style="color:var(--v3-ink-3)">Notifies buyer via email</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════
+         Frame 2: Buyer email preview
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 2 — Buyer Email">
+      <p class="ds-label" style="margin-bottom:12px">Buyer Email · Refund Notification</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Simulated email UI in phone -->
+          <div style="background:var(--v3-bg-3);padding:10px 16px;border-bottom:1px solid var(--v3-border);display:flex;align-items:center;gap:10px">
+            <span style="font-size:18px;cursor:pointer">←</span>
+            <span style="font:700 14px var(--v3-font);color:var(--v3-ink)">Inbox</span>
+          </div>
+
+          <div class="email-card">
+            <div class="email-header">
+              <div class="email-subject">Refund Sent — Pomfret (पापलेट)</div>
+              <div class="email-from">from: noreply@relifish.in · Just now</div>
+            </div>
+            <div class="email-body">
+              <p>Hi there,</p>
+              <p>The seller has marked your refund as sent via UPI. It typically reflects within <strong>1–3 business days</strong>.</p>
+              <div class="note-box">
+                "Sorry for the inconvenience — the catch wasn't fresh enough today. Full refund sent. 🙏"
+              </div>
+              <p style="font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-bottom:12px">Order: Pomfret · 1 kg · ₹2400</p>
+              <a href="#" class="email-cta">Track Order →</a>
+            </div>
+            <div class="email-footer">
+              <span>Relifish · Fish delivered fresh · Unsubscribe</span>
+            </div>
+          </div>
+
+          <!-- Info note -->
+          <div style="margin:0 16px;padding:8px 12px;background:var(--v3-bg-3);border-radius:var(--v3-radius-sm);border:1px solid var(--v3-border)">
+            <p style="font:400 11px var(--v3-font);color:var(--v3-ink-3)">Email sent automatically when seller marks refund as sent. Includes seller note if provided.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════
+         Frame 3: Webhook refund.processed
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 3 — Webhook Processed">
+      <p class="ds-label" style="margin-bottom:12px">Webhook · refund.processed Auto-Updated</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="hdr-back">←</span>
+            <span class="hdr-title">Order Detail</span>
+          </div>
+
+          <!-- Refund processed banner -->
+          <div class="webhook-banner green">
+            <span class="wb-icon">✅</span>
+            <div class="wb-text">
+              <h4 class="green-txt">Refund processed by Razorpay</h4>
+              <p>Automated via payment gateway. Both parties notified.</p>
+            </div>
+          </div>
+
+          <!-- Refund detail card -->
+          <div class="detail-card">
+            <div class="d-row">
+              <span class="d-label">Refund ID</span>
+              <span class="d-value mono">rfnd_QxMk2…</span>
+            </div>
+            <div class="d-row">
+              <span class="d-label">Amount</span>
+              <span class="d-value green">₹540 refunded</span>
+            </div>
+            <div class="d-row">
+              <span class="d-label">Status</span>
+              <span class="d-value" style="color:var(--v3-green)">Processed</span>
+            </div>
+            <div class="d-row">
+              <span class="d-label">Mode</span>
+              <span class="d-value">Razorpay automatic</span>
+            </div>
+          </div>
+
+          <!-- Notified chips -->
+          <div class="notified-row">
+            <div class="notified-chip">✓ Buyer notified</div>
+            <div class="notified-chip">✓ Seller notified</div>
+          </div>
+
+          <!-- Webhook tech note -->
+          <div class="tech-note">
+            <code>Triggered by webhook:</code>
+            <br><code style="color:var(--v3-brand)">/api/payments/razorpay-webhook</code>
+            <br><code style="color:var(--v3-ink-3)">event: refund.processed</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════
+         Frame 4: Webhook refund.failed — seller alert
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 4 — Webhook Failed">
+      <p class="ds-label" style="margin-bottom:12px">Webhook · refund.failed · Seller Alert</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <div class="seller-header">
+            <span class="hdr-back">←</span>
+            <span class="hdr-title">Refund Alert</span>
+          </div>
+
+          <!-- Refund failed banner -->
+          <div class="webhook-banner red">
+            <span class="wb-icon">⚠️</span>
+            <div class="wb-text">
+              <h4 class="red-txt">Refund failed</h4>
+              <p>Razorpay could not process the automated refund. Action required.</p>
+            </div>
+          </div>
+
+          <!-- Alert card (red-l background) -->
+          <div class="alert-card">
+            <h4><span>⚠️</span> Razorpay Refund Failed</h4>
+            <p>The automated refund could not be processed. Please retry manually in your Razorpay Dashboard.</p>
+            <div class="alert-refund-id">Refund ID: rfnd_Px9Nk1…</div>
+          </div>
+
+          <!-- What to do -->
+          <div style="padding:0 16px 10px">
+            <div style="font:700 12px var(--v3-font);color:var(--v3-ink);margin-bottom:6px">What to do:</div>
+            <ol style="margin:0 0 0 16px;padding:0">
+              <li style="font:400 12px var(--v3-font);color:var(--v3-ink-2);margin-bottom:4px">Log in to Razorpay Dashboard</li>
+              <li style="font:400 12px var(--v3-font);color:var(--v3-ink-2);margin-bottom:4px">Search by Refund ID above</li>
+              <li style="font:400 12px var(--v3-font);color:var(--v3-ink-2)">Click "Retry refund"</li>
+            </ol>
+          </div>
+
+          <!-- CTA -->
+          <button class="cta-btn brand" style="margin:0 16px 10px">View Orders →</button>
+
+          <!-- Seller email alert note -->
+          <div style="margin:0 16px;padding:8px 12px;background:var(--v3-orange-l);border-radius:var(--v3-radius-sm);display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px">📧</span>
+            <span style="font:600 11px var(--v3-font);color:var(--v3-orange)">Seller email alert sent automatically</span>
+          </div>
+
+          <!-- Webhook tech note -->
+          <div class="tech-note" style="margin-top:10px">
+            <code>event: refund.failed</code>
+            <br><code style="color:var(--v3-brand)">/api/payments/razorpay-webhook</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

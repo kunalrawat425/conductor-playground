@@ -2,92 +2,295 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Atom — Modals & Dialogs</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V3 Modals — Relifish Design System</title>
 <link rel="stylesheet" href="../_shared.css">
 <style>
-  .backdrop{background:rgba(15,23,42,.5);padding:32px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;min-height:400px}
+/* ── Modal scaffold ── */
+.v3-modal-demo{
+  position:relative;
+  width:390px;height:200px;
+  border-radius:var(--v3-radius);
+  overflow:hidden;
+  border:1px solid var(--v3-border);
+  background:var(--v3-bg-3);
+}
+.v3-backdrop{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,0.4);
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:16px;
+}
 
-  .dialog{background:#fff;border-radius:var(--radius-lg);width:320px;padding:24px;box-shadow:var(--shadow-lg);text-align:center}
-  .dialog .icon{font-size:48px;margin-bottom:12px}
-  .dialog h3{font:800 18px Inter;color:var(--ink);margin-bottom:6px}
-  .dialog p{font:400 13px Inter;color:var(--ink2);margin-bottom:20px;line-height:1.5}
-  .dialog-actions{display:flex;gap:8px}
-  .dialog-actions button{flex:1;padding:12px;border-radius:var(--radius-sm);font:700 13px Inter;border:none;cursor:pointer}
-  .btn-cancel{background:var(--bg3);color:var(--ink2)}
-  .btn-confirm{background:var(--brand);color:#fff}
-  .btn-danger{background:var(--red);color:#fff}
+/* ── Sheet / dialog ── */
+.v3-sheet{
+  background:var(--v3-bg);
+  border-radius:var(--v3-radius-lg) var(--v3-radius-lg) var(--v3-radius-sm) var(--v3-radius-sm);
+  width:100%;max-width:360px;
+  padding:24px;
+  box-shadow:var(--v3-shadow-lg);
+}
+.v3-sheet-title{
+  font:800 18px var(--v3-font);
+  color:var(--v3-ink);
+  margin-bottom:8px;
+}
+.v3-sheet-body{
+  font:400 14px var(--v3-font);
+  color:var(--v3-ink-3);
+  line-height:1.5;
+  margin-bottom:24px;
+}
+.v3-sheet-actions{display:flex;gap:12px}
 
-  .alert{background:#fff;border-radius:var(--radius-lg);width:320px;padding:24px;box-shadow:var(--shadow-lg);text-align:center}
-  .alert .icon{width:64px;height:64px;border-radius:50%;background:var(--green-l);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px}
-  .alert.error .icon{background:var(--red-l);color:var(--red)}
-  .alert.warning .icon{background:var(--orange-l);color:var(--orange)}
-  .alert h3{font:800 17px Inter;color:var(--ink);margin-bottom:6px}
-  .alert p{font:400 13px Inter;color:var(--ink2);margin-bottom:20px}
-  .alert button{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius-sm);font:700 13px Inter;cursor:pointer}
+/* ── Buttons inside modal ── */
+.v3-modal-btn{
+  flex:1;padding:12px;border-radius:var(--v3-radius-sm);
+  font:600 14px var(--v3-font);cursor:pointer;
+  transition:opacity var(--v3-dur-fast);
+}
+.v3-modal-btn:hover{opacity:.88}
+.v3-modal-btn-ghost{
+  border:1.5px solid var(--v3-border);
+  background:var(--v3-bg);
+  color:var(--v3-ink-2);
+}
+.v3-modal-btn-danger{
+  border:none;
+  background:var(--v3-red);
+  color:#fff;
+  font-weight:700;
+}
+.v3-modal-btn-primary{
+  border:none;
+  background:var(--v3-brand);
+  color:#fff;
+  font-weight:700;
+}
+.v3-modal-btn-primary-outline{
+  border:1.5px solid var(--v3-brand);
+  background:var(--v3-bg);
+  color:var(--v3-brand);
+  font-weight:700;
+}
+
+/* ── Alert icon circle ── */
+.v3-alert-icon{
+  width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:12px;
+  flex-shrink:0;
+}
+.v3-alert-icon svg{width:22px;height:22px}
+
+/* ── Backdrop standalone ── */
+.v3-backdrop-demo{
+  width:390px;height:220px;
+  border-radius:var(--v3-radius);
+  position:relative;overflow:hidden;
+  border:1px solid var(--v3-border);
+}
+.v3-backdrop-overlay{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,0.4);
+  display:flex;align-items:center;justify-content:center;
+}
+.v3-backdrop-label{
+  font:700 13px var(--v3-font);
+  color:rgba(255,255,255,.9);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+/* ── Drag handle ── */
+.v3-drag-handle{
+  width:36px;height:4px;
+  border-radius:2px;
+  background:var(--v3-bg-3);
+  margin:0 auto 20px;
+}
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Modals & Dialogs</h1>
-  <p class="sub">Confirmations, alerts, destructive actions. Always with backdrop.</p>
+<div class="ds-page">
+  <h1>V3 Modals</h1>
+  <p class="ds-sub">Relifish Design System · Dialogs, sheets, overlays</p>
 
-  <div class="component" data-name="ConfirmDialog">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">confirm</span>
-        <div class="backdrop">
-          <div class="dialog">
-            <div class="icon">🌙</div>
-            <h3>Confirm pre-order?</h3>
-            <p>Reserve 2kg Surmai with Kamla Tai for tomorrow 7am pickup. Estimated ₹1,300 ± 5%.</p>
-            <div class="dialog-actions">
-              <button class="btn-cancel">Cancel</button>
-              <button class="btn-confirm">Confirm</button>
+  <!-- ── Section 1: Confirm Dialog ── -->
+  <div class="ds-component" data-name="Confirm Dialog — Destructive Action">
+    <div class="ds-variants" style="flex-direction:column;gap:32px">
+
+      <div class="ds-variant">
+        <div class="ds-label">Cancel order (destructive)</div>
+        <div class="v3-modal-demo">
+          <!-- App screen in bg -->
+          <div style="padding:16px;background:var(--v3-bg-3)">
+            <div style="height:12px;background:var(--v3-bg-2);border-radius:6px;width:60%;margin-bottom:8px"></div>
+            <div style="height:8px;background:var(--v3-bg-2);border-radius:4px;width:40%"></div>
+          </div>
+          <div class="v3-backdrop">
+            <div class="v3-sheet">
+              <div class="v3-drag-handle"></div>
+              <div class="v3-sheet-title">Cancel order?</div>
+              <div class="v3-sheet-body">This cannot be undone. Your payment will be refunded within 3–5 business days.</div>
+              <div class="v3-sheet-actions">
+                <button class="v3-modal-btn v3-modal-btn-ghost" type="button">Keep order</button>
+                <button class="v3-modal-btn v3-modal-btn-danger" type="button">Cancel order</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="variant"><span class="variant-label">destructive</span>
-        <div class="backdrop">
-          <div class="dialog">
-            <div class="icon">🗑️</div>
-            <h3>Cancel this order?</h3>
-            <p>You'll receive a full refund within 5-7 days. The seller has already started preparation.</p>
-            <div class="dialog-actions">
-              <button class="btn-cancel">Keep order</button>
-              <button class="btn-danger">Cancel order</button>
+
+      <div class="ds-variant">
+        <div class="ds-label">Remove item</div>
+        <div class="v3-modal-demo">
+          <div style="padding:16px;background:var(--v3-bg-3)">
+            <div style="height:12px;background:var(--v3-bg-2);border-radius:6px;width:60%;margin-bottom:8px"></div>
+            <div style="height:8px;background:var(--v3-bg-2);border-radius:4px;width:40%"></div>
+          </div>
+          <div class="v3-backdrop">
+            <div class="v3-sheet">
+              <div class="v3-drag-handle"></div>
+              <div class="v3-sheet-title">Remove from cart?</div>
+              <div class="v3-sheet-body">500g Pomfret will be removed from your order.</div>
+              <div class="v3-sheet-actions">
+                <button class="v3-modal-btn v3-modal-btn-ghost" type="button">Keep it</button>
+                <button class="v3-modal-btn v3-modal-btn-danger" type="button">Remove</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
     </div>
-    <div class="spec"><b>Backdrop:</b> rgba(15,23,42,.5) · <b>Dialog:</b> 320px · radius 16px · centered · <b>Destructive:</b> red confirm button</div>
+    <div class="ds-spec">
+      <b>Sheet:</b> full-width, bottom-attached · <code>border-radius: --v3-radius-lg --v3-radius-lg --v3-radius-sm --v3-radius-sm</code><br>
+      <b>Backdrop:</b> <code>rgba(0,0,0,0.4)</code> · drag handle 36×4px<br>
+      <b>Z-index:</b> <code>--v3-z-modal (100)</code>
+    </div>
   </div>
 
-  <div class="component" data-name="AlertDialog · Success / Error">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">success</span>
-        <div class="backdrop">
-          <div class="alert">
-            <div class="icon">✓</div>
-            <h3>Order confirmed!</h3>
-            <p>Kamla Tai will reserve your fish. Pickup at 7-9am tomorrow.</p>
-            <button>View order</button>
+  <!-- ── Section 2: Alert Dialog ── -->
+  <div class="ds-component" data-name="Alert Dialog — Info / Warning / Success Variants">
+    <div class="ds-variants" style="flex-direction:column;gap:32px">
+
+      <!-- Info -->
+      <div class="ds-variant">
+        <div class="ds-label">Info (brand)</div>
+        <div class="v3-modal-demo">
+          <div style="padding:16px;background:var(--v3-bg-3)">
+            <div style="height:12px;background:var(--v3-bg-2);border-radius:6px;width:55%;margin-bottom:8px"></div>
+          </div>
+          <div class="v3-backdrop">
+            <div class="v3-sheet">
+              <div class="v3-drag-handle"></div>
+              <div class="v3-alert-icon" style="background:var(--v3-brand-l)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--v3-brand)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div class="v3-sheet-title" style="font-size:16px">Pre-order deadline</div>
+              <div class="v3-sheet-body" style="margin-bottom:16px">Orders must be placed before midnight today to arrive fresh tomorrow.</div>
+              <div class="v3-sheet-actions">
+                <button class="v3-modal-btn v3-modal-btn-primary" type="button">Got it</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="variant"><span class="variant-label">error</span>
-        <div class="backdrop">
-          <div class="alert error">
-            <div class="icon">✕</div>
-            <h3>Payment failed</h3>
-            <p>Your UPI transaction was declined. Try a different payment method or contact your bank.</p>
-            <button>Try again</button>
+
+      <!-- Warning -->
+      <div class="ds-variant">
+        <div class="ds-label">Warning (orange)</div>
+        <div class="v3-modal-demo">
+          <div style="padding:16px;background:var(--v3-bg-3)">
+            <div style="height:12px;background:var(--v3-bg-2);border-radius:6px;width:55%;margin-bottom:8px"></div>
+          </div>
+          <div class="v3-backdrop">
+            <div class="v3-sheet">
+              <div class="v3-drag-handle"></div>
+              <div class="v3-alert-icon" style="background:var(--v3-orange-l)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--v3-orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="v3-sheet-title" style="font-size:16px">Stock running low</div>
+              <div class="v3-sheet-body" style="margin-bottom:16px">Only 3 portions left. Complete your order quickly to avoid missing out.</div>
+              <div class="v3-sheet-actions">
+                <button class="v3-modal-btn v3-modal-btn-ghost" type="button">Dismiss</button>
+                <button class="v3-modal-btn" type="button" style="flex:1;padding:12px;border:none;border-radius:var(--v3-radius-sm);font:700 14px var(--v3-font);background:var(--v3-orange);color:#fff;cursor:pointer;">Order now</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Success -->
+      <div class="ds-variant">
+        <div class="ds-label">Success (green)</div>
+        <div class="v3-modal-demo">
+          <div style="padding:16px;background:var(--v3-bg-3)">
+            <div style="height:12px;background:var(--v3-bg-2);border-radius:6px;width:55%;margin-bottom:8px"></div>
+          </div>
+          <div class="v3-backdrop">
+            <div class="v3-sheet">
+              <div class="v3-drag-handle"></div>
+              <div class="v3-alert-icon" style="background:var(--v3-green-l)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--v3-green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="v3-sheet-title" style="font-size:16px">Order confirmed!</div>
+              <div class="v3-sheet-body" style="margin-bottom:16px">Fish Tokri will prepare your Surmai tomorrow. Delivery by 8 AM.</div>
+              <div class="v3-sheet-actions">
+                <button class="v3-modal-btn v3-modal-btn-primary" type="button" style="background:var(--v3-green)">View order</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <div class="spec"><b>Single-action variant</b> · large status icon (64px circle) · used after critical action</div>
+    <div class="ds-spec">
+      <b>Alert icon:</b> 44px circle · icon 22px · color matches semantic variant<br>
+      Single CTA: full-width primary button · Two CTAs: ghost + primary
+    </div>
   </div>
+
+  <!-- ── Section 3: Backdrop Standalone ── -->
+  <div class="ds-component" data-name="Backdrop Overlay — Standalone">
+    <div class="ds-variants">
+
+      <div class="ds-variant">
+        <div class="ds-label">Dark overlay (40%)</div>
+        <div class="v3-backdrop-demo">
+          <div style="padding:20px;background:var(--v3-bg)">
+            <div style="height:14px;background:var(--v3-bg-3);border-radius:6px;width:70%;margin-bottom:10px"></div>
+            <div style="height:10px;background:var(--v3-bg-3);border-radius:4px;width:50%;margin-bottom:10px"></div>
+            <div style="height:10px;background:var(--v3-bg-3);border-radius:4px;width:60%"></div>
+          </div>
+          <div class="v3-backdrop-overlay">
+            <span class="v3-backdrop-label">Tap to dismiss</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-variant">
+        <div class="ds-label">Lighter (20%)</div>
+        <div class="v3-backdrop-demo">
+          <div style="padding:20px;background:var(--v3-bg)">
+            <div style="height:14px;background:var(--v3-bg-3);border-radius:6px;width:70%;margin-bottom:10px"></div>
+            <div style="height:10px;background:var(--v3-bg-3);border-radius:4px;width:50%;margin-bottom:10px"></div>
+            <div style="height:10px;background:var(--v3-bg-3);border-radius:4px;width:60%"></div>
+          </div>
+          <div class="v3-backdrop-overlay" style="background:rgba(0,0,0,0.2)">
+            <span class="v3-backdrop-label">Loading overlay</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="ds-spec">
+      <b>Default:</b> <code>background: rgba(0,0,0,0.4)</code> · fills <code>position:fixed;inset:0</code><br>
+      <b>Light variant:</b> <code>rgba(0,0,0,0.2)</code> — used for non-blocking loading states
+    </div>
+  </div>
+
 </div>
 </body>
 </html>

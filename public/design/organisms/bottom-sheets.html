@@ -2,175 +2,197 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Organism — Bottom Sheets</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V3 Bottom Sheets — Relifish Design System</title>
 <link rel="stylesheet" href="../_shared.css">
 <style>
-  .sheet{width:360px;background:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;border:1px solid var(--border)}
-  .handle{height:4px;width:40px;background:var(--ink4);border-radius:2px;margin:8px auto}
-  .sheet-head{padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
-  .sheet-head h3{font:800 16px Inter;color:var(--ink)}
-  .sheet-head .close{font:400 22px Inter;color:var(--ink3);cursor:pointer;background:none;border:none}
-
-  .addr-pick{padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer}
-  .addr-pick:hover{background:var(--bg2)}
-  .addr-pick.selected{background:var(--brand-l)}
-  .addr-pick .icon{width:36px;height:36px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px}
-  .addr-pick.selected .icon{background:var(--brand);color:#fff}
-  .addr-pick .info{flex:1}
-  .addr-pick .lbl{font:700 13px Inter;color:var(--ink)}
-  .addr-pick .text{font:400 11px Inter;color:var(--ink3);margin-top:2px}
-  .addr-pick .check{color:var(--brand);font:700 16px Inter;display:none}
-  .addr-pick.selected .check{display:block}
-
-  .add-new{padding:16px;display:flex;align-items:center;gap:8px;color:var(--brand);font:700 13px Inter;cursor:pointer;border-bottom:1px solid var(--border)}
-
-  .filter-section{padding:16px;border-bottom:1px solid var(--border)}
-  .filter-section h4{font:700 13px Inter;color:var(--ink);margin-bottom:10px}
-  .filter-chips{display:flex;flex-wrap:wrap;gap:6px}
-  .filter-chip{padding:6px 12px;border:1px solid var(--border);border-radius:20px;font:500 12px Inter;color:var(--ink2);background:#fff;cursor:pointer}
-  .filter-chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
-
-  .price-range{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font:600 12px Inter;color:var(--ink2)}
-  .slider{width:100%;height:4px;background:var(--bg3);border-radius:2px;position:relative;margin:12px 0}
-  .slider .track{position:absolute;left:20%;right:30%;height:100%;background:var(--brand);border-radius:2px}
-  .slider .thumb{position:absolute;width:18px;height:18px;background:#fff;border:2px solid var(--brand);border-radius:50%;top:-7px}
-  .slider .thumb.left{left:18%}
-  .slider .thumb.right{right:28%}
-
-  .sheet-cta{padding:14px 16px;background:#fff;border-top:1px solid var(--border)}
-  .sheet-cta button{width:100%;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius);font:800 14px Inter;cursor:pointer}
-
-  .slot-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px}
-  .slot-pill{padding:12px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);text-align:center;cursor:pointer}
-  .slot-pill.selected{border-color:var(--brand);background:var(--brand-l)}
-  .slot-pill .time{font:700 12px Inter;color:var(--ink)}
-  .slot-pill.selected .time{color:var(--brand)}
-  .slot-pill .lbl{font:500 10px Inter;color:var(--ink3);margin-top:2px}
-  .slot-pill .price{font:700 9px Inter;color:var(--green);margin-top:2px}
-  .slot-pill.disabled{opacity:.4;cursor:not-allowed}
-  .slot-pill.disabled .lbl{color:var(--red)}
-
-  .day-picker{display:flex;gap:6px;padding:12px 16px;overflow-x:auto}
-  .day-pill{flex-shrink:0;padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);font:600 12px Inter;color:var(--ink2);background:#fff}
-  .day-pill.selected{background:var(--brand);color:#fff;border-color:var(--brand)}
-  .day-pill.today{border-color:var(--brand);color:var(--brand)}
+  /* Shared sheet frame (shows sheet as if partially raised from bottom) */
+  .v3-sheet-frame {
+    width: 360px;
+    background: var(--v3-bg-3);
+    border-radius: var(--v3-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--v3-shadow-lg);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .v3-sheet-dim {
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,.10));
+  }
+  .v3-sheet-surface {
+    background: var(--v3-bg);
+    border-radius: var(--v3-radius-lg) var(--v3-radius-lg) 0 0;
+    padding: 12px 16px 28px;
+  }
+  .v3-sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--v3-border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  /* Filter chip */
+  .v3-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: var(--v3-radius-full);
+    font: 500 12px var(--v3-font);
+    cursor: pointer;
+    border: 1.5px solid var(--v3-border);
+    background: var(--v3-bg);
+    color: var(--v3-ink-2);
+    transition: all 150ms;
+  }
+  .v3-filter-chip.active {
+    background: var(--v3-brand-l);
+    color: var(--v3-brand);
+    border-color: var(--v3-brand);
+    font-weight: 700;
+  }
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Bottom Sheets</h1>
-  <p class="sub">Modal sheets from bottom. Address picker, filters, slot picker.</p>
+<div class="ds-page">
+  <h1>V3 Bottom Sheets</h1>
+  <p class="ds-sub">Reusable bottom sheet patterns: draggable handle structure, address picker, and filter panel.</p>
 
-  <div class="component" data-name="BottomSheet · Address Picker">
-    <div class="sheet">
-      <div class="handle"></div>
-      <div class="sheet-head"><h3>Deliver to</h3><button class="close">×</button></div>
-      <div class="addr-pick selected">
-        <div class="icon">🏠</div>
-        <div class="info"><div class="lbl">Home</div><div class="text">Flat 304, Sagar Mahal, Bandra West</div></div>
-        <div class="check">✓</div>
+  <!-- Pattern 1: Base structure with draggable handle -->
+  <div class="ds-component" data-name="BottomSheet / Base — Draggable Handle Structure">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <span class="ds-label">Base structure</span>
+        <div class="v3-sheet-frame">
+          <div class="v3-sheet-dim"></div>
+          <div class="v3-sheet-surface">
+            <div class="v3-sheet-handle"></div>
+            <h3 style="font:700 16px var(--v3-font);color:var(--v3-ink);margin-bottom:8px;">Sheet title</h3>
+            <p style="font:400 13px var(--v3-font);color:var(--v3-ink-3);line-height:1.5;margin-bottom:20px;">Sheet content goes here. Can be scrollable for long lists.</p>
+            <!-- Example action row -->
+            <div style="display:flex;gap:10px;">
+              <button style="flex:1;padding:12px;background:var(--v3-bg-2);color:var(--v3-ink-2);border:1.5px solid var(--v3-border);border-radius:var(--v3-radius);font:600 14px var(--v3-font);cursor:pointer;">Cancel</button>
+              <button style="flex:2;padding:12px;background:var(--v3-brand);color:#fff;border:none;border-radius:var(--v3-radius);font:700 14px var(--v3-font);cursor:pointer;">Confirm</button>
+            </div>
+          </div>
+        </div>
+        <div class="ds-spec">
+          <b>Handle:</b> 40×4px pill, var(--v3-border), centered<br>
+          <b>Corner radius:</b> var(--v3-radius-lg) top corners only<br>
+          <b>Padding:</b> 12px 16px 28px (extra bottom for home indicator)<br>
+          <b>Backdrop:</b> semi-transparent overlay behind sheet (not shown here)
+        </div>
       </div>
-      <div class="addr-pick">
-        <div class="icon">🏢</div>
-        <div class="info"><div class="lbl">Office</div><div class="text">8th floor, Tower C, BKC</div></div>
-        <div class="check">✓</div>
-      </div>
-      <div class="addr-pick">
-        <div class="icon">📍</div>
-        <div class="info"><div class="lbl">Mom's place</div><div class="text">Khar West</div></div>
-        <div class="check">✓</div>
-      </div>
-      <div class="add-new">+ Add new address</div>
-      <div class="sheet-cta"><button>Deliver here →</button></div>
     </div>
-    <div class="spec"><b>Triggered:</b> from app header location chip · <b>Tap row:</b> selects · <b>CTA:</b> confirms selection</div>
   </div>
 
-  <div class="component" data-name="BottomSheet · Slot Picker (Pre-order)">
-    <div class="sheet">
-      <div class="handle"></div>
-      <div class="sheet-head"><h3>Pickup time tomorrow</h3><button class="close">×</button></div>
-
-      <div class="day-picker">
-        <div class="day-pill today selected">Tomorrow<br><span style="font-weight:400;font-size:10px">17 Apr</span></div>
-        <div class="day-pill">Sat 18</div>
-        <div class="day-pill">Sun 19</div>
-        <div class="day-pill">Mon 20</div>
+  <!-- Pattern 2: Address picker sheet -->
+  <div class="ds-component" data-name="BottomSheet / Address Picker">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <span class="ds-label">Address picker</span>
+        <div class="v3-sheet-frame">
+          <div class="v3-sheet-dim"></div>
+          <div class="v3-sheet-surface">
+            <div class="v3-sheet-handle"></div>
+            <h3 style="font:700 16px var(--v3-font);color:var(--v3-ink);margin-bottom:16px;">Choose delivery address</h3>
+            <!-- Saved addresses -->
+            <!-- Address 1 — selected -->
+            <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:2px solid var(--v3-brand);border-radius:var(--v3-radius);background:var(--v3-brand-l);margin-bottom:8px;cursor:pointer;">
+              <div style="width:32px;height:32px;border-radius:8px;background:var(--v3-brand);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg viewBox="0 0 24 24" fill="#fff" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <div style="flex:1;">
+                <div style="font:700 13px var(--v3-font);color:var(--v3-ink);">Home</div>
+                <div style="font:400 12px var(--v3-font);color:var(--v3-ink-3);margin-top:2px;line-height:1.4;">201, Shiv Shakti Apts, Andheri West</div>
+              </div>
+              <div style="width:18px;height:18px;border-radius:50%;background:var(--v3-brand);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+            <!-- Address 2 -->
+            <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1.5px solid var(--v3-border);border-radius:var(--v3-radius);background:var(--v3-bg);margin-bottom:8px;cursor:pointer;">
+              <div style="width:32px;height:32px;border-radius:8px;background:var(--v3-bg-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--v3-ink-3)" stroke-width="1.8" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div style="flex:1;">
+                <div style="font:600 13px var(--v3-font);color:var(--v3-ink);">Work</div>
+                <div style="font:400 12px var(--v3-font);color:var(--v3-ink-3);margin-top:2px;line-height:1.4;">14th Floor, One BKC, Bandra East</div>
+              </div>
+            </div>
+            <!-- Add new -->
+            <button style="width:100%;padding:11px 14px;background:var(--v3-bg-2);color:var(--v3-brand);border:1.5px dashed var(--v3-border);border-radius:var(--v3-radius);font:600 13px var(--v3-font);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add new address
+            </button>
+            <button style="width:100%;padding:14px;background:var(--v3-brand);color:#fff;border:none;border-radius:var(--v3-radius);font:700 15px var(--v3-font);cursor:pointer;">Deliver here</button>
+          </div>
+        </div>
       </div>
-
-      <div style="padding:0 16px"><h4 style="font:700 12px Inter;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Morning slots</h4></div>
-      <div class="slot-row">
-        <div class="slot-pill"><div class="time">5-7am</div><div class="lbl">Dawn</div><div class="price">₹0 fee</div></div>
-        <div class="slot-pill selected"><div class="time">7-9am</div><div class="lbl">Morning</div><div class="price">₹0 fee</div></div>
-        <div class="slot-pill"><div class="time">9-11am</div><div class="lbl">Late</div><div class="price">+₹20</div></div>
-      </div>
-      <div style="padding:8px 16px"><h4 style="font:700 12px Inter;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Evening slots</h4></div>
-      <div class="slot-row">
-        <div class="slot-pill"><div class="time">4-6pm</div><div class="lbl">Evening</div><div class="price">+₹40</div></div>
-        <div class="slot-pill"><div class="time">6-8pm</div><div class="lbl">Night</div><div class="price">+₹40</div></div>
-        <div class="slot-pill disabled"><div class="time">8-10pm</div><div class="lbl">Sold out</div></div>
-      </div>
-      <div class="sheet-cta"><button>Confirm 7-9am →</button></div>
     </div>
-    <div class="spec"><b>Day picker</b> top scroll · <b>Time grouped</b> morning/evening · <b>Slot fees</b> shown inline · disabled state when full</div>
   </div>
 
-  <div class="component" data-name="BottomSheet · Filters">
-    <div class="sheet">
-      <div class="handle"></div>
-      <div class="sheet-head">
-        <h3>Filter sellers</h3>
-        <button style="background:none;border:none;color:var(--brand);font:600 12px Inter">Reset all</button>
-      </div>
-
-      <div class="filter-section">
-        <h4>Seller status</h4>
-        <div class="filter-chips">
-          <span class="filter-chip active">Open now</span>
-          <span class="filter-chip">Pre-order</span>
-          <span class="filter-chip">Both</span>
+  <!-- Pattern 3: Filter panel -->
+  <div class="ds-component" data-name="BottomSheet / Filter Panel">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <span class="ds-label">Filter panel</span>
+        <div class="v3-sheet-frame">
+          <div class="v3-sheet-dim"></div>
+          <div class="v3-sheet-surface">
+            <div class="v3-sheet-handle"></div>
+            <!-- Header row -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+              <h3 style="font:700 16px var(--v3-font);color:var(--v3-ink);">Filters</h3>
+              <button style="font:600 13px var(--v3-font);color:var(--v3-brand);background:none;border:none;cursor:pointer;padding:0;">Clear all</button>
+            </div>
+            <!-- Fish type -->
+            <div style="margin-bottom:16px;">
+              <div style="font:600 12px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Fish type</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <span class="v3-filter-chip active">Pomfret</span>
+                <span class="v3-filter-chip active">Surmai</span>
+                <span class="v3-filter-chip">Bangda</span>
+                <span class="v3-filter-chip">Rawas</span>
+                <span class="v3-filter-chip">Kolambi</span>
+                <span class="v3-filter-chip">Lobster</span>
+              </div>
+            </div>
+            <!-- Order type -->
+            <div style="margin-bottom:16px;">
+              <div style="font:600 12px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Order type</div>
+              <div style="display:flex;gap:8px;">
+                <span class="v3-filter-chip active">Same-day</span>
+                <span class="v3-filter-chip">Pre-order</span>
+              </div>
+            </div>
+            <!-- Rating -->
+            <div style="margin-bottom:20px;">
+              <div style="font:600 12px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Min. rating</div>
+              <div style="display:flex;gap:8px;">
+                <span class="v3-filter-chip">Any</span>
+                <span class="v3-filter-chip active">4.0+</span>
+                <span class="v3-filter-chip">4.5+</span>
+              </div>
+            </div>
+            <!-- Actions -->
+            <div style="display:flex;gap:10px;">
+              <button style="flex:1;padding:12px;background:var(--v3-bg-2);color:var(--v3-ink-2);border:1.5px solid var(--v3-border);border-radius:var(--v3-radius);font:600 14px var(--v3-font);cursor:pointer;">Cancel</button>
+              <button style="flex:2;padding:12px;background:var(--v3-brand);color:#fff;border:none;border-radius:var(--v3-radius);font:700 14px var(--v3-font);cursor:pointer;">Show 24 sellers</button>
+            </div>
+          </div>
+        </div>
+        <div class="ds-spec">
+          <b>Active chip:</b> var(--v3-brand-l) bg · var(--v3-brand) text+border · 700 weight<br>
+          <b>Inactive chip:</b> var(--v3-bg) bg · var(--v3-border) border · var(--v3-ink-2) text<br>
+          <b>Section labels:</b> 12px, 600, uppercase, letter-spacing .06em, var(--v3-ink-3)
         </div>
       </div>
-
-      <div class="filter-section">
-        <h4>Delivery</h4>
-        <div class="filter-chips">
-          <span class="filter-chip active">Delivery</span>
-          <span class="filter-chip">Pickup</span>
-          <span class="filter-chip">Both</span>
-        </div>
-      </div>
-
-      <div class="filter-section">
-        <h4>Fish category</h4>
-        <div class="filter-chips">
-          <span class="filter-chip active">All</span>
-          <span class="filter-chip">Sea fish</span>
-          <span class="filter-chip">Freshwater</span>
-          <span class="filter-chip">Shellfish</span>
-          <span class="filter-chip">Crustaceans</span>
-        </div>
-      </div>
-
-      <div class="filter-section">
-        <h4>Price range (per kg)</h4>
-        <div class="price-range"><span>₹200</span><span>₹1,200</span></div>
-        <div class="slider"><div class="track"></div><div class="thumb left"></div><div class="thumb right"></div></div>
-      </div>
-
-      <div class="filter-section">
-        <h4>Rating</h4>
-        <div class="filter-chips">
-          <span class="filter-chip">Any</span>
-          <span class="filter-chip active">4.0+</span>
-          <span class="filter-chip">4.5+</span>
-        </div>
-      </div>
-
-      <div class="sheet-cta"><button>Apply filters · 12 sellers</button></div>
     </div>
-    <div class="spec"><b>Sections:</b> grouped chips · <b>Price:</b> dual-thumb slider · <b>CTA shows result count</b> live</div>
   </div>
+
 </div>
 </body>
 </html>

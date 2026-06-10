@@ -2,117 +2,378 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Screen 03 — Pre-order</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Screen 03 — Pre-order Flow (Buyer Persona)</title>
 <link rel="stylesheet" href="../_shared.css">
-<link rel="stylesheet" href="_screen-shared.css">
 <style>
-  .hero{background:linear-gradient(135deg,#4F46E5,#7C3AED);padding:20px 16px;color:#fff;position:relative;overflow:hidden}
-  .hero::before{content:'🌙';position:absolute;right:-10px;top:-10px;font-size:140px;opacity:.15}
-  .hero .back{font:500 13px Inter;color:rgba(255,255,255,.8);margin-bottom:12px;cursor:pointer;position:relative}
-  .hero h2{font:800 22px Inter;line-height:1.2;position:relative}
-  .hero p{font:400 13px Inter;margin-top:6px;opacity:.9;position:relative}
+/* ── Pre-order hero header ── */
+.po-header{
+  background:linear-gradient(135deg,#1E1B4B 0%,#3730A3 45%,#4F46E5 75%,#818CF8);
+  padding:24px 16px 20px;text-align:center;
+}
+.po-header h2{font:800 18px var(--v3-font);color:#fff;letter-spacing:-.02em;line-height:1.3}
+.po-header p{font:400 12px var(--v3-font);color:rgba(255,255,255,.8);margin-top:4px;line-height:1.5}
+.po-cta-link{
+  display:inline-block;margin-top:12px;padding:8px 20px;
+  background:rgba(255,255,255,.2);border-radius:var(--v3-radius-full);
+  font:700 12px var(--v3-font);color:#fff;cursor:pointer;
+}
 
-  .wizard{padding:16px}
-  .steps{display:flex;gap:8px;margin-bottom:20px}
-  .step{flex:1;height:4px;border-radius:2px;background:#E2E8F0}
-  .step.done{background:#059669}
-  .step.active{background:#4F46E5}
+/* ── Category grid ── */
+.cat-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;padding:16px;
+}
+.cat-card{
+  background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);overflow:hidden;cursor:pointer;
+  border:1px solid var(--v3-border);
+}
+.cat-card-img{
+  height:68px;overflow:hidden;
+  background:linear-gradient(135deg,#BAE6FD,#7DD3FC);
+  display:flex;align-items:center;justify-content:center;font-size:36px;
+}
+.cat-card-img img{width:100%;height:100%;object-fit:cover}
+.cat-card-body{padding:7px 10px 8px}
+.cat-card-name{font:700 12px var(--v3-font);color:var(--v3-ink)}
+.cat-card-tag{
+  display:inline-block;margin-top:3px;
+  background:var(--v3-indigo-l);color:var(--v3-indigo);
+  font:600 9px var(--v3-font);padding:2px 7px;border-radius:var(--v3-radius-full);
+}
 
-  .step-title{font:800 17px Inter;color:#0F172A;margin-bottom:4px}
-  .step-sub{font:400 12px Inter;color:#64748B;margin-bottom:16px}
+/* ── Step progress ── */
+.step-progress{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:16px;
+}
+.step-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--v3-bg-3);border:2px solid var(--v3-border);
+  transition:all .2s;
+}
+.step-dot.active{background:var(--v3-brand);border-color:var(--v3-brand);width:24px;border-radius:5px}
+.step-dot.done{background:var(--v3-green);border-color:var(--v3-green)}
+.step-line{width:24px;height:2px;background:var(--v3-border)}
+.step-line.done{background:var(--v3-green)}
 
-  .species{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-  .species-card{background:#fff;border:1.5px solid #E2E8F0;border-radius:12px;padding:14px;text-align:center;cursor:pointer}
-  .species-card.selected{border-color:#4F46E5;background:#F3E8FF}
-  .species-card .e{font-size:36px;margin-bottom:4px}
-  .species-card .n{font:700 13px Inter;color:#0F172A}
-  .species-card .p{font:500 11px Inter;color:#64748B;margin-top:2px}
-  .species-card .avail{font:500 10px Inter;color:#059669;margin-top:4px}
+/* ── Species wizard card ── */
+.species-card{
+  margin:0 16px 10px;
+  background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);padding:12px;
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  border:1.5px solid var(--v3-border);
+}
+.species-card.selected{border-color:var(--v3-brand);background:var(--v3-brand-l)}
+.species-img{
+  width:64px;height:64px;border-radius:var(--v3-radius-sm);overflow:hidden;flex-shrink:0;
+  background:linear-gradient(135deg,#BAE6FD,#7DD3FC);
+}
+.species-img img{width:100%;height:100%;object-fit:cover}
+.species-meta{flex:1}
+.species-name{font:700 14px var(--v3-font);color:var(--v3-ink)}
+.species-price{font:600 12px var(--v3-font);color:var(--v3-indigo);margin-top:3px}
+.species-radio{
+  width:20px;height:20px;border-radius:50%;border:2px solid var(--v3-border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.species-radio.checked{border-color:var(--v3-brand);background:var(--v3-brand)}
+.species-radio.checked::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff}
 
-  .qty-row{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
-  .qty-row .label{flex:1;font:700 13px Inter;color:#0F172A}
-  .qty-row .qty{display:flex;align-items:center;background:#F1F5F9;border-radius:8px;overflow:hidden}
-  .qty-row .qty button{background:none;border:none;width:32px;height:32px;font:700 16px Inter;color:#0F172A}
-  .qty-row .qty span{padding:0 12px;font:700 13px Inter}
+/* ── Order summary card ── */
+.summary-card{
+  margin:12px 16px;background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);overflow:hidden;
+}
+.summary-header{
+  background:linear-gradient(135deg,#3730A3,#4F46E5);
+  padding:10px 14px;display:flex;align-items:center;gap:10px;
+}
+.summary-header .icon{font-size:18px}
+.summary-header h4{font:700 13px var(--v3-font);color:#fff}
+.summary-rows{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.sum-row{display:flex;justify-content:space-between;align-items:center}
+.sum-label{font:400 12px var(--v3-font);color:var(--v3-ink-3)}
+.sum-value{font:600 12px var(--v3-font);color:var(--v3-ink)}
 
-  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-  .slot{padding:12px;background:#fff;border:1.5px solid #E2E8F0;border-radius:8px;text-align:center;cursor:pointer}
-  .slot.selected{border-color:#4F46E5;background:#F3E8FF}
-  .slot .time{font:700 13px Inter;color:#0F172A}
-  .slot.selected .time{color:#4F46E5}
-  .slot .lbl{font:500 10px Inter;color:#64748B;margin-top:2px}
+/* ── Notes ── */
+.po-note{
+  margin:0 16px 10px;padding:10px 12px;
+  background:var(--v3-indigo-l);border-radius:var(--v3-radius-sm);
+  border-left:3px solid var(--v3-indigo);
+}
+.po-note p{font:400 11px var(--v3-font);color:var(--v3-indigo-d);line-height:1.5}
+.cutoff-warning{
+  margin:0 16px 12px;padding:8px 12px;
+  background:var(--v3-orange-l);border-radius:var(--v3-radius-sm);
+  display:flex;align-items:center;gap:8px;
+}
+.cutoff-warning p{font:600 11px var(--v3-font);color:var(--v3-orange)}
 
-  .review{background:#ECFDF5;border:1px solid #A7F3D0;border-radius:12px;padding:16px;margin-bottom:16px}
-  .review h4{font:700 13px Inter;color:#059669;margin-bottom:8px}
-  .review-row{display:flex;justify-content:space-between;padding:6px 0;font:400 12px Inter;color:#0F172A}
-  .review-row b{font-weight:700}
-  .review-total{display:flex;justify-content:space-between;padding-top:8px;border-top:1px dashed #A7F3D0;font:800 14px Inter;color:#059669}
+/* ── CTA ── */
+.cta-btn{
+  display:block;margin:0 16px;padding:14px;
+  background:var(--v3-brand);color:#fff;
+  border:none;border-radius:var(--v3-radius-full);
+  font:700 14px var(--v3-font);text-align:center;cursor:pointer;
+  box-shadow:var(--v3-shadow-md);
+}
+.cta-btn.indigo{background:var(--v3-indigo)}
 
-  .confirm-cta{width:100%;background:#4F46E5;color:#fff;border:none;font:800 15px Inter;padding:14px;border-radius:12px}
-  .foot{font:400 10px Inter;color:#94A3B8;text-align:center;margin-top:8px}
+/* ── Bottom nav ── */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;height:60px;
+  background:var(--v3-bg);border-top:1px solid var(--v3-border);
+  display:flex;z-index:var(--v3-z-bottom-nav);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;font:500 10px var(--v3-font);color:var(--v3-ink-4);cursor:pointer;
+}
+.nav-item.active{color:var(--v3-brand)}
+.nav-icon{font-size:18px}
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Screen 03 — Pre-order</h1>
-  <p class="sub">Our moat. Must feel magical.</p>
+<div class="ds-page">
+  <h1>Screen 03 — Pre-order Flow (Buyer Persona)</h1>
+  <p class="ds-sub">Three screens: pre-order landing with category grid, species wizard (step 1), and confirm pre-order.</p>
 
-  <div class="phone">
-    <div class="phone-status" style="background:#4F46E5;color:#fff">9:41</div>
-    <div class="phone-body">
-      <div class="hero">
-        <div class="back">← Back</div>
-        <h2>Tomorrow's catch,<br>reserved tonight</h2>
-        <p>Pre-order by 10pm · Ready at 7am</p>
-      </div>
+  <div style="display:flex;gap:32px;flex-wrap:wrap;">
 
-      <div class="wizard">
-        <div class="steps">
-          <div class="step done"></div>
-          <div class="step done"></div>
-          <div class="step done"></div>
-          <div class="step active"></div>
+    <!-- ═════════════════════════════════
+         Frame 1: Pre-order landing
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 1 — Pre-order Landing">
+      <p class="ds-label" style="margin-bottom:12px">Pre-order Landing</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
         </div>
+        <div class="phone-body">
+          <!-- Pre-order hero header -->
+          <div class="po-header">
+            <h2>Pre-order Tomorrow's Catch 🌙</h2>
+            <p>Order tonight. Fresh catch delivered morning.</p>
+            <span class="po-cta-link">See available sellers →</span>
+          </div>
 
-        <!-- Step 1: Pick Seller (shown as completed) -->
-        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:14px;margin-bottom:16px">
-          <div style="font:700 11px Inter;color:#059669;margin-bottom:8px">Step 1 · Pick Seller ✓</div>
-          <div style="display:flex;gap:10px">
-            <div class="species-card selected" style="flex:1;margin:0;padding:10px">
-              <div class="e" style="font-size:24px">🐟</div>
-              <div class="n" style="font-size:11px">Kamla Tai Fish Stall</div>
-              <div class="avail">Sassoon Dock · 1.2 km</div>
+          <!-- Category grid 2×3 -->
+          <div class="cat-grid">
+            <div class="cat-card">
+              <div class="cat-card-img">
+                <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret">
+              </div>
+              <div class="cat-card-body">
+                <div class="cat-card-name">Pomfret</div>
+                <span class="cat-card-tag">pre-order</span>
+              </div>
             </div>
-            <div class="species-card" style="flex:1;margin:0;padding:10px;opacity:.5">
-              <div class="e" style="font-size:24px">🦐</div>
-              <div class="n" style="font-size:11px">Rafiq Bhai Fish</div>
-              <div class="avail">Versova · 0.8 km</div>
+            <div class="cat-card">
+              <div class="cat-card-img">
+                <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai">
+              </div>
+              <div class="cat-card-body">
+                <div class="cat-card-name">Surmai</div>
+                <span class="cat-card-tag">pre-order</span>
+              </div>
+            </div>
+            <div class="cat-card">
+              <div class="cat-card-img">
+                <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns">
+              </div>
+              <div class="cat-card-body">
+                <div class="cat-card-name">Prawns</div>
+                <span class="cat-card-tag">pre-order</span>
+              </div>
+            </div>
+            <div class="cat-card">
+              <div class="cat-card-img">🐟</div>
+              <div class="cat-card-body">
+                <div class="cat-card-name">Bangda</div>
+                <span class="cat-card-tag">pre-order</span>
+              </div>
+            </div>
+            <div class="cat-card">
+              <div class="cat-card-img">🐠</div>
+              <div class="cat-card-body">
+                <div class="cat-card-name">Rawas</div>
+                <span class="cat-card-tag">pre-order</span>
+              </div>
+            </div>
+            <div class="cat-card">
+              <div class="cat-card-img">🦀</div>
+              <div class="cat-card-body">
+                <div class="cat-card-name">Crab</div>
+                <span class="cat-card-tag">pre-order</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="step-title">Pick your morning slot</div>
-        <div class="step-sub">Seller will reserve at dock before 5am</div>
-        <div class="slots">
-          <div class="slot"><div class="time">5-7am</div><div class="lbl">Dawn</div></div>
-          <div class="slot selected"><div class="time">7-9am</div><div class="lbl">Morning</div></div>
-          <div class="slot"><div class="time">9-11am</div><div class="lbl">Late</div></div>
-        </div>
+          <div style="padding:0 16px 80px">
+            <button class="cta-btn indigo">See available sellers →</button>
+          </div>
 
-        <div class="review">
-          <h4>✓ Your pre-order summary</h4>
-          <div class="review-row"><span>Seller</span><b>Kamla Tai</b></div>
-          <div class="review-row"><span>Surmai (Whole)</span><b>2 kg</b></div>
-          <div class="review-row"><span>Prawns (Medium)</span><b>500 g</b></div>
-          <div class="review-row"><span>Pickup slot</span><b>Tomorrow 7-9am</b></div>
-          <div class="review-row"><span>Estimated price</span><span>₹1,450 ± 5%</span></div>
-          <div class="review-total"><span>You pay at pickup</span><span>~₹1,450</span></div>
+          <div class="bottom-nav">
+            <div class="nav-item"><span class="nav-icon">🏠</span>Home</div>
+            <div class="nav-item active"><span class="nav-icon">🌙</span>Pre-order</div>
+            <div class="nav-item"><span class="nav-icon">👤</span>Account</div>
+          </div>
         </div>
-
-        <button class="confirm-cta">Reserve tomorrow's catch →</button>
-        <div class="foot">Seller confirms exact price by 5am · Cancel anytime</div>
       </div>
     </div>
+
+    <!-- ═════════════════════════════════
+         Frame 2: Seller selected — species wizard
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 2 — Species Wizard">
+      <p class="ds-label" style="margin-bottom:12px">Step 1 — Choose Fish</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
+          <div style="background:var(--v3-brand);padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:var(--v3-z-header)">
+            <span style="font-size:18px;color:#fff;cursor:pointer">←</span>
+            <span style="flex:1;font:700 16px var(--v3-font);color:#fff;text-align:center">Pre-order · Fish Tokri</span>
+          </div>
+
+          <!-- Step progress: 3 dots, step 1 active -->
+          <div class="step-progress">
+            <div class="step-dot active"></div>
+            <div class="step-line"></div>
+            <div class="step-dot"></div>
+            <div class="step-line"></div>
+            <div class="step-dot"></div>
+          </div>
+
+          <div style="padding:0 16px 12px">
+            <h3 style="font:700 18px var(--v3-font);color:var(--v3-ink)">Choose your fish</h3>
+            <p style="font:400 12px var(--v3-font);color:var(--v3-ink-3);margin-top:3px">Select a species to pre-order from Fish Tokri</p>
+          </div>
+
+          <!-- Species cards (3) -->
+          <div class="species-card selected">
+            <div class="species-img">
+              <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret">
+            </div>
+            <div class="species-meta">
+              <div class="species-name">Pomfret (पापलेट)</div>
+              <div class="species-price">₹1800–₹2400/kg</div>
+            </div>
+            <div class="species-radio checked"></div>
+          </div>
+
+          <div class="species-card">
+            <div class="species-img">
+              <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai">
+            </div>
+            <div class="species-meta">
+              <div class="species-name">Surmai (Kingfish)</div>
+              <div class="species-price">₹1800–₹2400/kg</div>
+            </div>
+            <div class="species-radio"></div>
+          </div>
+
+          <div class="species-card">
+            <div class="species-img">
+              <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns">
+            </div>
+            <div class="species-meta">
+              <div class="species-name">Prawns (कोलंबी)</div>
+              <div class="species-price">Market rate</div>
+            </div>
+            <div class="species-radio"></div>
+          </div>
+
+          <div style="height:70px"></div>
+
+          <!-- Sticky CTA -->
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 16px;background:var(--v3-bg);border-top:1px solid var(--v3-border)">
+            <button class="cta-btn" style="margin:0">Next: Choose quantity →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════
+         Frame 3: Confirm pre-order
+    ═════════════════════════════════ -->
+    <div class="ds-component" data-name="Frame 3 — Confirm Pre-order">
+      <p class="ds-label" style="margin-bottom:12px">Step 3 — Confirm Order</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
+          <div style="background:var(--v3-brand);padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:var(--v3-z-header)">
+            <span style="font-size:18px;color:#fff;cursor:pointer">←</span>
+            <span style="flex:1;font:700 16px var(--v3-font);color:#fff;text-align:center">Confirm Pre-order</span>
+          </div>
+
+          <!-- Step progress: all 3 done-ish, step 3 active -->
+          <div class="step-progress">
+            <div class="step-dot done"></div>
+            <div class="step-line done"></div>
+            <div class="step-dot done"></div>
+            <div class="step-line done"></div>
+            <div class="step-dot active"></div>
+          </div>
+
+          <!-- Summary card -->
+          <div class="summary-card">
+            <div class="summary-header">
+              <span class="icon">🌙</span>
+              <h4>Pre-order Summary</h4>
+            </div>
+            <div class="summary-rows">
+              <div class="sum-row">
+                <span class="sum-label">Seller</span>
+                <span class="sum-value">Fish Tokri</span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Species</span>
+                <span class="sum-value">Surmai (Kingfish)</span>
+              </div>
+              <div class="sum-row">
+                <span class="sum-label">Quantity</span>
+                <span class="sum-value">1 kg</span>
+              </div>
+              <div style="border-top:1px solid var(--v3-border);margin:4px 0;padding-top:8px">
+                <div class="sum-row">
+                  <span class="sum-label">Estimated price</span>
+                  <span class="sum-value" style="color:var(--v3-green)">₹2000 est.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Note -->
+          <div class="po-note">
+            <p>💡 Final price set after catch — you'll confirm before payment</p>
+          </div>
+
+          <!-- Cutoff warning -->
+          <div class="cutoff-warning">
+            <span style="font-size:16px">⏰</span>
+            <p>Order by 10 PM tonight</p>
+          </div>
+
+          <!-- CTA -->
+          <button class="cta-btn indigo" style="margin-top:8px">Place pre-order</button>
+
+          <p style="text-align:center;font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:10px;padding:0 16px">No payment now. You'll pay after the seller confirms.</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 </body>

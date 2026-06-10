@@ -2,210 +2,472 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Screen 08 — Edge Cases (Composite)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Screen 08 — Edge Cases &amp; QA Reference</title>
 <link rel="stylesheet" href="../_shared.css">
-<link rel="stylesheet" href="_screen-shared.css">
 <style>
-  .pad{padding:24px}
-  .empty{padding:60px 24px;text-align:center}
-  .empty .icon{font-size:64px;margin-bottom:16px}
-  .empty h3{font:800 17px Inter;color:#0F172A;margin-bottom:6px}
-  .empty p{font:400 13px Inter;color:#64748B;margin-bottom:20px}
-  .empty .cta{background:#0066FF;color:#fff;border:none;padding:12px 28px;border-radius:8px;font:700 13px Inter}
-  .empty .cta-ghost{background:transparent;color:#0066FF;border:none;font:600 13px Inter;display:block;margin:8px auto;padding:8px}
+/* ── Grid layout ── */
+.frames-grid{
+  display:grid;
+  grid-template-columns:repeat(3,360px);
+  gap:32px 28px;
+}
+@media(max-width:1200px){.frames-grid{grid-template-columns:repeat(2,360px)}}
+@media(max-width:780px){.frames-grid{grid-template-columns:360px}}
 
-  .toast{position:absolute;top:60px;left:16px;right:16px;background:#0F172A;color:#fff;padding:12px 14px;border-radius:10px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 25px rgba(0,0,0,.3);z-index:50}
-  .toast.error{background:#DC2626}
-  .toast.success{background:#059669}
-  .toast .icon{font-size:18px}
-  .toast .body{flex:1}
-  .toast .title{font:600 13px Inter}
-  .toast .desc{font:400 11px Inter;opacity:.9;margin-top:1px}
+/* ── Common app header ── */
+.app-header{
+  background:var(--v3-brand);padding:10px 16px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:var(--v3-z-header);
+}
+.app-logo{font:800 18px var(--v3-font);color:#fff;letter-spacing:-.04em}
+.loc-pill{
+  flex:1;display:flex;align-items:center;gap:4px;
+  background:rgba(255,255,255,.15);border-radius:var(--v3-radius-full);
+  padding:5px 10px;cursor:pointer;min-width:0;
+}
+.loc-pill .pin{font-size:11px;flex-shrink:0}
+.loc-pill .loc-name{font:600 12px var(--v3-font);color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loc-pill .chev{font-size:9px;color:rgba(255,255,255,.7);flex-shrink:0}
+.hdr-icons{display:flex;gap:4px;flex-shrink:0}
+.hdr-icon{width:32px;height:32px;border-radius:var(--v3-radius-full);background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
 
-  .grid-screens{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+/* ── Ocean gradient seller card ── */
+.v3-sc{
+  display:block;margin:16px 16px 12px;
+  background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);overflow:hidden;
+}
+.v3-sc-hero{height:110px;position:relative;overflow:hidden}
+.v3-sc-hero.ocean{background:linear-gradient(160deg,#003580,#0055CC 45%,#0077E6 75%,#0EA5E9)}
+.wave-ring-1{position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;border-radius:50%;border:2px solid rgba(255,255,255,.08)}
+.wave-ring-2{position:absolute;top:-30px;right:60px;width:160px;height:160px;border-radius:50%;border:2px solid rgba(255,255,255,.05)}
+.fish-wm{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:54px;opacity:.1;line-height:1}
+.hero-logo{position:absolute;bottom:8px;right:8px;font:800 11px var(--v3-font);color:rgba(255,255,255,.5);letter-spacing:-.02em}
+.hero-badges{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-start}
+.badge{display:inline-flex;align-items:center;font:700 10px var(--v3-font);border-radius:var(--v3-radius-full);padding:3px 8px;white-space:nowrap}
+.badge-green-tag{background:var(--v3-green-l);color:var(--v3-green)}
+.v3-sc-body{padding:10px 14px 8px}
+.v3-sc-name{font:700 14px var(--v3-font);color:var(--v3-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v3-sc-loc{font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:1px}
+.v3-sc-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.listing-chips{
+  display:flex;gap:6px;padding:8px 12px 10px;border-top:1px solid var(--v3-border);
+  flex-wrap:wrap;
+}
+.lchip-tag{
+  padding:4px 10px;border-radius:var(--v3-radius-full);
+  font:600 10px var(--v3-font);
+  background:var(--v3-bg-3);color:var(--v3-ink-2);border:1px solid var(--v3-border);
+}
+
+/* ── Bundle max-3 enforcement ── */
+.tier-row{
+  display:flex;align-items:center;gap:8px;padding:8px 14px;
+  border-bottom:1px solid var(--v3-border);
+}
+.tier-weight{font:600 12px var(--v3-font);color:var(--v3-ink-2);width:36px}
+.tier-price{
+  flex:1;padding:7px 10px;border:1px solid var(--v3-border);
+  border-radius:var(--v3-radius-sm);font:600 12px var(--v3-font);color:var(--v3-ink);
+  background:var(--v3-bg);
+}
+.tier-delete{font-size:14px;color:var(--v3-red);cursor:pointer;padding:4px;flex-shrink:0}
+.add-tier-btn{
+  display:flex;align-items:center;gap:6px;margin:8px 14px;
+  padding:9px 14px;border-radius:var(--v3-radius-sm);
+  font:600 12px var(--v3-font);cursor:not-allowed;
+  background:var(--v3-bg-3);color:var(--v3-ink-4);border:1px dashed var(--v3-border);
+  opacity:0.4;
+}
+.max-hint{
+  margin:2px 14px 0;padding:4px 10px;
+  background:var(--v3-orange-l);border-radius:var(--v3-radius-sm);
+  display:inline-flex;align-items:center;gap:4px;
+}
+.max-hint span{font:600 10px var(--v3-font);color:var(--v3-orange)}
+
+/* ── Dark mode card ── */
+.dark-phone .phone-body{background:#0F172A}
+.dark-card{
+  margin:12px 16px;background:#1E293B;border-radius:var(--v3-radius);
+  box-shadow:0 1px 3px rgba(0,0,0,.3);overflow:hidden;border:1px solid #334155;
+}
+.dark-toggle{
+  display:flex;align-items:center;gap:6px;padding:6px 10px;
+  background:#334155;border-radius:var(--v3-radius-full);
+  font:600 11px var(--v3-font);color:#CBD5E1;
+}
+
+/* ── Toast ── */
+.toast{
+  margin:12px 16px;padding:10px 14px;
+  border-radius:var(--v3-radius);
+  display:flex;align-items:center;gap:10px;
+  box-shadow:var(--v3-shadow-lg);
+}
+.toast.red{background:#DC2626;color:#fff}
+.toast .t-txt{flex:1;font:600 12px var(--v3-font)}
+.toast .t-action{font:700 11px var(--v3-font);background:rgba(255,255,255,.2);padding:4px 10px;border-radius:var(--v3-radius-full);cursor:pointer;flex-shrink:0}
+
+/* ── Empty states ── */
+.empty-state{
+  padding:32px 24px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.empty-state .icon{font-size:40px;margin-bottom:4px}
+.empty-state h3{font:700 16px var(--v3-font);color:var(--v3-ink)}
+.empty-state p{font:400 12px var(--v3-font);color:var(--v3-ink-3);line-height:1.5;max-width:220px;text-align:center}
+.empty-cta{
+  margin-top:4px;padding:11px 24px;
+  background:var(--v3-brand);color:#fff;border:none;border-radius:var(--v3-radius-full);
+  font:700 13px var(--v3-font);cursor:pointer;
+}
+
+/* ── Bottom nav ── */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;height:60px;
+  background:var(--v3-bg);border-top:1px solid var(--v3-border);
+  display:flex;z-index:var(--v3-z-bottom-nav);
+}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px var(--v3-font);color:var(--v3-ink-4);cursor:pointer}
+.nav-item.active{color:var(--v3-brand)}
+.nav-icon{font-size:18px}
 </style>
 </head>
 <body>
-<div class="figma-page" style="max-width:840px">
-  <h1>Edge Case Screens</h1>
-  <p class="sub">Composite screens showing real-world states.</p>
+<div class="ds-page">
+  <h1>Screen 08 — Edge Cases &amp; QA Reference</h1>
+  <p class="ds-sub">Six edge case frames arranged in 2 rows of 3: geolocation denied, no-image fallback, bundle max-3, dark mode, offline error, outside service area.</p>
 
-  <div class="grid-screens">
+  <div class="frames-grid">
 
-    <!-- AREA NOT COVERED -->
-    <div>
-      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Area Not Covered</h3>
+    <!-- ═════════════════════
+         Frame 1: Geolocation denied
+    ═════════════════════ -->
+    <div class="ds-component" data-name="Frame 1 — Geo Denied">
+      <p class="ds-label" style="margin-bottom:12px">Geolocation Denied · Location Not Set</p>
       <div class="phone">
-        <div class="phone-status">9:41</div>
-        <div class="phone-body with-nav">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header with location cue -->
           <div class="app-header">
-            <span class="logo">relifish</span>
-            <div class="loc-wrap">
-              <div class="loc-main">Powai ▼</div>
-              <div class="loc-sub" style="color:#FCA5A5">No sellers in your area</div>
+            <span class="app-logo">relifish</span>
+            <div class="loc-pill">
+              <span class="pin">📍</span>
+              <span class="loc-name">Set location</span>
+              <span class="chev">›</span>
             </div>
-            <div class="profile">👤</div>
+            <div class="hdr-icons">
+              <div class="hdr-icon">🔔</div>
+              <div class="hdr-icon">👤</div>
+            </div>
           </div>
-          <div class="empty">
+
+          <!-- Location sub-header tap indicator -->
+          <div style="background:var(--v3-brand-l);padding:8px 16px;border-bottom:1px solid var(--v3-border);display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px">📍</span>
+            <span style="font:400 11px var(--v3-font);color:var(--v3-brand)">Tap to choose your area</span>
+          </div>
+
+          <!-- Empty state card -->
+          <div class="empty-state" style="margin-top:24px">
             <div class="icon">📍</div>
-            <h3>We're not in Powai yet</h3>
-            <p>Be the first to know when sellers go live here.</p>
-            <button class="cta">Join waitlist</button>
-            <button class="cta-ghost">Try a different area →</button>
+            <h3>Set your location</h3>
+            <p>Choose your area to see sellers near you</p>
+            <button class="empty-cta">Choose area</button>
           </div>
-        </div>
-        <div class="bottom-nav">
-          <div class="n-item active"><span class="icon">🏠</span>Home</div>
-          <div class="n-item"><span class="icon">📋</span>Orders</div>
-          <div class="n-item"><span class="icon">👤</span>Account</div>
+
+          <div style="height:64px"></div>
+          <div class="bottom-nav">
+            <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+            <div class="nav-item"><span class="nav-icon">📋</span>Orders</div>
+            <div class="nav-item"><span class="nav-icon">👤</span>Account</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- MARKETS CLOSED -->
-    <div>
-      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">All Sellers Closed</h3>
+    <!-- ═════════════════════
+         Frame 2: No store image — ocean gradient fallback
+    ═════════════════════ -->
+    <div class="ds-component" data-name="Frame 2 — No Store Image">
+      <p class="ds-label" style="margin-bottom:12px">No Store Image → Ocean Gradient Fallback</p>
       <div class="phone">
-        <div class="phone-status">2:30 PM</div>
-        <div class="phone-body with-nav">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
           <div class="app-header">
-            <span class="logo">relifish</span>
-            <div class="loc-wrap">
-              <div class="loc-main">Bandra West ▼</div>
-              <div class="loc-sub">Markets closed · 5am opening</div>
+            <span class="app-logo">relifish</span>
+            <div class="loc-pill">
+              <span class="pin">📍</span>
+              <span class="loc-name">Andheri West</span>
+              <span class="chev">›</span>
             </div>
-            <div class="profile">👤</div>
-          </div>
-          <div class="empty" style="background:linear-gradient(180deg,#EEF2FF,#fff);padding:50px 24px">
-            <div class="icon">🌙</div>
-            <h3>Fish markets closed</h3>
-            <p>Open 5am–11am daily. Pre-order now for tomorrow morning.</p>
-            <button class="cta" style="background:#4F46E5">Pre-order tomorrow</button>
-          </div>
-        </div>
-        <div class="bottom-nav">
-          <div class="n-item active"><span class="icon">🏠</span>Home</div>
-          <div class="n-item"><span class="icon">📋</span>Orders</div>
-          <div class="n-item"><span class="icon">👤</span>Account</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ERROR TOAST -->
-    <div>
-      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Payment Failed Toast</h3>
-      <div class="phone">
-        <div class="phone-status">9:41</div>
-        <div class="phone-body with-nav">
-          <div class="app-header">
-            <span class="logo">relifish</span>
-            <div class="loc-wrap"><div class="loc-main">Bandra West ▼</div><div class="loc-sub">Deliver in 45 min</div></div>
-            <div class="profile">👤</div>
-          </div>
-          <div class="toast error">
-            <span class="icon">✕</span>
-            <div class="body">
-              <div class="title">Payment failed</div>
-              <div class="desc">UPI declined · try cash on delivery</div>
-            </div>
-            <button style="background:transparent;border:none;color:rgba(255,255,255,.7);font:400 18px Inter">×</button>
-          </div>
-          <div style="padding:80px 24px 24px;text-align:center;color:#94A3B8;font:500 13px Inter">Cart preserved · ₹905 (2 items)</div>
-        </div>
-        <div class="bottom-nav">
-          <div class="n-item active"><span class="icon">🏠</span>Home</div>
-          <div class="n-item"><span class="icon">📋</span>Orders</div>
-          <div class="n-item"><span class="icon">👤</span>Account</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUCCESS TOAST -->
-    <div>
-      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Pre-order Confirmed Toast</h3>
-      <div class="phone">
-        <div class="phone-status">10:15 PM</div>
-        <div class="phone-body with-nav">
-          <div class="app-header" style="background:#4F46E5">
-            <span class="logo">🌙 relifish</span>
-            <div class="loc-wrap"><div class="loc-main">Pre-order mode</div><div class="loc-sub">Tomorrow 7am</div></div>
-            <div class="profile">👤</div>
-          </div>
-          <div class="toast success">
-            <span class="icon">✓</span>
-            <div class="body">
-              <div class="title">Pre-order confirmed</div>
-              <div class="desc">Kamla Tai will reserve at 5am · ₹1,450</div>
+            <div class="hdr-icons">
+              <div class="hdr-icon">👤</div>
             </div>
           </div>
-          <div style="padding:100px 24px 24px;text-align:center">
-            <div style="font-size:48px;margin-bottom:12px">🎉</div>
-            <div style="font:700 16px Inter;color:#0F172A;margin-bottom:4px">All set for tomorrow</div>
-            <div style="font:400 13px Inter;color:#64748B">We'll notify you at 5am with confirmation</div>
+
+          <div style="padding:12px 16px 8px;font:700 13px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.06em">Sellers near you</div>
+
+          <!-- Seller card — ocean gradient fallback -->
+          <div class="v3-sc">
+            <div class="v3-sc-hero ocean">
+              <div class="wave-ring-1"></div>
+              <div class="wave-ring-2"></div>
+              <div class="fish-wm">🐟</div>
+              <div class="hero-logo">relifish</div>
+              <div class="hero-badges">
+                <span></span>
+                <span class="badge badge-green-tag">Open now</span>
+              </div>
+            </div>
+            <div class="v3-sc-body">
+              <div class="v3-sc-row">
+                <div class="v3-sc-name">Seller 9974</div>
+                <span class="badge badge-green-tag">Open now</span>
+              </div>
+              <div class="v3-sc-loc">3.4 km away</div>
+            </div>
+            <div class="listing-chips">
+              <span class="lchip-tag">🐟 Pomfret</span>
+              <span class="lchip-tag">🐟 Surmai</span>
+            </div>
           </div>
-        </div>
-        <div class="bottom-nav">
-          <div class="n-item active"><span class="icon">🏠</span>Home</div>
-          <div class="n-item"><span class="icon">📋</span>Orders</div>
-          <div class="n-item"><span class="icon">👤</span>Account</div>
+
+          <!-- Spec note -->
+          <div style="margin:0 16px;padding:10px 12px;background:var(--v3-bg-3);border-radius:var(--v3-radius-sm);border:1px solid var(--v3-border)">
+            <p style="font:600 11px var(--v3-font);color:var(--v3-ink-2)">Ocean gradient: <code style="font-size:10px;background:var(--v3-bg);padding:1px 4px;border-radius:3px">#003580→#0EA5E9</code></p>
+            <p style="font:400 10px var(--v3-font);color:var(--v3-ink-3);margin-top:3px">Shown when seller has no store photo uploaded. Wave rings + fish watermark + Relifish logo.</p>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- LOADING / SKELETON -->
-    <div>
-      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Loading State (Skeleton)</h3>
+    <!-- ═════════════════════
+         Frame 3: Bundle max-3 enforcement
+    ═════════════════════ -->
+    <div class="ds-component" data-name="Frame 3 — Bundle Max-3">
+      <p class="ds-label" style="margin-bottom:12px">Bundle Max-3 Tier Enforcement</p>
       <div class="phone">
-        <div class="phone-status">9:41</div>
-        <div class="phone-body with-nav">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish Seller</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
+          <div class="app-header" style="background:var(--v3-brand)">
+            <span style="font-size:18px;color:#fff;cursor:pointer">←</span>
+            <span style="flex:1;font:700 16px var(--v3-font);color:#fff;text-align:center">Edit Listing</span>
+          </div>
+
+          <div style="padding:14px 14px 8px">
+            <div style="font:700 13px var(--v3-font);color:var(--v3-ink)">Price Tiers</div>
+            <div style="font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:2px">Set up to 3 bundle sizes for this listing</div>
+          </div>
+
+          <!-- 3 tier rows (all filled) -->
+          <div style="background:var(--v3-bg);border-radius:var(--v3-radius);margin:0 14px;box-shadow:var(--v3-shadow);overflow:hidden">
+            <div class="tier-row">
+              <span class="tier-weight">250g</span>
+              <input type="text" class="tier-price" value="₹249" readonly>
+              <span class="tier-delete">✕</span>
+            </div>
+            <div class="tier-row">
+              <span class="tier-weight">500g</span>
+              <input type="text" class="tier-price" value="₹449" readonly>
+              <span class="tier-delete">✕</span>
+            </div>
+            <div class="tier-row" style="border-bottom:none">
+              <span class="tier-weight">1kg</span>
+              <input type="text" class="tier-price" value="₹799" readonly>
+              <span class="tier-delete">✕</span>
+            </div>
+
+            <!-- Disabled add button -->
+            <div class="add-tier-btn">
+              <span>+</span>
+              <span>Add another price tier</span>
+            </div>
+          </div>
+
+          <!-- Max hint badge -->
+          <div style="margin:6px 14px 0">
+            <div class="max-hint">
+              <span style="font-size:12px">⚠️</span>
+              <span>Max 3 tiers reached</span>
+            </div>
+          </div>
+
+          <!-- Enforcement note -->
+          <div style="margin:10px 14px;padding:10px 12px;background:var(--v3-green-l);border-radius:var(--v3-radius-sm);border-left:3px solid var(--v3-green)">
+            <p style="font:600 11px var(--v3-font);color:var(--v3-green)">Also enforced: form validation + API (POST &amp; PATCH)</p>
+            <p style="font:400 10px var(--v3-font);color:var(--v3-green);margin-top:3px;opacity:.8">PATCH /api/seller/listings rejects if tier count &gt; 3</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════
+         Frame 4: Dark mode — home screen
+    ═════════════════════ -->
+    <div class="ds-component" data-name="Frame 4 — Dark Mode">
+      <p class="ds-label" style="margin-bottom:12px">Dark Mode · Home Screen</p>
+      <div class="phone dark-phone">
+        <div class="phone-status" style="background:#0F172A;padding:0 20px;border-bottom:1px solid #334155">
+          <span style="font:700 12px var(--v3-font);color:#F1F5F9;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#F1F5F9;">Relifish</span>
+        </div>
+        <div class="phone-body" style="background:#0F172A">
+          <!-- Header dark -->
+          <div style="background:#1E293B;padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;border-bottom:1px solid #334155">
+            <span style="font:800 18px var(--v3-font);color:#F1F5F9;letter-spacing:-.04em">relifish</span>
+            <div style="flex:1;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.08);border-radius:9999px;padding:5px 10px;cursor:pointer">
+              <span style="font-size:11px">📍</span>
+              <span style="font:600 12px var(--v3-font);color:#CBD5E1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Andheri West</span>
+              <span style="font-size:9px;color:#64748B">›</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <!-- Moon icon active — dark mode indicator -->
+              <div style="width:32px;height:32px;border-radius:9999px;background:rgba(79,70,229,.25);border:1px solid #4F46E5;display:flex;align-items:center;justify-content:center;font-size:14px">🌙</div>
+              <div style="width:32px;height:32px;border-radius:9999px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>
+            </div>
+          </div>
+
+          <!-- Dark toggle chip -->
+          <div style="padding:10px 16px 0;display:flex;gap:8px;align-items:center">
+            <div class="dark-toggle">🌙 Dark mode</div>
+          </div>
+
+          <!-- Dark seller card -->
+          <div class="dark-card">
+            <div class="v3-sc-hero ocean" style="height:100px">
+              <div class="wave-ring-1"></div>
+              <div class="wave-ring-2"></div>
+              <div class="fish-wm">🐟</div>
+            </div>
+            <div style="padding:10px 14px 8px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font:700 14px var(--v3-font);color:#F1F5F9">Fish Tokri</span>
+                <span style="background:rgba(5,150,105,.18);color:#34D399;font:700 10px var(--v3-font);padding:3px 8px;border-radius:9999px">Open now</span>
+              </div>
+              <div style="font:400 11px var(--v3-font);color:#64748B;margin-top:2px">Andheri West · 1.4 km</div>
+            </div>
+            <div style="display:flex;gap:6px;padding:8px 12px 10px;border-top:1px solid #334155">
+              <span style="padding:4px 10px;border-radius:9999px;font:600 10px var(--v3-font);background:#1E293B;color:#94A3B8;border:1px solid #334155">🐟 Pomfret</span>
+              <span style="padding:4px 10px;border-radius:9999px;font:600 10px var(--v3-font);background:#1E293B;color:#94A3B8;border:1px solid #334155">🐟 Surmai</span>
+            </div>
+          </div>
+
+          <div style="height:64px"></div>
+
+          <!-- Dark bottom nav -->
+          <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:#1E293B;border-top:1px solid #334155;display:flex;z-index:40">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px var(--v3-font);color:#0066FF">
+              <span style="font-size:18px">🏠</span>Home
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px var(--v3-font);color:#64748B">
+              <span style="font-size:18px">📋</span>Orders
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 10px var(--v3-font);color:#64748B">
+              <span style="font-size:18px">👤</span>Account
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════
+         Frame 5: Network / offline error
+    ═════════════════════ -->
+    <div class="ds-component" data-name="Frame 5 — Offline Error">
+      <p class="ds-label" style="margin-bottom:12px">Network Error · Offline State</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
           <div class="app-header">
-            <span class="logo">relifish</span>
-            <div class="loc-wrap"><div class="loc-main">Loading...</div></div>
-            <div class="profile">👤</div>
+            <span class="app-logo">relifish</span>
+            <div class="loc-pill">
+              <span class="pin">📍</span>
+              <span class="loc-name">Andheri West</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="hdr-icons">
+              <div class="hdr-icon">👤</div>
+            </div>
           </div>
-          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
-            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
-            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
-            <div style="background:linear-gradient(90deg,#F1F5F9 0%,#E2E8F0 50%,#F1F5F9 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:90px;border-radius:12px"></div>
-          </div>
-        </div>
-        <div class="bottom-nav">
-          <div class="n-item active"><span class="icon">🏠</span>Home</div>
-          <div class="n-item"><span class="icon">📋</span>Orders</div>
-          <div class="n-item"><span class="icon">👤</span>Account</div>
-        </div>
-      </div>
-    </div>
 
-    <!-- OFFLINE -->
-    <div>
-      <h3 style="font:700 13px Inter;margin-bottom:8px;color:#64748B">Offline State</h3>
-      <div class="phone">
-        <div class="phone-status">9:41</div>
-        <div class="phone-body with-nav">
-          <div class="app-header" style="background:#64748B">
-            <span class="logo">relifish</span>
-            <div class="loc-wrap"><div class="loc-main">📡 Offline</div><div class="loc-sub">Connection lost</div></div>
-            <div class="profile">👤</div>
+          <!-- Toast: connection lost -->
+          <div class="toast red" style="margin:12px 16px">
+            <span style="font-size:16px">📡</span>
+            <span class="t-txt">Connection lost · Tap to retry</span>
+            <span class="t-action">Retry</span>
           </div>
-          <div class="empty" style="padding:80px 24px">
+
+          <!-- Error state card -->
+          <div class="empty-state" style="margin-top:16px">
             <div class="icon">📡</div>
-            <h3>You're offline</h3>
-            <p>Check connection. Past orders still viewable.</p>
-            <button class="cta">Retry</button>
-            <button class="cta-ghost">View past orders →</button>
+            <h3>Failed to load sellers</h3>
+            <p>Check your connection and try again</p>
+            <button class="empty-cta">Retry</button>
           </div>
         </div>
-        <div class="bottom-nav">
-          <div class="n-item"><span class="icon">🏠</span>Home</div>
-          <div class="n-item"><span class="icon">📋</span>Orders</div>
-          <div class="n-item"><span class="icon">👤</span>Account</div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════
+         Frame 6: Outside service area
+    ═════════════════════ -->
+    <div class="ds-component" data-name="Frame 6 — Outside Service Area">
+      <p class="ds-label" style="margin-bottom:12px">Outside Service Area · Waitlist CTA</p>
+      <div class="phone">
+        <div class="phone-status" style="background:var(--v3-brand);padding:0 20px;">
+          <span style="font:700 12px var(--v3-font);color:#fff;">9:41</span>
+          <span style="font:600 12px var(--v3-font);color:#fff;">Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
+          <div class="app-header">
+            <span class="app-logo">relifish</span>
+            <div class="loc-pill">
+              <span class="pin">📍</span>
+              <span class="loc-name">Pune, Kothrud</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="hdr-icons">
+              <div class="hdr-icon">👤</div>
+            </div>
+          </div>
+
+          <!-- Out of area empty state -->
+          <div class="empty-state" style="margin-top:32px">
+            <div class="icon">🎣</div>
+            <h3>Not serviceable in your area yet</h3>
+            <p>We're adding new sellers. Join the waitlist and we'll notify you when we reach you.</p>
+            <button class="empty-cta" style="border-radius:var(--v3-radius-full)">Join waitlist →</button>
+          </div>
+
+          <!-- Support note -->
+          <div style="margin:0 24px;padding:10px 12px;background:var(--v3-bg-3);border-radius:var(--v3-radius-sm);text-align:center">
+            <p style="font:400 11px var(--v3-font);color:var(--v3-ink-3)">Know a local fish seller? <span style="color:var(--v3-brand);font-weight:600">Refer them →</span></p>
+          </div>
         </div>
       </div>
     </div>
 
   </div>
 </div>
-<style>@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}</style>
 </body>
 </html>

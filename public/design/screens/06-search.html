@@ -2,93 +2,351 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Screen 06 — Search</title>
+<title>Screen 06 — Search (Buyer)</title>
 <link rel="stylesheet" href="../_shared.css">
 <link rel="stylesheet" href="_screen-shared.css">
 <style>
-  .search-header{padding:14px 16px;background:#fff;border-bottom:1px solid #E2E8F0;display:flex;gap:10px;align-items:center}
-  .cancel{font:600 13px Inter;color:#0066FF;cursor:pointer}
-  .search-input{flex:1;padding:10px 14px;background:#F1F5F9;border-radius:10px;font:400 14px Inter;color:#0F172A;border:none;outline:none}
+  /* ── Multi-phone layout ── */
+  .ds-frames{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start}
+  .ds-frame-wrap{display:flex;flex-direction:column;gap:10px}
+  .ds-frame-label{font:700 11px var(--v3-font);color:var(--v3-ink-4);text-transform:uppercase;letter-spacing:.08em;text-align:center}
 
-  .chip-row{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;background:#fff;border-bottom:1px solid #E2E8F0}
-  .chip-row::-webkit-scrollbar{display:none}
-  .filter-chip{padding:6px 14px;font:600 12px Inter;border-radius:20px;border:1px solid #E2E8F0;background:#fff;color:#64748B;flex-shrink:0;white-space:nowrap}
-  .filter-chip.active{background:#0066FF;color:#fff;border-color:#0066FF}
+  /* ── Search header ── */
+  .search-header{
+    padding:12px 14px;background:var(--v3-bg);
+    border-bottom:1px solid var(--v3-border);
+    display:flex;gap:10px;align-items:center;
+  }
+  .search-back{font:600 13px var(--v3-font);color:var(--v3-brand);cursor:pointer;white-space:nowrap}
+  .search-bar{
+    flex:1;display:flex;align-items:center;gap:8px;
+    padding:10px 14px;background:var(--v3-bg-3);
+    border-radius:var(--v3-radius-sm);
+    border:1.5px solid transparent;
+  }
+  .search-bar.focused{
+    border-color:var(--v3-brand);
+    box-shadow:0 0 0 3px rgba(0,102,255,.12);
+    background:var(--v3-bg);
+  }
+  .search-icon{font-size:15px;opacity:.6}
+  .search-input-inner{
+    flex:1;border:none;outline:none;background:transparent;
+    font:400 14px var(--v3-font);color:var(--v3-ink);
+  }
+  .search-clear{
+    width:18px;height:18px;border-radius:50%;background:var(--v3-ink-4);
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;color:#fff;cursor:pointer;flex-shrink:0;
+  }
 
-  .section-head{padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center}
-  .section-head h3{font:700 13px Inter;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
-  .section-head a{font:600 11px Inter;color:#DC2626}
+  /* ── Section ── */
+  .srch-section{padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+  .srch-section-title{font:700 12px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.06em}
+  .srch-section-action{font:600 11px var(--v3-font);color:var(--v3-red);cursor:pointer}
 
-  .recent{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
-  .recent-chip{padding:6px 12px;background:#F1F5F9;border-radius:20px;font:500 12px Inter;color:#0F172A;display:flex;align-items:center;gap:4px}
-  .recent-chip .x{color:#94A3B8;font-size:14px;margin-left:2px}
+  /* ── Recent searches ── */
+  .recent-chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 14px}
+  .recent-chip{
+    display:flex;align-items:center;gap:6px;
+    padding:6px 12px;background:var(--v3-bg-3);
+    border-radius:var(--v3-radius-full);
+    font:500 12px var(--v3-font);color:var(--v3-ink);cursor:pointer;
+  }
+  .chip-icon{font-size:13px;opacity:.7}
+  .chip-x{color:var(--v3-ink-4);font-size:14px;margin-left:2px;line-height:1}
 
-  .trending{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px}
-  .trend-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer}
-  .trend-card .e{font-size:28px}
-  .trend-card .n{font:600 11px Inter;color:#0F172A;margin-top:4px}
-  .trend-card .p{font:500 10px Inter;color:#059669;margin-top:2px}
+  /* ── Trending grid ── */
+  .trending-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px}
+  .trend-card{
+    background:var(--v3-bg);border:1px solid var(--v3-border);
+    border-radius:var(--v3-radius);padding:12px 8px;text-align:center;cursor:pointer;
+    transition:box-shadow var(--v3-dur) var(--v3-ease);
+  }
+  .trend-emoji{font-size:28px}
+  .trend-name{font:700 11px var(--v3-font);color:var(--v3-ink);margin-top:4px}
+  .trend-hot{font:600 10px var(--v3-font);color:var(--v3-orange);margin-top:2px}
 
-  .result{padding:12px 16px;background:#fff;border-bottom:1px solid #F1F5F9;display:flex;gap:12px;align-items:center}
-  .result .emoji{width:44px;height:44px;border-radius:10px;background:#E0F2FE;display:flex;align-items:center;justify-content:center;font-size:22px}
-  .result .body{flex:1}
-  .result .n{font:700 14px Inter;color:#0F172A}
-  .result .sub{font:400 11px Inter;color:#64748B;margin-top:1px}
-  .result .price{font:800 13px Inter;color:#0F172A}
-  .result .from{font:500 10px Inter;color:#64748B}
+  /* ── Search results ── */
+  .result-card{
+    padding:12px 16px;background:var(--v3-bg);
+    border-bottom:1px solid var(--v3-bg-3);
+    display:flex;gap:12px;align-items:center;
+  }
+  .result-thumb{
+    width:48px;height:48px;border-radius:var(--v3-radius-sm);
+    background:linear-gradient(135deg,#E0F2FE,#BAE6FD);
+    display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;
+  }
+  .result-body{flex:1;min-width:0}
+  .result-seller{font:700 13px var(--v3-font);color:var(--v3-ink)}
+  .result-meta{font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:1px}
+  .result-match{font:500 11px var(--v3-font);color:var(--v3-ink-2);margin-top:2px}
+  .badge-open{
+    font:700 9px var(--v3-font);color:var(--v3-green);background:var(--v3-green-l);
+    padding:2px 7px;border-radius:var(--v3-radius-xs);text-transform:uppercase;white-space:nowrap;
+  }
+  .badge-closed{
+    font:700 9px var(--v3-font);color:var(--v3-ink-3);background:var(--v3-bg-3);
+    padding:2px 7px;border-radius:var(--v3-radius-xs);text-transform:uppercase;white-space:nowrap;
+  }
+  .result-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+  .result-from{font:700 12px var(--v3-font);color:var(--v3-ink)}
+  .result-dist{font:400 10px var(--v3-font);color:var(--v3-ink-4)}
+
+  /* Results header bar */
+  .results-bar{
+    padding:10px 16px;background:var(--v3-bg);
+    border-bottom:1px solid var(--v3-border);
+    font:400 12px var(--v3-font);color:var(--v3-ink-3);
+  }
+  .results-bar strong{color:var(--v3-ink);font-weight:700}
+
+  /* ── No results empty state ── */
+  .empty-search{padding:52px 28px;text-align:center}
+  .empty-icon{font-size:60px;margin-bottom:16px}
+  .empty-title{font:800 17px var(--v3-font);color:var(--v3-ink);margin-bottom:8px}
+  .empty-sub{font:400 13px var(--v3-font);color:var(--v3-ink-3);margin-bottom:20px;line-height:1.5}
+  .suggestion-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .sugg-chip{
+    padding:8px 16px;background:var(--v3-brand-l);border-radius:var(--v3-radius-full);
+    font:600 12px var(--v3-font);color:var(--v3-brand);cursor:pointer;
+  }
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Screen 06 — Search</h1>
-  <p class="sub">Full-screen search overlay. Recent + Trending + Live results.</p>
+<div class="ds-page">
+  <h1>Screen 06 — Search (Buyer)</h1>
+  <p class="ds-sub">3 states: Empty search overlay · Results for "pomfret" · No results for "halibut"</p>
 
-  <div class="phone">
-    <div class="phone-status">9:41</div>
-    <div class="phone-body">
-      <div class="search-header">
-        <span class="cancel">← Cancel</span>
-        <input class="search-input" placeholder="Search fish, sellers, areas..." value="Surmai">
-      </div>
+  <div class="ds-frames">
 
-      <div class="section-head"><h3>Showing results for "Surmai"</h3></div>
-
-      <div class="result">
-        <div class="emoji">🐟</div>
-        <div class="body">
-          <div class="n">Surmai (King Fish)</div>
-          <div class="sub">Kamla Tai · 1.2 km</div>
+    <!-- ── Frame 1: Search overlay (empty / focused) ── -->
+    <div class="ds-frame-wrap">
+      <div class="ds-frame-label">Empty — Focused search bar</div>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
         </div>
-        <div><div class="price">₹650/kg</div><div class="from">from</div></div>
-      </div>
-      <div class="result">
-        <div class="emoji">🐟</div>
-        <div class="body">
-          <div class="n">Surmai (King Fish)</div>
-          <div class="sub">Rafiq Bhai · 0.8 km</div>
-        </div>
-        <div><div class="price">₹620/kg</div><div class="from">from</div></div>
-      </div>
-      <div class="result">
-        <div class="emoji">🐟</div>
-        <div class="body">
-          <div class="n">Surmai (Cut)</div>
-          <div class="sub">Kamla Tai · Pre-order</div>
-        </div>
-        <div><div class="price">₹680/kg</div><div class="from">from</div></div>
-      </div>
+        <div class="phone-body">
 
-      <div class="section-head"><h3>Trending near you</h3></div>
-      <div class="trending">
-        <div class="trend-card"><div class="e">🐟</div><div class="n">Surmai</div><div class="p">₹620/kg</div></div>
-        <div class="trend-card"><div class="e">🦐</div><div class="n">Prawns</div><div class="p">₹480/kg</div></div>
-        <div class="trend-card"><div class="e">🦀</div><div class="n">Crab</div><div class="p">₹400/kg</div></div>
-        <div class="trend-card"><div class="e">🐟</div><div class="n">Pomfret</div><div class="p">₹850/pc</div></div>
-        <div class="trend-card"><div class="e">🐟</div><div class="n">Bangda</div><div class="p">₹250/kg</div></div>
-        <div class="trend-card"><div class="e">🐟</div><div class="n">Ghol</div><div class="p">₹450/kg</div></div>
+          <div class="search-header">
+            <span class="search-back">← Cancel</span>
+            <div class="search-bar focused">
+              <span class="search-icon">🔍</span>
+              <input class="search-input-inner" placeholder="Search fish, sellers, areas…" autofocus>
+            </div>
+          </div>
+
+          <!-- Recent searches -->
+          <div class="srch-section">
+            <span class="srch-section-title">Recent searches</span>
+            <span class="srch-section-action">Clear all</span>
+          </div>
+          <div class="recent-chips">
+            <div class="recent-chip"><span class="chip-icon">🕐</span> Pomfret <span class="chip-x">×</span></div>
+            <div class="recent-chip"><span class="chip-icon">🕐</span> Surmai <span class="chip-x">×</span></div>
+            <div class="recent-chip"><span class="chip-icon">🕐</span> Thane fish <span class="chip-x">×</span></div>
+          </div>
+
+          <!-- Trending -->
+          <div class="srch-section">
+            <span class="srch-section-title">Trending now</span>
+          </div>
+          <div class="trending-grid">
+            <div class="trend-card">
+              <div class="trend-emoji">🦐</div>
+              <div class="trend-name">Prawns</div>
+              <div class="trend-hot">🔥 Hot</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🦀</div>
+              <div class="trend-name">Crab</div>
+              <div class="trend-hot">🦀 Fresh</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🐟</div>
+              <div class="trend-name">Bombil</div>
+              <div class="trend-hot">Seasonal</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🐟</div>
+              <div class="trend-name">Pomfret</div>
+              <div class="trend-hot">₹850/pc</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🐟</div>
+              <div class="trend-name">Bangda</div>
+              <div class="trend-hot">₹250/kg</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🐟</div>
+              <div class="trend-name">Surmai</div>
+              <div class="trend-hot">₹650/kg</div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
-  </div>
-</div>
+
+    <!-- ── Frame 2: Search results ── -->
+    <div class="ds-frame-wrap">
+      <div class="ds-frame-label">Results — "pomfret"</div>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
+        </div>
+        <div class="phone-body">
+
+          <div class="search-header">
+            <span class="search-back">← Back</span>
+            <div class="search-bar focused">
+              <span class="search-icon">🔍</span>
+              <input class="search-input-inner" value="pomfret">
+              <div class="search-clear">×</div>
+            </div>
+          </div>
+
+          <div class="results-bar">
+            <strong>3 sellers</strong> found for "pomfret" · Bandra West
+          </div>
+
+          <!-- Result 1 -->
+          <div class="result-card">
+            <div class="result-thumb">🐟</div>
+            <div class="result-body">
+              <div class="result-seller">Kamla Tai Fish Stall</div>
+              <div class="result-match">Pomfret (whole) · ₹850/pc</div>
+              <div class="result-meta">Sassoon Dock · 1.2 km</div>
+            </div>
+            <div class="result-right">
+              <span class="badge-open">Open</span>
+              <span class="result-dist">1.2 km</span>
+            </div>
+          </div>
+
+          <!-- Result 2 -->
+          <div class="result-card">
+            <div class="result-thumb">🐟</div>
+            <div class="result-body">
+              <div class="result-seller">Rafiq Bhai Fish</div>
+              <div class="result-match">Pomfret (cut) · ₹800/pc</div>
+              <div class="result-meta">Versova Beach · 0.8 km</div>
+            </div>
+            <div class="result-right">
+              <span class="badge-open">Open</span>
+              <span class="result-dist">0.8 km</span>
+            </div>
+          </div>
+
+          <!-- Result 3 — closed -->
+          <div class="result-card" style="opacity:.7">
+            <div class="result-thumb" style="background:linear-gradient(135deg,#F1F5F9,#E2E8F0)">🐟</div>
+            <div class="result-body">
+              <div class="result-seller">Sunita Fish Corner</div>
+              <div class="result-match">Pomfret (whole, large) · ₹950/pc</div>
+              <div class="result-meta">Dadar Market · 2.4 km</div>
+            </div>
+            <div class="result-right">
+              <span class="badge-closed">Closed</span>
+              <span class="result-dist">2.4 km</span>
+            </div>
+          </div>
+
+          <!-- Trending section below results -->
+          <div class="srch-section" style="margin-top:8px">
+            <span class="srch-section-title">Trending near you</span>
+          </div>
+          <div class="trending-grid">
+            <div class="trend-card">
+              <div class="trend-emoji">🦐</div>
+              <div class="trend-name">Prawns</div>
+              <div class="trend-hot">🔥 Hot</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🦀</div>
+              <div class="trend-name">Crab</div>
+              <div class="trend-hot">Fresh in</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🐟</div>
+              <div class="trend-name">Surmai</div>
+              <div class="trend-hot">₹650/kg</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Frame 3: No results ── -->
+    <div class="ds-frame-wrap">
+      <div class="ds-frame-label">No results — "halibut"</div>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
+        </div>
+        <div class="phone-body">
+
+          <div class="search-header">
+            <span class="search-back">← Back</span>
+            <div class="search-bar focused">
+              <span class="search-icon">🔍</span>
+              <input class="search-input-inner" value="halibut">
+              <div class="search-clear">×</div>
+            </div>
+          </div>
+
+          <div class="results-bar">
+            <strong>0 sellers</strong> found for "halibut"
+          </div>
+
+          <!-- Empty state -->
+          <div class="empty-search">
+            <div class="empty-icon">🎣</div>
+            <div class="empty-title">No sellers found for 'halibut'</div>
+            <div class="empty-sub">
+              Halibut isn't available near you right now.<br>
+              Try one of these instead:
+            </div>
+            <div class="suggestion-chips">
+              <div class="sugg-chip">Surmai</div>
+              <div class="sugg-chip">Pomfret</div>
+              <div class="sugg-chip">Rawas</div>
+            </div>
+          </div>
+
+          <!-- Trending fallback -->
+          <div class="srch-section">
+            <span class="srch-section-title">Popular near you</span>
+          </div>
+          <div class="trending-grid">
+            <div class="trend-card">
+              <div class="trend-emoji">🦐</div>
+              <div class="trend-name">Prawns</div>
+              <div class="trend-hot">🔥 Hot</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🦀</div>
+              <div class="trend-name">Crab</div>
+              <div class="trend-hot">🦀 Fresh</div>
+            </div>
+            <div class="trend-card">
+              <div class="trend-emoji">🐟</div>
+              <div class="trend-name">Bombil</div>
+              <div class="trend-hot">Seasonal</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ds-frames -->
+</div><!-- /ds-page -->
 </body>
 </html>

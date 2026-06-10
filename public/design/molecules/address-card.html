@@ -1,99 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Molecule — Address Card</title>
-<link rel="stylesheet" href="../_shared.css">
-<style>
-  .addr-card{width:336px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;gap:12px}
-  .addr-card.selected{border-color:var(--brand);background:var(--brand-l)}
-  .addr-icon{width:40px;height:40px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-  .addr-card.selected .addr-icon{background:var(--brand);color:#fff}
-  .addr-body{flex:1;min-width:0}
-  .addr-top{display:flex;align-items:center;gap:8px}
-  .addr-label{font:700 13px Inter;color:var(--ink)}
-  .addr-default{font:600 9px Inter;color:var(--green);background:var(--green-l);padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
-  .addr-text{font:400 12px Inter;color:var(--ink3);margin-top:3px;line-height:1.45}
-  .addr-actions{display:flex;gap:12px;margin-top:8px}
-  .addr-actions button{background:none;border:none;font:600 11px Inter;color:var(--brand);cursor:pointer;padding:0}
-  .addr-actions button.danger{color:var(--red)}
-  .addr-radio{width:20px;height:20px;border:2px solid var(--ink4);border-radius:50%;flex-shrink:0;margin-top:8px;position:relative}
-  .addr-card.selected .addr-radio{border-color:var(--brand)}
-  .addr-card.selected .addr-radio::after{content:'';position:absolute;inset:3px;background:var(--brand);border-radius:50%}
-
-  .add-new{width:336px;background:var(--bg2);border:1.5px dashed var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--brand);font:700 13px Inter;cursor:pointer}
-  .add-new:hover{border-color:var(--brand);background:var(--brand-l)}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V3 Address Card — Relifish Design System</title>
+  <link rel="stylesheet" href="../_shared.css" />
 </head>
 <body>
-<div class="figma-page">
+<div class="ds-page">
   <h1>Address Card</h1>
-  <p class="sub">Saved delivery addresses. Used in /me page and checkout sheet.</p>
+  <p class="ds-sub">Address list item in three states: default (green badge), non-default (pill + trash), radio selected (checkout).</p>
 
-  <div class="component" data-name="AddressCard · Home">
-    <div class="component-variants">
-      <div class="addr-card">
-        <div class="addr-icon">🏠</div>
-        <div class="addr-body">
-          <div class="addr-top">
-            <span class="addr-label">Home</span>
-            <span class="addr-default">Default</span>
-          </div>
-          <div class="addr-text">Flat 304, Sagar Mahal, Hill Road, near Mount Mary Church, Bandra West, Mumbai 400050</div>
-          <div class="addr-actions">
-            <button>Edit</button>
-            <button class="danger">Delete</button>
+  <div class="ds-component" data-name="Address Card">
+    <div class="ds-variants" style="flex-direction:column;max-width:360px;">
+
+      <!-- State 1: Default address -->
+      <div class="ds-variant">
+        <div class="ds-label">Default address</div>
+        <div style="background:var(--v3-bg);border:1.5px solid var(--v3-green);border-radius:var(--v3-radius);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;box-shadow:var(--v3-shadow-sm);">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+              <span style="font:700 13px var(--v3-font);color:var(--v3-ink);">home</span>
+              <span style="font:700 9px var(--v3-font);color:var(--v3-green);background:var(--v3-green-l);padding:2px 7px;border-radius:100px;letter-spacing:.04em;text-transform:uppercase;">Default</span>
+            </div>
+            <div style="font:400 12px var(--v3-font);color:var(--v3-ink-2);line-height:1.4;">12, Sea Breeze Apts, Bandra West, Mumbai 400050</div>
           </div>
         </div>
       </div>
-    </div>
-    <div class="spec"><b>Default variant:</b> home icon · "Default" green chip · edit/delete actions</div>
-  </div>
 
-  <div class="component" data-name="AddressCard · Selected (Checkout)">
-    <div class="component-variants">
-      <div class="addr-card selected">
-        <div class="addr-icon">🏠</div>
-        <div class="addr-body">
-          <div class="addr-top">
-            <span class="addr-label">Home</span>
+      <!-- State 2: Non-default -->
+      <div class="ds-variant">
+        <div class="ds-label">Non-default</div>
+        <div style="background:var(--v3-bg);border:1px solid var(--v3-border);border-radius:var(--v3-radius);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;box-shadow:var(--v3-shadow-sm);">
+          <div style="flex:1;">
+            <div style="font:700 13px var(--v3-font);color:var(--v3-ink);">home</div>
+            <div style="font:400 12px var(--v3-font);color:var(--v3-ink-2);margin-top:3px;line-height:1.4;">159, Dawdwa Apt, Kurla East</div>
           </div>
-          <div class="addr-text" style="color:var(--brand-d)">Flat 304, Sagar Mahal, Hill Road, Bandra West</div>
-        </div>
-        <div class="addr-radio"></div>
-      </div>
-      <div style="height:8px"></div>
-      <div class="addr-card">
-        <div class="addr-icon">🏢</div>
-        <div class="addr-body">
-          <div class="addr-top">
-            <span class="addr-label">Office</span>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+            <button style="font:600 10px var(--v3-font);color:var(--v3-ink-3);padding:4px 8px;border:1px solid var(--v3-border);border-radius:6px;background:var(--v3-bg-2);cursor:pointer;white-space:nowrap;">Default</button>
+            <button style="background:none;border:none;color:var(--v3-red);cursor:pointer;font-size:16px;padding:2px;">🗑</button>
           </div>
-          <div class="addr-text">8th floor, Tower C, BKC, Mumbai 400051</div>
         </div>
-        <div class="addr-radio"></div>
       </div>
+
+      <!-- State 3: Radio selected (checkout) -->
+      <div class="ds-variant">
+        <div class="ds-label">Radio selected (checkout)</div>
+        <div style="background:var(--v3-bg);border:2px solid var(--v3-brand);border-radius:var(--v3-radius);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;box-shadow:0 0 0 3px var(--v3-brand-l);">
+          <!-- Radio indicator -->
+          <div style="flex-shrink:0;width:18px;height:18px;border-radius:50%;border:2px solid var(--v3-brand);display:flex;align-items:center;justify-content:center;margin-top:1px;">
+            <div style="width:9px;height:9px;border-radius:50%;background:var(--v3-brand);"></div>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+              <span style="font:700 13px var(--v3-font);color:var(--v3-ink);">work</span>
+              <span style="font:700 9px var(--v3-font);color:var(--v3-brand);background:var(--v3-brand-l);padding:2px 7px;border-radius:100px;letter-spacing:.04em;text-transform:uppercase;">Selected</span>
+            </div>
+            <div style="font:400 12px var(--v3-font);color:var(--v3-ink-2);line-height:1.4;">401, Tech Park, Powai, Mumbai 400076</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /ds-variants -->
+
+    <div class="ds-spec">
+      <b>Default badge:</b> background: var(--v3-green-l); color: var(--v3-green); border-radius: 100px; text-transform: uppercase.<br/>
+      <b>Non-default actions:</b> "Default" text pill button (NOT star emoji) + 🗑 trash icon in var(--v3-red).<br/>
+      <b>Radio selected:</b> border: 2px solid var(--v3-brand); box-shadow: 0 0 0 3px var(--v3-brand-l); filled radio dot inside circle.
     </div>
-    <div class="spec"><b>Selectable variant:</b> used in checkout · radio button right · brand border on selected</div>
   </div>
 
-  <div class="component" data-name="AddressCard · All Types">
-    <div class="component-variants">
-      <div class="addr-card"><div class="addr-icon">🏠</div><div class="addr-body"><div class="addr-label">Home</div><div class="addr-text">Bandra West</div></div></div>
-      <div style="height:8px"></div>
-      <div class="addr-card"><div class="addr-icon">🏢</div><div class="addr-body"><div class="addr-label">Office</div><div class="addr-text">BKC</div></div></div>
-      <div style="height:8px"></div>
-      <div class="addr-card"><div class="addr-icon">📍</div><div class="addr-body"><div class="addr-label">Other</div><div class="addr-text">Custom location</div></div></div>
-    </div>
-    <div class="spec"><b>Icon variants:</b> 🏠 home · 🏢 office · 📍 other</div>
-  </div>
-
-  <div class="component" data-name="AddressCard · Add New">
-    <div class="component-variants">
-      <button class="add-new">+ Add new address</button>
-    </div>
-    <div class="spec"><b>Empty state / add button</b> · dashed border · brand text on hover</div>
-  </div>
 </div>
 </body>
 </html>

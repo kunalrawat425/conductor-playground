@@ -2,142 +2,636 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Screen 01 — Home</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Screen 01 — Home / Shop (Buyer)</title>
 <link rel="stylesheet" href="../_shared.css">
-<link rel="stylesheet" href="_screen-shared.css">
 <style>
-  .search{margin:0 16px;transform:translateY(-14px);padding:12px 14px;background:#fff;border-radius:12px;font:400 13px Inter;color:#94A3B8;box-shadow:0 4px 6px rgba(0,0,0,.07);display:flex;align-items:center;gap:8px;position:relative;z-index:5}
+/* ── Layout ── */
+.frames{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start}
 
-  .banner{margin:0 16px 12px;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #C7D2FE;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px}
-  .banner .icon{font-size:28px}
-  .banner h4{font:700 13px Inter;color:#3730A3}
-  .banner p{font:400 10px Inter;color:#4338CA;margin-top:1px}
-  .banner .btn{background:#4F46E5;color:#fff;font:700 11px Inter;padding:6px 12px;border-radius:8px;border:none;flex-shrink:0}
+/* ── App Header ── */
+.app-header{
+  background:var(--v3-brand);
+  padding:12px 16px 14px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:var(--v3-z-header);
+}
+.app-logo{font:800 18px var(--v3-font);color:#fff;letter-spacing:-.04em;flex-shrink:0}
+.loc-pill{
+  flex:1;display:flex;align-items:center;gap:4px;
+  background:rgba(255,255,255,.15);border-radius:var(--v3-radius-full);
+  padding:5px 10px;cursor:pointer;min-width:0;
+}
+.loc-pill .pin{font-size:11px;flex-shrink:0}
+.loc-pill .loc-name{font:600 12px var(--v3-font);color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loc-pill .chev{font-size:9px;color:rgba(255,255,255,.7);flex-shrink:0}
+.hdr-icons{display:flex;gap:4px;flex-shrink:0}
+.hdr-icon{width:32px;height:32px;border-radius:var(--v3-radius-full);background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
 
-  .cats{display:flex;gap:10px;padding:0 16px;margin-bottom:14px;overflow-x:auto}
-  .cats::-webkit-scrollbar{display:none}
-  .cat{text-align:center;flex-shrink:0;width:56px}
-  .cat .c{width:48px;height:48px;border-radius:12px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:24px}
-  .cat.active .c{background:#E6F0FF;outline:2px solid #0066FF;outline-offset:-2px}
-  .cat .n{font:500 9px Inter;color:#334155;margin-top:4px}
+/* ── Location prompt ── */
+.loc-prompt{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:48px 32px;gap:12px;text-align:center;
+  height:calc(100% - 80px);
+}
+.loc-prompt .pin-big{font-size:48px;margin-bottom:4px}
+.loc-prompt h3{font:700 17px var(--v3-font);color:var(--v3-ink)}
+.loc-prompt p{font:400 13px var(--v3-font);color:var(--v3-ink-3);line-height:1.5}
+.loc-btn{
+  margin-top:4px;padding:11px 28px;
+  background:var(--v3-brand);color:#fff;
+  border:none;border-radius:var(--v3-radius-full);
+  font:700 13px var(--v3-font);cursor:pointer;
+}
 
-  .section{padding:0 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
-  .section h3{font:700 15px Inter;color:#0F172A}
-  .section a{font:600 12px Inter;color:#0066FF;text-decoration:none}
+/* ── Pre-order banner ── */
+.preorder-banner{
+  margin:12px 16px 0;
+  background:linear-gradient(135deg,#3730A3,#4F46E5 60%,#6366F1);
+  border-radius:var(--v3-radius);
+  padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+}
+.preorder-banner .icon{font-size:22px;flex-shrink:0}
+.preorder-banner .txt{flex:1}
+.preorder-banner h4{font:700 12px var(--v3-font);color:#fff}
+.preorder-banner p{font:400 10px var(--v3-font);color:rgba(255,255,255,.8);margin-top:1px}
+.preorder-banner .btn{
+  background:#fff;color:var(--v3-indigo);
+  font:700 10px var(--v3-font);padding:5px 10px;
+  border-radius:var(--v3-radius-sm);border:none;flex-shrink:0;cursor:pointer;
+}
 
-  .card{margin:0 16px 12px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden}
-  .card-img{height:100px;background:linear-gradient(135deg,#E0F2FE,#BAE6FD);display:flex;align-items:flex-start;padding:8px;position:relative}
-  .card-img .emoji{font-size:40px;position:absolute;right:12px;bottom:8px;opacity:.3}
-  .card-img .offer{background:#0066FF;color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px}
-  .card-body{padding:12px 14px}
-  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-  .seller{font:700 14px Inter;color:#0F172A}
-  .loc{font:400 11px Inter;color:#64748B;margin-top:1px}
-  .rating{display:flex;align-items:center;gap:3px;background:#059669;color:#fff;font:700 11px Inter;padding:2px 6px;border-radius:5px;height:20px}
-  .tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
-  .tag{font:500 10px Inter;padding:2px 8px;border-radius:20px;background:#F1F5F9;color:#64748B}
-  .tag.g{background:#ECFDF5;color:#059669}
-  .tag.b{background:#E6F0FF;color:#0066FF}
-  .menu{display:flex;gap:8px;padding:10px 14px 12px;overflow-x:auto;border-top:1px solid #E2E8F0}
-  .menu::-webkit-scrollbar{display:none}
-  .chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#F8FAFC;border-radius:8px;flex-shrink:0}
-  .chip .e{font-size:16px}
-  .chip .n{font:600 11px Inter;color:#0F172A}
-  .chip .p{font:700 11px Inter;color:#059669}
-  .delivery{display:flex;align-items:center;gap:6px;padding:8px 14px;background:#ECFDF5;font:500 11px Inter;color:#059669}
+/* ── Category strip ── */
+.cat-strip{
+  display:flex;gap:8px;padding:10px 16px 0;
+  overflow-x:auto;scroll-padding-inline:16px;
+}
+.cat-strip::-webkit-scrollbar{display:none}
+.cat-tile{
+  text-align:center;flex-shrink:0;cursor:pointer;
+}
+.cat-tile .c{
+  width:48px;height:48px;border-radius:var(--v3-radius-sm);
+  background:var(--v3-bg-3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;overflow:hidden;
+}
+.cat-tile .c img{width:100%;height:100%;object-fit:cover;border-radius:var(--v3-radius-sm)}
+.cat-tile .n{font:500 9px var(--v3-font);color:var(--v3-ink-2);margin-top:4px}
+.cat-tile.active .c{background:var(--v3-brand-l);outline:2.5px solid var(--v3-brand);outline-offset:-2px}
+.cat-tile.active .n{color:var(--v3-brand);font-weight:700}
+
+/* ── Filter chips ── */
+.filter-row{
+  display:flex;gap:6px;padding:10px 16px 12px;
+  overflow-x:auto;
+}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{
+  padding:5px 14px;border-radius:var(--v3-radius-full);
+  font:600 11px var(--v3-font);white-space:nowrap;flex-shrink:0;cursor:pointer;
+  background:var(--v3-bg-3);color:var(--v3-ink-2);
+  border:1px solid transparent;
+}
+.filter-chip.active{background:var(--v3-brand);color:#fff}
+.filter-chip.active-indigo{background:var(--v3-indigo);color:#fff}
+
+/* ── Section header ── */
+.section-hdr{
+  padding:0 16px 10px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-hdr h3{font:700 15px var(--v3-font);color:var(--v3-ink)}
+.count-badge{
+  background:var(--v3-brand-l);color:var(--v3-brand);
+  font:700 10px var(--v3-font);padding:2px 7px;border-radius:var(--v3-radius-full);
+}
+
+/* ── Seller card (V3) ── */
+.v3-sc{
+  display:block;margin:0 16px 12px;
+  background:var(--v3-bg);border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow);overflow:hidden;
+  text-decoration:none;color:inherit;
+}
+.v3-sc-hero{height:120px;position:relative;overflow:hidden}
+.v3-sc-hero img.store-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.v3-sc-hero .overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.45))}
+.v3-sc-hero .hero-badges{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-start}
+/* ocean gradient */
+.v3-sc-hero.ocean{background:linear-gradient(160deg,#003580,#0055CC 45%,#0077E6 75%,#0EA5E9)}
+.v3-sc-hero.ocean .wave-ring-1{position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;border-radius:50%;border:2px solid rgba(255,255,255,.08)}
+.v3-sc-hero.ocean .wave-ring-2{position:absolute;top:-30px;right:60px;width:160px;height:160px;border-radius:50%;border:2px solid rgba(255,255,255,.05)}
+.v3-sc-hero.ocean .fish-wm{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:60px;opacity:.1;line-height:1}
+
+.badge{display:inline-flex;align-items:center;font:700 10px var(--v3-font);border-radius:var(--v3-radius-full);padding:3px 8px;white-space:nowrap}
+.badge-brand{background:var(--v3-brand);color:#fff}
+.badge-green{background:var(--v3-green);color:#fff}
+.badge-indigo{background:var(--v3-indigo);color:#fff}
+.badge-green-tag{background:var(--v3-green-l);color:var(--v3-green)}
+.badge-indigo-tag{background:var(--v3-indigo-l);color:var(--v3-indigo)}
+
+.v3-sc-body{padding:10px 14px 8px}
+.v3-sc-name{font:700 14px var(--v3-font);color:var(--v3-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v3-sc-loc{font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:1px}
+.v3-sc-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+
+/* ── Listing chips inside card ── */
+.listing-chips{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  padding:8px 12px 10px;border-top:1px solid var(--v3-border);
+}
+.lchip{
+  display:flex;align-items:flex-start;gap:7px;padding:7px 9px;
+  background:var(--v3-bg-2);border-radius:10px;border:1px solid var(--v3-border);min-height:58px;
+}
+.lchip img{width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;align-self:center}
+.lchip-name{font:600 10px var(--v3-font);color:var(--v3-ink);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lchip-price{font:700 10px var(--v3-font);color:var(--v3-green);margin-top:2px}
+.lchip-more{
+  display:flex;align-items:center;justify-content:center;
+  padding:7px 9px;border-radius:10px;border:1.5px dashed var(--v3-border);
+  min-height:58px;color:var(--v3-brand);font:700 11px var(--v3-font);text-align:center;
+}
+
+/* ── Delivery bar ── */
+.delivery-bar{
+  display:flex;align-items:center;gap:6px;padding:7px 14px;
+  background:var(--v3-green-l);color:var(--v3-green);
+  font:600 11px var(--v3-font);border-top:1px solid var(--v3-green-bg);
+}
+.delivery-bar.indigo{background:var(--v3-indigo-l);color:var(--v3-indigo);border-top-color:var(--v3-indigo-m)}
+
+/* ── Bottom nav ── */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;height:60px;
+  background:var(--v3-bg);border-top:1px solid var(--v3-border);
+  display:flex;z-index:var(--v3-z-bottom-nav);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;font:500 10px var(--v3-font);color:var(--v3-ink-4);cursor:pointer;
+}
+.nav-item.active{color:var(--v3-brand)}
+.nav-icon{font-size:18px}
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Screen 01 — Home</h1>
-  <p class="sub">Seller browse homepage. First impression. Must convert.</p>
+<div class="ds-page">
+  <h1>Screen 01 — Home / Shop (Buyer)</h1>
+  <p class="ds-sub">Seller browse homepage. 4 states: no location → sellers grid → category filter → pre-order filter.</p>
 
-  <div class="phone">
-    <div class="phone-status">9:41</div>
-    <div class="phone-body with-nav">
-      <div class="app-header" style="padding-bottom:20px">
-        <span class="logo">relifish</span>
-        <div class="loc-wrap">
-          <div class="loc-main">Bandra West ▼</div>
-          <div class="loc-sub">Deliver in 45 min · 3 sellers</div>
+  <div class="frames">
+
+    <!-- ══════════════════════════════════════
+         Frame 1: No location set
+    ══════════════════════════════════════ -->
+    <div>
+      <h2 style="font:700 13px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">No Location Set</h2>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
         </div>
-        <div class="profile">👤</div>
-      </div>
-      <div class="search">🔍 Search "Surmai", "Pomfret", sellers...</div>
-
-      <div class="banner">
-        <div class="icon">🌙</div>
-        <div style="flex:1">
-          <h4>Pre-order tomorrow's catch</h4>
-          <p>Order tonight, reserved by 5am</p>
-        </div>
-        <button class="btn">Browse</button>
-      </div>
-
-      <div class="cats">
-        <div class="cat active"><div class="c">🐟</div><div class="n">All Fish</div></div>
-        <div class="cat"><div class="c">🦐</div><div class="n">Prawns</div></div>
-        <div class="cat"><div class="c">🦀</div><div class="n">Crab</div></div>
-        <div class="cat"><div class="c">🦑</div><div class="n">Squid</div></div>
-        <div class="cat"><div class="c">🐚</div><div class="n">Shellfish</div></div>
-      </div>
-
-      <div style="display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <span style="padding:6px 14px;border-radius:20px;background:#0066FF;color:#fff;font:600 12px Inter;white-space:nowrap;flex-shrink:0">All</span>
-        <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#334155;font:500 12px Inter;white-space:nowrap;flex-shrink:0">Open now</span>
-        <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#334155;font:500 12px Inter;white-space:nowrap;flex-shrink:0">Pre-order</span>
-        <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#334155;font:500 12px Inter;white-space:nowrap;flex-shrink:0">Pickup</span>
-        <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#334155;font:500 12px Inter;white-space:nowrap;flex-shrink:0">Delivery</span>
-        <span style="padding:6px 14px;border-radius:20px;background:#F1F5F9;color:#334155;font:500 12px Inter;white-space:nowrap;flex-shrink:0">Top rated</span>
-      </div>
-
-      <div class="section"><h3>Near you</h3><a>See all →</a></div>
-
-      <div class="card">
-        <div class="card-img"><span class="offer">Same-day catch</span><span class="emoji">🐟</span></div>
-        <div class="card-body">
-          <div class="card-top">
-            <div><div class="seller">Kamla Tai Fish Stall</div><div class="loc">Sassoon Dock · 1.2 km · 45 min</div></div>
-            <div class="rating">4.8 ★</div>
+        <div class="phone-body">
+          <!-- Header -->
+          <div class="app-header">
+            <span class="app-logo">relifish</span>
+            <div class="loc-pill">
+              <span class="pin">📍</span>
+              <span class="loc-name">Set location</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="hdr-icons">
+              <div class="hdr-icon">🔔</div>
+              <div class="hdr-icon">👤</div>
+            </div>
           </div>
-          <div class="tags"><span class="tag g">Open now</span><span class="tag b">Pre-order</span><span class="tag">Cleaned & cut</span></div>
-        </div>
-        <div class="menu">
-          <div class="chip"><span class="e">🐟</span><div><div class="n">Surmai</div><div class="p">₹650/kg</div></div></div>
-          <div class="chip"><span class="e">🐟</span><div><div class="n">Rawas</div><div class="p">₹800/kg</div></div></div>
-          <div class="chip"><span class="e">🦐</span><div><div class="n">Prawns</div><div class="p">₹500/kg</div></div></div>
-        </div>
-        <div class="delivery">🚲 Delivery available · Free above ₹1,000</div>
-      </div>
 
-      <div class="card">
-        <div class="card-img" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5)"><span class="offer" style="background:#059669">Fresh today</span><span class="emoji">🦐</span></div>
-        <div class="card-body">
-          <div class="card-top">
-            <div><div class="seller">Rafiq Bhai Fish</div><div class="loc">Versova Beach · 0.8 km · 30 min</div></div>
-            <div class="rating">4.6 ★</div>
+          <!-- Empty state -->
+          <div class="loc-prompt">
+            <div class="pin-big">📍</div>
+            <h3>Set your location</h3>
+            <p>We'll show you fresh fish sellers<br>delivering to your area today.</p>
+            <button class="loc-btn">Choose area</button>
           </div>
-          <div class="tags"><span class="tag g">Open now</span><span class="tag">Pickup only</span></div>
         </div>
       </div>
     </div>
-    <div style="position:absolute;bottom:60px;left:16px;right:16px;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);padding:10px 14px;display:flex;align-items:center;gap:10px;z-index:20">
-      <div style="position:relative;width:36px;height:36px">
-        <div style="width:36px;height:36px;background:#E6F0FF;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;position:absolute;top:0;left:0;z-index:2">🛒</div>
-        <div style="width:36px;height:36px;background:#D4E4FF;border-radius:8px;position:absolute;top:-3px;left:3px;z-index:1"></div>
+
+    <!-- ══════════════════════════════════════
+         Frame 2: Sellers grid (normal)
+    ══════════════════════════════════════ -->
+    <div>
+      <h2 style="font:700 13px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Sellers Near You</h2>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
+          <div class="app-header">
+            <span class="app-logo">relifish</span>
+            <div class="loc-pill">
+              <span class="pin">📍</span>
+              <span class="loc-name">Andheri West</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="hdr-icons">
+              <div class="hdr-icon">🔔</div>
+              <div class="hdr-icon">👤</div>
+            </div>
+          </div>
+
+          <!-- Pre-order banner -->
+          <div class="preorder-banner">
+            <span class="icon">🌙</span>
+            <div class="txt">
+              <h4>Pre-order tomorrow's catch</h4>
+              <p>Order tonight, reserved by 5am</p>
+            </div>
+            <button class="btn">Browse</button>
+          </div>
+
+          <!-- Category strip -->
+          <div class="cat-strip">
+            <div class="cat-tile active">
+              <div class="c">🐟</div>
+              <div class="n">All Fish</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c"><img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret"></div>
+              <div class="n">Pomfret</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c"><img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai"></div>
+              <div class="n">Surmai</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c"><img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns"></div>
+              <div class="n">Prawns</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c">🦀</div>
+              <div class="n">Crab</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c">🐙</div>
+              <div class="n">Squid</div>
+            </div>
+          </div>
+
+          <!-- Filter chips -->
+          <div class="filter-row">
+            <span class="filter-chip active">All</span>
+            <span class="filter-chip">Open now</span>
+            <span class="filter-chip">Pre-order</span>
+            <span class="filter-chip">Delivery</span>
+            <span class="filter-chip">Top rated</span>
+          </div>
+
+          <!-- Section header -->
+          <div class="section-hdr">
+            <h3>Sellers near you</h3>
+            <span class="count-badge">3</span>
+          </div>
+
+          <!-- Card 1: Fish Tokri — ocean gradient, no store image -->
+          <a class="v3-sc" href="#">
+            <div class="v3-sc-hero ocean">
+              <div class="wave-ring-1"></div>
+              <div class="wave-ring-2"></div>
+              <div class="fish-wm">🐟</div>
+              <div class="hero-badges">
+                <span class="badge badge-brand">Same-day catch</span>
+              </div>
+            </div>
+            <div class="v3-sc-body">
+              <div class="v3-sc-row">
+                <div class="v3-sc-name">Fish Tokri</div>
+                <span class="badge badge-green-tag">Open now</span>
+              </div>
+              <div class="v3-sc-loc">Andheri West · 1.4 km</div>
+            </div>
+            <div class="listing-chips">
+              <div class="lchip">
+                <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret">
+                <div><div class="lchip-name">Pomfret (पापलेट)</div><div class="lchip-price">₹2400/kg</div></div>
+              </div>
+              <div class="lchip">
+                <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai">
+                <div><div class="lchip-name">Surmai (Kingfish)</div><div class="lchip-price">₹2400/kg</div></div>
+              </div>
+            </div>
+            <div class="delivery-bar">🚲 Delivery · Free above ₹1500</div>
+          </a>
+
+          <!-- Card 2: Seller 9974 — store image -->
+          <a class="v3-sc" href="#">
+            <div class="v3-sc-hero">
+              <img class="store-img" src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Seller store">
+              <div class="overlay"></div>
+              <div class="hero-badges">
+                <span class="badge badge-brand">Same-day catch</span>
+                <span class="badge badge-green">4.7 ★</span>
+              </div>
+            </div>
+            <div class="v3-sc-body">
+              <div class="v3-sc-row">
+                <div class="v3-sc-name">Seller 9974</div>
+                <span class="badge badge-green-tag">Open now</span>
+              </div>
+              <div class="v3-sc-loc">Andheri West · 2.2 km</div>
+            </div>
+            <div class="listing-chips" style="grid-template-columns:1fr 1fr 1fr">
+              <div class="lchip">
+                <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns">
+                <div><div class="lchip-name">Prawns</div><div class="lchip-price">₹620/kg</div></div>
+              </div>
+              <div class="lchip-more">+2 more</div>
+            </div>
+            <div class="delivery-bar">🚲 Delivery · Free above ₹2000</div>
+          </a>
+
+          <div style="height:64px"></div>
+
+          <!-- Bottom nav -->
+          <div class="bottom-nav">
+            <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+            <div class="nav-item"><span class="nav-icon">📋</span>Orders</div>
+            <div class="nav-item"><span class="nav-icon">👤</span>Account</div>
+          </div>
+        </div>
       </div>
-      <div style="flex:1">
-        <div style="font:700 13px Inter;color:#0F172A">Your Carts</div>
-        <div style="font:400 11px Inter;color:#64748B">Kamla Tai · 3 items</div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         Frame 3: Category filter — Surmai active
+    ══════════════════════════════════════ -->
+    <div>
+      <h2 style="font:700 13px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Category Filter — Surmai</h2>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
+          <div class="app-header">
+            <span class="app-logo">relifish</span>
+            <div class="loc-pill">
+              <span class="pin">📍</span>
+              <span class="loc-name">Andheri West</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="hdr-icons">
+              <div class="hdr-icon">🔔</div>
+              <div class="hdr-icon">👤</div>
+            </div>
+          </div>
+
+          <!-- Pre-order banner -->
+          <div class="preorder-banner">
+            <span class="icon">🌙</span>
+            <div class="txt">
+              <h4>Pre-order tomorrow's catch</h4>
+              <p>Order tonight, reserved by 5am</p>
+            </div>
+            <button class="btn">Browse</button>
+          </div>
+
+          <!-- Category strip — Surmai active -->
+          <div class="cat-strip">
+            <div class="cat-tile">
+              <div class="c">🐟</div>
+              <div class="n">All Fish</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c"><img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret"></div>
+              <div class="n">Pomfret</div>
+            </div>
+            <div class="cat-tile active">
+              <div class="c"><img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai"></div>
+              <div class="n">Surmai</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c"><img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns"></div>
+              <div class="n">Prawns</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c">🦀</div>
+              <div class="n">Crab</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c">🐙</div>
+              <div class="n">Squid</div>
+            </div>
+          </div>
+
+          <!-- Filter chips -->
+          <div class="filter-row">
+            <span class="filter-chip active">All</span>
+            <span class="filter-chip">Open now</span>
+            <span class="filter-chip">Pre-order</span>
+            <span class="filter-chip">Delivery</span>
+          </div>
+
+          <!-- Section header — filtered -->
+          <div class="section-hdr">
+            <h3>Surmai sellers</h3>
+            <span class="count-badge">1</span>
+          </div>
+
+          <!-- Only 1 card visible after filter -->
+          <a class="v3-sc" href="#">
+            <div class="v3-sc-hero ocean">
+              <div class="wave-ring-1"></div>
+              <div class="wave-ring-2"></div>
+              <div class="fish-wm">🐟</div>
+              <div class="hero-badges">
+                <span class="badge badge-brand">Same-day catch</span>
+              </div>
+            </div>
+            <div class="v3-sc-body">
+              <div class="v3-sc-row">
+                <div class="v3-sc-name">Fish Tokri</div>
+                <span class="badge badge-green-tag">Open now</span>
+              </div>
+              <div class="v3-sc-loc">Andheri West · 1.4 km</div>
+            </div>
+            <div class="listing-chips">
+              <div class="lchip" style="border-color:var(--v3-brand);background:var(--v3-brand-l)">
+                <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai">
+                <div><div class="lchip-name" style="color:var(--v3-brand)">Surmai (Kingfish)</div><div class="lchip-price">₹2400/kg</div></div>
+              </div>
+              <div class="lchip">
+                <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret">
+                <div><div class="lchip-name">Pomfret</div><div class="lchip-price">₹2400/kg</div></div>
+              </div>
+            </div>
+            <div class="delivery-bar">🚲 Delivery · Free above ₹1500</div>
+          </a>
+
+          <!-- Empty hint for other sellers -->
+          <div style="margin:0 16px;padding:16px;background:var(--v3-bg-3);border-radius:var(--v3-radius);text-align:center">
+            <div style="font:400 12px var(--v3-font);color:var(--v3-ink-3)">2 more sellers don't carry Surmai today</div>
+          </div>
+
+          <div style="height:64px"></div>
+          <div class="bottom-nav">
+            <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+            <div class="nav-item"><span class="nav-icon">📋</span>Orders</div>
+            <div class="nav-item"><span class="nav-icon">👤</span>Account</div>
+          </div>
+        </div>
       </div>
-      <div style="background:#0066FF;color:#fff;font:700 11px Inter;padding:6px 12px;border-radius:8px">View</div>
     </div>
-    <div class="bottom-nav">
-      <div class="n-item active"><span class="icon">🏠</span>Home</div>
-      <div class="n-item"><span class="icon">📋</span>Orders</div>
-      <div class="n-item"><span class="icon">👤</span>Account</div>
+
+    <!-- ══════════════════════════════════════
+         Frame 4: Pre-order filter active
+    ══════════════════════════════════════ -->
+    <div>
+      <h2 style="font:700 13px var(--v3-font);color:var(--v3-ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Pre-order Filter</h2>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
+        </div>
+        <div class="phone-body">
+          <!-- Header -->
+          <div class="app-header">
+            <span class="app-logo">relifish</span>
+            <div class="loc-pill">
+              <span class="pin">📍</span>
+              <span class="loc-name">Andheri West</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="hdr-icons">
+              <div class="hdr-icon">🔔</div>
+              <div class="hdr-icon">👤</div>
+            </div>
+          </div>
+
+          <!-- Pre-order banner -->
+          <div class="preorder-banner">
+            <span class="icon">🌙</span>
+            <div class="txt">
+              <h4>Pre-order tomorrow's catch</h4>
+              <p>Order tonight, reserved by 5am</p>
+            </div>
+            <button class="btn">Browse</button>
+          </div>
+
+          <!-- Category strip -->
+          <div class="cat-strip">
+            <div class="cat-tile active">
+              <div class="c">🐟</div>
+              <div class="n">All Fish</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c"><img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret"></div>
+              <div class="n">Pomfret</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c"><img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai"></div>
+              <div class="n">Surmai</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c"><img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns"></div>
+              <div class="n">Prawns</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c">🦀</div>
+              <div class="n">Crab</div>
+            </div>
+            <div class="cat-tile">
+              <div class="c">🐙</div>
+              <div class="n">Squid</div>
+            </div>
+          </div>
+
+          <!-- Filter chips — Pre-order active -->
+          <div class="filter-row">
+            <span class="filter-chip">All</span>
+            <span class="filter-chip">Open now</span>
+            <span class="filter-chip active-indigo">Pre-order</span>
+            <span class="filter-chip">Delivery</span>
+            <span class="filter-chip">Top rated</span>
+          </div>
+
+          <!-- Section header -->
+          <div class="section-hdr">
+            <h3>Pre-order sellers</h3>
+            <span class="count-badge" style="background:var(--v3-indigo-l);color:var(--v3-indigo)">2</span>
+          </div>
+
+          <!-- Card: pre-order open -->
+          <a class="v3-sc" href="#">
+            <div class="v3-sc-hero" style="background:linear-gradient(160deg,#1E1B4B,#3730A3 45%,#4F46E5 75%,#818CF8)">
+              <div style="position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;border-radius:50%;border:2px solid rgba(255,255,255,.08)"></div>
+              <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:52px;opacity:.12;line-height:1">🌙</div>
+              <div class="hero-badges">
+                <span class="badge badge-indigo">Tomorrow's catch</span>
+              </div>
+            </div>
+            <div class="v3-sc-body">
+              <div class="v3-sc-row">
+                <div class="v3-sc-name">Fish Tokri</div>
+                <span class="badge badge-indigo-tag">Pre-orders open</span>
+              </div>
+              <div class="v3-sc-loc">Andheri West · 1.4 km · Order by 11 PM</div>
+            </div>
+            <div class="listing-chips">
+              <div class="lchip">
+                <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret">
+                <div><div class="lchip-name">Pomfret</div><div class="lchip-price" style="color:var(--v3-indigo)">₹2000–2800/kg</div></div>
+              </div>
+              <div class="lchip">
+                <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai">
+                <div><div class="lchip-name">Surmai</div><div class="lchip-price" style="color:var(--v3-indigo)">₹2000–2800/kg</div></div>
+              </div>
+            </div>
+            <div class="delivery-bar indigo">🌙 Reserve tonight · Ready at 7am tomorrow</div>
+          </a>
+
+          <!-- Card 2: pre-order open -->
+          <a class="v3-sc" href="#">
+            <div class="v3-sc-hero" style="background:linear-gradient(160deg,#1E1B4B,#3730A3 45%,#4F46E5 75%,#818CF8)">
+              <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:52px;opacity:.12;line-height:1">🌙</div>
+              <div class="hero-badges">
+                <span class="badge badge-indigo">Tomorrow's catch</span>
+              </div>
+            </div>
+            <div class="v3-sc-body">
+              <div class="v3-sc-row">
+                <div class="v3-sc-name">Rafiq Bhai Fish</div>
+                <span class="badge badge-indigo-tag">Pre-orders open</span>
+              </div>
+              <div class="v3-sc-loc">Versova · 2.8 km · Order by 11 PM</div>
+            </div>
+            <div class="listing-chips">
+              <div class="lchip">
+                <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns">
+                <div><div class="lchip-name">Prawns</div><div class="lchip-price" style="color:var(--v3-indigo)">Market rate</div></div>
+              </div>
+              <div class="lchip-more">+3 more</div>
+            </div>
+            <div class="delivery-bar indigo">🌙 Reserve tonight · Ready at 7am tomorrow</div>
+          </a>
+
+          <div style="height:64px"></div>
+          <div class="bottom-nav">
+            <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+            <div class="nav-item"><span class="nav-icon">📋</span>Orders</div>
+            <div class="nav-item"><span class="nav-icon">👤</span>Account</div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+
+  </div><!-- /frames -->
 </div>
 </body>
 </html>

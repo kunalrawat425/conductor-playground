@@ -2,96 +2,418 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Screen 05 — Profile</title>
+<title>Screen 05 — Profile / Account (Buyer)</title>
 <link rel="stylesheet" href="../_shared.css">
 <link rel="stylesheet" href="_screen-shared.css">
 <style>
-  .profile-hero{background:linear-gradient(135deg,#0066FF,#3B82F6);padding:24px 16px 60px;color:#fff;text-align:center;position:relative}
-  .avatar-lg{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 12px}
-  .name-lg{font:800 20px Inter}
-  .phone-num{font:400 12px Inter;opacity:.8;margin-top:2px}
+  /* ── Multi-phone layout ── */
+  .ds-frames{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start}
+  .ds-frame-wrap{display:flex;flex-direction:column;gap:10px}
+  .ds-frame-label{font:700 11px var(--v3-font);color:var(--v3-ink-4);text-transform:uppercase;letter-spacing:.08em;text-align:center}
 
-  .quick-actions{margin:-40px 16px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#fff;border-radius:16px;padding:16px 8px;box-shadow:0 4px 6px rgba(0,0,0,.07);position:relative;z-index:2}
-  .qa{text-align:center;cursor:pointer}
-  .qa .icon{width:44px;height:44px;border-radius:12px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 4px}
-  .qa .lbl{font:600 10px Inter;color:#0F172A}
+  /* ── Ocean gradient hero ── */
+  .profile-hero{
+    background:linear-gradient(160deg,#003580 0%,#0EA5E9 100%);
+    padding:28px 16px 64px;
+    color:#fff;text-align:center;position:relative;overflow:hidden;
+  }
+  /* Wave rings */
+  .wave-ring{
+    position:absolute;border-radius:50%;border:1.5px solid rgba(255,255,255,.18);
+    pointer-events:none;
+  }
+  .wave-ring-1{width:160px;height:160px;top:-40px;right:-40px}
+  .wave-ring-2{width:240px;height:240px;top:-80px;right:-80px}
+  .wave-ring-3{width:320px;height:320px;top:-120px;right:-120px}
 
-  .section-head{padding:16px 16px 8px;font:700 12px Inter;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
+  /* Initials avatar */
+  .avatar-initials{
+    width:80px;height:80px;border-radius:50%;
+    background:rgba(255,255,255,.2);border:2.5px solid rgba(255,255,255,.9);
+    display:flex;align-items:center;justify-content:center;
+    font:800 28px var(--v3-font);color:#fff;
+    margin:0 auto 12px;position:relative;z-index:2;
+  }
+  .profile-name{font:800 20px var(--v3-font);color:#fff;position:relative;z-index:2}
+  .profile-phone{font:400 12px var(--v3-font);color:rgba(255,255,255,.85);margin-top:4px;position:relative;z-index:2}
+  .edit-pill{
+    display:inline-flex;align-items:center;gap:6px;margin-top:12px;
+    padding:7px 18px;border-radius:var(--v3-radius-full);
+    background:rgba(255,255,255,.18);backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.35);
+    font:600 12px var(--v3-font);color:#fff;cursor:pointer;
+    position:relative;z-index:2;
+  }
 
-  .addr{margin:0 16px 8px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:center}
-  .addr-icon{width:36px;height:36px;border-radius:10px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .addr-body{flex:1}
-  .addr-top{display:flex;align-items:center;gap:8px}
-  .addr-lbl{font:700 13px Inter;color:#0F172A}
-  .addr-def{font:600 9px Inter;color:#059669;background:#ECFDF5;padding:2px 6px;border-radius:4px;text-transform:uppercase}
-  .addr-text{font:400 11px Inter;color:#64748B;margin-top:2px;line-height:1.4}
+  /* Quick actions card overlapping hero */
+  .quick-actions-card{
+    margin:-36px 16px 16px;
+    background:var(--v3-brand-l);
+    border-radius:var(--v3-radius-lg);
+    padding:16px 8px;
+    box-shadow:var(--v3-shadow-lg);
+    position:relative;z-index:5;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:4px;
+  }
+  .qa-item{text-align:center;padding:8px 4px;cursor:pointer}
+  .qa-icon{
+    width:44px;height:44px;border-radius:var(--v3-radius-sm);
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;margin:0 auto 6px;
+  }
+  .qa-label{font:600 10px var(--v3-font);color:var(--v3-ink)}
 
-  .list-item{margin:0 16px 1px;background:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}
-  .list-item:first-child{border-radius:12px 12px 0 0}
-  .list-item:last-child{border-radius:0 0 12px 12px;margin-bottom:16px}
-  .list-item .li-icon{width:32px;height:32px;border-radius:8px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:16px}
-  .list-item .li-name{flex:1;font:600 13px Inter;color:#0F172A}
-  .list-item .li-arrow{color:#94A3B8;font-size:14px}
-  .list-item .li-toggle{width:40px;height:24px;background:#0066FF;border-radius:12px;position:relative}
-  .list-item .li-toggle::after{content:'';position:absolute;right:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%}
+  /* Section headers */
+  .section-hd{
+    padding:16px 16px 8px;
+    font:700 11px var(--v3-font);color:var(--v3-ink-3);
+    text-transform:uppercase;letter-spacing:.06em;
+  }
 
-  .logout{margin:8px 16px;background:#fff;border:1px solid #FEE2E2;color:#DC2626;padding:14px;border-radius:12px;font:700 13px Inter;text-align:center}
+  /* Address cards */
+  .addr-card{
+    margin:0 16px 8px;background:var(--v3-bg);
+    border:1px solid var(--v3-border);border-radius:var(--v3-radius);
+    padding:14px 16px;display:flex;gap:12px;align-items:center;
+  }
+  .addr-icon-box{
+    width:38px;height:38px;border-radius:var(--v3-radius-sm);
+    background:var(--v3-bg-3);display:flex;align-items:center;
+    justify-content:center;font-size:18px;flex-shrink:0;
+  }
+  .addr-body{flex:1;min-width:0}
+  .addr-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .addr-name{font:700 13px var(--v3-font);color:var(--v3-ink)}
+  .badge-default{
+    font:700 9px var(--v3-font);color:var(--v3-green);
+    background:var(--v3-green-l);padding:2px 7px;border-radius:var(--v3-radius-xs);
+    text-transform:uppercase;
+  }
+  .addr-text{font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:2px;line-height:1.4}
+  .btn-default-pill{
+    padding:5px 12px;border-radius:var(--v3-radius-full);
+    border:1px solid var(--v3-border);background:var(--v3-bg);
+    font:600 10px var(--v3-font);color:var(--v3-ink-3);cursor:pointer;white-space:nowrap;
+  }
+
+  /* Order history card */
+  .order-hist-card{
+    margin:0 16px 16px;background:var(--v3-bg);
+    border:1px solid var(--v3-border);border-radius:var(--v3-radius);
+    padding:14px 16px;
+  }
+  .order-hist-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .order-hist-id{font:700 13px var(--v3-font);color:var(--v3-ink)}
+  .order-hist-date{font:400 11px var(--v3-font);color:var(--v3-ink-3);margin-top:2px}
+  .order-hist-items{font:400 12px var(--v3-font);color:var(--v3-ink-2);margin-top:8px}
+  .order-hist-total{font:800 13px var(--v3-font);color:var(--v3-ink);margin-top:6px}
+  .order-badge-done{
+    font:700 9px var(--v3-font);color:var(--v3-green);
+    background:var(--v3-green-l);padding:2px 8px;border-radius:var(--v3-radius-xs);
+    text-transform:uppercase;
+  }
+
+  /* ── Frame 2: Guest / Sign-in ── */
+  .signin-card{
+    margin:24px 16px;background:var(--v3-bg);
+    border:1px solid var(--v3-border);border-radius:var(--v3-radius-lg);
+    padding:28px 20px;text-align:center;
+    box-shadow:var(--v3-shadow-md);
+  }
+  .signin-icon{font-size:48px;margin-bottom:12px}
+  .signin-title{font:800 18px var(--v3-font);color:var(--v3-ink);margin-bottom:6px}
+  .signin-sub{font:400 13px var(--v3-font);color:var(--v3-ink-3);margin-bottom:20px}
+  .phone-input-wrap{
+    display:flex;border:1.5px solid var(--v3-brand);border-radius:var(--v3-radius-sm);
+    overflow:hidden;margin-bottom:14px;
+  }
+  .phone-prefix{
+    padding:12px 14px;background:var(--v3-brand-l);
+    font:700 14px var(--v3-font);color:var(--v3-brand);border-right:1.5px solid var(--v3-brand);
+  }
+  .phone-field{
+    flex:1;padding:12px 14px;border:none;outline:none;
+    font:400 14px var(--v3-font);color:var(--v3-ink);background:var(--v3-bg);
+  }
+  .btn-signin{
+    width:100%;padding:14px;border-radius:var(--v3-radius-sm);
+    background:var(--v3-brand);color:#fff;border:none;
+    font:700 14px var(--v3-font);cursor:pointer;
+  }
+  .signin-footer{font:400 11px var(--v3-font);color:var(--v3-ink-4);margin-top:12px}
+
+  /* ── Frame 3: Edit profile sheet ── */
+  .bottom-sheet{
+    position:absolute;bottom:0;left:0;right:0;
+    background:var(--v3-bg);border-radius:20px 20px 0 0;
+    box-shadow:0 -8px 32px rgba(0,0,0,.18);
+    padding:12px 20px 32px;z-index:10;
+  }
+  .sheet-drag{
+    width:40px;height:4px;background:var(--v3-border);
+    border-radius:2px;margin:0 auto 16px;
+  }
+  .sheet-title{font:800 17px var(--v3-font);color:var(--v3-ink);margin-bottom:18px}
+  .field-group{margin-bottom:14px}
+  .field-label{font:600 11px var(--v3-font);color:var(--v3-ink-3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+  .field-input{
+    width:100%;padding:11px 14px;border:1.5px solid var(--v3-border);border-radius:var(--v3-radius-sm);
+    font:400 14px var(--v3-font);color:var(--v3-ink);background:var(--v3-bg);outline:none;
+    box-sizing:border-box;
+  }
+  .field-input:focus{border-color:var(--v3-brand)}
+  .field-note{font:400 10px var(--v3-font);color:var(--v3-ink-4);margin-top:4px}
+  .btn-save{
+    width:100%;padding:14px;border-radius:var(--v3-radius-sm);
+    background:var(--v3-brand);color:#fff;border:none;
+    font:700 14px var(--v3-font);cursor:pointer;margin-top:6px;
+  }
+  .sheet-row{display:flex;gap:12px}
+  .sheet-row .field-group{flex:1}
+
+  /* Profile hero dim when sheet open */
+  .hero-dimmed::after{
+    content:'';position:absolute;inset:0;background:rgba(0,0,0,.35);z-index:3;pointer-events:none;
+  }
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Screen 05 — Profile</h1>
-  <p class="sub">Account settings. Quick actions grid + grouped lists.</p>
+<div class="ds-page">
+  <h1>Screen 05 — Profile / Account (Buyer)</h1>
+  <p class="ds-sub">3 states: Signed-in profile · Guest sign-in prompt · Edit profile sheet open</p>
 
-  <div class="phone">
-    <div class="phone-status" style="background:#0066FF;color:#fff">9:41</div>
-    <div class="phone-body with-nav">
-      <div class="profile-hero">
-        <div class="avatar-lg">👤</div>
-        <div class="name-lg">Priya Desai</div>
-        <div class="phone-num">+91 98XXX XXXXX</div>
-      </div>
+  <div class="ds-frames">
 
-      <div class="quick-actions">
-        <div class="qa"><div class="icon">📍</div><div class="lbl">Addresses</div></div>
-        <div class="qa"><div class="icon">🔔</div><div class="lbl">Notifications</div></div>
-        <div class="qa"><div class="icon">💳</div><div class="lbl">Payments</div></div>
-        <div class="qa"><div class="icon">💬</div><div class="lbl">Help</div></div>
-      </div>
-
-      <div class="section-head">Saved addresses</div>
-      <div class="addr">
-        <div class="addr-icon">🏠</div>
-        <div class="addr-body">
-          <div class="addr-top"><span class="addr-lbl">Home</span><span class="addr-def">Default</span></div>
-          <div class="addr-text">Flat 304, Sagar Mahal, Hill Road, Bandra West</div>
+    <!-- ── Frame 1: Signed-in profile ── -->
+    <div class="ds-frame-wrap">
+      <div class="ds-frame-label">Signed-in — Kunal Rawat</div>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
         </div>
-        <div style="color:#94A3B8">›</div>
-      </div>
-      <div class="addr">
-        <div class="addr-icon">🏢</div>
-        <div class="addr-body">
-          <div class="addr-top"><span class="addr-lbl">Office</span></div>
-          <div class="addr-text">8th floor, Tower C, BKC</div>
+        <div class="phone-body with-nav">
+
+          <!-- Hero -->
+          <div class="profile-hero">
+            <div class="wave-ring wave-ring-1"></div>
+            <div class="wave-ring wave-ring-2"></div>
+            <div class="wave-ring wave-ring-3"></div>
+            <div class="avatar-initials">KR</div>
+            <div class="profile-name">Kunal Rawat</div>
+            <div class="profile-phone">+919870619974</div>
+            <button class="edit-pill">✎ Edit profile</button>
+          </div>
+
+          <!-- Quick actions card overlapping hero -->
+          <div class="quick-actions-card">
+            <div class="qa-item">
+              <div class="qa-icon" style="background:#E0F2FE">📍</div>
+              <div class="qa-label">Addresses</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-icon" style="background:var(--v3-green-l)">📋</div>
+              <div class="qa-label">Orders</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-icon" style="background:var(--v3-orange-l)">🔔</div>
+              <div class="qa-label">Alerts</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-icon" style="background:var(--v3-indigo-l)">💬</div>
+              <div class="qa-label">Help</div>
+            </div>
+          </div>
+
+          <!-- Saved Addresses -->
+          <div class="section-hd">Saved Addresses</div>
+
+          <div class="addr-card">
+            <div class="addr-icon-box">🏠</div>
+            <div class="addr-body">
+              <div class="addr-top">
+                <span class="addr-name">Home</span>
+                <span class="badge-default">DEFAULT</span>
+              </div>
+              <div class="addr-text">Flat 304, Sagar Mahal, Hill Road, Bandra West</div>
+            </div>
+            <span style="color:var(--v3-ink-4);font-size:16px">›</span>
+          </div>
+
+          <div class="addr-card">
+            <div class="addr-icon-box">🏢</div>
+            <div class="addr-body">
+              <div class="addr-top">
+                <span class="addr-name">Office</span>
+              </div>
+              <div class="addr-text">8th floor, Tower C, BKC, Mumbai 400051</div>
+            </div>
+            <button class="btn-default-pill">Default</button>
+          </div>
+
+          <!-- Order History -->
+          <div class="section-hd">Order History</div>
+
+          <div class="order-hist-card">
+            <div class="order-hist-top">
+              <div>
+                <div class="order-hist-id">#RF298 · Kamla Tai Fish Stall</div>
+                <div class="order-hist-date">Mon 9 Jun · 7:15am pickup</div>
+              </div>
+              <span class="order-badge-done">Done</span>
+            </div>
+            <div class="order-hist-items">🐟 Surmai 1kg · 🦐 Prawns 500g</div>
+            <div class="order-hist-total">₹1,150</div>
+          </div>
+
+          <div style="height:8px"></div>
         </div>
-        <div style="color:#94A3B8">›</div>
+        <div class="bottom-nav">
+          <div class="n-item"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item active"><span class="icon">👤</span>Account</div>
+        </div>
       </div>
-
-      <div class="section-head">Preferences</div>
-      <div class="list-item"><div class="li-icon">🔔</div><div class="li-name">Push notifications</div><div class="li-toggle"></div></div>
-      <div class="list-item"><div class="li-icon">🌐</div><div class="li-name">Language</div><span style="font:500 12px Inter;color:#64748B">English</span><div class="li-arrow">›</div></div>
-      <div class="list-item"><div class="li-icon">📋</div><div class="li-name">Terms & Privacy</div><div class="li-arrow">›</div></div>
-      <div class="list-item"><div class="li-icon">ℹ️</div><div class="li-name">About Relifish</div><div class="li-arrow">›</div></div>
-
-      <div class="logout">Log out</div>
-      <div style="text-align:center;font:400 10px Inter;color:#94A3B8;padding:0 16px 80px">v2.0.0 · Made in Mumbai ❤️</div>
     </div>
-    <div class="bottom-nav">
-      <div class="n-item"><span class="icon">🏠</span>Home</div>
-      <div class="n-item"><span class="icon">📋</span>Orders</div>
-      <div class="n-item active"><span class="icon">👤</span>Account</div>
+
+    <!-- ── Frame 2: Guest / Not signed in ── -->
+    <div class="ds-frame-wrap">
+      <div class="ds-frame-label">Guest — Sign-in prompt</div>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
+        </div>
+        <div class="phone-body with-nav">
+
+          <!-- Minimal header without hero -->
+          <div style="padding:16px;background:var(--v3-bg);border-bottom:1px solid var(--v3-border);display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;border-radius:50%;background:var(--v3-bg-3);border:2px dashed var(--v3-border);display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>
+            <div>
+              <div style="font:800 15px var(--v3-font);color:var(--v3-ink)">Your Account</div>
+              <div style="font:400 12px var(--v3-font);color:var(--v3-ink-3)">Sign in to get started</div>
+            </div>
+          </div>
+
+          <!-- Sign-in card -->
+          <div class="signin-card">
+            <div class="signin-icon">🔑</div>
+            <div class="signin-title">Sign in to your account</div>
+            <div class="signin-sub">Enter your mobile number to continue</div>
+            <div class="phone-input-wrap">
+              <div class="phone-prefix">+91</div>
+              <input class="phone-field" type="tel" placeholder="98XXXXXXXX">
+            </div>
+            <button class="btn-signin">Send OTP</button>
+            <div class="signin-footer">By signing in you agree to our Terms &amp; Privacy Policy</div>
+          </div>
+
+          <!-- Why sign in -->
+          <div style="margin:0 16px;background:var(--v3-brand-l);border-radius:var(--v3-radius);padding:16px">
+            <div style="font:700 13px var(--v3-font);color:var(--v3-ink);margin-bottom:10px">Why sign in?</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px;font:400 12px var(--v3-font);color:var(--v3-ink-2)">
+                <span style="font-size:16px">📋</span>Track all your orders
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font:400 12px var(--v3-font);color:var(--v3-ink-2)">
+                <span style="font-size:16px">📍</span>Save delivery addresses
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font:400 12px var(--v3-font);color:var(--v3-ink-2)">
+                <span style="font-size:16px">🔔</span>Get fresh catch alerts
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item active"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
+
+    <!-- ── Frame 3: Edit profile sheet open ── -->
+    <div class="ds-frame-wrap">
+      <div class="ds-frame-label">Edit Profile — Sheet open</div>
+      <div class="phone">
+        <div class="phone-status">
+          <span class="phone-time">9:41</span>
+          <span>Relifish</span>
+        </div>
+        <div class="phone-body with-nav" style="position:relative">
+
+          <!-- Dimmed hero visible behind -->
+          <div class="profile-hero hero-dimmed">
+            <div class="wave-ring wave-ring-1"></div>
+            <div class="wave-ring wave-ring-2"></div>
+            <div class="wave-ring wave-ring-3"></div>
+            <div class="avatar-initials">KR</div>
+            <div class="profile-name">Kunal Rawat</div>
+            <div class="profile-phone">+919870619974</div>
+          </div>
+
+          <!-- Quick actions card (partially visible) -->
+          <div class="quick-actions-card" style="opacity:.4;pointer-events:none">
+            <div class="qa-item">
+              <div class="qa-icon" style="background:#E0F2FE">📍</div>
+              <div class="qa-label">Addresses</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-icon" style="background:var(--v3-green-l)">📋</div>
+              <div class="qa-label">Orders</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-icon" style="background:var(--v3-orange-l)">🔔</div>
+              <div class="qa-label">Alerts</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-icon" style="background:var(--v3-indigo-l)">💬</div>
+              <div class="qa-label">Help</div>
+            </div>
+          </div>
+
+          <!-- Bottom sheet -->
+          <div class="bottom-sheet">
+            <div class="sheet-drag"></div>
+            <div class="sheet-title">Edit Profile</div>
+
+            <div class="sheet-row">
+              <div class="field-group">
+                <div class="field-label">First name</div>
+                <input class="field-input" type="text" value="Kunal">
+              </div>
+              <div class="field-group">
+                <div class="field-label">Last name</div>
+                <input class="field-input" type="text" value="Rawat">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">Email (optional)</div>
+              <input class="field-input" type="email" placeholder="you@email.com">
+              <div class="field-note">Add email for order updates &amp; receipts</div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">Mobile</div>
+              <input class="field-input" type="tel" value="+919870619974" disabled style="background:var(--v3-bg-3);color:var(--v3-ink-3)">
+              <div class="field-note">Mobile number cannot be changed</div>
+            </div>
+
+            <button class="btn-save">Save changes</button>
+          </div>
+
+        </div>
+        <div class="bottom-nav">
+          <div class="n-item"><span class="icon">🏠</span>Home</div>
+          <div class="n-item"><span class="icon">📋</span>Orders</div>
+          <div class="n-item active"><span class="icon">👤</span>Account</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ds-frames -->
+</div><!-- /ds-page -->
 </body>
 </html>

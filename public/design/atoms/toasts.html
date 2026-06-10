@@ -2,89 +2,234 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Atom — Toasts & Snackbars</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V3 Toasts — Relifish Design System</title>
 <link rel="stylesheet" href="../_shared.css">
 <style>
-  .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0F172A;color:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);width:320px;font:500 13px Inter}
-  .toast .icon{font-size:18px}
-  .toast .body{flex:1}
-  .toast .title{font:600 13px Inter}
-  .toast .desc{font:400 11px Inter;opacity:.85;margin-top:1px}
-  .toast .action{background:transparent;border:none;color:#60A5FA;font:700 12px Inter;cursor:pointer}
-  .toast .close{background:transparent;border:none;color:rgba(255,255,255,.6);font:400 16px Inter;cursor:pointer;padding:0 4px}
+/* ── Toast base ── */
+.v3-toast{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:12px 14px;
+  background:var(--v3-bg);
+  border-radius:var(--v3-radius);
+  box-shadow:var(--v3-shadow-lg);
+  max-width:320px;
+  border-left:4px solid transparent;
+  animation:v3-slide-up var(--v3-dur) var(--v3-ease-out) both;
+}
+.v3-toast-icon{
+  width:20px;height:20px;
+  flex-shrink:0;
+  margin-top:1px;
+}
+.v3-toast-content{flex:1;min-width:0}
+.v3-toast-title{
+  font:700 13px var(--v3-font);
+  color:var(--v3-ink);
+  line-height:1.4;
+}
+.v3-toast-msg{
+  font:400 12px var(--v3-font);
+  color:var(--v3-ink-3);
+  margin-top:2px;
+  line-height:1.45;
+}
+.v3-toast-close{
+  background:none;border:none;
+  color:var(--v3-ink-4);cursor:pointer;
+  font-size:18px;line-height:1;
+  padding:0 0 0 2px;
+  flex-shrink:0;
+  transition:color var(--v3-dur-fast);
+}
+.v3-toast-close:hover{color:var(--v3-ink-2)}
 
-  .toast.success{background:#059669}
-  .toast.error{background:#DC2626}
-  .toast.warning{background:#EA580C}
-  .toast.info{background:#0066FF}
+/* Semantic border colours */
+.v3-toast-success{border-left-color:var(--v3-green)}
+.v3-toast-error  {border-left-color:var(--v3-red)}
+.v3-toast-warning{border-left-color:var(--v3-orange)}
+.v3-toast-info   {border-left-color:var(--v3-brand)}
 
-  .snack{display:flex;align-items:center;gap:10px;padding:14px 18px;background:#1E293B;color:#fff;border-radius:8px;box-shadow:var(--shadow-lg);width:340px;font:500 13px Inter}
-  .snack .body{flex:1}
-  .snack button{background:transparent;border:none;color:#FCD34D;font:700 12px Inter;cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+/* ── Stack demo ── */
+.v3-toast-stack{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:flex-start;
+}
 
-  .banner{padding:12px 16px;border-radius:var(--radius);width:340px;display:flex;align-items:center;gap:10px;font:500 13px Inter}
-  .banner.success{background:var(--green-l);color:#065F46;border-left:3px solid var(--green)}
-  .banner.error{background:var(--red-l);color:#991B1B;border-left:3px solid var(--red)}
-  .banner.warning{background:var(--orange-l);color:#9A3412;border-left:3px solid var(--orange)}
-  .banner.info{background:var(--brand-l);color:#1E40AF;border-left:3px solid var(--brand)}
-  .banner .icon{font-size:18px;flex-shrink:0}
+/* ── Phone frame preview ── */
+.toast-phone-preview{
+  width:320px;
+  background:var(--v3-bg-3);
+  border-radius:var(--v3-radius);
+  padding:16px;
+  border:1px solid var(--v3-border);
+  position:relative;
+}
+.toast-phone-preview .screen-content{
+  height:80px;
+  background:var(--v3-bg);
+  border-radius:var(--v3-radius-sm);
+  margin-bottom:12px;
+  padding:12px;
+}
+.toast-phone-preview .screen-bar{
+  height:10px;background:var(--v3-bg-3);border-radius:4px;margin-bottom:6px;
+}
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Toasts & Banners</h1>
-  <p class="sub">Feedback layer. Top-toast for success, bottom-snack for undo, inline banner for context.</p>
+<div class="ds-page">
+  <h1>V3 Toasts</h1>
+  <p class="ds-sub">Relifish Design System · In-app notification toasts · 4 semantic variants</p>
 
-  <div class="component" data-name="Toast · All Variants">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">success</span>
-        <div class="toast success"><span class="icon">✓</span><div class="body"><div class="title">Order placed</div><div class="desc">Kamla Tai will confirm shortly</div></div><button class="close">×</button></div>
+  <!-- ── Section 1: All 4 Variants ── -->
+  <div class="ds-component" data-name="Toast Variants — Success / Error / Warning / Info">
+    <div class="ds-variants" style="flex-direction:column;gap:12px">
+
+      <!-- Success -->
+      <div class="ds-variant" style="flex-direction:row;align-items:center;gap:16px">
+        <div class="ds-label" style="width:72px;text-align:right;flex-shrink:0">Success</div>
+        <div class="v3-toast v3-toast-success">
+          <svg class="v3-toast-icon" viewBox="0 0 24 24" fill="none" stroke="var(--v3-green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 15.5 9.5"/></svg>
+          <div class="v3-toast-content">
+            <div class="v3-toast-title">Order confirmed!</div>
+            <div class="v3-toast-msg">Fish Tokri accepted your order</div>
+          </div>
+          <button class="v3-toast-close" type="button">×</button>
+        </div>
       </div>
-      <div class="variant"><span class="variant-label">error</span>
-        <div class="toast error"><span class="icon">✕</span><div class="body"><div class="title">Payment failed</div><div class="desc">Try a different method</div></div><button class="close">×</button></div>
+
+      <!-- Error -->
+      <div class="ds-variant" style="flex-direction:row;align-items:center;gap:16px">
+        <div class="ds-label" style="width:72px;text-align:right;flex-shrink:0">Error</div>
+        <div class="v3-toast v3-toast-error">
+          <svg class="v3-toast-icon" viewBox="0 0 24 24" fill="none" stroke="var(--v3-red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <div class="v3-toast-content">
+            <div class="v3-toast-title">Payment failed</div>
+            <div class="v3-toast-msg">Please check your card details and retry</div>
+          </div>
+          <button class="v3-toast-close" type="button">×</button>
+        </div>
       </div>
-      <div class="variant"><span class="variant-label">warning</span>
-        <div class="toast warning"><span class="icon">!</span><div class="body"><div class="title">Item out of stock</div><div class="desc">Surmai removed from cart</div></div><button class="close">×</button></div>
+
+      <!-- Warning -->
+      <div class="ds-variant" style="flex-direction:row;align-items:center;gap:16px">
+        <div class="ds-label" style="width:72px;text-align:right;flex-shrink:0">Warning</div>
+        <div class="v3-toast v3-toast-warning">
+          <svg class="v3-toast-icon" viewBox="0 0 24 24" fill="none" stroke="var(--v3-orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div class="v3-toast-content">
+            <div class="v3-toast-title">Almost out of stock</div>
+            <div class="v3-toast-msg">Only 2 portions of Pomfret left today</div>
+          </div>
+          <button class="v3-toast-close" type="button">×</button>
+        </div>
       </div>
-      <div class="variant"><span class="variant-label">info</span>
-        <div class="toast info"><span class="icon">i</span><div class="body"><div class="title">Pre-order confirmed</div><div class="desc">Ready by 7am tomorrow</div></div><button class="close">×</button></div>
+
+      <!-- Info -->
+      <div class="ds-variant" style="flex-direction:row;align-items:center;gap:16px">
+        <div class="ds-label" style="width:72px;text-align:right;flex-shrink:0">Info</div>
+        <div class="v3-toast v3-toast-info">
+          <svg class="v3-toast-icon" viewBox="0 0 24 24" fill="none" stroke="var(--v3-brand)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div class="v3-toast-content">
+            <div class="v3-toast-title">Pre-order opens midnight</div>
+            <div class="v3-toast-msg">Set a reminder for tomorrow's catch</div>
+          </div>
+          <button class="v3-toast-close" type="button">×</button>
+        </div>
       </div>
+
     </div>
-    <div class="spec"><b>Position:</b> top center, 16px from top · <b>Duration:</b> 4s success/info, 6s warning/error · <b>Animation:</b> slide-down + fade</div>
+    <div class="ds-spec">
+      <b>Base:</b> <code>max-width: 320px</code> · <code>border-left: 4px solid</code> (semantic colour)<br>
+      <b>Icon:</b> 20×20px stroke · <b>Title:</b> 13px/700 · <b>Message:</b> 12px/400 <code>--v3-ink-3</code><br>
+      <b>Z-index:</b> <code>--v3-z-toast (200)</code> — highest layer · <b>Animation:</b> <code>v3-slide-up</code>
+    </div>
   </div>
 
-  <div class="component" data-name="Snackbar · With Action">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">undo</span>
-        <div class="snack"><div class="body">Removed Surmai from cart</div><button>UNDO</button></div>
+  <!-- ── Section 2: Toast with Action ── -->
+  <div class="ds-component" data-name="Toast with Action Button">
+    <div class="ds-variants" style="flex-direction:column;gap:12px">
+
+      <div class="ds-variant">
+        <div class="ds-label">Undo action (success)</div>
+        <div class="v3-toast v3-toast-success" style="max-width:340px">
+          <svg class="v3-toast-icon" viewBox="0 0 24 24" fill="none" stroke="var(--v3-green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 15.5 9.5"/></svg>
+          <div class="v3-toast-content">
+            <div class="v3-toast-title">Item removed from cart</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+              <button type="button" style="background:none;border:none;font:700 12px var(--v3-font);color:var(--v3-green);cursor:pointer;padding:0;text-decoration:underline">Undo</button>
+            </div>
+          </div>
+          <button class="v3-toast-close" type="button">×</button>
+        </div>
       </div>
-      <div class="variant"><span class="variant-label">retry</span>
-        <div class="snack"><div class="body">Couldn't load sellers</div><button>RETRY</button></div>
+
+      <div class="ds-variant">
+        <div class="ds-label">Retry action (error)</div>
+        <div class="v3-toast v3-toast-error" style="max-width:340px">
+          <svg class="v3-toast-icon" viewBox="0 0 24 24" fill="none" stroke="var(--v3-red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <div class="v3-toast-content">
+            <div class="v3-toast-title">Network error</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+              <span class="v3-toast-msg" style="margin:0">Could not load listings</span>
+              <button type="button" style="background:none;border:none;font:700 12px var(--v3-font);color:var(--v3-red);cursor:pointer;padding:0;white-space:nowrap;text-decoration:underline">Retry</button>
+            </div>
+          </div>
+          <button class="v3-toast-close" type="button">×</button>
+        </div>
       </div>
-      <div class="variant"><span class="variant-label">view</span>
-        <div class="snack"><div class="body">Order confirmed by seller</div><button>VIEW</button></div>
-      </div>
+
     </div>
-    <div class="spec"><b>Position:</b> bottom center, 80px from bottom (above nav) · <b>Duration:</b> 5-7s · <b>Action:</b> yellow accent text</div>
+    <div class="ds-spec">
+      Action link: 12px/700 · semantic colour · underlined · inline below message
+    </div>
   </div>
 
-  <div class="component" data-name="InlineBanner · Persistent Context">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">success</span>
-        <div class="banner success"><span class="icon">✓</span><div>Free delivery unlocked. Add ₹120 more for ₹50 off.</div></div>
+  <!-- ── Section 3: Toast Stack (screen preview) ── -->
+  <div class="ds-component" data-name="Toast Stack — Top-of-screen Preview">
+    <div class="ds-variants">
+
+      <div class="ds-variant">
+        <div class="ds-label">Stacked (max 3 visible)</div>
+        <div class="toast-phone-preview">
+          <div class="screen-content">
+            <div class="screen-bar" style="width:65%"></div>
+            <div class="screen-bar" style="width:45%"></div>
+            <div class="screen-bar" style="width:55%"></div>
+          </div>
+          <div class="v3-toast-stack">
+            <div class="v3-toast v3-toast-success" style="width:100%;max-width:none;animation-delay:0s">
+              <svg class="v3-toast-icon" viewBox="0 0 24 24" fill="none" stroke="var(--v3-green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 15.5 9.5"/></svg>
+              <div class="v3-toast-content">
+                <div class="v3-toast-title">Order #1042 confirmed</div>
+                <div class="v3-toast-msg">Expected by 8 AM tomorrow</div>
+              </div>
+              <button class="v3-toast-close" type="button">×</button>
+            </div>
+            <div class="v3-toast v3-toast-info" style="width:100%;max-width:none;animation-delay:.1s">
+              <svg class="v3-toast-icon" viewBox="0 0 24 24" fill="none" stroke="var(--v3-brand)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div class="v3-toast-content">
+                <div class="v3-toast-title">New seller nearby</div>
+                <div class="v3-toast-msg">Fresh Catch Co. just listed Rawas</div>
+              </div>
+              <button class="v3-toast-close" type="button">×</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="variant"><span class="variant-label">warning</span>
-        <div class="banner warning"><span class="icon">⚠</span><div>Seller closes in 30 min. Place order soon.</div></div>
-      </div>
-      <div class="variant"><span class="variant-label">error</span>
-        <div class="banner error"><span class="icon">✕</span><div>3 items in cart unavailable. Tap to review.</div></div>
-      </div>
-      <div class="variant"><span class="variant-label">info</span>
-        <div class="banner info"><span class="icon">🌙</span><div>Market closed now. Pre-order for tomorrow morning.</div></div>
-      </div>
+
     </div>
-    <div class="spec"><b>Inline placement:</b> in page flow, not floating · <b>Persistent</b> until condition resolved · 3px accent border-left</div>
+    <div class="ds-spec">
+      <b>Position:</b> top-center on mobile, bottom-right on desktop<br>
+      <b>Gap:</b> 10px between toasts · <b>Auto-dismiss:</b> 4000ms (success/info), persistent (error/warning)<br>
+      Entrance: <code>v3-slide-up</code> · Exit: fade out + translate down
+    </div>
   </div>
+
 </div>
 </body>
 </html>

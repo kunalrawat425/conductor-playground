@@ -1,198 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Molecule — Error & Edge States</title>
-<link rel="stylesheet" href="../_shared.css">
-<style>
-  .err-card{width:340px;background:#fff;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
-  .err-card.warning{border-color:#FED7AA}
-  .err-card.danger{border-color:#FCA5A5}
-  .err-head{padding:16px;display:flex;gap:12px;align-items:flex-start}
-  .err-card.warning .err-head{background:var(--orange-l)}
-  .err-card.danger .err-head{background:var(--red-l)}
-  .err-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-  .err-card.warning .err-icon{background:var(--orange);color:#fff}
-  .err-card.danger .err-icon{background:var(--red);color:#fff}
-  .err-body h4{font:700 14px Inter;color:var(--ink)}
-  .err-card.warning .err-body h4{color:#9A3412}
-  .err-card.danger .err-body h4{color:#991B1B}
-  .err-body p{font:400 12px Inter;color:var(--ink2);margin-top:3px;line-height:1.45}
-  .err-actions{padding:12px 16px;display:flex;gap:8px;border-top:1px solid var(--border);background:#fff}
-  .err-btn{flex:1;padding:10px;border-radius:var(--radius-sm);font:700 12px Inter;border:none;cursor:pointer}
-  .err-btn.primary{background:var(--brand);color:#fff}
-  .err-btn.danger{background:var(--red);color:#fff}
-  .err-btn.ghost{background:var(--bg3);color:var(--ink2)}
-
-  .item-strike{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:8px;margin:8px 0}
-  .item-strike .e{font-size:24px}
-  .item-strike .info{flex:1}
-  .item-strike .n{font:600 13px Inter;color:var(--ink);text-decoration:line-through;opacity:.6}
-  .item-strike .reason{font:500 11px Inter;color:var(--red);margin-top:1px}
-  .item-strike .swap{font:600 11px Inter;color:var(--brand);background:none;border:none;cursor:pointer}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V3 Error States — Relifish Design System</title>
+  <link rel="stylesheet" href="../_shared.css" />
 </head>
 <body>
-<div class="figma-page">
-  <h1>Error & Edge States</h1>
-  <p class="sub">Real-world failure modes. Each with recovery path.</p>
+<div class="ds-page">
+  <h1>Error States</h1>
+  <p class="ds-sub">3 variants: network error, server error, not found. Each with a recovery action.</p>
 
-  <div class="component" data-name="Error · Item Sold Out Mid-Cart">
-    <div class="err-card warning">
-      <div class="err-head">
-        <div class="err-icon">!</div>
-        <div class="err-body">
-          <h4>Items unavailable</h4>
-          <p>2 items in your cart sold out before you could checkout.</p>
+  <div class="ds-component" data-name="Error States">
+    <div class="ds-variants">
+
+      <!-- Variant 1: Network error -->
+      <div class="ds-variant">
+        <div class="ds-label">Network error</div>
+        <div style="padding:32px 24px;text-align:center;background:var(--v3-bg);border:1px solid var(--v3-red-l);border-radius:var(--v3-radius);max-width:280px;">
+          <div style="font-size:40px;margin-bottom:12px;">📡</div>
+          <div style="font:700 15px var(--v3-font);color:var(--v3-ink);margin-bottom:6px;">Connection lost</div>
+          <div style="font:400 12px var(--v3-font);color:var(--v3-ink-3);margin-bottom:18px;line-height:1.5;">Check your internet and try again.</div>
+          <button style="background:var(--v3-brand);color:#fff;border:none;font:700 13px var(--v3-font);padding:10px 24px;border-radius:100px;cursor:pointer;">Retry</button>
+          <div style="margin-top:8px;">
+            <button style="background:none;border:none;font:600 12px var(--v3-font);color:var(--v3-ink-3);cursor:pointer;padding:6px;">View past orders →</button>
+          </div>
         </div>
       </div>
-      <div style="padding:12px 16px">
-        <div class="item-strike"><span class="e">🐟</span><div class="info"><div class="n">Surmai · 1kg</div><div class="reason">Sold out</div></div><button class="swap">Suggest alt</button></div>
-        <div class="item-strike"><span class="e">🦐</span><div class="info"><div class="n">Prawns · 500g</div><div class="reason">Only 200g available</div></div><button class="swap">Adjust qty</button></div>
-      </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">Remove all</button>
-        <button class="err-btn primary">Update cart</button>
-      </div>
-    </div>
-    <div class="spec"><b>Stock check at checkout</b> · show alternatives or quantity adjustments · don't auto-remove</div>
-  </div>
 
-  <div class="component" data-name="Error · Seller Closed During Checkout">
-    <div class="err-card warning">
-      <div class="err-head">
-        <div class="err-icon">🌙</div>
-        <div class="err-body">
-          <h4>Kamla Tai just closed for the day</h4>
-          <p>You can pre-order tomorrow's catch (ready by 7am) or pick a different seller.</p>
+      <!-- Variant 2: Server error -->
+      <div class="ds-variant">
+        <div class="ds-label">Server error (500)</div>
+        <div style="padding:32px 24px;text-align:center;background:var(--v3-bg);border:1px solid var(--v3-red-l);border-radius:var(--v3-radius);max-width:280px;">
+          <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+          <div style="font:700 15px var(--v3-font);color:var(--v3-ink);margin-bottom:6px;">Something went wrong</div>
+          <div style="font:400 12px var(--v3-font);color:var(--v3-ink-3);margin-bottom:18px;line-height:1.5;">Our servers are having trouble. We're on it — try again in a moment.</div>
+          <button style="background:var(--v3-brand);color:#fff;border:none;font:700 13px var(--v3-font);padding:10px 24px;border-radius:100px;cursor:pointer;">Try again</button>
+          <div style="margin-top:8px;">
+            <button style="background:none;border:none;font:600 12px var(--v3-font);color:var(--v3-ink-3);cursor:pointer;padding:6px;">Report issue →</button>
+          </div>
         </div>
       </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">Other sellers</button>
-        <button class="err-btn primary" style="background:#4F46E5">Pre-order tomorrow</button>
-      </div>
-    </div>
-    <div class="spec"><b>Real-time seller state check</b> · graceful pivot to pre-order or alternative seller</div>
-  </div>
 
-  <div class="component" data-name="Error · Payment Failed">
-    <div class="err-card danger">
-      <div class="err-head">
-        <div class="err-icon">✕</div>
-        <div class="err-body">
-          <h4>UPI payment failed</h4>
-          <p>Bank declined the transaction. Your order is held for 5 minutes — try again or switch payment.</p>
+      <!-- Variant 3: Not found (404) -->
+      <div class="ds-variant">
+        <div class="ds-label">Not found (404)</div>
+        <div style="padding:32px 24px;text-align:center;background:var(--v3-bg);border:1px solid var(--v3-border);border-radius:var(--v3-radius);max-width:280px;">
+          <div style="font-size:40px;margin-bottom:12px;">🐟</div>
+          <div style="font:700 15px var(--v3-font);color:var(--v3-ink);margin-bottom:6px;">Page not found</div>
+          <div style="font:400 12px var(--v3-font);color:var(--v3-ink-3);margin-bottom:18px;line-height:1.5;">This page has swum away. Let's get you back to fresh fish.</div>
+          <a href="#" style="display:inline-block;background:var(--v3-brand);color:#fff;font:700 13px var(--v3-font);padding:10px 24px;border-radius:100px;text-decoration:none;">Go home →</a>
         </div>
       </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">Cash on delivery</button>
-        <button class="err-btn primary">Retry UPI</button>
-      </div>
+
+    </div><!-- /ds-variants -->
+
+    <div class="ds-spec">
+      <b>Network error:</b> border: 1px solid var(--v3-red-l); 📡 icon; Retry primary + "View past orders" ghost.<br/>
+      <b>Server error:</b> border: 1px solid var(--v3-red-l); ⚠️ icon; "Try again" primary + "Report issue" ghost; honest copy.<br/>
+      <b>Not found:</b> border: 1px solid var(--v3-border); 🐟 icon (on-brand); "Go home" CTA.<br/>
+      <b>Pattern:</b> 40px emoji → 700/15px title → 400/12px body → 100px pill CTA.
     </div>
-    <div class="spec"><b>Hold order</b> for retry window · <b>Always offer COD fallback</b></div>
   </div>
 
-  <div class="component" data-name="Error · OTP Wrong / Expired">
-    <div class="err-card danger">
-      <div class="err-head">
-        <div class="err-icon">✕</div>
-        <div class="err-body">
-          <h4>OTP doesn't match</h4>
-          <p>Check the code in your SMS or request a new one. Code expires in 10 min.</p>
-        </div>
-      </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">Resend OTP</button>
-        <button class="err-btn primary">Try again</button>
-      </div>
-    </div>
-    <div class="spec"><b>Inline below OTP input</b> · resend visible · countdown shown</div>
-  </div>
-
-  <div class="component" data-name="Error · Pre-order Price Increased">
-    <div class="err-card warning">
-      <div class="err-head">
-        <div class="err-icon">⚡</div>
-        <div class="err-body">
-          <h4>Morning price update</h4>
-          <p>Surmai today is ₹720/kg (estimate was ₹650). Total now ₹1,490 instead of ₹1,300. Confirm to proceed.</p>
-        </div>
-      </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">Cancel order</button>
-        <button class="err-btn primary">Confirm new price</button>
-      </div>
-    </div>
-    <div class="spec"><b>Pre-order specific</b> · catch price varies daily · always require confirm if change &gt; 5%</div>
-  </div>
-
-  <div class="component" data-name="Error · Seller Declined Order">
-    <div class="err-card danger">
-      <div class="err-head">
-        <div class="err-icon">✕</div>
-        <div class="err-body">
-          <h4>Seller couldn't fulfill</h4>
-          <p>Kamla Tai is out of Surmai today. Full refund processed. We've found 2 sellers nearby with Surmai available.</p>
-        </div>
-      </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">View refund</button>
-        <button class="err-btn primary">See alternatives</button>
-      </div>
-    </div>
-    <div class="spec"><b>Auto-refund + auto-suggest</b> · turn negative into positive (alternative discovery)</div>
-  </div>
-
-  <div class="component" data-name="Error · Min Order Not Met">
-    <div class="err-card warning">
-      <div class="err-head">
-        <div class="err-icon">!</div>
-        <div class="err-body">
-          <h4>Add ₹150 more for delivery</h4>
-          <p>This seller's minimum is ₹500 for delivery. Or pickup at no minimum.</p>
-        </div>
-      </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">Switch to pickup</button>
-        <button class="err-btn primary">Add more items</button>
-      </div>
-    </div>
-    <div class="spec"><b>Delivery threshold check</b> · always offer pickup as no-min alternative</div>
-  </div>
-
-  <div class="component" data-name="Error · Multiple Sellers in Cart">
-    <div class="err-card warning">
-      <div class="err-head">
-        <div class="err-icon">🐟</div>
-        <div class="err-body">
-          <h4>One seller per order</h4>
-          <p>Add Pomfret from Rafiq Bhai? This will replace items from Kamla Tai in your cart.</p>
-        </div>
-      </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">Cancel</button>
-        <button class="err-btn primary">Replace cart</button>
-      </div>
-    </div>
-    <div class="spec"><b>Marketplace constraint</b> · one seller per order (enforces clear pickup logistics)</div>
-  </div>
-
-  <div class="component" data-name="Error · Delivery Address Out of Range">
-    <div class="err-card warning">
-      <div class="err-head">
-        <div class="err-icon">📍</div>
-        <div class="err-body">
-          <h4>Out of delivery range</h4>
-          <p>This address is 8.2 km from the seller (max 5 km). Switch to pickup or pick a closer address.</p>
-        </div>
-      </div>
-      <div class="err-actions">
-        <button class="err-btn ghost">Change address</button>
-        <button class="err-btn primary">Switch to pickup</button>
-      </div>
-    </div>
-    <div class="spec"><b>Range check</b> at checkout · always show actual distance for transparency</div>
-  </div>
 </div>
 </body>
 </html>

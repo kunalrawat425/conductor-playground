@@ -2,118 +2,235 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Atom — Buttons</title>
+<title>V3 Buttons — Relifish Design System</title>
 <link rel="stylesheet" href="../_shared.css">
 <style>
-  .btn-primary{background:var(--brand);color:#fff;border:none;font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
-  .btn-primary:hover{background:var(--brand-d)}
-  .btn-secondary{background:#fff;color:var(--brand);border:1.5px solid var(--brand);font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
-  .btn-ghost{background:transparent;color:var(--ink);border:none;font:600 13px Inter;padding:8px 12px;cursor:pointer}
-  .btn-danger{background:var(--red);color:#fff;border:none;font:700 14px Inter;padding:12px 24px;border-radius:var(--radius-sm);cursor:pointer}
-  .btn-cta-lg{background:var(--brand);color:#fff;border:none;font:800 16px Inter;padding:14px 32px;border-radius:var(--radius);cursor:pointer;box-shadow:var(--shadow-md)}
+/* ── Button base ── */
+.v3-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  font:600 14px var(--v3-font);letter-spacing:-.01em;
+  border:none;border-radius:var(--v3-radius-full);cursor:pointer;
+  transition:background var(--v3-dur-fast) var(--v3-ease),
+             box-shadow var(--v3-dur-fast) var(--v3-ease),
+             opacity var(--v3-dur-fast) var(--v3-ease);
+  white-space:nowrap;text-decoration:none;
+}
+.v3-btn-sm{height:32px;padding:0 14px;font-size:12px}
+.v3-btn-md{height:42px;padding:0 20px;font-size:14px}
+.v3-btn-lg{height:52px;padding:0 28px;font-size:16px}
+.v3-btn-full{width:100%;display:flex}
 
-  .add-btn{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;border:none;font:700 18px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
-  .add-btn-lg{width:36px;height:36px;border-radius:10px;background:var(--brand);color:#fff;border:none;font:700 22px Inter;display:flex;align-items:center;justify-content:center;cursor:pointer}
-  .add-counter{display:flex;align-items:center;background:var(--brand);border-radius:8px;overflow:hidden;height:28px}
-  .add-counter button{background:transparent;color:#fff;border:none;width:28px;height:28px;font:700 14px Inter;cursor:pointer}
-  .add-counter span{color:#fff;font:700 12px Inter;padding:0 8px;min-width:24px;text-align:center}
+.v3-btn-primary{background:var(--v3-brand);color:#fff;box-shadow:0 1px 2px rgba(0,102,255,.25)}
+.v3-btn-primary:hover{background:var(--v3-brand-d);box-shadow:0 4px 12px rgba(0,102,255,.35)}
+.v3-btn-primary:active{background:var(--v3-brand-d);box-shadow:none}
 
-  .cart-bar{background:var(--brand);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg);width:320px}
-  .cart-bar .c-left{color:#fff}
-  .cart-bar .c-items{font:600 12px Inter;opacity:.9}
-  .cart-bar .c-total{font:800 15px Inter}
-  .cart-bar .c-btn{background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:var(--radius-sm);border:none}
+.v3-btn-secondary{background:transparent;color:var(--v3-brand);border:1.5px solid var(--v3-brand)}
+.v3-btn-secondary:hover{background:var(--v3-brand-l)}
+.v3-btn-secondary:active{background:var(--v3-brand-m)}
 
-  .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;font:500 10px Inter;color:var(--ink4);padding:8px;position:relative}
-  .nav-item.active{color:var(--brand)}
-  .nav-item.active::before{content:'';position:absolute;top:0;width:24px;height:2px;background:var(--brand);border-radius:0 0 2px 2px}
-  .nav-item .icon{font-size:20px}
+.v3-btn-ghost{background:transparent;color:var(--v3-brand);border:none}
+.v3-btn-ghost:hover{background:var(--v3-brand-l)}
+.v3-btn-ghost:active{background:var(--v3-brand-m)}
+
+.v3-btn-danger{background:var(--v3-red);color:#fff;box-shadow:0 1px 2px rgba(220,38,38,.25)}
+.v3-btn-danger:hover{background:#b91c1c;box-shadow:0 4px 12px rgba(220,38,38,.35)}
+.v3-btn-danger:active{background:#991b1b;box-shadow:none}
+
+.v3-btn:disabled,.v3-btn[disabled]{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+.v3-btn-spinner{
+  width:16px;height:16px;
+  border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:v3-spin .7s linear infinite;
+  flex-shrink:0;
+}
+.v3-btn-secondary .v3-btn-spinner,.v3-btn-ghost .v3-btn-spinner{
+  border-color:rgba(0,102,255,.25);
+  border-top-color:var(--v3-brand);
+}
+
+.v3-icon-btn{
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(0,102,255,0.12);
+  border:1px solid rgba(0,102,255,0.18);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background var(--v3-dur-fast);
+  flex-shrink:0;
+}
+.v3-icon-btn:hover{background:rgba(0,102,255,.20)}
+.v3-icon-btn:active{background:rgba(0,102,255,.28)}
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Buttons</h1>
-  <p class="sub">All button primitives for V2. Each variant maps 1:1 to a Figma component.</p>
+<div class="ds-page">
+  <h1>V3 Buttons</h1>
+  <p class="ds-sub">Relifish Design System V3 · Interactive controls &amp; triggers</p>
 
-  <div class="component" data-name="Button / Primary">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">default</span><button class="btn-primary">Place Order</button></div>
-      <div class="variant"><span class="variant-label">large</span><button class="btn-cta-lg">Place Order</button></div>
-      <div class="variant"><span class="variant-label">loading</span><button class="btn-primary" disabled style="opacity:.6">Placing...</button></div>
-      <div class="variant"><span class="variant-label">disabled</span><button class="btn-primary" disabled style="opacity:.4;cursor:not-allowed">Place Order</button></div>
-    </div>
-    <div class="spec">
-      <b>bg:</b> #0066FF &nbsp; <b>text:</b> #FFFFFF &nbsp; <b>font:</b> 700 / 14px &nbsp; <b>padding:</b> 12px 24px &nbsp; <b>radius:</b> 8px<br>
-      <b>hover:</b> bg #0052CC &nbsp; <b>disabled:</b> opacity 0.4
-    </div>
-  </div>
-
-  <div class="component" data-name="Button / Secondary">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">default</span><button class="btn-secondary">Cancel</button></div>
-      <div class="variant"><span class="variant-label">ghost</span><button class="btn-ghost">Skip</button></div>
-    </div>
-    <div class="spec">
-      <b>Secondary:</b> bg white, border 1.5px #0066FF, text #0066FF<br>
-      <b>Ghost:</b> transparent bg, text #0F172A, no border
-    </div>
-  </div>
-
-  <div class="component" data-name="Button / Danger">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">default</span><button class="btn-danger">Delete</button></div>
-    </div>
-    <div class="spec">
-      <b>bg:</b> #DC2626 &nbsp; <b>text:</b> #FFFFFF &nbsp; used for destructive actions only
-    </div>
-  </div>
-
-  <div class="component" data-name="AddButton (Menu Item)">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">add · sm</span><button class="add-btn">+</button></div>
-      <div class="variant"><span class="variant-label">add · lg</span><button class="add-btn-lg">+</button></div>
-      <div class="variant"><span class="variant-label">counter · sm</span>
-        <div class="add-counter"><button>−</button><span>2</span><button>+</button></div>
+  <!-- Variants -->
+  <div class="ds-component" data-name="button-variants">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Primary</div>
+        <button class="v3-btn v3-btn-primary v3-btn-md">Add to cart</button>
       </div>
-      <div class="variant"><span class="variant-label">counter · lg</span>
-        <div class="add-counter" style="height:36px"><button style="width:36px;height:36px">−</button><span style="font-size:14px">2</span><button style="width:36px;height:36px">+</button></div>
+      <div class="ds-variant">
+        <div class="ds-label">Secondary</div>
+        <button class="v3-btn v3-btn-secondary v3-btn-md">Learn more</button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Ghost</div>
+        <button class="v3-btn v3-btn-ghost v3-btn-md">View details</button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Danger</div>
+        <button class="v3-btn v3-btn-danger v3-btn-md">Delete order</button>
       </div>
     </div>
-    <div class="spec">
-      <b>Blinkit pattern.</b> Single "+" → expands to "− count +" after first tap.<br>
-      <b>Size sm:</b> 28x28px · radius 8px · font 18px &nbsp; <b>Size lg:</b> 36x36px · radius 10px · font 22px
+    <div class="ds-spec">
+      <b>Primary:</b> bg var(--v3-brand) · color #fff · hover var(--v3-brand-d) ·
+      <b>Secondary:</b> border 1.5px var(--v3-brand) · hover bg var(--v3-brand-l) ·
+      <b>Ghost:</b> no border · hover bg var(--v3-brand-l) ·
+      <b>Danger:</b> bg var(--v3-red) · color #fff
     </div>
   </div>
 
-  <div class="component" data-name="CartBar (Floating)">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">default</span>
-        <div class="cart-bar"><div class="c-left"><div class="c-items">2 items</div><div class="c-total">₹1,450</div></div><button class="c-btn">View Cart →</button></div>
+  <!-- Sizes -->
+  <div class="ds-component" data-name="button-sizes">
+    <div class="ds-variants" style="align-items:center">
+      <div class="ds-variant">
+        <div class="ds-label">Small — 32px</div>
+        <button class="v3-btn v3-btn-primary v3-btn-sm">Small</button>
       </div>
-      <div class="variant"><span class="variant-label">min-order-warning</span>
-        <div class="cart-bar" style="background:var(--orange)"><div class="c-left"><div class="c-items">Add ₹150 more</div><div class="c-total">₹850</div></div><button class="c-btn" style="color:var(--orange)">Min order ₹1,000</button></div>
+      <div class="ds-variant">
+        <div class="ds-label">Medium — 42px</div>
+        <button class="v3-btn v3-btn-primary v3-btn-md">Medium</button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Large — 52px</div>
+        <button class="v3-btn v3-btn-primary v3-btn-lg">Large</button>
       </div>
     </div>
-    <div class="spec">
-      <b>Placement:</b> fixed bottom, 12px from edges, above nav<br>
-      <b>bg:</b> #0066FF &nbsp; <b>radius:</b> 12px &nbsp; <b>shadow:</b> shadow-lg<br>
-      <b>Warning state:</b> orange bg when below min order threshold
+    <div class="ds-spec">
+      <b>.v3-btn-sm:</b> h 32px · px 14px · 12px font ·
+      <b>.v3-btn-md:</b> h 42px · px 20px · 14px font ·
+      <b>.v3-btn-lg:</b> h 52px · px 28px · 16px font
     </div>
   </div>
 
-  <div class="component" data-name="NavItem (Bottom Nav)">
-    <div class="component-variants" style="background:#fff;padding:16px 24px;border-radius:8px;border-top:1px solid var(--border)">
-      <div class="nav-item active"><span class="icon">🏠</span>Home</div>
-      <div class="nav-item"><span class="icon">🔍</span>Search</div>
-      <div class="nav-item"><span class="icon">🌙</span>Pre-order</div>
-      <div class="nav-item"><span class="icon">📋</span>Orders</div>
-      <div class="nav-item"><span class="icon">👤</span>Account</div>
+  <!-- Full width -->
+  <div class="ds-component" data-name="button-full-width">
+    <div class="ds-variants" style="flex-direction:column;width:100%;max-width:360px">
+      <div class="ds-variant" style="width:100%">
+        <div class="ds-label">Full width primary</div>
+        <button class="v3-btn v3-btn-primary v3-btn-md v3-btn-full">Confirm order</button>
+      </div>
+      <div class="ds-variant" style="width:100%">
+        <div class="ds-label">Full width secondary</div>
+        <button class="v3-btn v3-btn-secondary v3-btn-md v3-btn-full">Cancel</button>
+      </div>
     </div>
-    <div class="spec">
-      <b>Active:</b> color #0066FF + 2px top indicator bar<br>
-      <b>Inactive:</b> color #94A3B8 &nbsp; <b>icon:</b> 20px &nbsp; <b>label:</b> 500/10px
+    <div class="ds-spec"><b>Class:</b> .v3-btn-full · width:100%;display:flex</div>
+  </div>
+
+  <!-- Disabled -->
+  <div class="ds-component" data-name="button-disabled">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Primary disabled</div>
+        <button class="v3-btn v3-btn-primary v3-btn-md" disabled>Add to cart</button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Secondary disabled</div>
+        <button class="v3-btn v3-btn-secondary v3-btn-md" disabled>Learn more</button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Ghost disabled</div>
+        <button class="v3-btn v3-btn-ghost v3-btn-md" disabled>View details</button>
+      </div>
+    </div>
+    <div class="ds-spec"><b>disabled</b> attribute · opacity: 0.4 · pointer-events: none · cursor: not-allowed</div>
+  </div>
+
+  <!-- Loading -->
+  <div class="ds-component" data-name="button-loading">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Primary loading</div>
+        <button class="v3-btn v3-btn-primary v3-btn-md">
+          <span class="v3-btn-spinner"></span>
+          Placing order…
+        </button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Secondary loading</div>
+        <button class="v3-btn v3-btn-secondary v3-btn-md">
+          <span class="v3-btn-spinner"></span>
+          Loading…
+        </button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Icon-only loading</div>
+        <button class="v3-btn v3-btn-primary v3-btn-md" style="width:42px;padding:0">
+          <span class="v3-btn-spinner"></span>
+        </button>
+      </div>
+    </div>
+    <div class="ds-spec"><b>.v3-btn-spinner:</b> 16×16px · border 2px · border-top-color #fff · animation v3-spin .7s linear infinite</div>
+  </div>
+
+  <!-- Icon button -->
+  <div class="ds-component" data-name="icon-button">
+    <div class="ds-variants" style="align-items:center">
+      <div class="ds-variant">
+        <div class="ds-label">Cart</div>
+        <button class="v3-icon-btn" aria-label="Cart">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--v3-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Search</div>
+        <button class="v3-icon-btn" aria-label="Search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--v3-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Back</div>
+        <button class="v3-icon-btn" aria-label="Back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--v3-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">On brand header</div>
+        <div style="background:var(--v3-brand);padding:10px 16px;border-radius:var(--v3-radius);display:flex;gap:8px">
+          <button class="v3-icon-btn" aria-label="Cart" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+          </button>
+          <button class="v3-icon-btn" aria-label="Search" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="ds-spec">
+      <b>.v3-icon-btn:</b> 34×34px · border-radius 50% · background rgba(0,102,255,0.12) · border 1px rgba(0,102,255,0.18)<br>
+      <b>On brand header:</b> background rgba(255,255,255,.15) · border rgba(255,255,255,.25)
     </div>
   </div>
+
 </div>
 </body>
 </html>

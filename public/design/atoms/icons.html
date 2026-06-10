@@ -2,68 +2,274 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Atom — Icons</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V3 Icons — Relifish Design System</title>
 <link rel="stylesheet" href="../_shared.css">
 <style>
-  .icon-tile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;width:72px}
-  .icon-tile .tile{width:56px;height:56px;border-radius:var(--radius);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px}
-  .icon-tile .label{font:500 11px Inter;color:var(--ink2)}
-  .icon-row{display:flex;gap:12px;flex-wrap:wrap}
-  .nav-icons{display:flex;gap:24px;background:#fff;padding:12px 20px;border-radius:var(--radius);border:1px solid var(--border)}
-  .nav-icons .i{display:flex;flex-direction:column;align-items:center;gap:2px;font:500 10px Inter;color:var(--ink4)}
-  .nav-icons .i .g{font-size:22px}
-  .nav-icons .i.active{color:var(--brand)}
+.icon-box{
+  width:48px;height:48px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:var(--v3-radius-sm);
+  background:var(--v3-bg-2);
+  border:1px solid var(--v3-border);
+}
+.icon-box svg{width:24px;height:24px}
+.icon-box.inactive{color:var(--v3-ink-3)}
+.icon-box.active{background:var(--v3-brand-l);color:var(--v3-brand);border-color:var(--v3-brand-m)}
+
+.state-tag{
+  font:500 9px var(--v3-font);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--v3-ink-4);text-align:center;
+}
+.icon-pair{display:flex;flex-direction:column;align-items:center;gap:10px}
+
+.hdr-btn{
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(0,102,255,0.15);
+  border:1px solid rgba(0,102,255,0.18);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--v3-brand);cursor:pointer;
+  flex-shrink:0;
+}
+.hdr-btn svg{width:18px;height:18px}
+
+.species-tile{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.species-circle{
+  width:64px;height:64px;border-radius:50%;
+  border:2px solid var(--v3-border);
+  overflow:hidden;background:var(--v3-bg-3);
+}
+.species-circle img{width:100%;height:100%;object-fit:cover;display:block}
+.species-circle.active{
+  border-color:var(--v3-brand);
+  box-shadow:0 0 0 3px var(--v3-brand-m);
+}
+.species-name{
+  font:500 11px var(--v3-font);color:var(--v3-ink-2);
+  text-align:center;text-transform:capitalize;
+}
+.species-name.active{color:var(--v3-brand);font-weight:700}
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Icons</h1>
-  <p class="sub">Emoji-based icon system (V2 phase 1). Replace with SVG line icons (Lucide) in V2 phase 2.</p>
+<div class="ds-page">
+  <h1>V3 Icons</h1>
+  <p class="ds-sub">Relifish Design System · All SVG icon pairs used in the live app</p>
 
-  <div class="component" data-name="CategoryIcon">
-    <div class="icon-row">
-      <div class="icon-tile"><div class="tile">🐟</div><div class="label">All Fish</div></div>
-      <div class="icon-tile"><div class="tile">🦐</div><div class="label">Prawns</div></div>
-      <div class="icon-tile"><div class="tile">🦀</div><div class="label">Crab</div></div>
-      <div class="icon-tile"><div class="tile">🦑</div><div class="label">Squid</div></div>
-      <div class="icon-tile"><div class="tile">🐚</div><div class="label">Shellfish</div></div>
-      <div class="icon-tile"><div class="tile">🍤</div><div class="label">Seafood</div></div>
-      <div class="icon-tile"><div class="tile">🐠</div><div class="label">Exotic</div></div>
+  <!-- ── Section 1: Navigation Icons ── -->
+  <div class="ds-component" data-name="Navigation Icons — Bottom Nav">
+    <div class="ds-variants">
+
+      <!-- Home -->
+      <div class="icon-pair">
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="icon-box inactive">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+            </div>
+            <span class="state-tag">Outline</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="icon-box active">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.03 2.59a1.5 1.5 0 0 1 1.94 0l7 6A1.5 1.5 0 0 1 20.5 9.5V20a1 1 0 0 1-1 1h-4.5v-6.5h-6V21H4.5a1 1 0 0 1-1-1V9.5a1.5 1.5 0 0 1 .53-1.15l7-5.76z"/></svg>
+            </div>
+            <span class="state-tag">Filled</span>
+          </div>
+        </div>
+        <div class="ds-label">Home</div>
+      </div>
+
+      <!-- Orders -->
+      <div class="icon-pair">
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="icon-box inactive">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
+            </div>
+            <span class="state-tag">Outline</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="icon-box active">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM9 7h6a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2zm0 4h6a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2zm0 4h4a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2z"/></svg>
+            </div>
+            <span class="state-tag">Filled</span>
+          </div>
+        </div>
+        <div class="ds-label">Orders</div>
+      </div>
+
+      <!-- Account -->
+      <div class="icon-pair">
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="icon-box inactive">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/></svg>
+            </div>
+            <span class="state-tag">Outline</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="icon-box active">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a5 5 0 1 1 0 10A5 5 0 0 1 12 3zm0 13c-5.33 0-8 2.67-8 4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1c0-1.33-2.67-4-8-4z"/></svg>
+            </div>
+            <span class="state-tag">Filled</span>
+          </div>
+        </div>
+        <div class="ds-label">Account</div>
+      </div>
+
+      <!-- Inventory -->
+      <div class="icon-pair">
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="icon-box inactive">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <span class="state-tag">Outline</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="icon-box active">
+              <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="2" width="22" height="15" rx="3"/><path d="M7 21h10M12 17v4"/></svg>
+            </div>
+            <span class="state-tag">Filled</span>
+          </div>
+        </div>
+        <div class="ds-label">Inventory</div>
+      </div>
+
     </div>
-    <div class="spec"><b>Tile:</b> 56x56 · radius 12px · bg bg-3 · <b>Emoji:</b> 28px · <b>Label:</b> 500 / 11px</div>
+    <div class="ds-spec">
+      <b>Size:</b> 24×24px &nbsp;·&nbsp;
+      <b>Inactive color:</b> <code>--v3-ink-3</code> &nbsp;·&nbsp;
+      <b>Active color:</b> <code>--v3-brand</code><br>
+      Outline = inactive/unselected tab · Filled = active/selected tab
+    </div>
   </div>
 
-  <div class="component" data-name="CategoryIcon · Colored Tiles">
-    <div class="icon-row">
-      <div class="icon-tile"><div class="tile" style="background:#E0F2FE">🐟</div><div class="label">Fresh catch</div></div>
-      <div class="icon-tile"><div class="tile" style="background:#ECFDF5">🌊</div><div class="label">Sea fish</div></div>
-      <div class="icon-tile"><div class="tile" style="background:#FFF7ED">🔥</div><div class="label">Trending</div></div>
-      <div class="icon-tile"><div class="tile" style="background:#FEF2F2">❤️</div><div class="label">Favorites</div></div>
-      <div class="icon-tile"><div class="tile" style="background:#F3E8FF">🌙</div><div class="label">Pre-order</div></div>
+  <!-- ── Section 2: Header Icons ── -->
+  <div class="ds-component" data-name="Header Icons — Frosted Circular Button">
+    <div class="ds-variants">
+
+      <div class="icon-pair">
+        <button class="hdr-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <div class="ds-label">Back</div>
+      </div>
+
+      <div class="icon-pair">
+        <button class="hdr-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+        <div class="ds-label">Sun</div>
+      </div>
+
+      <div class="icon-pair">
+        <button class="hdr-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <div class="ds-label">Moon</div>
+      </div>
+
+      <div class="icon-pair">
+        <button class="hdr-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+        <div class="ds-label">User</div>
+      </div>
+
+      <div class="icon-pair">
+        <button class="hdr-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </button>
+        <div class="ds-label">Cart</div>
+      </div>
+
+      <div class="icon-pair">
+        <button class="hdr-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        </button>
+        <div class="ds-label">Search</div>
+      </div>
+
+      <div class="icon-pair">
+        <button class="hdr-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+        </button>
+        <div class="ds-label">Pin</div>
+      </div>
+
+      <div class="icon-pair">
+        <button class="hdr-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="ds-label">Chevron ↓</div>
+      </div>
+
     </div>
-    <div class="spec"><b>Colored tile bgs</b> · differentiate featured categories · use sparingly</div>
+    <div class="ds-spec">
+      <b>Button:</b> 34×34px circle &nbsp;·&nbsp;
+      <code>background: rgba(0,102,255,0.15)</code> &nbsp;·&nbsp;
+      <code>border: 1px solid rgba(0,102,255,0.18)</code><br>
+      <b>Icon:</b> 18×18px &nbsp;·&nbsp; color <code>--v3-brand</code>
+    </div>
   </div>
 
-  <div class="component" data-name="NavIcon (Bottom Nav)">
-    <div class="nav-icons">
-      <div class="i active"><div class="g">🏠</div>Home</div>
-      <div class="i"><div class="g">🔍</div>Search</div>
-      <div class="i"><div class="g">🌙</div>Pre-order</div>
-      <div class="i"><div class="g">📋</div>Orders</div>
-      <div class="i"><div class="g">👤</div>Account</div>
+  <!-- ── Section 3: Species Tiles ── -->
+  <div class="ds-component" data-name="Category Species Icons — Circular Tile">
+    <div class="ds-variants">
+
+      <div class="species-tile">
+        <div class="species-circle">
+          <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret" loading="lazy">
+        </div>
+        <span class="species-name">Pomfret</span>
+      </div>
+
+      <div class="species-tile">
+        <div class="species-circle active">
+          <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai" loading="lazy">
+        </div>
+        <span class="species-name active">Surmai (active)</span>
+      </div>
+
+      <div class="species-tile">
+        <div class="species-circle">
+          <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns" loading="lazy">
+        </div>
+        <span class="species-name">Prawns</span>
+      </div>
+
+      <div class="species-tile">
+        <div class="species-circle">
+          <img src="https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline" alt="Crab" loading="lazy">
+        </div>
+        <span class="species-name">Crab</span>
+      </div>
+
+      <div class="species-tile">
+        <div class="species-circle">
+          <img src="https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0" alt="Rawas" loading="lazy">
+        </div>
+        <span class="species-name">Rawas</span>
+      </div>
+
+      <div class="species-tile">
+        <div class="species-circle">
+          <img src="https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize" alt="Bangda" loading="lazy">
+        </div>
+        <span class="species-name">Bangda</span>
+      </div>
+
     </div>
-    <div class="spec"><b>5-tab pattern.</b> Pre-order has unique moon icon (our differentiator). Icon 22px · label 500/10px</div>
+    <div class="ds-spec">
+      <b>Default:</b> 64×64px circle · <code>border: 2px solid --v3-border</code><br>
+      <b>Active:</b> <code>border-color: --v3-brand</code> · <code>box-shadow: 0 0 0 3px --v3-brand-m</code><br>
+      Image: <code>object-fit: cover</code> fills circle
+    </div>
   </div>
 
-  <div class="component" data-name="StatusIcon (Trust Signals)">
-    <div class="icon-row">
-      <div class="icon-tile"><div class="tile" style="background:var(--green-l);color:var(--green)">✓</div><div class="label">Verified</div></div>
-      <div class="icon-tile"><div class="tile" style="background:var(--brand-l);color:var(--brand)">⭐</div><div class="label">Top rated</div></div>
-      <div class="icon-tile"><div class="tile" style="background:var(--orange-l);color:var(--orange)">⚡</div><div class="label">Fast</div></div>
-      <div class="icon-tile"><div class="tile" style="background:var(--green-l);color:var(--green)">🛡️</div><div class="label">Quality</div></div>
-    </div>
-    <div class="spec"><b>Trust signals</b> · seller profile badges · 56x56 tiles with status colors</div>
-  </div>
 </div>
 </body>
 </html>

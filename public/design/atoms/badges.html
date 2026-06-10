@@ -2,93 +2,241 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Atom — Badges & Tags</title>
+<title>V3 Badges — Relifish Design System</title>
 <link rel="stylesheet" href="../_shared.css">
 <style>
-  .rating{display:inline-flex;align-items:center;gap:3px;background:var(--green);color:#fff;font:700 11px Inter;padding:3px 7px;border-radius:5px}
-  .rating-lg{font:700 13px Inter;padding:4px 9px}
-  .offer-badge{background:var(--brand);color:#fff;font:700 10px Inter;padding:3px 8px;border-radius:6px;display:inline-block}
-  .offer-badge-green{background:var(--green)}
-  .offer-badge-orange{background:var(--orange)}
-  .offer-badge-red{background:var(--red)}
-  .tag{display:inline-flex;font:500 10px Inter;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--ink3)}
-  .tag-green{background:var(--green-l);color:var(--green)}
-  .tag-brand{background:var(--brand-l);color:var(--brand)}
-  .tag-orange{background:var(--orange-l);color:var(--orange)}
-  .tag-red{background:var(--red-l);color:var(--red)}
-  .status-dot{display:inline-flex;align-items:center;gap:5px;font:500 11px Inter}
-  .status-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ink4)}
-  .status-dot.open{color:var(--green)}
-  .status-dot.open::before{background:var(--green)}
-  .status-dot.closed{color:var(--red)}
-  .status-dot.closed::before{background:var(--red)}
-  .cut-badge{background:var(--brand-l);color:var(--brand);font:600 9px Inter;padding:2px 6px;border-radius:4px;display:inline-block}
+/* ── Badge base ── */
+.v3-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font:600 11px var(--v3-font);letter-spacing:.02em;
+  border-radius:var(--v3-radius-full);
+  line-height:1;white-space:nowrap;
+}
+
+/* ── Tag pill ── */
+.v3-badge-tag{padding:4px 8px}
+.v3-badge-tag.v3-badge-green{background:var(--v3-green-l);color:var(--v3-green)}
+.v3-badge-tag.v3-badge-orange{background:var(--v3-orange-l);color:var(--v3-orange)}
+.v3-badge-tag.v3-badge-red{background:var(--v3-red-l);color:var(--v3-red)}
+.v3-badge-tag.v3-badge-indigo{background:var(--v3-indigo-l);color:var(--v3-indigo)}
+.v3-badge-tag.v3-badge-brand{background:var(--v3-brand-l);color:var(--v3-brand)}
+
+/* ── Rating badge ── */
+.v3-badge-rating{
+  padding:3px 7px;
+  background:var(--v3-green-bg);color:var(--v3-green);
+  font-size:12px;font-weight:700;
+}
+.v3-badge-rating.v3-badge-green{background:var(--v3-green-bg);color:var(--v3-green)}
+
+/* ── Offer banner ── */
+.v3-badge-offer{
+  padding:6px 12px;border-radius:var(--v3-radius-xs);
+  font-size:12px;font-weight:700;letter-spacing:.01em;
+}
+.v3-badge-offer.v3-badge-brand{background:var(--v3-brand-l);color:var(--v3-brand);border-left:3px solid var(--v3-brand)}
+
+/* ── Sizes ── */
+.v3-badge-size-sm{font-size:10px;padding:3px 6px}
+.v3-badge-size-md{font-size:12px;padding:4px 10px}
+
+/* ── Bold modifier ── */
+.v3-badge-bold{font-weight:800}
+
+/* ── Status dot ── */
+.v3-status-dot{
+  display:inline-block;width:8px;height:8px;
+  border-radius:50%;flex-shrink:0;
+}
+.v3-status-dot-green{background:var(--v3-green)}
+.v3-status-dot-orange{background:var(--v3-orange)}
+.v3-status-dot-red{background:var(--v3-red)}
+
+/* ── Dot with label ── */
+.v3-status-label{
+  display:inline-flex;align-items:center;gap:5px;
+  font:500 12px var(--v3-font);
+}
 </style>
 </head>
 <body>
-<div class="figma-page">
-  <h1>Badges & Tags</h1>
-  <p class="sub">Status indicators. Rating badges, offer badges, status tags.</p>
+<div class="ds-page">
+  <h1>V3 Badges</h1>
+  <p class="ds-sub">Relifish Design System V3 · Status pills, tags &amp; rating chips</p>
 
-  <div class="component" data-name="RatingBadge">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">sm</span><span class="rating">4.8 ★</span></div>
-      <div class="variant"><span class="variant-label">lg</span><span class="rating rating-lg">4.8 ★</span></div>
-      <div class="variant"><span class="variant-label">new</span><span class="rating" style="background:var(--ink3)">NEW</span></div>
-      <div class="variant"><span class="variant-label">low (orange)</span><span class="rating" style="background:var(--orange)">3.2 ★</span></div>
+  <!-- Rating badges -->
+  <div class="ds-component" data-name="badge-rating">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Rating — green</div>
+        <span class="v3-badge v3-badge-rating v3-badge-green">4.5 ★</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Rating — high</div>
+        <span class="v3-badge v3-badge-rating v3-badge-green">4.9 ★</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Rating — bold</div>
+        <span class="v3-badge v3-badge-rating v3-badge-green v3-badge-bold">4.7 ★</span>
+      </div>
     </div>
-    <div class="spec"><b>Zomato-style.</b> Green bg = trust. <b>sm:</b> 11/700 · padding 3px 7px · radius 5px</div>
+    <div class="ds-spec">
+      <b>.v3-badge-rating.v3-badge-green:</b> bg var(--v3-green-bg) · color var(--v3-green) · 12px/700 · px 7px
+    </div>
   </div>
 
-  <div class="component" data-name="OfferBadge">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">brand</span><span class="offer-badge">Same-day catch</span></div>
-      <div class="variant"><span class="variant-label">green</span><span class="offer-badge offer-badge-green">Fresh today</span></div>
-      <div class="variant"><span class="variant-label">orange</span><span class="offer-badge offer-badge-orange">Limited stock</span></div>
-      <div class="variant"><span class="variant-label">red</span><span class="offer-badge offer-badge-red">Sold out</span></div>
+  <!-- Tag pills -->
+  <div class="ds-component" data-name="badge-tag">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Open now</div>
+        <span class="v3-badge v3-badge-tag v3-badge-green">Open now</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Pre-order</div>
+        <span class="v3-badge v3-badge-tag v3-badge-orange">Pre-order</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Closed</div>
+        <span class="v3-badge v3-badge-tag v3-badge-red">Closed</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Pre-orders open</div>
+        <span class="v3-badge v3-badge-tag v3-badge-indigo">Pre-orders open</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Same-day catch</div>
+        <span class="v3-badge v3-badge-tag v3-badge-brand">Same-day catch</span>
+      </div>
     </div>
-    <div class="spec"><b>Placement:</b> top-left on card images · <b>font:</b> 700 / 10px · <b>padding:</b> 3px 8px · <b>radius:</b> 6px</div>
+    <div class="ds-spec">
+      <b>.v3-badge-tag:</b> padding 4px 8px · border-radius var(--v3-radius-full)<br>
+      <b>green:</b> bg var(--v3-green-l) · color var(--v3-green) ·
+      <b>orange:</b> bg var(--v3-orange-l) · color var(--v3-orange) ·
+      <b>red:</b> bg var(--v3-red-l) · color var(--v3-red) ·
+      <b>indigo:</b> bg var(--v3-indigo-l) · color var(--v3-indigo) ·
+      <b>brand:</b> bg var(--v3-brand-l) · color var(--v3-brand)
+    </div>
   </div>
 
-  <div class="component" data-name="Tag (Status Chip)">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">neutral</span><span class="tag">Pickup only</span></div>
-      <div class="variant"><span class="variant-label">green</span><span class="tag tag-green">Open now</span></div>
-      <div class="variant"><span class="variant-label">brand</span><span class="tag tag-brand">Pre-order</span></div>
-      <div class="variant"><span class="variant-label">orange</span><span class="tag tag-orange">Closing soon</span></div>
-      <div class="variant"><span class="variant-label">red</span><span class="tag tag-red">Closed</span></div>
+  <!-- Offer banner -->
+  <div class="ds-component" data-name="badge-offer">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Offer banner — brand</div>
+        <span class="v3-badge v3-badge-offer v3-badge-brand">🎣 Fresh catch — order before 8 PM</span>
+      </div>
     </div>
-    <div class="spec"><b>font:</b> 500 / 10px · <b>padding:</b> 3px 10px · <b>radius:</b> 20px (pill)</div>
+    <div class="ds-spec">
+      <b>.v3-badge-offer.v3-badge-brand:</b> bg var(--v3-brand-l) · color var(--v3-brand) · border-left 3px solid var(--v3-brand) · radius var(--v3-radius-xs)
+    </div>
   </div>
 
-  <div class="component" data-name="StatusDot (Live Indicator)">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">open</span><span class="status-dot open">Open · Sassoon Dock</span></div>
-      <div class="variant"><span class="variant-label">closed</span><span class="status-dot closed">Closed · Opens 5am</span></div>
+  <!-- Sizes -->
+  <div class="ds-component" data-name="badge-sizes">
+    <div class="ds-variants" style="align-items:center">
+      <div class="ds-variant">
+        <div class="ds-label">sm — 10px</div>
+        <span class="v3-badge v3-badge-tag v3-badge-green v3-badge-size-sm">Open now</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">md — 12px</div>
+        <span class="v3-badge v3-badge-tag v3-badge-green v3-badge-size-md">Open now</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">default — 11px</div>
+        <span class="v3-badge v3-badge-tag v3-badge-green">Open now</span>
+      </div>
     </div>
-    <div class="spec"><b>Dot:</b> 6x6px circle · <b>font:</b> 500 / 11px · animate pulse for live state</div>
+    <div class="ds-spec">
+      <b>.v3-badge-size-sm:</b> 10px · px 6px ·
+      <b>.v3-badge-size-md:</b> 12px · px 10px
+    </div>
   </div>
 
-  <div class="component" data-name="CutBadge (Menu Item)">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">options</span><span class="cut-badge">Whole / Cut</span></div>
-      <div class="variant"><span class="variant-label">cleaned</span><span class="cut-badge" style="background:var(--green-l);color:var(--green)">Cleaned</span></div>
-      <div class="variant"><span class="variant-label">fresh-today</span><span class="cut-badge" style="background:var(--green-l);color:var(--green)">Fresh today</span></div>
+  <!-- Bold modifier -->
+  <div class="ds-component" data-name="badge-bold">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Normal weight</div>
+        <span class="v3-badge v3-badge-tag v3-badge-indigo">Pre-orders open</span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Bold modifier</div>
+        <span class="v3-badge v3-badge-tag v3-badge-indigo v3-badge-bold">Pre-orders open</span>
+      </div>
     </div>
-    <div class="spec"><b>Placement:</b> top-left on menu item image · <b>font:</b> 600 / 9px · <b>padding:</b> 2px 6px</div>
+    <div class="ds-spec"><b>.v3-badge-bold:</b> font-weight: 800</div>
   </div>
 
-  <div class="component" data-name="OrderStatusBadge">
-    <div class="component-variants">
-      <div class="variant"><span class="variant-label">placed</span><span class="tag tag-brand">Order placed</span></div>
-      <div class="variant"><span class="variant-label">confirmed</span><span class="tag tag-green">Confirmed</span></div>
-      <div class="variant"><span class="variant-label">ready</span><span class="tag" style="background:#E0F2FE;color:#0369A1">Ready for pickup</span></div>
-      <div class="variant"><span class="variant-label">completed</span><span class="tag tag-green">Completed</span></div>
-      <div class="variant"><span class="variant-label">cancelled</span><span class="tag tag-red">Cancelled</span></div>
-      <div class="variant"><span class="variant-label">scheduled</span><span class="tag" style="background:#F3E8FF;color:#7C3AED">Scheduled</span></div>
+  <!-- Status dots -->
+  <div class="ds-component" data-name="status-dots">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Open (green dot)</div>
+        <span class="v3-status-label" style="color:var(--v3-green)">
+          <span class="v3-status-dot v3-status-dot-green"></span>Open
+        </span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Pre-order (orange dot)</div>
+        <span class="v3-status-label" style="color:var(--v3-orange)">
+          <span class="v3-status-dot v3-status-dot-orange"></span>Pre-order
+        </span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Closed (red dot)</div>
+        <span class="v3-status-label" style="color:var(--v3-red)">
+          <span class="v3-status-dot v3-status-dot-red"></span>Closed
+        </span>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Dots alone</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="v3-status-dot v3-status-dot-green"></span>
+          <span class="v3-status-dot v3-status-dot-orange"></span>
+          <span class="v3-status-dot v3-status-dot-red"></span>
+        </div>
+      </div>
     </div>
-    <div class="spec"><b>Color-coded status</b> · used in order history, tracking page, seller dashboard</div>
+    <div class="ds-spec">
+      <b>.v3-status-dot:</b> 8×8px · border-radius 50% ·
+      <b>-green:</b> var(--v3-green) · <b>-orange:</b> var(--v3-orange) · <b>-red:</b> var(--v3-red)
+    </div>
   </div>
+
+  <!-- In-context: seller card -->
+  <div class="ds-component" data-name="badges-in-context">
+    <div class="ds-variants">
+      <div class="ds-variant">
+        <div class="ds-label">Seller card — open</div>
+        <div style="background:var(--v3-bg);border:1px solid var(--v3-border);border-radius:var(--v3-radius);padding:14px;width:200px;box-shadow:var(--v3-shadow-sm)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <span style="font:700 14px var(--v3-font);color:var(--v3-ink)">Marina Fresh</span>
+            <span class="v3-badge v3-badge-rating v3-badge-green">4.8 ★</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="v3-badge v3-badge-tag v3-badge-green">Open now</span>
+            <span class="v3-badge v3-badge-tag v3-badge-brand">Same-day catch</span>
+          </div>
+        </div>
+      </div>
+      <div class="ds-variant">
+        <div class="ds-label">Seller card — pre-order</div>
+        <div style="background:var(--v3-bg);border:1px solid var(--v3-border);border-radius:var(--v3-radius);padding:14px;width:200px;box-shadow:var(--v3-shadow-sm)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <span style="font:700 14px var(--v3-font);color:var(--v3-ink)">Bay Harbour</span>
+            <span class="v3-badge v3-badge-rating v3-badge-green">4.6 ★</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="v3-badge v3-badge-tag v3-badge-indigo">Pre-orders open</span>
+            <span class="v3-badge v3-badge-tag v3-badge-orange">Pre-order</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 </body>
 </html>

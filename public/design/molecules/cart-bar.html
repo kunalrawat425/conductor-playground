@@ -1,99 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Molecule — Cart Bar</title>
-<link rel="stylesheet" href="../_shared.css">
-<style>
-  .cart-bar{width:336px;background:var(--brand);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-lg)}
-  .cb-left{color:#fff}
-  .cb-items{font:600 12px Inter;opacity:.9}
-  .cb-total{font:800 16px Inter}
-  .cb-btn{background:#fff;color:var(--brand);font:700 12px Inter;padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer}
-  .cb-warning{background:var(--orange)}
-  .cb-success{background:var(--green)}
-  .cb-empty{background:var(--ink3);opacity:.7}
-  .cb-progress{width:336px;background:var(--brand);border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow-lg);color:#fff}
-  .cb-progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-  .cb-progress-text{font:600 11px Inter}
-  .cb-progress-amt{font:800 14px Inter}
-  .cb-progress-bar{height:4px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
-  .cb-progress-bar .fill{height:100%;background:#fff;border-radius:2px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V3 Cart Bar — Relifish Design System</title>
+  <link rel="stylesheet" href="../_shared.css" />
 </head>
 <body>
-<div class="figma-page">
+<div class="ds-page">
   <h1>Cart Bar</h1>
-  <p class="sub">Floating cart pill. Blinkit signature pattern.</p>
+  <p class="ds-sub">Floating cart bar: collapsed pill, expanded full bar, and minimum-order warning state.</p>
 
-  <div class="component" data-name="CartBar · Default">
-    <div class="component-variants">
-      <div class="cart-bar">
-        <div class="cb-left">
-          <div class="cb-items">2 items</div>
-          <div class="cb-total">₹1,450</div>
+  <div class="ds-component" data-name="Cart Bar">
+    <div class="ds-variants" style="flex-direction:column;max-width:400px;">
+
+      <!-- State 1: Collapsed pill -->
+      <div class="ds-variant">
+        <div class="ds-label">Collapsed (pill)</div>
+        <div style="display:inline-flex;align-items:center;gap:10px;background:var(--v3-brand);border-radius:100px;padding:10px 18px;box-shadow:var(--v3-shadow-lg);cursor:pointer;">
+          <span style="font:800 14px var(--v3-font);color:#fff;">2 items · ₹1,080</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
-        <button class="cb-btn">View Cart →</button>
       </div>
-    </div>
-    <div class="spec">
-      <b>Placement:</b> fixed bottom · 12px from edges · above bottom nav (if present)<br>
-      <b>bg:</b> #0066FF · <b>radius:</b> 12px · <b>shadow:</b> shadow-lg<br>
-      <b>Appears:</b> slide-up animation on first item add
+
+      <!-- State 2: Expanded full bar -->
+      <div class="ds-variant">
+        <div class="ds-label">Expanded</div>
+        <div style="background:var(--v3-bg);border-top:1px solid var(--v3-border);box-shadow:0 -4px 12px rgba(0,0,0,0.1);padding:12px 16px;border-radius:var(--v3-radius-lg) var(--v3-radius-lg) 0 0;max-width:400px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font:800 14px var(--v3-font);color:var(--v3-ink);">2 items · ₹1,080</span>
+            <button style="background:none;border:none;font:600 12px var(--v3-font);color:var(--v3-red);cursor:pointer;">Clear</button>
+          </div>
+          <a href="#" style="display:block;text-align:center;background:var(--v3-brand);color:#fff;font:700 15px var(--v3-font);padding:14px;border-radius:var(--v3-radius);text-decoration:none;">Proceed to Checkout →</a>
+        </div>
+      </div>
+
+      <!-- State 3: Warning — min order not met -->
+      <div class="ds-variant">
+        <div class="ds-label">Warning (min order not met)</div>
+        <div style="background:var(--v3-bg);border-top:1px solid var(--v3-border);box-shadow:0 -4px 12px rgba(0,0,0,0.1);padding:12px 16px;border-radius:var(--v3-radius-lg) var(--v3-radius-lg) 0 0;max-width:400px;">
+          <!-- Warning message -->
+          <div style="display:flex;align-items:center;gap:8px;background:var(--v3-orange-l);border:1px solid #FED7AA;border-radius:var(--v3-radius-sm);padding:8px 12px;margin-bottom:10px;">
+            <span style="font-size:14px;">⚠️</span>
+            <span style="font:600 12px var(--v3-font);color:var(--v3-orange);">Add ₹170 more to meet the ₹500 minimum order</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font:800 14px var(--v3-font);color:var(--v3-ink);">1 item · ₹330</span>
+            <button style="background:none;border:none;font:600 12px var(--v3-font);color:var(--v3-red);cursor:pointer;">Clear</button>
+          </div>
+          <button disabled style="display:block;width:100%;text-align:center;background:var(--v3-bg-3);color:var(--v3-ink-4);font:700 15px var(--v3-font);padding:14px;border-radius:var(--v3-radius);border:none;cursor:not-allowed;">Proceed to Checkout →</button>
+        </div>
+      </div>
+
+    </div><!-- /ds-variants -->
+
+    <div class="ds-spec">
+      <b>Collapsed pill:</b> background: var(--v3-brand); border-radius: 100px; box-shadow: var(--v3-shadow-lg).<br/>
+      <b>Expanded:</b> fixed bottom 64px (above bottom nav); border-top: 1px solid var(--v3-border); box-shadow: 0 -4px 12px rgba(0,0,0,0.1).<br/>
+      <b>Warning:</b> background: var(--v3-orange-l); border: 1px solid #FED7AA; disabled checkout button (var(--v3-bg-3)).<br/>
+      <b>z-index:</b> var(--v3-z-cart-bar) = 45 (above bottom nav at 40, below modals at 100).
     </div>
   </div>
 
-  <div class="component" data-name="CartBar · Below Min Order">
-    <div class="component-variants">
-      <div class="cart-bar cb-warning">
-        <div class="cb-left">
-          <div class="cb-items">Add ₹150 more for min order</div>
-          <div class="cb-total">₹850</div>
-        </div>
-        <button class="cb-btn" style="color:var(--orange)">Keep shopping</button>
-      </div>
-    </div>
-    <div class="spec"><b>Warning state:</b> orange bg · shows how much more needed · CTA reverts to "Keep shopping"</div>
-  </div>
-
-  <div class="component" data-name="CartBar · Free Delivery Hit">
-    <div class="component-variants">
-      <div class="cart-bar cb-success">
-        <div class="cb-left">
-          <div class="cb-items">🎉 Free delivery unlocked</div>
-          <div class="cb-total">₹1,120</div>
-        </div>
-        <button class="cb-btn" style="color:var(--green)">Checkout →</button>
-      </div>
-    </div>
-    <div class="spec"><b>Success state:</b> green bg · celebrates milestone · pushes to checkout</div>
-  </div>
-
-  <div class="component" data-name="CartBar · With Progress Bar">
-    <div class="component-variants">
-      <div class="cb-progress">
-        <div class="cb-progress-top">
-          <div class="cb-progress-text">Add ₹280 more for free delivery</div>
-          <div class="cb-progress-amt">₹720</div>
-        </div>
-        <div class="cb-progress-bar"><div class="fill" style="width:72%"></div></div>
-      </div>
-    </div>
-    <div class="spec"><b>Progress variant:</b> AOV pusher · shows ₹ needed to unlock free delivery · Swiggy pattern</div>
-  </div>
-
-  <div class="component" data-name="CartBar · Pre-order Mode">
-    <div class="component-variants">
-      <div class="cart-bar" style="background:#4F46E5">
-        <div class="cb-left">
-          <div class="cb-items">🌙 Pre-order for tomorrow 7am</div>
-          <div class="cb-total">₹1,450</div>
-        </div>
-        <button class="cb-btn" style="color:#4F46E5">Review →</button>
-      </div>
-    </div>
-    <div class="spec"><b>Pre-order variant:</b> indigo bg · differentiates from same-day order flow</div>
-  </div>
 </div>
 </body>
 </html>
