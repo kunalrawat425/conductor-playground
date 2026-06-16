@@ -230,7 +230,7 @@ const MAX_ATTEMPTS = 3;
         document.getElementById(`${id}-otp`).value = "";
         document.querySelector(`#${id}-step2 .v2-otp-cell`)?.focus();
         btn.disabled = false;
-        btn.textContent = left > 0 ? "Try again" : "Resend OTP first";
+        btn.textContent = left > 0 ? "Verify & continue" : "Resend OTP first";
         return;
       }
 
@@ -267,7 +267,7 @@ const MAX_ATTEMPTS = 3;
       otpAttempts++;
       window.v2Toast?.("error", "Network error", err.message || "Try again");
       btn.disabled = false;
-      btn.textContent = "Try again";
+      btn.textContent = "Verify & continue";
     }
   });
 
