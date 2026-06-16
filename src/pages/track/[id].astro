@@ -643,19 +643,25 @@ const { id } = Astro.params;
           window.location.href = `/s/${sellerSlug}`;
         });
       }
-    } else if (o.status === "ready_for_pickup") {
-      // Form locked — show read-only preferences only
+    } else if (o.status === "ready_for_pickup" || o.status === "out_for_delivery") {
+      // Order in transit or ready — preferences locked, show read-only
       const savedCuts2 = (o.cut_style || "").split(",").filter(Boolean);
       const cutLabels2: Record<string, string> = { whole: "🐟 Whole", cleaned: "✂️ Cleaned", cut: "🔪 Cut" };
       const cutDisplay2 = savedCuts2.map(c => cutLabels2[c] || c).join(", ");
+      const statusMsg = o.status === "out_for_delivery"
+        ? "🛵 On the way — preferences locked"
+        : "✅ Order ready — preferences locked";
+      const hasAnyPref = cutDisplay2 || o.buyer_notes;
       actions.innerHTML = `
         <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
-          <div style="font:700 13px Inter;color:#059669;margin-bottom:6px;">✅ Order ready — preferences locked</div>
-          ${cutDisplay2 ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Cut: ${cutDisplay2}</div>` : ""}
-          ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);">📝 ${escape(o.buyer_notes)}</div>` : ""}
+          <div style="font:700 13px Inter;color:#059669;margin-bottom:6px;">${statusMsg}</div>
+          ${hasAnyPref
+            ? `${cutDisplay2 ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Cut: ${cutDisplay2}</div>` : ""}
+               ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);">📝 ${escape(o.buyer_notes)}</div>` : ""}`
+            : `<div style="font:400 12px Inter;color:var(--v2-ink-3);">No preference added</div>`}
           <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:8px;">No changes possible after this point.</div>
         </div>`;
-    } else if (["confirmed", "paid", "out_for_delivery", "scheduled"].includes(o.status)) {
+    } else if (["confirmed", "paid", "scheduled"].includes(o.status)) {
       const hasCut = !!o.cut_style;
       const hasNotes = !!o.buyer_notes;
       const alreadySaved = hasCut || hasNotes;
