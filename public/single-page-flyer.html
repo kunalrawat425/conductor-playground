@@ -38,7 +38,7 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
 .headline span{color:#fbbf24;}
 
 /* ── HERO PHOTO SECTION ── */
-.hero{position:relative;flex-shrink:0;height:262px;overflow:hidden;}
+.hero{position:relative;flex-shrink:0;height:240px;overflow:hidden;}
 .hero-img{width:100%;height:100%;object-fit:cover;object-position:center center;display:block;}
 
 /* QR overlaid bottom-left */
@@ -54,7 +54,7 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
 
 /* Badge top-left: 2HR DELIVERY */
 .hero-badge-delivery{
-  position:absolute;top:10px;left:10px;
+  position:absolute;bottom:178px;left:10px;
   background:linear-gradient(135deg,#f97316 0%,#ea580c 100%);
   border-radius:10px;padding:6px 10px;text-align:center;
   box-shadow:0 3px 10px rgba(0,0,0,0.25);
@@ -80,7 +80,7 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
 /* ── DELIVERY PROMISE STRIP ── */
 .delivery-strip{
   background:#eff6ff;border-bottom:2px solid #bfdbfe;
-  padding:8px 20px;flex-shrink:0;
+  padding:6px 20px;flex-shrink:0;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
 }
 .delivery-text{}
@@ -94,21 +94,21 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
 .dstat-label{font-size:6px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;}
 
 /* ── WHY RELIFISH ── */
-.why-section{background:#0a2472;padding:7px 20px;flex-shrink:0;}
+.why-section{background:#0a2472;padding:5px 20px;flex-shrink:0;}
 .why-title{font-size:8px;font-weight:800;color:#60a5fa;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:5px;text-align:center;}
-.why-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;}
+.why-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;}
 .why-item{display:flex;align-items:flex-start;gap:5px;}
 .why-check{font-size:9px;color:#4ade80;flex-shrink:0;line-height:1.35;font-weight:800;}
 .why-text{font-size:7.5px;font-weight:600;color:#e2e8f0;line-height:1.35;}
 .why-text b{color:#fbbf24;font-weight:800;}
 
 /* ── FISH GRID ── */
-.fish-section{padding:7px 20px 5px;flex:1;}
-.fish-title{font-size:7.5px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;text-align:center;margin-bottom:5px;}
-.fish-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
-.fc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;text-align:center;}
-.fc img{width:100%;height:42px;object-fit:cover;display:block;}
-.fc-name{font-size:9px;font-weight:800;color:#0f172a;padding:2px 4px 0;}
+.fish-section{padding:5px 20px 4px;flex:1;display:flex;flex-direction:column;min-height:0;}
+.fish-title{font-size:10px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;color:#dc2626;text-align:center;margin-bottom:5px;}
+.fish-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;flex:1;min-height:0;align-items:stretch;}
+.fc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;text-align:center;display:flex;flex-direction:column;position:relative;}
+.fc img{width:100%;flex:1;min-height:0;object-fit:cover;display:block;}
+.fc-name{font-size:20px;font-weight:900;color:#ffffff;padding:6px 4px 7px;position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.78) 0%,transparent 100%);text-shadow:0 1px 3px rgba(0,0,0,0.6);}
 .fc-price{font-size:7.5px;font-weight:700;color:#1d4ed8;padding:1px 4px 3px;}
 .fish-note{font-size:7px;font-weight:600;color:#64748b;text-align:center;margin-top:4px;font-style:italic;}
 
@@ -120,7 +120,7 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
 /* ── WHATSAPP ENQUIRY ── */
 .wa-enquiry{
   background:#f0fdf4;border-top:2px solid #86efac;
-  padding:7px 20px;flex-shrink:0;
+  padding:5px 20px;flex-shrink:0;
   display:flex;align-items:center;gap:12px;
 }
 .wa-icon-wrap{font-size:26px;flex-shrink:0;line-height:1;}
@@ -157,7 +157,7 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
   <div class="header">
     <div class="brand-name">Relifish</div>
     <div class="tagline">Mumbai's Hyperlocal Fresh Fish Marketplace</div>
-    <div class="headline">Fresh Catch From Your <span>Local Neighbourhood Seller</span></div>
+    <div class="headline">Stop Wasting <span>2 Hours At The Fish Market</span> Every Weekend</div>
   </div>
 
   <!-- HERO PHOTO — delivery handoff scene, full bleed -->
@@ -193,8 +193,8 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
   <!-- DELIVERY PROMISE + STATS -->
   <div class="delivery-strip">
     <div class="delivery-text">
-      <div class="delivery-big"><span>2-Hour</span> Doorstep Delivery!</div>
-      <div class="delivery-sub">🛵 Delivery guy only</div>
+      <div class="delivery-big"><span>Fresh Fish</span> Delivered To Your Doorstep</div>
+
       <div class="delivery-sub2">Same-day catch · Never frozen · Cleaned on request</div>
     </div>
     <div class="delivery-stats">
@@ -203,12 +203,12 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
         <div class="dstat-label">Delivery</div>
       </div>
       <div class="dstat">
-        <div class="dstat-num">4.8★</div>
-        <div class="dstat-label">Rating</div>
+        <div class="dstat-num">Zero</div>
+        <div class="dstat-label">Middleman</div>
       </div>
       <div class="dstat">
-        <div class="dstat-num">100+</div>
-        <div class="dstat-label">Orders</div>
+        <div class="dstat-num">Daily</div>
+        <div class="dstat-label">Fresh Catch</div>
       </div>
     </div>
   </div>
@@ -217,56 +217,33 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
   <div class="why-section">
     <div class="why-title">✦ Why Relifish? ✦</div>
     <div class="why-grid">
-      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Direct from local fishermen</b> — no middleman</div></div>
-      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Same-day catch</b> — not frozen, not days old</div></div>
-      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Cleaned &amp; cut</b> as per your preference</div></div>
-      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Limited &amp; fresh stock</b> — quality over quantity</div></div>
-      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Pre-order before shop opens</b></div></div>
-      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Same-day order</b></div></div>
-      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>UPI payment</b> — simple scan &amp; pay</div></div>
-      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>No app download needed</b> — order on web</div></div>
+      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Cleaned &amp; Ready To Cook</b> — your cut, your way</div></div>
+      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Hygienically Packed</b> — no fish smell in transit</div></div>
+      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Same Day Delivery</b> — morning catch at your door by lunch</div></div>
+      <div class="why-item"><span class="why-check">✓</span><div class="why-text"><b>Trusted Local Sourcing</b> — you know who caught your fish</div></div>
+      <div class="why-item" style="background:rgba(251,191,36,0.12);border:1.5px solid #fbbf24;border-radius:6px;padding:3px 6px;"><span class="why-check">✓</span><div class="why-text"><b>Pre-order</b> — place by tonight, get tomorrow's catch</div></div>
+      <div class="why-item" style="background:rgba(251,191,36,0.12);border:1.5px solid #fbbf24;border-radius:6px;padding:3px 6px;"><span class="why-check">✓</span><div class="why-text"><b>Same-day order</b> — during seller's shop hours</div></div>
     </div>
   </div>
 
   <!-- FISH GRID -->
   <div class="fish-section">
-    <div class="fish-title">🐟 Popular Fresh Fish &amp; Seafood — Stock Updated Daily 🐟</div>
+    <div class="fish-title">🐟 Daily Check Fresh Stock &amp; Live Price — Stock Sells Out Fast 🐟</div>
     <div class="fish-grid">
 
       <div class="fc">
         <img src="https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0" alt="Pomfret" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Pomfret</div>
-        <div class="fc-price">Check live price →</div>
       </div>
 
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline" alt="Surmai" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Surmai</div>
-        <div class="fc-price">Check live price →</div>
       </div>
 
       <div class="fc">
         <img src="https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize" alt="Prawns" onerror="this.style.background='#f1f5f9'"/>
         <div class="fc-name">Prawns</div>
-        <div class="fc-price">Check live price →</div>
-      </div>
-
-      <div class="fc">
-        <img src="https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize" alt="Bangda" onerror="this.style.background='#f1f5f9'"/>
-        <div class="fc-name">Bangda</div>
-        <div class="fc-price">Check live price →</div>
-      </div>
-
-      <div class="fc">
-        <img src="https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0" alt="Rawas" onerror="this.style.background='#f1f5f9'"/>
-        <div class="fc-name">Rawas</div>
-        <div class="fc-price">Check live price →</div>
-      </div>
-
-      <div class="fc">
-        <img src="https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline" alt="Crab" onerror="this.style.background='#f1f5f9'"/>
-        <div class="fc-name">Crab</div>
-        <div class="fc-price">Check live price →</div>
       </div>
 
     </div>
@@ -283,11 +260,13 @@ body{font-family:'Inter',sans-serif;background:#c8d0e8;display:flex;flex-directi
   <div class="wa-enquiry">
     <span class="wa-icon-wrap">💬</span>
     <div class="wa-text">
-      <div class="wa-label">WhatsApp for Enquiries</div>
+      <div class="wa-label">💬 WhatsApp for Queries &amp; Chat</div>
       <div class="wa-number">9152 207 607</div>
-      <div class="wa-hours">⏰ Available 7:30 AM – 9:00 PM</div>
     </div>
-    <div class="wa-note">✨ Try us once!</div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div class="wa-note">Send: "Aaj kya fresh hai?" 🐟</div>
+      <div class="wa-hours" style="margin-top:4px;text-align:right;">⏰ Available 7:30 AM – 9:00 PM</div>
+    </div>
   </div>
 
   <!-- FOOTER -->

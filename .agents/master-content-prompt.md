@@ -46,8 +46,8 @@ Please generate the following deliverables in full, ensuring they sound human, s
 ### 3. The Full Blog Article (800 - 1200 words)
 - Write in a direct, warm, no-nonsense tone. Avoid AI phrases like "delve," "testament," "realm," "furthermore." Start directly with the hook.
 - Structure with H2/H3 subheadings containing keywords.
-- Integrate one "Fish Economics" educational section (e.g., how tides, monsoon bans, or dock bidding affects this specific topic).
-- End with a localized call-to-action (CTA) widget offering code "[LOCALITY]100" (Rs. 100 off first order).
+- Integrate one "Fish Sourcing & Economics" educational section (e.g., how tides, monsoon bans, or dock bidding affects this specific topic).
+- **DO NOT include hardcoded coupon/referral codes in the blog body.** All calls-to-action should link dynamically to the shop page where active offers are managed, avoiding stale or unverified promo codes.
 
 ### 4. The WhatsApp Broadcast (Hinglish default)
 - A punchy, short, emoji-rich broadcast copy for our community broadcast lists. Lead with the daily catch update or a relatable local situation.
@@ -63,4 +63,13 @@ Please generate the following deliverables in full, ensuring they sound human, s
 ### 6. Midjourney Photo Prompts
 - Image 1 (Hero Graphic): Photo of whole fish on ice in warm morning dock light, raw and unedited, with human hands visible.
 - Image 2 (Cooking Graphic): Close-up of the fish marinating in a home kitchen (steel plates, banana leaves, natural light).
-```
+
+## Pre-Posting Editorial Compliance Checklist (Human Verification)
+
+Before copying, saving, or staging any generated draft JSON for Git commit, the editor must manually verify that the content passes this quality gate:
+
+1.  **AI Slop Check:** Scan the text for standard AI transitional phrases ("In conclusion," "It is a testament to," "Furthermore," "Let's dive into"). Delete them. The article must start immediately with the story hook.
+2.  **No Arbitrary Promo Codes:** DO NOT invent or publish arbitrary coupon/referral codes in the blog body. Always verify the status of active codes in your database/codebase configuration *before* posting the blog to avoid selling discount features that do not exist or are inactive.
+3.  **Hinglish Flow Test:** Read the Hinglish WhatsApp templates aloud. If the sentence structures feel like a direct, literal translation from English rather than natural Mumbai slang, rewrite them manually.
+4.  **Local Entity Accuracy Check:** Double-check that the mentioned society names and Thane landmarks are geographically accurate (e.g., Viviana Mall is in Majiwada, Arcadia is in Hiranandani Estate).
+5.  **Fish Sourcing Fact-Check:** Ensure that seasonal information, tide explanations, and species details match actual coastal Maharashtra fishing conditions.

@@ -255,18 +255,20 @@ Before any generated blog post, Instagram carousel, or WhatsApp broadcast goes l
 ```mermaid
 graph TD
     A[AI Content Engine] -->|1. Generate draft JSON| B[Pending Folder / Draft Sheet]
-    B -->|2. Notification to Admin| C[Slack/WhatsApp Notification]
-    C -->|3. Manual Review/Edit| D[Founder/Editor Approval]
+    B -->|2. Send WhatsApp Notification| C[Founder WhatsApp - 1 Day Before Publish]
+    C -->|3. Manual Review/Edit| D[Founder Approval]
     D -->|4. Push to master| E[Vercel Auto-Publish]
     D -->|5. Queue Socials| F[Buffer Scheduler]
 ```
 
-1. **Generation Gate:** The Python script deposits the AI outputs into a `public/assets/campaigns/draft-[slug].json` file and sends a Discord/Slack webhook notification to the team.
-2. **Review/Sanitization Check:**
+1. **Generation Gate:** The Python script deposits the AI outputs into a `public/assets/campaigns/draft-[slug].json` file.
+2. **WhatsApp Review Ping (1 Day Prior):** The automation script triggers a WhatsApp notification directly to the founder **exactly 24 hours before the scheduled post time**, sending the raw copy, image prompts, and target tower tags for quick approval.
+3. **Review/Sanitization Check:**
    - **Quality Check:** Ensure the content contains no AI buzzwords (e.g., "delve," "testament").
    - **Hyperlocal Verification:** Ensure the localized society names and landmarks are correct.
    - **Marathi/Hinglish Verification:** Ensure the phonetically written Marathi reads naturally.
-3. **Approval Trigger:** Once approved, renaming the file to `[slug].json` triggers the push to production and schedules the social posts.
+4. **Approval Trigger:** Once approved by the founder, renaming the file to `[slug].json` triggers the push to production and schedules the social posts.
+
 
 ---
 
