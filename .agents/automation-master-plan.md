@@ -164,5 +164,74 @@ if __name__ == "__main__":
 ```
 
 ### 3. Automatically Publishing & Scheduling
-* **Git Commit:** Hook your script into your GitHub Actions pipeline. When a new blog file is created in `src/content/blog/`, Vercel automatically redeploys the site and renders the page.
-* **Buffer/Zapier Hook:** Set up a Zapier trigger that watches for new JSON files in `public/assets/campaigns/`. When a new file is detected, parse the JSON and queue the Instagram/Facebook copy, along with the generated image, directly into Buffer or Hootsuite.
+
+To achieve a fully automated setup, use the official **Meta Graph API** to publish your generated images and captions directly to Instagram Business and Facebook Pages.
+
+#### Direct Meta Graph API Integration Code (Python)
+Add this helper function to your automation pipeline to auto-publish assets:
+
+```python
+import os
+import requests
+
+def auto_publish_to_meta(image_url, caption):
+    """
+    Publishes the generated image and caption directly to Instagram Business
+    and Facebook Page endpoints using the Meta Graph API.
+    """
+    META_ACCESS_TOKEN = os.getenv("META_ACCESS_TOKEN")
+    INSTAGRAM_BUSINESS_ACCOUNT_ID = os.getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID")
+    FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID")
+
+    # ──── 1. INSTAGRAM PUBLISHING FLOW ────
+    # Step A: Create the Instagram Media Container
+    ig_container_url = f"https://graph.facebook.com/v19.0/{INSTAGRAM_BUSINESS_ACCOUNT_ID}/media"
+    ig_container_payload = {
+        'image_url': image_url,
+        'caption': caption,
+        'access_token': META_ACCESS_TOKEN
+    }
+    ig_container_res = requests.post(ig_container_url, data=ig_container_payload)
+    
+    if ig_container_res.status_code == 200:
+        creation_id = ig_container_res.json().get("id")
+        print(f"Instagram container created successfully. ID: {creation_id}")
+        
+        # Step B: Publish the Media Container
+        ig_publish_url = f"https://graph.facebook.com/v19.0/{INSTAGRAM_BUSINESS_ACCOUNT_ID}/media_publish"
+        ig_publish_payload = {
+            'creation_id': creation_id,
+            'access_token': META_ACCESS_TOKEN
+        }
+        ig_publish_res = requests.post(ig_publish_url, data=ig_publish_payload)
+        if ig_publish_res.status_code == 200:
+            print("Successfully published post to Instagram Business!")
+        else:
+            print(f"Failed to publish container on Instagram: {ig_publish_res.text}")
+    else:
+        print(f"Failed to create Instagram media container: {ig_container_res.text}")
+
+    # ──── 2. FACEBOOK PAGE PUBLISHING FLOW ────
+    fb_publish_url = f"https://graph.facebook.com/v19.0/{FACEBOOK_PAGE_ID}/photos"
+    fb_payload = {
+        'url': image_url,
+        'message': caption,
+        'access_token': META_ACCESS_TOKEN
+    }
+    fb_res = requests.post(fb_publish_url, data=fb_payload)
+    if fb_res.status_code == 200:
+        print("Successfully published post to Facebook Page!")
+    else:
+        print(f"Failed to publish on Facebook Page: {fb_res.text}")
+
+# Example Usage:
+# auto_publish_to_meta(
+#     image_url="https://relifish.store/assets/campaigns/surmai-hero.jpg",
+#     caption="Aaj ka catch: Fresh Surmai direct from Versova dock... 🐟"
+# )
+```
+
+#### Alternate No-Code / Low-Code Publishing Pipeline:
+1. **GitHub Trigger:** Hook your script into your GitHub Actions pipeline. When a new blog file is created in `src/content/blog/`, Vercel automatically redeploys the site and renders the page.
+2. **Zapier/Make.com Hook:** Set up a Zapier trigger that watches for new JSON files in `public/assets/campaigns/`. When a new file is detected, parse the JSON and pass the caption and image URL directly to the **Instagram for Business** Zapier integration.
+3. **Buffer API:** Send the generated assets directly to the Buffer API queue to manage schedules and timings.
