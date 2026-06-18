@@ -322,6 +322,7 @@ Always optimize for trust, local authority, conversion, repeat purchases, and lo
 
 
 ## Marketing Assets (for reference)
+- **SEO & Growth Content Engine Playbook:** [seo-content-engine.md](file:///Users/kunalrawat/conductor/workspaces/conductor-playground/da-nang/.agents/seo-content-engine.md)
 - **Buyer landing (long):** relifish.store/buyer-detailed.html
 - **Buyer flyer (simple + QR to WhatsApp):** relifish.store/buyer-simple.html
 - **Cardboard standee (in-person distribution):** relifish.store/cardboard.html
