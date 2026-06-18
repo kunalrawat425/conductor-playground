@@ -234,4 +234,38 @@ def auto_publish_to_meta(image_url, caption):
 #### Alternate No-Code / Low-Code Publishing Pipeline:
 1. **GitHub Trigger:** Hook your script into your GitHub Actions pipeline. When a new blog file is created in `src/content/blog/`, Vercel automatically redeploys the site and renders the page.
 2. **Zapier/Make.com Hook:** Set up a Zapier trigger that watches for new JSON files in `public/assets/campaigns/`. When a new file is detected, parse the JSON and pass the caption and image URL directly to the **Instagram for Business** Zapier integration.
-3. **Buffer API:** Send the generated assets directly to the Buffer API queue to manage schedules and timings.
+- **Buffer API:** Send the generated assets directly to the Buffer API queue to manage schedules and timings.
+
+---
+
+## 4. Next Steps, OKRs, & Required Tokens
+
+### OKRs (Objectives and Key Results)
+
+#### Objective 1: Dominate Hyperlocal Density in Thane West
+*   **KR 1.1:** Achieve 150 weekly orders from Hiranandani Estate & Majiwada (combined) within 90 days of launch.
+*   **KR 1.2:** Onboard at least 8 "Seafood Captains" across key residential towers to coordinate group order batches.
+*   **KR 1.3:** Maintain a Customer Acquisition Cost (Obtained organically) under Rs. 75 per first order using organic referral loops.
+
+#### Objective 2: Establish Genuinely Fresh Authority (Trust Metric)
+*   **KR 2.1:** Maintain a Month-1 repeat purchase rate of >45% among first-time buyers.
+*   **KR 2.2:** Gather 50+ Google Business Profile and local community WhatsApp reviews with photo proof within 60 days.
+*   **KR 2.3:** Maintain an Average Order Value (AOV) above Rs. 850 by leveraging family bundles and thalis.
+
+---
+
+### Required Integration Tokens
+To activate the automation script and hook the calendar into real social networks, configure these environment variables in your deployment settings:
+
+1.  **`META_ACCESS_TOKEN`:** A Page Access Token (extended/never-expiring) generated from the Meta Developer Console with `instagram_basic`, `instagram_content_publish`, and `pages_read_engagement` scopes.
+2.  **`INSTAGRAM_BUSINESS_ACCOUNT_ID`:** The unique business ID of the linked Instagram Professional Account.
+3.  **`FACEBOOK_PAGE_ID`:** The ID of the linked Facebook Page serving the target area.
+4.  **`GEMINI_API_KEY` (or `CLAUDE_API_KEY`):** To run the content compiler prompts programmatically.
+5.  **`service_account.json`:** A Google Cloud service account key file with read/write access to the Google Sheet hosting your content calendar.
+
+---
+
+### Action Plan & Next Steps
+1.  **Run the Phase 1 Concierge Test:** Select 15 target families in a single tower. Coordinate manually via WhatsApp this Friday night to prove they will buy.
+2.  **Set up the Google Sheet Database:** Populate the Sheet with the 12-month calendar rows.
+3.  **Deploy the Automation Script:** Run the python compiler script on a cron job or locally before the weekend catch drops.
