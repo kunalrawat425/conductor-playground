@@ -81,10 +81,11 @@ Create a table `content_calendar` with the following columns:
 * `topic` (e.g., *Where Does Your Sunday Surmai Come From?*)
 * `primary_keyword` (e.g., `fresh fish delivery Thane`)
 * `target_locality` (e.g., `Hiranandani Estate`)
+* `google_flow_media_url` (The URL to the high-quality photos/videos stored in your Google Flow asset folder)
 * `status` (e.g., `pending`, `generated`, `published`)
 
 ### 2. The Python Automation Script (Using MCP or API)
-This script reads the next pending topic, compiles it using your Master Prompt, and saves the output.
+This script reads the next pending topic, pulls the verified media URL from Google Flow, compiles it using your Master Prompt, and saves the output.
 
 ```python
 import os
@@ -110,7 +111,7 @@ Generate the full blog article in markdown, along with:
 1. Meta Description
 2. WhatsApp Broadcast message (Hinglish)
 3. Facebook/Insta Copy
-4. Midjourney Image Prompts
+4. Midjourney Image Prompts (for additional assets if needed)
 
 Output as clean JSON.
 """
@@ -122,6 +123,9 @@ def generate_next_campaign():
         if row['status'] == 'pending':
             row_num = index + 2  # 1-indexed, account for header
             print(f"Generating campaign for: {row['topic']}...")
+            
+            # Map media asset directly from Google Flow URL in the Google Sheet
+            google_flow_image_url = row.get('google_flow_media_url', '')
 
             # Compile prompt
             prompt = MASTER_PROMPT_TEMPLATE.format(
@@ -140,6 +144,9 @@ def generate_next_campaign():
             )
 
             campaign_data = json.loads(response.text)
+            
+            # Embed the real Google Flow media asset URL in the campaign bundle
+            campaign_data['google_flow_media_url'] = google_flow_image_url
 
             # Save Blog Post to Git workspace
             slug = row['topic'].lower().replace(" ", "-").replace("?", "").replace(":", "")
@@ -155,7 +162,7 @@ def generate_next_campaign():
                 json.dump(campaign_data, f, indent=2)
 
             # Update status in Google Sheets
-            worksheet.update_cell(row_num, 5, "generated")
+            worksheet.update_cell(row_num, 6, "generated")
             print("Successfully updated database status to 'generated'.")
             break
 
@@ -238,7 +245,50 @@ def auto_publish_to_meta(image_url, caption):
 
 ---
 
-## 4. Next Steps, OKRs, & Required Tokens
+## 4. The Double-Loop Review Pipeline (Editorial & Customer Feedback)
+
+To protect the brand from generic AI outputs and establish high customer trust, the automation engine operates on a double-loop review pipeline.
+
+### Loop 1: Editorial & Pre-Publishing Review Pipeline
+Before any generated blog post, Instagram carousel, or WhatsApp broadcast goes live, it must pass through a human approval gate:
+
+```mermaid
+graph TD
+    A[AI Content Engine] -->|1. Generate draft JSON| B[Pending Folder / Draft Sheet]
+    B -->|2. Notification to Admin| C[Slack/WhatsApp Notification]
+    C -->|3. Manual Review/Edit| D[Founder/Editor Approval]
+    D -->|4. Push to master| E[Vercel Auto-Publish]
+    D -->|5. Queue Socials| F[Buffer Scheduler]
+```
+
+1. **Generation Gate:** The Python script deposits the AI outputs into a `public/assets/campaigns/draft-[slug].json` file and sends a Discord/Slack webhook notification to the team.
+2. **Review/Sanitization Check:**
+   - **Quality Check:** Ensure the content contains no AI buzzwords (e.g., "delve," "testament").
+   - **Hyperlocal Verification:** Ensure the localized society names and landmarks are correct.
+   - **Marathi/Hinglish Verification:** Ensure the phonetically written Marathi reads naturally.
+3. **Approval Trigger:** Once approved, renaming the file to `[slug].json` triggers the push to production and schedules the social posts.
+
+---
+
+### Loop 2: Customer Feedback & UGC Review Pipeline
+Capturing and amplifying trust signals dynamically:
+
+1. **The Post-Purchase Trigger:** 2 hours after order fulfillment, the buyer receives an automated WhatsApp message:
+   > *"Hi {name}! How was the fresh {species} you bought from {seller_name} today? Rate it 1-5. If you loved it, reply with a photo of your cooked dish! Best photo wins Rs. 200 wallet credits."*
+2. **Dynamic Review Moderation:**
+   - **If rating is 4-5 Stars:**
+     * Automatically log review to the Supabase database.
+     * Render the rating badge (`⭐ 4.8+`) dynamically on the seller's profile page.
+     * Send a follow-up WhatsApp: *"Thank you! If you have 15 seconds, please review us on Google Business: [Google Review Link]"*
+   - **If rating is 1-3 Stars (Crisis Protocol):**
+     * Stop automatic logging. Flag the order immediately in the admin dashboard.
+     * Trigger immediate admin WhatsApp notification for customer service outreach.
+     * Send instant response: *"So sorry about your experience. Our team is contacting you now to issue a full refund."*
+3. **UGC Repurposing Loop:** Approved customer food photos are automatically pulled into the social media asset bank to be used as social proof in future carousels.
+
+---
+
+## 5. Next Steps, OKRs, & Required Tokens
 
 ### OKRs (Objectives and Key Results)
 
