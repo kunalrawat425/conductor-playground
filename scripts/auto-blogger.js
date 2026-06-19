@@ -56,11 +56,14 @@ STRICT BRAND RULES & MENTAL MODELS (DO NOT DEVIATE):
    - Highlight the 100% Odour-Free refund guarantee to eliminate the buyer's risk.
 
 Visuals & Style Guidance for Image Prompts:
-- Every prompt generated for Imagen 4 MUST describe a highly realistic, authentic photograph.
-- Visual style: Genuinely realistic, documentary-style, shot on 35mm lens, f/2.8, shallow depth of field, natural lighting, realistic textures.
-- Focus areas: Glistening raw fish scales, melting crushed ice, steam rising from hot curries in steel handis, authentic home kitchens in Mumbai/Thane, traditional docks (like Versova or Bhaucha Dhakka).
+- Every prompt generated for Imagen 4 MUST describe a highly realistic, premium, and authentic photograph.
+- Visual style: Genuinely realistic, documentary-style, shot on 50mm or 85mm lens, f/2.8 aperture, background blur, shallow depth of field, natural warm afternoon sunlight, clean surroundings, and realistic textures.
+- Environments: Upscale Thane high-rise residential corridors/doorways (peach/terracotta walls, blue door frames, clean tile floors, potted green plants, welcome mats) or high-end clean modular kitchens.
+- Characters: If delivery is shown, the delivery partner must be a woman wearing a dark teal polo shirt with a small white 'relifish.store' sleeve wordmark, dark cargo pants, a grey cap, grey face mask, and white gloves, carrying a dark blue insulated backpack with the white Relifish logo. The customer must be an Indian woman smiling warmly, wearing a bright royal blue kurta with white trousers.
+- Packaging: Premium light brown cardboard boxes with black Relifish wordmark and fish logo on the side. Seafood (glistening pomfrets, surmai, prawns) should be arranged neatly on clean crushed ice inside the box.
 - NO clean vectors, graphic design overlays, digital illustrations, 3D renders, cartoon characters, or artificial studio lighting.
-- NO text, logos, or labels in the generated images.
+- NO text, logos, or labels in the generated images (except the brand logos on uniforms/boxes as described above).
+- Make sure all prompts are highly relevant to the specific blog topic and social media post content.
 
 Inputs:
 - [Topic]: {topic}
@@ -88,10 +91,6 @@ const RESPONSE_SCHEMA = {
       type: "STRING", 
       description: "Full markdown string of the blog post (800-1200 words). Start directly with a hook. Use standard markdown headers (h2, h3). Do not include frontmatter or title inside this field, only the body content." 
     },
-    whatsapp_broadcast: { 
-      type: "STRING", 
-      description: "Hinglish whatsapp copy containing bold text, emojis, bullet points, and CTA" 
-    },
     social_caption_ig: { 
       type: "STRING", 
       description: "Instagram caption with hooks, bullet points, calls to action, and relevant hashtags" 
@@ -115,7 +114,6 @@ const RESPONSE_SCHEMA = {
     "meta_title",
     "meta_description",
     "blog_content",
-    "whatsapp_broadcast",
     "social_caption_ig",
     "social_caption_fb",
     "blog_hero_image_prompt",
@@ -152,6 +150,34 @@ const LOCAL_CONTENT_QUEUE = [
     keywords: ["fish home delivery Thane", "fresh fish online order", "pre-order fish Mumbai"],
     target_locality: "Thane",
     slug: "thane-professionals-preorder-fish-revolution"
+  },
+  {
+    id: "local-5",
+    topic: "Your First Order on Relifish: What to Expect, What to Order, and Why You Won't Go Back",
+    keywords: ["buy fish online Mumbai first time", "Relifish how to order"],
+    target_locality: "Thane",
+    slug: "first-order-relifish-guide"
+  },
+  {
+    id: "local-6",
+    topic: "Meet the Koli Families Behind Your Catch: The Real People of Mumbai's Fish Trade",
+    keywords: ["Koli fishermen Mumbai", "local fish sellers Thane", "sustainable seafood Mumbai"],
+    target_locality: "Thane",
+    slug: "meet-koli-families-behind-catch"
+  },
+  {
+    id: "local-7",
+    topic: "How Your Building Can Get Fresh Fish Together — The Relifish Neighbourhood Pre-Order Guide",
+    keywords: ["group fish order Mumbai", "society fish delivery Thane", "fresh fish Hiranandani Estate"],
+    target_locality: "Thane",
+    slug: "neighborhood-group-preorder-fish-guide"
+  },
+  {
+    id: "local-8",
+    topic: "The Sunday Fish Problem Every Mumbai Family Knows — And Nobody Has Fixed Until Now",
+    keywords: ["fresh fish home delivery Mumbai", "fish delivery Thane", "Sunday fish curry"],
+    target_locality: "Thane",
+    slug: "sunday-fish-ritual-mumbai-family-tradition"
   }
 ];
 
@@ -265,6 +291,30 @@ image: "${heroImagePath}"
     const blogPath = path.join(blogDir, `${campaignData.slug}.md`);
     fs.writeFileSync(blogPath, frontmatter + campaignData.blog_content);
     console.log(`✅ Saved Blog Post to: ${blogPath}`);
+
+    // Save full campaign data as JSON in public/assets/campaigns/
+    const campaignJsonPath = path.join(process.cwd(), 'public/assets/campaigns', `${campaignData.slug}.json`);
+    const campaignJsonData = {
+      topic: task.topic,
+      primary_keyword: (task.keywords || []).join(', '),
+      target_locality: task.target_locality || 'Thane',
+      google_flow_media_url: heroImagePath,
+      metadata: {
+        recommended_title: campaignData.meta_title,
+        meta_title: campaignData.meta_title,
+        meta_description: campaignData.meta_description,
+        url_slug: campaignData.slug
+      },
+      instagram_carousel: {
+        caption: campaignData.social_caption_ig,
+        prompts: campaignData.instagram_carousel_image_prompts
+      },
+      facebook: {
+        copy: campaignData.social_caption_fb
+      }
+    };
+    fs.writeFileSync(campaignJsonPath, JSON.stringify(campaignJsonData, null, 2));
+    console.log(`✅ Saved Campaign JSON to: ${campaignJsonPath}`);
 
     // Update Supabase if we pulled a Supabase task
     if (supabase && task.id && !task.id.startsWith('local-')) {

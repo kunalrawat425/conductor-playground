@@ -5,7 +5,7 @@ description: "Your amma's pomfret curry used to be unforgettable. Same masala, s
 pubDate: 2026-06-20
 author: "Relifish Team"
 tags: ["Fresh Fish", "Mumbai", "Fish Curry", "Freshness", "Koli", "Thane"]
-image: "/blog-article1-hero.png"
+image: "/blog-why-fish-curry-doesnt-taste-same-anymore-mumbai-hero.png"
 ---
 
 # Why Your Sunday Fish Curry Never Tastes the Same Anymore
