@@ -11,7 +11,7 @@ async function generateImage(prompt, filename, aspectRatio = "1:1") {
   console.log(`\nGenerating: ${filename}...`);
   try {
     const response = await ai.models.generateImages({
-      model: "imagen-4.0-generate-001",
+      model: "imagen-4.0-ultra-generate-001",
       prompt,
       config: {
         numberOfImages: 1,

@@ -221,7 +221,7 @@ async function generateCampaign(articleIndex = null) {
       console.log(`Prompt: ${campaignData.blog_hero_image_prompt}`);
       try {
         const imageResponse = await ai.models.generateImages({
-          model: 'imagen-4.0-generate-001',
+          model: 'imagen-4.0-ultra-generate-001',
           prompt: campaignData.blog_hero_image_prompt,
           config: {
             numberOfImages: 1,
