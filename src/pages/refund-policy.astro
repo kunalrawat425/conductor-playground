@@ -1,22 +1,23 @@
 ---
-import AppShell from "../components/ui/AppShell.astro";
+import LandingLayout from "../layouts/LandingLayout.astro";
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
-<AppShell
+<LandingLayout
   title={`Refund & Cancellation Policy · ${brandName}`}
   description={`Refund, return, and cancellation policy for ${brandName} — how we handle perishable seafood orders.`}
-  header={{ variant: "page", title: "Refund & Cancellation Policy", backHref: "/v2" }}
-  nav={{ active: "account" }}
 >
-  <div style="padding:16px; max-width:800px; margin:0 auto;">
-    <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 16px;">Last updated: April 2026</p>
-
-    <div class="legal-content">
+  <div class="legal-page">
+    <div class="legal-header">
+      <h1>Refund & Cancellation Policy</h1>
+      <p class="legal-updated">Last updated: April 2026</p>
+    </div>
+    <div class="legal-body">
       <h2>1. Perishable Goods Policy</h2>
       <p>At {brandName}, we and our independent sellers are committed to providing the freshest, morning-fresh seafood direct from the docks. <strong>Because fresh raw fish, shellfish, and seafood are highly perishable food items, standard e-commerce return policies do not apply.</strong></p>
       <p>Once seafood is prepared (scaled, gutted, cleaned, or cut) and dispatched/ready for pickup, we cannot accept returns or support change-of-mind cancellations.</p>
 
       <h2>2. Cancellation Policy</h2>
+
       <h3>For Same-Day Orders</h3>
       <ul>
         <li>Same-day orders are prepared and dispatched/made ready for pickup immediately after the seller confirms the order.</li>
@@ -25,9 +26,9 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       <h3>For Pre-Orders (Tomorrow's Catch)</h3>
       <ul>
-        <li><strong>Before Cutoff:</strong> You can cancel your pre-order freely at any time before the seller's daily cutoff window (e.g., 10 PM or 11 PM as shown on their shop page). <strong>Any pre-paid amount will be refunded in full.</strong></li>
-        <li><strong>Price Confirmation Window:</strong> Since pre-order prices depend on the morning landing, the seller will verify and update the final morning price once the catch is landed. <strong>You have a cancellation window to reject and cancel the pre-order with a single tap if you do not agree with the updated morning price, which will trigger a full refund of your pre-paid amount.</strong></li>
-        <li><strong>Partial Refunds for Lower Prices:</strong> When you place a pre-order, you pay the maximum estimated price upfront. If the final confirmed morning price is lower than what you paid, <strong>the remaining amount (the difference) will be automatically refunded</strong> to your original payment method.</li>
+        <li><strong>Before Cutoff:</strong> You can cancel your pre-order freely at any time before the seller's daily cutoff window (e.g., 10 PM or 11 PM as shown on their shop page). Any pre-paid amount will be refunded in full.</li>
+        <li><strong>Price Confirmation Window:</strong> Since pre-order prices depend on the morning landing, the seller will verify and update the final morning price once the catch is landed. You have a cancellation window to reject and cancel the pre-order with a single tap if you do not agree with the updated morning price, which will trigger a full refund of your pre-paid amount.</li>
+        <li><strong>Partial Refunds for Lower Prices:</strong> When you place a pre-order, you pay the maximum estimated price upfront. If the final confirmed morning price is lower than what you paid, the remaining amount (the difference) will be automatically refunded to your original payment method.</li>
         <li><strong>After Cutoff & Preparation:</strong> Pre-orders cannot be cancelled after the morning cutoff/price acceptance has passed and preparation has commenced.</li>
       </ul>
 
@@ -41,57 +42,71 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <p>If a seller cancels your order, you will be notified immediately via push notifications/WhatsApp, and any advance digital payments will be refunded in full.</p>
 
       <h2>3. Quality, Weight & Freshness Disputes</h2>
-      <p>We pride ourselves on connects that bring you morning-fresh seafood. To ensure complete satisfaction, please adhere to the following:</p>
+      <p>We pride ourselves on connecting you to morning-fresh seafood. To ensure complete satisfaction, please adhere to the following:</p>
       <ul>
         <li><strong>Inspection at Receipt:</strong> Buyers must inspect the seafood's freshness, cuts, cleaning, and weight immediately upon home delivery or self-pickup.</li>
         <li><strong>Immediate Reporting:</strong> If you receive the incorrect species, incorrect weight, poor cleaning, or are unsatisfied with the quality, you must notify the seller immediately upon receipt.</li>
-        <li><strong>Resolution:</strong> Since online payments are processed securely through our platform via Razorpay, all approved refunds (for cancellations, missing items, or verified quality disputes) will be initiated by {brandName} back to your original payment method. We will assist in coordinating with the seller to resolve the dispute and ensure you are credited promptly.</li>
+        <li><strong>Resolution:</strong> All approved refunds (for cancellations, missing items, or verified quality disputes) will be initiated by {brandName} back to your original payment method. We will assist in coordinating with the seller to resolve the dispute and ensure you are credited promptly.</li>
       </ul>
 
-      <h2>4. Refund Processing (If Applicable)</h2>
+      <h2>4. Refund Processing</h2>
       <ul>
         <li>Once a refund is approved by the seller or our support team, {brandName} will initiate the refund through our payment gateway (Razorpay).</li>
-        <li>The refunded amount will be credited back to your original payment method (UPI account, credit/debit card, or net banking) typically within 5 to 7 business days, depending on your bank's processing time.</li>
+        <li>The refunded amount will be credited back to your original payment method (UPI, credit/debit card, or net banking) typically within 5 to 7 business days, depending on your bank's processing time.</li>
         <li>For orders paid in cash on delivery, any approved refunds will be processed via a UPI transfer to the buyer's verified bank account.</li>
       </ul>
 
       <h2>5. Support & Assistance</h2>
-      <p>If you have any issues reaching your seller or resolving a dispute, our customer support team is here to help guide you. Contact us at:</p>
+      <p>If you have any issues reaching your seller or resolving a dispute, our customer support team is here to help.</p>
       <p>{brandName} · Mumbai, India · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
     </div>
   </div>
+</LandingLayout>
 
-  <style is:global>
-    .legal-content {
-      font: 400 14px/1.6 Inter, system-ui, -apple-system, sans-serif;
-      color: var(--v2-ink-2);
-    }
-    .legal-content h2 {
-      font: 700 16px Inter;
-      color: var(--v2-ink);
-      margin: 28px 0 10px;
-    }
-    .legal-content h3 {
-      font: 700 15px Inter;
-      color: var(--v2-ink);
-      margin: 20px 0 8px;
-    }
-    .legal-content p {
-      margin-bottom: 14px;
-    }
-    .legal-content ul {
-      padding-left: 20px;
-      margin-bottom: 16px;
-    }
-    .legal-content li {
-      margin-bottom: 8px;
-    }
-    .legal-content a {
-      color: var(--v2-brand);
-      text-decoration: underline;
-    }
-    .legal-content strong {
-      color: var(--v2-ink);
-    }
-  </style>
-</AppShell>
+<style>
+  .legal-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+  .legal-header {
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+  }
+  .legal-header h1 {
+    font: 900 36px/1.2 Inter, sans-serif;
+    color: #0f172a;
+    margin: 0 0 8px;
+  }
+  .legal-updated {
+    font: 400 13px Inter, sans-serif;
+    color: #94a3b8;
+    margin: 0;
+  }
+  .legal-body {
+    font: 400 15px/1.7 Inter, sans-serif;
+    color: #334155;
+  }
+  .legal-body h2 {
+    font: 700 18px Inter, sans-serif;
+    color: #0f172a;
+    margin: 36px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .legal-body h3 {
+    font: 700 16px Inter, sans-serif;
+    color: #1e293b;
+    margin: 22px 0 10px;
+  }
+  .legal-body p { margin: 0 0 16px; }
+  .legal-body ul { padding-left: 22px; margin: 0 0 16px; }
+  .legal-body li { margin-bottom: 10px; }
+  .legal-body a { color: #0066ff; font-weight: 500; }
+  .legal-body strong { color: #0f172a; font-weight: 600; }
+  @media (max-width: 600px) {
+    .legal-page { padding: 36px 16px 60px; }
+    .legal-header h1 { font-size: 28px; }
+  }
+</style>

@@ -1,17 +1,17 @@
 ---
-import AppShell from "../components/ui/AppShell.astro";
+import LandingLayout from "../layouts/LandingLayout.astro";
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
-<AppShell
+<LandingLayout
   title={`Privacy Policy · ${brandName}`}
   description={`Privacy policy for ${brandName} — how we handle your data.`}
-  header={{ variant: "page", title: "Privacy Policy", backHref: "/v2" }}
-  nav={{ active: "account" }}
 >
-  <div style="padding:16px; max-width:800px; margin:0 auto;">
-    <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 16px;">Last updated: April 2026</p>
-
-    <div class="legal-content">
+  <div class="legal-page">
+    <div class="legal-header">
+      <h1>Privacy Policy</h1>
+      <p class="legal-updated">Last updated: April 2026</p>
+    </div>
+    <div class="legal-body">
       <h2>1. Introduction & Context</h2>
       <p>At {brandName}, we value your trust and are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our hyperlocal fresh fish marketplace platform.</p>
 
@@ -37,7 +37,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <h2>4. Data Sharing & Disclosure</h2>
       <p>We believe in absolute transparency. Your trust is our biggest asset:</p>
       <ul>
-        <li><strong>With Sellers:</strong> We share your name, phone number, and delivery/pickup address with the specific seller you order from so they can prepare, custom-cut, and fulfill your order, or contact you via phone/WhatsApp if a item is out of stock.</li>
+        <li><strong>With Sellers:</strong> We share your name, phone number, and delivery/pickup address with the specific seller you order from so they can prepare, custom-cut, and fulfill your order.</li>
         <li><strong>No Selling of Data:</strong> We do not sell, trade, rent, or monetize your personal data or phone number to any third-party marketing companies.</li>
         <li><strong>No Cross-App Tracking:</strong> We do not track your browsing activity across other apps or websites.</li>
       </ul>
@@ -53,37 +53,53 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <p>We may update this Privacy Policy periodically to reflect changes in our practices or legal obligations. We will notify you of any material changes by updating the "Last updated" date at the top of this page.</p>
 
       <h2>8. Contact Us</h2>
-      <p>If you have any questions, concerns, or grievances regarding this Privacy Policy or our data practices, please contact our support team at:</p>
       <p>{brandName} · Mumbai, India · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
     </div>
   </div>
+</LandingLayout>
 
-  <style is:global>
-    .legal-content {
-      font: 400 14px/1.6 Inter, system-ui, -apple-system, sans-serif;
-      color: var(--v2-ink-2);
-    }
-    .legal-content h2 {
-      font: 700 16px Inter;
-      color: var(--v2-ink);
-      margin: 28px 0 10px;
-    }
-    .legal-content p {
-      margin-bottom: 14px;
-    }
-    .legal-content ul {
-      padding-left: 20px;
-      margin-bottom: 16px;
-    }
-    .legal-content li {
-      margin-bottom: 8px;
-    }
-    .legal-content a {
-      color: var(--v2-brand);
-      text-decoration: underline;
-    }
-    .legal-content strong {
-      color: var(--v2-ink);
-    }
-  </style>
-</AppShell>
+<style>
+  .legal-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+  .legal-header {
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+  }
+  .legal-header h1 {
+    font: 900 36px/1.2 Inter, sans-serif;
+    color: #0f172a;
+    margin: 0 0 8px;
+  }
+  .legal-updated {
+    font: 400 13px Inter, sans-serif;
+    color: #94a3b8;
+    margin: 0;
+  }
+  .legal-body {
+    font: 400 15px/1.7 Inter, sans-serif;
+    color: #334155;
+  }
+  .legal-body h2 {
+    font: 700 18px Inter, sans-serif;
+    color: #0f172a;
+    margin: 36px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .legal-body p { margin: 0 0 16px; }
+  .legal-body ul {
+    padding-left: 22px;
+    margin: 0 0 16px;
+  }
+  .legal-body li { margin-bottom: 10px; }
+  .legal-body a { color: #0066ff; font-weight: 500; }
+  .legal-body strong { color: #0f172a; font-weight: 600; }
+  @media (max-width: 600px) {
+    .legal-page { padding: 36px 16px 60px; }
+    .legal-header h1 { font-size: 28px; }
+  }
+</style>

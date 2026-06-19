@@ -1,17 +1,17 @@
 ---
-import AppShell from "../components/ui/AppShell.astro";
+import LandingLayout from "../layouts/LandingLayout.astro";
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
-<AppShell
+<LandingLayout
   title={`Terms of Service · ${brandName}`}
-  description={`Terms of Service for ${brandName} — terms and conditions for using our seafood marketplace.`}
-  header={{ variant: "page", title: "Terms of Service", backHref: "/v2" }}
-  nav={{ active: "account" }}
+  description={`Terms and conditions for using the ${brandName} seafood marketplace.`}
 >
-  <div style="padding:16px; max-width:800px; margin:0 auto;">
-    <p style="font:400 11px Inter;color:var(--v2-ink-4);margin:0 0 16px;">Last updated: April 2026</p>
-
-    <div class="legal-content">
+  <div class="legal-page">
+    <div class="legal-header">
+      <h1>Terms of Service</h1>
+      <p class="legal-updated">Last updated: April 2026</p>
+    </div>
+    <div class="legal-body">
       <h2>1. Introduction & Platform Nature</h2>
       <p>Welcome to {brandName}. These Terms of Service ("Terms") govern your access to and use of the {brandName} website, mobile applications, and services. By using our platform, you agree to these Terms.</p>
       <p><strong>{brandName} is a peer-to-peer marketplace platform.</strong> We are not a fish seller, merchant, middleman, or delivery provider. We do not source, store, clean, cut, or deliver seafood ourselves. Our service simply connects seafood buyers in Mumbai directly with independent, local fish sellers (such as fishermen, Koli women, and neighborhood fish stalls).</p>
@@ -19,27 +19,27 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <h2>2. User Accounts & Registration</h2>
       <ul>
         <li><strong>Verification:</strong> To browse specific pricing, place orders, or pre-order catch, you must register an account using a valid Indian mobile number verified via a One-Time Password (OTP).</li>
-        <li><strong>Accuracy:</strong> You agree to provide accurate, current, and complete location and profile details. Saved addresses are stored on your device/account solely to simplify checkout.</li>
+        <li><strong>Accuracy:</strong> You agree to provide accurate, current, and complete location and profile details.</li>
         <li><strong>Responsibility:</strong> You are responsible for all activities that occur under your verified phone number. Relifish reserves the right to suspend accounts displaying fraudulent behavior or spamming sellers.</li>
       </ul>
 
       <h2>3. Pricing & Catch Availability</h2>
       <ul>
         <li><strong>Daily Fluctuations:</strong> Daily fresh seafood pricing fluctuates dynamically based on weather conditions, dock landing volume, and seasonal catch availability. All listed prices are set directly by independent sellers, not by {brandName}.</li>
-        <li><strong>Pre-order Confirmations & Refunds:</strong> When you pre-order tomorrow's catch, you pay a maximum estimated price upfront to reserve your portion. The seller will confirm the final morning rate prior to preparation. <strong>If the final price is lower, the remaining amount is automatically refunded to you.</strong> If the morning price is unacceptable, <strong>you have the right to cancel your pre-order with one tap for a full refund.</strong></li>
+        <li><strong>Pre-order Confirmations & Refunds:</strong> When you pre-order tomorrow's catch, you pay a maximum estimated price upfront to reserve your portion. The seller will confirm the final morning rate prior to preparation. If the final price is lower, the remaining amount is automatically refunded to you. If the morning price is unacceptable, you have the right to cancel your pre-order with one tap for a full refund.</li>
         <li><strong>Out-of-Stock:</strong> Since seafood is subject to daily catch limits, a seller may cancel or decline any order if a specific species is unavailable or does not meet quality standards.</li>
       </ul>
 
       <h2>4. Payments & Transactions</h2>
       <ul>
-        <li><strong>Payment Processing:</strong> Payments are processed securely via our integrated payment gateway (Razorpay). We accept major credit/debit cards, UPI, and net banking. {brandName} collects these funds securely and settles the payments directly to the respective independent seller's bank account.</li>
+        <li><strong>Payment Processing:</strong> Payments are processed securely via our integrated payment gateway (Razorpay). We accept major credit/debit cards, UPI, and net banking.</li>
         <li><strong>Platform Fee:</strong> {brandName} does not charge buyers a platform fee or transaction commission on the listed price.</li>
       </ul>
 
       <h2>5. Delivery, Pickup & Hyperlocal Shipping</h2>
       <ul>
         <li><strong>Fulfillment Options:</strong> Buyers can choose scheduled self-pickup from the seller's local market/stall location, or choose hyperlocal home delivery (where offered by the seller).</li>
-        <li><strong>Fulfillment Terms:</strong> Each seller defines their own pickup windows, delivery radius (typically up to 5km), delivery fees (fixed or distance-based), and free-delivery thresholds. These terms are presented transparently on each seller's page prior to order placement.</li>
+        <li><strong>Fulfillment Terms:</strong> Each seller defines their own pickup windows, delivery radius (typically up to 5km), delivery fees, and free-delivery thresholds. These terms are presented transparently on each seller's page prior to order placement.</li>
         <li><strong>Timeliness:</strong> While sellers aim to meet estimated slots (e.g., morning 7–9 AM), exact times are subject to morning catch landings and local logistics.</li>
       </ul>
 
@@ -48,43 +48,56 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       <h2>7. Disclaimers & Limitation of Liability</h2>
       <p><strong>THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE."</strong> TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, {brandName} DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.</p>
-      <p>{brandName} shall not be liable for the quality, safety, healthfulness, preparation, freshness, weight, or delivery of seafood listed by independent sellers. Any transactions, agreements, or disputes are strictly between you and the respective seller. In no event shall {brandName} be liable for any indirect, incidental, special, or consequential damages arising from the use of our marketplace.</p>
+      <p>{brandName} shall not be liable for the quality, safety, healthfulness, preparation, freshness, weight, or delivery of seafood listed by independent sellers. Any transactions, agreements, or disputes are strictly between you and the respective seller.</p>
 
       <h2>8. Changes to Terms</h2>
       <p>We may update these Terms from time to time to reflect operational or regulatory changes. Any updates will be posted on this page with an updated "Last updated" date. Continued use of the platform after updates implies acceptance of the revised Terms.</p>
 
       <h2>9. Contact & Support</h2>
-      <p>If you have questions about these Terms, please contact us at:</p>
       <p>{brandName} · Mumbai, India · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
     </div>
   </div>
+</LandingLayout>
 
-  <style is:global>
-    .legal-content {
-      font: 400 14px/1.6 Inter, system-ui, -apple-system, sans-serif;
-      color: var(--v2-ink-2);
-    }
-    .legal-content h2 {
-      font: 700 16px Inter;
-      color: var(--v2-ink);
-      margin: 28px 0 10px;
-    }
-    .legal-content p {
-      margin-bottom: 14px;
-    }
-    .legal-content ul {
-      padding-left: 20px;
-      margin-bottom: 16px;
-    }
-    .legal-content li {
-      margin-bottom: 8px;
-    }
-    .legal-content a {
-      color: var(--v2-brand);
-      text-decoration: underline;
-    }
-    .legal-content strong {
-      color: var(--v2-ink);
-    }
-  </style>
-</AppShell>
+<style>
+  .legal-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+  .legal-header {
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+  }
+  .legal-header h1 {
+    font: 900 36px/1.2 Inter, sans-serif;
+    color: #0f172a;
+    margin: 0 0 8px;
+  }
+  .legal-updated {
+    font: 400 13px Inter, sans-serif;
+    color: #94a3b8;
+    margin: 0;
+  }
+  .legal-body {
+    font: 400 15px/1.7 Inter, sans-serif;
+    color: #334155;
+  }
+  .legal-body h2 {
+    font: 700 18px Inter, sans-serif;
+    color: #0f172a;
+    margin: 36px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .legal-body p { margin: 0 0 16px; }
+  .legal-body ul { padding-left: 22px; margin: 0 0 16px; }
+  .legal-body li { margin-bottom: 10px; }
+  .legal-body a { color: #0066ff; font-weight: 500; }
+  .legal-body strong { color: #0f172a; font-weight: 600; }
+  @media (max-width: 600px) {
+    .legal-page { padding: 36px 16px 60px; }
+    .legal-header h1 { font-size: 28px; }
+  }
+</style>

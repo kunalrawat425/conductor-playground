@@ -1,0 +1,232 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  canonicalURL?: string;
+}
+const { title, description = "Relifish — Fresh fish from local koli sellers in Thane. Same-day catch, no middlemen, no markup.", image = "/og-relifish.png", canonicalURL } = Astro.props;
+const siteUrl = "https://relifish.store";
+const ogImage = image?.startsWith("http") ? image : `${siteUrl}${image}`;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  {description && <meta name="description" content={description} />}
+  <link rel="canonical" href={canonicalURL ?? Astro.url.href} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #ffffff;
+      color: #0f172a;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+
+    /* ── NAV ── */
+    .lp-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .lp-nav-logo img {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+    .lp-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .lp-nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: #475569;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .lp-nav-links a:hover { color: #0f172a; }
+    .lp-nav-cta {
+      background: #0066ff;
+      color: #fff !important;
+      font-weight: 700 !important;
+      padding: 8px 18px !important;
+      border-radius: 8px;
+      font-size: 13px !important;
+    }
+    .lp-nav-cta:hover { background: #0052cc !important; color: #fff !important; }
+    @media (max-width: 600px) {
+      .lp-nav-links { gap: 12px; }
+      .lp-nav-links a:not(.lp-nav-cta) { display: none; }
+    }
+
+    /* ── MAIN CONTENT ── */
+    .lp-content {
+      min-height: calc(100vh - 60px - 120px);
+    }
+
+    /* ── FOOTER ── */
+    .lp-footer {
+      background: #050911;
+      padding: 40px 24px 28px;
+      margin-top: 80px;
+    }
+    .lp-footer-inner {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .lp-footer-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      margin-bottom: 32px;
+    }
+    .lp-footer-brand {
+      flex: 1;
+      min-width: 200px;
+    }
+    .lp-footer-brand img {
+      height: 36px;
+      width: auto;
+      filter: brightness(0) invert(1);
+      margin-bottom: 10px;
+    }
+    .lp-footer-brand p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+      max-width: 240px;
+    }
+    .lp-footer-socials {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .lp-footer-socials a {
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .lp-footer-socials a:hover { color: #fff; }
+    .lp-footer-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .lp-footer-col h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 4px;
+    }
+    .lp-footer-col a {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .lp-footer-col a:hover { color: #fff; }
+    .lp-footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.25);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="lp-nav">
+  <a href="/" class="lp-nav-logo">
+    <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" />
+  </a>
+  <div class="lp-nav-links">
+    <a href="/blog">Blog</a>
+    <a href="/shop">Browse Fish</a>
+    <a href="https://wa.me/919152207607" class="lp-nav-cta">Order on WhatsApp</a>
+  </div>
+</nav>
+
+<!-- ── CONTENT ── -->
+<main class="lp-content">
+  <slot />
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="lp-footer">
+  <div class="lp-footer-inner">
+    <div class="lp-footer-top">
+      <div class="lp-footer-brand">
+        <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" />
+        <p>Mumbai's fresh fish marketplace. Direct from koli sellers — no middleman, no cold storage.</p>
+        <div class="lp-footer-socials">
+          <a href="https://www.instagram.com/relifish.store/" target="_blank" rel="noopener" aria-label="Instagram">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+          </a>
+          <a href="https://wa.me/919152207607" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="lp-footer-col">
+        <h4>For buyers</h4>
+        <a href="/shop">Browse sellers</a>
+        <a href="/blog">Blog & guides</a>
+        <a href="/me">My account</a>
+        <a href="/track">Track order</a>
+      </div>
+      <div class="lp-footer-col">
+        <h4>Locations</h4>
+        <a href="/area/thane">Thane</a>
+        <a href="/area/kandivali">Kandivali</a>
+        <a href="/area/tardeo">Tardeo</a>
+        <a href="/area/kamothe">Kamothe</a>
+      </div>
+      <div class="lp-footer-col">
+        <h4>Company</h4>
+        <a href="/privacy">Privacy policy</a>
+        <a href="/terms">Terms of service</a>
+        <a href="/refund-policy">Refund policy</a>
+        <a href="mailto:relifishstore@gmail.com">Contact us</a>
+        <a href="/for-sellers">Sell on Relifish</a>
+      </div>
+    </div>
+    <div class="lp-footer-bottom">
+      <div>© 2026 Relifish. Made in Mumbai.</div>
+      <div>Fresh fish · Direct source · No middleman</div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

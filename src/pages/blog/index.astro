@@ -1,0 +1,87 @@
+---
+import LandingLayout from "../../layouts/LandingLayout.astro";
+
+const allPosts = await Astro.glob('./*.md');
+const posts = allPosts
+  .map(p => ({
+    url: p.url,
+    title: p.frontmatter.title,
+    description: p.frontmatter.description,
+    pubDate: p.frontmatter.pubDate,
+    image: p.frontmatter.image,
+    tags: p.frontmatter.tags || [],
+    author: p.frontmatter.author,
+  }))
+  .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+---
+<LandingLayout
+  title="Fresh Fish Guides & Seafood Tips — Relifish Blog"
+  description="Expert guides on buying fresh fish in Thane, monsoon seafood tips, koli seller stories, and everything you need to know about getting the freshest catch in Mumbai."
+>
+  <!-- Hero -->
+  <section style="background:linear-gradient(135deg,#0a2472 0%,#0066ff 100%);padding:72px 24px 60px;text-align:center;">
+    <div style="max-width:640px;margin:0 auto;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:100px;padding:5px 14px;margin-bottom:18px;">
+        <span style="font:700 11px Inter;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.85);">Relifish Blog</span>
+      </div>
+      <h1 style="font:900 38px/1.15 Inter;color:#fff;margin:0 0 16px;letter-spacing:-0.5px;">
+        Everything you should know<br/>about your fish
+      </h1>
+      <p style="font:400 17px/1.6 Inter;color:rgba(255,255,255,0.75);margin:0 auto 28px;max-width:480px;">
+        Honest guides on monsoon fishing bans, koli sellers, freshness tests, health benefits, and buying fresh fish in Thane.
+      </p>
+      <a href="https://wa.me/919152207607" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0a2472;font:700 15px Inter;padding:14px 28px;border-radius:10px;text-decoration:none;box-shadow:0 4px 24px rgba(0,0,0,0.18);">
+        🐟 Order Fresh Fish on WhatsApp
+      </a>
+    </div>
+  </section>
+
+  <!-- Posts grid -->
+  <section style="max-width:1040px;margin:0 auto;padding:56px 24px 40px;">
+    <h2 style="font:800 20px Inter;color:#0f172a;margin:0 0 32px;">Latest articles</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:28px;">
+      {posts.map(post => (
+        <a href={post.url} style="display:block;background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;transition:box-shadow 0.2s,transform 0.2s;" onmouseover="this.style.boxShadow='0 8px 32px rgba(0,0,0,0.10)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
+          {post.image && (
+            <img src={post.image} alt={post.title} style="width:100%;height:190px;object-fit:cover;display:block;" loading="lazy" />
+          )}
+          {!post.image && (
+            <div style="width:100%;height:120px;background:linear-gradient(135deg,#0a2472,#0066ff);display:flex;align-items:center;justify-content:center;font-size:40px;">🐟</div>
+          )}
+          <div style="padding:20px;">
+            {post.tags.length > 0 && (
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+                {post.tags.slice(0,2).map((tag: string) => (
+                  <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:0.06em;background:#eff6ff;color:#0066ff;border-radius:100px;padding:2px 8px;">{tag}</span>
+                ))}
+              </div>
+            )}
+            <h3 style="font:700 16px/1.35 Inter;color:#0f172a;margin:0 0 8px;">{post.title}</h3>
+            {post.description && (
+              <p style="font:400 13px/1.5 Inter;color:#64748b;margin:0 0 14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{post.description}</p>
+            )}
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              {post.pubDate && (
+                <span style="font:400 12px Inter;color:#94a3b8;">{new Date(post.pubDate).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</span>
+              )}
+              <span style="font:600 13px Inter;color:#0066ff;">Read →</span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section style="background:#eff6ff;border-top:1px solid #dbeafe;border-bottom:1px solid #dbeafe;padding:48px 24px;text-align:center;margin-bottom:0;">
+    <div style="max-width:500px;margin:0 auto;">
+      <div style="font-size:40px;margin-bottom:12px;">🐟</div>
+      <h3 style="font:800 22px Inter;color:#0a2472;margin:0 0 10px;">Ready to order fresh fish?</h3>
+      <p style="font:400 15px/1.5 Inter;color:#334155;margin:0 0 22px;">Same-day catch from local koli sellers in Thane. No middlemen. No cold chain.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="/shop" style="display:inline-flex;align-items:center;gap:6px;background:#0066ff;color:#fff;font:700 14px Inter;padding:12px 24px;border-radius:9px;text-decoration:none;">Browse Sellers →</a>
+        <a href="https://wa.me/919152207607" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;font:700 14px Inter;padding:12px 24px;border-radius:9px;text-decoration:none;">Order on WhatsApp</a>
+      </div>
+    </div>
+  </section>
+</LandingLayout>
