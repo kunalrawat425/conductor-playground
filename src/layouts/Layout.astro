@@ -13,8 +13,64 @@ const { frontmatter } = Astro.props;
     <article class="prose" style="line-height: 1.6; font-size: 15px; color: var(--v2-ink);">
       <slot />
     </article>
+
+    <!-- Social Share Hub & Performance Callout -->
+    <div class="share-container" style="margin-top: 40px; padding: 20px; border-top: 1px solid var(--v2-border); background: var(--v2-bg-2); border-radius: 8px;">
+      <h4 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: var(--v2-ink);">Share this article with family & friends:</h4>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+        <button id="share-wa" class="share-btn wa-btn">
+          <span>🟢 Share on WhatsApp</span>
+        </button>
+        <button id="share-fb" class="share-btn fb-btn">
+          <span>🔵 Share on Facebook</span>
+        </button>
+        <button id="share-copy" class="share-btn copy-btn">
+          <span id="copy-text">🔗 Copy Link</span>
+        </button>
+      </div>
+      
+      <!-- Performance Marketing Trust Banner -->
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0, 102, 255, 0.05); border: 1px solid rgba(0, 102, 255, 0.1); border-radius: 6px;">
+        <span style="font-size: 20px;">🐟</span>
+        <div style="font-size: 13px; line-height: 1.4; color: var(--v2-ink-2);">
+          <strong>Relifish Marketplace Moat:</strong> Connect directly to Koli sellers at fair landing rates. Never frozen, 100% odour-free refund guarantee.
+        </div>
+      </div>
+    </div>
   </div>
 </AppShell>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    const url = window.location.href;
+    const title = document.title;
+    
+    // WhatsApp Share
+    document.getElementById('share-wa')?.addEventListener('click', () => {
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' - ' + url)}`;
+      window.open(waUrl, '_blank');
+    });
+
+    // Facebook Share
+    document.getElementById('share-fb')?.addEventListener('click', () => {
+      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+      window.open(fbUrl, '_blank');
+    });
+
+    // Copy Link
+    document.getElementById('share-copy')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(url).then(() => {
+        const btnText = document.getElementById('copy-text');
+        if (btnText) {
+          btnText.innerText = "✅ Link Copied!";
+          setTimeout(() => {
+            btnText.innerText = "🔗 Copy Link";
+          }, 2000);
+        }
+      });
+    });
+  });
+</script>
 
 <style is:global>
   .prose h1 {
@@ -72,5 +128,48 @@ const { frontmatter } = Astro.props;
   .prose blockquote p {
     margin: 0;
     color: var(--v2-ink);
+  }
+
+  /* Share buttons styling */
+  .share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s, background 0.2s;
+    outline: none;
+  }
+  .share-btn:hover {
+    transform: translateY(-1px);
+  }
+  .share-btn:active {
+    transform: translateY(1px);
+  }
+  .wa-btn {
+    background: #25D366;
+    color: #fff;
+  }
+  .wa-btn:hover {
+    background: #20BA5A;
+  }
+  .fb-btn {
+    background: #1877F2;
+    color: #fff;
+  }
+  .fb-btn:hover {
+    background: #166FE5;
+  }
+  .copy-btn {
+    background: var(--v2-bg);
+    color: var(--v2-ink);
+    border: 1px solid var(--v2-border);
+  }
+  .copy-btn:hover {
+    background: var(--v2-bg-2);
   }
 </style>
