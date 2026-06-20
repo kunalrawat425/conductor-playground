@@ -1,41 +1,10 @@
-# Relifish — robots.txt
 User-agent: *
 Allow: /
+
+# Block internal/dashboard routes from indexing
 Disallow: /dashboard/
-Disallow: /api/
 Disallow: /me
 Disallow: /track
-Disallow: /seller-map.html
-Disallow: /pitch-deck.html
-Disallow: /pitch-deck-ultra.html
-Disallow: /sop.html
-Disallow: /design-system.html
-Disallow: /design-v2.html
+Disallow: /search
 
-# Block AI training crawlers (keep search indexing + AI citations)
-User-agent: GPTBot
-Disallow: /
-
-User-agent: Bytespider
-Disallow: /
-
-User-agent: CCBot
-Disallow: /
-
-# Allow AI search/browsing (citations + referral traffic + AI Overviews)
-User-agent: Google-Extended
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-Sitemap: https://www.relifish.store/sitemap.xml
+Sitemap: https://relifish.store/sitemap.xml
