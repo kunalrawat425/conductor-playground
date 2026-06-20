@@ -1,8 +1,21 @@
 import { defineConfig } from "astro/config";
 import vercel from "@astrojs/vercel";
+import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
+  site: "https://relifish.store",
   adapter: vercel(),
+  integrations: [
+    sitemap({
+      filter: (page) =>
+        !page.includes("/dashboard") &&
+        !page.includes("/me") &&
+        !page.includes("/track") &&
+        !page.includes("/search") &&
+        !page.includes("/v1") &&
+        !page.includes("/mfm-pitch"),
+    }),
+  ],
   redirects: {
     "/seller-banner": "/seller-banner.html",
   },
