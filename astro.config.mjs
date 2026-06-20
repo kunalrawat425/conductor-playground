@@ -8,7 +8,7 @@ export default defineConfig({
   integrations: [
     sitemap({
       filter: (page) => {
-        const blocked = ["/dashboard", "/me", "/track", "/search", "/v1", "/mfm-pitch"];
+        const blocked = ["/dashboard", "/me", "/track", "/search", "/v1", "/mfm-pitch", "/preorder"];
         return !blocked.some((b) => page.includes(b));
       },
     }),

@@ -5,6 +5,7 @@ description: "Tired of 3-day-old supermarket fish? Get morning-fresh Surmai caug
 pubDate: 2026-06-18
 author: "Relifish Team"
 tags: ["Surmai", "Thane", "Hiranandani Estate", "Fresh Catch"]
+image: "/blog-where-does-your-sunday-surmai-actually-come-from-hero.png"
 ---
 
 # Where Does Your Sunday Surmai Actually Come From?
@@ -48,7 +49,7 @@ It is caught, cleaned, and delivered **under 4 hours.**
 
 Genuinely fresh fish smells like the sea, not like ammonia. 
 
-We are so confident in our direct-from-boat sourcing that we offer an absolute promise: if your order from Relifish has any bad smell or feels stale, just ping us on WhatsApp for an instant, no-questions-asked refund. 
+We are so confident in our direct-from-boat sourcing that we offer an absolute promise: if your order from Relifish has any bad smell or feels stale, [contact us](mailto:relifishstore@gmail.com) for an instant, no-questions-asked refund. 
 
 By skipping the middleman, you get premium Surmai that is safe for your children, full of natural ocean juices, and supports traditional Koli fisherwomen who have run our coast's distribution backbone for generations.
 

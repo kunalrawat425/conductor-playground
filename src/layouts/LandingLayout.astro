@@ -72,6 +72,7 @@ const orgSchema = type === "website" ? JSON.stringify({
   {type === "article" && tags.map(tag => <meta property="article:tag" content={tag} />)}
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@relifish_store" />
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImage} />
@@ -262,10 +263,10 @@ const orgSchema = type === "website" ? JSON.stringify({
       </div>
       <div class="lp-footer-col">
         <h4>Locations</h4>
-        <a href="/area/thane">Thane</a>
-        <a href="/area/kandivali">Kandivali</a>
-        <a href="/area/tardeo">Tardeo</a>
-        <a href="/area/kamothe">Kamothe</a>
+        <a href="/shop?area=thane">Thane</a>
+        <a href="/shop?area=kandivali">Kandivali</a>
+        <a href="/shop?area=tardeo">Tardeo</a>
+        <a href="/shop?area=kamothe">Kamothe</a>
       </div>
       <div class="lp-footer-col">
         <h4>Company</h4>

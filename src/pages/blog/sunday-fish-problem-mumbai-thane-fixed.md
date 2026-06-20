@@ -57,7 +57,7 @@ We understand that cooking fish is a joy, but cleaning it is a chore. That is wh
 To protect your kitchen and lobby, every order is vacuum-sealed and delivered in a premium, 100% odour-free box on ice packs. 
 
 ### Our 100% Odour-Free Refund Guarantee
-We are so confident in the quality of our catch that we offer a complete refund if you are not satisfied. If the fish has any stale market smell upon unboxing, send a quick message to our team on WhatsApp, and we will refund your order immediately.
+We are so confident in the quality of our catch that we offer a complete refund if you are not satisfied. If the fish has any stale market smell upon unboxing, [contact our team](mailto:relifishstore@gmail.com) and we will refund your order immediately.
 
 ---
 

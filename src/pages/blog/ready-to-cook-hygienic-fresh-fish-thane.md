@@ -5,7 +5,7 @@ description: "Tired of kitchen prep mess and lingering fishy smells? Discover ho
 pubDate: 2026-06-19
 author: "Relifish Team"
 tags: ["Hygienic Seafood", "Thane", "Ready To Cook", "Odour Free"]
-image: "/blog-meet-the-koli-families-behind-your-thane-fish-hero.png"
+image: "/blog-ready-to-cook-hygienic-fresh-fish-thane-hero.png"
 ---
 
 # The Ready-to-Cook Seafood Standard: No Mess, Just Freshness in Thane
