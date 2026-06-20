@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import { supabase } from "../lib/supabase";
+import Footer from "../components/Footer.astro";
 const SITE = "https://www.relifish.store";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 
@@ -678,22 +679,6 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
     .detail-link:hover .dl-arrow{color:var(--blue-light)}
     @media(max-width:600px){.detail-links{grid-template-columns:1fr}}
 
-    /* ── Footer ── */
-    footer{background:#050911;padding:60px 28px 28px}
-    .ft{max-width:var(--max);margin:0 auto}
-    .ft-top{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:44px;margin-bottom:44px}
-    .ft-brand{font:800 22px Inter;color:#fff;margin-bottom:8px;letter-spacing:-.4px}
-    .ft-brand span{color:var(--teal)}
-    .ft-desc{font:400 13px/1.6 Inter;color:rgba(255,255,255,.28);max-width:220px}
-    .ft-socials{margin-top:16px;display:flex;gap:12px;align-items:center}
-    .ft-social-link{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);transition:all .2s}
-    .ft-social-link:hover{color:#fff;background:rgba(255,255,255,.12);transform:translateY(-2px)}
-    .ft-col h4{font:600 11px Inter;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:13px}
-    .ft-col a{display:block;font:400 13px Inter;color:rgba(255,255,255,.28);margin-bottom:8px;transition:color .15s}
-    .ft-col a:hover{color:#fff}
-    .ft-bottom{border-top:1px solid rgba(255,255,255,.05);padding-top:22px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font:400 12px Inter;color:rgba(255,255,255,.18)}
-    @media(max-width:720px){.ft-top{grid-template-columns:1fr 1fr;gap:24px}}
-    @media(max-width:420px){.ft-top{grid-template-columns:1fr}}
   </style>
   {enableTracking && (
     <>
@@ -1585,52 +1570,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
   </div>
 </section>
 
-<!-- ═══ FOOTER ═══ -->
-<footer>
-  <div class="ft">
-    <div class="ft-top">
-      <div>
-        <div class="ft-brand"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:50px;width:auto;display:block;filter:brightness(0) invert(1);" /></div>
-        <div class="ft-desc">Mumbai's fresh fish marketplace. Direct from koli sellers — no middleman, no cold storage.</div>
-        <div class="ft-socials">
-          <a href="https://www.instagram.com/relifish.store/" target="_blank" class="ft-social-link" aria-label="Instagram">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-          </a>
-          <a href="https://wa.me/919152207607" target="_blank" class="ft-social-link" aria-label="WhatsApp">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
-          </a>
-          <span style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,.6); margin-left: 4px; display: inline-flex; align-items: center; gap: 4px;">📞 +91 9152207607</span>
-        </div>
-      </div>
-      <div class="ft-col">
-        <h4>For buyers</h4>
-        <a href="/shop">Browse sellers</a>
-        <a href="/blog">Blog & guides</a>
-        <a href="/me">My account</a>
-        <a href="/track">Track order</a>
-      </div>
-      <div class="ft-col">
-        <h4>Locations</h4>
-        <a href="/shop?area=thane">Thane</a>
-        <a href="/shop?area=kandivali">Kandivali</a>
-        <a href="/shop?area=tardeo">Tardeo</a>
-        <a href="/shop?area=kamothe">Kamothe</a>
-      </div>
-      <div class="ft-col">
-        <h4>Company</h4>
-        <a href="/privacy">Privacy policy</a>
-        <a href="/terms">Terms of service</a>
-        <a href="/refund-policy">Refund policy</a>
-        <a href="mailto:relifishstore@gmail.com">Contact us</a>
-        <a href="/for-sellers">Sell on Relifish</a>
-      </div>
-    </div>
-    <div class="ft-bottom">
-      <div>© 2026 Relifish. Made in Mumbai.</div>
-      <div>Fresh fish · Direct source · No middleman</div>
-    </div>
-  </div>
-</footer>
+<Footer />
 
 <!-- ═══ CHAT WIDGET ═══ (commented out — re-enable when ready)
 <style>
