@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — 20-Day Reel + Carousel Scripts</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#060b16;font-family:-apple-system,'Inter',sans-serif;color:#fff;padding-bottom:80px;}
+.hero{background:linear-gradient(135deg,#0a2472,#0066ff 60%,#7c3aed);padding:48px 24px 40px;text-align:center;}
+.hero h1{font-size:28px;font-weight:900;margin-bottom:8px;}
+.hero p{font-size:13px;color:rgba(255,255,255,0.65);max-width:560px;margin:0 auto 20px;}
+.pills{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.pill{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:700;}
+
+/* calendar strip */
+.cal{max-width:1100px;margin:36px auto 0;padding:0 20px;}
+.cal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:40px;}
+.cal-day{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;transition:all 0.15s;}
+.cal-day:hover{border-color:#0066ff;}
+.cal-day .d{font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:2px;}
+.cal-day .n{font-size:18px;font-weight:900;color:#fff;}
+.cal-day .t{font-size:9px;margin-top:4px;font-weight:700;border-radius:3px;padding:1px 5px;display:inline-block;}
+.t-reel{background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;}
+.t-carousel{background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;}
+.t-fb{background:#1877f220;color:#60a5fa;border:1px solid #1877f230;}
+.t-rest{background:#1e293b;color:#475569;}
+
+/* post blocks */
+.section{max-width:1100px;margin:0 auto 64px;padding:0 20px;}
+.day-header{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #1e293b;}
+.day-header .date{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#475569;}
+.day-header .title{font-size:20px;font-weight:900;color:#fff;}
+.day-header .type-badge{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;}
+
+.post-card{background:#0f172a;border:1px solid #1e293b;border-radius:14px;overflow:hidden;margin-bottom:16px;}
+.post-card-header{padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:10px;}
+.post-card-header .icon{font-size:18px;}
+.post-card-header h3{font-size:13px;font-weight:800;color:#e2e8f0;}
+.post-card-header .dim{font-size:10px;font-family:monospace;color:#475569;background:#0a0f1a;padding:2px 6px;border-radius:3px;margin-left:auto;}
+.post-card-body{padding:20px;}
+
+/* reel script */
+.reel-block{margin-bottom:12px;}
+.reel-time{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#7c3aed;margin-bottom:6px;}
+.reel-hook-text{font-size:20px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:8px;}
+.reel-rows{display:flex;flex-direction:column;gap:6px;}
+.reel-row{display:grid;grid-template-columns:80px 1fr;gap:8px;}
+.reel-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#475569;padding-top:2px;}
+.reel-content{font-size:12px;color:#94a3b8;line-height:1.6;}
+.reel-content strong{color:#e2e8f0;}
+.reel-divider{height:1px;background:#1e293b;margin:12px 0;}
+
+/* carousel slides */
+.slide-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.slide{border-radius:10px;overflow:hidden;aspect-ratio:1;}
+.slide-inner{width:100%;height:100%;display:flex;flex-direction:column;padding:14px 12px;}
+.slide-num{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;opacity:0.5;margin-bottom:8px;}
+.slide-copy{font-size:11px;line-height:1.5;flex:1;}
+.slide-copy strong{display:block;font-size:13px;font-weight:900;margin-bottom:6px;line-height:1.2;}
+.slide-copy ul{padding-left:14px;margin-top:4px;}
+.slide-copy li{margin-bottom:3px;}
+.s-dark{background:#0a2472;color:#fff;}
+.s-light{background:#ffffff;color:#0f172a;}
+.s-grey{background:#f1f5f9;color:#0f172a;}
+
+/* filming + notes */
+.note-box{background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:12px 14px;margin-top:12px;}
+.note-box .note-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#475569;margin-bottom:5px;}
+.note-box .note-text{font-size:11px;color:#64748b;line-height:1.6;}
+.note-box .note-text strong{color:#94a3b8;}
+
+.copy-btn{display:inline-flex;align-items:center;gap:5px;background:#1e293b;border:1px solid #334155;color:#64748b;font-size:10px;font-weight:700;padding:5px 10px;border-radius:5px;cursor:pointer;margin-top:8px;transition:all 0.15s;}
+.copy-btn:hover{background:#334155;color:#e2e8f0;}
+
+.perf-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.perf-tag{font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;}
+.pt-high{background:#10b98120;color:#34d399;border:1px solid #10b98130;}
+.pt-med{background:#f59e0b20;color:#fbbf24;border:1px solid #f59e0b30;}
+.pt-kpi{background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Relifish — 20-Day Reel + Carousel Scripts</h1>
+  <p>Copy-paste ready. Every script has timing, visuals, filming note. Every carousel has all 5 slides. Season: Monsoon ban active.</p>
+  <div class="pills">
+    <div class="pill">📅 Jun 23 – Jul 12</div>
+    <div class="pill">▶ 7 Reels</div>
+    <div class="pill">⧉ 5 Carousels</div>
+    <div class="pill">📘 8 FB Posts</div>
+    <div class="pill">🎯 Zero audience cold-start</div>
+  </div>
+</div>
+
+<!-- CALENDAR STRIP -->
+<div class="cal">
+  <div class="cal-grid">
+    <div class="cal-day"><div class="d">Mon</div><div class="n">23</div><div class="t t-reel">Reel</div></div>
+    <div class="cal-day"><div class="d">Tue</div><div class="n">24</div><div class="t t-rest">Rest</div></div>
+    <div class="cal-day"><div class="d">Wed</div><div class="n">25</div><div class="t t-carousel">Carousel</div></div>
+    <div class="cal-day"><div class="d">Thu</div><div class="n">26</div><div class="t t-fb">FB</div></div>
+    <div class="cal-day"><div class="d">Fri</div><div class="n">27</div><div class="t t-reel">Reel</div></div>
+    <div class="cal-day"><div class="d">Sat</div><div class="n">28</div><div class="t t-rest">Rest</div></div>
+    <div class="cal-day"><div class="d">Sun</div><div class="n">29</div><div class="t t-fb">FB</div></div>
+    <div class="cal-day"><div class="d">Mon</div><div class="n">30</div><div class="t t-reel">Reel</div></div>
+    <div class="cal-day"><div class="d">Tue</div><div class="n">1</div><div class="t t-carousel">Carousel</div></div>
+    <div class="cal-day"><div class="d">Wed</div><div class="n">2</div><div class="t t-fb">FB</div></div>
+    <div class="cal-day"><div class="d">Thu</div><div class="n">3</div><div class="t t-reel">Reel</div></div>
+    <div class="cal-day"><div class="d">Fri</div><div class="n">4</div><div class="t t-carousel">Carousel</div></div>
+    <div class="cal-day"><div class="d">Sat</div><div class="n">5</div><div class="t t-fb">FB</div></div>
+    <div class="cal-day"><div class="d">Sun</div><div class="n">6</div><div class="t t-rest">Rest</div></div>
+    <div class="cal-day"><div class="d">Mon</div><div class="n">7</div><div class="t t-reel">Reel</div></div>
+    <div class="cal-day"><div class="d">Tue</div><div class="n">8</div><div class="t t-carousel">Carousel</div></div>
+    <div class="cal-day"><div class="d">Wed</div><div class="n">9</div><div class="t t-fb">FB</div></div>
+    <div class="cal-day"><div class="d">Thu</div><div class="n">10</div><div class="t t-reel">Reel</div></div>
+    <div class="cal-day"><div class="d">Fri</div><div class="n">11</div><div class="t t-carousel">Carousel</div></div>
+    <div class="cal-day"><div class="d">Sat</div><div class="n">12</div><div class="t t-fb">FB</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 1 — MON 23 JUNE — REEL #1 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Monday · 23 June 2026 · 6:00 PM</div>
+      <div class="title">Reel #1 — Cold Truth · Campaign 1</div>
+    </div>
+    <div class="type-badge" style="background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;">▶ REEL · 1080×1920</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">▶</div>
+      <h3>REEL: "Your surmai changed hands 5 times. Here's the math."</h3>
+      <div class="dim">1080×1920 · 9:16 · 52 sec</div>
+    </div>
+    <div class="post-card-body">
+
+      <div class="reel-block">
+        <div class="reel-time">0–3 sec · HOOK</div>
+        <div class="reel-hook-text">"Your surmai changed hands<br>5 times before your plate."</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content"><strong>Your surmai changed hands 5 times.</strong> (large white text on black)</div></div>
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">Your surmai changed hands 5 times before reaching your plate.</div></div>
+          <div class="reel-row"><div class="reel-label">Visual</div><div class="reel-content">Extreme close-up: fresh surmai on dark surface. Single light. No background. Hold 3 seconds.</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">3–15 sec · TENSION BUILD</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">After the koli fisherman catches it at sea — it goes to a government auction. Then a wholesale buyer. Then a city distributor. Then a local vendor. Then your delivery app. That's Monday's fish reaching you by Thursday — 3 to 4 days later.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">Show each step as simple text: BOAT → AUCTION → WHOLESALE → DISTRIBUTOR → VENDOR → YOU</div></div>
+          <div class="reel-row"><div class="reel-label">Visual</div><div class="reel-content">Dark background. Each word appears one by one with a 0.5 sec pause. Last word YOU appears in blue.</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">15–45 sec · PAYOFF</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">The koli community who fish the Arabian Sea have always sold differently. Their catch arrives at the Versova dock before sunrise. Same-day fish. The fish was alive in the ocean 6 to 8 hours before you cook it. The eyes are clear. The flesh springs back when you press it. The smell is just sea water. That difference is not marketing. It is biology. Fish is perishable — every hour after catch matters. Relifish connects you directly to these sellers in Thane. No warehouse. No cold storage. Same-day.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">Show 3 text cards: "CLEAR EYES" / "FIRM FLESH" / "SEA SMELL ONLY" — each for 2 seconds</div></div>
+          <div class="reel-row"><div class="reel-label">Visual</div><div class="reel-content">Close-up shots: fish eye (clear), press test on fish flesh, person smelling fish naturally. No voiceover visuals needed — text carries.</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">45–52 sec · CTA</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">Follow for honest fish updates from Thane. No ads. Just things your fish vendor won't tell you.</div></div>
+          <div class="reel-row"><div class="reel-label">Last frame</div><div class="reel-content"><strong>Follow @relifish.store — honest fish updates from Thane.</strong> (white on navy, holds 3 sec)</div></div>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-label">📱 Filming Setup</div>
+        <div class="note-text">
+          <strong>Camera:</strong> Phone on tripod or leaning against wall. Portrait. Natural light from window — left side.<br>
+          <strong>Props needed:</strong> 1 fresh surmai on a dark cutting board or dark tray. Nothing else in frame.<br>
+          <strong>Format:</strong> Text overlay on black background — NO talking head needed. Voiceover only. Record audio on phone, sync with text slides in CapCut.<br>
+          <strong>Sound-off essentials (must be on screen):</strong> "5 middlemen" / "Monday's fish → Thursday" / "Same-day. No warehouse."<br>
+          <strong>Music:</strong> No music. Silence or very low ambient café/dock sound.
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">🎯 3-sec hold: HIGH — specific number hook</div>
+        <div class="perf-tag pt-kpi">📊 KPI: Profile visits → follows</div>
+        <div class="perf-tag pt-med">🔍 SEO: "fresh fish Thane" / "surmai supply chain"</div>
+      </div>
+
+      <div class="note-box" style="margin-top:12px;border-color:#1e293b;">
+        <div class="note-label">📝 Caption (post with reel)</div>
+        <div class="note-text">
+          Your surmai changed hands 5 times before reaching your plate.<br><br>
+          Boat → auction → wholesale → distributor → vendor → you. That chain takes 3-4 days. By Thursday, Monday's fish is on your counter.<br><br>
+          The koli sellers at Versova dock sell same-day catch. Fish that was in the Arabian Sea 6-8 hours ago.<br><br>
+          That's what we're building access to for Thane. Follow for honest fish updates.<br><br>
+          #FreshFishThane #KoliFish #ThaneFoodies #FishDeliveryThane #HiranandaniEstate #FreshSeafood #MumbaiFood #RelifishStore
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 3 — WED 25 JUNE — CAROUSEL #1 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Wednesday · 25 June 2026 · 12:00 PM</div>
+      <div class="title">Carousel #1 — Know Your Fish · "Freshness Test Guide"</div>
+    </div>
+    <div class="type-badge" style="background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;">⧉ CAROUSEL · 5 slides · 1080×1080</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">⧉</div>
+      <h3>CAROUSEL: "How to check if fish is actually fresh — 4 tests in 30 seconds"</h3>
+      <div class="dim">5 slides · 1080×1080 · 1:1</div>
+    </div>
+    <div class="post-card-body">
+      <div class="slide-grid">
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 1 · COVER</div>
+            <div class="slide-copy">
+              <strong>Is your fish actually fresh?</strong>
+              4 tests. 30 seconds. Know before you buy.
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:auto;">@relifish.store · Save this</div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 2 · WHY IT MATTERS</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>Most Thane families can't tell the difference.</strong>
+              "Fresh" at supermarkets means 2-3 days on ice. Hiranandani residents — the fish you bought yesterday was likely caught 4 days ago. That's not a quality problem. That's a supply chain problem.
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 3 · THE 4 TESTS</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>Do these at the market:</strong>
+              <ul>
+                <li>👁 Eyes: clear, bright, full — not sunken or cloudy</li>
+                <li>👃 Smell: sea only — never "fishy"</li>
+                <li>👆 Press: flesh springs back fast — stays dented = old</li>
+                <li>🔴 Gills: bright red, moist — not brown or dry</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-grey">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 4 · REFERENCE CARD — SAVE THIS</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>Quick checklist</strong>
+              <ul>
+                <li>✅ Clear, full, bright eyes</li>
+                <li>✅ Smells like sea — not fish</li>
+                <li>✅ Flesh springs back on press</li>
+                <li>✅ Gills: bright red</li>
+                <li>✅ Skin: shiny, not dull</li>
+                <li>❌ Cloudy, sunken eyes</li>
+                <li>❌ Any "fishy" odour before cooking</li>
+                <li>❌ Dent stays when pressed</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 5 · CTA</div>
+            <div class="slide-copy">
+              <strong>Same-day koli catch — direct to Thane kitchens.</strong>
+              No cold storage. No middlemen.
+            </div>
+            <div style="margin-top:auto;">
+              <div style="font-size:10px;color:rgba(255,255,255,0.5);">relifish.store</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;">@relifish.store</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note-box" style="margin-top:14px;">
+        <div class="note-label">🎨 Canva Instructions</div>
+        <div class="note-text">
+          <strong>Slide 1:</strong> 1080×1080. Dark navy #0a2472 bg. Headline Inter Black 52px white. Sub-text 20px white 60% opacity. Bottom right: "@relifish.store" 14px white 40% opacity.<br>
+          <strong>Slides 2–3:</strong> 1080×1080. White bg. Headline Inter Bold 26px navy #0a2472. Body Inter Regular 18px #334155. Line height 1.7.<br>
+          <strong>Slide 4:</strong> 1080×1080. Light grey #f1f5f9 bg. Checklist in 2 columns. ✅ items = green text. ❌ items = red text. Bold headline navy.<br>
+          <strong>Slide 5:</strong> 1080×1080. Navy bg. Headline Inter Black 36px white. Logo bottom right.<br>
+          <strong>Save-rate note:</strong> Slide 4 is the screenshot. People save reference checklists. This is why the checklist is the biggest slide.
+        </div>
+      </div>
+
+      <div class="note-box" style="margin-top:8px;">
+        <div class="note-label">📝 Caption</div>
+        <div class="note-text">
+          Is your fish actually fresh? 4 tests. 30 seconds. Know before you buy.<br><br>
+          Most "fresh" fish in Thane supermarkets and delivery apps has been on ice for 2-3 days. These 4 tests — eyes, smell, press, gills — will tell you the truth in under a minute.<br><br>
+          Save this for your next market visit. ↗<br><br>
+          #FreshFishThane #HowToCheckFreshFish #FishTips #KoliFish #ThaneFoodies #FoodTipsIndia #SeafoodIndia #Relifish
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">💾 Save rate target: 8%+ (reference card format)</div>
+        <div class="perf-tag pt-kpi">📊 KPI: Slide 4 screenshots</div>
+        <div class="perf-tag pt-med">🔍 SEO mirror: "how to check if fish is fresh"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 5 — FRI 27 JUNE — REEL #2 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Friday · 27 June 2026 · 6:00 PM</div>
+      <div class="title">Reel #2 — Know Your Fish · "Press Test"</div>
+    </div>
+    <div class="type-badge" style="background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;">▶ REEL · 1080×1920</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">▶</div>
+      <h3>REEL: "Press here. If this happens — put it down."</h3>
+      <div class="dim">1080×1920 · 9:16 · 48 sec</div>
+    </div>
+    <div class="post-card-body">
+
+      <div class="reel-block">
+        <div class="reel-time">0–3 sec · HOOK</div>
+        <div class="reel-hook-text">"Press here. If this happens — put it down."</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content"><strong>Press here. If this happens — put it down.</strong> (white on black, with a red arrow pointing at fish flesh in frame)</div></div>
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">Press here. If this happens — put it down.</div></div>
+          <div class="reel-row"><div class="reel-label">Visual</div><div class="reel-content">Hands pressing into fish flesh, close-up macro. Dent STAYS in flesh. Cut to: same press, dent SPRINGS BACK immediately. Side by side or cut between them.</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">3–15 sec · TENSION</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">When fish loses freshness, the muscle protein starts breaking down. The flesh goes from firm to soft. When you press fresh fish and let go — it springs back almost immediately. When you press old fish and let go — the dent stays. That dent is the sign your fish is already 3 days old.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">Show text: "FRESH → springs back" / "OLD → dent stays"</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">15–45 sec · PAYOFF</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">Here's the full 3-step check you can do at any market in 30 seconds. One — the press test. Fresh: springs back. Old: stays dented. Two — the eye test. Fresh: clear, full, bright. Old: cloudy, sunken, dull. Three — the smell test. Fresh fish smells like the sea — clean salt water. Old fish smells like fish. If it already smells before cooking, that smell gets worse in the pan. The koli sellers at Versova have been doing these checks by instinct for generations. We bring that same standard to Thane kitchens — same day catch, no cold storage.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">3 cards appear: "1. PRESS" / "2. EYE" / "3. SMELL" — each with checkmark for fresh, X for old</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">45–48 sec · CTA</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">Follow for more fish knowledge that your vendor won't share.</div></div>
+          <div class="reel-row"><div class="reel-label">Last frame</div><div class="reel-content"><strong>Follow @relifish.store — fish knowledge from Thane.</strong></div></div>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-label">📱 Filming Setup</div>
+        <div class="note-text">
+          <strong>This reel NEEDS a real prop:</strong> Buy 2 fish — one very fresh, one 2 days old. Film both press tests side by side.<br>
+          <strong>Camera:</strong> Top-down overhead shot of fish on dark surface. Hands enter frame from above. Close macro on the flesh area near dorsal fin.<br>
+          <strong>Light:</strong> Natural daylight from side. The press dent must be clearly visible — side lighting creates shadow that shows the dent.<br>
+          <strong>Sound-off essentials:</strong> "Press here" / "Springs back = fresh" / "Dent stays = old"<br>
+          <strong>Format:</strong> Real demonstration video. No voiceover-only. Must show the actual test.
+        </div>
+      </div>
+
+      <div class="note-box" style="margin-top:8px;">
+        <div class="note-label">📝 Caption</div>
+        <div class="note-text">
+          Press here. If this happens — put it down.<br><br>
+          The 3-second press test tells you everything your vendor won't. Fresh fish springs back. Fish that's 3 days old leaves a dent. This is biology, not opinion.<br><br>
+          Full guide on how to check freshness → link in bio.<br><br>
+          #FreshFishTest #FishFreshness #HowToBuyFreshFish #KoliFish #ThaneFoodies #FishDeliveryMumbai #Relifish #SeafoodIndia
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">🎯 3-sec hold: HIGH — visual demonstration hook</div>
+        <div class="perf-tag pt-kpi">📊 KPI: Saves (reference info)</div>
+        <div class="perf-tag pt-med">🔍 SEO: "how to check if fish is fresh" / "fresh fish test"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 8 — MON 30 JUNE — REEL #3 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Monday · 30 June 2026 · 6:00 PM</div>
+      <div class="title">Reel #3 — Behind the Source · Koli Story</div>
+    </div>
+    <div class="type-badge" style="background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;">▶ REEL · 1080×1920</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">▶</div>
+      <h3>REEL: "While you were sleeping. 3 AM at Versova dock."</h3>
+      <div class="dim">1080×1920 · 9:16 · 55 sec</div>
+    </div>
+    <div class="post-card-body">
+
+      <div class="reel-block">
+        <div class="reel-time">0–3 sec · HOOK</div>
+        <div class="reel-hook-text">"While you were sleeping, koli fishermen left the dock."</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content"><strong>3 AM. Versova Dock. While Thane slept.</strong> (white on near-black background)</div></div>
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">While you were sleeping, koli fishermen left the Versova dock at 3 AM.</div></div>
+          <div class="reel-row"><div class="reel-label">Visual</div><div class="reel-content">Dark screen. "3:00 AM" clock display appears. Then cut to dark dock imagery or dark screen with text only.</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">3–20 sec · TENSION + STORY</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">The koli fishing community has fished the Arabian Sea for generations. They leave before sunrise. They return by morning with the catch. Not a warehouse. Not a cold storage unit. The same dock. The same boats. The same knowledge, passed down from parents to children. The woman who sorts the fish knows which one is two hours old and which one is eight. Not from a label. From years of touch and smell.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">Text appears over dark: "Left at 3 AM" / "Arabian Sea" / "Back by 7 AM" / "Same dock. Generations."</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">20–45 sec · PAYOFF</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">This supply chain has existed for hundreds of years. What has not existed — until recently — is a way for a family in Hiranandani Estate or Ghodbunder Road to access it without going to the market themselves. Relifish is a direct bridge. Koli seller lists their morning catch. You order before the day is out. It reaches your kitchen same day. No cold storage. No middleman. The fish that was at Versova dock at 7 AM is in your Thane kitchen by noon.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">Simple timeline animation: "7 AM Versova dock" → arrow → "12 PM Your kitchen" → text: "No cold storage. No middlemen."</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">45–55 sec · CTA</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">Follow to learn more about where your fish actually comes from.</div></div>
+          <div class="reel-row"><div class="reel-label">Last frame</div><div class="reel-content"><strong>@relifish.store — Koli sellers. Thane kitchens. Same day.</strong></div></div>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-label">📱 Filming Setup</div>
+        <div class="note-text">
+          <strong>Format:</strong> Text overlay on dark background + voiceover. No talking head needed.<br>
+          <strong>Optional b-roll:</strong> If you can get dock footage (even just dark water, boats at distance), use it. Otherwise pure text on dark background works.<br>
+          <strong>Sound-off essentials:</strong> "3 AM Versova dock" / "7 AM → 12 PM Thane kitchen" / "No cold storage"<br>
+          <strong>Tone:</strong> Narration pace — slow and deliberate. Not fast-cut. This is a story, not a tutorial.
+        </div>
+      </div>
+
+      <div class="note-box" style="margin-top:8px;">
+        <div class="note-label">📝 Caption</div>
+        <div class="note-text">
+          While you were sleeping, koli fishermen left the Versova dock at 3 AM.<br><br>
+          They've fished the Arabian Sea for generations. Their morning catch is at the dock by 7 AM. Relifish connects that dock to Thane kitchens — same day, no cold storage, no middlemen.<br><br>
+          The fish that reaches you should taste like the ocean. Not like a refrigerator.<br><br>
+          #KoliFish #VersovaDock #FreshFishMumbai #ThaneFoodie #HiranandaniEstate #FishDeliveryThane #Relifish #MumbaiKoli
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">❤️ Share rate: HIGH — emotional story, people forward this</div>
+        <div class="perf-tag pt-kpi">📊 KPI: Shares to building WhatsApp + follows</div>
+        <div class="perf-tag pt-med">🔍 SEO: "koli fish Mumbai" / "Versova fish market"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 9 — TUE 1 JULY — CAROUSEL #2 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Tuesday · 1 July 2026 · 12:00 PM</div>
+      <div class="title">Carousel #2 — Monsoon Guide · "What fish to buy right now"</div>
+    </div>
+    <div class="type-badge" style="background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;">⧉ CAROUSEL · 5 slides · 1080×1080</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">⧉</div>
+      <h3>CAROUSEL: "Monsoon fish guide for Thane — what's real, what's not"</h3>
+      <div class="dim">5 slides · 1080×1080 · 1:1</div>
+    </div>
+    <div class="post-card-body">
+      <div class="slide-grid">
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 1 · COVER</div>
+            <div class="slide-copy">
+              <strong>Monsoon fish guide for Thane.</strong>
+              What to buy now. What to avoid.
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:auto;">June–July 2026 · @relifish.store</div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 2 · THE BAN</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>The fishing ban is active.</strong>
+              Maharashtra's fishing ban runs June–July. Wild sea fish — Surmai, Pomfret, Rawas — are off the boats right now. Any "wild surmai" you see at a Thane vendor or delivery app this month is from cold storage. It was caught before the ban. Weeks ago.
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 3 · WHAT'S IN SEASON NOW</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>What's actually fresh this month:</strong>
+              <ul>
+                <li>🦐 Farmed prawns — peak season, excellent quality</li>
+                <li>🐟 Bhetki (Barramundi) — farmed, available daily</li>
+                <li>🐠 Rohu & Catla — river fish, monsoon is their season</li>
+                <li>🦀 Mud crabs — monsoon is good crab season</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-grey">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 4 · REFERENCE TABLE — SAVE THIS</div>
+            <div class="slide-copy" style="color:#0f172a;font-size:10px;">
+              <strong>June–July fish reality check:</strong>
+              <ul style="margin-top:6px;">
+                <li>✅ Farmed Prawns → fresh, in season</li>
+                <li>✅ Bhetki / Barramundi → fresh, available</li>
+                <li>✅ Rohu / Catla → peak river fish season</li>
+                <li>✅ Mud Crab → monsoon season</li>
+                <li>⚠️ Surmai → only cold storage available</li>
+                <li>⚠️ Pomfret → only cold storage available</li>
+                <li>⚠️ Rawas → only cold storage available</li>
+                <li>❌ Any "wild catch" sea fish → ban is active</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 5 · CTA</div>
+            <div class="slide-copy">
+              <strong>Relifish shows you what koli sellers have today. No cold storage listed.</strong>
+            </div>
+            <div style="margin-top:auto;">
+              <div style="font-size:10px;color:rgba(255,255,255,0.5);">relifish.store</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;">@relifish.store</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note-box" style="margin-top:14px;">
+        <div class="note-label">📝 Caption</div>
+        <div class="note-text">
+          Monsoon fish guide for Thane families — what's actually fresh right now.<br><br>
+          The fishing ban is active. Any wild Surmai, Pomfret or Rawas you see this month is from cold storage — weeks old. The fish genuinely in season right now: farmed prawns, Bhetki, Rohu, Catla, mud crabs.<br><br>
+          Save this for your next market visit. ↗<br><br>
+          #MonsoonFish #FishingBanMumbai #WhichFishToBuyMonsoon #ThaneFoodies #FreshFishThane #KoliFish #SeasonalFish #Relifish
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">💾 Save rate: VERY HIGH — seasonal guide, people keep this</div>
+        <div class="perf-tag pt-high">📤 Share rate: HIGH — moms share to building group</div>
+        <div class="perf-tag pt-med">🔍 SEO: "which fish to buy in monsoon" / "fishing ban Mumbai"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 11 — THU 3 JULY — REEL #4 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Thursday · 3 July 2026 · 6:00 PM</div>
+      <div class="title">Reel #4 — Monsoon Guide · "The fishing ban explained"</div>
+    </div>
+    <div class="type-badge" style="background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;">▶ REEL · 1080×1920</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">▶</div>
+      <h3>REEL: "That surmai at DMart right now — it's from cold storage. Here's why."</h3>
+      <div class="dim">1080×1920 · 9:16 · 50 sec</div>
+    </div>
+    <div class="post-card-body">
+
+      <div class="reel-block">
+        <div class="reel-time">0–3 sec · HOOK</div>
+        <div class="reel-hook-text">"That surmai at your app right now is weeks old."</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content"><strong>That surmai at your delivery app right now is weeks old.</strong></div></div>
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">That surmai you see on your fish delivery app right now — it's weeks old.</div></div>
+          <div class="reel-row"><div class="reel-label">Visual</div><div class="reel-content">Screen recording or mockup of a fish delivery app showing surmai listing — blurred/generic. Then cut to red text: "BAN ACTIVE"</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">3–20 sec · TENSION</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">Maharashtra's annual fishing ban runs from June to July. During this period, fishing boats are not allowed to go out to sea. This ban exists to protect fish breeding season — it is actually good for the ecosystem. But it means one thing that nobody selling fish will tell you: any wild sea fish you buy right now — surmai, pomfret, rawas — is from cold storage. It was caught before the ban began. It has been frozen for weeks.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">"Fishing ban: June–July" / "Boats: not at sea" / "Surmai at your vendor: COLD STORAGE"</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">20–45 sec · PAYOFF</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">So what should you actually buy this month? Farmed prawns are in peak season — and they are genuinely fresh. Bhetki, also known as Barramundi, is farmed and available fresh daily. Rohu and Catla — river fish — are in their natural season right now and excellent quality. Mud crabs are a monsoon specialty. These four are what a Thane family should be cooking this month. Not cold storage surmai. This is not a knock on surmai — it is excellent fish. But not in July. Save surmai for when the ban lifts and the boats go back out.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">List: "✅ Prawns · Bhetki · Rohu · Mud crab" and "⚠️ Surmai · Pomfret · Rawas = cold storage this month"</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">45–50 sec · CTA</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Last frame</div><div class="reel-content"><strong>Follow @relifish.store — honest fish updates. No cold storage.</strong></div></div>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-label">📱 Filming Setup</div>
+        <div class="note-text">
+          <strong>Format:</strong> Voiceover + text overlay. No talking head needed.<br>
+          <strong>Visual option:</strong> Film fresh prawns on dark surface for the "what to buy" section — vivid orange-pink, visually strong.<br>
+          <strong>Sound-off essentials:</strong> "Fishing ban June–July" / "Cold storage surmai" / "✅ Prawns Bhetki Rohu"
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">🎯 3-sec hold: HIGH — counter-intuitive fact about product they can see on apps</div>
+        <div class="perf-tag pt-high">📤 Share rate: VERY HIGH — moms share this to building WhatsApp immediately</div>
+        <div class="perf-tag pt-med">🔍 SEO: "fishing ban Mumbai" / "which fish to buy monsoon"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 12 — FRI 4 JULY — CAROUSEL #3 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Friday · 4 July 2026 · 12:00 PM</div>
+      <div class="title">Carousel #3 — Cold Truth · "Supply Chain Split"</div>
+    </div>
+    <div class="type-badge" style="background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;">⧉ CAROUSEL · 5 slides · 1080×1080</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">⧉</div>
+      <h3>CAROUSEL: "Supermarket fish vs koli market fish — honest comparison"</h3>
+      <div class="dim">5 slides · 1080×1080 · 1:1</div>
+    </div>
+    <div class="post-card-body">
+      <div class="slide-grid">
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 1 · COVER</div>
+            <div class="slide-copy">
+              <strong>Supermarket fish vs koli seller fish.</strong>
+              The honest comparison.
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:auto;">@relifish.store</div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 2 · JOURNEY</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>How far does your fish travel?</strong>
+              Supermarket path: Boat → auction → wholesale → cold storage → distributor → retail → your cart → delivery rider → you. Time: 3–5 days.<br><br>
+              Koli seller path: Boat → dock → Relifish listing → you. Time: same day.
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 3 · WHAT CHANGES</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>What happens to fish over 3 days:</strong>
+              <ul>
+                <li>Flesh texture softens and breaks down</li>
+                <li>Omega-3s begin degrading after 24 hrs</li>
+                <li>Eyes go from clear to cloudy</li>
+                <li>Smell changes from sea to "fishy"</li>
+                <li>Flavour flattens — fish curry tastes less like fish</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-grey">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 4 · COMPARISON TABLE — SAVE THIS</div>
+            <div class="slide-copy" style="color:#0f172a;font-size:10px;">
+              <strong>Side by side:</strong>
+              <ul style="margin-top:6px;">
+                <li>Days since catch: Supermarket 3-5 · Koli same day</li>
+                <li>Cold storage: Supermarket yes · Koli no</li>
+                <li>Middlemen: Supermarket 4-5 · Koli 0</li>
+                <li>Eye condition: Supermarket cloudy · Koli clear</li>
+                <li>Flesh texture: Supermarket soft · Koli firm</li>
+                <li>Smell before cooking: Supermarket fishy · Koli sea only</li>
+                <li>Who decides quality: Supermarket warehouse · Koli the seller</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 5 · CTA</div>
+            <div class="slide-copy">
+              <strong>Direct from koli sellers in Thane. Same-day. No cold storage.</strong>
+            </div>
+            <div style="margin-top:auto;font-size:10px;color:rgba(255,255,255,0.4);">relifish.store</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note-box" style="margin-top:14px;">
+        <div class="note-label">📝 Caption</div>
+        <div class="note-text">
+          Supermarket fish vs koli seller fish — the honest comparison nobody makes.<br><br>
+          The fish you buy from a delivery app or supermarket has typically passed through 4-5 middlemen over 3-5 days. The fish from a koli seller at Versova dock: caught this morning, listed on Relifish, at your Thane kitchen by afternoon.<br><br>
+          Save the comparison table ↗<br><br>
+          #FreshFishVsSupermarket #KoliFishMumbai #FreshFishThane #ThaneFoodies #FoodTruth #HiranandaniFood #Relifish
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">💾 Save rate: HIGH — comparison table is reference material</div>
+        <div class="perf-tag pt-med">📊 KPI: Slide 4 screenshots + profile visits</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 15 — MON 7 JULY — REEL #5 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Monday · 7 July 2026 · 6:00 PM</div>
+      <div class="title">Reel #5 — Know Your Fish · "Pomfret vs Surmai"</div>
+    </div>
+    <div class="type-badge" style="background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;">▶ REEL · 1080×1920</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">▶</div>
+      <h3>REEL: "Pomfret or surmai — which one should you actually buy?"</h3>
+      <div class="dim">1080×1920 · 9:16 · 52 sec</div>
+    </div>
+    <div class="post-card-body">
+
+      <div class="reel-block">
+        <div class="reel-time">0–3 sec · HOOK</div>
+        <div class="reel-hook-text">"Pomfret or surmai? Most Thane families pick wrong."</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content"><strong>Pomfret or surmai? Most people pick wrong for their recipe.</strong></div></div>
+          <div class="reel-row"><div class="reel-label">Visual</div><div class="reel-content">Both fish side by side on dark surface. Camera pulls back slowly from close-up to show both.</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">3–45 sec · PAYOFF</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">Pomfret — also known as paplet — is flat, mild, and delicate. The flesh flakes easily. It is perfect for light preparations: steamed, fried whole, or in a coconut-based curry where you want the fish flavour to be subtle. The texture is soft and the taste is gentle. Pomfret is forgiving — even slightly old pomfret can taste reasonable because its flavour is so mild to begin with. Surmai — king mackerel — is the opposite. Firm, oily, bold. Strong flavour. It holds up to heavy spicing. Recheado masala, strong red curry, grilling. Surmai ages badly — the oiliness turns fast. So surmai is the fish where freshness matters most. If you are buying surmai from a delivery app during the fishing ban — it is cold storage. The oils have already started to turn. Buy surmai only when you know the source and the date. Right now, during the ban — stick to prawns, bhetki, rohu. When the ban lifts and wild surmai is back — that is when to cook it.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">POMFRET: "Mild · Flaky · Forgiving" | SURMAI: "Bold · Oily · Needs freshness" | Bottom card: "Ban active → skip surmai this month"</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">45–52 sec · CTA</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Last frame</div><div class="reel-content"><strong>Follow @relifish.store — honest fish knowledge from Thane.</strong></div></div>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-label">📱 Filming Setup</div>
+        <div class="note-text">
+          <strong>Props needed:</strong> 1 pomfret + 1 surmai on dark tray. Side by side.<br>
+          <strong>Camera:</strong> Overhead + side angle. Show both fish clearly. The visual contrast (flat vs torpedo-shaped) is the story.<br>
+          <strong>Format:</strong> Voice + text cards. The fish comparison visuals are the b-roll.
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">🎯 3-sec hold: HIGH — "you're choosing wrong" hook</div>
+        <div class="perf-tag pt-kpi">📊 KPI: Saves (reference) + follows</div>
+        <div class="perf-tag pt-med">🔍 SEO: "pomfret vs surmai" / "which fish to cook"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 16 — TUE 8 JULY — CAROUSEL #4 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Tuesday · 8 July 2026 · 12:00 PM</div>
+      <div class="title">Carousel #4 — Behind the Source · Koli Community Story</div>
+    </div>
+    <div class="type-badge" style="background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;">⧉ CAROUSEL · 5 slides · 1080×1080</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">⧉</div>
+      <h3>CAROUSEL: "The people behind your fish — koli community story"</h3>
+      <div class="dim">5 slides · 1080×1080 · 1:1</div>
+    </div>
+    <div class="post-card-body">
+      <div class="slide-grid">
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 1 · COVER</div>
+            <div class="slide-copy">
+              <strong>The people behind your fish.</strong>
+              Who the koli community actually are.
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:auto;">@relifish.store</div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 2 · WHO THEY ARE</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>The koli community has fished the Arabian Sea for generations.</strong>
+              They are Mumbai's original residents — predating the city itself. Their fishing villages at Versova, Malvan, Ratnagiri were there before any commercial port. Their knowledge of fish — which species is in season, which catch is fresh, how to assess quality — is built over centuries, not years.
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 3 · THEIR DAILY REALITY</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>A koli seller's day starts at 3 AM.</strong>
+              <ul>
+                <li>Leave dock before sunrise</li>
+                <li>Return with catch by 7 AM</li>
+                <li>Sort and grade at the dock</li>
+                <li>Sell at the dock market by 8–9 AM</li>
+                <li>What's not sold goes to intermediaries</li>
+              </ul>
+              The freshest fish is at the dock. The rest enters the supply chain.
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-grey">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 4 · WHAT'S CHANGING</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>The koli seller now lists on Relifish.</strong>
+              For the first time, a family in Hiranandani Estate or Ghodbunder Road can order directly from the seller — without going to Versova themselves. The seller gets a fair direct rate. The buyer gets same-day catch. No middleman takes a cut from either side.
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 5 · CTA</div>
+            <div class="slide-copy">
+              <strong>Supporting koli sellers. Serving Thane kitchens. Same day.</strong>
+            </div>
+            <div style="margin-top:auto;font-size:10px;color:rgba(255,255,255,0.4);">relifish.store</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note-box" style="margin-top:14px;">
+        <div class="note-label">📝 Caption</div>
+        <div class="note-text">
+          The koli community has fished the Arabian Sea for generations — they're Mumbai's original residents.<br><br>
+          Their day starts at 3 AM. Their fish knowledge is built over centuries. And until recently, Thane families had no direct way to access their catch without going to Versova themselves.<br><br>
+          That's what Relifish changes.<br><br>
+          #KoliCommunity #KoliFish #MumbaiKoli #VersovaDock #FreshFishMumbai #ThaneFoodie #HyperLocal #Relifish
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">❤️ Share rate: HIGH — emotional community story</div>
+        <div class="perf-tag pt-kpi">📊 KPI: Shares + saves</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 18 — THU 10 JULY — REEL #6 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Thursday · 10 July 2026 · 6:00 PM</div>
+      <div class="title">Reel #6 — Cold Truth · "Why your fish curry doesn't taste the same"</div>
+    </div>
+    <div class="type-badge" style="background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;">▶ REEL · 1080×1920</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">▶</div>
+      <h3>REEL: "Your fish curry doesn't taste the same. Here's the real reason."</h3>
+      <div class="dim">1080×1920 · 9:16 · 55 sec</div>
+    </div>
+    <div class="post-card-body">
+
+      <div class="reel-block">
+        <div class="reel-time">0–3 sec · HOOK</div>
+        <div class="reel-hook-text">"Your fish curry doesn't taste like it used to. Here's why."</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content"><strong>Your fish curry doesn't taste like it used to.</strong> (white on dark)</div></div>
+          <div class="reel-row"><div class="reel-label">Visual</div><div class="reel-content">Dark background. Simple text. Then cut to: close-up of fish curry in steel kadai, steam rising.</div></div>
+        </div>
+      </div>
+
+      <div class="reel-divider"></div>
+
+      <div class="reel-block">
+        <div class="reel-time">3–55 sec · FULL SCRIPT</div>
+        <div class="reel-rows">
+          <div class="reel-row"><div class="reel-label">Spoken</div><div class="reel-content">You have not lost cooking skill. The recipe has not changed. But something else has. The fish has. Twenty years ago, the fish your grandmother bought came from a local koli seller at the neighbourhood market — caught that morning or the previous night. The supply chain was 6 hours long. Today, the fish in your kitchen likely spent 3 to 5 days in transit before you cooked it. Omega-3 oils start degrading within 24 hours of catch. The collagen structure of the flesh starts to soften by day 2. By day 3, the fish still looks acceptable on a tray under fluorescent light — but it has already lost the qualities that make it taste extraordinary. The firm texture. The depth of flavour. The way it holds together when you cook it. This is not the fish you remember. It is a processed, transported, refrigerated version of it. The recipe is the same. The ingredient is not. Same-day fish from a koli seller is not nostalgia. It is biology. Relifish brings that supply chain back for Thane families.</div></div>
+          <div class="reel-row"><div class="reel-label">On screen</div><div class="reel-content">Mid-reel text cards: "Your recipe: same ✓" / "The fish: different ✗" / "3-5 days in transit" / "Omega-3s degrade after 24 hrs" / "Same-day = how it's supposed to taste"</div></div>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-label">📱 Filming Setup</div>
+        <div class="note-text">
+          <strong>Format:</strong> Voiceover + text cards. MOST POWERFUL reel in the calendar — this is the emotional recognition hook.<br>
+          <strong>Optional visual:</strong> Old family photo of cooking (if available). Or close-up of hands cooking fish curry.<br>
+          <strong>Sound-off essentials:</strong> "3-5 days in transit" / "Omega-3s degrade after 24 hrs" / "The recipe is the same. The ingredient is not."<br>
+          <strong>Tone:</strong> Slow, deliberate. Not fast. Let the words land.
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">🎯 3-sec hold: VERY HIGH — emotional recognition hook</div>
+        <div class="perf-tag pt-high">📤 Share rate: VERY HIGH — "finally someone said it"</div>
+        <div class="perf-tag pt-med">🔍 SEO: "why fish curry doesn't taste same" exact mirror</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- DAY 19 — FRI 11 JULY — CAROUSEL #5 -->
+<!-- ═══════════════════════════════════ -->
+<div class="section">
+  <div class="day-header">
+    <div>
+      <div class="date">Friday · 11 July 2026 · 12:00 PM</div>
+      <div class="title">Carousel #5 — The Wait · Anticipation + Waitlist</div>
+    </div>
+    <div class="type-badge" style="background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;">⧉ CAROUSEL · 5 slides · 1080×1080</div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-card-header">
+      <div class="icon">⧉</div>
+      <h3>CAROUSEL: "Wild catch is coming back. Here's what that means for Thane."</h3>
+      <div class="dim">5 slides · 1080×1080 · 1:1</div>
+    </div>
+    <div class="post-card-body">
+      <div class="slide-grid">
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 1 · COVER</div>
+            <div class="slide-copy">
+              <strong>Wild catch returns soon.</strong>
+              Here's what changes for Thane kitchens.
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:auto;">@relifish.store</div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 2 · WHY IT MATTERS</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>The fishing ban protects breeding season.</strong>
+              The 61-day ban allows fish populations to replenish. When the boats go back out — the first catch of the season is the best. The fish are at peak health. The population is rested. Wild surmai and pomfret right after the ban lifts are exceptional quality.
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-light">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 3 · FIRST CATCH</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>First catch of the season is different.</strong>
+              <ul>
+                <li>Surmai: firm, full flavour — at its best post-ban</li>
+                <li>Pomfret: fuller body, better fat content</li>
+                <li>Rawas (Indian salmon): returns to peak form</li>
+                <li>Demand spikes — best sellers go first</li>
+              </ul>
+              Thane families who have sellers lined up get first access.
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-grey">
+            <div class="slide-num" style="color:#94a3b8;">SLIDE 4 · HOW TO PREPARE</div>
+            <div class="slide-copy" style="color:#0f172a;">
+              <strong>How to be ready when the ban lifts:</strong>
+              <ul>
+                <li>✅ Have a seller you trust already lined up</li>
+                <li>✅ Know what to order — surmai, pomfret, rawas</li>
+                <li>✅ Order within the first week — quality is highest</li>
+                <li>✅ Join Relifish waitlist — get notified first</li>
+                <li>❌ Don't wait — first-week catch goes to regulars</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="slide-inner s-dark">
+            <div class="slide-num">SLIDE 5 · CTA</div>
+            <div class="slide-copy">
+              <strong>Join the Relifish waitlist. Be first when wild catch returns to Thane.</strong>
+            </div>
+            <div style="margin-top:auto;font-size:10px;color:rgba(255,255,255,0.4);">relifish.store → waitlist</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note-box" style="margin-top:14px;">
+        <div class="note-label">📝 Caption</div>
+        <div class="note-text">
+          Wild catch is coming back. And the first week is the best fish of the year.<br><br>
+          The 61-day ban lets fish populations recover. When boats go out after the ban — surmai, pomfret, rawas are at peak quality. Firmest flesh, deepest flavour. First-week catch goes to sellers' regulars first.<br><br>
+          Relifish waitlist → relifish.store (link in bio)<br><br>
+          #WildCatch #FreshFishMumbai #FishingBanOver #SurmaiFish #PomfretMumbai #ThaneFoodie #KoliFish #Relifish
+        </div>
+      </div>
+
+      <div class="perf-row">
+        <div class="perf-tag pt-high">🎯 FOMO trigger: "first-week catch goes to regulars"</div>
+        <div class="perf-tag pt-high">🔗 Drives: waitlist signups at relifish.store</div>
+        <div class="perf-tag pt-kpi">📊 KPI: Link-in-bio clicks → waitlist conversion</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY TABLE -->
+<div style="max-width:1100px;margin:48px auto 0;padding:0 20px;">
+  <div style="background:#111827;border:1px solid #1e293b;border-radius:16px;padding:28px;">
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#475569;margin-bottom:20px;">20-Day Calendar Summary</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="border-bottom:1px solid #1e293b;">
+          <th style="text-align:left;padding:8px 12px;color:#475569;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">Date</th>
+          <th style="text-align:left;padding:8px 12px;color:#475569;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">Type</th>
+          <th style="text-align:left;padding:8px 12px;color:#475569;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">Title</th>
+          <th style="text-align:left;padding:8px 12px;color:#475569;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">Campaign</th>
+          <th style="text-align:left;padding:8px 12px;color:#475569;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">KPI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Mon 23 Jun</td><td style="padding:8px 12px;"><span style="background:#7c3aed20;color:#a78bfa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">▶ REEL</span></td><td style="padding:8px 12px;color:#94a3b8;">5 middlemen / surmai journey</td><td style="padding:8px 12px;color:#475569;">Cold Truth</td><td style="padding:8px 12px;color:#475569;">Follows</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Wed 25 Jun</td><td style="padding:8px 12px;"><span style="background:#0066ff20;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">⧉ CAROUSEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Freshness test 4-step guide</td><td style="padding:8px 12px;color:#475569;">Know Your Fish</td><td style="padding:8px 12px;color:#475569;">Saves 8%+</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Thu 26 Jun</td><td style="padding:8px 12px;"><span style="background:#1877f220;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">📘 FB</span></td><td style="padding:8px 12px;color:#94a3b8;">Fish tips for Hiranandani residents</td><td style="padding:8px 12px;color:#475569;">Cold Truth</td><td style="padding:8px 12px;color:#475569;">Group shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Fri 27 Jun</td><td style="padding:8px 12px;"><span style="background:#7c3aed20;color:#a78bfa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">▶ REEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Press test demonstration</td><td style="padding:8px 12px;color:#475569;">Know Your Fish</td><td style="padding:8px 12px;color:#475569;">Saves + follows</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Sun 29 Jun</td><td style="padding:8px 12px;"><span style="background:#1877f220;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">📘 FB</span></td><td style="padding:8px 12px;color:#94a3b8;">Monsoon fish guide for Thane</td><td style="padding:8px 12px;color:#475569;">Monsoon Guide</td><td style="padding:8px 12px;color:#475569;">Group shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Mon 30 Jun</td><td style="padding:8px 12px;"><span style="background:#7c3aed20;color:#a78bfa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">▶ REEL</span></td><td style="padding:8px 12px;color:#94a3b8;">3 AM Versova dock — koli story</td><td style="padding:8px 12px;color:#475569;">Behind Source</td><td style="padding:8px 12px;color:#475569;">Shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Tue 1 Jul</td><td style="padding:8px 12px;"><span style="background:#0066ff20;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">⧉ CAROUSEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Monsoon fish guide — what's real</td><td style="padding:8px 12px;color:#475569;">Monsoon Guide</td><td style="padding:8px 12px;color:#475569;">Saves + shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Wed 2 Jul</td><td style="padding:8px 12px;"><span style="background:#1877f220;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">📘 FB</span></td><td style="padding:8px 12px;color:#94a3b8;">Safe fish for kids this monsoon</td><td style="padding:8px 12px;color:#475569;">Monsoon Guide</td><td style="padding:8px 12px;color:#475569;">Group shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Thu 3 Jul</td><td style="padding:8px 12px;"><span style="background:#7c3aed20;color:#a78bfa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">▶ REEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Cold storage surmai — ban explained</td><td style="padding:8px 12px;color:#475569;">Monsoon Guide</td><td style="padding:8px 12px;color:#475569;">Shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Fri 4 Jul</td><td style="padding:8px 12px;"><span style="background:#0066ff20;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">⧉ CAROUSEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Supermarket vs koli comparison</td><td style="padding:8px 12px;color:#475569;">Cold Truth</td><td style="padding:8px 12px;color:#475569;">Saves</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Sat 5 Jul</td><td style="padding:8px 12px;"><span style="background:#1877f220;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">📘 FB</span></td><td style="padding:8px 12px;color:#94a3b8;">Koli community: who they are</td><td style="padding:8px 12px;color:#475569;">Behind Source</td><td style="padding:8px 12px;color:#475569;">Group shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Mon 7 Jul</td><td style="padding:8px 12px;"><span style="background:#7c3aed20;color:#a78bfa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">▶ REEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Pomfret vs surmai — which to buy</td><td style="padding:8px 12px;color:#475569;">Know Your Fish</td><td style="padding:8px 12px;color:#475569;">Saves + follows</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Tue 8 Jul</td><td style="padding:8px 12px;"><span style="background:#0066ff20;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">⧉ CAROUSEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Koli community story carousel</td><td style="padding:8px 12px;color:#475569;">Behind Source</td><td style="padding:8px 12px;color:#475569;">Shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Wed 9 Jul</td><td style="padding:8px 12px;"><span style="background:#1877f220;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">📘 FB</span></td><td style="padding:8px 12px;color:#94a3b8;">Why fish curry doesn't taste same</td><td style="padding:8px 12px;color:#475569;">Cold Truth</td><td style="padding:8px 12px;color:#475569;">Recognition shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Thu 10 Jul</td><td style="padding:8px 12px;"><span style="background:#7c3aed20;color:#a78bfa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">▶ REEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Fish curry doesn't taste same — why</td><td style="padding:8px 12px;color:#475569;">Cold Truth</td><td style="padding:8px 12px;color:#475569;">Highest shares</td></tr>
+        <tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px 12px;color:#e2e8f0;">Fri 11 Jul</td><td style="padding:8px 12px;"><span style="background:#0066ff20;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">⧉ CAROUSEL</span></td><td style="padding:8px 12px;color:#94a3b8;">Wild catch returns — be ready</td><td style="padding:8px 12px;color:#475569;">The Wait</td><td style="padding:8px 12px;color:#475569;">Waitlist signups</td></tr>
+        <tr><td style="padding:8px 12px;color:#e2e8f0;">Sat 12 Jul</td><td style="padding:8px 12px;"><span style="background:#1877f220;color:#60a5fa;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;">📘 FB</span></td><td style="padding:8px 12px;color:#94a3b8;">Ban lifting — first catch preview</td><td style="padding:8px 12px;color:#475569;">The Wait</td><td style="padding:8px 12px;color:#475569;">Waitlist signups</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:20px;padding:14px;background:#0f172a;border-radius:10px;font-size:11px;color:#64748b;line-height:1.7;">
+      <strong style="color:#94a3b8;">Season variable to use throughout:</strong><br>
+      <code style="color:#60a5fa;">Monsoon ban active. Wild Surmai, Pomfret, Rawas not available from boats. Farmed prawns, Bhetki/Barramundi, Rohu, Catla, Mud crab in season and good quality now.</code><br><br>
+      <strong style="color:#94a3b8;">Posting times:</strong> Reels → 6 PM weekdays. Carousels → 12 PM midweek. FB Posts → 8 AM any day.
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
