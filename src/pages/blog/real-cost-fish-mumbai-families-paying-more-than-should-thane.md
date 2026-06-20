@@ -44,9 +44,9 @@ Our fish comes directly from the day's catch. We pride ourselves on offering "Ne
 
 We eliminate the guesswork. Every fish on Relifish comes with a unique Freshness Score, based on objective parameters like gill colour, eye clarity, and skin texture, assessed by our experts. This empowers you to make informed choices, confident in the quality of your purchase. No more wondering if what you see is truly what you get.
 
-### 4. 100% Odour-Free Refund Guarantee: Peace of Mind for Your Kitchen
+### 4. Odour-Free Packaging: Peace of Mind for Your Kitchen
 
-Worried about the dreaded "fishy smell" that lingers? We tackle this head-on. Our 100% Odour-Free Refund Guarantee means if your fish smells anything less than fresh upon delivery, we'll refund you, no questions asked. We are confident in our sourcing and handling practices, ensuring your kitchen remains a pleasant space.
+Worried about the dreaded "fishy smell" that lingers? Every order is vacuum-sealed in food-grade, leak-proof pouches. Genuinely fresh fish sealed right, delivered cold — your kitchen stays a pleasant space.
 
 ### 5. Supporting Local Koli Sellers: A Community-Driven Approach
 

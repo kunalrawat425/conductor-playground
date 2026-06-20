@@ -40,9 +40,9 @@ While others deliver fish in simple plastic bags that leak and spread smells, we
 
 We pack your vacuum pouches on fresh ice gel packs inside premium, clean insulated boxes. Our delivery team delivers it directly to your doorstep or your society's lobby reception, ensuring the cold chain is never broken and your home remains odour-free.
 
-### 4. Our 100% Odour-Free Refund Guarantee
+### 4. Packed for Your Kitchen
 
-We are so confident in the superior hygiene and freshness of our catch that we offer a no-questions-asked, 100% Odour-Free Refund Guarantee. If, for any reason, your delivery isn't perfectly sealed or smells less than fresh upon arrival, [contact us](mailto:relifishstore@gmail.com) for an immediate refund.
+Every order is vacuum-sealed in thick, food-grade pouches — airtight, leak-proof, and odour-contained. If you have questions about your order, [contact us](mailto:relifishstore@gmail.com).
 
 ---
 

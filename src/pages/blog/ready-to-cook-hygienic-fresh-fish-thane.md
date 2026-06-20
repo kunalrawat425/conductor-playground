@@ -34,7 +34,7 @@ These worries often lead families to buy seafood less frequently, or settle for 
 
 Relifish operates as your "Freshness Trust Layer," designed specifically for high-middle-class lifestyles that value both time and absolute hygiene. We handle the entire preparation process in a state-of-the-art sanitised environment, so all you have to do is open the pack and cook.
 
-Here is how we guarantee the cleanest seafood experience in Thane:
+Here is how Relifish delivers the cleanest seafood experience in Thane:
 
 ### 1. Selected at Source, Processed under Strict Sanitation
 Our premium catch is hand-selected immediately upon landing. It is transferred directly in temperature-controlled boxes to our clean, sanitised processing facility. Every prep chef wears protective gear, including aprons, hairnets, masks, and sanitised gloves. All cutting boards and custom tools are sterilised before and after every order.
@@ -50,9 +50,9 @@ We pack the vacuum-sealed pouches inside premium, clean insulated boxes filled w
 
 ---
 
-## 100% Odour-Free Refund Guarantee
+## Odour-Free by Design
 
-We stand behind our hygiene standards with an iron-clad **100% Odour-Free Guarantee**. If your delivery has any leak, or if you detect any unpleasant odour upon opening it, [contact us](mailto:relifishstore@gmail.com) for an immediate refund, no questions asked. We take the risk so you can enjoy premium dining with total confidence.
+Every order is packed in food-grade vacuum-sealed pouches — airtight, leak-proof, and safe to store next to other refrigerator items. For any concerns about your delivery, [contact us](mailto:relifishstore@gmail.com).
 
 ---
 

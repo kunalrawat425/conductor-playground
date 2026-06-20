@@ -82,11 +82,9 @@ Just honest fish, handled by people who depend on that honesty for their livelih
 
 ---
 
-## 🛡️ The 100% Freshness Guarantee
+## Direct Sourcing, No Middlemen
 
-We are confident enough in our direct sourcing that every Relifish order comes with a simple promise: if anything smells off or feels wrong, [contact us](mailto:relifishstore@gmail.com) for an instant, no-questions-asked refund.
-
-We can offer this because we know exactly where the fish came from this morning.
+We know exactly where every order came from — caught that morning, listed by name, delivered same day. If you have any concerns about your delivery, [contact us](mailto:relifishstore@gmail.com).
 
 ---
 

@@ -38,7 +38,7 @@ Here is why Thane societies are coordinating group orders:
 *   **100% Odour-Free Vacuum-Sealed Pouches:** We pack all orders in thick, double-layered vacuum pouches. The seal locks in natural juices and blocks all odours. When picking up your order from the lobby, there is zero smell.
 *   **Direct Delivery to Insulated Stations:** Instead of multiple riders arriving throughout the day, we make a single, clean delivery to a dedicated Relifish station in your lobby or security gate, keeping your complex secure and clean.
 *   **Transparent landing Rates:** By ordering together, you get direct, fair prices from landing sources, bypassing app markups without compromising on quality.
-*   **100% Odour-Free Guarantee:** Our iron-clad freshness guarantee applies to all society orders. If anything leaks or smells less than fresh, you get an instant refund.
+*   **Odour-Free Vacuum Sealing:** All society orders are packed in food-grade vacuum pouches — no leaks, no smell in the lobby.
 
 ---
 

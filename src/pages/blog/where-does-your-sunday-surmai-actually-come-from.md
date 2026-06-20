@@ -45,11 +45,11 @@ It is caught, cleaned, and delivered **under 4 hours.**
 
 ---
 
-## 🛡️ The 100% Odour-Free Guarantee
+## Freshness You Can Smell
 
-Genuinely fresh fish smells like the sea, not like ammonia. 
+Genuinely fresh fish smells like the sea, not like ammonia. That's how you know it was caught this morning.
 
-We are so confident in our direct-from-boat sourcing that we offer an absolute promise: if your order from Relifish has any bad smell or feels stale, [contact us](mailto:relifishstore@gmail.com) for an instant, no-questions-asked refund. 
+If you have any concerns about your order, [contact us](mailto:relifishstore@gmail.com).
 
 By skipping the middleman, you get premium Surmai that is safe for your children, full of natural ocean juices, and supports traditional Koli fisherwomen who have run our coast's distribution backbone for generations.
 

@@ -57,8 +57,8 @@ We connect you directly to trusted local Koli sellers in Thane. No middlemen, no
 
 1.  **Direct from Koli Sellers:** We eliminate the layers of intermediaries. You pay what the Koli sellers genuinely charge, reflecting the day's mandi rate, not an inflated app price.
 2.  **Transparency & Fair Pricing:** While prices will still fluctuate daily (because the ocean doesn't take orders!), you'll know you're getting a direct-from-source price. No hidden charges, no surprises.
-3.  **Guaranteed Freshness Score:** Every listing comes with a 'Freshness Score,' giving you complete confidence. You'll know exactly how recently your fish was caught.
-4.  **Regret Aversion: No More Worry About Smell or Chemicals!** Many worry, "Will my kitchen smell?" or "Is this fish chemically treated?" With Relifish, these anxieties disappear. Our fish is genuinely fresh, never frozen, and free from any chemical treatments. We even offer a **100% Odour-Free Refund Guarantee**. If you're not absolutely delighted with the freshness, we'll make it right. No more fearing that unpleasant fishy smell that lingers!
+3.  **Freshness Score on Every Listing:** Every listing shows how recently your fish was caught — gill colour, eye clarity, skin texture, assessed by the seller. No guesswork.
+4.  **No Cold Storage, No Chemicals:** Our fish is genuinely fresh, never frozen, free from chemical treatments. Same-day catch means no need for preservatives or masking agents.
 5.  **Convenience, Reimagined:** Order from the comfort of your home in Hiranandani Estate, Ghodbunder Road, Majiwada, or Kasarvadavali, and get **2-hour doorstep delivery**. No waking up at dawn, no smelly markets, just pure convenience without compromising on freshness.
 
 Imagine cooking a delicious Pomfret curry tonight, knowing that the fish was caught just hours ago, sourced directly from a trusted Koli family, and delivered to you at a fair, transparent price. That’s the Relifish promise.
