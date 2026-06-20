@@ -9,7 +9,7 @@ export const AREAS = {
     metaDescription: "Buy fresh fish online with same-day delivery in Thane. Direct from local sellers. No middleman, no cold storage.",
     contentHeadline: "Fresh Fish Delivery in Thane",
     contentSubheading: "Same-day & next-day pre-order from local Thane fish sellers",
-    keywords: ["thane"],
+    keywords: [],
   },
   kandivali: {
     name: "Kandivali",
