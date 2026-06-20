@@ -42,7 +42,7 @@ We pack your vacuum pouches on fresh ice gel packs inside premium, clean insulat
 
 ### 4. Our 100% Odour-Free Refund Guarantee
 
-We are so confident in the superior hygiene and freshness of our catch that we offer a no-questions-asked, 100% Odour-Free Refund Guarantee. If, for any reason, your delivery isn't perfectly sealed or smells less than fresh upon arrival, we will issue an immediate refund via WhatsApp.
+We are so confident in the superior hygiene and freshness of our catch that we offer a no-questions-asked, 100% Odour-Free Refund Guarantee. If, for any reason, your delivery isn't perfectly sealed or smells less than fresh upon arrival, [contact us](mailto:relifishstore@gmail.com) for an immediate refund.
 
 ---
 

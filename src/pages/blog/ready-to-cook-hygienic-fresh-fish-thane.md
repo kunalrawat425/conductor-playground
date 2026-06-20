@@ -52,7 +52,7 @@ We pack the vacuum-sealed pouches inside premium, clean insulated boxes filled w
 
 ## 100% Odour-Free Refund Guarantee
 
-We stand behind our hygiene standards with an iron-clad **100% Odour-Free Guarantee**. If your delivery has any leak, or if you detect any unpleasant odour upon opening it, we will issue an immediate refund via WhatsApp, no questions asked. We take the risk so you can enjoy premium dining with total confidence.
+We stand behind our hygiene standards with an iron-clad **100% Odour-Free Guarantee**. If your delivery has any leak, or if you detect any unpleasant odour upon opening it, [contact us](mailto:relifishstore@gmail.com) for an immediate refund, no questions asked. We take the risk so you can enjoy premium dining with total confidence.
 
 ---
 

@@ -84,7 +84,7 @@ Just honest fish, handled by people who depend on that honesty for their livelih
 
 ## 🛡️ The 100% Freshness Guarantee
 
-We are confident enough in our direct sourcing that every Relifish order comes with a simple promise: if anything smells off or feels wrong, ping us on WhatsApp for an instant, no-questions-asked refund.
+We are confident enough in our direct sourcing that every Relifish order comes with a simple promise: if anything smells off or feels wrong, [contact us](mailto:relifishstore@gmail.com) for an instant, no-questions-asked refund.
 
 We can offer this because we know exactly where the fish came from this morning.
 
@@ -92,7 +92,7 @@ We can offer this because we know exactly where the fish came from this morning.
 
 **→ [Check Today's Available Catch at Relifish](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=monsoon_guide_thane)**
 
-*Prices are updated daily by our sellers. The monsoon window closes August 1 — that's when the first wild catch returns. Subscribe to our WhatsApp community to get notified the moment surmai season is back.*
+*Prices are updated daily by our sellers. The monsoon window closes August 1 — that's when the first wild catch returns. [Subscribe to updates](mailto:relifishstore@gmail.com) to get notified the moment surmai season is back.*
 
 ---
 

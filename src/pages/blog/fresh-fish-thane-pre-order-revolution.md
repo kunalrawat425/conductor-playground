@@ -42,7 +42,7 @@ Our professional culinary team handles the entire prep work in a sterile facilit
 We seal all orders in thick, food-grade vacuum pouches. The airtight seal locks in the fish's natural juices and firm texture without freezing it. More importantly, it keeps the package 100% odour-free, so you can store it in your refrigerator next to other foods with total confidence.
 
 ### 4. 100% Odour-Free Guarantee
-We stand behind our hygiene standards with a no-questions-asked, 100% Odour-Free Guarantee. If your delivery package leaks or smells less than fresh upon arrival, we will issue an immediate refund via WhatsApp.
+We stand behind our hygiene standards with a no-questions-asked, 100% Odour-Free Guarantee. If your delivery package leaks or smells less than fresh upon arrival, [contact us](mailto:relifishstore@gmail.com) for an immediate refund.
 
 ---
 
