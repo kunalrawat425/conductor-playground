@@ -3,7 +3,7 @@
 ### Source of Truth: REQUIREMENTS.md (product facts, order flows, capabilities)
 ### Verified against: product-marketing-context.md, seo-content-engine.md, all 11 blog posts, launch playbook
 
-**Platform:** Mumbai's Hyperlocal Fresh Fish Marketplace — pure marketplace model (buyers ↔ hyperlocal fish sellers; Relifish takes 6.5% commission; WhatsApp: 9152207607)
+**Platform:** Mumbai's Hyperlocal Fresh Fish Marketplace — pure marketplace model (buyers ↔ hyperlocal fish sellers; zero commission currently; WhatsApp: 9152207607)
 
 ---
 

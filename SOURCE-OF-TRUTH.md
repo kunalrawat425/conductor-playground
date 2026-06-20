@@ -8,7 +8,7 @@
 
 **Name:** Relifish  
 **Category:** Mumbai's Hyperlocal Fresh Fish Marketplace  
-**Model:** Pure marketplace — buyers pay hyperlocal fish sellers via UPI; Relifish takes **6.5% commission**. Relifish does NOT source, catch, or deliver fish. Sellers do.  
+**Model:** Pure marketplace — buyers pay hyperlocal fish sellers via UPI; **Relifish currently charges zero commission** (early growth phase). Relifish does NOT source, catch, or deliver fish. Sellers do.  
 **Website:** relifish.store  
 **WhatsApp:** 9152207607 (⚠️ NOT 9870619974 — that number is retired)  
 **Hours:** 7:30 AM – 9:00 PM  
@@ -31,17 +31,12 @@
 
 ---
 
-## Service Areas (Current — Thane, Mumbai Metro)
+## Service Areas
 
-| Area | Priority |
-|------|----------|
-| Hiranandani Estate | 1 — beachhead |
-| Lodha Splendora / Lodha Amara / Ghodbunder Road | 2 |
-| Majiwada / Kasarvadavali | 3 |
-| Kalwa / Thane West | 4 |
-| Puranik City / Rustomjee | 5 |
+**All Mumbai** — any verified hyperlocal seller in Mumbai can list; any buyer in Mumbai can order.
+Current seller density is highest in Thane (Hiranandani Estate, Lodha, Majiwada, Kasarvadavali, Ghodbunder Road, Kalwa, Puranik, Rustomjee) but the platform is open across Mumbai.
 
-**Positioning:** "Mumbai's Hyperlocal Fresh Fish Marketplace" — Thane is the current serving area within Mumbai Metro. NOT "Thane-only marketplace."
+**Positioning:** "Mumbai's Hyperlocal Fresh Fish Marketplace" — city-wide, not neighborhood-locked.
 
 ---
 
@@ -95,7 +90,7 @@
 | Instagram | @relifish.store |
 | Email | contact@relifish.store |
 | Hours | 7:30 AM – 9:00 PM |
-| Commission | 6.5% per order |
+| Commission | 0% currently (early growth — no fee charged to sellers or buyers) |
 
 ---
 
