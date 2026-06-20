@@ -1,17 +1,20 @@
 ---
 import LandingLayout from "../../layouts/LandingLayout.astro";
 
-const allPosts = await Astro.glob('./*.md');
-const posts = allPosts
-  .map(p => ({
-    url: p.url,
-    title: p.frontmatter.title,
-    description: p.frontmatter.description,
-    pubDate: p.frontmatter.pubDate,
-    image: p.frontmatter.image,
-    tags: p.frontmatter.tags || [],
-    author: p.frontmatter.author,
-  }))
+const rawPosts = import.meta.glob('./*.md', { eager: true });
+const posts = Object.entries(rawPosts)
+  .map(([file, mod]: [string, any]) => {
+    const slug = file.replace('./', '').replace('.md', '');
+    return {
+      url: `/blog/${slug}`,
+      title: mod.frontmatter.title,
+      description: mod.frontmatter.description,
+      pubDate: mod.frontmatter.pubDate,
+      image: mod.frontmatter.image,
+      tags: mod.frontmatter.tags || [],
+      author: mod.frontmatter.author,
+    };
+  })
   .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 ---
 <LandingLayout
@@ -30,8 +33,8 @@ const posts = allPosts
       <p style="font:400 17px/1.6 Inter;color:rgba(255,255,255,0.75);margin:0 auto 28px;max-width:480px;">
         Honest guides on monsoon fishing bans, koli sellers, freshness tests, health benefits, and buying fresh fish in Thane.
       </p>
-      <a href="https://wa.me/919152207607" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0a2472;font:700 15px Inter;padding:14px 28px;border-radius:10px;text-decoration:none;box-shadow:0 4px 24px rgba(0,0,0,0.18);">
-        🐟 Order Fresh Fish on WhatsApp
+      <a href="/shop" style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0a2472;font:700 15px Inter;padding:14px 28px;border-radius:10px;text-decoration:none;box-shadow:0 4px 24px rgba(0,0,0,0.18);">
+        🐟 Browse Fresh Fish
       </a>
     </div>
   </section>
@@ -80,7 +83,6 @@ const posts = allPosts
       <p style="font:400 15px/1.5 Inter;color:#334155;margin:0 0 22px;">Same-day catch from local koli sellers in Thane. No middlemen. No cold chain.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
         <a href="/shop" style="display:inline-flex;align-items:center;gap:6px;background:#0066ff;color:#fff;font:700 14px Inter;padding:12px 24px;border-radius:9px;text-decoration:none;">Browse Sellers →</a>
-        <a href="https://wa.me/919152207607" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;font:700 14px Inter;padding:12px 24px;border-radius:9px;text-decoration:none;">Order on WhatsApp</a>
       </div>
     </div>
   </section>

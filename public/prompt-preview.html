@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — Imagen 4 Prompt Pack</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#060b16;font-family:-apple-system,'Inter',sans-serif;color:#fff;padding-bottom:80px;}
+.hero{background:linear-gradient(135deg,#0a2472,#0066ff);padding:48px 24px 40px;text-align:center;}
+.hero h1{font-size:32px;font-weight:900;margin-bottom:8px;}
+.hero p{font-size:14px;color:rgba(255,255,255,0.6);max-width:560px;margin:0 auto;}
+.badge-row{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap;}
+.badge{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:100px;padding:5px 14px;font-size:11px;font-weight:700;}
+
+/* constraints bar */
+.constraints{background:#0f1117;border-bottom:1px solid #1e293b;padding:14px 24px;}
+.constraints-inner{max-width:900px;margin:0 auto;display:flex;gap:24px;flex-wrap:wrap;}
+.con-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;}
+.con-item span{color:#10b981;font-size:14px;}
+
+/* section */
+.section{max-width:1100px;margin:48px auto 0;padding:0 20px;}
+.section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.14em;color:#475569;margin-bottom:24px;display:flex;align-items:center;gap:12px;}
+.section-title::after{content:'';flex:1;height:1px;background:#1e293b;}
+
+/* prompt card */
+.prompt-card{background:#111827;border:1px solid #1e293b;border-radius:16px;overflow:hidden;margin-bottom:24px;}
+.pc-header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #1e293b;}
+.pc-day{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#475569;background:#1e293b;padding:4px 10px;border-radius:100px;}
+.pc-name{font-size:14px;font-weight:700;color:#e2e8f0;}
+.pc-dim{margin-left:auto;font-size:10px;color:#475569;background:#0f172a;padding:3px 8px;border-radius:6px;font-family:monospace;}
+.pc-body{display:grid;grid-template-columns:280px 1fr;gap:0;}
+.pc-visual{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:280px;position:relative;border-right:1px solid #1e293b;}
+.pc-prompt{padding:20px;overflow:auto;max-height:380px;}
+.pc-prompt h5{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#0066ff;margin-bottom:10px;}
+.prompt-text{font-size:11px;line-height:1.75;color:#94a3b8;font-family:'Courier New',monospace;white-space:pre-wrap;}
+.trust-tags{display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px;border-top:1px solid #1e293b;}
+.trust-tag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;}
+.trust-tag.human{background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed40;}
+.trust-tag.env{background:#0f766e20;color:#2dd4bf;border:1px solid #0f766e40;}
+.trust-tag.signal{background:#b4530020;color:#fb923c;border:1px solid #b4530040;}
+.trust-tag.dimension{background:#1d4ed820;color:#60a5fa;border:1px solid #1d4ed840;}
+
+/* mockup visuals */
+/* REEL phone */
+.reel-frame{width:160px;height:280px;background:#0a0a0a;border-radius:20px;overflow:hidden;position:relative;border:2px solid #222;}
+.reel-frame .rf-img{width:100%;height:100%;display:flex;align-items:flex-end;padding:16px;}
+.reel-frame .rf-bottom{position:relative;z-index:2;}
+.reel-frame .rf-handle{font-size:10px;font-weight:700;color:#fff;}
+.reel-frame .rf-caption{font-size:8px;color:rgba(255,255,255,0.7);line-height:1.4;margin-top:4px;}
+.reel-frame .play-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-size:16px;}
+
+/* SQUARE card */
+.sq-frame{width:200px;height:200px;background:#0a0a0a;border-radius:12px;overflow:hidden;position:relative;border:1px solid #222;}
+
+/* ── VISUAL SCENES ── */
+/* scene: dock woman */
+.scene-dock{background:linear-gradient(180deg,#0a1628 0%,#162035 40%,#1a2840 70%,#0d1520 100%);}
+.scene-dock .horizon{position:absolute;bottom:35%;left:0;right:0;height:1px;background:rgba(255,150,50,0.3);}
+.scene-dock .lights{position:absolute;bottom:32%;left:0;right:0;display:flex;justify-content:space-around;}
+.scene-dock .light{width:6px;height:6px;border-radius:50%;background:#ff9500;box-shadow:0 0 12px 4px rgba(255,149,0,0.4);}
+.scene-dock .figure{position:absolute;bottom:28%;left:50%;transform:translateX(-50%);text-align:center;font-size:24px;}
+.scene-dock .water-reflect{position:absolute;bottom:0;left:0;right:0;height:32%;background:linear-gradient(0deg,rgba(255,149,0,0.08),transparent);}
+
+/* scene: koli woman portrait */
+.scene-portrait{background:linear-gradient(180deg,#1a1008 0%,#2a1c0e 50%,#1a1008 100%);}
+.scene-portrait .bokeh{position:absolute;inset:0;background:radial-gradient(circle at 70% 30%,rgba(255,150,50,0.15),transparent 60%);}
+.scene-portrait .face{position:absolute;top:12%;left:50%;transform:translateX(-50%);text-align:center;}
+.scene-portrait .face-emoji{font-size:48px;}
+.scene-portrait .saree-color{position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(0deg,rgba(255,149,0,0.25),transparent);}
+
+/* scene: child eating */
+.scene-child{background:linear-gradient(135deg,#fff8f0,#fff5e8);}
+.scene-child .table-surface{position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(0deg,#f5e6d0,transparent);}
+.scene-child .child-figure{position:absolute;bottom:20%;left:50%;transform:translateX(-50%);text-align:center;font-size:36px;}
+.scene-child .plate{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);width:50px;height:20px;border-radius:50%;background:#c0c0c0;display:flex;align-items:center;justify-content:center;font-size:12px;}
+.scene-child .light{position:absolute;top:0;right:0;width:60%;height:100%;background:radial-gradient(ellipse at 80% 20%,rgba(255,200,100,0.3),transparent 70%);}
+
+/* scene: fresh fish flat-lay */
+.scene-flatlay{background:#1a1a1a;}
+.scene-flatlay .items{display:flex;justify-content:center;align-items:center;height:100%;gap:8px;flex-wrap:wrap;padding:16px;}
+.scene-flatlay .fish-icon{font-size:28px;}
+.scene-flatlay .prawn{font-size:20px;}
+.scene-flatlay .herbs{font-size:14px;}
+
+/* scene: supermarket contrast */
+.scene-split{display:grid;grid-template-columns:1fr 1fr;}
+.scene-split .left-sup{background:#e8f0f8;display:flex;align-items:center;justify-content:center;font-size:28px;filter:saturate(0.4);}
+.scene-split .right-fresh{background:linear-gradient(135deg,#1a2a1a,#2a4a2a);display:flex;align-items:center;justify-content:center;font-size:28px;}
+
+/* scene: boats at sea */
+.scene-boats{background:linear-gradient(180deg,#1a2a40 0%,#0d1a2e 40%,#0a1520 100%);}
+.scene-boats .sun-ray{position:absolute;top:0;left:50%;transform:translateX(-50%);width:80%;height:70%;background:radial-gradient(ellipse at 50% 0%,rgba(255,200,50,0.2),transparent 70%);}
+.scene-boats .boat-row{position:absolute;bottom:25%;left:0;right:0;display:flex;justify-content:center;gap:12px;font-size:20px;}
+.scene-boats .water{position:absolute;bottom:0;left:0;right:0;height:28%;background:linear-gradient(0deg,#0d1a2e,rgba(13,26,46,0.5));}
+.scene-boats .water-shim{position:absolute;bottom:25%;left:0;right:0;height:3%;background:linear-gradient(90deg,transparent,rgba(255,200,50,0.15),transparent);}
+
+/* scene: fish on black */
+.scene-fish-black{background:#000;}
+.scene-fish-black .fish-spotlight{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:56px;filter:drop-shadow(0 0 20px rgba(255,255,255,0.3)) drop-shadow(0 4px 8px rgba(0,0,0,0.8));transform:translate(-50%,-50%) rotate(-20deg);}
+
+/* scene: fish species */
+.scene-species{background:#1a1010;}
+.scene-species .fish-pair{display:flex;justify-content:center;gap:20px;height:100%;align-items:center;}
+.scene-species .sp-fish{text-align:center;}
+.scene-species .sp-fish .emoji{font-size:32px;display:block;margin-bottom:4px;}
+.scene-species .sp-fish .name{font-size:8px;color:#888;}
+
+/* scene: minimal navy */
+.scene-brand{background:#0a2472;}
+.scene-brand .fish-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:48px;filter:drop-shadow(0 0 16px rgba(96,165,250,0.4));}
+
+/* Dimension badge */
+.dim-pill{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:2px 6px;font-size:8px;font-family:monospace;color:rgba(255,255,255,0.6);}
+
+/* Copy button */
+.copy-btn{display:inline-flex;align-items:center;gap:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;margin-top:10px;transition:all 0.15s;}
+.copy-btn:hover{background:#334155;color:#e2e8f0;}
+.copy-btn:active{transform:scale(0.97);}
+
+/* neg prompt box */
+.neg-box{background:#1a0a0a;border:1px solid #3b1a1a;border-radius:10px;padding:16px 20px;margin-top:20px;}
+.neg-box h4{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#ef4444;margin-bottom:10px;}
+.neg-text{font-size:10px;font-family:monospace;color:#7f1d1d;line-height:1.6;}
+
+/* api block */
+.api-block{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:20px;margin-top:24px;}
+.api-block h4{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#60a5fa;margin-bottom:14px;}
+.api-block pre{font-size:11px;color:#94a3b8;line-height:1.7;overflow-x:auto;}
+
+/* priority table */
+.priority-table{width:100%;border-collapse:collapse;margin-top:16px;}
+.priority-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#475569;padding:6px 12px;border-bottom:1px solid #1e293b;}
+.priority-table td{padding:10px 12px;border-bottom:1px solid #0f172a;font-size:12px;color:#94a3b8;}
+.priority-table tr:hover td{background:#0f172a;}
+.p-badge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;}
+.p1{background:#7c3aed30;color:#a78bfa;}
+.p2{background:#0f766e30;color:#2dd4bf;}
+.p3{background:#1d4ed830;color:#60a5fa;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Relifish — Imagen 4 Ultra Prompt Pack</h1>
+  <p>20-day social calendar · High-trust human-first photography prompts · Dimensions + negative prompts included</p>
+  <div class="badge-row">
+    <div class="badge">Imagen 4 Ultra</div>
+    <div class="badge">1080x1920 Reels</div>
+    <div class="badge">1080x1080 Feed</div>
+    <div class="badge">15 Prompts</div>
+    <div class="badge">Human + Trust signals</div>
+  </div>
+</div>
+
+<div class="constraints">
+  <div class="constraints-inner">
+    <div class="con-item"><span>✓</span> No prices in any prompt</div>
+    <div class="con-item"><span>✓</span> No coupon/offer text</div>
+    <div class="con-item"><span>✓</span> No health guarantees</div>
+    <div class="con-item"><span>✓</span> Real humans, not models</div>
+    <div class="con-item"><span>✓</span> Authentic koli/Thane context</div>
+  </div>
+</div>
+
+<!-- ══════════════ REEL PROMPTS ══════════════ -->
+<div class="section">
+  <div class="section-title">Reel Covers · 1080×1920 (9:16)</div>
+
+  <!-- Asset 1A -->
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 1 · Asset 1A</div>
+      <div class="pc-name">Koli woman at Versova dock — primary launch Reel cover</div>
+      <div class="pc-dim">1080 × 1920</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual scene-dock">
+        <div class="horizon"></div>
+        <div class="lights">
+          <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+        </div>
+        <div class="figure">👩‍🦱🐟</div>
+        <div class="water-reflect"></div>
+        <div class="reel-frame" style="position:absolute;inset:12px;border-radius:20px;width:auto;height:auto;">
+          <div class="dim-pill">1080×1920</div>
+          <div class="play-btn">▶</div>
+          <div class="rf-img scene-dock" style="height:100%;">
+            <div class="rf-bottom">
+              <div class="rf-handle">@relifish.store</div>
+              <div class="rf-caption">The fish at your supermarket<br/>is probably 2-3 days old.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt</h5>
+        <div class="prompt-text">Ultra-photorealistic editorial photograph, 1080x1920 portrait.
+
+Subject: A middle-aged Indian koli woman (40s, sun-weathered skin, bright eyes, wearing a cotton saree in teal-orange, pallu tucked at waist) holding a gleaming, whole Surmai fish with both hands. She looks directly into lens with quiet confidence — serious, proud, knowledgeable. NOT smiling.
+
+Setting: Versova fish dock at 5:30 AM. Behind her: wooden fishing boats, morning mist over Arabian Sea, amber dock lights creating bokeh. Foreground: crushed ice, silver fish scales catching light.
+
+Lighting: Golden hour mixed with blue-grey pre-dawn. Key light from left (warm). Rim light from right (cold, from ocean horizon). No flash. Skin texture visible. Eyes sharp.
+
+Composition: Rule-of-thirds. Woman occupies left 60%. Fish is hero prop — fills center. Right side: negative space (dark water) for text overlay. Camera angle: slightly below eye level — creates authority.
+
+Trust signals: Real hands (fish-handling calluses visible), authentic environment, natural expression, authentic koli clothing.
+
+Color grade: Warm teal-orange palette. Deep shadows. Cinematic — National Geographic meets editorial food photography.
+
+NO text. NO logos. NO price tags. Shot on Hasselblad equivalent quality.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag human">👩 Real koli woman (40s)</div>
+      <div class="trust-tag human">🤲 Fish-handling calluses</div>
+      <div class="trust-tag env">⛵ Versova dock 5:30 AM</div>
+      <div class="trust-tag env">🌊 Morning mist + dock lights</div>
+      <div class="trust-tag signal">👁 Direct eye contact</div>
+      <div class="trust-tag signal">😐 No smile = authenticity</div>
+      <div class="trust-tag dimension">📐 1080×1920</div>
+    </div>
+  </div>
+
+  <!-- Asset 3A -->
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 3 · Asset 3A</div>
+      <div class="pc-name">Freshness press test — home cook's hands</div>
+      <div class="pc-dim">1080 × 1920</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual" style="background:#f5f0ea;">
+        <div class="dim-pill">1080×1920</div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;">
+          <div style="font-size:48px;">🤲🐟</div>
+          <div style="font-size:10px;color:#666;text-align:center;">Indian home cook's hands<br/>press test · window light<br/>Thane kitchen counter</div>
+        </div>
+        <div style="position:absolute;top:0;right:0;width:50%;height:100%;background:linear-gradient(270deg,rgba(255,200,100,0.25),transparent);"></div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt</h5>
+        <div class="prompt-text">Ultra-photorealistic close-up photograph, 1080x1920 portrait.
+
+Subject: Two hands — Indian home cook (woman, 35-45, clean nails without polish, slight turmeric stain on fingertips, gold wedding ring on left hand) performing freshness press test on whole fresh pomfret on clean white marble kitchen counter.
+
+Action: Right index finger pressed gently into flesh near dorsal area. Flesh is firm — minimal indent. Fish lays on marble counter. Water droplets visible on fish. Fish eye partially visible — clear, bright, reflective.
+
+Background: Residential kitchen counter, slightly blurred. Clean modern kitchen, natural window light from right. Steel tiffin box, curry leaf plant on windowsill visible but soft-focus.
+
+Lighting: Bright natural window light from right (golden morning). Soft fill from left (bounced off white walls). Warm and clean.
+
+Composition: Hands fill 70% of frame, center-lower. Fish occupies full width. Upper third: blurred kitchen background with clear negative space for title text.
+
+Trust signals: Real home kitchen (not commercial studio), Indian woman's hands (not model hands), turmeric stains = authenticity, wedding ring = relatable everyday person.
+
+Color grade: Warm, bright, morning-kitchen feel. Clean whites.
+
+NO text. NO logos. NO commercial setting.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag human">💍 Wedding ring visible</div>
+      <div class="trust-tag human">🌿 Turmeric stains on fingers</div>
+      <div class="trust-tag env">🏠 Real Thane apartment kitchen</div>
+      <div class="trust-tag env">🪴 Curry leaf plant on windowsill</div>
+      <div class="trust-tag signal">📸 No studio = authenticity</div>
+      <div class="trust-tag dimension">📐 1080×1920</div>
+    </div>
+  </div>
+
+  <!-- Asset 5A -->
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 5 · Asset 5A</div>
+      <div class="pc-name">Koli fisherman at 3AM dock — story Reel</div>
+      <div class="pc-dim">1080 × 1920</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual scene-boats" style="min-height:280px;position:relative;">
+        <div class="dim-pill">1080×1920</div>
+        <div class="sun-ray"></div>
+        <div class="boat-row">⛵🚤⛵🚤⛵</div>
+        <div class="water-shim"></div>
+        <div class="water"></div>
+        <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:28px;">👨‍🦱</div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt</h5>
+        <div class="prompt-text">Cinematic atmospheric photograph, 1080x1920 portrait.
+
+Scene: Versova fishing dock, pre-dawn 3:00-4:00 AM.
+
+Foreground: Weathered wooden fishing boat hull, painted blue-white, barnacles at waterline. Rope coiled on dock.
+
+Middle ground: Male Koli fisherman (50s, dark-tanned skin, checked lungi, white banyan/vest, rubber boots) carrying large wicker basket filled with glistening fish — walking toward camera from boat. Face slightly turned, not looking directly at camera — three-quarter profile. Expression: focused, purposeful, tired but proud.
+
+Background: Dark Arabian Sea. 2-3 other boats visible. Dock lights reflecting gold-orange on water. Horizon showing faintest dark-blue glow (pre-sunrise).
+
+Lighting: Practical dock lights overhead (warm orange sodium vapor quality). One light creates rim on fisherman's right shoulder. Deep shadows everywhere else.
+
+Atmosphere: Mist over water. Humid. Salt air feel through texture and mood.
+
+Composition: Fisherman positioned at golden ratio left. Boat takes right half. Sky/sea horizon at upper-third.
+
+Color grade: Very dark. Warm amber dock light vs cold blue ocean and sky. High contrast. Denis Villeneuve film quality.
+
+Mood: This is where your food comes from. Before 7 AM. Before you wake up.
+
+NO text. NO brand.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag human">👨 Koli fisherman 50s, real physique</div>
+      <div class="trust-tag human">🎽 Authentic clothing: lungi + banyan</div>
+      <div class="trust-tag env">⚓ Versova dock pre-dawn</div>
+      <div class="trust-tag env">🌊 Arabian Sea mist</div>
+      <div class="trust-tag signal">😔 Tired expression = authenticity</div>
+      <div class="trust-tag signal">🎬 Cinematic grade = premium perception</div>
+      <div class="trust-tag dimension">📐 1080×1920</div>
+    </div>
+  </div>
+
+  <!-- Asset 8A -->
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 8 · Asset 8A</div>
+      <div class="pc-name">Supermarket vs Koli split — rebel Reel</div>
+      <div class="pc-dim">1080 × 1920</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div class="scene-split" style="width:100%;height:100%;position:absolute;inset:0;">
+          <div class="left-sup">🏪🐟😐</div>
+          <div class="right-fresh">🐟✨😊</div>
+        </div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:80%;background:white;opacity:0.3;"></div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt</h5>
+        <div class="prompt-text">Split-screen editorial photograph, 1080x1920 portrait.
+
+Layout: Vertical split, 50-50.
+
+LEFT HALF — Supermarket: Cold clinical fish counter. Fluorescent lights. Fish in plastic wrap on styrofoam trays. Digital price display (numbers blurred). Plastic gloves on counter. Slightly dull fish eyes. Clinical white and blue. Slightly desaturated, cooler, fluorescent blue cast.
+
+RIGHT HALF — Koli market: Same frame position — Koli woman's hands (60s, weathered) presenting whole gleaming surmai directly on banana leaf. Natural light. Wet fish, vivid colors. No packaging. Warm, saturated, golden natural light.
+
+CENTER: Thin vertical line — like a mirror showing two realities of the same fish category.
+
+Bottom quarter: Both sides show a family at dinner table — Left side: uncertain expressions, muted tones. Right side: warm expressions, vivid warm tones. Subtle, not theatrical.
+
+Color treatment: Left half — slightly desaturated, cooler, fluorescent blue cast. Right half — warm, saturated, golden natural light.
+
+The LEFT side is recognizable — everyone has been in that supermarket. Recognition = credibility for the argument.
+
+NO text. NO logos. NO brand names visible.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag human">👨‍👩‍👧 Family dinner result shown</div>
+      <div class="trust-tag env">🏪 Real supermarket environment (left)</div>
+      <div class="trust-tag env">🌿 Banana leaf = authentic (right)</div>
+      <div class="trust-tag signal">⚖️ Contrast = instant message</div>
+      <div class="trust-tag signal">😐 Dull vs vivid colors = emotional proof</div>
+      <div class="trust-tag dimension">📐 1080×1920</div>
+    </div>
+  </div>
+
+  <!-- Asset 10A -->
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 10 · Asset 10A</div>
+      <div class="pc-name">Child eating fish — highest emotional trust</div>
+      <div class="pc-dim">1080 × 1920</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual scene-child">
+        <div class="dim-pill">1080×1920</div>
+        <div class="light"></div>
+        <div class="table-surface"></div>
+        <div class="child-figure">👶</div>
+        <div class="plate">🍛</div>
+        <div style="position:absolute;right:10%;bottom:30%;font-size:24px;">🤱</div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt</h5>
+        <div class="prompt-text">Warm lifestyle photograph, 1080x1920 portrait.
+
+Scene: Thane apartment dining table, weekend afternoon. Natural window light.
+
+Subject: Young child (5-7 years old, Indian, gender-neutral features) seated at table eating from steel plate. On plate: piece of cooked fish curry over rice. Child is mid-eating — not posed, genuinely focused on food. Expression: enjoying.
+
+Background parent element: Mother's hand (30s, bangle on wrist, no face visible) places fresh piece of fish from pan using spatula — the loving gesture of serving more. Hand extends from right side of frame, entering naturally.
+
+Table setting: Normal Indian home — steel plates, small steel glass of water, small bowl of dal. Not styled for a photoshoot. Real home.
+
+Window behind: Apartment window visible, afternoon light, Thane cityscape blurred outside — buildings suggest high-rise apartment context.
+
+Lighting: Soft natural window light. Warm. Golden hour afternoon quality. No harsh shadows on child's face.
+
+Color grade: Warm, golden, saturated. The colors of a happy home meal. Fish curry should look deeply appetizing.
+
+Composition: Child is hero, takes left 60% frame. Fish on plate at center. Mother's hand enters from right. Child's face at upper-third. Eye contact with plate (not camera) — documentary, not posed.
+
+Trust: Real apartment, real child (not model-child), real Indian steel plates, unstaged quality is intentional.
+
+NO text. NO logos.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag human">👶 Real child 5-7, not model</div>
+      <div class="trust-tag human">🤱 Mother's hand with bangle</div>
+      <div class="trust-tag env">🏠 Thane high-rise apartment</div>
+      <div class="trust-tag env">🥣 Steel plates (Indian home realism)</div>
+      <div class="trust-tag signal">😋 Mid-eat = unstaged authenticity</div>
+      <div class="trust-tag signal">🏙 City visible through window = hyperlocal</div>
+      <div class="trust-tag dimension">📐 1080×1920</div>
+    </div>
+  </div>
+
+</div><!-- end reel section -->
+
+<!-- ══════════════ PORTRAIT/TRUST ══════════════ -->
+<div class="section">
+  <div class="section-title">Trust Portraits · 1080×1080 (highest impact assets)</div>
+
+  <!-- Asset 7A -->
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 7 · Asset 7A</div>
+      <div class="pc-name">Koli seller portrait — primary trust image (use everywhere)</div>
+      <div class="pc-dim">1080 × 1080</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual scene-portrait" style="min-height:260px;">
+        <div class="dim-pill">1080×1080</div>
+        <div class="bokeh"></div>
+        <div class="face">
+          <div class="face-emoji">👩‍🦳</div>
+          <div style="font-size:9px;color:#a16207;margin-top:4px;">Koli seller · 55-65<br/>Saffron saree · Direct gaze</div>
+        </div>
+        <div style="position:absolute;bottom:15%;left:50%;transform:translateX(-50%);font-size:24px;">🐟🐟🐟</div>
+        <div class="saree-color"></div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt — PRIORITY ASSET</h5>
+        <div class="prompt-text">Editorial portrait photograph, 1080x1080 square.
+
+Subject: Indian Koli woman (55-65 years old). Sun-weathered dark skin, deep-set expressive eyes, grey hair pulled back, wearing bright cotton saree (saffron-yellow with red border). She is NOT smiling — looking directly at camera with quiet authority and decades of knowledge. Strong face. Dignified.
+
+Setting: She is seated/standing behind fish display — fresh fish laid on banana leaves on wooden table. Pomfret, surmai, prawn visible. All fish gleaming fresh.
+
+HANDS (most important): Both hands resting on table edge, in frame at bottom. Hands show age and labor — veins, calluses, henna faded but present. This is the most trust-signaling element in the image.
+
+Background: Slight bokeh of fish market behind her. Other vendors, baskets, yellow turmeric powder in steel bowl — all soft focus.
+
+Lighting: Bright overcast natural light (ideal for skin tones). Slight warm fill from left. Eyes are the brightest point in image.
+
+Composition: Face takes upper 60% of frame. Hands and fish take lower 40%. Eyes exactly at upper-third line. Direct eye contact with lens.
+
+Color grade: Warm but accurate skin tones. No heavy filter. Slight lift in shadows. Magazine editorial quality.
+
+Trust signals: Age (decades of fish knowledge), hands (thousands of fish handled), direct gaze (not performing), traditional clothing (authentic), real fish (not plastic display).
+
+NO text. NO logos.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag human">👩‍🦳 Age 55-65: decades of expertise visible</div>
+      <div class="trust-tag human">🤲 Aged hands: calluses + faded henna</div>
+      <div class="trust-tag human">😐 No smile: authority not performance</div>
+      <div class="trust-tag env">🐟 Real fish on banana leaves</div>
+      <div class="trust-tag env">🌿 Real market bokeh background</div>
+      <div class="trust-tag signal">👁 Direct eye contact = trust anchor</div>
+      <div class="trust-tag signal">👘 Authentic saffron saree = cultural truth</div>
+      <div class="trust-tag dimension">📐 1080×1080 (use as feed post + stories)</div>
+    </div>
+  </div>
+
+  <!-- Asset 19A -->
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 19 · Asset 19A</div>
+      <div class="pc-name">Real seller mid-explanation — most powerful single image</div>
+      <div class="pc-dim">1080 × 1080</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual" style="background:linear-gradient(180deg,#1a1008,#2a1c0e);position:relative;min-height:260px;">
+        <div class="dim-pill">1080×1080</div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;text-align:center;padding:20px;">
+          <div style="font-size:40px;">👩‍🦳🗣</div>
+          <div style="font-size:10px;color:#a16207;line-height:1.6;">Mid-sentence · eyes focused on customer<br/>Pomfret in both weathered hands<br/>30-year market veteran<br/>Green-orange cotton saree</div>
+          <div style="font-size:18px;margin-top:8px;">🐟🐡🦐</div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:30%;background:linear-gradient(0deg,rgba(255,149,0,0.1),transparent);"></div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt — HIGHEST TRUST ASSET</h5>
+        <div class="prompt-text">Documentary portrait photograph, 1080x1080 square.
+
+Subject: Indian Koli fish seller woman (55-70 years). White hair, or salt-and-pepper, pinned back. Deep-set eyes — expressive, intelligent. Well-worn face. She wears cotton saree (green and orange, modest print). Single gold stud earring. Mangalsutra visible. No makeup.
+
+Her hands (CRITICAL): Both hands hold a medium pomfret fish — natural grip, the way someone holds something they've held thousands of times. Hands: aged, brown, calloused, slight swollen knuckle on one finger from decades of cold water work. These hands tell a 30-year story.
+
+Setting: Her actual stall. Fish on banana leaves in front of her. Weighing scale (old style, brass pan) visible to her right. Stack of newspapers for wrapping. Price board behind her — blurred, illegible. Chaos and color of real fish market visible as rich bokeh in background.
+
+Expression: She is mid-sentence — slightly open mouth, eyes focused on whoever she's speaking to (camera stand-in). She is explaining something. The expert explaining to the student. NOT smiling for a photo.
+
+Light: Beautiful overcast natural light. Even. Truthful to her skin tone.
+
+Composition: Face takes upper 40%. Her hands + fish take center 40%. Lower 20%: edge of stall, fish on leaves. Left-third composition, right side shows market bokeh.
+
+WHY THIS WORKS: This photo cannot be faked. A marketing agency cannot create this. It is evidence of a real person, real knowledge, real community.
+
+NO text visible. NO logos.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag human">👩‍🦳 55-70: maximum expertise perception</div>
+      <div class="trust-tag human">🤲 Swollen knuckle: 30 years of cold water</div>
+      <div class="trust-tag human">🗣 Mid-sentence: documentary not posed</div>
+      <div class="trust-tag env">⚖️ Brass weighing scale = old school trust</div>
+      <div class="trust-tag env">📰 Newspaper stack = real market</div>
+      <div class="trust-tag signal">No makeup · no smile · no pose = cannot be faked</div>
+      <div class="trust-tag dimension">📐 1080×1080</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════ FLAT-LAY ══════════════ -->
+<div class="section">
+  <div class="section-title">Flat-lay / Product · 1080×1080</div>
+
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 2 · Asset 2B</div>
+      <div class="pc-name">Fresh seafood flat-lay — "what IS available" slide</div>
+      <div class="pc-dim">1080 × 1080</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual scene-flatlay">
+        <div class="dim-pill">1080×1080</div>
+        <div class="items">
+          <div class="fish-icon">🦐</div><div class="fish-icon">🦐</div><div class="fish-icon">🦐</div>
+          <div class="fish-icon">🐟</div>
+          <div class="herbs">🌿🌶️</div>
+          <div class="prawn">🦐</div><div class="prawn">🦐</div>
+          <div style="font-size:16px;">🍋</div>
+        </div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt</h5>
+        <div class="prompt-text">Ultra-photorealistic flat-lay food photography, 1080x1080 square.
+
+Scene: Overhead flat-lay on dark wet slate surface (deep charcoal grey stone).
+
+Arranged beautifully (editorial, deliberate but natural-looking):
+- 6-8 large tiger prawns: bright orange-pink, raw, perfectly fresh, arranged in arc
+- 1 whole Barramundi/Bhetki: silver-white, gleaming, positioned diagonally
+- Fresh curry leaves: scattered naturally
+- A halved lime: cut side up, bright green-yellow
+- Small steel katori of rock salt: to the side
+- 3-4 green chilies: scattered
+
+Natural textures: Water droplets on fish and prawns. Wet slate. No artificial garnishes.
+
+Lighting: Diffused overhead (large softbox effect). Slight vignette at corners. Specular highlights on wet surfaces.
+
+Composition: Centered arrangement with breathing room at edges (for text overlay at top and bottom). Dense center, sparse edges.
+
+Color palette: Cool — grey slate, coral-orange prawns, silver fish. Pop of green from chilies/curry leaves. No warm filters.
+
+Mood: Aspirational yet real. Home cook inspiration.
+
+NO text. NO branding. NO price stickers.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag env">🪨 Dark wet slate = premium styling</div>
+      <div class="trust-tag env">💧 Water droplets = just-washed freshness</div>
+      <div class="trust-tag env">🌿 Steel katori = Indian kitchen authenticity</div>
+      <div class="trust-tag signal">📸 Editorial overhead = aspirational</div>
+      <div class="trust-tag dimension">📐 1080×1080</div>
+    </div>
+  </div>
+
+  <div class="prompt-card">
+    <div class="pc-header">
+      <div class="pc-day">Day 12 · Asset 12A</div>
+      <div class="pc-name">Pomfret vs Surmai — dark dramatic comparison</div>
+      <div class="pc-dim">1080 × 1920</div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-visual scene-species" style="min-height:260px;">
+        <div class="dim-pill">1080×1920</div>
+        <div class="fish-pair">
+          <div class="sp-fish"><span class="emoji">🐟</span><span class="name">POMFRET<br/>flat · delicate</span></div>
+          <div style="color:#444;font-size:20px;font-weight:900;">VS</div>
+          <div class="sp-fish"><span class="emoji">🐠</span><span class="name">SURMAI<br/>torpedo · firm</span></div>
+        </div>
+      </div>
+      <div class="pc-prompt">
+        <h5>Imagen 4 Ultra Prompt</h5>
+        <div class="prompt-text">Ultra-photorealistic food editorial, 1080x1920 portrait.
+
+Scene: Dark wet black slate surface. Two fish laid side by side, heads pointing upward.
+
+LEFT FISH: Whole fresh Pomfret (Paplet) — flat, disc-shaped, silver-white, delicate. Elegant, almost ornate.
+RIGHT FISH: Whole fresh Surmai (King Mackerel) — long, torpedo-shaped, silver-blue, powerful.
+
+Between the fish: Single folded banana leaf (dark green, slightly glossy).
+
+Around them: Minimal props — whole black peppercorns scattered, 2 dried red chillies, small lemon wedge (cut, vivid yellow).
+
+Both fish: Gleaming. Wet. Eyes clear. Gills red (freshness indicator). Scales catching light differently — Pomfret scales = fine and smooth, Surmai scales = coarser.
+
+Lighting: Two light sources — Warm side light from left (golden, creates dramatic shadows highlighting three-dimensional form). Dim fill from right. Top: slight overhead fill.
+
+Composition: Portrait orientation. Both fish vertical, parallel, occupying top 70% of frame. Props in lower 30%.
+
+Color: Dark, moody, cinematic. Black slate, silver fish, green banana leaf, red chilli.
+
+Mood: This is serious food. This is knowledge. Michelin Guide energy meets Indian fish market.
+
+NO text. NO branding.</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-text').textContent)">📋 Copy prompt</button>
+      </div>
+    </div>
+    <div class="trust-tags">
+      <div class="trust-tag env">🪨 Black slate = premium authority</div>
+      <div class="trust-tag env">🌿 Banana leaf = Indian market authenticity</div>
+      <div class="trust-tag signal">🔴 Red gills = visible freshness proof</div>
+      <div class="trust-tag signal">🎬 Michelin-grade photography = premium brand</div>
+      <div class="trust-tag dimension">📐 1080×1920</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════ TOOLS SECTION ══════════════ -->
+<div class="section">
+  <div class="section-title">Generation Setup</div>
+
+  <div style="background:#111827;border:1px solid #1e293b;border-radius:16px;padding:24px;">
+    <div class="neg-box">
+      <h4>Negative Prompt (add to every single generation)</h4>
+      <div class="neg-text">ugly, distorted, blurry, oversaturated, fake-looking, artificial, plastic fish, dead eyes on fish, price tags visible, price text, coupon text, offer text, health guarantee text, text watermarks, nsfw, cartoon style, illustration style (for photo prompts), white background, studio backdrop sweep, fake smiles, stock photo poses, stock photo lighting, commercial look, western faces, American kitchen, supermarket packaging visible and legible, brand logos visible, compression artifacts, low resolution</div>
+    </div>
+
+    <div class="api-block" style="margin-top:16px;">
+      <h4>Vertex AI — Python Code</h4>
+      <pre>import vertexai
+from vertexai.preview.vision_models import ImageGenerationModel
+
+vertexai.init(project="YOUR_PROJECT_ID", location="us-central1")
+model = ImageGenerationModel.from_pretrained("imagegeneration@006")
+
+NEGATIVE = "ugly, distorted, blurry, price tags, text watermarks, cartoon, white background, fake smiles, stock photo poses, brand logos, plastic fish"
+
+# Paste any prompt from this file
+PROMPT = """[PASTE PROMPT HERE]"""
+
+response = model.generate_images(
+    prompt=PROMPT,
+    negative_prompt=NEGATIVE,
+    number_of_images=4,          # generate 4, pick best
+    aspect_ratio="9:16",         # "9:16" Reel | "1:1" Feed | "16:9" FB
+    safety_filter_level="block_few",
+    person_generation="allow_adult",
+    add_watermark=False,
+    seed=42,                     # for reproducibility
+)
+
+for i, img in enumerate(response.images):
+    img.save(f"asset_{i+1}.png")
+    print(f"Saved asset_{i+1}.png")</pre>
+    </div>
+
+    <div style="margin-top:24px;">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#475569;margin-bottom:16px;">Generation Priority Order</div>
+      <table class="priority-table">
+        <tr><th>#</th><th>Asset</th><th>Day</th><th>Why first</th><th>Aspect</th></tr>
+        <tr><td><span class="p-badge p1">1</span></td><td>Koli seller portrait (7A)</td><td>Day 7</td><td>Reuse across 10+ posts. Highest trust. Generate 4 variants, pick 2.</td><td>1:1</td></tr>
+        <tr><td><span class="p-badge p1">2</span></td><td>Real seller mid-explain (19A)</td><td>Day 19</td><td>Most powerful single image. Irreplaceable authenticity.</td><td>1:1</td></tr>
+        <tr><td><span class="p-badge p1">3</span></td><td>Child eating (10A)</td><td>Day 10</td><td>Highest share rate from Thane moms. Use for Reel and Stories.</td><td>9:16</td></tr>
+        <tr><td><span class="p-badge p2">4</span></td><td>Koli dock woman (1A)</td><td>Day 1</td><td>Day 1 post needs this. First impression.</td><td>9:16</td></tr>
+        <tr><td><span class="p-badge p2">5</span></td><td>Freshness press test (3A)</td><td>Day 3</td><td>Educational Reel — high saves from this visual.</td><td>9:16</td></tr>
+        <tr><td><span class="p-badge p2">6</span></td><td>Fresh seafood flat-lay (2B)</td><td>Day 2</td><td>Use across 5+ carousel slides. Versatile.</td><td>1:1</td></tr>
+        <tr><td><span class="p-badge p3">7</span></td><td>3AM dock fisherman (5A)</td><td>Day 5</td><td>Emotional storytelling Reel.</td><td>9:16</td></tr>
+        <tr><td><span class="p-badge p3">8</span></td><td>Pomfret vs Surmai (12A)</td><td>Day 12</td><td>Education Reel. High saves.</td><td>9:16</td></tr>
+        <tr><td><span class="p-badge p3">9</span></td><td>Supermarket split (8A)</td><td>Day 8</td><td>Rebel angle. High shares.</td><td>9:16</td></tr>
+        <tr><td><span class="p-badge p3">10</span></td><td>Aug 1 boats (15A)</td><td>Day 15</td><td>Anticipation hero. Boost budget this one.</td><td>1:1</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- post workflow -->
+<div class="section">
+  <div class="section-title">After Generation — Canva → Post Workflow</div>
+  <div style="background:#111827;border:1px solid #1e293b;border-radius:16px;padding:24px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
+      <div style="background:#0f172a;border-radius:10px;padding:14px;">
+        <div style="font-size:18px;margin-bottom:8px;">1️⃣</div>
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;">Generate 4 variants</div>
+        <div style="font-size:11px;color:#64748b;">Run Imagen 4 with seed=42 first, then random seed × 3. Pick the most authentic-looking.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;">
+        <div style="font-size:18px;margin-bottom:8px;">2️⃣</div>
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;">Upload to Canva</div>
+        <div style="font-size:11px;color:#64748b;">Use as background layer. Template: Navy overlay at 0% (transparent) on clean shots, 40% on busy backgrounds.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;">
+        <div style="font-size:18px;margin-bottom:8px;">3️⃣</div>
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;">Add text overlay</div>
+        <div style="font-size:11px;color:#64748b;">Font: Inter Black (900) for headline. 36-48px. White on dark bg. Navy on light bg. Keep it minimal — 1 line max on Reel.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;">
+        <div style="font-size:18px;margin-bottom:8px;">4️⃣</div>
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;">Validate constraints</div>
+        <div style="font-size:11px;color:#64748b;">Check: no prices · no coupons · no health claims. Read every word on the final image before export.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;">
+        <div style="font-size:18px;margin-bottom:8px;">5️⃣</div>
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;">Export + post</div>
+        <div style="font-size:11px;color:#64748b;">PNG for feed. MP4 for Reels (use CapCut: overlay the image, add subtle Ken Burns zoom, add background audio). 7:30 AM post time.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;">
+        <div style="font-size:18px;margin-bottom:8px;">6️⃣</div>
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;">Tag location</div>
+        <div style="font-size:11px;color:#64748b;">Hiranandani Estate Thane / Lodha Splendora / Ghodbunder Road. Rotate per day. Location tag = 20-40% more local reach.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="text-align:center;color:#1e293b;font-size:11px;padding:32px 0 0;">prompt-preview.html · social-preview.html · SOCIAL-CALENDAR.md · IMAGEN-PROMPTS.md</p>
+</body>
+</html>

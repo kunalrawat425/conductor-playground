@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — Instagram Creative Previews</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1a2e; font-family: -apple-system, 'Inter', sans-serif; padding: 40px 20px; }
+  h1 { color: #fff; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 48px; }
+  .section-label { color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin: 48px 0 20px; }
+
+  /* Phone frame */
+  .phone { width: 375px; background: #fff; border-radius: 40px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.5); margin: 0 auto 56px; position: relative; }
+  .phone-status { background: #000; color: #fff; font-size: 12px; font-weight: 600; padding: 12px 20px 8px; display: flex; justify-content: space-between; align-items: center; }
+  .ig-header { background: #fff; display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; }
+  .ig-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #f6a623, #e91e8c, #673ab7); margin-right: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .ig-handle { font-size: 13px; font-weight: 700; color: #111; }
+  .ig-location { font-size: 11px; color: #666; }
+  .ig-more { margin-left: auto; font-size: 18px; color: #111; line-height: 1; }
+
+  /* Post images / carousel slides */
+  .post-img { width: 375px; height: 375px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .slide { width: 375px; height: 375px; position: absolute; transition: transform 0.3s; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 28px; text-align: center; }
+
+  /* Engagement bar */
+  .ig-actions { padding: 10px 14px 4px; display: flex; align-items: center; gap: 14px; }
+  .ig-actions svg { width: 24px; height: 24px; }
+  .ig-likes { padding: 0 14px; font-size: 13px; font-weight: 700; color: #111; }
+  .ig-caption { padding: 0 14px 10px; font-size: 13px; line-height: 1.5; color: #111; }
+  .ig-caption strong { font-weight: 700; }
+  .ig-caption .hashtags { color: #0066ff; margin-top: 6px; display: block; font-size: 12px; }
+  .ig-time { padding: 0 14px 14px; font-size: 11px; color: #999; }
+
+  /* Carousel dots */
+  .carousel-dots { display: flex; justify-content: center; gap: 4px; padding: 6px 0; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: #dbdbdb; }
+  .dot.active { background: #3897f0; }
+
+  /* ─── SLIDE DESIGNS ─── */
+  .s1-slide1 { background: #0a0a0a; }
+  .s1-slide1 .big { font-size: 26px; font-weight: 900; color: #fff; line-height: 1.2; margin-bottom: 12px; }
+  .s1-slide1 .sub { font-size: 14px; color: #aaa; }
+  .s1-slide1 .logo { position: absolute; top: 20px; right: 20px; font-size: 12px; font-weight: 800; color: #fff; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 100px; }
+  .s1-slide1 .fish-emoji { font-size: 48px; margin-bottom: 16px; }
+
+  .s1-slide2 { background: #fff5eb; flex-direction: column; align-items: flex-start; padding: 32px; }
+  .s1-slide2 h2 { font-size: 18px; font-weight: 900; color: #0a0a0a; margin-bottom: 20px; text-align: left; }
+  .problem-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; text-align: left; }
+  .problem-item .icon { font-size: 18px; flex-shrink: 0; }
+  .problem-item p { font-size: 13px; line-height: 1.5; color: #333; }
+
+  .s1-slide3 { background: linear-gradient(160deg, #0a2472 0%, #0066ff 100%); padding: 32px; align-items: flex-start; }
+  .s1-slide3 h2 { font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 18px; text-align: left; }
+  .s1-slide3 .benefit { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .s1-slide3 .benefit .check { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; flex-shrink: 0; }
+  .s1-slide3 .benefit p { font-size: 13px; color: rgba(255,255,255,0.9); text-align: left; }
+
+  .s1-slide4 { background: #f8f9fa; align-items: flex-start; padding: 32px; }
+  .s1-slide4 h2 { font-size: 16px; font-weight: 900; color: #0a0a0a; margin-bottom: 16px; text-align: left; }
+  .society-tag { display: inline-block; background: #e8f0fe; color: #0a2472; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 100px; margin: 4px; }
+
+  .s1-slide5 { background: linear-gradient(160deg, #ff6b00 0%, #ff9500 100%); }
+  .s1-slide5 .big { font-size: 42px; font-weight: 900; color: #fff; line-height: 1; margin-bottom: 8px; }
+  .s1-slide5 .aug { font-size: 16px; color: rgba(255,255,255,0.9); margin-bottom: 20px; }
+  .s1-slide5 .cta-pill { background: #fff; color: #ff6b00; font-size: 13px; font-weight: 800; padding: 10px 24px; border-radius: 100px; }
+  .s1-slide5 .fish-row { font-size: 32px; margin-bottom: 16px; letter-spacing: 4px; }
+
+  /* Post 2 — Monsoon ban info card */
+  .p2-img { background: #0a2472; width: 375px; height: 375px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px; }
+  .p2-top { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+  .p2-number { font-size: 80px; font-weight: 900; color: #fff; line-height: 1; }
+  .p2-days { font-size: 16px; font-weight: 800; color: rgba(255,255,255,0.7); margin-bottom: 12px; }
+  .p2-date { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
+  .p2-divider { width: 40px; height: 2px; background: #0066ff; margin-bottom: 20px; }
+  .p2-line { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6; text-align: center; }
+  .p2-badge { background: rgba(0,102,255,0.2); border: 1px solid rgba(0,102,255,0.5); border-radius: 6px; padding: 6px 14px; font-size: 11px; font-weight: 700; color: #60a5fa; letter-spacing: 0.06em; margin-top: 18px; }
+
+  /* Post 3 — Koli story */
+  .p3-img { width: 375px; height: 375px; position: relative; overflow: hidden; }
+  .p3-bg { width: 100%; height: 100%; background: linear-gradient(180deg, #1a1a1a 0%, #3a3a3a 100%); position: absolute; }
+  .p3-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.8) 100%); }
+  .p3-dock { position: absolute; top: 16px; left: 16px; right: 16px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .p3-boat-row { font-size: 56px; margin-bottom: 8px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+  .p3-wave { font-size: 28px; margin-bottom: 24px; }
+  .p3-text { position: absolute; bottom: 28px; left: 20px; right: 20px; }
+  .p3-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #ff9500; margin-bottom: 8px; }
+  .p3-headline { font-size: 20px; font-weight: 900; color: #fff; line-height: 1.25; }
+
+  /* Post 4 — Freshness test */
+  .p4-slide1 { background: #111; flex-direction: column; }
+  .p4-slide1 .eyebrow { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: #ff3b30; margin-bottom: 12px; }
+  .p4-slide1 .h { font-size: 24px; font-weight: 900; color: #fff; line-height: 1.2; }
+
+  .p4-slide { background: #fff; align-items: flex-start; padding: 28px; }
+  .p4-num { font-size: 64px; font-weight: 900; color: #f0f0f0; line-height: 1; position: absolute; top: 12px; right: 20px; }
+  .p4-title { font-size: 16px; font-weight: 900; color: #0a0a0a; margin-bottom: 10px; }
+  .p4-desc { font-size: 13px; color: #444; line-height: 1.6; }
+  .p4-demo { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-top: 14px; font-size: 12px; color: #333; line-height: 1.5; }
+  .p4-demo strong { color: #0066ff; font-weight: 700; }
+
+  /* labels */
+  .post-label { text-align: center; margin: 0 auto 10px; }
+  .post-label .day { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .post-label .type { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>Relifish — Instagram Creative Previews</h1>
+<p class="subtitle">Based on SOCIAL-CALENDAR.md · June–July 2026 · Monsoon Trust Build Phase</p>
+
+<!-- ─── POST 1 ─── -->
+<div class="section-label">Day 1 · June 21 · Launch Carousel (5 slides)</div>
+<div class="post-label">
+  <div class="day">Account Launch · 9:00 AM</div>
+  <div class="type">Swipe the carousel below ↓ (showing slide 1 of 5)</div>
+</div>
+<div class="phone">
+  <div class="phone-status">
+    <span>9:00</span>
+    <span>● ● ●</span>
+  </div>
+  <div class="ig-header">
+    <div class="ig-avatar">🐟</div>
+    <div>
+      <div class="ig-handle">relifish.store</div>
+      <div class="ig-location">Thane, Maharashtra</div>
+    </div>
+    <div class="ig-more">···</div>
+  </div>
+  <!-- Slide 1 -->
+  <div class="post-img">
+    <div class="slide s1-slide1">
+      <div class="logo">Relifish</div>
+      <div class="fish-emoji">🐟</div>
+      <div class="big">"Thane needs an<br/>honest fish brand."</div>
+      <div class="sub">We're Relifish. This is why we exist.</div>
+    </div>
+  </div>
+  <div class="carousel-dots">
+    <div class="dot active"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+  <div class="ig-actions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" style="margin-left:auto"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+  </div>
+  <div class="ig-likes">Be the first to like this</div>
+  <div class="ig-caption">
+    <strong>relifish.store</strong> We're not a fish delivery app. We're the honest connection between Thane kitchens and local koli sellers.<br/><br/>This account exists to tell you the truth about fish — where it comes from, what's actually fresh in monsoon, and why your Sunday surmai used to taste better.<br/><br/>Follow. Tell us your building. Let's do this right.<br/>
+    <span class="hashtags">#Relifish #FreshFishThane #ThaneFishDelivery #HiranandaniEstateFoodies #LodhaFoodies #MumbaiSeafood #Food</span>
+  </div>
+  <div class="ig-time">June 21 · Sponsored</div>
+</div>
+
+<!-- slide 2 preview -->
+<div class="section-label">Slide 2 of 5 — The Problem</div>
+<div class="phone">
+  <div class="phone-status"><span>9:00</span><span>● ● ●</span></div>
+  <div class="ig-header">
+    <div class="ig-avatar">🐟</div>
+    <div><div class="ig-handle">relifish.store</div><div class="ig-location">Thane, Maharashtra</div></div>
+    <div class="ig-more">···</div>
+  </div>
+  <div class="post-img">
+    <div class="slide s1-slide2">
+      <h2>The problem no one talks about:</h2>
+      <div class="problem-item"><div class="icon">🏪</div><p>The fish at your local supermarket was packed <strong>2–3 days ago.</strong></p></div>
+      <div class="problem-item"><div class="icon">📱</div><p>Your delivery app has a <strong>25–30% markup</strong> baked in.</p></div>
+      <div class="problem-item"><div class="icon">⏰</div><p>The mandi fish is fine — but you'd need to be there <strong>by 8 AM.</strong></p></div>
+    </div>
+  </div>
+  <div class="carousel-dots">
+    <div class="dot"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div class="ig-actions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" style="margin-left:auto"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+  </div>
+</div>
+
+<!-- slide 3 -->
+<div class="section-label">Slide 3 of 5 — The Solution</div>
+<div class="phone">
+  <div class="phone-status"><span>9:00</span><span>● ● ●</span></div>
+  <div class="ig-header">
+    <div class="ig-avatar">🐟</div>
+    <div><div class="ig-handle">relifish.store</div><div class="ig-location">Thane, Maharashtra</div></div>
+    <div class="ig-more">···</div>
+  </div>
+  <div class="post-img">
+    <div class="slide s1-slide3">
+      <h2>What Relifish does:</h2>
+      <div class="benefit"><div class="check">✓</div><p>Connects you directly to verified local koli fish sellers in Thane</p></div>
+      <div class="benefit"><div class="check">✓</div><p>Same-day catch — you see who caught it, when, and where</p></div>
+      <div class="benefit"><div class="check">✓</div><p>No middlemen. No markup. No mystery.</p></div>
+      <div class="benefit"><div class="check">✓</div><p>Morning fresh, at your door in Hiranandani, Lodha, Ghodbunder</p></div>
+    </div>
+  </div>
+  <div class="carousel-dots">
+    <div class="dot"></div><div class="dot"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+</div>
+
+<!-- slide 5 CTA -->
+<div class="section-label">Slide 5 of 5 — CTA (August 1)</div>
+<div class="phone">
+  <div class="phone-status"><span>9:00</span><span>● ● ●</span></div>
+  <div class="ig-header">
+    <div class="ig-avatar">🐟</div>
+    <div><div class="ig-handle">relifish.store</div><div class="ig-location">Thane, Maharashtra</div></div>
+    <div class="ig-more">···</div>
+  </div>
+  <div class="post-img">
+    <div class="slide s1-slide5">
+      <div class="fish-row">🐟🦐🐡</div>
+      <div class="big">Aug 1</div>
+      <div class="aug">Fresh surmai, pomfret, rawas — back from Versova & Malvan.</div>
+      <div class="cta-pill">Join the waitlist → relifish.store</div>
+    </div>
+  </div>
+  <div class="carousel-dots">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot active"></div>
+  </div>
+</div>
+
+<!-- ─── POST 2 ─── -->
+<div class="section-label">Day 2 · June 22 · Monsoon Ban Education</div>
+<div class="phone">
+  <div class="phone-status"><span>10:00</span><span>● ● ●</span></div>
+  <div class="ig-header">
+    <div class="ig-avatar">🐟</div>
+    <div><div class="ig-handle">relifish.store</div></div>
+    <div class="ig-more">···</div>
+  </div>
+  <div class="post-img">
+    <div class="p2-img">
+      <div class="p2-top">Maharashtra Fishing Ban</div>
+      <div class="p2-number">61</div>
+      <div class="p2-days">DAYS</div>
+      <div class="p2-date">June 1 → July 31, 2026</div>
+      <div class="p2-divider"></div>
+      <div class="p2-line">Breeding season. The ban exists so there IS<br/>fish in August, September, and beyond.</div>
+      <div class="p2-badge">RELIFISH ALWAYS TELLS YOU THE TRUTH</div>
+    </div>
+  </div>
+  <div class="ig-actions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" style="margin-left:auto"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+  </div>
+  <div class="ig-likes">Be the first to like this</div>
+  <div class="ig-caption">
+    <strong>relifish.store</strong> Every year, June 1 to July 31, Maharashtra bans trawl fishing. This is the right thing.<br/><br/>
+    Any vendor selling "fresh" Surmai or Pomfret right now is selling cold storage stock. We'll always tell you what's actually available.<br/>
+    <span class="hashtags">#Relifish #MonsoonFish #FreshFishMumbai #ThaneFishDelivery #SeafoodLovers #HonestFood</span>
+  </div>
+  <div class="ig-time">June 22 · 2 hours ago</div>
+</div>
+
+<!-- ─── POST 3 ─── -->
+<div class="section-label">Day 4 · June 24 · Koli Source Story</div>
+<div class="phone">
+  <div class="phone-status"><span>9:00</span><span>● ● ●</span></div>
+  <div class="ig-header">
+    <div class="ig-avatar">🐟</div>
+    <div><div class="ig-handle">relifish.store</div></div>
+    <div class="ig-more">···</div>
+  </div>
+  <div class="post-img">
+    <div class="p3-img">
+      <div class="p3-bg"></div>
+      <div class="p3-overlay"></div>
+      <div class="p3-dock">
+        <div class="p3-boat-row">⛵🌊🐟</div>
+        <div class="p3-wave">🌊🌊🌊</div>
+      </div>
+      <div class="p3-text">
+        <div class="p3-tag">Behind the Source</div>
+        <div class="p3-headline">The koli community has fished the Arabian Sea for generations.</div>
+      </div>
+    </div>
+  </div>
+  <div class="ig-actions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" style="margin-left:auto"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+  </div>
+  <div class="ig-likes">Be the first to like this</div>
+  <div class="ig-caption">
+    <strong>relifish.store</strong> They wake at 3 AM. Back by dawn. The fish they bring in is what "same-day catch" actually means.<br/><br/>
+    Relifish works with koli sellers in Thane — women who've sold fish for 30 years, men who know exactly what was caught this morning. We're not a warehouse. We're their connection to your kitchen.<br/>
+    <span class="hashtags">#KoliFood #MumbaiSeafood #FreshFishMumbai #Relifish #SeafoodLovers #ThaneFoodLovers</span>
+  </div>
+  <div class="ig-time">June 24 · 1 hour ago</div>
+</div>
+
+<!-- ─── POST 4 ─── -->
+<div class="section-label">Day 5 · June 25 · Freshness Test Carousel (slide 1)</div>
+<div class="phone">
+  <div class="phone-status"><span>9:00</span><span>● ● ●</span></div>
+  <div class="ig-header">
+    <div class="ig-avatar">🐟</div>
+    <div><div class="ig-handle">relifish.store</div></div>
+    <div class="ig-more">···</div>
+  </div>
+  <div class="post-img">
+    <div class="slide p4-slide1">
+      <div class="eyebrow">Monsoon Buyer's Guide</div>
+      <div class="h" style="font-size:24px;font-weight:900;color:#fff;line-height:1.2;">"What fish is safe<br/>to buy in monsoon?"</div>
+      <div style="font-size:32px;margin-top:16px;">🐟🦐🐡</div>
+      <div style="font-size:13px;color:#666;margin-top:14px;">Swipe for the full breakdown →</div>
+    </div>
+  </div>
+  <div class="carousel-dots">
+    <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div class="ig-actions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" style="margin-left:auto"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+  </div>
+  <div class="ig-likes">Save this 🔖</div>
+  <div class="ig-caption">
+    <strong>relifish.store</strong> June and July are when honest fish vendors earn your trust — and dishonest ones lose it.<br/><br/>
+    Relifish will always tell you what's available and what isn't. Even if that means saying "not much this week."<br/><br/>
+    Save this. Share it with your cook or your building WhatsApp group.<br/>
+    <span class="hashtags">#FreshFishMumbai #MonsoonFish #Relifish #ThaneFishDelivery #SeafoodLovers #FoodSafety #MumbaiFood</span>
+  </div>
+</div>
+
+<!-- ─── STORIES FORMAT ─── -->
+<div class="section-label">Day 3 · June 23 · Instagram Stories (3-slide series)</div>
+<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:56px;">
+
+  <!-- Story 1 -->
+  <div style="width:195px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <div style="height:340px;background:linear-gradient(160deg,#1a1a2e,#0066ff);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;position:relative;">
+      <div style="position:absolute;top:12px;left:0;right:0;display:flex;gap:3px;padding:0 12px;">
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.9);border-radius:2px;"></div>
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.3);border-radius:2px;"></div>
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.3);border-radius:2px;"></div>
+      </div>
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.6);margin-bottom:12px;">📊 Poll</div>
+      <div style="font-size:14px;font-weight:700;color:#fff;text-align:center;margin-bottom:20px;">Where do you currently buy fish?</div>
+      <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
+        <div style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#fff;font-weight:600;">🏪 Local mandi / stall</div>
+        <div style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#fff;font-weight:600;">🛒 DMart / Reliance Fresh</div>
+        <div style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#fff;font-weight:600;">📱 Swiggy / Zomato / Blinkit</div>
+        <div style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#fff;font-weight:600;">💬 WhatsApp seller</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Story 2 -->
+  <div style="width:195px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <div style="height:340px;background:linear-gradient(160deg,#ff6b00,#ff9500);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;position:relative;">
+      <div style="position:absolute;top:12px;left:0;right:0;display:flex;gap:3px;padding:0 12px;">
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.3);border-radius:2px;"></div>
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.9);border-radius:2px;"></div>
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.3);border-radius:2px;"></div>
+      </div>
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.7);margin-bottom:12px;">❓ Question</div>
+      <div style="font-size:40px;margin-bottom:12px;">🏢</div>
+      <div style="font-size:14px;font-weight:800;color:#fff;text-align:center;margin-bottom:16px;">Which society do you live in?</div>
+      <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:10px 14px;width:100%;text-align:center;font-size:12px;color:rgba(255,255,255,0.6);">Type your answer...</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:14px;text-align:center;">We're mapping demand in Thane.</div>
+    </div>
+  </div>
+
+  <!-- Story 3 -->
+  <div style="width:195px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <div style="height:340px;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;position:relative;">
+      <div style="position:absolute;top:12px;left:0;right:0;display:flex;gap:3px;padding:0 12px;">
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.3);border-radius:2px;"></div>
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.3);border-radius:2px;"></div>
+        <div style="flex:1;height:2px;background:rgba(255,255,255,0.9);border-radius:2px;"></div>
+      </div>
+      <div style="font-size:32px;margin-bottom:16px;">📍</div>
+      <div style="font-size:14px;font-weight:800;color:#fff;text-align:center;line-height:1.4;margin-bottom:16px;">Tell us your area.<br/>Get priority when we launch.</div>
+      <div style="background:#0066ff;border-radius:10px;padding:10px 20px;font-size:12px;font-weight:800;color:#fff;">Join Waitlist →</div>
+      <div style="font-size:10px;color:#666;margin-top:12px;text-align:center;">relifish.store</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SUMMARY ─── -->
+<div style="max-width:560px;margin:0 auto 60px;background:#1e293b;border-radius:16px;padding:28px;">
+  <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:16px;">Creative Summary · Week 1</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="background:#0f172a;border-radius:10px;padding:14px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px;">TONE</div>
+      <div style="font-size:14px;font-weight:700;color:#fff;">Honest · Direct · Warm</div>
+    </div>
+    <div style="background:#0f172a;border-radius:10px;padding:14px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px;">COLORS</div>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <div style="width:20px;height:20px;border-radius:4px;background:#0a2472;"></div>
+        <div style="width:20px;height:20px;border-radius:4px;background:#0066ff;"></div>
+        <div style="width:20px;height:20px;border-radius:4px;background:#ff6b00;"></div>
+        <div style="width:20px;height:20px;border-radius:4px;background:#0a0a0a;"></div>
+      </div>
+    </div>
+    <div style="background:#0f172a;border-radius:10px;padding:14px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px;">NO PRICES?</div>
+      <div style="font-size:14px;font-weight:700;color:#22c55e;">✓ None shown</div>
+    </div>
+    <div style="background:#0f172a;border-radius:10px;padding:14px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px;">NO COUPONS?</div>
+      <div style="font-size:14px;font-weight:700;color:#22c55e;">✓ None shown</div>
+    </div>
+    <div style="background:#0f172a;border-radius:10px;padding:14px;grid-column:span 2;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px;">CONTENT MIX</div>
+      <div style="font-size:13px;color:#94a3b8;">Launch carousel · Monsoon education · Koli story · Freshness guide · Stories polls</div>
+    </div>
+  </div>
+</div>
+
+<p style="text-align:center;color:#334155;font-size:12px;padding-bottom:40px;">Open at <strong style="color:#60a5fa;">localhost:4321/ig-previews.html</strong> for full render</p>
+</body>
+</html>
