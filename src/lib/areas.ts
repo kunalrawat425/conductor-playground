@@ -4,7 +4,7 @@ export const AREAS = {
     name: "Thane",
     lat: 19.2183,
     lng: 72.9781,
-    radius: 12, // km
+    radius: 9, // km
     slug: "thane",
     metaDescription: "Buy fresh fish online with same-day delivery in Thane. Direct from local sellers. No middleman, no cold storage.",
     contentHeadline: "Fresh Fish Delivery in Thane",
