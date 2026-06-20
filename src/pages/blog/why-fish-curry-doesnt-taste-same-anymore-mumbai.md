@@ -4,7 +4,7 @@ title: "Why Your Sunday Fish Curry Never Tastes the Same Anymore (It's Not Your 
 description: "Your amma's pomfret curry used to be unforgettable. Same masala, same pan, same coconut. But it doesn't taste the same. Before you blame the recipe — blame the fish."
 pubDate: 2026-06-20
 author: "Relifish Team"
-tags: ["Fresh Fish", "Mumbai", "Fish Curry", "Freshness", "Koli", "Thane"]
+tags: ["Fresh Fish", "Mumbai", "Fish Curry", "Freshness", "Hyperlocal", "Thane"]
 image: "/blog-why-fish-curry-doesnt-taste-same-anymore-mumbai-hero.png"
 ---
 
@@ -20,7 +20,7 @@ Before you blame the recipe, blame the fish.
 
 ## What Changed — And When
 
-Ten years ago, most Mumbai households bought fish from the same local Koli seller who came to the building gate or the nearby mandi. That fish was caught the night before or that morning. It was sold the same day. No warehouse. No cold truck. No preservative coating.
+Ten years ago, most Mumbai households bought fish from the same hyperlocal seller who came to the building gate or the nearby mandi. That fish was caught the night before or that morning. It was sold the same day. No warehouse. No cold truck. No preservative coating.
 
 That supply chain no longer exists for most urban families in Thane, Hiranandani Estate, Majiwada, or Ghodbunder Road.
 
@@ -44,7 +44,7 @@ Fish is one of the most time-sensitive foods on earth. Unlike chicken or mutton,
 
 After 18 hours on ice, the fish is still safe to eat — but the flavour profile has already started shifting. After 48 hours, the texture has changed. After 72 hours, you're cooking with a fundamentally different ingredient than what left the dock.
 
-This is what Koli households in Versova and Bhaucha Dhakka have always known. They don't refrigerate the morning catch. They sell it by noon — or they give it away.
+This is what local fishing households in local Mumbai fishing docks have always known. They don't refrigerate the morning catch. They sell it by noon — or they give it away.
 
 The urban supply chain has trained city buyers to accept 3-day-old fish as "fresh" because the packaging looks clean and the app interface looks premium.
 
@@ -68,7 +68,7 @@ When you cook with genuinely same-day fish, the difference is immediate. The cur
 
 ## Why This Is a Supply Chain Problem, Not a Skill Problem
 
-The uncomfortable truth is that most Mumbai families are doing everything right in the kitchen — and being let down at the source. The supermarket looks trustworthy. The delivery app looks convenient. But neither can deliver what a Koli seller at 7 AM at the mandi delivers.
+The uncomfortable truth is that most Mumbai families are doing everything right in the kitchen — and being let down at the source. The supermarket looks trustworthy. The delivery app looks convenient. But neither can deliver what a hyperlocal seller at 7 AM at the mandi delivers.
 
 The fish mandi model works because it has no storage. The seller brings what was caught. What isn't sold by midday is gone. There's no incentive to keep inventory — and no ability to pass off yesterday's catch as today's.
 
@@ -82,7 +82,7 @@ You don't need a new recipe. You need a new source.
 
 Same-day catch from a verified local seller — someone whose name you know, whose ratings you can see, who lists what they actually have available that morning — changes the dish completely. Not because of anything you do differently in the kitchen. But because the ingredient is finally what it's supposed to be.
 
-Relifish connects Mumbai families directly to local Koli sellers in Thane. Every seller lists their live morning catch. You see who caught it, what's available today, and you order before it sells out.
+Relifish connects Mumbai families directly to hyperlocal sellers in Thane. Every seller lists their live morning catch. You see who caught it, what's available today, and you order before it sells out.
 
 No warehouses. No cold chain. No 3-day-old fish dressed as fresh.
 

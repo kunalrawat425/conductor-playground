@@ -25,7 +25,7 @@ The default Indian consumer belief is: **"If it is packaged and sold online, it 
 ### 2. Cognitive Biases Applied to Relifish
 
 #### Loss Aversion (The Sunday Dinner Anxiety)
-In seafood-loving households (coastal Maharashtrian, Bengali, Koli), the Sunday afternoon meal is a sacred family ritual. 
+In seafood-loving households (coastal Maharashtrian, Bengali, Hyperlocal), the Sunday afternoon meal is a sacred family ritual. 
 * A bad batch of Surmai doesn't just represent a loss of Rs. 600; it represents the **loss of the entire family Sunday experience**. The emotional cost of a ruined meal is 10x higher than the financial cost.
 * **Relifish Play:** Frame our service as the ultimate insurance policy for the Sunday feast. We guarantee dock-to-door transit under 4 hours, ensuring the Sunday meal is perfect.
 
@@ -47,7 +47,7 @@ You cannot build a sustainable marketplace unless you master the unit economics 
 ### 1. The Dock Auction Dynamics (Sassoon Dock vs. Versova)
 * Docks operate on a Dutch auction system starting at 4:00 AM. Middlemen (aggregators) buy in bulk, load into trucks, transport to regional wholesale markets (like Crawford Market or Dadar), where retail sellers buy them, load them onto auto-rickshaws, and bring them to local neighborhood stalls.
 * **The Markup:** By the time the fish reaches a stall in Thane, it has passed through 3 middlemen and sat in melting ice for 12–24 hours. The price has inflated by 40–50%.
-* **The Relifish Disruption:** We bypass the wholesale middlemen. The local Koli seller lists their catch directly on Relifish at dock-out rates. We pick it up directly from the dock/seller landing site and bring it to Thane, keeping the price fair and the fish fresh.
+* **The Relifish Disruption:** We bypass the wholesale middlemen. The local Hyperlocal seller lists their catch directly on Relifish at dock-out rates. We pick it up directly from the dock/seller landing site and bring it to Thane, keeping the price fair and the fish fresh.
 
 ### 2. The Seasonality & Tide Playbook
 
@@ -56,7 +56,7 @@ Spring Tides (New/Full Moon) ➔ Strong Currents ➔ Glistening Pelagic Catch (P
 Neap Tides (Half Moon)       ➔ Calm Water     ➔ High Demersal Catch (Prawns, Crabs, Lobster)
 ```
 
-* **Monsoon Ban (June 1 – July 31):** Deep-sea trawling is banned along the Maharashtra coast to allow breeding. Educate your users about this. Explain that anyone selling "fresh wild Pomfret" in July is selling cold-stored frozen stock. Teach them to buy fresh river fish (Rohu, Catla), shellfish (crabs/clams), or Koli dried fish (Sukha Bombil) during these 60 days. This makes you an educator, not a salesperson.
+* **Monsoon Ban (June 1 – July 31):** Deep-sea trawling is banned along the Maharashtra coast to allow breeding. Educate your users about this. Explain that anyone selling "fresh wild Pomfret" in July is selling cold-stored frozen stock. Teach them to buy fresh river fish (Rohu, Catla), shellfish (crabs/clams), or Hyperlocal dried fish (Sukha Bombil) during these 60 days. This makes you an educator, not a salesperson.
 
 ---
 
@@ -114,7 +114,7 @@ The database triggers a localized WhatsApp alert to Thane West subscribers:
 ### 4. Social Proof & Storytelling (Instagram/Facebook)
 The founder uploads a raw 15-second Reel shot at the dock:
 * **Visual:** Vinod holding the glistening Ghol.
-* **Audio:** Koli chatter in the background.
+* **Audio:** Hyperlocal chatter in the background.
 * **Caption:** Hinglish/Marathi hook detailing the rarity of Ghol and linking to the menu.
 
 ### 5. Community Referral Trigger

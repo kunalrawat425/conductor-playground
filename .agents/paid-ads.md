@@ -50,11 +50,11 @@
 ### Campaign 2: Awareness / Video Views
 **Objective:** ThruPlay (15-sec video completion)
 **Budget:** ₹2,500/month (₹80/day)
-**Goal:** Warm up 10K+ users who can be retargeted; build "koli direct" brand association.
+**Goal:** Warm up 10K+ users who can be retargeted; build "hyperlocal direct" brand association.
 
 **Ad sets:**
 - Broad Mumbai 25–55, interest: "Seafood" + "Fresh produce"
-- Run one 15–20s vertical video: "A day in the life of a Versova koli seller" (borrowed-channel creator content repurposed)
+- Run one 15–20s vertical video: "A day in the life of a Versova hyperlocal seller" (borrowed-channel creator content repurposed)
 
 **Placements:** IG Reels, IG Stories, FB Reels.
 
@@ -80,7 +80,7 @@
 **Objective:** Leads
 **Budget:** ₹500/month (if needed, else fold into C1)
 **Targeting:** Custom locations near wholesale fish markets (Sassoon Dock, Versova, Bhaucha Dhakka, Crawford Market). Interests: "Small business", "Fishing industry". Age 25–55.
-**Creative:** Marathi-first, koli-respectful tone. Landing: seller-detailed.html.
+**Creative:** Marathi-first, hyperlocal-respectful tone. Landing: seller-detailed.html.
 
 ---
 
@@ -107,7 +107,7 @@
 - "restaurant", "near me restaurant", "buffet"
 - "jobs", "wholesale", "license", "export"
 
-**Ad extensions:** Sitelinks (Waitlist / Sellers / How it Works / WhatsApp), Call extension with 9870619974, Location extension.
+**Ad extensions:** Sitelinks (Waitlist / Sellers / How it Works / WhatsApp), Call extension with 9152207607, Location extension.
 
 **Landing pages:**
 - Species queries → buyer-detailed.html with anchor to that species (build anchor links: #surmai, #pomfret, etc.)
@@ -131,7 +131,7 @@
 3. Google Ads conversion tag + GA4 linked
 4. UTM conventions:
    - `utm_source={platform}&utm_medium={paid}&utm_campaign={campaign-name}&utm_content={ad-name}`
-   - Example: `?utm_source=meta&utm_medium=paid&utm_campaign=waitlist_bandra_2026-04&utm_content=koli_video_v1`
+   - Example: `?utm_source=meta&utm_medium=paid&utm_campaign=waitlist_bandra_2026-04&utm_content=hyperlocal_video_v1`
 5. WhatsApp click tracker (wa.me link with UTM-style param `?text=relifish-ad-bandra`)
 
 **Weekly review cadence (every Monday):**
@@ -163,7 +163,7 @@ Run 4 creative concepts × 2 hooks = 8 ad variants in Campaign 1.
 
 | Concept | Hook A | Hook B |
 |---|---|---|
-| 1. Koli direct (seller at dock) | "The fish your local stall can't get" | "Same-day catch. No middleman." |
+| 1. Hyperlocal direct (seller at dock) | "The fish your local stall can't get" | "Same-day catch. No middleman." |
 | 2. Price comparison (Swiggy vs Relifish) | "Stop paying 30% extra on fish" | "Fair prices. Direct from sellers." |
 | 3. Pre-order magic | "Order tomorrow's Pomfret tonight" | "Never miss fresh fish again" |
 | 4. Variety showcase | "Surmai, Rawas, Pomfret — all in one app" | "Beyond your local stall's 4 options" |
@@ -175,8 +175,8 @@ Kill bottom 4 after 7 days. Double down on top 2. Refresh new concepts monthly.
 ## Common Mistakes to Avoid (Relifish-specific)
 
 - **Don't run ads in neighborhoods without sellers.** Waitlist signups rot if activation is 3+ months away.
-- **Don't use stock fish imagery** — Mumbai buyers spot it instantly. Use real koli seller photos + real daily catch.
-- **Don't over-target "Koli community"** as an interest — too narrow, Meta won't spend. Use behavior + location instead.
+- **Don't use stock fish imagery** — Mumbai buyers spot it instantly. Use real hyperlocal seller photos + real daily catch.
+- **Don't over-target "Hyperlocal community"** as an interest — too narrow, Meta won't spend. Use behavior + location instead.
 - **Don't run English-only ads** in Dadar/Prabhadevi/Worli — Marathi creative lifts CTR 2–3× here.
 - **Don't skip brand defense on Google** once you appear in press.
 - **Don't discount in the ad copy** — discounts attract deal-hunters, not repeat buyers. Lead with freshness.

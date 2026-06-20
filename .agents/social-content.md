@@ -5,12 +5,12 @@
 
 ## Strategic Premise
 
-Instagram is where Mumbai's 25–55 food-conscious buyers live — especially via Reels and local food creator follows. We're NOT building a national fish-recipe account. We're building a **hyperlocal, koli-proud, Mumbai-specific brand** that feels native to the city's food culture.
+Instagram is where Mumbai's 25–55 food-conscious buyers live — especially via Reels and local food creator follows. We're NOT building a national fish-recipe account. We're building a **hyperlocal, hyperlocal-proud, Mumbai-specific brand** that feels native to the city's food culture.
 
 **North star:** Every post should do one of three things:
 1. Make a Mumbaikar say, "I want *that* fish, today."
 2. Make someone trust us more than FreshToHome/Swiggy.
-3. Drive a waitlist signup or WhatsApp DM (9870619974).
+3. Drive a waitlist signup or WhatsApp DM (9152207607).
 
 ---
 
@@ -19,7 +19,7 @@ Instagram is where Mumbai's 25–55 food-conscious buyers live — especially vi
 | # | Pillar | % Mix | Purpose |
 |---|---|---|---|
 | 1 | Fresh Catch of the Day | 30% | Desire + freshness proof |
-| 2 | Meet the Seller | 20% | Trust, koli community storytelling |
+| 2 | Meet the Seller | 20% | Trust, hyperlocal community storytelling |
 | 3 | Fish Education | 20% | SEO + save-worthy value |
 | 4 | Mumbai Food Culture | 15% | Community, shareability, non-promotional reach |
 | 5 | Waitlist + Launch | 15% | Conversion |
@@ -31,7 +31,7 @@ Instagram is where Mumbai's 25–55 food-conscious buyers live — especially vi
 **Goal:** Instant desire. "I want this tonight."
 
 Formats:
-- **Reel** (daily, 7am): 10–15 sec. Seller holding today's catch at the dock. Text overlay: "Andheri — today's catch" + species list + price range. CTA: "WhatsApp 9870619974 / link in bio."
+- **Reel** (daily, 7am): 10–15 sec. Seller holding today's catch at the dock. Text overlay: "Andheri — today's catch" + species list + price range. CTA: "WhatsApp 9152207607 / link in bio."
 - **Story** (3x/day): Morning catch, midday "X species sold out", evening "Tomorrow's pre-orders close at 10pm."
 - **Carousel** (2x/week): "This week in Mumbai fish" — 5 slides, one species per slide, size/price/seller.
 
@@ -44,7 +44,7 @@ Formats:
 
 ### Pillar 2 — Meet the Seller (20%)
 
-**Goal:** Build trust and koli community pride. This is the borrowed-authenticity play — real people, not slick branding.
+**Goal:** Build trust and hyperlocal community pride. This is the borrowed-authenticity play — real people, not slick branding.
 
 Formats:
 - **Reel** (1x/week): 30–45 sec seller profile. Name, neighborhood, how long fishing, one signature species.
@@ -85,10 +85,10 @@ Hook formulas:
 **Goal:** Shareability, non-promotional reach, city love. This is what gets us saved + shared by non-buyers.
 
 Topics:
-- "5 koli restaurants in Mumbai worth the trip"
+- "5 hyperlocal restaurants in Mumbai worth the trip"
 - "The history of Sassoon Dock" (carousel)
 - "Bombil fry — the monsoon ritual"
-- "How the Koli community built Mumbai"
+- "How the Hyperlocal community built Mumbai"
 - Creator collabs: recipe reels with Mumbai food creators featuring a Relifish seller's catch
 - UGC repost: "Tag us when you cook" — customer meal photos
 
@@ -141,7 +141,7 @@ Each seller visit or creator collab produces:
 Mumbai-specific + species-specific, capped at 12 per post.
 
 **Core set (rotate):**
-`#Mumbai #MumbaiFood #MumbaiFoodie #BombayFoodie #KoliFood #FreshFish #Seafood #FishLoversIndia #Surmai #Pomfret #Rawas #Bangda #Ghol #AndheriFoodie #BandraFood #VersovaKoli #SassoonDock #RelifishMumbai`
+`#Mumbai #MumbaiFood #MumbaiFoodie #BombayFoodie #HyperlocalFood #FreshFish #Seafood #FishLoversIndia #Surmai #Pomfret #Rawas #Bangda #Ghol #AndheriFoodie #BandraFood #VersovaHyperlocal #SassoonDock #RelifishMumbai`
 
 **Neighborhood tags (use 2–3 per post based on which area):**
 `#AndheriWest #BandraWest #KharWest #Santacruz #Dadar #Prabhadevi #Worli #Borivali #Juhu`
@@ -153,7 +153,7 @@ Mumbai-specific + species-specific, capped at 12 per post.
 ## Brand Voice on Social
 
 - Direct, warm, Mumbai-casual
-- Mix Hindi/Marathi naturally ("Aaj fresh hai", "Seedha koli se", "Bhaiyya ne bola")
+- Mix Hindi/Marathi naturally ("Aaj fresh hai", "Seedha hyperlocal se", "Bhaiyya ne bola")
 - Never corporate-speak
 - Pride, not apology
 - Show the seller's face more than our logo
@@ -191,7 +191,7 @@ Broadcast cadence: 1 morning catch + 1 evening pre-order cutoff per day.
 - Mumbai Foodie (@mumbaifoodie)
 - Bombay Bites
 - The Bombay Review
-- Local koli-culture creators on YouTube + IG
+- Local hyperlocal-culture creators on YouTube + IG
 
 **The ask:** Gift a curated catch box (₹800 value). No mandate to post. If they love it, they'll post. Better a genuine 1-in-5 conversion than a forced sponsored post.
 
@@ -223,7 +223,7 @@ Draft these 30 in batch Week 1 and schedule — gives 4 weeks of content runway.
 18. "I've cooked Mumbai fish for 30 years. Here's my list." (senior cook spotlight)
 19. Testimonial card from waitlist buyer
 20. Fish quality red-flags carousel
-21. Koli community history (3-slide mini-doc)
+21. Hyperlocal community history (3-slide mini-doc)
 22. Meet seller #5 (Khar)
 23. "Name this fish" engagement post
 24. Launch day countdown — 7 days

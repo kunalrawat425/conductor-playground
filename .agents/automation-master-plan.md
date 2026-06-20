@@ -9,7 +9,7 @@ This document outlines the final master plan for the Relifish Hyperlocal Content
 Before executing any automation, the core strategy must remain **density-first** rather than general awareness:
 * **The Goal:** Establish a 40% repeat order rate in Thane's active pockets (Hiranandani Estate, Ghodbunder Road, Majiwada, Kasarvadavali) by building a localized "Freshness Trust Layer."
 * **The Engine:** Build high-trust WhatsApp micro-communities led by building "Seafood Captains" (local RWA/society influencers) who coordinate weekly group orders.
-* **The Content Flywheel:** Use hyper-targeted, outcome-based local content (recipes, Koli seller stories, seasonal guides, and price transparency) to capture demand and feed the WhatsApp groups.
+* **The Content Flywheel:** Use hyper-targeted, outcome-based local content (recipes, Hyperlocal seller stories, seasonal guides, and price transparency) to capture demand and feed the WhatsApp groups.
 
 ---
 
@@ -31,7 +31,7 @@ Style Requirements:
 - Use Hinglish (Hindi-English mix) naturally with some Marathi words (e.g., "tai," "bhai," "taza," "curry cut," "mandi"). No awkward translations.
 - Use street-smart, warm, food-obsessed language. Never sound corporate or academic.
 - Focus on the outcome: convenience, freshness, no market smell, safe for kids, time saved.
-- Emphasize the direct link to the local fisherman/koli seller.
+- Emphasize the direct link to the local fisherman/hyperlocal seller.
 
 For each of the 3 variations, output:
 1. **Hook:** A punchy first line that calls out the locality or the daily pain point.

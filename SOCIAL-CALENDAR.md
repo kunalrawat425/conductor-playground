@@ -1,4 +1,5 @@
 # Social Media Strategy — Relifish
+**⚠️ Source of Truth:** Read `SOURCE-OF-TRUTH.md` before editing — brand rules, WhatsApp number, forbidden language, correct service areas.
 **Rebuilt:** June 20, 2026
 **Reality:** Zero followers. Zero posts. Zero audience.
 **Platforms:** Instagram (primary) · Facebook Groups (primary) · Facebook Page (secondary)
@@ -70,7 +71,7 @@ This is your HIGHEST ROI channel with zero audience. Your buyers are already in 
 **Formula per post: 3 niche + 3 medium + 2 broad + #Relifish = 9 hashtags**
 
 ### Niche (under 50K posts — you can rank on these)
-`#FreshFishThane` `#ThaneFishDelivery` `#HiranandaniEstateFoodies` `#LodhaFoodies` `#GhodbunderRoadFood` `#KasarvadavaliFoodies` `#MajiwadaThane` `#ThaneSeafood` `#ThaneFoodLovers` `#KoliFood`
+`#FreshFishThane` `#ThaneFishDelivery` `#HiranandaniEstateFoodies` `#LodhaFoodies` `#GhodbunderRoadFood` `#KasarvadavaliFoodies` `#MajiwadaThane` `#ThaneSeafood` `#ThaneFoodLovers` `#HyperlocalFood`
 
 ### Medium (100K–1M)
 `#FreshFishMumbai` `#MumbaiSeafood` `#SeafoodLovers` `#MumbaiFood` `#ThaneFood` `#FreshSeafood` `#IndianSeafood` `#HomeCooking`
@@ -94,7 +95,7 @@ You have 11 blog posts. Each one is a Reel script. This is your content engine.
 | Child nutrition fish guide | "3 fish that are actually safe for your kids in monsoon" | List format |
 | Pomfret vs surmai | "Pomfret or Surmai? The answer changes in monsoon." | This vs That |
 | Freshness test at home | "Press your finger here. If this happens, the fish is old." | Demo Reel |
-| Koli seller story | "3 AM. Versova dock. This is where your fish actually comes from." | Cinematic |
+| Hyperlocal seller story | "3 AM. Versova dock. This is where your fish actually comes from." | Cinematic |
 | Fishing ban explained | "The government just banned fishing. Here's what that means for your kitchen." | Explainer |
 
 **Reel structure (60-90 sec):**
@@ -118,7 +119,7 @@ You have 11 blog posts. Each one is a Reel script. This is your content engine.
 **Target accounts to engage with (comment on their posts weekly):**
 - Mumbai food bloggers: @burrpindia @thefoodiepost_mumbai @mumbaieats
 - Thane-specific food accounts
-- Koli culture accounts
+- Hyperlocal culture accounts
 - Any society residents posting about cooking/food in Thane
 
 ---
@@ -161,7 +162,7 @@ Script:
 [0-3 sec — text overlay on black]: "The fish at your local supermarket? It's probably 2-3 days old."
 [3-10 sec]: "I'm not saying this to scare you. I'm saying it because it explains why your fish curry doesn't taste the way it used to."
 [10-30 sec]: "Fish loses 40% of its flavour in 24 hours after being caught. The fish at DMart, Reliance Fresh, or your delivery app — it's been in cold storage. Sometimes since Monday."
-[30-50 sec]: "We built Relifish to fix this. Local koli sellers in Thane. Same-day catch. You see who caught it and when."
+[30-50 sec]: "We built Relifish to fix this. local independent sellers in Thane. Same-day catch. You see who caught it and when."
 [50-60 sec]: "The fishing ban is active right now — we'll tell you exactly what IS fresh this week. Follow for updates."
 ```
 
@@ -169,7 +170,7 @@ Caption:
 ```
 The fish you bought last week? Here's what it went through before reaching your plate.
 
-Relifish connects Thane kitchens directly to koli sellers. Same-day catch. No middleman. No cold-storage dressed up as fresh.
+Relifish connects Thane kitchens directly to hyperlocal sellers. Same-day catch. No middleman. No cold-storage dressed up as fresh.
 
 Fishing ban is active until August 1. We'll tell you exactly what's available and what isn't — unlike everyone else.
 
@@ -237,7 +238,7 @@ The fishing ban is real. The fish that disappears from the honest vendor's count
 
 Save this guide. Send it to your tai or your building food group.
 
-#FreshFishMumbai #MonsoonFish #Relifish #ThaneFishDelivery #KoliFood #SeafoodLovers #FoodSafety #MumbaiFood #FreshSeafood #ThaneFood
+#FreshFishMumbai #MonsoonFish #Relifish #ThaneFishDelivery #HyperlocalFood #SeafoodLovers #FoodSafety #MumbaiFood #FreshSeafood #ThaneFood
 ```
 
 Location tag: Lodha Splendora, Thane
@@ -285,7 +286,7 @@ Takes 10 seconds. Saves you from a bad meal — and a bad smell in your kitchen.
 
 Your fish tai at the mandi knows all of this. Your delivery app doesn't.
 
-#FreshFishThane #HowToTestFreshFish #Relifish #SeafoodLovers #MumbaiFood #FreshFishMumbai #ThaneFoodLovers #KoliFood
+#FreshFishThane #HowToTestFreshFish #Relifish #SeafoodLovers #MumbaiFood #FreshFishMumbai #ThaneFoodLovers #HyperlocalFood
 ```
 
 Location tag: Ghodbunder Road, Thane
@@ -305,7 +306,7 @@ No post today.
 
 **DAY 5 — Wednesday June 25**
 
-**Instagram — Reel #3: Koli story**
+**Instagram — Reel #3: Hyperlocal story**
 Time: 7:30 AM
 Format: Voiceover or talking head, evocative
 Duration: 60 sec
@@ -313,8 +314,8 @@ Duration: 60 sec
 Script:
 ```
 [0-3 sec]: "3 AM. Versova. That's when your fish starts its journey."
-[3-20 sec]: "The koli community has fished the Arabian Sea for generations. They're back by sunrise. The fish they bring in is what 'same-day catch' actually means."
-[20-40 sec]: "In Thane, koli women have sold fish at the local bazaar for 30 years. They know every fish by name, by season, by smell. They're the reason 'taza fish' means something."
+[3-20 sec]: "The hyperlocal community has fished the Arabian Sea for generations. They're back by sunrise. The fish they bring in is what 'same-day catch' actually means."
+[20-40 sec]: "In Thane, local independent women have sold fish at the local bazaar for 30 years. They know every fish by name, by season, by smell. They're the reason 'taza fish' means something."
 [40-55 sec]: "Relifish works with these sellers. We're not a warehouse. We're the connection between their catch and your kitchen."
 [55-60 sec]: "Fishing ban is active right now. We'll be the first to tell you when fresh catch is back. Follow."
 ```
@@ -323,13 +324,13 @@ Caption:
 ```
 From the boat to your kitchen — here's who actually catches your fish.
 
-The koli community has fished the Arabian Sea for generations. They wake at 3 AM. They're back by dawn.
+The hyperlocal community has fished the Arabian Sea for generations. They wake at 3 AM. They're back by dawn.
 
-In Thane, koli women have sold fish at the local bazaar for 30 years. They know every fish by name, by season, by smell.
+In Thane, local independent women have sold fish at the local bazaar for 30 years. They know every fish by name, by season, by smell.
 
 Relifish connects them directly to your building.
 
-#KoliFood #MumbaiSeafood #FreshFishMumbai #Relifish #SeafoodLovers #ThaneFoodLovers #IndianSeafood #GhodbunderRoadFood #HiranandaniEstateFoodies
+#HyperlocalFood #MumbaiSeafood #FreshFishMumbai #Relifish #SeafoodLovers #ThaneFoodLovers #IndianSeafood #GhodbunderRoadFood #HiranandaniEstateFoodies
 ```
 
 Location tag: Kasarvadavali, Thane
@@ -363,7 +364,7 @@ Slide 1: **"Your Sunday surmai took a longer journey than you think."** (hook sl
 
 Slide 2: The typical journey: Boat → auction → wholesaler → distributor → retailer → your plate. 3-5 days. Multiple hands.
 
-Slide 3: The Relifish journey: Boat → verified koli seller → your building. Same day.
+Slide 3: The Relifish journey: Boat → verified hyperlocal seller → your building. Same day.
 
 Slide 4: Why this matters: Every extra hand = time, handling, temperature change. By the time fish reaches a delivery app, the texture has changed. The flavour has changed.
 
@@ -379,7 +380,7 @@ Same-day catch is not a marketing phrase. It's the actual difference between fis
 
 The ban lifts August 1. Same-day surmai, direct from the dock. We'll tell you when it's time.
 
-#FreshFishThane #Relifish #MumbaiSeafood #ThaneFishDelivery #FreshFishMumbai #SeafoodLovers #KoliFood #LodhaFoodies
+#FreshFishThane #Relifish #MumbaiSeafood #ThaneFishDelivery #FreshFishMumbai #SeafoodLovers #HyperlocalFood #LodhaFoodies
 ```
 
 Location tag: Puranik City, Thane
@@ -390,7 +391,7 @@ Location tag: Puranik City, Thane
 
 **Instagram — Single image + strong caption**
 Time: 8:00 PM
-Format: Real photo — close-up of fresh fish on ice or in a koli seller's basket
+Format: Real photo — close-up of fresh fish on ice or in a hyperlocal seller's basket
 
 Caption:
 ```
@@ -440,7 +441,7 @@ These are just facts about how fish moves from catch to consumer — facts that 
 
 Relifish doesn't fix everything. But we tell you everything.
 
-#FreshFishThane #HonestFood #Relifish #ThaneFishDelivery #FreshFishMumbai #MumbaiSeafood #KoliFood #ThaneFood
+#FreshFishThane #HonestFood #Relifish #ThaneFishDelivery #FreshFishMumbai #MumbaiSeafood #HyperlocalFood #ThaneFood
 ```
 
 ---
@@ -551,9 +552,9 @@ Script:
 
 **DAY 19 — Wednesday July 9**
 
-**Instagram — Real content: koli seller feature**
+**Instagram — Real content: hyperlocal seller feature**
 Time: 8:00 PM
-Format: Photo of actual koli seller (with permission) + caption
+Format: Photo of actual hyperlocal seller (with permission) + caption
 
 Caption:
 ```
@@ -565,7 +566,7 @@ Relifish works with her. When you order through us, she knows your order is comi
 
 No warehouse. No cold chain. No mystery.
 
-#KoliFood #Relifish #FreshFishThane #MumbaiSeafood #ThaneFoodLovers #BehindTheSource
+#HyperlocalFood #Relifish #FreshFishThane #MumbaiSeafood #ThaneFoodLovers #BehindTheSource
 ```
 
 ---
@@ -585,7 +586,7 @@ Script:
 ```
 [0-3 sec]: "20 days until the fishing ban ends. Here's what's coming."
 [3-30 sec]: "August 1 — wild surmai back from Versova. Pomfret from Malvan. Rawas from the Arabian Sea. For the first time in 61 days."
-[30-50 sec]: "Relifish launches in Thane on August 1. Same-day catch, direct from koli sellers, to your building."
+[30-50 sec]: "Relifish launches in Thane on August 1. Same-day catch, direct from hyperlocal sellers, to your building."
 [50-60 sec]: "Waitlist is open at relifish.store — first 100 people get priority on the first day's catch."
 ```
 
@@ -621,7 +622,7 @@ Final trust-building post before launch
 
 Slide 1: "We've been in your feed for 30 days. Here's what we're actually building."
 Slide 2: The problem — every fish supply chain in Mumbai has 4-5 middlemen. Each adds time. Time = quality loss.
-Slide 3: The solution — koli sellers in Thane, same-day catch, direct to your building.
+Slide 3: The solution — hyperlocal sellers in Thane, same-day catch, direct to your building.
 Slide 4: What's coming August 1 — wild Surmai, Pomfret, Rawas, Bangda. First catch of the season.
 Slide 5: "Join 400+ Thane residents on the waitlist → relifish.store"
 
@@ -678,7 +679,7 @@ Fishing ban ends August 1. Wild surmai, pomfret, and rawas back from the boats f
 
 We're building Relifish to bring same-day catch directly to Thane buildings — launching August 1.
 
-If you want fresh fish updates from local koli sellers, we're building a waitlist at relifish.store — priority delivery for the first batch.
+If you want fresh fish updates from local independent sellers, we're building a waitlist at relifish.store — priority delivery for the first batch.
 
 No pressure, just sharing in case useful!
 ```

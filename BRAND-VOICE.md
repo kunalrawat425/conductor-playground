@@ -1,6 +1,25 @@
 # Brand Voice Guidelines — Relifish
 ### Analysis Date: June 20, 2026
+### Source of Truth: REQUIREMENTS.md (product facts, order flows, capabilities)
 ### Verified against: product-marketing-context.md, seo-content-engine.md, all 11 blog posts, launch playbook
+
+**Platform:** Mumbai's Hyperlocal Fresh Fish Marketplace — pure marketplace model (buyers ↔ hyperlocal fish sellers; Relifish takes 6.5% commission; WhatsApp: 9152207607)
+
+---
+
+## Brand Pillars
+
+All content must connect to at least 3 of these 7 pillars:
+
+| Pillar | What it means | How to say it |
+|--------|---------------|---------------|
+| **1. Hyperlocal** | Neighborhood-level sourcing within 2km, not city-wide warehouses | "Your building's fish seller, not a cold chain" |
+| **2. Service** | WhatsApp 9152207607 support, cut preferences, order tracking, 7:30AM–9PM | "Cleaned and cut as per your preference" |
+| **3. Convenience** | Pre-order tonight, pickup tomorrow; or same-day in 1–2 hrs from seller | "Order from your sofa. Pickup at your building gate." |
+| **4. Freshness** | Same-day catch, never frozen, stock updated daily by sellers | "Same-day catch. Nothing from yesterday." |
+| **5. Affordable** | No middleman markup; no Swiggy 25–30% fee; fair seller prices | "Your ₹500 buys ₹500 of fish. Not ₹350." |
+| **6. Trust** | Verified sellers, rated, transparent sourcing, FSSAI-compliant handling | "Hygienically sourced from verified sellers" |
+| **7. Engagement** | WhatsApp community, daily catch updates, honest fish education, seasonal guides | "We'll tell you when fish isn't fresh too." |
 
 ---
 
@@ -16,7 +35,7 @@ Relifish speaks like the most knowledgeable person in the building who also happ
 Evidence:
 - "Aaj kya fresh hai?" used naturally in persona language
 - Short sentences. No corporate jargon.
-- "koli," "tai," "bhai," "mandi" used without glossary
+- "hyperlocal," "tai," "bhai," "mandi" used without glossary
 - BUT not slangy — always respectful and clear for a 45-year-old Lodha resident
 
 ### Serious ←————→ Playful: **4/10** (measured, not playful)
@@ -89,7 +108,7 @@ Genuinely cares about the buyer's family dinner. Not transactional. The tone of 
 ### Words We Use
 **Action words:** order, pre-order, pick up, source, catch, deliver, clean, cut, verify, trust
 **Descriptive:** fresh, same-day, local, direct, honest, hyperlocal, taza, clean
-**Value words:** transparent, fair, direct, no middleman, community, koli
+**Value words:** transparent, fair, direct, no middleman, community, hyperlocal
 **Species as vocabulary (not jargon):** Surmai, Pomfret, Rawas, Bangda, Ghol, Prawns, Bombil
 
 ### Words We Avoid
@@ -116,15 +135,15 @@ Genuinely cares about the buyer's family dinner. Not transactional. The tone of 
 **"Fresh fish. No middlemen. No nonsense."**
 
 ### Value Propositions
-1. Same-day catch from local koli sellers — not cold-chain warehouse stock
+1. Same-day catch from local independent sellers — not cold-chain warehouse stock
 2. Order without leaving your society — pre-order tonight, pick up tomorrow
 3. See who caught your fish, where, and when — no opacity
 
 ### Elevator Pitch (75 words)
-Relifish connects Thane households directly to local fish sellers — koli women, fishermen, trusted fish stalls. You browse what's fresh today, pre-order tomorrow's catch, and pick up at your convenience. No Swiggy markup. No two-day-old fish dressed up as fresh. No mystery about where it came from. Just same-day catch, fair prices, and the kind of transparency the fish market never offered.
+Relifish is Mumbai's hyperlocal fresh fish marketplace. We connect Thane households directly to verified hyperlocal fish sellers — fisherwomen, fishermen, trusted local fish stalls. You browse what's fresh today, pre-order tomorrow's catch, and pick up at your convenience. No Swiggy markup. No two-day-old fish dressed up as fresh. No mystery about where it came from. Just same-day catch, fair prices, and the kind of transparency the fish market never offered.
 
 ### Boilerplate (120 words)
-Relifish is a hyperlocal seafood marketplace serving Thane. We connect urban households directly to local koli fish sellers — eliminating the middleman markup and the opacity that lets 2-day-old fish get sold as fresh. Buyers browse daily catch, pre-order tomorrow's fish, and pick up from nearby sellers or get doorstep delivery. Every seller on Relifish is verified and rated. Every catch comes with transparency — who caught it, when, and where. We serve Hiranandani Estate, Lodha, Puranik, Rustomjee, Majiwada, Ghodbunder Road, and Kasarvadavali. For families who care what goes into their fish curry, Relifish is the only honest option.
+Relifish is Mumbai's Hyperlocal Fresh Fish Marketplace, currently serving Thane. We connect urban households directly to verified hyperlocal fish sellers — eliminating the middleman markup and the opacity that lets 2-day-old fish get sold as fresh. Buyers browse daily catch, pre-order tomorrow's fish, and pick up from nearby sellers or get doorstep delivery. Every seller on Relifish is verified and rated. Every catch comes with transparency — who caught it, when, and where. We serve Hiranandani Estate, Lodha, Puranik, Rustomjee, Majiwada, Ghodbunder Road, and Kasarvadavali. For families who care what goes into their fish curry, Relifish is the only honest option.
 
 ---
 
@@ -135,7 +154,7 @@ Relifish is a hyperlocal seafood marketplace serving Thane. We connect urban hou
 - Lead with the outcome, not the feature ("Never wait for fresh fish again" not "Our app has pre-order functionality")
 - Use species names as natural vocabulary — Surmai, Pomfret, Bangda — never explained
 - Name real neighborhoods — Hiranandani Estate, Lodha, Ghodbunder Road — not just "Thane"
-- Use Hindi/Marathi words where they fit: taza, mandi, bhai, tai, koliwada, aaj — never in quotes, never explained
+- Use Hindi/Marathi words where they fit: taza, mandi, bhai, tai, koliwada (as a place reference only), aaj — never in quotes, never explained
 - Start sentences with verbs or customer outcomes — not "We at Relifish..."
 - Be honest about gaps: if fish is unavailable, say so and explain why
 - Write for a 45-year-old Lodha resident AND her domestic cook — both need to understand
@@ -144,7 +163,7 @@ Relifish is a hyperlocal seafood marketplace serving Thane. We connect urban hou
 ### DON'T:
 - Don't open with "We at Relifish..." — start with the buyer's world
 - Don't use exclamation marks more than once per post
-- Don't explain cultural terms (koli, bhai) — they're vocabulary, not jargon
+- Don't explain cultural terms (hyperlocal, bhai) — they're vocabulary, not jargon
 - Don't show prices in ads or social content
 - Don't use discount codes or coupon-based CTAs
 - Don't make guarantees or use the word "guarantee"
@@ -223,7 +242,7 @@ No spam. Just taza fish updates for your area."
 
 ## Immediate Recommendations
 
-1. **Fix the homepage H1 first** — "Fresh fish from sellers near you" is too generic. Replace with: "Thane's freshest fish. Straight from koli sellers. No middlemen."
+1. **Fix the homepage H1 first** — "Fresh fish from sellers near you" is too generic. Replace with: "Thane's freshest fish. Straight from hyperlocal sellers. No middlemen."
 2. **Write a brand voice 1-pager** for anyone who writes content (future team, freelancers)
 3. **Pick 3 signature phrases** and use them consistently across all channels — "same-day catch," "no middlemen," "from the boat to your kitchen"
 4. **No prices, no coupons, no guarantees** in any social or ad content — this is confirmed strategy

@@ -1,18 +1,19 @@
 # Relifish Launch Strategy — Neighborhood-by-Neighborhood
 
-*Last updated: 2026-04-14*
+*Last updated: 2026-06-20 (corrected from 2026-04-14)*
 *Budget: ₹12,000/month | Phase: Pre-launch waitlist*
+*Market: Mumbai's Hyperlocal Fresh Fish Marketplace — Thane beachhead*
 
 ## Strategic Premise
 
-Relifish is a **two-sided marketplace with zero network value outside a ~2 km radius.** A buyer in Andheri doesn't care about a seller in Thane. This means the launch strategy is not one launch — it's a **series of micro-launches, one neighborhood at a time**, each with its own liquidity threshold.
+Relifish is a **two-sided marketplace with zero network value outside a ~2 km radius.** A buyer in Hiranandani Estate doesn't care about a seller in Majiwada. This means the launch strategy is not one launch — it's a **series of micro-launches, one Thane neighborhood at a time**, each with its own liquidity threshold.
 
-**Target launch neighborhoods (order of priority):**
-1. **Versova / Andheri West / Juhu** — coastal, dense koli community, high seafood households
-2. **Bandra West / Khar / Santacruz West** — affluent, coastal, high WTP for convenience
-3. **Dadar / Prabhadevi / Worli** — central, strong Maharashtrian fish-eating households
-4. **Mahim / Matunga / Sion** — South Indian + Maharashtrian fish-eating base
-5. **Borivali / Kandivali / Malad** — suburban density, bigger ticket sizes
+**Target launch neighborhoods (order of priority — all within Thane, Mumbai Metro):**
+1. **Hiranandani Estate** — high-density gated community, high WTP, homogeneous buyer profile, concentrated demand
+2. **Lodha Splendora / Lodha Amara / Ghodbunder Road** — large township, multiple towers, strong fish-buying household base
+3. **Majiwada / Kasarvadavali** — dense residential, strong Maharashtrian fish-eating households, near fish markets
+4. **Kalwa / Thane West** — working-class residential, price-sensitive but high-frequency fish buyers
+5. **Puranik City / Rustomjee** — mid-premium gated societies, growing digital adoption
 
 **Launch threshold per neighborhood:** 50 buyer waitlist signups + 5 onboarded sellers = LAUNCH.
 
@@ -24,22 +25,22 @@ Relifish is a **two-sided marketplace with zero network value outside a ~2 km ra
 1. **Area-segmented WhatsApp broadcast lists** — one list per neighborhood. Primary activation channel. Low-cost, high-intimacy, Mumbai-native.
 2. **Email waitlist** — captured via buyer-detailed.html; segmented by area.
 3. **Website (relifish.store)** — waitlist-first, buyer-simple flyer, cardboard standee for in-person.
-4. **WhatsApp Business Catalog** at 9870619974 — showcase daily catch, push updates.
+4. **WhatsApp Business Catalog** at 9152207607 — showcase daily catch, push updates.
 
 ### Rented Channels
-1. **Instagram** — visual (fresh fish, koli sellers at work, recipes) + Meta ad stack. **Primary paid channel.**
+1. **Instagram** — visual (fresh fish, hyperlocal sellers at work, recipes) + Meta ad stack. **Primary paid channel.**
 2. **Meta ads (Instagram + Facebook)** — hyperlocal radius targeting per neighborhood.
-3. **Google Search (long-tail)** — "buy Pomfret online Mumbai", "fresh Surmai Andheri", etc.
-4. **Local Facebook groups** — "Bandra Residents", "Andheri West Foodies", "Mumbai Foodies".
+3. **Google Search (long-tail)** — "buy Pomfret online Thane", "fresh Surmai Hiranandani", "fish delivery Thane", etc.
+4. **Local Facebook groups** — "Hiranandani Estate Residents", "Lodha Splendora Community", "Thane Foodies", "Ghodbunder Road Residents".
 
 ### Borrowed Channels
 1. **Local Mumbai food Instagram creators** — 10K–100K followers (e.g., Mumbai Foodie, Bombay Bites, Tiffin Tales). Gift catch → review. Target 3–5 creators per launch neighborhood.
 2. **Building WhatsApp groups** — partner with one resident/RWA rep per building to share flyer. Incentive: ₹500 credit per 10 signups.
 3. **Local fish recipe YouTubers** (Marathi/Hindi) — small but loyal audiences.
-4. **Koli community endorsement** — one respected koli seller per area becomes the anchor; their word carries more weight than any ad.
+4. **Hyperlocal community endorsement** — one respected hyperlocal seller per area becomes the anchor; their word carries more weight than any ad.
 5. **Dabbawalas / society security guards / building managers** — distribute cardboard standees and flyers for ₹200–500 per building.
 
-**Rule:** Every borrowed/rented impression should drive to either (a) WhatsApp 9870619974, or (b) waitlist signup at relifish.store. No vanity traffic.
+**Rule:** Every borrowed/rented impression should drive to either (a) WhatsApp 9152207607, or (b) waitlist signup at relifish.store. No vanity traffic.
 
 ---
 
@@ -51,9 +52,9 @@ Relifish is a **two-sided marketplace with zero network value outside a ~2 km ra
 Actions:
 - Distribute cardboard standees at 20 local fish stalls, kirana shops, society gates in Priority 1 areas
 - Flyer drop in 10 Priority 1 building societies (500 flyers/society = 5,000 flyers)
-- Seed 5 Mumbai food Instagram creators with free curated catch box (₹1000 × 5 = ₹5K)
-- Run ₹2K/month Instagram ad to warm awareness, hyperlocal radius targeting
-- Track: waitlist signups per neighborhood (from buyer-detailed.html form).
+- Seed 5 Thane/Mumbai food Instagram creators with free curated catch box (₹1000 × 5 = ₹5K)
+- Run ₹2K/month Instagram ad to warm awareness, hyperlocal Thane radius targeting (2km pin drops on Hiranandani, Lodha, Majiwada)
+- Track: waitlist signups per Thane neighborhood (from buyer-detailed.html form).
 
 **Budget allocation Phase 0 (~₹8K/month):**
 - Flyer print + distribution: ₹2K
@@ -84,7 +85,7 @@ Actions:
 - Launch comparison content (Relifish vs FreshToHome vs Licious, Relifish vs local stall) — for SEO
 
 ### Phase 4: Pan-Mumbai Category Awareness (Months 4–6)
-- PR push: pitch Mumbai Mirror, HT Mumbai, MidDay (koli-empowerment angle — strong local story)
+- PR push: pitch Mumbai Mirror, HT Mumbai, MidDay, Maharashtra Times (Mumbai hyperlocal marketplace angle — strong local empowerment story)
 - Food festival presence: Times Food Festival, local flea markets
 - Partner with 1–2 large building complexes for "Relifish Sundays" (on-site seller setup)
 
@@ -100,13 +101,13 @@ Actions:
 ### Month 1 (₹12K)
 | Spend | Amount | Channel |
 |---|---|---|
-| Flyer print + society distribution (Priority 1: 3 neighborhoods × 3 societies) | ₹2,500 | Owned/physical |
-| Cardboard standees in 20 local stalls/shops (cost + placement incentive) | ₹1,500 | Owned/physical |
-| Instagram hyperlocal ads (3 neighborhoods × ₹1,500) | ₹4,500 | Rented |
-| Creator seeding (5 creators × ₹800 catch box) | ₹2,500 | Borrowed |
+| Flyer print + society distribution (Hiranandani Estate + Lodha Splendora — 3 societies each) | ₹2,500 | Owned/physical |
+| Cardboard standees in 20 Thane fish stalls/society gates (cost + placement incentive) | ₹1,500 | Owned/physical |
+| Instagram hyperlocal ads (Hiranandani + Lodha + Majiwada 2km radius × ₹1,500) | ₹4,500 | Rented |
+| Creator seeding (5 Thane/Mumbai creators × ₹800 catch box) | ₹2,500 | Borrowed |
 | WhatsApp Business tools + catalog setup | ₹1,000 | Owned |
 
-**Targets:** 200 waitlist signups, 10 seller inquiries, soft launch in 1 neighborhood.
+**Targets:** 200 waitlist signups from Thane, 10 seller inquiries, soft launch in Hiranandani Estate.
 
 ### Month 2 (₹12K)
 | Spend | Amount | Channel |
@@ -117,17 +118,17 @@ Actions:
 | 2 creator collabs (paid mini-reviews) | ₹1,500 | Borrowed |
 | Local Mumbai micro-influencer (1 post + 1 reel) | ₹1,000 | Borrowed |
 
-**Targets:** 500 waitlist signups, first 100 orders, soft launch in 2nd neighborhood.
+**Targets:** 500 waitlist signups (Thane), first 100 orders, soft launch in Lodha/Ghodbunder Road.
 
 ### Month 3 (₹12K)
 | Spend | Amount | Channel |
 |---|---|---|
 | Meta ads scale-up (best-performing neighborhoods) | ₹7,000 | Rented |
-| Google Ads (long-tail: "buy pomfret online mumbai" etc.) | ₹2,000 | Rented |
+| Google Ads (long-tail: "buy pomfret Thane", "fresh fish delivery Hiranandani", "fish delivery Thane" etc.) | ₹2,000 | Rented |
 | PR outreach + press kit | ₹1,000 | Borrowed |
 | Referrals + creator round 3 | ₹2,000 | Mixed |
 
-**Targets:** 1,000 waitlist, 300 orders, launch in 3rd neighborhood, first press mention.
+**Targets:** 1,000 waitlist, 300 orders, launch in Majiwada/Kasarvadavali, first press mention.
 
 ---
 

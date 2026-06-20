@@ -8,7 +8,7 @@ This playbook serves as the operational blueprint for the Relifish Content Engin
 
 ## 1. Niche Nurturing & Trust-First Funnel
 
-Most seafood startups fail by focusing on transaction volume instead of customer trust. In a highly fragmented fish market, Relifish wins by establishing a **Freshness Trust Layer** between local fish sellers (fishermen/koliwada) and urban families.
+Most seafood startups fail by focusing on transaction volume instead of customer trust. In a highly fragmented fish market, Relifish wins by establishing a **Freshness Trust Layer** between local fish sellers (fishermen/local fishing port) and urban families.
 
 ### Outcome-Based Value Propositions
 Following the first-principles growth models of industry leaders like SolarSquare and Country Delight, Relifish does not sell raw fish species; it sells outcomes:
@@ -22,7 +22,7 @@ graph TD
 ```
 
 ### Psychological Triggers & Trust Hooks
-* **Risk & Regret Aversion:** Consumers are terrified of buying stale, chemically treated, or foul-smelling fish. We counter this with the *Freshness Score* (real timestamps of catch-to-delivery) and a no-questions-asked refund policy.
+* **Risk & Regret Aversion:** Consumers are terrified of buying stale, chemically treated, or foul-smelling fish. We counter this with seller transparency (verified sellers, same-day catch listings) and an honest refund process (see REQUIREMENTS.md — no blanket guarantees).
 * **The Default Effect (Convenience):** Position doorstep delivery or scheduled neighborhood pickup as the default choice. Waking up at 6 AM to visit a smelly fish market is framed as the high-friction alternative.
 * **IKEA Effect (Customization):** Let buyers select their exact fish cut (steak, curry cut, whole cleaned, head-on) to increase investment in the final meal prep.
 * **Mimetic Desire & Social Proof:** Share testimonials from local apartment societies (e.g., "14 families in Hiranandani Estate ordered this morning").
@@ -84,7 +84,7 @@ Every blog article is designed to feed the content recycling pipeline:
 <!-- slide -->
 ### Month 4 - 6: Recipes & Seasonal Guides
 **Month 4: Recipes & Cooking**
-*   **Topic:** *The 15-Minute Koli-Style Surmai Fry (Without the Mess).*
+*   **Topic:** *The 15-Minute local-style Surmai Fry (Without the Mess).*
 *   **Keyword:** `surmai fry recipe` (Informational Intent)
 *   **Pain Point:** Seafood cooking is hard, smelly, or time-consuming.
 *   **Trigger:** Culinary pride.
@@ -175,12 +175,12 @@ You are the Content Director, Chief SEO Architect, Consumer Psychologist, and Se
 Your task is to compile a complete, production-ready content marketing bundle based on a target Topic and Key Phrase.
 
 Context:
-Relifish is a hyperlocal seafood marketplace in Thane (Hiranandani Estate, Ghodbunder Road, Majiwada, Kasarvadavali). It delivers same-day catch direct from local fishermen/koli sellers to urban households via pre-orders, serving as the "Freshness Trust Layer."
+Relifish is a hyperlocal seafood marketplace in Thane (Hiranandani Estate, Ghodbunder Road, Majiwada, Kasarvadavali). It delivers same-day catch direct from local fishermen/hyperlocal sellers to urban households via pre-orders, serving as the "Freshness Trust Layer."
 
 Style Constraints:
 - Writing must sound human, street-smart, and culturally authentic to Mumbai.
 - DO NOT use AI filler words (e.g., "delve," "testament," "realm," "furthermore," "moreover," "in conclusion," "revolutionizing").
-- Weave in Hindi/Marathi terms naturally (e.g., "tai," "bhai," "taza," "curry cut," "mandi," "koliwada") without italicizing or explaining them.
+- Weave in Hindi/Marathi terms naturally (e.g., "tai," "bhai," "taza," "curry cut," "mandi," "local fishing port") without italicizing or explaining them.
 - Focus heavily on outcome-based benefits (time saved, healthy dinners, chemical-free seafood) instead of features.
 
 Inputs:

@@ -1,4 +1,5 @@
 # Ad Campaigns — Relifish
+**⚠️ Source of Truth:** Read `SOURCE-OF-TRUTH.md` before editing — brand rules, WhatsApp number, forbidden language, correct service areas.
 **Date:** June 20, 2026 | **Budget:** ₹12,000/month | **Market:** Thane — High Society Apartments
 **Primary Objective:** Waitlist signups (June-July) → First orders (August 1+)
 **Platforms:** Meta (Facebook + Instagram) — Click to WhatsApp
@@ -77,7 +78,7 @@ Visual: Split screen — cloudy-eyed fish on left (supermarket), clear-eyed fres
 
 Primary Text:
 > The fish at your supermarket was probably caught 3 days ago.
-> Relifish connects you directly to koli sellers in Thane — same-day catch, no middleman.
+> Relifish connects you directly to hyperlocal sellers in Thane — same-day catch, no middleman.
 > Launching August 1. Join the waitlist now.
 
 Headline: **"Fresh fish. Finally honest."**
@@ -92,7 +93,7 @@ Visual: Photo of Hiranandani Estate tower/Lodha township with text overlay: "You
 
 Primary Text:
 > Hiranandani Estate residents — Relifish is launching in your neighborhood.
-> Same-day catch from local koli sellers. No Swiggy markup. No cold chain.
+> Same-day catch from local independent sellers. No Swiggy markup. No cold chain.
 > Join the waitlist. Be first when we go live.
 
 Headline: **"Hiranandani Estate's fresh fish marketplace"**
@@ -121,7 +122,7 @@ Visual: Screenshot collage of WhatsApp replies (with permission) — "Hiranandan
 
 Primary Text:
 > 400 Thane families are already on the Relifish waitlist.
-> They'll get first access to fresh koli catch when we launch August 1.
+> They'll get first access to fresh hyperlocal catch when we launch August 1.
 > Which building are you in?
 
 Headline: **"Your neighbors are already in. Are you?"**
@@ -129,15 +130,15 @@ CTA Button: Send WhatsApp Message
 
 ---
 
-### Campaign 2: The Koli Story (Trust + Authority)
+### Campaign 2: The Hyperlocal Story (Trust + Authority)
 
 **AD 2A — SOURCE TRANSPARENCY**
 
-Visual: Photo of koli seller or fishermen at dawn (authentic, real)
+Visual: Photo of hyperlocal seller or fishermen at dawn (authentic, real)
 
 Primary Text:
 > This is where your fish comes from — if you buy from Relifish.
-> A koli seller who's been at Majiwada market since 5 AM.
+> A hyperlocal seller who's been at Majiwada market since 5 AM.
 > Not a cold chain distribution center. Not a supermarket delivery truck.
 >
 > Same-day catch. Verified local sellers. No middlemen.
@@ -174,7 +175,7 @@ Primary Text:
 > The first Sunday after monsoon is sacred in Mumbai kitchens.
 > Surmai fry. Pomfret curry. Prawns in coconut masala.
 >
-> Relifish delivers same-day catch from koli sellers directly to your building.
+> Relifish delivers same-day catch from hyperlocal sellers directly to your building.
 > Hiranandani Estate | Lodha | Ghodbunder | Majiwada | Kasarvadavali
 
 Headline: **"Sunday lunch deserves the real thing."**
@@ -190,7 +191,7 @@ Visual: Simple text on navy. "You've been waiting. We're live."
 
 Primary Text:
 > You joined the Relifish waitlist. We haven't forgotten.
-> We're live August 1. Same-day koli catch in your area.
+> We're live August 1. Same-day hyperlocal catch in your area.
 > Pre-order tonight — your first order is waiting.
 
 Headline: **"Your fish. Ready when you are."**
@@ -209,7 +210,7 @@ STAGE 1: AWARENESS (Cold)
 
 STAGE 2: CONSIDERATION (IG engagers, video viewers)
   Audience: Watched >50% of video / saved carousel / visited profile
-  Ad: 2A (Koli story) or 1D (Social proof)
+  Ad: 2A (Hyperlocal story) or 1D (Social proof)
   Goal: WhatsApp opt-in
   Budget: 30%
 
@@ -242,7 +243,7 @@ Every ad that clicks to WhatsApp must have:
 > "Hi Relifish! I saw your ad. I live in [building/area] and want to know when you launch."
 
 **Response from Relifish within 30 min:**
-> "Welcome! 🐟 We're launching [area] on August 1 with fresh koli catch.
+> "Welcome! 🐟 We're launching [area] on August 1 with fresh hyperlocal catch.
 > You'll get first access before we open to the public.
 > Which building are you in? We'll confirm your area is covered."
 

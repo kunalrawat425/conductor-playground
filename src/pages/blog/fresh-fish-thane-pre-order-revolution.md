@@ -28,18 +28,18 @@ Worse, standard packaging leaks. When fish is delivered in thin plastic bag wrap
 
 ## The Relifish Pre-Order Solution: Ready-to-Cook Convenience
 
-Relifish was created to bridge this gap, establishing a new standard of seafood hygiene and convenience for Thane. Our model is simple: you pre-order, and we deliver fresh, pre-cleaned, vacuum-packed portions directly to your doorstep.
+Relifish was created to bridge this gap, establishing a new standard of seafood hygiene and convenience for Thane. The model is simple: you pre-order, and verified hyperlocal sellers deliver fresh, pre-cleaned, vacuum-packed portions directly to your doorstep.
 
-Here is how we deliver convenience without compromise:
+Here is how the marketplace delivers convenience without compromise:
 
 ### 1. Pre-Order for Freshness, Not Warehouse Storage
-With Relifish, you don't receive fish that has been sitting in a dark store warehouse for days. We source the finest catch of the day, immediately transfer it to our sanitised processing facility, and deliver it to you on your preferred schedule. 
+With Relifish, you don't receive fish that has been sitting in a dark store warehouse for days. Verified sellers list their morning catch, clean and portion it in sanitised environments, and dispatch it to you on your preferred schedule. 
 
 ### 2. Zero Kitchen Mess: Cleaned and Cut to Order
-Our professional culinary team handles the entire prep work in a sterile facility. All seafood is cleaned with cold, purified water, descaled, gutted, and custom-cut to your instructions. No scales on your counters, no waste to clean up at home.
+Verified marketplace sellers handle the entire prep work in sanitised environments. All seafood is cleaned with cold, purified water, descaled, gutted, and custom-cut to your instructions. No scales on your counters, no waste to clean up at home.
 
 ### 3. Double-Layered Vacuum-Sealed Packaging
-We seal all orders in thick, food-grade vacuum pouches. The airtight seal locks in the fish's natural juices and firm texture without freezing it. More importantly, it keeps the package 100% odour-free, so you can store it in your refrigerator next to other foods with total confidence.
+Sellers seal all orders in thick, food-grade vacuum pouches. The airtight seal locks in the fish's natural juices and firm texture without freezing it. More importantly, it keeps the package 100% odour-free, so you can store it in your refrigerator next to other foods with total confidence.
 
 ### 4. Sealed for Freshness
 Every order is vacuum-sealed in thick, food-grade pouches — airtight, leak-proof, and odour-contained. If you have any concerns about your delivery, [contact us](mailto:relifishstore@gmail.com).

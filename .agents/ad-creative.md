@@ -1,7 +1,8 @@
 # Relifish Ad Creative — Launch-Ready Variants
 
-*Last updated: 2026-04-14*
-*Platforms: Meta (IG/FB) + Google Search | Languages: English primary, Marathi for Dadar/Worli/Prabhadevi*
+*Last updated: 2026-06-20 (corrected from 2026-04-14)*
+*Platforms: Meta (IG/FB) + Google Search | Languages: English primary, Marathi for Thane Maharashtrian households*
+*Market: Mumbai's Hyperlocal Fresh Fish Marketplace — Thane (Hiranandani Estate, Lodha, Majiwada, Kasarvadavali, Ghodbunder Road)*
 
 ## Core Angles
 
@@ -11,7 +12,7 @@
 | B | **No Markup** — direct from sellers | Price-sensitive buyers, Swiggy-fatigued |
 | C | **Pre-order** — tomorrow's catch tonight | Working professionals, planners |
 | D | **Variety** — beyond 3–4 species | Regular coastal households |
-| E | **Koli Pride** — trust + community | Dadar/Worli, Marathi audiences |
+| E | **Hyperlocal Pride** — trust + community | Majiwada/Kasarvadavali, Thane Maharashtrian households |
 
 ---
 
@@ -21,8 +22,8 @@
 
 #### Primary Text (125 char hook)
 1. "Your supermarket fish is 2 days old. Ours is 2 hours old. 🐟" (59)
-2. "Same-day catch from Mumbai's koli sellers. No cold chain. No markup." (70)
-3. "Caught at 4am in Versova. On your plate by 7pm. That's Relifish." (66)
+2. "Same-day catch from Mumbai's hyperlocal sellers. No cold chain. No markup." (70)
+3. "Caught this morning by local sellers. In your Thane kitchen by evening." (73)
 4. "Tired of stale fish from DMart? There's a better way." (55)
 5. "Fish should smell like the sea, not the freezer." (49)
 
@@ -36,7 +37,7 @@
 #### Descriptions (30 char)
 1. "Join the waitlist today" (23)
 2. "Launching in your area soon" (27)
-3. "First 1,000 get launch deals" (28)
+3. "Launching in Thane now" (22)
 
 #### CTA buttons
 - "Sign Up" (waitlist)
@@ -46,7 +47,7 @@
 #### Visual direction
 - Hero shot: Fresh Surmai / Pomfret on ice, close-up, visible sheen + clear eyes
 - Vertical format, warm morning light (5–7am feel)
-- Text overlay: "Caught today in Versova" + timestamp
+- Text overlay: "Caught today — same-day catch" + timestamp
 - Logo bottom-right, WhatsApp number bottom
 - Subtle cue to seller's hands in frame (builds trust — no faceless product shot)
 
@@ -130,21 +131,22 @@
 
 ---
 
-### Angle E — Koli Pride (English + Marathi)
+### Angle E — Hyperlocal Pride (English + Marathi)
+*Target: Thane — Majiwada, Kasarvadavali, Maharashtrian households*
 
 #### Primary Text (English)
-1. "From Versova koli to your Andheri kitchen. Direct. Honest. Fresh." (65)
-2. "Mumbai was built on the koli community. Relifish brings them to your door." (75)
+1. "From local hyperlocal sellers in Thane — direct to your kitchen. Honest. Fresh." (80)
+2. "Mumbai's hyperlocal fish sellers are on Relifish. No middleman. No markup." (74)
 3. "Meet Pratik. He's been fishing for 22 years. Now his catch is a click away." (76)
 
 #### Primary Text (Marathi)
-1. "कोळी समाजाच्या हातून थेट तुमच्या ताटात. ताजी मासळी, योग्य भाव." (Direct from koli hands to your plate. Fresh fish, fair price.)
+1. "स्थानिक विक्रेत्यांकडून थेट तुमच्या ताटात. ताजी मासळी, योग्य भाव." (Direct from local sellers to your plate. Fresh fish, fair price.)
 2. "आज सकाळी पकडलेली. संध्याकाळी तुमच्या घरी. मध्ये कोणी नाही." (Caught this morning. At your home by evening. No middleman.)
-3. "सुरमई, पापलेट, रावस — सगळं एकाच ठिकाणी. मुंबईच्या कोळ्यांकडून." (Surmai, Pomfret, Rawas — all in one place. From Mumbai's koli community.)
+3. "सुरमई, पापलेट, रावस — सगळं एकाच ठिकाणी. ठाण्याच्या स्थानिक विक्रेत्यांकडून." (Surmai, Pomfret, Rawas — all in one place. From Thane's hyperlocal sellers.)
 
 #### Headlines (Marathi)
 1. "मुंबईची ताजी मासळी" (Mumbai's fresh fish)
-2. "थेट कोळ्यांकडून, योग्य भावात" (Direct from koli, fair price)
+2. "थेट स्थानिक विक्रेत्यांकडून, योग्य भावात" (Direct from local sellers, fair price)
 3. "आजची मासळी, आजच" (Today's fish, today)
 
 #### Descriptions (Marathi)
@@ -178,10 +180,10 @@
 12. "Baby, Medium, Export-Grade" (26)
 
 #### Descriptions (90 char max) — provide 4
-1. "Same-day catch. Direct from Versova & Sassoon Dock sellers. No markup. Join waitlist." (85)
-2. "Skip stale supermarket fish. Browse Mumbai sellers. Compare prices. Order or pre-order." (87)
-3. "Whole, cleaned, or ready-to-cook Pomfret. Fresh daily. Pickup in your area." (76)
-4. "First 1,000 buyers get launch deals. WhatsApp 9870619974 or join waitlist today." (81)
+1. "Same-day catch. Direct from Thane's hyperlocal sellers. No markup. Join waitlist." (83)
+2. "Skip stale supermarket fish. Browse Thane sellers. Compare prices. Order or pre-order." (87)
+3. "Whole, cleaned, or ready-to-cook Pomfret. Fresh daily. Pickup in your Thane area." (83)
+4. "Mumbai's hyperlocal fish marketplace. WhatsApp 9152207607 or join waitlist today." (81)
 
 ---
 
@@ -193,17 +195,17 @@
 3. "Same-Day Surmai, No Markup" (26)
 4. "Fresh Surmai in Your Area" (25)
 5. "Order Surmai for Dinner" (23)
-6. "Mumbai's Koli Fish Marketplace" (30)
+6. "Mumbai's Hyperlocal Fish Marketplace" (30)
 7. "Compare Surmai Prices Fast" (26)
 8. "Surmai, Direct from Sellers" (27)
 9. "Pre-Order Tomorrow's Surmai" (27)
 10. "Fresh Catch Delivered Fair" (26)
 
 #### Descriptions
-1. "Same-day Surmai catch. Direct from Mumbai's koli sellers. Fair prices, no markup." (81)
+1. "Same-day Surmai catch. Direct from Mumbai's hyperlocal sellers. Fair prices, no markup." (81)
 2. "Whole or cleaned. Pickup nearby. Pre-order if your stall is closed. Join the waitlist." (87)
-3. "Verified sellers. Ratings + reviews. Compare across Mumbai. WhatsApp 9870619974." (81)
-4. "Launching neighborhood-by-neighborhood. First 1,000 buyers get launch deals." (78)
+3. "Verified sellers. Ratings + reviews. Compare across Mumbai. WhatsApp 9152207607." (81)
+4. "Launching in Thane neighborhood-by-neighborhood. Join the waitlist for your area." (82)
 
 ---
 
@@ -212,7 +214,7 @@
 #### Headlines
 1. "Buy Fresh Fish in Mumbai" (24)
 2. "Mumbai's Fish Marketplace" (25)
-3. "Direct from Koli Sellers" (24)
+3. "Direct from hyperlocal sellers" (24)
 4. "No Middleman. Fresh Catch." (26)
 5. "Fresh Fish, Fair Prices" (23)
 6. "Same-Day Fish in Mumbai" (23)
@@ -226,8 +228,8 @@
 #### Descriptions
 1. "Mumbai's fish marketplace. No Swiggy markup. Same-day catch from local sellers." (79)
 2. "Surmai, Pomfret, Rawas, Bangda, Ghol. Browse sellers, compare, order. Fresh daily." (82)
-3. "Launching in Andheri, Bandra, Dadar first. Join the waitlist for your area today." (82)
-4. "Free to join. No fees. Direct seller prices. WhatsApp 9870619974 to get started." (81)
+3. "Launching in Thane — Hiranandani Estate, Lodha, Majiwada. Join the waitlist today." (84)
+4. "Free to join. No fees. Direct seller prices. WhatsApp 9152207607 to get started." (81)
 
 ---
 
@@ -240,12 +242,12 @@
 4. "Direct Seller Alternative" (25)
 5. "Same-Day Mumbai Catch" (21)
 6. "No 30% Markup, No Cold Chain" (28)
-7. "Koli Direct — Not Warehoused" (28)
+7. "Hyperlocal Direct — Not Warehoused" (28)
 8. "Mumbai Fish, Not National Supply" (30)
 
 #### Descriptions
 1. "Hyperlocal Mumbai fish marketplace. Same-day catch, not national cold-chain supply." (84)
-2. "Direct from koli sellers. No premium markup. See seller, compare prices, order direct." (87)
+2. "Direct from hyperlocal sellers. No premium markup. See seller, compare prices, order direct." (87)
 3. "Surmai, Pomfret, Rawas, Bangda — all fresh today. Pickup in your area. Join waitlist." (86)
 
 ---
@@ -259,8 +261,8 @@
 4. "Join Relifish Waitlist" (22)
 
 #### Descriptions
-1. "The official Relifish. Mumbai's fish marketplace. Direct from koli sellers. No markup." (85)
-2. "Sign up free. Launching neighborhood-by-neighborhood. WhatsApp 9870619974." (75)
+1. "The official Relifish. Mumbai's fish marketplace. Direct from hyperlocal sellers. No markup." (85)
+2. "Sign up free. Launching neighborhood-by-neighborhood. WhatsApp 9152207607." (75)
 
 ---
 
@@ -270,7 +272,7 @@
 
 **Wave 2 (Week 3–4):** Kill bottom 4. Introduce Angle C (Pre-order) and Angle D (Variety) with fresh creative.
 
-**Wave 3 (Week 5+):** Introduce Angle E (Koli Pride) — English in Bandra/Andheri, Marathi in Dadar/Worli/Prabhadevi.
+**Wave 3 (Week 5+):** Introduce Angle E (Hyperlocal Pride) — English in Hiranandani/Lodha, Marathi in Majiwada/Kasarvadavali.
 
 **For Google RSAs:** Pin "Fresh Pomfret/Surmai/etc." headlines to Position 1 (brand-match for query). Leave rest unpinned for Google to optimize.
 
@@ -286,7 +288,7 @@
 - [ ] Doesn't name competitors unless in competitor ad group
 - [ ] Image shows real catch, not stock photo
 - [ ] Subtitles on all videos
-- [ ] WhatsApp 9870619974 visible on video end-card
+- [ ] WhatsApp 9152207607 visible on video end-card
 
 ---
 

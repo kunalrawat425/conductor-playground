@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/Layout.astro
 title: "Why Fish Prices Change Daily in Thane & Mumbai"
-description: "Ever wondered why pomfret or surmai prices fluctuate daily in Thane & Mumbai? Discover the real reasons and get genuine Koli-fresh fish at fair mandi rates with Relifish."
+description: "Ever wondered why pomfret or surmai prices fluctuate daily in Thane & Mumbai? Discover the real reasons and get genuine hyperlocal-fresh fish at fair mandi rates with Relifish."
 pubDate: 2026-06-19
 author: "Relifish Team"
-tags: ["Fresh Fish", "Thane", "Koli Sellers", "Market Rates"]
+tags: ["Fresh Fish", "Thane", "Hyperlocal Sellers", "Market Rates"]
 image: "/blog-why-fish-prices-change-daily-thane-mumbai-get-fair-rate-hero.png"
 ---
 
@@ -20,7 +20,7 @@ It's not a conspiracy, we promise! The price of fish, especially sought-after va
 
 ### 1. The Whims of Weather and Sea Conditions
 
-Imagine a Koli fisherman setting out from the coast near Thane. If the sea is rough, storms are brewing, or strong currents make fishing dangerous, fewer boats go out. Less catch means less supply, which inevitably drives prices up. Conversely, calm seas and abundant catches lead to lower prices. This is the single biggest factor influencing daily prices.
+Imagine a local fisherman setting out from the coast near Thane. If the sea is rough, storms are brewing, or strong currents make fishing dangerous, fewer boats go out. Less catch means less supply, which inevitably drives prices up. Conversely, calm seas and abundant catches lead to lower prices. This is the single biggest factor influencing daily prices.
 
 ### 2. The Law of Supply and Demand
 
@@ -32,7 +32,7 @@ Just like fruits, fish have seasons. Certain species are more abundant at specif
 
 ### 4. Fuel Costs and Operational Expenses
 
-Fishermen's boats run on fuel, and fuel prices fluctuate. The cost of ice, labour, and transport from the landing sites to markets like those in Thane also adds up. When these operational costs increase, it naturally reflects in the final price you pay. For traditional Koli sellers, these are daily calculations that affect their livelihoods.
+Fishermen's boats run on fuel, and fuel prices fluctuate. The cost of ice, labour, and transport from the landing sites to markets like those in Thane also adds up. When these operational costs increase, it naturally reflects in the final price you pay. For traditional hyperlocal sellers, these are daily calculations that affect their livelihoods.
 
 ### 5. The Auction System at Landing Centres
 
@@ -49,19 +49,19 @@ This isn't just about paying more; it's about a **loss of family health** from c
 
 ## Relifish: Your Freshness Trust Layer in Thane
 
-This is where Relifish steps in, bridging the gap between genuine Koli freshness and modern convenience, all while ensuring you get a fair *fish price Thane*.
+This is where Relifish steps in, bridging the gap between genuine hyperlocal freshness and modern convenience, all while ensuring you get a fair *fish price Thane*.
 
-We connect you directly to trusted local Koli sellers in Thane. No middlemen, no cold storage warehouses, no artificial markups. Just the purest, freshest catch, delivered to your doorstep.
+We connect you directly to trusted hyperlocal sellers in Thane. No middlemen, no cold storage warehouses, no artificial markups. Just the purest, freshest catch, delivered to your doorstep.
 
 ### How Relifish Solves the Price & Freshness Puzzle:
 
-1.  **Direct from Koli Sellers:** We eliminate the layers of intermediaries. You pay what the Koli sellers genuinely charge, reflecting the day's mandi rate, not an inflated app price.
+1.  **Direct from Hyperlocal Sellers:** We eliminate the layers of intermediaries. You pay what the hyperlocal sellers genuinely charge, reflecting the day's mandi rate, not an inflated app price.
 2.  **Transparency & Fair Pricing:** While prices will still fluctuate daily (because the ocean doesn't take orders!), you'll know you're getting a direct-from-source price. No hidden charges, no surprises.
-3.  **Freshness Score on Every Listing:** Every listing shows how recently your fish was caught — gill colour, eye clarity, skin texture, assessed by the seller. No guesswork.
+3.  **Seller-Verified Freshness:** Every listing shows what's available today from the seller — gill colour, eye clarity, skin texture noted by the seller. You see who caught it and when. No guesswork.
 4.  **No Cold Storage, No Chemicals:** Our fish is genuinely fresh, never frozen, free from chemical treatments. Same-day catch means no need for preservatives or masking agents.
 5.  **Convenience, Reimagined:** Order from the comfort of your home in Hiranandani Estate, Ghodbunder Road, Majiwada, or Kasarvadavali, and get **2-hour doorstep delivery**. No waking up at dawn, no smelly markets, just pure convenience without compromising on freshness.
 
-Imagine cooking a delicious Pomfret curry tonight, knowing that the fish was caught just hours ago, sourced directly from a trusted Koli family, and delivered to you at a fair, transparent price. That’s the Relifish promise.
+Imagine cooking a delicious Pomfret curry tonight, knowing that the fish was caught just hours ago, sourced directly from a trusted local fishing family, and delivered to you at a fair, transparent price. That’s the Relifish promise.
 
 ## How to Ensure You're Getting a Fair Deal in Thane
 

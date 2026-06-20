@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/Layout.astro
 title: "Finally Solved: Thane's Sunday Fish Curry Dilemma"
-description: "Mumbai & Thane's Sunday fish dilemma is over. Get dock-fresh, local Koli fish delivered to your home in Hiranandani Estate, Ghodbunder Road & more. No cold chain, no markups. Just pure freshness. Order now."
+description: "Mumbai & Thane's Sunday fish dilemma is over. Get dock-fresh, hyperlocal fresh fish delivered to your home in Hiranandani Estate, Ghodbunder Road & more. No cold chain, no markups. Just pure freshness. Order now."
 pubDate: 2026-06-19
 author: "Relifish Team"
-tags: ["Fresh Fish", "Thane", "Koli Sellers", "Market Rates"]
+tags: ["Fresh Fish", "Thane", "Hyperlocal Sellers", "Market Rates"]
 image: "/blog-sunday-fish-problem-mumbai-thane-fixed-hero.png"
 ---
 
@@ -37,10 +37,10 @@ Relifish was built to break this compromise. We believe you should enjoy the con
 Here is how we do it:
 
 ### 1. Direct Dock Sourcing Under 4 Hours
-We bypass the warehouses entirely. Our verified Koli sellers bring in their catch directly from the docks (like Versova or Bhaucha Dhakka) early in the morning—often by 4:15 AM. It is packed in clean ice and delivered to your doorstep in Thane by lunch. That means the surmai or pomfret on your plate was swimming in the ocean just hours prior.
+We bypass the warehouses entirely. Our verified hyperlocal sellers bring in their catch directly from the docks (from local Mumbai fishing docks) early in the morning—often by 4:15 AM. It is packed in clean ice and delivered to your doorstep in Thane by lunch. That means the surmai or pomfret on your plate was swimming in the ocean just hours prior.
 
-### 2. Supporting Local Koli Families
-Relifish is a direct marketplace. By ordering here, you connect directly with local Koli fishing families. Your purchase supports their livelihoods and heritage instead of funding corporate middleman operations. 
+### 2. Supporting Local Fishing Families
+Relifish is a direct marketplace. By ordering here, you connect directly with hyperlocal fresh fishing families. Your purchase supports their livelihoods and heritage instead of funding corporate middleman operations. 
 
 ### 3. Mandi Rates, Delivered
 We do not mark up the price of the fish. You pay the direct seller rates—what the local mandi charges—meaning you get premium-grade fresh fish without the convenience tax.

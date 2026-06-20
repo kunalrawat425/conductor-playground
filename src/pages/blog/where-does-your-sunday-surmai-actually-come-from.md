@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Layout.astro
 title: "Where Does Your Sunday Surmai Actually Come From? (The Stale Truth)"
-description: "Tired of 3-day-old supermarket fish? Get morning-fresh Surmai caught by Koli sellers at 4:15 AM and delivered to Hiranandani Estate under 4 hours."
+description: "Tired of 3-day-old supermarket fish? Get morning-fresh Surmai caught by hyperlocal sellers at 4:15 AM and delivered to Hiranandani Estate under 4 hours."
 pubDate: 2026-06-18
 author: "Relifish Team"
 tags: ["Surmai", "Thane", "Hiranandani Estate", "Fresh Catch"]
@@ -33,10 +33,10 @@ By the time it hits your frying pan, **it is at least 3 to 4 days old.** It has 
 
 ## Direct from Boat to Hiranandani Estate in 4 Hours
 
-Relifish operates as the **Freshness Trust Layer** between Thane households and traditional Koli fishing families. We do not keep cold-stored inventory or operate Bhiwandi warehouses.
+Relifish operates as the **Freshness Trust Layer** between Thane households and local fishing families. We do not keep cold-stored inventory or operate Bhiwandi warehouses.
 
 Here is how we bring genuine freshness to your Sunday table:
-* **4:15 AM:** Koli fishermen, like Vinod Patil at Versova, dock their boats with the morning catch.
+* **4:15 AM:** local fishermen, dock their boats with the morning catch.
 * **6:00 AM:** The catch is listed live on Relifish. You browse real-time inventory from your phone.
 * **7:30 AM:** You place your order. The seller cuts and packs your selection in clean ice.
 * **11:00 AM:** The fish is delivered directly to your building lobby near Hiranandani Estate Circle, Arcadia, or The Walk. 
@@ -51,7 +51,7 @@ Genuinely fresh fish smells like the sea, not like ammonia. That's how you know 
 
 If you have any concerns about your order, [contact us](mailto:relifishstore@gmail.com).
 
-By skipping the middleman, you get premium Surmai that is safe for your children, full of natural ocean juices, and supports traditional Koli fisherwomen who have run our coast's distribution backbone for generations.
+By skipping the middleman, you get premium Surmai that is safe for your children, full of natural ocean juices, and supports local fisherwomen who have run our coast's distribution backbone for generations.
 
 ---
 

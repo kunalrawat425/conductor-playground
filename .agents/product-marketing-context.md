@@ -4,14 +4,14 @@
 
 ## Product Overview
 **One-liner:** Mumbai's fish marketplace — fresh catch direct from local sellers, no middlemen.
-**What it does:** Relifish connects Mumbai fish buyers directly with local sellers (fishermen, koli women, fish stalls). Buyers browse real menus, compare prices, pre-order tomorrow's catch, and pick up same-day fresh fish. Sellers list inventory and fulfill orders via the platform.
+**What it does:** Relifish connects Mumbai fish buyers directly with local sellers (fishermen, local independent women, fish stalls). Buyers browse real menus, compare prices, pre-order tomorrow's catch, and pick up same-day fresh fish. Sellers list inventory and fulfill orders via the platform.
 **Product category:** Hyperlocal fish marketplace / fresh seafood e-commerce (direct-to-consumer).
 **Product type:** Two-sided marketplace (buyers + local sellers), mobile-first web app.
 **Business model:** Currently pre-launch / waitlist. Likely take-rate on transactions or seller subscription post-launch. Free for buyers.
 
 ## Target Audience
 **Target customers:** Mumbai households, ages 25–55, who buy fish weekly or occasionally. Coastal Maharashtrian, Bengali, Mangalorean, South Indian, and other seafood-loving communities. Two core segments:
-- **Regular buyers (weekly):** Koli/coastal households, families where fish is a staple 2–3x/week. Budget ₹500–1000/order. Want freshest catch, best price, variety.
+- **Regular buyers (weekly):** Hyperlocal/coastal households, families where fish is a staple 2–3x/week. Budget ₹500–1000/order. Want freshest catch, best price, variety.
 - **Occasional buyers (monthly):** Professionals, working couples, nuclear families. Budget ₹300–500/order. Want convenience, trust, cleaned & cut or ready-to-cook options.
 **Decision-makers:** Primary grocery buyer in the household — often the woman/mother; increasingly working professionals who order via phone.
 **Primary use case:** Order fresh fish without leaving home, without paying supermarket/delivery-app markup, without settling for 2-day-old fish.
@@ -54,13 +54,13 @@ B2C — primary personas:
 
 **Secondary:** Swiggy Instamart / Zomato Blinkit / BigBasket — delivery apps with fish SKUs. Fall short because: 25–30% markup, same stale supply chain, no transparency on seller/catch date, limited variety.
 
-**Indirect:** Local koli stalls and WhatsApp groups — the status quo. Fall short because: limited inventory, missed messages, no tracking, closes by 11am, inconvenient for working buyers, price varies unpredictably.
+**Indirect:** Local hyperlocal stalls and WhatsApp groups — the status quo. Fall short because: limited inventory, missed messages, no tracking, closes by 11am, inconvenient for working buyers, price varies unpredictably.
 
 **Indirect 2:** Supermarkets (Reliance Fresh, DMart, Nature's Basket) — falls short: 2–3 day old fish, supply-chain sourced, not same-day catch.
 
 ## Differentiation
 **Key differentiators:**
-- Hyperlocal + direct: Mumbai koli/local sellers, no national middleman
+- Hyperlocal + direct: Mumbai hyperlocal/local sellers, no national middleman
 - Same-day catch transparency — see seller, location, freshness
 - Pre-order tomorrow's catch — unique in the category
 - Multi-seller comparison in buyer's area (not single-vendor)
@@ -79,7 +79,7 @@ B2C — primary personas:
 | "How do I know the fish is actually fresh?" | Same-day catch from local sellers. Seller name, location, and ratings shown. If you're unhappy, rate and review — bad sellers lose customers fast. |
 | "Why not just go to my local stall?" | Your stall has 3–4 species. Relifish shows dozens of sellers with different catch — Surmai, Rawas, Pomfret, Bangda, Ghol. Pre-order means you never miss out when they're closed. |
 | "Pre-ordering means I don't know the price upfront?" | Seller confirms with morning rate before you pay. Cancel anytime with one tap if the price doesn't work for you. |
-| "What if my area isn't covered?" | Join the waitlist — we use your phone & area to prioritize seller launches. First 1,000 buyers get exclusive launch deals. |
+| "What if my area isn't covered?" | Join the waitlist — we use your phone & area to prioritize seller launches. We'll notify you when your neighborhood goes live. |
 | "I already use WhatsApp for orders" | WhatsApp works until it doesn't — missed messages, no tracking, no notifications. Relifish is one tap: order, track, get notified. |
 
 **Anti-persona:** Vegetarians. Premium buyers who only want branded/packaged fish (Licious loyalists who prefer convenience over freshness). People outside Mumbai. People unwilling to pickup (we start with pickup, add delivery later).
@@ -103,24 +103,24 @@ B2C — primary personas:
 **How they describe us:**
 - "Fresh fish direct from sellers"
 - "Like Zomato, but for fish — and no markup"
-- "The koli marketplace"
+- "The hyperlocal marketplace"
 - "I can pre-order for tomorrow"
 
-**Words to use:** Fresh, direct, same-day catch, no middlemen, fair prices, local sellers, pre-order, your area, Mumbai, koli, seller, pickup, freshness, variety, compare, Surmai, Rawas, Pomfret, Bangda, Ghol, freshest catch, fair rate, honest.
+**Words to use:** Fresh, direct, same-day catch, no middlemen, fair prices, local sellers, pre-order, your area, Mumbai, hyperlocal, seller, pickup, freshness, variety, compare, Surmai, Rawas, Pomfret, Bangda, Ghol, freshest catch, fair rate, honest.
 
 **Words to avoid:** "Delivery app" (we're a marketplace, not delivery), "cheap" (say "fair" or "no markup"), "discount-first" framing (lead with freshness), "premium" / "curated" (sounds like Licious). Don't overuse "platform" or jargon.
 
 **Glossary:**
 | Term | Meaning |
 |------|---------|
-| Koli | Mumbai's indigenous fishing community — trust signal |
+| Hyperlocal | Mumbai's indigenous fishing community — trust signal |
 | Same-day catch | Fish caught that morning, not from cold-chain supply |
 | Pre-order | Reserve tomorrow's catch; seller confirms with morning price |
 | Surmai / Rawas / Pomfret / Bangda / Ghol | Top Mumbai fish species |
 | Relifish | The product name — "Re" (fresh again) + "fish" |
 
 ## Brand Voice
-**Tone:** Direct, warm, no-nonsense. Mumbai-casual. Confident without being arrogant. Hindi/Marathi words used naturally where they fit (aaj, fresh hai, koli, bhai).
+**Tone:** Direct, warm, no-nonsense. Mumbai-casual. Confident without being arrogant. Hindi/Marathi words used naturally where they fit (aaj, fresh hai, hyperlocal, bhai).
 **Style:** Short sentences. Concrete ("same-day catch from the dock" not "premium quality seafood"). Buyer's voice first.
 **Personality:** Local, honest, fresh, practical, trust-building.
 
@@ -160,12 +160,12 @@ Relifish must pivot from being a standard "fish delivery marketplace" to a **tru
 * **SolarSquare (Sell the Outcome):** Do not just sell raw species (Pomfret, Surmai, Prawns). Sell the outcomes: healthy family dinners, absolute freshness without dirty market visits, safe seafood for children, and saved weekly time.
 * **Zepto (Convenience as the Product):** Position convenience as the core product. Deliver "Fresh fish at your doorstep: No bargaining, no smell, no travel, no waiting."
 * **Country Delight (The Trust Layer):** Act as the **Freshness Trust Layer** between local fishermen and urban consumers, addressing primary anxieties about stale/frozen fish and poor hygiene.
-* **Licious (Premium Hyperlocal Branded Food):** Elevate raw seafood into a premium branded food experience. While Licious is a national player, Relifish will win by owning the hyperlocal koli/fisherman network and same-day delivery.
+* **Licious (Premium Hyperlocal Branded Food):** Elevate raw seafood into a premium branded food experience. While Licious is a national player, Relifish will win by owning the hyperlocal hyperlocal/fisherman network and same-day delivery.
 * **Airbnb (Storytelling Over Features):** Humanize the platform. Tell real stories of the fishermen, the daily catch, customer recipes, and local families.
 
 ### 2. The 5 Trust Moats
 To build an undefendable mental position ("For seafood, I trust Relifish"), the company should construct five trust moats:
-1. **Freshness Score:** Attach precise timestamps for caught, processed, and delivered status on every product.
+1. **Seller Transparency:** Show who caught the fish, when, and from which seller — timestamps on listing activity, not a score system.
 2. **Fisherman Stories:** Provide transparency on sourcing—who caught the fish and exactly where it came from.
 3. **Hyperlocal Authority:** Prioritize dominating Thane (Hiranandani Estate, Ghodbunder Road, Majiwada, Kasarvadavali) before physical expansion.
 4. **Seafood Education:** Help customers navigate seasonal fish, health benefits, and kid-safe seafood choices.
