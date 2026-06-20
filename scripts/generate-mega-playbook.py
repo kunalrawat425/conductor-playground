@@ -394,9 +394,9 @@ Same framework + add:
 18. "Macchi market ka secret: how sellers decide prices"
 19. "Best fish for frying vs curry vs grilling" (guide)
 20. "Why Relifish is different from FreshToHome" (explainer)
-21. "Koli fisherwomen of Mumbai" (cultural spotlight)
+21. "local independent fisherwomen of Mumbai" (cultural spotlight)
 22. "Fish storage hacks: keep it fresh for 3 days"
-23. "Making fish curry like a Koli grandmother"
+23. "Making fish curry like a Hyperlocal grandmother"
 24. "The busiest hour at Sassoon Dock" (time-lapse)
 25. "Rate my fish plate" (customer submissions)
 26. "What fishermen eat for breakfast" (surprising)
@@ -443,7 +443,7 @@ Festival Specials:
 4. "How to Buy Fresh Fish Online in Mumbai" (buyer's guide)
 5. "Surmai vs Rawas: Which Mumbai Fish Should You Buy?"
 6. "Fish Delivery in Andheri: Best Options" (+ Bandra, Dadar, Thane = 10 area pages)
-7. "Mumbai Koli Community: The Fishermen Behind Your Dinner"
+7. "Mumbai Hyperlocal Community: The Fishermen Behind Your Dinner"
 8. "Is Online Fish Delivery Really Fresh? We Tested 5 Services"
 9. "Complete Guide to Mumbai Fish Species (with Marathi Names)"
 10. "How to Store Fresh Fish at Home: Expert Tips"
@@ -642,7 +642,7 @@ Month 3-6:
 
 ### 10 Press Angles
 1. "Solo founder vs $810M: How Relifish is taking on FreshToHome with zero inventory"
-2. "Mumbai's Koli fishermen go digital: Inside the app connecting fishers to foodies"
+2. "Mumbai's local fishermen go digital: Inside the app connecting fishers to foodies"
 3. "The pre-order revolution: Why this startup lets you reserve tomorrow's catch tonight"
 4. "Zero commission for fishermen: How Relifish empowers India's 25M fishing families"
 5. "From Sassoon Dock to your doorstep: The tech startup preserving Mumbai's fish culture"

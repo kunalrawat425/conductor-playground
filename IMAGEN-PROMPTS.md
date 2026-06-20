@@ -17,7 +17,7 @@
 ✅ No coupon codes  
 ✅ No health claim text overlaid  
 ✅ All fish shown fresh — no packaged/cold-storage imagery  
-✅ Humans = real koli women, Thane apartment dwellers, home cooks  
+✅ Humans = real local independent women, Thane apartment dwellers, home cooks  
 
 ---
 
@@ -27,7 +27,7 @@
 ```
 Ultra-photorealistic editorial photograph, 1080x1920 portrait.
 
-Subject: A middle-aged Indian koli woman (40s, sun-weathered skin, bright eyes, wearing a cotton saree in teal-orange, pallu tucked at waist) holding a gleaming, whole Surmai fish with both hands, fish parallel to camera. She is looking directly into lens with quiet confidence, not smiling — serious, proud, knowledgeable. 
+Subject: A middle-aged Indian local independent woman (40s, sun-weathered skin, bright eyes, wearing a cotton saree in teal-orange, pallu tucked at waist) holding a gleaming, whole Surmai fish with both hands, fish parallel to camera. She is looking directly into lens with quiet confidence, not smiling — serious, proud, knowledgeable. 
 
 Setting: A Versova fish dock at 5:30 AM. Behind her: wooden fishing boats, morning mist over the Arabian Sea, amber dock lights creating bokeh. Foreground: crushed ice visible at frame bottom, silver fish scales catching light.
 
@@ -35,7 +35,7 @@ Lighting: Golden hour mixed with blue-grey pre-dawn. Key light from left (warm, 
 
 Composition: Rule-of-thirds. Woman occupies left 60% of frame. Fish is hero prop — fills center. Right side: negative space (dark water) for text overlay. Camera angle: slightly below eye level looking up — creates authority.
 
-Trust signals: Real hands (fish-handling calluses visible), authentic environment (not a studio backdrop), natural expression (no forced smile), authentic koli clothing.
+Trust signals: Real hands (fish-handling calluses visible), authentic environment (not a studio backdrop), natural expression (no forced smile), authentic hyperlocal clothing.
 
 Color grade: Warm teal-orange palette. Deep shadows. Bright fish body. Cinematic — like National Geographic meets editorial food photography.
 
@@ -171,7 +171,7 @@ NO text. NO logos. NO commercial setting.
 
 ## DAY 5 — Reel Cover · 1080x1920
 
-### Asset 5A: Koli story — 3 AM dock
+### Asset 5A: Hyperlocal story — 3 AM dock
 ```
 Cinematic atmospheric photograph, 1080x1920 portrait.
 
@@ -179,7 +179,7 @@ Scene: Versova or Malvan fishing dock, pre-dawn. 3:00-4:00 AM atmosphere.
 
 Foreground: A weathered wooden fishing boat hull, painted blue-white, barnacles at waterline. Rope coiled on dock.
 
-Middle ground: A male Koli fisherman (50s, dark-tanned skin, checked lungi, white banyan/vest, rubber boots) carrying a large wicker basket filled with glistening fish — walking toward camera from the boat. Face slightly turned, not looking directly at camera — three-quarter profile. Expression: focused, purposeful, tired but proud.
+Middle ground: A male local fisherman (50s, dark-tanned skin, checked lungi, white banyan/vest, rubber boots) carrying a large wicker basket filled with glistening fish — walking toward camera from the boat. Face slightly turned, not looking directly at camera — three-quarter profile. Expression: focused, purposeful, tired but proud.
 
 Background: Dark Arabian Sea. 2-3 other boats visible. Dock lights reflecting gold-orange on water. Horizon just beginning to show the faintest dark-blue glow (pre-sunrise).
 
@@ -231,7 +231,7 @@ NO logos. NO price. Purely visual storytelling.
 ```
 Editorial portrait photograph, 1080x1080 square.
 
-Subject: An Indian Koli woman (55-65 years old). Features: sun-weathered dark skin, deep-set expressive eyes, grey hair pulled back, wearing a bright cotton saree (saffron-yellow with red border). She is NOT smiling — she is looking directly at the camera with an expression of quiet authority and decades of knowledge. Strong face. Dignified.
+Subject: An Indian local independent woman (55-65 years old). Features: sun-weathered dark skin, deep-set expressive eyes, grey hair pulled back, wearing a bright cotton saree (saffron-yellow with red border). She is NOT smiling — she is looking directly at the camera with an expression of quiet authority and decades of knowledge. Strong face. Dignified.
 
 Setting: She is seated/standing behind a fish display — fresh fish laid on banana leaves on a wooden table. Pomfret, surmai, and prawn visible. All fish gleaming fresh.
 
@@ -263,8 +263,8 @@ Layout: Vertical split, 50-50.
 LEFT HALF — Supermarket:
 Cold, clinical supermarket fish counter. Fluorescent lights. Fish in plastic wrap on styrofoam trays. A digital price display (numbers blurred). Plastic gloves on counter. Slightly dull fish eyes visible. Clinical white and blue.
 
-RIGHT HALF — Relifish/Koli:
-Same frame position — but: a Koli woman's hands (60s, weathered) presenting a whole gleaming surmai directly in banana leaf. Natural light. Wet fish, vivid colors. No packaging.
+RIGHT HALF — Relifish/Hyperlocal:
+Same frame position — but: a local independent woman's hands (60s, weathered) presenting a whole gleaming surmai directly in banana leaf. Natural light. Wet fish, vivid colors. No packaging.
 
 Down the CENTER: A thin vertical line. Like a mirror showing two realities of the same fish category.
 
@@ -402,7 +402,7 @@ Style reference: Nick Knight studio photography energy applied to fish.
 ```
 Documentary portrait photograph, 1080x1080 square.
 
-Subject: An Indian Koli fish seller woman (55-70 years), seated in her stall. This is THE trust photograph. Every element signals authenticity.
+Subject: An Indian Hyperlocal fish seller woman (55-70 years), seated in her stall. This is THE trust photograph. Every element signals authenticity.
 
 Her: White hair, or salt-and-pepper, pinned back. Deep-set eyes — expressive, intelligent. Well-worn face — beautiful in the way that lived experience is beautiful. She is wearing a cotton saree (specific: green and orange, modest print). A single gold stud earring. Her mangalsutra is visible. No makeup.
 
@@ -429,7 +429,7 @@ NO text visible in image. NO logos.
 ```
 Editorial photograph, 1200x628 landscape (1.91:1).
 
-Scene: Three people in genuine conversation at a Thane fish market. Left side: the Koli seller woman (same as Day 19 asset — aged, authoritative, white saree). Center: A young Thane couple (28-32, urban professional appearance, casual clothes, Saturday morning vibes). They are looking at fish together, the seller explaining something, the couple listening with genuine attention and interest.
+Scene: Three people in genuine conversation at a Thane fish market. Left side: the Hyperlocal seller woman (same as Day 19 asset — aged, authoritative, white saree). Center: A young Thane couple (28-32, urban professional appearance, casual clothes, Saturday morning vibes). They are looking at fish together, the seller explaining something, the couple listening with genuine attention and interest.
 
 Fish display in foreground: Fresh fish on banana leaves — pomfret, surmai, prawns — arranged naturally (not styled).
 
@@ -539,11 +539,11 @@ white background, studio sweep, fake smiles, stock photo poses
 
 ### Generation order (priority)
 1. Asset 1A — Reel 1 cover (day 1 post needs this)
-2. Asset 7A — Koli seller portrait (highest trust, use across multiple posts)
+2. Asset 7A — Hyperlocal seller portrait (highest trust, use across multiple posts)
 3. Asset 19A — Real seller portrait (most important single asset)
 4. Asset 10A — Child nutrition (highest share rate from moms)
 5. Asset 2B — Fresh seafood flat-lay (use across multiple carousel slides)
-6. Asset 5A — Dock 3AM (Koli story Reel)
+6. Asset 5A — Dock 3AM (Hyperlocal story Reel)
 7. Asset 15A — Aug 1 boats (build to this for weeks)
 8. All others
 

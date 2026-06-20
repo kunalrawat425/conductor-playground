@@ -35,7 +35,7 @@ You are the Chief Brand Officer, Consumer Psychologist, Hyperlocal Growth Lead, 
 Your objective is to compile a complete, high-converting content marketing bundle (Blog post + Instagram Carousel Caption + Facebook post + WhatsApp broadcast) for a target Topic and Key Phrase.
 
 Context:
-Relifish is a hyperlocal seafood marketplace in Thane (serving Hiranandani Estate, Ghodbunder Road, Majiwada, Kasarvadavali). We connect buyers directly to local Koli sellers. We operate as the "Freshness Trust Layer," solving the bad trade-off between convenience (which usually means stale, warehouse-stored fish with a 30% delivery app markup) and freshness (which usually means waking up at 6 AM to visit a smelly local mandi).
+Relifish is a hyperlocal seafood marketplace in Thane (serving Hiranandani Estate, Ghodbunder Road, Majiwada, Kasarvadavali). We connect buyers directly to local independent sellers. We operate as the "Freshness Trust Layer," solving the bad trade-off between convenience (which usually means stale, warehouse-stored fish with a 30% delivery app markup) and freshness (which usually means waking up at 6 AM to visit a smelly local mandi).
 
 STRICT BRAND RULES & MENTAL MODELS (DO NOT DEVIATE):
 1. MARKETPLACE OVER COUPONS:
@@ -48,8 +48,8 @@ STRICT BRAND RULES & MENTAL MODELS (DO NOT DEVIATE):
    - Frame the competition's "cold chain," "refrigerated warehouses," and "dark stores" as a compromise. Cold chain keeps fish from rotting, but it ruins the texture, natural juices, and authentic sea flavor, delivering 3-day-old stale fish.
 
 3. CONNECTION BUILDING:
-   - Frame purchases as building a direct relationship between Koli fishing families and Thane households.
-   - Mention local Koli sellers, their names, and their heritage. Show that buying here directly supports local livelihoods instead of corporate dark store warehouses.
+   - Frame purchases as building a direct relationship between local independent fishing families and Thane households.
+   - Mention local independent sellers, their names, and their heritage. Show that buying here directly supports local livelihoods instead of corporate dark store warehouses.
 
 4. COMPETITOR CONTRAST (What they do vs what we do):
    - Contrast Relifish with delivery apps/supermarkets which charge 30% markups, use chemical treatments (like formalin/ammonia), and deliver warehouse-stored fish.
@@ -160,10 +160,10 @@ const LOCAL_CONTENT_QUEUE = [
   },
   {
     id: "local-6",
-    topic: "Meet the Koli Families Behind Your Catch: The Real People of Mumbai's Fish Trade",
-    keywords: ["Koli fishermen Mumbai", "local fish sellers Thane", "sustainable seafood Mumbai"],
+    topic: "Meet the local independent families Behind Your Catch: The Real People of Mumbai's Fish Trade",
+    keywords: ["local fishermen Mumbai", "local fish sellers Thane", "sustainable seafood Mumbai"],
     target_locality: "Thane",
-    slug: "meet-koli-families-behind-catch"
+    slug: "meet-hyperlocal-families-behind-catch"
   },
   {
     id: "local-7",
@@ -280,7 +280,7 @@ title: "${campaignData.meta_title.replace(/"/g, '\\"')}"
 description: "${campaignData.meta_description.replace(/"/g, '\\"')}"
 pubDate: ${dateStr}
 author: "Relifish Team"
-tags: ["Fresh Fish", "Thane", "Koli Sellers", "Market Rates"]
+tags: ["Fresh Fish", "Thane", "hyperlocal sellers", "Market Rates"]
 image: "${heroImagePath}"
 ---
 

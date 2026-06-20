@@ -95,12 +95,12 @@ const queue = [
   },
   // Campaign 9 (Ready-to-Cook standard)
   {
-    filename: "blog-meet-the-koli-families-behind-your-thane-fish-hero.png",
+    filename: "blog-meet-the-hyperlocal-families-behind-your-thane-fish-hero.png",
     aspectRatio: "16:9",
     prompt: "A professional, photorealistic 16:9 landscape photo of a chef in a spotless white uniform, black apron, and black gloves, presenting a beautifully cleaned, whole raw pomfret on a silver platter inside a high-end restaurant kitchen. Spotless clean environment, warm professional lighting, f/2.8, 50mm lens, no text.",
   },
   {
-    filename: "ig-meet-the-koli-families-behind-your-thane-fish-square.png",
+    filename: "ig-meet-the-hyperlocal-families-behind-your-thane-fish-square.png",
     aspectRatio: "1:1",
     prompt: "A close-up, photorealistic 1:1 square photograph of fresh, translucent raw tiger prawns with grey-green shells, arranged neatly on a bed of ice in a shiny stainless steel tray. Glistening water droplets, detailed shell textures, shot on 50mm, f/2.8, no text.",
   },

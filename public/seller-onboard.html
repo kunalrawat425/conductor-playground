@@ -302,8 +302,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
           <option value="Malad">Malad Fish Market</option>
           <option value="Dadar">Dadar Fish Market</option>
           <option value="Crawford">Crawford Market</option>
-          <option value="Bandra">Bandra Koliwada</option>
-          <option value="Worli">Worli Koliwada</option>
+          <option value="Bandra">Bandra local fishing port</option>
+          <option value="Worli">Worli local fishing port</option>
           <option value="other">Other (type below)</option>
         </select>
       </div>
@@ -378,7 +378,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
   <!-- Footer -->
   <div class="footer">
     <p>Relifish — Mumbai's Fish Marketplace</p>
-    <p style="margin-top:4px"><a href="https://relifish.store">relifish.store</a> &middot; WhatsApp: <a href="https://wa.me/919870619974">9870619974</a></p>
+    <p style="margin-top:4px"><a href="https://relifish.store">relifish.store</a> &middot; WhatsApp: <a href="https://wa.me/919152207607">9152207607</a></p>
     <p style="margin-top:8px;font-size:10px;color:#334155">Questions? WhatsApp us anytime. We reply in minutes.</p>
   </div>
 
@@ -434,12 +434,12 @@ document.getElementById('seller-form').addEventListener('submit', async function
     } else {
       btn.disabled = false;
       btn.textContent = 'Join Relifish — Free Setup →';
-      alert(data.error || 'Something went wrong. Try WhatsApp: 9870619974');
+      alert(data.error || 'Something went wrong. Try WhatsApp: 9152207607');
     }
   } catch(_) {
     // Fallback: open WhatsApp with pre-filled message
     const msg = encodeURIComponent(`Hi! I want to join Relifish.\nName: ${name}\nShop: ${shop || 'N/A'}\nArea: ${area}\nFish: ${fish.join(', ') || 'Various'}\nPhone: ${phone}`);
-    window.open(`https://wa.me/919870619974?text=${msg}`, '_blank');
+    window.open(`https://wa.me/919152207607?text=${msg}`, '_blank');
     document.getElementById('seller-form').style.display = 'none';
     document.getElementById('sf-success').style.display = 'block';
   }

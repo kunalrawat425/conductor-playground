@@ -130,7 +130,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   publishToMeta({
     slug: "why-fish-curry-doesnt-taste-same-anymore-mumbai",
     social_caption_ig: "Your Sunday Fish Curry didn't change. Your fish did. 🐟\n\nDirect mandi catch to your doorstep in 4 hours.\n\n👉 Join the waitlist: relifish.store\n#Thane #HiranandaniEstate",
-    social_caption_fb: "Mumbai families deserve same-day fresh fish instead of 3-day cold warehouse items. Browse local Koli sellers directly with Relifish.",
+    social_caption_fb: "Mumbai families deserve same-day fresh fish instead of 3-day cold warehouse items. Browse local independent sellers directly with Relifish.",
     target_locality: "Thane"
   }, ["public/relifish-slide3-moat.png", "public/relifish-slide5-cta.png"]);
 }

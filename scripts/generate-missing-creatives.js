@@ -69,7 +69,7 @@ const queue = [
     prompt: "A close-up, photorealistic 1:1 square photograph of a whole fresh pomfret, glistening and fresh, resting on a clean wooden cutting board in a bright Thane apartment kitchen. Natural daylight, high-detail scales and wet skin, f/2.8, shot on 50mm lens, no text.",
   },
   {
-    filename: "ig-meet-the-koli-families-behind-your-thane-fish-square.png",
+    filename: "ig-meet-the-hyperlocal-families-behind-your-thane-fish-square.png",
     aspectRatio: "1:1",
     prompt: "A close-up, photorealistic 1:1 square photograph of fresh, translucent raw tiger prawns with grey-green shells, arranged neatly on a bed of ice in a shiny stainless steel tray. Glistening water droplets, detailed shell textures, shot on 50mm, f/2.8, no text.",
   },

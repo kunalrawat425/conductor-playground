@@ -260,7 +260,7 @@ insert into sellers (name, phone, location, location_name, lat, lng, has_deliver
 values
   ('Raju Fish Stall', '9876543210', 'Versova Fish Market', 'Versova, Andheri West', 19.1334, 72.8167, true, 3.0, 4.5, 127),
   ('Fresh Catch Mumbai', '9876543211', 'Sassoon Dock', 'Colaba', 18.9067, 72.8347, true, 5.0, 4.2, 89),
-  ('Koliwada Fisheries', '9876543212', 'Worli Koliwada', 'Worli', 19.0144, 72.8177, false, null, 4.8, 203)
+  ('local fishing port Fisheries', '9876543212', 'Worli local fishing port', 'Worli', 19.0144, 72.8177, false, null, 4.8, 203)
 on conflict (phone) do nothing;
 
 -- Species price ranges
@@ -313,9 +313,9 @@ begin
   if s3 is not null then
     insert into fish_listings (seller_id, species, price, price_unit, weight_avail, pickup_loc, delivery_avl)
     values
-      (s3, 'pomfret', 600, 'kg', 4, 'Worli Koliwada Market', false),
-      (s3, 'hilsa', 1200, 'kg', 2, 'Worli Koliwada Market', false),
-      (s3, 'crab', 150, 'piece', 20, 'Worli Koliwada Market', false);
+      (s3, 'pomfret', 600, 'kg', 4, 'Worli local fishing port Market', false),
+      (s3, 'hilsa', 1200, 'kg', 2, 'Worli local fishing port Market', false),
+      (s3, 'crab', 150, 'piece', 20, 'Worli local fishing port Market', false);
   end if;
 end $$;
 

@@ -224,7 +224,7 @@ CALLOUT: Complete ALL items before moving to Chapter 2. Estimated time: 2-3 days
 - [ ] Submit sitemap: https://www.relifish.store/sitemap.xml
 - [ ] Set up Bing Webmaster Tools — import from Google Search Console
 - [ ] Verify UTM tracking works: visit relifish.store?utm_source=test&utm_medium=test, submit waitlist, check Supabase for UTM data
-- [ ] Verify WhatsApp link works: tap wa.me/919870619974 on phone
+- [ ] Verify WhatsApp link works: tap wa.me/919152207607 on phone
 - [ ] Print 5 test standees (cardboard.html) — verify QR code scans correctly
 
 ## Accounts Setup (Day 1)
