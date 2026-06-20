@@ -115,7 +115,7 @@ That fish literacy is a gift that lasts a lifetime.
 
 **→ [Order today's fresh catch for your family at Relifish](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=child_fish_guide_thane)**
 
-> 💬 *Ordering for your child? WhatsApp us at 9152 207 607 — tell us their age and we'll recommend the safest cut and cleaning style.*
+> 🐟 *Ordering for your child? [Browse sellers on Relifish](/shop) — select your fish and cleaning style directly with your seller.*
 
 ---
 

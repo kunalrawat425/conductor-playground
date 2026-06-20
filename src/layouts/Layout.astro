@@ -6,6 +6,10 @@ const { frontmatter } = Astro.props;
   title={frontmatter.title}
   description={frontmatter.description}
   image={frontmatter.image}
+  type="article"
+  pubDate={frontmatter.pubDate}
+  author={frontmatter.author}
+  tags={frontmatter.tags ?? []}
 >
   <article style="max-width:780px;margin:0 auto;padding:48px 24px 80px;">
     <!-- Hero image -->

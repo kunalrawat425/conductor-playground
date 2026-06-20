@@ -92,4 +92,4 @@ No warehouses. No cold chain. No 3-day-old fish dressed as fresh.
 
 *📦 Currently serving: Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali*
 
-*💬 WhatsApp: 9152 207 607 — tell us your area and we'll confirm availability.*
+*📍 Serving Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali — [check your area](/shop)*

@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relifish — Campaign Creative Brief</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#060b16;font-family:-apple-system,'Inter',sans-serif;color:#fff;padding-bottom:80px;}
+
+.hero{background:linear-gradient(135deg,#0a2472 0%,#0066ff 60%,#7c3aed 100%);padding:52px 24px 44px;text-align:center;}
+.hero h1{font-size:30px;font-weight:900;margin-bottom:8px;letter-spacing:-0.5px;}
+.hero p{font-size:13px;color:rgba(255,255,255,0.65);max-width:600px;margin:0 auto 24px;}
+.gtm-bar{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+.gtm-pill{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:100px;padding:5px 14px;font-size:11px;font-weight:700;}
+
+/* campaign header */
+.campaign{max-width:1200px;margin:56px auto 0;padding:0 20px;}
+.c-header{border-radius:16px 16px 0 0;padding:28px 32px 24px;}
+.c-number{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;opacity:0.6;margin-bottom:8px;}
+.c-name{font-size:26px;font-weight:900;margin-bottom:8px;letter-spacing:-0.3px;}
+.c-tagline{font-size:14px;opacity:0.75;margin-bottom:20px;}
+.c-meta{display:flex;gap:16px;flex-wrap:wrap;}
+.c-meta-item{display:flex;flex-direction:column;gap:2px;}
+.c-meta-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;opacity:0.5;}
+.c-meta-value{font-size:12px;font-weight:700;}
+
+/* campaign colors */
+.cam1{background:linear-gradient(135deg,#1a0a00,#2d1200);}
+.cam2{background:linear-gradient(135deg,#001a0a,#00280f);}
+.cam3{background:linear-gradient(135deg,#0a0018,#1a0040);}
+.cam4{background:linear-gradient(135deg,#001428,#002850);}
+.cam5{background:linear-gradient(135deg,#1a1000,#2a1800);}
+
+/* creative grid */
+.creative-grid{background:#0f1117;border:1px solid #1e293b;border-radius:0 0 16px 16px;overflow:hidden;margin-bottom:48px;}
+.creative-row{display:grid;grid-template-columns:280px 1fr;border-bottom:1px solid #1e293b;}
+.creative-row:last-child{border-bottom:none;}
+.cr-visual{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:320px;position:relative;border-right:1px solid #1e293b;}
+.cr-content{padding:24px 28px;display:flex;flex-direction:column;gap:14px;}
+.cr-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;width:fit-content;}
+.cr-title{font-size:16px;font-weight:800;color:#e2e8f0;line-height:1.3;}
+.cr-dim{font-size:10px;font-family:monospace;color:#475569;background:#0f172a;padding:3px 8px;border-radius:4px;width:fit-content;}
+.cr-section{display:flex;flex-direction:column;gap:6px;}
+.cr-section h5{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#0066ff;}
+.cr-text{font-size:11px;line-height:1.75;color:#94a3b8;font-family:'Courier New',monospace;white-space:pre-wrap;background:#0f172a;padding:12px;border-radius:8px;border-left:3px solid #1e293b;}
+.cr-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.cr-tag{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;}
+.tag-human{background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;}
+.tag-env{background:#0f766e20;color:#2dd4bf;border:1px solid #0f766e30;}
+.tag-perf{background:#b4530020;color:#fb923c;border:1px solid #b4530030;}
+.tag-dim{background:#1d4ed820;color:#60a5fa;border:1px solid #1d4ed830;}
+.tag-seo{background:#71717a20;color:#a1a1aa;border:1px solid #71717a30;}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s;margin-top:4px;width:fit-content;}
+.copy-btn:hover{background:#334155;color:#e2e8f0;}
+
+/* MOCK VISUALS */
+/* C1: dark truth */
+.v-dark-hook{background:#0a0a0a;width:100%;height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:24px;position:absolute;inset:0;}
+.v-dark-hook .e{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#ef4444;margin-bottom:12px;}
+.v-dark-hook .h{font-size:20px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:20px;}
+.v-dark-hook .n{font-size:52px;font-weight:900;color:#fff;line-height:1;}
+.v-dark-hook .nl{font-size:12px;color:#555;margin-top:4px;}
+
+/* C2: freshness */
+.v-fresh{background:#fff5eb;width:100%;height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:24px;position:absolute;inset:0;}
+.v-fresh .step{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.v-fresh .step-n{width:24px;height:24px;border-radius:50%;background:#0066ff;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.v-fresh .step-t{font-size:12px;color:#0f172a;font-weight:600;}
+
+/* C3: koli portrait */
+.v-koli-port{background:linear-gradient(180deg,#1a1008,#0a0800);width:100%;height:100%;position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;}
+.v-koli-port .bokeh{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(255,149,0,0.15),transparent 60%);}
+.v-koli-port .face{position:absolute;top:15%;left:50%;transform:translateX(-50%);font-size:52px;}
+.v-koli-port .bottom{position:relative;z-index:1;}
+.v-koli-port .tag{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#f59e0b;margin-bottom:5px;}
+.v-koli-port .name{font-size:18px;font-weight:900;color:#fff;line-height:1.2;}
+
+/* C4: season guide */
+.v-season{background:#0a2472;width:100%;height:100%;position:absolute;inset:0;display:flex;flex-direction:column;padding:24px;justify-content:center;}
+.v-season .row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.v-season .dot-on{width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0;}
+.v-season .dot-off{width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0;}
+.v-season .fish-name{font-size:13px;font-weight:700;color:#fff;}
+.v-season .fish-tag{font-size:10px;color:rgba(255,255,255,0.5);margin-left:auto;}
+.v-season .divider{height:1px;background:rgba(255,255,255,0.1);margin:8px 0;}
+
+/* C5: anticipation */
+.v-wait{background:#000;width:100%;height:100%;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.v-wait .big-n{font-size:80px;font-weight:900;color:#fff;line-height:1;}
+.v-wait .unit{font-size:14px;color:#555;letter-spacing:0.2em;text-transform:uppercase;margin-top:4px;}
+.v-wait .event{font-size:12px;color:#0066ff;margin-top:16px;font-weight:700;}
+
+/* dimension badge */
+.dim-pill{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:2px 6px;font-size:8px;font-family:monospace;color:rgba(255,255,255,0.5);}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Relifish — Campaign Creative Briefs</h1>
+  <p>5 campaigns · 20 image prompts · GTM cold-start phase · Performance marketer lens · Each prompt has dimensions, trust signals, SEO hooks</p>
+  <div class="gtm-bar">
+    <div class="gtm-pill">🎯 GTM Stage: Cold-Start Pre-Launch</div>
+    <div class="gtm-pill">👥 Zero followers</div>
+    <div class="gtm-pill">📍 Thane high-society</div>
+    <div class="gtm-pill">🏆 Goal: Waitlist 200+</div>
+    <div class="gtm-pill">🐟 Monsoon ban active</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- CAMPAIGN 1 -->
+<!-- ══════════════════════════════════════ -->
+<div class="campaign">
+  <div class="c-header cam1">
+    <div class="c-number">Campaign 01 of 05</div>
+    <div class="c-name">Cold Truth</div>
+    <div class="c-tagline">"The fish supply chain nobody talks about. We will."</div>
+    <div class="c-meta">
+      <div class="c-meta-item"><div class="c-meta-label">Objective</div><div class="c-meta-value">Discovery + credibility</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Format</div><div class="c-meta-value">Reels #1, #4, #7</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">KPI</div><div class="c-meta-value">3-sec hold rate &gt; 40%</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">SEO hook</div><div class="c-meta-value">"fresh fish Thane" / "fish delivery Mumbai"</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Emotion</div><div class="c-meta-value">Recognition → mild outrage → trust</div></div>
+    </div>
+  </div>
+  <div class="creative-grid">
+
+    <!-- C1 · Creative 1 -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div class="v-dark-hook">
+          <div class="e">Reel Cover · Day 1</div>
+          <div class="h">"The fish at your supermarket is probably 2-3 days old."</div>
+          <div style="font-size:18px;margin-top:8px;">👩‍🦱 · Versova dock · 5:30 AM</div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#ef444420;color:#f87171;border:1px solid #ef444430;">▶ Reel Cover · C1-01</div>
+        <div class="cr-title">Koli Woman at Versova Dock — Launch Hook</div>
+        <div class="cr-dim">1080 × 1920 px · 9:16 · Reel / Story</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Ultra-photorealistic editorial photograph. 1080×1920px portrait (9:16).
+
+SUBJECT: Indian koli woman, 42-48 years old. Sun-weathered brown skin with visible texture — not smooth, real. Bright, intelligent eyes. Wearing a cotton saree in teal-green with orange border, pallu tucked at waist (working position). She holds a whole gleaming fresh Surmai fish with both hands — naturally, the way she has held thousands of fish. She looks DIRECTLY into the lens. Expression: quiet authority. No smile. Not performing.
+
+HANDS: Her hands are critical trust signals. Show aged skin, slight calluses on the fish-handling areas, clean but worked.
+
+SETTING: Versova fishing dock, pre-sunrise. 5:30 AM atmosphere. Behind her: 2-3 wooden fishing boats (blue, white, worn paint), morning mist over dark Arabian Sea. Amber-orange dock sodium lights overhead creating warm pools of light. Crushed ice in foreground at frame bottom edge, catching the dock light.
+
+LIGHTING: Mixed — warm amber from dock lights (key, from left), cold blue-grey from sea horizon (rim, from right). No flash. Natural. Skin texture fully visible. The light is dramatic but real.
+
+COMPOSITION: Rule of thirds. She occupies left 55% of frame. Fish is center-dominant. Right side is negative space (dark water + distant boat lights) — clean for text overlay. Camera angle: slightly below eye level, looking up at her. Creates authority.
+
+TEXT SPACE: Right third of frame and bottom 15% are dark/empty — white text overlays go here.
+
+COLOR GRADE: Warm amber + cold ocean blue. Deep shadows. The fish body is the brightest element in the center. Cinematic. National Geographic editorial quality.
+
+NEGATIVE: no smile, no studio backdrop, no plastic fish, no price tags, no logos, no fake dock, no stock photo pose.
+
+DIMENSIONS: 1080×1920px · 9:16 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-human">👩 Real koli woman 42-48</div>
+          <div class="cr-tag tag-human">🤲 Worked hands — calluses</div>
+          <div class="cr-tag tag-human">😐 No smile — authority</div>
+          <div class="cr-tag tag-env">⛵ Versova dock 5:30 AM</div>
+          <div class="cr-tag tag-env">🌊 Arabian Sea mist</div>
+          <div class="cr-tag tag-perf">📊 Hook: Surprising counter-intuitive fact</div>
+          <div class="cr-tag tag-seo">🔍 "fresh fish Thane" mirror</div>
+          <div class="cr-tag tag-dim">📐 1080×1920 Reel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C1 · Creative 2 -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1080</div>
+        <div style="position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;">
+          <div style="background:#e8f0f8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;filter:saturate(0.3);">
+            <div style="font-size:28px;">🐟</div>
+            <div style="font-size:8px;color:#333;font-weight:700;">5 MIDDLEMEN</div>
+            <div style="font-size:8px;color:#666;">3-4 DAYS</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#001428,#002850);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
+            <div style="font-size:28px;">🐟</div>
+            <div style="font-size:8px;color:#60a5fa;font-weight:700;">KOLI → YOU</div>
+            <div style="font-size:8px;color:#2dd4bf;">SAME DAY</div>
+          </div>
+        </div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:80%;background:rgba(255,255,255,0.15);"></div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;">⧉ Carousel Slide · C1-02</div>
+        <div class="cr-title">Supply Chain Split — "Your Surmai's journey" Carousel Cover</div>
+        <div class="cr-dim">1080 × 1080 px · 1:1 · Feed / Carousel</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Ultra-photorealistic split-screen photograph. 1080×1080px square (1:1).
+
+LAYOUT: Perfect vertical 50/50 split. A clean 3px white dividing line runs full height, center.
+
+LEFT HALF (50% of frame) — SUPERMARKET:
+A Mumbai supermarket fish display counter. Overhead fluorescent lighting (cold white, clinical). Pomfret fish in plastic-wrap on white styrofoam trays. A digital price display in the background (numbers blurred, illegible). Plastic sneeze guard in foreground (slightly fogged). A laminated "Fresh Fish" label on the counter (small, slightly ironic given context). The fish eyes are slightly cloudy. The ice underneath has partially melted and gone grey. Overall color: desaturated, cold blue-white.
+
+RIGHT HALF (50% of frame) — KOLI MARKET:
+Same frame position — but a traditional Thane fish market. A Koli woman's aged hands (60s, weathered, henna-faded) present a whole gleaming Surmai on a fresh banana leaf (deep green). Fish: vivid silver-blue, clearly wet and fresh. Eyes clear and bright. Natural warm overcast light. Banana leaf texture. Zero packaging. Color: warm, saturated, golden.
+
+The split creates instant visual tension — same product category, completely different reality.
+
+Bottom 20% of each half: LEFT shows a family member eating with uncertain expression (muted tones). RIGHT shows a woman smelling fish before cooking — satisfied expression (warm tones). Very subtle, not theatrical.
+
+DIMENSIONS: 1080×1080px · 1:1 ratio · Left/right text space available at top of each half</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-human">🏪 Recognizable supermarket (trust through recognition)</div>
+          <div class="cr-tag tag-human">🤲 Aged Koli hands — authenticity</div>
+          <div class="cr-tag tag-env">🌿 Banana leaf — cultural truth</div>
+          <div class="cr-tag tag-perf">📊 KPI: Save rate (reference card)</div>
+          <div class="cr-tag tag-dim">📐 1080×1080 Carousel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C1 · Creative 3 -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div class="v-dark-hook" style="background:#050505;">
+          <div class="e">5 Middlemen · Reel Visual</div>
+          <div class="n">5</div>
+          <div class="nl">hands between the boat<br/>and your kitchen</div>
+          <div style="margin-top:16px;font-size:11px;color:#333;">→ boat · auction · wholesale<br/>→ distribution · retail · you</div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#ef444420;color:#f87171;border:1px solid #ef444430;">▶ Reel · C1-03</div>
+        <div class="cr-title">"4 things Nature's Basket won't tell you" — Talking Head BG</div>
+        <div class="cr-dim">1080 × 1920 px · 9:16 · Reel background</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Ultra-minimalist dark studio photograph. 1080×1920px portrait (9:16).
+
+PURPOSE: This is a background plate for a text-overlay / talking head Reel. Must be visually strong but not compete with text.
+
+SCENE: Extreme close-up of a fresh Pomfret fish being held up by two hands (man, 30s, plain clothes, forearms visible entering from bottom). The fish hangs vertically, filling the CENTER of the frame. The eye of the fish is at the exact center.
+
+Fish quality: Ultra-fresh. Crystal clear eye with bright catch-light. Scales iridescent in studio light. Wet. Silver-white body with subtle iridescent blue at dorsal.
+
+Background: Pure deep black void. Not a backdrop — just darkness. No floor, no shadows, no context. The fish exists in nothing.
+
+Lighting: Single strip light from left side. Creates a bright edge along the left body of the fish — dramatic specular highlight on scales. Right side falls to near-black. High contrast.
+
+Composition: Fish is centered vertically. Takes up 60% of frame height. Hands enter from bottom. Upper 35% of frame: pure black — for title text overlay. Lower 10%: pure black — for handle text.
+
+Color: Near-monochromatic. Silver-white fish against black. The scale iridescence is the only color note (subtle blue-green).
+
+IMPORTANT: Upper 35% of frame must be pure black (safe for white text overlay). This is where the Reel text goes.
+
+DIMENSIONS: 1080×1920px · 9:16 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-perf">📊 Background plate: works with text overlay</div>
+          <div class="cr-tag tag-perf">🎯 Upper 35% pure black = text safe zone</div>
+          <div class="cr-tag tag-env">💎 Minimalist = premium brand signal</div>
+          <div class="cr-tag tag-dim">📐 1080×1920 Reel</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end creative-grid C1 -->
+</div><!-- end campaign 1 -->
+
+<!-- ══════════════════════════════════════ -->
+<!-- CAMPAIGN 2 -->
+<!-- ══════════════════════════════════════ -->
+<div class="campaign">
+  <div class="c-header cam2">
+    <div class="c-number">Campaign 02 of 05</div>
+    <div class="c-name">Know Your Fish</div>
+    <div class="c-tagline">"The knowledge your fish tai has. Now yours."</div>
+    <div class="c-meta">
+      <div class="c-meta-item"><div class="c-meta-label">Objective</div><div class="c-meta-value">Education → saves → profile visits</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Format</div><div class="c-meta-value">Reels #2, #5 · Carousels</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">KPI</div><div class="c-meta-value">Save rate &gt; 5% on carousels</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">SEO hook</div><div class="c-meta-value">"how to check if fish is fresh" / "fish freshness test"</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Emotion</div><div class="c-meta-value">Curiosity → empowerment → competence</div></div>
+    </div>
+  </div>
+  <div class="creative-grid">
+
+    <!-- C2 · Creative 1 -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div class="v-fresh" style="position:absolute;inset:0;">
+          <div style="font-size:9px;font-weight:800;color:#0066ff;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:16px;">Freshness Test</div>
+          <div class="step"><div class="step-n">1</div><div class="step-t">Press test — springs back fast</div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-t">Eye test — clear + bright</div></div>
+          <div class="step"><div class="step-n">3</div><div class="step-t">Smell — sea only, not fish</div></div>
+          <div style="margin-top:12px;font-size:10px;color:#888;">Indian home cook · Thane kitchen · turmeric-stained fingers</div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#10b98120;color:#34d399;border:1px solid #10b98130;">▶ Reel Cover · C2-01</div>
+        <div class="cr-title">Freshness Press Test — Home Cook's Hands · "Takes 10 seconds"</div>
+        <div class="cr-dim">1080 × 1920 px · 9:16 · Reel / Story</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Ultra-photorealistic macro lifestyle photograph. 1080×1920px portrait (9:16).
+
+SUBJECT — HANDS (primary): An Indian woman's hands, 35-45 years old. These hands tell her story:
+- Clean but with faint turmeric stain on the right index and middle finger (she cooks daily)
+- Gold wedding ring on left ring finger (no nail polish)
+- Slim bangles (2-3, gold-toned) on right wrist — visible but not distracting
+- Natural skin texture — not model-perfect, real domestic hands
+- Slight mehndi remnant on the back of the left hand (faded, about 2 weeks old)
+
+ACTION: Her right index finger is pressed gently but firmly into the flesh of a whole fresh pomfret — specifically into the thick flesh near the dorsal fin, roughly mid-body. The flesh shows minimal indentation — it is fresh and firm. The moment of the test.
+
+FISH: Whole fresh pomfret (Paplet). Silver-white, gleaming. Placed on a clean white marble kitchen counter. Several water droplets visible on the skin. Fish eye visible at left edge — clear, bright, with catch-light.
+
+SECONDARY DETAIL: A small steel katori (bowl) with rock salt visible at far left edge, out of focus.
+
+BACKGROUND: Residential Thane apartment kitchen. Clean granite/marble counter. Blurred background shows: a window with golden morning light, a steel tiffin box on a shelf, a small curry leaf plant on the windowsill. Modern Indian middle-to-upper-class kitchen.
+
+LIGHTING: Natural window light from the right (warm golden morning). Soft fill from white kitchen walls on left. The fish is the brightest element. Hands are lit naturally. Clean and warm.
+
+COMPOSITION: Portrait (9:16). Hands fill center-lower 50% of frame. Fish spans full width. Upper 40%: blurred kitchen background (negative space for text overlay). The composition draws eye from the window light → to the fish → to the press test action.
+
+TEXT SAFE ZONE: Top 35% of frame (blurred kitchen bg) is clean for title text overlay.
+
+TRUST SIGNALS: turmeric stains (she really cooks), bangles (authentic Indian household), real kitchen (not a food photography studio), mehndi (cultural truth).
+
+NEGATIVE: no studio backdrop, no professional chef hands, no commercial kitchen, no perfectly manicured nails.
+
+DIMENSIONS: 1080×1920px · 9:16 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-human">💍 Wedding ring — relatable homemaker</div>
+          <div class="cr-tag tag-human">🌿 Turmeric stains — she actually cooks</div>
+          <div class="cr-tag tag-human">🪔 Faded mehndi — cultural authenticity</div>
+          <div class="cr-tag tag-env">🏠 Real Thane apartment kitchen</div>
+          <div class="cr-tag tag-env">🪴 Curry leaf plant — Indian home detail</div>
+          <div class="cr-tag tag-perf">📊 How-to hook: immediate payoff format</div>
+          <div class="cr-tag tag-seo">🔍 "how to check fresh fish" search mirror</div>
+          <div class="cr-tag tag-dim">📐 1080×1920 Reel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C2 · Creative 2 -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1080</div>
+        <div style="position:absolute;inset:0;background:#1a1a1a;display:flex;flex-direction:column;align-items:stretch;justify-content:center;padding:20px;gap:6px;">
+          <div style="text-align:center;font-size:14px;font-weight:900;color:#fff;margin-bottom:12px;">Pomfret vs Surmai</div>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;">
+            <div style="text-align:center;"><div style="font-size:28px;">🐟</div><div style="font-size:10px;color:#888;margin-top:4px;">POMFRET<br/>flat · delicate</div></div>
+            <div style="font-size:18px;font-weight:900;color:#0066ff;">VS</div>
+            <div style="text-align:center;"><div style="font-size:28px;">🐠</div><div style="font-size:10px;color:#888;margin-top:4px;">SURMAI<br/>firm · bold</div></div>
+          </div>
+          <div style="margin-top:12px;background:#1a1a1a;border:1px solid #ef4444;border-radius:6px;padding:8px;font-size:10px;color:#ef4444;text-align:center;">⚠ Both under fishing ban right now</div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#10b98120;color:#34d399;border:1px solid #10b98130;">▶ Reel · C2-02</div>
+        <div class="cr-title">Pomfret vs Surmai — Dark Dramatic Comparison · Species Education</div>
+        <div class="cr-dim">1080 × 1920 px · 9:16 · Reel / Story</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Ultra-photorealistic dark food editorial photograph. 1080×1920px portrait (9:16).
+
+SCENE: Dark wet black slate surface (deep charcoal, not grey). Two fish positioned vertically, side by side with a thin gap between them.
+
+LEFT FISH — POMFRET (Paplet):
+Whole fresh pomfret. Positioned head-up. Flat, disc-shaped body, elegant. Silver-white with slight iridescence. Scales: fine and smooth. Fins: delicate, translucent at edges. Eye: clear, precise. The pomfret has a refined, almost ornate quality — it looks like expensive fish.
+
+RIGHT FISH — SURMAI (King Mackerel):
+Whole fresh surmai. Also head-up, parallel. Long, torpedo-shaped — powerful and streamlined. Silver with blue-charcoal stripe along the dorsal. Scales: more pronounced, coarser than pomfret. Muscle mass visible in the body thickness. A more aggressive, powerful-looking fish.
+
+Between them: A single folded banana leaf placed diagonally, slightly behind the fish — adds natural green color and cultural context.
+
+Surrounding props (minimal, deliberate):
+- 4-5 whole black peppercorns scattered at the base of each fish
+- 1 dried red chilli at the lower left
+- A wedge of lemon (cut, bright yellow) at the lower right
+- Nothing else
+
+BOTH FISH: Absolutely fresh — gills red (visible at edge), eyes crystal clear with distinct bright catch-lights, wet skin catching single-source dramatic studio light.
+
+LIGHTING: Two lights — primary warm strip light from left-above (creates sculptural shadows along the fish bodies, highlights the curves and scales), secondary cold fill from right (keeps detail visible in shadows). The banana leaf catches warm light differently than the fish skin — intentional texture contrast.
+
+COMPOSITION: Portrait 9:16. Both fish occupy top 65% of frame vertically. Fish heads at approximately the 25% line from top. Props fill bottom 20%. Gap between fish: approximately 40px. The upper 20% of frame: dark slate — clean for text overlay title.
+
+COLOR: Moody and dark. Charcoal slate, silver fish, deep green banana leaf, red chilli. Palette is deliberate: elegant, authoritative, like a Michelin Guide food photograph combined with a fish market documentary.
+
+LOWER BAND: Bottom 15% of frame features a subtle red warning label area that will be added in Canva ("⚠ Both under fishing ban — check season before buying"). Leave this space relatively dark and uncluttered.
+
+NEGATIVE: no price tags, no packaging, no text in image, no logos, no studio sweep backdrop.
+
+DIMENSIONS: 1080×1920px · 9:16 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-env">🪨 Dark slate — premium positioning</div>
+          <div class="cr-tag tag-env">🌿 Banana leaf — Indian market authenticity</div>
+          <div class="cr-tag tag-perf">📊 This vs That: highest engagement format</div>
+          <div class="cr-tag tag-seo">🔍 "pomfret vs surmai" search target</div>
+          <div class="cr-tag tag-dim">📐 1080×1920 Reel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C2 · Creative 3 — Carousel reference card -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1080</div>
+        <div class="v-fresh" style="position:absolute;inset:0;background:#f8fafc;">
+          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#0066ff;margin-bottom:12px;">Reference Card — Save this</div>
+          <div style="width:100%;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+            <div style="background:#0a2472;padding:6px 10px;font-size:10px;font-weight:700;color:#fff;">Fresh fish checklist</div>
+            <div style="padding:10px;display:flex;flex-direction:column;gap:6px;">
+              <div style="font-size:10px;color:#334155;">✅ Press test — springs back</div>
+              <div style="font-size:10px;color:#334155;">✅ Eyes — clear, bright, wet</div>
+              <div style="font-size:10px;color:#334155;">✅ Smell — sea only</div>
+              <div style="font-size:10px;color:#334155;">✅ Gills — bright red</div>
+              <div style="font-size:10px;color:#ef4444;">❌ Fishy smell before cooking</div>
+              <div style="font-size:10px;color:#ef4444;">❌ Cloudy sunken eyes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#0066ff20;color:#60a5fa;border:1px solid #0066ff30;">⧉ Carousel Slide 4 · C2-03</div>
+        <div class="cr-title">Freshness Checklist — "Save this for your next market visit" Reference Card</div>
+        <div class="cr-dim">1080 × 1080 px · 1:1 · Carousel Slide 4 (most saveable)</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Ultra-photorealistic still-life photograph. 1080×1080px square (1:1).
+
+PURPOSE: This is the "save" card in the freshness carousel. It must look like something someone would screenshot and keep for reference. Like a sticky note from an expert.
+
+SCENE: Clean white marble surface (warm white, faint veining). Overhead flat-lay perspective (100% top-down).
+
+OBJECTS:
+1. A fresh whole pomfret fish — placed in the lower-left quadrant, slightly angled (not perfectly straight). Water droplets on its body. Eyes visible and clear.
+2. A small handwritten note card (index card size, slightly worn at edges) placed upper-right. The card has hand-drawn or handwritten text elements — LEAVE BLANK, these will be text overlaid in Canva.
+3. A steel pen or pencil resting diagonally across the card.
+4. A small steel katori with turmeric (bright yellow) to the upper-left.
+5. 3-4 curry leaves scattered naturally.
+6. A halved lime — lower right, vivid yellow-green.
+
+TEXTURES: The marble is cool and clean. The fish is wet and alive-looking. The index card is slightly warm (cream-white). The steel objects are bright and reflective.
+
+LIGHTING: Overhead diffused light (large softbox effect — flat, even, with very soft shadows). Slight warmth bias. The fish has slight specular highlights on the wet scales.
+
+COMPOSITION: Rule of thirds. Fish in lower-left third. Card in upper-right two-thirds (the MAIN save area — this is where the checklist text overlay goes in Canva). Supporting objects fill naturally without crowding.
+
+This image works as: a recipe reference card background, a checklist reference, a "save this" reminder card.
+
+COLOR: Clean whites, bright yellows (turmeric, lime), silver fish, green curry leaves. Cheerful and useful-feeling. Not moody.
+
+NEGATIVE: no text in image, no price tags, no brand names, no dark background.
+
+DIMENSIONS: 1080×1080px · 1:1 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-env">📋 Reference card format — highest save rate</div>
+          <div class="cr-tag tag-env">🪙 Steel katori turmeric — Indian kitchen</div>
+          <div class="cr-tag tag-perf">📊 TARGET: save rate &gt;8% (best carousel slide)</div>
+          <div class="cr-tag tag-seo">🔍 "fresh fish check" / "how to buy fresh fish"</div>
+          <div class="cr-tag tag-dim">📐 1080×1080 Carousel Slide 4</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- CAMPAIGN 3 -->
+<!-- ══════════════════════════════════════ -->
+<div class="campaign">
+  <div class="c-header cam3">
+    <div class="c-number">Campaign 03 of 05</div>
+    <div class="c-name">Behind the Source</div>
+    <div class="c-tagline">"The koli community fished the Arabian Sea for generations. This is their story."</div>
+    <div class="c-meta">
+      <div class="c-meta-item"><div class="c-meta-label">Objective</div><div class="c-meta-value">Emotional connection + brand story</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Format</div><div class="c-meta-value">Reel #3 · Portrait posts · Seller feature</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">KPI</div><div class="c-meta-value">Share rate (forwarded to building WhatsApp)</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">SEO hook</div><div class="c-meta-value">"koli fish Mumbai" / "Versova fish market"</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Emotion</div><div class="c-meta-value">Respect → connection → loyalty</div></div>
+    </div>
+  </div>
+  <div class="creative-grid">
+
+    <!-- C3 · Creative 1 -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div class="v-koli-port" style="position:absolute;inset:0;min-height:0;">
+          <div class="bokeh"></div>
+          <div class="face">👩‍🦳</div>
+          <div class="bottom">
+            <div class="tag">Behind the source · Thane</div>
+            <div class="name">30 years.<br/>Thousands of fish.<br/>She knows them all.</div>
+          </div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;">📸 Portrait · C3-01</div>
+        <div class="cr-title">Koli Seller — PRIMARY TRUST PORTRAIT · Use across entire campaign</div>
+        <div class="cr-dim">1080 × 1080 px · 1:1 · Feed post (also crops to 1080×1920 for Story)</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt — HIGHEST PRIORITY ASSET</h5>
+          <div class="cr-text">Documentary portrait photograph. 1080×1080px square (1:1).
+Generate 4 variants — pick the one where her eyes are sharpest and most expressive.
+
+SUBJECT: Indian Koli woman, 58-68 years old. She is NOT a model. She is:
+- Sun-darkened brown skin, deeply weathered — every line on her face is a year of early mornings and cold water
+- White hair, pulled back simply — a few strands loose at the temple
+- Eyes: deep-set, dark brown, sharp and intelligent. These eyes have assessed thousands of fish and dozens of buyers. They are the most important element in the image.
+- Wearing a cotton saree: saffron-yellow body with red border. Old and worn — washed hundreds of times. This is her work saree.
+- Jewelry: ONE small gold stud earring (right ear visible). Mangalsutra visible at neckline. That's all. No bangles while working.
+- NO makeup. Chapped lips (she works outdoors). Real skin.
+
+HER EXPRESSION: She is mid-sentence. Not looking AT the camera — she is looking at the customer (camera stand-in). Slight mouth open. Eyes focused and direct. The expression of an expert explaining something obvious to someone who should already know it. NOT a smile. NOT performing.
+
+HER HANDS (critical secondary element): Both hands are in frame at the lower portion of the image. She is holding a medium-sized fresh pomfret — natural grip, the effortless hold of someone who has picked up this species 40,000 times. Her hands:
+- Aged and brown — decades of cold water, ice, salt
+- Slight swelling on one finger joint (arthritis from years of work)
+- Henna pattern almost fully faded — was applied 3 weeks ago
+- Calluses on the inner palm from the basket handles
+- Clean, but stained (the permanent brown of someone whose hands are always in fish water)
+These hands are more trustworthy than any certificate.
+
+SETTING: Her actual stall at a Thane fish market. Behind her (bokeh/soft focus):
+- Other vendors visible as blurred shapes + color
+- A wicker basket with fresh fish
+- Stainless steel weighing scale (old-style, brass pan) to her right
+- Stack of old newspaper for wrapping (3-4 sheets)
+- Small plastic price board — completely blurred/illegible
+The chaos of a real market is visible as background energy, not detail.
+
+FISH DISPLAY: In the foreground/lower frame: fresh fish laid out on fresh banana leaves on her wooden table. Pomfret, surmai heads, 2-3 prawns visible.
+
+LIGHTING: Natural overcast market light — beautiful, diffused, perfect for skin tones. No direct sun creating harsh shadows. The light is the same quality as the best portrait photography — but it's REAL market light, not studio.
+
+COMPOSITION: Portrait orientation. Her face takes the upper 45% of frame. Her hands + fish take center 40%. Lower 15%: the edge of her display, fish on banana leaves. Her face is positioned slightly left of center — right side shows market bokeh. Eyes are at the upper-third intersection.
+
+DEPTH OF FIELD: Sharp focus on her face (especially eyes) and hands. The fish in her hands is mostly sharp. Background is progressively softer bokeh.
+
+WHAT MAKES THIS IMAGE IRREPLACEABLE: You cannot commission this at a studio. It is the accumulated evidence of a life spent in this work. Every wrinkle, every stain, every faded henna pattern says: "She knows things about fish that an app will never know."
+
+NEGATIVE: no studio backdrop, no arranged/styled hair, no professional lighting setup feel, no clean manicured hands, no forced smile, no retail fishmonger uniform.
+
+DIMENSIONS: 1080×1080px · 1:1 ratio. Also crop to 1080×1350 and 1080×1920 for different placements.</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-human">👩‍🦳 Age 58-68 — maximum expertise perception</div>
+          <div class="cr-tag tag-human">🤲 Arthritic knuckles — 30 years of cold water</div>
+          <div class="cr-tag tag-human">🗣 Mid-sentence — documentary authenticity</div>
+          <div class="cr-tag tag-human">😐 No smile — she's not performing</div>
+          <div class="cr-tag tag-env">⚖️ Brass weighing scale — old school trust</div>
+          <div class="cr-tag tag-env">📰 Newspaper stack — real market</div>
+          <div class="cr-tag tag-perf">📊 HIGHEST ROI asset — reuse 10+ times</div>
+          <div class="cr-tag tag-dim">📐 1080×1080 + crop to 1080×1920</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C3 · Creative 2 — 3AM dock -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1628,#162035,#0d1520);display:flex;align-items:flex-end;padding:20px;">
+          <div style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);font-size:32px;">👨‍🦱</div>
+          <div style="position:absolute;bottom:22%;left:0;right:0;display:flex;justify-content:center;gap:24px;font-size:10px;">
+            <span style="color:rgba(255,149,0,0.6);">⬤</span><span style="color:rgba(255,149,0,0.6);">⬤</span><span style="color:rgba(255,149,0,0.6);">⬤</span>
+          </div>
+          <div style="position:relative;z-index:1;">
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#f59e0b;margin-bottom:6px;">3 AM · Versova Dock</div>
+            <div style="font-size:18px;font-weight:900;color:#fff;line-height:1.25;">This is where your<br/>fish starts its journey.</div>
+          </div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed30;">▶ Reel Cover · C3-02</div>
+        <div class="cr-title">3 AM Versova Dock — Koli Fisherman Loading Catch</div>
+        <div class="cr-dim">1080 × 1920 px · 9:16 · Reel</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Cinematic atmospheric photograph. 1080×1920px portrait (9:16).
+Visual reference: Denis Villeneuve cinematography + National Geographic fisheries documentary.
+
+TIME: Pre-dawn. 3:00-4:00 AM. The darkest and most alive hour at a fishing dock.
+
+FOREGROUND (lower 30%): Weathered dock surface — grey wet concrete with water stains. A heavy rope (manila, 3cm diameter) coiled messily to the left. Water puddles reflecting the dock lights above. The texture here is gritty and real.
+
+MIDDLE GROUND (center 40%): A male Koli fisherman, 50-60 years old. Dressed: faded checked lungi (dark blue/white), plain white banyan/banian vest (slightly damp from sea spray), worn rubber boots. Physique: lean, strong, tanned to deep brown. He is carrying a large wicker basket on his shoulder/hip — the basket is loaded with fresh fish (Surmai and pomfret visible in the top of the basket, glistening). He walks TOWARD the camera — three-quarter angle, face at slight left turn. Not looking at camera. Expression: focused, purposeful, with the contained tiredness of a man who starts work at midnight.
+
+BACKGROUND (upper 30%): The Arabian Sea — dark green-black, slight chop visible. 2-3 other fishing boats moored in various distances. Dock lights (sodium vapor — warm orange) are strung between poles, creating pools of amber in the darkness. The very faintest hint of pre-dawn — the horizon between sea and sky shows a strip of dark blue that is barely lighter than the rest of the sky.
+
+LIGHT QUALITY: Primary source: overhead dock sodium lights — warm amber-orange. This creates one side of the fisherman strongly lit (warm amber edge on his right shoulder and basket), deep shadow on the left. Secondary: faint ambient blue-grey from the sea and pre-dawn sky. The contrast between warm amber and cold blue-grey is the emotional core of the image.
+
+ATMOSPHERE: You can FEEL the humidity. The salt air. The specific smell of a dock at 3 AM. This is achieved through: water droplets on surfaces, visible mist over the sea, slightly soft edges from the humidity-laden air.
+
+COMPOSITION: Fisherman at golden-ratio left. He walks toward bottom-center of frame. The dock recedes to the right. Sky takes upper 30%. Strong sense of depth — dock lights receding into distance at right.
+
+COLOR GRADE: Dark. Warm amber vs cold blue-grey. Deep blacks with detail (not crushed). High contrast but retaining texture. Like shooting on a RED MONSTRO with a 2.8 anamorphic.
+
+TEXT SPACE: Upper right quarter of frame — sky and distant dock lights. Dark enough for white text overlay. This is where "3 AM. Versova." goes.
+
+NEGATIVE: no staged dock, no commercial fishing operation, no daytime, no smiling, no direct camera look.
+
+DIMENSIONS: 1080×1920px · 9:16 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-human">👨 Koli fisherman 50-60: real physique</div>
+          <div class="cr-tag tag-human">😔 Purposeful tiredness — authentic</div>
+          <div class="cr-tag tag-env">⚓ Versova dock pre-dawn: before you wake</div>
+          <div class="cr-tag tag-perf">📊 Narrative hook: "before you wake up"</div>
+          <div class="cr-tag tag-seo">🔍 "koli fish Mumbai" / "Versova fish market"</div>
+          <div class="cr-tag tag-dim">📐 1080×1920 Reel</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- CAMPAIGN 4 -->
+<!-- ══════════════════════════════════════ -->
+<div class="campaign">
+  <div class="c-header cam4">
+    <div class="c-number">Campaign 04 of 05</div>
+    <div class="c-name">Monsoon Guide</div>
+    <div class="c-tagline">"The 61-day fishing ban. What's real, what's not, what to buy."</div>
+    <div class="c-meta">
+      <div class="c-meta-item"><div class="c-meta-label">Objective</div><div class="c-meta-value">Seasonal authority + save-worthy content</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Format</div><div class="c-meta-value">Carousels + single image</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">KPI</div><div class="c-meta-value">Saves + FB group shares</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">SEO hook</div><div class="c-meta-value">"which fish to buy in monsoon" / "fishing ban Mumbai"</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Emotion</div><div class="c-meta-value">Confusion → clarity → gratitude</div></div>
+    </div>
+  </div>
+  <div class="creative-grid">
+
+    <!-- C4 · Creative 1 -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1080</div>
+        <div class="v-season" style="position:absolute;inset:0;">
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:16px;">Monsoon Season Guide</div>
+          <div class="row"><div class="dot-on"></div><div class="fish-name">Farmed Prawns</div><div class="fish-tag">In season ✓</div></div>
+          <div class="row"><div class="dot-on"></div><div class="fish-name">Bhetki / Barramundi</div><div class="fish-tag">Available ✓</div></div>
+          <div class="row"><div class="dot-on"></div><div class="fish-name">Rohu / Catla</div><div class="fish-tag">Peak season ✓</div></div>
+          <div class="divider"></div>
+          <div class="row"><div class="dot-off"></div><div class="fish-name">Wild Surmai</div><div class="fish-tag">Ban active ✗</div></div>
+          <div class="row"><div class="dot-off"></div><div class="fish-name">Wild Pomfret</div><div class="fish-tag">Cold storage ✗</div></div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#1d4ed820;color:#60a5fa;border:1px solid #1d4ed830;">⧉ Carousel · C4-01</div>
+        <div class="cr-title">"61 Days" — Monsoon Ban Explained · Save-worthy guide carousel</div>
+        <div class="cr-dim">1080 × 1080 px · 1:1 · Carousel Slide 1 (Cover)</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt — Carousel Cover</h5>
+          <div class="cr-text">Graphic-photographic hybrid. 1080×1080px square (1:1).
+
+CONCEPT: An overhead flat-lay that visually tells the story of abundance vs scarcity — what's in season and what isn't. This is a "save this" reference card with photographic beauty.
+
+SURFACE: Dark navy blue (#0a2472) matte surface — like a dark tile or painted wood. The surface IS the brand color.
+
+TWO ZONES separated by a thin diagonal line (or natural negative space):
+
+ZONE 1 — "Available" (upper-left 60%):
+Fresh, beautiful, well-lit:
+- 5-6 raw tiger prawns: vivid orange-pink, gleaming, arranged in a gentle arc
+- 1 whole Bhetki/Barramundi: silver-white, gleaming, diagonal placement
+- Fresh curry leaves: scattered naturally between
+- A wedge of lime: bright green-yellow, cut side up
+- Droplets of water on everything — freshness signal
+These items are BRIGHT and SATURATED — lit by warm overhead light.
+
+ZONE 2 — "Not available" (lower-right 40%):
+The ABSENCE zone. Instead of crossed-out fish, show:
+- Dark, barely-visible outlines/silhouettes of a pomfret and surmai shape — almost ghost-like
+- Created by placing dark-colored versions of the fish on the dark surface, barely distinguishable
+- No bright light on this zone — flat, low, dim
+- 1-2 question marks visible as small paper cards with "?" written on them
+This zone represents what's missing without being heavy-handed.
+
+LIGHTING: Zone 1 gets bright, warm overhead light. Zone 2 gets almost nothing. The lighting itself tells the story.
+
+COMPOSITION: Diagonal composition. Zone 1 upper-left, Zone 2 lower-right. The diagonal line between them is organic (negative space), not ruled.
+
+COLOR: Navy background, bright coral/orange prawns, silver fish, green herbs in Zone 1. Zone 2 stays dark navy-on-navy.
+
+DIMENSIONS: 1080×1080px · 1:1 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-env">🎨 Navy brand color background</div>
+          <div class="cr-tag tag-env">💧 Water droplets = freshness signal</div>
+          <div class="cr-tag tag-perf">📊 Save-worthy: people reference this guide</div>
+          <div class="cr-tag tag-seo">🔍 "which fish to buy in monsoon" exact match</div>
+          <div class="cr-tag tag-dim">📐 1080×1080 Carousel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C4 · Creative 2 — Child nutrition -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div style="position:absolute;inset:0;background:linear-gradient(160deg,#f5f0e8,#fdf6ec);display:flex;align-items:center;justify-content:center;">
+          <div style="text-align:center;">
+            <div style="font-size:40px;margin-bottom:10px;">👶🐟</div>
+            <div style="font-size:10px;color:#666;line-height:1.6;">Thane apartment · afternoon<br/>Indian home kitchen · steel plates<br/>mother's hand serving fish<br/>child genuinely eating, not posed</div>
+          </div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#1d4ed820;color:#60a5fa;border:1px solid #1d4ed830;">▶ Reel Cover · C4-02</div>
+        <div class="cr-title">"Fish safe for your kids in monsoon" — Child + Mother Moment · Emotional highest share</div>
+        <div class="cr-dim">1080 × 1920 px · 9:16 · Reel</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Warm authentic lifestyle photograph. 1080×1920px portrait (9:16).
+
+EMOTIONAL OBJECTIVE: This image must make a Thane mother feel seen — "this is my house, my child, my Saturday afternoon."
+
+SETTING: Weekend afternoon in a Thane apartment. Dining area. Not a dining room — a dining corner, as most Thane apartments have. Time: approximately 1-2 PM (post-cooking, lunch time). Light is warm afternoon through apartment windows.
+
+THE CHILD: 5-7 years old. Indian. Gender-neutral features (could be boy or girl). School holiday clothes — not school uniform, not special occasion. Just normal t-shirt and shorts. Seated at a small dining table (4-seater). The child is mid-eating from a kansa/steel plate:
+- On the plate: cooked fish curry (red/orange gravy) with rice. One piece of fish clearly visible.
+- The child is not looking at the camera — they're looking at the food, or at the person serving them
+- Expression: genuine enjoyment. Not performed "yum" face. Just a child eating something they like.
+
+THE MOTHER'S GESTURE: A woman's right hand enters from the right side of frame (her face is NOT in frame — this is intentional, makes it universal). She is serving a second piece of fish onto the child's plate using a steel spoon/spatula. The gesture is casual and practiced — she's done this a thousand times. Her hand shows:
+- Age: late 30s skin
+- One or two simple gold bangles
+- No elaborate jewelry — she was cooking
+- Short, clean nails (practical, she was in the kitchen)
+
+TABLE DETAILS (make these real, not styled):
+- Steel kansa/steel plates (not fancy china)
+- A small steel tumbler/glass with water
+- A small bowl of dal visible
+- A container of pickle (achaar) at the edge
+- The wooden table has a slight scratch or mark — real furniture, not showroom
+
+BACKGROUND: The apartment space behind — blurred. A wall-mounted TV unit (Indian apartment standard), a few framed photos on the wall (out of focus). A window shows the outside — suggest urban Thane from the blurred building shapes and sky.
+
+LIGHT: Warm afternoon window light from the right side. Soft, natural. Golden-hour adjacent. No harsh overhead light. The atmosphere feels like the best hours of a Saturday.
+
+COMPOSITION: Child is the hero and occupies left-center of frame. Their face and plate are in the middle third. Mother's arm/hand enters from the right third. The plate is at center-frame. Upper 30%: the apartment background — enough negative space for title text overlay (semi-dark tones for white text readability).
+
+KEY INSIGHT: This image is more powerful than any freshness test photo. It hits the deepest buyer motivation — feeding your child well. The target audience is the woman whose hand is entering from the right.
+
+NEGATIVE: no studio, no food stylist arrangement, no professional child model poses, no beautiful dining room, no white tablecloth.
+
+DIMENSIONS: 1080×1920px · 9:16 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-human">👶 Real child 5-7, not model</div>
+          <div class="cr-tag tag-human">🤱 Mother's hand — the actual target customer</div>
+          <div class="cr-tag tag-human">🍽 Steel plates — Indian home truth</div>
+          <div class="cr-tag tag-env">🏙 Thane apartment visible through window</div>
+          <div class="cr-tag tag-perf">📊 HIGHEST share rate — moms forward this</div>
+          <div class="cr-tag tag-seo">🔍 "fish for kids monsoon" / "safe fish children"</div>
+          <div class="cr-tag tag-dim">📐 1080×1920 Reel</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- CAMPAIGN 5 -->
+<!-- ══════════════════════════════════════ -->
+<div class="campaign">
+  <div class="c-header cam5">
+    <div class="c-number">Campaign 05 of 05</div>
+    <div class="c-name">The Wait</div>
+    <div class="c-tagline">"The ban ends. Wild catch returns. First come, first served."</div>
+    <div class="c-meta">
+      <div class="c-meta-item"><div class="c-meta-label">Objective</div><div class="c-meta-value">Waitlist conversion · urgency</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Format</div><div class="c-meta-value">Countdown Reels + anticipation carousels</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">KPI</div><div class="c-meta-value">Waitlist signups (relifish.store)</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">SEO hook</div><div class="c-meta-value">"fresh fish delivery Thane" (transactional intent)</div></div>
+      <div class="c-meta-item"><div class="c-meta-label">Emotion</div><div class="c-meta-value">Anticipation → urgency → FOMO → action</div></div>
+    </div>
+  </div>
+  <div class="creative-grid">
+
+    <!-- C5 · Creative 1 — Countdown -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div class="v-wait" style="position:absolute;inset:0;">
+          <div class="big-n">20</div>
+          <div class="unit">days</div>
+          <div class="event">Wild catch returns</div>
+          <div style="font-size:10px;color:#333;margin-top:8px;">Versova · Malvan · Arabian Sea</div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#b4530020;color:#fb923c;border:1px solid #b4530030;">▶ Reel · C5-01</div>
+        <div class="cr-title">Season Return Countdown — Aerial boats at sea · Anticipation hero</div>
+        <div class="cr-dim">1080 × 1080 px · 1:1 · Carousel hero / Single post</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Dramatic cinematic aerial photograph. 1080×1080px square (1:1).
+
+CONCEPT: The boats are waiting. The sea is quiet. The ban is almost over. Everything is still — but about to change.
+
+AERIAL PERSPECTIVE: Drone-style overhead shot looking down at a small fleet of fishing boats moored at a dock or floating in a harbor. The camera is approximately 30-50 meters above water level — high enough to see the water and multiple boats, low enough to see detail on the boats.
+
+THE BOATS: 6-8 traditional Indian fishing boats arranged in a loose cluster near a dock. Each boat:
+- Painted in traditional colors: bright blue, turquoise, orange-red, white combinations
+- Traditional design: flat-bottomed, wooden, with a raised prow
+- Nets folded and stored on deck — not deployed. The nets being stowed IS the visual metaphor: they're not working yet.
+- One small figure visible on one of the boats (small from this height, anonymous)
+- All boats have rope lines connecting them to the dock
+
+WATER: Monsoon sea. Grey-green, slightly textured. Not rough — but not calm either. The water has the specific color and texture of the Arabian Sea during the ban period. The boats cast clear dark shadows on the water below.
+
+SKY (upper 35% of frame): Heavy overcast. Monsoon clouds — textured grey-white. The sky is NOT dramatic sunset — it's waiting weather. Overcast but bright — diffused light.
+
+LIGHTING: Overcast — perfectly even, no shadows. The boat colors pop against the grey-green water. Natural, real.
+
+COMPOSITION: Square frame (1:1). Boats clustered in the center-lower two-thirds. Sky takes upper third. The cluster of boats has energy — they're together, moored, waiting.
+
+TEXT SPACE: Sky area (upper 35%) is medium grey — clean for dark text or light overlay. Lower 10%: water surface without boats — also clean.
+
+COLOR: Grey-green sea, grey-white sky, vivid painted boat colors (blue, orange, turquoise). The contrast between the muted sea/sky and the vivid boat colors is the visual hook.
+
+EMOTION: Anticipation. Everything is still, but not empty. Something is about to happen. The boats are loaded with potential.
+
+NEGATIVE: no specific number or countdown in the image, no dates, no text, no specific harbor name identifiable.
+
+DIMENSIONS: 1080×1080px · 1:1 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-env">⛵ Moored boats — nets stowed = waiting</div>
+          <div class="cr-tag tag-env">🌊 Monsoon sea texture — seasonal truth</div>
+          <div class="cr-tag tag-perf">📊 Paired with countdown text overlay in Canva</div>
+          <div class="cr-tag tag-perf">🎯 No dates in image = evergreen asset</div>
+          <div class="cr-tag tag-seo">🔍 "fresh fish delivery Thane" transactional</div>
+          <div class="cr-tag tag-dim">📐 1080×1080 Carousel / Single post</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C5 · Creative 2 — First catch energy -->
+    <div class="creative-row">
+      <div class="cr-visual">
+        <div class="dim-pill">1080×1920</div>
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1628,#0d1f35);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:24px;">
+          <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:80%;height:60%;background:radial-gradient(ellipse at 50% 0%,rgba(255,200,50,0.2),transparent 70%);"></div>
+          <div style="position:absolute;top:25%;left:0;right:0;display:flex;justify-content:center;gap:16px;font-size:24px;">⛵ ⛵ ⛵</div>
+          <div style="position:relative;z-index:1;text-align:left;width:100%;">
+            <div style="font-size:9px;color:#f59e0b;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;">First catch of the season</div>
+            <div style="font-size:18px;font-weight:900;color:#fff;line-height:1.2;">The boats go out.<br/>Wild catch returns.<br/>Thane gets it first.</div>
+          </div>
+        </div>
+      </div>
+      <div class="cr-content">
+        <div class="cr-badge" style="background:#b4530020;color:#fb923c;border:1px solid #b4530030;">▶ Reel Cover · C5-02</div>
+        <div class="cr-title">Season Opening — Boats Returning at Dawn · "First catch" energy</div>
+        <div class="cr-dim">1080 × 1920 px · 9:16 · Reel</div>
+        <div class="cr-section">
+          <h5>Imagen 4 Prompt</h5>
+          <div class="cr-text">Cinematic dawn photograph. 1080×1920px portrait (9:16).
+This is the CELEBRATION image. The ban is over. The boats are moving. Energy and abundance.
+
+SCENE: A fleet of 5-7 fishing boats returning to dock at sunrise. The first morning after a long ban (visual storytelling — the boats are active, loaded, purposeful after weeks of stillness).
+
+THE BOATS: Coming TOWARD the camera (arriving at dock). Traditional painted boats — vivid colors (blue, turquoise, orange-red) against the dawn sky. Nets are deployed or just being gathered — the boats were working. The boats are loaded — you can see the mass of fish in the nets or baskets at the prow of the lead boat.
+
+FISHERMEN: 1-2 visible on the nearest boat — silhouetted against the dawn sky. Active postures: one pulling a rope, one steering. Small from distance but clearly working. Their activity IS the energy.
+
+WATER: Calm monsoon sea transitioning to post-monsoon — slightly more settled than peak monsoon. The water surface is dark with dawn light beginning to break across it.
+
+SKY (upper 40%): This is the key visual moment. Heavy clouds are breaking — a dramatic God-ray or sunrise light breaks through the clouds directly above the approaching boats. Not clichéd golden sunset — this is a SPECIFIC early morning break in the overcast, a shaft of pale gold light hitting the lead boat and the water in front of it. The rest of the sky remains overcast grey-blue.
+
+LIGHT QUALITY: The single shaft of light creates a spotlight on the lead boat. The light on the water in front of the boat creates a shimmer path leading toward camera. This is the visual metaphor: light at the end of 61 days.
+
+COMPOSITION: Wide angle. Boats fill the middle 50% of frame. Sky fills upper 40%. Water fills lower 10%. The leading boat is positioned at center-frame. Leading lines: the shimmer path on water, the boat's trajectory, the shaft of light — all converge on the center boat.
+
+COLOR GRADE: Cool grey-blue overall (dawn, overcast) with ONE warm note: the shaft of gold light on the center boat and the shimmer path. The contrast between cold overall and warm center is the emotional anchor.
+
+MOOD: Return. Abundance. Relief. The day fish came back.
+
+TEXT SPACE: Upper-left and lower sections have open sky/water — clean for white text overlay. Avoid placing text over the shaft of light.
+
+NEGATIVE: no perfect golden hour, no tourist fishing pier, no stock photo fishing boat.
+
+DIMENSIONS: 1080×1920px · 9:16 ratio</div>
+        </div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.querySelector('.cr-text').textContent)">📋 Copy</button>
+        <div class="cr-tags">
+          <div class="cr-tag tag-env">⛵ Boats returning = narrative climax</div>
+          <div class="cr-tag tag-env">☀️ God-ray on center boat = visual metaphor</div>
+          <div class="cr-tag tag-perf">📊 FOMO trigger: "first catch" urgency</div>
+          <div class="cr-tag tag-perf">🎯 Drives waitlist CTA: "be first"</div>
+          <div class="cr-tag tag-dim">📐 1080×1920 Reel</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- generation order -->
+<div style="max-width:1200px;margin:48px auto 0;padding:0 20px;">
+  <div style="background:#111827;border:1px solid #1e293b;border-radius:16px;padding:28px;">
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#475569;margin-bottom:20px;">Generation Order — By GTM Priority</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+      <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #ef4444;">
+        <div style="font-size:10px;color:#ef4444;font-weight:800;margin-bottom:6px;">GENERATE FIRST</div>
+        <div style="font-size:12px;color:#fff;font-weight:700;margin-bottom:4px;">C3-01 · Koli Seller Portrait</div>
+        <div style="font-size:11px;color:#64748b;">Reuse across ALL 5 campaigns. 4 variants. Pick 2. This single asset replaces 10 posts.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #f59e0b;">
+        <div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:6px;">GENERATE SECOND</div>
+        <div style="font-size:12px;color:#fff;font-weight:700;margin-bottom:4px;">C4-02 · Child + Mother</div>
+        <div style="font-size:11px;color:#64748b;">Highest share rate. Moms forward to building WhatsApp. Converts watchers to waitlist.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #0066ff;">
+        <div style="font-size:10px;color:#60a5fa;font-weight:800;margin-bottom:6px;">GENERATE THIRD</div>
+        <div style="font-size:12px;color:#fff;font-weight:700;margin-bottom:4px;">C1-01 · Dock Woman (Day 1)</div>
+        <div style="font-size:11px;color:#64748b;">Day 1 Reel needs this. First impression of the account. Non-negotiable for launch.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #10b981;">
+        <div style="font-size:10px;color:#34d399;font-weight:800;margin-bottom:6px;">GENERATE FOURTH</div>
+        <div style="font-size:12px;color:#fff;font-weight:700;margin-bottom:4px;">C2-01 · Freshness Test Hands</div>
+        <div style="font-size:11px;color:#64748b;">Day 3 Reel. How-to format = highest 3-sec hold. Save rate &gt;5%.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #7c3aed;">
+        <div style="font-size:10px;color:#a78bfa;font-weight:800;margin-bottom:6px;">GENERATE FIFTH</div>
+        <div style="font-size:12px;color:#fff;font-weight:700;margin-bottom:4px;">C3-02 · 3AM Dock Fisherman</div>
+        <div style="font-size:11px;color:#64748b;">Koli story Reel. Emotional narrative. Works as standalone + carousel background.</div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #475569;">
+        <div style="font-size:10px;color:#94a3b8;font-weight:800;margin-bottom:6px;">GENERATE SIXTH</div>
+        <div style="font-size:12px;color:#fff;font-weight:700;margin-bottom:4px;">All remaining in campaign order</div>
+        <div style="font-size:11px;color:#64748b;">C1-02, C1-03, C2-02, C2-03, C4-01, C5-01, C5-02</div>
+      </div>
+    </div>
+    <div style="margin-top:20px;background:#0f172a;border-radius:10px;padding:14px;font-size:12px;color:#94a3b8;line-height:1.7;">
+      <strong style="color:#fff;">Negative prompt to add to every generation:</strong><br/>
+      ugly, distorted, blurry, oversaturated, fake-looking, artificial, plastic fish, price tags, text watermarks, coupon text, health guarantee text, studio backdrop sweep, fake smiles, stock photo poses, western faces, American kitchen, brand logos visible, compression artifacts, model-perfect manicured nails, commercial fishing pier, sunflower fields, generic "fresh food" stock photo
+    </div>
+  </div>
+</div>
+
+<p style="text-align:center;color:#1e293b;font-size:11px;padding:32px 0 0;">campaign-creatives.html · 5 campaigns · 10 image prompts · GTM cold-start · Relifish Thane</p>
+
+</body>
+</html>

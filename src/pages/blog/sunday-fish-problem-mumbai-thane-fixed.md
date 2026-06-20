@@ -69,4 +69,4 @@ Pre-order by Thursday night, and the morning's catch is confirmed for your weeke
 
 **→ [Pre-order this Sunday's fresh catch on Relifish](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=sunday_fish_problem_fixed)**
 
-*📞 Have questions? Reach out to our team directly via WhatsApp or Call at **9152207607** for help with your order.*
+*📩 Have questions? [Contact us](mailto:relifishstore@gmail.com) or find your seller directly on the platform.*

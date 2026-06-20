@@ -62,4 +62,4 @@ Bring the highest standard of seafood hygiene and convenience to your building. 
 
 *📦 Currently serving: Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali*
 
-*💬 WhatsApp: 9152 207 607 — tell us your area and we'll confirm availability.*
+*📍 Serving Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali — [check your area](/shop)*

@@ -4,10 +4,50 @@ interface Props {
   description?: string;
   image?: string;
   canonicalURL?: string;
+  type?: "website" | "article";
+  pubDate?: string;
+  author?: string;
+  tags?: string[];
 }
-const { title, description = "Relifish — Fresh fish from local koli sellers in Thane. Same-day catch, no middlemen, no markup.", image = "/og-relifish.png", canonicalURL } = Astro.props;
+const {
+  title,
+  description = "Relifish — Fresh fish from local koli sellers in Thane. Same-day catch, no middlemen, no markup.",
+  image = "/og-relifish.png",
+  canonicalURL,
+  type = "website",
+  pubDate,
+  author,
+  tags = [],
+} = Astro.props;
 const siteUrl = "https://relifish.store";
 const ogImage = image?.startsWith("http") ? image : `${siteUrl}${image}`;
+const canonical = canonicalURL ?? Astro.url.href;
+
+const articleSchema = type === "article" ? JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": title,
+  "description": description,
+  "image": ogImage,
+  "datePublished": pubDate,
+  "author": { "@type": "Organization", "name": author ?? "Relifish Team", "url": siteUrl },
+  "publisher": { "@type": "Organization", "name": "Relifish", "logo": { "@type": "ImageObject", "url": `${siteUrl}/favicon.png` } },
+  "url": canonical,
+  "keywords": tags.join(", "),
+  "mainEntityOfPage": { "@type": "WebPage", "@id": canonical }
+}) : null;
+
+const orgSchema = type === "website" ? JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Relifish",
+  "url": siteUrl,
+  "description": "Fresh fish marketplace in Thane. Same-day catch from local koli sellers, no middlemen.",
+  "logo": `${siteUrl}/favicon.png`,
+  "address": { "@type": "PostalAddress", "addressLocality": "Thane", "addressRegion": "Maharashtra", "addressCountry": "IN" },
+  "areaServed": ["Thane", "Hiranandani Estate", "Lodha Splendora", "Ghodbunder Road"],
+  "sameAs": ["https://www.instagram.com/relifish.store/"]
+}) : null;
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -16,12 +56,28 @@ const ogImage = image?.startsWith("http") ? image : `${siteUrl}${image}`;
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
   {description && <meta name="description" content={description} />}
-  <link rel="canonical" href={canonicalURL ?? Astro.url.href} />
+  <link rel="canonical" href={canonical} />
+  <!-- Open Graph -->
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImage} />
-  <meta property="og:type" content="website" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:type" content={type} />
+  <meta property="og:site_name" content="Relifish" />
+  <meta property="og:locale" content="en_IN" />
+  {type === "article" && pubDate && <meta property="article:published_time" content={pubDate} />}
+  {type === "article" && author && <meta property="article:author" content={author} />}
+  {type === "article" && tags.map(tag => <meta property="article:tag" content={tag} />)}
+  <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
+  <!-- Schema.org JSON-LD -->
+  {articleSchema && <script type="application/ld+json" set:html={articleSchema} />}
+  {orgSchema && <script type="application/ld+json" set:html={orgSchema} />}
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
