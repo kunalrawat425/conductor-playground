@@ -7,13 +7,10 @@ export default defineConfig({
   adapter: vercel(),
   integrations: [
     sitemap({
-      filter: (page) =>
-        !page.includes("/dashboard") &&
-        !page.includes("/me") &&
-        !page.includes("/track") &&
-        !page.includes("/search") &&
-        !page.includes("/v1") &&
-        !page.includes("/mfm-pitch"),
+      filter: (page) => {
+        const blocked = ["/dashboard", "/me", "/track", "/search", "/v1", "/mfm-pitch"];
+        return !blocked.some((b) => page.includes(b));
+      },
     }),
   ],
   redirects: {
