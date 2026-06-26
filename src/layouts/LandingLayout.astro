@@ -11,7 +11,7 @@ interface Props {
 }
 const {
   title,
-  description = "Relifish — Fresh fish from local koli sellers in Thane. Same-day catch, no middlemen, no markup.",
+  description = "Relifish — Fresh fish from verified hyperlocal sellers in Mumbai. Same-day catch, no middlemen, no markup.",
   image = "/og-relifish.png",
   canonicalURL,
   type = "website",
@@ -42,7 +42,7 @@ const orgSchema = type === "website" ? JSON.stringify({
   "@type": "Organization",
   "name": "Relifish",
   "url": siteUrl,
-  "description": "Fresh fish marketplace in Thane. Same-day catch from local koli sellers, no middlemen.",
+  "description": "Fresh fish marketplace in Mumbai. Same-day catch from verified hyperlocal sellers, no middlemen.",
   "logo": `${siteUrl}/favicon.png`,
   "address": { "@type": "PostalAddress", "addressLocality": "Thane", "addressRegion": "Maharashtra", "addressCountry": "IN" },
   "areaServed": ["Thane", "Hiranandani Estate", "Lodha Splendora", "Ghodbunder Road"],
@@ -81,6 +81,69 @@ import Footer from "../components/Footer.astro";
   {orgSchema && <script type="application/ld+json" set:html={orgSchema} />}
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- Google Tag Manager -->
+  <script is:inline>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-JG2ZTX3F');</script>
+  <!-- Google Analytics (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DGS7557PZ6"></script>
+  <script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DGS7557PZ6');
+    (function() {
+      var p = new URLSearchParams(location.search);
+      var src = p.get('utm_source'), med = p.get('utm_medium'), cam = p.get('utm_campaign');
+      if (src) {
+        sessionStorage.setItem('rf_utm_source', src);
+        sessionStorage.setItem('rf_utm_medium', med || '');
+        sessionStorage.setItem('rf_utm_campaign', cam || '');
+        gtag('event', 'utm_landing', { utm_source: src, utm_medium: med, utm_campaign: cam });
+      }
+    })();
+  </script>
+  <!-- Microsoft Clarity -->
+  <script is:inline type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "wryvhcf3k8");
+  </script>
+  <!-- Facebook Pixel -->
+  <script is:inline>
+    !function(f,b,e,v,n,t,s){
+      if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window,document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init','1197248829088195');
+    fbq('track','PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1197248829088195&ev=PageView&noscript=1"/></noscript>
+  <!-- Firebase Analytics -->
+  <script type="module" is:inline>
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYlmH764DU2ZJQJIfmnX-WpGBJ5hwV520",
+      authDomain: "relifish.firebaseapp.com",
+      projectId: "relifish",
+      storageBucket: "relifish.firebasestorage.app",
+      messagingSenderId: "881437398033",
+      appId: "1:881437398033:web:982edeaf6e723a8ab04db0",
+      measurementId: "G-7MXZDZ1S4N"
+    };
+    const app = initializeApp(firebaseConfig);
+    getAnalytics(app);
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -146,6 +209,9 @@ import Footer from "../components/Footer.astro";
   </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-JG2ZTX3F"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <!-- ── NAV ── -->
 <nav class="lp-nav">
