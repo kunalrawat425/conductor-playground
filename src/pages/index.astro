@@ -719,6 +719,22 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
       `}</script>
       <noscript><img height="1" width="1" style="display:none"
         src="https://www.facebook.com/tr?id=1197248829088195&ev=PageView&noscript=1"/></noscript>
+      {/* Firebase Analytics */}
+      <script type="module" is:inline>{`
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
+        const firebaseConfig = {
+          apiKey: "AIzaSyDYlmH764DU2ZJQJIfmnX-WpGBJ5hwV520",
+          authDomain: "relifish.firebaseapp.com",
+          projectId: "relifish",
+          storageBucket: "relifish.firebasestorage.app",
+          messagingSenderId: "881437398033",
+          appId: "1:881437398033:web:982edeaf6e723a8ab04db0",
+          measurementId: "G-7MXZDZ1S4N"
+        };
+        const app = initializeApp(firebaseConfig);
+        getAnalytics(app);
+      `}</script>
     </>
   )}
 </head>
