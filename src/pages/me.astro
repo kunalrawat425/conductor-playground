@@ -637,7 +637,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
     function statusLabel(s: string) {
       const map: Record<string, string> = {
-        pending: "Pending", pre_order: "Pre-order", scheduled: "Scheduled",
+        pending: "Pay now", pending_payment: "Pay now", pre_order: "Pre-order", scheduled: "Scheduled",
         confirmed: "Confirmed", paid: "Paid",
         ready_for_pickup: "Ready for pickup", out_for_delivery: "Out for delivery",
         picked_up: "Picked up", completed: "Completed",
@@ -666,14 +666,20 @@ import Toast from "../components/ui/atoms/Toast.astro";
         const totalPages = json.total_pages || 1;
 
         if (!orders || orders.length === 0) {
-          el.innerHTML = `<div class="v2-me-addr-empty">No past orders yet.</div>`;
+          el.innerHTML = `<div class="v2-me-addr-empty">No orders yet.</div>`;
           return;
         }
 
-        el.innerHTML = orders.map((o: any) => {
+        const ACTIVE = new Set(["pending","pending_payment","confirmed","ready_for_pickup","out_for_delivery"]);
+        const activeOrders = orders.filter((o: any) => ACTIVE.has(o.status));
+        const pastOrders = orders.filter((o: any) => !ACTIVE.has(o.status));
+
+        function renderCard(o: any) {
           const seller = o.listing?.seller?.name || "Seller";
           const sp = o.listing?.species || "";
-          return `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:12px 14px;margin-bottom:8px;">
+          const isPendingPayment = o.status === "pending" || o.status === "pending_payment";
+          const cta = isPendingPayment ? "Complete payment →" : (ACTIVE.has(o.status) ? "Track →" : "View →");
+          return `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;background:var(--v2-bg);border:1px solid ${isPendingPayment ? 'var(--v2-brand)' : 'var(--v2-border)'};border-radius:var(--v2-radius);padding:12px 14px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
               <div>
                 <div style="font:700 13px Inter;color:var(--v2-ink);">${escape(seller)}</div>
@@ -684,15 +690,25 @@ import Toast from "../components/ui/atoms/Toast.astro";
                   ["declined","cancelled"].includes(o.status) ? "background:#FEE2E2;color:#DC2626;" :
                   o.status === "refunded" ? "background:#EDE9FE;color:#7C3AED;" :
                   o.status === "completed" || o.status === "picked_up" ? "background:#DCFCE7;color:#16A34A;" :
+                  isPendingPayment ? "background:#FEF3C7;color:#B45309;" :
                   "background:var(--v2-bg-3);color:var(--v2-ink-3);"
                 }">${statusLabel(o.status)}</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--v2-border);">
               <span style="font:800 13px Inter;color:var(--v2-ink);">₹${(o.total_price || 0).toLocaleString("en-IN")}</span>
-              <span style="font:600 11px Inter;color:var(--v2-brand);">View →</span>
+              <span style="font:600 11px Inter;color:${isPendingPayment ? 'var(--v2-brand)' : 'var(--v2-ink-3)'};">${cta}</span>
             </div>
           </a>`;
-        }).join("")
+        }
+
+        const activeHtml = activeOrders.length
+          ? `<div style="font:700 12px Inter;color:var(--v2-brand);text-transform:uppercase;letter-spacing:.6px;margin:4px 0 8px;">Active (${activeOrders.length})</div>${activeOrders.map(renderCard).join('')}`
+          : '';
+        const pastHtml = pastOrders.length
+          ? `<div style="font:700 12px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.6px;margin:${activeOrders.length ? '16px' : '4px'} 0 8px;">Past (${pastOrders.length})</div>${pastOrders.map(renderCard).join('')}`
+          : (activeOrders.length ? '' : `<div class="v2-me-addr-empty">No past orders yet.</div>`);
+
+        el.innerHTML = activeHtml + pastHtml
         + (totalPages > 1 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
             <button class="v2-btn v2-btn-ghost v2-btn-sm" id="v2-me-ord-prev" ${orderPage <= 1 ? 'disabled style="opacity:.4;"' : ''}>← Prev</button>
             <span style="font:500 12px Inter;color:var(--v2-ink-3);">Page ${orderPage} of ${totalPages}</span>

@@ -207,6 +207,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         .eq("id", seller_id)
         .single();
 
+      // Hoisted so the assignment at end of block sees it in both branches
+      // (BUG-11 fix: was `const` inside `else` → ReferenceError at line 244
+      // for every non-scheduled checkout → 500 on all same-day POSTs).
+      let placementKind: "same_day" | "preorder" | "closed" | "scheduled" = "same_day";
+
       if (scheduled_for) {
         if (!seller?.schedule_pickup_slots) {
           return new Response(
@@ -215,8 +220,9 @@ export const POST: APIRoute = async ({ request, url }) => {
           );
         }
         status = "pending_payment";
+        placementKind = "scheduled";
       } else {
-        const placementKind = seller ? classifyPlacementAtOrderTime(seller) : "same_day";
+        placementKind = seller ? classifyPlacementAtOrderTime(seller) : "same_day";
 
         if (placementKind === "closed") {
           return new Response(
