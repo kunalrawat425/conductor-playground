@@ -85,7 +85,7 @@ async function main() {
   const failSig = createHmac("sha256", WEBHOOK_SECRET).update(failBody).digest("hex");
   const c = await postRaw(`${BASE}/api/payments/razorpay-webhook`, failBody, { "x-razorpay-signature": failSig });
   console.log("[C] failed event:", c.status, c.body);
-  results.push(["C. Webhook ignores non-captured events", c.status === 200 && c.body.includes("ignored") ? "PASS" : "FAIL"]);
+  results.push(["C. Webhook handles payment.failed (logs, no flip)", c.status === 200 && (c.body.includes("ignored") || c.body.includes("logged")) ? "PASS" : "FAIL"]);
 
   // =========================================================
   // TEST D: FIX #3 reconcile — endpoint returns proper shape

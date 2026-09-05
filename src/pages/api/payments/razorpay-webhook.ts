@@ -120,6 +120,33 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: n }), { status: 200 });
   }
 
+  // ── payment.failed — log for ops visibility, do NOT flip status ──
+  // Buyer may re-try payment; keep row pending_payment. Record failure in
+  // refund_note field (repurposed for any payment-related annotation) so ops
+  // can grep DB for "payment_failed:" tags.
+  if (evtType === "payment.failed") {
+    if (payment) {
+      const razorpay_order_id: string = payment.order_id;
+      const razorpay_payment_id: string = payment.id;
+      const errCode: string = payment.error_code || "unknown";
+      const errDesc: string = payment.error_description || "";
+      const note = `payment_failed: ${errCode} ${errDesc.slice(0, 100)} (attempt ${razorpay_payment_id})`;
+      // Only annotate — never overwrite existing refund_note.
+      const { data: rows } = await sb
+        .from("orders")
+        .select("id, refund_note")
+        .eq("razorpay_order_id", razorpay_order_id)
+        .in("status", ["pending", "pending_payment"]);
+      for (const r of (rows || [])) {
+        const existing = (r as any).refund_note || "";
+        const combined = existing ? `${existing}\n${note}` : note;
+        await sb.from("orders").update({ refund_note: combined.slice(0, 1000) }).eq("id", (r as any).id);
+      }
+      console.log(`[razorpay-webhook] payment.failed logged on ${rows?.length ?? 0} row(s) for ${razorpay_order_id}`);
+    }
+    return new Response(JSON.stringify({ ok: true, event: "payment.failed", logged: true }), { status: 200 });
+  }
+
   // Any other event — ack 200 so Razorpay doesn't retry.
   return new Response(JSON.stringify({ ok: true, ignored: evtType }), { status: 200 });
 };
