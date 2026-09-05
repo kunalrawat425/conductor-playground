@@ -47,45 +47,79 @@ export const POST: APIRoute = async ({ request }) => {
   const evtType = event?.event as string | undefined;
   const payment = event?.payload?.payment?.entity;
 
-  if (!evtType || !payment) {
+  if (!evtType) {
     return new Response(JSON.stringify({ error: "Malformed event" }), { status: 400 });
   }
 
-  // Only act on captured payments. `payment.failed` acknowledged with 200 for now.
-  if (evtType !== "payment.captured") {
-    return new Response(JSON.stringify({ ok: true, ignored: evtType }), { status: 200 });
-  }
-
-  const razorpay_order_id: string = payment.order_id;
-  const razorpay_payment_id: string = payment.id;
-
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Idempotent flip: only orders still in pending states get updated.
-  const { data: updated, error } = await sb
-    .from("orders")
-    .update({
-      status: "confirmed",
-      payment_method: "razorpay",
-      razorpay_payment_id,
-      payment_verified_at: new Date().toISOString(),
-      payment_verified_by: null,
-    })
-    .eq("razorpay_order_id", razorpay_order_id)
-    .in("status", ["pending", "pending_payment"])
-    .select("id, buyer_id");
+  // ── payment.captured — flip pending → confirmed ─────────────────────
+  if (evtType === "payment.captured") {
+    if (!payment) {
+      return new Response(JSON.stringify({ error: "Malformed payment event" }), { status: 400 });
+    }
+    const razorpay_order_id: string = payment.order_id;
+    const razorpay_payment_id: string = payment.id;
 
-  if (error) {
-    console.error("[razorpay-webhook] update failed", { razorpay_order_id, error: error.message });
-    return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
+    const { data: updated, error } = await sb
+      .from("orders")
+      .update({
+        status: "confirmed",
+        payment_method: "razorpay",
+        razorpay_payment_id,
+        payment_verified_at: new Date().toISOString(),
+        payment_verified_by: null,
+      })
+      .eq("razorpay_order_id", razorpay_order_id)
+      .in("status", ["pending", "pending_payment"])
+      .select("id, buyer_id");
+
+    if (error) {
+      console.error("[razorpay-webhook] captured update failed", { razorpay_order_id, error: error.message });
+      return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
+    }
+
+    const n = updated?.length ?? 0;
+    console.log(n === 0
+      ? `[razorpay-webhook] no pending row for ${razorpay_order_id} (already confirmed — OK)`
+      : `[razorpay-webhook] captured: reconciled ${n} row(s) for ${razorpay_order_id}`);
+    return new Response(JSON.stringify({ ok: true, event: "payment.captured", reconciled: n }), { status: 200 });
   }
 
-  const reconciledCount = updated?.length ?? 0;
-  if (reconciledCount === 0) {
-    console.log("[razorpay-webhook] no pending row for", razorpay_order_id, "(already confirmed by client handler — OK)");
-  } else {
-    console.log("[razorpay-webhook] reconciled", reconciledCount, "row(s) for", razorpay_order_id);
+  // ── refund.processed / refund.created — flip → refunded ─────────────
+  if (evtType === "refund.processed" || evtType === "refund.created") {
+    const refund = event?.payload?.refund?.entity;
+    if (!refund) {
+      return new Response(JSON.stringify({ error: "Malformed refund event" }), { status: 400 });
+    }
+    const razorpay_payment_id: string = refund.payment_id;
+    const refund_id: string = refund.id;
+    const refund_amt_paise = Number(refund.amount) || 0;
+
+    // Match by razorpay_payment_id (captured refunds always have this).
+    const { data: updated, error } = await sb
+      .from("orders")
+      .update({
+        status: "refunded",
+        refund_note: `Razorpay refund ${refund_id} (${evtType})`,
+        refund_amt: refund_amt_paise / 100,
+        refund_sent_at: new Date().toISOString(),
+      })
+      .eq("razorpay_payment_id", razorpay_payment_id)
+      .not("status", "eq", "refunded")
+      .select("id");
+
+    if (error) {
+      console.error("[razorpay-webhook] refund update failed", { razorpay_payment_id, error: error.message });
+      return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
+    }
+    const n = updated?.length ?? 0;
+    console.log(n === 0
+      ? `[razorpay-webhook] no matching order for payment ${razorpay_payment_id} (may be legacy or already refunded)`
+      : `[razorpay-webhook] ${evtType}: reconciled ${n} row(s) for payment ${razorpay_payment_id}`);
+    return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: n }), { status: 200 });
   }
 
-  return new Response(JSON.stringify({ ok: true, reconciled: reconciledCount }), { status: 200 });
+  // Any other event — ack 200 so Razorpay doesn't retry.
+  return new Response(JSON.stringify({ ok: true, ignored: evtType }), { status: 200 });
 };
