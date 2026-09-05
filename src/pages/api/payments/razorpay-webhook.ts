@@ -107,7 +107,23 @@ export const POST: APIRoute = async ({ request }) => {
       })
       .eq("razorpay_payment_id", razorpay_payment_id)
       .not("status", "eq", "refunded")
-      .select("id");
+      .select("id, buyer_id, buyer_phone, species");
+
+    // Best-effort push notify buyer per updated row
+    if (Array.isArray(updated) && updated.length > 0) {
+      try {
+        const { sendBuyerOrderPush } = await import("../../../lib/server/buyer-push");
+        for (const row of updated) {
+          await sendBuyerOrderPush({
+            buyer_id: (row as any).buyer_id,
+            buyer_phone: (row as any).buyer_phone,
+            status: "refunded",
+            species: (row as any).species || "Fish",
+            order_id: (row as any).id,
+          }).catch((err: any) => console.warn("[razorpay-webhook] refund push failed", { order_id: (row as any).id, err: err?.message }));
+        }
+      } catch (err: any) { console.warn("[razorpay-webhook] refund push import failed", { err: err?.message }); }
+    }
 
     if (error) {
       console.error("[razorpay-webhook] refund update failed", { razorpay_payment_id, error: error.message });
