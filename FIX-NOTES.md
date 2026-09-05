@@ -1,5 +1,60 @@
 # FIX-NOTES — Relifish payment reconciliation
 
+## Session 2 additions (already shipped to branch — 13 commits ahead of master)
+
+New endpoints + config wired end-to-end. Deploy-checklist for prod:
+
+| Env var | Set where | Value |
+|---------|-----------|-------|
+| `RAZORPAY_WEBHOOK_SECRET` | Vercel Prod + Preview | already pushed |
+| `ADMIN_SECRET` | Vercel Prod + Preview | already pushed (`zqf9m2K1wpX7v_Bx8jL0eT4rY6cN5uH3`) |
+| `CRON_SECRET` | Vercel Prod + Preview | verify present |
+| `PUBLIC_LOGO_URL` | Optional override | defaults to legacy Supabase URL |
+
+Razorpay Dashboard → Webhooks — enable these events on the URL
+`https://relifish.store/api/payments/razorpay-webhook`:
+
+- ✅ `payment.captured`
+- ✅ `refund.processed`
+- ✅ `refund.created`
+- ✅ `payment.failed`
+
+vercel.json crons — auto-scheduled once master merges:
+
+- `/api/cron/expire-pending-orders` — daily 03:00 UTC — auto-cancel 24h-old pending_payment orphans (only rows without razorpay_order_id)
+- `/api/cron/reconcile-orphans` — hourly at :17 — bulk-scan orphan Razorpay rows + flip if captured
+
+Ops endpoints (curl-able post-deploy):
+
+- `GET /api/health` — public snapshot. Auth-free. Returns env-flag booleans + orphan count.
+- `POST /api/admin/reconcile-all-orphans` — Bearer ADMIN_SECRET. Body `{dry_run?:bool}`. Bulk scan.
+- `POST /api/admin/apply-refund` — Bearer ADMIN_SECRET. Body `{refund_id}`. Looks up refund at Razorpay + updates matching order row. **This is the fix for B3F1CCED / `rfnd_TWshWuF9dF5hb2` / any pre-webhook refund.**
+
+Schema (BUG-4) — apply `supabase/migrations/064_orders_confirmed_invariant.sql` in your Supabase SQL editor after checking backfill counts:
+
+```sql
+-- Verify current legacy count first
+SELECT count(*) FROM orders
+WHERE status='confirmed' AND razorpay_payment_id IS NULL
+  AND payment_verified_at IS NULL;
+-- Expected: ~79 (50 pre-Razorpay + 29 accept_price/direct)
+```
+
+After applying migration + code deploy:
+
+```sql
+-- Should now be 0
+SELECT count(*) FROM orders
+WHERE status='confirmed' AND razorpay_payment_id IS NULL
+  AND payment_verified_at IS NULL
+  AND (payment_method IS NULL OR payment_method != 'cod_legacy');
+-- Then lock in constraint for existing rows too:
+ALTER TABLE orders VALIDATE CONSTRAINT orders_confirmed_needs_payment;
+```
+
+---
+
+
 Concrete patches ranked by severity. Each block: **file path** · **why** ·
 **diff sketch**. Apply after QA-REPORT.md is reviewed.
 
