@@ -236,6 +236,52 @@ BUG-5 (29 confirmed-with-amount audit), BUG-9 (S3 hardcoded logo URL).
 
 ---
 
+## Continuous-iterate session (2026-09-06 03:00 IST)
+
+### Additional fixes shipped in this round
+
+| # | Fix | File | Verified |
+|---|-----|------|----------|
+| Refund events | webhook handles `refund.processed`, `refund.created` → status=refunded | `razorpay-webhook.ts` | 2/2 script cases PASS |
+| Payment failed | `payment.failed` → tag `refund_note` "payment_failed: code desc" | same | 1/1 case PASS |
+| Refund push | notify buyer on refund event | same | code review + import wired |
+| BUG-5 code fix | stamp `payment_verified_at` on `accept_price` + seller direct-confirm | `cancel.ts`, `seller/orders.ts` | 141/141 vitest |
+| BUG-4 migration | backfill 79 legacy rows + CHECK constraint | `supabase/migrations/064_orders_confirmed_invariant.sql` | dry-file, needs manual apply |
+| brand.ts | `LOGO_URL`, `BRAND_NAME` env-driven constants | `src/lib/brand.ts` | new file, opt-in |
+| /api/health | public health snapshot (env flags + DB + orphan count) | `src/pages/api/health.ts` | live: `{ok:true, ...}` |
+| /api/admin/reconcile-all-orphans | bulk-scan orphans against Razorpay + flip to confirmed | `src/pages/api/admin/reconcile-all-orphans.ts` | 401 no-auth, 200 with-auth (dry-run OK) |
+| /api/cron/reconcile-orphans | hourly auto-reconcile — belt+suspenders with webhook | `src/pages/api/cron/reconcile-orphans.ts` | scanned=2 flipped=0 skipped=2 correct |
+| 6 new webhook unit tests | payload shape + signature edge cases | `tests/lib/order-webhook-refund.test.ts` | 6/6 PASS |
+
+### Vercel envs pushed this session
+
+| Var | Where | Purpose |
+|-----|-------|---------|
+| `RAZORPAY_WEBHOOK_SECRET` | Production + Preview | webhook HMAC verify |
+| `ADMIN_SECRET` | Production + Preview | /api/admin/* auth |
+| `RAZORPAY_WEBHOOK_SECRET`, `ADMIN_SECRET`, `CRON_SECRET` | local `.env` + `.env.local` | local dev |
+
+### Git branch state (kunalrawat425/payment-not-reflected-qa)
+
+10 commits ahead of master. Each atomic + individually revertable:
+1. Payment reconciliation + 8 bugs (webhook, cancel, filters, cron, ...)
+2. Refund events handler
+3. BUG-5 payment_verified_at stamping
+4. payment.failed handler
+5. Refund push notify
+6. BUG-4 migration + brand.ts
+7. 6 new webhook unit tests
+8. Admin bulk-reconcile endpoint
+9. /api/health
+10. Hourly cron reconcile-orphans
+
+Vitest 147/147 pass. All 10 integration suites pass.
+
+**Waiting on user to merge branch → master → Vercel auto-deploy → prod.**
+PR URL: https://github.com/kunalrawat425/conductor-playground/pull/new/kunalrawat425/payment-not-reflected-qa
+
+---
+
 ## FINAL SESSION TOTALS
 
 | Metric | Count |
