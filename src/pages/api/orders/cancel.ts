@@ -101,12 +101,18 @@ export const POST: APIRoute = async ({ request }) => {
       }), { status: 200 });
     }
 
-    // Accept pre-order final price — buyer accepts, now move to confirmed
+    // Accept pre-order final price — buyer accepts, now move to confirmed.
+    // Also stamp payment_verified_at so the row satisfies "confirmed → has proof"
+    // invariant (BUG-5 fix: prior rows lacked verified_at, causing 29 audit hits).
     if (action === "accept_price") {
       if (order.status !== "pre_order" || !order.final_price) {
         return new Response(JSON.stringify({ error: "No price to accept" }), { status: 400 });
       }
-      await sb.from("orders").update({ status: "confirmed" }).eq("id", order_id);
+      await sb.from("orders").update({
+        status: "confirmed",
+        payment_verified_at: order.payment_verified_at || new Date().toISOString(),
+        payment_verified_by: order.payment_verified_by || "buyer_accept_price",
+      }).eq("id", order_id);
 
       try {
         await sendBuyerOrderPush({
