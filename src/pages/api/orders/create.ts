@@ -14,6 +14,7 @@ import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
+import { sellerRejectionReason } from "../../../lib/server/assert-seller-accepts";
 import { afterResponse } from "../../../lib/server/after-response";
 
 export const prerender = false;
@@ -101,6 +102,39 @@ export const POST: APIRoute = async ({ request, url }) => {
       listingPricingOptions = listingRow?.pricing_options;
 
       if (line.kind === "preorder") {
+        // BUG-46: this branch returns 201 before the `if (seller_id)` block
+        // below, so these seller-level gates were skipped entirely during the
+        // pre-order window — a seller with has_delivery=false could receive a
+        // delivery pre-order under their own minimum, with no delivery fee.
+        const { data: preorderSeller } = await supabase
+          .from("sellers")
+          .select("min_order_amount, has_delivery, has_pickup, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, lat, lng")
+          .eq("id", line.seller_id)
+          .single();
+
+        const preorderRejection = sellerRejectionReason(preorderSeller, { order_type, total_price });
+        if (preorderRejection) {
+          return new Response(JSON.stringify({ error: preorderRejection }), { status: 400 });
+        }
+
+        let preorderDistanceKm: number | undefined = undefined;
+        if (order_type === "delivery" && buyer_addr && preorderSeller?.lat != null && preorderSeller?.lng != null) {
+          const { data: addrRow } = await supabase
+            .from("buyer_addresses")
+            .select("lat, lng")
+            .eq("id", buyer_addr)
+            .single();
+          if (addrRow?.lat != null && addrRow?.lng != null) {
+            preorderDistanceKm = haversineKm(
+              Number(preorderSeller.lat), Number(preorderSeller.lng),
+              Number(addrRow.lat), Number(addrRow.lng)
+            );
+          }
+        }
+        const preorderDeliveryFee = preorderSeller
+          ? computeDeliveryFee(preorderSeller, total_price, order_type, preorderDistanceKm)
+          : 0;
+
         const { data: preOrder, error: preErr } = await supabase
           .from("orders")
           .insert({
@@ -112,7 +146,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity,
             quantity_unit,
             total_price,
-            delivery_fee: 0,
+            delivery_fee: preorderDeliveryFee,
             platform_fee: 0,
             status: "pending_payment",
             placement_kind: "preorder",
@@ -266,18 +300,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
       placement_kind = placementKind as PlacementKind;
 
-      const minAmt = Number(seller?.min_order_amount) || 0;
-      if (minAmt > 0 && total_price < minAmt) {
-        return new Response(JSON.stringify({ error: `Minimum order for this seller is ₹${minAmt}` }), {
-          status: 400,
-        });
-      }
-
-      if (order_type === "delivery" && !seller?.has_delivery) {
-        return new Response(JSON.stringify({ error: "This seller does not offer delivery" }), { status: 400 });
-      }
-      if (order_type === "pickup" && seller?.has_pickup === false) {
-        return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
+      const rejection = sellerRejectionReason(seller, { order_type, total_price });
+      if (rejection) {
+        return new Response(JSON.stringify({ error: rejection }), { status: 400 });
       }
 
       let deliveryDistanceKm: number | undefined = undefined;

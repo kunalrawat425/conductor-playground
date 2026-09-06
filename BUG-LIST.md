@@ -1079,3 +1079,44 @@ day**. Everything else in this codebase converts explicitly;
 helpers, used for the cap window. Covered by 5 unit tests including the precise
 02:00/06:00 IST case that defeated the cap, and the 18:29/18:31 UTC pair that
 must straddle the IST midnight rollover.
+
+## BUG-46 · S2 · Pre-orders bypassed every seller-level gate — FIXED
+
+**Files:** `src/lib/server/assert-seller-accepts.ts` (new),
+`src/pages/api/orders/create.ts:103-189`
+
+The pre-order branch returns **201 before** the `if (seller_id)` block at
+`:218-298` that enforces `min_order_amount`, `has_delivery` and `has_pickup`,
+and it hard-coded `delivery_fee: 0`. So during the pre-order window a seller
+could receive:
+
+- an order **below their own minimum**
+- a **delivery** order when `has_delivery = false`
+- a **pickup** order when `has_pickup = false`
+- any delivery **with no delivery fee**
+
+Proven against staging with `has_delivery=false`, `min_order_amount=5000`:
+
+```
+seller after update: {"min_order_amount":5000,"has_delivery":false}
+HTTP 201  order_type=delivery delivery_fee=0 placement=preorder
+```
+
+The identical request during same-day hours returns 400.
+
+**Fix:** the three gates move into a shared `sellerRejectionReason()` used by
+**both** branches, so they cannot drift apart again, and the pre-order branch
+now computes the delivery fee with `computeDeliveryFee` like the same-day path
+(including the per-km distance lookup).
+
+**Verified** by `scripts/qa-preorder-gates.ts` (8/8) — each gate rejects, a
+legitimate pre-order still returns 201 with `placement_kind=preorder`, and a
+pre-order delivery now carries the seller's ₹25 fee instead of 0.
+
+### Test-fixture note
+
+This one took three attempts to reproduce, and the first two failures were
+mine, not the code's: the seller update silently failed on
+`preorder_cutoff_time` being `NOT NULL`, and the script discarded the update
+error — the same discarded-error pattern this audit has been fixing. The
+harness now prints update errors before asserting.
