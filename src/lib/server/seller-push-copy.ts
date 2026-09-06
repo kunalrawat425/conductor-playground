@@ -16,6 +16,7 @@ export type SellerPushKind =
   | "payment_proof"
   | "payment_confirmed"
   | "cancelled"
+  | "expired_unpaid"
   | "refunded";
 
 const KINDS = new Set<SellerPushKind>([
@@ -23,6 +24,7 @@ const KINDS = new Set<SellerPushKind>([
   "payment_proof",
   "payment_confirmed",
   "cancelled",
+  "expired_unpaid",
   "refunded",
 ]);
 
@@ -73,6 +75,14 @@ export function sellerPushNotification(
         body: species
           ? `Buyer cancelled their ${species} order${idSuffix}. Do not prepare it.`
           : `Buyer cancelled their order${idSuffix}. Do not prepare it.`,
+      };
+
+    case "expired_unpaid":
+      return {
+        title: "Order expired unpaid",
+        body: species
+          ? `Buyer never paid for ${species}${idSuffix}. Cancelled automatically — do not prepare it.`
+          : `Buyer never paid${idSuffix}. Cancelled automatically — do not prepare it.`,
       };
 
     case "refunded":

@@ -28,6 +28,7 @@ const supabaseServiceKey = import.meta.env?.SUPABASE_SERVICE_KEY || process.env.
 export type OrderEvent =
   | "payment_confirmed"
   | "cancelled_by_buyer"
+  | "expired_unpaid"
   | "refunded";
 
 export type NotifyResult = {
@@ -60,6 +61,15 @@ export function copyFor(event: OrderEvent, species: string, orderIdShort: string
         sellerHeading: "Order cancelled by buyer",
         sellerLine: `The buyer cancelled their ${fish} order #${orderIdShort}${amt}. Do not prepare this order.`,
       };
+    case "expired_unpaid":
+      return {
+        buyerSubject: `Order cancelled — payment not completed · ${fish}`,
+        buyerHeading: "Order cancelled",
+        buyerLine: `Your ${fish} order #${orderIdShort} was cancelled because payment was not completed in time. Nothing has been charged. You can order again any time.`,
+        sellerSubject: `Order expired unpaid — ${fish} · #${orderIdShort}`,
+        sellerHeading: "Order expired unpaid",
+        sellerLine: `The buyer never completed payment for ${fish} order #${orderIdShort}, so it was cancelled automatically. Do not prepare this order. Stock has been released.`,
+      };
     case "refunded":
       return {
         buyerSubject: `Refund processed — ${fish} · #${orderIdShort}`,
@@ -86,13 +96,15 @@ function shell(heading: string, line: string, orderId: string, cta: string): str
 export function pushStatusFor(event: OrderEvent): string {
   if (event === "payment_confirmed") return "confirmed";
   if (event === "cancelled_by_buyer") return "cancelled";
+  if (event === "expired_unpaid") return "expired_unpaid";
   return "refunded";
 }
 
 /** Seller push kind for each event (maps into seller-push-copy). Exported for unit tests. */
-export function sellerPushKindFor(event: OrderEvent): "payment_confirmed" | "cancelled" | "refunded" {
+export function sellerPushKindFor(event: OrderEvent): "payment_confirmed" | "cancelled" | "expired_unpaid" | "refunded" {
   if (event === "payment_confirmed") return "payment_confirmed";
   if (event === "cancelled_by_buyer") return "cancelled";
+  if (event === "expired_unpaid") return "expired_unpaid";
   return "refunded";
 }
 

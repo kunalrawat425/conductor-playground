@@ -204,6 +204,44 @@ async function main() {
     check("N5-T3 original subscription restored", restored?.push_enabled === saved.enabled, String(restored?.push_enabled));
   }
 
+
+  console.log("\n=== N6. Writes to the uuid column payment_verified_by (BUG-34/35) ===");
+  {
+    const { data: listing } = await sb.from("fish_listings").select("id, species").limit(1).single();
+    const { data: buyer } = await sb.from("buyers").select("id, phone").limit(1).single();
+    if (!listing || !buyer) console.log("  ! no fixtures — skipping N6");
+    else {
+      // A pre_order with a final_price set is what the Accept price button acts on.
+      const { data: o } = await sb.from("orders").insert({
+        listing_id: listing.id, species: listing.species, quantity: 1, quantity_unit: "kg",
+        total_price: 100, delivery_fee: 0, buyer_id: buyer.id, buyer_phone: buyer.phone,
+        status: "pre_order", order_type: "pickup", final_price: 250, is_preorder: true,
+      }).select("id").single();
+
+      if (!o) console.log("  ! could not seed pre_order — skipping N6");
+      else {
+        const r = await post(`${BASE}/api/orders/cancel`, { order_id: o.id, buyer_id: buyer.id, action: "accept_price" });
+        const { data: after } = await sb.from("orders").select("status, payment_verified_at").eq("id", o.id).single();
+
+        // The original defect: HTTP 200 with a success body while the row never
+        // moved, because writing a string to a uuid column raised 22P02 and the
+        // error was discarded. Asserting the DB, not the response.
+        check("N6-T1 accept_price returns 200", r.status === 200, String(r.status));
+        check("N6-T2 order actually advanced to confirmed", after?.status === "confirmed", String(after?.status));
+        check("N6-T3 payment_verified_at stamped", !!after?.payment_verified_at, String(after?.payment_verified_at));
+
+        await sb.from("orders").delete().eq("id", o.id);
+      }
+
+      // Guard the column type itself, so a future string write is caught here.
+      const { data: probe } = await sb.from("orders").select("id").limit(1).single();
+      if (probe) {
+        const { error: pErr } = await sb.from("orders").update({ payment_verified_by: "not_a_uuid" }).eq("id", probe.id);
+        check("N6-T4 payment_verified_by still rejects non-uuid (column is uuid)", pErr?.code === "22P02", String(pErr?.code));
+      }
+    }
+  }
+
   console.log(`\n${pass}/${pass + fail} PASS`);
   if (fail > 0) process.exitCode = 1;
 }

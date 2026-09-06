@@ -115,11 +115,22 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (order.status !== "pre_order" || !order.final_price) {
         return new Response(JSON.stringify({ error: "No price to accept" }), { status: 400 });
       }
-      await sb.from("orders").update({
+      // BUG-35: `payment_verified_by` is a uuid column, so writing the string
+      // "buyer_accept_price" raised 22P02 and the whole UPDATE was rejected.
+      // The error was discarded, so this endpoint returned
+      // 200 {"success":true,"status":"confirmed"} while the row stayed
+      // `pre_order` — the buyer tapped Accept price, saw success, and nothing
+      // happened. `payment_verified_at` alone satisfies the BUG-5 invariant.
+      const { error: acceptErr } = await sb.from("orders").update({
         status: "confirmed",
         payment_verified_at: order.payment_verified_at || new Date().toISOString(),
-        payment_verified_by: order.payment_verified_by || "buyer_accept_price",
+        payment_verified_by: order.payment_verified_by || null,
       }).eq("id", order_id);
+
+      if (acceptErr) {
+        console.error("[cancel:accept_price] update failed", { order_id, err: acceptErr.message });
+        return new Response(JSON.stringify({ error: acceptErr.message }), { status: 500 });
+      }
 
       try {
         await sendBuyerOrderPush({

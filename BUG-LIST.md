@@ -574,3 +574,126 @@ correct destination for an order notification with no specific target.
   offline. Kept to assets verified to exist, because `cache.addAll()` rejects
   wholesale if any single entry 404s — which would have broken shell caching
   entirely had the missing icon been listed there originally.
+
+---
+
+# Cron + status-machine audit — BUG-31 .. BUG-35
+
+Found by asking "which code paths change an order's state?" rather than "which
+endpoints return 200?". The crons and the preorder accept path were never
+covered because they are not reachable from a module test — one runs on a
+schedule, the other returned a success body while doing nothing.
+
+## BUG-34 · S1 · `payment_verified_by` is a uuid column; three writers put strings in it — FIXED
+
+**Root cause for BUG-34 and BUG-35 both.** `orders.payment_verified_by` is
+`uuid`. Proven directly against the DB:
+
+```
+write non-UUID string to payment_verified_by -> 22P02: invalid input syntax for type uuid: "cron_reconcile"
+```
+
+Three writers passed a label instead of a UUID, so Postgres rejected the
+**entire UPDATE**. In every case the returned `error` was discarded, so the
+failure was completely invisible:
+
+| File | Value written | Consequence |
+|---|---|---|
+| `api/cron/reconcile-orphans.ts:69` | `"cron_reconcile"` | cron reported `flipped=0` forever — **had never once recovered an order** |
+| `api/admin/reconcile-all-orphans.ts:87` | `"admin_reconcile"` | bulk reconcile never flipped anything |
+| `api/orders/cancel.ts:121` | `"buyer_accept_price"` | see BUG-35 |
+
+The reconcile cron is supposed to be the last line of defence for a captured
+payment whose webhook was missed. It was dead on arrival.
+
+**Fix:** column stays `null` (matching the precedent set when the legacy
+backfill hit the same 22P02); `payment_verified_at` alone satisfies the BUG-5
+invariant, and the actor is recorded in the log line. Every one of these
+updates now checks `error` and reports it.
+
+## BUG-35 · S1 · "Accept price" returned success and did nothing — FIXED
+
+**File:** `src/pages/api/orders/cancel.ts:121`
+
+Reproduced end to end against the dev server:
+
+```
+seeded pre_order: bdaaf710… final_price: 250
+accept_price HTTP: 200 {"success":true,"status":"confirmed"}
+DB status after accept: pre_order | verified_at: null
+=> BROKEN
+```
+
+The buyer taps **Accept price** on a preorder, the UI reports success, and the
+order never leaves `pre_order`. Reload and they are asked to accept the same
+price again, forever. Money path, and a lying 200 — the same failure shape as
+the notification bugs.
+
+After the fix, same script: `DB status after accept: confirmed` → `WORKS`.
+Locked in as `qa-notifications.ts` N6, which asserts the **database row**
+rather than the response body, plus N6-T4 which guards the column type so a
+future string write fails loudly in CI.
+
+## BUG-31 · S1 · Expiry cron cancelled orders and told nobody — FIXED
+
+**File:** `src/pages/api/cron/expire-pending-orders.ts`
+
+The nightly job flips unpaid orders to `cancelled` and returned. No push, no
+email, to either party. From the buyer's side the order simply **vanished** —
+precisely the "my order disappeared" complaint that started this whole audit.
+The seller was never told either, so a catch held back for that order was
+never released.
+
+**Fix:** fans out a new `expired_unpaid` event. The copy states explicitly that
+nothing was charged, because a bare "cancelled" notification reads like money
+disappeared.
+
+**Verified:** `{"ok":true,"expired":1,"stock_restored":0,"notified":1}`
+
+## BUG-32 · S1 · Orphan-recovery cron notified nobody — FIXED
+
+**File:** `src/pages/api/cron/reconcile-orphans.ts`
+
+Same silence, in the worst possible place. This cron runs when the buyer paid,
+the client handler dropped, **and** the webhook missed it. It confirms the
+order from Razorpay's own record — and then told no one. The single case where
+the buyer has the least reason to believe their payment worked was the case
+with zero communication.
+
+**Fix:** fans out `payment_confirmed` on every successful flip. (Note this only
+became reachable at all once BUG-34 was fixed — the flip itself had never
+succeeded.)
+
+## BUG-33 · S1 · Expiry cron leaked inventory — FIXED
+
+**File:** `src/pages/api/cron/expire-pending-orders.ts`
+
+`/api/orders/cancel` calls `restore_order_stock` when `inventory_deducted ===
+true`. The cron cancelling the *same* orders did not. Any `pending` row that
+had already deducted stock lost it permanently: the listing stayed short and
+the seller could never sell that quantity again. Silent, cumulative, and
+invisible — the stock count just drifts down over time.
+
+**Fix:** mirrors the cancel endpoint exactly, same `inventory_deducted === true`
+guard, and reports `stock_restored` in the response.
+
+---
+
+## Verification
+
+- `astro build` clean · `vitest run` **194/194**
+- `qa-notifications.ts` **31/31** (was 27; +4 for the uuid-column regression)
+- Both crons exercised via GET + Bearer, as Vercel Cron actually invokes them:
+  `expire-pending` → `expired:1, notified:1`; `reconcile-orphans` →
+  `scanned:2, skipped:2, errors:0`
+- Auth still enforced: 401 without Bearer on both
+- Module suites re-run green: M4 9/10 (known false negative) ·
+  integration-fixes 9/9 · M9/M15 8/8 · admin 13/13 · M8/M11/M12/M13 18/18
+
+## Method note
+
+Every bug in this batch returned HTTP 200 (or ran silently on a schedule) while
+doing nothing. Endpoint status-code tests cannot find these. What found them was
+checking the **database row after the call**, and grepping for discarded
+`error` values on Supabase writes. Worth repeating on any remaining path that
+mutates orders.

@@ -58,6 +58,14 @@ export function buyerOrderPushNotification(
       title: "Order declined",
       body: species ? `Sorry, your ${species} order was declined` : "Your order was declined",
     },
+    // Emitted by the expire-pending-orders cron. Must make clear that nothing
+    // was charged, otherwise a silent "cancelled" reads like money vanished.
+    expired_unpaid: {
+      title: "Order cancelled",
+      body: species
+        ? `Your ${species} order was cancelled — payment wasn't completed. You haven't been charged.`
+        : "Your order was cancelled — payment wasn't completed. You haven't been charged.",
+    },
     cancelled: {
       title: "Order Cancelled",
       body: species

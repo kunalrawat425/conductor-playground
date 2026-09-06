@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { notifyOrderParties } from "../../../lib/server/notify-order-parties";
 
 export const prerender = false;
 
@@ -25,7 +26,7 @@ const CRON_SECRET = import.meta.env.CRON_SECRET || "";
  *
  * Auth: Authorization: Bearer $CRON_SECRET.
  */
-async function run(request: Request) {
+async function run(request: Request, origin: string) {
   if (!CRON_SECRET) return new Response(JSON.stringify({ error: "CRON_SECRET not configured" }), { status: 503 });
   const auth = request.headers.get("authorization") || "";
   if (auth !== `Bearer ${CRON_SECRET}`) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
@@ -59,24 +60,42 @@ async function run(request: Request) {
     const rzpData = await res.json();
     const captured = Array.isArray(rzpData.items) ? rzpData.items.find((p: any) => p?.status === "captured") : null;
     if (!captured) { skipped++; continue; }
-    const { data: upd } = await sb
+    // BUG-34: `payment_verified_by` is uuid, so "cron_reconcile" raised 22P02
+    // and every UPDATE was rejected. The error was discarded, so this cron
+    // reported flipped=0 forever and had never once recovered an order — the
+    // exact job meant to be the last line of defence for a captured payment.
+    // Actor is recorded in the log line instead; the column stays null.
+    const { data: upd, error: updErr } = await sb
       .from("orders")
       .update({
         status: "confirmed",
         payment_method: "razorpay",
         razorpay_payment_id: captured.id,
         payment_verified_at: new Date().toISOString(),
-        payment_verified_by: "cron_reconcile",
+        payment_verified_by: null,
       })
       .eq("id", (o as any).id)
       .in("status", ["pending", "pending_payment"])
       .select("id");
-    if ((upd?.length ?? 0) > 0) flipped++;
+
+    if (updErr) {
+      console.error("[cron/reconcile-orphans] update failed", { order_id: (o as any).id, err: updErr.message });
+      errors++;
+      continue;
+    }
+    if ((upd?.length ?? 0) > 0) {
+      flipped++;
+      console.log(`[cron/reconcile-orphans] recovered ${(o as any).id} via payment ${captured.id}`);
+      // The buyer paid, the client handler dropped and the webhook missed it —
+      // this is the last chance anyone gets told. Previously: nobody was.
+      await notifyOrderParties({ order_id: (o as any).id, event: "payment_confirmed", origin })
+        .catch((err: any) => console.warn("[cron/reconcile-orphans] notify failed", { order_id: (o as any).id, err: err?.message }));
+    }
   }
 
   console.log(`[cron/reconcile-orphans] scanned=${orphans?.length ?? 0} flipped=${flipped} skipped=${skipped} errors=${errors}`);
   return new Response(JSON.stringify({ ok: true, scanned: orphans?.length ?? 0, flipped, skipped, errors }), { status: 200 });
 }
 
-export const GET: APIRoute = async ({ request }) => run(request);
-export const POST: APIRoute = async ({ request }) => run(request);
+export const GET: APIRoute = async ({ request, url }) => run(request, url.origin);
+export const POST: APIRoute = async ({ request, url }) => run(request, url.origin);

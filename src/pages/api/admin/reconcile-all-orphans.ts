@@ -84,7 +84,9 @@ export const POST: APIRoute = async ({ request }) => {
         payment_method: "razorpay",
         razorpay_payment_id: captured.id,
         payment_verified_at: new Date().toISOString(),
-        payment_verified_by: "admin_reconcile",
+        // BUG-34: uuid column — a string here raised 22P02 and silently
+        // rejected the whole update, so bulk reconcile never flipped anything.
+        payment_verified_by: null,
       })
       .eq("id", (o as any).id)
       .in("status", ["pending", "pending_payment"])
