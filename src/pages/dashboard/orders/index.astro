@@ -806,7 +806,24 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               : `<div class="v2-oc-actions">
                   <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="ready" data-order-id="${o.id}">📦 Ready for pickup</button>
                 </div>`;
-            actionsHtml = `${proofAfterPrice ? `<div style="display:flex;flex-direction:column;gap:8px;">${proofAfterPrice}</div>` : ""}${fulfill}`;
+            // BUG-43: a pre-order that came in cheaper than the buyer paid used
+            // to be flipped to status `refunded`, which tripped the inventory
+            // restore trigger on an order still being fulfilled. It now stays
+            // `confirmed` with the difference recorded in refund_amt — so the
+            // amount owed has to be surfaced here, or it becomes invisible.
+            const dueBack = Number(o.refund_amt) || 0;
+            const owedBlock = dueBack > 0 && !o.refund_sent_at
+              ? `<div style="padding:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:var(--v2-radius-sm);display:flex;flex-direction:column;gap:6px;">
+                  <div style="font:700 12px Inter;color:var(--v2-orange);">↩ Refund ₹${dueBack.toLocaleString("en-IN")} to buyer</div>
+                  <div style="font:400 11px Inter;color:var(--v2-ink-3);">Final price came in lower than they paid. Fulfil the order as normal, then send the difference.</div>
+                  <button class="v2-btn v2-btn-sm" style="background:var(--v2-orange);color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
+                </div>`
+              : dueBack > 0 && o.refund_sent_at
+                ? `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);">
+                    <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${dueBack.toLocaleString("en-IN")} marked as sent</div>
+                  </div>`
+                : "";
+            actionsHtml = `${owedBlock}${proofAfterPrice ? `<div style="display:flex;flex-direction:column;gap:8px;">${proofAfterPrice}</div>` : ""}${fulfill}`;
           }
         } else if (o.status === "ready_for_pickup") {
           actionsHtml = `<div class="v2-oc-actions">

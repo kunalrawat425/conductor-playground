@@ -260,7 +260,16 @@ const { id } = Astro.params;
     let payStatusText = "";
     if (o.status === 'refunded') payStatusText = "Refunded";
     else if (['declined', 'cancelled'].includes(o.status) && wasActuallyPaid(o)) payStatusText = "Refund pending";
-    else if (!awaitingPayment && (wasActuallyPaid(o) || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) payStatusText = "Paid";
+    else if (!awaitingPayment && (wasActuallyPaid(o) || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) {
+      // BUG-43: a pre-order that priced in cheaper than the buyer paid now stays
+      // `confirmed` with the difference in refund_amt, instead of being flipped
+      // to `refunded` (which restored stock on a live order). Surface the amount
+      // owed, or the buyer never learns money is coming back.
+      const dueBack = Number(o.refund_amt) || 0;
+      payStatusText = dueBack > 0 && !o.refund_sent_at
+        ? `Paid · ₹${dueBack.toLocaleString("en-IN")} refund due`
+        : "Paid";
+    }
     
     if (payPill) {
       if (payStatusText) {

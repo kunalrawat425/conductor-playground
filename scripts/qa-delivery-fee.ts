@@ -44,7 +44,7 @@ async function main() {
 
   // Find a seller with >=2 listings we can put in one cart.
   const { data: sellers } = await sb.from("sellers")
-    .select("id, name, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, free_delivery_above, min_order_amount, has_delivery, opens_at, closes_at")
+    .select("id, name, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, free_delivery_above, min_order_amount, has_delivery, has_pickup, opens_at, closes_at, open_days, accepts_preorder")
     .eq("has_delivery", true).limit(40);
 
   let target: any = null, listings: any[] | null = null;
@@ -61,15 +61,18 @@ async function main() {
     free_delivery_above: target.free_delivery_above,
     min_order_amount: target.min_order_amount,
     opens_at: target.opens_at, closes_at: target.closes_at,
+    open_days: target.open_days, has_pickup: target.has_pickup,
   };
   console.log(`seller: ${target.name} (${target.id.slice(0, 8)}), listings: ${listings.length}`);
 
   try {
     // ---- Case A: flat fee, 2-line cart. Total fee across rows must equal ONE fee.
+    // Force the seller open for the whole run: an empty open_days means "every
+    // day" (isTodayOrderDay), and 00:00-23:59 covers any clock time.
     await sb.from("sellers").update({
       delivery_fee_enabled: true, delivery_fee_amount: 30, delivery_fee_type: "fixed",
       free_delivery_above: null, min_order_amount: 0,
-      opens_at: "00:00:00", closes_at: "23:59:00",
+      opens_at: "00:00:00", closes_at: "23:59:00", open_days: [],
     }).eq("id", target.id);
 
     console.log("\n=== A. Flat ₹30 fee, 2-line cart ===");
@@ -112,7 +115,7 @@ async function main() {
 
     // ---- Case C: pickup carts must never carry a delivery fee.
     console.log("\n=== C. Pickup cart ===");
-    await sb.from("sellers").update({ free_delivery_above: null, delivery_fee_amount: 30 }).eq("id", target.id);
+    await sb.from("sellers").update({ free_delivery_above: null, delivery_fee_amount: 30, has_pickup: true }).eq("id", target.id);
     const lines = listings.map((l) => ({ listing_id: l.id, quantity: 1, quantity_unit: "kg" }));
     const rc = await fetch(`${BASE}/api/orders/create-seller-cart`, {
       method: "POST", headers: { "Content-Type": "application/json", Origin: BASE },
@@ -131,6 +134,11 @@ async function main() {
     console.log("\nseller config restored");
   }
 
+  if (pass + fail === 0) {
+    console.log("\nNO ASSERTIONS RAN — fixture setup failed, treat as failure");
+    process.exitCode = 1;
+    return;
+  }
   console.log(`\n${pass}/${pass + fail} PASS`);
   if (fail > 0) process.exitCode = 1;
 }

@@ -968,3 +968,56 @@ Both kept rows are exactly the UPI-screenshot case. Covered by 14 unit tests in
 `razorpay-verify` / `razorpay-webhook` / `verify_payment`. That is a migration
 plus a backfill of existing rows, so this change fixes the readers first — no
 row is mutated, and the display is now correct regardless.
+
+## BUG-43 · S1 · A cheaper pre-order catch restored stock on a live order — CODE FIXED, MIGRATION PENDING
+
+**Files:** `supabase/migrations/043_preorder_price_reconciliation.sql`
+(`reconcile_preorder_price`), `src/pages/api/seller/orders.ts:283`,
+`src/pages/dashboard/orders/index.astro`, `src/pages/track/[id].astro`
+
+```sql
+elsif p_final_price < v_paid then
+  v_new_status := 'refunded';   -- seller owes buyer the difference
+```
+
+`refunded` is one of the statuses `trg_restore_inventory` treats as terminal, so
+setting it returned the stock and set `inventory_deducted = false` /
+`is_available = true` — **while the order carried on being fulfilled**.
+`seller/orders.ts:283` explicitly allows `refunded → ready_for_pickup |
+out_for_delivery`, and the dashboard renders those buttons in the `refunded`
+branch. So the seller got the fish back into sellable inventory *and* handed it
+to the buyer. The next sale had no stock behind it and nothing re-deducted.
+
+Not an edge case: `paid_amount` is pre-set to the estimate at creation (see
+BUG-42), so **any** catch that priced in cheaper than estimated took this path.
+
+**Fix — stop overloading `refunded`.** The order *is* confirmed; there is simply
+a difference owed. `reconcile_preorder_price` now returns `confirmed` and
+records the difference in `refund_amt` (already used with exactly that meaning
+by `orders/cancel.ts` and the Razorpay webhook). `refunded` goes back to meaning
+only "money went back and the order is over".
+
+Because the obligation moved out of the status, it had to be surfaced or it
+would vanish silently:
+- **Seller** — the `confirmed` branch now shows *"↩ Refund ₹X to buyer · Final
+  price came in lower than they paid. Fulfil the order as normal, then send the
+  difference."* with a *Mark refund sent* button.
+- **Buyer** — the payment pill reads *"Paid · ₹X refund due"*.
+
+`refunded: ["ready_for_pickup", "out_for_delivery"]` is deliberately **kept** in
+the transition whitelist: rows created before this fix are already sitting in
+`refunded` mid-fulfilment and must stay fulfillable.
+
+**Needs `066_preorder_price_drop_keeps_order_live.sql` applied by hand** — until
+then, a price drop still flips to `refunded` and still restores stock once.
+
+---
+
+## Test-suite note
+
+`scripts/qa-delivery-fee.ts` first reported `0/0 PASS` on a later run because it
+picked a different staging seller that was closed that day — the fee logic was
+fine, the fixture wasn't. It now forces the chosen seller open for the whole run
+(`open_days: []`, `00:00–23:59`, `has_pickup: true`), restores every mutated
+field afterwards, and **fails when zero assertions ran** instead of reporting a
+green `0/0`. A suite that can silently assert nothing is worse than no suite.
