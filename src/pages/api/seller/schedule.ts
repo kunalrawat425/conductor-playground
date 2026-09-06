@@ -96,10 +96,18 @@ function buildVirtualSlots(config: ScheduleConfigRow): Array<{
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { action, seller_id } = body;
+    const { action, seller_id, seller_phone } = body;
 
     if (!seller_id) {
       return new Response(JSON.stringify({ error: "seller_id required" }), { status: 400 });
+    }
+
+    // BUG-13: same pattern as BUG-12 — seller_id is public.
+    // get_slots is read-only + used by public buyer flow; skip auth there.
+    if (action !== "get_slots") {
+      const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+      const authCheck = await assertSellerOwns(seller_id, seller_phone);
+      if (authCheck instanceof Response) return authCheck;
     }
 
     const sb = createClient(supabaseUrl, supabaseServiceKey);
