@@ -10,11 +10,18 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 export const GET: APIRoute = async ({ url }) => {
   try {
     const sellerId = url.searchParams.get("seller_id");
+    const sellerPhone = url.searchParams.get("seller_phone");
     const dateFilter = url.searchParams.get("date_filter") || "30d";
 
     if (!sellerId) {
       return new Response("seller_id required", { status: 400 });
     }
+
+    // BUG-12: order data (buyer phone, addresses in row) is PII.
+    // seller_id alone is a public identifier — require phone.
+    const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+    const authCheck = await assertSellerOwns(sellerId, sellerPhone);
+    if (authCheck instanceof Response) return authCheck;
 
     const sb = createClient(supabaseUrl, supabaseServiceKey);
 

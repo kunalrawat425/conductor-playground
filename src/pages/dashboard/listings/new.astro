@@ -76,6 +76,7 @@ import Toast from "../../../components/ui/atoms/Toast.astro";
               }
               const upForm = new FormData();
               upForm.append("seller_id", sellerId);
+              upForm.append("seller_phone", localStorage.getItem("rlf_seller_phone") || "");
               upForm.append("file", photoFile);
               const upRes = await fetch("/api/seller/upload-listing-photo", { method: "POST", body: upForm });
               const upData = await upRes.json();

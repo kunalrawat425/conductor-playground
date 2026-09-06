@@ -967,7 +967,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     btn.disabled = true;
     btn.textContent = "Loading…";
     try {
-      const res = await fetch(`/api/seller/payment-screenshot?order_id=${encodeURIComponent(orderId)}&seller_id=${encodeURIComponent(sellerId!)}&path=${encodeURIComponent(path)}`);
+      const res = await fetch(`/api/seller/payment-screenshot?order_id=${encodeURIComponent(orderId)}&seller_id=${encodeURIComponent(sellerId!)}&seller_phone=${encodeURIComponent(localStorage.getItem("rlf_seller_phone") || "")}&path=${encodeURIComponent(path)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       window.open(data.url, "_blank", "noopener");
@@ -1070,6 +1070,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             const form = new FormData();
             form.append("order_id", orderId);
             form.append("seller_id", sellerId!);
+            form.append("seller_phone", localStorage.getItem("rlf_seller_phone") || "");
             form.append("file", file);
             const uploadRes = await fetch("/api/seller/upload-refund", { method: "POST", body: form });
             const uploadData = await uploadRes.json();
@@ -1169,7 +1170,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   document.getElementById("v2-dash-export")?.addEventListener("click", (e) => {
     e.preventDefault();
     if (!sellerId) return;
-    const url = `/api/seller/orders-export?seller_id=${encodeURIComponent(sellerId)}&date_filter=${encodeURIComponent(currentRange)}`;
+    const url = `/api/seller/orders-export?seller_id=${encodeURIComponent(sellerId)}&seller_phone=${encodeURIComponent(localStorage.getItem("rlf_seller_phone") || "")}&date_filter=${encodeURIComponent(currentRange)}`;
     window.location.href = url;
   });
 

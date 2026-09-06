@@ -23,6 +23,7 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const form = await request.formData();
     const seller_id = form.get("seller_id")?.toString();
+    const seller_phone = form.get("seller_phone")?.toString();
     const file = form.get("file") as File | null;
 
     if (!seller_id || !file) {
@@ -31,6 +32,11 @@ export const POST: APIRoute = async ({ request }) => {
     if (file.size > 5 * 1024 * 1024) {
       return new Response(JSON.stringify({ error: "File too large (max 5 MB)" }), { status: 400 });
     }
+
+    // BUG-12: prevent storage-spam by strangers with knowledge of seller_id
+    const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+    const authCheck = await assertSellerOwns(seller_id, seller_phone);
+    if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     await ensureFishPhotosBucket(supabase);

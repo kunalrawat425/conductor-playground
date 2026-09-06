@@ -16,11 +16,17 @@ export const POST: APIRoute = async ({ request }) => {
     const form = await request.formData();
     const order_id = form.get("order_id")?.toString();
     const seller_id = form.get("seller_id")?.toString();
+    const seller_phone = form.get("seller_phone")?.toString();
     const file = form.get("file") as File | null;
 
     if (!order_id || !seller_id || !file) {
       return new Response(JSON.stringify({ error: "order_id, seller_id, and file required" }), { status: 400 });
     }
+
+    // BUG-12 gate
+    const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+    const authCheck = await assertSellerOwns(seller_id, seller_phone);
+    if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

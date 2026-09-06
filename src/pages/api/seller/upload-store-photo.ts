@@ -23,12 +23,18 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const form = await request.formData();
     const seller_id = form.get("seller_id")?.toString();
+    const seller_phone = form.get("seller_phone")?.toString();
     const file = form.get("file") as File | null;
     const remove = form.get("remove")?.toString();
 
     if (!seller_id) {
       return new Response(JSON.stringify({ error: "seller_id required" }), { status: 400 });
     }
+
+    // BUG-12 gate
+    const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+    const authCheck = await assertSellerOwns(seller_id, seller_phone);
+    if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

@@ -90,11 +90,18 @@ export const GET: APIRoute = async ({ url }) => {
   try {
     const order_id = url.searchParams.get("order_id");
     const seller_id = url.searchParams.get("seller_id");
+    const seller_phone = url.searchParams.get("seller_phone");
     const pathParam = url.searchParams.get("path");
 
     if (!order_id || !seller_id || !pathParam) {
       return new Response(JSON.stringify({ error: "order_id, seller_id, and path required" }), { status: 400 });
     }
+
+    // BUG-12: signed URLs to buyer payment screenshots are sensitive.
+    // Verify seller_phone matches to prevent seller_id enumeration attack.
+    const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+    const authCheck = await assertSellerOwns(seller_id, seller_phone);
+    if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const pathCandidates = pathMatchCandidates(pathParam);
