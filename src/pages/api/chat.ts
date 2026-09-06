@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { anthropic } from '@ai-sdk/anthropic';
 import { generateText } from 'ai';
 
+export const prerender = false;
+
 const SYSTEM = `You are a helpful assistant for Relifish, a fresh seafood marketplace in India.
 Relifish connects buyers directly with local fish sellers for same-day and pre-order delivery.
 Answer questions about how the app works, pricing, availability, and ordering process.
