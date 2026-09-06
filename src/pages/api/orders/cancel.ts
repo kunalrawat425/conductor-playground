@@ -22,9 +22,14 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Order not found" }), { status: 404 });
     }
 
-    // Cancel: allowed only before fulfillment starts (including payment-pending pre-orders)
+    // Cancel: allowed before fulfillment starts.
+    // Pre-payment states: cancel immediately, no refund needed.
+    // Confirmed state: allowed ONLY if seller has not yet marked ready / dispatched.
+    //   If paid via Razorpay, trigger auto-refund.
     if (action === "cancel") {
-      if (!["pending", "pending_payment", "pre_order", "scheduled"].includes(order.status)) {
+      const preFulfillmentStates = ["pending", "pending_payment", "pre_order", "scheduled"];
+      const confirmedCancellable = order.status === "confirmed";
+      if (!preFulfillmentStates.includes(order.status) && !confirmedCancellable) {
         return new Response(JSON.stringify({ error: "Cannot cancel — order is already " + order.status }), { status: 400 });
       }
 
@@ -33,7 +38,51 @@ export const POST: APIRoute = async ({ request }) => {
         await sb.rpc("restore_order_stock", { p_listing_id: order.listing_id, p_quantity: order.quantity });
       }
 
-      await sb.from("orders").update({ status: "cancelled", cancelled_by: "buyer", cancel_reason: cancel_reason || null }).eq("id", order_id);
+      // Trigger Razorpay refund if the order was paid via Razorpay.
+      // Non-blocking: on failure we still cancel the order and flag it for manual seller refund.
+      let refundNote: string | null = null;
+      let refundId: string | null = null;
+      const isRzpPaid = order.payment_method === "razorpay" && order.razorpay_payment_id;
+      if (isRzpPaid) {
+        const keyId = import.meta.env.PUBLIC_RAZORPAY_KEY_ID || "";
+        const keySecret = import.meta.env.RAZORPAY_KEY_SECRET || "";
+        if (keyId && keySecret) {
+          const authHex = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+          try {
+            const rr = await fetch(`https://api.razorpay.com/v1/payments/${order.razorpay_payment_id}/refund`, {
+              method: "POST",
+              headers: { Authorization: `Basic ${authHex}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ speed: "normal" }),
+            });
+            if (rr.ok) {
+              const body = await rr.json();
+              refundId = body?.id || null;
+              refundNote = `Razorpay refund ${refundId} initiated`;
+            } else {
+              const body = await rr.json().catch(() => ({}));
+              refundNote = `Razorpay refund FAILED (${rr.status}): ${(body as any)?.error?.description || "unknown"} — seller must refund manually`;
+              console.warn("[cancel] razorpay refund failed", { order_id, status: rr.status, body });
+            }
+          } catch (err: any) {
+            refundNote = `Razorpay refund FAILED (network): ${err?.message || "unknown"} — seller must refund manually`;
+            console.warn("[cancel] razorpay refund network err", { order_id, err: err?.message });
+          }
+        } else {
+          refundNote = "Razorpay keys not configured — seller must refund manually";
+        }
+      }
+
+      const updatePayload: Record<string, unknown> = {
+        status: "cancelled",
+        cancelled_by: "buyer",
+        cancel_reason: cancel_reason || null,
+      };
+      if (refundNote) updatePayload.refund_note = refundNote;
+      if (isRzpPaid && refundId) {
+        updatePayload.refund_amt = Number(order.paid_amount) || (Number(order.total_price) + Number(order.delivery_fee || 0));
+        updatePayload.refund_sent_at = new Date().toISOString();
+      }
+      await sb.from("orders").update(updatePayload).eq("id", order_id);
 
       try {
         await sendBuyerOrderPush({
@@ -43,17 +92,27 @@ export const POST: APIRoute = async ({ request }) => {
           species: order.species || "Fish",
           order_id,
         });
-      } catch (_) {}
+      } catch (err) { console.warn("[cancel] buyer push failed", { order_id, err: (err as any)?.message }); }
 
-      return new Response(JSON.stringify({ success: true, status: "cancelled" }), { status: 200 });
+      return new Response(JSON.stringify({
+        success: true,
+        status: "cancelled",
+        refund: isRzpPaid ? { auto: !!refundId, id: refundId, note: refundNote } : null,
+      }), { status: 200 });
     }
 
-    // Accept pre-order final price — buyer accepts, now move to confirmed
+    // Accept pre-order final price — buyer accepts, now move to confirmed.
+    // Also stamp payment_verified_at so the row satisfies "confirmed → has proof"
+    // invariant (BUG-5 fix: prior rows lacked verified_at, causing 29 audit hits).
     if (action === "accept_price") {
       if (order.status !== "pre_order" || !order.final_price) {
         return new Response(JSON.stringify({ error: "No price to accept" }), { status: 400 });
       }
-      await sb.from("orders").update({ status: "confirmed" }).eq("id", order_id);
+      await sb.from("orders").update({
+        status: "confirmed",
+        payment_verified_at: order.payment_verified_at || new Date().toISOString(),
+        payment_verified_by: order.payment_verified_by || "buyer_accept_price",
+      }).eq("id", order_id);
 
       try {
         await sendBuyerOrderPush({

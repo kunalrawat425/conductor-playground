@@ -649,6 +649,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           if (noteInput) noteInput.style.display = "block";
           if (confirmBtn) confirmBtn.style.display = "block";
           btn.style.display = "none";
+        } else if (btn.dataset.action === "reconcile-razorpay") {
+          reconcileRazorpay(btn.dataset.orderId!, btn);
         } else {
           updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
         }
@@ -720,9 +722,18 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Paid via Razorpay — auto-confirmed</div>
               <div class="v2-oc-actions">${fulfill}</div>`;
           } else if (RAZORPAY_ENABLED && !isPaidViaRazorpay) {
-            // Razorpay is active but buyer hasn't completed payment yet
+            // Razorpay is active but buyer hasn't completed payment yet.
+            // Offer a manual reconcile button — if buyer paid but the client
+            // handler never fired, this checks Razorpay directly and flips
+            // the row to confirmed. Backup for when the webhook is missing/lagged.
+            const hasRzpOrder = !!o.razorpay_order_id;
+            const reconcileBtn = hasRzpOrder
+              ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="reconcile-razorpay" data-order-id="${o.id}">🔄 Check Razorpay for payment</button>`
+              : `<div style="font:500 11px Inter;color:var(--v2-ink-3);">Buyer hasn't opened payment yet — nothing to reconcile.</div>`;
             actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
-              <div style="font:500 11px Inter;color:var(--v2-ink-3);">⏳ Waiting for buyer to complete Razorpay payment. No action needed.</div>
+              <div style="font:500 11px Inter;color:var(--v2-ink-3);">⏳ Waiting for buyer to complete Razorpay payment. If buyer says money was deducted, click below to reconcile.</div>
+              <div style="display:flex;gap:8px;">${reconcileBtn}</div>
+              <div id="reconcile-result-${o.id}" style="font:500 11px Inter;margin-top:4px;"></div>
               <div style="display:flex;gap:8px;">
                 <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline-show-reason" data-order-id="${o.id}">Can't fulfill</button>
               </div>
@@ -970,6 +981,33 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     } finally {
       btn.disabled = false;
       btn.textContent = orig;
+    }
+  }
+
+  async function reconcileRazorpay(orderId: string, btn?: HTMLButtonElement) {
+    if (!sellerId) return;
+    const resultEl = document.getElementById(`reconcile-result-${orderId}`);
+    if (btn) { btn.disabled = true; btn.textContent = "🔄 Checking Razorpay..."; }
+    if (resultEl) resultEl.textContent = "";
+    try {
+      const res = await fetch("/api/seller/reconcile-razorpay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId, seller_id: sellerId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Reconcile failed");
+      if (data.ok && (data.reconciled || data.already_confirmed)) {
+        if (resultEl) { resultEl.style.color = "#15803d"; resultEl.textContent = data.already_confirmed ? "✓ Already confirmed" : "✓ Payment found — order confirmed"; }
+        (window as any).v2Toast?.("success", "Reconciled", data.already_confirmed ? "Order was already confirmed" : `Payment ${data.payment_id} confirmed`);
+        setTimeout(() => loadOrders(true), 800);
+      } else {
+        if (resultEl) { resultEl.style.color = "var(--v2-ink-3)"; resultEl.textContent = data.reason || "No captured payment on Razorpay yet"; }
+      }
+    } catch (err: any) {
+      if (resultEl) { resultEl.style.color = "var(--v2-red)"; resultEl.textContent = `Failed: ${err.message}`; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "🔄 Check Razorpay for payment"; }
     }
   }
 

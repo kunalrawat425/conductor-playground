@@ -110,7 +110,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       species: (order as any).listing?.species || (order as any).species || "Fish",
       order_id,
     });
-  } catch { /* non-blocking */ }
+  } catch (err) { console.warn("[razorpay-verify] buyer push failed", { order_id, err: (err as any)?.message || String(err) }); }
 
   // Send Razorpay receipt email to buyer — truly non-blocking
   if (resendApiKey) {
@@ -172,9 +172,9 @@ export const POST: APIRoute = async ({ request, url }) => {
             subject: "Payment confirmed — your Relifish order is set ✓",
             html,
           }),
-        }).catch(() => {});
+        }).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));
       }
-    }).catch(() => {});
+    }).catch((err) => console.warn("[razorpay-verify] buyer email lookup failed", { order_id, err: err?.message || String(err) }));
   }
 
   // Notify seller — truly non-blocking
@@ -203,7 +203,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           subject: `New order paid: ${capitalizeFishName(species)}`,
           html,
         }),
-      }).catch(() => {});
+      }).catch((err) => console.warn("[razorpay-verify] seller email failed", { order_id, err: err?.message || String(err) }));
 
       // Seller push — new order paid
       const sellerId = (order as any).listing?.seller?.id;
@@ -219,9 +219,9 @@ export const POST: APIRoute = async ({ request, url }) => {
             placement_kind: (order as any).placement_kind || "same_day",
             order_id,
           }),
-        }).catch(() => {});
+        }).catch((err) => console.warn("[razorpay-verify] seller push failed", { order_id, err: err?.message || String(err) }));
       }
-    })().catch(() => {});
+    })().catch((err) => console.warn("[razorpay-verify] seller notify block failed", { order_id, err: err?.message || String(err) }));
   }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200 });

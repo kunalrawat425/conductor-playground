@@ -345,6 +345,13 @@ export const POST: APIRoute = async ({ request }) => {
       updates.cancelled_by = "seller";
       if (refund_note) updates.refund_note = refund_note;
     }
+    // BUG-5 fix: when seller advances into "confirmed" without going through
+    // verify_payment (e.g. direct "Mark confirmed" button), stamp payment_verified_at
+    // so the row satisfies the "confirmed → has proof" invariant.
+    if (status === "confirmed" && !(currentOrder as any)?.payment_verified_at) {
+      updates.payment_verified_at = new Date().toISOString();
+      updates.payment_verified_by = seller_id;
+    }
 
     const { data, error } = await supabase
       .from("orders")

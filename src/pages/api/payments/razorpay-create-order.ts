@@ -50,25 +50,43 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  // Idempotency — return existing Razorpay order if already created
-  if (order.razorpay_order_id) {
-    const amountPaise = Math.round(
-      (Number(order.total_price) + Number(order.delivery_fee || 0)) * 100
-    );
-    return new Response(
-      JSON.stringify({
-        razorpay_order_id: order.razorpay_order_id,
-        amount: amountPaise,
-        currency: "INR",
-        key_id: RAZORPAY_KEY_ID,
-      }),
-      { status: 200 }
-    );
-  }
-
+  // Idempotency — reuse existing Razorpay order ONLY if amount still matches.
+  // If seller changed `final_price` between two Pay clicks, the cached
+  // Razorpay order carries the OLD amount → buyer pays stale amount → verify.ts:66
+  // rejects with "Payment does not match this order". Prevent that by
+  // dropping the stale reference and creating a fresh Razorpay order.
   const amountPaise = Math.round(
     (Number(order.total_price) + Number(order.delivery_fee || 0)) * 100
   );
+  if (order.razorpay_order_id) {
+    // Ask Razorpay for the cached order's amount
+    const authHex = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+    let cachedOk = false;
+    try {
+      const cachedRes = await fetch(`https://api.razorpay.com/v1/orders/${order.razorpay_order_id}`, {
+        headers: { Authorization: `Basic ${authHex}` },
+      });
+      if (cachedRes.ok) {
+        const cachedOrder = await cachedRes.json();
+        cachedOk = Number(cachedOrder?.amount) === amountPaise;
+      }
+    } catch { /* network or malformed — cachedOk stays false, fall through to create new */ }
+
+    if (cachedOk) {
+      return new Response(
+        JSON.stringify({
+          razorpay_order_id: order.razorpay_order_id,
+          amount: amountPaise,
+          currency: "INR",
+          key_id: RAZORPAY_KEY_ID,
+        }),
+        { status: 200 }
+      );
+    }
+    // Amount drifted (or Razorpay lost the order) — clear stale ref and create new one below.
+    await supabase.from("orders").update({ razorpay_order_id: null }).eq("id", order_id);
+  }
+
   if (amountPaise <= 0) {
     return new Response(JSON.stringify({ error: "Order amount is zero" }), { status: 400 });
   }
