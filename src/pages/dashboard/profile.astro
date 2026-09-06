@@ -385,7 +385,7 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
       const res = await fetch("/api/seller/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seller_id: sellerId, updates }),
+        body: JSON.stringify({ seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", updates }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
@@ -501,7 +501,7 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
           const res = await fetch("/api/seller/profile", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ seller_id: sellerId, updates: { lat, lng } }),
+            body: JSON.stringify({ seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", updates: { lat, lng } }),
           });
           if (!res.ok) throw new Error("Failed to save");
           const locSt = document.getElementById("p-location-status")!;

@@ -8,18 +8,34 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
 /**
  * POST /api/seller/profile
- * Body: { seller_id, updates: { ... } }
- * Uses service_role key to bypass RLS
+ * Body: { seller_id, seller_phone, updates: { ... } }
+ * Uses service_role key to bypass RLS.
+ *
+ * BUG-12 fix: seller_id is publicly exposed in /api/search responses, so it
+ * cannot be used alone as a bearer credential. Require seller_phone (stored
+ * in localStorage.rlf_seller_phone at OTP verify time) and verify it matches
+ * the row's phone before allowing any update.
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { seller_id, updates } = await request.json();
+    const { seller_id, seller_phone, updates } = await request.json();
 
     if (!seller_id || !updates) {
       return new Response(JSON.stringify({ error: "seller_id and updates required" }), { status: 400 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Ownership: seller_phone must match the row (BUG-12).
+    // Strip leading +/91 prefixes both sides for comparison consistency.
+    const norm = (s: string) => (s || "").replace(/^\+?91/, "").replace(/^\+/, "").replace(/\D/g, "");
+    const { data: owner } = await supabase.from("sellers").select("phone").eq("id", seller_id).single();
+    if (!owner) {
+      return new Response(JSON.stringify({ error: "Seller not found" }), { status: 404 });
+    }
+    if (!seller_phone || norm(String(seller_phone)) !== norm(String(owner.phone))) {
+      return new Response(JSON.stringify({ error: "Unauthorized — seller phone mismatch" }), { status: 403 });
+    }
 
     // Reset email_verified if email changed
     if (updates.email !== undefined) {

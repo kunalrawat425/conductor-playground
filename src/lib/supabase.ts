@@ -240,10 +240,11 @@ export async function updateSellerProfile(
   id: string,
   updates: Partial<Seller>
 ) {
+  const sellerPhone = typeof localStorage !== "undefined" ? (localStorage.getItem("rlf_seller_phone") || "") : "";
   const res = await fetch("/api/seller/profile", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ seller_id: id, updates }),
+    body: JSON.stringify({ seller_id: id, seller_phone: sellerPhone, updates }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to update profile");
