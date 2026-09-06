@@ -11,6 +11,7 @@ import { getListingOptionById, type ListingPricingSource } from "../../../lib/li
 import type { PlacementKind } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
+import { internalHeaders } from "../../../lib/server/internal-auth";
 
 type ResolvedRow = Awaited<ReturnType<typeof resolveListingOrderLine>> extends { ok: true; line: infer L }
   ? { line: L }
@@ -184,7 +185,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           const origin = url.origin;
           await fetch(`${origin}/api/notify-seller`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...internalHeaders() },
             body: JSON.stringify({
               seller_id: line.seller_id,
               species: line.species || "Fish",
@@ -280,7 +281,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         const origin = url.origin;
         await fetch(`${origin}/api/notify-seller`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...internalHeaders() },
           body: JSON.stringify({
             seller_id: line.seller_id,
             species: line.species || "Fish",

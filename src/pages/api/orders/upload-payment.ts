@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { paymentProofReceivedEmailSeller, proofUploadedEmailBuyer } from "../../../lib/email-templates";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
+import { internalHeaders } from "../../../lib/server/internal-auth";
 
 export const prerender = false;
 
@@ -152,7 +153,7 @@ export const POST: APIRoute = async ({ request }) => {
         const origin = new URL(request.url).origin;
         await fetch(`${origin}/api/notify-seller`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...internalHeaders() },
           body: JSON.stringify({
             kind: "payment_proof",
             seller_id: sellerId,

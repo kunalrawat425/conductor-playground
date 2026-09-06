@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { internalHeaders } from "../../../lib/server/internal-auth";
 
 export const prerender = false;
 
@@ -210,7 +211,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (sellerId) {
         fetch(`${url.origin}/api/notify-seller`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...internalHeaders() },
           body: JSON.stringify({
             seller_id: sellerId,
             species: (order as any).listing?.species || (order as any).species || "Fish",

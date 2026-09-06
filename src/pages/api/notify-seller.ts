@@ -34,9 +34,14 @@ function normalizePushSubscription(raw: unknown): { endpoint: string; keys?: { p
 /**
  * POST /api/notify-seller
  * Body: { seller_id, species, quantity, quantity_unit, buyer_phone, order_id?, kind? }
+ * BUG-14: internal-only. Callers must send x-internal-api-secret header.
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
+    const { assertInternalCaller } = await import("../../lib/server/internal-auth");
+    const authCheck = assertInternalCaller(request);
+    if (authCheck) return authCheck;
+
     const body = await request.json();
     const kind = body.kind === "payment_proof" ? "payment_proof" : "new_order";
     const {

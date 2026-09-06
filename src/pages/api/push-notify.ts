@@ -10,6 +10,11 @@ export const prerender = false;
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
+    // BUG-16: gate — only internal callers or ADMIN_SECRET-holders (for manual testing)
+    const { assertInternalCaller } = await import("../../lib/server/internal-auth");
+    const authCheck = assertInternalCaller(request);
+    if (authCheck) return authCheck;
+
     const body = await request.json();
     const { buyer_id, buyer_phone, status, species, final_price, order_id } = body;
 

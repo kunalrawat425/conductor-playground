@@ -12,6 +12,7 @@ import type { PlacementKind } from "../../../lib/order-timing";
 import { classifyPlacementAtOrderTime, closedSellerMessage } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
+import { internalHeaders } from "../../../lib/server/internal-auth";
 
 export const prerender = false;
 
@@ -132,7 +133,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (seller_id) {
           fetch(`${url.origin}/api/notify-seller`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...internalHeaders() },
             body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, placement_kind: "preorder", order_id: preOrder.id }),
           }).catch(() => {});
         }
@@ -364,7 +365,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       try {
         await fetch(`${url.origin}/api/notify-seller`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...internalHeaders() },
           body: JSON.stringify({
             seller_id,
             species: species || "Fish",
