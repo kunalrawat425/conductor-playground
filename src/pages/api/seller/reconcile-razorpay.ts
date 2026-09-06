@@ -20,17 +20,22 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: "Payment gateway not configured" }), { status: 503 });
   }
 
-  let body: { order_id?: string; seller_id?: string };
+  let body: { order_id?: string; seller_id?: string; seller_phone?: string };
   try {
     body = await request.json();
   } catch {
     return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 });
   }
 
-  const { order_id, seller_id } = body;
+  const { order_id, seller_id, seller_phone } = body;
   if (!order_id || !seller_id) {
     return new Response(JSON.stringify({ error: "order_id and seller_id required" }), { status: 400 });
   }
+
+  // BUG-12: verify seller_phone matches
+  const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+  const authCheck = await assertSellerOwns(seller_id, seller_phone);
+  if (authCheck instanceof Response) return authCheck;
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 

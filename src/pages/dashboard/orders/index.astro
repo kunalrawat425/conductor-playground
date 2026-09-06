@@ -993,7 +993,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       const res = await fetch("/api/seller/reconcile-razorpay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: orderId, seller_id: sellerId }),
+        body: JSON.stringify({ order_id: orderId, seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Reconcile failed");
@@ -1043,7 +1043,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       btn.textContent = loadingLabels[action] || "Updating…";
     }
     try {
-      let body: Record<string, any> = { seller_id: sellerId, order_id: orderId };
+      let body: Record<string, any> = { seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", order_id: orderId };
       if (apiActions.has(action)) {
         body.action = action;
         if (action === "set_final_price") {
@@ -1099,7 +1099,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         await fetch("/api/seller/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ seller_id: sellerId, order_id: orderId, action: "set_final_price", final_price: body._preOrderPrice }),
+          body: JSON.stringify({ seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", order_id: orderId, action: "set_final_price", final_price: body._preOrderPrice }),
         });
       }
 

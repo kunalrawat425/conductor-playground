@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { canonicalPricingOptionsFromPayload, pricingOptionsUniformUnit } from "../../../lib/listing-pricing";
+import { assertSellerOwns } from "../../../lib/server/assert-seller";
 
 export const prerender = false;
 
@@ -9,30 +10,19 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
 /**
  * POST /api/seller/listings
- * Body: { action: "create" | "update" | "delete", seller_id, listing?, listing_id?, updates? }
- * Uses service_role key to bypass RLS (seller auth is localStorage-based, not Supabase Auth)
+ * Body: { action: "create" | "update" | "delete", seller_id, seller_phone, listing?, listing_id?, updates? }
+ * Uses service_role key to bypass RLS (seller auth is localStorage-based, not Supabase Auth).
+ * BUG-12: seller_phone required — seller_id alone is publicly exposed via /api/search.
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { action, seller_id } = body;
+    const { action, seller_id, seller_phone } = body;
 
-    if (!seller_id) {
-      return new Response(JSON.stringify({ error: "seller_id required" }), { status: 400 });
-    }
+    const authCheck = await assertSellerOwns(seller_id, seller_phone);
+    if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify seller exists
-    const { data: seller } = await supabase
-      .from("sellers")
-      .select("id")
-      .eq("id", seller_id)
-      .single();
-
-    if (!seller) {
-      return new Response(JSON.stringify({ error: "Seller not found" }), { status: 404 });
-    }
 
     if (action === "create") {
       const { listing } = body;

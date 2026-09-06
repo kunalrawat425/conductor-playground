@@ -446,6 +446,10 @@ export async function getScheduledOrdersForSeller(
   return { orders: (data || []) as Order[], total: count ?? 0 };
 }
 
+function getSellerPhone(): string {
+  return typeof localStorage !== "undefined" ? (localStorage.getItem("rlf_seller_phone") || "") : "";
+}
+
 export async function createListing(
   listing: Omit<FishListing, "id" | "created_at" | "seller">
 ) {
@@ -453,7 +457,7 @@ export async function createListing(
   const res = await fetch("/api/seller/listings", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "create", seller_id, listing: rest }),
+    body: JSON.stringify({ action: "create", seller_id, seller_phone: getSellerPhone(), listing: rest }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to create listing");
@@ -471,7 +475,7 @@ export async function updateListing(
     const res = await fetch("/api/seller/listings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "update", seller_id: sid, listing_id: id, updates }),
+      body: JSON.stringify({ action: "update", seller_id: sid, seller_phone: getSellerPhone(), listing_id: id, updates }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed to update listing");

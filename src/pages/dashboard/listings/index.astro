@@ -201,7 +201,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               const res = await fetch("/api/seller/listings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "update", seller_id: sellerId, listing_id: lid, updates: { is_available: next } }),
+                body: JSON.stringify({ action: "update", seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", listing_id: lid, updates: { is_available: next } }),
               });
               const data = await res.json();
               if (!res.ok) throw new Error(data.error || "Failed");
@@ -225,7 +225,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               const res = await fetch("/api/seller/listings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "delete", seller_id: sellerId, listing_id: lid }),
+                body: JSON.stringify({ action: "delete", seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", listing_id: lid }),
               });
               const data = await res.json();
               if (!res.ok) throw new Error(data.error || "Delete failed");

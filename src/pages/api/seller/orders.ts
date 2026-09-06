@@ -50,7 +50,7 @@ async function sendResendEmail(to: string, subject: string, bodyHtml: string) {
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { seller_id, order_id, status, action, final_price, refund_note, refund_screenshot_path } = await request.json();
+    const { seller_id, seller_phone, order_id, status, action, final_price, refund_note, refund_screenshot_path } = await request.json();
 
     if (!seller_id || !order_id) {
       return new Response(JSON.stringify({ error: "seller_id and order_id required" }), { status: 400 });
@@ -58,6 +58,12 @@ export const POST: APIRoute = async ({ request }) => {
     if (!action && !status) {
       return new Response(JSON.stringify({ error: "action or status required" }), { status: 400 });
     }
+
+    // BUG-12: verify seller_phone matches the seller row.
+    // seller_id is publicly exposed via /api/search so cannot be a bearer alone.
+    const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+    const authCheck = await assertSellerOwns(seller_id, seller_phone);
+    if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
