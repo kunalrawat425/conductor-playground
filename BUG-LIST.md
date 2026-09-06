@@ -917,3 +917,54 @@ at `console.error`.
 
 **Verified:** a signed `payment.captured` for an unknown order id now produces
 that error line instead of an all-clear.
+
+## BUG-42 · S1 · Sellers were told to refund orders nobody ever paid for — FIXED
+
+**Files:** `src/lib/order-payment-state.ts` (new),
+`src/pages/dashboard/orders/index.astro:818,924`,
+`src/pages/track/[id].astro:261,262,304,491`
+
+`create_order_atomic` sets `paid_amount = total_price + delivery_fee` at INSERT
+time — it records what the buyer **owes**, not what they **paid**. Four readers
+tested only `paid_amount > 0`, so every unpaid order looked paid.
+
+Consequence: a buyer places a ₹1,800 order, never pays, `expire-pending-orders`
+cancels it — and the seller's History card renders
+**"↩ Refund ₹1,800 to buyer via UPI · Buyer expects refund within 7 working
+days"** with a *Mark refund sent* button, while the buyer's track page shows
+**"Refund pending"** and a refund stepper. For money that never moved.
+
+`track/[id].astro:425` already knew about this (*"paid_amount is pre-set at
+creation"*) and guarded on `payment_verified_at` — the other four sites simply
+never applied it.
+
+**Fix:** one shared `wasActuallyPaid()` / `refundableAmount()` in
+`src/lib/order-payment-state.ts`, imported by both pages so the dashboard and
+the track page cannot drift apart again.
+
+Evidence that money moved is any of `razorpay_payment_id`,
+`payment_verified_at`, or **a payment screenshot**. That last one is included
+deliberately: a screenshot is only a *claim*, but the buyer may genuinely have
+sent UPI money and the seller must see the prompt to check the proof and decide.
+Showing a prompt the seller can dismiss is far safer than silently hiding a
+refund a buyer is owed — my first version omitted it and would have hidden two
+real refunds.
+
+**Measured across all 163 cancelled/declined rows on staging:**
+
+```
+OLD refund prompts: 127
+NEW refund prompts: 2
+phantom removed:    125
+  kept c4ab9c61 ₹270  verified=false rzp=false shots=1
+  kept 9a86792f ₹1400 verified=false rzp=false shots=1
+```
+
+Both kept rows are exactly the UPI-screenshot case. Covered by 14 unit tests in
+`tests/lib/order-payment-state.test.ts`.
+
+**Note on the underlying schema:** the real repair is to stop pre-setting
+`paid_amount` at creation and set it from the captured amount in
+`razorpay-verify` / `razorpay-webhook` / `verify_payment`. That is a migration
+plus a backfill of existing rows, so this change fixes the readers first — no
+row is mutated, and the display is now correct regardless.

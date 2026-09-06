@@ -280,6 +280,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 </style>
 
 <script>
+  import { wasActuallyPaid, refundableAmount } from "../../../lib/order-payment-state";
   import { supabase } from "../../../lib/supabase";
 
   const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
@@ -815,8 +816,10 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           actionsHtml = `<div class="v2-oc-actions">
             <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="delivered" data-order-id="${o.id}">✓ Delivered</button>
           </div>`;
-        } else if (["cancelled", "declined"].includes(o.status) && o.paid_amount > 0) {
-          const refundAmt = Number(o.paid_amount).toLocaleString("en-IN");
+        } else if (["cancelled", "declined"].includes(o.status) && wasActuallyPaid(o)) {
+          // BUG-42: paid_amount is pre-set at creation, so this used to tell the
+          // seller to refund orders the buyer had never paid for.
+          const refundAmt = refundableAmount(o).toLocaleString("en-IN");
           const paymentSsPaths: string[] = o.payment_screenshot_urls || [];
           const paymentSsBtns = paymentSsPaths.map((p, i) =>
             `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${attrDataPath(p)}">🖼 Buyer proof ${paymentSsPaths.length > 1 ? i + 1 : ''}</button>`
@@ -921,7 +924,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         // Determine payment status badge — order matters: most specific first
         let payStatusText = "Payment pending"; // default for new/awaiting orders
         if (o.status === 'refunded') payStatusText = "Refunded";
-        else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
+        else if (['declined', 'cancelled'].includes(o.status) && wasActuallyPaid(o)) payStatusText = "Refund pending";
         else if (['declined', 'cancelled'].includes(o.status)) payStatusText = "Unpaid";
         else if (['pending_payment', 'payment_required'].includes(o.status) && !isPaidViaRazorpay) payStatusText = "Payment pending";
         else if (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";

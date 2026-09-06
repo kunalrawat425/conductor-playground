@@ -163,6 +163,7 @@ const { id } = Astro.params;
 </style>
 
 <script>
+  import { wasActuallyPaid, refundableAmount } from "../../lib/order-payment-state";
   import { createClient } from "@supabase/supabase-js";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
   import { cleanSellerName } from "../../lib/seller-display";
@@ -258,8 +259,8 @@ const { id } = Astro.params;
     const awaitingPayment = ['pending_payment', 'pending'].includes(o.status);
     let payStatusText = "";
     if (o.status === 'refunded') payStatusText = "Refunded";
-    else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
-    else if (!awaitingPayment && (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) payStatusText = "Paid";
+    else if (['declined', 'cancelled'].includes(o.status) && wasActuallyPaid(o)) payStatusText = "Refund pending";
+    else if (!awaitingPayment && (wasActuallyPaid(o) || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) payStatusText = "Paid";
     
     if (payPill) {
       if (payStatusText) {
@@ -301,7 +302,7 @@ const { id } = Astro.params;
     const { labels: stepLabels, step } = resolveBuyerStepper(o, orderType);
     const stepper = document.getElementById("v2-od-stepper");
     const stepLabelEl = document.querySelector(".v2-od-steplabels");
-    const isRefundStepper = ["declined","cancelled"].includes(o.status) && Number(o.paid_amount) > 0;
+    const isRefundStepper = ["declined","cancelled"].includes(o.status) && wasActuallyPaid(o);
     if (isRefundStepper) {
       const refundStep = o.refund_sent_at ? 2 : 1;
       const refundLabels = ["Placed", o.status === "declined" ? "Declined" : "Cancelled", "Refund"];
@@ -488,7 +489,8 @@ const { id } = Astro.params;
       });
     } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
       // Finished/cancelled order — show refund notice if paid, ask rating for completed/picked_up, then offer re-order.
-      const paidForRefund = Number(o.paid_amount) || 0;
+      // BUG-42: gate on real payment, not the pre-set paid_amount.
+      const paidForRefund = refundableAmount(o);
       let refundHtml = "";
       const isDelivered = ["completed", "picked_up"].includes(o.status);
       const existingFeedback = o.buyer_feedback || null;
