@@ -123,3 +123,22 @@ export function closedSellerMessage(seller: SellerTimingInput): string {
   }
   return "This seller is closed now and is not accepting pre-orders.";
 }
+
+/**
+ * Start of the current IST day, as an ISO timestamp.
+ *
+ * BUG-45: callers used `new Date(); d.setHours(0,0,0,0)`, which zeroes the time
+ * in the SERVER's zone. On Vercel that is UTC, so the "day" ran 05:30 IST to
+ * 05:30 IST and every per-day limit reset mid-morning instead of at midnight.
+ * A buyer capped at 5 kg/day could take 5 kg at 02:00 IST and another 5 kg at
+ * 06:00 IST — 10 kg inside one IST day.
+ */
+export function istDayStartISO(nowMs = Date.now()): string {
+  const ist = new Date(nowMs + 5.5 * 60 * 60 * 1000);
+  const midnightIstAsUtcMs = Date.UTC(
+    ist.getUTCFullYear(),
+    ist.getUTCMonth(),
+    ist.getUTCDate()
+  );
+  return new Date(midnightIstAsUtcMs - 5.5 * 60 * 60 * 1000).toISOString();
+}

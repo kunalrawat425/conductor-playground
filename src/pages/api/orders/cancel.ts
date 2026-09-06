@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
+import { refundRazorpayPayment, isRazorpayPaid } from "../../../lib/server/razorpay-refund";
 
 export const prerender = false;
 
@@ -43,34 +44,11 @@ export const POST: APIRoute = async ({ request, url }) => {
       // Non-blocking: on failure we still cancel the order and flag it for manual seller refund.
       let refundNote: string | null = null;
       let refundId: string | null = null;
-      const isRzpPaid = order.payment_method === "razorpay" && order.razorpay_payment_id;
+      const isRzpPaid = isRazorpayPaid(order);
       if (isRzpPaid) {
-        const keyId = import.meta.env.PUBLIC_RAZORPAY_KEY_ID || "";
-        const keySecret = import.meta.env.RAZORPAY_KEY_SECRET || "";
-        if (keyId && keySecret) {
-          const authHex = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
-          try {
-            const rr = await fetch(`https://api.razorpay.com/v1/payments/${order.razorpay_payment_id}/refund`, {
-              method: "POST",
-              headers: { Authorization: `Basic ${authHex}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ speed: "normal" }),
-            });
-            if (rr.ok) {
-              const body = await rr.json();
-              refundId = body?.id || null;
-              refundNote = `Razorpay refund ${refundId} initiated`;
-            } else {
-              const body = await rr.json().catch(() => ({}));
-              refundNote = `Razorpay refund FAILED (${rr.status}): ${(body as any)?.error?.description || "unknown"} — seller must refund manually`;
-              console.warn("[cancel] razorpay refund failed", { order_id, status: rr.status, body });
-            }
-          } catch (err: any) {
-            refundNote = `Razorpay refund FAILED (network): ${err?.message || "unknown"} — seller must refund manually`;
-            console.warn("[cancel] razorpay refund network err", { order_id, err: err?.message });
-          }
-        } else {
-          refundNote = "Razorpay keys not configured — seller must refund manually";
-        }
+        const outcome = await refundRazorpayPayment(order.razorpay_payment_id, { order_id, caller: "cancel" });
+        refundId = outcome.refundId;
+        refundNote = outcome.note;
       }
 
       const updatePayload: Record<string, unknown> = {

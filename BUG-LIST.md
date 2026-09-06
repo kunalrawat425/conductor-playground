@@ -1021,3 +1021,61 @@ fine, the fixture wasn't. It now forces the chosen seller open for the whole run
 (`open_days: []`, `00:00–23:59`, `has_pickup: true`), restores every mutated
 field afterwards, and **fails when zero assertions ran** instead of reporting a
 green `0/0`. A suite that can silently assert nothing is worse than no suite.
+
+## BUG-44 · S1 · Seller declining a Razorpay-paid order refunded nothing — FIXED
+
+**Files:** `src/lib/server/razorpay-refund.ts` (new),
+`src/pages/api/seller/orders.ts`, `src/pages/api/orders/cancel.ts`
+
+The seller-initiated decline/cancel branch wrote `cancelled_by` and
+`refund_note` and stopped. No Razorpay refund call, no `refund_amt`, no
+`refund_sent_at`. The buyer-initiated path in `orders/cancel.ts` had always
+called `POST /v1/payments/:id/refund` — the seller path simply never did.
+
+The dashboard button is labelled **"✓ Confirm — refund buyer"** and the
+resulting card tells the seller to send the money over UPI. But for a Razorpay
+order the funds are in the **platform's** Razorpay account, not the seller's, so
+following that instruction is impossible and the buyer got nothing unless
+someone noticed and refunded by hand.
+
+**Fix:** the refund logic is extracted to `refundRazorpayPayment()` and called
+from both paths, so they cannot drift again. On success the seller branch also
+stamps `refund_amt` and `refund_sent_at`; on failure it records why, e.g.
+`Razorpay refund FAILED (404): … — seller must refund manually`.
+
+**Found while wiring it:** the `currentOrder` select in `seller/orders.ts` did
+not include `razorpay_payment_id`, so the new check would have silently been
+false for every order. Added to the select.
+
+**Verified** against a confirmed Razorpay order with a deliberately invalid
+payment id:
+
+```
+decline HTTP: 200
+status: declined
+refund_note: Razorpay refund FAILED (404): unknown — seller must refund manually
+=> refund WAS attempted and recorded
+```
+
+Previously nothing was attempted and nothing was recorded.
+
+## BUG-45 · S2 · Per-buyer daily quantity cap reset at 05:30 IST — FIXED
+
+**Files:** `src/lib/server/resolve-listing-order-line.ts:191`,
+`src/lib/order-timing.ts`
+
+```ts
+const todayStart = new Date();
+todayStart.setHours(0, 0, 0, 0);
+```
+
+`setHours` zeroes the time in the **server's** zone. On Vercel that is UTC, so
+the window ran 05:30 IST → 05:30 IST. A listing capped at 5 kg per buyer per day
+allowed 5 kg at 02:00 IST and another 5 kg at 06:00 IST — **10 kg inside one IST
+day**. Everything else in this codebase converts explicitly;
+`order-timing.ts:20` even documents the exact hazard for `todayDayName`.
+
+**Fix:** new `istDayStartISO()` in `order-timing.ts`, alongside the existing IST
+helpers, used for the cap window. Covered by 5 unit tests including the precise
+02:00/06:00 IST case that defeated the cap, and the 18:29/18:31 UTC pair that
+must straddle the IST midnight rollover.

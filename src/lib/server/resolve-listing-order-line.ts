@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { istDayStartISO } from "../order-timing";
 import {
   getListingOptionById,
   getListingPriceOptions,
@@ -188,13 +189,16 @@ export async function resolveListingOrderLine(
         error: `Per-buyer daily limit must be at least ${dailyCapFloor} ${quantity_unit} (covers at least one smallest pack and your seller minimum order ₹${minOrderAmt || 0}). Raise the limit on the listing or adjust pricing.`,
       };
     }
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    // BUG-45: must be the IST day boundary, not the server's. setHours(0,0,0,0)
+    // on a UTC server made the window run 05:30 IST -> 05:30 IST, so the cap
+    // reset mid-morning and a buyer could take two full daily allowances
+    // within one IST day.
+    const todayStartISO = istDayStartISO();
     const { data: dayOrders } = await supabase
       .from("orders")
       .select("quantity, buyer_phone, buyer_id, status")
       .eq("listing_id", listing_id)
-      .gte("created_at", todayStart.toISOString());
+      .gte("created_at", todayStartISO);
 
     let usedToday = 0;
     for (const o of dayOrders || []) {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  istDayStartISO,
   classifyPlacementAtOrderTime,
   isPastPreorderCutoffIST,
   isPreorderShoppingWindow,
@@ -91,5 +92,48 @@ describe("todayDayName — IST midnight boundary (regression for UTC getDay bug)
       // IST time is 00:30 — before opens_at 06:00 so closed by clock, but correct day
       false // closed by clock (00:30 IST < 06:00 opens_at), but day is correct (tue ✓)
     );
+  });
+});
+
+/**
+ * BUG-45: the per-buyer daily quantity cap used `setHours(0,0,0,0)`, which
+ * zeroes the time in the SERVER's zone. On Vercel (UTC) the window ran
+ * 05:30 IST -> 05:30 IST, so a 5 kg/day cap allowed 5 kg at 02:00 IST plus
+ * another 5 kg at 06:00 IST — 10 kg inside one IST day.
+ */
+describe("istDayStartISO", () => {
+  const IST = 5.5 * 60 * 60 * 1000;
+
+  it("returns 00:00 IST, i.e. 18:30 UTC the previous day", () => {
+    // 2026-09-06 14:00 IST
+    const noonIst = Date.UTC(2026, 8, 6, 14, 0) - IST;
+    expect(istDayStartISO(noonIst)).toBe("2026-09-05T18:30:00.000Z");
+  });
+
+  it("does not roll the day over at 00:00 UTC", () => {
+    // 00:30 UTC on 2026-09-07 is 06:00 IST the same IST day.
+    const justAfterUtcMidnight = Date.UTC(2026, 8, 7, 0, 30);
+    // 23:00 UTC on 2026-09-06 is 04:30 IST on the 7th — same IST day as above.
+    const beforeUtcMidnight = Date.UTC(2026, 8, 6, 23, 0);
+    expect(istDayStartISO(justAfterUtcMidnight)).toBe(istDayStartISO(beforeUtcMidnight));
+  });
+
+  it("DOES roll over at 00:00 IST", () => {
+    // 18:29 UTC = 23:59 IST (day N). 18:31 UTC = 00:01 IST (day N+1).
+    const lastMinuteOfIstDay = Date.UTC(2026, 8, 6, 18, 29);
+    const firstMinuteOfNextIstDay = Date.UTC(2026, 8, 6, 18, 31);
+    expect(istDayStartISO(lastMinuteOfIstDay)).not.toBe(istDayStartISO(firstMinuteOfNextIstDay));
+  });
+
+  it("is stable across the whole of one IST day", () => {
+    const start = Date.UTC(2026, 8, 6, 18, 30); // 00:00 IST on the 7th
+    const stamps = [0, 1, 6, 12, 18, 23.9].map((h) => istDayStartISO(start + h * 3600e3));
+    expect(new Set(stamps).size).toBe(1);
+  });
+
+  it("the 02:00 and 06:00 IST case that defeated the cap now shares a window", () => {
+    const twoAmIst = Date.UTC(2026, 8, 7, 2, 0) - IST;
+    const sixAmIst = Date.UTC(2026, 8, 7, 6, 0) - IST;
+    expect(istDayStartISO(twoAmIst)).toBe(istDayStartISO(sixAmIst));
   });
 });

@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
+import { refundRazorpayPayment, isRazorpayPaid } from "../../../lib/server/razorpay-refund";
 import { orderEmailBuyer, orderEmailSeller, paymentVerifiedEmailBuyer, paymentVerifiedEmailSeller, refundSentEmailBuyer, refundSentEmailSeller } from "../../../lib/email-templates";
 
 function capitalizeFishName(s: string): string {
@@ -289,7 +290,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
     const { data: currentOrder } = await supabase
       .from("orders")
-      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
+      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
       .eq("id", order_id)
       .single();
     const currentStatus = currentOrder?.status;
@@ -342,6 +343,26 @@ export const POST: APIRoute = async ({ request }) => {
     if (status === "declined" || status === "cancelled") {
       updates.cancelled_by = "seller";
       if (refund_note) updates.refund_note = refund_note;
+
+      // BUG-44: this branch used to write cancelled_by/refund_note and stop —
+      // no Razorpay refund was ever issued. The dashboard button says
+      // "✓ Confirm — refund buyer" and the resulting card tells the seller to
+      // send the money over UPI, but for a Razorpay order the funds sit in the
+      // PLATFORM's Razorpay account, not the seller's, so the buyer got nothing
+      // unless someone noticed and refunded by hand. The buyer-initiated cancel
+      // path has always refunded properly; now both use the same helper.
+      if (isRazorpayPaid(currentOrder as any)) {
+        const outcome = await refundRazorpayPayment(
+          String((currentOrder as any).razorpay_payment_id),
+          { order_id, caller: `seller/orders:${status}` }
+        );
+        updates.refund_note = refund_note ? `${refund_note} — ${outcome.note}` : outcome.note;
+        if (outcome.ok) {
+          updates.refund_amt = Number((currentOrder as any).paid_amount)
+            || (Number((currentOrder as any).total_price) + Number((currentOrder as any).delivery_fee || 0));
+          updates.refund_sent_at = new Date().toISOString();
+        }
+      }
     }
     // BUG-5 fix: when seller advances into "confirmed" without going through
     // verify_payment (e.g. direct "Mark confirmed" button), stamp payment_verified_at
