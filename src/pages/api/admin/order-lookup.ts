@@ -25,12 +25,14 @@ export const GET: APIRoute = async ({ url, request }) => {
   if (auth !== `Bearer ${ADMIN_SECRET}`) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
 
   const id = url.searchParams.get("id");
+  const idPrefix = url.searchParams.get("id_prefix");
   const rzpOrder = url.searchParams.get("razorpay_order_id");
   const rzpPayment = url.searchParams.get("razorpay_payment_id");
   const refundId = url.searchParams.get("refund_id");
+  const buyerPhone = url.searchParams.get("buyer_phone");
 
-  if (!id && !rzpOrder && !rzpPayment && !refundId) {
-    return new Response(JSON.stringify({ error: "one of id, razorpay_order_id, razorpay_payment_id, refund_id required" }), { status: 400 });
+  if (!id && !idPrefix && !rzpOrder && !rzpPayment && !refundId && !buyerPhone) {
+    return new Response(JSON.stringify({ error: "one of id, id_prefix, razorpay_order_id, razorpay_payment_id, refund_id, buyer_phone required" }), { status: 400 });
   }
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
@@ -40,11 +42,13 @@ export const GET: APIRoute = async ({ url, request }) => {
   let orderQuery = sb.from("orders").select("*, listing:fish_listings(species, seller:sellers(id, name, phone))");
   let pk: string;
   if (id) { orderQuery = orderQuery.eq("id", id); pk = `id=${id}`; }
+  else if (idPrefix) { orderQuery = orderQuery.ilike("id", `${idPrefix.toLowerCase()}%`); pk = `id_prefix=${idPrefix}`; }
   else if (rzpOrder) { orderQuery = orderQuery.eq("razorpay_order_id", rzpOrder); pk = `razorpay_order_id=${rzpOrder}`; }
   else if (rzpPayment) { orderQuery = orderQuery.eq("razorpay_payment_id", rzpPayment); pk = `razorpay_payment_id=${rzpPayment}`; }
+  else if (buyerPhone) { orderQuery = orderQuery.eq("buyer_phone", buyerPhone).order("created_at", { ascending: false }); pk = `buyer_phone=${buyerPhone}`; }
   else { pk = `refund_id=${refundId}`; }
 
-  const { data: rows } = pk.startsWith("refund_id=") ? { data: [] as any[] } : await orderQuery.limit(5);
+  const { data: rows } = pk.startsWith("refund_id=") ? { data: [] as any[] } : await orderQuery.limit(10);
 
   // Razorpay side: pull matching payment(s) + refunds if we have a rzp id
   const rzp: any = { payment: null, refunds: null, refund: null };
