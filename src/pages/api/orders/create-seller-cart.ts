@@ -13,6 +13,7 @@ import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
+import { afterResponse } from "../../../lib/server/after-response";
 
 type ResolvedRow = Awaited<ReturnType<typeof resolveListingOrderLine>> extends { ok: true; line: infer L }
   ? { line: L }
@@ -217,7 +218,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
         if (resendApiKey && preOrder) {
           const _po = preOrder;
-          await Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
+          afterResponse(Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
             sendCartOrderEmail(resendApiKey, {
               order: _po,
               species: line.species,
@@ -236,7 +237,7 @@ export const POST: APIRoute = async ({ request, url }) => {
               bundleSize: (line as any).bundle_size || null,
               pricingLabel: line.pricing_label || null,
             })
-          ).catch((err) => console.warn("[create-seller-cart] preorder email fan-out failed", { order_id: _po?.id, err: err?.message }));
+          ), "create-seller-cart:preorder-email");
         }
         continue;
       }
@@ -298,13 +299,13 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       if (fetchedOrder?.id && (fetchedOrder.buyer_id || buyer_phone)) {
-        await sendBuyerOrderPush({
+        afterResponse(sendBuyerOrderPush({
           buyer_id: fetchedOrder.buyer_id,
           buyer_phone,
           status: "placed",
           species: line.species || "Fish",
           order_id: fetchedOrder.id,
-        }).catch((err) => console.warn("[create-seller-cart] buyer push failed", { order_id: fetchedOrder.id, err: err?.message }));
+        }), "create-seller-cart:buyer-push");
       }
 
       if (resendApiKey && fetchedOrder) {
@@ -316,7 +317,7 @@ export const POST: APIRoute = async ({ request, url }) => {
               ? "Order placed — complete payment to confirm"
               : "Order placed — upload payment proof";
         const _fo = fetchedOrder;
-        await Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
+        afterResponse(Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
           sendCartOrderEmail(resendApiKey, {
             order: _fo,
             species: line.species,
@@ -332,7 +333,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             bundleSize: (line as any).bundle_size || null,
             pricingLabel: line.pricing_label || null,
           })
-        ).catch((err) => console.warn("[create-seller-cart] order email fan-out failed", { order_id: _fo?.id, err: err?.message }));
+        ), "create-seller-cart:order-email");
       }
     }
 

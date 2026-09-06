@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { internalHeaders } from "../../../lib/server/internal-auth";
+import { afterResponse } from "../../../lib/server/after-response";
 
 export const prerender = false;
 
@@ -237,7 +238,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     })().catch((err) => console.warn("[razorpay-verify] seller notify block failed", { order_id, err: err?.message || String(err) })));
   }
 
-  await Promise.allSettled(pending);
+  afterResponse(Promise.allSettled(pending), "razorpay-verify:notify");
 
   return new Response(JSON.stringify({ ok: true }), { status: 200 });
 };

@@ -14,6 +14,7 @@ import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
+import { afterResponse } from "../../../lib/server/after-response";
 
 export const prerender = false;
 
@@ -183,7 +184,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           );
         }
 
-        await Promise.allSettled(preNotify);
+        afterResponse(Promise.allSettled(preNotify), "orders/create:preorder");
 
         return new Response(JSON.stringify({ order: preOrder, placement_kind: "preorder" }), { status: 201 });
       }
@@ -459,7 +460,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           ).catch((err) => console.warn("[orders/create] seller email lookup failed", { err: err?.message }))
         );
       }
-      await Promise.allSettled(mail);
+      afterResponse(Promise.allSettled(mail), "orders/create:email");
     }
 
     return new Response(JSON.stringify({ order, placement_kind }), { status: 201 });
