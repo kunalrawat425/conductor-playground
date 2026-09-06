@@ -288,3 +288,61 @@ cross-origin iframes):
   2. Ask me to run `browse handoff` — I pop a visible Chromium at the
      Razorpay modal on your screen; you enter the test card and say
      done; I capture final state.
+
+---
+
+## BUG-18 · S3 · Waitlist join had no rate limit — FIXED
+
+**File:** `src/pages/api/waitlist/join.ts`
+
+Public unauthenticated endpoint. Anyone could flood `buyer_waitlist` with junk
+rows in a loop. Upsert on `(phone, area)` deduped exact repeats but not varied
+input.
+
+**Fix:** new shared helper `src/lib/server/rate-limit.ts` (sliding window,
+per-IP from `X-Forwarded-For`). Capped at 5 joins / 10 min.
+
+**Verified:** local test — attempts 1-5 pass through, 6 and 7 return `429`
+with `Retry-After: 600`.
+
+**Known limitation:** in-memory buckets are per serverless instance, so the
+real prod ceiling is `5 × instanceCount` per window. That still converts an
+unbounded flood into a bounded trickle. Move to Vercel KV if an actual attack
+materialises.
+
+## BUG-19 · S3 · Coordinates accepted any number — FIXED
+
+**Files:** `src/pages/api/buyer/addresses.ts`, `src/pages/api/seller/profile.ts`
+
+`lat: 999, lng: 999` was stored without complaint. Out-of-range coords make
+`haversineKm()` return garbage, which then corrupts `computeDeliveryFee()` at
+checkout — buyer gets charged a wrong delivery fee, or the distance gate
+silently passes/fails.
+
+**Fix:** WGS-84 range guards on both write paths.
+- `sanitizeLat` clamps to [-90, 90], else `null`
+- `sanitizeLng` clamps to [-180, 180], else `null`
+- Applied on buyer_addresses POST + PATCH, and sellers profile POST
+
+Storing `null` (rather than rejecting the request) keeps the address usable
+for pickup while disabling distance-based delivery — the safe degradation.
+
+## BUG-9 · S3 · Hardcoded logo URL in 20 places — FIXED
+
+**Files:** 14 files across components, layouts, pages, email templates
+
+Logo URL was pasted inline in 20 spots. If the storage project rotates, the
+logo breaks site-wide with no single place to fix.
+
+**Fix:** all sites now `import { LOGO_URL } from "src/lib/brand"`, overridable
+via `PUBLIC_LOGO_URL` env with the current URL as default.
+
+**Two build-breaking gotchas hit while doing this (worth remembering):**
+1. `typeof import.meta` is a **parse error** in esbuild — `import.meta` is a
+   syntactic form, not a value. Reference `import.meta.env.X` directly.
+2. Astro frontmatter imports must sit at the **top**. Appending an import
+   after existing statements shifts template line numbers and makes the
+   compiler fail with a misleading error pointing at unrelated markup.
+
+**Verified:** `astro build` clean; logo renders on `/`, `/for-sellers`,
+`/dashboard/login` with zero broken images.
