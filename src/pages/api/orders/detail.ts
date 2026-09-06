@@ -46,11 +46,21 @@ export const GET: APIRoute = async ({ url }) => {
         .single();
       address = addr;
     }
-    // Authorization: buyer must own this order (matches buyer_id OR phone)
-    if (order.buyer_id && order.buyer_id !== buyer_id) {
-      // Allow phone-based access if buyer_id wasn't recorded at order time
+    // Authorization: buyer must own this order (matches buyer_id OR phone).
+    //
+    // BUG-39: this used to read `if (order.buyer_id && order.buyer_id !== buyer_id)`.
+    // For a guest order `buyer_id` is NULL (orders/create inserts
+    // `buyer_id: buyer_id || null`), so the && short-circuited and NO
+    // authorization ran at all — anyone holding the order UUID got the full
+    // select("*"): buyer_phone, buyer_notes, the delivery address, seller phone,
+    // and upi_id when Razorpay is off. Verified against staging: an unrelated
+    // buyer_id read a guest order's phone and notes over HTTP 200.
+    //
+    // Now a NULL buyer_id falls through to the phone comparison, which is what
+    // the sibling endpoints (update-notes, payment-screenshots) already do.
+    if (order.buyer_id !== buyer_id) {
       const { data: buyer } = await sb.from("buyers").select("phone").eq("id", buyer_id).single();
-      if (!buyer || buyer.phone !== order.buyer_phone) {
+      if (!buyer || !order.buyer_phone || buyer.phone !== order.buyer_phone) {
         return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
       }
     }

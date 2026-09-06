@@ -790,3 +790,36 @@ A sweep found **26** awaited Supabase mutations whose result was discarded
 entirely. The ones on order, money and auth paths are fixed; the remainder are
 flag updates (`push_enabled` self-heal, `email_sent`) where a silent failure is
 genuinely harmless.
+
+## BUG-39 · S1 · Guest orders had NO authorization on /api/orders/detail — FIXED
+
+**File:** `src/pages/api/orders/detail.ts:50`
+
+```ts
+if (order.buyer_id && order.buyer_id !== buyer_id) { /* phone fallback check */ }
+```
+
+`/api/orders/create` inserts `buyer_id: buyer_id || null`, so a guest order has
+`buyer_id = NULL`. The `&&` then short-circuits and **no authorization runs at
+all** — any caller holding the order UUID receives the full `select("*")`:
+`buyer_phone`, `buyer_notes`, the resolved delivery address, the seller's phone,
+and `upi_id` when Razorpay is disabled.
+
+Proven against staging:
+
+```
+guest order: 18ea5812-…
+HTTP 200
+LEAKED buyer_phone: 9876500099
+LEAKED buyer_notes: SECRET: ring the back doorbell
+=> LEAK CONFIRMED: unrelated buyer_id read a guest order
+```
+
+**Fix:** dropped the `order.buyer_id &&` guard so a NULL falls through to the
+phone comparison — which is what the sibling endpoints (`update-notes`,
+`payment-screenshots`) already do. Also requires `order.buyer_phone` to be
+non-empty, so two rows with NULL phone cannot match each other.
+
+After: same request returns **403**, while an owner reading their own order and
+a buyer claiming a guest order by matching phone both still return 200.
+Locked in as `qa-notifications.ts` N7 (all three cases).

@@ -242,6 +242,43 @@ async function main() {
     }
   }
 
+
+  console.log("\n=== N7. Guest-order authorization on /api/orders/detail (BUG-39) ===");
+  {
+    const { data: l } = await sb.from("fish_listings").select("id, species").limit(1).single();
+    const { data: b } = await sb.from("buyers").select("id, phone").limit(1).single();
+    if (!l || !b) console.log("  ! no fixtures — skipping N7");
+    else {
+      const mk = (buyer_id: string | null, phone: string) =>
+        sb.from("orders").insert({
+          listing_id: l.id, species: l.species, quantity: 1, quantity_unit: "kg", total_price: 100,
+          delivery_fee: 0, buyer_id, buyer_phone: phone, buyer_notes: "probe",
+          status: "pending_payment", order_type: "pickup",
+        }).select("id").single();
+
+      const get = (order_id: string, buyer_id: string) =>
+        fetch(`${BASE}/api/orders/detail?id=${order_id}&buyer_id=${buyer_id}`, { headers: { Origin: BASE } });
+
+      // The defect: buyer_id NULL made the `&&` short-circuit past all authz.
+      const { data: guest } = await mk(null, "9876500099");
+      const { data: owned } = await mk(b.id, b.phone!);
+      const { data: guestMine } = await mk(null, b.phone!);
+
+      if (guest && owned && guestMine) {
+        const rLeak = await get(guest.id, b.id);
+        check("N7-T1 unrelated buyer cannot read a guest order", rLeak.status === 403, String(rLeak.status));
+
+        const rOwn = await get(owned.id, b.id);
+        check("N7-T2 owner can still read their own order", rOwn.status === 200, String(rOwn.status));
+
+        const rPhone = await get(guestMine.id, b.id);
+        check("N7-T3 guest order still claimable by matching phone", rPhone.status === 200, String(rPhone.status));
+
+        await sb.from("orders").delete().in("id", [guest.id, owned.id, guestMine.id]);
+      }
+    }
+  }
+
   console.log(`\n${pass}/${pass + fail} PASS`);
   if (fail > 0) process.exitCode = 1;
 }
