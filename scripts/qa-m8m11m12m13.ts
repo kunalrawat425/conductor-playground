@@ -50,7 +50,7 @@ async function main() {
   // T7 seller/profile POST update
   const idToUpdate = newSeller?.id;
   if (idToUpdate) {
-    const s7 = await post(`${BASE}/api/seller/profile`, { seller_id: idToUpdate, updates: { name: "QA Test Seller", location_name: "Powai", lat: 19.12, lng: 72.90 } });
+    const s7 = await post(`${BASE}/api/seller/profile`, { seller_id: idToUpdate, seller_phone: NEW_SELLER_PHONE.slice(3), updates: { name: "QA Test Seller", location_name: "Powai", lat: 19.12, lng: 72.90 } });
     results.push(["M8-T7 seller profile POST", [200, 201].includes(s7.status) ? "PASS" : `FAIL(${s7.status}: ${s7.body.slice(0,150)})`]);
   } else {
     results.push(["M8-T7 seller profile POST", "SKIP (no seller_id from T5)"]);

@@ -1,12 +1,19 @@
 import { createHmac } from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
 import { config as dotenv } from "dotenv";
 dotenv();
 
 const ORDER_ID = "c00a9d6b-f7a0-47da-ad2a-a270cf07b2c7";
 const BUYER_ID = "ceeed802-e716-40b3-bc21-bf3b92a5531c";
-const RAZORPAY_ORDER = "order_TYQ5Q84jJOfeyD"; // from create-order call
-const FAKE_PAYMENT = "pay_TESTFAKE" + Date.now();
 const SECRET = process.env.RAZORPAY_KEY_SECRET!;
+const FAKE_PAYMENT = "pay_TESTFAKE" + Date.now();
+
+// Fetch current razorpay_order_id from DB (write path assigns it via create-order)
+const sb = createClient(process.env.PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+const { data: row } = await sb.from("orders").select("razorpay_order_id").eq("id", ORDER_ID).single();
+const RAZORPAY_ORDER = (row as any)?.razorpay_order_id;
+if (!RAZORPAY_ORDER) { console.error("No razorpay_order_id on row — run create-order first"); process.exit(1); }
+console.log("using razorpay_order:", RAZORPAY_ORDER);
 
 async function post(url: string, body: any) {
   const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });

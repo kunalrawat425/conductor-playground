@@ -93,7 +93,8 @@ async function main() {
   const co2 = await post(`${BASE}/api/payments/razorpay-create-order`, { order_id: ORDER, buyer_id: BUYER });
   const rzp2 = JSON.parse(co2.body).razorpay_order_id;
   console.log("[D] fresh razorpay order:", rzp2);
-  const rec = await post(`${BASE}/api/seller/reconcile-razorpay`, { order_id: ORDER, seller_id: SELLER });
+  // BUG-12: seller_phone required. Prawns orphan's listing seller = fd5534b2 (The fishy spot, phone 9999999999).
+  const rec = await post(`${BASE}/api/seller/reconcile-razorpay`, { order_id: ORDER, seller_id: "fd5534b2-06e8-4011-93f7-40b677a0758f", seller_phone: "9011295599" });
   console.log("[D] reconcile:", rec.status, rec.body);
   // Since we didn't actually capture on Razorpay's side, should return ok:false with "no captured payment"
   const recData = JSON.parse(rec.body);
@@ -102,9 +103,10 @@ async function main() {
   // =========================================================
   // TEST E: reconcile with wrong seller → 403
   // =========================================================
-  const e = await post(`${BASE}/api/seller/reconcile-razorpay`, { order_id: ORDER, seller_id: "00000000-0000-0000-0000-000000000000" });
+  const e = await post(`${BASE}/api/seller/reconcile-razorpay`, { order_id: ORDER, seller_id: "00000000-0000-0000-0000-000000000000", seller_phone: "0000000000" });
   console.log("[E] wrong seller:", e.status, e.body);
-  results.push(["E. Reconcile rejects wrong seller", e.status === 403 ? "PASS" : "FAIL"]);
+  // BUG-12: assertSellerOwns returns 404 if seller_id unknown (fine — either 403/404 = auth denied)
+  results.push(["E. Reconcile rejects wrong seller", [403, 404].includes(e.status) ? "PASS" : `FAIL(${e.status})`]);
 
   // =========================================================
   // TEST F: FIX #2 buyer /me — active scope returns pending_payment
