@@ -52,7 +52,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and guard against replay
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, status, total_price, delivery_fee, species, quantity, quantity_unit, order_type, razorpay_order_id, scheduled_for, pricing_option_id, listing:fish_listings(species, pricing_options, seller:sellers(id, name, email, location_name))")
+    .select("id, buyer_id, status, total_price, delivery_fee, final_price, paid_amount, species, quantity, quantity_unit, order_type, razorpay_order_id, scheduled_for, pricing_option_id, listing:fish_listings(species, pricing_options, seller:sellers(id, name, email, location_name))")
     .eq("id", order_id)
     .single();
 
@@ -80,18 +80,28 @@ export const POST: APIRoute = async ({ request, url }) => {
     );
   }
 
-  // Atomically confirm the order
+  // Atomically confirm the order.
+  // BUG-47: `payment_required` (a balance top-up) must be included here. It was
+  // not, so once the balance flow was enabled the money would be captured and
+  // the row would match 0 updates — paid, but never confirmed.
+  const isBalanceTopUp = (order as any).status === "payment_required";
+  const confirmUpdate: Record<string, unknown> = {
+    status: "confirmed",
+    payment_method: "razorpay",
+    razorpay_payment_id,
+    payment_verified_at: new Date().toISOString(),
+    payment_verified_by: null,
+  };
+  // After a balance payment the buyer has now paid the full final price.
+  if (isBalanceTopUp && (order as any).final_price != null) {
+    confirmUpdate.paid_amount = Number((order as any).final_price);
+  }
+
   const { data: updatedRows, error: updateErr } = await supabase
     .from("orders")
-    .update({
-      status: "confirmed",
-      payment_method: "razorpay",
-      razorpay_payment_id,
-      payment_verified_at: new Date().toISOString(),
-      payment_verified_by: null,
-    })
+    .update(confirmUpdate)
     .eq("id", order_id)
-    .in("status", ["pending", "pending_payment"])
+    .in("status", ["pending", "pending_payment", "payment_required"])
     .select("id");
 
   if (updateErr) {

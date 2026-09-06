@@ -637,7 +637,8 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
     function statusLabel(s: string) {
       const map: Record<string, string> = {
-        pending: "Pay now", pending_payment: "Pay now", pre_order: "Pre-order", scheduled: "Scheduled",
+        pending: "Pay now", pending_payment: "Pay now", payment_required: "Pay balance",
+        pre_order: "Pre-order", scheduled: "Scheduled",
         confirmed: "Confirmed", paid: "Paid",
         ready_for_pickup: "Ready for pickup", out_for_delivery: "Out for delivery",
         picked_up: "Picked up", completed: "Completed",
@@ -670,14 +671,18 @@ import Toast from "../components/ui/atoms/Toast.astro";
           return;
         }
 
-        const ACTIVE = new Set(["pending","pending_payment","confirmed","ready_for_pickup","out_for_delivery"]);
+        // BUG-47: must match ACTIVE_STATUSES in /api/buyer/orders.ts. These four
+        // were missing, so pre-orders, scheduled orders, paid orders and orders
+        // still awaiting a balance payment were all shown under "Past".
+        const ACTIVE = new Set(["pending","pending_payment","payment_required","pre_order","scheduled","confirmed","paid","ready_for_pickup","out_for_delivery"]);
         const activeOrders = orders.filter((o: any) => ACTIVE.has(o.status));
         const pastOrders = orders.filter((o: any) => !ACTIVE.has(o.status));
 
         function renderCard(o: any) {
           const seller = o.listing?.seller?.name || "Seller";
           const sp = o.listing?.species || "";
-          const isPendingPayment = o.status === "pending" || o.status === "pending_payment";
+          // payment_required means a balance is still owed — same CTA as an unpaid order.
+          const isPendingPayment = o.status === "pending" || o.status === "pending_payment" || o.status === "payment_required";
           const cta = isPendingPayment ? "Complete payment →" : (ACTIVE.has(o.status) ? "Track →" : "View →");
           return `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;background:var(--v2-bg);border:1px solid ${isPendingPayment ? 'var(--v2-brand)' : 'var(--v2-border)'};border-radius:var(--v2-radius);padding:12px 14px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">

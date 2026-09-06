@@ -900,10 +900,20 @@ const { id } = Astro.params;
         return;
       }
 
-      // Razorpay branch — replaces UPI card + screenshot upload for primary payment
-      if (RAZORPAY_ENABLED && !isBalance) {
-        const balance = Number(o.total_price) + Number(o.delivery_fee || 0);
-        renderRazorpayButton(o, balance, root);
+      // Razorpay branch — replaces UPI card + screenshot upload.
+      // BUG-47: `!isBalance` used to exclude the payment_required case, so a
+      // buyer owing a balance fell through to the UPI screenshot flow — which
+      // renders no UPI id (detail.ts strips it when Razorpay is on) and no Pay
+      // button. The order was unpayable from the UI.
+      if (RAZORPAY_ENABLED) {
+        const balance = isBalance
+          ? Math.max(0, Number(o.final_price || 0) - Number(o.paid_amount || 0))
+          : Number(o.total_price) + Number(o.delivery_fee || 0);
+        if (balance > 0) {
+          renderRazorpayButton(o, balance, root);
+          return;
+        }
+        // Nothing actually owed — render nothing rather than a ₹0 Pay button.
         return;
       }
 

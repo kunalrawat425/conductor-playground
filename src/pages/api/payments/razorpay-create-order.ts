@@ -33,7 +33,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and status
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, total_price, delivery_fee, status, razorpay_order_id")
+    .select("id, buyer_id, total_price, delivery_fee, status, razorpay_order_id, final_price, paid_amount")
     .eq("id", order_id)
     .single();
 
@@ -43,7 +43,12 @@ export const POST: APIRoute = async ({ request, url }) => {
   if (order.buyer_id !== buyer_id) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403 });
   }
-  if (!["pending", "pending_payment"].includes(order.status)) {
+  // BUG-47: `payment_required` means the seller's final price came in ABOVE what
+  // the buyer already paid, so a balance is owed. It was excluded here, which
+  // left the buyer with no Razorpay button at all — and the UPI fallback shows
+  // no UPI id, because detail.ts strips it whenever Razorpay is enabled. The
+  // order was simply unpayable.
+  if (!["pending", "pending_payment", "payment_required"].includes(order.status)) {
     return new Response(
       JSON.stringify({ error: `Order status '${order.status}' cannot be paid via Razorpay` }),
       { status: 400 }
@@ -55,9 +60,12 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Razorpay order carries the OLD amount → buyer pays stale amount → verify.ts:66
   // rejects with "Payment does not match this order". Prevent that by
   // dropping the stale reference and creating a fresh Razorpay order.
-  const amountPaise = Math.round(
-    (Number(order.total_price) + Number(order.delivery_fee || 0)) * 100
-  );
+  // A balance payment must charge only the DIFFERENCE. Charging
+  // total_price + delivery_fee again would take the full amount a second time.
+  const isBalanceDue = order.status === "payment_required";
+  const amountPaise = isBalanceDue
+    ? Math.round(Math.max(0, Number(order.final_price || 0) - Number(order.paid_amount || 0)) * 100)
+    : Math.round((Number(order.total_price) + Number(order.delivery_fee || 0)) * 100);
   if (order.razorpay_order_id) {
     // Ask Razorpay for the cached order's amount
     const authHex = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");

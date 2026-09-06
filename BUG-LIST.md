@@ -1120,3 +1120,48 @@ mine, not the code's: the seller update silently failed on
 `preorder_cutoff_time` being `NOT NULL`, and the script discarded the update
 error — the same discarded-error pattern this audit has been fixing. The
 harness now prints update errors before asserting.
+
+## BUG-47 · S2 · An order owing a balance was unpayable, and filed under "Past" — FIXED
+
+**Files:** `src/pages/api/payments/razorpay-create-order.ts`,
+`razorpay-verify.ts`, `razorpay-webhook.ts`, `src/pages/track/[id].astro`,
+`src/pages/api/buyer/orders.ts`, `src/pages/me.astro`
+
+`payment_required` means the seller's final price came in **above** what the
+buyer already paid, so a balance is owed. It was excluded everywhere that
+matters:
+
+- `razorpay-create-order` rejected it — *"Order status 'payment_required'
+  cannot be paid via Razorpay"*
+- `track/[id].astro` guarded the Razorpay branch with `!isBalance`, so it fell
+  through to the UPI screenshot flow — which renders **no UPI id** (detail.ts
+  strips it whenever Razorpay is enabled) and no Pay button
+
+Net effect: the buyer was told to pay and given no way to do it.
+
+**The list bug is wider than that status.** `ACTIVE_STATUSES` in
+`/api/buyer/orders.ts` and the matching `ACTIVE` set in `me.astro` both omitted
+**four** in-flight statuses — `payment_required`, `pre_order`, `scheduled` and
+`paid`. All four were bucketed into **Past** with a *"View →"* CTA, so a
+pre-order awaiting the seller's price, a scheduled pickup and an order still
+owing money all looked finished. This is the same complaint BUG-2 fixed, for
+the statuses BUG-2 missed. `statusLabel` also had no `payment_required` entry,
+so it rendered the raw string.
+
+**Fix:** the status is payable end to end, the two active-status lists are
+aligned and widened, `payment_required` gets the label *"Pay balance"* and the
+*"Complete payment →"* CTA.
+
+**Two follow-on bugs this would have introduced, caught before shipping:**
+
+1. `razorpay-create-order` computes `amountPaise` from
+   `total_price + delivery_fee`. For a balance payment that charges the **full
+   amount a second time**. It now charges `final_price − paid_amount`.
+2. `razorpay-verify` filtered `.in("status", ["pending", "pending_payment"])`,
+   so a balance payment would have been **captured and never confirmed** —
+   money taken, order stuck. Both it and the webhook now accept
+   `payment_required`, and verify settles `paid_amount` to `final_price`.
+
+**Verified** by `scripts/qa-balance-payment.ts` (8/8): the ₹300 balance on a
+₹500-paid / ₹800-final order is charged as ₹300 (not ₹500), the webhook
+reconciles the top-up to `confirmed`, and all four statuses appear under active.

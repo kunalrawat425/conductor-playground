@@ -11,7 +11,17 @@ export const prerender = false;
  */
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const ACTIVE_STATUSES = ["pending", "pending_payment", "confirmed", "ready_for_pickup", "out_for_delivery"] as const;
+// BUG-47: pre_order, scheduled, paid and payment_required are all in-flight,
+// but were in neither ACTIVE nor PAST, so /me filed them under "Past" with a
+// "View →" CTA. A payment_required order is one where the buyer still OWES a
+// balance, and a pre_order is waiting on the seller's final price — filing
+// either as finished is the same "my order vanished" complaint that BUG-2 was
+// about, just for the statuses BUG-2 missed.
+const ACTIVE_STATUSES = [
+  "pending", "pending_payment", "payment_required",
+  "pre_order", "scheduled", "confirmed", "paid",
+  "ready_for_pickup", "out_for_delivery",
+] as const;
 const PAST_STATUSES = ["picked_up", "completed", "declined", "cancelled", "refunded"] as const;
 
 export const GET: APIRoute = async ({ url }) => {

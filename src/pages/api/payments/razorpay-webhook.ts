@@ -71,7 +71,9 @@ export const POST: APIRoute = async ({ request, url }) => {
         payment_verified_by: null,
       })
       .eq("razorpay_order_id", razorpay_order_id)
-      .in("status", ["pending", "pending_payment"])
+      // BUG-47: must match razorpay-verify's payable set, or a balance top-up
+      // whose client handler dropped would never be reconciled by the webhook.
+      .in("status", ["pending", "pending_payment", "payment_required"])
       .select("id, buyer_id");
 
     if (error) {
@@ -179,7 +181,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         .from("orders")
         .select("id, refund_note")
         .eq("razorpay_order_id", razorpay_order_id)
-        .in("status", ["pending", "pending_payment"]);
+        .in("status", ["pending", "pending_payment", "payment_required"]);
       for (const r of (rows || [])) {
         const existing = (r as any).refund_note || "";
         const combined = existing ? `${existing}\n${note}` : note;
