@@ -43,7 +43,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   // BACKFILL 1: pre-Razorpay legacy (created < 2026-05-15 AND paid_amount NULL/0)
   const { data: b1, error: e1 } = await sb.from("orders")
-    .update({ payment_method: "cod_legacy", payment_verified_at: new Date().toISOString(), payment_verified_by: "legacy_backfill" })
+    .update({ payment_method: "cod_legacy", payment_verified_at: new Date().toISOString() })
     .eq("status", "confirmed")
     .is("razorpay_payment_id", null)
     .is("payment_verified_at", null)
@@ -64,7 +64,6 @@ export const POST: APIRoute = async ({ request }) => {
   for (const row of (cwp || [])) {
     const { error: eR } = await sb.from("orders").update({
       payment_verified_at: (row as any).created_at,
-      payment_verified_by: (row as any).payment_verified_by || "legacy_backfill_paid",
     }).eq("id", (row as any).id);
     if (!eR) b2.push((row as any).id);
   }
