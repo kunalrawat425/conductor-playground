@@ -33,10 +33,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: "Cannot cancel — order is already " + order.status }), { status: 400 });
       }
 
-      // Restore stock only if inventory was deducted (029: pending_payment skips deduct until confirm)
-      if (order.listing_id && order.inventory_deducted === true) {
-        await sb.rpc("restore_order_stock", { p_listing_id: order.listing_id, p_quantity: order.quantity });
-      }
+      // BUG-38: no explicit restore here. The `trg_restore_inventory` trigger
+      // (migration 029) already returns stock when status becomes `cancelled`
+      // and inventory_deducted was true. Calling restore_order_stock as well
+      // restored the quantity a third time (trigger fires twice on its own),
+      // inventing phantom stock on every cancellation.
 
       // Trigger Razorpay refund if the order was paid via Razorpay.
       // Non-blocking: on failure we still cancel the order and flag it for manual seller refund.
@@ -82,7 +83,22 @@ export const POST: APIRoute = async ({ request, url }) => {
         updatePayload.refund_amt = Number(order.paid_amount) || (Number(order.total_price) + Number(order.delivery_fee || 0));
         updatePayload.refund_sent_at = new Date().toISOString();
       }
-      await sb.from("orders").update(updatePayload).eq("id", order_id);
+      // The Razorpay refund has ALREADY been issued by this point. If this
+      // update is discarded and fails, the buyer gets their money back while
+      // the order stays `confirmed` — the seller prepares and hands over food
+      // that has been refunded. Never fail silently here.
+      const { error: cancelErr } = await sb.from("orders").update(updatePayload).eq("id", order_id);
+      if (cancelErr) {
+        console.error("[cancel] status update FAILED after refund was issued", {
+          order_id, refund_id: refundId, err: cancelErr.message,
+        });
+        return new Response(JSON.stringify({
+          error: "Could not cancel the order. " + (refundId
+            ? `A refund (${refundId}) was already issued — contact support with order ${String(order_id).slice(0, 8).toUpperCase()}.`
+            : "Please try again."),
+          refund: refundId ? { auto: true, id: refundId, note: refundNote } : null,
+        }), { status: 500 });
+      }
 
       // BUG-20 + BUG-25: previously only the buyer got a push here — the seller
       // was told NOTHING, so they could prep an order cancelled hours earlier.
@@ -151,11 +167,13 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: "No price to reject" }), { status: 400 });
       }
 
-      if (order.listing_id && order.inventory_deducted === true) {
-        await sb.rpc("restore_order_stock", { p_listing_id: order.listing_id, p_quantity: order.quantity });
-      }
+      // BUG-38: trigger handles the restore — see the note in the cancel branch.
 
-      await sb.from("orders").update({ status: "cancelled", refund_amt: order.paid_amount, cancelled_by: "buyer", cancel_reason: "Price rejected by buyer" }).eq("id", order_id);
+      const { error: rejectErr } = await sb.from("orders").update({ status: "cancelled", refund_amt: order.paid_amount, cancelled_by: "buyer", cancel_reason: "Price rejected by buyer" }).eq("id", order_id);
+      if (rejectErr) {
+        console.error("[cancel:reject_price] update failed", { order_id, err: rejectErr.message });
+        return new Response(JSON.stringify({ error: rejectErr.message }), { status: 500 });
+      }
 
       // BUG-20: reject_price also cancels the order, so the seller must hear
       // about it too — same fan-out as the plain cancel branch.

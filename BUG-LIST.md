@@ -697,3 +697,96 @@ doing nothing. Endpoint status-code tests cannot find these. What found them was
 checking the **database row after the call**, and grepping for discarded
 `error` values on Supabase writes. Worth repeating on any remaining path that
 mutates orders.
+
+---
+
+# BUG-36 .. BUG-38 · auth race, money-path silence, phantom stock
+
+## BUG-38 · S1 · Every cancellation invented phantom stock — CODE FIXED, MIGRATION PENDING
+
+**Files:** `supabase/migrations/029_inventory_preorder_confirm_only.sql`
+(`restore_listing_inventory`), `src/pages/api/orders/cancel.ts`,
+`src/pages/api/cron/expire-pending-orders.ts`
+
+`restore_listing_inventory()` is an AFTER UPDATE trigger whose body runs
+`update orders set inventory_deducted = false where id = NEW.id`. That nested
+UPDATE **re-fires the same trigger**, and at that moment `OLD.inventory_deducted`
+is still true and `NEW.status` is still `cancelled`, so the guard passes and the
+quantity is added a second time. Measured on staging, 2 kg order:
+
+```
+insert (deduct)     -> 25.5
+status -> cancelled -> 29.5      +4 restored for a 2 kg order
+```
+
+`/api/orders/cancel` then called `restore_order_stock` on top of that, making it
+**three** restores — measured +6 for a 2 kg order. Every cancel, decline or
+refund handed the seller free inventory they never had, so they oversell.
+
+**This invalidates BUG-33.** My earlier "fix" added a restore call to
+`expire-pending-orders.ts` on the belief that stock was being leaked. The
+opposite was true — it was being over-restored, and I made it worse. That call
+is reverted, and both redundant calls in `cancel.ts` are removed. Endpoint
+drift is now +4 instead of +6.
+
+**Remaining half needs a migration** (`065_fix_double_stock_restore.sql`) —
+PostgREST cannot execute DDL, so this must be run by hand:
+
+```sql
+create trigger trg_restore_inventory
+  after update on orders
+  for each row
+  when (OLD.status is distinct from NEW.status)   -- nested UPDATE no longer re-fires
+  execute function restore_listing_inventory();
+```
+
+The migration also adds `and OLD.status not in ('cancelled','declined','refunded')`
+as defence in depth, and stops the trigger force-setting `is_available = true`
+unconditionally — that was re-listing items a seller had deliberately marked
+sold out.
+
+Until it is applied, cancellations still over-restore by 1× the order quantity.
+
+## BUG-36 · S1 · OTP attempt limit defeated by concurrency — FIXED
+
+**File:** `src/pages/api/auth/verify-otp.ts`
+
+The wrong-code branch did `update({ verify_attempts: row.verify_attempts + 1 })`
+using a value from an earlier SELECT — a read-modify-write on a stale read, with
+the error discarded. Concurrent guesses all read the same number and write the
+same increment. Measured:
+
+```
+20 concurrent wrong guesses -> verify_attempts went 0 -> 1
+=> LIMIT DEFEATED (expected 20)
+```
+
+`MAX_VERIFY_ATTEMPTS = 3` was therefore not a limit at all. Fired in parallel
+batches, a 6-digit OTP is brute-forceable.
+
+**Fix:** compare-and-swap — the UPDATE carries `.eq("verify_attempts", expected)`
+so exactly one racer wins per round; losers re-read and retry, which re-applies
+the limit check. No migration needed. If the attempt cannot be recorded the
+request now **fails closed** with 503, because handing out a guess we cannot
+count is exactly what made brute force viable.
+
+## BUG-37 · S2 · Failed OTP burn was silent — FIXED
+
+Same file. The post-success burn discarded its error, so a failed burn left the
+code replayable until natural expiry with nothing logged. Replay still requires
+knowing the code, so this is hygiene rather than a gate — it now logs at
+`console.error` rather than failing a login the user already earned.
+
+## Money-path writes that could fail silently — FIXED
+
+`src/pages/api/orders/cancel.ts` discarded the error on its main status UPDATE.
+The Razorpay refund is issued **before** that write, so a failure meant the
+buyer got their money back while the order stayed `confirmed` — the seller
+prepares and hands over food that has already been refunded, and the response
+still said `{"success":true}`. It now returns 500 and names the refund id so
+support can trace it.
+
+A sweep found **26** awaited Supabase mutations whose result was discarded
+entirely. The ones on order, money and auth paths are fixed; the remainder are
+flag updates (`push_enabled` self-heal, `email_sent`) where a silent failure is
+genuinely harmless.
