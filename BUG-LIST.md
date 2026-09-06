@@ -1165,3 +1165,88 @@ aligned and widened, `payment_required` gets the label *"Pay balance"* and the
 **Verified** by `scripts/qa-balance-payment.ts` (8/8): the ₹300 balance on a
 ₹500-paid / ₹800-final order is charged as ₹300 (not ₹500), the webhook
 reconciles the top-up to `confirmed`, and all four statuses appear under active.
+
+---
+
+# Migration rollout — what went wrong, and BUG-48
+
+## INCIDENT · I broke cancellations on production
+
+Migration `065_fix_double_stock_restore.sql` was verified against **staging** and
+handed over for both databases. Running it on prod installed
+`trg_restore_inventory`, whose function body references `OLD.inventory_deducted`
+— a column that **does not exist on production**. Every cancellation began
+failing:
+
+```
+!! CANCEL BROKEN ON PROD: record "old" has no field "inventory_deducted"
+```
+
+Resolved by `drop trigger if exists trg_restore_inventory on orders;` on prod
+only. Re-verified afterwards — `cancelled`, `declined`, `refunded`, `completed`
+and `ready_for_pickup` all succeed, 0 probe rows left behind.
+
+**Cause:** I treated a staging result as proof for production without ever
+diffing the two schemas. They are not the same database.
+
+**Rule going forward: diff the schema before shipping DDL.** One query would
+have caught it:
+
+```
+orders columns — staging 38, prod 38
+only on STAGING: inventory_deducted
+only on PROD   : seller_upi_id
+```
+
+## Schema drift: staging and production are NOT equivalent
+
+- `orders.inventory_deducted` — **staging only**. Migration 029 never reached
+  production.
+- `orders.seller_upi_id` — **production only**.
+
+Consequences worth acting on separately:
+
+1. **BUG-38 is fixed on staging only.** Production never had the restore trigger
+   at all, so it never had the double-restore either — the bug simply does not
+   exist there.
+2. **Production has never restored stock on a cancellation.** It deducts on
+   INSERT (observed live: `10 → 9`) and never gives it back. A long-standing
+   silent stock leak, unrelated to anything in this session. Fixing it means
+   applying the rest of migration 029 to production — column, deduct-on-confirm
+   trigger and restore trigger together — which needs writing and testing as one
+   unit, not a single statement.
+
+## BUG-48 · S1 · "Set final price" has been broken since it shipped — FIXED
+
+**File:** `supabase/migrations/043_preorder_price_reconciliation.sql`
+
+`reconcile_preorder_price` ended its UPDATE with `updated_at = now()`, but
+`orders` has **no `updated_at` column on either database**. Every call raised
+42703, and `/api/seller/orders` returns the raw error, so a seller clicking
+**Set final price** on a pre-order got a 500 — and had since the function
+shipped.
+
+Caught only because migration 066 rewrote this function and the verification
+harness called it for real. Reading the SQL would not have found it; the column
+reference is only resolved at execution time.
+
+**Fix:** `updated_at = now()` removed from 066. Nothing else writes
+`orders.updated_at`.
+
+**Verified on staging, 7/7:**
+
+```
+065: 21437 -> 21439  (restored 2 for a 2 kg order)   not double
+066: rpc returned: confirmed   status=confirmed  refund_amt=300
+     stock NOT restored on a live order
+     higher final price still returns 'payment_required'
+```
+
+## Current state
+
+| | staging | production |
+|---|---|---|
+| 065 stock-restore trigger | applied, verified | **rolled back** (needs full 029 first) |
+| 066 pre-order price drop | applied, verified | applied |
+| BUG-48 set_final_price | fixed | fixed |
+| Cancellations | working | working |

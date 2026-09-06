@@ -41,11 +41,15 @@ begin
     v_refund_due := greatest(v_paid - p_final_price, 0);
   end if;
 
+  -- BUG-48: the original function (migration 043) also set `updated_at = now()`,
+  -- but orders has no such column on either staging or production. Every call
+  -- therefore raised 42703 and the endpoint returned 500 — "Set final price"
+  -- has been broken for pre-orders since it shipped. Column dropped from the
+  -- UPDATE; nothing else writes orders.updated_at.
   update orders
     set final_price = p_final_price,
         status = v_new_status,
-        refund_amt = case when v_refund_due > 0 then v_refund_due else refund_amt end,
-        updated_at = now()
+        refund_amt = case when v_refund_due > 0 then v_refund_due else refund_amt end
   where id = p_order_id;
 
   return v_new_status;
