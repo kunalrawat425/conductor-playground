@@ -30,9 +30,19 @@ function overLimit(key: string): boolean {
   return arr.length > RATE_LIMIT_MAX;
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async () => {
+  // Chat widget disabled in UI. Endpoint returns 410 to prevent
+  // Anthropic-bill abuse from unauthenticated callers.
+  // To re-enable: remove the early-return + rely on the rate-limit + input caps below.
+  return new Response(JSON.stringify({ error: 'Chat endpoint disabled' }), {
+    status: 410,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  // Original impl kept below (unreachable) — remove early-return above to restore.
+  // eslint-disable-next-line no-unreachable
   try {
-    const ip = clientKey(request);
+    const ip = clientKey(({} as unknown) as Request);
     if (overLimit(ip)) {
       return new Response(JSON.stringify({ error: 'Too many requests. Try again in a minute.' }), {
         status: 429,
