@@ -1,8 +1,8 @@
 // Relifish Service Worker
 // Handles push notifications and offline app shell caching
 
-const CACHE_NAME = "relifish-v2";
-const SHELL_ASSETS = ["/", "/manifest.json", "/favicon.png"];
+const CACHE_NAME = "relifish-v3";
+const SHELL_ASSETS = ["/", "/manifest.json", "/favicon.png", "/icon-192.png", "/badge-96.png"];
 
 // Install: cache app shell
 self.addEventListener("install", (event) => {
@@ -63,7 +63,7 @@ function uniqueFallbackTag() {
 }
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Relifish", body: "You have an update!", url: "/v2/track" };
+  let data = { title: "Relifish", body: "You have an update!", url: "/me" };
 
   if (event.data) {
     try {
@@ -92,7 +92,7 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: "/icon-192.png",
-      badge: "/icon-192.png",
+      badge: "/badge-96.png",
       tag,
       data: { url: data.url },
       vibrate: [200, 100, 200],
@@ -102,7 +102,9 @@ self.addEventListener("push", (event) => {
 });
 
 function resolvePushTarget(raw) {
-  const fallback = "/v2/track";
+  // BUG-30: was "/v2/track", a route removed when the v2 prefix was dropped —
+  // any push without a usable url opened a 404. /me lists the buyer's orders.
+  const fallback = "/me";
   const r = (raw && String(raw).trim()) || fallback;
   try {
     if (/^https?:\/\//i.test(r)) return r;

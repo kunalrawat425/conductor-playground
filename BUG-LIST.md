@@ -514,3 +514,63 @@ the dev-server log during the BUG-22 test, not by a failing assertion.
 Web Push delivery cannot be asserted end-to-end from a script — it needs a real
 browser subscription. The suite verifies everything up to and including the
 push-service HTTP response; the copy itself is covered by unit tests.
+
+---
+
+# Service worker audit — BUG-29 .. BUG-30
+
+Found while answering "can I still rely on push?". Both were live on prod and
+affected **every** push notification, buyer and seller alike. Neither could be
+caught by an endpoint test — the server sent a perfectly good payload and got a
+200 back from the push service; the damage was entirely on the device.
+
+## BUG-29 · S2 · Every push rendered with a blank icon — FIXED
+
+**File:** `public/sw.js:94`
+
+```js
+icon: "/icon-192.png",
+badge: "/icon-192.png",
+```
+
+`public/icon-192.png` did not exist — only `icon-192.svg`, which references a
+remote Supabase URL via `<image href>` and would not render in a notification
+context anyway. `curl https://relifish.store/icon-192.png` returned **404**.
+So every notification we have ever sent showed the browser's generic bell
+instead of the Relifish mark, on every device.
+
+**Fix:** generated real `icon-192.png` (192×192, 39 KB), `icon-512.png` and
+`badge-96.png` from `favicon.png`. `badge` now points at the 96px asset, which
+is what the badge slot actually wants.
+
+Note `favicon.png` is 1254×1254 and **1.4 MB** — usable as a manifest icon but
+far too heavy to have been the notification icon, so "just point at favicon"
+was not the right fix.
+
+## BUG-30 · S2 · Notification tap could open a 404 — FIXED
+
+**File:** `public/sw.js:66,107`
+
+The push-payload default and `resolvePushTarget`'s fallback were both
+`/v2/track`, a route that stopped existing when the `v2` prefix was dropped
+(there is no `src/pages/v2/` directory; prod returns **404**).
+
+Any push arriving without a usable `url` — an FCM console message, a payload
+whose `url` fails `new URL()`, or any future caller that forgets the field —
+sent the user to a dead page from their lock screen.
+
+**Fix:** fallback is now `/me`, which lists the buyer's orders and is the
+correct destination for an order notification with no specific target.
+
+## Also
+
+- `manifest.json` declared only `favicon.png` at `sizes: "any"` with
+  `purpose: "any maskable"`. Now declares proper 192 and 512 entries for
+  install prompts, with `favicon.png` kept as the maskable variant.
+- `CACHE_NAME` bumped `relifish-v2` → `relifish-v3` so already-installed
+  service workers re-run `install` and pick up the new icons. Without the bump
+  existing clients would keep the old cache and never fetch them.
+- The icons are added to `SHELL_ASSETS` so notifications still render the mark
+  offline. Kept to assets verified to exist, because `cache.addAll()` rejects
+  wholesale if any single entry 404s — which would have broken shell caching
+  entirely had the missing icon been listed there originally.
