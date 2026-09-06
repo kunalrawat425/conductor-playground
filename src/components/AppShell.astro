@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../lib/brand";
 interface Props {
   title?: string;
   description?: string;
@@ -89,7 +90,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
       <!-- Fixed header -->
       <header class="app-header">
         <div class="app-header-top">
-          <a href="/" class="app-logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt={brandName} class="app-logo-img" /></a>
+          <a href="/" class="app-logo"><img src={LOGO_URL} alt={brandName} class="app-logo-img" /></a>
           {showLocationBadge && (
             <button class="location-badge" id="location-badge" aria-label="Change location">
               <span id="location-text">Set location</span>

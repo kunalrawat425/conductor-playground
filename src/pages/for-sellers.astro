@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../lib/brand";
 export const prerender = true;
 import AppShell from "../components/ui/AppShell.astro";
 
@@ -59,7 +60,7 @@ const jsonLd = {
       "@id": "https://www.relifish.store#org",
       "name": "Relifish",
       "url": "https://www.relifish.store",
-      "logo": "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png",
+      "logo": "${LOGO_URL}",
       "description": "Online marketplace for fresh fish in Mumbai. Connects local fish sellers with buyers for same-day pickup and pre-order delivery.",
       "areaServed": [
         { "@type": "City", "name": "Mumbai" },
@@ -300,7 +301,7 @@ const jsonLd = {
 <!-- ─── NAV ───────────────────────────────────────────────────────── -->
 <nav class="fs-nav">
   <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
-    <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="fs-nav-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+    <img src={LOGO_URL} alt="Relifish" class="fs-nav-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
     <span style="display:none;font:900 20px Inter;color:#fff;letter-spacing:-0.5px;">Relifish</span>
   </a>
   <div style="display:flex;gap:8px;align-items:center;">

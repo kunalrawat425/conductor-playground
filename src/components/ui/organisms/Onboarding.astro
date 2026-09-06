@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../../../lib/brand";
 interface Props {
   id?: string;
   forceShow?: boolean;
@@ -9,7 +10,7 @@ const { id = "v2-onboarding", forceShow = false } = Astro.props;
   <div class="v2-onb-card">
     <!-- Step 1 -->
     <div id={`${id}-step1`} class="v2-onb-step">
-      <div class="v2-onb-illust"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:80px;width:auto;display:block;margin:0 auto;" /></div>
+      <div class="v2-onb-illust"><img src={LOGO_URL} alt="Relifish" style="height:80px;width:auto;display:block;margin:0 auto;" /></div>
       <h2 class="v2-onb-title">Fresh fish, direct from sellers</h2>
       <p class="v2-onb-desc">Skip the supermarket. Order from local Mumbai fishermen with same-day catch.</p>
     </div>

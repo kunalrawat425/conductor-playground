@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../lib/brand";
 interface Props {
   showDashboardLink?: boolean;
 }
@@ -8,7 +9,7 @@ const { showDashboardLink = true } = Astro.props;
 ---
 
 <header class="header">
-  <a href="/" class="logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt={brandName} class="logo-img" /></a>
+  <a href="/" class="logo"><img src={LOGO_URL} alt={brandName} class="logo-img" /></a>
   <nav class="header-nav">
     {showDashboardLink && <a href="/dashboard/orders" class="nav-link">Seller home</a>}
   </nav>

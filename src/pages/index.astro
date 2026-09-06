@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../lib/brand";
 export const prerender = false;
 import { supabase } from "../lib/supabase";
 import Footer from "../components/Footer.astro";
@@ -747,7 +748,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
 <!-- NAV — no seller links -->
 <nav class="nav" id="nav">
   <div class="nav-inner">
-    <a href="/" class="logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="logo-img" /></a>
+    <a href="/" class="logo"><img src={LOGO_URL} alt="Relifish" class="logo-img" /></a>
     <div class="nav-links">
       <a href="#how" class="nl">How it works</a>
       <a href="#fish" class="nl">Browse fish</a>
@@ -912,7 +913,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
           <!-- Screen 0: Welcome -->
           <div class="demo-screen active" data-screen="0">
             <div class="ds-dark d0-center">
-              <div class="d0-logo"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:56px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" /></div>
+              <div class="d0-logo"><img src={LOGO_URL} alt="Relifish" style="height:56px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" /></div>
               <div class="d0-tagline">Mumbai's fresh fish marketplace.<br/>Pre-order tonight, collect morning-fresh.</div>
             </div>
             <div class="demo-cta demo-cta-dark">
@@ -955,14 +956,14 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
           <div class="demo-screen" data-screen="2">
             <div class="ds-light">
               <div class="dh">
-                <div class="dh-title"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:24px;width:auto;vertical-align:middle;" /></div>
+                <div class="dh-title"><img src={LOGO_URL} alt="Relifish" style="height:24px;width:auto;vertical-align:middle;" /></div>
                 <div class="dh-sub">📍 Lokhandwala, Andheri West</div>
                 <div class="dh-search">🔍&nbsp;Search fish or sellers...</div>
               </div>
               <div class="d2-tabs"><div class="d2t on">🌙 Pre-order</div><div class="d2t">⚡ Same Day</div></div>
               <div class="d2-list">
                 <div class="d2-card tap">
-                  <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);" /><div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)"><img src={LOGO_URL} alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);" /><div class="d2-badge op">🟢 Open</div></div>
                   <div class="d2-info"><div class="d2-name">Versova Fresh Fish Co.</div><div class="d2-sub">Pomfret · Surmai · Prawns · +4 · Cutoff 11 PM</div></div>
                 </div>
                 <div class="d2-card">
@@ -1108,7 +1109,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
           <!-- Screen 8: Delivered -->
           <div class="demo-screen" data-screen="8">
             <div class="ds-light d8-center">
-              <div class="d8-icon"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:40px;width:auto;display:block;margin:0 auto;" /></div>
+              <div class="d8-icon"><img src={LOGO_URL} alt="Relifish" style="height:40px;width:auto;display:block;margin:0 auto;" /></div>
               <div class="d8-title">Fresh fish delivered!</div>
               <div class="d8-sub">Your Pomfret and Bangda from Versova Fresh Fish Co. Morning-fresh, straight from the catch.</div>
               <div class="d8-rate">
@@ -1213,7 +1214,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
             </div>
             <div class="s2-list">
               <div class="s2-card">
-                <div class="s2-cover g"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:24px;width:auto;filter:brightness(0) invert(1);" /><div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-cover g"><img src={LOGO_URL} alt="Relifish" style="height:24px;width:auto;filter:brightness(0) invert(1);" /><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Versova Fresh Fish Co.</div>
                   <div class="s2-sub">Cutoff 11 PM · 0.8 km away</div>
@@ -1254,7 +1255,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
               <div class="s3-ttl">Confirm your order</div>
             </div>
             <div class="s3-seller">
-              <div class="s3-s-icon"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
+              <div class="s3-s-icon"><img src={LOGO_URL} alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
               <div><div class="s3-s-name">Versova Fresh Fish Co.</div><div class="s3-s-sub">🌙 Pre-order · Pickup 7–9 AM</div></div>
             </div>
             <div class="s3-items">
@@ -1544,7 +1545,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
       </a>
       <a href="/shop" class="detail-link">
         <div class="dl-inner">
-          <div class="dl-icon buy"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:28px;width:auto;filter:brightness(0) invert(1);" /></div>
+          <div class="dl-icon buy"><img src={LOGO_URL} alt="Relifish" style="height:28px;width:auto;filter:brightness(0) invert(1);" /></div>
           <div>
             <div class="dl-title">Browse sellers now</div>
             <div class="dl-sub">See which sellers are open tonight near you. Login to view prices and pre-order.</div>
@@ -1632,7 +1633,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
 <div class="chat-panel" id="chat-panel" role="dialog" aria-label="Relifish AI assistant">
   <div class="chat-header">
     <div class="chat-header-left">
-      <div class="chat-avatar"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:28px;width:auto;filter:brightness(0) invert(1);" /></div>
+      <div class="chat-avatar"><img src={LOGO_URL} alt="Relifish" style="height:28px;width:auto;filter:brightness(0) invert(1);" /></div>
       <div>
         <div class="chat-title">Relifish Assistant</div>
         <div class="chat-subtitle">Ask anything about fresh fish</div>

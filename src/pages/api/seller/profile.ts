@@ -75,6 +75,17 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    // BUG-19: same WGS-84 guard as buyer_addresses. A seller with garbage
+    // coords breaks haversine distance → wrong delivery fee for every order.
+    if (updates.lat !== undefined) {
+      const n = Number(updates.lat);
+      updates.lat = Number.isFinite(n) && n >= -90 && n <= 90 ? n : null;
+    }
+    if (updates.lng !== undefined) {
+      const n = Number(updates.lng);
+      updates.lng = Number.isFinite(n) && n >= -180 && n <= 180 ? n : null;
+    }
+
     const touchesFulfillment =
       Object.prototype.hasOwnProperty.call(updates, "has_pickup") ||
       Object.prototype.hasOwnProperty.call(updates, "has_delivery");

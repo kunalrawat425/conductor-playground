@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../lib/brand";
 import AppShell from "../components/AppShell.astro";
 
 import LocationPicker from "../components/LocationPicker.astro";
@@ -115,7 +116,7 @@ import LoginModal from "../components/LoginModal.astro";
       <div class="ns-flow">
         <div class="ns-flow-step"><div class="ns-flow-num">1</div><div class="ns-flow-icon">📍</div><div class="ns-flow-label">You tell us<br/>your area</div></div>
         <div class="ns-flow-arrow">→</div>
-        <div class="ns-flow-step"><div class="ns-flow-num">2</div><div class="ns-flow-icon"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:28px;width:auto;display:block;" /></div><div class="ns-flow-label">We bring<br/>sellers to you</div></div>
+        <div class="ns-flow-step"><div class="ns-flow-num">2</div><div class="ns-flow-icon"><img src={LOGO_URL} alt="Relifish" style="height:28px;width:auto;display:block;" /></div><div class="ns-flow-label">We bring<br/>sellers to you</div></div>
         <div class="ns-flow-arrow">→</div>
         <div class="ns-flow-step"><div class="ns-flow-num">3</div><div class="ns-flow-icon">🔔</div><div class="ns-flow-label">You get<br/>notified</div></div>
         <div class="ns-flow-arrow">→</div>
@@ -910,7 +911,7 @@ import LoginModal from "../components/LoginModal.astro";
               : !g.inServiceArea ? ""
               : `<div class="seller-hours-tag">🕐 ${opensAt} – ${closesAt}</div>`}
             <div class="seller-card-header">
-              <div class="seller-avatar"><img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
+              <div class="seller-avatar"><img src={LOGO_URL} alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
               <div class="seller-info">
                 <div class="seller-name">${esc(s.name)}</div>
                 <div class="seller-location">${esc(s.location_name || s.location || "")}</div>

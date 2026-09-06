@@ -4,6 +4,7 @@
  */
 import { fmtDateTimeFullIST, fmtDateTimeIST } from "./format-ist";
 import { cleanSellerName, stripContactInfo } from "./seller-display";
+import { LOGO_URL } from "./brand";
 
 const BRAND_BLUE = "#0066cc";
 const BRAND_DARK = "#0a0f1a";
@@ -26,7 +27,7 @@ function shell(content: string): string {
         <!-- HEADER -->
         <tr>
           <td style="background:linear-gradient(135deg,${BRAND_DARK},#111a2a);padding:24px 28px;text-align:center;">
-            <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
+            <img src="${LOGO_URL}" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
             <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;">Fresh local seafood</div>
           </td>
         </tr>

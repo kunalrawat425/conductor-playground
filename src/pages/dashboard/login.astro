@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../../lib/brand";
 export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import LoginSheet from "../../components/ui/organisms/LoginSheet.astro";
@@ -24,7 +25,7 @@ import Toast from "../../components/ui/atoms/Toast.astro";
 
   <div class="dl-hero-wrap">
     <div style="margin-bottom:14px;">
-      <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" style="height:72px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
+      <img src={LOGO_URL} alt="Relifish" style="height:72px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
     </div>
     <h1 style="font:900 24px Inter;margin:0 0 6px;letter-spacing:-.02em;">Seller dashboard</h1>
     <p style="font:400 14px Inter;opacity:.9;margin:0;">Sign in to manage your fish listings and orders</p>

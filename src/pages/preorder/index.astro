@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../../lib/brand";
 export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import PreorderBanner from "../../components/ui/molecules/PreorderBanner.astro";
@@ -119,7 +120,7 @@ const species = [
         return `<a href="/s/${(s.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}" class="v2-seller-card" style="margin-bottom:12px;">
           <div class="v2-sc-img" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF);">
             <span class="v2-badge v2-badge-offer v2-badge-indigo v2-badge-size-md">🌙 Same-Day & Pre-Orders</span>
-            <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png" alt="Relifish" class="v2-sc-emoji" style="height:36px;width:auto;display:block;" />
+            <img src={LOGO_URL} alt="Relifish" class="v2-sc-emoji" style="height:36px;width:auto;display:block;" />
           </div>
           <div class="v2-sc-body">
             <div class="v2-sc-top">

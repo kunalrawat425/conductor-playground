@@ -21,6 +21,25 @@ type AddressPayload = {
   is_default?: boolean;
 };
 
+/**
+ * BUG-19: validate WGS-84 coordinate ranges. Out-of-range values silently
+ * break distance maths (haversine returns NaN/garbage) which then corrupts
+ * delivery-fee calculation at checkout. Returns a normalised number or null.
+ */
+function sanitizeLat(v: unknown): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < -90 || n > 90) return null;
+  return n;
+}
+
+function sanitizeLng(v: unknown): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < -180 || n > 180) return null;
+  return n;
+}
+
 async function clearOtherDefaults(supabase: ReturnType<typeof client>, buyer_id: string, exceptId?: string) {
   let q = supabase.from("buyer_addresses").update({ is_default: false }).eq("buyer_id", buyer_id);
   if (exceptId) q = q.neq("id", exceptId);
@@ -76,8 +95,8 @@ export const POST: APIRoute = async ({ request }) => {
       building: (address.building ?? "").trim(),
       landmark: (address.landmark ?? "").trim(),
       location_name: (address.location_name ?? "").trim(),
-      lat: address.lat ?? null,
-      lng: address.lng ?? null,
+      lat: sanitizeLat(address.lat),
+      lng: sanitizeLng(address.lng),
       is_default: !!address.is_default,
       updated_at: new Date().toISOString(),
     };
@@ -118,8 +137,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (address.building !== undefined) updates.building = String(address.building).trim();
     if (address.landmark !== undefined) updates.landmark = String(address.landmark).trim();
     if (address.location_name !== undefined) updates.location_name = String(address.location_name).trim();
-    if (address.lat !== undefined) updates.lat = address.lat;
-    if (address.lng !== undefined) updates.lng = address.lng;
+    if (address.lat !== undefined) updates.lat = sanitizeLat(address.lat);
+    if (address.lng !== undefined) updates.lng = sanitizeLng(address.lng);
     if (address.is_default !== undefined) updates.is_default = !!address.is_default;
 
     const { data, error } = await supabase

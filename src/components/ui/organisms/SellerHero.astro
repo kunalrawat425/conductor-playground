@@ -1,4 +1,5 @@
 ---
+import { LOGO_URL } from "../../../lib/brand";
 import type { SellerHeroProps } from "../../../types/components";
 interface Props extends SellerHeroProps {}
 const {
@@ -53,7 +54,7 @@ const subParts = [
           {/* Fish emoji watermark */}
           <span style="position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:72px;opacity:0.12;pointer-events:none;line-height:1;user-select:none;">🐟</span>
           {/* Relifish logo bottom-right */}
-          <img src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png"
+          <img src={LOGO_URL}
             alt="Relifish"
             style="position:absolute;bottom:14px;right:16px;height:24px;width:auto;filter:brightness(0) invert(1);opacity:0.75;pointer-events:none;" />
         </>
