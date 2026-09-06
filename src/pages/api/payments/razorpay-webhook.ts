@@ -80,9 +80,24 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     const n = updated?.length ?? 0;
-    console.log(n === 0
-      ? `[razorpay-webhook] no pending row for ${razorpay_order_id} (already confirmed — OK)`
-      : `[razorpay-webhook] captured: reconciled ${n} row(s) for ${razorpay_order_id}`);
+    if (n > 0) {
+      console.log(`[razorpay-webhook] captured: reconciled ${n} row(s) for ${razorpay_order_id}`);
+    } else {
+      // The old log said "already confirmed — OK" for every zero-match, which
+      // is a false all-clear: zero rows also means no order carries this
+      // razorpay_order_id at all, i.e. captured money with nothing to attach it
+      // to (see BUG-41). Distinguish the two, loudly.
+      const { data: anyRow } = await sb
+        .from("orders")
+        .select("id, status")
+        .eq("razorpay_order_id", razorpay_order_id)
+        .limit(1);
+      if (anyRow && anyRow.length > 0) {
+        console.log(`[razorpay-webhook] ${razorpay_order_id} already in status ${(anyRow[0] as any).status} — OK`);
+      } else {
+        console.error(`[razorpay-webhook] ORPHANED PAYMENT: no order carries razorpay_order_id ${razorpay_order_id} (payment ${razorpay_payment_id} captured). Manual reconcile required.`);
+      }
+    }
 
     // BUG-21: notify BOTH parties on BOTH channels. This is the recovery path
     // that fires when the buyer's browser died mid-payment, so the seller was

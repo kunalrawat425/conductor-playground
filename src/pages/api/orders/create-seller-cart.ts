@@ -148,6 +148,11 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     const orders: unknown[] = [];
 
+
+    // Delivery fee applies once per cart, computed from the whole subtotal so it
+    // matches what the buyer was shown (and honours free_delivery_above).
+    const cartDeliveryFee = seller ? computeDeliveryFee(seller, cartSubtotal, order_type, deliveryDistanceKm) : 0;
+    let deliveryFeeAssigned = false;
     for (const { line } of resolved) {
       if (line.kind === "preorder") {
         const amountDue = line.total_price;
@@ -242,7 +247,20 @@ export const POST: APIRoute = async ({ request, url }) => {
         continue;
       }
 
-      const delivery_fee = seller ? computeDeliveryFee(seller, line.total_price, order_type, deliveryDistanceKm) : 0;
+      // BUG-40: this used to be computeDeliveryFee(seller, line.total_price, ...)
+      // inside the per-line loop. A cart splits into one order row per line and
+      // each row is paid separately, so a 3-line cart was charged the delivery
+      // fee three times. computeDeliveryFee's parameter is even named `subtotal`
+      // — it always wanted the cart total.
+      //
+      // Worse with free_delivery_above: the client compares the whole subtotal
+      // against the threshold and can display "FREE", while the server compared
+      // each line individually and charged the fee on every one.
+      //
+      // The fee is a property of the delivery, not of the line, so it is
+      // computed once from cartSubtotal and carried by the first row only.
+      const delivery_fee = deliveryFeeAssigned ? 0 : cartDeliveryFee;
+      deliveryFeeAssigned = true;
 
       const { data: orderId, error: rpcError } = await supabase.rpc("create_order_atomic", {
         p_listing_id: line.listing_id,

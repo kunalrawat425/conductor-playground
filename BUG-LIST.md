@@ -823,3 +823,97 @@ non-empty, so two rows with NULL phone cannot match each other.
 After: same request returns **403**, while an owner reading their own order and
 a buyer claiming a guest order by matching phone both still return 200.
 Locked in as `qa-notifications.ts` N7 (all three cases).
+
+---
+
+# BUG-40 .. BUG-41 · money path
+
+## BUG-40 · S1 · Delivery fee charged once per cart LINE — FIXED
+
+**File:** `src/pages/api/orders/create-seller-cart.ts:245`
+
+```ts
+const delivery_fee = seller ? computeDeliveryFee(seller, line.total_price, ...) : 0;
+```
+
+This sat inside the per-line loop. A cart becomes one order row per line and
+each row is paid separately, so a 3-line cart was charged the delivery fee three
+times. `computeDeliveryFee`'s second parameter is literally named `subtotal` —
+it always wanted the cart total. `cartSubtotal` was already computed on line 95
+and used for the minimum-order check, but never for the fee.
+
+The `free_delivery_above` case is worse, because the client and server disagree:
+`seller/[id].astro` compares the whole subtotal against the threshold and can
+display **"FREE"**, while the server compared each line individually and charged
+the fee on every one. The buyer pays a delivery charge the UI promised was free.
+
+Real row on staging — buyer `9870619974`, 2026-04-14T20:37:
+
+```
+2 order rows, delivery_fee = [50, 50] → ₹100 charged for one delivery
+```
+
+**Fix:** the fee is computed once from `cartSubtotal` before the loop and
+carried by the first row only; the rest get 0.
+
+**Verified** by `scripts/qa-delivery-fee.ts` (6/6), which mutates a staging
+seller's fee config and restores it afterwards:
+
+```
+A. Flat ₹30 fee, 2-line cart      rows=2 fees=[30, 0] total=₹30
+B. free_delivery_above cleared     subtotal=₹930 fees=[0, 0] total=₹0
+C. Pickup cart                     total=₹0
+```
+
+## BUG-41 · S1 · Re-paying an order could orphan already-captured money — FIXED
+
+**File:** `src/pages/api/payments/razorpay-create-order.ts:87`
+
+When the cached Razorpay order's amount no longer matched the order total (the
+BUG-6 stale-amount fix), the code did:
+
+```ts
+await supabase.from("orders").update({ razorpay_order_id: null }).eq("id", order_id);
+```
+
+without first asking whether that Razorpay order had already been **paid**.
+`razorpay_order_id` is the only key every recovery path uses:
+
+- `razorpay-webhook.ts` matches `.eq("razorpay_order_id", ...)`
+- `cron/reconcile-orphans.ts` filters `.not("razorpay_order_id","is",null)`
+- `seller/reconcile-razorpay.ts` reads the stored id
+
+Failure sequence: seller changes `final_price` → buyer taps Pay again → the id
+is nulled and a new Razorpay order created → but the buyer had already paid the
+first one and the client-side verify POST died. Now the original
+`payment.captured` webhook matches **zero rows**, the orphan cron cannot see the
+row (its id is null), the seller's "Check Razorpay" button queries the new
+order, and 24 h later `expire-pending-orders` — which selects
+`.is("razorpay_order_id", null)` — cancels it as `auto_expired_payment`.
+**Money captured, order cancelled, nobody refunds.**
+
+**Fix:** read `amount_paid` on the cached order first.
+- `amount_paid > 0` → do **not** clear. List the order's payments, reconcile the
+  row to `confirmed` at the captured amount, fan out `payment_confirmed`, and
+  return **409 `already_paid`** so the client cannot open a second checkout
+  against an order that has been paid.
+- Razorpay unreachable → keep the id and return 502, rather than risk orphaning
+  on a network blip.
+- Only clear once Razorpay has confirmed it holds no money for that order.
+
+### Related: the webhook's false all-clear
+
+`razorpay-webhook.ts` logged this for *every* zero-match:
+
+```
+no pending row for {id} (already confirmed — OK)
+```
+
+Zero matches also means **no order carries that id at all** — exactly the
+orphaned-money case above — so the one log line that should have screamed read
+"OK". It now distinguishes the two and logs
+`ORPHANED PAYMENT: no order carries razorpay_order_id … Manual reconcile required.`
+at `console.error`.
+
+**Verified:** a signed `payment.captured` for an unknown order id now produces
+that error line instead of an all-clear.
