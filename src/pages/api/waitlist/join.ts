@@ -148,7 +148,7 @@ export const POST: APIRoute = async ({ request }) => {
             }),
           });
         }
-      } catch (_) {}
+      } catch (err) { console.warn("[waitlist/join] notify failed", { err: (err as any)?.message }); }
     }
 
     return new Response(

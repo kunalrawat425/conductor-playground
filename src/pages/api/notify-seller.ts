@@ -1,11 +1,9 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import { priceUnitShortLabel } from "../../lib/listing-pricing";
-import type { PriceUnit } from "../../lib/species";
 import { loadWebPush } from "../../lib/server/load-web-push";
 import { absoluteUrl } from "../../lib/server/site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
-import { fmtDateTimeFullIST } from "../../lib/format-ist";
+import { normalizeSellerPushKind, sellerPushNotification } from "../../lib/server/seller-push-copy";
 
 export const prerender = false;
 
@@ -43,7 +41,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (authCheck) return authCheck;
 
     const body = await request.json();
-    const kind = body.kind === "payment_proof" ? "payment_proof" : "new_order";
+    const kind = normalizeSellerPushKind(body.kind);
     const {
       seller_id,
       species,
@@ -91,27 +89,15 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    let title: string;
-    let pushBody: string;
-    if (kind === "payment_proof") {
-      const id = order_id_short ? String(order_id_short).toUpperCase() : "";
-      title = "Payment proof received";
-      pushBody = species
-        ? `Buyer uploaded UPI proof for ${species}${id ? ` (order #${id})` : ""}. Verify in dashboard.`
-        : `A buyer uploaded payment proof${id ? ` for order #${id}` : ""}. Verify in dashboard.`;
-    } else {
-      const u = String(quantity_unit || "piece");
-      const unitLabel =
-        u === "piece" || u === "kg"
-          ? priceUnitShortLabel(u as PriceUnit)
-          : u;
-      const isPreorder = placement_kind === "preorder";
-      const schedLabel = scheduled_for ? ` (${fmtDateTimeFullIST(scheduled_for)})` : "";
-      pushBody = species
-        ? `New${isPreorder ? " pre-order" : " order"}: ${species} ${quantity || ""}${unitLabel}${schedLabel}`
-        : `You have a new${isPreorder ? " pre-order" : " order"}${schedLabel}`;
-      title = isPreorder ? "New pre-order" : "New order";
-    }
+    const { title, body: pushBody } = sellerPushNotification(kind, {
+      species,
+      quantity,
+      quantity_unit,
+      scheduled_for,
+      placement_kind,
+      order_id_short,
+      amount: typeof body.amount === "number" ? body.amount : null,
+    });
 
     let dashboardUrl = absoluteUrl("/dashboard/orders");
     if (typeof order_id === "string" && /^[0-9a-f-]{36}$/i.test(order_id.trim())) {
@@ -132,6 +118,20 @@ export const POST: APIRoute = async ({ request }) => {
       );
     } catch (pushErr: any) {
       console.error("notify-seller push failed:", pushErr?.message || pushErr);
+      // BUG-22 (seller side): a 404/410 endpoint is dead forever. Clear it so the
+      // seller is re-prompted, instead of every future order push failing silently.
+      const { isTerminalPushError, pushErrorStatus } = await import("../../lib/server/push-error-classify");
+      if (isTerminalPushError(pushErr)) {
+        await supabase
+          .from("sellers")
+          .update({ push_subscription: null, push_enabled: false })
+          .eq("id", seller_id);
+        console.warn(`[notify-seller] pruned dead subscription for seller ${seller_id} (HTTP ${pushErrorStatus(pushErr)})`);
+        return new Response(JSON.stringify({ skipped: true, reason: "subscription expired — cleared", pruned: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ skipped: true, reason: pushErr?.message || "push failed" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },

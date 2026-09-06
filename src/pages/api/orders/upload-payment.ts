@@ -18,7 +18,7 @@ async function sendResendEmail(to: string, subject: string, html: string) {
       headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to, subject, html }),
     });
-  } catch (_) {}
+  } catch (err) { console.warn("[upload-payment] resend send failed", { to, subject, err: (err as any)?.message }); }
 }
 
 /**
@@ -112,7 +112,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (existing.length > 0) {
       try {
         await supabase.storage.from("order-payments").remove(existing);
-      } catch (_) {}
+      } catch (err) { console.warn("[upload-payment] old screenshot cleanup failed", { order_id, err: (err as any)?.message }); }
     }
     const updated = [path];
 
@@ -172,17 +172,19 @@ export const POST: APIRoute = async ({ request }) => {
           }),
         });
       }
-    } catch (_) {}
+    } catch (err) { console.warn("[upload-payment] seller notify failed", { order_id, err: (err as any)?.message }); }
 
     try {
       await sendBuyerOrderPush({
         buyer_id,
         buyer_phone: order.buyer_phone ?? null,
-        status: "pending_payment",
+        // BUG-23: "proof_uploaded", not "pending_payment" — the latter now reads
+        // "waiting for payment" when Razorpay is on, which is wrong here.
+        status: "proof_uploaded",
         species: String((updatedOrder as any)?.species || "Fish"),
         order_id,
       });
-    } catch (_) {}
+    } catch (err) { console.warn("[upload-payment] buyer push failed", { order_id, err: (err as any)?.message }); }
 
     // Email buyer confirmation that proof was received
     try {
@@ -197,7 +199,7 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
       }
-    } catch (_) {}
+    } catch (err) { console.warn("[upload-payment] buyer email failed", { order_id, err: (err as any)?.message }); }
 
     return new Response(JSON.stringify({ order: updatedOrder, url: signedData?.signedUrl ?? null, path }), { status: 200 });
   } catch (err: any) {

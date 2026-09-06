@@ -17,7 +17,7 @@ const RAZORPAY_WEBHOOK_SECRET = import.meta.env.RAZORPAY_WEBHOOK_SECRET || "";
  *   Events: payment.captured, payment.failed
  *   Secret: same value as env RAZORPAY_WEBHOOK_SECRET
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, url }) => {
   if (!RAZORPAY_WEBHOOK_SECRET) {
     return new Response(JSON.stringify({ error: "Webhook not configured" }), { status: 503 });
   }
@@ -83,6 +83,21 @@ export const POST: APIRoute = async ({ request }) => {
     console.log(n === 0
       ? `[razorpay-webhook] no pending row for ${razorpay_order_id} (already confirmed — OK)`
       : `[razorpay-webhook] captured: reconciled ${n} row(s) for ${razorpay_order_id}`);
+
+    // BUG-21: notify BOTH parties on BOTH channels. This is the recovery path
+    // that fires when the buyer's browser died mid-payment, so the seller was
+    // previously left blind on exactly the orders needing attention.
+    if (Array.isArray(updated) && updated.length > 0) {
+      const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+      for (const row of updated) {
+        await notifyOrderParties({
+          order_id: (row as any).id,
+          event: "payment_confirmed",
+          origin: url.origin,
+        }).catch((err: any) => console.warn("[razorpay-webhook] notify fan-out failed", { order_id: (row as any).id, err: err?.message }));
+      }
+    }
+
     return new Response(JSON.stringify({ ok: true, event: "payment.captured", reconciled: n }), { status: 200 });
   }
 
@@ -109,25 +124,22 @@ export const POST: APIRoute = async ({ request }) => {
       .not("status", "eq", "refunded")
       .select("id, buyer_id, buyer_phone, species");
 
-    // Best-effort push notify buyer per updated row
-    if (Array.isArray(updated) && updated.length > 0) {
-      try {
-        const { sendBuyerOrderPush } = await import("../../../lib/server/buyer-push");
-        for (const row of updated) {
-          await sendBuyerOrderPush({
-            buyer_id: (row as any).buyer_id,
-            buyer_phone: (row as any).buyer_phone,
-            status: "refunded",
-            species: (row as any).species || "Fish",
-            order_id: (row as any).id,
-          }).catch((err: any) => console.warn("[razorpay-webhook] refund push failed", { order_id: (row as any).id, err: err?.message }));
-        }
-      } catch (err: any) { console.warn("[razorpay-webhook] refund push import failed", { err: err?.message }); }
-    }
-
     if (error) {
       console.error("[razorpay-webhook] refund update failed", { razorpay_payment_id, error: error.message });
       return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
+    }
+
+    // BUG-21: refunds also fan out to both parties on both channels.
+    if (Array.isArray(updated) && updated.length > 0) {
+      const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+      for (const row of updated) {
+        await notifyOrderParties({
+          order_id: (row as any).id,
+          event: "refunded",
+          origin: url.origin,
+          amount: refund_amt_paise / 100,
+        }).catch((err: any) => console.warn("[razorpay-webhook] refund notify failed", { order_id: (row as any).id, err: err?.message }));
+      }
     }
     const n = updated?.length ?? 0;
     console.log(n === 0

@@ -8,7 +8,7 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, url }) => {
   try {
     const { order_id, buyer_id, action, cancel_reason } = await request.json();
     if (!order_id || !buyer_id) {
@@ -84,20 +84,27 @@ export const POST: APIRoute = async ({ request }) => {
       }
       await sb.from("orders").update(updatePayload).eq("id", order_id);
 
+      // BUG-20 + BUG-25: previously only the buyer got a push here — the seller
+      // was told NOTHING, so they could prep an order cancelled hours earlier.
+      // Now both parties get push + email.
+      let notified: unknown = null;
       try {
-        await sendBuyerOrderPush({
-          buyer_id,
-          buyer_phone: order.buyer_phone ?? null,
-          status: "cancelled",
-          species: order.species || "Fish",
+        const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+        notified = await notifyOrderParties({
           order_id,
+          event: "cancelled_by_buyer",
+          origin: url.origin,
+          amount: isRzpPaid ? (Number(order.paid_amount) || null) : null,
         });
-      } catch (err) { console.warn("[cancel] buyer push failed", { order_id, err: (err as any)?.message }); }
+      } catch (err) {
+        console.warn("[cancel] notify fan-out failed", { order_id, err: (err as any)?.message });
+      }
 
       return new Response(JSON.stringify({
         success: true,
         status: "cancelled",
         refund: isRzpPaid ? { auto: !!refundId, id: refundId, note: refundNote } : null,
+        notified,
       }), { status: 200 });
     }
 
@@ -122,7 +129,7 @@ export const POST: APIRoute = async ({ request }) => {
           species: order.species || "Fish",
           order_id,
         });
-      } catch (_) {}
+      } catch (err) { console.warn("[cancel:accept_price] buyer push failed", { order_id, err: (err as any)?.message }); }
 
       return new Response(JSON.stringify({ success: true, status: "confirmed" }), { status: 200 });
     }
@@ -139,15 +146,19 @@ export const POST: APIRoute = async ({ request }) => {
 
       await sb.from("orders").update({ status: "cancelled", refund_amt: order.paid_amount, cancelled_by: "buyer", cancel_reason: "Price rejected by buyer" }).eq("id", order_id);
 
+      // BUG-20: reject_price also cancels the order, so the seller must hear
+      // about it too — same fan-out as the plain cancel branch.
       try {
-        await sendBuyerOrderPush({
-          buyer_id,
-          buyer_phone: order.buyer_phone ?? null,
-          status: "cancelled",
-          species: order.species || "Fish",
+        const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+        await notifyOrderParties({
           order_id,
+          event: "cancelled_by_buyer",
+          origin: url.origin,
+          amount: Number(order.paid_amount) || null,
         });
-      } catch (_) {}
+      } catch (err) {
+        console.warn("[cancel:reject_price] notify fan-out failed", { order_id, err: (err as any)?.message });
+      }
 
       return new Response(JSON.stringify({ success: true, status: "cancelled" }), { status: 200 });
     }

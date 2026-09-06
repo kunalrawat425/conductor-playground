@@ -13,6 +13,7 @@ import { classifyPlacementAtOrderTime, closedSellerMessage } from "../../../lib/
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
+import { sendTransactionalEmail } from "../../../lib/server/send-email";
 
 export const prerender = false;
 
@@ -130,15 +131,23 @@ export const POST: APIRoute = async ({ request, url }) => {
           return new Response(JSON.stringify({ error: preErr.message }), { status: 500 });
         }
 
+        // BUG-27: these were fire-and-forget. Vercel freezes the function the
+        // moment the response is returned, so in-flight push/email requests were
+        // killed and the notification simply never arrived. Awaited now.
+        const preNotify: Promise<unknown>[] = [];
         if (seller_id) {
-          fetch(`${url.origin}/api/notify-seller`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...internalHeaders() },
-            body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, placement_kind: "preorder", order_id: preOrder.id }),
-          }).catch(() => {});
+          preNotify.push(
+            fetch(`${url.origin}/api/notify-seller`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...internalHeaders() },
+              body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, placement_kind: "preorder", order_id: preOrder.id }),
+            }).catch((err) => console.warn("[orders/create] preorder notify-seller failed", { order_id: preOrder.id, err: err?.message }))
+          );
         }
-
-        sendBuyerOrderPush({ buyer_id: buyer_id || null, buyer_phone, status: "placed", species: species || "Fish", order_id: preOrder.id }).catch(() => {});
+        preNotify.push(
+          sendBuyerOrderPush({ buyer_id: buyer_id || null, buyer_phone, status: "placed", species: species || "Fish", order_id: preOrder.id })
+            .catch((err) => console.warn("[orders/create] preorder buyer push failed", { order_id: preOrder.id, err: err?.message }))
+        );
 
         if (resendApiKey) {
           const pLine = line as import("../../../lib/server/resolve-listing-order-line").PreorderLinePayload;
@@ -161,14 +170,20 @@ export const POST: APIRoute = async ({ request, url }) => {
           };
           const speciesLabel = capitalizeFishName(species || "Fish");
           if (buyer_id) {
-            supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: b }) => {
-              if (b?.email) fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: b.email, subject: `Pre-order placed — ${speciesLabel}`, html: orderEmailBuyer(poEmailArgs) }) }).catch(() => {});
-            }).catch(() => {});
+            preNotify.push(
+              supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: b }) =>
+                sendTransactionalEmail(b?.email, `Pre-order placed — ${speciesLabel}`, orderEmailBuyer(poEmailArgs), "preorder-buyer")
+              )
+            );
           }
-          supabase.from("sellers").select("email").eq("id", seller_id).single().then(({ data: sd }) => {
-            if (sd?.email) fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sd.email, subject: `New pre-order: ${speciesLabel}`, html: orderEmailSeller({ ...poEmailArgs, buyerPhone: buyer_phone }) }) }).catch(() => {});
-          }).catch(() => {});
+          preNotify.push(
+            supabase.from("sellers").select("email").eq("id", seller_id).single().then(({ data: sd }) =>
+              sendTransactionalEmail(sd?.email, `New pre-order: ${speciesLabel}`, orderEmailSeller({ ...poEmailArgs, buyerPhone: buyer_phone }), "preorder-seller")
+            )
+          );
         }
+
+        await Promise.allSettled(preNotify);
 
         return new Response(JSON.stringify({ order: preOrder, placement_kind: "preorder" }), { status: 201 });
       }
@@ -376,8 +391,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             order_id: order.id,
           }),
         });
-      } catch {
-        /* non-blocking */
+      } catch (err) {
+        console.warn("[orders/create] notify-seller failed", { order_id: order.id, err: (err as any)?.message });
       }
     }
 
@@ -390,8 +405,8 @@ export const POST: APIRoute = async ({ request, url }) => {
           species: species || "Fish",
           order_id: order.id,
         });
-      } catch {
-        /* non-blocking */
+      } catch (err) {
+        console.warn("[orders/create] buyer push failed", { order_id: order.id, err: (err as any)?.message });
       }
     }
 
@@ -421,31 +436,30 @@ export const POST: APIRoute = async ({ request, url }) => {
       };
       const speciesForEmail = capitalizeFishName(species || "Fish");
 
-      // Buyer email — async, does not block response
+      // BUG-27: awaited in parallel. Previously fire-and-forget, which Vercel
+      // cancels on response — the order-placed mail was lost roughly whenever
+      // Resend was slower than the response.
+      const mail: Promise<unknown>[] = [];
       if (buyer_id) {
-        supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: buyer }) => {
-          if (buyer?.email) {
-            fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: buyer.email, subject: `${statusLabel} — ${speciesForEmail}`, html: orderEmailBuyer(emailArgs) }),
-            }).catch(() => {});
-          }
-        }).catch(() => {});
+        mail.push(
+          supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: buyer }) =>
+            sendTransactionalEmail(buyer?.email, `${statusLabel} — ${speciesForEmail}`, orderEmailBuyer(emailArgs), "order-buyer")
+          ).catch((err) => console.warn("[orders/create] buyer email lookup failed", { err: err?.message }))
+        );
       }
-
-      // Seller email — async, does not block response
       if (seller_id) {
-        supabase.from("sellers").select("email").eq("id", seller_id).single().then(({ data: sellerData }) => {
-          if (sellerData?.email) {
-            fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to: sellerData.email, subject: isPreorderBranch ? `New pre-order: ${speciesForEmail}` : `New order: ${speciesForEmail}`, html: orderEmailSeller(emailArgs) }),
-            }).catch(() => {});
-          }
-        }).catch(() => {});
+        mail.push(
+          supabase.from("sellers").select("email").eq("id", seller_id).single().then(({ data: sellerData }) =>
+            sendTransactionalEmail(
+              sellerData?.email,
+              isPreorderBranch ? `New pre-order: ${speciesForEmail}` : `New order: ${speciesForEmail}`,
+              orderEmailSeller(emailArgs),
+              "order-seller"
+            )
+          ).catch((err) => console.warn("[orders/create] seller email lookup failed", { err: err?.message }))
+        );
       }
+      await Promise.allSettled(mail);
     }
 
     return new Response(JSON.stringify({ order, placement_kind }), { status: 201 });

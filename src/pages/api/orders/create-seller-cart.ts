@@ -12,6 +12,7 @@ import type { PlacementKind } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
+import { sendTransactionalEmail } from "../../../lib/server/send-email";
 
 type ResolvedRow = Awaited<ReturnType<typeof resolveListingOrderLine>> extends { ok: true; line: infer L }
   ? { line: L }
@@ -196,8 +197,8 @@ export const POST: APIRoute = async ({ request, url }) => {
               order_id: preOrder.id,
             }),
           });
-        } catch {
-          /* non-blocking */
+        } catch (err) {
+          console.warn("[create-seller-cart] notify-seller failed", { err: (err as any)?.message });
         }
 
         if (preOrder?.id) {
@@ -209,14 +210,14 @@ export const POST: APIRoute = async ({ request, url }) => {
               species: line.species || "Fish",
               order_id: preOrder.id,
             });
-          } catch {
-            /* non-blocking */
+          } catch (err) {
+            console.warn("[create-seller-cart] buyer push failed", { err: (err as any)?.message });
           }
         }
 
         if (resendApiKey && preOrder) {
           const _po = preOrder;
-          Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) => {
+          await Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
             sendCartOrderEmail(resendApiKey, {
               order: _po,
               species: line.species,
@@ -234,8 +235,8 @@ export const POST: APIRoute = async ({ request, url }) => {
               preorderMax: line.preorder_price_max,
               bundleSize: (line as any).bundle_size || null,
               pricingLabel: line.pricing_label || null,
-            });
-          }).catch(() => {});
+            })
+          ).catch((err) => console.warn("[create-seller-cart] preorder email fan-out failed", { order_id: _po?.id, err: err?.message }));
         }
         continue;
       }
@@ -292,18 +293,18 @@ export const POST: APIRoute = async ({ request, url }) => {
             order_id: fetchedOrder.id,
           }),
         });
-      } catch {
-        /* non-blocking */
+      } catch (err) {
+        console.warn("[create-seller-cart] notify-seller failed", { err: (err as any)?.message });
       }
 
       if (fetchedOrder?.id && (fetchedOrder.buyer_id || buyer_phone)) {
-        sendBuyerOrderPush({
+        await sendBuyerOrderPush({
           buyer_id: fetchedOrder.buyer_id,
           buyer_phone,
           status: "placed",
           species: line.species || "Fish",
           order_id: fetchedOrder.id,
-        }).catch(() => {});
+        }).catch((err) => console.warn("[create-seller-cart] buyer push failed", { order_id: fetchedOrder.id, err: err?.message }));
       }
 
       if (resendApiKey && fetchedOrder) {
@@ -315,7 +316,7 @@ export const POST: APIRoute = async ({ request, url }) => {
               ? "Order placed — complete payment to confirm"
               : "Order placed — upload payment proof";
         const _fo = fetchedOrder;
-        Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) => {
+        await Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
           sendCartOrderEmail(resendApiKey, {
             order: _fo,
             species: line.species,
@@ -330,8 +331,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             sellerEmail: sEmail,
             bundleSize: (line as any).bundle_size || null,
             pricingLabel: line.pricing_label || null,
-          });
-        }).catch(() => {});
+          })
+        ).catch((err) => console.warn("[create-seller-cart] order email fan-out failed", { order_id: _fo?.id, err: err?.message }));
       }
     }
 
@@ -389,28 +390,10 @@ async function sendCartOrderEmail(
   };
   const speciesForEmail = capitalizeFishName(species || "Fish");
   const sellerSubject = args.isPreorder ? `New pre-order: ${speciesForEmail}` : `New order: ${speciesForEmail}`;
-  if (buyerEmail) {
-    fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Relifish <noreply@relifish.store>",
-        to: buyerEmail,
-        subject: `${statusLabel} — ${speciesForEmail}`,
-        html: orderEmailBuyer(emailArgs),
-      }),
-    }).catch(() => {});
-  }
-  if (sellerEmail) {
-    fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Relifish <noreply@relifish.store>",
-        to: sellerEmail,
-        subject: sellerSubject,
-        html: orderEmailSeller({ ...emailArgs, buyerPhone: buyer_phone }),
-      }),
-    }).catch(() => {});
-  }
+  // BUG-24 + BUG-27: awaited, and non-2xx from Resend is now logged instead of
+  // being swallowed by `.catch(() => {})`.
+  await Promise.allSettled([
+    sendTransactionalEmail(buyerEmail, `${statusLabel} — ${speciesForEmail}`, orderEmailBuyer(emailArgs), "cart-buyer"),
+    sendTransactionalEmail(sellerEmail, sellerSubject, orderEmailSeller({ ...emailArgs, buyerPhone: buyer_phone }), "cart-seller"),
+  ]);
 }

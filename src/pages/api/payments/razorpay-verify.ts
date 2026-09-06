@@ -113,15 +113,21 @@ export const POST: APIRoute = async ({ request, url }) => {
     });
   } catch (err) { console.warn("[razorpay-verify] buyer push failed", { order_id, err: (err as any)?.message || String(err) }); }
 
-  // Send Razorpay receipt email to buyer — truly non-blocking
+  // BUG-27: these used to be fire-and-forget. Vercel freezes the function once
+  // the response is returned, so the receipt email and the seller notification
+  // were being killed in flight on exactly the payment-confirmation path.
+  // Collected here and awaited before we respond.
+  const pending: Promise<unknown>[] = [];
+
+  // Send Razorpay receipt email to buyer
   if (resendApiKey) {
     const _order = order;
-    supabase.from("buyers").select("email").eq("id", buyer_id).single().then(async ({ data: buyer }) => {
+    pending.push(supabase.from("buyers").select("email").eq("id", buyer_id).single().then(async ({ data: buyer }) => {
       const emailTo = buyer?.email || (clientBuyerEmail && typeof clientBuyerEmail === "string" ? clientBuyerEmail.trim() : null);
       if (!emailTo) return;
       // Patch email to buyers table if they don't have one yet
       if (!buyer?.email && emailTo) {
-        supabase.from("buyers").update({ email: emailTo }).eq("id", buyer_id).then(() => {}).catch(() => {});
+        await supabase.from("buyers").update({ email: emailTo }).eq("id", buyer_id);
       }
       const { razorpayReceiptEmail } = await import("../../../lib/email-templates");
       const seller = (_order as any).listing?.seller;
@@ -175,13 +181,13 @@ export const POST: APIRoute = async ({ request, url }) => {
           }),
         }).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));
       }
-    }).catch((err) => console.warn("[razorpay-verify] buyer email lookup failed", { order_id, err: err?.message || String(err) }));
+    }).catch((err) => console.warn("[razorpay-verify] buyer email lookup failed", { order_id, err: err?.message || String(err) })));
   }
 
   // Notify seller — truly non-blocking
   const _sellerForEmail = (order as any).listing?.seller;
   if (_sellerForEmail?.email && resendApiKey) {
-    (async () => {
+    pending.push((async () => {
       const { orderEmailSeller, capitalizeFishName } = await import("../../../lib/email-templates");
       const species = (order as any).listing?.species || (order as any).species || "Fish";
       const html = orderEmailSeller({
@@ -195,7 +201,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         scheduled_for: (order as any).scheduled_for || null,
         buyerPhone: undefined,
       });
-      fetch("https://api.resend.com/emails", {
+      const sellerEmailReq = fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -205,11 +211,12 @@ export const POST: APIRoute = async ({ request, url }) => {
           html,
         }),
       }).catch((err) => console.warn("[razorpay-verify] seller email failed", { order_id, err: err?.message || String(err) }));
+      await sellerEmailReq;
 
       // Seller push — new order paid
       const sellerId = (order as any).listing?.seller?.id;
       if (sellerId) {
-        fetch(`${url.origin}/api/notify-seller`, {
+        await fetch(`${url.origin}/api/notify-seller`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...internalHeaders() },
           body: JSON.stringify({
@@ -219,11 +226,18 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity_unit: (order as any).quantity_unit,
             placement_kind: (order as any).placement_kind || "same_day",
             order_id,
+            order_id_short: String(order_id).slice(0, 8),
+            // BUG-26: the seller already got a "New order" push at creation time;
+            // this one is the payment landing, so it must read differently.
+            kind: "payment_confirmed",
+            amount: Number((order as any).total_price) + Number((order as any).delivery_fee || 0),
           }),
         }).catch((err) => console.warn("[razorpay-verify] seller push failed", { order_id, err: err?.message || String(err) }));
       }
-    })().catch((err) => console.warn("[razorpay-verify] seller notify block failed", { order_id, err: err?.message || String(err) }));
+    })().catch((err) => console.warn("[razorpay-verify] seller notify block failed", { order_id, err: err?.message || String(err) })));
   }
+
+  await Promise.allSettled(pending);
 
   return new Response(JSON.stringify({ ok: true }), { status: 200 });
 };

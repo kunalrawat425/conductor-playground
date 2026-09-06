@@ -41,6 +41,33 @@ async function logPushToDb(
 
 
 
+/**
+ * BUG-22 fix: when a push endpoint is gone (404) or expired (410), the stored
+ * subscription is permanently dead. Previously we only logged the failure, so
+ * the dead endpoint stayed on the row and EVERY future push to that buyer
+ * failed forever with no self-healing.
+ *
+ * Web Push spec: 404 = endpoint not found, 410 = subscription expired/revoked.
+ * Both are terminal — clear the subscription so the buyer is re-prompted to
+ * subscribe next time they open /me.
+ */
+async function pruneDeadSubscription(supabase: any, buyerId: string, err: any): Promise<boolean> {
+  const { isTerminalPushError, pushErrorStatus } = await import("./push-error-classify");
+  if (!isTerminalPushError(err)) return false;
+  const code = pushErrorStatus(err);
+  try {
+    await supabase
+      .from("buyers")
+      .update({ push_subscription: null, push_enabled: false })
+      .eq("id", buyerId);
+    console.warn(`[buyer-push] pruned dead subscription for buyer ${buyerId} (HTTP ${code})`);
+    return true;
+  } catch (e: any) {
+    console.warn(`[buyer-push] could not prune dead subscription for ${buyerId}:`, e?.message);
+    return false;
+  }
+}
+
 export type BuyerPushPayload = {
   /** Prefer UUID from orders.buyer_id */
   buyer_id?: string | null;
@@ -146,10 +173,16 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
   } catch (err: any) {
     const msg = err?.message || String(err);
     console.error("buyer-push: failed:", msg);
-    
+
+    // BUG-22: self-heal on terminal endpoint errors
+    const pruned = await pruneDeadSubscription(supabase, effectiveBuyerId, err);
+
     // Log failure in background (non-blocking)
     logPushToDb(supabase, effectiveBuyerId, notification.title, notification.body, openUrl, "failed", msg);
-    
+
+    if (pruned) {
+      return { ok: true, sent: false, reason: "subscription expired — cleared, buyer must re-enable notifications" };
+    }
     return { ok: false, error: msg || "Push send failed" };
   }
 }
@@ -222,9 +255,15 @@ export async function sendCustomBuyerPush(
     const msg = err?.message || String(err);
     console.error("buyer-push: custom failed:", msg);
 
+    // BUG-22: self-heal on terminal endpoint errors
+    const pruned = await pruneDeadSubscription(supabase, buyerId, err);
+
     // Log failure in background (non-blocking)
     logPushToDb(supabase, buyerId, notification.title, notification.body, openUrl, "failed", msg);
 
+    if (pruned) {
+      return { ok: true, sent: false, reason: "subscription expired — cleared" };
+    }
     return { ok: false, error: msg || "Push send failed" };
   }
 }

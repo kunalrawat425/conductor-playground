@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
+import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { orderEmailBuyer, orderEmailSeller, paymentVerifiedEmailBuyer, paymentVerifiedEmailSeller, refundSentEmailBuyer, refundSentEmailSeller } from "../../../lib/email-templates";
 
 function capitalizeFishName(s: string): string {
@@ -11,7 +12,6 @@ export const prerender = false;
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
-const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Order Placed",
@@ -29,17 +29,6 @@ const STATUS_LABELS: Record<string, string> = {
   scheduled: "Order Scheduled",
   pre_order: "Pre-order Placed",
 };
-
-async function sendResendEmail(to: string, subject: string, bodyHtml: string) {
-  if (!resendApiKey || !to || !to.includes("@")) return;
-  try {
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "Relifish <noreply@relifish.store>", to, subject, html: bodyHtml }),
-    });
-  } catch (_) {}
-}
 
 /**
  * POST /api/seller/orders
@@ -135,7 +124,7 @@ export const POST: APIRoute = async ({ request }) => {
             final_price,
             order_id,
           });
-        } catch (_) {}
+        } catch (err) { console.warn("[seller/orders] set_final_price buyer push failed", { order_id, err: (err as any)?.message }); }
       }
       return new Response(JSON.stringify({ order: data, reconciled_status: newStatus }), { status: 200 });
     }
@@ -177,7 +166,7 @@ export const POST: APIRoute = async ({ request }) => {
             final_price: null,
             order_id,
           });
-        } catch (_) {}
+        } catch (err) { console.warn("[seller/orders] mark_refund_sent buyer push failed", { order_id, err: (err as any)?.message }); }
       }
       // Email buyer + seller on refund sent
       try {
@@ -185,12 +174,12 @@ export const POST: APIRoute = async ({ request }) => {
         if (order.buyer_id) {
           const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
           if (buyer?.email) {
-            await sendResendEmail(buyer.email, `Refund sent — ${species}`, refundSentEmailBuyer({ species, orderId: order_id, refundNote: refund_note || null }));
+            await sendTransactionalEmail(buyer.email, `Refund sent — ${species}`, refundSentEmailBuyer({ species, orderId: order_id, refundNote: refund_note || null }));
           }
         }
         const { data: sellerRow } = await supabase.from("sellers").select("email, name, push_subscription, push_enabled").eq("id", seller_id).single();
         if (sellerRow?.email) {
-          await sendResendEmail(sellerRow.email, `Refund marked sent — ${species}`, refundSentEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
+          await sendTransactionalEmail(sellerRow.email, `Refund marked sent — ${species}`, refundSentEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
         }
         // Seller push confirmation that refund was recorded
         if (sellerRow?.push_subscription) {
@@ -212,9 +201,9 @@ export const POST: APIRoute = async ({ request }) => {
                 tag: `seller-refund-${Date.now()}`,
               }));
             }
-          } catch (_) {}
+          } catch (err) { console.warn("[seller/orders] mark_refund_sent seller push failed", { order_id, err: (err as any)?.message }); }
         }
-      } catch (_) {}
+      } catch (err) { console.warn("[seller/orders] mark_refund_sent email fan-out failed", { order_id, err: (err as any)?.message }); }
       return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
@@ -263,7 +252,7 @@ export const POST: APIRoute = async ({ request }) => {
             final_price: null,
             order_id,
           });
-        } catch (_) {}
+        } catch (err) { console.warn("[seller/orders] verify_payment buyer push failed", { order_id, err: (err as any)?.message }); }
       }
       // Email buyer + seller on payment verified
       try {
@@ -271,14 +260,14 @@ export const POST: APIRoute = async ({ request }) => {
         if (order.buyer_id) {
           const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
           if (buyer?.email) {
-            await sendResendEmail(buyer.email, `Payment verified — ${species}`, paymentVerifiedEmailBuyer({ species, orderId: order_id }));
+            await sendTransactionalEmail(buyer.email, `Payment verified — ${species}`, paymentVerifiedEmailBuyer({ species, orderId: order_id }));
           }
         }
         const { data: sellerRow } = await supabase.from("sellers").select("email, name").eq("id", seller_id).single();
         if (sellerRow?.email) {
-          await sendResendEmail(sellerRow.email, `Payment verified — ${species}`, paymentVerifiedEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
+          await sendTransactionalEmail(sellerRow.email, `Payment verified — ${species}`, paymentVerifiedEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
         }
-      } catch (_) {}
+      } catch (err) { console.warn("[seller/orders] verify_payment email fan-out failed", { order_id, err: (err as any)?.message }); }
       return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
@@ -432,14 +421,14 @@ export const POST: APIRoute = async ({ request }) => {
       if (order.buyer_id) {
         const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
         if (buyer?.email) {
-          await sendResendEmail(buyer.email, `${statusLabel} — ${species}`, orderEmailBuyer(emailArgs));
+          await sendTransactionalEmail(buyer.email, `${statusLabel} — ${species}`, orderEmailBuyer(emailArgs));
         }
       }
 
       // Email seller
       const { data: seller } = await supabase.from("sellers").select("email, push_subscription, push_enabled").eq("id", seller_id).single();
       if (seller?.email) {
-        await sendResendEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, orderEmailSeller(emailArgs));
+        await sendTransactionalEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, orderEmailSeller(emailArgs));
       }
 
       // Seller push for cancelled/declined (seller needs confirmation their action was processed)
@@ -462,9 +451,9 @@ export const POST: APIRoute = async ({ request }) => {
               tag: `seller-${status}-${Date.now()}`,
             }));
           }
-        } catch (_) {}
+        } catch (err) { console.warn("[seller/orders] status-change seller push failed", { order_id, err: (err as any)?.message }); }
       }
-    } catch (_) {}
+    } catch (err) { console.warn("[seller/orders] status-change email fan-out failed", { order_id, err: (err as any)?.message }); }
 
     return new Response(JSON.stringify({ order: data }), { status: 200 });
   } catch (err: any) {

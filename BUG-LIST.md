@@ -346,3 +346,171 @@ via `PUBLIC_LOGO_URL` env with the current URL as default.
 
 **Verified:** `astro build` clean; logo renders on `/`, `/for-sellers`,
 `/dashboard/login` with zero broken images.
+
+---
+
+# Notification system audit — BUG-20 .. BUG-28
+
+Scope: every order event, both audiences (buyer + seller), both channels
+(Web Push + email). The pattern underneath most of these is the same — the
+notification was written at the call site, so each new code path re-invented
+it and quietly dropped an audience or a channel.
+
+## BUG-20 · S1 · Seller was never told an order was cancelled — FIXED
+
+**Files:** `src/pages/api/orders/cancel.ts`
+
+`action=cancel` sent a buyer push and nothing else. The seller had no push, no
+email, and no dashboard signal. They could prep and hold stock for an order the
+buyer had cancelled hours earlier. `action=reject_price` also cancels the order
+and had the same hole.
+
+**Fix:** both branches now call the new `notifyOrderParties()` fan-out. The
+cancel response returns the per-channel `notified` block so the outcome is
+assertable from a test and visible in logs.
+
+## BUG-21 · S1 · Webhook reconciliation notified nobody — FIXED
+
+**Files:** `src/pages/api/payments/razorpay-webhook.ts`
+
+`payment.captured` and `refund.processed` flipped the DB row and returned. This
+is precisely the recovery path that runs when the buyer's browser died during
+checkout — so the one case where nobody saw a confirmation on screen was also
+the one case where nobody got told.
+
+**Fix:** both branches fan out via `notifyOrderParties()`. The refund branch
+also had its `if (error)` check reordered to run *before* the notify block.
+
+## BUG-22 · S2 · Dead push subscriptions were never pruned — FIXED
+
+**Files:** `src/lib/server/buyer-push.ts`, `src/pages/api/notify-seller.ts`,
+`src/lib/server/push-error-classify.ts` (new)
+
+Send failures were logged and forgotten. When a browser subscription expires
+(reinstall, cleared data, token rotation) the push service answers `410 Gone`
+or `404`. The dead endpoint stayed on the row forever, so *every* future push
+to that user failed silently.
+
+**Fix:** shared `isTerminalPushError()`. On 404/410 only, clear
+`push_subscription` and set `push_enabled = false` so the user is re-prompted.
+Deliberately narrow: 429, 5xx, 401/403 and bare network errors must NOT prune —
+a bad VAPID key yields 401 for every user at once, and pruning there would wipe
+the entire subscriber base on one bad deploy.
+
+**Verified:** `qa-notifications.ts` N5 drives a real FCM round-trip that returns
+410 and asserts the row is cleared and then restored.
+
+## BUG-23 · S2 · "Order placed" push told Razorpay buyers to upload a screenshot — FIXED
+
+**Files:** `src/lib/server/buyer-order-push-copy.ts`,
+`src/pages/api/orders/upload-payment.ts`
+
+Copy was a leftover from the screenshot-only era: *"Open Relifish to upload UPI
+payment proof."* With Razorpay live there is no screenshot — buyers pay in a
+modal — so the push sent them hunting for a control that does not exist.
+
+**Fix:** `placed` and `pending_payment` are now Razorpay-aware.
+
+**Trap worth recording:** `pending_payment` is emitted from two very different
+moments — order-created (awaiting payment) and screenshot-uploaded (proof
+received). Keying it on the global flag alone corrupted the second one into
+"waiting for payment". Split out a `proof_uploaded` status, used only by
+`upload-payment.ts`, which never varies with the flag.
+
+Also: the `declined` push title was `"Order Update"`, identical to the
+unknown-status fallback, so a decline arrived on the lock screen looking like
+routine noise. Now `"Order declined"`.
+
+## BUG-24 · S3 · Silent `catch (_) {}` across the notification paths — FIXED
+
+**Files:** `src/pages/api/seller/orders.ts` (9), `upload-payment.ts` (5),
+`waitlist/join.ts` (1), `orders/create.ts`, `create-seller-cart.ts`
+
+Every server-side silent catch is gone (client-side `catch {}` around
+`localStorage` is left alone — that is idiomatic and not a failure worth
+logging). Each now logs a labelled `console.warn` with the order id.
+
+Related: `sendResendEmail` never checked `res.ok`. Resend answers 4xx for an
+unverified domain, a bad recipient or a quota trip — all of which vanished. Now
+surfaced.
+
+## BUG-25 · S3 · No visibility into which channel actually delivered — FIXED
+
+`notifyOrderParties()` returns `{buyer_push, buyer_email, seller_push,
+seller_email}`, each `"sent"` / `"skipped: <reason>"` / `"failed: <reason>"`,
+and logs one line per event. "The customer says they got nothing" is now a log
+grep instead of a guess.
+
+## BUG-26 · S1 · Seller push said "Verify in dashboard" on a CANCELLED order — FIXED
+
+**Files:** `src/pages/api/notify-seller.ts`,
+`src/lib/server/seller-push-copy.ts` (new)
+
+`/api/notify-seller` understood exactly two kinds and coerced everything else
+to `payment_proof`:
+
+```ts
+const kind = body.kind === "payment_proof" ? "payment_proof" : "new_order";
+```
+
+So the fan-out's cancellation and refund events rendered as *"Payment proof
+received. Verify in dashboard."* — the exact opposite instruction from the
+cancellation email landing in the same second.
+
+**Fix:** five explicit kinds (`new_order`, `payment_proof`,
+`payment_confirmed`, `cancelled`, `refunded`) in a pure, unit-tested copy
+module. A test asserts push and email never disagree about whether the seller
+should prepare the order.
+
+## BUG-27 · S1 · Order emails were fire-and-forget, so Vercel killed them — FIXED
+
+**Files:** `src/pages/api/orders/create.ts`, `create-seller-cart.ts`,
+`src/pages/api/payments/razorpay-verify.ts`,
+`src/lib/server/send-email.ts` (new)
+
+Order-placed and payment-receipt emails were sent as unawaited promises,
+commented "truly non-blocking". On Vercel the function is frozen the instant
+the response is returned, so any Resend request still in flight is killed. The
+mail was being dropped by design, non-deterministically — whenever Resend was
+slower than the response.
+
+This hit the payment-confirmation path in `razorpay-verify.ts`, where both the
+buyer receipt and the entire seller-notify block were unawaited. That is the
+most likely mechanical cause of "I paid and never heard anything".
+
+**Fix:** one shared `sendTransactionalEmail()`; call sites collect promises and
+`await Promise.allSettled(...)` before responding. Costs ~200–400ms on order
+placement, in exchange for the mail actually being sent.
+
+## BUG-28 · S2 · Fan-out logged `seller_push: "sent"` when nothing was sent — FIXED
+
+**Files:** `src/lib/server/notify-order-parties.ts`
+
+`/api/notify-seller` returns `200 {skipped: true, reason: ...}` for no
+subscription / VAPID unset / pruned endpoint. The fan-out treated any 200 as
+success, so the log asserted the seller had been notified when nothing left the
+building — the worst possible failure mode for a diagnostic field.
+
+**Fix:** parse the body; only `sent === true` counts as sent. Found by reading
+the dev-server log during the BUG-22 test, not by a failing assertion.
+
+---
+
+## Verification
+
+- `astro build` clean
+- `vitest run` — **194/194** (was 147; +47 across 4 new suites:
+  `notify-order-parties`, `buyer-order-push-copy`, `seller-push-copy`,
+  `push-error-classify`)
+- `scripts/qa-notifications.ts` — **27/27**, covering the cancel fan-out, both
+  webhook events, all five seller-push kinds, and live 410 subscription pruning
+- Integration suites re-run green: M1 10/10 · M2 14/14 · M3 17/17 + 10/10 ·
+  M4 9/10 (known response-shape false negative) · M8/M11/M12/M13 18/18 ·
+  M9/M15 8/8 · M14 15/15 · admin 13/13 · integration-fixes 9/9 ·
+  refund-webhook full 2-step pass
+
+## Known limitation
+
+Web Push delivery cannot be asserted end-to-end from a script — it needs a real
+browser subscription. The suite verifies everything up to and including the
+push-service HTTP response; the copy itself is covered by unit tests.
