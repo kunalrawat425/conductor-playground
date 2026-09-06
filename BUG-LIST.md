@@ -1250,3 +1250,60 @@ reference is only resolved at execution time.
 | 066 pre-order price drop | applied, verified | applied |
 | BUG-48 set_final_price | fixed | fixed |
 | Cancellations | working | working |
+
+---
+
+# Production inventory alignment — COMPLETE
+
+Migration 029 never reached production. Probed live on both databases:
+
+|  | insert `pending` | insert `pending_payment` | → `confirmed` | → `cancelled` |
+|---|---|---|---|---|
+| **PROD before** | −2, flag false | **−2** (should be 0) | no deduct | **+0** ← leak |
+| **STAGE** | −2, flag true | 0 | −2 | +2 |
+| **PROD after** | −2, flag true | 0 | −2 | **+2** |
+
+Production deducted stock on every insert, never recorded that it had, and never
+gave it back — so every cancelled or abandoned order permanently ate inventory.
+Sellers drifted toward showing less stock than they actually had.
+
+Applied as `067_align_prod_inventory_triggers.sql` (three trigger functions plus
+the `WHEN (OLD.status is distinct from NEW.status)` clauses that stop each
+function's own bookkeeping UPDATE from re-firing it) and
+`068_prod_only_inventory_backfill.sql`.
+
+**Both databases now behave identically.** Stage is a valid predictor of prod
+for inventory again.
+
+## Why the backfill is a separate, production-only file
+
+On staging `pending_payment` orders correctly have **no** stock deducted, so
+flagging them `inventory_deducted = true` would make a later cancellation hand
+back stock that was never taken. On production the opposite was true — they
+*had* been deducted. One script for both databases would have broken staging in
+exactly the way the earlier assume-identical-schemas mistake broke production.
+
+It is also not optional on production: with the on-confirm trigger installed but
+the flag left false, confirming any of the 93 existing `pending_payment` rows
+would have deducted their stock a **second** time. That window did briefly open,
+because the two steps were sent in separate messages and the backfill was run
+against the wrong database — corrected before any order was confirmed through
+it. Ship coupled DDL and its backfill as one unit, in one message.
+
+Final state: prod 261 live rows flagged, 0 remaining, terminal rows untouched.
+Stage's `pending_payment` / `pre_order` flags corrected back to 0.
+
+## Verification
+
+- Inventory probe, both databases: `−2 / 0 / −2 / +2`, identical
+- `vitest` 213/213
+- 10 integration suites green (M4 9/10 is the known response-shape false negative)
+- Prod endpoints 200; no probe rows or test orders left behind; no listing at
+  negative stock
+
+## Not done, deliberately
+
+The **historical** leak is not repaired. Production has terminal orders whose
+stock was deducted and never returned, so some listings read lower than reality.
+Repairing it means adding stock back across many listings, and sellers may have
+hand-corrected in the meantime — that is a business decision, not a migration.

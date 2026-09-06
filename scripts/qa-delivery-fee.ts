@@ -26,7 +26,14 @@ async function twoListings(sellerId: string) {
 }
 
 async function placeCart(sellerId: string, listings: any[], buyer: any, addrId: string | null) {
-  const lines = listings.map((l) => ({ listing_id: l.id, quantity: 1, quantity_unit: "kg" }));
+  // Each listing may sell in packs (e.g. multiples of 4 piece) — honour that,
+  // otherwise the cart is rejected before any fee assertion can run.
+  const lines = listings.map((l) => {
+    const opt: any = Array.isArray(l.pricing_options) ? l.pricing_options[0] : null;
+    const bundle = Number(opt?.bundle_size) > 0 ? Number(opt.bundle_size) : 1;
+    const unit = opt?.unit === "piece" ? "piece" : "kg";
+    return { listing_id: l.id, quantity: bundle, quantity_unit: unit };
+  });
   const r = await fetch(`${BASE}/api/orders/create-seller-cart`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Origin: BASE },
@@ -116,7 +123,14 @@ async function main() {
     // ---- Case C: pickup carts must never carry a delivery fee.
     console.log("\n=== C. Pickup cart ===");
     await sb.from("sellers").update({ free_delivery_above: null, delivery_fee_amount: 30, has_pickup: true }).eq("id", target.id);
-    const lines = listings.map((l) => ({ listing_id: l.id, quantity: 1, quantity_unit: "kg" }));
+    // Each listing may sell in packs (e.g. multiples of 4 piece) — honour that,
+  // otherwise the cart is rejected before any fee assertion can run.
+  const lines = listings.map((l) => {
+    const opt: any = Array.isArray(l.pricing_options) ? l.pricing_options[0] : null;
+    const bundle = Number(opt?.bundle_size) > 0 ? Number(opt.bundle_size) : 1;
+    const unit = opt?.unit === "piece" ? "piece" : "kg";
+    return { listing_id: l.id, quantity: bundle, quantity_unit: unit };
+  });
     const rc = await fetch(`${BASE}/api/orders/create-seller-cart`, {
       method: "POST", headers: { "Content-Type": "application/json", Origin: BASE },
       body: JSON.stringify({ seller_id: target.id, lines, buyer_id: buyer!.id, buyer_phone: buyer!.phone, order_type: "pickup" }),
