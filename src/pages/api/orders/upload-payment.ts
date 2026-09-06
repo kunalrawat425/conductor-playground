@@ -36,6 +36,15 @@ export const POST: APIRoute = async ({ request }) => {
     const buyer_id = form.get("buyer_id")?.toString();
     const file = form.get("file") as File | null;
 
+    // BUG-17: cap file size to match other upload endpoints (prevent storage flood)
+    if (file && file.size > 5 * 1024 * 1024) {
+      return new Response(JSON.stringify({ error: "File too large (max 5 MB)" }), { status: 400 });
+    }
+    // Basic MIME allow-list — only common image types
+    if (file && file.type && !file.type.startsWith("image/")) {
+      return new Response(JSON.stringify({ error: "Only image uploads allowed" }), { status: 400 });
+    }
+
     if (!order_id || !buyer_id || !file) {
       return new Response(JSON.stringify({ error: "order_id, buyer_id, and file required" }), { status: 400 });
     }
