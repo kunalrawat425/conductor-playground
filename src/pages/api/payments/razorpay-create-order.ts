@@ -71,18 +71,49 @@ export const POST: APIRoute = async ({ request, url }) => {
     const authHex = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
     let cachedOk = false;
     let cachedAmountPaid = 0;
-    let cachedFetched = false;
+    // Did Razorpay give us a definitive answer about this order id?
+    //
+    // BUG-49: this used to be a single `cachedFetched` flag set only on a 2xx,
+    // and anything else returned 502. But Razorpay answers **400
+    // BAD_REQUEST_ERROR** ("The id provided does not exist") for an unknown or
+    // foreign order id — a definitive "no such order", not an outage. So any
+    // row carrying a stale id (keys rotated, id from another account, a value
+    // written by hand) became permanently unpayable: every Pay click returned
+    // 502 "Could not reach the payment gateway" and no fresh Razorpay order was
+    // ever created. Staging accumulates exactly those rows.
+    //
+    // Split the two cases. A 4xx means Razorpay definitively holds nothing for
+    // this id, so clearing it cannot orphan money — which is all BUG-41 was
+    // protecting against. Only a throw or a 5xx is genuine unreachability.
+    let answered = false;      // Razorpay responded about this id, 2xx or 4xx
+    let unreachable = false;   // network error or 5xx — no answer at all
     try {
       const cachedRes = await fetch(`https://api.razorpay.com/v1/orders/${order.razorpay_order_id}`, {
         headers: { Authorization: `Basic ${authHex}` },
       });
       if (cachedRes.ok) {
         const cachedOrder = await cachedRes.json();
-        cachedFetched = true;
+        answered = true;
         cachedOk = Number(cachedOrder?.amount) === amountPaise;
         cachedAmountPaid = Number(cachedOrder?.amount_paid) || 0;
+      } else if (cachedRes.status >= 400 && cachedRes.status < 500) {
+        // Definitive: no such order under these keys, so no money against it.
+        answered = true;
+        console.warn("[razorpay-create-order] stale razorpay_order_id — Razorpay does not recognise it, replacing", {
+          order_id, razorpay_order_id: order.razorpay_order_id, status: cachedRes.status,
+        });
+      } else {
+        unreachable = true;
+        console.warn("[razorpay-create-order] Razorpay 5xx while checking cached order", {
+          order_id, razorpay_order_id: order.razorpay_order_id, status: cachedRes.status,
+        });
       }
-    } catch { /* network or malformed — cachedOk stays false, fall through to create new */ }
+    } catch (err: any) {
+      unreachable = true;
+      console.warn("[razorpay-create-order] network error while checking cached order", {
+        order_id, razorpay_order_id: order.razorpay_order_id, err: err?.message,
+      });
+    }
 
     if (cachedOk) {
       return new Response(
@@ -165,12 +196,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       );
     }
 
-    // Only safe to clear once we know Razorpay holds no money for it. If we
-    // could not reach Razorpay at all, keep the id rather than risk orphaning.
-    if (!cachedFetched) {
-      console.warn("[razorpay-create-order] could not verify cached order — keeping razorpay_order_id", {
-        order_id, razorpay_order_id: order.razorpay_order_id,
-      });
+    // Genuinely no answer from Razorpay — keep the id rather than risk
+    // orphaning a payment we cannot see (BUG-41). A 4xx does NOT land here.
+    if (unreachable || !answered) {
       return new Response(
         JSON.stringify({ error: "Could not reach the payment gateway. Please try again." }),
         { status: 502 }

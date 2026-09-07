@@ -1307,3 +1307,77 @@ The **historical** leak is not repaired. Production has terminal orders whose
 stock was deducted and never returned, so some listings read lower than reality.
 Repairing it means adding stock back across many listings, and sellers may have
 hand-corrected in the meantime — that is a business decision, not a migration.
+
+---
+
+# BUG-49 · S1 · A stale razorpay_order_id made an order permanently unpayable — FIXED
+
+**File:** `src/pages/api/payments/razorpay-create-order.ts`
+
+Regression I introduced in `9d8991b` while fixing BUG-41. That fix added a guard
+so a cached Razorpay order is never discarded when we cannot confirm it holds no
+money. But it keyed on a single `cachedFetched` flag set **only on a 2xx**, and
+returned 502 for everything else.
+
+Razorpay answers **400 BAD_REQUEST_ERROR** — *"The id provided does not exist"* —
+for an unknown or foreign order id. Verified directly:
+
+```
+bogus id    : HTTP 400  {"error":{"code":"BAD_REQUEST_ERROR","description":"... is not a valid id"}}
+real id     : HTTP 200  {"id":"order_SqyLcF4Z5nf591","amount":112500,"amount_paid":0,...}
+malformed id: HTTP 400  {"error":{"code":"BAD_REQUEST_ERROR","description":"The id provided does not exist"}}
+```
+
+That 400 is a *definitive answer*, not an outage — but the guard read it as
+unreachable. So any row carrying a stale id became **permanently unpayable**:
+every Pay click returned 502 "Could not reach the payment gateway" and no fresh
+Razorpay order was ever created. Reproduced:
+
+```
+Case 1  fresh order, no cached id          -> 200  order_TZ9141ycjXcNBU
+Case 2  id Razorpay does not recognise     -> 502  "Could not reach the payment gateway"
+Case 3  real cached id                     -> 200  (reused correctly)
+```
+
+Staging accumulates exactly these rows — ids written by hand during testing, and
+ids created under keys that were later rotated.
+
+**Fix:** split the two failure modes.
+- **4xx** → Razorpay definitively has no such order, so it holds no money and
+  clearing the id cannot orphan a payment. This is all BUG-41 was protecting
+  against, so the protection is intact. Clear and create a fresh order.
+- **throw or 5xx** → genuinely no answer. Keep the id and return 502.
+
+Both branches now log which one fired.
+
+**Verified** by `scripts/qa-razorpay-create-order.ts` (17/17), covering fresh
+orders, the stale-id regression, idempotent reuse, amount drift, the guards
+(403 / 400 / 404), and the BUG-47 balance amount.
+
+**The test was proven meaningful** by running it against the pre-fix code:
+**13/17**, with exactly B-T1…B-T4 failing (`502`, stale id left on the row).
+
+## Population exposed
+
+- staging: 2 unpaid orders carrying a `razorpay_order_id`
+- production: 3
+
+Any of those whose id Razorpay no longer recognises was unpayable. Small blast
+radius, but it is the checkout path, and on staging it is what blocked testing.
+
+## Environment finding (not the root cause, but worth fixing)
+
+`PUBLIC_ENABLE_RAZORPAY` is typed **Config** on Production but **Secret** on
+Preview. Both types are injected at build and runtime, so this is not what broke
+payment — but Secret values cannot be read back by the CLI, which is why the
+staging value could not be verified from here.
+
+If that value is anything other than the exact string `"true"`, staging fails
+closed in two places at once and looks identical to a broken gateway:
+`razorpay-create-order` returns `400 "Razorpay is not enabled"`, and
+`track/[id].astro:174` never renders the Pay button at all.
+
+`/api/health` already reports the flag, so this is one request to settle — but
+`stage.relifish.store/api/health` still returns **302** to Vercel SSO, so
+Deployment Protection has to come off Preview before staging can be verified
+from outside. That remains the one thing blocking staging QA.
