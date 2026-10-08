@@ -1,79 +1,83 @@
 -- PRODUCTION ONE-OFF (witoghpdfocywiosmrzv). Not a migration: ids are prod-specific.
 -- Run AFTER migrations 069–072. Whole script is one transaction.
 --
--- What it does
---   1. Flags test accounts (is_test + "TEST " name prefix):
---        fake sellers  Fishy mart / RAJU Fish HUb / Fresh Catch Mumbai (98765432xx), Seller 0033
---        fake buyers   99001100{11..55}, 9876543210, 9999999999
---        dev account   …9974 buyer + admin seller "Seller 9974" (kept, becomes the ₹1 QA seller)
---   2. Copies every row it will delete into schema _backup_20261008 (not exposed by the API).
---   3. Deletes all test orders (orders of test sellers, orders by test buyers, 4 listing-less
---      junk orders), then the fake accounts and their listings. Real sellers' and real buyers'
---      orders are untouched. The 7 Razorpay-paid dev orders are included (decision D2=A);
---      their payments stay in razorpay_payments (order_id → null) as the money audit trail.
---   4. Sets up the ₹1 QA seller: "TEST Relifish QA", inactive (hidden from every list),
---      reachable only at /seller/337904df-ef4d-4825-b3e6-7767bedf40d2, surmai ₹1/kg pickup.
+-- Rule (product owner, 2026-10-08): an account with a real name, address or
+-- email is REAL and is kept, even if its phone looks like a dummy. Only
+-- accounts with no identity at all are fake.
 --
--- After it: delete the backed-up payment screenshots via the Storage API (paths in
--- _backup_20261008.screenshot_paths), and drop the backup schema once you're satisfied.
+-- Classified from prod data:
+--   KEEP  Fishy mart (name, Versova Fish Market, email), RAJU Fish HUb (Worli
+--         Koliwada), Fresh Catch Mumbai (Sassoon Dock), Seller 9974 (email,
+--         address), buyer …9974 (name, email, 2 saved addresses), every other
+--         seller/buyer.
+--   FAKE  seller "Seller 0033" (placeholder name, no address/email, 0 listings);
+--         buyers 99001100{11,22,33,44,55}, 9876543210, 9999999999 (no name,
+--         no email, no saved address).
+--
+-- What it does
+--   1. Copies every row it will delete into schema _backup_20261008 (not exposed by the API).
+--   2. Deletes the fake accounts, their orders, and 2 junk orders with no
+--      listing and no account (one with phone "…_CHECK", one from a fake buyer).
+--   3. Turns Seller 9974 into the ₹1 QA seller "TEST Relifish QA" (is_test,
+--      inactive = hidden from every list, reachable only by direct link).
+--   Nothing else is deleted. Payments in razorpay_payments are never deleted.
 
 begin;
 
--- 1. Flag test accounts --------------------------------------------------------
-update sellers set is_test = true,
-  name = case when name like 'TEST %' then name else 'TEST ' || name end
-where id in (
-  '61f02807-15af-4352-bef6-686ae797ea34',  -- Fishy mart
-  '052c9f78-2a28-47a5-b70f-cd9221a4c1ff',  -- RAJU Fish HUb
-  '74e870ca-2991-4466-b2ad-5669eb6d3da7',  -- Fresh Catch Mumbai
-  '4470effc-ee2f-4bde-94f9-4859c8540fba',  -- Seller 0033
-  '337904df-ef4d-4825-b3e6-7767bedf40d2'   -- dev seller (kept)
-);
-update buyers set is_test = true where id in (
-  '9bc6c71a-1e5a-415c-b9ec-07819a65a7c1', '095b7eef-fb4d-44a7-903c-69f528004a73',
-  '90458900-3954-463b-b274-80528f8c0ef3', 'b2a3b91e-8431-4eee-8474-6b7acac4514c',
-  'fa46d75d-a652-41cd-b0b4-5c58fb83afe9', '2b6e9e78-6bad-419d-8a1d-ac7dd30c6904',
-  '54aa5fc9-6af9-4784-be89-64e34563b9d3',
-  '76a2c702-b332-49ea-b4e4-bcf9ccb1629c'   -- dev buyer (kept)
-);
+create temporary table fake_sellers on commit drop as
+  select id from sellers where id in ('4470effc-ee2f-4bde-94f9-4859c8540fba');  -- Seller 0033
 
-update orders o set is_test = true
-where o.listing_id in (select l.id from fish_listings l join sellers s on s.id = l.seller_id where s.is_test)
-   or o.buyer_id in (select id from buyers where is_test)
-   or o.buyer_phone in (select phone from buyers where is_test)
-   or o.id in ('5f3a87aa-e94a-426f-bc32-fa1c902019a9', 'af6e873e-589f-4d2a-83d8-b508178a6a11',
-               'f66589a5-5579-46f0-8eef-3beb7185dc5f', '5c3149aa-83d7-461c-926e-de2c1bbe22f7');
+create temporary table fake_buyers on commit drop as
+  select id, phone from buyers where id in (
+    '9bc6c71a-1e5a-415c-b9ec-07819a65a7c1', '095b7eef-fb4d-44a7-903c-69f528004a73',
+    '90458900-3954-463b-b274-80528f8c0ef3', 'b2a3b91e-8431-4eee-8474-6b7acac4514c',
+    'fa46d75d-a652-41cd-b0b4-5c58fb83afe9', '2b6e9e78-6bad-419d-8a1d-ac7dd30c6904',
+    '54aa5fc9-6af9-4784-be89-64e34563b9d3');
 
--- 2. Backup ----------------------------------------------------------------------
+-- Safety: abort if any "fake" account has a name, email or saved address.
+do $$ begin
+  if exists (select 1 from sellers s join fake_sellers f on f.id = s.id
+             where coalesce(s.email, '') <> '' or coalesce(s.location, '') <> '' or coalesce(s.location_name, '') <> ''
+                or coalesce(s.first_name, '') <> '' or coalesce(s.last_name, '') <> '')
+  or exists (select 1 from buyers b join fake_buyers f on f.id = b.id
+             where coalesce(b.email, '') <> '' or coalesce(b.first_name, '') <> '' or coalesce(b.last_name, '') <> ''
+                or exists (select 1 from buyer_addresses a where a.buyer_id = b.id)) then
+    raise exception 'A listed fake account has a real name/email/address — stop and re-check';
+  end if;
+end $$;
+
+-- Orders to delete: placed by a fake buyer, placed with a fake seller, or junk
+-- with neither a listing nor an account.
+create temporary table fake_orders on commit drop as
+  select o.id from orders o
+  where o.buyer_id in (select id from fake_buyers)
+     or right(o.buyer_phone, 10) in (select right(phone, 10) from fake_buyers)
+     or o.listing_id in (select l.id from fish_listings l where l.seller_id in (select id from fake_sellers))
+     or o.id in ('af6e873e-589f-4d2a-83d8-b508178a6a11', '5f3a87aa-e94a-426f-bc32-fa1c902019a9');
+
+-- 1. Backup ----------------------------------------------------------------------
 create schema if not exists _backup_20261008;
 revoke all on schema _backup_20261008 from public, anon, authenticated;
-create table _backup_20261008.orders as select * from orders where is_test;
-create table _backup_20261008.order_feedback as select f.* from order_feedback f join orders o on o.id = f.order_id where o.is_test;
-create table _backup_20261008.fish_listings as select l.* from fish_listings l join sellers s on s.id = l.seller_id
-  where s.is_test and s.id <> '337904df-ef4d-4825-b3e6-7767bedf40d2';
-create table _backup_20261008.sellers as select * from sellers where is_test and id <> '337904df-ef4d-4825-b3e6-7767bedf40d2';
-create table _backup_20261008.buyers as select * from buyers where is_test and id <> '76a2c702-b332-49ea-b4e4-bcf9ccb1629c';
+create table _backup_20261008.orders as select * from orders where id in (select id from fake_orders);
+create table _backup_20261008.order_feedback as select * from order_feedback where order_id in (select id from fake_orders);
+create table _backup_20261008.fish_listings as select * from fish_listings where seller_id in (select id from fake_sellers);
+create table _backup_20261008.sellers as select * from sellers where id in (select id from fake_sellers);
+create table _backup_20261008.buyers as select * from buyers where id in (select id from fake_buyers);
 create table _backup_20261008.screenshot_paths as
-  select id as order_id, unnest(payment_screenshot_urls) as path from orders where is_test
-  union all select id, refund_screenshot_path from orders where is_test and refund_screenshot_path is not null;
+  select id as order_id, unnest(payment_screenshot_urls) as path from orders where id in (select id from fake_orders)
+  union all select id, refund_screenshot_path from orders where id in (select id from fake_orders) and refund_screenshot_path is not null;
 
--- 3. Delete ----------------------------------------------------------------------
--- Rows outside the test set that point at fake accounts must let go first.
-update orders set payment_verified_by = null
-  where payment_verified_by in (select id from sellers where is_test and id <> '337904df-ef4d-4825-b3e6-7767bedf40d2');
-update buyer_waitlist set buyer_id = null
-  where buyer_id in (select id from buyers where is_test and id <> '76a2c702-b332-49ea-b4e4-bcf9ccb1629c');
-update species_ranges set updated_by = null
-  where updated_by in (select id from sellers where is_test and id <> '337904df-ef4d-4825-b3e6-7767bedf40d2');
+-- 2. Delete ----------------------------------------------------------------------
+update orders set is_test = true where id in (select id from fake_orders);
+update orders set payment_verified_by = null where payment_verified_by in (select id from fake_sellers);
+update buyer_waitlist set buyer_id = null where buyer_id in (select id from fake_buyers);
+update species_ranges set updated_by = null where updated_by in (select id from fake_sellers);
 
-select public.purge_test_orders() as test_orders_deleted;
+select public.purge_test_orders() as fake_orders_deleted;
+delete from sellers where id in (select id from fake_sellers);   -- listings, feedback, push logs cascade
+delete from buyers  where id in (select id from fake_buyers);    -- cart, addresses, feedback, push logs cascade
 
-delete from sellers where is_test and id <> '337904df-ef4d-4825-b3e6-7767bedf40d2';   -- listings, feedback, push logs cascade
-delete from buyers  where is_test and id <> '76a2c702-b332-49ea-b4e4-bcf9ccb1629c';   -- cart, addresses, feedback, push logs cascade
--- Dev seller's other listing (pomfret) is test-only too.
-delete from fish_listings where seller_id = '337904df-ef4d-4825-b3e6-7767bedf40d2' and species <> 'surmai';
-
--- 4. ₹1 QA seller ------------------------------------------------------------------
+-- 3. ₹1 QA seller ------------------------------------------------------------------
 update sellers set
   name = 'TEST Relifish QA',
   is_test = true,
@@ -95,11 +99,11 @@ where seller_id = '337904df-ef4d-4825-b3e6-7767bedf40d2' and species = 'surmai';
 
 -- Verify (inside the transaction) --------------------------------------------------
 select
-  (select count(*) from orders) as orders_left,
-  (select count(*) from orders where is_test) as test_orders_left,
-  (select count(*) from _backup_20261008.orders) as orders_backed_up,
-  (select count(*) from sellers where is_test) as test_sellers_left,      -- 1 (QA seller)
-  (select count(*) from buyers where is_test) as test_buyers_left,        -- 1 (dev buyer)
-  (select count(*) from razorpay_payments where order_id is null) as ledger_rows_detached;
+  (select count(*) from _backup_20261008.orders)  as orders_deleted,       -- expect 18
+  (select count(*) from _backup_20261008.sellers) as sellers_deleted,      -- expect 1
+  (select count(*) from _backup_20261008.buyers)  as buyers_deleted,       -- expect 7
+  (select count(*) from orders)                   as orders_left,          -- expect 319
+  (select count(*) from sellers)                  as sellers_left,         -- expect 23
+  (select count(*) from buyers)                   as buyers_left;          -- expect 18
 
 commit;

@@ -245,8 +245,25 @@ stateDiagram-v2
 
 ## 6. Test data on production
 
-| Group | Identification | Rows |
+Rule (product owner): **an account with a real name, address or email is real** — kept even
+if the phone looks like a dummy. Only identity-less accounts are fake.
+
+| Account | Evidence | Verdict |
 |---|---|---|
+| Fishy mart, RAJU Fish HUb, Fresh Catch Mumbai | Real names and street addresses (Versova Fish Market, Worli Koliwada, Sassoon Dock), coordinates; Fishy mart has an email | **Keep** |
+| Seller 9974 | Email, address | **Keep** — becomes the ₹1 QA seller `TEST Relifish QA` |
+| Buyer …9974 | Name, email, 2 saved addresses | **Keep** |
+| Seller 0033 | Placeholder name, no address/email, 0 listings | **Delete** |
+| Buyers 99001100{11..55}, 9876543210, 9999999999 | No name, no email, no saved address | **Delete** |
+
+`supabase/prod-ops/2026-10-08_test_data_cleanup.sql` backs up then deletes 1 seller, 7 buyers
+and 18 orders (none Razorpay-paid, no feedback lost); 319 orders remain. It aborts if any
+listed account turns out to have a name, email or address.
+
+**Convention from now on:** `is_test` on sellers/buyers/orders (orders inherit it), names
+prefixed `TEST `, `select purge_test_orders();` removes test orders and keeps accounts.
+
+---|---|---|
 | Fake sellers | Fishy mart / Fresh Catch Mumbai / RAJU Fish HUb (`98765432 10/11/12`), Seller 0033 (`9900110033`) | 4 sellers, 13 listings, 252 orders |
 | Fake buyers | `99001100{11,22,33,44,55}`, `9876543210`, `9999999999` | 7 buyers, 17 orders |
 | Dev account | `…9974`: buyer + admin seller "Seller 9974" | 302 orders (7 Razorpay-paid, real money) |
