@@ -22,6 +22,8 @@ describe("buildCrawlSellers (/shop crawlable list)", () => {
   it("dedupes species and keeps the raw-name slug link", () => {
     expect(out[0].href).toBe("/s/fishtokri-com");
     expect(out[0].species).toHaveLength(2);
+    expect(out[0].species.map((x) => x.href)).toEqual(["/s/fishtokri-com/surmai", "/s/fishtokri-com/pomfret"]);
+    expect(out[1].species[0].href).toBeNull(); // /seller/<id> fallback has no fish pages
     expect(out[0].location).toBe("Thane West");
   });
   it("handles empty input", () => {

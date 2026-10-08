@@ -38,12 +38,22 @@ export const GET: APIRoute = async () => {
     })),
   ];
 
+  // Per-fish product pages (/s/<slug>/<species>) for sellers with a latin slug.
+  const { data: fishRows } = await supabase.from("fish_listings").select("seller_id, species, pricing_options");
+  const speciesBySeller = new Map<string, Set<string>>();
+  for (const r of fishRows || []) {
+    if (!Array.isArray(r.pricing_options) || !r.pricing_options.length) continue; // fish page 404s without a price
+    if (!speciesBySeller.has(r.seller_id)) speciesBySeller.set(r.seller_id, new Set());
+    speciesBySeller.get(r.seller_id)!.add(String(r.species).toLowerCase());
+  }
+
   for (const seller of sellers || []) {
-    urls.push({
-      loc: sellerHref(seller.name, seller.id), // same URL as the seller page canonical
-      changefreq: "daily",
-      priority: "0.8",
-    });
+    const path = sellerHref(seller.name, seller.id); // same URL as the seller page canonical
+    urls.push({ loc: path, changefreq: "daily", priority: "0.8" });
+    if (!path.startsWith("/s/")) continue;
+    for (const sp of speciesBySeller.get(seller.id) || []) {
+      urls.push({ loc: `${path}/${sp}`, changefreq: "daily", priority: "0.7" });
+    }
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

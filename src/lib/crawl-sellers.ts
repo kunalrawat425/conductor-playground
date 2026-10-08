@@ -1,7 +1,7 @@
 import { cleanSellerName, sellerHref, stripContactInfo } from "./seller-display";
 import { getSpeciesDisplay } from "./species";
 
-export interface CrawlSeller { name: string; href: string; location: string; species: string[] }
+export interface CrawlSeller { name: string; href: string; location: string; species: { name: string; href: string | null }[] }
 
 /** Server-rendered seller list for crawlers: only sellers with at least one available listing. */
 export function buildCrawlSellers(
@@ -15,10 +15,14 @@ export function buildCrawlSellers(
   }
   return sellers
     .filter((s) => speciesBySeller.has(s.id))
-    .map((s) => ({
+    .map((s) => ({ s, href: sellerHref(s.name, s.id) }))
+    .map(({ s, href }) => ({
       name: cleanSellerName(s.name),
-      href: sellerHref(s.name, s.id),
+      href,
       location: stripContactInfo(s.location_name) || "",
-      species: [...speciesBySeller.get(s.id)!].map(getSpeciesDisplay),
+      species: [...speciesBySeller.get(s.id)!].map((sp) => ({
+        name: getSpeciesDisplay(sp),
+        href: href.startsWith("/s/") ? `${href}/${sp.toLowerCase()}` : null, // fish page only under /s/<slug>
+      })),
     }));
 }
