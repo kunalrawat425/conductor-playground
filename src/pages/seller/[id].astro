@@ -252,12 +252,13 @@ const tags = [
         "openingHours": seller.opens_at && seller.closes_at
           ? `${openDays.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 2)).join(",") || "Mo,Tu,We,Th,Fr,Sa,Su"} ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}`
           : undefined,
-        "aggregateRating": seller.rating_avg && seller.rating_avg > 0 ? {
+        // ratingCount must be the number of reviews, not orders (Google rich-result policy).
+        "aggregateRating": seller.rating_avg && seller.rating_avg > 0 && seller.rating_count > 0 ? {
           "@type": "AggregateRating",
           "ratingValue": Number(seller.rating_avg).toFixed(1),
           "bestRating": "5",
           "worstRating": "1",
-          "ratingCount": seller.total_orders || 1
+          "ratingCount": seller.rating_count
         } : undefined,
         "hasMenu": seoListings.length > 0 ? {
           "@type": "Menu",

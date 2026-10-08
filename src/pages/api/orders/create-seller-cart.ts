@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
   capitalizeFishName,
@@ -40,7 +41,7 @@ type CartLineInput = {
 export const POST: APIRoute = async ({ request, url }) => {
   try {
     const body = await request.json();
-    const {
+    let {
       lines: rawLines,
       buyer_phone,
       buyer_id,
@@ -62,6 +63,13 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!buyer_phone) {
       return new Response(JSON.stringify({ error: "Phone number required" }), { status: 400 });
     }
+    // One stored format (10 digits) across orders/buyers/sellers. Orders used to
+    // keep whatever the client sent: prod had 218 "+91…" rows and 117 10-digit.
+    const phoneCheck = normalizeIndianMobile(String(buyer_phone));
+    if (!phoneCheck.ok) {
+      return new Response(JSON.stringify({ error: phoneCheck.message }), { status: 400 });
+    }
+    buyer_phone = phoneCheck.digits10;
     if (!clientSellerId || typeof clientSellerId !== "string") {
       return new Response(JSON.stringify({ error: "seller_id required" }), { status: 400 });
     }
