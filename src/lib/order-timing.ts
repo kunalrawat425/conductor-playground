@@ -52,6 +52,10 @@ export function isTodayOrderDay(seller: SellerTimingInput, day?: string): boolea
 }
 
 export function isTodayPreorderDay(seller: SellerTimingInput, day?: string): boolean {
+  // The "Accept pre-orders" switch wins. The dashboard always saves
+  // preorder_days, so with the switch off the server still took pre-orders
+  // while the seller page showed the shop as closed.
+  if (seller.accepts_preorder === false) return false;
   const d = day || todayDayName();
   const preorderDays = Array.isArray(seller.preorder_days) ? seller.preorder_days : [];
   if (preorderDays.length > 0) return preorderDays.includes(d);

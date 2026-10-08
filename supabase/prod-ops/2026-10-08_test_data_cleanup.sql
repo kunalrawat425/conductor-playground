@@ -1,5 +1,5 @@
 -- PRODUCTION ONE-OFF (witoghpdfocywiosmrzv). Not a migration: ids are prod-specific.
--- Run AFTER migrations 069, 070, 071. Whole script is one transaction.
+-- Run AFTER migrations 069–072. Whole script is one transaction.
 --
 -- What it does
 --   1. Flags test accounts (is_test + "TEST " name prefix):
@@ -90,7 +90,6 @@ update fish_listings set
   is_preorder_enabled = false,
   deleted_at = null,
   weight_avail = 100,
-  expires_at = now() + interval '60 days',
   pricing_options = '[{"id":"default","unit":"kg","label":"QA ₹1 per kg","price":1,"bundle_size":1}]'::jsonb
 where seller_id = '337904df-ef4d-4825-b3e6-7767bedf40d2' and species = 'surmai';
 

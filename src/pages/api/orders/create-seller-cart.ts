@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
+import { deliveryDistanceRejection } from "../../../lib/server/assert-seller-accepts";
 import { resolveOrderAddress, saveAddressSnapshot } from "../../../lib/server/order-address";
 import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
@@ -109,7 +110,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const { data: seller } = await supabase
       .from("sellers")
       .select(
-        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, lat, lng"
+        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, lat, lng"
       )
       .eq("id", clientSellerId)
       .single();
@@ -160,11 +161,20 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // Delivery fee applies once per cart, computed from the whole subtotal so it
     // matches what the buyer was shown (and honours free_delivery_above).
+    const distErr = deliveryDistanceRejection(seller, order_type, deliveryDistanceKm);
+    if (distErr) {
+      return new Response(JSON.stringify({ error: distErr }), { status: 400 });
+    }
     const cartDeliveryFee = seller ? computeDeliveryFee(seller, cartSubtotal, order_type, deliveryDistanceKm) : 0;
     let deliveryFeeAssigned = false;
     for (const { line } of resolved) {
       if (line.kind === "preorder") {
-        const amountDue = line.total_price;
+        // One delivery per cart: pre-order lines carry the fee too (first row only),
+        // same as same-day lines and as /api/orders/create. It was hard-coded to 0,
+        // so the same pre-order cost less through the cart than through create.
+        const preFee = deliveryFeeAssigned ? 0 : cartDeliveryFee;
+        deliveryFeeAssigned = true;
+        const amountDue = line.total_price + preFee;
         const { data: preOrder, error: preErr } = await supabase
           .from("orders")
           .insert({
@@ -176,7 +186,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity: line.quantity,
             quantity_unit: line.quantity_unit,
             total_price: line.total_price,
-            delivery_fee: 0,
+            delivery_fee: preFee,
             platform_fee: 0,
             status: "pending_payment",
             placement_kind: "preorder",

@@ -1191,7 +1191,9 @@ const tags = [
             </div>`).join("")}`;
       }
       const subtotal = group.subtotal;
-      document.getElementById("seller-checkout-subtotal").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+      const subOut = document.getElementById("seller-checkout-subtotal");
+      subOut.textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+      subOut.dataset.amount = String(subtotal);
       // Total = subtotal (delivery fee shows up in the Delivery row below only if user picks delivery).
       document.getElementById("seller-checkout-total").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
       document.getElementById("seller-checkout-total-final").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
@@ -1253,8 +1255,9 @@ const tags = [
         const totalEl = document.getElementById("seller-checkout-total");
         const totalFinal = document.getElementById("seller-checkout-total-final");
         const subEl = document.getElementById("seller-checkout-subtotal");
-        const subtotalText = (subEl?.textContent || "").replace(/[^\d]/g, "");
-        const subtotal = parseInt(subtotalText) || 0;
+        // Read the number, not the label: "₹83.25" → "8325" made 0.25 kg look
+        // like ₹8,325 and showed FREE delivery the server then charged for.
+        const subtotal = Number(subEl?.dataset.amount) || 0;
         // Use actual seller config — matches server-side computeDeliveryFee logic.
         let fee = 0;
         let distKm = null;

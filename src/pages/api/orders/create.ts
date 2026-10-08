@@ -16,7 +16,7 @@ import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
-import { sellerRejectionReason } from "../../../lib/server/assert-seller-accepts";
+import { sellerRejectionReason, deliveryDistanceRejection } from "../../../lib/server/assert-seller-accepts";
 import { afterResponse } from "../../../lib/server/after-response";
 
 export const prerender = false;
@@ -122,7 +122,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         // delivery pre-order under their own minimum, with no delivery fee.
         const { data: preorderSeller } = await supabase
           .from("sellers")
-          .select("min_order_amount, has_delivery, has_pickup, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, lat, lng")
+          .select("min_order_amount, has_delivery, has_pickup, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, lat, lng")
           .eq("id", line.seller_id)
           .single();
 
@@ -140,6 +140,10 @@ export const POST: APIRoute = async ({ request, url }) => {
               Number(addrRow.lat), Number(addrRow.lng)
             );
           }
+        }
+        const preDistErr = deliveryDistanceRejection(preorderSeller, order_type, preorderDistanceKm);
+        if (preDistErr) {
+          return new Response(JSON.stringify({ error: preDistErr }), { status: 400 });
         }
         const preorderDeliveryFee = preorderSeller
           ? computeDeliveryFee(preorderSeller, total_price, order_type, preorderDistanceKm)
@@ -162,7 +166,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             placement_kind: "preorder",
             is_preorder: true,
             order_type,
-            paid_amount: total_price,
+            // What Razorpay charges: total + delivery fee (refunds use this).
+            paid_amount: total_price + preorderDeliveryFee,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
@@ -263,7 +268,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, preorder_cutoff_time, open_days, preorder_days, lat, lng"
+          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, preorder_cutoff_time, open_days, preorder_days, lat, lng"
         )
         .eq("id", seller_id)
         .single();
@@ -324,6 +329,10 @@ export const POST: APIRoute = async ({ request, url }) => {
             Number(addrRow.lat), Number(addrRow.lng)
           );
         }
+      }
+      const distErr = deliveryDistanceRejection(seller, order_type, deliveryDistanceKm);
+      if (distErr) {
+        return new Response(JSON.stringify({ error: distErr }), { status: 400 });
       }
       delivery_fee = seller ? computeDeliveryFee(seller, total_price, order_type, deliveryDistanceKm) : 0;
     }

@@ -362,3 +362,62 @@ errors in prod logs (24h) · webhook secret, MSG91, Razorpay all configured on p
 3. **Lockdown PR** (sessions D3, RLS, API reads) behind the staging E2E matrix.
 4. **Inventory PR:** reservation at pending_payment + pre-order trigger + set-price for all pre-orders.
 5. Privacy/consent, CI + lockfile + `npm audit`, image/perf, repo cleanup.
+
+---
+
+## 9. Schema evaluation — tables, relations, indexes, constraints vs live data
+
+Evaluated against prod on 2026-10-08. "After" = state once migrations 069–072 are applied.
+
+### 9.1 Relations (FKs)
+
+```
+sellers 1─* fish_listings (cascade) 1─* orders (no action) *─1 buyers (no action)
+sellers 1─* order_feedback (cascade) *─1 orders (cascade)      buyers 1─* buyer_addresses (cascade)
+buyers  1─* buyer_cart (cascade) *─1 fish_listings (cascade)   buyers 1─* push_notification_logs (cascade)
+orders  1─* razorpay_payments (set null)  [069]                orders 1─* order_events (cascade) [072]
+orders.payment_verified_by → sellers (no action)               orders.schedule_slot_id → seller_schedule_slots
+orders.buyer_addr → (none — text, uuid or free text)  →  copy kept in orders.delivery_address [071]
+```
+
+Gaps: `orders` has no `seller_id` (seller is derived via `listing_id`; 4 legacy orders have no listing
+and therefore no seller) · `orders.buyer_addr` is an untyped reference · `orders.razorpay_*` are
+keys into Razorpay, now unique [069].
+
+### 9.2 Per table
+
+| Table | Rows | Keys / relations | Indexes | Constraints | Data findings | After 069–072 |
+|---|---|---|---|---|---|---|
+| **orders** | 337 (≈320 test) | PK id; FK listing, buyer, verified_by, slot | buyer_phone, buyer_id, listing_id, status, scheduled (0 scans) | status/type/unit/placement checks; 064 "confirmed needs payment" (**ineffective: NULL-unsafe**) | payment_type `cod` on all rows · 1 Razorpay-paid row never marked verified (b3f1cced) · 55 `pre_order` rows not flagged pre-order · 314 null placement_kind · 93 null paid_amount · 17 fulfilled with no payment record (all pre-Razorpay) · mixed phone formats · no history of changes | payment_type derived · backfills A1–A5 · null-safe constraints (payment ↔ status, amounts, method/actor enums, phone format) · `updated_at` + `order_events` history · indexes (listing,status,created) and (buyer,created); dead scheduled index dropped |
+| **razorpay_payments** [069] | — | PK razorpay_payment_id; FK order (set null) | order_id, razorpay_order_id | RLS on, no policies | — | one row per captured payment; refund ids |
+| **order_events** [072] | — | FK order (cascade) | (order_id, at) | RLS on, no policies | — | insert + every status/payment/refund change |
+| **fish_listings** | 68 | PK; FK seller (cascade) | seller_id, deleted_at, available (0 scans) | fish_size check | `expires_at` dead (59 "expired", unread) · `delivery_avl` unread · species free text | species validated in API · amounts/tier-count check · both dead columns dropped |
+| **sellers** | 24 (4 fake) | PK; unique phone, auth_id | phone, auth_id | fee type check | rating_avg/total_orders never written · `auth_id` always null · phone public via anon · 1 seller with pre-orders off but days set | stats + rating_count via triggers · `is_test` · amounts/open≠close check · phone format check |
+| **buyers** | 25 (8 test) | PK; unique auth_id | auth_id ×2 (duplicate), phone | — | `auth_id` always null (no Supabase Auth) | `is_test` · phone format check · duplicate index dropped |
+| **buyer_addresses** | 4 | FK buyer (cascade) | buyer_id | — | 1 without coordinates (per-km fee was free) | one default per buyer (unique partial) · orders keep a copy |
+| **buyer_cart** | 1 | FK buyer, listing (cascade); unique (buyer, listing) | | qty > 0 | tier lost (no pricing_option_id) · price rounded to 2dp | unique (buyer, listing, tier) · exact price |
+| **order_feedback** | 4 | FK order, buyer, seller (cascade); unique (order, buyer) | | rating 1–5 | — | drives seller rating |
+| **otp_codes** | 40 | PK phone | — | RLS `false` | plaintext codes kept forever | expired purged (070) |
+| **otp_attempts** | 10 | PK phone | — | — | abandoned since 052, out of sync | **dropped** (070) |
+| **price_logs** | 0 | — | — | — | unused | **dropped** (070) |
+| **push_notification_logs** | 109 | FK buyer/seller (cascade) | 2 (0 scans) | — | no retention | (retention job still open) |
+| **buyer_waitlist** | 8 | FK buyer (no action) | | — | 2 bad phones | phones normalised (070) |
+| **species_ranges** | 21 | FK updated_by | | — | — | — |
+| **seller_schedule_\*** | 0 | FK seller | | — | feature disabled | keep until decided |
+
+### 9.3 Out-of-sync data on prod and what fixes it
+
+| Data point | Prod | Fix |
+|---|---|---|
+| "Paid online shows COD" | payment_type `cod` on 8/8 Razorpay rows | 069 trigger + backfill |
+| Paid but shown unpaid (b3f1cced, ₹1,990) | Razorpay payment id stored, `payment_verified_at` null | 072 A1; settle module stamps it on every path now |
+| Razorpay checkout opened, no payment recorded | 5 orders (3 pending, 2 cancelled) | daily cron + expiry cron settle them; **`/api/admin/reconcile-all-orphans` (dry_run first)** checks all against Razorpay now, refunds any paid-after-cancel |
+| Pre-order flag | 55 + 20 unflagged | 072 A2 |
+| Seller rating / order count | never written | 070 triggers |
+| Phone formats | 3 formats across tables | 070 + writers normalise + 072 check |
+| Cart tier | lost on sync → double orders | 071 + client fix |
+| Delivery address | 4 orders lost theirs | 071 copy |
+| Stock | phantom stock after oversold decline; pre-orders took today's stock | 071 |
+| Pre-order paid_amount | excluded delivery fee (refunds short) | create.ts fixed |
+| Pre-order delivery fee | cart 0 vs single-order charged | cart fixed |
+| Pre-orders while switched off | server accepted them | order-timing fixed |

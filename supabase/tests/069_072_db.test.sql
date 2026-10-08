@@ -1,4 +1,4 @@
--- Runs inside a transaction and rolls back. Raises on the first failed check.
+-- Covers migrations 069–072. Runs inside a transaction and rolls back. Raises on the first failed check.
 -- Local: docker exec -i <db container> psql -U postgres -v ON_ERROR_STOP=1 < supabase/tests/069_071_triggers.test.sql
 begin;
 
@@ -26,10 +26,10 @@ begin
   select inventory_deducted_qty into v from orders where id = ob;
   if v <> 0 then raise exception 'oversold order should record 0 taken, got %', v; end if;
   -- Declining the oversold order must not invent stock (was +2 phantom).
-  update orders set status = 'declined' where id = ob;
+  update orders set status = 'declined', cancelled_by = 'seller' where id = ob;
   select weight_avail into v from fish_listings where id = l_id;
   if v <> 0 then raise exception 'phantom stock after declining oversold order: %', v; end if;
-  update orders set status = 'declined' where id = oa;
+  update orders set status = 'declined', cancelled_by = 'seller' where id = oa;
   select weight_avail into v from fish_listings where id = l_id;
   if v <> 2 then raise exception 'restore after declining the real order: expected 2, got %', v; end if;
 
@@ -82,6 +82,41 @@ begin
     insert into razorpay_payments (razorpay_payment_id, razorpay_order_id, order_id, source) values ('pay_dup', 'order_1', op, 'test');
     raise exception 'duplicate payment id accepted';
   exception when unique_violation then null; end;
+end $$;
+
+
+-- 072: order history + constraints
+do $$
+declare s_id uuid; l_id uuid; o uuid; n int;
+begin
+  insert into sellers (phone, name, location, location_name) values ('9000000099', 'Hist Seller', '', '') returning id into s_id;
+  insert into fish_listings (seller_id, species, weight_avail, pickup_loc, pricing_options)
+    values (s_id, 'rawas', 5, '', '[{"id":"default","unit":"kg","price":100}]') returning id into l_id;
+  insert into orders (listing_id, buyer_phone, quantity, status, total_price) values (l_id, '9000000098', 1, 'pending_payment', 100) returning id into o;
+  update orders set razorpay_order_id = 'order_h' where id = o;
+  update orders set status = 'confirmed', payment_method = 'razorpay', razorpay_payment_id = 'pay_h', payment_verified_at = now() where id = o;
+  update orders set buyer_notes = 'no event for this' where id = o;
+  select count(*) into n from order_events where order_id = o;
+  if n <> 3 then raise exception 'order_events: expected 3 (insert, rzp order, confirm), got %', n; end if;
+  if not exists (select 1 from order_events where order_id = o and old_status = 'pending_payment' and new_status = 'confirmed' and razorpay_payment_id = 'pay_h') then
+    raise exception 'confirm event not recorded'; end if;
+
+  begin
+    update orders set status = 'ready_for_pickup', razorpay_payment_id = null, payment_method = null, payment_verified_at = null where id = o;
+    raise exception 'fulfilment without payment accepted';
+  exception when check_violation then null; end;
+  begin
+    update orders set status = 'cancelled', cancelled_by = null where id = o;
+    raise exception 'cancel without actor accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into orders (listing_id, buyer_phone, quantity, status, total_price) values (l_id, '+91 90000 00098', 1, 'pending_payment', 100);
+    raise exception 'unnormalised phone accepted';
+  exception when check_violation then null; end;
+  begin
+    update sellers set opens_at = '09:00', closes_at = '09:00' where id = s_id;
+    raise exception 'open == close accepted';
+  exception when check_violation then null; end;
 end $$;
 
 -- Permissions

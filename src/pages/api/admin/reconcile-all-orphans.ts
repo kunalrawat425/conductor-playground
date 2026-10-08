@@ -42,7 +42,10 @@ export const POST: APIRoute = async ({ request }) => {
     .from("orders")
     .select("id, razorpay_order_id, buyer_id, buyer_phone, species, status")
     .not("razorpay_order_id", "is", null)
-    .in("status", ["pending", "pending_payment"]);
+    .is("razorpay_payment_id", null)
+    // Closed orders too, any age: a buyer who paid and then cancelled (or whose
+    // order expired) is owed a refund that nothing else will ever find.
+    .in("status", ["pending", "pending_payment", "payment_required", "cancelled", "declined"]);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   const report: Array<{ order_id: string; rzp_order: string; reconciled: boolean; reason?: string; pay_id?: string }> = [];
@@ -64,26 +67,26 @@ export const POST: APIRoute = async ({ request }) => {
       continue;
     }
     const rzpData = await res.json();
-    const captured = Array.isArray(rzpData.items)
-      ? rzpData.items.find((p: any) => p?.status === "captured")
-      : null;
-    if (!captured) {
+    const capturedAll = Array.isArray(rzpData.items) ? rzpData.items.filter((p: any) => p?.status === "captured") : [];
+    if (!capturedAll.length) {
       report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: false, reason: "no captured payment at razorpay" });
       continue;
     }
-    if (dryRun) {
-      report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: true, reason: "dry-run — would flip", pay_id: captured.id });
-      flipped += 1;
-      continue;
-    }
-
-    try {
-      const { settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
-      const r = await settleCapturedPayment(sb, { razorpay_order_id: rzpOrder, razorpay_payment_id: captured.id, source: "admin" });
-      report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: r.kind === "confirmed", reason: r.kind, pay_id: captured.id });
-      if (r.kind === "confirmed") flipped += 1;
-    } catch (err: any) {
-      report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: false, reason: `settle: ${err?.message}` });
+    for (const captured of capturedAll) {
+      if (dryRun) {
+        const closed = ["cancelled", "declined"].includes((o as any).status);
+        report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: !closed, reason: closed ? "dry-run — paid after close, would REFUND" : "dry-run — would confirm", pay_id: captured.id });
+        if (!closed) flipped += 1;
+        continue;
+      }
+      try {
+        const { settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
+        const r = await settleCapturedPayment(sb, { razorpay_order_id: rzpOrder, razorpay_payment_id: captured.id, source: "admin" });
+        report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: r.kind === "confirmed", reason: r.kind, pay_id: captured.id });
+        if (r.kind === "confirmed") flipped += 1;
+      } catch (err: any) {
+        report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: false, reason: `settle: ${err?.message}` });
+      }
     }
   }
 
