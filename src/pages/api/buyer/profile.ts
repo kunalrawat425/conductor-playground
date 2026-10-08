@@ -21,7 +21,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "buyer_id and updates required" }), { status: 400 });
     }
 
-    const sanitized: Record<string, string | null> = {};
+    const sanitized: Record<string, string | number | null> = {};
     for (const key of ALLOWED_BUYER_FIELDS) {
       if (updates[key] === undefined) continue;
       const raw = updates[key];
@@ -34,9 +34,23 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    if (Object.keys(sanitized).length === 0) {
+    // Location picked on the map. It only ever lived in localStorage, so buyers
+    // could not be reached by area ("everyone near Thane"). Same WGS-84 guard as
+    // buyer_addresses (BUG-19).
+    const loc: Record<string, number | string | null> = {};
+    if (updates.lat !== undefined && updates.lng !== undefined) {
+      const lat = Number(updates.lat), lng = Number(updates.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return new Response(JSON.stringify({ error: "Invalid coordinates" }), { status: 400 });
+      }
+      loc.lat = lat; loc.lng = lng;
+      if (typeof updates.location_name === "string") loc.location_name = updates.location_name.trim().slice(0, 120) || null;
+    }
+
+    if (Object.keys(sanitized).length === 0 && Object.keys(loc).length === 0) {
       return new Response(JSON.stringify({ error: "No allowed fields to update" }), { status: 400 });
     }
+    Object.assign(sanitized, loc);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

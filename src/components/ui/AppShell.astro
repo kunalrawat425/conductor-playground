@@ -169,6 +169,24 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 
     <!-- Web Push requires an active service worker; v1 registers from AppShell only -->
     <script is:inline>
+      // Save the buyer's map location to their account (once per change) so
+      // area notifications can reach them. Location picks only lived in
+      // localStorage before.
+      (function () {
+        try {
+          var id = localStorage.getItem("rlf_buyer_id");
+          var lat = localStorage.getItem("rlf_buyer_lat"), lng = localStorage.getItem("rlf_buyer_lng");
+          if (!id || !lat || !lng) return;
+          var key = lat + "," + lng;
+          if (localStorage.getItem("rlf_loc_synced") === key) return;
+          fetch("/api/buyer/profile", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ buyer_id: id, updates: { lat: lat, lng: lng, location_name: localStorage.getItem("rlf_buyer_location") || null } }) })
+            .then(function (r) { if (r.ok) localStorage.setItem("rlf_loc_synced", key); })
+            .catch(function () {});
+        } catch (e) {}
+      })();
+    </script>
+    <script is:inline>
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(function () {});
       }

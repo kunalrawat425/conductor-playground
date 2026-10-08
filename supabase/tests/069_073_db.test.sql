@@ -1,4 +1,4 @@
--- Covers migrations 069–072. Runs inside a transaction and rolls back. Raises on the first failed check.
+-- Covers migrations 069–073. Runs inside a transaction and rolls back. Raises on the first failed check.
 -- Local: docker exec -i <db container> psql -U postgres -v ON_ERROR_STOP=1 < supabase/tests/069_071_triggers.test.sql
 begin;
 
@@ -109,9 +109,12 @@ begin
     update orders set status = 'cancelled', cancelled_by = null where id = o;
     raise exception 'cancel without actor accepted';
   exception when check_violation then null; end;
+  -- 073: phones are normalised on write; junk is rejected.
+  insert into orders (listing_id, buyer_phone, quantity, status, total_price) values (l_id, '+91 90000 00098', 1, 'pending_payment', 100) returning id into o;
+  if (select buyer_phone from orders where id = o) <> '9000000098' then raise exception 'phone not normalised'; end if;
   begin
-    insert into orders (listing_id, buyer_phone, quantity, status, total_price) values (l_id, '+91 90000 00098', 1, 'pending_payment', 100);
-    raise exception 'unnormalised phone accepted';
+    insert into orders (listing_id, buyer_phone, quantity, status, total_price) values (l_id, '12345', 1, 'pending_payment', 100);
+    raise exception 'junk phone accepted';
   exception when check_violation then null; end;
   begin
     update sellers set opens_at = '09:00', closes_at = '09:00' where id = s_id;
