@@ -32,3 +32,23 @@ export function cleanSellerName(raw: string | null | undefined): string {
   }
   return cleaned;
 }
+
+/** URL slug for /s/[slug]. Always derive from the raw DB name — getSellerBySlug matches on it. */
+export function sellerNameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/** Link to a seller page; falls back to /seller/<id> when the name has no latin chars (empty slug). */
+export function sellerHref(name: string | null | undefined, id: string): string {
+  const slug = sellerNameToSlug(name || "");
+  return slug ? `/s/${slug}` : `/seller/${id}`;
+}
+
+/** Supabase lookup error -> page outcome. PGRST116 = no row, 22P02 = malformed uuid; anything else is an outage. */
+export function sellerLookupOutcome(err: unknown): "not_found" | "unavailable" {
+  const code = (err as { code?: string } | null)?.code;
+  return code === "PGRST116" || code === "22P02" ? "not_found" : "unavailable";
+}

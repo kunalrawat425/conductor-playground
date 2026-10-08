@@ -86,10 +86,12 @@ Relifish connects Mumbai families directly to hyperlocal sellers in Thane. Every
 
 No warehouses. No cold chain. No 3-day-old fish dressed as fresh.
 
-**→ [Check today's live catch from local sellers](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=article1_awareness)**
+**→ [Check today's live catch from local sellers](https://www.relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=article1_awareness)**
 
 ---
 
 *📦 Currently serving: Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali*
 
 *📍 Serving Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali — [check your area](/shop)*
+
+**→ [See which local fish sellers deliver in Thane today](https://www.relifish.store/area/thane)**

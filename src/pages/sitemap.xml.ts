@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
-import { supabase, sellerNameToSlug } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
+import { sellerHref } from "../lib/seller-display";
 import { AREAS } from "../lib/areas";
 
 export const prerender = false;
@@ -38,9 +39,8 @@ export const GET: APIRoute = async () => {
   ];
 
   for (const seller of sellers || []) {
-    const slug = sellerNameToSlug(seller.name);
     urls.push({
-      loc: `/s/${slug}`,
+      loc: sellerHref(seller.name, seller.id), // same URL as the seller page canonical
       changefreq: "daily",
       priority: "0.8",
     });

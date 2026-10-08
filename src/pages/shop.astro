@@ -8,7 +8,26 @@ import EmptyState from "../components/ui/molecules/EmptyState.astro";
 import Skeleton from "../components/ui/atoms/Skeleton.astro";
 import Toast from "../components/ui/atoms/Toast.astro";
 import LocationPickerSheet from "../components/ui/organisms/LocationPickerSheet.astro";
-import { sellerNameToSlug } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
+import { buildCrawlSellers, type CrawlSeller } from "../lib/crawl-sellers";
+
+// Server-rendered for Google: the interactive grid below is filled by JS after
+// geolocation, so crawlers saw no sellers or fish. This list is the crawlable copy.
+export const prerender = false;
+
+let crawlSellers: CrawlSeller[] = [];
+try {
+  const [sellersRes, listingsRes] = await Promise.all([
+    supabase.from("sellers").select("id, name, location_name").eq("is_active", true).abortSignal(AbortSignal.timeout(1500)),
+    supabase.from("fish_listings").select("seller_id, species").or("is_available.eq.true,is_preorder_enabled.eq.true").abortSignal(AbortSignal.timeout(1500)),
+  ]);
+  if (sellersRes.error || listingsRes.error) throw sellersRes.error || listingsRes.error;
+  crawlSellers = buildCrawlSellers(sellersRes.data ?? [], listingsRes.data ?? []);
+  Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+} catch {
+  // Never block the shop on this list (the interactive grid still works), and never cache the empty version.
+  Astro.response.headers.set("Cache-Control", "no-store");
+}
 
 // Category strip is built dynamically from live listings data (see script below).
 // SSR renders only "All Fish" as a placeholder; JS fills the rest after data loads.
@@ -17,8 +36,8 @@ const categories = [
 ];
 ---
 <AppShell
-  title="Best Fish Shop Near Me — Order Fresh Fish | Relifish"
-  description="Looking for the best fish shop near me in Mumbai? Order same-day morning-fresh catch or pre-order tomorrow's catch from local sellers. Premium pomfret, surmai, rawas &amp; prawns."
+  title="Order Fresh Fish Online from Local Sellers in Thane and Mumbai | Relifish"
+  description="Order fresh fish online from local sellers in Thane and Mumbai. Same-day catch or pre-order tonight for tomorrow — pomfret, surmai, rawas, prawns, home delivery or pickup."
   needsMap={true}
   header={{
     locationLabel: "Set location",
@@ -115,6 +134,21 @@ const categories = [
     <EmptyState variant="closed" ctaHref="/v2?mode=preorder" />
   </div>
 
+  {crawlSellers.length > 0 && (
+    <section class="v2-crawl-sellers" style="padding:24px 16px 96px;">
+      <h2 style="font:700 16px/1.3 Inter;margin:0 0 8px;">Local fish sellers on Relifish</h2>
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;">
+        {crawlSellers.map((cs) => (
+          <li style="font:400 13px/1.5 Inter;color:var(--v2-ink-2);">
+            <a href={cs.href} style="font-weight:700;color:var(--v2-brand);text-decoration:none;">{cs.name}</a>
+            {cs.location && <span> · {cs.location}</span>}
+            <div style="color:var(--v2-ink-3);">{cs.species.join(", ")}</div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
   <!-- Sticky cart section (Swiggy-style, fixed above bottom nav) -->
   <div id="v2-home-carts" style="display:none;position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:40;max-height:40vh;overflow-y:auto;background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.1);max-width:var(--app-max-width);margin:0 auto;"></div>
 </AppShell>
@@ -196,12 +230,11 @@ const categories = [
 
 <script>
   import { supabase } from "../lib/supabase";
-  const sellerNameToSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   import { getSession } from "../lib/auth";
   import { subscribePush } from "../lib/push";
   import { getSpeciesDisplay } from "../lib/species";
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
-  import { cleanSellerName } from "../lib/seller-display";
+  import { cleanSellerName, sellerHref } from "../lib/seller-display";
   import type { Seller, FishListing } from "../lib/supabase";
 
   type SellerHue = "sky" | "green" | "orange" | "indigo";
@@ -535,15 +568,14 @@ const categories = [
 
   // Species photos — same images as the landing page flyer (index.astro). No seller-specific photos.
   const BASE_P = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
-  const FLYER_POMFRET = "https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0";
+  const FLYER_POMFRET = "/fish/pomfret.jpg";
   const speciesPhotos: Record<string, string> = {
     all:     FLYER_POMFRET,
     pomfret: FLYER_POMFRET,
-    surmai:  "https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline",
-    prawns:  "https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize",
-    bangda:  "https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize",
-    rawas:   "https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0",
-    crab:    "https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline",
+    surmai:  "/fish/surmai.jpg",
+    prawns:  "/fish/prawns.jpg",
+    bangda:  "/fish/bangda.jpg",
+    rawas:   "/fish/rawas.jpg",
     bombil:  BASE_P + "/ocean/11_bombil.jpg",
     shark:   BASE_P + "/bombay/shark.webp",
     salmon:  BASE_P + "/bombay/salmon.webp",
@@ -796,13 +828,13 @@ const categories = [
 
         const fullyClosed = false; // We no longer grey out or disable the card
 
-        const sellerSlug = sellerNameToSlug(s.name);
+        const sellerPath = sellerHref(s.name, s.id);
 
         // Card hero: store image if available, otherwise blue gradient + logo
         const cardPhoto: string | null = (s as any).store_image_url || null;
 
         return `
-        <a href="/s/${sellerSlug}" class="v2-seller-card">
+        <a href="${sellerPath}" class="v2-seller-card">
           <div class="v2-sc-img" style="background:${hueColors[hue]};">
             ${cardPhoto
               ? `<img src="${escapeHtml(cardPhoto as string)}" alt="" loading="lazy" decoding="async" /><div class="v2-sc-img-overlay"></div>`
@@ -985,9 +1017,9 @@ const categories = [
             <div style="width:50px;height:50px;border-radius:10px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">${avatarInner}</div>
             <div style="flex:1;min-width:0;">
               <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(cleanSellerName(g.seller_name) || "Seller")}</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/s/${sellerNameToSlug(g.seller_name || "")}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/seller/${g.seller_id}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
             </div>
-            <a href="/s/${sellerNameToSlug(g.seller_name || "")}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">
+            <a href="/seller/${g.seller_id}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">
               ₹${g.subtotal.toLocaleString("en-IN")}<br><span style="font:600 9px Inter;opacity:.85;">View Cart</span>
             </a>
             <button data-hc-remove="${g.seller_id}" style="background:none;border:none;color:var(--v2-ink-4);font-size:16px;cursor:pointer;padding:2px;flex-shrink:0;" aria-label="Remove">✕</button>

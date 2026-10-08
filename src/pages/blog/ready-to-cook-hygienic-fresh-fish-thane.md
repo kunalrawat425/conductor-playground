@@ -60,10 +60,12 @@ Every order is packed in food-grade vacuum-sealed pouches — airtight, leak-pro
 
 Stop dealing with messy counters and lingering smells. Relifish offers Thane's residents convenience without compromise: premium, sanitised, ready-to-cook seafood delivered fresh on your schedule. 
 
-**→ [Browse today's hygienic, ready-to-cook seafood menu](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=hygienic_ready_to_cook_thane)**
+**→ [Browse today's hygienic, ready-to-cook seafood menu](https://www.relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=hygienic_ready_to_cook_thane)**
 
 ---
 
 *📦 Currently serving: Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali*
 
 *📍 Serving Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali — [check your area](/shop)*
+
+**→ [See which local fish sellers deliver in Thane today](https://www.relifish.store/area/thane)**
