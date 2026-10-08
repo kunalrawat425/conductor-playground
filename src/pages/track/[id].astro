@@ -489,7 +489,7 @@ const { id } = Astro.params;
           const res = await fetch("/api/orders/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel", cancel_reason: reason.trim() }),
+            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Cancel failed");
@@ -499,7 +499,7 @@ const { id } = Astro.params;
           window.v2Toast?.("error", "Failed", err.message);
         }
       });
-    } else if (isCancellable(o) && !["confirmed", "paid"].includes(o.status)) {
+    } else if (isCancellable(o) && !["confirmed", "paid", "payment_required"].includes(o.status)) {
       actions.innerHTML = "";
       attachCancelButton(o, actions);
     } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
@@ -762,6 +762,7 @@ const { id } = Astro.params;
       if (isCancellable(o)) attachCancelButton(o, actions);
     } else if (o.status === "payment_required") {
       renderPaymentUpload(o, "balance");
+      if (isCancellable(o)) attachCancelButton(o, actions);
     } else if (o.status === "refunded") {
       const paidAmt = Number(o.paid_amount) || 0;
       const finalAmt = Number(o.final_price) || 0;
