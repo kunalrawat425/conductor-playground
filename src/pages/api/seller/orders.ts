@@ -171,7 +171,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
     const { data: currentOrder } = await supabase
       .from("orders")
-      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
+      .select("status, order_type, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
       .eq("id", order_id)
       .single();
     const currentStatus = currentOrder?.status;
@@ -187,6 +187,12 @@ export const POST: APIRoute = async ({ request }) => {
     }
     // A status missing from the map used to skip this check entirely, so
     // `cancelled → confirmed` or `completed → declined` were accepted.
+    // Fulfilment step must match how the order is fulfilled: a pickup order was
+    // accepted into out_for_delivery (found on staging), and vice versa.
+    const orderType = (currentOrder as any)?.order_type;
+    if ((status === "out_for_delivery" && orderType !== "delivery") || (status === "ready_for_pickup" && orderType !== "pickup")) {
+      return new Response(JSON.stringify({ error: `This is a ${orderType || "pickup"} order — use ${orderType === "delivery" ? "Out for delivery" : "Ready for pickup"}` }), { status: 400 });
+    }
     if (!currentStatus || !validTransitions[currentStatus]?.includes(status)) {
       return new Response(JSON.stringify({ error: `Cannot change from ${currentStatus} to ${status}` }), { status: 400 });
     }

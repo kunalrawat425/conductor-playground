@@ -90,8 +90,9 @@ export const POST: APIRoute = async ({ request, url }) => {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
-  // Fire buyer push notification (non-blocking)
-  try {
+  // Buyer push goes out after the response (waitUntil): awaiting it here held the
+  // "payment confirmed" screen for several seconds on staging.
+  afterResponse((async () => {
     const { sendBuyerOrderPush } = await import("../../../lib/server/buyer-push");
     await sendBuyerOrderPush({
       buyer_id,
@@ -100,7 +101,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       species: (order as any).listing?.species || (order as any).species || "Fish",
       order_id,
     });
-  } catch (err) { console.warn("[razorpay-verify] buyer push failed", { order_id, err: (err as any)?.message || String(err) }); }
+  })(), "razorpay-verify:buyer-push");
 
   // BUG-27: these used to be fire-and-forget. Vercel freezes the function once
   // the response is returned, so the receipt email and the seller notification

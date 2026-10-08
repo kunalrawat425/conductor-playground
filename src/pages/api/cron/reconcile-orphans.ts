@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { notifyOrderParties } from "../../../lib/server/notify-order-parties";
-import { settleCapturedPayment, PAYABLE_STATUSES } from "../../../lib/server/razorpay-ledger";
+import { settleCapturedPayment, PAYABLE_STATUSES, refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
+import { refundRazorpayPayment } from "../../../lib/server/razorpay-refund";
 
 export const prerender = false;
 
@@ -83,8 +84,45 @@ async function run(request: Request, origin: string) {
     }
   }
 
-  console.log(`[cron/reconcile-orphans] scanned=${orphans?.length ?? 0} flipped=${flipped} refunded=${refunded} skipped=${skipped} errors=${errors}`);
-  return new Response(JSON.stringify({ ok: true, scanned: orphans?.length ?? 0, flipped, refunded, skipped, errors }), { status: 200 });
+  // Refunds owed but never completed (Razorpay rejected them, or the network
+  // failed): a pre-order priced lower (refund_amt on a live order) or a paid
+  // order that was cancelled/declined. Nothing retried these before — the buyer
+  // waited on a "seller must refund manually" note. Razorpay is asked first how
+  // much is already refunded, so a retry can never refund twice.
+  let refundRetried = 0, refundStillFailing = 0;
+  const { data: owed } = await sb
+    .from("orders")
+    .select("id, status, razorpay_payment_id, razorpay_order_id, refund_amt, refund_note")
+    .eq("payment_method", "razorpay")
+    .not("razorpay_payment_id", "is", null)
+    .is("refund_sent_at", null)
+    .gt("created_at", new Date(Date.now() - 30 * 86400_000).toISOString())
+    .or("refund_amt.gt.0,status.in.(cancelled,declined)")
+    .limit(50);
+  for (const o of (owed || []) as any[]) {
+    const closed = ["cancelled", "declined"].includes(o.status);
+    let outcome;
+    if (closed) {
+      outcome = await refundOrderRazorpay(sb, o, { caller: "cron:refund-retry" });
+    } else {
+      const dueBack = Math.round(Number(o.refund_amt) * 100);
+      let already = 0;
+      try {
+        const pr = await fetch(`https://api.razorpay.com/v1/payments/${o.razorpay_payment_id}`, { headers: { Authorization: `Basic ${rzpAuth}` } });
+        if (pr.ok) already = Number((await pr.json())?.amount_refunded) || 0;
+      } catch { /* treat as nothing refunded yet */ }
+      outcome = already >= dueBack
+        ? { ok: true, refundId: null, note: "already refunded on Razorpay" }
+        : await refundRazorpayPayment(o.razorpay_payment_id, { order_id: o.id, caller: "cron:refund-retry" }, dueBack - already);
+    }
+    const patch: Record<string, unknown> = { refund_note: `${o.refund_note ? o.refund_note + " | " : ""}Retry: ${outcome.note}`.slice(0, 1000) };
+    if (outcome.ok) patch.refund_sent_at = new Date().toISOString();
+    await sb.from("orders").update(patch).eq("id", o.id).is("refund_sent_at", null);
+    outcome.ok ? refundRetried++ : refundStillFailing++;
+  }
+
+  console.log(`[cron/reconcile-orphans] scanned=${orphans?.length ?? 0} flipped=${flipped} refunded=${refunded} skipped=${skipped} errors=${errors} refund_retried=${refundRetried} refund_failing=${refundStillFailing}`);
+  return new Response(JSON.stringify({ ok: true, scanned: orphans?.length ?? 0, flipped, refunded, skipped, errors, refund_retried: refundRetried, refund_failing: refundStillFailing }), { status: 200 });
 }
 
 export const GET: APIRoute = async ({ request, url }) => run(request, url.origin);

@@ -3,8 +3,8 @@
  * same-day and catch pre-orders. Catch pre-orders add a **Price set** step after payment.
  *
  * - `simple` — 4 steps: no UPI proof track on this order (COD / never uploaded / no verify path).
- * - `payment` — 5 steps: Placed → Payment proof → Confirmed → Ready / On the way → …
- * - `preorder` — 5 steps: Pre-ordered → Payment proof → Price set → Confirmed → …
+ * - `payment` — 5 steps: Placed → Paid → Confirmed → Ready / On the way → …
+ * - `preorder` — 5 steps: Pre-ordered → Paid → Price set → Confirmed → …
  */
 
 export type BuyerStepperVariant = "simple" | "payment" | "preorder";
@@ -89,7 +89,7 @@ export function isPreorderCatchFlow(o: BuyerStepperOrder): boolean {
   return false;
 }
 
-/** Pay-first: always show Payment proof → Confirmed unless this is catch pre-order flow or terminal. */
+/** Pay-first: always show Paid → Confirmed unless this is catch pre-order flow or terminal. */
 export function usesSameDayPaymentStepper(o: BuyerStepperOrder): boolean {
   if (isPreorderCatchFlow(o)) return false;
   const st = o.status;
@@ -115,12 +115,12 @@ export function getBuyerStepperLabels(
   }
   if (variant === "payment") {
     return orderType === "delivery"
-      ? ["Placed", "Payment proof", "Confirmed", "On the way", last]
-      : ["Placed", "Payment proof", "Confirmed", "Ready", last];
+      ? ["Placed", "Paid", "Confirmed", "On the way", last]
+      : ["Placed", "Paid", "Confirmed", "Ready", last];
   }
   return orderType === "delivery"
-    ? ["Pre-ordered", "Payment proof", "Confirmed", "On the way", last]
-    : ["Pre-ordered", "Payment proof", "Confirmed", "Ready", last];
+    ? ["Pre-ordered", "Paid", "Confirmed", "On the way", last]
+    : ["Pre-ordered", "Paid", "Confirmed", "Ready", last];
 }
 
 function simpleStatusStep(status: string, orderType: "pickup" | "delivery"): number {
