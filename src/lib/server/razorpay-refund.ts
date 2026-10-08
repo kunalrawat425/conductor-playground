@@ -30,7 +30,7 @@ export async function refundRazorpayPayment(
   const keySecret = import.meta.env.RAZORPAY_KEY_SECRET || "";
 
   if (!keyId || !keySecret) {
-    return { refundId: null, ok: false, note: "Razorpay keys not configured — seller must refund manually" };
+    return { refundId: null, ok: false, note: "Razorpay refund FAILED (keys not configured) — retried automatically; support can refund from the Razorpay dashboard" };
   }
 
   const authHex = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
@@ -53,14 +53,14 @@ export async function refundRazorpayPayment(
     return {
       refundId: null,
       ok: false,
-      note: `Razorpay refund FAILED (${res.status}): ${desc} — seller must refund manually`,
+      note: `Razorpay refund FAILED (${res.status}): ${desc} — retried automatically; support can refund from the Razorpay dashboard`,
     };
   } catch (err: any) {
     console.warn(`[${tag}] razorpay refund network error`, { ...ctx, err: err?.message });
     return {
       refundId: null,
       ok: false,
-      note: `Razorpay refund FAILED (network): ${err?.message || "unknown"} — seller must refund manually`,
+      note: `Razorpay refund FAILED (network): ${err?.message || "unknown"} — retried automatically; support can refund from the Razorpay dashboard`,
     };
   }
 }

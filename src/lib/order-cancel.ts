@@ -31,3 +31,21 @@ export function buyerCancelRule(
   if (seller && isPreorderShoppingWindow(seller, nowMs)) return { ok: true };
   return { ok: false, reason: "The pre-order cutoff has passed — the seller is already sourcing your catch." };
 }
+
+export type CancelActor = "buyer" | "seller" | "system" | "admin" | "unknown" | null | undefined;
+
+/** "Who cancelled" in words, from the point of view of the person reading it. */
+export function cancelledByText(by: CancelActor, viewer: "buyer" | "seller", cancelReason?: string | null): string {
+  if (cancelReason === "auto_expired_payment" || by === "system") return "Cancelled automatically — payment was not completed in time";
+  if (by === "buyer") return viewer === "buyer" ? "Cancelled by you" : "Cancelled by the buyer";
+  if (by === "seller") return viewer === "seller" ? "Cancelled by you" : "Cancelled by the seller";
+  if (by === "admin") return "Cancelled by Relifish support";
+  return "Cancelled";
+}
+
+/** The human reason, or null for system codes / empty. */
+export function cancelReasonText(reason?: string | null): string | null {
+  const r = String(reason || "").trim();
+  if (!r || r === "auto_expired_payment" || r.startsWith("e2e:")) return null;
+  return r.slice(0, 200);
+}

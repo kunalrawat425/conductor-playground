@@ -106,3 +106,16 @@ describe("paymentMethodLabel", () => {
     expect(paymentMethodLabel({ payment_method: "cod_legacy" })).toBe("Cash on delivery (legacy order)");
   });
 });
+
+import { refundStatus } from "../../src/lib/order-payment-state";
+describe("refundStatus", () => {
+  it("never tells anyone the seller must refund manually", () => {
+    const r = refundStatus({ refund_note: "Razorpay refund FAILED (400): invalid request sent — retried automatically" });
+    expect(r.state).toBe("delayed");
+    expect(r.text.toLowerCase()).not.toContain("seller");
+  });
+  it("refunded once refund_sent_at is set; processing otherwise", () => {
+    expect(refundStatus({ refund_sent_at: "2026-10-09T00:00:00Z" }).state).toBe("refunded");
+    expect(refundStatus({}).state).toBe("processing");
+  });
+});

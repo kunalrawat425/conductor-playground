@@ -78,6 +78,8 @@ export type BuyerPushPayload = {
   final_price?: number | null;
   /** When set, notification opens this order on `/track/[id]` (else track list). */
   order_id?: string | null;
+  /** Cancellations: who cancelled and why (shown in the notification). */
+  cancel?: { by?: string | null; reason?: string | null; refunded?: boolean } | null;
 };
 
 export type BuyerPushResult =
@@ -105,7 +107,7 @@ function normalizeSubscription(raw: unknown): PushSubscriptionJSON | null {
  * Shared by /api/push-notify (manual/test) and /api/seller/orders (no HTTP self-call).
  */
 export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<BuyerPushResult> {
-  const { buyer_id, buyer_phone, status, species, final_price, order_id } = payload;
+  const { buyer_id, buyer_phone, status, species, final_price, order_id, cancel } = payload;
 
   if (!status) {
     return { ok: false, error: "Missing status" };
@@ -149,7 +151,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
     return { ok: false, error: "VAPID keys not configured" };
   }
 
-  const notification = buyerOrderPushNotification(status, species, final_price);
+  const notification = buyerOrderPushNotification(status, species, final_price, cancel);
   const trackPath = order_id ? `/track/${order_id}` : "/track";
   const openUrl = absoluteUrl(trackPath);
 

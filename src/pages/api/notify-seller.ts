@@ -97,6 +97,7 @@ export const POST: APIRoute = async ({ request }) => {
       placement_kind,
       order_id_short,
       amount: typeof body.amount === "number" ? body.amount : null,
+      reason: typeof body.reason === "string" ? body.reason.slice(0, 200) : null,
     });
 
     let dashboardUrl = absoluteUrl("/dashboard/orders");

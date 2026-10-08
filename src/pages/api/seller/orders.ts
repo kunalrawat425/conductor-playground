@@ -39,9 +39,9 @@ const STATUS_LABELS: Record<string, string> = {
  * action=set_final_price: calls reconcile_preorder_price RPC (refunds a price drop on Razorpay)
  * Otherwise: status transition
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, url }) => {
   try {
-    const { seller_id, seller_phone, order_id, status, action, final_price, refund_note } = await request.json();
+    const { seller_id, seller_phone, order_id, status, action, final_price, refund_note, cancel_reason } = await request.json();
 
     if (!seller_id || !order_id) {
       return new Response(JSON.stringify({ error: "seller_id and order_id required" }), { status: 400 });
@@ -213,7 +213,10 @@ export const POST: APIRoute = async ({ request }) => {
     const updates: any = { status };
     if (status === "declined" || status === "cancelled") {
       updates.cancelled_by = "seller";
-      if (refund_note) updates.refund_note = refund_note;
+      // The seller's reason is shown to the buyer (screen + notification). It used
+      // to be written into refund_note, mixed with refund gateway text.
+      const why = String(cancel_reason ?? refund_note ?? "").trim().slice(0, 200);
+      updates.cancel_reason = why || null;
 
       // BUG-44: this branch used to write cancelled_by/refund_note and stop —
       // no Razorpay refund was ever issued. The dashboard button says
@@ -229,7 +232,7 @@ export const POST: APIRoute = async ({ request }) => {
           { id: order_id, razorpay_payment_id: (currentOrder as any).razorpay_payment_id, razorpay_order_id: (currentOrder as any).razorpay_order_id },
           { caller: `seller/orders:${status}` }
         );
-        updates.refund_note = refund_note ? `${refund_note} — ${outcome.note}` : outcome.note;
+        updates.refund_note = outcome.note;
         if (outcome.ok) {
           updates.refund_amt = Number((currentOrder as any).paid_amount)
             || (Number((currentOrder as any).total_price) + Number((currentOrder as any).delivery_fee || 0));
@@ -258,6 +261,15 @@ export const POST: APIRoute = async ({ request }) => {
     const data = rows?.[0];
     if (!data) {
       return new Response(JSON.stringify({ error: "This order was just updated. Refresh and try again." }), { status: 409 });
+    }
+
+    // Seller cancelled / declined: one notifier tells the buyer who cancelled,
+    // the reason and the refund, on push and email.
+    if (status === "declined" || status === "cancelled") {
+      const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+      await notifyOrderParties({ order_id, event: "cancelled_by_seller", origin: url.origin })
+        .catch((err: any) => console.warn("[seller/orders] cancel notify failed", { order_id, err: err?.message }));
+      return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
     // Notify buyer via push — never fail the order update if push throws

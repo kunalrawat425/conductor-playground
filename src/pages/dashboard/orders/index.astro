@@ -280,8 +280,9 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 </style>
 
 <script>
-  import { wasActuallyPaid, refundableAmount, paymentMethodLabel, preorderNeedsFinalPrice } from "../../../lib/order-payment-state";
+  import { wasActuallyPaid, refundableAmount, paymentMethodLabel, preorderNeedsFinalPrice, refundStatus } from "../../../lib/order-payment-state";
   import { supabase } from "../../../lib/supabase";
+  import { cancelledByText, cancelReasonText } from "../../../lib/order-cancel";
 
   let sellerId: string | null = null;
   let sellerData: any = null;
@@ -399,19 +400,15 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   /** Read-only refund status for cancelled/declined/refunded cards. Razorpay refunds run server-side. */
   function refundStatusHtml(o: any, amt: number) {
     const amtStr = amt.toLocaleString("en-IN");
-    const note = o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(o.refund_note)}</div>` : "";
-    if (o.refund_sent_at) {
-      return `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-        <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${amtStr} sent via Razorpay</div>
-        ${note}
-        <div style="font:400 10px Inter;color:var(--v2-ink-3);">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+    const rs = refundStatus(o);
+    const box = (bg: string, border: string, color: string, title: string) =>
+      `<div style="padding:10px;background:${bg};border:1px solid ${border};border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+        <div style="font:700 12px Inter;color:${color};">${title}</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(rs.text)} No action needed from you.</div>
       </div>`;
-    }
-    return `<div style="padding:10px;background:#F5F3FF;border:1px solid #C4B5FD;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-      <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${amtStr} to buyer — processing via Razorpay</div>
-      ${note}
-      <div style="font:400 11px Inter;color:var(--v2-ink-3);">⏱ Reaches the buyer's original payment method within 5–7 working days. No action needed.</div>
-    </div>`;
+    if (rs.state === "refunded") return box("#F0FDF4", "#86EFAC", "var(--v2-green)", `✓ ₹${amtStr} refunded to buyer · ${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}`);
+    if (rs.state === "delayed") return box("#FFF7ED", "#FED7AA", "var(--v2-orange)", `↩ Refund ₹${amtStr} to buyer — delayed, retrying`);
+    return box("#F5F3FF", "#C4B5FD", "#7C3AED", `↩ Refund ₹${amtStr} to buyer — processing via Razorpay`);
   }
 
   async function init() {
@@ -792,6 +789,14 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           const finalAmt = Number(o.final_price) || 0;
           actionsHtml = refundStatusHtml(o, finalAmt > 0 ? Math.max(0, paidAmt - finalAmt) : paidAmt);
         }
+        if (["cancelled", "declined"].includes(o.status)) {
+          const who = cancelledByText(o.cancelled_by, "seller", o.cancel_reason);
+          const why = cancelReasonText(o.cancel_reason);
+          actionsHtml = `<div style="padding:10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:4px;">
+            <div style="font:700 12px Inter;color:var(--v2-red);">${escape(o.status === "declined" ? who.replace(/^Cancelled/, "Declined") : who)}</div>
+            ${why ? `<div style="font:400 12px Inter;color:var(--v2-ink-2);">Reason: ${escape(why)}</div>` : ""}
+          </div>${actionsHtml}`;
+        }
 
         const listingOpts = o.listing?.pricing_options || [];
         const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
@@ -902,7 +907,13 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       delivered: "completed",
       seller_cancel: "cancelled",
     };
-    if (action === "seller_cancel" && !window.confirm("Cancel this order? The buyer is refunded in full and notified.")) return;
+    let sellerCancelReason = "";
+    if (action === "seller_cancel") {
+      const r = window.prompt("Why are you cancelling? The buyer sees this reason and is refunded in full.", "");
+      if (r === null) return;
+      sellerCancelReason = r.trim();
+      if (!sellerCancelReason) { (window as any).v2Toast?.("error", "Reason needed", "Tell the buyer why the order is cancelled"); return; }
+    }
     const originalText = btn?.textContent || "";
     const loadingLabels: Record<string, string> = {
       accept: "Confirming…", decline: "Declining…", ready: "Updating…",
@@ -936,8 +947,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         body.status = statusMap[action] || "declined";
         if (body.status === "declined" || body.status === "cancelled") {
           const declineNoteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
-          const note = declineNoteInput?.value?.trim();
-          if (note) body.refund_note = note;
+          const note = sellerCancelReason || declineNoteInput?.value?.trim();
+          if (note) body.cancel_reason = note;
         }
       }
       const res = await fetch("/api/seller/orders", {

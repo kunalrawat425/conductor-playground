@@ -41,6 +41,8 @@ export type SellerPushOpts = {
   placement_kind?: string | null;
   order_id_short?: string | null;
   amount?: number | null;
+  /** Buyer's cancellation reason, shown on the seller's lock screen. */
+  reason?: string | null;
 };
 
 export function sellerPushNotification(
@@ -69,13 +71,15 @@ export function sellerPushNotification(
           : `Buyer paid${amt}${idSuffix}. Open the dashboard to confirm or decline.`,
       };
 
-    case "cancelled":
+    case "cancelled": {
+      const why = opts.reason ? ` Reason: ${opts.reason}.` : "";
       return {
-        title: "Order cancelled by buyer",
+        title: "Order cancelled by the buyer",
         body: species
-          ? `Buyer cancelled their ${species} order${idSuffix}. Do not prepare it.`
-          : `Buyer cancelled their order${idSuffix}. Do not prepare it.`,
+          ? `The buyer cancelled their ${species} order${idSuffix}.${why} Do not prepare it.`
+          : `The buyer cancelled their order${idSuffix}.${why} Do not prepare it.`,
       };
+    }
 
     case "expired_unpaid":
       return {

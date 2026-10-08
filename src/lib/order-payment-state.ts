@@ -95,3 +95,18 @@ export function preorderNeedsFinalPrice(o: FinalPriceFields): boolean {
   // actual price (within the pre-order min–max) once the catch is weighed.
   return o.is_preorder === true || o.placement_kind === "preorder";
 }
+
+/**
+ * Plain-language refund status for buyer and seller screens. refund_note holds
+ * raw gateway text for support ("Razorpay refund FAILED (400)…"), which leaked
+ * onto both screens with a "seller must refund manually" line — wrong with
+ * Razorpay (the money is in the platform's account; the seller cannot refund).
+ */
+export function refundStatus(o: { refund_sent_at?: string | null; refund_note?: string | null }):
+  { state: "refunded" | "delayed" | "processing"; text: string } {
+  if (o?.refund_sent_at) return { state: "refunded", text: "Refunded via Razorpay — reaches the original payment method in 5–7 working days." };
+  if (/FAILED/i.test(o?.refund_note || "")) {
+    return { state: "delayed", text: "Refund delayed — Relifish retries it automatically. Contact support if it hasn't arrived in 2 days." };
+  }
+  return { state: "processing", text: "Refund processing via Razorpay — reaches the original payment method in 5–7 working days." };
+}

@@ -163,8 +163,8 @@ const { id } = Astro.params;
 </style>
 
 <script>
-  import { wasActuallyPaid, refundableAmount, paymentMethodLabel } from "../../lib/order-payment-state";
-  import { buyerCancelRule } from "../../lib/order-cancel";
+  import { wasActuallyPaid, refundableAmount, paymentMethodLabel, refundStatus } from "../../lib/order-payment-state";
+  import { buyerCancelRule, cancelledByText, cancelReasonText } from "../../lib/order-cancel";
   import { createClient } from "@supabase/supabase-js";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
   import { cleanSellerName } from "../../lib/seller-display";
@@ -219,12 +219,14 @@ const { id } = Astro.params;
         ? "Cancel this order? Your payment is refunded in full to your original payment method (5–7 working days)."
         : "Cancel this order? This cannot be undone.";
       if (!confirm(msg)) return;
+      const reason = prompt("Why are you cancelling? The seller sees this (optional).", "");
+      if (reason === null) return;
       try {
         const buyerId = localStorage.getItem("rlf_buyer_id") || "";
         const res = await fetch("/api/orders/cancel", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+          body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel", cancel_reason: reason.trim() }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Cancel failed");
@@ -487,7 +489,7 @@ const { id } = Astro.params;
           const res = await fetch("/api/orders/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel", cancel_reason: reason.trim() }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Cancel failed");
@@ -507,20 +509,31 @@ const { id } = Astro.params;
       let refundHtml = "";
       const isDelivered = ["completed", "picked_up"].includes(o.status);
       const existingFeedback = o.buyer_feedback || null;
-      if (paidForRefund > 0 && ["cancelled", "declined"].includes(o.status)) {
-        const label = o.status === "declined" ? "Order declined by seller" : "Order cancelled";
-        const sellerRefundNote = o.refund_sent_at
-          ? `<div style="font:500 11px Inter;color:#059669;margin-top:6px;">✓ Refund initiated on ${new Date(o.refund_sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</div>`
-          : "";
-        const sellerNote = o.refund_note
-          ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;padding:6px 8px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(o.refund_note)}</div>`
-          : "";
+      const isClosed = ["cancelled", "declined"].includes(o.status);
+      const whoText = cancelledByText(o.cancelled_by, "buyer", o.cancel_reason);
+      const label = o.status === "declined" ? whoText.replace(/^Cancelled/, "Declined") : whoText;
+      const why = cancelReasonText(o.cancel_reason);
+      const whyHtml = why ? `<div style="font:500 13px Inter;color:var(--v2-ink-2);margin-bottom:8px;">Reason: ${escape(why)}</div>` : "";
+      if (isClosed && paidForRefund <= 0) {
         refundHtml = `
           <div style="background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius);padding:16px;margin-top:8px;margin-bottom:8px;">
-            <div style="font:800 14px Inter;color:#DC2626;margin-bottom:8px;">❌ ${label}</div>
+            <div style="font:800 14px Inter;color:#DC2626;margin-bottom:6px;">❌ ${escape(label)}</div>
+            ${whyHtml}
+          </div>`;
+      }
+      if (paidForRefund > 0 && isClosed) {
+        const rs = refundStatus(o);
+        const rsColor = rs.state === "refunded" ? "#059669" : rs.state === "delayed" ? "#B45309" : "#7C3AED";
+        const rsTitle = rs.state === "refunded"
+          ? `✓ Refunded on ${new Date(o.refund_sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}`
+          : rs.state === "delayed" ? "Refund delayed — retrying" : "Refund processing";
+        refundHtml = `
+          <div style="background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius);padding:16px;margin-top:8px;margin-bottom:8px;">
+            <div style="font:800 14px Inter;color:#DC2626;margin-bottom:8px;">❌ ${escape(label)}</div>
+            ${whyHtml}
             <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Refund: ₹${paidForRefund.toLocaleString("en-IN")}</div>
-            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Razorpay refunds reach your original payment method within <strong>5–7 working days</strong>.</div>
-            ${sellerRefundNote}${sellerNote}
+            <div style="font:700 12px Inter;color:${rsColor};margin-bottom:4px;">${rsTitle}</div>
+            <div style="font:600 11px Inter;color:${rsColor};padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ ${escape(rs.text)}</div>
           </div>`;
       }
       const feedbackHtml = isDelivered
@@ -735,7 +748,7 @@ const { id } = Astro.params;
             const res = await fetch("/api/orders/cancel", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+              body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel", cancel_reason: reason.trim() }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Cancel failed");
@@ -770,7 +783,6 @@ const { id } = Astro.params;
             ${refundBadge}
             <div style="font:800 14px Inter;color:#6366F1;margin-bottom:6px;">↩ Refund: ₹${refundAmt.toLocaleString("en-IN")} sent back</div>
             <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Refund initiated on ${sentAt}</div>
-            ${note ? `<div style="font:500 12px Inter;color:var(--v2-ink-2);margin-top:6px;padding:8px 10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(note)}</div>` : ''}
             <div style="font:600 11px Inter;color:#7C3AED;margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ ${refundEta}</div>
           </div>`;
       } else {

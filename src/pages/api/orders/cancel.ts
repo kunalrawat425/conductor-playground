@@ -45,7 +45,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       // Ready at the same moment ended with food prepared for a refunded order.
       // Stock comes back via trg_restore_inventory (BUG-38: no explicit restore).
       const { data: claimed, error: cancelErr } = await sb.from("orders")
-        .update({ status: "cancelled", cancelled_by: "buyer", cancel_reason: cancel_reason || null })
+        .update({ status: "cancelled", cancelled_by: "buyer", cancel_reason: String(cancel_reason || "").trim().slice(0, 200) || null })
         .eq("id", order_id).eq("status", order.status)
         .select("id");
       if (cancelErr) {
