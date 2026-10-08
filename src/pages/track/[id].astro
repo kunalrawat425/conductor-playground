@@ -164,6 +164,7 @@ const { id } = Astro.params;
 
 <script>
   import { wasActuallyPaid, refundableAmount, paymentMethodLabel } from "../../lib/order-payment-state";
+  import { buyerCancelRule } from "../../lib/order-cancel";
   import { createClient } from "@supabase/supabase-js";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
   import { cleanSellerName } from "../../lib/seller-display";
@@ -189,7 +190,7 @@ const { id } = Astro.params;
       pre_order: "Pre-order placed",
       scheduled: "Scheduled pickup",
       confirmed: "Confirmed ✓",
-      paid: "Payment received",
+      paid: "Paid — waiting for seller to confirm",
       payment_required: "Additional payment needed",
       ready_for_pickup: "Ready for pickup",
       out_for_delivery: "Out for delivery",
@@ -203,8 +204,36 @@ const { id } = Astro.params;
   function billPaymentFootnote(o) {
     return paymentMethodLabel(o) || "Payment pending";
   }
-  function isCancellable(s) {
-    return s === "pending" || s === "pending_payment" || s === "pre_order";
+  // Same rule the server enforces (refund policy): see src/lib/order-cancel.ts.
+  function isCancellable(o) {
+    return buyerCancelRule(o, o.listing?.seller || o.seller || null).ok;
+  }
+  /** Cancel button + handler; any paid amount is refunded in full by the server. */
+  function attachCancelButton(o, container) {
+    const paid = wasActuallyPaid(o);
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `<button class="v2-od-cancel" style="margin-top:10px;">Cancel order${paid ? " · full refund" : ""}</button>`;
+    container.appendChild(wrap);
+    wrap.querySelector("button").addEventListener("click", async () => {
+      const msg = paid
+        ? "Cancel this order? Your payment is refunded in full to your original payment method (5–7 working days)."
+        : "Cancel this order? This cannot be undone.";
+      if (!confirm(msg)) return;
+      try {
+        const buyerId = localStorage.getItem("rlf_buyer_id") || "";
+        const res = await fetch("/api/orders/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Cancel failed");
+        window.v2Toast?.("success", "Order cancelled", paid ? "Refund started" : "");
+        setTimeout(() => load(), 600);
+      } catch (err) {
+        window.v2Toast?.("error", "Could not cancel", err.message);
+      }
+    });
   }
 
   let pollTimer = null;
@@ -468,25 +497,9 @@ const { id } = Astro.params;
           window.v2Toast?.("error", "Failed", err.message);
         }
       });
-    } else if (isCancellable(o.status)) {
-      actions.innerHTML = `<button class="v2-od-cancel" id="v2-od-cancel-btn">Cancel order</button>`;
-      document.getElementById("v2-od-cancel-btn").addEventListener("click", async () => {
-        if (!confirm("Cancel this order? This cannot be undone.")) return;
-        try {
-          const buyerId = localStorage.getItem("rlf_buyer_id") || "";
-          const res = await fetch("/api/orders/cancel", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Cancel failed");
-          window.v2Toast?.("success", "Order cancelled");
-          setTimeout(() => load(), 600);
-        } catch (err) {
-          window.v2Toast?.("error", "Failed", err.message);
-        }
-      });
+    } else if (isCancellable(o) && !["confirmed", "paid"].includes(o.status)) {
+      actions.innerHTML = "";
+      attachCancelButton(o, actions);
     } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
       // Finished/cancelled order — show refund notice if paid, ask rating for completed/picked_up, then offer re-order.
       // BUG-42: gate on real payment, not the pre-set paid_amount.
@@ -733,6 +746,7 @@ const { id } = Astro.params;
           }
         });
       }
+      if (isCancellable(o)) attachCancelButton(o, actions);
     } else if (o.status === "payment_required") {
       renderPaymentUpload(o, "balance");
     } else if (o.status === "refunded") {
@@ -857,6 +871,11 @@ const { id } = Astro.params;
           body: JSON.stringify({ order_id: o.id, buyer_id: buyerId }),
         });
         createData = await createRes.json();
+        if (createRes.status === 409 && createData.error_code === "already_paid") {
+          window.v2Toast?.("success", "Payment received", "Your earlier payment went through.");
+          setTimeout(() => load(), 400);
+          return;
+        }
         if (!createRes.ok) throw new Error(createData.error || "Could not initiate payment");
       } catch (err: any) {
         showErr(err.message || "Payment failed to start. Please try again.");
@@ -933,8 +952,10 @@ const { id } = Astro.params;
           }
         },
         modal: {
-          ondismiss: function() {
-            // User closed modal without paying — restore button
+          ondismiss: async function() {
+            // The in-page handler does not fire when the modal is closed or a UPI
+            // app takes over — ask the server whether the payment went through.
+            if (await syncPayment(o.id)) return;
             btn.disabled = false;
             btn.style.display = "block";
             btn.textContent = `Pay ₹${fmt(balance)} →`;
@@ -947,8 +968,30 @@ const { id } = Astro.params;
     });
   }
 
+  /** Ask the server to settle a captured-but-unrecorded payment. true = order changed. */
+  async function syncPayment(orderId: string): Promise<boolean> {
+    try {
+      const buyerId = localStorage.getItem("rlf_buyer_id") || "";
+      const res = await fetch("/api/payments/razorpay-sync", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId, buyer_id: buyerId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.changed) {
+        window.v2Toast?.("success", "Payment received", "Waiting for the seller to confirm.");
+        load();
+        return true;
+      }
+    } catch { /* fall through */ }
+    return false;
+  }
+
+  let syncedOnce = false;
   function initPage() {
     load();
+    // Returning to an order still awaiting payment (tab closed mid-checkout, UPI
+    // app came back): check once whether Razorpay already has the money.
+    setTimeout(() => { if (!syncedOnce) { syncedOnce = true; syncPayment(orderId); } }, 1500);
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initPage);

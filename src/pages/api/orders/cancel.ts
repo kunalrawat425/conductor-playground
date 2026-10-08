@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { isRazorpayPaid } from "../../../lib/server/razorpay-refund";
 import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
+import { buyerCancelRule } from "../../../lib/order-cancel";
 
 export const prerender = false;
 
@@ -29,55 +30,47 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Confirmed state: allowed ONLY if seller has not yet marked ready / dispatched.
     //   If paid via Razorpay, trigger auto-refund.
     if (action === "cancel") {
-      const preFulfillmentStates = ["pending", "pending_payment", "pre_order", "scheduled"];
-      const confirmedCancellable = order.status === "confirmed";
-      if (!preFulfillmentStates.includes(order.status) && !confirmedCancellable) {
-        return new Response(JSON.stringify({ error: "Cannot cancel — order is already " + order.status }), { status: 400 });
+      const { data: seller } = order.listing_id
+        ? await sb.from("fish_listings")
+            .select("seller:sellers(opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time)")
+            .eq("id", order.listing_id).maybeSingle().then((r: any) => ({ data: r.data?.seller ?? null }))
+        : { data: null };
+      const rule = buyerCancelRule(order, seller);
+      if (!rule.ok) {
+        return new Response(JSON.stringify({ error: rule.reason }), { status: 400 });
       }
 
-      // BUG-38: no explicit restore here. The `trg_restore_inventory` trigger
-      // (migration 029) already returns stock when status becomes `cancelled`
-      // and inventory_deducted was true. Calling restore_order_stock as well
-      // restored the quantity a third time (trigger fires twice on its own),
-      // inventing phantom stock on every cancellation.
+      // Claim the cancel FIRST, guarded on the status we checked. It used to
+      // refund first and then write status unguarded: a seller marking the order
+      // Ready at the same moment ended with food prepared for a refunded order.
+      // Stock comes back via trg_restore_inventory (BUG-38: no explicit restore).
+      const { data: claimed, error: cancelErr } = await sb.from("orders")
+        .update({ status: "cancelled", cancelled_by: "buyer", cancel_reason: cancel_reason || null })
+        .eq("id", order_id).eq("status", order.status)
+        .select("id");
+      if (cancelErr) {
+        return new Response(JSON.stringify({ error: "Could not cancel the order. Please try again." }), { status: 500 });
+      }
+      if (!claimed?.length) {
+        return new Response(JSON.stringify({ error: "The seller just updated this order. Refresh to see its status." }), { status: 409 });
+      }
 
-      // Trigger Razorpay refund if the order was paid via Razorpay.
-      // Non-blocking: on failure we still cancel the order and flag it for manual seller refund.
+      // Full refund of every Razorpay payment (upfront + any balance). On failure
+      // the order stays cancelled with a note and the daily cron retries.
       let refundNote: string | null = null;
       let refundId: string | null = null;
       const isRzpPaid = isRazorpayPaid(order);
       if (isRzpPaid) {
-        // Every payment on the order: upfront plus any balance top-up.
         const outcome = await refundOrderRazorpay(sb, order, { caller: "cancel" });
         refundId = outcome.refundId;
         refundNote = outcome.note;
-      }
-
-      const updatePayload: Record<string, unknown> = {
-        status: "cancelled",
-        cancelled_by: "buyer",
-        cancel_reason: cancel_reason || null,
-      };
-      if (refundNote) updatePayload.refund_note = refundNote;
-      if (isRzpPaid && refundId) {
-        updatePayload.refund_amt = Number(order.paid_amount) || (Number(order.total_price) + Number(order.delivery_fee || 0));
-        updatePayload.refund_sent_at = new Date().toISOString();
-      }
-      // The Razorpay refund has ALREADY been issued by this point. If this
-      // update is discarded and fails, the buyer gets their money back while
-      // the order stays `confirmed` — the seller prepares and hands over food
-      // that has been refunded. Never fail silently here.
-      const { error: cancelErr } = await sb.from("orders").update(updatePayload).eq("id", order_id);
-      if (cancelErr) {
-        console.error("[cancel] status update FAILED after refund was issued", {
-          order_id, refund_id: refundId, err: cancelErr.message,
-        });
-        return new Response(JSON.stringify({
-          error: "Could not cancel the order. " + (refundId
-            ? `A refund (${refundId}) was already issued — contact support with order ${String(order_id).slice(0, 8).toUpperCase()}.`
-            : "Please try again."),
-          refund: refundId ? { auto: true, id: refundId, note: refundNote } : null,
-        }), { status: 500 });
+        const refundFields: Record<string, unknown> = { refund_note: refundNote };
+        if (outcome.ok) {
+          refundFields.refund_amt = Number(order.paid_amount) || (Number(order.total_price) + Number(order.delivery_fee || 0));
+          refundFields.refund_sent_at = new Date().toISOString();
+        }
+        const { error: rfErr } = await sb.from("orders").update(refundFields).eq("id", order_id);
+        if (rfErr) console.error("[cancel] refund recorded on Razorpay but not on the order", { order_id, refund_id: refundId, err: rfErr.message });
       }
 
       // BUG-20 + BUG-25: previously only the buyer got a push here — the seller

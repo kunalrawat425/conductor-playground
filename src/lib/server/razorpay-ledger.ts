@@ -11,7 +11,8 @@
  *
  * Every captured payment is now recorded in `razorpay_payments` (migration 069)
  * and settled exactly once:
- *   confirm  — order still awaiting this payment → confirmed
+ *   confirm  — order still awaiting this payment → paid (seller then confirms);
+ *              a balance top-up returns the order to confirmed
  *   already  — this payment is already on the order → no-op
  *   stamp    — order moved on without a payment id (seller confirmed first) → attach id
  *   refund   — order closed, already paid by another payment, or the payment was
@@ -114,8 +115,11 @@ export async function settleCapturedPayment(
     if (decision === "already") return { kind: "already", order };
 
     if (decision === "confirm") {
+      // Business rule: a payment makes the order PAID; only the seller's accept
+      // makes it CONFIRMED. A balance top-up returns an already-accepted
+      // pre-order to confirmed.
       const update: Record<string, unknown> = {
-        status: "confirmed",
+        status: order.status === "payment_required" ? "confirmed" : "paid",
         payment_method: "razorpay",
         razorpay_payment_id: p.razorpay_payment_id,
         payment_verified_at: new Date().toISOString(),

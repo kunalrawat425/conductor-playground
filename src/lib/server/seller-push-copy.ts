@@ -63,10 +63,10 @@ export function sellerPushNotification(
 
     case "payment_confirmed":
       return {
-        title: "Payment confirmed",
+        title: "New paid order — confirm it",
         body: species
-          ? `Payment${amt} confirmed for ${species}${idSuffix}. Prepare this order.`
-          : `Payment${amt} confirmed${idSuffix}. Prepare this order.`,
+          ? `Buyer paid${amt} for ${species}${idSuffix}. Open the dashboard to confirm or decline.`
+          : `Buyer paid${amt}${idSuffix}. Open the dashboard to confirm or decline.`,
       };
 
     case "cancelled":

@@ -48,3 +48,17 @@ describe("preorderNeedsFinalPrice", () => {
     expect(preorderNeedsFinalPrice({ status: "confirmed", total_price: 500, delivery_fee: 50, paid_amount: 500 })).toBe(true);
   });
 });
+
+import { buyerCancelRule } from "../../src/lib/order-cancel";
+describe("buyerCancelRule (refund & cancellation policy)", () => {
+  it("allows cancelling until the seller marks it ready", () => {
+    for (const status of ["pending_payment", "paid", "payment_required"]) expect(buyerCancelRule({ status }).ok).toBe(true);
+    expect(buyerCancelRule({ status: "confirmed", is_preorder: false }).ok).toBe(true);
+    for (const status of ["ready_for_pickup", "out_for_delivery", "completed", "cancelled"]) expect(buyerCancelRule({ status }).ok).toBe(false);
+  });
+  it("confirmed pre-order: allowed while the seller's pre-order window is open, or once the price is set", () => {
+    const closedNoWindow = { opens_at: "05:00", closes_at: "23:59", accepts_preorder: false };
+    expect(buyerCancelRule({ status: "confirmed", is_preorder: true }, closedNoWindow).ok).toBe(false);
+    expect(buyerCancelRule({ status: "confirmed", is_preorder: true, final_price: 450 }, closedNoWindow).ok).toBe(true);
+  });
+});

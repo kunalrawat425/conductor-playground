@@ -168,7 +168,7 @@ function paymentTrackStep(
     pending_payment: hasPaymentProof ? 1 : 0,
     payment_required: 1,
     confirmed: 2,
-    paid: 2,
+    paid: 1, // buyer paid, seller hasn't confirmed yet
     ready_for_pickup: 3,
     out_for_delivery: 3,
     picked_up: 4,
@@ -189,7 +189,7 @@ function preorderTrackStep(o: BuyerStepperOrder, hasPaymentProof: boolean): numb
     scheduled: hasPaymentProof ? 1 : 0,
     payment_required: 1,
     confirmed: 2,
-    paid: 2,
+    paid: 1, // buyer paid, seller hasn't confirmed yet
     refunded: 2,
     ready_for_pickup: 3,
     out_for_delivery: 3,

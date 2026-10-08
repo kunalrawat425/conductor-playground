@@ -50,8 +50,8 @@ export function buyerOrderPushNotification(
     paid: {
       title: "Payment received",
       body: species
-        ? `Payment recorded for your ${species} order`
-        : "Payment recorded for your order",
+        ? `We got your payment for ${species}. Waiting for the seller to confirm your order.`
+        : "We got your payment. Waiting for the seller to confirm your order.",
     },
     completed: {
       title: "Order completed",

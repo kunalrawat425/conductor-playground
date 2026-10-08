@@ -97,7 +97,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     await sendBuyerOrderPush({
       buyer_id,
       buyer_phone: undefined,
-      status: "confirmed",
+      status: settled.order.status === "confirmed" ? "confirmed" : "paid",
       species: (order as any).listing?.species || (order as any).species || "Fish",
       order_id,
     });
@@ -166,7 +166,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           body: JSON.stringify({
             from: "Relifish <noreply@relifish.store>",
             to: emailTo,
-            subject: "Payment confirmed — your Relifish order is set ✓",
+            subject: "Payment received — waiting for the seller to confirm",
             html,
           }),
         }).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));
@@ -181,7 +181,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { orderEmailSeller, capitalizeFishName } = await import("../../../lib/email-templates");
       const species = (order as any).listing?.species || (order as any).species || "Fish";
       const html = orderEmailSeller({
-        statusLabel: "Paid via Razorpay — auto-confirmed",
+        statusLabel: "Paid — open your dashboard to confirm or decline",
         species,
         quantity: Number((order as any).quantity) || 1,
         quantity_unit: (order as any).quantity_unit || "kg",
@@ -197,7 +197,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         body: JSON.stringify({
           from: "Relifish <noreply@relifish.store>",
           to: _sellerForEmail.email,
-          subject: `New order paid: ${capitalizeFishName(species)}`,
+          subject: `New paid order — please confirm: ${capitalizeFishName(species)}`,
           html,
         }),
       }).catch((err) => console.warn("[razorpay-verify] seller email failed", { order_id, err: err?.message || String(err) }));

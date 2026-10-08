@@ -325,8 +325,9 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   let didFocusFromOrderQuery = false;
 
   const STATUS_BY_TAB: Record<string, string[]> = {
-    pending: ["pending", "pending_payment", "pre_order", "scheduled"],
-    accepted: ["confirmed", "paid", "payment_required", "ready_for_pickup", "out_for_delivery"],
+    // `paid` = buyer paid, seller hasn't accepted yet → needs action → New.
+    pending: ["pending", "pending_payment", "pre_order", "scheduled", "paid"],
+    accepted: ["confirmed", "payment_required", "ready_for_pickup", "out_for_delivery"],
     completed: ["picked_up", "completed", "declined", "cancelled", "refunded"],
   };
 
@@ -664,7 +665,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           pending_payment: ["New", "v2-oc-badge-new"],
           scheduled: ["Scheduled", "v2-oc-badge-new"],
           confirmed: ["Confirmed", "v2-oc-badge-new"],
-          paid: ["Paid", "v2-oc-badge-new"],
+          paid: ["Paid — confirm", "v2-oc-badge-urgent"],
           ready_for_pickup: ["Ready", "v2-oc-badge-ready"],
           out_for_delivery: ["Out for delivery", "v2-oc-badge-ready"],
           picked_up: ["Picked up", "v2-oc-badge-done"],
@@ -707,7 +708,18 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Confirm — refund buyer</button>
             </div>`;
           }
-        } else if (o.status === "confirmed" || o.status === "paid") {
+        } else if (o.status === "paid") {
+          // Buyer paid; the seller decides. Accept → confirmed, decline → full refund.
+          actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Buyer paid ₹${(Number(o.paid_amount) || 0).toLocaleString("en-IN")} — confirm to accept the order</div>
+            <div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
+              <div style="display:flex;gap:8px;">
+                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="accept" data-order-id="${o.id}">✓ Confirm order</button>
+                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline-show-reason" data-order-id="${o.id}">Can't fulfill</button>
+              </div>
+              <input type="text" placeholder="Reason (shown to buyer, optional)" id="decline-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;display:none;" />
+              <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Decline — refund buyer in full</button>
+            </div>`;
+        } else if (o.status === "confirmed") {
           const preorderPriceBlock = needsFinalPrice
             ? (() => {
                 const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "—";
@@ -755,15 +767,15 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                   <div style="font:400 11px Inter;color:var(--v2-ink-3);">Final price came in lower than they paid. The difference is refunded automatically via Razorpay — just fulfil the order as normal.</div>`}
                 </div>`
               : "";
-            actionsHtml = `${owedBlock}${fulfill}`;
+            actionsHtml = `${owedBlock}${fulfill}<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Cancel order · refund buyer</button>`;
           }
         } else if (o.status === "ready_for_pickup") {
-          actionsHtml = `<div class="v2-oc-actions">
-            <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="picked_up" data-order-id="${o.id}">✓ Picked up</button>
+          actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;">
+            <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="picked_up" data-order-id="${o.id}">✓ Picked up</button><button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Cancel order · refund buyer</button>
           </div>`;
         } else if (o.status === "out_for_delivery") {
-          actionsHtml = `<div class="v2-oc-actions">
-            <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="delivered" data-order-id="${o.id}">✓ Delivered</button>
+          actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;">
+            <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="delivered" data-order-id="${o.id}">✓ Delivered</button><button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Cancel order · refund buyer</button>
           </div>`;
         } else if (["cancelled", "declined"].includes(o.status) && wasActuallyPaid(o)) {
           // BUG-42: paid_amount is pre-set at creation, so this used to tell the
@@ -788,12 +800,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(o.quantity) / bundle)} pack` : (unit === "kg" && Number(o.quantity) > 0 && Number(o.quantity) < 1 ? `${Math.round(Number(o.quantity) * 1000)} grams` : `${o.quantity}${escape(unit)}`);
         let nextStepHint = "";
         if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
-          nextStepHint = isPaidViaRazorpay
-            ? (isDelivery ? "Next: Mark as out for delivery." : "Next: Mark as ready for pickup.")
-            : "Waiting for buyer to complete Razorpay payment.";
-        } else if ((o.status === "confirmed" || o.status === "paid") && needsFinalPrice) {
+          nextStepHint = isPaidViaRazorpay ? "Next: Confirm the order." : "Waiting for buyer to complete Razorpay payment.";
+        } else if (o.status === "paid") {
+          nextStepHint = "Next: Confirm the order (or decline — the buyer is refunded in full).";
+        } else if (o.status === "confirmed" && needsFinalPrice) {
           nextStepHint = "Next: Set final price before delivery or pickup.";
-        } else if (o.status === "confirmed" || o.status === "paid") {
+        } else if (o.status === "confirmed") {
           nextStepHint = isDelivery ? "Next: Mark as out for delivery." : "Next: Mark as ready for pickup.";
         } else if (o.status === "payment_required") {
           nextStepHint = "Waiting: Buyer must pay the difference.";
@@ -888,17 +900,19 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       out_for_delivery: "out_for_delivery",
       picked_up: "completed",
       delivered: "completed",
+      seller_cancel: "cancelled",
     };
+    if (action === "seller_cancel" && !window.confirm("Cancel this order? The buyer is refunded in full and notified.")) return;
     const originalText = btn?.textContent || "";
     const loadingLabels: Record<string, string> = {
       accept: "Confirming…", decline: "Declining…", ready: "Updating…",
       out_for_delivery: "Updating…", picked_up: "Completing…", delivered: "Completing…",
-      set_final_price: "Setting…",
+      set_final_price: "Setting…", seller_cancel: "Cancelling…",
     };
     const successLabels: Record<string, string> = {
       accept: "Confirmed", decline: "Declined", ready: "Marked ready",
       out_for_delivery: "Out for delivery", picked_up: "Completed", delivered: "Delivered",
-      set_final_price: "Price set",
+      set_final_price: "Price set", seller_cancel: "Cancelled",
     };
     if (btn) {
       btn.disabled = true;

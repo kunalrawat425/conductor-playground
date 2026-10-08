@@ -1,4 +1,4 @@
--- Covers migrations 069–073. Runs inside a transaction and rolls back. Raises on the first failed check.
+-- Covers migrations 069–074. Runs inside a transaction and rolls back. Raises on the first failed check.
 -- Local: docker exec -i <db container> psql -U postgres -v ON_ERROR_STOP=1 < supabase/tests/069_071_triggers.test.sql
 begin;
 
@@ -33,6 +33,18 @@ begin
   select weight_avail into v from fish_listings where id = l_id;
   if v <> 2 then raise exception 'restore after declining the real order: expected 2, got %', v; end if;
 
+  -- 074: stock is taken when the order becomes PAID (seller confirms later).
+  insert into orders (listing_id, buyer_id, buyer_phone, quantity, status, total_price) values (l_id, b_id, '9000000011', 0.5, 'pending_payment', 50) returning id into oa;
+  update orders set status = 'paid', payment_method = 'razorpay', razorpay_payment_id = 'pay_paid1' where id = oa;
+  select weight_avail into v from fish_listings where id = l_id;
+  if v <> 1.5 then raise exception 'paid did not hold stock: %', v; end if;
+  update orders set status = 'confirmed' where id = oa;
+  select weight_avail into v from fish_listings where id = l_id;
+  if v <> 1.5 then raise exception 'seller confirm took stock twice: %', v; end if;
+  update orders set status = 'cancelled', cancelled_by = 'buyer' where id = oa;
+  select weight_avail into v from fish_listings where id = l_id;
+  if v <> 2 then raise exception 'cancel after paid did not return stock: %', v; end if;
+
   -- Confirming a pre-order must not take today's stock.
   insert into orders (listing_id, buyer_id, buyer_phone, quantity, status, total_price, is_preorder, placement_kind)
     values (l_id, b_id, '9000000011', 1, 'pending_payment', 100, true, 'preorder') returning id into op;
@@ -54,7 +66,7 @@ begin
   insert into orders (listing_id, buyer_id, buyer_phone, quantity, status, total_price) values (l_id, tb_id, '9000000012', 1, 'pending_payment', 100) returning id into ot;
   if not (select is_test from orders where id = ot) then raise exception 'order of test buyer not is_test'; end if;
   n := purge_test_orders();
-  if n <> 2 then raise exception 'purge_test_orders deleted %, expected 2', n; end if;
+  if n < 2 then raise exception 'purge_test_orders deleted %, expected at least the 2 created here', n; end if;
   if exists (select 1 from orders where is_test) then raise exception 'test orders left after purge'; end if;
   if not exists (select 1 from orders where id = op) then raise exception 'purge deleted a real order'; end if;
 

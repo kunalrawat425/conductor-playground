@@ -156,18 +156,20 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Default: status transition
     const validTransitions: Record<string, string[]> = {
+      // Not paid yet: the seller can only decline (or confirm a row whose
+      // payment is already captured — guarded below).
       pending: ["confirmed", "declined"],
       pending_payment: ["confirmed", "declined"],
       pre_order: ["confirmed", "declined"],
       scheduled: ["confirmed", "declined"],
+      // Paid, awaiting the seller: accept → confirmed, or decline → full refund.
+      paid: ["confirmed", "declined", "cancelled"],
+      // Accepted: fulfil, or cancel with a full refund (policy: seller cancellations).
       confirmed: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
-      paid: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       payment_required: ["confirmed", "cancelled"],
-      // `refunded`, `completed`, `declined`, `cancelled` are terminal: no exits.
-      // `refunded` used to allow Ready/Out (for pre-BUG-43 price-drop rows), so a
-      // fully refunded order could be "fulfilled" again. Prod has none of those rows.
       ready_for_pickup: ["completed", "cancelled"],
       out_for_delivery: ["completed", "cancelled"],
+      // `refunded`, `completed`, `declined`, `cancelled` are terminal: no exits.
     };
     const { data: currentOrder } = await supabase
       .from("orders")
