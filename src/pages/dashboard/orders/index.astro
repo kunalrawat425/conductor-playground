@@ -283,8 +283,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   import { wasActuallyPaid, refundableAmount, paymentMethodLabel, preorderNeedsFinalPrice } from "../../../lib/order-payment-state";
   import { supabase } from "../../../lib/supabase";
 
-  const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
-
   let sellerId: string | null = null;
   let sellerData: any = null;
   let currentTab: "pending" | "accepted" | "completed" = "pending";
@@ -397,26 +395,21 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     }, 4500);
   }
 
-  /** Storage paths for data-path= (do not use encodeURIComponent — dataset/DOM decoding breaks slashes). */
-  function attrDataPath(p: string) {
-    return String(p || "")
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;");
-  }
-
-  /** Signed URLs via /api/seller/payment-screenshot — show whenever paths exist. */
-  function paymentProofHtml(orderId: string, paths: string[] | null | undefined, heading = "Buyer payment proof") {
-    const arr = Array.isArray(paths) ? paths.filter(Boolean) : [];
-    if (!arr.length) return "";
-    const btns = arr
-      .map(
-        (p, i) =>
-          `<button type="button" class="v2-btn v2-btn-sm v2-oc-proof-btn" data-action="view_screenshot" data-order-id="${orderId}" data-path="${attrDataPath(p)}">🖼 View proof${arr.length > 1 ? " " + (i + 1) : ""}</button>`,
-      )
-      .join("");
-    return `<div class="v2-oc-proof">
-      <div class="v2-oc-proof-label">💳 ${escape(heading)}</div>
-      <div class="v2-oc-proof-btns">${btns}</div>
+  /** Read-only refund status for cancelled/declined/refunded cards. Razorpay refunds run server-side. */
+  function refundStatusHtml(o: any, amt: number) {
+    const amtStr = amt.toLocaleString("en-IN");
+    const note = o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(o.refund_note)}</div>` : "";
+    if (o.refund_sent_at) {
+      return `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+        <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${amtStr} sent via Razorpay</div>
+        ${note}
+        <div style="font:400 10px Inter;color:var(--v2-ink-3);">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+      </div>`;
+    }
+    return `<div style="padding:10px;background:#F5F3FF;border:1px solid #C4B5FD;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+      <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${amtStr} to buyer — processing via Razorpay</div>
+      ${note}
+      <div style="font:400 11px Inter;color:var(--v2-ink-3);">⏱ Reaches the buyer's original payment method within 5–7 working days. No action needed.</div>
     </div>`;
   }
 
@@ -636,9 +629,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     // Action delegation for all order cards (including session group cards)
     list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        if (btn.dataset.action === "view_screenshot") {
-          viewScreenshot(btn.dataset.orderId!, btn.dataset.path!, btn);
-        } else if (btn.dataset.action === "decline-show-reason") {
+        if (btn.dataset.action === "decline-show-reason") {
           const orderId = btn.dataset.orderId!;
           const noteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
           const confirmBtn = document.getElementById(`decline-confirm-${orderId}`) as HTMLButtonElement | null;
@@ -652,22 +643,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         }
       });
     });
-    // Refund file picker label updates
-    list.querySelectorAll<HTMLInputElement>("input[id^='refund-file-']").forEach((inp) => {
-      const orderId = inp.id.replace("refund-file-", "");
-      inp.addEventListener("change", () => {
-        const drop = document.getElementById(`refund-drop-${orderId}`);
-        if (drop) drop.textContent = inp.files?.[0]?.name || "📷 Upload UPI screenshot (optional)";
-      });
-    });
-
     tryFocusOrderFromQuery();
   }
 
   function renderSingleOrder(o: any) {
         const needsFinalPrice = preorderNeedsFinalPrice(o);
         const isPreorder = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
-        const hasPaymentProof = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
         const time = o.scheduled_for
           ? new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
@@ -706,11 +687,11 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           if (isPaidViaRazorpay) {
             actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Payment received — confirm to start preparing</div>
               <div class="v2-oc-actions"><button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="accept" data-order-id="${o.id}">✓ Confirm order</button></div>`;
-          } else if (RAZORPAY_ENABLED && !isPaidViaRazorpay) {
-            // Razorpay is active but buyer hasn't completed payment yet.
-            // Offer a manual reconcile button — if buyer paid but the client
-            // handler never fired, this checks Razorpay directly and flips
-            // the row to confirmed. Backup for when the webhook is missing/lagged.
+          } else {
+            // Buyer hasn't completed payment yet. Offer a manual reconcile
+            // button — if buyer paid but the client handler never fired, this
+            // checks Razorpay directly and flips the row to confirmed. Backup
+            // for when the webhook is missing/lagged.
             const hasRzpOrder = !!o.razorpay_order_id;
             const reconcileBtn = hasRzpOrder
               ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="reconcile-razorpay" data-order-id="${o.id}">🔄 Check Razorpay for payment</button>`
@@ -725,33 +706,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               <input type="text" placeholder="Decline reason (shown to buyer, optional)" id="decline-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;display:none;" />
               <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Confirm — refund buyer</button>
             </div>`;
-          } else {
-          const proofPending = paymentProofHtml(o.id, o.payment_screenshot_urls, "Buyer uploaded payment proof");
-          const awaitingNote = proofPending
-            ? ""
-            : `<div style="font:500 11px Inter;color:var(--v2-orange);">Awaiting buyer payment screenshot</div>`;
-          const verifyBtnAttrs = !hasPaymentProof
-            ? `disabled style="flex:1;background:#CBD5E1;color:#64748B;cursor:not-allowed;"`
-            : `style="flex:1;background:var(--v2-green);color:#fff;"`;
-          const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "";
-          const preOrderExtras = o.status === "pre_order" ? `
-            <div style="background:#F5F3FF;border-radius:var(--v2-radius-sm);padding:10px;display:flex;flex-direction:column;gap:8px;">
-              <div style="font:600 11px Inter;color:#7C3AED;">🌙 Pre-order — enter actual selling price</div>
-              ${paidAmt ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">Buyer pre-paid: ₹${paidAmt}. Lower price → auto-refund difference.</div>` : ""}
-              <input type="number" placeholder="Actual selling price ₹" id="pre-confirm-price-${o.id}"
-                style="width:100%;padding:8px 10px;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
-            </div>` : "";
-          actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
-            ${awaitingNote}
-            ${proofPending}
-            ${preOrderExtras}
-            <input type="text" placeholder="Decline reason (shown to buyer, optional)" id="decline-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;display:none;" />
-            <div style="display:flex;gap:8px;">
-              <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline-show-reason" data-order-id="${o.id}">Can't fulfill</button>
-              <button class="v2-btn v2-btn-sm" ${verifyBtnAttrs} data-action="verify_payment" data-order-id="${o.id}" data-is-preorder="${o.status === "pre_order" ? "1" : "0"}">✓ Verify & Confirm</button>
-            </div>
-            <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Confirm — refund buyer</button>
-          </div>`;
           }
         } else if (o.status === "confirmed" || o.status === "paid") {
           const preorderPriceBlock = needsFinalPrice
@@ -764,17 +718,15 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                 const rangeHtml = priceMin && priceMax
                   ? `<div style="font:500 11px Inter;color:#7C3AED;">Your listed range: ₹${Number(priceMin).toLocaleString("en-IN")} – ₹${Number(priceMax).toLocaleString("en-IN")}</div>`
                   : "";
-                const proofBlock = paymentProofHtml(o.id, o.payment_screenshot_urls, "Buyer uploaded payment proof");
                 return `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;margin-top:8px;">
                   <div style="font:500 11px Inter;color:var(--v2-ink-3);">🌙 Next-day catch. Set actual price after receiving the fish.</div>
                   <div style="font:600 12px Inter;color:#7C3AED;">Amount received: ₹${paidAmt}</div>
-                  ${proofBlock}
                   ${rangeHtml}
                   <div style="display:flex;gap:8px;align-items:center;">
                     <input type="number" placeholder="Final price (₹)" id="final-price-${o.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
                     <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;white-space:nowrap;" data-action="set_final_price" data-order-id="${o.id}">Set price</button>
                   </div>
-                  <div style="font:400 11px Inter;color:#D97706;">⚠️ If final &lt; ₹${paidAmt} → refund within 7 working days. If final &gt; ₹${paidAmt} → buyer pays the difference.</div>
+                  <div style="font:400 11px Inter;color:#D97706;">⚠️ If final &lt; ₹${paidAmt} → the difference is refunded to the buyer automatically via Razorpay. If final &gt; ₹${paidAmt} → buyer pays the difference.</div>
                   <div style="font:600 11px Inter;color:#7C3AED;">Next step unlocks only after final price is set.</div>
                 </div>`;
               })()
@@ -782,7 +734,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           if (needsFinalPrice) {
             actionsHtml = preorderPriceBlock;
           } else {
-            const proofAfterPrice = paymentProofHtml(o.id, o.payment_screenshot_urls, "Payment proof on file");
             const fulfill = isDelivery
               ? `<div class="v2-oc-actions">
                   <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="out_for_delivery" data-order-id="${o.id}">🚲 Out for delivery</button>
@@ -796,18 +747,15 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             // `confirmed` with the difference recorded in refund_amt — so the
             // amount owed has to be surfaced here, or it becomes invisible.
             const dueBack = Number(o.refund_amt) || 0;
-            const owedBlock = dueBack > 0 && !o.refund_sent_at
-              ? `<div style="padding:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:var(--v2-radius-sm);display:flex;flex-direction:column;gap:6px;">
-                  <div style="font:700 12px Inter;color:var(--v2-orange);">↩ Refund ₹${dueBack.toLocaleString("en-IN")} to buyer</div>
-                  <div style="font:400 11px Inter;color:var(--v2-ink-3);">Final price came in lower than they paid. Fulfil the order as normal, then send the difference.</div>
-                  <button class="v2-btn v2-btn-sm" style="background:var(--v2-orange);color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
+            const owedBlock = dueBack > 0
+              ? `<div style="padding:10px;background:${o.refund_sent_at ? "#F0FDF4" : "#FFF7ED"};border:1px solid ${o.refund_sent_at ? "#86EFAC" : "#FED7AA"};border-radius:var(--v2-radius-sm);display:flex;flex-direction:column;gap:6px;">
+                  ${o.refund_sent_at
+                    ? `<div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${dueBack.toLocaleString("en-IN")} sent via Razorpay</div>`
+                    : `<div style="font:700 12px Inter;color:var(--v2-orange);">↩ Refund ₹${dueBack.toLocaleString("en-IN")} to buyer</div>
+                  <div style="font:400 11px Inter;color:var(--v2-ink-3);">Final price came in lower than they paid. The difference is refunded automatically via Razorpay — just fulfil the order as normal.</div>`}
                 </div>`
-              : dueBack > 0 && o.refund_sent_at
-                ? `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);">
-                    <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${dueBack.toLocaleString("en-IN")} marked as sent</div>
-                  </div>`
-                : "";
-            actionsHtml = `${owedBlock}${proofAfterPrice ? `<div style="display:flex;flex-direction:column;gap:8px;">${proofAfterPrice}</div>` : ""}${fulfill}`;
+              : "";
+            actionsHtml = `${owedBlock}${fulfill}`;
           }
         } else if (o.status === "ready_for_pickup") {
           actionsHtml = `<div class="v2-oc-actions">
@@ -820,73 +768,17 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         } else if (["cancelled", "declined"].includes(o.status) && wasActuallyPaid(o)) {
           // BUG-42: paid_amount is pre-set at creation, so this used to tell the
           // seller to refund orders the buyer had never paid for.
-          const refundAmt = refundableAmount(o).toLocaleString("en-IN");
-          const paymentSsPaths: string[] = o.payment_screenshot_urls || [];
-          const paymentSsBtns = paymentSsPaths.map((p, i) =>
-            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${attrDataPath(p)}">🖼 Buyer proof ${paymentSsPaths.length > 1 ? i + 1 : ''}</button>`
-          ).join("");
-          if (o.refund_sent_at) {
-            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-              <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${refundAmt} marked as sent</div>
-              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(o.refund_note)}</div>` : ''}
-              <div style="font:400 10px Inter;color:var(--v2-ink-3);">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
-              ${paymentSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${paymentSsBtns}</div>` : ''}
-            </div>`;
-          } else {
-            actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
-              <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${refundAmt} to buyer via UPI</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);">⏱ Buyer expects refund within 7 working days.</div>
-              ${paymentSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${paymentSsBtns}</div>` : ''}
-              <input type="text" placeholder="UTR number / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
-              <label style="cursor:pointer;">
-                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload your UPI screenshot (optional)</div>
-                <input type="file" id="refund-file-${o.id}" accept="image/*" style="display:none;" />
-              </label>
-              <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
-            </div>`;
-          }
+          actionsHtml = refundStatusHtml(o, refundableAmount(o));
         } else if (o.status === "payment_required") {
           const balanceAmt = o.final_price && o.paid_amount ? (Number(o.final_price) - Number(o.paid_amount)).toLocaleString("en-IN") : "—";
-          const balSsPaths: string[] = o.payment_screenshot_urls || [];
-          const balSsBtns = balSsPaths.map((p, i) =>
-            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${attrDataPath(p)}">🖼 Buyer proof ${balSsPaths.length > 1 ? i + 1 : ''}</button>`
-          ).join("");
           actionsHtml = `<div style="padding:10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
             <div style="font:700 12px Inter;color:var(--v2-orange);">⏳ Waiting for balance ₹${balanceAmt}</div>
             <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyer notified. Will confirm once they pay the difference.</div>
-            ${balSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${balSsBtns}</div>` : ''}
           </div>`;
         } else if (o.status === "refunded") {
-          const refundAmt = o.paid_amount && o.final_price ? (Number(o.paid_amount) - Number(o.final_price)).toLocaleString("en-IN") : "—";
-          const refSsPaths: string[] = o.payment_screenshot_urls || [];
-          const refSsBtns = refSsPaths.map((p, i) =>
-            `<button class="v2-btn v2-btn-sm" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;" data-action="view_screenshot" data-order-id="${o.id}" data-path="${attrDataPath(p)}">🖼 Buyer proof ${refSsPaths.length > 1 ? i + 1 : ''}</button>`
-          ).join("");
-          const fulfillBtns = isDelivery
-            ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="out_for_delivery" data-order-id="${o.id}">🚲 Out for delivery</button>`
-            : `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="ready" data-order-id="${o.id}">📦 Ready for pickup</button>`;
-          if (o.refund_sent_at) {
-            actionsHtml = `<div style="padding:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-              <div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${refundAmt} marked as sent</div>
-              ${o.refund_note ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);">${escape(o.refund_note)}</div>` : ''}
-              <div style="font:400 10px Inter;color:var(--v2-ink-3);">${new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
-              ${refSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${refSsBtns}</div>` : ''}
-            </div>
-            <div class="v2-oc-actions" style="margin-top:6px;">${fulfillBtns}</div>`;
-          } else {
-            actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;" data-refund-block="${o.id}">
-              <div style="font:700 12px Inter;color:#7C3AED;">↩ Refund ₹${refundAmt} difference to buyer via UPI</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);">⏱ Send the difference first, then mark the order ready.</div>
-              ${refSsBtns ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);">💳 Buyer's payment proof:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${refSsBtns}</div>` : ''}
-              <input type="text" placeholder="UTR number / note (optional)" id="refund-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;" />
-              <label style="cursor:pointer;">
-                <div id="refund-drop-${o.id}" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:8px 10px;text-align:center;font:500 11px Inter;color:var(--v2-ink-3);">📷 Upload your UPI screenshot (optional)</div>
-                <input type="file" id="refund-file-${o.id}" accept="image/*" style="display:none;" />
-              </label>
-              <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;" data-action="mark_refund_sent" data-order-id="${o.id}">✓ Mark refund sent</button>
-              <div class="v2-oc-actions" style="margin-top:4px;">${fulfillBtns}</div>
-            </div>`;
-          }
+          const paidAmt = Number(o.paid_amount) || 0;
+          const finalAmt = Number(o.final_price) || 0;
+          actionsHtml = refundStatusHtml(o, finalAmt > 0 ? Math.max(0, paidAmt - finalAmt) : paidAmt);
         }
 
         const listingOpts = o.listing?.pricing_options || [];
@@ -898,9 +790,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
           nextStepHint = isPaidViaRazorpay
             ? (isDelivery ? "Next: Mark as out for delivery." : "Next: Mark as ready for pickup.")
-            : RAZORPAY_ENABLED
-              ? "Waiting for buyer to complete Razorpay payment."
-              : "Next: Wait for payment screenshot, then verify and confirm.";
+            : "Waiting for buyer to complete Razorpay payment.";
         } else if ((o.status === "confirmed" || o.status === "paid") && needsFinalPrice) {
           nextStepHint = "Next: Set final price before delivery or pickup.";
         } else if (o.status === "confirmed" || o.status === "paid") {
@@ -930,7 +820,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         else if (['pending_payment', 'payment_required'].includes(o.status) && !isPaidViaRazorpay) payStatusText = "Payment pending";
         else if (wasActuallyPaid(o) || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
 
-        return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}" data-has-payment-proof="${hasPaymentProof ? "true" : "false"}">
+        return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}">
           <div class="v2-oc-top">
             <div>
               <div class="v2-oc-id">${isPreorder ? "🌙 " : ""}#${id6}${o.buyer_phone ? ' · ' + escape(o.buyer_phone.slice(-4)) : ''}</div>
@@ -954,39 +844,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           ${nextStepHint ? `<div class="v2-oc-next">${nextStepHint}</div>` : ""}
           ${actionsHtml}
         </div>`;
-  }
-
-  async function viewScreenshot(orderId: string, _pathFromDataset: string, btn: HTMLButtonElement) {
-    if (!orderId) {
-      (window as any).v2Toast?.("error", "Could not load screenshot", "Missing order id on this card. Refresh and retry.");
-      return;
-    }
-    const raw = (btn.getAttribute("data-path") || _pathFromDataset || "").trim();
-    let path = raw;
-    try {
-      path = decodeURIComponent(raw);
-    } catch {
-      path = raw;
-    }
-    const orig = btn.textContent || "";
-    btn.disabled = true;
-    btn.textContent = "Loading…";
-    try {
-      const res = await fetch(`/api/seller/payment-screenshot?order_id=${encodeURIComponent(orderId)}&seller_id=${encodeURIComponent(sellerId!)}&seller_phone=${encodeURIComponent(localStorage.getItem("rlf_seller_phone") || "")}&path=${encodeURIComponent(path)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
-      window.open(data.url, "_blank", "noopener");
-    } catch (err: any) {
-      const msg = err.message || "Failed";
-      if (/order not found|screenshot not found on this order/i.test(msg)) {
-        (window as any).v2Toast?.("error", "Could not load screenshot", "Order lookup failed for this screenshot. Please refresh orders and try again.");
-      } else {
-        (window as any).v2Toast?.("error", "Could not load screenshot", msg);
-      }
-    } finally {
-      btn.disabled = false;
-      btn.textContent = orig;
-    }
   }
 
   async function reconcileRazorpay(orderId: string, btn?: HTMLButtonElement) {
@@ -1023,7 +880,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       return;
     }
     // Actions that go directly to the API as action= (not status transitions)
-    const apiActions = new Set(["verify_payment", "mark_refund_sent", "set_final_price"]);
+    const apiActions = new Set(["set_final_price"]);
     const statusMap: Record<string, string> = {
       accept: "confirmed",
       decline: "declined",
@@ -1036,12 +893,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     const loadingLabels: Record<string, string> = {
       accept: "Confirming…", decline: "Declining…", ready: "Updating…",
       out_for_delivery: "Updating…", picked_up: "Completing…", delivered: "Completing…",
-      verify_payment: "Verifying…", mark_refund_sent: "Saving…", set_final_price: "Setting…",
+      set_final_price: "Setting…",
     };
     const successLabels: Record<string, string> = {
       accept: "Confirmed", decline: "Declined", ready: "Marked ready",
       out_for_delivery: "Out for delivery", picked_up: "Completed", delivered: "Delivered",
-      verify_payment: "Payment verified", mark_refund_sent: "Refund marked sent", set_final_price: "Price set",
+      set_final_price: "Price set",
     };
     if (btn) {
       btn.disabled = true;
@@ -1061,29 +918,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           }
           body.final_price = finalPrice;
         }
-        if (action === "verify_payment") {
-          const priceInput = document.getElementById(`pre-confirm-price-${orderId}`) as HTMLInputElement | null;
-          body._preOrderPrice = priceInput ? parseFloat(priceInput.value || "") : NaN;
-        }
-        if (action === "mark_refund_sent") {
-          const noteInput = document.getElementById(`refund-note-${orderId}`) as HTMLInputElement | null;
-          body.refund_note = noteInput?.value?.trim() || null;
-          // Upload screenshot first if selected
-          const fileInput = document.getElementById(`refund-file-${orderId}`) as HTMLInputElement | null;
-          const file = fileInput?.files?.[0];
-          if (file) {
-            const form = new FormData();
-            form.append("order_id", orderId);
-            form.append("seller_id", sellerId!);
-            form.append("seller_phone", localStorage.getItem("rlf_seller_phone") || "");
-            form.append("file", file);
-            const uploadRes = await fetch("/api/seller/upload-refund", { method: "POST", body: form });
-            const uploadData = await uploadRes.json();
-            if (uploadRes.ok && uploadData.path) {
-              body.refund_screenshot_path = uploadData.path;
-            }
-          }
-        }
       } else {
         body.status = statusMap[action] || "declined";
         if (body.status === "declined" || body.status === "cancelled") {
@@ -1099,15 +933,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Update failed");
-
-      // Pre-order verify: chain set_final_price if price entered
-      if (action === "verify_payment" && Number.isFinite(body._preOrderPrice) && body._preOrderPrice > 0) {
-        await fetch("/api/seller/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", order_id: orderId, action: "set_final_price", final_price: body._preOrderPrice }),
-        });
-      }
 
       (window as any).v2Toast?.("success", successLabels[action] || "Updated", "Order status updated");
       // Auto-switch to tab where order now lives
@@ -1177,42 +1002,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     if (!sellerId) return;
     const url = `/api/seller/orders-export?seller_id=${encodeURIComponent(sellerId)}&seller_phone=${encodeURIComponent(localStorage.getItem("rlf_seller_phone") || "")}&date_filter=${encodeURIComponent(currentRange)}`;
     window.location.href = url;
-  });
-
-  // Bulk-verify orders that already have buyer payment proof in the current list
-  document.getElementById("v2-mark-ready")?.addEventListener("click", async () => {
-    if (!sellerId) return;
-    const list = document.getElementById("v2-orders-list");
-    const cards = Array.from(list?.querySelectorAll<HTMLDivElement>("[data-order-id][data-has-payment-proof=\"true\"]") || []);
-    const ids = cards.map((c) => c.dataset.orderId!).filter(Boolean);
-    if (ids.length === 0) {
-      (window as any).v2Toast?.("error", "Nothing to verify", "No orders with payment proof in view — upload must appear on each card first.");
-      return;
-    }
-    if (!confirm(`Verify payment and confirm ${ids.length} order${ids.length !== 1 ? "s" : ""} that already have buyer proof?`)) return;
-    const btn = document.getElementById("v2-mark-ready") as HTMLButtonElement;
-    btn.disabled = true;
-    btn.textContent = `Verifying ${ids.length}…`;
-    const results = await Promise.all(ids.map(async (id) => {
-      try {
-        const res = await fetch("/api/seller/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ seller_id: sellerId, order_id: id, action: "verify_payment" }),
-        });
-        return res.ok;
-      } catch { return false; }
-    }));
-    const ok = results.filter(Boolean).length;
-    const fail = results.length - ok;
-    if (fail === 0) {
-      (window as any).v2Toast?.("success", `${ok} verified`, "Payment verified for all selected orders");
-    } else {
-      (window as any).v2Toast?.("error", `${ok} verified, ${fail} failed`, "Retry the failed ones individually");
-    }
-    btn.disabled = false;
-    btn.textContent = "✓ Verify all with proof";
-    await loadOrders(false);
   });
 
   // Wire empty-state CTAs (Refresh status + Sign out on pending activation page)

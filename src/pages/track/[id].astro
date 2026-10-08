@@ -84,7 +84,7 @@ const { id } = Astro.params;
 
     <!-- Actions -->
     <div id="v2-od-actions" style="margin-top:16px;"></div>
-    <!-- Optional payment proof (confirmed+); separate from #v2-od-actions so prefs form re-renders do not wipe it -->
+    <!-- Scheduled-order cancel (confirmed+); separate from #v2-od-actions so prefs form re-renders do not wipe it -->
     <div id="v2-od-extra-payment"></div>
   </div>
 </AppShell>
@@ -171,7 +171,6 @@ const { id } = Astro.params;
     import.meta.env.PUBLIC_SUPABASE_URL || "",
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
   );
-  const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
   const RAZORPAY_KEY_ID  = import.meta.env.PUBLIC_RAZORPAY_KEY_ID  || "";
   // Extract order ID from URL path: /track/{id}
   const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
@@ -182,11 +181,8 @@ const { id } = Astro.params;
     const rating = Math.max(0, Math.min(5, Number(n) || 0));
     return [1, 2, 3, 4, 5].map(i => i <= rating ? "★" : "☆").join(" ");
   }
-  function statusLabel(s, o) {
-    const proofOnFile = o && Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
-    const pendingLabel = RAZORPAY_ENABLED
-      ? "Complete payment"
-      : (proofOnFile ? "Payment proof submitted" : "Upload payment proof");
+  function statusLabel(s) {
+    const pendingLabel = "Complete payment";
     return ({
       pending: pendingLabel,
       pending_payment: pendingLabel,
@@ -205,7 +201,7 @@ const { id } = Astro.params;
     })[s] || s;
   }
   function billPaymentFootnote(o) {
-    return paymentMethodLabel(o) || (RAZORPAY_ENABLED ? "Payment pending" : "Payment proof pending");
+    return paymentMethodLabel(o) || "Payment pending";
   }
   function isCancellable(s) {
     return s === "pending" || s === "pending_payment" || s === "pre_order";
@@ -242,7 +238,7 @@ const { id } = Astro.params;
     const extraPaySlot = document.getElementById("v2-od-extra-payment");
     if (extraPaySlot) extraPaySlot.innerHTML = "";
 
-    document.getElementById("v2-od-status").textContent = statusLabel(o.status, o);
+    document.getElementById("v2-od-status").textContent = statusLabel(o.status);
     document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,8).toUpperCase();
     document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     
@@ -300,7 +296,7 @@ const { id } = Astro.params;
       }
     }
 
-    // Stepper — simple (4) vs same-day UPI (5, no Price set) vs catch pre-order (5 + Price set)
+    // Stepper — simple (4) vs same-day (5, no Price set) vs catch pre-order (5 + Price set)
     const orderType = (o.order_type || "pickup") === "delivery" ? "delivery" : "pickup";
     const { labels: stepLabels, step } = resolveBuyerStepper(o, orderType);
     const stepper = document.getElementById("v2-od-stepper");
@@ -410,8 +406,8 @@ const { id } = Astro.params;
           <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
             <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Next-day catch pre-order</div>
             ${rangeHtml}
-            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">Pay and upload UPI screenshot so the seller can verify, then they’ll set the final price after the morning catch.${amountDue ? ` Amount: <strong>${amountDue}</strong>.` : ""}</div>
-            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → <strong>refund within 7 working days</strong>. If <strong>higher</strong> → you'll approve the difference.</div>
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">Pay via Razorpay to place your pre-order, then the seller will set the final price after the morning catch.${amountDue ? ` Amount: <strong>${amountDue}</strong>.` : ""}</div>
+            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → <strong>the difference is refunded automatically</strong> to your original payment method (5–7 working days). If <strong>higher</strong> → you'll approve the difference.</div>
           </div>`;
         preorderEl.style.display = "block";
       } else {
@@ -444,7 +440,7 @@ const { id } = Astro.params;
     // Actions
     const actions = document.getElementById("v2-od-actions");
     if (o.status === "pending_payment" || o.status === "pending") {
-      // UPI screenshot upload — pending_payment is the normal pay-first flow;
+      // Razorpay pay button — pending_payment is the normal pay-first flow;
       // pending covers legacy orders created before the pending_payment migration.
       renderPaymentUpload(o, "pending");
       const pre = isPreorderCatchFlow(o);
@@ -499,16 +495,9 @@ const { id } = Astro.params;
       const isDelivered = ["completed", "picked_up"].includes(o.status);
       const existingFeedback = o.buyer_feedback || null;
       if (paidForRefund > 0 && ["cancelled", "declined"].includes(o.status)) {
-        const buyerSsPaths2: string[] = o.payment_screenshot_urls || [];
-        const buyerSsBtns2 = buyerSsPaths2.map((_, i) =>
-          `<button id="v2-od-refund-ss2-${i}" style="width:100%;margin-top:6px;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View my screenshot${buyerSsPaths2.length > 1 ? ' ' + (i+1) : ''}</button>`
-        ).join("");
         const label = o.status === "declined" ? "Order declined by seller" : "Order cancelled";
-        const sellerRefundBtn = o.refund_screenshot_path
-          ? `<button id="v2-od-seller-refund-ss" style="width:100%;margin-top:6px;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🧾 View seller's refund proof</button>`
-          : "";
         const sellerRefundNote = o.refund_sent_at
-          ? `<div style="font:500 11px Inter;color:#059669;margin-top:6px;">✓ Seller marked refund sent on ${new Date(o.refund_sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</div>`
+          ? `<div style="font:500 11px Inter;color:#059669;margin-top:6px;">✓ Refund initiated on ${new Date(o.refund_sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</div>`
           : "";
         const sellerNote = o.refund_note
           ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:4px;padding:6px 8px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(o.refund_note)}</div>`
@@ -517,38 +506,9 @@ const { id } = Astro.params;
           <div style="background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius);padding:16px;margin-top:8px;margin-bottom:8px;">
             <div style="font:800 14px Inter;color:#DC2626;margin-bottom:8px;">❌ ${label}</div>
             <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Refund: ₹${paidForRefund.toLocaleString("en-IN")}</div>
-            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Your refund will be sent within <strong>7 working days</strong> via UPI. Check your UPI app.</div>
-            ${sellerRefundNote}${sellerNote}${sellerRefundBtn}${buyerSsBtns2}
+            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ Razorpay refunds reach your original payment method within <strong>5–7 working days</strong>.</div>
+            ${sellerRefundNote}${sellerNote}
           </div>`;
-        // Wire screenshot buttons
-        setTimeout(() => {
-          const buyerIdForRef = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
-          // Seller's refund screenshot
-          document.getElementById("v2-od-seller-refund-ss")?.addEventListener("click", async (e) => {
-            const btn = e.currentTarget as HTMLButtonElement;
-            btn.disabled = true; btn.textContent = "Loading…";
-            try {
-              const res = await fetch(`/api/orders/refund-screenshot?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForRef)}`);
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error || "Failed");
-              window.open(data.url, "_blank", "noopener");
-            } catch (err: any) { window.v2Toast?.("error", "Could not load", err.message); }
-            finally { btn.disabled = false; btn.textContent = "🧾 View seller's refund proof"; }
-          });
-          buyerSsPaths2.forEach((_, i) => {
-            document.getElementById(`v2-od-refund-ss2-${i}`)?.addEventListener("click", async (e) => {
-              const btn = e.currentTarget as HTMLButtonElement;
-              btn.disabled = true; btn.textContent = "Loading…";
-              try {
-                const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForRef)}`);
-                const data = await res.json();
-                const url = data.urls?.[i];
-                if (url) window.open(url, "_blank", "noopener");
-              } catch (err: any) { window.v2Toast?.("error", "Could not load", err.message); }
-              finally { btn.disabled = false; btn.textContent = `🖼 View my screenshot${buyerSsPaths2.length > 1 ? ' ' + (i+1) : ''}`; }
-            });
-          });
-        }, 0);
       }
       const feedbackHtml = isDelivered
         ? `
@@ -753,31 +713,25 @@ const { id } = Astro.params;
       }
 
       const paySlot = document.getElementById("v2-od-extra-payment");
-      if (paySlot) {
-        if (o.status === "scheduled") {
-          paySlot.innerHTML = `<button type="button" class="v2-od-cancel" id="v2-od-cancel-sched" style="margin-bottom:10px;">Cancel order</button><div id="v2-od-opt-pay-host"></div>`;
-          document.getElementById("v2-od-cancel-sched")?.addEventListener("click", async () => {
-            if (!confirm("Cancel this scheduled order?")) return;
-            try {
-              const buyerId = localStorage.getItem("rlf_buyer_id") || "";
-              const res = await fetch("/api/orders/cancel", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error || "Cancel failed");
-              window.v2Toast?.("success", "Order cancelled");
-              setTimeout(() => load(), 600);
-            } catch (err: any) {
-              window.v2Toast?.("error", "Failed", err.message);
-            }
-          });
-          const host = document.getElementById("v2-od-opt-pay-host");
-          if (host) renderPaymentUpload(o, "optional", host);
-        } else {
-          renderPaymentUpload(o, "optional", paySlot);
-        }
+      if (paySlot && o.status === "scheduled") {
+        paySlot.innerHTML = `<button type="button" class="v2-od-cancel" id="v2-od-cancel-sched" style="margin-bottom:10px;">Cancel order</button>`;
+        document.getElementById("v2-od-cancel-sched")?.addEventListener("click", async () => {
+          if (!confirm("Cancel this scheduled order?")) return;
+          try {
+            const buyerId = localStorage.getItem("rlf_buyer_id") || "";
+            const res = await fetch("/api/orders/cancel", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Cancel failed");
+            window.v2Toast?.("success", "Order cancelled");
+            setTimeout(() => load(), 600);
+          } catch (err: any) {
+            window.v2Toast?.("error", "Failed", err.message);
+          }
+        });
       }
     } else if (o.status === "payment_required") {
       renderPaymentUpload(o, "balance");
@@ -793,285 +747,40 @@ const { id } = Astro.params;
       const refundBadge = stillLive
         ? `<div style="font:700 10px Inter;color:#059669;background:#DCFCE7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">✅ Your order is confirmed — being prepared</div>`
         : `<div style="font:700 10px Inter;color:#B45309;background:#FEF3C7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">Order closed — payment refunded</div>`;
-      const refundEta = o.payment_method === "razorpay"
-        ? `Razorpay refunds reach your original payment method within <strong>5–7 working days</strong>.`
-        : `UPI refunds reflect within <strong>7 working days</strong>. Check your UPI app.`;
+      const refundEta = `Razorpay refunds reach your original payment method within <strong>5–7 working days</strong>.`;
       const sentAt = o.refund_sent_at ? new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : null;
       const note = o.refund_note || "";
-      const buyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
-      // Buyer's own payment screenshots (to show alongside refund info)
-      const buyerSsPaths: string[] = o.payment_screenshot_urls || [];
-      const buyerSsSection = buyerSsPaths.length > 0
-        ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--v2-border);">
-            <div style="font:600 11px Inter;color:var(--v2-ink-3);margin-bottom:6px;">💳 Your uploaded payment proof</div>
-            <div id="v2-od-buyer-ss-list" style="display:flex;flex-direction:column;gap:6px;">
-              ${buyerSsPaths.map((_, i) => `<button id="v2-od-buyer-ss-${i}" style="width:100%;padding:9px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}</button>`).join('')}
-            </div>
-          </div>`
-        : "";
       if (sentAt) {
-        const screenshotBtn = o.refund_screenshot_path
-          ? `<button id="v2-od-refund-ss" style="margin-top:10px;width:100%;padding:10px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:var(--v2-radius-sm);font:600 12px Inter;cursor:pointer;">🖼 View seller's refund proof</button>`
-          : "";
         actions.innerHTML = `
           <div style="background:var(--v2-bg);border:1.5px solid #6366F1;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
             ${refundBadge}
             <div style="font:800 14px Inter;color:#6366F1;margin-bottom:6px;">↩ Refund: ₹${refundAmt.toLocaleString("en-IN")} sent back</div>
-            <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Sent on ${sentAt}</div>
+            <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Refund initiated on ${sentAt}</div>
             ${note ? `<div style="font:500 12px Inter;color:var(--v2-ink-2);margin-top:6px;padding:8px 10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);">📝 ${escape(note)}</div>` : ''}
             <div style="font:600 11px Inter;color:#7C3AED;margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ ${refundEta}</div>
-            ${screenshotBtn}
-            ${buyerSsSection}
           </div>`;
-        if (o.refund_screenshot_path) {
-          document.getElementById("v2-od-refund-ss")?.addEventListener("click", async (e) => {
-            const btn = e.currentTarget as HTMLButtonElement;
-            btn.disabled = true;
-            btn.textContent = "Loading…";
-            try {
-              const res = await fetch(`/api/orders/refund-screenshot?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error || "Failed");
-              window.open(data.url, "_blank", "noopener");
-            } catch (err: any) {
-              window.v2Toast?.("error", "Could not load", err.message);
-            } finally {
-              btn.disabled = false;
-              btn.textContent = "🖼 View seller's refund proof";
-            }
-          });
-        }
-        // Wire buyer's own screenshot buttons
-        buyerSsPaths.forEach((path, i) => {
-          document.getElementById(`v2-od-buyer-ss-${i}`)?.addEventListener("click", async (e) => {
-            const btn = e.currentTarget as HTMLButtonElement;
-            btn.disabled = true;
-            btn.textContent = "Loading…";
-            try {
-              const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error || "Failed");
-              const url = data.urls?.[i];
-              if (url) window.open(url, "_blank", "noopener");
-            } catch (err: any) {
-              window.v2Toast?.("error", "Could not load", err.message);
-            } finally {
-              btn.disabled = false;
-              btn.textContent = `🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}`;
-            }
-          });
-        });
       } else {
         actions.innerHTML = `
           <div style="background:var(--v2-bg);border:1.5px solid #A78BFA;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
             ${refundBadge}
             <div style="font:800 14px Inter;color:#7C3AED;margin-bottom:6px;">↩ Refund ₹${refundAmt.toLocaleString("en-IN")} pending</div>
-            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ ${o.payment_method === "razorpay" ? refundEta : `Seller will send ₹${refundAmt.toLocaleString("en-IN")} back to your UPI within <strong>7 working days</strong>.`}</div>
-            ${buyerSsSection}
+            <div style="font:600 11px Inter;color:#7C3AED;padding:8px 10px;background:#F5F3FF;border-radius:var(--v2-radius-sm);">⏱ ${refundEta}</div>
           </div>`;
-        // Wire buyer screenshot buttons for "processing" state too
-        buyerSsPaths.forEach((path, i) => {
-          document.getElementById(`v2-od-buyer-ss-${i}`)?.addEventListener("click", async (e) => {
-            const btn = e.currentTarget as HTMLButtonElement;
-            btn.disabled = true;
-            btn.textContent = "Loading…";
-            try {
-              const res = await fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error || "Failed");
-              const url = data.urls?.[i];
-              if (url) window.open(url, "_blank", "noopener");
-            } catch (err: any) {
-              window.v2Toast?.("error", "Could not load", err.message);
-            } finally {
-              btn.disabled = false;
-              btn.textContent = `🖼 View my screenshot${buyerSsPaths.length > 1 ? ' ' + (i + 1) : ''}`;
-            }
-          });
-        });
       }
     } else {
       actions.innerHTML = "";
     }
 
-    function renderPaymentUpload(o, kind, mountEl) {
-      const actionsRoot = document.getElementById("v2-od-actions");
-      const root = mountEl || actionsRoot;
+    function renderPaymentUpload(o, kind) {
+      const root = document.getElementById("v2-od-actions");
       if (!root) return;
-
-      const isBalance = kind === "balance";
-      const isOptional = kind === "optional";
-
-      if (RAZORPAY_ENABLED && isOptional) {
-        return;
-      }
-
-      // Razorpay branch — replaces UPI card + screenshot upload.
-      // BUG-47: `!isBalance` used to exclude the payment_required case, so a
-      // buyer owing a balance fell through to the UPI screenshot flow — which
-      // renders no UPI id (detail.ts strips it when Razorpay is on) and no Pay
-      // button. The order was unpayable from the UI.
-      if (RAZORPAY_ENABLED) {
-        const balance = isBalance
-          ? Math.max(0, Number(o.final_price || 0) - Number(o.paid_amount || 0))
-          : Number(o.total_price) + Number(o.delivery_fee || 0);
-        if (balance > 0) {
-          renderRazorpayButton(o, balance, root);
-          return;
-        }
-        // Nothing actually owed — render nothing rather than a ₹0 Pay button.
-        return;
-      }
-
-      const paidSoFar = Number(o.paid_amount) || 0;
-      const finalPrice = Number(o.final_price) || 0;
-      let balance = 0;
-      if (isBalance) {
-        balance = Math.max(0, finalPrice - paidSoFar);
-      } else if (!isOptional) {
-        balance = Number(o.total_price) + Number(o.delivery_fee || 0);
-      }
-
-      const alreadyUploaded = o.payment_screenshot_urls && o.payment_screenshot_urls.length > 0;
-      const orderTotalRef = Number(o.total_price) + Number(o.delivery_fee || 0);
-
-      const title = isOptional
-        ? "💳 Payment screenshot"
-        : isBalance
-          ? "💸 Additional payment needed"
-          : "💳 Upload payment proof";
-      const subtitle = isOptional
-        ? "Upload or replace your UPI payment photo. The seller is notified and can verify again if needed."
-        : isBalance
-          ? `Seller updated the final price. Please pay ₹${balance.toLocaleString("en-IN")} and upload the UPI screenshot.`
-          : `Pay ₹${balance.toLocaleString("en-IN")} via UPI and upload the screenshot below.`;
-      const amountBlock = isOptional
-        ? paidSoFar > 0
-          ? `<div style="font:600 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">Paid on record: ₹${paidSoFar.toLocaleString("en-IN")}</div>`
-          : `<div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">Order total (reference): ₹${orderTotalRef.toLocaleString("en-IN")}</div>`
-        : `<div style="font:800 16px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${balance.toLocaleString("en-IN")}</div>`;
-
-      const sellerUpi = o.seller?.upi_id || (o.listing?.seller as any)?.upi_id || null;
-      const upiCard = sellerUpi
-        ? `<div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:var(--v2-radius-sm);padding:12px;margin-bottom:12px;">
-            <div style="font:600 11px Inter;color:#92400E;margin-bottom:2px;">💳 Pay via UPI</div>
-            <div style="font:800 16px Inter;color:#78350F;letter-spacing:0.3px;">${sellerUpi}</div>
-            <div style="font:400 11px Inter;color:#92400E;margin-top:3px;">Copy this ID → open your UPI app → paste and pay</div>
-          </div>`
-        : "";
-
-      root.innerHTML = `
-        <div style="background:var(--v2-bg);border:1.5px solid var(--v2-brand);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
-          <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">${title}</div>
-          <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">${subtitle}</div>
-          ${upiCard}
-          ${amountBlock}
-          ${alreadyUploaded ? `<div id="v2-pay-ss-status" style="font:600 12px Inter;color:var(--v2-green);margin-bottom:6px;">✓ Screenshot uploaded — awaiting seller confirmation</div><div id="v2-pay-screenshots-list" style="margin-bottom:12px;font:400 11px Inter;color:var(--v2-ink-3);">Loading your screenshot...</div>` : ""}
-          <label style="display:block;cursor:pointer;">
-            <div id="v2-pay-drop" style="border:2px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:20px;text-align:center;font:500 13px Inter;color:var(--v2-ink-2);">
-              ${alreadyUploaded ? "📷 Replace screenshot" : "📷 Tap to select screenshot"}
-            </div>
-            <input type="file" id="v2-pay-file" accept="image/*" style="display:none;" />
-          </label>
-          <div id="v2-pay-preview" style="margin-top:10px;display:none;">
-            <img id="v2-pay-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);" />
-          </div>
-          <button type="button" id="v2-pay-submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" style="margin-top:12px;display:none;">Submit payment proof</button>
-          <div id="v2-pay-err" style="font:500 11px Inter;color:var(--v2-red);margin-top:8px;display:none;"></div>
-        </div>`;
-
-      const qs = (sel) => root.querySelector(sel);
-
-      if (alreadyUploaded) {
-        const buyerIdForSS = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
-        fetch(`/api/orders/payment-screenshots?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerIdForSS)}`)
-          .then(r => r.json())
-          .then(ssData => {
-            const list = qs("#v2-pay-screenshots-list");
-            const statusEl = qs("#v2-pay-ss-status");
-            if (!list) return;
-            if (ssData.verified && statusEl) {
-              statusEl.textContent = "✓ Payment verified by seller";
-              statusEl.style.fontWeight = "800";
-            }
-            if (ssData.urls && ssData.urls.length > 0) {
-              list.innerHTML = ssData.urls.map((url: string) =>
-                `<img src="${url}" onclick="window.open('${url}','_blank','noopener')" style="width:100%;max-height:200px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);margin-bottom:6px;cursor:pointer;" />`
-              ).join("") + `<div style="font:400 10px Inter;color:var(--v2-ink-3);">Tap image to open full size</div>`;
-            } else {
-              list.innerHTML = "";
-            }
-          })
-          .catch(() => {
-            const list = qs("#v2-pay-screenshots-list");
-            if (list) list.innerHTML = "";
-          });
-      }
-
-      const fileInput = qs("#v2-pay-file") as HTMLInputElement | null;
-      const dropZone = qs("#v2-pay-drop") as HTMLElement | null;
-      const preview = qs("#v2-pay-preview") as HTMLElement | null;
-      const previewImg = qs("#v2-pay-img") as HTMLImageElement | null;
-      const submitBtn = qs("#v2-pay-submit") as HTMLButtonElement | null;
-      const errEl = qs("#v2-pay-err") as HTMLElement | null;
-
-      fileInput?.addEventListener("change", () => {
-        const file = fileInput.files?.[0];
-        if (!file || !errEl || !preview || !dropZone || !previewImg || !submitBtn) return;
-        if (file.size > 5 * 1024 * 1024) {
-          errEl.style.display = "block";
-          errEl.textContent = "File too large (max 5 MB)";
-          return;
-        }
-        const url = URL.createObjectURL(file);
-        previewImg.src = url;
-        preview.style.display = "block";
-        dropZone.textContent = file.name;
-        submitBtn.style.display = "block";
-        errEl.style.display = "none";
-      });
-
-      submitBtn?.addEventListener("click", async () => {
-        const file = fileInput?.files?.[0];
-        if (!file || !submitBtn || !errEl) return;
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Uploading...";
-        errEl.style.display = "none";
-        try {
-          const buyerId = localStorage.getItem("rlf_buyer_id") || "";
-          const form = new FormData();
-          form.append("order_id", o.id);
-          form.append("buyer_id", buyerId);
-          form.append("file", file);
-          const res = await fetch("/api/orders/upload-payment", { method: "POST", body: form });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Upload failed");
-          if (data.url) {
-            const list = qs("#v2-pay-screenshots-list");
-            const statusEl = qs("#v2-pay-ss-status");
-            if (statusEl) statusEl.textContent = "✓ Screenshot uploaded — awaiting seller confirmation";
-            if (list) {
-              list.innerHTML = `<img src="${data.url}" onclick="window.open('${data.url}','_blank','noopener')" style="width:100%;max-height:200px;object-fit:contain;border-radius:var(--v2-radius-sm);border:1px solid var(--v2-border);margin-bottom:6px;cursor:pointer;" />`;
-            }
-          }
-          window.v2Toast?.(
-            "success",
-            isOptional ? "Payment proof updated" : "Payment proof submitted",
-            isOptional ? "The seller has been notified." : "Seller will confirm shortly"
-          );
-          // Realtime subscription handles re-render when DB updates — no manual load() needed here.
-        } catch (err) {
-          errEl.style.display = "block";
-          const msg = err.message || "Upload failed";
-          if (/bucket[_ ]missing|storage is not configured|bucket .*not found/i.test(msg)) {
-            errEl.textContent = "Payment upload is not configured yet. Ask admin to create private Supabase bucket `order-payments`.";
-          } else {
-            errEl.textContent = msg;
-          }
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Submit payment proof";
-        }
-      });
+      // BUG-47: payment_required (balance) must get a Pay button too, or the
+      // order is unpayable from the UI.
+      const balance = kind === "balance"
+        ? Math.max(0, Number(o.final_price || 0) - Number(o.paid_amount || 0))
+        : Number(o.total_price) + Number(o.delivery_fee || 0);
+      // Nothing actually owed — render nothing rather than a ₹0 Pay button.
+      if (balance > 0) renderRazorpayButton(o, balance, root);
     }
   }
 

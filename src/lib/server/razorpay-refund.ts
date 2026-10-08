@@ -21,7 +21,9 @@ export type RefundOutcome = {
 
 export async function refundRazorpayPayment(
   razorpayPaymentId: string,
-  ctx: { order_id?: string; caller?: string } = {}
+  ctx: { order_id?: string; caller?: string } = {},
+  /** Partial refund in paise. Omit to refund whatever is left on the payment. */
+  amountPaise?: number
 ): Promise<RefundOutcome> {
   const tag = ctx.caller || "razorpay-refund";
   const keyId = import.meta.env.PUBLIC_RAZORPAY_KEY_ID || "";
@@ -36,7 +38,7 @@ export async function refundRazorpayPayment(
     const res = await fetch(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}/refund`, {
       method: "POST",
       headers: { Authorization: `Basic ${authHex}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ speed: "normal" }),
+      body: JSON.stringify(amountPaise && amountPaise > 0 ? { speed: "normal", amount: Math.round(amountPaise) } : { speed: "normal" }),
     });
 
     if (res.ok) {

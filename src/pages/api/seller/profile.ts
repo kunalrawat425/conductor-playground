@@ -17,7 +17,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
  * the row's phone before allowing any update.
  */
 const SELLER_EDITABLE = [
-  "name", "location", "location_name", "first_name", "last_name", "email", "upi_id",
+  "name", "location", "location_name", "first_name", "last_name", "email",
   "opens_at", "closes_at", "open_days", "accepts_preorder", "preorder_days", "preorder_cutoff_time",
   "has_pickup", "has_delivery", "delivery_rad", "min_order_amount",
   "delivery_fee_enabled", "delivery_fee_amount", "delivery_fee_type", "delivery_fee_per_km", "free_delivery_above",

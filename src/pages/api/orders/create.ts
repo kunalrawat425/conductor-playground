@@ -254,7 +254,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
 
-    // Pay-first: new orders are pending_payment until buyer uploads proof; seller confirms after verify.
+    // Pay-first: new orders are pending_payment until the Razorpay payment is captured.
     let status = "pending_payment";
     let isPreorderBranch = false;
     let delivery_fee = 0;
@@ -444,12 +444,9 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // Send emails non-blocking — fire and forget so order response is instant
     if (resendApiKey && order) {
-      const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
       const statusLabel = isPreorderBranch
         ? "Pre-order placed — catch reserved for tomorrow"
-        : RAZORPAY_ENABLED
-          ? "Order placed — complete payment to confirm"
-          : "Order placed — upload payment proof";
+        : "Order placed — complete payment to confirm";
       const emailArgs = {
         statusLabel,
         species: species || "Fish",

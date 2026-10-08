@@ -4,41 +4,16 @@
 export function buyerOrderPushNotification(
   status: string,
   species?: string | null,
-  final_price?: number | null,
-  /**
-   * BUG-23: when Razorpay is live the buyer pays in a modal — there is no UPI
-   * screenshot to upload, so the old "upload payment proof" copy actively
-   * misdirected them. Defaults to the env flag; pass explicitly in tests.
-   */
-  razorpayEnabled: boolean = import.meta.env?.PUBLIC_ENABLE_RAZORPAY === "true"
+  final_price?: number | null
 ): { title: string; body: string } {
   const messages: Record<string, { title: string; body: string }> = {
-    placed: razorpayEnabled
-      ? {
-          title: "Order placed",
-          body: species
-            ? `Tap to pay securely and confirm your ${species} order.`
-            : "Tap to pay securely and confirm your order.",
-        }
-      : {
-          title: "Order placed",
-          body: species
-            ? `Open Relifish to upload UPI payment proof for your ${species} order.`
-            : "Open Relifish to upload payment proof for your order.",
-        },
-    // Emitted only by /api/orders/upload-payment — the buyer definitely did
-    // send a screenshot, so this copy must NOT vary with the Razorpay flag.
-    proof_uploaded: {
-      title: "Payment proof sent",
+    // Razorpay is the only payment method: the buyer pays in a modal, there is
+    // no screenshot to upload (BUG-23 told every buyer to upload one).
+    placed: {
+      title: "Order placed",
       body: species
-        ? `We received your UPI screenshot for ${species}. The seller will verify shortly.`
-        : "We received your payment screenshot. The seller will verify shortly.",
-    },
-    payment_verified: {
-      title: "Payment verified",
-      body: species
-        ? `The seller verified your UPI payment for ${species}. Check your order for next steps.`
-        : "Your payment was verified. Check your order for next steps.",
+        ? `Tap to pay securely and confirm your ${species} order.`
+        : "Tap to pay securely and confirm your order.",
     },
     confirmed: {
       title: "Order Confirmed!",
@@ -96,19 +71,12 @@ export function buyerOrderPushNotification(
       title: "Order received",
       body: species ? `Your ${species} order is pending seller action` : "Your order is pending seller action",
     },
-    pending_payment: razorpayEnabled
-      ? {
-          title: "Payment pending",
-          body: species
-            ? `Your ${species} order is waiting for payment. Tap to complete it.`
-            : "Your order is waiting for payment. Tap to complete it.",
-        }
-      : {
-          title: "Payment proof sent",
-          body: species
-            ? `We received your UPI screenshot for ${species}. The seller will verify shortly.`
-            : "We received your payment screenshot. The seller will verify shortly.",
-        },
+    pending_payment: {
+      title: "Payment pending",
+      body: species
+        ? `Your ${species} order is waiting for payment. Tap to complete it.`
+        : "Your order is waiting for payment. Tap to complete it.",
+    },
     payment_required: {
       title: "Payment needed",
       body: species ? `Complete payment for your ${species} order` : "Complete payment for your order",

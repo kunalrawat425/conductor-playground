@@ -335,13 +335,10 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       if (resendApiKey && fetchedOrder) {
-        const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
         const stLabel =
           scheduled_for
             ? "Pickup scheduled — complete payment to confirm 🗓️"
-            : RAZORPAY_ENABLED
-              ? "Order placed — complete payment to confirm"
-              : "Order placed — upload payment proof";
+            : "Order placed — complete payment to confirm";
         const _fo = fetchedOrder;
         afterResponse(Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
           sendCartOrderEmail(resendApiKey, {

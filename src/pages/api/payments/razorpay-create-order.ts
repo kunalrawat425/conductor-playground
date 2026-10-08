@@ -9,9 +9,6 @@ const RAZORPAY_KEY_ID = import.meta.env.PUBLIC_RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = import.meta.env.RAZORPAY_KEY_SECRET || "";
 
 export const POST: APIRoute = async ({ request, url }) => {
-  if (import.meta.env.PUBLIC_ENABLE_RAZORPAY !== "true") {
-    return new Response(JSON.stringify({ error: "Razorpay is not enabled" }), { status: 400 });
-  }
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
     return new Response(JSON.stringify({ error: "Payment gateway not configured" }), { status: 503 });
   }
