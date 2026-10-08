@@ -1,5 +1,5 @@
 -- PRODUCTION ONE-OFF (witoghpdfocywiosmrzv). Not a migration: ids are prod-specific.
--- Run AFTER migrations 069–072. Whole script is one transaction.
+-- Run AFTER migrations 069–073. Whole script is one transaction.
 --
 -- Rule (product owner, 2026-10-08): an account with a real name, address or
 -- email is REAL and is kept, even if its phone looks like a dummy. Only

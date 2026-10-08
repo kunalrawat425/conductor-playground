@@ -438,3 +438,31 @@ keys into Razorpay, now unique [069].
 | Pre-order paid_amount | excluded delivery fee (refunds short) | create.ts fixed |
 | Pre-order delivery fee | cart 0 vs single-order charged | cart fixed |
 | Pre-orders while switched off | server accepted them | order-timing fixed |
+
+---
+
+## 10. Staging verification with real Razorpay test payments (2026-10-08)
+
+Staging DB migrated (069–073, backed up first), cleaned (2 dummy sellers, 8 dummy buyers), app
+deployed as a Vercel preview on the staging DB. Harness: `scripts/e2e-staging/`.
+
+| Flow | Result |
+|---|---|
+| Same-day: buy → pay → confirm → ready → completed | ✅ ledger `verify`, `payment_type=online`, stock −0.15 exactly |
+| Pre-order: pay max → "ready" before price | ✅ blocked |
+| Pre-order priced lower → partial refund | ⚠️ refund rejected by the Razorpay **test account** (also when called directly); recorded + retried by cron |
+| Pre-order priced higher → balance | ✅ second Razorpay order, `paid_amount` = final, both payments in ledger |
+| Card + OTP / bank failure then retry | ✅ |
+| Browser dies → webhook only; replay; bad signature | ✅ confirmed via webhook; replay no-op; 400 |
+| Cancel with checkout open, then pay | ✅ stays cancelled, payment recorded, refund attempted |
+| Seller declines paid order | ✅ declined, stock returned exactly |
+| Invalid transitions (backwards, after completed, delivery step on pickup) | ✅ refused |
+| Crons (reconcile + refund retry, expiry) and their auth | ✅; 4 stuck legacy orders expired after checking Razorpay |
+| Buyer pushes (placed, confirmed, ready, completed) + area push to Thane | ✅ delivered to a subscribed device |
+
+Found and fixed during the run: pickup order accepted `out_for_delivery`; failed refunds never
+retried; verify awaited the buyer push; stepper said "Payment proof"; 072's NOT VALID constraints
+blocked updates of legacy rows (073); shared phone trigger failed to compile (073).
+
+Open: Razorpay test account must allow refunds to verify refund paths; seller pushes need a
+seller with notifications enabled; seller pushes are not written to `push_notification_logs`.
