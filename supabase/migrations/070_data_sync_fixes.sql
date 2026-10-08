@@ -29,6 +29,14 @@ set buyer_phone = right(regexp_replace(buyer_phone, '\D', '', 'g'), 10)
 where buyer_phone !~ '^[6-9][0-9]{9}$'
   and right(regexp_replace(buyer_phone, '\D', '', 'g'), 10) ~ '^[6-9][0-9]{9}$';
 
+-- Prod had the same person twice in one area (+91… and 10-digit); normalizing
+-- would break unique (phone, area). Keep the oldest row of each pair.
+delete from public.buyer_waitlist w
+using public.buyer_waitlist k
+where right(regexp_replace(w.phone, '\D', '', 'g'), 10) = right(regexp_replace(k.phone, '\D', '', 'g'), 10)
+  and w.area is not distinct from k.area
+  and (k.created_at, k.id::text) < (w.created_at, w.id::text);
+
 update public.buyer_waitlist
 set phone = right(regexp_replace(phone, '\D', '', 'g'), 10)
 where phone !~ '^[6-9][0-9]{9}$'
