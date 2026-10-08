@@ -273,3 +273,92 @@ queries filter `is_test = false`. Cleanup is one statement per table in FK order
 - Stock at 0: two pending_payment orders both confirm (no reservation).
 - Seller paused/inactive while an order is placed; cutoff across IST midnight.
 - OTP: wrong code ×3, resend cooldown, daily cap, MSG91 disabled on prod (must 503).
+
+---
+
+## 8. 360° audit by layer (2026-10-08)
+
+Six layers audited: frontend, API, integrations/privacy, ops/infra, business logic, plus the
+DB/payments work above. Live prod checks: storage buckets, headers, `/api/health`, 24h logs.
+Severity: **S1** fix now (money, data exposure, auth bypass) · **S2** fix soon · **S3** hygiene.
+
+### 8.1 All S1s, ranked
+
+| # | Layer | Finding | Where | Status |
+|---|---|---|---|---|
+| 1 | Ops | **Live Razorpay key + secret committed to a PUBLIC GitHub repo** (since 2026-09-06), plus a test key | `FLOW-MAP.md:171`, `BUG-LIST.md:55`, `QA-REPORT.md` | Redacted in files (3070b68). **Rotate in Razorpay — history still has it** |
+| 2 | Storage | `order-payments` bucket is **public** in prod (migration 048 says private) and allows SVG — 19 UPI screenshots (payer name, UPI id, bank ref) fetchable by URL | `storage.buckets` | OPEN — one SQL update |
+| 3 | DB | Anon key reads every order (phone, address, notes) and every seller row (phone, email, push sub) | RLS `USING (true)` | OPEN — lockdown |
+| 4 | API | Cron auth bypass: `GET /api/cron/meat-day-promo?force=true` pushes promo to every buyer and **returns all buyer phones**; `remind-sellers?test_phone=%` returns all seller phones | `cron/meat-day-promo.ts:33`, `cron/remind-sellers.ts:69` | OPEN |
+| 5 | API | Seller profile writes request body straight to DB → a new seller sets `is_active:true` (skips admin approval), `email_verified`, `rating_avg` | `seller/profile.ts:112` | OPEN |
+| 6 | API | Filter injection: `/api/buyer/orders?buyer_id=<any uuid>&phone=x,id.not.is.null` returns **every order** | `buyer/orders.ts:49` | OPEN |
+| 7 | API | `/api/preorders?phone=` has no auth, returns `select *` incl. seller phone | `preorders.ts:7` | OPEN (dead route — delete) |
+| 8 | Frontend | Stored XSS: `JSON.stringify` into `<script type=ld+json>` lets a seller break out via species/name on `/`, `/s/*`, `/area/*` — with localStorage auth = account takeover | `index.astro:101`, `ui/AppShell.astro:86` | OPEN |
+| 9 | Frontend | Stored XSS in `/shop` category strip (`item.name`, `item.photo` raw) | `shop.astro:619` | OPEN |
+| 10 | Integrations | SMS pumping: `send-otp` limited per phone only, no IP/global cap, read-then-upsert race | `auth/send-otp.ts` | OPEN |
+| 11 | Integrations | Waitlist = open email relay: branded mail to any address, unescaped `area` HTML | `waitlist/join.ts:103` | OPEN |
+| 12 | Logic | **Cart double charge**: server-cart hydrate writes `local[listing_id]` but cart keys are `listing:option` → reload = 2 lines = 2 orders | `lib/cart.ts:287` vs `cartKey()` :115 | OPEN (one line) |
+| 13 | Logic | Pre-order checkout removes the pre-order items (`!is_available` treated as out of stock) | `lib/cart.ts:344` | OPEN |
+| 14 | Logic | No stock reservation at `pending_payment`: two buyers pay for the last 2 kg → oversold silently; a later decline restores **phantom** stock | migrations 054 + 067 | OPEN |
+| 15 | Logic | Confirming a pre-order deducts **today's** stock | `067` deduct-on-confirm | OPEN (add `and not is_preorder`) |
+| 16 | Logic | Pickup pre-orders never show "Set price" → buyer always pays the max, never refunded | `dashboard/orders/index.astro:680` | OPEN |
+| 17 | Ops | Build runs `migrate-safe` before `astro build`: if `DATABASE_URL` is ever set it replays all 70 migrations on prod (incl. `054_rollback` which drops a column, `070` deletes); errors containing "duplicate" are swallowed | `package.json` build, `scripts/migrate-safe.ts:51` | OPEN |
+| 18 | Privacy | Privacy page says "No cross-app tracking" while FB Pixel, GTM, Clarity load before any consent; Clarity records `/me`, `/track`, checkout unmasked | `privacy.astro:42`, `ui/AppShell.astro:88` | OPEN |
+| — | Auth | OTP guessable (~1,458 codes), logged, fail-open `123456` | `send-otp.ts`, `verify-otp.ts` | **FIXED** (0d49d44) |
+| — | Payments | Late/second payments kept without refund, balance unpayable, COD label | settle module | **FIXED** (0bb63ea) |
+
+### 8.2 S2 by layer (condensed)
+
+**API** — orders creatable in another buyer's name and with another buyer's address id, then
+read back via `/api/orders/detail` · refund-screenshot path set by seller lets them sign any
+file · seller transition map bypass + unvalidated `final_price` · `reject_price` from `completed`,
+`accept_price` confirms unpaid · `push-subscribe` / waitlist overwrite other people's rows ·
+`seller/listings` spreads body (can move a listing to another seller) · internal secret fails
+open when unset · `seller/schedule` negative slot length = infinite loop on a public action ·
+uploads without MIME/magic checks into public buckets · `verify-email` HMAC falls back to
+`"fallback-secret"`, tokens never expire · every route returns raw `error.message`.
+
+**Integrations** — no `fetch` timeout anywhere · 5 Resend call sites bypass the helper, 3 never
+check `res.ok` · receipts and order mail go to unverified, client-supplied emails · buyer notes
+unescaped in seller email · sends re-enable `push_enabled` (ignores opt-out) · push endpoint not
+validated (blind SSRF) · no retention jobs (OTP, push logs, screenshots kept forever) · no account
+deletion despite "within 30 days" promise · DPDP gaps (grievance officer, consent withdrawal,
+third-party list, storage disclosure).
+
+**Ops** — no CI, 0 API route tests, 4 tests test local copies not `src/` · 3 lockfiles, `npm ci`
+would fail; `npm audit`: 2 critical (astro XSS, tar), 15 high · no CSP, no region (`bom1`), Vercel
+Hobby is non-commercial · no error tracking or cron alerting · `/api/health` public and reveals
+which secrets are set · 26 root `.md` reports, ~2,350 tracked AI-tooling files, 28 MB fixture ·
+6 stale remote branches may hold old secrets · real buyer phones in committed docs.
+
+**Business logic** — server swaps the buyer's chosen pack tier for a "better" one · unknown
+option id falls back to tier 0 · per-km delivery free when address lacks lat/lng; `delivery_rad`
+never enforced server-side · pre-order fee differs between single and cart endpoints;
+`paid_amount` excludes the fee → refunds short · cart not atomic, retry duplicates · client
+subtotal parsed from text ("₹83.25" → 8325) shows FREE delivery wrongly · `buyer_cart` has no
+`pricing_option_id` · paused / deleted / inactive listings orderable via API · 7 copies of the
+open/pre-order timing logic disagreeing at midnight, at close, when pre-orders are off.
+
+**Frontend** — four pages carry 800–1,100 lines of inline JS each; 13 escape helpers, 4 status-label
+sets that disagree · broken `{LOGO_URL}` literal on every seller card without a photo · `/preorder`
+species cards 404 · sync render-blocking Leaflet from unpkg on every app page · 1.45 MB favicon
+precached by SW; 1.6–1.8 MB blog heroes; no image transforms · landing page runs an all-sellers
+query on every hit with no cache headers · `/shop` downloads every listing nationwide incl.
+seller email/phone · BottomSheet `aria-hidden` stuck true (sheets invisible to screen readers) ·
+logout leaves push subscription and address on device · deactivated sellers keep live pages
+(soft 404) · two sitemaps, two hosts (www vs apex) · place-order has no idempotency key · profile
+load failure → Save wipes UPI id.
+
+### 8.3 What is healthy
+Server recomputes every price from the DB · Razorpay webhook uses `timingSafeEqual` · haversine
+and daily-limit IST boundary correct · security headers (HSTS, XFO, nosniff) present · no DB
+errors in prod logs (24h) · webhook secret, MSG91, Razorpay all configured on prod.
+
+### 8.4 Suggested order
+1. **Today, outside the code:** rotate Razorpay keys; set `order-payments` bucket private.
+2. **One small PR (S1 code, low blast radius):** cron bypasses, seller profile whitelist,
+   `buyer/orders` injection, delete `/api/preorders`, JSON-LD + shop XSS escapes, cart hydrate
+   key, pre-order cart validation, `send-otp` IP limit, waitlist relay, build without migrate.
+3. **Lockdown PR** (sessions D3, RLS, API reads) behind the staging E2E matrix.
+4. **Inventory PR:** reservation at pending_payment + pre-order trigger + set-price for all pre-orders.
+5. Privacy/consent, CI + lockfile + `npm audit`, image/perf, repo cleanup.
