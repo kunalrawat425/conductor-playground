@@ -1,7 +1,7 @@
 # Relifish — Feature Reference
 
 Buyer and seller flows in parallel, module by module.
-Last updated: 2026-05-19
+Last updated: 2026-10-09
 
 ---
 
@@ -688,3 +688,29 @@ Migration: old `zepto_*` keys auto-migrate to `rlf_*` on first `getSession()` ca
 | Refund sent | ✅ | ✅ | ✅ | ✅ |
 
 Push requires: buyer enabled notifications at `/me` · seller enabled in dashboard · VAPID keys set in Vercel env.
+
+---
+
+## Session update (2026-10-09) — SEO + campaign attribution branch
+
+### Shipped features
+| Feature | Status | Key files |
+|---|---|---|
+| Canonical host `www.relifish.store`; apex 308-redirects (except `/api/*`, `/sw.js`) | ✅ Done | `lib/brand.ts`, `lib/server/site-origin.ts`, `vercel.json`, `astro.config.mjs` |
+| Crawlable seller list on `/shop` (SSR, above the JS grid) | ✅ Done | `pages/shop.astro`, `lib/crawl-sellers.ts` |
+| Per-fish product pages `/s/<seller>/<fish>` with price, availability, Product JSON-LD | ✅ Done | `pages/s/[slug]/[species].astro`, `lib/product-offer.ts`, `pages/sitemap.xml.ts` |
+| Missing seller → 404 page, DB outage → 503 + `Retry-After` (no more 302 to `/shop`) | ✅ Done | `pages/s/[slug].astro`, `pages/seller/[id].astro`, `lib/seller-display.ts` |
+| Orders carry campaign attribution (`utm_source/medium/campaign/content`) | ✅ Done | `components/UtmCapture.astro`, `lib/utm.ts`, `api/orders/create-seller-cart.ts`, migration 074 |
+| GA4 events: `order_placed` (checkout), `purchase` (after Razorpay verify), `sign_up`, `seller_signup` | ✅ Done | `seller/[id].astro`, `track/[id].astro`, `LoginSheet.astro`, `api/auth/verify-otp.ts` (`is_new`) |
+| Firebase SDK removed; GA4 stream `G-7MXZDZ1S4N` kept via plain `gtag` | ✅ Done | `components/ui/AppShell.astro`, `components/AppShell.astro` |
+| Self-hosted fish photos (pomfret, surmai, prawns, bangda, rawas) | ✅ Done | `public/fish/*.jpg` |
+
+### Migrations Required (apply in Supabase SQL editor)
+| Migration | Adds |
+|---|---|
+| `074_order_utm_attribution.sql` | Nullable `utm_source`, `utm_medium`, `utm_campaign`, `utm_content` on orders |
+
+### localStorage key reference (additions)
+| Key | Value |
+|---|---|
+| `rf_utm` | JSON `{source, medium, campaign, content, at}`: last-touch campaign, counted for 30 days. `utm_source=blog` never overwrites it. |

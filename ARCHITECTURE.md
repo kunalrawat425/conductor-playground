@@ -10,7 +10,7 @@
 
 ```
 Browser
-  ├── Buyer flows    → /shop, /s/[slug], /track, /me, /search, /preorder
+  ├── Buyer flows    → /shop, /s/[slug], /s/[slug]/[species], /track, /me, /search, /preorder
   └── Seller flows   → /dashboard/**
 
 Astro SSR (Vercel)
@@ -116,20 +116,33 @@ Server validation chain:
 ### Seller Routes — URL Architecture
 
 ```
+Canonical host: https://www.relifish.store
+  SITE_URL + canonicalFor(path) in src/lib/brand.ts   → www, no query, no trailing slash
+  siteOriginFromEnv() in src/lib/server/site-origin.ts → www in production
+  vercel.json: apex relifish.store → 308 → www (except /api/* and /sw.js)
+
 Public (indexed by Google):
   /s/[slug]              → canonical seller URL (SEO)
     └── Astro.rewrite → /seller/[id] (server-side, browser URL stays /s/slug)
+    └── no seller → inline 404 page (noindex); DB error → 503 + Retry-After: 120
+        (no 302 to /shop: Google treats that as a soft 404)
+  /s/[slug]/[species]    → one fish from one seller: price + availability,
+                           schema.org Product JSON-LD (src/lib/product-offer.ts).
+                           Same 404/503 contract. Ordering stays on /s/[slug].
+  /shop                  → SSR crawlable seller list (src/lib/crawl-sellers.ts)
+                           above the JS-filled grid; s-maxage=300, no-store on DB error
 
-Internal (404 on direct access):
-  /seller/[id]           → returns 404 if Astro.url.pathname.startsWith("/seller/")
-                           (Astro.rewrite from /s/[slug] bypasses this check)
+Fallback:
+  /seller/[id]           → used as the canonical only when the seller name has no
+                           latin characters (empty slug). sellerHref() decides.
+                           404 / 503 on missing seller or outage.
 
 robots.txt:
-  Disallow: /seller/     → Googlebot never crawls UUID URLs
-  Sitemap: /s/[slug] URLs only
+  Sitemaps: /sitemap-index.xml (static pages) + /sitemap.xml (sellers, fish pages, areas)
+  sitemap.xml lists /s/[slug] and /s/[slug]/[species] (only species with a price)
 ```
 
-**Rule:** All seller page links must use `/s/[slug]`. Never link to `/seller/[id]` from any buyer-facing UI.
+**Rule:** Build seller links with `sellerHref(name, id)` from `src/lib/seller-display.ts`. It returns `/s/[slug]`, or `/seller/[id]` when the slug would be empty. Never hand-roll the slug regex.
 
 **Slug generation:** `sellerNameToSlug(seller.name)` — derived from name at runtime. **Known risk:** if seller renames, slug changes and old URLs 404. Fix: add `sellers.slug` DB column (P0 backlog).
 
@@ -138,26 +151,38 @@ robots.txt:
 ### Analytics
 
 ```
-src/components/ui/AppShell.astro   ← ALL analytics live here
+src/components/ui/AppShell.astro   ← ALL analytics scripts live here
+  (legacy src/components/AppShell.astro: gtag G-7MXZDZ1S4N, FB Pixel, Vercel Analytics)
 
-Scripts loaded (in order):
+Always on (not gated by PUBLIC_ENABLE_TRACKING):
+  UtmCapture.astro                 → URL utm_* → localStorage "rf_utm"
+                                     {source, medium, campaign, content, at}
+                                     last-touch; utm_source=blog never overwrites
+
+Scripts loaded when PUBLIC_ENABLE_TRACKING=true (in order):
   1. GTM (GTM-JG2ZTX3F)           → Google Tag Manager container
-  2. GA4 (G-DGS7557PZ6)           → Google Analytics 4
-  3. UTM capture                   → reads URL params → sessionStorage → utm_landing event
-  4. Microsoft Clarity             → session recording + heatmaps
-  5. Facebook Pixel (1197248829088195) → PageView on every page
-  6. Vercel Analytics (@vercel/analytics/astro) → separate from GA4
+  2. gtag: G-DGS7557PZ6 + G-7MXZDZ1S4N (GA4 property 539604989 web stream)
+     + utm_landing event when utm_source is in the URL
+  3. Microsoft Clarity             → session recording + heatmaps
+  4. Facebook Pixel (1197248829088195) → PageView on every page
+  5. Vercel Analytics (@vercel/analytics/astro) → separate from GA4
+  (Firebase SDK removed: G-7MXZDZ1S4N now reports through plain gtag)
 
-UTM sessionStorage keys:
-  rf_utm_source, rf_utm_medium, rf_utm_campaign
-  (set on first touch, never overwritten — first-touch attribution)
+Order attribution:
+  seller/[id] checkout sends rf_utm → POST /api/orders/create-seller-cart
+  → pickUtm() (src/lib/utm.ts: strings only, 100 chars, 30-day window)
+  → orders.utm_source / utm_medium / utm_campaign / utm_content (migration 074)
+  Best effort: a failed UTM write never fails the order.
 
-GA4 custom events:
-  utm_landing → fires when UTM params present in URL
-               params: utm_source, utm_medium, utm_campaign
+GA4 events:
+  utm_landing    → UTM params present in URL (utm_source, utm_medium, utm_campaign)
+  order_placed   → checkout created the order(s) (seller/[id].astro)
+  purchase       → Razorpay payment verified (track/[id].astro), plus FB Purchase
+  sign_up        → first OTP login as a new buyer (LoginSheet, is_new from verify-otp)
+  seller_signup  → first OTP login as a new seller
 ```
 
-**Rule:** Never add analytics scripts outside AppShell. Never hardcode measurement IDs in page files.
+**Rule:** Never add analytics scripts outside AppShell. Never hardcode measurement IDs in page files. Pages fire events through `gtag`/`track` guarded by `typeof gtag === "function"`.
 
 ---
 
@@ -257,16 +282,19 @@ AppShell.astro          ← root layout, all <head> scripts, analytics
 Request: GET /s/bombay-fish-market
 
 1. s/[slug].astro:
-   - getSellerBySlug("bombay-fish-market") → seller row
-   - Astro.rewrite("/seller/{seller.id}")
+   - getSellerBySlug(slug.toLowerCase()) → seller row
+   - found → Astro.rewrite("/seller/{seller.id}")
+   - not found → 404 inline; DB error → 503 (Astro.rewrite("/404") throws here:
+     404.astro is prerendered)
 
 2. seller/[id].astro (server frontmatter):
-   - Check Astro.url.pathname → not /seller/* → continue
    - getSellerById(id) + getSellerListings(id)
+     (lookup error → sellerLookupOutcome(): PGRST116/22P02 = 404, else 503)
    - Compute isEffectivelyOpen, isPreorderMode, isClosed (IST)
    - Filter listings by mode
-   - Build JSON-LD schema with canonical /s/[slug] URL
-   - Render page with correct canonical
+   - Build JSON-LD schema with canonical sellerHref() URL; MenuItems link to
+     /s/[slug]/[species]
+   - Render page with correct canonical + "Fish from <seller>" links
 
 3. Client-side script:
    - window.__sellerPageData = { id, imageUrl } ← for CartStackSheet fallback
@@ -281,7 +309,8 @@ Request: GET /s/bombay-fish-market
 ```
 Request: GET /shop (or app.relifish.store → rewrite)
 
-1. Server: renders shell, injects initial data placeholders
+1. Server: renders shell + crawlable seller list (buildCrawlSellers, 1.5s DB timeout;
+   on error the list is empty and the response is Cache-Control: no-store)
 
 2. Client: loadSellers() fetch
    - GET /api/sellers + GET fish_listings join
@@ -302,9 +331,12 @@ Request: GET /shop (or app.relifish.store → rewrite)
 | Timing source of truth = `order-timing.ts` | Prevent drift across 5+ files. Any timezone bug fixed once. | 2026-04 |
 | `/seller/[id]` returns 404 on direct access | SEO dedup — `/s/[slug]` is canonical | 2026-05 |
 | Cart in localStorage with server sync | Offline-first UX. Server cart is source of truth on conflict. | 2026-04 |
-| UTM in sessionStorage not URL params | URL params lost on SPA navigation. sessionStorage persists for session. | 2026-05 |
+| UTM in sessionStorage not URL params (superseded 2026-10, see below) | URL params lost on SPA navigation. sessionStorage persists for session. | 2026-05 |
 | Astro over Next.js | SSR without JS overhead on static content. Vercel native. | 2026-01 |
 | Supabase anon key in client | Row-level security enforced in Postgres. Anon key is safe to expose. | 2026-01 |
+| Canonical host is www; apex 308s to it | One indexed URL per page; GSC property is the www URL prefix. | 2026-10 |
+| Missing seller = 404/503, not 302 to /shop | Google reads redirect-to-listing as a soft 404; 503 makes it retry during outages. | 2026-10 |
+| UTM in localStorage `rf_utm`, last touch, 30 days, stored on orders | A campaign gets credit for orders up to 30 days after landing; the attribution lives on the order row, not only in GA. | 2026-10 |
 
 ---
 
