@@ -209,7 +209,7 @@ Fix per **FIX-NOTES.md #1**.
 ## Executed Test Cases (2026-09-05 21:52 IST)
 
 Setup: `astro dev --port 4321` against `nyavzumoljcrmmwcdcuj` Supabase +
-Razorpay TEST keys (`rzp_test_TYQ1rCCU011s9p`). Subject row:
+Razorpay TEST keys (`rzp_test_<REDACTED>`). Subject row:
 `c00a9d6b-f7a0-47da-ad2a-a270cf07b2c7` (existing orphan reset to
 `pending_payment` for test). Buyer: `ceeed802-…` (real row on that phone).
 
