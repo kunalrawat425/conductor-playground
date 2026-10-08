@@ -10,10 +10,11 @@ import CartStackSheet from "../../components/ui/organisms/CartStackSheet.astro";
 import AddressPickerSheet from "../../components/ui/organisms/AddressPickerSheet.astro";
 import Toast from "../../components/ui/atoms/Toast.astro";
 import Modal from "../../components/ui/atoms/Modal.astro";
-import { getSellerById, getSellerListings, sellerNameToSlug } from "../../lib/supabase";
+import { getSellerById, getSellerListings } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
-import { cleanSellerName, stripContactInfo } from "../../lib/seller-display";
+import { cleanSellerName, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
+import { SITE_URL } from "../../lib/brand";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -21,6 +22,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 let seller: any = null;
 let listings: any[] = [];
 let notFound = false;
+let unavailable = false;
 try {
   seller = await getSellerById(id!);
   if (seller) {
@@ -30,23 +32,29 @@ try {
     // in the card renderer below.
     listings = listings.filter((l: any) => !!(l.pricing_options?.length));
   } else notFound = true;
-} catch { notFound = true; }
+} catch (e) {
+  notFound = true;
+  unavailable = sellerLookupOutcome(e) === "unavailable";
+}
+if (notFound) {
+  // Real status codes so Google neither indexes "Seller not found" nor drops pages during an outage.
+  Astro.response.status = unavailable ? 503 : 404;
+  if (unavailable) Astro.response.headers.set("Retry-After", "120");
+}
 
 const sellerName = cleanSellerName(seller?.name) || "Seller";
 const sellerLocation = stripContactInfo(seller?.location_name) || "";
-const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
-const SITE = "https://www.relifish.store";
-const canonicalUrl = sellerSlug ? `${SITE}/s/${sellerSlug}` : `${SITE}/seller/${id}`;
+const SITE = SITE_URL;
+const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
 
 // Server-side species photo map — same images as flyer (index.astro). Used in SSR cards.
 const _SB = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
 const ssrSpeciesPhotos: Record<string, string> = {
-  pomfret: "https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0",
-  surmai:  "https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline",
-  prawns:  "https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize",
-  bangda:  "https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize",
-  rawas:   "https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0",
-  crab:    "https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline",
+  pomfret: "/fish/pomfret.jpg",
+  surmai:  "/fish/surmai.jpg",
+  prawns:  "/fish/prawns.jpg",
+  bangda:  "/fish/bangda.jpg",
+  rawas:   "/fish/rawas.jpg",
   bombil:  _SB + "/ocean/11_bombil.jpg",
   shark:   _SB + "/bombay/shark.webp",
   salmon:  _SB + "/bombay/salmon.webp",
@@ -223,12 +231,13 @@ const tags = [
 ].filter(Boolean) as string[];
 ---
 <AppShell
-  title={`${sellerName} — Fresh Fish${sellerLocation ? ` in ${sellerLocation}` : ''} | Relifish`}
+  title={`${sellerName}${sellerLocation ? ` ${sellerLocation}` : ""} — Today's Menu & Fish Home Delivery | Relifish`}
   description={(() => {
     const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
-    return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`;
+    return `Order fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""}: ${speciesList || "pomfret, surmai, rawas, prawns"}. See today's menu, pre-order tonight for tomorrow's catch, home delivery or pickup.`;
   })()}
   canonical={canonicalUrl}
+  noindex={notFound || seller?.is_active === false}
   needsMap={true}
   header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
   nav={{ active: "home" }}
@@ -329,7 +338,7 @@ const tags = [
 
   {notFound ? (
     <div style="padding:24px 16px;margin-top:24px;">
-      <EmptyState variant="server-error" title="Seller not found" description="This seller doesn't exist or has been deactivated." ctaText="Browse sellers" ctaHref="/" />
+      <EmptyState variant="server-error" title={unavailable ? "Couldn't load this seller" : "Seller not found"} description={unavailable ? "Please try again in a minute." : "This seller doesn't exist or has been deactivated."} ctaText="Browse sellers" ctaHref="/shop" />
     </div>
   ) : (
     <>
@@ -557,14 +566,13 @@ const tags = [
 
     // Generic species stock photos — same images as landing page flyer. No seller-specific photos.
     const _BP = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
-    const _FP = "https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0";
+    const _FP = "/fish/pomfret.jpg";
     const speciesPhotos = {
       pomfret: _FP,
-      surmai:  "https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline",
-      prawns:  "https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize",
-      bangda:  "https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize",
-      rawas:   "https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0",
-      crab:    "https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline",
+      surmai:  "/fish/surmai.jpg",
+      prawns:  "/fish/prawns.jpg",
+      bangda:  "/fish/bangda.jpg",
+      rawas:   "/fish/rawas.jpg",
       bombil:  _BP + "/ocean/11_bombil.jpg",
       shark:   _BP + "/bombay/shark.webp",
       salmon:  _BP + "/bombay/salmon.webp",
@@ -1434,6 +1442,7 @@ const tags = [
             buyer_id: buyerId,
             buyer_addr: selectedAddressId,
             order_type: orderType,
+            utm: (() => { try { return JSON.parse(localStorage.getItem("rf_utm") || "null"); } catch { return null; } })(),
           }),
         });
         const data = await res.json();
@@ -1441,7 +1450,7 @@ const tags = [
 
         // Success: clear cart, show fullscreen success animation, redirect
         const orderTotal = (data.orders || []).reduce((s, o) => s + (Number(o.total_price) || 0) + (Number(o.delivery_fee) || 0), 0);
-        track("purchase", {
+        track("order_placed", {
           value: orderTotal,
           order_type: orderType,
           item_count: group.items.length,
