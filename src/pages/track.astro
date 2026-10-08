@@ -127,6 +127,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
 <script>
   import { createClient } from "@supabase/supabase-js";
   import { resolveBuyerStepper } from "../lib/buyer-order-stepper";
+  import { wasActuallyPaid, refundableAmount } from "../lib/order-payment-state";
   const supabase = createClient(
     import.meta.env.PUBLIC_SUPABASE_URL || "",
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
@@ -217,8 +218,9 @@ import Toast from "../components/ui/atoms/Toast.astro";
     const awaitingPayment = ['pending_payment', 'pending'].includes(o.status);
     let payStatusText = "";
     if (o.status === 'refunded') payStatusText = "Refunded";
-    else if (['declined', 'cancelled'].includes(o.status) && Number(o.paid_amount) > 0) payStatusText = "Refund pending";
-    else if (!awaitingPayment && (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) payStatusText = "Paid";
+    // BUG-42 again: paid_amount is pre-set at creation, so it is not evidence of payment.
+    else if (['declined', 'cancelled'].includes(o.status) && wasActuallyPaid(o)) payStatusText = o.refund_sent_at ? "Refunded" : "Refund pending";
+    else if (!awaitingPayment && (wasActuallyPaid(o) || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) payStatusText = "Paid";
     
     if (!payStatusText) return "";
     
@@ -302,7 +304,6 @@ import Toast from "../components/ui/atoms/Toast.astro";
         const terminated = isTerminated(o.status);
         const orderType = isDelivery ? "delivery" : "pickup";
         const { labels, step: stepIdx } = resolveBuyerStepper(o, orderType);
-        const paidAmt = Number(o.paid_amount) || 0;
 
         const listingOpts = o.listing?.pricing_options || [];
         const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
@@ -332,8 +333,9 @@ import Toast from "../components/ui/atoms/Toast.astro";
               ${labels.map(l => `<span>${l}</span>`).join("")}
             </div>`;
 
-        const refundNote = terminated && paidAmt > 0
-          ? `<div style="margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:6px;font:600 11px Inter;color:#7C3AED;">⏱ Refund ₹${paidAmt.toLocaleString("en-IN")} within 7 working days via UPI</div>`
+        const owed = terminated && !o.refund_sent_at ? refundableAmount(o) : 0;
+        const refundNote = owed > 0
+          ? `<div style="margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:6px;font:600 11px Inter;color:#7C3AED;">⏱ Refund ₹${owed.toLocaleString("en-IN")} within ${o.payment_method === "razorpay" ? "5–7 working days to your original payment method" : "7 working days via UPI"}</div>`
           : "";
 
         const cardStyle = terminated

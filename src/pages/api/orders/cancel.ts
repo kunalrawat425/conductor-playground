@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
-import { refundRazorpayPayment, isRazorpayPaid } from "../../../lib/server/razorpay-refund";
+import { isRazorpayPaid } from "../../../lib/server/razorpay-refund";
+import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 
 export const prerender = false;
 
@@ -46,7 +47,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       let refundId: string | null = null;
       const isRzpPaid = isRazorpayPaid(order);
       if (isRzpPaid) {
-        const outcome = await refundRazorpayPayment(order.razorpay_payment_id, { order_id, caller: "cancel" });
+        // Every payment on the order: upfront plus any balance top-up.
+        const outcome = await refundOrderRazorpay(sb, order, { caller: "cancel" });
         refundId = outcome.refundId;
         refundNote = outcome.note;
       }

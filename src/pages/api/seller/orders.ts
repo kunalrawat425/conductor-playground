@@ -2,7 +2,8 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
-import { refundRazorpayPayment, isRazorpayPaid } from "../../../lib/server/razorpay-refund";
+import { isRazorpayPaid } from "../../../lib/server/razorpay-refund";
+import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 import { orderEmailBuyer, orderEmailSeller, paymentVerifiedEmailBuyer, paymentVerifiedEmailSeller, refundSentEmailBuyer, refundSentEmailSeller } from "../../../lib/email-templates";
 
 function capitalizeFishName(s: string): string {
@@ -290,7 +291,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
     const { data: currentOrder } = await supabase
       .from("orders")
-      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
+      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
       .eq("id", order_id)
       .single();
     const currentStatus = currentOrder?.status;
@@ -352,9 +353,11 @@ export const POST: APIRoute = async ({ request }) => {
       // unless someone noticed and refunded by hand. The buyer-initiated cancel
       // path has always refunded properly; now both use the same helper.
       if (isRazorpayPaid(currentOrder as any)) {
-        const outcome = await refundRazorpayPayment(
-          String((currentOrder as any).razorpay_payment_id),
-          { order_id, caller: `seller/orders:${status}` }
+        // Every payment on the order: upfront plus any balance top-up.
+        const outcome = await refundOrderRazorpay(
+          supabase,
+          { id: order_id, razorpay_payment_id: (currentOrder as any).razorpay_payment_id, razorpay_order_id: (currentOrder as any).razorpay_order_id },
+          { caller: `seller/orders:${status}` }
         );
         updates.refund_note = refund_note ? `${refund_note} — ${outcome.note}` : outcome.note;
         if (outcome.ok) {

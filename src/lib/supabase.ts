@@ -143,6 +143,7 @@ export interface Order {
   paid_amount: number | null;
   final_price: number | null;
   refund_amt: number | null;
+  /** Derived in the DB from payment_method (migration 069): online | upi | cod (legacy) | unpaid. Read-only. */
   payment_type: string;
   buyer_id: string | null;
   species: string | null;

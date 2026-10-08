@@ -92,27 +92,22 @@ export const POST: APIRoute = async ({ request }) => {
     }), { status: 200 });
   }
 
-  // Flip the row — idempotent guard prevents double-confirm race
-  const { data: updated, error: updateErr } = await sb
-    .from("orders")
-    .update({
-      status: "confirmed",
-      payment_method: "razorpay",
-      razorpay_payment_id: captured.id,
-      payment_verified_at: new Date().toISOString(),
-      payment_verified_by: seller_id,
-    })
-    .eq("id", order_id)
-    .in("status", ["pending", "pending_payment"])
-    .select("id");
-
-  if (updateErr) {
-    console.error("[reconcile-razorpay] update failed", { order_id, error: updateErr.message });
+  // Same settle rules as verify/webhook/cron: confirm, attach, or refund.
+  const { settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
+  let settled;
+  try {
+    settled = await settleCapturedPayment(sb, {
+      razorpay_order_id: order.razorpay_order_id, razorpay_payment_id: captured.id, source: "seller", verified_by: seller_id,
+    });
+  } catch (err: any) {
+    console.error("[reconcile-razorpay] settle failed", { order_id, error: err?.message });
     return new Response(JSON.stringify({ error: "Failed to reconcile" }), { status: 500 });
   }
-
-  if (!updated || updated.length === 0) {
-    // Race — someone else confirmed between our SELECT and UPDATE. Still success.
+  if (settled.kind === "refunded") {
+    return new Response(JSON.stringify({ ok: true, refunded: true, payment_id: captured.id }), { status: 200 });
+  }
+  if (settled.kind !== "confirmed") {
+    // Someone else confirmed between our SELECT and settle. Still success.
     return new Response(JSON.stringify({ ok: true, already_confirmed: true, payment_id: captured.id }), { status: 200 });
   }
 

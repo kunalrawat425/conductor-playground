@@ -41,3 +41,24 @@ export function wasActuallyPaid(order: PaymentEvidenceFields): boolean {
 export function refundableAmount(order: PaymentEvidenceFields): number {
   return wasActuallyPaid(order) ? Number(order.paid_amount) || 0 : 0;
 }
+
+export type PaymentLabelFields = PaymentEvidenceFields & { payment_method?: string | null };
+
+/**
+ * How this order was paid, in one place for the buyer and seller screens.
+ *
+ * The track page used to say "Paid via UPI" whenever `paid_amount > 0` — which
+ * create_order_atomic sets at INSERT (see wasActuallyPaid), so every unpaid
+ * order read as paid. `payment_type` in the DB is no help either: it was
+ * hardcoded to 'cod' for years (now derived by migration 069).
+ * Returns null when there is no evidence of payment; callers pick their own
+ * "pending" wording.
+ */
+export function paymentMethodLabel(o: PaymentLabelFields): string | null {
+  if (o?.payment_method === "razorpay" && o.razorpay_payment_id) return "Paid online · Razorpay";
+  if (o?.payment_method === "cod_legacy") return "Cash on delivery (legacy order)";
+  if (o?.payment_verified_at) return "Paid via UPI · verified by seller";
+  const hasScreenshot = Array.isArray(o?.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
+  if (hasScreenshot) return "UPI proof submitted — seller will verify";
+  return null;
+}

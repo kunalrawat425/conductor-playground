@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { notifyOrderParties } from "../../../lib/server/notify-order-parties";
+import { settleCapturedPayment, PAYABLE_STATUSES } from "../../../lib/server/razorpay-ledger";
 
 export const prerender = false;
 
@@ -11,18 +12,14 @@ const RAZORPAY_KEY_SECRET = import.meta.env.RAZORPAY_KEY_SECRET || "";
 const CRON_SECRET = import.meta.env.CRON_SECRET || "";
 
 /**
- * Hourly cron: auto-reconcile orphan Razorpay payments.
- * Redundant with the webhook (which reconciles instantly) but catches:
- *   - Events lost due to webhook downtime
- *   - Rows created before webhook was live
- *   - Any Razorpay retry-exhausted delivery
+ * Daily cron (vercel.json: 17 4 * * * — Hobby plan allows daily only): auto-reconcile
+ * Razorpay payments the client handler and the webhook both missed.
+ *   - Events lost due to webhook downtime or an unset RAZORPAY_WEBHOOK_SECRET
+ *   - Rows created before the webhook was live
+ *   - Payments that landed after the order was cancelled/declined (refunded by settle)
  *
- * Scans only orders WHERE razorpay_order_id IS NOT NULL AND status IN
- * (pending, pending_payment) AND created_at < NOW() - 5 minutes
- * (grace period so we don't race the webhook).
- *
- * Vercel schedule (add to vercel.json):
- *   { "path": "/api/cron/reconcile-orphans", "schedule": "17 * * * *" }
+ * Scans orders WHERE razorpay_order_id IS NOT NULL AND status IN (payable, cancelled,
+ * declined), created 5 minutes to 14 days ago (grace period so we don't race the webhook).
  *
  * Auth: Authorization: Bearer $CRON_SECRET.
  */
@@ -39,15 +36,20 @@ async function run(request: Request, origin: string) {
     .from("orders")
     .select("id, razorpay_order_id")
     .not("razorpay_order_id", "is", null)
-    .in("status", ["pending", "pending_payment"])
+    // Payable rows whose handler + webhook both missed, plus recently closed
+    // rows: a payment that landed after cancel/decline is captured money the
+    // buyer must get back (settle refunds it).
+    .in("status", [...PAYABLE_STATUSES, "cancelled", "declined"])
     .lt("created_at", graceCutoff)
+    .gt("created_at", new Date(Date.now() - 14 * 86400_000).toISOString())
+    .order("created_at", { ascending: false })
     .limit(100);
   if (error) {
     console.error("[cron/reconcile-orphans] scan failed", error);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 
-  let flipped = 0, skipped = 0, errors = 0;
+  let flipped = 0, refunded = 0, skipped = 0, errors = 0;
   for (const o of (orphans || [])) {
     const rzpOrder = (o as any).razorpay_order_id;
     let res: Response;
@@ -58,43 +60,31 @@ async function run(request: Request, origin: string) {
     } catch { errors++; continue; }
     if (!res.ok) { errors++; continue; }
     const rzpData = await res.json();
-    const captured = Array.isArray(rzpData.items) ? rzpData.items.find((p: any) => p?.status === "captured") : null;
-    if (!captured) { skipped++; continue; }
-    // BUG-34: `payment_verified_by` is uuid, so "cron_reconcile" raised 22P02
-    // and every UPDATE was rejected. The error was discarded, so this cron
-    // reported flipped=0 forever and had never once recovered an order — the
-    // exact job meant to be the last line of defence for a captured payment.
-    // Actor is recorded in the log line instead; the column stays null.
-    const { data: upd, error: updErr } = await sb
-      .from("orders")
-      .update({
-        status: "confirmed",
-        payment_method: "razorpay",
-        razorpay_payment_id: captured.id,
-        payment_verified_at: new Date().toISOString(),
-        payment_verified_by: null,
-      })
-      .eq("id", (o as any).id)
-      .in("status", ["pending", "pending_payment"])
-      .select("id");
-
-    if (updErr) {
-      console.error("[cron/reconcile-orphans] update failed", { order_id: (o as any).id, err: updErr.message });
-      errors++;
-      continue;
-    }
-    if ((upd?.length ?? 0) > 0) {
-      flipped++;
-      console.log(`[cron/reconcile-orphans] recovered ${(o as any).id} via payment ${captured.id}`);
-      // The buyer paid, the client handler dropped and the webhook missed it —
-      // this is the last chance anyone gets told. Previously: nobody was.
-      await notifyOrderParties({ order_id: (o as any).id, event: "payment_confirmed", origin })
-        .catch((err: any) => console.warn("[cron/reconcile-orphans] notify failed", { order_id: (o as any).id, err: err?.message }));
+    const captured = Array.isArray(rzpData.items) ? rzpData.items.filter((p: any) => p?.status === "captured") : [];
+    if (!captured.length) { skipped++; continue; }
+    // Every captured payment, not just the first: two tabs can capture two.
+    for (const pmt of captured) {
+      try {
+        const r = await settleCapturedPayment(sb, { razorpay_order_id: rzpOrder, razorpay_payment_id: pmt.id, source: "cron" });
+        if (r.kind === "confirmed") {
+          flipped++;
+          console.log(`[cron/reconcile-orphans] recovered ${(o as any).id} via payment ${pmt.id}`);
+          // The buyer paid, the client handler dropped and the webhook missed it —
+          // this is the last chance anyone gets told.
+          await notifyOrderParties({ order_id: (o as any).id, event: "payment_confirmed", origin })
+            .catch((err: any) => console.warn("[cron/reconcile-orphans] notify failed", { order_id: (o as any).id, err: err?.message }));
+        } else if (r.kind === "refunded") {
+          refunded++;
+        }
+      } catch (err: any) {
+        console.error("[cron/reconcile-orphans] settle failed", { order_id: (o as any).id, payment: pmt.id, err: err?.message });
+        errors++;
+      }
     }
   }
 
-  console.log(`[cron/reconcile-orphans] scanned=${orphans?.length ?? 0} flipped=${flipped} skipped=${skipped} errors=${errors}`);
-  return new Response(JSON.stringify({ ok: true, scanned: orphans?.length ?? 0, flipped, skipped, errors }), { status: 200 });
+  console.log(`[cron/reconcile-orphans] scanned=${orphans?.length ?? 0} flipped=${flipped} refunded=${refunded} skipped=${skipped} errors=${errors}`);
+  return new Response(JSON.stringify({ ok: true, scanned: orphans?.length ?? 0, flipped, refunded, skipped, errors }), { status: 200 });
 }
 
 export const GET: APIRoute = async ({ request, url }) => run(request, url.origin);

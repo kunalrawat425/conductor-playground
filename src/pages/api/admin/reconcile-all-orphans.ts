@@ -77,26 +77,14 @@ export const POST: APIRoute = async ({ request }) => {
       continue;
     }
 
-    const { data: upd, error: uErr } = await sb
-      .from("orders")
-      .update({
-        status: "confirmed",
-        payment_method: "razorpay",
-        razorpay_payment_id: captured.id,
-        payment_verified_at: new Date().toISOString(),
-        // BUG-34: uuid column — a string here raised 22P02 and silently
-        // rejected the whole update, so bulk reconcile never flipped anything.
-        payment_verified_by: null,
-      })
-      .eq("id", (o as any).id)
-      .in("status", ["pending", "pending_payment"])
-      .select("id");
-    if (uErr) {
-      report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: false, reason: `db update: ${uErr.message}` });
-      continue;
+    try {
+      const { settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
+      const r = await settleCapturedPayment(sb, { razorpay_order_id: rzpOrder, razorpay_payment_id: captured.id, source: "admin" });
+      report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: r.kind === "confirmed", reason: r.kind, pay_id: captured.id });
+      if (r.kind === "confirmed") flipped += 1;
+    } catch (err: any) {
+      report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: false, reason: `settle: ${err?.message}` });
     }
-    report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: (upd?.length ?? 0) > 0, pay_id: captured.id });
-    if ((upd?.length ?? 0) > 0) flipped += 1;
   }
 
   return new Response(JSON.stringify({

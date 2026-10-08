@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { wasActuallyPaid, refundableAmount } from "../../src/lib/order-payment-state";
+import { wasActuallyPaid, refundableAmount, paymentMethodLabel } from "../../src/lib/order-payment-state";
 
 /**
  * BUG-42 regression. create_order_atomic sets paid_amount = total + delivery at
@@ -87,5 +87,22 @@ describe("wasActuallyPaid — UPI screenshot evidence", () => {
 
   it("refundableAmount includes the screenshot case", () => {
     expect(refundableAmount({ paid_amount: 540, payment_screenshot_urls: ["a.jpg"] })).toBe(540);
+  });
+});
+
+describe("paymentMethodLabel", () => {
+  it("never calls an unpaid order paid just because paid_amount is pre-set", () => {
+    expect(paymentMethodLabel({ paid_amount: 1800, payment_method: null })).toBeNull();
+  });
+  it("labels Razorpay only with a captured payment id", () => {
+    expect(paymentMethodLabel({ payment_method: "razorpay", razorpay_payment_id: "pay_1" })).toBe("Paid online · Razorpay");
+    expect(paymentMethodLabel({ payment_method: "razorpay", razorpay_payment_id: null })).toBeNull();
+  });
+  it("distinguishes verified UPI from a submitted screenshot", () => {
+    expect(paymentMethodLabel({ payment_verified_at: "2026-10-01T00:00:00Z" })).toBe("Paid via UPI · verified by seller");
+    expect(paymentMethodLabel({ payment_screenshot_urls: ["a.jpg"] })).toBe("UPI proof submitted — seller will verify");
+  });
+  it("labels legacy COD rows", () => {
+    expect(paymentMethodLabel({ payment_method: "cod_legacy" })).toBe("Cash on delivery (legacy order)");
   });
 });

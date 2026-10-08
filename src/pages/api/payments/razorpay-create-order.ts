@@ -33,7 +33,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and status
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, total_price, delivery_fee, status, razorpay_order_id, final_price, paid_amount")
+    .select("id, buyer_id, total_price, delivery_fee, status, razorpay_order_id, razorpay_payment_id, final_price, paid_amount")
     .eq("id", order_id)
     .single();
 
@@ -96,8 +96,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         answered = true;
         cachedOk = Number(cachedOrder?.amount) === amountPaise;
         cachedAmountPaid = Number(cachedOrder?.amount_paid) || 0;
-      } else if (cachedRes.status >= 400 && cachedRes.status < 500) {
+      } else if (cachedRes.status === 400 || cachedRes.status === 404) {
         // Definitive: no such order under these keys, so no money against it.
+        // Only 400/404. A 401 (keys rotated/misconfigured) or 429 (rate limit)
+        // says nothing about the order — treating those as "gone" cleared ids
+        // that had captured money against them (BUG-41 again).
         answered = true;
         console.warn("[razorpay-create-order] stale razorpay_order_id — Razorpay does not recognise it, replacing", {
           order_id, razorpay_order_id: order.razorpay_order_id, status: cachedRes.status,
@@ -115,7 +118,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       });
     }
 
-    if (cachedOk) {
+    // Reuse only an UNPAID cached order: Razorpay will not take a second payment
+    // on a paid one, and a balance top-up's cached id is the paid upfront order.
+    if (cachedOk && cachedAmountPaid === 0) {
       return new Response(
         JSON.stringify({
           razorpay_order_id: order.razorpay_order_id,
@@ -139,21 +144,16 @@ export const POST: APIRoute = async ({ request, url }) => {
     //
     // Never discard an id that already has money against it — reconcile instead.
     if (cachedAmountPaid > 0) {
-      let capturedId: string | null = null;
-      let capturedPaise = cachedAmountPaid;
+      let capturedIds: string[] = [];
       try {
         const payRes = await fetch(`https://api.razorpay.com/v1/orders/${order.razorpay_order_id}/payments`, {
           headers: { Authorization: `Basic ${authHex}` },
         });
         if (payRes.ok) {
           const payBody = await payRes.json();
-          const captured = Array.isArray(payBody?.items)
-            ? payBody.items.find((pmt: any) => pmt?.status === "captured")
-            : null;
-          if (captured) {
-            capturedId = String(captured.id);
-            capturedPaise = Number(captured.amount) || cachedAmountPaid;
-          }
+          capturedIds = Array.isArray(payBody?.items)
+            ? payBody.items.filter((pmt: any) => pmt?.status === "captured").map((pmt: any) => String(pmt.id))
+            : [];
         }
       } catch (err: any) {
         console.warn("[razorpay-create-order] could not list payments for paid order", {
@@ -161,39 +161,42 @@ export const POST: APIRoute = async ({ request, url }) => {
         });
       }
 
-      if (capturedId) {
-        const { error: recErr } = await supabase
-          .from("orders")
-          .update({
-            status: "confirmed",
-            payment_method: "razorpay",
-            razorpay_payment_id: capturedId,
-            paid_amount: capturedPaise / 100,
-            payment_verified_at: new Date().toISOString(),
-            payment_verified_by: null,
-          })
-          .eq("id", order_id)
-          .in("status", ["pending", "pending_payment"]);
-        if (recErr) {
-          console.error("[razorpay-create-order] reconcile of already-paid order failed", { order_id, err: recErr.message });
-        } else {
-          console.log(`[razorpay-create-order] order ${order_id} was already paid (${capturedId}) — reconciled instead of re-charging`);
-          const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
-          await notifyOrderParties({ order_id, event: "payment_confirmed", origin: url.origin, amount: capturedPaise / 100 })
-            .catch((err: any) => console.warn("[razorpay-create-order] notify failed", { order_id, err: err?.message }));
+      // Balance top-up: the cached id is the upfront order whose payment is
+      // already on the row. It is spent, not "already paid for this amount" —
+      // fall through and open a fresh Razorpay order for the difference.
+      // Without this every balance Pay click returned 409 and the order was unpayable.
+      const spentUpfront = isBalanceDue && !!order.razorpay_payment_id && capturedIds.includes(order.razorpay_payment_id);
+      if (!spentUpfront) {
+        // Never discard an id that already has money against it — settle it with
+        // the same rules verify/webhook/cron use (confirm, attach, or refund).
+        const { settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
+        for (const capturedId of capturedIds) {
+          try {
+            const r = await settleCapturedPayment(supabase, {
+              razorpay_order_id: order.razorpay_order_id, razorpay_payment_id: capturedId, source: "create_order",
+            });
+            if (r.kind === "confirmed") {
+              console.log(`[razorpay-create-order] order ${order_id} was already paid (${capturedId}) — reconciled instead of re-charging`);
+              const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+              await notifyOrderParties({ order_id, event: "payment_confirmed", origin: url.origin })
+                .catch((err: any) => console.warn("[razorpay-create-order] notify failed", { order_id, err: err?.message }));
+            }
+          } catch (err: any) {
+            console.error("[razorpay-create-order] reconcile of already-paid order failed", { order_id, err: err?.message });
+          }
         }
-      }
 
-      // Either way, do not open a second checkout against an order that has
-      // already been paid — that is how buyers get charged twice.
-      return new Response(
-        JSON.stringify({
-          error: "This order has already been paid. Refresh to see the updated status.",
-          error_code: "already_paid",
-          razorpay_payment_id: capturedId,
-        }),
-        { status: 409 }
-      );
+        // Either way, do not open a second checkout against an order that has
+        // already been paid — that is how buyers get charged twice.
+        return new Response(
+          JSON.stringify({
+            error: "This order has already been paid. Refresh to see the updated status.",
+            error_code: "already_paid",
+            razorpay_payment_id: capturedIds[0] ?? null,
+          }),
+          { status: 409 }
+        );
+      }
     }
 
     // Genuinely no answer from Razorpay — keep the id rather than risk

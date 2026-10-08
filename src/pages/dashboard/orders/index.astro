@@ -280,7 +280,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 </style>
 
 <script>
-  import { wasActuallyPaid, refundableAmount } from "../../../lib/order-payment-state";
+  import { wasActuallyPaid, refundableAmount, paymentMethodLabel } from "../../../lib/order-payment-state";
   import { supabase } from "../../../lib/supabase";
 
   const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
@@ -715,13 +715,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         const isDelivery = o.order_type === "delivery";
         const isPaidViaRazorpay = o.payment_method === "razorpay" || !!o.payment_verified_at;
         if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
-          // Razorpay-paid orders: skip screenshot flow entirely — show fulfillment actions directly
+          // Paid but the row is still in a pre-confirm status (a confirm write was
+          // lost). Ready/Out-for-delivery are rejected by the server from here, so
+          // the one useful action is to confirm it.
           if (isPaidViaRazorpay) {
-            const fulfill = isDelivery
-              ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="out_for_delivery" data-order-id="${o.id}">🚲 Out for delivery</button>`
-              : `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="ready" data-order-id="${o.id}">📦 Ready for pickup</button>`;
-            actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Paid via Razorpay — auto-confirmed</div>
-              <div class="v2-oc-actions">${fulfill}</div>`;
+            actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Payment received — confirm to start preparing</div>
+              <div class="v2-oc-actions"><button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="accept" data-order-id="${o.id}">✓ Confirm order</button></div>`;
           } else if (RAZORPAY_ENABLED && !isPaidViaRazorpay) {
             // Razorpay is active but buyer hasn't completed payment yet.
             // Offer a manual reconcile button — if buyer paid but the client
@@ -944,7 +943,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         else if (['declined', 'cancelled'].includes(o.status) && wasActuallyPaid(o)) payStatusText = "Refund pending";
         else if (['declined', 'cancelled'].includes(o.status)) payStatusText = "Unpaid";
         else if (['pending_payment', 'payment_required'].includes(o.status) && !isPaidViaRazorpay) payStatusText = "Payment pending";
-        else if (Number(o.paid_amount) > 0 || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
+        else if (wasActuallyPaid(o) || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
 
         return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}" data-has-payment-proof="${hasPaymentProof ? "true" : "false"}">
           <div class="v2-oc-top">
@@ -966,6 +965,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           ${o.buyer_notes ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
           ${buyerRatingHtml}
           <div class="v2-oc-total">₹${total.toLocaleString("en-IN")}</div>
+          ${paymentMethodLabel(o) ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(paymentMethodLabel(o))}${o.razorpay_payment_id ? ` · Ref <span style="font-family:monospace;user-select:all;">${escape(o.razorpay_payment_id)}</span>` : ""}</div>` : ""}
           ${nextStepHint ? `<div class="v2-oc-next">${nextStepHint}</div>` : ""}
           ${actionsHtml}
         </div>`;

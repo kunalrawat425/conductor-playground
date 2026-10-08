@@ -172,7 +172,6 @@ export const POST: APIRoute = async ({ request, url }) => {
             status: "pending_payment",
             placement_kind: "preorder",
             order_type,
-            payment_type: "cod",
             paid_amount: amountDue,
             pricing_option_id: line.pricing_option_id,
             pricing_label: line.pricing_label,
