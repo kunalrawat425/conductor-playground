@@ -22,7 +22,7 @@ describe("who cancelled + why", () => {
   it("buyer push says who cancelled and why", () => {
     const n = buyerOrderPushNotification("cancelled", "Surmai", null, { by: "seller", reason: "Boat did not go out", refunded: true });
     expect(n.title).toBe("Order cancelled by the seller");
-    expect(n.body).toContain("Boat did not go out");
+    expect(n.body).toContain("Reason: Boat did not go out. Your payment");
     expect(n.body).toContain("refunded");
     const mine = buyerOrderPushNotification("cancelled", "Surmai", null, { by: "buyer", reason: null, refunded: false });
     expect(mine.title).toBe("You cancelled your order");

@@ -10,7 +10,7 @@ export function buyerOrderPushNotification(
 ): { title: string; body: string } {
   if (cancel && (status === "cancelled" || status === "declined")) {
     const fish = species ? `${species} ` : "";
-    const reason = cancel.reason ? ` Reason: ${cancel.reason}` : "";
+    const reason = cancel.reason ? ` Reason: ${cancel.reason.replace(/[.!?]*$/, ".")}` : "";
     const refund = cancel.refunded ? " Your payment is being refunded in full." : "";
     if (cancel.by === "seller") {
       return { title: "Order cancelled by the seller", body: `The seller cancelled your ${fish}order.${reason}${refund}`.trim() };
