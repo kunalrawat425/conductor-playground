@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { isRazorpayPaid } from "../../../lib/server/razorpay-refund";
+import { refundableAmount, preorderNeedsFinalPrice } from "../../../lib/order-payment-state";
 import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 import { orderEmailBuyer, orderEmailSeller, paymentVerifiedEmailBuyer, paymentVerifiedEmailSeller, refundSentEmailBuyer, refundSentEmailSeller } from "../../../lib/email-templates";
 
@@ -61,7 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify order belongs to this seller's listings
     const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
-      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, payment_screenshot_urls, payment_method, payment_verified_at")
+      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, refund_amt, payment_screenshot_urls, payment_method, payment_verified_at, razorpay_payment_id")
       .eq("id", order_id)
       .single();
 
@@ -137,6 +138,11 @@ export const POST: APIRoute = async ({ request }) => {
         refund_sent_at: new Date().toISOString(),
         refund_note: refund_note || null,
       };
+      // 8 prod rows had refund_sent_at with no refund_amt: record what was owed.
+      if ((order as any).refund_amt == null) {
+        const owed = refundableAmount(order as any);
+        if (owed > 0) refundUpdate.refund_amt = owed;
+      }
       if (refund_screenshot_path) refundUpdate.refund_screenshot_path = refund_screenshot_path;
       let { data, error: rErr } = await supabase
         .from("orders")
@@ -282,10 +288,9 @@ export const POST: APIRoute = async ({ request }) => {
       confirmed: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       paid: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       payment_required: ["confirmed", "cancelled"],
-      // Kept for rows created BEFORE BUG-43 was fixed: a pre-order price drop
-      // used to set status `refunded` while the order was still live, so those
-      // existing rows must remain fulfillable. New price drops stay `confirmed`.
-      refunded: ["ready_for_pickup", "out_for_delivery"],
+      // `refunded`, `completed`, `declined`, `cancelled` are terminal: no exits.
+      // `refunded` used to allow Ready/Out (for pre-BUG-43 price-drop rows), so a
+      // fully refunded order could be "fulfilled" again. Prod has none of those rows.
       ready_for_pickup: ["completed", "cancelled"],
       out_for_delivery: ["completed", "cancelled"],
     };
@@ -311,36 +316,24 @@ export const POST: APIRoute = async ({ request }) => {
         );
       }
     }
-    if (currentStatus && validTransitions[currentStatus] && !validTransitions[currentStatus].includes(status)) {
+    // A status missing from the map used to skip this check entirely, so
+    // `cancelled → confirmed` or `completed → declined` were accepted.
+    if (!currentStatus || !validTransitions[currentStatus]?.includes(status)) {
       return new Response(JSON.stringify({ error: `Cannot change from ${currentStatus} to ${status}` }), { status: 400 });
     }
-    // Next-day catch only: buyer paid an advance *below* listed total — seller must set final_price before fulfillment.
-    // Pay-first same-day sets paid_amount === total+delivery; do not require final_price (matches dashboard `needsFinalPrice`).
+    // Pre-orders priced on a range must have their catch price set before
+    // fulfilment (same rule as the dashboard's "Set price" button).
     const tryingToFulfill = status === "ready_for_pickup" || status === "out_for_delivery";
-    const finalNotSet = currentOrder?.final_price === null || currentOrder?.final_price === undefined;
-    if (tryingToFulfill && finalNotSet && ["confirmed", "paid"].includes(String(currentStatus || ""))) {
-      const totalDue =
-        Number(currentOrder?.total_price || 0) +
-        Number((currentOrder as { delivery_fee?: number | null } | null)?.delivery_fee || 0);
-      const paid = Number(currentOrder?.paid_amount);
-      const partialAdvanceCatch =
-        Number.isFinite(paid) &&
-        paid > 0 &&
-        Number.isFinite(totalDue) &&
-        totalDue > 0 &&
-        paid + 0.01 < totalDue;
-      if (partialAdvanceCatch) {
-        return new Response(
-          JSON.stringify({ error: "Set final price first before moving preorder to pickup/delivery" }),
-          { status: 400 }
-        );
-      }
+    if (tryingToFulfill && preorderNeedsFinalPrice(currentOrder as any)) {
+      return new Response(
+        JSON.stringify({ error: "Set final price first before moving preorder to pickup/delivery" }),
+        { status: 400 }
+      );
     }
 
+    // final_price is only ever set through action=set_final_price (validated, and
+    // reconciled by the RPC). Writing it here unvalidated skipped refund_amt.
     const updates: any = { status };
-    if (final_price !== undefined) {
-      updates.final_price = final_price;
-    }
     if (status === "declined" || status === "cancelled") {
       updates.cancelled_by = "seller";
       if (refund_note) updates.refund_note = refund_note;
@@ -375,15 +368,21 @@ export const POST: APIRoute = async ({ request }) => {
       updates.payment_verified_by = seller_id;
     }
 
-    const { data, error } = await supabase
+    // Guard on the status we validated against: a concurrent buyer cancel or a
+    // second click must not be overwritten (e.g. a refunded order flipped to Ready).
+    const { data: rows, error } = await supabase
       .from("orders")
       .update(updates)
       .eq("id", order_id)
-      .select()
-      .single();
+      .eq("status", currentStatus)
+      .select();
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
+    const data = rows?.[0];
+    if (!data) {
+      return new Response(JSON.stringify({ error: "This order was just updated. Refresh and try again." }), { status: 409 });
     }
 
     // Notify buyer via push — never fail the order update if push throws

@@ -36,15 +36,21 @@ export const GET: APIRoute = async ({ url }) => {
       return new Response(JSON.stringify({ error: error?.message || "Order not found" }), { status: 404 });
     }
 
-    // Fetch address separately if order had one
-    let address = null;
-    if (order.buyer_addr) {
-      const { data: addr } = await sb
-        .from("buyer_addresses")
-        .select("id, label, flat, building, landmark, location_name, lat, lng")
-        .eq("id", order.buyer_addr)
-        .single();
-      address = addr;
+    // The copy taken at order time wins (migration 071); older orders fall back
+    // to the saved-address row, and legacy free-text addresses are shown as-is
+    // (they used to hit .eq("id", text), error out, and show no address at all).
+    let address: any = (order as any).delivery_address || null;
+    if (!address && order.buyer_addr) {
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.buyer_addr)) {
+        const { data: addr } = await sb
+          .from("buyer_addresses")
+          .select("id, label, flat, building, landmark, location_name, lat, lng")
+          .eq("id", order.buyer_addr)
+          .maybeSingle();
+        address = addr;
+      } else {
+        address = { location_name: order.buyer_addr };
+      }
     }
     // Authorization: buyer must own this order (matches buyer_id OR phone).
     //

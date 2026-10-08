@@ -287,22 +287,22 @@ Severity: **S1** fix now (money, data exposure, auth bypass) · **S2** fix soon 
 | # | Layer | Finding | Where | Status |
 |---|---|---|---|---|
 | 1 | Ops | **Live Razorpay key + secret committed to a PUBLIC GitHub repo** (since 2026-09-06), plus a test key | `FLOW-MAP.md:171`, `BUG-LIST.md:55`, `QA-REPORT.md` | Redacted in files (3070b68). **Rotate in Razorpay — history still has it** |
-| 2 | Storage | `order-payments` bucket is **public** in prod (migration 048 says private) and allows SVG — 19 UPI screenshots (payer name, UPI id, bank ref) fetchable by URL | `storage.buckets` | OPEN — one SQL update |
+| 2 | Storage | `order-payments` bucket is **public** in prod (migration 048 says private) and allows SVG — 19 UPI screenshots (payer name, UPI id, bank ref) fetchable by URL | `storage.buckets` | **MIGRATION 071** (private + jpeg/png/webp only) |
 | 3 | DB | Anon key reads every order (phone, address, notes) and every seller row (phone, email, push sub) | RLS `USING (true)` | OPEN — lockdown |
-| 4 | API | Cron auth bypass: `GET /api/cron/meat-day-promo?force=true` pushes promo to every buyer and **returns all buyer phones**; `remind-sellers?test_phone=%` returns all seller phones | `cron/meat-day-promo.ts:33`, `cron/remind-sellers.ts:69` | OPEN |
-| 5 | API | Seller profile writes request body straight to DB → a new seller sets `is_active:true` (skips admin approval), `email_verified`, `rating_avg` | `seller/profile.ts:112` | OPEN |
-| 6 | API | Filter injection: `/api/buyer/orders?buyer_id=<any uuid>&phone=x,id.not.is.null` returns **every order** | `buyer/orders.ts:49` | OPEN |
-| 7 | API | `/api/preorders?phone=` has no auth, returns `select *` incl. seller phone | `preorders.ts:7` | OPEN (dead route — delete) |
-| 8 | Frontend | Stored XSS: `JSON.stringify` into `<script type=ld+json>` lets a seller break out via species/name on `/`, `/s/*`, `/area/*` — with localStorage auth = account takeover | `index.astro:101`, `ui/AppShell.astro:86` | OPEN |
-| 9 | Frontend | Stored XSS in `/shop` category strip (`item.name`, `item.photo` raw) | `shop.astro:619` | OPEN |
-| 10 | Integrations | SMS pumping: `send-otp` limited per phone only, no IP/global cap, read-then-upsert race | `auth/send-otp.ts` | OPEN |
-| 11 | Integrations | Waitlist = open email relay: branded mail to any address, unescaped `area` HTML | `waitlist/join.ts:103` | OPEN |
-| 12 | Logic | **Cart double charge**: server-cart hydrate writes `local[listing_id]` but cart keys are `listing:option` → reload = 2 lines = 2 orders | `lib/cart.ts:287` vs `cartKey()` :115 | OPEN (one line) |
-| 13 | Logic | Pre-order checkout removes the pre-order items (`!is_available` treated as out of stock) | `lib/cart.ts:344` | OPEN |
-| 14 | Logic | No stock reservation at `pending_payment`: two buyers pay for the last 2 kg → oversold silently; a later decline restores **phantom** stock | migrations 054 + 067 | OPEN |
-| 15 | Logic | Confirming a pre-order deducts **today's** stock | `067` deduct-on-confirm | OPEN (add `and not is_preorder`) |
-| 16 | Logic | Pickup pre-orders never show "Set price" → buyer always pays the max, never refunded | `dashboard/orders/index.astro:680` | OPEN |
-| 17 | Ops | Build runs `migrate-safe` before `astro build`: if `DATABASE_URL` is ever set it replays all 70 migrations on prod (incl. `054_rollback` which drops a column, `070` deletes); errors containing "duplicate" are swallowed | `package.json` build, `scripts/migrate-safe.ts:51` | OPEN |
+| 4 | API | Cron auth bypass: `GET /api/cron/meat-day-promo?force=true` pushes promo to every buyer and **returns all buyer phones**; `remind-sellers?test_phone=%` returns all seller phones | `cron/meat-day-promo.ts:33`, `cron/remind-sellers.ts:69` | **FIXED** (secret always required, no phones in response) |
+| 5 | API | Seller profile writes request body straight to DB → a new seller sets `is_active:true` (skips admin approval), `email_verified`, `rating_avg` | `seller/profile.ts:112` | **FIXED** (field allow-list) |
+| 6 | API | Filter injection: `/api/buyer/orders?buyer_id=<any uuid>&phone=x,id.not.is.null` returns **every order** | `buyer/orders.ts:49` | **FIXED** (uses buyer's own phone on record) |
+| 7 | API | `/api/preorders?phone=` has no auth, returns `select *` incl. seller phone | `preorders.ts:7` | **FIXED** (deleted) |
+| 8 | Frontend | Stored XSS: `JSON.stringify` into `<script type=ld+json>` lets a seller break out via species/name on `/`, `/s/*`, `/area/*` — with localStorage auth = account takeover | `index.astro:101`, `ui/AppShell.astro:86` | **FIXED** (`jsonLdString` + species validated server-side) |
+| 9 | Frontend | Stored XSS in `/shop` category strip (`item.name`, `item.photo` raw) | `shop.astro:619` | **FIXED** |
+| 10 | Integrations | SMS pumping: `send-otp` limited per phone only, no IP/global cap, read-then-upsert race | `auth/send-otp.ts` | **FIXED** (per-IP + global daily cap) |
+| 11 | Integrations | Waitlist = open email relay: branded mail to any address, unescaped `area` HTML | `waitlist/join.ts:103` | **FIXED** (all fields escaped, email validated) |
+| 12 | Logic | **Cart double charge**: server-cart hydrate writes `local[listing_id]` but cart keys are `listing:option` → reload = 2 lines = 2 orders | `lib/cart.ts:287` vs `cartKey()` :115 | **FIXED** + server cart keyed by tier (071) |
+| 13 | Logic | Pre-order checkout removes the pre-order items (`!is_available` treated as out of stock) | `lib/cart.ts:344` | **FIXED** |
+| 14 | Logic | No stock reservation at `pending_payment`: two buyers pay for the last 2 kg → oversold silently; a later decline restores **phantom** stock | migrations 054 + 067 | **Phantom stock FIXED (071)**; reservation at pending_payment still OPEN (needs decision) |
+| 15 | Logic | Confirming a pre-order deducts **today's** stock | `067` deduct-on-confirm | **MIGRATION 071** |
+| 16 | Logic | Pickup pre-orders never show "Set price" → buyer always pays the max, never refunded | `dashboard/orders/index.astro:680` | **FIXED** (`preorderNeedsFinalPrice`, every pre-order) |
+| 17 | Ops | Build runs `migrate-safe` before `astro build`: if `DATABASE_URL` is ever set it replays all 70 migrations on prod (incl. `054_rollback` which drops a column, `070` deletes); errors containing "duplicate" are swallowed | `package.json` build, `scripts/migrate-safe.ts:51` | **FIXED** (build = `astro build`) |
 | 18 | Privacy | Privacy page says "No cross-app tracking" while FB Pixel, GTM, Clarity load before any consent; Clarity records `/me`, `/track`, checkout unmasked | `privacy.astro:42`, `ui/AppShell.astro:88` | OPEN |
 | — | Auth | OTP guessable (~1,458 codes), logged, fail-open `123456` | `send-otp.ts`, `verify-otp.ts` | **FIXED** (0d49d44) |
 | — | Payments | Late/second payments kept without refund, balance unpayable, COD label | settle module | **FIXED** (0bb63ea) |

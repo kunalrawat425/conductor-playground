@@ -280,7 +280,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 </style>
 
 <script>
-  import { wasActuallyPaid, refundableAmount, paymentMethodLabel } from "../../../lib/order-payment-state";
+  import { wasActuallyPaid, refundableAmount, paymentMethodLabel, preorderNeedsFinalPrice } from "../../../lib/order-payment-state";
   import { supabase } from "../../../lib/supabase";
 
   const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
@@ -507,8 +507,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).in("status", STATUS_BY_TAB.accepted),
         supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).in("status", ["picked_up", "completed"]),
         supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).in("status", ["declined", "cancelled", "refunded"]),
-        // Pre-orders are tracked via paid_amount, but the entry state is pending_payment.
-        supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).eq("status", "pending_payment"),
+        // Open pre-orders. This counted every pending_payment order (same-day too).
+        supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", listingIds).eq("is_preorder", true).not("status", "in", '("completed","picked_up","declined","cancelled","refunded")'),
       ]);
       // GMV = today only
       const todayStart = new Date(); todayStart.setHours(0,0,0,0);
@@ -560,14 +560,9 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           (o.buyer_phone || "").includes(sq)
         );
         const typeFiltered = matched.filter((o: any) => {
-          const due = Number(o.total_price || 0) + Number(o.delivery_fee || 0);
-          const paid = Number(o.paid_amount);
-          const partialCatch =
-            Number.isFinite(paid) && Number.isFinite(due) && due > 0 && paid + 0.01 < due;
-          const isPre =
-            o.status === "pre_order" ||
-            o.status === "payment_required" ||
-            partialCatch;
+          // Pre-orders are flagged at creation; status alone (pre_order /
+          // payment_required) missed every pending_payment / confirmed pre-order.
+          const isPre = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
           if (currentType === "order") return !isPre;
           if (currentType === "preorder") return isPre;
           return true;
@@ -593,10 +588,10 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           .range(offset, offset + PAGE_SIZE - 1);
         if (sinceDate) q = q.gte("created_at", sinceDate.toISOString());
         if (currentType === "order") {
-          q = q.not("status", "in", '("pre_order","payment_required")');
+          q = q.not("is_preorder", "is", true);
         }
         if (currentType === "preorder") {
-          q = q.in("status", ["pre_order", "payment_required"]);
+          q = q.eq("is_preorder", true);
         }
       }
 
@@ -670,17 +665,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   }
 
   function renderSingleOrder(o: any) {
-        const totalDue = Number(o.total_price || 0) + Number(o.delivery_fee || 0);
-        const paidNum = Number(o.paid_amount);
-        const partialCatch =
-          Number.isFinite(paidNum) &&
-          Number.isFinite(totalDue) &&
-          totalDue > 0 &&
-          paidNum + 0.01 < totalDue;
-        const needsFinalPrice =
-          (o.final_price === null || o.final_price === undefined) &&
-          ["confirmed", "paid"].includes(o.status) &&
-          partialCatch;
+        const needsFinalPrice = preorderNeedsFinalPrice(o);
         const isPreorder = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
         const hasPaymentProof = Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;

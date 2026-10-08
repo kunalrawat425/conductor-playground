@@ -16,12 +16,44 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
  * in localStorage.rlf_seller_phone at OTP verify time) and verify it matches
  * the row's phone before allowing any update.
  */
+const SELLER_EDITABLE = [
+  "name", "location", "location_name", "first_name", "last_name", "email", "upi_id",
+  "opens_at", "closes_at", "open_days", "accepts_preorder", "preorder_days", "preorder_cutoff_time",
+  "has_pickup", "has_delivery", "delivery_rad", "min_order_amount",
+  "delivery_fee_enabled", "delivery_fee_amount", "delivery_fee_type", "delivery_fee_per_km", "free_delivery_above",
+  "lat", "lng", "push_subscription", "push_enabled", "schedule_pickup_slots",
+] as const;
+
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { seller_id, seller_phone, updates } = await request.json();
+    const { seller_id, seller_phone, updates: rawUpdates } = await request.json();
 
-    if (!seller_id || !updates) {
+    if (!seller_id || !rawUpdates || typeof rawUpdates !== "object") {
       return new Response(JSON.stringify({ error: "seller_id and updates required" }), { status: 400 });
+    }
+
+    // Only fields a seller may edit about themselves. The body used to be written
+    // to the row as-is, so a fresh OTP sign-up could send {is_active:true} and
+    // skip admin approval, or set email_verified / rating_avg / total_orders / phone.
+    const updates: Record<string, any> = {};
+    for (const k of SELLER_EDITABLE) {
+      if (Object.prototype.hasOwnProperty.call(rawUpdates, k)) updates[k] = rawUpdates[k];
+    }
+    if (Object.keys(updates).length === 0) {
+      return new Response(JSON.stringify({ error: "No editable fields in updates" }), { status: 400 });
+    }
+    for (const k of ["min_order_amount", "delivery_rad", "delivery_fee_amount", "delivery_fee_per_km", "free_delivery_above"]) {
+      if (updates[k] === undefined) continue;
+      const n = Number(updates[k]);
+      if (!Number.isFinite(n) || n < 0) {
+        return new Response(JSON.stringify({ error: `${k} must be a non-negative number` }), { status: 400 });
+      }
+      updates[k] = n;
+    }
+    // Same open/close time means "always open" to the server but "never open" to
+    // the seller page (timing logic disagreed). The dashboard blocks it; so does the API now.
+    if (updates.opens_at && updates.closes_at && String(updates.opens_at).slice(0, 5) === String(updates.closes_at).slice(0, 5)) {
+      return new Response(JSON.stringify({ error: "Opening and closing time cannot be the same" }), { status: 400 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -60,21 +92,6 @@ export const POST: APIRoute = async ({ request }) => {
         );
       }
     }
-    if (updates.phone && typeof updates.phone === "string" && updates.phone.trim()) {
-      const phone = updates.phone.trim();
-      const { data: existingBuyer } = await supabase
-        .from("buyers")
-        .select("id")
-        .eq("phone", phone)
-        .maybeSingle();
-      if (existingBuyer) {
-        return new Response(
-          JSON.stringify({ error: "That phone number is already registered as a buyer." }),
-          { status: 409 }
-        );
-      }
-    }
-
     // BUG-19: same WGS-84 guard as buyer_addresses. A seller with garbage
     // coords breaks haversine distance → wrong delivery fee for every order.
     if (updates.lat !== undefined) {

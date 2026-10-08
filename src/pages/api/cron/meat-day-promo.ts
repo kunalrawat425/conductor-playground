@@ -29,8 +29,12 @@ export const GET: APIRoute = async ({ request }) => {
     const testPhone = url.searchParams.get("test_phone");
     const force = url.searchParams.get("force") === "true";
 
+    // The secret is required for every call, including test/force runs. It used
+    // to be skipped whenever ?force or ?test_phone was present, which let anyone
+    // push a promo to every buyer and read their phone numbers back from `log`.
     const cronSecret = import.meta.env.CRON_SECRET || process.env.CRON_SECRET || "";
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}` && !testPhone && !force) {
+    if (!cronSecret) return new Response("CRON_SECRET not configured", { status: 503 });
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return new Response("Unauthorized", { status: 401 });
     }
 
@@ -45,7 +49,7 @@ export const GET: APIRoute = async ({ request }) => {
       .not("push_subscription", "is", null);
 
     if (testPhone) {
-      buyersQuery = buyersQuery.ilike("phone", `%${testPhone}%`);
+      buyersQuery = buyersQuery.eq("phone", testPhone.replace(/\D/g, "").slice(-10));
     }
 
     let { data: buyers, error: buyersErr } = await buyersQuery;
@@ -61,7 +65,7 @@ export const GET: APIRoute = async ({ request }) => {
         .not("push_subscription", "is", null);
 
       if (testPhone) {
-        fallbackQuery = fallbackQuery.ilike("phone", `%${testPhone}%`);
+        fallbackQuery = fallbackQuery.eq("phone", testPhone.replace(/\D/g, "").slice(-10));
       }
       
       const fallbackRes = await fallbackQuery;
@@ -132,7 +136,7 @@ export const GET: APIRoute = async ({ request }) => {
         const lastSentTime = new Date(buyer.last_promo_push_sent_at).getTime();
         if (nowMs - lastSentTime < 90 * 60 * 1000) {
           log.push({
-            buyer: buyer.phone,
+            buyer: buyer.id,
             skipped: true,
             reason: "Frequency cap (sent within 90 minutes)",
           });
@@ -223,7 +227,7 @@ export const GET: APIRoute = async ({ request }) => {
       if (pushRes.ok && pushRes.sent) {
         sentCount++;
         log.push({
-          buyer: buyer.phone,
+          buyer: buyer.id,
           sent: true,
           trigger: triggerReason,
           locationStatus: hasLocation ? (activeListingsNearby ? "Case A" : "Case B") : "Case C",
@@ -231,7 +235,7 @@ export const GET: APIRoute = async ({ request }) => {
         });
       } else {
         log.push({
-          buyer: buyer.phone,
+          buyer: buyer.id,
           sent: false,
           reason: pushRes.ok ? pushRes.reason : pushRes.error,
         });

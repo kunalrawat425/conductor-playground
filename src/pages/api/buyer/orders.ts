@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export const prerender = false;
 
 /**
- * GET /api/buyer/orders?buyer_id=<id>&phone=<phone>&page=1&page_size=10&scope=all|active|past
+ * GET /api/buyer/orders?buyer_id=<id>&page=1&page_size=10&scope=all|active|past
  * Returns paginated orders for a buyer. `scope` defaults to `all` — returns
  * every status so /me can group into Active + Past sections. Prior behaviour
  * (past-only) available via `scope=past` for callers that still want it.
@@ -26,7 +26,6 @@ const PAST_STATUSES = ["picked_up", "completed", "declined", "cancelled", "refun
 
 export const GET: APIRoute = async ({ url }) => {
   const buyer_id = url.searchParams.get("buyer_id");
-  const phone = (url.searchParams.get("phone") || "").trim();
   const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
   const page_size = Math.min(50, Math.max(1, parseInt(url.searchParams.get("page_size") || "20")));
   const scope = (url.searchParams.get("scope") || "all").toLowerCase();
@@ -45,10 +44,18 @@ export const GET: APIRoute = async ({ url }) => {
 
     const offset = (page - 1) * page_size;
 
-    // Only include phone clauses when phone is non-empty and normalises to something real
-    const phoneNorm = phone ? `+91${phone.replace(/^\+91/, "").replace(/\D/g, "")}` : "";
-    const phoneClauses = phoneNorm.length > 3
-      ? `,buyer_phone.eq.${phone},buyer_phone.eq.${phoneNorm}`
+    // Phone-matched orders (placed before login linked buyer_id) come from the
+    // buyer's OWN phone on record, never the query string. The raw `phone`
+    // param was interpolated into the PostgREST .or() filter: any phone's
+    // orders, or `phone=x,id.not.is.null` for every order in the table.
+    const admin = createClient(
+      import.meta.env.PUBLIC_SUPABASE_URL || "",
+      import.meta.env.SUPABASE_SERVICE_KEY || ""
+    );
+    const { data: me } = await admin.from("buyers").select("phone").eq("id", buyer_id).maybeSingle();
+    const own = String(me?.phone || "").replace(/\D/g, "").slice(-10);
+    const phoneClauses = /^[6-9]\d{9}$/.test(own)
+      ? `,buyer_phone.eq.${own},buyer_phone.eq.+91${own}`
       : "";
     const orClause = `buyer_id.eq.${buyer_id}${phoneClauses}`;
 

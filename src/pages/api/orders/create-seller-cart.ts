@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
+import { resolveOrderAddress, saveAddressSnapshot } from "../../../lib/server/order-address";
 import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
   capitalizeFishName,
@@ -132,12 +133,12 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // For per-km delivery fee: resolve buyer address coordinates once.
     let deliveryDistanceKm: number | undefined = undefined;
-    if (order_type === "delivery" && buyer_addr && seller?.lat != null && seller?.lng != null) {
-      const { data: addrRow } = await supabase
-        .from("buyer_addresses")
-        .select("lat, lng")
-        .eq("id", buyer_addr)
-        .single();
+    const addr = await resolveOrderAddress(supabase, buyer_addr, buyer_id);
+    if (!addr.ok) {
+      return new Response(JSON.stringify({ error: addr.error }), { status: 400 });
+    }
+    const addrRow = addr.snapshot;
+    if (order_type === "delivery" && seller?.lat != null && seller?.lng != null) {
       if (addrRow?.lat != null && addrRow?.lng != null) {
         deliveryDistanceKm = haversineKm(
           Number(seller.lat), Number(seller.lng),
@@ -361,6 +362,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         ), "create-seller-cart:order-email");
       }
     }
+
+    await saveAddressSnapshot(supabase, (orders as any[]).map((o) => o?.id).filter(Boolean), addr.snapshot);
 
     return new Response(JSON.stringify({ orders, cart_subtotal: cartSubtotal, placement_kind }), { status: 201 });
   } catch (err: unknown) {

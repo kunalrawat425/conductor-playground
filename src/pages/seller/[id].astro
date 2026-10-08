@@ -23,6 +23,9 @@ let listings: any[] = [];
 let notFound = false;
 try {
   seller = await getSellerById(id!);
+  // Unapproved / deactivated sellers had live, orderable pages. Test sellers
+  // stay reachable by direct link only (they are inactive, so hidden from lists).
+  if (seller && (seller as any).is_active === false && !(seller as any).is_test) seller = null;
   if (seller) {
     listings = await getSellerListings(id!);
     // Keep menu broad so buyers can still place pre-orders when the seller is in
@@ -31,6 +34,7 @@ try {
     listings = listings.filter((l: any) => !!(l.pricing_options?.length));
   } else notFound = true;
 } catch { notFound = true; }
+if (notFound) Astro.response.status = 404;
 
 const sellerName = cleanSellerName(seller?.name) || "Seller";
 const sellerLocation = stripContactInfo(seller?.location_name) || "";

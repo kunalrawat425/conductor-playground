@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { imageExtension, IMAGE_MIME } from "../../../lib/server/image-upload";
 
 export const prerender = false;
 
@@ -61,12 +62,15 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "File too large (max 5 MB)" }), { status: 400 });
     }
 
-    const ext = file.name.split(".").pop() || "jpg";
+    const ext = await imageExtension(file);
+    if (!ext) {
+      return new Response(JSON.stringify({ error: "Only JPEG, PNG or WebP images allowed" }), { status: 400 });
+    }
     const path = `order-payments/${order_id}/refund-${Date.now()}.${ext}`;
 
     const { error: uploadErr } = await supabase.storage
       .from("order-payments")
-      .upload(path, file, { contentType: file.type || "image/jpeg" });
+      .upload(path, file, { contentType: IMAGE_MIME[ext] });
 
     if (uploadErr) {
       return new Response(JSON.stringify({ error: uploadErr.message }), { status: 500 });

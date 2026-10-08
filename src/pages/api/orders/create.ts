@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
+import { resolveOrderAddress, saveAddressSnapshot } from "../../../lib/server/order-address";
 import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
   capitalizeFishName,
@@ -73,6 +74,11 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const addr = await resolveOrderAddress(supabase, buyer_addr, buyer_id);
+    if (!addr.ok) {
+      return new Response(JSON.stringify({ error: addr.error }), { status: 400 });
+    }
+
     let total_price = 0;
     let seller_id: string | null = clientSellerId || null;
     let orderPricingOptionId: string | null = null;
@@ -126,12 +132,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
 
         let preorderDistanceKm: number | undefined = undefined;
-        if (order_type === "delivery" && buyer_addr && preorderSeller?.lat != null && preorderSeller?.lng != null) {
-          const { data: addrRow } = await supabase
-            .from("buyer_addresses")
-            .select("lat, lng")
-            .eq("id", buyer_addr)
-            .single();
+        const addrRow = addr.snapshot;
+        if (order_type === "delivery" && preorderSeller?.lat != null && preorderSeller?.lng != null) {
           if (addrRow?.lat != null && addrRow?.lng != null) {
             preorderDistanceKm = haversineKm(
               Number(preorderSeller.lat), Number(preorderSeller.lng),
@@ -172,6 +174,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (preErr) {
           return new Response(JSON.stringify({ error: preErr.message }), { status: 500 });
         }
+        await saveAddressSnapshot(supabase, [preOrder.id], addr.snapshot);
 
         // BUG-27: these were fire-and-forget. Vercel freezes the function the
         // moment the response is returned, so in-flight push/email requests were
@@ -313,12 +316,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       let deliveryDistanceKm: number | undefined = undefined;
-      if (order_type === "delivery" && buyer_addr && seller?.lat != null && seller?.lng != null) {
-        const { data: addrRow } = await supabase
-          .from("buyer_addresses")
-          .select("lat, lng")
-          .eq("id", buyer_addr)
-          .single();
+      const addrRow = addr.snapshot;
+      if (order_type === "delivery" && seller?.lat != null && seller?.lng != null) {
         if (addrRow?.lat != null && addrRow?.lng != null) {
           deliveryDistanceKm = haversineKm(
             Number(seller.lat), Number(seller.lng),
@@ -407,6 +406,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!order) {
       return new Response(JSON.stringify({ error: "Order creation failed" }), { status: 500 });
     }
+    await saveAddressSnapshot(supabase, [order.id], addr.snapshot);
 
     if (seller_id) {
       try {

@@ -101,7 +101,7 @@ async function syncMutation(action: "upsert" | "remove" | "clear", payload?: any
         body: JSON.stringify({ buyer_id: buyerId, ...payload }),
       });
     } else if (action === "remove") {
-      await fetch(`/api/buyer/cart?buyer_id=${buyerId}&listing_id=${payload.listing_id}`, { method: "DELETE" });
+      await fetch(`/api/buyer/cart?buyer_id=${buyerId}&listing_id=${payload.listing_id}&pricing_option_id=${encodeURIComponent(payload.pricing_option_id ?? "")}`, { method: "DELETE" });
     } else if (action === "clear") {
       const sellerParam = payload?.seller_id ? `&seller_id=${payload.seller_id}` : "&clear=true";
       await fetch(`/api/buyer/cart?buyer_id=${buyerId}${sellerParam}`, { method: "DELETE" });
@@ -139,6 +139,7 @@ export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: numbe
   saveCart(cart);
   syncMutation("upsert", {
     listing_id: next.listing_id,
+    pricing_option_id: next.pricing_option_id || "",
     qty: next.qty,
     qty_unit: next.qty_unit,
     price_snapshot: next.price,
@@ -165,13 +166,14 @@ export function setQty(id: string, qty: number): void {
     const item = cart[key];
     delete cart[key];
     saveCart(cart);
-    syncMutation("remove", { listing_id: item.listing_id });
+    syncMutation("remove", { listing_id: item.listing_id, pricing_option_id: item.pricing_option_id || "" });
     return;
   }
   cart[key].qty = qty;
   saveCart(cart);
   syncMutation("upsert", {
     listing_id: cart[key].listing_id,
+    pricing_option_id: cart[key].pricing_option_id || "",
     qty,
     qty_unit: cart[key].qty_unit,
     price_snapshot: cart[key].price,
@@ -187,6 +189,7 @@ export function updateItemPrice(id: string, price: number): void {
   saveCart(cart);
   syncMutation("upsert", {
     listing_id: cart[key].listing_id,
+    pricing_option_id: cart[key].pricing_option_id || "",
     qty: cart[key].qty,
     qty_unit: cart[key].qty_unit,
     price_snapshot: price,
@@ -214,7 +217,7 @@ export function removeItem(id: string): void {
   const item = cart[key];
   delete cart[key];
   saveCart(cart);
-  syncMutation("remove", { listing_id: item.listing_id });
+  syncMutation("remove", { listing_id: item.listing_id, pricing_option_id: item.pricing_option_id || "" });
 }
 
 export function clearCart(opts?: { sellerId?: string }): void {
@@ -283,21 +286,26 @@ export async function hydrateFromServer(): Promise<void> {
 
     const local = getCart();
     for (const it of items) {
-      // Server wins
-      local[it.listing_id] = {
+      // Server wins. Key by listing + price tier exactly like addItem does —
+      // writing local[listing_id] next to an existing "listing:opt" line made a
+      // second line for the same item, i.e. two orders and two charges.
+      // Legacy server rows have no tier: reuse the local line for that listing.
+      const opt = it.pricing_option_id || "";
+      const k = opt ? cartKey(it.listing_id, opt) : (findCartKey(local, it.listing_id) ?? it.listing_id);
+      local[k] = {
         listing_id: it.listing_id,
         seller_id: it.seller_id,
-        seller_name: it.seller_name || local[it.listing_id]?.seller_name || "",
+        seller_name: it.seller_name || local[k]?.seller_name || "",
         seller_image_url:
           it.seller_image_url
-          ?? local[it.listing_id]?.seller_image_url
+          ?? local[k]?.seller_image_url
           ?? null,
-        name: it.species_display || it.name || local[it.listing_id]?.name || "",
+        name: it.species_display || it.name || local[k]?.name || "",
         qty: Number(it.qty) || 0,
         qty_unit: it.qty_unit || "kg",
         price: Number(it.price_snapshot) || 0,
-        pricing_option_id: it.pricing_option_id || local[it.listing_id]?.pricing_option_id || "",
-        pricing_label: it.pricing_label || local[it.listing_id]?.pricing_label || "",
+        pricing_option_id: opt || local[k]?.pricing_option_id || "",
+        pricing_label: it.pricing_label || local[k]?.pricing_label || "",
         added_at: it.created_at ? new Date(it.created_at).getTime() : Date.now(),
       };
     }
@@ -313,6 +321,7 @@ export async function pushLocalToServer(): Promise<void> {
   for (const item of Object.values(cart)) {
     await syncMutation("upsert", {
       listing_id: item.listing_id,
+      pricing_option_id: item.pricing_option_id || "",
       qty: item.qty,
       qty_unit: item.qty_unit,
       price_snapshot: item.price,
@@ -341,7 +350,13 @@ export async function validateCartLive(sellerId?: string, isPreorderMode?: boole
         const live = valData.listings.find((l: any) => l.id === item.listing_id);
         const keyToUse = item.pricing_option_id && item.pricing_option_id !== "default" ? item.listing_id + ":" + item.pricing_option_id : item.listing_id;
         
-        if (!live || !live.is_available || (live.weight_avail != null && live.weight_avail < item.qty)) {
+        // Pre-order items are normally unavailable / at 0 stock today — that is the
+        // point of a pre-order. Treating them as out of stock removed them at checkout.
+        const preorderLine = !!(isPreorderMode && live?.is_preorder_enabled);
+        // Callers that don't know the seller's mode (the global cart sheet) must not
+        // reprice or drop pre-order-capable lines; the seller page re-validates with the mode.
+        if (isPreorderMode === undefined && live?.is_preorder_enabled) continue;
+        if (!live || (!preorderLine && (!live.is_available || (live.weight_avail != null && live.weight_avail < item.qty)))) {
            removeItem(keyToUse);
            oosMessages.push(`"${item.name}" is out of stock and was removed.`);
         } else {

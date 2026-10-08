@@ -1,6 +1,7 @@
 ---
 import "../../styles/tokens.css";
 import "../../styles/components.css";
+import { jsonLdString } from "../../lib/html";
 import AppHeader from "./organisms/AppHeader.astro";
 import BottomNav from "./organisms/BottomNav.astro";
 import VercelAnalytics from "../VercelAnalytics.astro";
@@ -83,7 +84,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
     {needsMap && <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>}
-    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {jsonLd && <script type="application/ld+json" set:html={jsonLdString(jsonLd)} />}
     
     {enableTracking && (
       <>

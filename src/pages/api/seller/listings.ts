@@ -2,6 +2,34 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { canonicalPricingOptionsFromPayload, pricingOptionsUniformUnit } from "../../../lib/listing-pricing";
 import { assertSellerOwns } from "../../../lib/server/assert-seller";
+import { SPECIES } from "../../../lib/species";
+
+// Fields a seller may set on their own listing. The body used to be spread
+// into insert/update, so a seller could set id / deleted_at / seller_id (moving
+// a listing to another seller), and any species string — which flows unescaped
+// into JSON-LD and the /shop category strip (stored XSS).
+const LISTING_EDITABLE = [
+  "species", "fish_size", "pricing_options", "weight_avail", "photo_url", "listed_date",
+  "expires_at", "is_available", "pickup_loc", "buyer_daily_qty_limit", "oos_threshold",
+  "is_preorder_enabled", "is_order_paused",
+] as const;
+
+function pickListingFields(src: Record<string, unknown>): { row?: Record<string, unknown>; error?: string } {
+  const row: Record<string, unknown> = {};
+  for (const k of LISTING_EDITABLE) {
+    if (Object.prototype.hasOwnProperty.call(src, k)) row[k] = src[k];
+  }
+  if (row.species !== undefined && !Object.prototype.hasOwnProperty.call(SPECIES, String(row.species))) {
+    return { error: "Unknown species" };
+  }
+  for (const k of ["weight_avail", "buyer_daily_qty_limit", "oos_threshold"]) {
+    if (row[k] == null) continue;
+    const n = Number(row[k]);
+    if (!Number.isFinite(n) || n < 0) return { error: `${k} must be a non-negative number` };
+    row[k] = n;
+  }
+  return { row };
+}
 
 export const prerender = false;
 
@@ -55,21 +83,18 @@ export const POST: APIRoute = async ({ request }) => {
           { status: 400 }
         );
       }
-      const {
-        pricing_options: _raw,
-        price: _legacyPrice,
-        price_unit: _legacyUnit,
-        ...rest
-      } = listing as Record<string, unknown>;
-
+      const picked = pickListingFields(listing as Record<string, unknown>);
+      if (picked.error) {
+        return new Response(JSON.stringify({ error: picked.error }), { status: 400 });
+      }
+      if (!picked.row!.species) {
+        return new Response(JSON.stringify({ error: "species required" }), { status: 400 });
+      }
       const insertRow: Record<string, unknown> = {
-        ...rest,
+        ...picked.row,
         seller_id,
         pricing_options: tiers,
       };
-      if (insertRow.weight_avail != null) {
-        insertRow.weight_avail = Number(insertRow.weight_avail);
-      }
 
       const { data, error } = await supabase
         .from("fish_listings")
@@ -100,9 +125,11 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: "Not your listing" }), { status: 403 });
       }
 
-      let patch = { ...updates } as Record<string, unknown>;
-      delete patch.price;
-      delete patch.price_unit;
+      const picked = pickListingFields(updates as Record<string, unknown>);
+      if (picked.error) {
+        return new Response(JSON.stringify({ error: picked.error }), { status: 400 });
+      }
+      let patch = picked.row!;
       if (Object.prototype.hasOwnProperty.call(patch, "pricing_options")) {
         const tiers = canonicalPricingOptionsFromPayload(patch.pricing_options);
         if (!tiers || tiers.some((t) => t.price < 1)) {
@@ -124,10 +151,6 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
         patch = { ...patch, pricing_options: tiers };
-      }
-
-      if (Object.prototype.hasOwnProperty.call(patch, "weight_avail") && patch.weight_avail != null) {
-        patch = { ...patch, weight_avail: Number(patch.weight_avail) };
       }
 
       const { data, error } = await supabase
@@ -157,15 +180,14 @@ export const POST: APIRoute = async ({ request }) => {
       if (!existing || existing.seller_id !== seller_id) {
         return new Response(JSON.stringify({ error: "Not your listing" }), { status: 403 });
       }
-      // Soft-delete: flip is_available off + zero stock. Try setting deleted_at if column
-      // exists (migration 035); gracefully fallback without it.
-      const updates: Record<string, any> = { is_available: false, weight_avail: 0 };
-      try { updates.deleted_at = new Date().toISOString(); } catch {}
-      const { error: e1 } = await supabase.from("fish_listings").update(updates).eq("id", listing_id);
-      // If deleted_at column doesn't exist, retry without it
-      const error = (e1 && e1.message?.includes("deleted_at"))
-        ? (await supabase.from("fish_listings").update({ is_available: false, weight_avail: 0 }).eq("id", listing_id)).error
-        : e1;
+      // Soft-delete. is_preorder_enabled must go off too: it used to stay true,
+      // so deleted listings kept appearing in pre-order menus and stayed orderable.
+      const { error } = await supabase.from("fish_listings").update({
+        is_available: false,
+        weight_avail: 0,
+        is_preorder_enabled: false,
+        deleted_at: new Date().toISOString(),
+      }).eq("id", listing_id);
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       }

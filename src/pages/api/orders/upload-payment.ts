@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { imageExtension, IMAGE_MIME } from "../../../lib/server/image-upload";
 import { paymentProofReceivedEmailSeller, proofUploadedEmailBuyer } from "../../../lib/email-templates";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { internalHeaders } from "../../../lib/server/internal-auth";
@@ -30,6 +31,12 @@ async function sendResendEmail(to: string, subject: string, html: string) {
  * Sets status to pending_payment only if currently pending or pre_order; otherwise status is unchanged (e.g. confirmed + replace proof).
  */
 export const POST: APIRoute = async ({ request }) => {
+  // Razorpay is the only payment path while it is enabled; the UI never offers
+  // a screenshot upload then. Closing the endpoint removes an open file upload
+  // into the payments bucket that nothing legitimate uses.
+  if (import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true") {
+    return new Response(JSON.stringify({ error: "Pay online with Razorpay — screenshot uploads are closed" }), { status: 410 });
+  }
   try {
     const form = await request.formData();
     const order_id = form.get("order_id")?.toString();
@@ -41,7 +48,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "File too large (max 5 MB)" }), { status: 400 });
     }
     // Basic MIME allow-list — only common image types
-    if (file && file.type && !file.type.startsWith("image/")) {
+    if (file && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       return new Response(JSON.stringify({ error: "Only image uploads allowed" }), { status: 400 });
     }
 
@@ -83,13 +90,16 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const ext = file.name.split(".").pop() || "jpg";
+    const ext = await imageExtension(file);
+    if (!ext) {
+      return new Response(JSON.stringify({ error: "Only JPEG, PNG or WebP images allowed" }), { status: 400 });
+    }
     const filename = `${Date.now()}.${ext}`;
     const path = `order-payments/${order_id}/${filename}`;
 
     const { error: uploadErr } = await supabase.storage
       .from("order-payments")
-      .upload(path, file, { contentType: file.type || "image/jpeg" });
+      .upload(path, file, { contentType: IMAGE_MIME[ext] });
 
     if (uploadErr) {
       const msg = uploadErr.message || "Upload failed";

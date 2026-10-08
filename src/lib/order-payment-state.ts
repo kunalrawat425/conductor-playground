@@ -62,3 +62,36 @@ export function paymentMethodLabel(o: PaymentLabelFields): string | null {
   if (hasScreenshot) return "UPI proof submitted — seller will verify";
   return null;
 }
+
+export type FinalPriceFields = {
+  status?: string | null;
+  final_price?: number | string | null;
+  total_price?: number | string | null;
+  delivery_fee?: number | string | null;
+  paid_amount?: number | string | null;
+  is_preorder?: boolean | null;
+  placement_kind?: string | null;
+};
+
+/**
+ * Must the seller set the catch's final price before fulfilling this order?
+ *
+ * A pre-order is charged the top of its price range upfront; the real price is
+ * set once the catch is weighed (reconcile_preorder_price refunds the
+ * difference). This used to be inferred from `paid < total + delivery`, which
+ * only ever held for delivery pre-orders from one endpoint — pickup pre-orders
+ * never showed "Set price", so buyers always paid the maximum.
+ * Shared by the dashboard (button) and /api/seller/orders (gate).
+ */
+export function preorderNeedsFinalPrice(o: FinalPriceFields): boolean {
+  if (o?.final_price !== null && o?.final_price !== undefined) return false;
+  if (!["confirmed", "paid"].includes(String(o?.status || ""))) return false;
+
+  const totalDue = (Number(o.total_price) || 0) + (Number(o.delivery_fee) || 0);
+  const paid = Number(o.paid_amount);
+  if (Number.isFinite(paid) && paid > 0 && totalDue > 0 && paid + 0.01 < totalDue) return true; // legacy partial advance
+
+  // A pre-order is charged its pre-order max upfront; the seller sets the
+  // actual price (within the pre-order min–max) once the catch is weighed.
+  return o.is_preorder === true || o.placement_kind === "preorder";
+}

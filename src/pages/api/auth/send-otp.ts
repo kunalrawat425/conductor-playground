@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { randomInt } from "node:crypto";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { otpDevBypassAllowed } from "../../../lib/server/otp-mode";
+import { clientKey, overLimit } from "../../../lib/server/rate-limit";
 
 export const prerender = false;
 
@@ -15,6 +16,12 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const OTP_EXPIRY_MINUTES = 10;
 const MAX_SENDS_PER_DAY = 10;
 const RESEND_COOLDOWN_SECONDS = 30;
+// SMS pumping guards: limits were per phone only, so a script looping over
+// numbers could send unlimited paid SMS. Per-IP (per instance) + a global
+// daily ceiling. ponytail: in-memory IP buckets and a sum over otp_codes —
+// move to Vercel KV / a counter row if real traffic approaches the ceiling.
+const MAX_SENDS_PER_IP_10MIN = 5;
+const MAX_SENDS_GLOBAL_PER_DAY = 500;
 
 /**
  * Uniform 6-digit code from a CSPRNG. The old "pattern friendly" generator
@@ -77,9 +84,20 @@ export const POST: APIRoute = async ({ request }) => {
     // otp_codes key + MSG91 format: 91XXXXXXXXXX (no +)
     const normalised = "91" + parsed.digits10;
 
+    if (overLimit(`send-otp:${clientKey(request)}`, MAX_SENDS_PER_IP_10MIN, 10 * 60 * 1000)) {
+      return new Response(JSON.stringify({ error: "Too many OTP requests. Try again in a few minutes." }), { status: 429 });
+    }
+
     const sb = createClient(supabaseUrl, supabaseServiceKey);
     const today = todayIST();
     const now = new Date();
+
+    const { data: todays } = await sb.from("otp_codes").select("sends_today").eq("send_date", today);
+    const globalSends = (todays || []).reduce((n: number, r: any) => n + (Number(r.sends_today) || 0), 0);
+    if (globalSends >= MAX_SENDS_GLOBAL_PER_DAY) {
+      console.error("[send-otp] global daily OTP ceiling reached", { globalSends });
+      return new Response(JSON.stringify({ error: "Login is busy right now. Please try again later." }), { status: 503 });
+    }
 
     // Load existing record
     const { data: row } = await sb
