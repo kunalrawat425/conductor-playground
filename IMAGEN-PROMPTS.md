@@ -1,3 +1,7 @@
+> **RETIRED (2026-10-08).** Do not use these prompts. They generate photoreal AI people and fish that read as
+> real Relifish sellers and catch, which breaks buyer trust. Use real seller photos/videos for fish, catch and people.
+> AI (Nano Banana) is allowed only for design: text cards, layouts, headers, and touch-ups of real photos with consent.
+
 # Relifish — Imagen 4 Ultra Prompts
 # Full 20-Day Asset Pack · With Humans · Trust-First
 
