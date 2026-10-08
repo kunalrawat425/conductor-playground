@@ -28,7 +28,7 @@ All notable changes to Relifish are documented here.
 - `/v1` (an old page mentioning Goa) is now blocked in robots.txt.
 
 ### Removed
-- Firebase Analytics (duplicate GA4 property `G-7MXZDZ1S4N`). All analytics go to `G-DGS7557PZ6`.
+- The Firebase SDK, which was only used for analytics. GA4 property 539604989 still receives everything through its web stream `G-7MXZDZ1S4N`, now sent with plain `gtag` (two fewer scripts per page). `G-DGS7557PZ6` is unchanged.
 - Hardcoded "In stock" badges on the homepage fish cards, which were not tied to real stock.
 
 ## [0.2.2.0] - 2026-05-20

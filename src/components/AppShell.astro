@@ -48,6 +48,14 @@ const canonicalUrl = canonicalFor(Astro.url.pathname);
     
     {import.meta.env.PUBLIC_ENABLE_TRACKING === "true" && (
       <>
+        <!-- Google Analytics: GA4 property 539604989 (relifish), stream G-7MXZDZ1S4N -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-7MXZDZ1S4N"></script>
+        <script is:inline>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-7MXZDZ1S4N');
+        </script>
         <!-- Facebook Pixel -->
         <script is:inline>
           !function(f,b,e,v,n,t,s){
