@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { loadWebPush } from "../../lib/server/load-web-push";
+import { logPush } from "../../lib/server/push-log";
 import { absoluteUrl } from "../../lib/server/site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
 import { normalizeSellerPushKind, sellerPushNotification } from "../../lib/server/seller-push-copy";
@@ -68,27 +69,6 @@ export const POST: APIRoute = async ({ request }) => {
       .eq("id", seller_id)
       .single();
 
-    const subscription = normalizePushSubscription(seller?.push_subscription);
-    if (!subscription?.endpoint) {
-      return new Response(JSON.stringify({ skipped: true, reason: "no push subscription" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // Heal flag when a subscription exists (mirrors buyer-push behavior).
-    if (!seller?.push_enabled) {
-      await supabase.from("sellers").update({ push_enabled: true }).eq("id", seller_id);
-    }
-
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      console.error("notify-seller: VAPID keys not configured");
-      return new Response(JSON.stringify({ skipped: true, reason: "vapid not configured" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
     const { title, body: pushBody } = sellerPushNotification(kind, {
       species,
       quantity,
@@ -105,6 +85,32 @@ export const POST: APIRoute = async ({ request }) => {
       dashboardUrl = absoluteUrl(`/dashboard/orders?order=${encodeURIComponent(order_id.trim())}`);
     }
 
+    const log = (status: "success" | "failed" | "skipped", error_message: string | null = null) =>
+      logPush(supabase, { seller_id, title, body: pushBody, url: dashboardUrl, status, error_message });
+
+    const subscription = normalizePushSubscription(seller?.push_subscription);
+    if (!subscription?.endpoint) {
+      await log("skipped", "no push subscription — seller has not enabled notifications");
+      return new Response(JSON.stringify({ skipped: true, reason: "no push subscription" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Heal flag when a subscription exists (mirrors buyer-push behavior).
+    if (!seller?.push_enabled) {
+      await supabase.from("sellers").update({ push_enabled: true }).eq("id", seller_id);
+    }
+
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error("notify-seller: VAPID keys not configured");
+      await log("skipped", "VAPID keys not configured");
+      return new Response(JSON.stringify({ skipped: true, reason: "vapid not configured" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     try {
       const webPush = await loadWebPush();
       webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
@@ -119,6 +125,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     } catch (pushErr: any) {
       console.error("notify-seller push failed:", pushErr?.message || pushErr);
+      await log("failed", String(pushErr?.statusCode || "") + " " + String(pushErr?.message || pushErr).slice(0, 300));
       // BUG-22 (seller side): a 404/410 endpoint is dead forever. Clear it so the
       // seller is re-prompted, instead of every future order push failing silently.
       const { isTerminalPushError, pushErrorStatus } = await import("../../lib/server/push-error-classify");
@@ -139,6 +146,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    await log("success");
     return new Response(JSON.stringify({ sent: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },

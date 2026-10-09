@@ -410,33 +410,11 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       // Email seller
-      const { data: seller } = await supabase.from("sellers").select("email, push_subscription, push_enabled").eq("id", seller_id).single();
+      const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
       if (seller?.email) {
         await sendTransactionalEmail(seller.email, `Order Update: ${statusLabel} — ${species}`, orderEmailSeller(emailArgs));
       }
 
-      // Seller push for cancelled/declined (seller needs confirmation their action was processed)
-      if (["cancelled", "declined"].includes(status) && seller?.push_subscription) {
-        try {
-          const { loadWebPush } = await import("../../../lib/server/load-web-push");
-          const { normalizeVapidKeyForWebPush, trimVapidKey } = await import("../../../lib/server/vapid-env");
-          const { absoluteUrl } = await import("../../../lib/server/site-origin");
-          const vapidPub = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
-          const vapidPriv = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
-          const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
-          if (vapidPub && vapidPriv) {
-            const sub = typeof seller.push_subscription === "string" ? JSON.parse(seller.push_subscription) : seller.push_subscription;
-            const wp = await loadWebPush();
-            wp.setVapidDetails(vapidContact, vapidPub, vapidPriv);
-            await wp.sendNotification(sub, JSON.stringify({
-              title: status === "declined" ? "Order declined" : "Order cancelled",
-              body: `${species} order #${String(order_id).slice(0, 8).toUpperCase()} has been ${status}.`,
-              url: absoluteUrl(`/dashboard/orders?order=${order_id}`),
-              tag: `seller-${status}-${Date.now()}`,
-            }));
-          }
-        } catch (err) { console.warn("[seller/orders] status-change seller push failed", { order_id, err: (err as any)?.message }); }
-      }
     } catch (err) { console.warn("[seller/orders] status-change email fan-out failed", { order_id, err: (err as any)?.message }); }
 
     return new Response(JSON.stringify({ order: toSellerView(data) }), { status: 200 });

@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { loadWebPush } from "../../../lib/server/load-web-push";
+import { logPush } from "../../../lib/server/push-log";
 import { absoluteUrl } from "../../../lib/server/site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../../lib/server/vapid-env";
 
@@ -32,28 +33,6 @@ function normalizePushSubscription(raw: unknown): { endpoint: string; keys?: { p
   return null;
 }
 
-async function logSellerPushToDb(
-  supabase: any,
-  sellerId: string,
-  title: string,
-  body: string,
-  url: string,
-  status: "success" | "failed",
-  errorMessage?: string | null
-) {
-  try {
-    await supabase.from("push_notification_logs").insert({
-      seller_id: sellerId,
-      title,
-      body,
-      url,
-      status,
-      error_message: errorMessage || null,
-    });
-  } catch (e) {
-    console.warn("Could not write to push_notification_logs table (migration may not be applied yet):", e);
-  }
-}
 
 // Ensure the endpoint is secured. Use a CRON_SECRET or rely on edge security.
 const CRON_SECRET = import.meta.env.CRON_SECRET || "";
@@ -206,13 +185,13 @@ export const GET: APIRoute = async ({ request }) => {
                 );
 
                 // Log success in DB (non-blocking)
-                logSellerPushToDb(supabase, seller.id, pushTitle, pushBody, dashboardUrl, "success");
+                logPush(supabase, { seller_id: seller.id, title: pushTitle, body: pushBody, url: dashboardUrl, status: "success" });
                 console.log(`[Web Push Reminder] Sent successfully to ${seller.name}`);
               } catch (pushErr: any) {
                 const msg = pushErr?.message || String(pushErr);
                 console.error(`[Web Push Reminder] Failed to send to ${seller.name}:`, msg);
                 // Log failure in DB (non-blocking)
-                logSellerPushToDb(supabase, seller.id, pushTitle, pushBody, dashboardUrl, "failed", msg);
+                logPush(supabase, { seller_id: seller.id, title: pushTitle, body: pushBody, url: dashboardUrl, status: "failed", error_message: msg });
               }
             } else {
               console.error("[Web Push Reminder] VAPID keys not configured in environment");
