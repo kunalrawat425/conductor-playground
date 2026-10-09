@@ -869,10 +869,11 @@ const { id } = Astro.params;
             const verifyData = await verifyRes.json();
             if (!verifyRes.ok) throw new Error(verifyData.error || "Payment verification failed");
 
-            // Analytics "purchase" = money actually captured (checkout fires order_placed).
+            // GA "purchase": the server sends it when the payment settles (lib/server/ga-mp.ts), so it counts
+            // once even if this tab closes. Until GA4_API_SECRET is configured (ga_server false), send it here.
             try {
               const value = Number(createData.amount) / 100;
-              if (typeof gtag === "function") gtag("event", "purchase", { transaction_id: createData.razorpay_order_id || o.id, value, currency: "INR", seller_id: o.seller_id });
+              if (!verifyData.ga_server && typeof gtag === "function") gtag("event", "purchase", { transaction_id: createData.razorpay_order_id || o.id, value, currency: "INR", seller_id: o.seller_id });
               if (typeof fbq === "function") fbq("track", "Purchase", { value, currency: "INR" });
             } catch {}
 
@@ -894,7 +895,7 @@ const { id } = Astro.params;
                 <div style="font:800 14px Inter;color:var(--v2-red);margin-bottom:6px;">⚠️ Payment received but confirmation failed</div>
                 <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:8px;">Your money was deducted. Please contact us immediately and share your payment ID.</div>
                 ${payId ? `<div style="font:600 11px Inter;color:var(--v2-ink-3);background:var(--v2-bg-2);padding:8px;border-radius:var(--v2-radius-sm);margin-bottom:8px;word-break:break-all;">Payment ID: ${payId}</div>` : ""}
-                <div style="font:500 12px Inter;color:var(--v2-ink);">💬 WhatsApp 9152207607 (7:30 AM – 9 PM) &nbsp;·&nbsp; ✉️ contact@relifish.store</div>
+                <div style="font:500 12px Inter;color:var(--v2-ink);">💬 WhatsApp 9152207607 (7:30 AM – 9 PM) &nbsp;·&nbsp; ✉️ relifishstore@gmail.com</div>
               </div>`;
           }
         },

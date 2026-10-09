@@ -1,3 +1,5 @@
+import { haversineKm } from "./order-pricing";
+
 /** Hyperlocal areas with coordinates and delivery radius. */
 export const AREAS = {
   thane: {
@@ -6,7 +8,7 @@ export const AREAS = {
     lng: 72.9781,
     radius: 9, // km
     slug: "thane",
-    metaDescription: "Buy fresh fish online with same-day delivery in Thane. Direct from local sellers. No middleman, no cold storage.",
+    metaDescription: "Order fresh fish online in Thane from local sellers on Relifish. Same-day orders or pre-order tonight for tomorrow; sellers deliver or keep it ready for pickup.",
     contentHeadline: "Fresh Fish Delivery in Thane",
     contentSubheading: "Same-day & next-day pre-order from local Thane fish sellers",
     keywords: [],
@@ -17,9 +19,9 @@ export const AREAS = {
     lng: 72.8264,
     radius: 10, // km
     slug: "kandivali",
-    metaDescription: "Order fresh fish online in Kandivali, Mumbai. Same-day delivery from trusted local sellers. No cold storage.",
+    metaDescription: "Fresh fish delivery in Kandivali on Relifish is coming. Join the waitlist to hear when a local seller goes live.",
     contentHeadline: "Fresh Fish Delivery in Kandivali",
-    contentSubheading: "Daily catch delivered to your door in Kandivali",
+    contentSubheading: "No seller live in Kandivali yet: join the waitlist",
     keywords: ["kandivali"],
   },
   tardeo: {
@@ -28,9 +30,9 @@ export const AREAS = {
     lng: 72.8108,
     radius: 8, // km
     slug: "tardeo",
-    metaDescription: "Buy fresh fish in Tardeo with fast delivery. Direct from local Mumbai fish sellers. Premium quality, best prices.",
+    metaDescription: "Order fresh fish online in Tardeo and South Mumbai from local sellers on Relifish. Same-day orders or pre-order tonight for tomorrow.",
     contentHeadline: "Fresh Fish Delivery in Tardeo",
-    contentSubheading: "Quality fish from local sellers, delivered same-day in Tardeo",
+    contentSubheading: "Same-day & pre-order from local sellers in Tardeo and South Mumbai",
     keywords: ["tardeo", "tardeo", "south mumbai"],
   },
   kamothe: {
@@ -39,7 +41,7 @@ export const AREAS = {
     lng: 73.0809,
     radius: 12, // km
     slug: "kamothe",
-    metaDescription: "Fresh fish delivery in Kamothe, Navi Mumbai. Pre-order next-day catch. Direct from local sellers, no middleman.",
+    metaDescription: "Order fresh fish online in Kamothe, Navi Mumbai from local sellers on Relifish. Same-day orders or pre-order tonight for tomorrow.",
     contentHeadline: "Fresh Fish Delivery in Kamothe",
     contentSubheading: "Same-day & pre-order fish delivery in Kamothe, Navi Mumbai",
     keywords: ["kamothe", "navi mumbai"],
@@ -53,4 +55,18 @@ export function getAreaBySlug(slug: string): (typeof AREAS)[AreaSlug] | null {
     return AREAS[slug as AreaSlug];
   }
   return null;
+}
+
+type AreaSeller = { lat?: number | null; lng?: number | null; location?: string | null; location_name?: string | null };
+
+/** Active sellers listed on an area page: within the area radius and matching one of its keywords, nearest first. */
+export function sellersForArea<T extends AreaSeller>(area: (typeof AREAS)[AreaSlug], sellers: T[]): (T & { distanceKm: number })[] {
+  return sellers
+    .filter((s) => s.lat != null && s.lng != null)
+    .map((s) => ({ ...s, distanceKm: haversineKm(area.lat, area.lng, s.lat!, s.lng!) }))
+    .filter((s) => {
+      const addressText = `${s.location || ""} ${s.location_name || ""}`.toLowerCase();
+      return s.distanceKm <= area.radius && (area.keywords.length === 0 || area.keywords.some((kw) => addressText.includes(kw.toLowerCase())));
+    })
+    .sort((a, b) => a.distanceKm - b.distanceKm);
 }

@@ -23,6 +23,19 @@ describe("apex -> www redirect (vercel.json)", () => {
   });
 });
 
+describe("removed blog posts redirect (vercel.json)", () => {
+  const { routes } = getTransformedRoutes({ redirects: vercelJson.redirects });
+  const hit = (path: string) => routes.slice(1).find((r: any) => new RegExp(r.src).test(path));
+
+  it("sends old URLs, with or without a trailing slash, to a live page with a 308", () => {
+    for (const p of ["/blog/where-does-your-sunday-surmai-actually-come-from", "/blog/where-does-your-sunday-surmai-actually-come-from/"]) {
+      expect(hit(p)?.status).toBe(308);
+      expect(hit(p)?.headers.Location).toBe("/fish/surmai");
+    }
+    expect(hit("/blog/first-relifish-order-guide-thane")).toBeUndefined();
+  });
+});
+
 describe("absolute links in emails/push use the www origin", () => {
   afterEach(() => vi.unstubAllEnvs());
   it("production -> https://www.relifish.store (no apex redirect hop)", async () => {
