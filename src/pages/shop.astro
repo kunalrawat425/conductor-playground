@@ -827,7 +827,7 @@ const categories = [
         const offerBadge = status === "closed" ? "" : `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
 
         const deliveryBar = s.has_delivery
-          ? `<div class="v2-sc-delivery">🚲 Delivery available${s.delivery_free_above ? ` · Free above ₹${s.delivery_free_above}` : ''}</div>`
+          ? `<div class="v2-sc-delivery">🚲 Delivery available${Number(s.free_delivery_above) > 0 ? ` · Free above ₹${s.free_delivery_above}` : ''}${Number(s.min_order_amount) > 0 ? ` · Min ₹${s.min_order_amount}` : ''}</div>`
           : "";
 
         const fullyClosed = false; // We no longer grey out or disable the card

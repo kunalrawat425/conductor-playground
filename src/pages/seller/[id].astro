@@ -1046,6 +1046,23 @@ const tags = [
       window.__relifishMinOrders[sellerId] = minOrder || 0;
     })();
 
+    // Cart-bar estimate. Mirrors computeDeliveryFee (src/lib/order-pricing.ts); the real fee is computed
+    // server-side at place-order. per_km uses the buyer's saved location (rlf_buyer_lat/lng) when known.
+    function estimateDeliveryFee(subtotal) {
+      if (!deliveryFeeEnabled) return { fee: 0, label: "free" };
+      if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) return { fee: 0, label: "free" };
+      if (deliveryFeeType === "per_km") {
+        let lat = null, lng = null;
+        try { lat = parseFloat(localStorage.getItem("rlf_buyer_lat") || ""); lng = parseFloat(localStorage.getItem("rlf_buyer_lng") || ""); } catch {}
+        if (sellerLat == null || sellerLng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return { fee: null, label: `₹${deliveryFeePerKm}/km` };
+        const R = 6371, dLat = (lat - sellerLat) * Math.PI / 180, dLng = (lng - sellerLng) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(sellerLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+        const fee = Math.max(0, Math.ceil(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * deliveryFeePerKm));
+        return { fee, label: `~₹${fee}` };
+      }
+      return deliveryFeeAmount > 0 ? { fee: deliveryFeeAmount, label: `₹${deliveryFeeAmount}` } : { fee: 0, label: "free" };
+    }
+
     function renderCart() {
       const c = Cart(); if (!c) return;
       const cart = c.getCart();
@@ -1063,6 +1080,7 @@ const tags = [
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
       const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
+      const feeEstimate = !isPreorderMode && hasDelivery ? estimateDeliveryFee(sellerSubtotal) : null;
 
       // Status line (pre-order window is pickup-only — don't imply a delivery savings perk)
       let statusLine = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""}`;
@@ -1070,6 +1088,11 @@ const tags = [
       if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
       else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
+      else if (feeEstimate) {
+        // Show the delivery fee before checkout so it is never a surprise at step 2.
+        statusLine += ` · Delivery ${feeEstimate.label}`;
+        if (feeEstimate.fee !== 0 && deliveryFreeAbove > sellerSubtotal) statusLine += ` · free above ₹${deliveryFreeAbove}`;
+      }
 
       cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -1081,7 +1104,7 @@ const tags = [
         </div>
         <div style="display:flex;gap:8px;">
           <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
-          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.4;pointer-events:none;' : ''}">Checkout →</button>
+          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.55;' : ''}">${belowMin ? `Add ₹${minOrder - sellerSubtotal} more` : "Checkout →"}</button>
         </div>
       </div>`;
 
@@ -1097,6 +1120,19 @@ const tags = [
       });
     }
 
+    // Resume marker survives the OTP login reload (and cross-seller hops). Only honoured for this
+    // seller and for 10 minutes, so a stale marker can never pop checkout open later.
+    const RESUME_KEY = "rf_resume_checkout";
+    function markResume(sid) { try { sessionStorage.setItem(RESUME_KEY, JSON.stringify({ sid, t: Date.now() })); } catch {} }
+
+    // "Checkout" inside View Cart (CartStackSheet) dispatches v2-cs-checkout. Nothing listened, so it was a dead button.
+    // Another seller's cart is checked out on that seller's own page (their hours, min order, delivery rules).
+    document.addEventListener("v2-cs-checkout", (e) => {
+      const sid = e.detail?.sellerId;
+      if (sid && sid !== sellerId) { markResume(sid); window.location.href = `/seller/${encodeURIComponent(sid)}`; return; }
+      openCheckout(sid);
+    });
+
     // Toast when cart switches seller (user added item from different seller page)
     window.addEventListener("v2-cart-seller-switched", () => {
       window.v2Toast?.("success", "Cart updated", "Previous seller's items cleared");
@@ -1109,8 +1145,11 @@ const tags = [
       const c = Cart(); if (!c) return;
       const sid = targetSellerId || sellerId;
       activeCheckoutSellerId = sid;
+      track("checkout_tap", { checkout_seller_id: sid });
+      const blocked = (reason) => track("checkout_blocked", { reason, checkout_seller_id: sid });
 
       if (sellerFullyClosed && sid === sellerId) {
+        blocked("closed");
         window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
         return;
       }
@@ -1142,10 +1181,21 @@ const tags = [
         }
       }
 
-      // Pre-flight: must be signed in
+      // Min-order gate for this page's seller (we only have minOrder for them). Checked before login so
+      // buyers aren't asked for an OTP only to be told the cart is too small.
+      if (sid === sellerId && minOrder && group.subtotal < minOrder) {
+        blocked("min_order");
+        window.v2Toast?.("error", "Below min order", `Add ₹${minOrder - group.subtotal} more to checkout`);
+        return;
+      }
+
+      // Pre-flight: must be signed in. The login sheet reloads the page on success, so remember
+      // that the buyer was checking out and reopen checkout after the reload (see resumeCheckout).
       let buyerId = null, buyerPhone = null;
       try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
       if (!buyerId || !buyerPhone) {
+        blocked("login");
+        markResume(sid);
         window.v2OpenSheet?.("seller-login-sheet");
         return;
       }
@@ -1157,13 +1207,6 @@ const tags = [
       }
       if (!fulfill.has_pickup && !fulfill.has_delivery) {
         window.v2Toast?.("error", "Unavailable", "This seller has no pickup or delivery enabled");
-        return;
-      }
-
-      // Min-order gate for the active seller (the one we're checking out).
-      // Only enforce for THIS page's seller since we only have minOrder for them.
-      if (sid === sellerId && minOrder && group.subtotal < minOrder) {
-        window.v2Toast?.("error", "Below min order", `Add ₹${minOrder - group.subtotal} more to checkout`);
         return;
       }
 
@@ -1223,6 +1266,7 @@ const tags = [
       preloadAddress();
 
       window.v2OpenSheet?.("seller-checkout");
+      track("begin_checkout", { checkout_seller_id: sid });
 
       // Track: checkout initiated
       const c2 = Cart();
@@ -1399,7 +1443,11 @@ const tags = [
 
       let buyerId = null, buyerPhone = null;
       try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
-      if (!buyerId || !buyerPhone) { window.v2OpenSheet?.("seller-login-sheet"); return; }
+      if (!buyerId || !buyerPhone) {
+        markResume(activeCheckoutSellerId || sellerId);
+        window.v2OpenSheet?.("seller-login-sheet");
+        return;
+      }
 
       const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');
       const orderType = methodEl?.value === "delivery" ? "delivery" : "pickup";
@@ -1454,10 +1502,10 @@ const tags = [
         overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:var(--v2-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:v2-fade-in 300ms ease-out;";
         overlay.innerHTML = `
           <div style="width:80px;height:80px;border-radius:50%;background:var(--v2-green);display:flex;align-items:center;justify-content:center;font-size:40px;animation:v2-slide-up 400ms ease-out;">✓</div>
-          <div style="font:800 22px Inter;color:var(--v2-ink);margin-top:20px;">Order placed!</div>
-          <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-top:8px;">${group.items.length} item${group.items.length !== 1 ? "s" : ""} confirmed</div>
+          <div style="font:800 22px Inter;color:var(--v2-ink);margin-top:20px;">Almost done — pay to confirm</div>
+          <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-top:8px;">Complete payment on the next screen to confirm</div>
           <div style="margin-top:24px;"><span class="v2-spinner v2-spinner-sm"></span></div>
-          <div style="font:500 12px Inter;color:var(--v2-ink-4);margin-top:8px;">Redirecting to your orders...</div>
+          <div style="font:500 12px Inter;color:var(--v2-ink-4);margin-top:8px;">Opening payment…</div>
         `;
         document.body.appendChild(overlay);
         const firstOrderId = Array.isArray(data.orders) && data.orders[0]?.id ? String(data.orders[0].id) : "";
@@ -1468,7 +1516,7 @@ const tags = [
         track("order_failed", { error: err?.message || "unknown" });
         window.v2Toast?.("error", "Failed", err.message || "Try again");
         btn.disabled = false;
-        btn.textContent = "Place order";
+        btn.textContent = "Place order & pay";
         // Re-enable back buttons and sheet close on error
         document.querySelectorAll("[data-co-back]").forEach((b) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
         document.querySelectorAll(".v2-sheet-close").forEach((b) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
@@ -1566,10 +1614,25 @@ const tags = [
     // First paint: render whatever we know (works even before cart module loads)
     render();
 
+    // Back from the OTP login reload: reopen checkout instead of making the buyer find it again.
+    function resumeCheckout() {
+      let m = null, signedIn = false;
+      try {
+        m = JSON.parse(sessionStorage.getItem(RESUME_KEY) || "null");
+        // Same check as the checkout login gate (both keys), or the gate would reopen login forever.
+        signedIn = !!localStorage.getItem("rlf_buyer_id") && !!localStorage.getItem("rlf_phone");
+      } catch {}
+      if (!m) return;
+      try { sessionStorage.removeItem(RESUME_KEY); } catch {}
+      if (!signedIn || m.sid !== sellerId || !(Date.now() - m.t < 10 * 60 * 1000)) return;
+      track("checkout_resumed", { checkout_seller_id: m.sid });
+      openCheckout(m.sid);
+    }
+
     // Once cart module loads: migrate legacy + hydrate from server, then re-render
     withCart((c) => {
       c.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
-      c.hydrateFromServer().then(() => render());
+      c.hydrateFromServer().then(() => { render(); resumeCheckout(); });
       render();
     });
   }
