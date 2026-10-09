@@ -34,6 +34,19 @@ if (seller) {
 
 const forSpecies = listings.filter((l: any) => String(l.species).toLowerCase() === species);
 const offer = speciesOffer(forSpecies);
+// ?opt=<listingId>-<optionId> (from the Google product feed): the Product schema describes exactly that
+// option, so Merchant Center's automatic item updates compare like with like. Canonical stays the bare URL.
+const optParam = Astro.url.searchParams.get("opt");
+const optMatch = optParam
+  ? forSpecies.flatMap((l: any) => getListingPriceOptions(l).map((o: any) => ({ l, o }))).find(({ l, o }) => `${l.id}-${o.id ?? "0"}` === optParam)
+  : undefined;
+const schemaOffer = optMatch
+  ? (() => {
+      const price = Number(optMatch.o.price) > 0 ? Number(optMatch.o.price) : Number(optMatch.o.preorder_price_max) || 0;
+      const sameDay = optMatch.l.is_available && !optMatch.l.is_order_paused && Number(optMatch.l.weight_avail) > 0;
+      return price > 0 ? { availability: sameDay ? "InStock" : optMatch.l.is_preorder_enabled ? "PreOrder" : "OutOfStock", lowPrice: price, highPrice: price, offerCount: 1 } as const : offer;
+    })()
+  : offer;
 const found = !!seller && !!offer;
 if (!found) {
   // Same contract as /s/[slug]: 404 when it doesn't exist, 503 on a DB outage so Google retries.
@@ -65,7 +78,7 @@ const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLower
   jsonLd={found ? {
     "@context": "https://schema.org",
     "@graph": [
-      productJsonLd({ name: `${fishName} — ${sellerName}`, description, url, image: photoAbs, sellerName, offer: offer! }),
+      productJsonLd({ name: `${fishName} — ${sellerName}`, description, url: optMatch ? `${url}?opt=${encodeURIComponent(optParam!)}` : url, image: photoAbs, sellerName, offer: schemaOffer! }),
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
