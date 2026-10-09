@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { normalizeIndianMobile } from "../../../lib/indian-phone";
+import { otpDevBypassAllowed } from "../../../lib/server/otp-mode";
 
 export const prerender = false;
 
@@ -67,7 +69,11 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Phone and code required" }), { status: 400 });
     }
 
-    const normalised = phone.replace("+", "");
+    const parsed = normalizeIndianMobile(String(phone));
+    if (!parsed.ok) {
+      return new Response(JSON.stringify({ error: parsed.message }), { status: 400 });
+    }
+    const normalised = "91" + parsed.digits10;
     const sb = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch OTP record
@@ -86,6 +92,12 @@ export const POST: APIRoute = async ({ request }) => {
     const OTP_SEND_ENABLED = import.meta.env.PUBLIC_ENABLE_MSG91 === "true";
     const msg91Configured = OTP_SEND_ENABLED && !!(import.meta.env.MSG91_AUTH_KEY && import.meta.env.MSG91_TEMPLATE_ID);
     if (!msg91Configured) {
+      // Fail closed: a missing MSG91 env var in production used to make the
+      // fixed dev code log into ANY account.
+      if (!otpDevBypassAllowed()) {
+        console.error("[verify-otp] MSG91 not configured outside dev — refusing dev-code login");
+        return new Response(JSON.stringify({ error: "Login is temporarily unavailable" }), { status: 503 });
+      }
       if (code !== "123456") {
         return new Response(JSON.stringify({ error: "Invalid OTP (dev mode: use 123456)" }), { status: 401 });
       }
@@ -142,7 +154,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // OTP verified — upsert user
-    const cleanPhone = normalised.replace("91", "").replace(/\D/g, "").slice(-10);
+    // `normalised.replace("91", "")` stripped the FIRST "91" anywhere in the
+    // string; the parsed 10 digits are exact.
+    const cleanPhone = parsed.digits10;
 
     if (role === "seller") {
       const { data: existing } = await sb

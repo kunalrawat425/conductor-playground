@@ -1,6 +1,11 @@
 /**
- * Safe migration runner — runs on deploy, skips gracefully if DATABASE_URL not set.
- * Called as prebuild step: `bun run db:migrate:safe && astro build`
+ * Manual migration runner: `bun run db:migrate:safe` with DATABASE_URL set.
+ *
+ * No longer part of `build`. As a prebuild step it would have replayed every
+ * migration on the first deploy that had DATABASE_URL — including
+ * 054_rollback_checkout_session (drops a column), 068 (prod-only data backfill,
+ * corrupts staging) and 070 (drops tables) — and it treats any error containing
+ * "duplicate" as already-applied. Apply migrations deliberately, one at a time.
  */
 import postgres from "postgres";
 import { readdirSync, readFileSync } from "node:fs";

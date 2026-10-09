@@ -2,8 +2,10 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
-import { refundRazorpayPayment, isRazorpayPaid } from "../../../lib/server/razorpay-refund";
-import { orderEmailBuyer, orderEmailSeller, paymentVerifiedEmailBuyer, paymentVerifiedEmailSeller, refundSentEmailBuyer, refundSentEmailSeller } from "../../../lib/email-templates";
+import { isRazorpayPaid, refundRazorpayPayment } from "../../../lib/server/razorpay-refund";
+import { preorderNeedsFinalPrice } from "../../../lib/order-payment-state";
+import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
+import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 
 function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
@@ -34,13 +36,12 @@ const STATUS_LABELS: Record<string, string> = {
 /**
  * POST /api/seller/orders
  * Body: { seller_id, order_id, status?, action?, final_price? }
- * action=set_final_price: calls reconcile_preorder_price RPC, returns new status
- * action=verify_payment: marks payment verified by seller
- * Otherwise: status transition with optional final_price
+ * action=set_final_price: calls reconcile_preorder_price RPC (refunds a price drop on Razorpay)
+ * Otherwise: status transition
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, url }) => {
   try {
-    const { seller_id, seller_phone, order_id, status, action, final_price, refund_note, refund_screenshot_path } = await request.json();
+    const { seller_id, seller_phone, order_id, status, action, final_price, refund_note, cancel_reason } = await request.json();
 
     if (!seller_id || !order_id) {
       return new Response(JSON.stringify({ error: "seller_id and order_id required" }), { status: 400 });
@@ -60,7 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify order belongs to this seller's listings
     const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
-      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, payment_screenshot_urls, payment_method, payment_verified_at")
+      .select("listing_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, refund_amt, payment_screenshot_urls, payment_method, payment_verified_at, razorpay_payment_id")
       .eq("id", order_id)
       .single();
 
@@ -95,14 +96,14 @@ export const POST: APIRoute = async ({ request }) => {
       if (!Number.isFinite(parsedFinal) || parsedFinal <= 0) {
         return new Response(JSON.stringify({ error: "final_price must be a positive number" }), { status: 400 });
       }
-      if (order.paid_amount === null || order.paid_amount === undefined) {
-        return new Response(JSON.stringify({ error: "set_final_price is only allowed for pre-orders with payment proof" }), { status: 400 });
+      if (order.paid_amount === null || order.paid_amount === undefined || !order.razorpay_payment_id) {
+        return new Response(JSON.stringify({ error: "Set the final price once the buyer's payment is in" }), { status: 400 });
       }
       if (order.final_price !== null && order.final_price !== undefined) {
         return new Response(JSON.stringify({ error: "Final price already set for this order" }), { status: 400 });
       }
       if (!["confirmed", "paid"].includes(String(order.status || ""))) {
-        return new Response(JSON.stringify({ error: "Set final price after payment verification (confirmed stage)" }), { status: 400 });
+        return new Response(JSON.stringify({ error: "Set final price once the order is confirmed" }), { status: 400 });
       }
       const { data: newStatus, error: rpcErr } = await supabase.rpc("reconcile_preorder_price", {
         p_order_id: order_id,
@@ -111,9 +112,26 @@ export const POST: APIRoute = async ({ request }) => {
       if (rpcErr) {
         return new Response(JSON.stringify({ error: rpcErr.message }), { status: 500 });
       }
-      const { data, error: fetchErr } = await supabase.from("orders").select().eq("id", order_id).single();
+      let { data, error: fetchErr } = await supabase.from("orders").select().eq("id", order_id).single();
       if (fetchErr) {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
+      }
+      // Catch priced in lower than the pre-order max the buyer paid: refund the
+      // difference on Razorpay right away. It used to sit in refund_amt and the
+      // seller was told to send it over UPI — but the money is in the platform's
+      // Razorpay account, not the seller's.
+      const dueBack = Number((data as any)?.refund_amt) || 0;
+      if (newStatus === "confirmed" && dueBack > 0 && isRazorpayPaid(data as any) && !(data as any).refund_sent_at) {
+        const outcome = await refundRazorpayPayment(
+          String((data as any).razorpay_payment_id),
+          { order_id, caller: "seller/orders:set_final_price" },
+          Math.round(dueBack * 100)
+        );
+        const patch: Record<string, unknown> = { refund_note: `Price set at ₹${parsedFinal}: ${outcome.note}` };
+        if (outcome.ok) patch.refund_sent_at = new Date().toISOString();
+        const upd = await supabase.from("orders").update(patch).eq("id", order_id).select().single();
+        if (upd.error) console.error("[seller/orders] partial refund recorded on Razorpay but not on the order", { order_id, refund: outcome.refundId, err: upd.error.message });
+        else data = upd.data;
       }
       if (order.buyer_id || order.buyer_phone) {
         try {
@@ -130,219 +148,75 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ order: data, reconciled_status: newStatus }), { status: 200 });
     }
 
-    // action=mark_refund_sent: seller confirms UPI refund was sent to buyer
-    if (action === "mark_refund_sent") {
-      const refundUpdate: Record<string, any> = {
-        refund_sent_at: new Date().toISOString(),
-        refund_note: refund_note || null,
-      };
-      if (refund_screenshot_path) refundUpdate.refund_screenshot_path = refund_screenshot_path;
-      let { data, error: rErr } = await supabase
-        .from("orders")
-        .update(refundUpdate)
-        .eq("id", order_id)
-        .select()
-        .single();
-      // Backward compatibility for environments where refund columns migrations
-      // were not applied yet or PostgREST cache is stale.
-      if (rErr && /refund_note|refund_screenshot_path|schema cache/i.test(rErr.message || "")) {
-        const minimalUpdate = { refund_sent_at: refundUpdate.refund_sent_at };
-        const retry = await supabase
-          .from("orders")
-          .update(minimalUpdate)
-          .eq("id", order_id)
-          .select()
-          .single();
-        data = retry.data as any;
-        rErr = retry.error as any;
-      }
-      if (rErr) return new Response(JSON.stringify({ error: rErr.message }), { status: 500 });
-      if (order.buyer_id || order.buyer_phone) {
-        try {
-          await sendBuyerOrderPush({
-            buyer_id: order.buyer_id,
-            buyer_phone: order.buyer_phone,
-            status: "refunded",
-            species: order.species || "Fish",
-            final_price: null,
-            order_id,
-          });
-        } catch (err) { console.warn("[seller/orders] mark_refund_sent buyer push failed", { order_id, err: (err as any)?.message }); }
-      }
-      // Email buyer + seller on refund sent
-      try {
-        const species = capitalizeFishName(order.species || "Fish");
-        if (order.buyer_id) {
-          const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
-          if (buyer?.email) {
-            await sendTransactionalEmail(buyer.email, `Refund sent — ${species}`, refundSentEmailBuyer({ species, orderId: order_id, refundNote: refund_note || null }));
-          }
-        }
-        const { data: sellerRow } = await supabase.from("sellers").select("email, name, push_subscription, push_enabled").eq("id", seller_id).single();
-        if (sellerRow?.email) {
-          await sendTransactionalEmail(sellerRow.email, `Refund marked sent — ${species}`, refundSentEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
-        }
-        // Seller push confirmation that refund was recorded
-        if (sellerRow?.push_subscription) {
-          try {
-            const { loadWebPush } = await import("../../../lib/server/load-web-push");
-            const { normalizeVapidKeyForWebPush, trimVapidKey } = await import("../../../lib/server/vapid-env");
-            const { absoluteUrl } = await import("../../../lib/server/site-origin");
-            const vapidPub = normalizeVapidKeyForWebPush(import.meta.env.PUBLIC_VAPID_KEY || "");
-            const vapidPriv = normalizeVapidKeyForWebPush(import.meta.env.VAPID_PRIVATE_KEY || "");
-            const vapidContact = trimVapidKey(import.meta.env.VAPID_CONTACT || "") || "mailto:relifishstore@gmail.com";
-            if (vapidPub && vapidPriv) {
-              const sub = typeof sellerRow.push_subscription === "string" ? JSON.parse(sellerRow.push_subscription) : sellerRow.push_subscription;
-              const wp = await loadWebPush();
-              wp.setVapidDetails(vapidContact, vapidPub, vapidPriv);
-              await wp.sendNotification(sub, JSON.stringify({
-                title: "Refund recorded",
-                body: `Refund for ${species} order #${String(order_id).slice(0, 8).toUpperCase()} has been marked as sent.`,
-                url: absoluteUrl(`/dashboard/orders?order=${order_id}`),
-                tag: `seller-refund-${Date.now()}`,
-              }));
-            }
-          } catch (err) { console.warn("[seller/orders] mark_refund_sent seller push failed", { order_id, err: (err as any)?.message }); }
-        }
-      } catch (err) { console.warn("[seller/orders] mark_refund_sent email fan-out failed", { order_id, err: (err as any)?.message }); }
-      return new Response(JSON.stringify({ order: data }), { status: 200 });
-    }
-
-    // action=verify_payment: mark payment verified and advance pay-first rows → confirmed
-    if (action === "verify_payment") {
-      const { data: currentForVerify } = await supabase
-        .from("orders")
-        .select("status, payment_screenshot_urls, payment_method, payment_verified_at")
-        .eq("id", order_id)
-        .single();
-      const isRazorpayOrder = currentForVerify?.payment_method === "razorpay" || !!currentForVerify?.payment_verified_at;
-      const proofUrls = Array.isArray(currentForVerify?.payment_screenshot_urls)
-        ? currentForVerify.payment_screenshot_urls
-        : [];
-      if (!isRazorpayOrder && proofUrls.length === 0) {
-        return new Response(
-          JSON.stringify({ error: "Buyer has not uploaded payment proof yet. Ask them to upload a screenshot on Track order." }),
-          { status: 400 }
-        );
-      }
-      const verifyUpdates: any = {
-        payment_verified_at: new Date().toISOString(),
-        payment_verified_by: seller_id,
-      };
-      const verifyAdvanceStatuses = new Set(["pending_payment", "pending", "scheduled", "pre_order"]);
-      if (verifyAdvanceStatuses.has(String(currentForVerify?.status || ""))) {
-        verifyUpdates.status = "confirmed";
-      }
-      const { data, error: vErr } = await supabase
-        .from("orders")
-        .update(verifyUpdates)
-        .eq("id", order_id)
-        .select()
-        .single();
-      if (vErr) {
-        return new Response(JSON.stringify({ error: vErr.message }), { status: 500 });
-      }
-      if (order.buyer_id || order.buyer_phone) {
-        try {
-          const pushStatus = verifyUpdates.status === "confirmed" ? "confirmed" : "payment_verified";
-          await sendBuyerOrderPush({
-            buyer_id: order.buyer_id,
-            buyer_phone: order.buyer_phone,
-            status: pushStatus,
-            species: order.species || "Fish",
-            final_price: null,
-            order_id,
-          });
-        } catch (err) { console.warn("[seller/orders] verify_payment buyer push failed", { order_id, err: (err as any)?.message }); }
-      }
-      // Email buyer + seller on payment verified
-      try {
-        const species = capitalizeFishName(order.species || "Fish");
-        if (order.buyer_id) {
-          const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
-          if (buyer?.email) {
-            await sendTransactionalEmail(buyer.email, `Payment verified — ${species}`, paymentVerifiedEmailBuyer({ species, orderId: order_id }));
-          }
-        }
-        const { data: sellerRow } = await supabase.from("sellers").select("email, name").eq("id", seller_id).single();
-        if (sellerRow?.email) {
-          await sendTransactionalEmail(sellerRow.email, `Payment verified — ${species}`, paymentVerifiedEmailSeller({ species, orderId: order_id, sellerName: sellerRow.name }));
-        }
-      } catch (err) { console.warn("[seller/orders] verify_payment email fan-out failed", { order_id, err: (err as any)?.message }); }
-      return new Response(JSON.stringify({ order: data }), { status: 200 });
+    // Razorpay is the only payment method: no manual UPI verification and no
+    // "mark refund sent" — refunds go back through Razorpay automatically.
+    if (action) {
+      return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), { status: 400 });
     }
 
     // Default: status transition
     const validTransitions: Record<string, string[]> = {
+      // Not paid yet: the seller can only decline (or confirm a row whose
+      // payment is already captured — guarded below).
       pending: ["confirmed", "declined"],
       pending_payment: ["confirmed", "declined"],
       pre_order: ["confirmed", "declined"],
       scheduled: ["confirmed", "declined"],
+      // Paid, awaiting the seller: accept → confirmed, or decline → full refund.
+      paid: ["confirmed", "declined", "cancelled"],
+      // Accepted: fulfil, or cancel with a full refund (policy: seller cancellations).
       confirmed: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
-      paid: ["ready_for_pickup", "out_for_delivery", "declined", "cancelled"],
       payment_required: ["confirmed", "cancelled"],
-      // Kept for rows created BEFORE BUG-43 was fixed: a pre-order price drop
-      // used to set status `refunded` while the order was still live, so those
-      // existing rows must remain fulfillable. New price drops stay `confirmed`.
-      refunded: ["ready_for_pickup", "out_for_delivery"],
       ready_for_pickup: ["completed", "cancelled"],
       out_for_delivery: ["completed", "cancelled"],
+      // `refunded`, `completed`, `declined`, `cancelled` are terminal: no exits.
     };
     const { data: currentOrder } = await supabase
       .from("orders")
-      .select("status, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
+      .select("status, order_type, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
       .eq("id", order_id)
       .single();
     const currentStatus = currentOrder?.status;
 
-    if (status === "confirmed") {
-      const proofUrls = Array.isArray(currentOrder?.payment_screenshot_urls)
-        ? currentOrder!.payment_screenshot_urls
-        : [];
-      const isRazorpay = (currentOrder as any)?.payment_method === "razorpay" || !!(currentOrder as any)?.payment_verified_at;
-      const mustHaveProof = ["pending", "pending_payment", "scheduled", "pre_order"].includes(String(currentStatus || ""));
-      if (mustHaveProof && !isRazorpay && proofUrls.length === 0) {
-        return new Response(
-          JSON.stringify({
-            error: "Confirm only after the buyer uploads payment proof. Use Verify payment once their screenshot is visible.",
-          }),
-          { status: 400 }
-        );
-      }
+    // Razorpay is the only payment method: an order is confirmed only once its
+    // payment is captured (settle confirms it automatically; this covers the
+    // seller's "Confirm order" for a paid row whose confirm write was lost).
+    if (status === "confirmed" && !(currentOrder as any)?.razorpay_payment_id) {
+      return new Response(
+        JSON.stringify({ error: "Confirm only after the buyer has paid. Use “Check Razorpay for payment”." }),
+        { status: 400 }
+      );
     }
-    if (currentStatus && validTransitions[currentStatus] && !validTransitions[currentStatus].includes(status)) {
+    // A status missing from the map used to skip this check entirely, so
+    // `cancelled → confirmed` or `completed → declined` were accepted.
+    // Fulfilment step must match how the order is fulfilled: a pickup order was
+    // accepted into out_for_delivery (found on staging), and vice versa.
+    const orderType = (currentOrder as any)?.order_type;
+    if ((status === "out_for_delivery" && orderType !== "delivery") || (status === "ready_for_pickup" && orderType !== "pickup")) {
+      return new Response(JSON.stringify({ error: `This is a ${orderType || "pickup"} order — use ${orderType === "delivery" ? "Out for delivery" : "Ready for pickup"}` }), { status: 400 });
+    }
+    if (!currentStatus || !validTransitions[currentStatus]?.includes(status)) {
       return new Response(JSON.stringify({ error: `Cannot change from ${currentStatus} to ${status}` }), { status: 400 });
     }
-    // Next-day catch only: buyer paid an advance *below* listed total — seller must set final_price before fulfillment.
-    // Pay-first same-day sets paid_amount === total+delivery; do not require final_price (matches dashboard `needsFinalPrice`).
+    // Pre-orders priced on a range must have their catch price set before
+    // fulfilment (same rule as the dashboard's "Set price" button).
     const tryingToFulfill = status === "ready_for_pickup" || status === "out_for_delivery";
-    const finalNotSet = currentOrder?.final_price === null || currentOrder?.final_price === undefined;
-    if (tryingToFulfill && finalNotSet && ["confirmed", "paid"].includes(String(currentStatus || ""))) {
-      const totalDue =
-        Number(currentOrder?.total_price || 0) +
-        Number((currentOrder as { delivery_fee?: number | null } | null)?.delivery_fee || 0);
-      const paid = Number(currentOrder?.paid_amount);
-      const partialAdvanceCatch =
-        Number.isFinite(paid) &&
-        paid > 0 &&
-        Number.isFinite(totalDue) &&
-        totalDue > 0 &&
-        paid + 0.01 < totalDue;
-      if (partialAdvanceCatch) {
-        return new Response(
-          JSON.stringify({ error: "Set final price first before moving preorder to pickup/delivery" }),
-          { status: 400 }
-        );
-      }
+    if (tryingToFulfill && preorderNeedsFinalPrice(currentOrder as any)) {
+      return new Response(
+        JSON.stringify({ error: "Set final price first before moving preorder to pickup/delivery" }),
+        { status: 400 }
+      );
     }
 
+    // final_price is only ever set through action=set_final_price (validated, and
+    // reconciled by the RPC). Writing it here unvalidated skipped refund_amt.
     const updates: any = { status };
-    if (final_price !== undefined) {
-      updates.final_price = final_price;
-    }
     if (status === "declined" || status === "cancelled") {
       updates.cancelled_by = "seller";
-      if (refund_note) updates.refund_note = refund_note;
+      // The seller's reason is shown to the buyer (screen + notification). It used
+      // to be written into refund_note, mixed with refund gateway text.
+      const why = String(cancel_reason ?? refund_note ?? "").trim().slice(0, 200);
+      updates.cancel_reason = why || null;
 
       // BUG-44: this branch used to write cancelled_by/refund_note and stop —
       // no Razorpay refund was ever issued. The dashboard button says
@@ -352,11 +226,13 @@ export const POST: APIRoute = async ({ request }) => {
       // unless someone noticed and refunded by hand. The buyer-initiated cancel
       // path has always refunded properly; now both use the same helper.
       if (isRazorpayPaid(currentOrder as any)) {
-        const outcome = await refundRazorpayPayment(
-          String((currentOrder as any).razorpay_payment_id),
-          { order_id, caller: `seller/orders:${status}` }
+        // Every payment on the order: upfront plus any balance top-up.
+        const outcome = await refundOrderRazorpay(
+          supabase,
+          { id: order_id, razorpay_payment_id: (currentOrder as any).razorpay_payment_id, razorpay_order_id: (currentOrder as any).razorpay_order_id },
+          { caller: `seller/orders:${status}` }
         );
-        updates.refund_note = refund_note ? `${refund_note} — ${outcome.note}` : outcome.note;
+        updates.refund_note = outcome.note;
         if (outcome.ok) {
           updates.refund_amt = Number((currentOrder as any).paid_amount)
             || (Number((currentOrder as any).total_price) + Number((currentOrder as any).delivery_fee || 0));
@@ -364,23 +240,36 @@ export const POST: APIRoute = async ({ request }) => {
         }
       }
     }
-    // BUG-5 fix: when seller advances into "confirmed" without going through
-    // verify_payment (e.g. direct "Mark confirmed" button), stamp payment_verified_at
-    // so the row satisfies the "confirmed → has proof" invariant.
+    // Stamp payment_verified_at if a paid row reached here without it.
     if (status === "confirmed" && !(currentOrder as any)?.payment_verified_at) {
       updates.payment_verified_at = new Date().toISOString();
       updates.payment_verified_by = seller_id;
     }
 
-    const { data, error } = await supabase
+    // Guard on the status we validated against: a concurrent buyer cancel or a
+    // second click must not be overwritten (e.g. a refunded order flipped to Ready).
+    const { data: rows, error } = await supabase
       .from("orders")
       .update(updates)
       .eq("id", order_id)
-      .select()
-      .single();
+      .eq("status", currentStatus)
+      .select();
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
+    const data = rows?.[0];
+    if (!data) {
+      return new Response(JSON.stringify({ error: "This order was just updated. Refresh and try again." }), { status: 409 });
+    }
+
+    // Seller cancelled / declined: one notifier tells the buyer who cancelled,
+    // the reason and the refund, on push and email.
+    if (status === "declined" || status === "cancelled") {
+      const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+      await notifyOrderParties({ order_id, event: "cancelled_by_seller", origin: url.origin })
+        .catch((err: any) => console.warn("[seller/orders] cancel notify failed", { order_id, err: err?.message }));
+      return new Response(JSON.stringify({ order: data }), { status: 200 });
     }
 
     // Notify buyer via push — never fail the order update if push throws

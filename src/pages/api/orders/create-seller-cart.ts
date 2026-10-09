@@ -1,5 +1,8 @@
 import type { APIRoute } from "astro";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { normalizeIndianMobile } from "../../../lib/indian-phone";
+import { deliveryDistanceRejection } from "../../../lib/server/assert-seller-accepts";
+import { resolveOrderAddress, saveAddressSnapshot } from "../../../lib/server/order-address";
 import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
   capitalizeFishName,
@@ -41,7 +44,7 @@ type CartLineInput = {
 export const POST: APIRoute = async ({ request, url }) => {
   try {
     const body = await request.json();
-    const {
+    let {
       lines: rawLines,
       buyer_phone,
       buyer_id,
@@ -64,6 +67,13 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!buyer_phone) {
       return new Response(JSON.stringify({ error: "Phone number required" }), { status: 400 });
     }
+    // One stored format (10 digits) across orders/buyers/sellers. Orders used to
+    // keep whatever the client sent: prod had 218 "+91…" rows and 117 10-digit.
+    const phoneCheck = normalizeIndianMobile(String(buyer_phone));
+    if (!phoneCheck.ok) {
+      return new Response(JSON.stringify({ error: phoneCheck.message }), { status: 400 });
+    }
+    buyer_phone = phoneCheck.digits10;
     if (!clientSellerId || typeof clientSellerId !== "string") {
       return new Response(JSON.stringify({ error: "seller_id required" }), { status: 400 });
     }
@@ -102,7 +112,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const { data: seller } = await supabase
       .from("sellers")
       .select(
-        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, lat, lng"
+        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, lat, lng"
       )
       .eq("id", clientSellerId)
       .single();
@@ -126,12 +136,12 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // For per-km delivery fee: resolve buyer address coordinates once.
     let deliveryDistanceKm: number | undefined = undefined;
-    if (order_type === "delivery" && buyer_addr && seller?.lat != null && seller?.lng != null) {
-      const { data: addrRow } = await supabase
-        .from("buyer_addresses")
-        .select("lat, lng")
-        .eq("id", buyer_addr)
-        .single();
+    const addr = await resolveOrderAddress(supabase, buyer_addr, buyer_id);
+    if (!addr.ok) {
+      return new Response(JSON.stringify({ error: addr.error }), { status: 400 });
+    }
+    const addrRow = addr.snapshot;
+    if (order_type === "delivery" && seller?.lat != null && seller?.lng != null) {
       if (addrRow?.lat != null && addrRow?.lng != null) {
         deliveryDistanceKm = haversineKm(
           Number(seller.lat), Number(seller.lng),
@@ -153,11 +163,20 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // Delivery fee applies once per cart, computed from the whole subtotal so it
     // matches what the buyer was shown (and honours free_delivery_above).
+    const distErr = deliveryDistanceRejection(seller, order_type, deliveryDistanceKm);
+    if (distErr) {
+      return new Response(JSON.stringify({ error: distErr }), { status: 400 });
+    }
     const cartDeliveryFee = seller ? computeDeliveryFee(seller, cartSubtotal, order_type, deliveryDistanceKm) : 0;
     let deliveryFeeAssigned = false;
     for (const { line } of resolved) {
       if (line.kind === "preorder") {
-        const amountDue = line.total_price;
+        // One delivery per cart: pre-order lines carry the fee too (first row only),
+        // same as same-day lines and as /api/orders/create. It was hard-coded to 0,
+        // so the same pre-order cost less through the cart than through create.
+        const preFee = deliveryFeeAssigned ? 0 : cartDeliveryFee;
+        deliveryFeeAssigned = true;
+        const amountDue = line.total_price + preFee;
         const { data: preOrder, error: preErr } = await supabase
           .from("orders")
           .insert({
@@ -169,12 +188,11 @@ export const POST: APIRoute = async ({ request, url }) => {
             quantity: line.quantity,
             quantity_unit: line.quantity_unit,
             total_price: line.total_price,
-            delivery_fee: 0,
+            delivery_fee: preFee,
             platform_fee: 0,
             status: "pending_payment",
             placement_kind: "preorder",
             order_type,
-            payment_type: "cod",
             paid_amount: amountDue,
             pricing_option_id: line.pricing_option_id,
             pricing_label: line.pricing_label,
@@ -329,13 +347,10 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       if (resendApiKey && fetchedOrder) {
-        const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
         const stLabel =
           scheduled_for
             ? "Pickup scheduled — complete payment to confirm 🗓️"
-            : RAZORPAY_ENABLED
-              ? "Order placed — complete payment to confirm"
-              : "Order placed — upload payment proof";
+            : "Order placed — complete payment to confirm";
         const _fo = fetchedOrder;
         afterResponse(Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
           sendCartOrderEmail(resendApiKey, {
@@ -356,6 +371,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         ), "create-seller-cart:order-email");
       }
     }
+
+    await saveAddressSnapshot(supabase, (orders as any[]).map((o) => o?.id).filter(Boolean), addr.snapshot);
 
     // Campaign attribution (e.g. flyer QR) — best effort, never fails the order.
     const utmRow = pickUtm(utm);

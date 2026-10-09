@@ -38,3 +38,26 @@ export function sellerRejectionReason(
   }
   return null;
 }
+
+/**
+ * Delivery orders must be priceable and inside the seller's radius.
+ * - Per-km sellers: with no map pin there is no distance, and computeDeliveryFee
+ *   fell back to the fixed amount (usually 0) — free delivery by accident.
+ * - delivery_rad was only applied in the /shop list; a buyer 40 km away could
+ *   order delivery through the seller link or the API.
+ */
+export function deliveryDistanceRejection(
+  seller: { delivery_fee_enabled?: boolean | null; delivery_fee_type?: string | null; delivery_rad?: number | string | null } | null | undefined,
+  orderType: string,
+  distanceKm: number | undefined
+): string | null {
+  if (!seller || orderType !== "delivery") return null;
+  if (seller.delivery_fee_enabled && seller.delivery_fee_type === "per_km" && distanceKm == null) {
+    return "Pick your delivery location on the map so the delivery fee can be calculated.";
+  }
+  const rad = Number(seller.delivery_rad) || 0;
+  if (distanceKm != null && rad > 0 && distanceKm > rad) {
+    return `This seller delivers within ${rad} km of their shop.`;
+  }
+  return null;
+}

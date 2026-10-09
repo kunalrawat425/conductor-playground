@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { buyerOrderPushNotification } from "../../src/lib/server/buyer-order-push-copy";
 
 const ALL_STATUSES = [
-  "placed", "proof_uploaded", "payment_verified", "confirmed", "picked_up",
+  "placed", "confirmed", "picked_up",
   "declined", "cancelled", "paid", "completed", "refunded", "pre_order",
   "pending", "pending_payment", "payment_required", "ready_for_pickup",
   "out_for_delivery", "scheduled",
@@ -46,50 +46,15 @@ describe("buyer push copy — coverage", () => {
 
 /**
  * BUG-23 regression: the "placed" copy told every buyer to upload a UPI
- * screenshot. With Razorpay live there is no screenshot — they pay in a modal —
- * so the copy sent them hunting for a control that does not exist.
+ * screenshot. Razorpay is the only payment method — buyers pay in a modal.
  */
-describe("buyer push copy — BUG-23 Razorpay awareness", () => {
-  it("placed: does NOT mention uploading proof when Razorpay is enabled", () => {
-    const n = buyerOrderPushNotification("placed", "pomfret", null, true);
-    expect(n.body.toLowerCase()).not.toContain("upload");
-    expect(n.body.toLowerCase()).not.toContain("screenshot");
-    expect(n.body.toLowerCase()).toContain("pay");
-  });
-
-  it("placed: still asks for proof on the screenshot-only rail", () => {
-    const n = buyerOrderPushNotification("placed", "pomfret", null, false);
-    expect(n.body.toLowerCase()).toContain("upload");
-    expect(n.body).toContain("pomfret");
-  });
-
-  it("pending_payment: reads as 'awaiting payment' when Razorpay is enabled", () => {
-    const n = buyerOrderPushNotification("pending_payment", "pomfret", null, true);
-    expect(n.body.toLowerCase()).not.toContain("screenshot");
-    expect(n.body.toLowerCase()).toContain("payment");
-  });
-
-  it("pending_payment: reads as 'proof received' on the screenshot-only rail", () => {
-    const n = buyerOrderPushNotification("pending_payment", "pomfret", null, false);
-    expect(n.body.toLowerCase()).toContain("screenshot");
-  });
-
-  it("proof_uploaded: always confirms the screenshot, regardless of the flag", () => {
-    // This one is emitted only after an actual upload, so the flag must not
-    // change it — that was the trap in the first BUG-23 patch.
-    for (const flag of [true, false]) {
-      const n = buyerOrderPushNotification("proof_uploaded", "pomfret", null, flag);
-      expect(n.title, String(flag)).toBe("Payment proof sent");
-      expect(n.body.toLowerCase(), String(flag)).toContain("screenshot");
-    }
-  });
-
-  it("no non-payment status is affected by the Razorpay flag", () => {
-    const unaffected = ALL_STATUSES.filter((s) => s !== "placed" && s !== "pending_payment");
-    for (const s of unaffected) {
-      const on = buyerOrderPushNotification(s, "pomfret", null, true);
-      const off = buyerOrderPushNotification(s, "pomfret", null, false);
-      expect(on, s).toEqual(off);
-    }
-  });
+describe("buyer push copy — Razorpay only", () => {
+  for (const status of ["placed", "pending_payment"]) {
+    it(`${status}: asks for payment, never for a screenshot`, () => {
+      const n = buyerOrderPushNotification(status, "pomfret");
+      expect(n.body.toLowerCase()).not.toContain("upload");
+      expect(n.body.toLowerCase()).not.toContain("screenshot");
+      expect(n.body.toLowerCase()).toMatch(/pay/);
+    });
+  }
 });

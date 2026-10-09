@@ -19,7 +19,7 @@ export const GET: APIRoute = async () => {
   const key = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
   const env = {
-    razorpay_enabled: import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true",
+    razorpay_keys_set: !!(import.meta.env.PUBLIC_RAZORPAY_KEY_ID && import.meta.env.RAZORPAY_KEY_SECRET),
     msg91_enabled: import.meta.env.PUBLIC_ENABLE_MSG91 === "true",
     webhook_secret_set: !!import.meta.env.RAZORPAY_WEBHOOK_SECRET,
     admin_secret_set: !!import.meta.env.ADMIN_SECRET,

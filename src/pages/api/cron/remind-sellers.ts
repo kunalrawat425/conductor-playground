@@ -66,7 +66,10 @@ export const GET: APIRoute = async ({ request }) => {
     const url = new URL(request.url);
     const testPhone = url.searchParams.get("test_phone");
 
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}` && !testPhone) {
+    // Secret required for every call (test runs included); fail closed when unset.
+    // ?test_phone used to bypass auth and return every seller's name + phone.
+    if (!CRON_SECRET) return new Response("CRON_SECRET not configured", { status: 503 });
+    if (authHeader !== `Bearer ${CRON_SECRET}`) {
       return new Response("Unauthorized", { status: 401 });
     }
 
@@ -80,7 +83,7 @@ export const GET: APIRoute = async ({ request }) => {
       
     if (testPhone) {
       // For testing, just find the seller with this phone
-      query = query.ilike("phone", `%${testPhone}%`);
+      query = query.eq("phone", testPhone.replace(/\D/g, "").slice(-10));
     }
 
     const { data: sellers, error } = await query;
@@ -164,7 +167,7 @@ export const GET: APIRoute = async ({ request }) => {
             
             const data = await res.json().catch(() => ({}));
             if (data.type === "success") {
-              console.log(`[MSG91 Reminder] Sent to ${seller.name} (${seller.phone})`);
+              console.log(`[MSG91 Reminder] Sent to seller ${seller.id}`);
             } else {
               console.error(`[MSG91 Reminder] Failed to send to ${seller.name}:`, data);
             }
@@ -172,7 +175,7 @@ export const GET: APIRoute = async ({ request }) => {
             console.error(`[MSG91 Reminder] Error sending to ${seller.name}:`, e);
           }
         } else {
-          console.log(`[MSG91 Reminder - Missing Env or Phone] Would send to ${seller.name} (${seller.phone}):\n${message}`);
+          console.log(`[MSG91 Reminder - Missing Env or Phone] Would send to seller ${seller.id}`);
         }
 
         // Web Push Notification Reminder (Only 60 min reminder / 1 hour before opening)
@@ -220,8 +223,7 @@ export const GET: APIRoute = async ({ request }) => {
         }
         
         remindersLog.push({
-          seller: seller.name,
-          phone: seller.phone,
+          seller: seller.id,
           type: `${minutesLeft}min`
         });
         

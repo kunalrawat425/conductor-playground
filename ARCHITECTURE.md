@@ -171,7 +171,7 @@ Scripts loaded when PUBLIC_ENABLE_TRACKING=true (in order):
 Order attribution:
   seller/[id] checkout sends rf_utm → POST /api/orders/create-seller-cart
   → pickUtm() (src/lib/utm.ts: strings only, 100 chars, 30-day window)
-  → orders.utm_source / utm_medium / utm_campaign / utm_content (migration 074)
+  → orders.utm_source / utm_medium / utm_campaign / utm_content (migration 075)
   Best effort: a failed UTM write never fails the order.
 
 GA4 events:

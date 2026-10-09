@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { normalizeIndianMobile } from "../../../lib/indian-phone";
+import { resolveOrderAddress, saveAddressSnapshot } from "../../../lib/server/order-address";
 import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
   capitalizeFishName,
@@ -14,7 +16,7 @@ import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
-import { sellerRejectionReason } from "../../../lib/server/assert-seller-accepts";
+import { sellerRejectionReason, deliveryDistanceRejection } from "../../../lib/server/assert-seller-accepts";
 import { afterResponse } from "../../../lib/server/after-response";
 
 export const prerender = false;
@@ -62,8 +64,20 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!buyer_phone) {
       return new Response(JSON.stringify({ error: "Phone number required" }), { status: 400 });
     }
+    // One stored format (10 digits) across orders/buyers/sellers. Orders used to
+    // keep whatever the client sent: prod had 218 "+91…" rows and 117 10-digit.
+    const phoneCheck = normalizeIndianMobile(String(buyer_phone));
+    if (!phoneCheck.ok) {
+      return new Response(JSON.stringify({ error: phoneCheck.message }), { status: 400 });
+    }
+    buyer_phone = phoneCheck.digits10;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const addr = await resolveOrderAddress(supabase, buyer_addr, buyer_id);
+    if (!addr.ok) {
+      return new Response(JSON.stringify({ error: addr.error }), { status: 400 });
+    }
 
     let total_price = 0;
     let seller_id: string | null = clientSellerId || null;
@@ -108,7 +122,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         // delivery pre-order under their own minimum, with no delivery fee.
         const { data: preorderSeller } = await supabase
           .from("sellers")
-          .select("min_order_amount, has_delivery, has_pickup, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, lat, lng")
+          .select("min_order_amount, has_delivery, has_pickup, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, lat, lng")
           .eq("id", line.seller_id)
           .single();
 
@@ -118,18 +132,18 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
 
         let preorderDistanceKm: number | undefined = undefined;
-        if (order_type === "delivery" && buyer_addr && preorderSeller?.lat != null && preorderSeller?.lng != null) {
-          const { data: addrRow } = await supabase
-            .from("buyer_addresses")
-            .select("lat, lng")
-            .eq("id", buyer_addr)
-            .single();
+        const addrRow = addr.snapshot;
+        if (order_type === "delivery" && preorderSeller?.lat != null && preorderSeller?.lng != null) {
           if (addrRow?.lat != null && addrRow?.lng != null) {
             preorderDistanceKm = haversineKm(
               Number(preorderSeller.lat), Number(preorderSeller.lng),
               Number(addrRow.lat), Number(addrRow.lng)
             );
           }
+        }
+        const preDistErr = deliveryDistanceRejection(preorderSeller, order_type, preorderDistanceKm);
+        if (preDistErr) {
+          return new Response(JSON.stringify({ error: preDistErr }), { status: 400 });
         }
         const preorderDeliveryFee = preorderSeller
           ? computeDeliveryFee(preorderSeller, total_price, order_type, preorderDistanceKm)
@@ -152,8 +166,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             placement_kind: "preorder",
             is_preorder: true,
             order_type,
-            payment_type: "cod",
-            paid_amount: total_price,
+            // What Razorpay charges: total + delivery fee (refunds use this).
+            paid_amount: total_price + preorderDeliveryFee,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
@@ -165,6 +179,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (preErr) {
           return new Response(JSON.stringify({ error: preErr.message }), { status: 500 });
         }
+        await saveAddressSnapshot(supabase, [preOrder.id], addr.snapshot);
 
         // BUG-27: these were fire-and-forget. Vercel freezes the function the
         // moment the response is returned, so in-flight push/email requests were
@@ -244,7 +259,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
 
-    // Pay-first: new orders are pending_payment until buyer uploads proof; seller confirms after verify.
+    // Pay-first: new orders are pending_payment until the Razorpay payment is captured.
     let status = "pending_payment";
     let isPreorderBranch = false;
     let delivery_fee = 0;
@@ -253,7 +268,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, preorder_cutoff_time, open_days, preorder_days, lat, lng"
+          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, preorder_cutoff_time, open_days, preorder_days, lat, lng"
         )
         .eq("id", seller_id)
         .single();
@@ -306,18 +321,18 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       let deliveryDistanceKm: number | undefined = undefined;
-      if (order_type === "delivery" && buyer_addr && seller?.lat != null && seller?.lng != null) {
-        const { data: addrRow } = await supabase
-          .from("buyer_addresses")
-          .select("lat, lng")
-          .eq("id", buyer_addr)
-          .single();
+      const addrRow = addr.snapshot;
+      if (order_type === "delivery" && seller?.lat != null && seller?.lng != null) {
         if (addrRow?.lat != null && addrRow?.lng != null) {
           deliveryDistanceKm = haversineKm(
             Number(seller.lat), Number(seller.lng),
             Number(addrRow.lat), Number(addrRow.lng)
           );
         }
+      }
+      const distErr = deliveryDistanceRejection(seller, order_type, deliveryDistanceKm);
+      if (distErr) {
+        return new Response(JSON.stringify({ error: distErr }), { status: 400 });
       }
       delivery_fee = seller ? computeDeliveryFee(seller, total_price, order_type, deliveryDistanceKm) : 0;
     }
@@ -366,7 +381,6 @@ export const POST: APIRoute = async ({ request, url }) => {
             status,
             placement_kind,
             order_type,
-            payment_type: "cod",
             paid_amount: total_price + delivery_fee,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
@@ -401,6 +415,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!order) {
       return new Response(JSON.stringify({ error: "Order creation failed" }), { status: 500 });
     }
+    await saveAddressSnapshot(supabase, [order.id], addr.snapshot);
 
     if (seller_id) {
       try {
@@ -438,12 +453,9 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // Send emails non-blocking — fire and forget so order response is instant
     if (resendApiKey && order) {
-      const RAZORPAY_ENABLED = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
       const statusLabel = isPreorderBranch
         ? "Pre-order placed — catch reserved for tomorrow"
-        : RAZORPAY_ENABLED
-          ? "Order placed — complete payment to confirm"
-          : "Order placed — upload payment proof";
+        : "Order placed — complete payment to confirm";
       const emailArgs = {
         statusLabel,
         species: species || "Fish",

@@ -29,7 +29,9 @@ export const GET: APIRoute = async ({ url, request }) => {
   const rzpOrder = url.searchParams.get("razorpay_order_id");
   const rzpPayment = url.searchParams.get("razorpay_payment_id");
   const refundId = url.searchParams.get("refund_id");
-  const buyerPhone = url.searchParams.get("buyer_phone");
+  const rawPhone = url.searchParams.get("buyer_phone");
+  // Stored as 10 digits since migration 070; accept any typed format.
+  const buyerPhone = rawPhone ? (rawPhone.replace(/\D/g, "").slice(-10) || null) : null;
 
   if (!id && !idPrefix && !rzpOrder && !rzpPayment && !refundId && !buyerPhone) {
     return new Response(JSON.stringify({ error: "one of id, id_prefix, razorpay_order_id, razorpay_payment_id, refund_id, buyer_phone required" }), { status: 400 });

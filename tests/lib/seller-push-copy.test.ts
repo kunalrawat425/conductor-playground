@@ -101,11 +101,11 @@ describe("BUG-26: cancel/refund must never render as payment-proof copy", () => 
     expect(n.body.toLowerCase()).not.toContain("proof");
   });
 
-  it("payment-confirmed push tells the seller TO prepare", () => {
+  it("payment push asks the seller to confirm or decline (payment ≠ accepted)", () => {
     const n = sellerPushNotification(sellerPushKindFor("payment_confirmed"), {
       species: "pomfret", order_id_short: "AB12CD34", amount: 1990,
     });
-    expect(n.body.toLowerCase()).toContain("prepare this order");
+    expect(n.body.toLowerCase()).toContain("confirm or decline");
     expect(n.body).toContain("₹1990");
   });
 

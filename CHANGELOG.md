@@ -5,7 +5,7 @@ All notable changes to Relifish are documented here.
 ## [0.3.0.0] - 2026-10-09
 
 ### Added
-- Every order now records where the buyer came from (flyer QR, blog, Instagram, ads). The campaign from the buyer's last visit (within 30 days) is saved on the order (`orders.utm_source/medium/campaign/content`, migration 074), so paid orders can be counted per flyer run or channel. Clicks on our own blog links never overwrite a real campaign.
+- Every order now records where the buyer came from (flyer QR, blog, Instagram, ads). The campaign from the buyer's last visit (within 30 days) is saved on the order (`orders.utm_source/medium/campaign/content`, migration 075), so paid orders can be counted per flyer run or channel. Clicks on our own blog links never overwrite a real campaign.
 - A page for every fish from every seller (`/s/<seller>/<fish>`, e.g. `/s/fishtokri-com/surmai`) showing price, today's availability and an order button. Each is a single-product page with `Product` + `Offer`/`AggregateOffer` markup (InStock / PreOrder / OutOfStock), so Google can show price and stock in results. They are linked from the seller page, `/shop` and the sitemap. The seller page keeps its `Menu` markup and drops the product list that Google does not use on multi-product pages.
 - Google can now see the shop. `/shop` renders a server-side list of active sellers and the fish they have (cached 5 minutes); the location-based shop app is unchanged.
 - Seller pages and seller links fall back to `/seller/<id>` when a seller name has no Latin letters, so no link points at an empty `/s/`.

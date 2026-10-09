@@ -1,6 +1,7 @@
 ---
 import UtmCapture from "../components/UtmCapture.astro";
 import { LOGO_URL } from "../lib/brand";
+import { jsonLdString } from "../lib/html";
 export const prerender = false;
 import { supabase } from "../lib/supabase";
 import Footer from "../components/Footer.astro";
@@ -100,7 +101,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" /></noscript>
-  <script type="application/ld+json" set:html={JSON.stringify({
+  <script type="application/ld+json" set:html={jsonLdString({
     "@context": "https://schema.org",
     "@graph": [
       {

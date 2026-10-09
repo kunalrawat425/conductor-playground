@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
-import { rateLimit } from "../../../lib/server/rate-limit";
+import { clientKey, overLimit } from "../../../lib/server/rate-limit";
+import { escapeHtml } from "../../../lib/html";
 import { LOGO_URL } from "../../../lib/brand";
 
 export const prerender = false;
@@ -15,7 +16,9 @@ export const POST: APIRoute = async ({ request }) => {
     // BUG-18: public unauthenticated endpoint — cap signups per IP so the
     // waitlist table can't be flooded with junk rows. 5 per 10 min is far
     // above any legitimate human rate.
-    const limited = rateLimit(request, 5, 10 * 60 * 1000);
+    const limited = overLimit(`waitlist:${clientKey(request)}`, 5, 10 * 60 * 1000)
+      ? new Response(JSON.stringify({ error: "Too many requests. Please try again shortly." }), { status: 429 })
+      : null;
     if (limited) return limited;
 
     const { buyer_id, phone, area, fish_wanted, frequency, preference, budget, notes, email } = await request.json();
@@ -85,12 +88,12 @@ export const POST: APIRoute = async ({ request }) => {
               <h2>New Buyer Waitlist Entry</h2>
               <table style="border-collapse:collapse;font-family:sans-serif;">
                 <tr><td style="padding:8px;font-weight:bold;">Phone</td><td style="padding:8px;">${phoneE164}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Area</td><td style="padding:8px;">${area}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Fish wanted</td><td style="padding:8px;">${fish_wanted || "—"}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Frequency</td><td style="padding:8px;">${frequency || "—"}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Preference</td><td style="padding:8px;">${preference || "—"}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Budget</td><td style="padding:8px;">${budget || "—"}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Notes</td><td style="padding:8px;">${notes || "—"}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Area</td><td style="padding:8px;">${escapeHtml(area)}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Fish wanted</td><td style="padding:8px;">${escapeHtml(fish_wanted || "—")}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Frequency</td><td style="padding:8px;">${escapeHtml(frequency || "—")}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Preference</td><td style="padding:8px;">${escapeHtml(preference || "—")}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Budget</td><td style="padding:8px;">${escapeHtml(budget || "—")}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Notes</td><td style="padding:8px;">${escapeHtml(notes || "—")}</td></tr>
                 <tr><td style="padding:8px;font-weight:bold;">Waitlist #</td><td style="padding:8px;">${totalCount}</td></tr>
                 <tr><td style="padding:8px;font-weight:bold;">People in area</td><td style="padding:8px;">${areaCount}</td></tr>
               </table>
@@ -100,7 +103,10 @@ export const POST: APIRoute = async ({ request }) => {
         await sb.from("buyer_waitlist").update({ email_sent: true }).eq("id", data.id);
 
         // Send welcome email to customer if they provided email
-        if (email && email.includes("@")) {
+        // Client-supplied text used to land unescaped in a Relifish-branded mail
+        // to any address (phishing relay). All fields are escaped now; the
+        // address must at least look like one.
+        if (email && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(String(email))) {
           await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -116,12 +122,12 @@ export const POST: APIRoute = async ({ request }) => {
                   <div style="margin:0 0 16px;"><img src="${LOGO_URL}" alt="Relifish" style="height:40px;width:auto;display:block;" /></div>
                   <h1 style="font-size:24px;margin:0 0 16px;">Welcome to Relifish!</h1>
                   <p style="font-size:16px;color:#333;line-height:1.6;margin:0 0 16px;">
-                    You're officially on the waitlist. We're bringing the freshest fish from local sellers to <strong>${area}</strong>.
+                    You're officially on the waitlist. We're bringing the freshest fish from local sellers to <strong>${escapeHtml(area)}</strong>.
                   </p>
                   <div style="background:#f0f6ff;border-radius:12px;padding:20px;margin:0 0 16px;">
                     <p style="font-size:14px;font-weight:700;color:#0066cc;margin:0 0 10px;">What happens next:</p>
                     <p style="font-size:14px;color:#333;line-height:1.6;margin:0;">
-                      1. We onboard trusted fish sellers near ${area}<br/>
+                      1. We onboard trusted fish sellers near ${escapeHtml(area)}<br/>
                       2. You get notified the moment they go live<br/>
                       3. You order first — with exclusive launch discounts
                     </p>

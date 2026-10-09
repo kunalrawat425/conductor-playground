@@ -25,6 +25,9 @@ let notFound = false;
 let unavailable = false;
 try {
   seller = await getSellerById(id!);
+  // Unapproved / deactivated sellers had live, orderable pages. Test sellers
+  // stay reachable by direct link only (they are inactive, so hidden from lists).
+  if (seller && (seller as any).is_active === false && !(seller as any).is_test) seller = null;
   if (seller) {
     listings = await getSellerListings(id!);
     // Keep menu broad so buyers can still place pre-orders when the seller is in
@@ -264,12 +267,13 @@ const tags = [
         "openingHours": seller.opens_at && seller.closes_at
           ? `${openDays.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 2)).join(",") || "Mo,Tu,We,Th,Fr,Sa,Su"} ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}`
           : undefined,
-        "aggregateRating": seller.rating_avg && seller.rating_avg > 0 ? {
+        // ratingCount must be the number of reviews, not orders (Google rich-result policy).
+        "aggregateRating": seller.rating_avg && seller.rating_avg > 0 && seller.rating_count > 0 ? {
           "@type": "AggregateRating",
           "ratingValue": Number(seller.rating_avg).toFixed(1),
           "bestRating": "5",
           "worstRating": "1",
-          "ratingCount": seller.total_orders || 1
+          "ratingCount": seller.rating_count
         } : undefined,
         "hasMenu": seoListings.length > 0 ? {
           "@type": "Menu",
@@ -1184,7 +1188,9 @@ const tags = [
             </div>`).join("")}`;
       }
       const subtotal = group.subtotal;
-      document.getElementById("seller-checkout-subtotal").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+      const subOut = document.getElementById("seller-checkout-subtotal");
+      subOut.textContent = `₹${subtotal.toLocaleString("en-IN")}`;
+      subOut.dataset.amount = String(subtotal);
       // Total = subtotal (delivery fee shows up in the Delivery row below only if user picks delivery).
       document.getElementById("seller-checkout-total").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
       document.getElementById("seller-checkout-total-final").textContent = `₹${subtotal.toLocaleString("en-IN")}`;
@@ -1246,8 +1252,9 @@ const tags = [
         const totalEl = document.getElementById("seller-checkout-total");
         const totalFinal = document.getElementById("seller-checkout-total-final");
         const subEl = document.getElementById("seller-checkout-subtotal");
-        const subtotalText = (subEl?.textContent || "").replace(/[^\d]/g, "");
-        const subtotal = parseInt(subtotalText) || 0;
+        // Read the number, not the label: "₹83.25" → "8325" made 0.25 kg look
+        // like ₹8,325 and showed FREE delivery the server then charged for.
+        const subtotal = Number(subEl?.dataset.amount) || 0;
         // Use actual seller config — matches server-side computeDeliveryFee logic.
         let fee = 0;
         let distKm = null;

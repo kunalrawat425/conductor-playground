@@ -1,6 +1,7 @@
 ---
 import { LOGO_URL, SITE_URL, canonicalFor } from "../lib/brand";
 import UtmCapture from "../components/UtmCapture.astro";
+import { jsonLdString } from "../lib/html";
 interface Props {
   title: string;
   description?: string;
@@ -79,8 +80,8 @@ import Footer from "../components/Footer.astro";
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImage} />
   <!-- Schema.org JSON-LD -->
-  {articleSchema && <script type="application/ld+json" set:html={articleSchema} />}
-  {orgSchema && <script type="application/ld+json" set:html={orgSchema} />}
+  {articleSchema && <script type="application/ld+json" set:html={jsonLdString(articleSchema)} />}
+  {orgSchema && <script type="application/ld+json" set:html={jsonLdString(orgSchema)} />}
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <UtmCapture />
