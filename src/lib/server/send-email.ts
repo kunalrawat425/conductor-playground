@@ -2,7 +2,9 @@
 // modules outside the Astro/Vite env pipeline.
 const resendApiKey = import.meta.env?.RESEND_API_KEY || process.env.RESEND_API_KEY || "";
 
-export const MAIL_FROM = "Relifish <noreply@relifish.store>";
+/** Sending domain, verified in Resend (DKIM + send/rsend CNAMEs at Hostinger). */
+export const MAIL_DOMAIN = "relifish.com";
+export const MAIL_FROM = `Relifish <noreply@${MAIL_DOMAIN}>`;
 
 /**
  * Single entry point for transactional email.

@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { MAIL_FROM } from "../../../lib/server/send-email";
 import { requireBuyer } from "../../../lib/server/session";
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
@@ -166,7 +167,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           method: "POST",
           headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            from: "Relifish <noreply@relifish.store>",
+            from: MAIL_FROM,
             to: emailTo,
             subject: "Payment received — waiting for the seller to confirm",
             html,
@@ -197,7 +198,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         method: "POST",
         headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: "Relifish <noreply@relifish.store>",
+          from: MAIL_FROM,
           to: _sellerForEmail.email,
           subject: `New paid order — please confirm: ${capitalizeFishName(species)}`,
           html,
