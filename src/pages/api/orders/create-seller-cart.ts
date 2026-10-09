@@ -379,9 +379,15 @@ export const POST: APIRoute = async ({ request, url }) => {
     const utmRow = pickUtm(utm);
     const prefs = pickPreferences(cut_style, buyer_notes);
     const orderIds = (orders as { id?: string }[]).map((o) => o?.id).filter(Boolean) as string[];
-    if ((utmRow || prefs) && orderIds.length) {
-      const { error: metaErr } = await supabase.from("orders").update({ ...utmRow, ...prefs }).in("id", orderIds);
-      if (metaErr) console.warn("[create-seller-cart] utm/preferences save failed", { err: metaErr.message });
+    // Separate writes: preferences are what the seller prepares and must never be lost because the
+    // optional attribution columns (migration 075) are missing on a database.
+    if (prefs && orderIds.length) {
+      const { error: prefsErr } = await supabase.from("orders").update(prefs).in("id", orderIds);
+      if (prefsErr) console.warn("[create-seller-cart] preferences save failed", { err: prefsErr.message });
+    }
+    if (utmRow && orderIds.length) {
+      const { error: utmErr } = await supabase.from("orders").update(utmRow).in("id", orderIds);
+      if (utmErr) console.warn("[create-seller-cart] utm save failed (is migration 075 applied?)", { err: utmErr.message });
     }
 
     return new Response(JSON.stringify({ orders, cart_subtotal: cartSubtotal, placement_kind }), { status: 201 });
