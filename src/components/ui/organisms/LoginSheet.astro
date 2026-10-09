@@ -238,7 +238,7 @@ const MAX_ATTEMPTS = 3;
       }
 
       // Verified
-      try { if (typeof gtag === "function") gtag("event", "otp_verified", { role }); } catch {}
+      try { if (typeof gtag === "function") { gtag("set", "user_properties", { user_type: role === "seller" ? "seller" : "buyer" }); gtag("event", "otp_verified", { role }); } } catch {}
       // Analytics: first-time account (GA4 recommended sign_up; seller_signup for the supply side).
       try { if (data.is_new && typeof gtag === "function") gtag("event", role === "seller" ? "seller_signup" : "sign_up", { method: "otp" }); } catch {}
       clearSession();
