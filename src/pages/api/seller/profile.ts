@@ -42,6 +42,12 @@ export const POST: APIRoute = async ({ request }) => {
     if (Object.keys(updates).length === 0) {
       return new Response(JSON.stringify({ error: "No editable fields in updates" }), { status: 400 });
     }
+    if (updates.name !== undefined) {
+      const { validateSellerName } = await import("../../../lib/seller-display");
+      const nameError = validateSellerName(updates.name);
+      if (nameError) return new Response(JSON.stringify({ error: nameError }), { status: 400 });
+      updates.name = String(updates.name).trim().replace(/\s+/g, " ");
+    }
     for (const k of ["min_order_amount", "delivery_rad", "delivery_fee_amount", "delivery_fee_per_km", "free_delivery_above"]) {
       if (updates[k] === undefined) continue;
       const n = Number(updates[k]);

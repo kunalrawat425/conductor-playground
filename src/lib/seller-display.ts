@@ -60,3 +60,16 @@ export function sellerLookupOutcome(err: unknown): "not_found" | "unavailable" {
   const code = (err as { code?: string } | null)?.code;
   return code === "PGRST116" || code === "22P02" ? "not_found" : "unavailable";
 }
+
+/**
+ * Business name rule for sellers: 2–60 characters of letters (any script), numbers, spaces and & ' - .
+ * No website addresses ("Fishtokri.com", "www…") and no phone numbers. Returns an error message, or null if OK.
+ */
+export function validateSellerName(raw: unknown): string | null {
+  const name = typeof raw === "string" ? raw.trim().replace(/\s+/g, " ") : "";
+  if (name.length < 2 || name.length > 60) return "Business name must be 2 to 60 characters.";
+  if (/https?:|www\.|\.[a-z]{2,}(\b|$)/i.test(name)) return "Don't add a website address to your business name (e.g. use \"Fishtokri\", not \"Fishtokri.com\").";
+  if (/\d[\d\s-]{6,}\d/.test(name)) return "Don't add a phone number to your business name; buyers contact you through Relifish.";
+  if (!/^[\p{L}\p{M}\p{N} &'-]+$/u.test(name)) return "Use only letters, numbers, spaces and & ' - in your business name.";
+  return null;
+}
