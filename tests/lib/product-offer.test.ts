@@ -11,12 +11,12 @@ describe("speciesOffer", () => {
     ]);
     expect(o).toEqual({ availability: "InStock", lowPrice: 510, highPrice: 735, offerCount: 2 });
   });
-  it("paused or zero-stock listings are not same-day", () => {
+  it("paused or zero-stock listings are not same-day; pre-order shows the regular price, not the range", () => {
     const o = speciesOffer([
       { is_available: true, is_order_paused: true, weight_avail: 5, is_preorder_enabled: true, pricing_options: [opt(700, { preorder_price_min: 650, preorder_price_max: 800 })] },
       { is_available: true, weight_avail: 0, pricing_options: [opt(500)] },
     ]);
-    expect(o).toEqual({ availability: "PreOrder", lowPrice: 650, highPrice: 800, offerCount: 2 });
+    expect(o).toEqual({ availability: "PreOrder", lowPrice: 700, highPrice: 700, offerCount: 1 });
   });
   it("pre-order falls back to the tier price when no range is set", () => {
     expect(speciesOffer([{ is_preorder_enabled: true, pricing_options: [opt(375)] }])?.lowPrice).toBe(375);
