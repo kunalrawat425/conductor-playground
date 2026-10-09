@@ -13,12 +13,12 @@ All content must connect to at least 3 of these 7 pillars:
 
 | Pillar | What it means | How to say it |
 |--------|---------------|---------------|
-| **1. Hyperlocal** | Neighborhood-level sourcing within 2km, not city-wide warehouses | "Your building's fish seller, not a cold chain" |
+| **1. Hyperlocal** | Local sellers near you; each seller sets their own delivery radius | "Your local fish seller, now online" |
 | **2. Service** | WhatsApp 9152207607 support, cut preferences, order tracking, 7:30AM–9PM | "Cleaned and cut as per your preference" |
 | **3. Convenience** | Pre-order tonight, pickup tomorrow; or same-day in 1–2 hrs from seller | "Order from your sofa. Pickup at your building gate." |
-| **4. Freshness** | Same-day catch, never frozen, stock updated daily by sellers | "Same-day catch. Nothing from yesterday." |
-| **5. Affordable** | No middleman markup; no Swiggy 25–30% fee; fair seller prices | "Your ₹500 buys ₹500 of fish. Not ₹350." |
-| **6. Trust** | Verified sellers, rated, transparent sourcing, FSSAI-compliant handling | "Hygienically sourced from verified sellers" |
+| **4. Freshness** | Sellers list what they have each day; buyer picks whole, cleaned or cut | "See what your seller has today." |
+| **5. Affordable** | Seller's own price; no platform markup; 0% commission | "You pay the seller's price. We add nothing." |
+| **6. Trust** | Real named sellers, Razorpay payment, full refund if declined or cancelled before confirmation | "If the seller can't fill it, you get your money back." |
 | **7. Engagement** | WhatsApp community, daily catch updates, honest fish education, seasonal guides | "We'll tell you when fish isn't fresh too." |
 
 ---
@@ -135,15 +135,15 @@ Genuinely cares about the buyer's family dinner. Not transactional. The tone of 
 **"Fresh fish. No middlemen. No nonsense."**
 
 ### Value Propositions
-1. Same-day catch from local independent sellers — not cold-chain warehouse stock
-2. Order without leaving your society — pre-order tonight, pick up tomorrow
-3. See who caught your fish, where, and when — no opacity
+1. Order from real local sellers — you see who you are buying from
+2. Order today, or pre-order tonight for tomorrow
+3. The seller's own price, no platform markup
 
 ### Elevator Pitch (75 words)
-Relifish is Mumbai's hyperlocal fresh fish marketplace. We connect Thane households directly to verified hyperlocal fish sellers — fisherwomen, fishermen, trusted local fish stalls. You browse what's fresh today, pre-order tomorrow's catch, and pick up at your convenience. No Swiggy markup. No two-day-old fish dressed up as fresh. No mystery about where it came from. Just same-day catch, fair prices, and the kind of transparency the fish market never offered.
+Relifish is a hyperlocal fresh fish marketplace for Thane and Mumbai. We connect households directly to local fish sellers. You see what each seller has today, order same-day or pre-order tonight for tomorrow, and the seller delivers or keeps it ready for pickup. You pay online and pay the seller's own price — Relifish adds no markup. If the seller can't fill your order, you get a full refund.
 
 ### Boilerplate (120 words)
-Relifish is Mumbai's Hyperlocal Fresh Fish Marketplace, currently serving Thane. We connect urban households directly to verified hyperlocal fish sellers — eliminating the middleman markup and the opacity that lets 2-day-old fish get sold as fresh. Buyers browse daily catch, pre-order tomorrow's fish, and pick up from nearby sellers or get doorstep delivery. Every seller on Relifish is verified and rated. Every catch comes with transparency — who caught it, when, and where. We serve Hiranandani Estate, Lodha, Puranik, Rustomjee, Majiwada, Ghodbunder Road, and Kasarvadavali. For families who care what goes into their fish curry, Relifish is the only honest option.
+Relifish is a hyperlocal fresh fish marketplace where buyers order fish online directly from local sellers. Sellers list what they have each day; buyers order same-day during the seller's hours or pre-order tonight for tomorrow, choose whole, cleaned or cut, and pay online via Razorpay. Sellers deliver or keep the order ready for pickup. Relifish adds no platform markup and charges sellers 0% commission. If a seller declines, or the buyer cancels before confirmation, the full amount is refunded. Sellers on Relifish currently serve Thane West (Hiranandani Estate, Lodha, Majiwada, Kasarvadavali, Ghodbunder Road), Tardeo in South Mumbai, and Kamothe in Navi Mumbai.
 
 ---
 

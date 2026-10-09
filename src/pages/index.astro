@@ -3,77 +3,20 @@ import UtmCapture from "../components/UtmCapture.astro";
 import { LOGO_URL } from "../lib/brand";
 import { jsonLdString } from "../lib/html";
 export const prerender = false;
-import { supabase } from "../lib/supabase";
 import Footer from "../components/Footer.astro";
 const SITE = "https://www.relifish.store";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 
-let areaListings: any[] = [];
-const speciesMap = new Map<string, { min: number; max: number; count: number }>();
+const homeFaqs = [
+  { q: "How does Relifish work?", a: "Local fish sellers list the fish they have each day. You order same-day during a seller's opening hours, or pre-order tonight before the seller's cutoff (usually 10 pm) for tomorrow. You pay online when you order, the seller confirms, then delivers or keeps it ready for pickup. No subscription." },
+  { q: "How do I know the fish is fresh?", a: "Each seller lists only what they have that day, and you choose how it is prepared (whole, cleaned or cut). Before cooking, check for clear eyes, red gills, firm flesh and a clean sea smell." },
+  { q: "Why do I need to log in to see prices?", a: "Prices vary by seller and change daily. Log in with your mobile number (OTP, no password) to see live prices from sellers near you." },
+  { q: "What fish can I order?", a: "It depends on what each seller lists that day: commonly pomfret, surmai, bangda, prawns, rawas, crab, halwa and bombil." },
+  { q: "What if my order can't be fulfilled?", a: "If the seller declines, or you cancel before they confirm, the full amount is refunded to your original payment method, usually within 5 to 7 working days." },
+  { q: "Is there a minimum order?", a: "Each seller sets their own minimum. You will see it on the seller's page before ordering." },
+  { q: "Which areas does Relifish serve?", a: "Sellers on Relifish currently serve parts of Thane, South Mumbai and Kamothe in Navi Mumbai. Each seller sets their own delivery radius; set your location to see who serves you." },
+];
 
-try {
-  const { data: listData } = await supabase
-    .from("fish_listings")
-    .select("*, seller:sellers(*)")
-    .or("is_available.eq.true,is_preorder_enabled.eq.true");
-
-  if (listData) {
-    areaListings = listData.filter(l => l.seller?.is_active && l.seller?.name !== "New Seller");
-    
-    // Calculate dynamic price ranges per species
-    for (const l of areaListings) {
-      const species = (l.species || "").toLowerCase().trim();
-      if (!species) continue;
-
-      const rawOpts = Array.isArray(l.pricing_options) ? l.pricing_options : [];
-      let pMin = Number(l.price) || 0;
-      let pMax = Number(l.price) || 0;
-
-      if (rawOpts.length > 0) {
-        pMin = Infinity;
-        pMax = -Infinity;
-        for (const o of rawOpts) {
-          const p = Number(o?.price ?? o?.preorder_price_min ?? o?.preorder_price_max ?? l.price) || 0;
-          if (p < pMin) pMin = p;
-          if (p > pMax) pMax = p;
-        }
-      }
-
-      const exist = speciesMap.get(species);
-      if (exist) {
-        exist.min = Math.min(exist.min, pMin);
-        exist.max = Math.max(exist.max, pMax);
-        exist.count += 1;
-      } else {
-        speciesMap.set(species, { min: pMin, max: pMax, count: 1 });
-      }
-    }
-  }
-} catch (err) {
-  console.error("Error fetching listings for index page:", err);
-}
-
-const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) => {
-  const title = species.charAt(0).toUpperCase() + species.slice(1);
-  return {
-    "@type": "Product",
-    "@id": `${SITE}/#product-${species}`,
-    "name": `Fresh ${title} Online`,
-    "description": `Buy fresh ${title} online in Mumbai. Sourced direct from verified local sellers. Same-day pickup or home delivery with zero platform markup.`,
-    "category": "Seafood",
-    "brand": { "@type": "Brand", "name": "Relifish" },
-    "offers": {
-      "@type": "AggregateOffer",
-      "priceCurrency": "INR",
-      "lowPrice": String(data.min),
-      "highPrice": String(data.max),
-      "offerCount": String(data.count),
-      "priceValidUntil": "2027-12-31",
-      "availability": "https://schema.org/InStock",
-      "url": SITE
-    }
-  };
-});
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -111,15 +54,15 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
         "alternateName": ["Reli Fish", "Relifish Store", "relifish.store"],
         "url": SITE,
         "logo": { "@type": "ImageObject", "url": `${SITE}/icon-192.svg` },
-        "description": "Mumbai's hyperlocal fresh fish marketplace — buy fish online directly from local sellers in Tardeo, Kandivali, Thane and Navi Mumbai. No middleman, no cold storage.",
+        "description": "Hyperlocal fish marketplace: buy fish online from local sellers in Thane, South Mumbai and Navi Mumbai. Order same-day or pre-order for tomorrow; sellers deliver or keep it ready for pickup.",
         "foundingDate": "2025",
         "areaServed": [
           { "@type": "City", "name": "Mumbai" },
           { "@type": "City", "name": "Navi Mumbai" },
           { "@type": "City", "name": "Thane" }
         ],
-        "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "email": "relifishstore@gmail.com" },
-        "dateModified": "2026-05-12"
+        "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "email": "contact@relifish.store" },
+        "dateModified": "2026-10-09"
       },
       {
         "@type": "WebSite",
@@ -134,18 +77,8 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
       },
       {
         "@type": "FAQPage",
-        "mainEntity": [
-          { "@type": "Question", "name": "How does Relifish work?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish lets you browse local Mumbai fish sellers, compare prices, and pre-order tonight before the cutoff. Your order is confirmed by the seller and ready for morning pickup or delivery — fresh from the catch, not from cold storage." } },
-          { "@type": "Question", "name": "Is Relifish available in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish is live across Mumbai with sellers in Tardeo, Kandivali, Thane, and Kamothe. More areas are being added. Join the waitlist to get notified when sellers go live near you." } },
-          { "@type": "Question", "name": "Can I pre-order fish online in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is built for pre-orders. Browse sellers, choose your fish and quantity, place your order before the seller's cutoff time, and collect morning-fresh the next day. No app download needed." } },
-          { "@type": "Question", "name": "What fish species are available on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish sellers offer Surmai (सुरमई), Pomfret (पापलेट), Rawas (रावस), Bangda (बांगडा), Prawns (कोलंबी), Bombay Duck (बोंबील), Crab, and seasonal catch — availability varies by seller and season." } },
-          { "@type": "Question", "name": "How fresh is the fish on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Fish on Relifish is sourced from local sellers who buy from docks daily. It reaches you within 24 hours of the catch — no cold storage, no 2–4 day old supermarket fish. Sellers are vetted before listing on Relifish." } },
-          { "@type": "Question", "name": "How does fish pricing work on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Sellers set their own prices on Relifish. There is no platform markup — unlike delivery apps that add 25–35% to the seller's price. You pay what the seller charges, directly." } },
-          { "@type": "Question", "name": "What areas in Mumbai does Relifish serve?", "acceptedAnswer": { "@type": "Answer", "text": "Relifish has active sellers across Mumbai: Tardeo (Bombay Sea Food), Kandivali (Ocean Lover Fish), Thane (Fish Tokri), and Kamothe (The Fishy Spot). More areas being added monthly." } },
-          { "@type": "Question", "name": "Is Relifish cheaper than Swiggy or Zomato for fish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish charges no platform commission, so you pay the seller's actual price. Swiggy and Zomato add 25–35% on top of the seller's price through commissions, packaging fees, and surge pricing. On Relifish, ₹400/kg pomfret stays ₹400/kg." } }
-        ]
-      },
-      ...schemaProducts
+        "mainEntity": homeFaqs.map((f) => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
+      }
     ]
   })} />
   <style>
@@ -855,11 +788,11 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
     <div>
       <h1>
         Buy fresh fish<br/>
-        <span class="blu">in Mumbai —<br/>direct from local sellers.</span>
+        <span class="blu">in Thane &amp; Mumbai —<br/>direct from local sellers.</span>
       </h1>
       <p class="hero-sub">
-        Order fresh fish online directly from local Mumbai sellers.
-        <strong>Morning-fresh. Zero markup. Direct to you.</strong>
+        Order fresh fish online directly from local sellers.
+        <strong>Order today or pre-order for tomorrow. No platform markup.</strong>
       </p>
       <!-- Citable prose for AI search engines — do not remove -->
       <p class="hero-cite">Relifish is a marketplace for fresh fish from local sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order tonight for tomorrow's catch, and the seller delivers to your home or keeps it ready for pickup.</p>
@@ -872,23 +805,19 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
         <a href="/shop" class="btn-primary">Order fresh fish →</a>
         <a href="#waitlist" class="btn-ghost">Join waitlist</a>
       </div>
-      <div class="hero-urgency">
-        <span class="udot"></span>
-        47 pre-orders placed in Mumbai tonight
-      </div>
       <div class="hero-stats">
-        <div class="hs"><div class="hs-n">10+</div><div class="hs-l">Local sellers</div></div>
+        <div class="hs"><div class="hs-n">3</div><div class="hs-l">Areas: Thane, South Mumbai, Kamothe</div></div>
         <div class="hs"><div class="hs-n">0%</div><div class="hs-l">Middleman</div></div>
-        <div class="hs"><div class="hs-n">&lt;24h</div><div class="hs-l">Catch to door</div></div>
+        <div class="hs"><div class="hs-n">2</div><div class="hs-l">Ways to order: today or pre-order</div></div>
       </div>
     </div>
 
     <!-- RIGHT — interactive phone demo -->
     <div class="hero-right">
       <!-- floating fish badges -->
-      <div class="fish3d"><span class="fish3d-e">🐟</span><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Morning catch</div></div></div>
+      <div class="fish3d"><span class="fish3d-e">🐟</span><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></div>
       <div class="fish3d"><span class="fish3d-e">🦐</span><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></div>
-      <div class="fish3d"><span class="fish3d-e">🐠</span><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Limited today</div></div></div>
+      <div class="fish3d"><span class="fish3d-e">🐠</span><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></div>
 
       <!-- phone -->
       <div class="demo-phone" id="demo-phone">
@@ -918,22 +847,22 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
               <div style="padding:8px 0">
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Versova</div><div class="d1-dist">Andheri West · 3 sellers</div></div>
+                  <div><div class="d1-name">Hiranandani Estate</div><div class="d1-dist">Thane · 1 seller</div></div>
                 </div>
                 <div class="d1-area tap" id="d1-tap">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Lokhandwala</div><div class="d1-dist">Andheri West · 2 sellers</div></div>
+                  <div><div class="d1-name">Tardeo</div><div class="d1-dist">South Mumbai · 1 seller</div></div>
                   <div class="d1-check">✓</div>
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Juhu</div><div class="d1-dist">Vile Parle West · 1 seller</div></div>
+                  <div><div class="d1-name">Kamothe</div><div class="d1-dist">Navi Mumbai · 1 seller</div></div>
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Malad West</div><div class="d1-dist">Coming soon · Join waitlist</div></div>
+                  <div><div class="d1-name">Kandivali</div><div class="d1-dist">Coming soon · Join waitlist</div></div>
                 </div>
-                <div class="demo-cta"><div class="demo-cta-btn">Confirm — Lokhandwala →</div></div>
+                <div class="demo-cta"><div class="demo-cta-btn">Confirm — Hiranandani →</div></div>
               </div>
             </div>
           </div>
@@ -943,22 +872,22 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
             <div class="ds-light">
               <div class="dh">
                 <div class="dh-title"><img src={LOGO_URL} alt="Relifish" style="height:24px;width:auto;vertical-align:middle;" /></div>
-                <div class="dh-sub">📍 Lokhandwala, Andheri West</div>
+                <div class="dh-sub">📍 Hiranandani Estate, Thane</div>
                 <div class="dh-search">🔍&nbsp;Search fish or sellers...</div>
               </div>
               <div class="d2-tabs"><div class="d2t on">🌙 Pre-order</div><div class="d2t">⚡ Same Day</div></div>
               <div class="d2-list">
                 <div class="d2-card tap">
                   <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)"><img src={LOGO_URL} alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);" /><div class="d2-badge op">🟢 Open</div></div>
-                  <div class="d2-info"><div class="d2-name">Versova Fresh Fish Co.</div><div class="d2-sub">Pomfret · Surmai · Prawns · +4 · Cutoff 11 PM</div></div>
+                  <div class="d2-info"><div class="d2-name">Fishtokri</div><div class="d2-sub">Pomfret · Surmai · Prawns · +4 · Cutoff 11 PM</div></div>
                 </div>
                 <div class="d2-card">
                   <div class="d2-img" style="background:linear-gradient(135deg,#1A0D4A,#2A1A6A)">🦐<div class="d2-badge pr">🌙 Pre-order</div></div>
-                  <div class="d2-info"><div class="d2-name">Andheri Sea Market</div><div class="d2-sub">Bangda · Rawas · Crab · Cutoff 10 PM</div></div>
+                  <div class="d2-info"><div class="d2-name">Bombay Sea Food</div><div class="d2-sub">Bangda · Rawas · Crab · Cutoff 10 PM</div></div>
                 </div>
                 <div class="d2-card">
                   <div class="d2-img" style="background:linear-gradient(135deg,#002020,#00403A)">🦀<div class="d2-badge op">🟢 Open</div></div>
-                  <div class="d2-info"><div class="d2-name">Juhu Catch Co.</div><div class="d2-sub">Crab · Halwa · Bombay Duck</div></div>
+                  <div class="d2-info"><div class="d2-name">The Fishy Spot</div><div class="d2-sub">Crab · Halwa · Bombay Duck</div></div>
                 </div>
               </div>
             </div>
@@ -968,7 +897,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
           <div class="demo-screen" data-screen="3">
             <div class="ds-light" style="position:relative">
               <div class="dh">
-                <div class="dh-back">← Versova Fresh Fish Co.</div>
+                <div class="dh-back">← Fishtokri</div>
                 <div class="dh-title">🌙 Tonight's menu</div>
               </div>
               <div class="d3-item tap">
@@ -996,11 +925,11 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
             <div class="ds-light">
               <div class="dh"><div class="dh-back">← Menu</div><div class="dh-title">Your cart</div></div>
               <div class="d4-item">
-                <div><div class="d4-name">🐟 Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Versova Fresh Fish Co.</div></div>
+                <div><div class="d4-name">🐟 Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
                 <div style="text-align:right"><div class="d4-lock">🔒 Login for price</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">1 kg</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-item">
-                <div><div class="d4-name">🐡 Bangda (Mackerel)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Versova Fresh Fish Co.</div></div>
+                <div><div class="d4-name">🐡 Bangda (Mackerel)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
                 <div style="text-align:right"><div class="d4-lock">🔒 Login for price</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">500 grams</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-summary">
@@ -1017,7 +946,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
             <div class="ds-light">
               <div class="d5-amount">
                 <div class="d5-to">Paying to</div>
-                <div class="d5-seller">Versova Fresh Fish Co.</div>
+                <div class="d5-seller">Fishtokri</div>
                 <div class="d5-amt-label">Amount</div>
                 <div class="d5-amt">₹<span style="font-size:28px;font-weight:900;color:#0A0F1E">—</span></div>
                 <div style="font:400 7px Inter;color:#9CA3AF;margin-top:2px">Login to confirm price · Pre-order 2 items</div>
@@ -1052,10 +981,10 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
             <div class="ds-light d6-center">
               <div class="d6-icon">✅</div>
               <div class="d6-title">Order confirmed!</div>
-              <div class="d6-sub">Versova Fresh Fish is preparing your order from tomorrow's morning catch.</div>
+              <div class="d6-sub">Fishtokri has confirmed your pre-order for tomorrow.</div>
               <div class="d6-eta">
-                <div class="d6-eta-t">🌅 Ready for pickup by 7–9 AM</div>
-                <div class="d6-eta-s">Versova Fish Market · Gate 2</div>
+                <div class="d6-eta-t">🛵 Seller delivers tomorrow</div>
+                <div class="d6-eta-s">Hiranandani Estate, Thane</div>
               </div>
               <div style="background:#F3F4F6;border-radius:8px;padding:7px 10px;width:100%;font:400 8px Inter;color:#6B7280;text-align:center">
                 📲 You'll get a WhatsApp when it's ready
@@ -1066,7 +995,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
           <!-- Screen 7: Tracking -->
           <div class="demo-screen" data-screen="7">
             <div class="ds-light">
-              <div class="dh"><div class="dh-title">📦 Track order #RF2847</div><div class="dh-sub">Versova Fresh Fish Co.</div></div>
+              <div class="dh"><div class="dh-title">📦 Track order #RF2847</div><div class="dh-sub">Fishtokri</div></div>
               <div style="padding:8px 0">
                 <div class="d7-step">
                   <div class="d7-dot-wrap"><div class="d7-dot done"></div><div class="d7-line done"></div></div>
@@ -1097,7 +1026,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
             <div class="ds-light d8-center">
               <div class="d8-icon"><img src={LOGO_URL} alt="Relifish" style="height:40px;width:auto;display:block;margin:0 auto;" /></div>
               <div class="d8-title">Fresh fish delivered!</div>
-              <div class="d8-sub">Your Pomfret and Bangda from Versova Fresh Fish Co. Morning-fresh, straight from the catch.</div>
+              <div class="d8-sub">Your Pomfret and Bangda from Fishtokri Morning-fresh, straight from the catch.</div>
               <div class="d8-rate">
                 <div class="d8-rate-t">How was your order?</div>
                 <div class="d8-stars">⭐⭐⭐⭐⭐</div>
@@ -1160,23 +1089,23 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
             <div class="s1-list">
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Versova</div><div class="s1-rd">Andheri West · 3 sellers open</div></div>
+                <div><div class="s1-rn">Hiranandani Estate</div><div class="s1-rd">Thane West · 1 seller</div></div>
               </div>
               <div class="s1-row sel tap-zone">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Lokhandwala</div><div class="s1-rd">Andheri West · 2 sellers open</div></div>
+                <div><div class="s1-rn">Tardeo</div><div class="s1-rd">South Mumbai · 1 seller</div></div>
                 <div class="s1-ck">✓</div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Juhu</div><div class="s1-rd">Vile Parle West · 1 seller</div></div>
+                <div><div class="s1-rn">Kamothe</div><div class="s1-rd">Navi Mumbai · 1 seller</div></div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Malad West</div><div class="s1-rd">Waitlist · Coming soon</div></div>
+                <div><div class="s1-rn">Kandivali</div><div class="s1-rd">Waitlist · Coming soon</div></div>
               </div>
             </div>
-            <div class="s1-btn">Confirm — Lokhandwala →</div>
+            <div class="s1-btn">Confirm — Hiranandani →</div>
           </div>
         </div>
         <h3>Set your location</h3>
@@ -1191,7 +1120,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
           <div class="fp-screen">
             <div class="sbar"><span class="sbar-t">9:43</span><span class="sbar-i">●●● 🔋</span></div>
             <div class="s2-top">
-              <div class="s2-loc">📍 <span class="s2-area">Lokhandwala, Andheri W</span></div>
+              <div class="s2-loc">📍 <span class="s2-area">Hiranandani, Thane</span></div>
               <div class="s2-srch">🔍&nbsp;Search fish or sellers...</div>
             </div>
             <div class="s2-tabs">
@@ -1202,7 +1131,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
               <div class="s2-card">
                 <div class="s2-cover g"><img src={LOGO_URL} alt="Relifish" style="height:24px;width:auto;filter:brightness(0) invert(1);" /><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">Versova Fresh Fish Co.</div>
+                  <div class="s2-nm">Fishtokri</div>
                   <div class="s2-sub">Cutoff 11 PM · 0.8 km away</div>
                   <div class="s2-chips"><div class="s2-chip">Pomfret</div><div class="s2-chip">Surmai</div><div class="s2-chip">Prawns</div></div>
                 </div>
@@ -1210,7 +1139,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
               <div class="s2-card tap-zone">
                 <div class="s2-cover p">🦐<div class="s2-st pr">🌙 Pre-order</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">Andheri Sea Market</div>
+                  <div class="s2-nm">Bombay Sea Food</div>
                   <div class="s2-sub">Cutoff 10 PM · 1.2 km away</div>
                   <div class="s2-chips"><div class="s2-chip">Bangda</div><div class="s2-chip">Rawas</div><div class="s2-chip">Crab</div></div>
                 </div>
@@ -1218,7 +1147,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
               <div class="s2-card">
                 <div class="s2-cover t">🦀<div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">Juhu Catch Co.</div>
+                  <div class="s2-nm">The Fishy Spot</div>
                   <div class="s2-sub">Crab · Halwa · Bombay Duck</div>
                 </div>
               </div>
@@ -1237,12 +1166,12 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
           <div class="fp-screen">
             <div class="sbar"><span class="sbar-t">9:48</span><span class="sbar-i">●●● 🔋</span></div>
             <div class="s3-top">
-              <div class="s3-bk">← Versova Fresh Fish Co.</div>
+              <div class="s3-bk">← Fishtokri</div>
               <div class="s3-ttl">Confirm your order</div>
             </div>
             <div class="s3-seller">
               <div class="s3-s-icon"><img src={LOGO_URL} alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
-              <div><div class="s3-s-name">Versova Fresh Fish Co.</div><div class="s3-s-sub">🌙 Pre-order · Pickup 7–9 AM</div></div>
+              <div><div class="s3-s-name">Fishtokri</div><div class="s3-s-sub">🌙 Pre-order · Pickup 7–9 AM</div></div>
             </div>
             <div class="s3-items">
               <div class="s3-item">
@@ -1278,10 +1207,10 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
             <div class="s4-wrap">
               <div class="s4-ring">✅</div>
               <div class="s4-ttl">Order confirmed!</div>
-              <div class="s4-sub">Versova Fresh Fish will prep from tomorrow's morning catch.</div>
+              <div class="s4-sub">Fishtokri has confirmed your pre-order for tomorrow.</div>
               <div class="s4-eta">
-                <div class="s4-eta-m">🌅 Ready for pickup by 7–9 AM</div>
-                <div class="s4-eta-s">Versova Fish Market · Gate 2</div>
+                <div class="s4-eta-m">🛵 Seller delivers tomorrow</div>
+                <div class="s4-eta-s">Hiranandani Estate, Thane</div>
               </div>
               <div class="s4-stepper">
                 <div class="s4st"><div class="s4st-d dn"></div><div class="s4st-lb ac">Placed</div></div>
@@ -1353,15 +1282,15 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
   <div class="wrap">
     <div class="slabel">Why Relifish</div>
     <h2>Your family deserves<br/><span class="hl">genuinely fresh fish.</span></h2>
-    <p class="ssub">Delivery apps stock fish 2–4 days old from cold-storage warehouses. Your local seller fills from last night's catch. We connect them directly.</p>
+    <p class="ssub">Relifish connects you directly with local fish sellers. You see what each seller has today and order from them.</p>
     <div class="why-grid">
       {[
-        {i:"💰",t:"Zero platform markup",d:"You pay the seller's own price. Delivery apps add 25–35% dark-store margin. We add nothing.",g:"₹0 platform fee",b:"Quick-commerce: +25–35%"},
-        {i:"🌊",t:"Morning-fresh catch",d:"Pre-orders fill from the very next morning's landing. Fish that hit the market hours ago — not 3-day cold storage.",g:"Caught overnight",b:"Apps: 2–4 days old"},
+        {i:"💰",t:"No platform markup",d:"You pay the seller's own price. Relifish charges sellers 0% commission and adds nothing to your bill.",g:"Seller's own price",b:"Platform markup"},
+        {i:"🌊",t:"Today's stock, listed daily",d:"Sellers list what they have each day. Pre-order tonight and the seller fills your order from tomorrow's stock.",g:"Listed daily",b:"Unknown stock age"},
         {i:"📍",t:"Your neighbourhood seller",d:"The fish seller your family has trusted for years, now online with pre-order convenience. Same quality, smarter system.",g:"Known local seller",b:"Anonymous warehouse"},
         {i:"🌙",t:"Reserve before it sells out",d:"The best fish goes first. Pre-order tonight and your seller holds your portion from the morning landing.",g:"Reserved for you",b:"First come first served"},
         {i:"🛵",t:"Pickup or home delivery",d:"Each seller sets their own delivery terms. Collect from the seller or get it delivered. Clear before you order.",g:"Your choice",b:"Fixed delivery windows"},
-        {i:"💬",t:"Direct contact",d:"WhatsApp your seller for cuts, special requests, freshness questions. Real people. You can't do that with Zepto.",g:"Direct WhatsApp",b:"Chatbot support"},
+        {i:"💬",t:"Direct contact",d:"WhatsApp your seller for cuts, special requests, freshness questions. Real people.",g:"Direct WhatsApp",b:"Chatbot support"},
       ].map(c=>(
         <div class="why-card">
           <div class="why-icon">{c.i}</div>
@@ -1379,47 +1308,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
       <div class="sb"><div class="sb-n">10<span class="a">+</span></div><div class="sb-l">Local sellers</div></div>
       <div class="sb"><div class="sb-n"><span class="a">₹</span>0</div><div class="sb-l">Listing fee</div></div>
       <div class="sb"><div class="sb-n">0<span class="a">%</span></div><div class="sb-l">Middleman cut</div></div>
-      <div class="sb"><div class="sb-n"><span class="a">&lt;</span>24h</div><div class="sb-l">Catch to door</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ TESTIMONIALS ═══ -->
-<section class="sec sec-alt">
-  <div class="wrap">
-    <div style="text-align:center">
-      <div class="slabel">Real customers</div>
-      <h2>Mumbai families <span class="hl">love it</span></h2>
-      <p class="ssub" style="text-align:center;margin:0 auto">Real people who switched from delivery apps and never looked back.</p>
-    </div>
-    <div class="testi-grid">
-      {[
-        {av:"RN",cl:"av1",name:"Rekha Nair",loc:"Versova, Andheri West",stars:"★★★★★",
-          text:'Got Pomfret <span class="hl">far cheaper than Blinkit</span> — same fish, same seller I\'ve bought from for years. Pre-ordering at night just makes sense.',save:"Significant savings"},
-        {av:"RD",cl:"av2",name:"Rohan Desai",loc:"Juhu, Mumbai",stars:"★★★★★",
-          text:'The Surmai was <span class="hl">clearly morning catch</span>. When I buy from Zepto it\'s always a bit grey. This was bright, firm, beautiful fish. Night and day difference.',save:"Morning-fresh quality"},
-        {av:"SS",cl:"av3",name:"Sunita Sharma",loc:"Andheri West",stars:"★★★★★",
-          text:'Pre-ordering at night is a game changer. I place the order after dinner, husband picks it up on the way to office. <span class="hl">Whole routine sorted.</span>',save:"Orders 3× per week"},
-        {av:"VP",cl:"av4",name:"Vijay Patil",loc:"Goregaon West",stars:"★★★★★",
-          text:'My local market was always out of Pomfret by 7 AM. Now I pre-order at 10 PM and it\'s <span class="hl">held for me</span> at my favourite seller. Perfect.',save:"Never missed Pomfret"},
-        {av:"MI",cl:"av5",name:"Meera Iyer",loc:"Lokhandwala, Andheri",stars:"★★★★★",
-          text:'The prawns were <span class="hl">the freshest I\'ve ever had</span> at home. Completely different from any delivery app. The seller cleaned them exactly how I asked.',save:"Custom cleaned"},
-        {av:"AK",cl:"av6",name:"Amit Khandelwal",loc:"Malad West",stars:"★★★★★",
-          text:'I WhatsApp my seller for coconut-cut Pomfret on request. <span class="hl">Impossible on Blinkit.</span> These are real people who care about their craft.',save:"Custom cuts available"},
-      ].map(t=>(
-        <div class="testi-card">
-          <div class="testi-stars">{t.stars}</div>
-          <p class="testi-text" set:html={t.text}></p>
-          <div class="testi-author">
-            <div class={`testi-av ${t.cl}`}>{t.av}</div>
-            <div>
-              <div class="testi-name">{t.name}</div>
-              <div class="testi-loc">📍 {t.loc}</div>
-              <div class="testi-save">✓ {t.save}</div>
-            </div>
-          </div>
-        </div>
-      ))}
+      <div class="sb"><div class="sb-n">2</div><div class="sb-l">Ways to order: today or pre-order</div></div>
     </div>
   </div>
 </section>
@@ -1454,7 +1343,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
           </div>
           <div>
             <label class="wl-lbl" for="wl-area">Your area in Mumbai *</label>
-            <input class="wl-input" id="wl-area" type="text" placeholder="e.g. Versova, Andheri West" required />
+            <input class="wl-input" id="wl-area" type="text" placeholder="e.g. Kandivali West" required />
           </div>
           <div class="wl-2col">
             <div>
@@ -1550,14 +1439,7 @@ const schemaProducts = Array.from(speciesMap.entries()).map(([species, data]) =>
       <h2>Common <span class="hl">questions</span></h2>
     </div>
     <div class="faqs" style="max-width:680px;margin-left:auto;margin-right:auto">
-      {[
-        {q:"How does Relifish work?",a:"Browse local fish sellers near you, pre-order tonight's catch before the seller's cutoff, and collect it fresh tomorrow morning or receive home delivery. No subscription, no minimum."},
-        {q:"Why is the fish fresher than Blinkit or Zepto?",a:"Pre-orders fill from the very next morning's catch — fish that hit the landing hours ago. Delivery apps stock fish 2–4 days old from cold-storage warehouses. Your local seller's reputation depends on freshness."},
-        {q:"Why do I need to login to see prices?",a:"Prices vary by seller and change daily based on the morning catch. Login with your mobile number (OTP, no password) to see live prices from sellers near your area."},
-        {q:"What fish can I order?",a:"Pomfret, Surmai, Bangda, Prawns, Rawas, Crab, Halwa, Bombay Duck and more — updated daily based on what sellers bring from the morning landing."},
-        {q:"What if my order can't be fulfilled?",a:"If a seller can't fulfil your order, they decline with a note and you get a full refund within 7 days. Seller can also WhatsApp you directly before the morning pickup."},
-        {q:"Is there a minimum order?",a:"Each seller sets their own minimums. You'll see it clearly on the seller's page before ordering."},
-      ].map(item=>(
+      {homeFaqs.map(item=>(
         <details class="faq">
           <summary>{item.q}<div class="faq-toggle">+</div></summary>
           <p>{item.a}</p>

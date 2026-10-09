@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { supabase } from "../lib/supabase";
+import { cleanSellerName, stripContactInfo } from "../lib/seller-display";
 
 export const prerender = false;
 
@@ -55,25 +56,25 @@ export const GET: APIRoute = async () => {
       if (existing) {
         existing.min = Math.min(existing.min, minPrice);
         existing.max = Math.max(existing.max, maxPrice);
-        existing.sellers.add(l.seller.name);
+        existing.sellers.add(cleanSellerName(l.seller.name));
       } else {
         speciesMap.set(species, {
           min: minPrice,
           max: maxPrice,
           unit,
-          sellers: new Set([l.seller.name]),
+          sellers: new Set([cleanSellerName(l.seller.name)]),
         });
       }
     }
 
     // Dynamic Markdown generation
-    let markdown = `# Live Fresh Fish Price Guide — Relifish Mumbai\n\n`;
+    let markdown = `# Live Fresh Fish Price Guide — Relifish (Thane & Mumbai)\n\n`;
     markdown += `*Last updated: Today (Live Database Catalogue)*\n\n`;
-    markdown += `If you are searching for the **best fish shop near me**, a local **fish market near me**, or direct **fresh fish delivery Mumbai**, this live guide provides real-time pricing ranges compiled directly from our active sellers' catalogues.\n\n`;
-    markdown += `Relifish connects buyers directly to local sellers in Tardeo, Kandivali, Thane, and Kamothe with **zero platform commission** or Swiggy/Zomato markups.\n\n`;
-    markdown += `## Live Fresh Seafood Prices Across Mumbai\n\n`;
-    markdown += `| Fish Species (English) | Live Price Range | Unit | Active Verified Sellers | Availability |\n`;
-    markdown += `|-----------------------|------------------|------|-------------------------|--------------|\n`;
+    markdown += `This guide lists live price ranges from the current listings of active sellers on Relifish. Prices change daily and are set by each seller.\n\n`;
+    markdown += `Relifish connects buyers directly to local fish sellers in Thane, South Mumbai (Tardeo) and Kamothe (Navi Mumbai). Sellers pay 0% commission and buyers pay the seller's own price.\n\n`;
+    markdown += `## Live Fresh Fish Prices\n\n`;
+    markdown += `| Fish Species (English) | Live Price Range | Unit | Sellers | Availability |\n`;
+    markdown += `|-----------------------|------------------|------|---------|--------------|\n`;
 
     if (speciesMap.size > 0) {
       for (const [species, data] of speciesMap.entries()) {
@@ -89,16 +90,18 @@ export const GET: APIRoute = async () => {
     }
 
     markdown += `\n## Neighborhood-by-Neighborhood Availability\n\n`;
-    markdown += `Our verified sellers serve the following hyperlocal zones in Mumbai:\n`;
+    markdown += `Active sellers and where they are based (each seller sets their own delivery radius):\n`;
     
     for (const s of sellers) {
-      markdown += `- **${s.name}** in *${s.location_name || s.location || "Mumbai"}* (Accepts ${s.accepts_preorder ? "Pre-orders" : ""} ${s.has_delivery ? "and Delivery" : "for Pickup"})\n`;
+      markdown += `- **${cleanSellerName(s.name)}** in *${stripContactInfo(s.location_name) || "Mumbai"}* (Accepts ${s.accepts_preorder ? "Pre-orders" : ""} ${s.has_delivery ? "and Delivery" : "for Pickup"})\n`;
     }
 
     markdown += `\n## Why Order from Relifish?\n\n`;
-    markdown += `- **Direct Dock Pricing**: Pay what the shop charges. Zero delivery app commission markups (Swiggy/Zomato add 25–35%).\n`;
-    markdown += `- **Daily Docks Catch**: Direct from docks daily. Fish reaches you within 24 hours of landing — no cold storage.\n`;
-    markdown += `- **Secure Pre-order Lock**: Lock in today's pre-orders before 11 PM for morning catch fulfillment.\n`;
+    markdown += `- **Seller's own price**: Relifish adds no platform markup and charges sellers 0% commission.\n`;
+    markdown += `- **Listed daily**: Sellers list what they have each day. Order same-day during opening hours, or pre-order for tomorrow.\n`;
+    markdown += `- **Pre-order pricing**: Pre-order prices are a range. You pay the top of the range and the difference is refunded once the seller sets the final price.\n`;
+    markdown += `- **Refunds**: If a seller declines or you cancel before they confirm, the full amount is refunded via Razorpay, usually within 5 to 7 working days.\n`;
+    markdown += `- **Contact**: WhatsApp 9152207607, contact@relifish.store, 7:30 AM to 9 PM.\n`;
 
     return new Response(markdown, {
       status: 200,

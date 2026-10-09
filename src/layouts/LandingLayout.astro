@@ -9,7 +9,9 @@ interface Props {
   canonicalURL?: string;
   type?: "website" | "article";
   pubDate?: string;
+  updatedDate?: string;
   author?: string;
+  noindex?: boolean;
   tags?: string[];
 }
 const {
@@ -19,7 +21,9 @@ const {
   canonicalURL,
   type = "website",
   pubDate,
+  updatedDate,
   author,
+  noindex = false,
   tags = [],
 } = Astro.props;
 const siteUrl = SITE_URL;
@@ -33,6 +37,7 @@ const articleSchema = type === "article" ? JSON.stringify({
   "description": description,
   "image": ogImage,
   "datePublished": pubDate,
+  "dateModified": updatedDate ?? pubDate,
   "author": { "@type": "Organization", "name": author ?? "Relifish Team", "url": siteUrl },
   "publisher": { "@type": "Organization", "name": "Relifish", "logo": { "@type": "ImageObject", "url": `${siteUrl}/favicon.png` } },
   "url": canonical,
@@ -45,10 +50,10 @@ const orgSchema = type === "website" ? JSON.stringify({
   "@type": "Organization",
   "name": "Relifish",
   "url": siteUrl,
-  "description": "Fresh fish marketplace in Mumbai. Same-day catch from verified hyperlocal sellers, no middlemen.",
+  "description": "Hyperlocal fish marketplace: local sellers in Mumbai, Thane and Navi Mumbai list the fish they have each day; buyers order same-day or pre-order for tomorrow, and sellers deliver or keep it ready for pickup.",
   "logo": `${siteUrl}/favicon.png`,
-  "address": { "@type": "PostalAddress", "addressLocality": "Thane", "addressRegion": "Maharashtra", "addressCountry": "IN" },
-  "areaServed": ["Thane", "Hiranandani Estate", "Lodha Splendora", "Ghodbunder Road"],
+  "email": "contact@relifish.store",
+  "areaServed": ["Thane", "Mumbai", "Navi Mumbai"],
   "sameAs": ["https://www.instagram.com/relifish.store/"]
 }) : null;
 import Footer from "../components/Footer.astro";
@@ -61,6 +66,7 @@ import Footer from "../components/Footer.astro";
   <title>{title}</title>
   {description && <meta name="description" content={description} />}
   <link rel="canonical" href={canonical} />
+  {noindex && <meta name="robots" content="noindex, follow" />}
   <!-- Open Graph -->
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />

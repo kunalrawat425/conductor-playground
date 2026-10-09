@@ -8,7 +8,9 @@ const { frontmatter } = Astro.props;
   image={frontmatter.image}
   type="article"
   pubDate={frontmatter.pubDate}
+  updatedDate={frontmatter.updatedDate}
   author={frontmatter.author}
+  noindex={!!frontmatter.noindex}
   tags={frontmatter.tags ?? []}
 >
   <article style="max-width:780px;margin:0 auto;padding:48px 24px 80px;">
@@ -26,6 +28,9 @@ const { frontmatter } = Astro.props;
       <a href="/blog" style="font-size:13px;font-weight:600;color:#0066ff;text-decoration:none;">← All articles</a>
       {frontmatter.pubDate && (
         <span style="font-size:13px;color:#94a3b8;">{new Date(frontmatter.pubDate).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}</span>
+      )}
+      {frontmatter.updatedDate && (
+        <span style="font-size:13px;color:#94a3b8;">Updated {new Date(frontmatter.updatedDate).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}</span>
       )}
       {frontmatter.author && (
         <span style="font-size:13px;color:#94a3b8;">by {frontmatter.author}</span>
@@ -65,7 +70,7 @@ const { frontmatter } = Astro.props;
         <span style="font-size:24px;">🐟</span>
         <div>
           <div style="font:700 13px Inter;color:#0a2472;margin-bottom:2px;">Order fresh fish in Thane</div>
-          <div style="font:400 12px Inter;color:#475569;line-height:1.4;">Same-day catch from local independent sellers. No middlemen. No cold storage. <a href="/shop" style="color:#0066ff;font-weight:600;text-decoration:none;">Browse sellers →</a></div>
+          <div style="font:400 12px Inter;color:#475569;line-height:1.4;">Order same-day or pre-order from local sellers in Thane, Tardeo and Kamothe. No platform markup. <a href="/shop" style="color:#0066ff;font-weight:600;text-decoration:none;">Browse sellers →</a></div>
         </div>
       </div>
     </div>

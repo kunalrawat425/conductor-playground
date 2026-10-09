@@ -6,7 +6,7 @@ export const AREAS = {
     lng: 72.9781,
     radius: 9, // km
     slug: "thane",
-    metaDescription: "Buy fresh fish online with same-day delivery in Thane. Direct from local sellers. No middleman, no cold storage.",
+    metaDescription: "Order fresh fish online in Thane from local sellers on Relifish. Same-day orders or pre-order tonight for tomorrow; sellers deliver or keep it ready for pickup.",
     contentHeadline: "Fresh Fish Delivery in Thane",
     contentSubheading: "Same-day & next-day pre-order from local Thane fish sellers",
     keywords: [],
@@ -17,9 +17,9 @@ export const AREAS = {
     lng: 72.8264,
     radius: 10, // km
     slug: "kandivali",
-    metaDescription: "Order fresh fish online in Kandivali, Mumbai. Same-day delivery from trusted local sellers. No cold storage.",
+    metaDescription: "Fresh fish delivery in Kandivali on Relifish is coming. Join the waitlist to hear when a local seller goes live.",
     contentHeadline: "Fresh Fish Delivery in Kandivali",
-    contentSubheading: "Daily catch delivered to your door in Kandivali",
+    contentSubheading: "No seller live in Kandivali yet: join the waitlist",
     keywords: ["kandivali"],
   },
   tardeo: {
@@ -28,9 +28,9 @@ export const AREAS = {
     lng: 72.8108,
     radius: 8, // km
     slug: "tardeo",
-    metaDescription: "Buy fresh fish in Tardeo with fast delivery. Direct from local Mumbai fish sellers. Premium quality, best prices.",
+    metaDescription: "Order fresh fish online in Tardeo and South Mumbai from local sellers on Relifish. Same-day orders or pre-order tonight for tomorrow.",
     contentHeadline: "Fresh Fish Delivery in Tardeo",
-    contentSubheading: "Quality fish from local sellers, delivered same-day in Tardeo",
+    contentSubheading: "Same-day & pre-order from local sellers in Tardeo and South Mumbai",
     keywords: ["tardeo", "tardeo", "south mumbai"],
   },
   kamothe: {
@@ -39,7 +39,7 @@ export const AREAS = {
     lng: 73.0809,
     radius: 12, // km
     slug: "kamothe",
-    metaDescription: "Fresh fish delivery in Kamothe, Navi Mumbai. Pre-order next-day catch. Direct from local sellers, no middleman.",
+    metaDescription: "Order fresh fish online in Kamothe, Navi Mumbai from local sellers on Relifish. Same-day orders or pre-order tonight for tomorrow.",
     contentHeadline: "Fresh Fish Delivery in Kamothe",
     contentSubheading: "Same-day & pre-order fish delivery in Kamothe, Navi Mumbai",
     keywords: ["kamothe", "navi mumbai"],

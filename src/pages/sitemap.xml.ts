@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { supabase } from "../lib/supabase";
 import { sellerHref } from "../lib/seller-display";
+import { HUB_MIN_SELLERS } from "../lib/fish-hub";
+import { SPECIES } from "../lib/species";
 import { AREAS } from "../lib/areas";
 
 export const prerender = false;
@@ -45,6 +47,17 @@ export const GET: APIRoute = async () => {
     if (!Array.isArray(r.pricing_options) || !r.pricing_options.length) continue; // fish page 404s without a price
     if (!speciesBySeller.has(r.seller_id)) speciesBySeller.set(r.seller_id, new Set());
     speciesBySeller.get(r.seller_id)!.add(String(r.species).toLowerCase());
+  }
+
+  // Fish hubs: only those the hub page itself marks indexable (>= HUB_MIN_SELLERS active sellers with a price).
+  const activeIds = new Set((sellers || []).map((s) => s.id));
+  const sellersPerSpecies = new Map<string, number>();
+  for (const [sid, set] of speciesBySeller) {
+    if (!activeIds.has(sid)) continue;
+    for (const sp of set) sellersPerSpecies.set(sp, (sellersPerSpecies.get(sp) || 0) + 1);
+  }
+  for (const [sp, n] of sellersPerSpecies) {
+    if (n >= HUB_MIN_SELLERS && SPECIES[sp]) urls.push({ loc: `/fish/${sp}`, changefreq: "daily", priority: "0.8" });
   }
 
   for (const seller of sellers || []) {

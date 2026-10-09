@@ -1,74 +1,108 @@
 ---
 layout: ../../layouts/Layout.astro
-title: "Your First Relifish Order: A Thane Guide to Hygienic, Fresh Fish Online"
-description: "Ready for fresh fish in Thane? Discover how Relifish delivers premium, vacuum-sealed, ready-to-cook seafood. What to expect, what to order, and why it's Thane's best choice."
+title: "How to Order Fish on Relifish: Same-Day or Pre-Order, Step by Step"
+description: "How ordering fresh fish on Relifish works in Thane and Mumbai: find a local seller, order today or pre-order for tomorrow, pay online, choose your cut, and what happens if the seller can't fill it."
 pubDate: 2026-06-19
+updatedDate: 2026-10-09
 author: "Relifish Team"
-tags: ["Hygienic Seafood", "Thane", "Ready To Cook", "Odour Free"]
+tags: ["How it works", "Thane", "Pre-order"]
 image: "/blog-first-relifish-order-guide-thane-hero.png"
 ---
 
-# Your First Relifish Order: A Thane Guide to Hygienic, Fresh Fish Online
+# How to Order Fish on Relifish: Same-Day or Pre-Order, Step by Step
 
-Are you in Thane, dreaming of truly fresh fish but dreading the prep mess, scale cleaning, or the lingering odour in your kitchen? You're not alone. Many households across Thane's premium complexes face a constant trade-off: convenience or uncompromised freshness? 
+**Relifish is a marketplace where you order fish online directly from local fish sellers.** Each seller lists the fish they have that day and sets their own prices. You order same-day while the seller is open, or pre-order tonight for tomorrow. The seller then delivers to you or keeps your order ready for pickup.
 
-If you've ever thought, "I wish I could buy fresh fish online in Thane without the hassle and disappointment of unhygienic local market handling," then Relifish is your answer. We understand your dilemma – the desire for that perfect, flaky texture and authentic sea flavour without the compromise of time, cleanliness, or quality. Get ready to experience premium seafood delivered ready-to-cook, straight to your doorstep.
-
----
-
-## What is Relifish? The Convenience and Hygiene Trust Layer
-
-Relifish isn't just another delivery app; we're a premium seafood marketplace built on a foundation of trust, sanitation, and absolute convenience. Independent local sellers list the day's finest catch at landing, prepare it under strict hygiene standards, and vacuum-pack it for peak freshness. 
-
-Think of us as your reliable bridge to premium seafood, eliminating the unnecessary mess of home cleaning and portioning. They deliver double-sealed, vacuum-packed, odour-free portions directly to your kitchen.
+This guide covers the whole flow, from finding a seller to getting a refund if something goes wrong.
 
 ---
 
-## Why Relifish is Different: The Pillars of Premium Seafood
+## Where you can order today
 
-Forget what you might know about "online fish delivery" from other platforms. Our commitment to quality is rooted in hygiene and propelled by efficiency.
+Sellers on Relifish currently serve parts of **Thane West**, **Tardeo (South Mumbai)** and **Kamothe (Navi Mumbai)**. Each seller sets their own delivery radius, so whether a seller delivers to you depends on your exact location.
 
-### 1. Ready-to-Cook Convenience, Prepared with Purified Water
-
-Descaling and gutting fish at home is messy. On Relifish, verified independent sellers handle the entire preparation process in sanitised environments. All seafood is cleaned exclusively with cold, purified water, descaled, gutted, and custom-cut to your specifications. No scales on your counters, no kitchen waste to deal with.
-
-### 2. Double-Layered Vacuum-Sealed Packaging
-
-While others deliver fish in simple plastic bags that leak and spread smells, sellers immediately pack your fresh portions in thick, food-grade vacuum-sealed pouches. This locks in the natural juices and firm texture without freezing it. It also keeps the package 100% odour-free, allowing you to store it in your refrigerator next to other foods with complete peace of mind.
-
-### 3. Insulated, Temperature-Controlled Delivery
-
-Sellers pack the vacuum pouches on fresh ice packs inside clean insulated boxes. Hyperlocal delivery partners deliver it directly to your doorstep or your society's lobby reception, ensuring the cold chain is never broken and your home remains odour-free.
-
-### 4. Packed for Your Kitchen
-
-Every order is vacuum-sealed in thick, food-grade pouches — airtight, leak-proof, and odour-contained. If you have questions about your order, [contact us](mailto:relifishstore@gmail.com).
+- [Fish sellers in Thane](/area/thane)
+- [Fish sellers in Tardeo](/area/tardeo)
+- [Fish sellers in Kamothe](/area/kamothe)
 
 ---
 
-## Your First Relifish Order: A Simple Guide for Thane Residents
+## Step 1: Set your location
 
-Wondering how to place your first order? It's designed to be incredibly easy and intuitive, tailored for your convenience:
+Open [relifish.store/shop](/shop) and allow location, or pick your area. You will see the sellers who can deliver to you or who you can collect from.
 
-1.  **Browse the Daily Menu**: Visit our website or app. Each morning, the marketplace is updated reflecting the fresh catch listed by sellers that day.
-2.  **Select Your Custom Cuts**: Select your desired fish, specify the quantity, and choose your prep preference — whether you need precise curry cuts, clean surmai steaks, or completely de-boned fillets for children.
-3.  **Hassle-Free Delivery**: Choose your preferred delivery slot. A hyperlocal delivery partner ensures your order reaches your Thane home, neatly packed on ice, preserving its peak freshness until it arrives directly at your door.
-4.  **Open and Cook**: Open the vacuum pack and place the fish directly into your pan or curry pot. Zero kitchen mess, zero prep time.
+## Step 2: Log in with your mobile number
+
+Log in with your mobile number and a one-time code (OTP). There is no password. You need to be logged in to see each seller's live prices, because prices change daily.
+
+## Step 3: Choose same-day or pre-order
+
+Every seller page shows one of three states:
+
+| What you see | What it means |
+|---|---|
+| **Open** | The seller is open now. You order from what they have in stock today. |
+| **Pre-order** | The seller is taking orders for tomorrow. You order before their cutoff (usually 10 PM). |
+| **Closed** | Not taking orders right now. The page shows when they open next. |
+
+**Pre-order prices are a range** (for example, a low and a high price per kg), because the final price depends on the next day's stock. You pay the top of the range when you order. Once the seller sets the final price, any difference is refunded to you.
+
+## Step 4: Pick delivery or pickup
+
+Some sellers deliver, some offer pickup, and many do both. If the seller delivers, their delivery fee is shown before you pay. Some sellers waive it above an order amount they set. Sellers also set their own minimum order, which is shown at checkout.
+
+## Step 5: Pay online
+
+You pay online through Razorpay (UPI, card or netbanking) when you place the order. The seller gets your order only after the payment goes through.
+
+## Step 6: Tell the seller how you want it cut
+
+After you pay, you can choose how each fish is prepared: **whole**, **cleaned**, or **cut** (for example curry pieces or steaks), and add a note for the seller.
+
+## Step 7: Track the order
+
+You can follow your order on its tracking page:
+
+1. **Paid**: your payment has gone through.
+2. **Confirmed**: the seller has accepted the order.
+3. **Out for delivery** or **Ready for pickup**.
+4. **Completed**.
 
 ---
 
-## What to Order First? Relifish Recommendations for Thane
+## If the seller can't fill your order
 
-For your inaugural Relifish experience in Thane, we highly recommend trying these premium, pre-cleaned favourites:
+- If the **seller declines** the order, you get a **full refund**.
+- If **you cancel before the seller confirms**, you get a **full refund**.
+- For **pre-orders**, if the final price is lower than what you paid, the **difference is refunded**.
 
-*   **Pomfret (Paplet)**: Cleaned, descaled, and gutted. Ready for a light spice rub and pan-frying.
-*   **Surmai (Kingfish)**: Meaty, bone-in steaks, custom-cut to uniform thickness. Perfect for a quick fry or a rich curry.
-*   **Prawns (Jhinga)**: Fully peeled, de-veined, and ready to cook. Sweet, succulent, and zero prep required.
+Refunds go back to your original payment method, usually within 5 to 7 working days.
 
 ---
 
-## Conclusion: End the Prep Mess, Taste the Freshness!
+## How to check fish is fresh when it arrives
 
-Ready to completely transform your seafood experience in Thane? Don't compromise on hygiene or convenience any longer. Discover the Relifish difference today. Visit our website or app now and bring premium seafood back to your table.
+1. **Eyes**: clear and full, not cloudy or sunken.
+2. **Gills**: bright red or pink, not brown or grey.
+3. **Flesh**: firm, and springs back when pressed.
+4. **Smell**: clean and of the sea, not sour or of ammonia.
 
-**→ [See which local fish sellers deliver in Thane today](https://www.relifish.store/area/thane)**
+If something is wrong with your order, message us on WhatsApp at [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or email [contact@relifish.store](mailto:contact@relifish.store).
+
+---
+
+## Questions people ask
+
+**Do I need an app?**
+No. Relifish works in your phone's browser at relifish.store.
+
+**Does Relifish deliver the fish?**
+No. The seller delivers, or keeps your order ready for pickup. Relifish is the marketplace that connects you.
+
+**Does Relifish add a markup?**
+No. You pay the seller's own price. Relifish charges sellers 0% commission.
+
+**Which fish can I order?**
+It depends on what each seller lists that day. Sellers commonly list pomfret, surmai, bangda, prawns, rawas and bombil. See [surmai](/fish/surmai), [pomfret](/fish/pomfret) and [prawns](/fish/prawns) to compare sellers.
+
+**→ [See which sellers serve you](/shop)**
