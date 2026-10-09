@@ -194,7 +194,8 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
 export async function sendCustomBuyerPush(
   buyerId: string,
   notification: { title: string; body: string },
-  urlPath: string
+  urlPath: string,
+  opts: { markPromo?: boolean } = {}
 ): Promise<BuyerPushResult> {
   const { supabaseUrl, supabaseServiceKey, vapidPublicKey, vapidPrivateKey, vapidContact } = getPushConfig();
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -238,13 +239,15 @@ export async function sendCustomBuyerPush(
     );
 
     // Update last_promo_push_sent_at upon successful delivery (gracefully catch if migration not applied yet)
-    try {
-      await supabase
-        .from("buyers")
-        .update({ last_promo_push_sent_at: new Date().toISOString() })
-        .eq("id", buyerId);
-    } catch (e) {
-      console.warn("Could not update last_promo_push_sent_at (migration may not be applied yet):", e);
+    if (opts.markPromo !== false) {
+      try {
+        await supabase
+          .from("buyers")
+          .update({ last_promo_push_sent_at: new Date().toISOString() })
+          .eq("id", buyerId);
+      } catch (e) {
+        console.warn("Could not update last_promo_push_sent_at (migration may not be applied yet):", e);
+      }
     }
 
     // Log success in background (non-blocking)
