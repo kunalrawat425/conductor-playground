@@ -76,7 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Send email notification
     if (resendApiKey) {
       try {
-        await fetch("https://api.resend.com/emails", {
+        const sent = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${resendApiKey}`,
@@ -102,7 +102,9 @@ export const POST: APIRoute = async ({ request }) => {
             `,
           }),
         });
-        await sb.from("buyer_waitlist").update({ email_sent: true }).eq("id", data.id);
+        // Only a mail Resend accepted counts as sent (a 401/403 used to be marked sent too).
+        if (sent.ok) await sb.from("buyer_waitlist").update({ email_sent: true }).eq("id", data.id);
+        else console.warn("[waitlist] notification email rejected", sent.status, (await sent.text()).slice(0, 200));
 
         // Send welcome email to customer if they provided email
         // Client-supplied text used to land unescaped in a Relifish-branded mail
