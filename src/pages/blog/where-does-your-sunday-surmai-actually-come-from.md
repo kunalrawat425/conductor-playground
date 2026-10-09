@@ -61,4 +61,6 @@ Tasting the difference between a 3-day-old warehouse fish and a 3-hour-old dock-
 
 🛵 **Relifish is now delivering to Hiranandani Estate, Majiwada, and Ghodbunder Road.**
 
-[👉 Click here to see what's fresh at the docks today!](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=hiranandani_surmai)
+[👉 Click here to see what's fresh at the docks today!](https://www.relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=hiranandani_surmai)
+
+**→ [See which local fish sellers deliver in Thane today](https://www.relifish.store/area/thane)**

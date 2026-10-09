@@ -2,6 +2,36 @@
 
 All notable changes to Relifish are documented here.
 
+## [0.3.0.0] - 2026-10-09
+
+### Added
+- Every order now records where the buyer came from (flyer QR, blog, Instagram, ads). The campaign from the buyer's last visit (within 30 days) is saved on the order (`orders.utm_source/medium/campaign/content`, migration 075), so paid orders can be counted per flyer run or channel. Clicks on our own blog links never overwrite a real campaign.
+- A page for every fish from every seller (`/s/<seller>/<fish>`, e.g. `/s/fishtokri-com/surmai`) showing price, today's availability and an order button. Each is a single-product page with `Product` + `Offer`/`AggregateOffer` markup (InStock / PreOrder / OutOfStock), so Google can show price and stock in results. They are linked from the seller page, `/shop` and the sitemap. The seller page keeps its `Menu` markup and drops the product list that Google does not use on multi-product pages.
+- Google can now see the shop. `/shop` renders a server-side list of active sellers and the fish they have (cached 5 minutes); the location-based shop app is unchanged.
+- Seller pages and seller links fall back to `/seller/<id>` when a seller name has no Latin letters, so no link points at an empty `/s/`.
+- GA4 now receives `sign_up` and `seller_signup` for first-time accounts, and `order_placed` when an order is placed.
+- Design doc for the Thane flyer pilot: `docs/designs/relifish-thane-flyer-pilot.md`.
+
+### Changed
+- `www.relifish.store` is now the only address. `relifish.store` redirects there (308) for every path except `/api/*` and `/sw.js`, so Razorpay webhooks, crons and installed service workers keep working. Canonical tags, the sitemap, robots.txt, and email and push links all use www, with no trailing slash and no query string.
+- Page titles match what buyers search: "{Seller} {Area} — Today's Menu & Fish Home Delivery", "Fresh Fish Home Delivery in {Area} — Surmai, Pomfret, Prawns", and new `/shop` and homepage titles without "near me". The keyword-stuffed homepage paragraph is replaced with plain copy.
+- GA4 `purchase` now fires only after Razorpay confirms the payment, with the real amount and a unique transaction id per payment. Before, it fired when the order was placed, so unpaid and test orders counted as purchases.
+- Every blog post links to the Thane sellers page.
+- Fish photos are served from the site itself (`/fish/*.jpg`, cached) instead of hotlinked Bing thumbnails and AI-generated images.
+- Cart "View menu" links go to the seller by id.
+- `IMAGEN-PROMPTS.md` is marked retired: no AI-generated fish or people presented as real sellers or catch.
+
+### Fixed
+- Unknown or inactive sellers now return a real 404 with `noindex` instead of a 302 to `/shop`. A database outage returns 503 with `Retry-After`, so Google retries instead of dropping the page. Seller links with capital letters resolve.
+- The Thane area page linked to a dead seller URL (`/s/fishtokri`), so Google never found Fishtokri's page.
+- The pre-order FAQ no longer claims "prices locked in advance" (pre-orders use a min/max range with a refund of the difference).
+- `/shop` never caches an empty seller list during a database error, and stops waiting for the database after 1.5 seconds.
+- `/v1` (an old page mentioning Goa) is now blocked in robots.txt.
+
+### Removed
+- The Firebase SDK, which was only used for analytics. GA4 property 539604989 still receives everything through its web stream `G-7MXZDZ1S4N`, now sent with plain `gtag` (two fewer scripts per page). `G-DGS7557PZ6` is unchanged.
+- Hardcoded "In stock" badges on the homepage fish cards, which were not tied to real stock.
+
 ## [0.2.2.0] - 2026-05-20
 
 ### Added

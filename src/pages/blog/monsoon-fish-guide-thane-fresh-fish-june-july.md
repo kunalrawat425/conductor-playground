@@ -88,10 +88,12 @@ We know exactly where every order came from — caught that morning, listed by n
 
 ---
 
-**→ [Check Today's Available Catch at Relifish](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=monsoon_guide_thane)**
+**→ [Check Today's Available Catch at Relifish](https://www.relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=monsoon_guide_thane)**
 
 *Prices are updated daily by our sellers. The monsoon window closes August 1 — that's when the first wild catch returns. [Subscribe to updates](mailto:relifishstore@gmail.com) to get notified the moment surmai season is back.*
 
 ---
 
 > 📦 **Relifish delivers to:** Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali · Kalwa
+
+**→ [See which local fish sellers deliver in Thane today](https://www.relifish.store/area/thane)**

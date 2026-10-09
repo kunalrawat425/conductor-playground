@@ -89,7 +89,7 @@ try {
   console.error("Error fetching sellers and listings for area:", err);
 }
 
-const areaTitle = `Buy Fresh Fish Online in ${area.name}`;
+const areaTitle = `Fresh Fish Home Delivery in ${area.name}`;
 const areaDescription = area.metaDescription;
 const canonicalUrl = `https://www.relifish.store/area/${area.slug}`;
 
@@ -197,7 +197,7 @@ const jsonLd = {
           "name": `Can I pre-order fish for tomorrow in ${area.name}?`,
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": `Yes. Many sellers in ${area.name} accept pre-orders. Order tonight before cutoff (usually 10pm) to get tomorrow's fresh catch. Prices locked in advance — no surprises.`
+            "text": `Yes. Many sellers in ${area.name} accept pre-orders. Order tonight before the seller's cutoff (usually 10pm) to get tomorrow's fresh catch. You pay the top of the price range; the seller sets the final price after the morning catch and any difference is refunded.`
           }
         }
       ]
@@ -208,7 +208,7 @@ const jsonLd = {
 ---
 
 <AppShell
-  title={`${areaTitle} — Local Fish Sellers | Relifish`}
+  title={`${areaTitle} — Surmai, Pomfret, Prawns from Local Sellers | Relifish`}
   description={areaDescription}
   needsMap={false}
   jsonLd={jsonLd}

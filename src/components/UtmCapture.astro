@@ -1,0 +1,13 @@
+---
+// Campaign attribution: always on (independent of analytics) so campaign orders are tagged.
+// Shape is read by pickUtm() in src/lib/utm.ts (server enforces the 30-day window via `at`).
+---
+<script is:inline>
+  (function () {
+    try {
+      var p = new URLSearchParams(location.search), src = p.get('utm_source');
+      // utm_source=blog marks our own blog CTAs: never let an internal click overwrite a real campaign.
+      if (src && src !== 'blog') localStorage.setItem('rf_utm', JSON.stringify({ source: src, medium: p.get('utm_medium') || '', campaign: p.get('utm_campaign') || '', content: p.get('utm_content') || '', at: Date.now() }));
+    } catch (e) {}
+  })();
+</script>

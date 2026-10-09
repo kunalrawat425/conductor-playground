@@ -14,6 +14,19 @@
     }
   ],
   "rewrites": [],
+  "redirects": [
+    {
+      "source": "/:path((?!api/|sw\\.js$).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "relifish.store"
+        }
+      ],
+      "destination": "https://www.relifish.store/:path",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

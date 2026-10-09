@@ -191,7 +191,7 @@ Test IDs use the module tag (M1–M15) + numeric suffix.
 | ID | Steps | Expected |
 |----|-------|----------|
 | M14.1 | `/` — hero → CTA → shop | No dead link |
-| M14.2 | Analytics tags fire (GA4, GTM, Clarity, FB Pixel, Firebase) | Network tab shows requests |
+| M14.2 | Analytics tags fire (GA4 `G-DGS7557PZ6` + `G-7MXZDZ1S4N`, GTM, Clarity, FB Pixel) | Network tab shows requests; no `firebasejs` requests |
 | M14.3 | `/for-sellers` → waitlist form | POST `/api/waitlist/join` writes row |
 | M14.4 | Blog posts render, no 500 | 200 status |
 | M14.5 | `/terms`, `/privacy`, `/refund-policy`, `/about` | Load OK |

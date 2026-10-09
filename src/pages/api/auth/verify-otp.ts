@@ -184,7 +184,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, seller_id: newSeller.id, name: newSeller.name, is_active: newSeller.is_active !== false }),
+        JSON.stringify({ success: true, seller_id: newSeller.id, name: newSeller.name, is_active: newSeller.is_active !== false, is_new: true }),
         { status: 200 }
       );
     }
@@ -198,6 +198,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     let buyer_id: string;
     let is_active = true;
+    let is_new = false;
 
     if (existing) {
       buyer_id = existing.id;
@@ -214,9 +215,10 @@ export const POST: APIRoute = async ({ request }) => {
       }
       buyer_id = newBuyer.id;
       is_active = newBuyer.is_active !== false;
+      is_new = true;
     }
 
-    return new Response(JSON.stringify({ success: true, buyer_id, is_active }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, buyer_id, is_active, is_new }), { status: 200 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("verify-otp error:", err);
