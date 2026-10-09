@@ -54,7 +54,7 @@ export const GET: APIRoute = async () => {
 <g:id>${esc(`${l.id}-${o.id ?? "0"}`)}</g:id>
 <g:title>${esc(title)}</g:title>
 <g:description>${esc(`Fresh ${fish} from ${seller}, a local fish seller in ${area}. Order same-day or pre-order for tomorrow on Relifish; the seller delivers or keeps it ready for pickup.`)}</g:description>
-<g:link>${esc(`${SITE_URL}${base}/${species}`)}</g:link>
+<g:link>${esc(`${SITE_URL}${base}/${species}?opt=${encodeURIComponent(`${l.id}-${o.id ?? "0"}`)}`)}</g:link>
 <g:image_link>${esc(image)}</g:image_link>
 <g:price>${price.toFixed(2)} INR</g:price>
 <g:availability>${availability}</g:availability>${availability === "preorder" ? `\n<g:availability_date>${tomorrow}T08:00+05:30</g:availability_date>` : ""}
