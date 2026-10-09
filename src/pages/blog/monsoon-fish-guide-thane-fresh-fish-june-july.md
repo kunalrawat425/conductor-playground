@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Layout.astro
-title: "Monsoon Fishing Ban in Maharashtra (June 1 – July 31): What Fish to Buy"
-description: "Maharashtra's monsoon fishing ban stops mechanised sea fishing from June 1 to July 31. What that means for surmai and pomfret, which fish are good choices in those months, and how to check freshness."
+title: "Monsoon Fishing Ban in Maharashtra 2026 (June 1 – Aug 15): What Fish to Buy"
+description: "Maharashtra's monsoon fishing ban stops mechanised sea fishing from June 1; in 2026 it was extended to August 15. What that means for surmai and pomfret, which fish are good choices in those months, and how to check freshness."
 pubDate: 2026-06-19
 updatedDate: 2026-10-09
 author: "Relifish Team"
@@ -9,9 +9,9 @@ tags: ["Monsoon", "Fishing ban", "Fish guide"]
 image: "/blog-monsoon-hero.png"
 ---
 
-# Monsoon Fishing Ban in Maharashtra: What Fish to Buy in June and July
+# Monsoon Fishing Ban in Maharashtra: What Fish to Buy in June, July and August
 
-**Every year, Maharashtra bans mechanised fishing boats at sea from June 1 to July 31.** These 61 days are the main breeding season for many fish, and the sea is rough during the monsoon. So less sea fish lands in June and July, and prices for popular fish like surmai and pomfret usually go up.
+**Every year, Maharashtra bans mechanised fishing boats at sea from June 1.** The ban traditionally ran to July 31 (61 days); **in 2026 the state extended it to August 15** for mechanised and motorised boats, in line with Gujarat. These weeks are the main breeding season for many fish, and the sea is rough during the monsoon. So less sea fish lands, and prices for popular fish like surmai and pomfret usually go up.
 
 This guide explains what changes during the ban and what to buy instead.
 
@@ -20,7 +20,7 @@ This guide explains what changes during the ban and what to buy instead.
 ## What the ban covers
 
 - **Who:** mechanised (motorised) fishing boats along the Maharashtra coast.
-- **When:** June 1 to July 31 each year.
+- **When:** from June 1. It ran to July 31 until 2025; in 2026 it was extended to August 15.
 - **Why:** to let fish breed, and for safety in monsoon seas.
 
 Small traditional boats and inland fishing are treated differently, so some fish keeps arriving. But there is much less sea fish, and what you see may have been caught before the ban and stored.
@@ -59,7 +59,7 @@ If two of these fail, don't cook it.
 
 ## When the ban ends
 
-Mechanised boats go back out from **August 1**. Sea fish like surmai, pomfret and bangda then start coming back, and prices usually ease over the following weeks as more boats return.
+Mechanised boats go back out once the ban ends (**August 16 in 2026**; August 1 in earlier years). Sea fish like surmai, pomfret and bangda then start coming back, and prices usually ease over the following weeks as more boats return.
 
 ---
 

@@ -70,3 +70,14 @@ export function sellersForArea<T extends AreaSeller>(area: (typeof AREAS)[AreaSl
     })
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
+
+/** The live area whose centre is within its radius of a point (e.g. a seller's shop), nearest first. */
+export function areaNameForPoint(lat: number | null | undefined, lng: number | null | undefined): string | null {
+  if (lat == null || lng == null) return null;
+  let best: { name: string; d: number } | null = null;
+  for (const a of Object.values(AREAS)) {
+    const d = haversineKm(a.lat, a.lng, Number(lat), Number(lng));
+    if (d <= a.radius && (!best || d < best.d)) best = { name: a.name, d };
+  }
+  return best?.name ?? null;
+}

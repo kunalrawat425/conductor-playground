@@ -3,6 +3,8 @@
 // show product snippets (price, availability). Ordering stays on the seller page (/s/<slug>).
 export const prerender = false;
 
+import SeoLinks from "../../../components/ui/molecules/SeoLinks.astro";
+import { areaNameForPoint } from "../../../lib/areas";
 import AppShell from "../../../components/ui/AppShell.astro";
 import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 import { getSellerBySlug, getSellerListings } from "../../../lib/supabase";
@@ -37,7 +39,7 @@ if (!found) {
 const SELF_HOSTED = new Set(["pomfret", "surmai", "prawns", "bangda", "rawas"]);
 const fishName = getSpeciesDisplay(species);
 const sellerName = cleanSellerName(seller?.name) || "Seller";
-const area = stripContactInfo(seller?.location_name) || "";
+const area = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const sellerPath = `/s/${slug}`;
 const url = canonicalFor(`${sellerPath}/${species}`);
 const photo = forSpecies.find((l: any) => l.photo_url)?.photo_url || (SELF_HOSTED.has(species) ? `/fish/${species}.jpg` : null);
@@ -49,7 +51,7 @@ const description = `${fishName} from ${sellerName}${where}. ${statusText}. See 
 const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLowerCase()))].filter((s) => s !== species);
 ---
 <AppShell
-  title={found ? `${fishName} from ${sellerName}${area ? ` ${area}` : ""} — Price & Fish Home Delivery | Relifish` : "Fish not found · Relifish"}
+  title={found ? `${fishName} from ${sellerName}${area ? `, ${area}` : ""}: Price Today & Delivery | Relifish` : "Fish not found · Relifish"}
   description={description}
   canonical={url}
   noindex={!found}
@@ -110,4 +112,5 @@ const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLower
       />
     </div>
   )}
+  <SeoLinks />
 </AppShell>
