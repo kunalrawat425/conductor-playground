@@ -97,6 +97,10 @@ import Footer from "../components/Footer.astro";
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
+    // Buyer vs seller split in GA: "Content group" per page, "user_type" per user (custom dimension).
+    var relifishSeller = /^\/(dashboard|for-sellers)(\/|$)/.test(location.pathname);
+    gtag('set', { content_group: relifishSeller ? 'seller' : 'buyer' });
+    if (location.pathname.indexOf('/dashboard') === 0) gtag('set', 'user_properties', { user_type: 'seller' });
     gtag('config', 'G-DGS7557PZ6');
     gtag('config', 'G-7MXZDZ1S4N'); // GA4 property 539604989 (relifish), stream 14975067322
     (function() {

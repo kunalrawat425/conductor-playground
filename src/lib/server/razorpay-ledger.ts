@@ -19,6 +19,7 @@
  *              for a superseded amount → refund this payment, never keep it silently
  */
 import { refundRazorpayPayment, type RefundOutcome } from "./razorpay-refund";
+import { gaPurchase } from "./ga-mp";
 
 export const PAYABLE_STATUSES = ["pending", "pending_payment", "payment_required"];
 const CLOSED_STATUSES = ["cancelled", "declined", "refunded"];
@@ -132,13 +133,20 @@ export async function settleCapturedPayment(
       const { data, error } = await sb.from("orders").update(update)
         .eq("id", order.id).eq("status", order.status).select(ORDER_COLS);
       if (error) throw new Error(`confirm failed: ${error.message}`);
-      if (data?.[0]) return { kind: "confirmed", order: data[0] };
+      if (data?.[0]) {
+        // The guarded UPDATE succeeds once per payment, so GA gets exactly one purchase (whichever path won).
+        await gaPurchase(p.razorpay_order_id, { order_id: order.id });
+        return { kind: "confirmed", order: data[0] };
+      }
     } else if (decision === "stamp") {
       const { data, error } = await sb.from("orders")
         .update({ payment_method: "razorpay", razorpay_payment_id: p.razorpay_payment_id })
         .eq("id", order.id).is("razorpay_payment_id", null).select(ORDER_COLS);
       if (error) throw new Error(`stamp failed: ${error.message}`);
-      if (data?.[0]) return { kind: "stamped", order: data[0] };
+      if (data?.[0]) {
+        await gaPurchase(p.razorpay_order_id, { order_id: order.id }); // money kept on this order: a purchase too
+        return { kind: "stamped", order: data[0] };
+      }
     } else {
       return refundLatePayment(sb, order, p);
     }

@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
+import { gaIdsFromCookies } from "../../../lib/server/ga-mp";
 
 export const prerender = false;
 
@@ -229,6 +230,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         amount: amountPaise,
         currency: "INR",
         receipt: order_id.slice(0, 40), // Razorpay receipt max 40 chars
+        // The server-side GA purchase/refund (lib/server/ga-mp.ts) joins the buyer's GA session with these.
+        notes: (({ cid, sid }) => ({ ...(cid ? { ga_cid: cid } : {}), ...(sid ? { ga_sid: sid } : {}) }))(gaIdsFromCookies(request.headers.get("cookie"))),
       }),
     });
   } catch {

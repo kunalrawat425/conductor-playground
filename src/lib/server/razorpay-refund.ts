@@ -1,3 +1,5 @@
+import { gaRefund } from "./ga-mp";
+
 /**
  * Issue a Razorpay refund for a captured payment.
  *
@@ -44,6 +46,8 @@ export async function refundRazorpayPayment(
     if (res.ok) {
       const body = await res.json();
       const refundId = body?.id || null;
+      // A payment we refund on settlement ("settle:*") was never reported as a GA purchase.
+      if (!tag.startsWith("settle:")) await gaRefund(razorpayPaymentId, amountPaise);
       return { refundId, ok: true, note: `Razorpay refund ${refundId} initiated` };
     }
 

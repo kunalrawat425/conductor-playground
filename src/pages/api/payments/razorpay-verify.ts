@@ -88,7 +88,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
   // already / stamped / orphan: someone else did the work (or nothing to do) — idempotent OK.
   if (settled.kind !== "confirmed") {
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    return new Response(JSON.stringify({ ok: true, ga_server: !!import.meta.env.GA4_API_SECRET }), { status: 200 });
   }
 
   // Buyer push goes out after the response (waitUntil): awaiting it here held the
@@ -231,5 +231,5 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   afterResponse(Promise.allSettled(pending), "razorpay-verify:notify");
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  return new Response(JSON.stringify({ ok: true, ga_server: !!import.meta.env.GA4_API_SECRET }), { status: 200 });
 };
