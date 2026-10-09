@@ -13,7 +13,7 @@
 **WhatsApp:** 9152207607 (⚠️ NOT 9870619974 — that number is retired)  
 **Hours:** 7:30 AM – 9:00 PM  
 **Email:** relifishstore@gmail.com (no inbox on relifish.com or relifish.store yet; transactional mail is sent from noreply@relifish.com via Resend)  
-**Instagram:** @relifish.store  
+**Instagram:** @relifish_ (was @relifish.store)  
 
 ---
 
@@ -96,7 +96,7 @@ Do NOT claim (no evidence yet): "within 2 km", "verified", "rated" / star rating
 |-------|-------|
 | WhatsApp | 9152207607 |
 | Website | www.relifish.com (relifish.store redirects) |
-| Instagram | @relifish.store |
+| Instagram | @relifish_ |
 | Email | relifishstore@gmail.com (until a relifish.com inbox is set up) |
 | Hours | 7:30 AM – 9:00 PM |
 | Commission | 0% currently (early growth — no fee charged to sellers or buyers) |
