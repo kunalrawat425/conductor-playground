@@ -33,12 +33,20 @@ export function cleanSellerName(raw: string | null | undefined): string {
   return cleaned;
 }
 
-/** URL slug for /s/[slug]. Always derive from the raw DB name — getSellerBySlug matches on it. */
-export function sellerNameToSlug(name: string): string {
+/** Old slug scheme ("Fishtokri.com" -> "fishtokri-com"). Still resolved so old links 308 to the clean slug. */
+export function legacySellerSlug(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+/**
+ * URL slug for /s/[slug], from the raw DB name with web-domain suffixes dropped:
+ * "Fishtokri.com" -> "fishtokri", "Bombay Sea Food" -> "bombay-sea-food".
+ */
+export function sellerNameToSlug(name: string): string {
+  return legacySellerSlug(name.replace(/\.(co\.in|com|in|store|net|org|shop)\b/gi, ""));
 }
 
 /** Link to a seller page; falls back to /seller/<id> when the name has no latin chars (empty slug). */

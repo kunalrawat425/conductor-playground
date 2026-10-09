@@ -7,6 +7,7 @@ export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 import { getSellerBySlug } from "../../lib/supabase";
+import { sellerHref } from "../../lib/seller-display";
 
 const { slug } = Astro.params;
 
@@ -18,7 +19,11 @@ try {
   unavailable = true; // DB error: not the same as "no such seller"
 }
 
-if (seller) return Astro.rewrite(`/seller/${seller.id}`);
+if (seller) {
+  const clean = sellerHref(seller.name, seller.id);
+  if (clean !== `/s/${slug!.toLowerCase()}`) return Astro.redirect(clean, 308); // old slug, e.g. /s/fishtokri-com
+  return Astro.rewrite(`/seller/${seller.id}`);
+}
 
 // No 302 to /shop (Google reads that as a soft 404). Astro.rewrite("/404") is not
 // allowed here (404 page is prerendered), so render the state inline:

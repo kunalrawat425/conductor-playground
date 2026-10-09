@@ -20,7 +20,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 export const GET: APIRoute = async () => {
   const [sRes, lRes] = await Promise.all([
     supabase.from("sellers").select("id, name, lat, lng, location_name, is_test").eq("is_active", true),
-    supabase.from("fish_listings").select("id, seller_id, species, photo_url, description, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options"),
+    supabase.from("fish_listings").select("id, seller_id, species, photo_url, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options"),
   ]);
   if (sRes.error || lRes.error) {
     return new Response("Temporarily unavailable", { status: 503, headers: { "Retry-After": "300", "Cache-Control": "no-store" } });
@@ -49,7 +49,7 @@ export const GET: APIRoute = async () => {
       items.push(`<item>
 <g:id>${esc(`${l.id}-${o.id ?? "0"}`)}</g:id>
 <g:title>${esc(title)}</g:title>
-<g:description>${esc(l.description || `Fresh ${fish} from ${seller}, a local fish seller in ${area}. Order same-day or pre-order for tomorrow on Relifish; the seller delivers or keeps it ready for pickup.`)}</g:description>
+<g:description>${esc(`Fresh ${fish} from ${seller}, a local fish seller in ${area}. Order same-day or pre-order for tomorrow on Relifish; the seller delivers or keeps it ready for pickup.`)}</g:description>
 <g:link>${esc(`${SITE_URL}${base}/${species}`)}</g:link>
 <g:image_link>${esc(image)}</g:image_link>
 <g:price>${price.toFixed(2)} INR</g:price>

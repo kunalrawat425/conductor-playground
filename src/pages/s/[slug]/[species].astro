@@ -8,7 +8,7 @@ import { areaNameForPoint } from "../../../lib/areas";
 import AppShell from "../../../components/ui/AppShell.astro";
 import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 import { getSellerBySlug, getSellerListings } from "../../../lib/supabase";
-import { cleanSellerName, stripContactInfo } from "../../../lib/seller-display";
+import { cleanSellerName, sellerHref, stripContactInfo } from "../../../lib/seller-display";
 import { SPECIES, getSpeciesDisplay } from "../../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../../lib/listing-pricing";
 import { SITE_URL, canonicalFor } from "../../../lib/brand";
@@ -25,6 +25,11 @@ try {
   if (seller) listings = (await getSellerListings(seller.id)).filter((l: any) => l.pricing_options?.length);
 } catch {
   unavailable = true;
+}
+
+if (seller) {
+  const clean = sellerHref(seller.name, seller.id);
+  if (clean !== `/s/${slug}`) return Astro.redirect(`${clean}/${species}${Astro.url.search}`, 308); // old slug
 }
 
 const forSpecies = listings.filter((l: any) => String(l.species).toLowerCase() === species);

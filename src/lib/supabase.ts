@@ -210,7 +210,7 @@ export async function getListingById(id: string) {
 }
 
 export { sellerNameToSlug } from "./seller-display";
-import { sellerNameToSlug } from "./seller-display";
+import { legacySellerSlug, sellerNameToSlug } from "./seller-display";
 
 export async function getSellerById(id: string) {
   const { data, error } = await supabase
@@ -230,7 +230,9 @@ export async function getSellerBySlug(slug: string) {
     .select("*")
     .eq("is_active", true);
   if (error) throw error;
-  return (data as Seller[]).find(s => sellerNameToSlug(s.name) === slug) || null;
+  const all = data as Seller[];
+  // Current slug first; the old one ("fishtokri-com") still resolves so pages can 308 to the clean URL.
+  return all.find(s => sellerNameToSlug(s.name) === slug) || all.find(s => legacySellerSlug(s.name) === slug) || null;
 }
 
 export async function updateSellerProfile(
