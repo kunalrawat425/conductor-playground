@@ -49,7 +49,7 @@ function shell(content: string): string {
             <div style="font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.6;">
               <a href="https://www.relifish.com" style="color:#94a3b8;text-decoration:none;">www.relifish.com</a>
               &nbsp;·&nbsp;
-              <a href="https://www.instagram.com/relifish.store/" target="_blank" style="color:#0066cc;text-decoration:none;font-weight:600;">📸 @relifish.store</a>
+              <a href="https://www.instagram.com/relifish_/" target="_blank" style="color:#0066cc;text-decoration:none;font-weight:600;">📸 @relifish_</a>
               &nbsp;·&nbsp; © ${new Date().getFullYear()} Relifish. All rights reserved.
             </div>
           </td>
