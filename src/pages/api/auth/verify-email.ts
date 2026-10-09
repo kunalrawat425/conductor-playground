@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { MAIL_FROM } from "../../../lib/server/send-email";
 import { createClient } from "@supabase/supabase-js";
 import { createHmac } from "node:crypto";
 import { verifyEmailTemplate } from "../../../lib/email-templates";
@@ -52,7 +53,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       method: "POST",
       headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: "Relifish <noreply@relifish.store>",
+        from: MAIL_FROM,
         to: email,
         subject: "Verify your email — Relifish",
         html: verifyEmailTemplate(email, verifyUrl),

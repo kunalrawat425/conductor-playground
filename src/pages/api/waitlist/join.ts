@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { MAIL_FROM, MAIL_DOMAIN } from "../../../lib/server/send-email";
 import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
@@ -82,7 +83,7 @@ export const POST: APIRoute = async ({ request }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Relifish Waitlist <noreply@relifish.store>",
+            from: `Relifish Waitlist <noreply@${MAIL_DOMAIN}>`,
             to: "relifishstore@gmail.com",
             subject: `New Waitlist: ${area} — ${phoneE164}`,
             html: `
@@ -115,7 +116,7 @@ export const POST: APIRoute = async ({ request }) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "Relifish <noreply@relifish.store>",
+              from: MAIL_FROM,
               to: email,
               subject: "You're on the Relifish waitlist!",
               html: `
