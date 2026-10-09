@@ -8,9 +8,9 @@ describe("perKgRange", () => {
     const r = perKgRange([{ is_available: true, weight_avail: 5, pricing_options: [kg(690, 0.25), kg(1200), { id: "p", unit: "piece", price: 300, bundle_size: 1 } as any] }]);
     expect(r).toEqual({ low: 1200, high: 2760 });
   });
-  it("uses the pre-order range when nothing is in stock today", () => {
-    const r = perKgRange([{ is_available: false, is_preorder_enabled: true, pricing_options: [kg(0, 1, { preorder_price_min: 900, preorder_price_max: 1100 })] }]);
-    expect(r).toEqual({ low: 900, high: 1100 });
+  it("pre-order only: the regular price, not the range (range max only if no price is set)", () => {
+    expect(perKgRange([{ is_available: false, is_preorder_enabled: true, pricing_options: [kg(1000, 1, { preorder_price_min: 900, preorder_price_max: 1100 })] }])).toEqual({ low: 1000, high: 1000 });
+    expect(perKgRange([{ is_available: false, is_preorder_enabled: true, pricing_options: [kg(0, 1, { preorder_price_min: 900, preorder_price_max: 1100 })] }])).toEqual({ low: 1100, high: 1100 });
   });
   it("is null when the fish is only sold by the piece", () => {
     expect(perKgRange([{ is_available: true, weight_avail: 3, pricing_options: [{ id: "p", unit: "piece", price: 300, bundle_size: 1 } as any] }])).toBeNull();

@@ -21,7 +21,7 @@ const positive = (n: unknown): n is number => typeof n === "number" && Number.is
 
 /**
  * One fish from one seller can have several listings (sizes / kg vs piece) and tiers.
- * Same-day stock wins (InStock, tier prices); otherwise pre-order (PreOrder, min–max range);
+ * Same-day stock wins (InStock, tier prices); otherwise pre-order (PreOrder, the regular tier prices);
  * otherwise OutOfStock with the last listed prices. Null when nothing is priced.
  */
 export function speciesOffer(listings: SpeciesListing[]): SpeciesOffer | null {
@@ -36,7 +36,9 @@ export function speciesOffer(listings: SpeciesListing[]): SpeciesOffer | null {
     prices = sameDay.flatMap((l) => opts(l).map((o) => o.price));
   } else if (preorder.length) {
     availability = "PreOrder";
-    prices = preorder.flatMap((l) => opts(l).flatMap((o) => [o.preorder_price_min ?? o.price, o.preorder_price_max ?? o.price]));
+    // Google and buyers see the seller's latest regular price, not the pre-order range
+    // (the range is shown separately on the page; the final price lands inside it).
+    prices = preorder.flatMap((l) => opts(l).map((o) => (positive(o.price) ? o.price : o.preorder_price_max ?? o.preorder_price_min ?? 0)));
   } else {
     availability = "OutOfStock";
     prices = listings.flatMap((l) => opts(l).map((o) => o.price));
