@@ -1,11 +1,6 @@
 ---
-/** Crawlable links between buyer pages (area, fish, seller) plus trust pages. App pages keep their bottom nav; this sits at the end of the content. */
-const areas = [["thane", "Thane"], ["tardeo", "Tardeo"], ["kamothe", "Kamothe"]];
-const fish = ["surmai", "pomfret", "prawns", "rawas", "bangda", "bombil"];
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** Trust links (ordering guide, about, contact, policies) at the end of buyer pages. App pages keep their bottom nav. */
 ---
 <nav aria-label="More on Relifish" style="padding:16px;border-top:1px solid var(--v2-border);font:400 13px/1.9 Inter;color:var(--v2-ink-3);">
-  <div><strong style="color:var(--v2-ink-2);">Fish delivery in:</strong> {areas.map(([s, n], i) => <>{i > 0 && " · "}<a href={`/area/${s}`}>{n}</a></>)}</div>
-  <div><strong style="color:var(--v2-ink-2);">Compare fish:</strong> {fish.map((f, i) => <>{i > 0 && " · "}<a href={`/fish/${f}`}>{cap(f)}</a></>)}</div>
   <div><a href="/blog/first-relifish-order-guide-thane">How ordering works</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/shipping-policy">Delivery policy</a> · <a href="/refund-policy">Refunds</a></div>
 </nav>
