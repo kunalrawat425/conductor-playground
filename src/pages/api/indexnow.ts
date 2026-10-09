@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 
 const INDEXNOW_KEY = import.meta.env.INDEXNOW_KEY || "a1b2c3d4e5f6g7h8i9j0";
-const HOST = "https://www.relifish.store";
+const HOST = "https://www.relifish.com";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ request }) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        host: "www.relifish.store",
+        host: "www.relifish.com",
         key: INDEXNOW_KEY,
         keyLocation: `${HOST}/${INDEXNOW_KEY}.txt`,
         urlList: urls.map(u => u.startsWith("http") ? u : `${HOST}${u}`),
