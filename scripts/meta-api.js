@@ -40,7 +40,7 @@ export async function publishToMeta(campaignData, imagePaths = []) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: campaignData.social_caption_fb,
-          link: `https://relifish.store/blog/${campaignData.slug}?utm_source=facebook&utm_medium=social&utm_campaign=${campaignData.slug}`,
+          link: `https://www.relifish.com/blog/${campaignData.slug}?utm_source=facebook&utm_medium=social&utm_campaign=${campaignData.slug}`,
           access_token: META_PAGE_ACCESS_TOKEN
         })
       });
@@ -109,7 +109,7 @@ function simulatePublish(campaignData, imagePaths) {
   console.log("\n💻 FACEBOOK FEED PREVIEW:");
   console.log("-----------------------------------------");
   console.log("🔗 LINK ATTACHED:");
-  console.log(`   https://relifish.store/blog/${campaignData.slug}?utm_source=facebook&utm_medium=social&utm_campaign=${campaignData.slug}`);
+  console.log(`   https://www.relifish.com/blog/${campaignData.slug}?utm_source=facebook&utm_medium=social&utm_campaign=${campaignData.slug}`);
   console.log("\n📝 FB COPY:");
   console.log(campaignData.social_caption_fb);
   console.log("-----------------------------------------");
@@ -129,7 +129,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log("Testing Meta API publication simulation...");
   publishToMeta({
     slug: "why-fish-curry-doesnt-taste-same-anymore-mumbai",
-    social_caption_ig: "Your Sunday Fish Curry didn't change. Your fish did. 🐟\n\nDirect mandi catch to your doorstep in 4 hours.\n\n👉 Join the waitlist: relifish.store\n#Thane #HiranandaniEstate",
+    social_caption_ig: "Your Sunday Fish Curry didn't change. Your fish did. 🐟\n\nDirect mandi catch to your doorstep in 4 hours.\n\n👉 Join the waitlist: www.relifish.com\n#Thane #HiranandaniEstate",
     social_caption_fb: "Mumbai families deserve same-day fresh fish instead of 3-day cold warehouse items. Browse local independent sellers directly with Relifish.",
     target_locality: "Thane"
   }, ["public/relifish-slide3-moat.png", "public/relifish-slide5-cta.png"]);

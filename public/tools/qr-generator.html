@@ -751,7 +751,7 @@
             </div>
             <div class="flyer-mock-body">
               <div class="flyer-mock-qr-wrap">
-                <img class="flyer-qr-preview" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Frelifish.store%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dfold_brochure%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4" alt="Flyer QR Preview">
+                <img class="flyer-qr-preview" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fwww.relifish.com%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dfold_brochure%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4" alt="Flyer QR Preview">
               </div>
               <div class="flyer-mock-text">Scan To Order</div>
             </div>
@@ -764,7 +764,7 @@
         <div class="qr-details">
           <div class="qr-detail-row">
             <span class="qr-detail-lbl">Target URL:</span>
-            <span class="qr-detail-val"><code>relifish.store/</code></span>
+            <span class="qr-detail-val"><code>www.relifish.com/</code></span>
           </div>
           <div class="qr-detail-row">
             <span class="qr-detail-lbl">Source / Medium:</span>
@@ -807,7 +807,7 @@
               <div class="hanger-mock-logo">Relifish</div>
               <span class="hanger-mock-badge">Free Delivery</span>
               <div class="hanger-mock-qr-wrap">
-                <img class="hanger-qr-preview" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Frelifish.store%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dhanger%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4" alt="Hanger QR Preview">
+                <img class="hanger-qr-preview" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fwww.relifish.com%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dhanger%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4" alt="Hanger QR Preview">
               </div>
               <div class="hanger-mock-text">Scan QR For Discount</div>
               <div class="hanger-mock-cta">Hang on Handle</div>
@@ -818,7 +818,7 @@
         <div class="qr-details">
           <div class="qr-detail-row">
             <span class="qr-detail-lbl">Target URL:</span>
-            <span class="qr-detail-val"><code>relifish.store/</code></span>
+            <span class="qr-detail-val"><code>www.relifish.com/</code></span>
           </div>
           <div class="qr-detail-row">
             <span class="qr-detail-lbl">Source / Medium:</span>
@@ -856,7 +856,7 @@
           
           <div class="form-group">
             <label for="qr-data">Embed URL (Full link with UTM parameters)</label>
-            <input type="text" id="qr-data" value="https://relifish.store/?utm_source=offline_qr&utm_medium=fold_brochure&utm_campaign=pomfret_cover&utm_content=fish_fold_design" placeholder="e.g. https://relifish.store/shop">
+            <input type="text" id="qr-data" value="https://www.relifish.com/?utm_source=offline_qr&utm_medium=fold_brochure&utm_campaign=pomfret_cover&utm_content=fish_fold_design" placeholder="e.g. https://www.relifish.com/shop">
           </div>
 
           <div class="form-row">
@@ -934,7 +934,7 @@
           <div class="qr-canvas-holder">
             <canvas id="custom-qr-canvas"></canvas>
           </div>
-          <div id="preview-url-tag" style="font-size: 0.85rem; font-weight: 700; color: white; word-break: break-all; margin-bottom: 0.5rem;">relifish.store/shop</div>
+          <div id="preview-url-tag" style="font-size: 0.85rem; font-weight: 700; color: white; word-break: break-all; margin-bottom: 0.5rem;">www.relifish.com/shop</div>
           <div class="qr-tip">
             💡 <strong>ECC High (Level H)</strong> allows up to 30% of the QR code to be damaged or dirty without breaking the scan. Highly recommended for physical flyer prints.
           </div>
@@ -955,14 +955,14 @@
     // Campaign QR Presets data
     const campaignPresets = {
       flyer: {
-        url: "https://relifish.store/?utm_source=offline_qr&utm_medium=fold_brochure&utm_campaign=pomfret_cover&utm_content=fish_fold_design",
+        url: "https://www.relifish.com/?utm_source=offline_qr&utm_medium=fold_brochure&utm_campaign=pomfret_cover&utm_content=fish_fold_design",
         fg: "#0a2472",
         bg: "#ffffff",
         ecc: "H",
         name: "relifish_flyer_qr"
       },
       hanger: {
-        url: "https://relifish.store/?utm_source=offline_qr&utm_medium=hanger&utm_campaign=pomfret_cover&utm_content=fish_fold_design",
+        url: "https://www.relifish.com/?utm_source=offline_qr&utm_medium=hanger&utm_campaign=pomfret_cover&utm_content=fish_fold_design",
         fg: "#0a2472",
         bg: "#ffffff",
         ecc: "H",
@@ -1071,7 +1071,7 @@
       const marginFactor = parseInt(document.getElementById("qr-margin").value);
 
       customQRGenerator.set({
-        value: data || "https://relifish.store",
+        value: data || "https://www.relifish.com",
         foreground: fg,
         background: bg,
         level: ecc,
@@ -1204,7 +1204,7 @@
 
     // Download customizable QR Code at the selected size
     function downloadCustomQR() {
-      const data = document.getElementById("qr-data").value || "https://relifish.store";
+      const data = document.getElementById("qr-data").value || "https://www.relifish.com";
       const fg = document.getElementById("qr-fg-picker").value;
       const bg = document.getElementById("qr-bg-picker").value;
       const ecc = document.getElementById("qr-ecc").value;

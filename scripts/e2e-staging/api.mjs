@@ -1,5 +1,5 @@
 // Tiny API driver for the staging preview.
-export const BASE = process.env.BASE || "https://stage.relifish.store";
+export const BASE = process.env.BASE || "https://stage.relifish.com";
 // Signed sessions from login(); sent on every call like the site's AppShell does.
 export const sessions = {};
 export async function call(path, body, method = body ? "POST" : "GET") {

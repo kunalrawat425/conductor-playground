@@ -43,8 +43,8 @@ import { validateIndianPhone } from "@/lib/indian-phone";
 | Seller auth | `src/lib/seller-auth.ts` | No direct `localStorage.getItem("rlf_seller_id")` in pages |
 | Push notifications | `src/lib/push.ts` + `src/lib/seller-push.ts` | No direct VAPID/push logic in API routes |
 | Supabase client | `src/lib/supabase.ts` | One client instance, never `createClient()` in a page |
-| Site origin / absolute URLs | `src/lib/server/site-origin.ts` | No hardcoded `https://relifish.store` strings |
-| Canonical URLs | `src/lib/brand.ts` (`SITE_URL`, `canonicalFor`) | Canonical host is `https://www.relifish.store`; never build canonicals by hand |
+| Site origin / absolute URLs | `src/lib/server/site-origin.ts` | No hardcoded site hosts (prod https://www.relifish.com, stage https://stage.relifish.com) |
+| Canonical URLs | `src/lib/brand.ts` (`SITE_URL`, `canonicalFor`) | Canonical host is `https://www.relifish.com`; never build canonicals by hand |
 | Seller links + slugs | `src/lib/seller-display.ts` (`sellerHref`, `sellerNameToSlug`) | No inline slug regex in pages or components |
 | Campaign (UTM) attribution | `src/lib/utm.ts` (`pickUtm`) | Treat client UTM as untrusted; never let it fail an order |
 

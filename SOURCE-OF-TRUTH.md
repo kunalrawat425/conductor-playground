@@ -9,10 +9,10 @@
 **Name:** Relifish  
 **Category:** Hyperlocal fresh fish marketplace (Thane, South Mumbai, Navi Mumbai)  
 **Model:** Pure marketplace — buyers pay online via Razorpay when they order; **Relifish currently charges zero commission** (early growth phase). Relifish does NOT source, catch, or deliver fish. Sellers do.  
-**Website:** relifish.store  
+**Website:** www.relifish.com (relifish.store redirects there)  
 **WhatsApp:** 9152207607 (⚠️ NOT 9870619974 — that number is retired)  
 **Hours:** 7:30 AM – 9:00 PM  
-**Email:** relifishstore@gmail.com (contact@relifish.store has no mailbox yet: relifish.store has no MX record, so mail to it bounces)  
+**Email:** relifishstore@gmail.com (no inbox on relifish.com or relifish.store yet; transactional mail is sent from noreply@relifish.com via Resend)  
 **Instagram:** @relifish.store  
 
 ---
@@ -95,9 +95,9 @@ Do NOT claim (no evidence yet): "within 2 km", "verified", "rated" / star rating
 | Field | Value |
 |-------|-------|
 | WhatsApp | 9152207607 |
-| Website | relifish.store |
+| Website | www.relifish.com (relifish.store redirects) |
 | Instagram | @relifish.store |
-| Email | relifishstore@gmail.com (until relifish.store email is set up) |
+| Email | relifishstore@gmail.com (until a relifish.com inbox is set up) |
 | Hours | 7:30 AM – 9:00 PM |
 | Commission | 0% currently (early growth — no fee charged to sellers or buyers) |
 
