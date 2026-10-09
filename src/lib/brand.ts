@@ -17,8 +17,8 @@ export const LOGO_URL: string = import.meta.env.PUBLIC_LOGO_URL || DEFAULT_LOGO;
 
 export const BRAND_NAME: string = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
-/** Canonical origin. relifish.store (apex) 308-redirects here via vercel.json. */
-export const SITE_URL = "https://www.relifish.store";
+/** Canonical origin. relifish.com, relifish.store and www.relifish.store 308-redirect here (Vercel domains + vercel.json). */
+export const SITE_URL = "https://www.relifish.com";
 
 /** One URL per page for Google: www host, no query string, no trailing slash (root stays "/"). */
 export function canonicalFor(pathname: string): string {

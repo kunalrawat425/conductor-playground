@@ -47,7 +47,7 @@ function shell(content: string): string {
               📞 <a href="tel:+919152207607" style="color:#0066cc;text-decoration:none;">${SUPPORT_PHONE}</a> (10:30 AM – 7:30 PM)
             </div>
             <div style="font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.6;">
-              <a href="https://www.relifish.store" style="color:#94a3b8;text-decoration:none;">www.relifish.store</a>
+              <a href="https://www.relifish.com" style="color:#94a3b8;text-decoration:none;">www.relifish.com</a>
               &nbsp;·&nbsp;
               <a href="https://www.instagram.com/relifish.store/" target="_blank" style="color:#0066cc;text-decoration:none;font-weight:600;">📸 @relifish.store</a>
               &nbsp;·&nbsp; © ${new Date().getFullYear()} Relifish. All rights reserved.
@@ -204,7 +204,7 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     ${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}
     <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("Track Order →", "https://www.relifish.store/track")}
+      ${ctaButton("Track Order →", "https://www.relifish.com/track")}
     </div>
   `);
 }
@@ -247,7 +247,7 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
     ${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}
     <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
+      ${ctaButton("View Orders →", "https://www.relifish.com/dashboard/orders")}
     </div>
   `);
 }
@@ -456,7 +456,7 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
     ${fulfilmentBlock}
 
     <div style="text-align:center;margin-top:20px;">
-      ${ctaButton("Track Order →", `https://www.relifish.store/track/${primary_order_id}`)}
+      ${ctaButton("Track Order →", `https://www.relifish.com/track/${primary_order_id}`)}
     </div>
 
     <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:18px;line-height:1.8;">

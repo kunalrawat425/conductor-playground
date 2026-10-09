@@ -7,7 +7,7 @@ import { AREAS, sellersForArea } from "../lib/areas";
 
 export const prerender = false;
 
-const SITE = "https://www.relifish.store";
+const SITE = "https://www.relifish.com";
 
 export const GET: APIRoute = async () => {
   const today = new Date().toISOString().split("T")[0];

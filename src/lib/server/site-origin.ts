@@ -4,7 +4,7 @@
 export function siteOriginFromEnv(): string {
   const env = import.meta.env?.VERCEL_ENV || process.env.VERCEL_ENV || "";
   if (env === "production") {
-    return "https://www.relifish.store";
+    return "https://www.relifish.com";
   }
   if (env === "preview") {
     return "https://stage.relifish.store";
@@ -22,7 +22,7 @@ export function siteOriginFromEnv(): string {
     return "https://stage.relifish.store";
   }
 
-  return "https://www.relifish.store";
+  return "https://www.relifish.com";
 }
 
 export function absoluteUrl(path: string): string {

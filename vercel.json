@@ -27,7 +27,29 @@
           "value": "relifish.store"
         }
       ],
-      "destination": "https://www.relifish.store/:path",
+      "destination": "https://www.relifish.com/:path",
+      "permanent": true
+    },
+    {
+      "source": "/:path((?!api/|sw\\.js$).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.relifish.store"
+        }
+      ],
+      "destination": "https://www.relifish.com/:path",
+      "permanent": true
+    },
+    {
+      "source": "/:path((?!api/|sw\\.js$).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "relifish.com"
+        }
+      ],
+      "destination": "https://www.relifish.com/:path",
       "permanent": true
     },
     {

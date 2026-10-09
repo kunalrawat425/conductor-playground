@@ -145,7 +145,7 @@ export const POST: APIRoute = async ({ request }) => {
                   <p style="font-size:14px;color:#666;line-height:1.5;margin:0 0 16px;">
                     ${areaCount && areaCount > 1 ? `<strong>${areaCount} people</strong> near you are already waiting. ` : ""}The more interest we see, the faster we launch in your area.
                   </p>
-                  <a href="https://www.relifish.store" style="display:inline-block;background:#0066cc;color:white;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">Browse Relifish</a>
+                  <a href="https://www.relifish.com" style="display:inline-block;background:#0066cc;color:white;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">Browse Relifish</a>
                   <p style="font-size:12px;color:#999;margin:20px 0 0;line-height:1.5;">
                     Questions? Reply to this email or reach us at relifishstore@gmail.com<br/>
                     — Team Relifish, Mumbai
