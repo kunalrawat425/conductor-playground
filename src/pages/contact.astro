@@ -1,0 +1,30 @@
+---
+import LandingLayout from "../layouts/LandingLayout.astro";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+---
+<LandingLayout
+  title={`Contact Us · ${brandName}`}
+  description={`Contact ${brandName}: WhatsApp 9152207607, email relifishstore@gmail.com, 7:30 AM to 9 PM. Help with orders, payments, refunds and selling on ${brandName}.`}
+>
+  <div class="legal-page">
+    <div class="legal-header">
+      <h1>Contact Us</h1>
+      <p class="legal-updated">Last updated: October 2026</p>
+    </div>
+    <div class="legal-body">
+      <p>{brandName} is an online marketplace where buyers order fish from independent local sellers in Thane, South Mumbai and Navi Mumbai. For help with an order, a payment, a refund, or selling on {brandName}, contact us:</p>
+      <ul>
+        <li><strong>WhatsApp / phone:</strong> <a href="https://wa.me/919152207607">+91 9152207607</a></li>
+        <li><strong>Email:</strong> <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></li>
+        <li><strong>Hours:</strong> 7:30 AM to 9 PM, every day</li>
+        <li><strong>Based in:</strong> Mumbai, Maharashtra, India</li>
+      </ul>
+      <h2>Order questions</h2>
+      <p>Please include your order ID (shown on your order tracking page) so we can help faster. For delivery timing, you can also message the seller directly from your order page.</p>
+      <h2>Payments and refunds</h2>
+      <p>Payments are processed by Razorpay. See our <a href="/refund-policy">Refund &amp; Cancellation Policy</a> and <a href="/shipping-policy">Delivery Policy</a>.</p>
+      <h2>Sellers</h2>
+      <p>To sell on {brandName}, see <a href="/for-sellers">Sell on {brandName}</a> or message us on WhatsApp.</p>
+    </div>
+  </div>
+</LandingLayout>
