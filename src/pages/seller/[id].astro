@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import AppShell from "../../components/ui/AppShell.astro";
+import SeoLinks from "../../components/ui/molecules/SeoLinks.astro";
 import SellerHero from "../../components/ui/organisms/SellerHero.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 import LoginSheet from "../../components/ui/organisms/LoginSheet.astro";
@@ -15,6 +16,7 @@ import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
 import { cleanSellerName, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
 import { SITE_URL } from "../../lib/brand";
+import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
 
 const { id } = Astro.params;
@@ -47,7 +49,8 @@ if (notFound) {
 }
 
 const sellerName = cleanSellerName(seller?.name) || "Seller";
-const sellerLocation = stripContactInfo(seller?.location_name) || "";
+// Live area from the seller's coordinates (e.g. "Thane") beats a vague profile text like "Mumbai".
+const sellerLocation = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const SITE = SITE_URL;
 const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
 // Per-fish product pages live under /s/<slug>/<species> (single-product pages for Google).
@@ -237,7 +240,7 @@ const tags = [
 ].filter(Boolean) as string[];
 ---
 <AppShell
-  title={`${sellerName}${sellerLocation ? ` ${sellerLocation}` : ""} — Today's Menu & Fish Home Delivery | Relifish`}
+  title={`${sellerName}${sellerLocation ? `, ${sellerLocation}` : ""}: Today's Fish Menu & Home Delivery | Relifish`}
   description={(() => {
     const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
     return `Order fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""}: ${speciesList || "pomfret, surmai, rawas, prawns"}. See today's menu, pre-order tonight for tomorrow's catch, home delivery or pickup.`;
@@ -251,19 +254,19 @@ const tags = [
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": ["FoodEstablishment", "LocalBusiness"],
+        "@type": "Store",
         "@id": `${canonicalUrl}#seller`,
         "name": sellerName,
-        "description": (() => { const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 5).join(", "); return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`; })(),
+        "description": (() => { const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 5).join(", "); return `Order same-day or pre-order for tomorrow (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""} on Relifish, with no platform markup.`; })(),
         "url": canonicalUrl,
         "image": seller.store_image_url || "https://www.relifish.com/og-image.png",
         "priceRange": "₹₹",
-        "servesCuisine": "Seafood",
         "currenciesAccepted": "INR",
-        "paymentAccepted": "Cash, UPI, Credit Card",
+        "paymentAccepted": "UPI, Credit Card, Debit Card, Net Banking",
         "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressRegion": "Maharashtra", "addressCountry": "IN" },
-        "geo": seller.lat && seller.lng ? { "@type": "GeoCoordinates", "latitude": seller.lat, "longitude": seller.lng } : undefined,
-        "potentialAction": { "@type": "OrderAction", "target": { "@type": "EntryPoint", "urlTemplate": canonicalUrl, "actionPlatform": ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"] }, "deliveryMethod": ["http://purl.org/goodrelations/v1#DeliveryModePickUp", "http://purl.org/goodrelations/v1#DeliveryModeDirectDownload"] },
+        "geo": seller.lat && seller.lng ? { "@type": "GeoCoordinates", "latitude": Number(Number(seller.lat).toFixed(2)), "longitude": Number(Number(seller.lng).toFixed(2)) } : undefined,
+        "areaServed": seller.lat && seller.lng && seller.delivery_rad ? { "@type": "GeoCircle", "geoMidpoint": { "@type": "GeoCoordinates", "latitude": Number(Number(seller.lat).toFixed(2)), "longitude": Number(Number(seller.lng).toFixed(2)) }, "geoRadius": `${Number(seller.delivery_rad)} km` } : undefined,
+        "potentialAction": { "@type": "OrderAction", "target": { "@type": "EntryPoint", "urlTemplate": canonicalUrl, "actionPlatform": ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"] }, "deliveryMethod": ["http://purl.org/goodrelations/v1#DeliveryModePickUp", "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"] },
         "openingHours": seller.opens_at && seller.closes_at
           ? `${openDays.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 2)).join(",") || "Mo,Tu,We,Th,Fr,Sa,Su"} ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}`
           : undefined,
@@ -457,6 +460,7 @@ const tags = [
       </p>
     </div>
   )}
+  {!notFound && <SeoLinks />}
 </AppShell>
 
 <style is:global>

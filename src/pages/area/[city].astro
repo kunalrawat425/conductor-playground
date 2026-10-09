@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 
+import SeoLinks from "../../components/ui/molecules/SeoLinks.astro";
 import AppShell from "../../components/ui/AppShell.astro";
 import SellerCard from "../../components/ui/molecules/SellerCard.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
@@ -97,7 +98,7 @@ const faqs = [
   {
     q: `Is there fresh fish delivery in ${area.name}?`,
     a: hasSellers
-      ? `Yes. ${sellers.length === 1 ? "One seller" : `${sellers.length} sellers`} on Relifish serve ${area.name}: ${listJoin(sellerNames)}. Each seller sets their own delivery radius, delivery fee and minimum order, and some also offer pickup.`
+      ? `Yes. ${sellers.length === 1 ? "One seller" : `${sellers.length} sellers`} on Relifish ${sellers.length === 1 ? "serves" : "serve"} ${area.name}: ${listJoin(sellerNames)}. Each seller sets their own delivery radius, delivery fee and minimum order, and some also offer pickup.`
       : `Not yet. No seller on Relifish delivers to ${area.name} right now. Join the waitlist and we will let you know when one does.`,
   },
   {
@@ -144,8 +145,19 @@ const jsonLd = {
       "name": "Relifish",
       "url": "https://www.relifish.com",
       "logo": "https://www.relifish.com/favicon.png",
-      "description": "Mumbai's hyperlocal fresh fish marketplace"
+      "description": "Hyperlocal fish marketplace: order fish online from local sellers in Thane, South Mumbai and Navi Mumbai.",
+      "sameAs": ["https://www.instagram.com/relifish.store/", "https://wa.me/919152207607"],
+      "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "telephone": "+91-9152207607", "email": "relifishstore@gmail.com", "areaServed": "IN", "availableLanguage": ["en", "hi", "mr"] }
     },
+    hasSellers ? {
+      "@type": "Service",
+      "@id": `${canonicalUrl}#service`,
+      "serviceType": "Fresh fish online ordering and delivery from local sellers",
+      "name": areaTitle,
+      "provider": { "@id": "https://www.relifish.com/#org" },
+      "areaServed": { "@type": "Place", "name": area.name },
+      "url": canonicalUrl,
+    } : undefined,
     hasSellers ? {
       "@type": "ItemList",
       "name": `Fish sellers serving ${area.name} on Relifish`,
@@ -161,7 +173,7 @@ const jsonLd = {
 ---
 
 <AppShell
-  title={`${areaTitle} — Surmai, Pomfret, Prawns from Local Sellers | Relifish`}
+  title={`Fish Delivery in ${area.name}: Today's Sellers & Prices | Relifish`}
   description={areaDescription}
   needsMap={false}
   jsonLd={jsonLd}
@@ -255,4 +267,5 @@ const jsonLd = {
     ))}
     <p style="font: 400 13px/1.5 Inter; margin: 12px 0 0 0;"><a href="/blog/first-relifish-order-guide-thane">How ordering on Relifish works →</a></p>
   </section>
+  <SeoLinks />
 </AppShell>

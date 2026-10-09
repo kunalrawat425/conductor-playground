@@ -27,7 +27,7 @@ Most sea fish in Mumbai is sold at landing centres, where wholesalers and local 
 
 ## 3. Season
 
-Fish have seasons. Bombil and bangda are plentiful at some times of year and scarce at others. During **Maharashtra's monsoon fishing ban (June 1 to July 31)**, mechanised boats don't go to sea, so sea fish is scarce and prices rise. See our [monsoon fishing ban guide](/blog/monsoon-fish-guide-thane-fresh-fish-june-july).
+Fish have seasons. Bombil and bangda are plentiful at some times of year and scarce at others. During **Maharashtra's monsoon fishing ban (from June 1; extended to August 15 in 2026)**, mechanised boats don't go to sea, so sea fish is scarce and prices rise. See our [monsoon fishing ban guide](/blog/monsoon-fish-guide-thane-fresh-fish-june-july).
 
 ## 4. Demand
 
