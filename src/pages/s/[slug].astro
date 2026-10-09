@@ -5,35 +5,42 @@
 export const prerender = false;
 
 import AppShell from "../../components/ui/AppShell.astro";
-import SellerHero from "../../components/ui/organisms/SellerHero.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
-import LoginSheet from "../../components/ui/organisms/LoginSheet.astro";
-import CheckoutSheet from "../../components/ui/organisms/CheckoutSheet.astro";
-import CartStackSheet from "../../components/ui/organisms/CartStackSheet.astro";
-import AddressPickerSheet from "../../components/ui/organisms/AddressPickerSheet.astro";
-import Toast from "../../components/ui/atoms/Toast.astro";
-import Modal from "../../components/ui/atoms/Modal.astro";
-import { getSellerBySlug, getSellerListings, sellerNameToSlug } from "../../lib/supabase";
-import { getSpeciesDisplay } from "../../lib/species";
-import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
+import { getSellerBySlug } from "../../lib/supabase";
 
 const { slug } = Astro.params;
-const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
 let seller: any = null;
-let listings: any[] = [];
-let notFound = false;
+let unavailable = false;
 try {
-  seller = await getSellerBySlug(slug!);
-  if (seller) {
-    listings = await getSellerListings(seller.id);
-    listings = listings.filter((l: any) => !!(l.pricing_options?.length));
-  } else notFound = true;
-} catch { notFound = true; }
-
-if (notFound) {
-  return Astro.redirect("/shop", 302);
+  seller = await getSellerBySlug(slug!.toLowerCase());
+} catch {
+  unavailable = true; // DB error: not the same as "no such seller"
 }
 
-return Astro.rewrite(`/seller/${seller.id}`);
+if (seller) return Astro.rewrite(`/seller/${seller.id}`);
+
+// No 302 to /shop (Google reads that as a soft 404). Astro.rewrite("/404") is not
+// allowed here (404 page is prerendered), so render the state inline:
+// 404 when the seller doesn't exist / is inactive, 503 on a DB outage so Google retries
+// instead of dropping the page.
+Astro.response.status = unavailable ? 503 : 404;
+if (unavailable) Astro.response.headers.set("Retry-After", "120");
 ---
+<AppShell
+  title={unavailable ? "Temporarily unavailable · Relifish" : "Seller not found · Relifish"}
+  description="This seller isn't taking orders on Relifish right now."
+  noindex={true}
+  header={{ variant: "page", title: unavailable ? "Relifish" : "Not found", backHref: "/shop" }}
+  nav={{ active: "home" }}
+>
+  <div style="padding:24px 16px;">
+    <EmptyState
+      variant="server-error"
+      title={unavailable ? "Couldn't load this seller" : "Seller not found"}
+      description={unavailable ? "Please try again in a minute." : "This seller isn't taking orders on Relifish right now. Browse other local sellers."}
+      ctaText="Browse sellers"
+      ctaHref="/shop"
+    />
+  </div>
+</AppShell>

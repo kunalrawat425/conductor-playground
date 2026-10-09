@@ -1,0 +1,112 @@
+---
+// /s/<seller-slug>/<species> — one fish from one seller. A single-product page so Google can
+// show product snippets (price, availability). Ordering stays on the seller page (/s/<slug>).
+export const prerender = false;
+
+import AppShell from "../../../components/ui/AppShell.astro";
+import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
+import { getSellerBySlug, getSellerListings } from "../../../lib/supabase";
+import { cleanSellerName, stripContactInfo } from "../../../lib/seller-display";
+import { getSpeciesDisplay } from "../../../lib/species";
+import { formatBuyerMenuUnitSuffix } from "../../../lib/listing-pricing";
+import { SITE_URL, canonicalFor } from "../../../lib/brand";
+import { productJsonLd, speciesOffer } from "../../../lib/product-offer";
+
+const slug = (Astro.params.slug || "").toLowerCase();
+const species = (Astro.params.species || "").toLowerCase();
+
+let seller: any = null;
+let listings: any[] = [];
+let unavailable = false;
+try {
+  seller = await getSellerBySlug(slug);
+  if (seller) listings = (await getSellerListings(seller.id)).filter((l: any) => l.pricing_options?.length);
+} catch {
+  unavailable = true;
+}
+
+const forSpecies = listings.filter((l: any) => String(l.species).toLowerCase() === species);
+const offer = speciesOffer(forSpecies);
+const found = !!seller && !!offer;
+if (!found) {
+  // Same contract as /s/[slug]: 404 when it doesn't exist, 503 on a DB outage so Google retries.
+  Astro.response.status = unavailable ? 503 : 404;
+  if (unavailable) Astro.response.headers.set("Retry-After", "120");
+}
+
+const SELF_HOSTED = new Set(["pomfret", "surmai", "prawns", "bangda", "rawas"]);
+const fishName = getSpeciesDisplay(species);
+const sellerName = cleanSellerName(seller?.name) || "Seller";
+const area = stripContactInfo(seller?.location_name) || "";
+const sellerPath = `/s/${slug}`;
+const url = canonicalFor(`${sellerPath}/${species}`);
+const photo = forSpecies.find((l: any) => l.photo_url)?.photo_url || (SELF_HOSTED.has(species) ? `/fish/${species}.jpg` : null);
+const photoAbs = photo ? (photo.startsWith("http") ? photo : SITE_URL + photo) : undefined;
+const where = area ? ` in ${area}` : "";
+const statusText =
+  offer?.availability === "InStock" ? "Available today" : offer?.availability === "PreOrder" ? "Pre-order tonight for tomorrow's catch" : "Not available right now";
+const description = `${fishName} from ${sellerName}${where}. ${statusText}. See the price, then order for home delivery or pickup on Relifish.`;
+const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLowerCase()))].filter((s) => s !== species);
+---
+<AppShell
+  title={found ? `${fishName} from ${sellerName}${area ? ` ${area}` : ""} — Price & Fish Home Delivery | Relifish` : "Fish not found · Relifish"}
+  description={description}
+  canonical={url}
+  noindex={!found}
+  header={{ variant: "page", backHref: found ? sellerPath : "/shop", title: "Relifish" }}
+  nav={{ active: "home" }}
+  jsonLd={found ? {
+    "@context": "https://schema.org",
+    "@graph": [
+      productJsonLd({ name: `${fishName} — ${sellerName}`, description, url, image: photoAbs, sellerName, offer: offer! }),
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": `${SITE_URL}/` },
+          { "@type": "ListItem", "position": 2, "name": sellerName, "item": canonicalFor(sellerPath) },
+          { "@type": "ListItem", "position": 3, "name": fishName, "item": url },
+        ],
+      },
+    ],
+  } : undefined}
+>
+  {found ? (
+    <article style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+      {photo && <img src={photo} alt={`${fishName} from ${sellerName}`} style="width:100%;max-height:280px;object-fit:cover;border-radius:var(--v2-radius);" />}
+      <div>
+        <h1 style="font:800 22px/1.3 Inter;margin:0 0 4px;">{fishName} from {sellerName}{where}</h1>
+        <div style="font:600 13px Inter;color:var(--v2-ink-3);">{statusText}</div>
+      </div>
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
+        {forSpecies.flatMap((l: any) => l.pricing_options).map((o: any) => (
+          <li style="font:600 15px Inter;">
+            ₹{offer!.availability === "PreOrder" && o.preorder_price_min && o.preorder_price_max ? `${o.preorder_price_min}–${o.preorder_price_max}` : o.price}
+            <span style="font:400 13px Inter;color:var(--v2-ink-3);"> {formatBuyerMenuUnitSuffix(o)}</span>
+          </li>
+        ))}
+      </ul>
+      {offer!.availability === "PreOrder" && (
+        <p style="font:400 13px/1.5 Inter;color:var(--v2-ink-2);margin:0;">Pre-orders are priced as a range. You pay the top of the range; the seller sets the final price after the morning catch and any difference is refunded.</p>
+      )}
+      <a href={sellerPath} class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">Order from {sellerName}</a>
+      {otherFish.length > 0 && (
+        <section>
+          <h2 style="font:700 15px Inter;margin:8px 0 6px;">More fish from {sellerName}</h2>
+          <ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px;">
+            {otherFish.map((s) => <li><a href={`${sellerPath}/${s}`} style="font:600 13px Inter;color:var(--v2-brand);">{getSpeciesDisplay(s)}</a></li>)}
+          </ul>
+        </section>
+      )}
+    </article>
+  ) : (
+    <div style="padding:24px 16px;">
+      <EmptyState
+        variant="server-error"
+        title={unavailable ? "Couldn't load this fish" : "Fish not found"}
+        description={unavailable ? "Please try again in a minute." : "This seller doesn't have this fish on Relifish right now."}
+        ctaText="Browse sellers"
+        ctaHref="/shop"
+      />
+    </div>
+  )}
+</AppShell>

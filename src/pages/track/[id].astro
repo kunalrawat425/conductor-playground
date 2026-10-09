@@ -652,91 +652,23 @@ const { id } = Astro.params;
           <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:8px;">No changes possible after this point.</div>
         </div>`;
     } else if (["confirmed", "paid", "scheduled"].includes(o.status)) {
-      const hasCut = !!o.cut_style;
-      const hasNotes = !!o.buyer_notes;
-      const alreadySaved = hasCut || hasNotes;
-
-      const savedCuts = (o.cut_style || "").split(",").filter(Boolean);
-      const cutOptions = [
-        { value: "whole", label: "🐟 Whole" },
-        { value: "cleaned", label: "✂️ Cleaned" },
-        { value: "cut", label: "🔪 Cut" },
-      ];
-
-      if (alreadySaved) {
-        const cutDisplay = savedCuts.map(c => cutOptions.find(x => x.value === c)?.label || c).join(", ") || "Not set";
-        actions.innerHTML = `
-          <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-              <div style="font:700 13px Inter;color:var(--v2-ink);">✅ Preferences saved</div>
-              <button id="v2-od-edit-prefs" type="button" style="background:none;border:none;font:600 12px Inter;color:var(--v2-brand);cursor:pointer;">Edit</button>
-            </div>
-            <div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">${cutDisplay}</div>
-            ${hasNotes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
-          </div>`;
-        document.getElementById("v2-od-edit-prefs")?.addEventListener("click", () => showPrefsForm(o));
-      } else {
-        showPrefsForm(o);
-      }
-
-      function showPrefsForm(o) {
-        const sc = (o.cut_style || "").split(",").filter(Boolean);
-        actions.innerHTML = `
-          <div style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
-            <div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:10px;">✂️ Add preferences</div>
-            <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:12px;">Select how you want your fish prepared. You can choose multiple.</div>
-            <div style="margin-bottom:10px;">
-              <label style="font:600 12px Inter;color:var(--v2-ink-2);display:block;margin-bottom:6px;">Cut style</label>
-              <div style="display:flex;gap:8px;" id="v2-od-cut-opts">
-                ${cutOptions.map(opt => {
-                  const checked = sc.includes(opt.value);
-                  return `<label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid ${checked ? 'var(--v2-brand)' : 'var(--v2-border)'};border-radius:var(--v2-radius-sm);cursor:pointer;background:${checked ? 'var(--v2-brand-l)' : 'var(--v2-bg)'};font:500 12px Inter;color:var(--v2-ink);">
-                    <input type="checkbox" name="v2-od-cut" value="${opt.value}" ${checked ? 'checked' : ''} style="display:none;" /> ${opt.label}
-                  </label>`;
-                }).join("")}
-              </div>
-            </div>
-            <div style="margin-bottom:12px;">
-              <label style="font:600 12px Inter;color:var(--v2-ink-2);display:block;margin-bottom:6px;">Special request (optional)</label>
-              <textarea id="v2-od-notes" rows="2" placeholder="e.g. medium pieces, no head" style="width:100%;padding:10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);resize:vertical;outline:none;box-sizing:border-box;">${escape(o.buyer_notes || "")}</textarea>
-            </div>
-            <button id="v2-od-save-notes" class="v2-btn v2-btn-primary v2-btn-sm v2-btn-full">${alreadySaved ? 'Update preferences' : 'Save preferences'}</button>
-          </div>`;
-
-        actions.querySelectorAll('input[name="v2-od-cut"]').forEach(cb => {
-          cb.addEventListener("change", () => {
-            actions.querySelectorAll('#v2-od-cut-opts label').forEach(l => {
-              const inp = l.querySelector('input') as HTMLInputElement;
-              l.style.borderColor = inp?.checked ? 'var(--v2-brand)' : 'var(--v2-border)';
-              l.style.background = inp?.checked ? 'var(--v2-brand-l)' : 'var(--v2-bg)';
-            });
-          });
-        });
-
-        document.getElementById("v2-od-save-notes")?.addEventListener("click", async () => {
-          const checked = Array.from(actions.querySelectorAll('input[name="v2-od-cut"]:checked')).map((c: any) => c.value);
-          const cut = checked.join(",") || "";
-          const notes = (document.getElementById("v2-od-notes") as HTMLTextAreaElement)?.value?.trim() || "";
-          const btn = document.getElementById("v2-od-save-notes") as HTMLButtonElement;
-          btn.disabled = true;
-          btn.textContent = "Saving...";
-          try {
-            const res = await fetch("/api/orders/update-notes", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ order_id: o.id, buyer_id: localStorage.getItem("rlf_buyer_id"), cut_style: cut, buyer_notes: notes }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed");
-            window.v2Toast?.("success", "Preferences saved", "Seller will see your request");
-            load();
-          } catch (err) {
-            window.v2Toast?.("error", "Failed", err.message || "Could not save");
-            btn.disabled = false;
-            btn.textContent = "Save preferences";
-          }
-        });
-      }
+      // Preferences are chosen in checkout, before payment. After payment they are read-only here.
+      const cutLabels: Record<string, string> = { whole: "🐟 Whole", cleaned: "✂️ Cleaned", cut: "🔪 Cut" };
+      const cutDisplay = (o.cut_style || "").split(",").filter(Boolean).map((c: string) => cutLabels[c] || c).join(", ");
+      const headline = o.status === "paid"
+        ? "✅ Payment received — waiting for the seller to confirm"
+        : o.status === "confirmed"
+          ? "✅ Seller confirmed — your fish is being prepared"
+          : "🗓️ Order scheduled";
+      actions.innerHTML = `
+        <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
+          <div style="font:700 13px Inter;color:#059669;">${headline}</div>
+          ${cutDisplay || o.buyer_notes
+            ? `<div style="font:600 12px Inter;color:var(--v2-ink-2);margin-top:10px;">Your preferences</div>
+               ${cutDisplay ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-top:2px;">${cutDisplay}</div>` : ""}
+               ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ""}`
+            : ""}
+        </div>`;
 
       const paySlot = document.getElementById("v2-od-extra-payment");
       if (paySlot && o.status === "scheduled") {
@@ -942,14 +874,21 @@ const { id } = Astro.params;
             const verifyData = await verifyRes.json();
             if (!verifyRes.ok) throw new Error(verifyData.error || "Payment verification failed");
 
+            // Analytics "purchase" = money actually captured (checkout fires order_placed).
+            try {
+              const value = Number(createData.amount) / 100;
+              if (typeof gtag === "function") gtag("event", "purchase", { transaction_id: createData.razorpay_order_id || o.id, value, currency: "INR", seller_id: o.seller_id });
+              if (typeof fbq === "function") fbq("track", "Purchase", { value, currency: "INR" });
+            } catch {}
+
             // Success — show confirmation and reload
             root.innerHTML = `
               <div style="background:#f0fdf4;border:1.5px solid #86EFAC;border-radius:var(--v2-radius);padding:16px;margin-top:8px;text-align:center;">
                 <div style="font-size:32px;margin-bottom:8px;">✅</div>
-                <div style="font:800 15px Inter;color:#15803d;margin-bottom:4px;">Payment confirmed!</div>
-                <div style="font:400 12px Inter;color:#166534;">Your order is confirmed. The seller has been notified.</div>
+                <div style="font:800 15px Inter;color:#15803d;margin-bottom:4px;">Payment received!</div>
+                <div style="font:400 12px Inter;color:#166534;">The seller has been notified and will confirm your order shortly.</div>
               </div>`;
-            (window as any).v2Toast?.("success", "Payment confirmed!", "Your order is confirmed.");
+            (window as any).v2Toast?.("success", "Payment received", "Waiting for the seller to confirm.");
             setTimeout(() => load(), 1200);
 
           } catch (err: any) {
@@ -960,7 +899,7 @@ const { id } = Astro.params;
                 <div style="font:800 14px Inter;color:var(--v2-red);margin-bottom:6px;">⚠️ Payment received but confirmation failed</div>
                 <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:8px;">Your money was deducted. Please contact us immediately and share your payment ID.</div>
                 ${payId ? `<div style="font:600 11px Inter;color:var(--v2-ink-3);background:var(--v2-bg-2);padding:8px;border-radius:var(--v2-radius-sm);margin-bottom:8px;word-break:break-all;">Payment ID: ${payId}</div>` : ""}
-                <div style="font:500 12px Inter;color:var(--v2-ink);">📞 9152207607 (10:30 AM – 7:30 PM) &nbsp;·&nbsp; ✉️ relifishstore@gmail.com</div>
+                <div style="font:500 12px Inter;color:var(--v2-ink);">💬 WhatsApp 9152207607 (7:30 AM – 9 PM) &nbsp;·&nbsp; ✉️ contact@relifish.store</div>
               </div>`;
           }
         },
@@ -969,6 +908,7 @@ const { id } = Astro.params;
             // The in-page handler does not fire when the modal is closed or a UPI
             // app takes over — ask the server whether the payment went through.
             if (await syncPayment(o.id)) return;
+            try { if (typeof gtag === "function") gtag("event", "payment_dismissed", { order_id: o.id }); } catch {}
             btn.disabled = false;
             btn.style.display = "block";
             btn.textContent = `Pay ₹${fmt(balance)} →`;
@@ -977,6 +917,10 @@ const { id } = Astro.params;
         },
       });
 
+      try { if (typeof gtag === "function") gtag("event", "payment_started", { order_id: o.id, value: Number(createData.amount) / 100, currency: "INR" }); } catch {}
+      rzp.on?.("payment.failed", (resp: any) => {
+        try { if (typeof gtag === "function") gtag("event", "payment_failed", { order_id: o.id, reason: resp?.error?.reason || resp?.error?.code || "unknown" }); } catch {}
+      });
       rzp.open();
     });
   }

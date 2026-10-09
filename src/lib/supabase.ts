@@ -209,12 +209,8 @@ export async function getListingById(id: string) {
   return data as FishListing;
 }
 
-export function sellerNameToSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+export { sellerNameToSlug } from "./seller-display";
+import { sellerNameToSlug } from "./seller-display";
 
 export async function getSellerById(id: string) {
   const { data, error } = await supabase

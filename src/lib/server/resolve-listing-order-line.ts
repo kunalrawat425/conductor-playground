@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { istDayStartISO } from "../order-timing";
+import { sellerBlocked } from "../test-sellers";
 import {
   getListingOptionById,
   getListingPriceOptions,
@@ -98,8 +99,8 @@ export async function resolveListingOrderLine(
 
   // Nothing checked seller status at order time: unapproved or deactivated
   // sellers took orders through direct links. Test sellers stay inactive
-  // (hidden from every public list) but must accept orders for QA.
-  if (seller && (seller as any).is_active === false && !(seller as any).is_test) {
+  // (hidden from every public list) but accept orders for QA — never on production.
+  if (sellerBlocked(seller as any, (import.meta.env.VERCEL_ENV || process.env.VERCEL_ENV))) {
     return { ok: false, status: 400, error: "This seller is not taking orders right now." };
   }
 

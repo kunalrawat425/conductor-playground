@@ -113,10 +113,12 @@ You don't need to overthink this. Start with half a teaspoon of mashed rohu with
 
 That fish literacy is a gift that lasts a lifetime.
 
-**→ [Order today's fresh catch for your family at Relifish](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=child_fish_guide_thane)**
+**→ [Order today's fresh catch for your family at Relifish](https://www.relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=child_fish_guide_thane)**
 
 > 🐟 *Ordering for your child? [Browse sellers on Relifish](/shop) — select your fish and cleaning style directly with your seller.*
 
 ---
 
 *📦 Delivering to: Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali · Kalwa*
+
+**→ [See which local fish sellers deliver in Thane today](https://www.relifish.store/area/thane)**

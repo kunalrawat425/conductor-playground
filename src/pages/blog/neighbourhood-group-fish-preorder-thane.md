@@ -56,10 +56,12 @@ Here is why Thane societies are coordinating group orders:
 
 Bring the highest standard of seafood hygiene and convenience to your building. Connect with Relifish to set up your society's first Neighbourhood Pre-Order.
 
-**→ [Setup your society pre-order or browse daily catch](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=neighbourhood_group_fish_preorder_thane)**
+**→ [Setup your society pre-order or browse daily catch](https://www.relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=neighbourhood_group_fish_preorder_thane)**
 
 ---
 
 *📦 Currently serving: Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali*
 
 *📍 Serving Hiranandani Estate · Majiwada · Ghodbunder Road · Kasarvadavali — [check your area](/shop)*
+
+**→ [See which local fish sellers deliver in Thane today](https://www.relifish.store/area/thane)**

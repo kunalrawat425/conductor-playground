@@ -67,6 +67,8 @@ You do not need to wake up at 6 AM or settle for tasteless supermarket packets. 
 
 Pre-order by Thursday night, and the morning's catch is confirmed for your weekend lunch. Let us take care of the sourcing so you can focus on the cooking.
 
-**→ [Pre-order this Sunday's fresh catch on Relifish](https://relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=sunday_fish_problem_fixed)**
+**→ [Pre-order this Sunday's fresh catch on Relifish](https://www.relifish.store/shop?utm_source=blog&utm_medium=article&utm_campaign=sunday_fish_problem_fixed)**
 
 *📩 Have questions? [Contact us](mailto:relifishstore@gmail.com) or find your seller directly on the platform.*
+
+**→ [See which local fish sellers deliver in Thane today](https://www.relifish.store/area/thane)**

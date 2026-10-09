@@ -182,10 +182,12 @@ const MAX_ATTEMPTS = 3;
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+      try { if (typeof gtag === "function") gtag("event", "otp_sent", { role }); } catch {}
       const sentAt = Date.now();
       saveSession(phone, sentAt);
       enterStep2(phone, sentAt);
     } catch (err) {
+      try { if (typeof gtag === "function") gtag("event", "otp_failed", { role, step: "send" }); } catch {}
       window.v2Toast?.("error", "Failed to send OTP", err.message);
     } finally {
       btn.disabled = false;
@@ -217,6 +219,7 @@ const MAX_ATTEMPTS = 3;
       const data = await res.json();
 
       if (!res.ok || !data.success) {
+        try { if (typeof gtag === "function") gtag("event", "otp_failed", { role, step: "verify" }); } catch {}
         otpAttempts++;
         const left = MAX_ATTEMPTS - otpAttempts;
         const hint = getEl("hint");
@@ -235,6 +238,9 @@ const MAX_ATTEMPTS = 3;
       }
 
       // Verified
+      try { if (typeof gtag === "function") gtag("event", "otp_verified", { role }); } catch {}
+      // Analytics: first-time account (GA4 recommended sign_up; seller_signup for the supply side).
+      try { if (data.is_new && typeof gtag === "function") gtag("event", role === "seller" ? "seller_signup" : "sign_up", { method: "otp" }); } catch {}
       clearSession();
       clearInterval(countdownTimer);
 

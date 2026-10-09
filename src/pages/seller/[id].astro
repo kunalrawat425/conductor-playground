@@ -10,10 +10,12 @@ import CartStackSheet from "../../components/ui/organisms/CartStackSheet.astro";
 import AddressPickerSheet from "../../components/ui/organisms/AddressPickerSheet.astro";
 import Toast from "../../components/ui/atoms/Toast.astro";
 import Modal from "../../components/ui/atoms/Modal.astro";
-import { getSellerById, getSellerListings, sellerNameToSlug } from "../../lib/supabase";
+import { getSellerById, getSellerListings } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
-import { cleanSellerName, stripContactInfo } from "../../lib/seller-display";
+import { cleanSellerName, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
+import { SITE_URL } from "../../lib/brand";
+import { sellerBlocked } from "../../lib/test-sellers";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -21,11 +23,12 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 let seller: any = null;
 let listings: any[] = [];
 let notFound = false;
+let unavailable = false;
 try {
   seller = await getSellerById(id!);
   // Unapproved / deactivated sellers had live, orderable pages. Test sellers
-  // stay reachable by direct link only (they are inactive, so hidden from lists).
-  if (seller && (seller as any).is_active === false && !(seller as any).is_test) seller = null;
+  // stay reachable by direct link only on staging/previews — never on production.
+  if (sellerBlocked(seller as any, (import.meta.env.VERCEL_ENV || process.env.VERCEL_ENV))) seller = null;
   if (seller) {
     listings = await getSellerListings(id!);
     // Keep menu broad so buyers can still place pre-orders when the seller is in
@@ -33,24 +36,31 @@ try {
     // in the card renderer below.
     listings = listings.filter((l: any) => !!(l.pricing_options?.length));
   } else notFound = true;
-} catch { notFound = true; }
-if (notFound) Astro.response.status = 404;
+} catch (e) {
+  notFound = true;
+  unavailable = sellerLookupOutcome(e) === "unavailable";
+}
+if (notFound) {
+  // Real status codes so Google neither indexes "Seller not found" nor drops pages during an outage.
+  Astro.response.status = unavailable ? 503 : 404;
+  if (unavailable) Astro.response.headers.set("Retry-After", "120");
+}
 
 const sellerName = cleanSellerName(seller?.name) || "Seller";
 const sellerLocation = stripContactInfo(seller?.location_name) || "";
-const sellerSlug = seller ? sellerNameToSlug(seller.name) : null;
-const SITE = "https://www.relifish.store";
-const canonicalUrl = sellerSlug ? `${SITE}/s/${sellerSlug}` : `${SITE}/seller/${id}`;
+const SITE = SITE_URL;
+const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
+// Per-fish product pages live under /s/<slug>/<species> (single-product pages for Google).
+const fishBase = seller && sellerHref(seller.name, seller.id).startsWith("/s/") ? sellerHref(seller.name, seller.id) : null;
 
 // Server-side species photo map — same images as flyer (index.astro). Used in SSR cards.
 const _SB = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
 const ssrSpeciesPhotos: Record<string, string> = {
-  pomfret: "https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0",
-  surmai:  "https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline",
-  prawns:  "https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize",
-  bangda:  "https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize",
-  rawas:   "https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0",
-  crab:    "https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline",
+  pomfret: "/fish/pomfret.jpg",
+  surmai:  "/fish/surmai.jpg",
+  prawns:  "/fish/prawns.jpg",
+  bangda:  "/fish/bangda.jpg",
+  rawas:   "/fish/rawas.jpg",
   bombil:  _SB + "/ocean/11_bombil.jpg",
   shark:   _SB + "/bombay/shark.webp",
   salmon:  _SB + "/bombay/salmon.webp",
@@ -121,6 +131,7 @@ const isClosed = !isEffectivelyOpen && !isPreorderMode;
 
 // SEO listings: all listings with pricing (for schema + SSR cards — crawlable regardless of open state)
 const seoListings = [...listings];
+const fishSpecies = fishBase ? [...new Set(seoListings.map((l: any) => String(l.species).toLowerCase()))] : [];
 
 // Filter UI listings to match current mode (what buyers interact with)
 if (isEffectivelyOpen) {
@@ -227,12 +238,13 @@ const tags = [
 ].filter(Boolean) as string[];
 ---
 <AppShell
-  title={`${sellerName} — Fresh Fish${sellerLocation ? ` in ${sellerLocation}` : ''} | Relifish`}
+  title={`${sellerName}${sellerLocation ? ` ${sellerLocation}` : ""} — Today's Menu & Fish Home Delivery | Relifish`}
   description={(() => {
     const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
-    return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`;
+    return `Order fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""}: ${speciesList || "pomfret, surmai, rawas, prawns"}. See today's menu, pre-order tonight for tomorrow's catch, home delivery or pickup.`;
   })()}
   canonical={canonicalUrl}
+  noindex={notFound || seller?.is_active === false}
   needsMap={true}
   header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
   nav={{ active: "home" }}
@@ -277,6 +289,7 @@ const tags = [
               return {
                 "@type": "MenuItem",
                 "name": sp,
+                "url": fishBase ? `${SITE}${fishBase}/${String(l.species).toLowerCase()}` : undefined,
                 "description": l.description || `Fresh ${sp} from ${sellerName}`,
                 "image": l.photo_url || undefined,
                 "offers": firstOpt ? {
@@ -290,29 +303,6 @@ const tags = [
           }
         } : undefined
       },
-      seoListings.length > 0 ? {
-        "@type": "ItemList",
-        "name": `Fresh fish available from ${sellerName}`,
-        "numberOfItems": seoListings.length,
-        "itemListElement": seoListings.map((l: any, i: number) => ({
-          "@type": "ListItem",
-          "position": i + 1,
-          "item": {
-            "@type": "Product",
-            "name": speciesDisplayById[l.species] || l.species || "Fish",
-            "description": l.description || `Fresh ${l.species} from ${sellerName} in ${sellerLocation || "Mumbai"}`,
-            "image": l.photo_url || undefined,
-            "url": canonicalUrl,
-            "offers": (l.pricing_options || []).length > 0 ? {
-              "@type": "Offer",
-              "price": l.pricing_options[0].price,
-              "priceCurrency": "INR",
-              "seller": { "@type": "Organization", "name": sellerName },
-              "availability": isPreorderMode ? "https://schema.org/PreOrder" : "https://schema.org/InStock"
-            } : undefined
-          }
-        }))
-      } : undefined,
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -334,7 +324,7 @@ const tags = [
 
   {notFound ? (
     <div style="padding:24px 16px;margin-top:24px;">
-      <EmptyState variant="server-error" title="Seller not found" description="This seller doesn't exist or has been deactivated." ctaText="Browse sellers" ctaHref="/" />
+      <EmptyState variant="server-error" title={unavailable ? "Couldn't load this seller" : "Seller not found"} description={unavailable ? "Please try again in a minute." : "This seller doesn't exist or has been deactivated."} ctaText="Browse sellers" ctaHref="/shop" />
     </div>
   ) : (
     <>
@@ -459,6 +449,15 @@ const tags = [
 
   <div id="v2-cart-bar-mount"></div>
 
+  {!notFound && fishSpecies.length > 0 && (
+    <nav aria-label={`Fish from ${sellerName}`} style="padding:16px;">
+      <h2 style="font:700 14px Inter;margin:0 0 8px;">Fish from {sellerName}</h2>
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px;">
+        {fishSpecies.map((sp) => <li><a href={`${fishBase}/${sp}`} style="font:600 13px Inter;color:var(--v2-brand);">{speciesDisplayById[sp] || sp}</a></li>)}
+      </ul>
+    </nav>
+  )}
+
   <!-- Hyperlocal footer -->
   {!notFound && (
     <div style="background:var(--v2-bg-2);border-top:1px solid var(--v2-border);padding:20px 16px;text-align:center;">
@@ -562,14 +561,13 @@ const tags = [
 
     // Generic species stock photos — same images as landing page flyer. No seller-specific photos.
     const _BP = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
-    const _FP = "https://tse2.mm.bing.net/th/id/OIP.kRY5-5nTe-XuEuXFtdCLAQHaHa?r=0&w=474&h=379&c=7&p=0";
+    const _FP = "/fish/pomfret.jpg";
     const speciesPhotos = {
       pomfret: _FP,
-      surmai:  "https://images.openai.com/static-rsc-4/5DsTl_raA5Ts0fiv2uRhyirFzJuREYAhpF94Pn-oH12kmkOd93HJCXrLFkia2O_AXiEvUU-3i8ctrtM7YtDllXv1BNCeQwQk_T0oW1QIuQPDSzGQg9fr4-zJce5aiR7Bv_ixJM-6doar11vj8BivgJJK1jH7apCPokXylX7tfQs?purpose=inline",
-      prawns:  "https://images.openai.com/static-rsc-4/cfl516p8ysXe0UyiVpDHwj--9B2T9JC81gZXaEEkrwQte8vl1Efcz2U4WtGTz5StkWUTiMFb5JMG6-Z0h-hi0MwFFMNX1YbPhbopP19njiu3i9_WqQmVAIUp171THHYpUDzWfrHtscfnc4rU6vdAPaqyiWS5oia1OqWTw9jnZFXMhphco7d6D6BWt9aeinSE?purpose=fullsize",
-      bangda:  "https://images.openai.com/static-rsc-4/vaq8xVh9KIJ1D87qGjtk1xGxQAIpiPiSM8NSkXsPvz3hnpvlc9m1bO6Y-ynHXfqUTq1VSv1IhpzKakycE30YyWSr4nGJJReq_mNKMimxycCB8-DYoJBe-DPP-Pzy_fyFi9IpnXMwX8QU09j6kSFxsrcz_0s7ydoqwtsYzk12w4Z8jYLtO3-kIcOnGv1AOqwD?purpose=fullsize",
-      rawas:   "https://tse1.mm.bing.net/th/id/OIP.LA2wDw_T4oP1LegbNrQvQAHaE7?r=0&w=474&h=379&c=7&p=0",
-      crab:    "https://images.openai.com/static-rsc-4/Bn0aZnxK8kpTOtm8Qd1IwMeEJLpZbg73wPB3TnV_TKZybd_cwyfjMLDvdK7aS04yAq_ZKJoANel6EMmx-1v8X5RdlFTjxucZEqrOw9KTPpQdwxen1Lv8l3gwwfwLhftyfuRppr08cRlbHJAMzPWxjUGm6OH10DYw9s291Q1cTSzPZ0r0Qh_VSPjFK7xlqbd5?purpose=inline",
+      surmai:  "/fish/surmai.jpg",
+      prawns:  "/fish/prawns.jpg",
+      bangda:  "/fish/bangda.jpg",
+      rawas:   "/fish/rawas.jpg",
       bombil:  _BP + "/ocean/11_bombil.jpg",
       shark:   _BP + "/bombay/shark.webp",
       salmon:  _BP + "/bombay/salmon.webp",
@@ -1053,6 +1051,23 @@ const tags = [
       window.__relifishMinOrders[sellerId] = minOrder || 0;
     })();
 
+    // Cart-bar estimate. Mirrors computeDeliveryFee (src/lib/order-pricing.ts); the real fee is computed
+    // server-side at place-order. per_km uses the buyer's saved location (rlf_buyer_lat/lng) when known.
+    function estimateDeliveryFee(subtotal) {
+      if (!deliveryFeeEnabled) return { fee: 0, label: "free" };
+      if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) return { fee: 0, label: "free" };
+      if (deliveryFeeType === "per_km") {
+        let lat = null, lng = null;
+        try { lat = parseFloat(localStorage.getItem("rlf_buyer_lat") || ""); lng = parseFloat(localStorage.getItem("rlf_buyer_lng") || ""); } catch {}
+        if (sellerLat == null || sellerLng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return { fee: null, label: `₹${deliveryFeePerKm}/km` };
+        const R = 6371, dLat = (lat - sellerLat) * Math.PI / 180, dLng = (lng - sellerLng) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(sellerLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+        const fee = Math.max(0, Math.ceil(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * deliveryFeePerKm));
+        return { fee, label: `~₹${fee}` };
+      }
+      return deliveryFeeAmount > 0 ? { fee: deliveryFeeAmount, label: `₹${deliveryFeeAmount}` } : { fee: 0, label: "free" };
+    }
+
     function renderCart() {
       const c = Cart(); if (!c) return;
       const cart = c.getCart();
@@ -1070,6 +1085,7 @@ const tags = [
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
       const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
+      const feeEstimate = !isPreorderMode && hasDelivery ? estimateDeliveryFee(sellerSubtotal) : null;
 
       // Status line (pre-order window is pickup-only — don't imply a delivery savings perk)
       let statusLine = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""}`;
@@ -1077,6 +1093,11 @@ const tags = [
       if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
       else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
+      else if (feeEstimate) {
+        // Show the delivery fee before checkout so it is never a surprise at step 2.
+        statusLine += ` · Delivery ${feeEstimate.label}`;
+        if (feeEstimate.fee !== 0 && deliveryFreeAbove > sellerSubtotal) statusLine += ` · free above ₹${deliveryFreeAbove}`;
+      }
 
       cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -1088,7 +1109,7 @@ const tags = [
         </div>
         <div style="display:flex;gap:8px;">
           <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
-          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.4;pointer-events:none;' : ''}">Checkout →</button>
+          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.55;' : ''}">${belowMin ? `Add ₹${minOrder - sellerSubtotal} more` : "Checkout →"}</button>
         </div>
       </div>`;
 
@@ -1104,6 +1125,19 @@ const tags = [
       });
     }
 
+    // Resume marker survives the OTP login reload (and cross-seller hops). Only honoured for this
+    // seller and for 10 minutes, so a stale marker can never pop checkout open later.
+    const RESUME_KEY = "rf_resume_checkout";
+    function markResume(sid) { try { sessionStorage.setItem(RESUME_KEY, JSON.stringify({ sid, t: Date.now() })); } catch {} }
+
+    // "Checkout" inside View Cart (CartStackSheet) dispatches v2-cs-checkout. Nothing listened, so it was a dead button.
+    // Another seller's cart is checked out on that seller's own page (their hours, min order, delivery rules).
+    document.addEventListener("v2-cs-checkout", (e) => {
+      const sid = e.detail?.sellerId;
+      if (sid && sid !== sellerId) { markResume(sid); window.location.href = `/seller/${encodeURIComponent(sid)}`; return; }
+      openCheckout(sid);
+    });
+
     // Toast when cart switches seller (user added item from different seller page)
     window.addEventListener("v2-cart-seller-switched", () => {
       window.v2Toast?.("success", "Cart updated", "Previous seller's items cleared");
@@ -1116,8 +1150,11 @@ const tags = [
       const c = Cart(); if (!c) return;
       const sid = targetSellerId || sellerId;
       activeCheckoutSellerId = sid;
+      track("checkout_tap", { checkout_seller_id: sid });
+      const blocked = (reason) => track("checkout_blocked", { reason, checkout_seller_id: sid });
 
       if (sellerFullyClosed && sid === sellerId) {
+        blocked("closed");
         window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
         return;
       }
@@ -1149,10 +1186,21 @@ const tags = [
         }
       }
 
-      // Pre-flight: must be signed in
+      // Min-order gate for this page's seller (we only have minOrder for them). Checked before login so
+      // buyers aren't asked for an OTP only to be told the cart is too small.
+      if (sid === sellerId && minOrder && group.subtotal < minOrder) {
+        blocked("min_order");
+        window.v2Toast?.("error", "Below min order", `Add ₹${minOrder - group.subtotal} more to checkout`);
+        return;
+      }
+
+      // Pre-flight: must be signed in. The login sheet reloads the page on success, so remember
+      // that the buyer was checking out and reopen checkout after the reload (see resumeCheckout).
       let buyerId = null, buyerPhone = null;
       try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
       if (!buyerId || !buyerPhone) {
+        blocked("login");
+        markResume(sid);
         window.v2OpenSheet?.("seller-login-sheet");
         return;
       }
@@ -1164,13 +1212,6 @@ const tags = [
       }
       if (!fulfill.has_pickup && !fulfill.has_delivery) {
         window.v2Toast?.("error", "Unavailable", "This seller has no pickup or delivery enabled");
-        return;
-      }
-
-      // Min-order gate for the active seller (the one we're checking out).
-      // Only enforce for THIS page's seller since we only have minOrder for them.
-      if (sid === sellerId && minOrder && group.subtotal < minOrder) {
-        window.v2Toast?.("error", "Below min order", `Add ₹${minOrder - group.subtotal} more to checkout`);
         return;
       }
 
@@ -1232,6 +1273,7 @@ const tags = [
       preloadAddress();
 
       window.v2OpenSheet?.("seller-checkout");
+      track("begin_checkout", { checkout_seller_id: sid });
 
       // Track: checkout initiated
       const c2 = Cart();
@@ -1409,7 +1451,11 @@ const tags = [
 
       let buyerId = null, buyerPhone = null;
       try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
-      if (!buyerId || !buyerPhone) { window.v2OpenSheet?.("seller-login-sheet"); return; }
+      if (!buyerId || !buyerPhone) {
+        markResume(activeCheckoutSellerId || sellerId);
+        window.v2OpenSheet?.("seller-login-sheet");
+        return;
+      }
 
       const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');
       const orderType = methodEl?.value === "delivery" ? "delivery" : "pickup";
@@ -1442,6 +1488,9 @@ const tags = [
             buyer_id: buyerId,
             buyer_addr: selectedAddressId,
             order_type: orderType,
+            utm: (() => { try { return JSON.parse(localStorage.getItem("rf_utm") || "null"); } catch { return null; } })(),
+            cut_style: [...document.querySelectorAll('input[name="seller-checkout-cut"]:checked')].map((el) => el.value).join(","),
+            buyer_notes: (document.getElementById("seller-checkout-notes")?.value || "").trim(),
           }),
         });
         const data = await res.json();
@@ -1449,7 +1498,7 @@ const tags = [
 
         // Success: clear cart, show fullscreen success animation, redirect
         const orderTotal = (data.orders || []).reduce((s, o) => s + (Number(o.total_price) || 0) + (Number(o.delivery_fee) || 0), 0);
-        track("purchase", {
+        track("order_placed", {
           value: orderTotal,
           order_type: orderType,
           item_count: group.items.length,
@@ -1463,10 +1512,10 @@ const tags = [
         overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:var(--v2-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:v2-fade-in 300ms ease-out;";
         overlay.innerHTML = `
           <div style="width:80px;height:80px;border-radius:50%;background:var(--v2-green);display:flex;align-items:center;justify-content:center;font-size:40px;animation:v2-slide-up 400ms ease-out;">✓</div>
-          <div style="font:800 22px Inter;color:var(--v2-ink);margin-top:20px;">Order placed!</div>
-          <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-top:8px;">${group.items.length} item${group.items.length !== 1 ? "s" : ""} confirmed</div>
+          <div style="font:800 22px Inter;color:var(--v2-ink);margin-top:20px;">Almost done — pay to confirm</div>
+          <div style="font:400 14px Inter;color:var(--v2-ink-3);margin-top:8px;">Complete payment on the next screen to confirm</div>
           <div style="margin-top:24px;"><span class="v2-spinner v2-spinner-sm"></span></div>
-          <div style="font:500 12px Inter;color:var(--v2-ink-4);margin-top:8px;">Redirecting to your orders...</div>
+          <div style="font:500 12px Inter;color:var(--v2-ink-4);margin-top:8px;">Opening payment…</div>
         `;
         document.body.appendChild(overlay);
         const firstOrderId = Array.isArray(data.orders) && data.orders[0]?.id ? String(data.orders[0].id) : "";
@@ -1477,7 +1526,7 @@ const tags = [
         track("order_failed", { error: err?.message || "unknown" });
         window.v2Toast?.("error", "Failed", err.message || "Try again");
         btn.disabled = false;
-        btn.textContent = "Place order";
+        btn.textContent = "Place order & pay";
         // Re-enable back buttons and sheet close on error
         document.querySelectorAll("[data-co-back]").forEach((b) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
         document.querySelectorAll(".v2-sheet-close").forEach((b) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
@@ -1575,10 +1624,25 @@ const tags = [
     // First paint: render whatever we know (works even before cart module loads)
     render();
 
+    // Back from the OTP login reload: reopen checkout instead of making the buyer find it again.
+    function resumeCheckout() {
+      let m = null, signedIn = false;
+      try {
+        m = JSON.parse(sessionStorage.getItem(RESUME_KEY) || "null");
+        // Same check as the checkout login gate (both keys), or the gate would reopen login forever.
+        signedIn = !!localStorage.getItem("rlf_buyer_id") && !!localStorage.getItem("rlf_phone");
+      } catch {}
+      if (!m) return;
+      try { sessionStorage.removeItem(RESUME_KEY); } catch {}
+      if (!signedIn || m.sid !== sellerId || !(Date.now() - m.t < 10 * 60 * 1000)) return;
+      track("checkout_resumed", { checkout_seller_id: m.sid });
+      openCheckout(m.sid);
+    }
+
     // Once cart module loads: migrate legacy + hydrate from server, then re-render
     withCart((c) => {
       c.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
-      c.hydrateFromServer().then(() => render());
+      c.hydrateFromServer().then(() => { render(); resumeCheckout(); });
       render();
     });
   }
