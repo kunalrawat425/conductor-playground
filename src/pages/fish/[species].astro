@@ -3,6 +3,7 @@
 // Indexable only when HUB_MIN_SELLERS sellers list it (no thin pages); otherwise noindex,follow.
 export const prerender = false;
 
+import SeoLinks from "../../components/ui/molecules/SeoLinks.astro";
 import AppShell from "../../components/ui/AppShell.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 import { supabase } from "../../lib/supabase";
@@ -18,7 +19,7 @@ let unavailable = false;
 if (known) {
   try {
     const [sellersRes, listingsRes] = await Promise.all([
-      supabase.from("sellers").select("id, name, location_name").eq("is_active", true),
+      supabase.from("sellers").select("id, name, location_name, lat, lng").eq("is_active", true),
       supabase
         .from("fish_listings")
         .select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options")
@@ -39,17 +40,34 @@ else if (unavailable) {
 
 const name = known ? getSpeciesDisplay(species) : "Fish";
 const english = known?.english || "Fish";
+// "Surmai" (what buyers search) and "Kingfish" (from "Surmai (Kingfish)") for titles and FAQs.
+const local = species.charAt(0).toUpperCase() + species.slice(1);
+const englishOnly = english.match(/\(([^)]+)\)/)?.[1] || english;
+const SHELLFISH = new Set(["prawns", "crab", "lobster", "squid", "oyster", "clam"]);
+const freshTips = SHELLFISH.has(species)
+  ? ["Shells are firm and intact, not slimy or soft.", "Heads (if on) are firmly attached, with no black patches.", "The meat is firm and translucent, not mushy.", "It smells of the sea, not sour or of ammonia."]
+  : ["Eyes are clear and full, not cloudy or sunken.", "Gills are bright red or pink, not brown or grey.", "Flesh is firm and springs back when pressed.", "Skin is shiny, with scales still attached.", "It smells of the sea, not sour or of ammonia."];
 const indexable = !!known && !unavailable && rows.length >= HUB_MIN_SELLERS;
 const url = canonicalFor(`/fish/${species}`);
 const updatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const statusText = { InStock: "Available today", PreOrder: "Pre-order for tomorrow", OutOfStock: "Not today" } as const;
 const priceText = (r: HubRow) => (r.offer.lowPrice === r.offer.highPrice ? `₹${r.offer.lowPrice}` : `₹${r.offer.lowPrice}–₹${r.offer.highPrice}`);
+const kgText = (k: { low: number; high: number }) => (k.low === k.high ? `₹${k.low}/kg` : `₹${k.low}–₹${k.high}/kg`);
+const kgRows = rows.filter((r) => r.perKg);
+const kgAll = kgRows.length ? { low: Math.min(...kgRows.map((r) => r.perKg!.low)), high: Math.max(...kgRows.map((r) => r.perKg!.high)) } : null;
+const areasList = [...new Set(rows.map((r) => r.area).filter(Boolean))];
+const faqs = known && rows.length ? [
+  { q: `What is the price of ${local} per kg today?`, a: kgAll ? `On Relifish, ${local} is listed at ${kgText(kgAll)} today across ${kgRows.length === 1 ? "one local seller" : `${kgRows.length} local sellers`} (updated ${updatedAt} IST). Prices are set by each seller and change daily with the catch.` : `${local} is sold by the piece or pack on Relifish today; open a seller to see each option's price. Prices are set by each seller and change daily.` },
+  ...(englishOnly.toLowerCase() !== local.toLowerCase() ? [{ q: `What is ${local} called in English?`, a: `${local} is ${englishOnly} in English and ${known.marathi} in Marathi.` }] : []),
+  { q: `How do I know if ${local} is fresh?`, a: freshTips.join(" ") },
+  { q: `Where can I order ${local} online?`, a: `${rows.length === 1 ? "One local seller lists" : `${rows.length} local sellers list`} ${local} on Relifish${areasList.length ? `, in ${areasList.join(", ")}` : ""}. Order same-day while the seller is open, or pre-order for tomorrow; the seller delivers or keeps it ready for pickup.` },
+] : [];
 const description = rows.length
   ? `${english} on Relifish: ${rows.length} local ${rows.length === 1 ? "seller lists" : "sellers list"} it. See today's price and availability, then order same-day or pre-order for tomorrow.`
   : `${english} is not listed by any seller on Relifish right now.`;
 ---
 <AppShell
-  title={known ? `${name} — Buy Fresh ${english} Online from Local Sellers | Relifish` : "Fish not found · Relifish"}
+  title={known ? `${local} Price Today in Thane & Mumbai, Buy Online | Relifish` : "Fish not found · Relifish"}
   description={description}
   canonical={url}
   noindex={!indexable}
@@ -63,6 +81,10 @@ const description = rows.length
         "name": `${english} from local sellers on Relifish`,
         "itemListElement": rows.map((r, i) => ({ "@type": "ListItem", "position": i + 1, "name": `${english} — ${r.seller}`, "url": SITE_URL + r.href })),
       },
+      ...(faqs.length ? [{
+        "@type": "FAQPage",
+        "mainEntity": faqs.map((f) => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } })),
+      }] : []),
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -78,7 +100,7 @@ const description = rows.length
   ) : (
     <article style="padding:16px;display:flex;flex-direction:column;gap:16px;">
       <header>
-        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">{name}</h1>
+        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">Buy {local} ({englishOnly}) online from local sellers</h1>
         <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
           {rows.length
             ? `${english} (${known.marathi}) from ${rows.length === 1 ? "one local seller" : `${rows.length} local sellers`} on Relifish. Prices and availability come from each seller's live listing. Updated ${updatedAt} IST.`
@@ -102,27 +124,36 @@ const description = rows.length
                 <tr style="border-top:1px solid var(--v2-border);">
                   <td style="padding:8px 4px;"><a href={r.href} style="font-weight:700;color:var(--v2-brand);">{r.seller}</a>{r.area && <div style="color:var(--v2-ink-3);font-size:12px;">{r.area}</div>}</td>
                   <td style="padding:8px 4px;">{statusText[r.offer.availability]}</td>
-                  <td style="padding:8px 4px;white-space:nowrap;">{priceText(r)}</td>
+                  <td style="padding:8px 4px;white-space:nowrap;">{r.perKg ? kgText(r.perKg) : `${priceText(r)} / pack`}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p style="font:400 12px/1.5 Inter;color:var(--v2-ink-3);margin:8px 0 0;">Prices are for the seller's listed pack or weight; open a seller to see each option. Pre-order prices are a range: you pay the top, and the difference is refunded once the seller sets the final price.</p>
+          <p style="font:400 12px/1.5 Inter;color:var(--v2-ink-3);margin:8px 0 0;">Prices by weight are shown per kg (packs converted); fish sold by the piece shows the pack price. Open a seller to see each option. Pre-order prices are a range: you pay the top, and the difference is refunded once the seller sets the final price.</p>
         </section>
       )}
 
       <section>
         <h2 style="font:700 16px Inter;margin:0 0 8px;">How to check {english.toLowerCase()} is fresh</h2>
         <ol style="font:400 14px/1.7 Inter;margin:0;padding-left:20px;color:var(--v2-ink-2);">
-          <li>Eyes are clear and full, not cloudy or sunken.</li>
-          <li>Gills are bright red or pink, not brown or grey.</li>
-          <li>Flesh is firm and springs back when pressed.</li>
-          <li>Skin is shiny with scales attached; prawns are firm with heads still attached and no black patches.</li>
-          <li>It smells of the sea, not sour or of ammonia.</li>
+          {freshTips.map((t) => <li>{t}</li>)}
         </ol>
       </section>
+
+      {faqs.length > 0 && (
+        <section>
+          <h2 style="font:700 16px Inter;margin:0 0 8px;">{local}: questions buyers ask</h2>
+          {faqs.map((f) => (
+            <details style="border-top:1px solid var(--v2-border);padding:8px 0;">
+              <summary style="font:600 14px/1.5 Inter;cursor:pointer;">{f.q}</summary>
+              <p style="font:400 14px/1.6 Inter;color:var(--v2-ink-2);margin:6px 0 0;">{f.a}</p>
+            </details>
+          ))}
+        </section>
+      )}
 
       <p style="font:400 13px/1.5 Inter;margin:0;"><a href="/blog/first-relifish-order-guide-thane">How ordering on Relifish works →</a></p>
     </article>
   )}
+  <SeoLinks />
 </AppShell>
