@@ -18,7 +18,7 @@ export const GET: APIRoute = async () => {
   try {
     const [s, f] = await Promise.all([
       supabase.from("sellers").select("id, name, location_name").eq("is_active", true).or("is_test.is.null,is_test.eq.false").order("name"),
-      supabase.from("fish_listings").select("seller_id, species, pricing_options"),
+      supabase.from("fish_listings").select("seller_id, species, pricing_options").is("deleted_at", null),
     ]);
     if (s.error || f.error) throw s.error || f.error;
     sellers = s.data ?? [];

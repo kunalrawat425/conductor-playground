@@ -43,7 +43,7 @@ export const GET: APIRoute = async () => {
   ];
 
   // Per-fish product pages (/s/<slug>/<species>) for sellers with a latin slug.
-  const { data: fishRows } = await supabase.from("fish_listings").select("seller_id, species, pricing_options");
+  const { data: fishRows } = await supabase.from("fish_listings").select("seller_id, species, pricing_options").is("deleted_at", null);
   const speciesBySeller = new Map<string, Set<string>>();
   for (const r of fishRows || []) {
     if (!Array.isArray(r.pricing_options) || !r.pricing_options.length) continue; // fish page 404s without a price
