@@ -1,0 +1,38 @@
+---
+import LandingLayout from "../layouts/LandingLayout.astro";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+---
+<LandingLayout
+  title={`Delivery & Shipping Policy · ${brandName}`}
+  description={`How delivery and pickup work on ${brandName}: local sellers deliver within their own radius in Thane, South Mumbai and Navi Mumbai. Same-day or next-day, fees shown before you pay.`}
+>
+  <div class="legal-page">
+    <div class="legal-header">
+      <h1>Delivery &amp; Shipping Policy</h1>
+      <p class="legal-updated">Last updated: October 2026</p>
+    </div>
+    <div class="legal-body">
+      <h2>1. Who delivers</h2>
+      <p>{brandName} is a marketplace. Orders are fulfilled by the independent local seller you order from. The seller delivers the order to your address or keeps it ready for pickup at their shop, as you choose at checkout (where the seller offers that option). {brandName} does not ship by courier and does not ship outside the sellers' local areas.</p>
+
+      <h2>2. Where we deliver</h2>
+      <p>Sellers on {brandName} currently serve parts of Thane, South Mumbai (Tardeo) and Kamothe (Navi Mumbai). Each seller sets their own delivery radius. When you set your location, you only see sellers who can deliver to you or whose shop you can collect from.</p>
+
+      <h2>3. When you receive your order</h2>
+      <ul>
+        <li><strong>Same-day orders:</strong> placed while the seller is open. The seller confirms, prepares and delivers the same day, or keeps it ready for pickup.</li>
+        <li><strong>Pre-orders:</strong> placed before the seller's cutoff (shown on their page) for the next day. The seller confirms and delivers, or keeps it ready, the next day.</li>
+      </ul>
+      <p>You can follow the status of your order (paid, confirmed, out for delivery or ready for pickup, completed) on your order tracking page, and message the seller from there.</p>
+
+      <h2>4. Delivery charges</h2>
+      <p>Delivery fees are set by each seller (a flat fee or a per-km fee, and some sellers deliver free above an order amount). The delivery fee and the seller's minimum order, if any, are shown at checkout before you pay. Pickup has no delivery charge.</p>
+
+      <h2>5. Failed or delayed delivery</h2>
+      <p>If the seller cannot fulfil your order, they will decline or cancel it and you get a full refund to your original payment method, usually within 5 to 7 working days. If a delivery is late or something is wrong, contact the seller from your order page or contact us (below). See also our <a href="/refund-policy">Refund &amp; Cancellation Policy</a>.</p>
+
+      <h2>6. Contact</h2>
+      <p>WhatsApp <a href="https://wa.me/919152207607">+91 9152207607</a> · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a> · 7:30 AM to 9 PM. <a href="/contact">Contact page</a>.</p>
+    </div>
+  </div>
+</LandingLayout>

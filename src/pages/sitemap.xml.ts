@@ -32,6 +32,8 @@ export const GET: APIRoute = async () => {
     { loc: "/privacy", changefreq: "yearly", priority: "0.3" },
     { loc: "/terms", changefreq: "yearly", priority: "0.3" },
     { loc: "/refund-policy", changefreq: "yearly", priority: "0.3" },
+    { loc: "/shipping-policy", changefreq: "yearly", priority: "0.3" },
+    { loc: "/contact", changefreq: "yearly", priority: "0.4" },
     // Area pages dynamically populated from areas config
     // Only areas a live seller serves: the others are noindex ("not yet") pages.
     ...Object.entries(AREAS).filter(([, area]) => sellersForArea(area, sellers ?? []).length > 0).map(([key]) => ({
