@@ -34,8 +34,8 @@ describe("canonicalFor", () => {
 describe("seller links", () => {
   it("slug comes from the raw DB name, not the cleaned display name", async () => {
     const { sellerNameToSlug, cleanSellerName } = await import("../../src/lib/seller-display");
-    expect(sellerNameToSlug("Fishtokri.com")).toBe("fishtokri-com"); // what /s/[slug] resolves
-    expect(sellerNameToSlug(cleanSellerName("Fishtokri.com"))).not.toBe("fishtokri-com"); // the old bug
+    expect(sellerNameToSlug("Fishtokri.com")).toBe("fishtokri"); // clean slug, no "-com"
+    expect(sellerNameToSlug(cleanSellerName("Fishtokri.com"))).toBe("fishtokri"); // same slug from raw or cleaned name
   });
 });
 
@@ -75,6 +75,12 @@ describe("sellerNameToSlug", () => {
     const { sellerNameToSlug } = await import("../../src/lib/seller-display");
     expect(sellerNameToSlug("  Ram's Fish  &  Co. ")).toBe("ram-s-fish-co");
     expect(sellerNameToSlug("RAM FISH")).toBe(sellerNameToSlug("ram fish"));
+    expect(sellerNameToSlug("Fresh Catch.in")).toBe("fresh-catch");
+    expect(sellerNameToSlug("Bombay Sea Food")).toBe("bombay-sea-food");
+  });
+  it("keeps the old slug resolvable for redirects", async () => {
+    const { legacySellerSlug } = await import("../../src/lib/seller-display");
+    expect(legacySellerSlug("Fishtokri.com")).toBe("fishtokri-com");
   });
 });
 
