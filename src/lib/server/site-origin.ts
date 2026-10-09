@@ -7,7 +7,7 @@ export function siteOriginFromEnv(): string {
     return "https://www.relifish.com";
   }
   if (env === "preview") {
-    return "https://stage.relifish.store";
+    return "https://stage.relifish.com";
   }
 
   // Fallback for local development or custom configurations
@@ -19,7 +19,7 @@ export function siteOriginFromEnv(): string {
   const v = import.meta.env?.VERCEL_URL || process.env.VERCEL_URL;
   if (typeof v === "string" && v.trim()) {
     // If it's a Vercel deployment but not marked as production, treat as staging
-    return "https://stage.relifish.store";
+    return "https://stage.relifish.com";
   }
 
   return "https://www.relifish.com";

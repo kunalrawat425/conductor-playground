@@ -5,11 +5,11 @@ import path from 'path';
 const qrs = [
   {
     name: 'qr-campaign-flyer.png',
-    url: 'https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=https%3A%2F%2Frelifish.store%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dfold_brochure%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4'
+    url: 'https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=https%3A%2F%2Fwww.relifish.com%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dfold_brochure%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4'
   },
   {
     name: 'qr-door-hanger.png',
-    url: 'https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=https%3A%2F%2Frelifish.store%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dhanger%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4'
+    url: 'https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=https%3A%2F%2Fwww.relifish.com%2F%3Futm_source%3Doffline_qr%26utm_medium%3Dhanger%26utm_campaign%3Dpomfret_cover%26utm_content%3Dfish_fold_design&bgcolor=ffffff&color=0a2472&qzone=4&margin=4'
   }
 ];
 

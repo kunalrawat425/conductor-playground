@@ -116,10 +116,11 @@ Server validation chain:
 ### Seller Routes — URL Architecture
 
 ```
-Canonical host: https://www.relifish.store
+Canonical host: https://www.relifish.com
   SITE_URL + canonicalFor(path) in src/lib/brand.ts   → www, no query, no trailing slash
   siteOriginFromEnv() in src/lib/server/site-origin.ts → www in production
-  vercel.json: apex relifish.store → 308 → www (except /api/* and /sw.js)
+  vercel.json: relifish.store, www.relifish.store → 308 → www.relifish.com (except /api/* and /sw.js);
+  apex relifish.com → 308 → www (including /api — Razorpay webhooks must use www)
 
 Public (indexed by Google):
   /s/[slug]              → canonical seller URL (SEO)
@@ -307,7 +308,7 @@ Request: GET /s/bombay-fish-market
 ### Data Flow — Shop Page
 
 ```
-Request: GET /shop (or app.relifish.store → rewrite)
+Request: GET /shop (or app.relifish.com → rewrite)
 
 1. Server: renders shell + crawlable seller list (buildCrawlSellers, 1.5s DB timeout;
    on error the list is empty and the response is Cache-Control: no-store)
