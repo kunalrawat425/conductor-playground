@@ -100,7 +100,7 @@ const description = rows.length
   ) : (
     <article style="padding:16px;display:flex;flex-direction:column;gap:16px;">
       <header>
-        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">Buy {local} ({englishOnly}) online from local sellers</h1>
+        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">Buy {local}{englishOnly.toLowerCase() !== local.toLowerCase() ? ` (${englishOnly})` : ""} online from local sellers</h1>
         <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
           {rows.length
             ? `${english} (${known.marathi}) from ${rows.length === 1 ? "one local seller" : `${rows.length} local sellers`} on Relifish. Prices and availability come from each seller's live listing. Updated ${updatedAt} IST.`
