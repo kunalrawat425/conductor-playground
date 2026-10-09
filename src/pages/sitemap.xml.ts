@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { sellerHref } from "../lib/seller-display";
 import { HUB_MIN_SELLERS } from "../lib/fish-hub";
 import { SPECIES } from "../lib/species";
-import { AREAS } from "../lib/areas";
+import { AREAS, sellersForArea } from "../lib/areas";
 
 export const prerender = false;
 
@@ -15,7 +15,7 @@ export const GET: APIRoute = async () => {
   // Fetch all active sellers
   const { data: sellers } = await supabase
     .from("sellers")
-    .select("id, name")
+    .select("id, name, lat, lng, location, location_name")
     .eq("is_active", true)
     .order("name");
 
@@ -33,7 +33,8 @@ export const GET: APIRoute = async () => {
     { loc: "/terms", changefreq: "yearly", priority: "0.3" },
     { loc: "/refund-policy", changefreq: "yearly", priority: "0.3" },
     // Area pages dynamically populated from areas config
-    ...Object.keys(AREAS).map((key) => ({
+    // Only areas a live seller serves: the others are noindex ("not yet") pages.
+    ...Object.entries(AREAS).filter(([, area]) => sellersForArea(area, sellers ?? []).length > 0).map(([key]) => ({
       loc: `/area/${key}`,
       changefreq: "weekly",
       priority: "0.7",

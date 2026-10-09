@@ -11,7 +11,7 @@ import { SITE_URL, canonicalFor } from "../../lib/brand";
 import { HUB_MIN_SELLERS, hubRows, type HubRow } from "../../lib/fish-hub";
 
 const species = (Astro.params.species || "").toLowerCase();
-const known = SPECIES[species];
+const known = Object.hasOwn(SPECIES, species) ? SPECIES[species] : undefined;
 
 let rows: HubRow[] = [];
 let unavailable = false;

@@ -12,7 +12,7 @@
 **Website:** relifish.store  
 **WhatsApp:** 9152207607 (⚠️ NOT 9870619974 — that number is retired)  
 **Hours:** 7:30 AM – 9:00 PM  
-**Email:** contact@relifish.store  
+**Email:** relifishstore@gmail.com (contact@relifish.store has no mailbox yet: relifish.store has no MX record, so mail to it bounces)  
 **Instagram:** @relifish.store  
 
 ---
@@ -51,7 +51,7 @@ Never say "all Mumbai" or name an area as served unless an active seller covers 
 
 1. **Hyperlocal** — local sellers near you, not city-wide warehouses (each seller sets their own radius)
 2. **Service** — WhatsApp support, cut preferences, order tracking, responsive hours
-3. **Convenience** — order same-day during the seller's hours, or pre-order tonight (seller cutoff, usually 10 PM) for tomorrow
+3. **Convenience** — order same-day during the seller's hours, or pre-order before the seller's cutoff (each seller sets it) for tomorrow
 4. **Freshness** — sellers list what they have each day; buyers choose whole, cleaned or cut
 5. **Affordable** — seller's own price, no platform markup, 0% commission
 6. **Trust** — real local sellers, online payment via Razorpay, full refund if the seller declines or the buyer cancels before confirmation (usually 5–7 working days)
@@ -97,7 +97,7 @@ Do NOT claim (no evidence yet): "within 2 km", "verified", "rated" / star rating
 | WhatsApp | 9152207607 |
 | Website | relifish.store |
 | Instagram | @relifish.store |
-| Email | contact@relifish.store |
+| Email | relifishstore@gmail.com (until relifish.store email is set up) |
 | Hours | 7:30 AM – 9:00 PM |
 | Commission | 0% currently (early growth — no fee charged to sellers or buyers) |
 

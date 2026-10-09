@@ -20,9 +20,13 @@ export const GET: APIRoute = async () => {
       supabase.from("sellers").select("id, name, location_name").eq("is_active", true).order("name"),
       supabase.from("fish_listings").select("seller_id, species, pricing_options"),
     ]);
+    if (s.error || f.error) throw s.error || f.error;
     sellers = s.data ?? [];
     fishRows = (f.data ?? []) as any;
-  } catch {}
+  } catch {
+    // Never publish (or let the CDN cache) an empty "no sellers" file during a DB outage.
+    return new Response("Temporarily unavailable", { status: 503, headers: { "Retry-After": "120", "Cache-Control": "no-store" } });
+  }
 
   const active = new Set(sellers.map((s) => s.id));
   const perSpecies = new Map<string, number>();
@@ -56,15 +60,15 @@ ${sellers.map((s) => `- [${cleanSellerName(s.name)}](${SITE}${sellerHref(s.name,
 
 ## Facts
 
-- Order types: same-day (during the seller's opening hours) and pre-order (before the seller's cutoff, usually 10 pm, for the next morning)
+- Order types: same-day (during the seller's opening hours) and pre-order (before the seller's cutoff shown on their page, for the next morning)
 - Payment: online through Razorpay when the order is placed; the seller then confirms the order
 - Pre-order pricing: the buyer pays the top of a price range; the seller sets the final price from the morning's stock and any difference is refunded
 - Refunds: if the seller declines or the buyer cancels before the seller confirms, the full amount is refunded to the original payment method, usually within 5 to 7 working days
 - Delivery and pickup: handled by each seller, who sets their own delivery radius, fee and minimum order
 - Preparation: buyers choose whole, cleaned or cut, plus a note, at checkout
-- Fish listed today: ${species.join(", ") || "varies by seller"}
+- Fish sellers list (varies daily): ${species.join(", ") || "varies by seller"}
 - Commission: Relifish charges sellers 0% commission today
-- Contact: contact@relifish.store · WhatsApp 9152207607 (7:30 AM – 9 PM)
+- Contact: relifishstore@gmail.com · WhatsApp 9152207607 (7:30 AM – 9 PM)
 `;
   return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, s-maxage=3600" } });
 };

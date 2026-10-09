@@ -42,7 +42,7 @@ Every seller page shows one of three states:
 | What you see | What it means |
 |---|---|
 | **Open** | The seller is open now. You order from what they have in stock today. |
-| **Pre-order** | The seller is taking orders for tomorrow. You order before their cutoff (usually 10 PM). |
+| **Pre-order** | The seller is taking orders for tomorrow. You order before their cutoff (shown on their page). |
 | **Closed** | Not taking orders right now. The page shows when they open next. |
 
 **Pre-order prices are a range** (for example, a low and a high price per kg), because the final price depends on the next day's stock. You pay the top of the range when you order. Once the seller sets the final price, any difference is refunded to you.
@@ -87,7 +87,7 @@ Refunds go back to your original payment method, usually within 5 to 7 working d
 3. **Flesh**: firm, and springs back when pressed.
 4. **Smell**: clean and of the sea, not sour or of ammonia.
 
-If something is wrong with your order, message us on WhatsApp at [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or email [contact@relifish.store](mailto:contact@relifish.store).
+If something is wrong with your order, message us on WhatsApp at [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or email [relifishstore@gmail.com](mailto:relifishstore@gmail.com).
 
 ---
 

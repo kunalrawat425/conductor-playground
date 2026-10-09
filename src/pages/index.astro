@@ -8,7 +8,7 @@ const SITE = "https://www.relifish.store";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 
 const homeFaqs = [
-  { q: "How does Relifish work?", a: "Local fish sellers list the fish they have each day. You order same-day during a seller's opening hours, or pre-order tonight before the seller's cutoff (usually 10 pm) for tomorrow. You pay online when you order, the seller confirms, then delivers or keeps it ready for pickup. No subscription." },
+  { q: "How does Relifish work?", a: "Local fish sellers list the fish they have each day. You order same-day during a seller's opening hours, or pre-order before the seller's cutoff (shown on their page) for tomorrow. You pay online when you order, the seller confirms, then delivers or keeps it ready for pickup. No subscription." },
   { q: "How do I know the fish is fresh?", a: "Each seller lists only what they have that day, and you choose how it is prepared (whole, cleaned or cut). Before cooking, check for clear eyes, red gills, firm flesh and a clean sea smell." },
   { q: "Why do I need to log in to see prices?", a: "Prices vary by seller and change daily. Log in with your mobile number (OTP, no password) to see live prices from sellers near you." },
   { q: "What fish can I order?", a: "It depends on what each seller lists that day: commonly pomfret, surmai, bangda, prawns, rawas, crab, halwa and bombil." },
@@ -25,10 +25,10 @@ const homeFaqs = [
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <UtmCapture />
   <title>Fresh Fish Home Delivery from Local Sellers in Thane &amp; Mumbai | Relifish</title>
-  <meta name="description" content="Order fresh fish online from local sellers in Thane and Mumbai. Same-day catch or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta name="description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <link rel="canonical" href={SITE} />
   <meta property="og:title" content="Fresh Fish Home Delivery from Local Sellers in Thane &amp; Mumbai | Relifish" />
-  <meta property="og:description" content="Order fresh fish online from local sellers in Thane and Mumbai. Same-day catch or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta property="og:description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <meta property="og:image" content={`${SITE}/og-image.png`} />
   <meta property="og:url" content={SITE} />
   <meta property="og:type" content="website" />
@@ -36,7 +36,7 @@ const homeFaqs = [
   <meta property="og:locale" content="en_IN" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Fresh Fish Home Delivery from Local Sellers in Thane &amp; Mumbai | Relifish" />
-  <meta name="twitter:description" content="Order fresh fish online from local sellers in Thane and Mumbai. Same-day catch or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta name="twitter:description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <meta name="twitter:image" content={`${SITE}/og-image.png`} />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="manifest" href="/manifest.json" />
@@ -61,7 +61,7 @@ const homeFaqs = [
           { "@type": "City", "name": "Navi Mumbai" },
           { "@type": "City", "name": "Thane" }
         ],
-        "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "email": "contact@relifish.store" },
+        "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "email": "relifishstore@gmail.com" },
         "dateModified": "2026-10-09"
       },
       {
@@ -829,7 +829,7 @@ const homeFaqs = [
           <div class="demo-screen active" data-screen="0">
             <div class="ds-dark d0-center">
               <div class="d0-logo"><img src={LOGO_URL} alt="Relifish" style="height:56px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" /></div>
-              <div class="d0-tagline">Mumbai's fresh fish marketplace.<br/>Pre-order tonight, collect morning-fresh.</div>
+              <div class="d0-tagline">Fish from local sellers.<br/>Order today or pre-order for tomorrow.</div>
             </div>
             <div class="demo-cta demo-cta-dark">
               <div class="demo-cta-btn">Get started →</div>
@@ -845,14 +845,14 @@ const homeFaqs = [
                 <div class="dh-search">🔍&nbsp;Search area...</div>
               </div>
               <div style="padding:8px 0">
-                <div class="d1-area">
-                  <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Hiranandani Estate</div><div class="d1-dist">Thane · 1 seller</div></div>
-                </div>
                 <div class="d1-area tap" id="d1-tap">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Tardeo</div><div class="d1-dist">South Mumbai · 1 seller</div></div>
+                  <div><div class="d1-name">Hiranandani Estate</div><div class="d1-dist">Thane · 1 seller</div></div>
                   <div class="d1-check">✓</div>
+                </div>
+                <div class="d1-area">
+                  <div class="d1-icon">📍</div>
+                  <div><div class="d1-name">Tardeo</div><div class="d1-dist">South Mumbai · 1 seller</div></div>
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
@@ -879,15 +879,15 @@ const homeFaqs = [
               <div class="d2-list">
                 <div class="d2-card tap">
                   <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)"><img src={LOGO_URL} alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);" /><div class="d2-badge op">🟢 Open</div></div>
-                  <div class="d2-info"><div class="d2-name">Fishtokri</div><div class="d2-sub">Pomfret · Surmai · Prawns · +4 · Cutoff 11 PM</div></div>
+                  <div class="d2-info"><div class="d2-name">Fishtokri</div><div class="d2-sub">Thane West · Pre-order till 6 PM</div></div>
                 </div>
                 <div class="d2-card">
                   <div class="d2-img" style="background:linear-gradient(135deg,#1A0D4A,#2A1A6A)">🦐<div class="d2-badge pr">🌙 Pre-order</div></div>
-                  <div class="d2-info"><div class="d2-name">Bombay Sea Food</div><div class="d2-sub">Bangda · Rawas · Crab · Cutoff 10 PM</div></div>
+                  <div class="d2-info"><div class="d2-name">Bombay Sea Food</div><div class="d2-sub">Tardeo · Pre-order till 10 PM</div></div>
                 </div>
                 <div class="d2-card">
                   <div class="d2-img" style="background:linear-gradient(135deg,#002020,#00403A)">🦀<div class="d2-badge op">🟢 Open</div></div>
-                  <div class="d2-info"><div class="d2-name">The Fishy Spot</div><div class="d2-sub">Crab · Halwa · Bombay Duck</div></div>
+                  <div class="d2-info"><div class="d2-name">The Fishy Spot</div><div class="d2-sub">Kamothe · Crab · Bombil · Prawns</div></div>
                 </div>
               </div>
             </div>
@@ -1026,7 +1026,7 @@ const homeFaqs = [
             <div class="ds-light d8-center">
               <div class="d8-icon"><img src={LOGO_URL} alt="Relifish" style="height:40px;width:auto;display:block;margin:0 auto;" /></div>
               <div class="d8-title">Fresh fish delivered!</div>
-              <div class="d8-sub">Your Pomfret and Bangda from Fishtokri Morning-fresh, straight from the catch.</div>
+              <div class="d8-sub">Your Pomfret and Surmai from Fishtokri.</div>
               <div class="d8-rate">
                 <div class="d8-rate-t">How was your order?</div>
                 <div class="d8-stars">⭐⭐⭐⭐⭐</div>
@@ -1087,14 +1087,14 @@ const homeFaqs = [
               <div class="s1-srch">🔍&nbsp;Search your area in Mumbai...</div>
             </div>
             <div class="s1-list">
-              <div class="s1-row">
-                <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Hiranandani Estate</div><div class="s1-rd">Thane West · 1 seller</div></div>
-              </div>
               <div class="s1-row sel tap-zone">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Tardeo</div><div class="s1-rd">South Mumbai · 1 seller</div></div>
+                <div><div class="s1-rn">Hiranandani Estate</div><div class="s1-rd">Thane West · 1 seller</div></div>
                 <div class="s1-ck">✓</div>
+              </div>
+              <div class="s1-row">
+                <div class="s1-pin">📍</div>
+                <div><div class="s1-rn">Tardeo</div><div class="s1-rd">South Mumbai · 1 seller</div></div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
@@ -1132,7 +1132,7 @@ const homeFaqs = [
                 <div class="s2-cover g"><img src={LOGO_URL} alt="Relifish" style="height:24px;width:auto;filter:brightness(0) invert(1);" /><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Fishtokri</div>
-                  <div class="s2-sub">Cutoff 11 PM · 0.8 km away</div>
+                  <div class="s2-sub">Thane West · Pre-order till 6 PM</div>
                   <div class="s2-chips"><div class="s2-chip">Pomfret</div><div class="s2-chip">Surmai</div><div class="s2-chip">Prawns</div></div>
                 </div>
               </div>
@@ -1140,7 +1140,7 @@ const homeFaqs = [
                 <div class="s2-cover p">🦐<div class="s2-st pr">🌙 Pre-order</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Bombay Sea Food</div>
-                  <div class="s2-sub">Cutoff 10 PM · 1.2 km away</div>
+                  <div class="s2-sub">Tardeo · Pre-order till 10 PM</div>
                   <div class="s2-chips"><div class="s2-chip">Bangda</div><div class="s2-chip">Rawas</div><div class="s2-chip">Crab</div></div>
                 </div>
               </div>
@@ -1148,7 +1148,7 @@ const homeFaqs = [
                 <div class="s2-cover t">🦀<div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">The Fishy Spot</div>
-                  <div class="s2-sub">Crab · Halwa · Bombay Duck</div>
+                  <div class="s2-sub">Kamothe · Crab · Bombil · Prawns</div>
                 </div>
               </div>
             </div>
@@ -1171,7 +1171,7 @@ const homeFaqs = [
             </div>
             <div class="s3-seller">
               <div class="s3-s-icon"><img src={LOGO_URL} alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
-              <div><div class="s3-s-name">Fishtokri</div><div class="s3-s-sub">🌙 Pre-order · Pickup 7–9 AM</div></div>
+              <div><div class="s3-s-name">Fishtokri</div><div class="s3-s-sub">🌙 Pre-order · Home delivery</div></div>
             </div>
             <div class="s3-items">
               <div class="s3-item">
@@ -1305,7 +1305,7 @@ const homeFaqs = [
       ))}
     </div>
     <div class="stats-bar">
-      <div class="sb"><div class="sb-n">10<span class="a">+</span></div><div class="sb-l">Local sellers</div></div>
+      <div class="sb"><div class="sb-n">3</div><div class="sb-l">Areas live: Thane, Tardeo, Kamothe</div></div>
       <div class="sb"><div class="sb-n"><span class="a">₹</span>0</div><div class="sb-l">Listing fee</div></div>
       <div class="sb"><div class="sb-n">0<span class="a">%</span></div><div class="sb-l">Middleman cut</div></div>
       <div class="sb"><div class="sb-n">2</div><div class="sb-l">Ways to order: today or pre-order</div></div>
@@ -1323,7 +1323,7 @@ const homeFaqs = [
           <span class="wl-badge-t">buyers on the waitlist</span>
         </div>
         <div class="wl-title">Get first access<br/>in your area</div>
-        <div class="wl-sub">We're expanding across Mumbai. Join the waitlist — be first when sellers go live near you.</div>
+        <div class="wl-sub">Not in Thane, Tardeo or Kamothe? Join the waitlist and we'll tell you when a seller goes live near you.</div>
         <div class="wl-perks">
           {[
             {i:"🎯",t:"Priority access before public launch"},
@@ -1447,7 +1447,7 @@ const homeFaqs = [
       ))}
       <details class="faq">
         <summary>Relifish isn't available in my area yet?<div class="faq-toggle">+</div></summary>
-        <p>We're expanding across Mumbai fast. Join the waitlist and we'll WhatsApp you the moment sellers go live in your area.</p>
+        <p>Join the waitlist and we'll WhatsApp you when a seller goes live in your area.</p>
         <div class="faq-blue-bar">📍 Not in your area yet? <a href="#waitlist" class="faq-blue-cta">Join the waitlist →</a></div>
       </details>
     </div>

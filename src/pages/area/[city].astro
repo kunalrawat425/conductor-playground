@@ -5,10 +5,9 @@ import AppShell from "../../components/ui/AppShell.astro";
 import SellerCard from "../../components/ui/molecules/SellerCard.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 import { supabase } from "../../lib/supabase";
-import { AREAS, getAreaBySlug } from "../../lib/areas";
-import { haversineKm } from "../../lib/order-pricing";
+import { getAreaBySlug, sellersForArea } from "../../lib/areas";
 import { cleanSellerName, sellerHref } from "../../lib/seller-display";
-import { getSpeciesDisplay } from "../../lib/species";
+import { SPECIES, getSpeciesDisplay } from "../../lib/species";
 
 const { city } = Astro.params;
 const area = getAreaBySlug(city || "");
@@ -18,6 +17,7 @@ if (!area) {
 }
 
 let sellers: any[] = [];
+let unavailable = false; // DB failed: answer 503 so Google retries, never noindex/"no sellers" on an outage
 let areaListings: any[] = [];
 const speciesMap = new Map<string, { min: number; max: number; count: number }>();
 
@@ -28,32 +28,20 @@ try {
     .eq("is_active", true)
     .neq("name", "New Seller");
 
-  if (data && !error) {
-    sellers = data
-      .filter((s: any) => s.lat != null && s.lng != null)
-      .map((s: any) => ({
-        ...s,
-        distanceKm: haversineKm(area.lat, area.lng, s.lat, s.lng),
-      }))
-      .filter((s: any) => {
-        const matchesDistance = s.distanceKm <= area.radius;
-        const addressText = `${s.location || ""} ${s.location_name || ""}`.toLowerCase();
-        const keywords = (area as any).keywords || [];
-        const matchesKeyword = keywords.length === 0 || keywords.some((kw: string) => addressText.includes(kw.toLowerCase()));
-        return matchesDistance && matchesKeyword;
-      })
-      .sort((a: any, b: any) => a.distanceKm - b.distanceKm);
+  if (error) throw error;
+  if (data) {
+    sellers = sellersForArea(area, data);
   }
 
   // Fetch listings for these active sellers in this location
   const sellerIds = sellers.map(s => s.id);
   if (sellerIds.length > 0) {
-    const { data: listData } = await supabase
+    const { data: listData, error: listErr } = await supabase
       .from("fish_listings")
       .select("*, seller:sellers(*)")
       .in("seller_id", sellerIds)
       .or("is_available.eq.true,is_preorder_enabled.eq.true");
-    
+    if (listErr) throw listErr;
     if (listData) {
       areaListings = listData.filter(l => l.seller?.is_active && l.seller?.name !== "New Seller");
       
@@ -89,6 +77,11 @@ try {
   }
 } catch (err) {
   console.error("Error fetching sellers and listings for area:", err);
+  unavailable = true;
+  sellers = [];
+  speciesMap.clear();
+  Astro.response.status = 503;
+  Astro.response.headers.set("Retry-After", "120");
 }
 
 const areaTitle = `Fresh Fish Home Delivery in ${area.name}`;
@@ -118,7 +111,7 @@ const faqs = [
   {
     q: `Can I pre-order fish for tomorrow in ${area.name}?`,
     a: hasSellers
-      ? `Yes, from sellers who accept pre-orders. Order before the seller's cutoff (usually 10 pm). You pay the top of the price range; the seller sets the final price from the morning's stock and any difference is refunded.`
+      ? `Yes, from sellers who accept pre-orders. Order before the seller's cutoff (shown on their page). You pay the top of the price range; the seller sets the final price from the morning's stock and any difference is refunded.`
       : `Not yet, because no seller serves ${area.name} on Relifish right now.`,
   },
 ];
@@ -172,13 +165,13 @@ const jsonLd = {
   description={areaDescription}
   needsMap={false}
   jsonLd={jsonLd}
-  noindex={!hasSellers}
+  noindex={!hasSellers && !unavailable}
   nav={{ active: "shop" }}
 >
   <!-- Hero section -->
   <div style="padding: 20px 16px; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); border-bottom: 1px solid var(--v2-border);">
     <h1 style="font: 700 24px/1.3 Inter; margin: 0 0 6px 0; color: #1e40af;">{area.contentHeadline}</h1>
-    <p style="font: 500 14px/1.4 Inter; margin: 0; color: #1e5a96;">{area.contentSubheading}</p>
+    <p style="font: 500 14px/1.4 Inter; margin: 0; color: #1e5a96;">{hasSellers || unavailable ? area.contentSubheading : `No seller live in ${area.name} yet: join the waitlist`}</p>
   </div>
 
   <!-- Content section -->
@@ -187,7 +180,9 @@ const jsonLd = {
     <p style="font: 400 14px/1.6 Inter; margin: 0; color: var(--v2-text-secondary);">
       {hasSellers
         ? `${listJoin(sellerNames)} ${sellers.length === 1 ? "lists" : "list"} fish for ${area.name} on Relifish${speciesList.length ? `, including ${listJoin(speciesList.slice(0, 6).map((sp) => getSpeciesDisplay(sp)))}` : ""}. Order same-day during the seller's opening hours, or pre-order tonight for tomorrow. You pay online when you order; the seller confirms and then delivers or keeps it ready for pickup. Updated ${updatedAt} IST.`
-        : `No seller on Relifish delivers to ${area.name} yet. Join the waitlist and we will tell you when one does.`}
+        : unavailable
+          ? "We couldn't load sellers right now. Please try again in a minute."
+          : `No seller on Relifish delivers to ${area.name} yet. Join the waitlist and we will tell you when one does.`}
     </p>
   </div>
 
@@ -199,7 +194,7 @@ const jsonLd = {
         {Array.from(speciesMap.entries()).map(([species, data]) => {
           const emoji = species.includes("prawn") ? "🦐" : species.includes("crab") ? "🦀" : "🐟";
           return (
-            <a href={`/fish/${species}`} style="text-decoration:none;background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: 12px; padding: 10px 14px; flex-shrink: 0; min-width: 120px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+            <a href={Object.hasOwn(SPECIES, species) ? `/fish/${species}` : undefined} style="text-decoration:none;background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: 12px; padding: 10px 14px; flex-shrink: 0; min-width: 120px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
               <span style="font-size: 24px; display: block; margin-bottom: 4px;">{emoji}</span>
               <span style="font: 700 12px Inter; color: var(--v2-ink); display: block;">{getSpeciesDisplay(species)}</span>
               <span style="font: 600 11px Inter; color: var(--v2-brand); display: block; margin-top: 2px;">

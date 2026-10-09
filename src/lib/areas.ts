@@ -1,3 +1,5 @@
+import { haversineKm } from "./order-pricing";
+
 /** Hyperlocal areas with coordinates and delivery radius. */
 export const AREAS = {
   thane: {
@@ -53,4 +55,18 @@ export function getAreaBySlug(slug: string): (typeof AREAS)[AreaSlug] | null {
     return AREAS[slug as AreaSlug];
   }
   return null;
+}
+
+type AreaSeller = { lat?: number | null; lng?: number | null; location?: string | null; location_name?: string | null };
+
+/** Active sellers listed on an area page: within the area radius and matching one of its keywords, nearest first. */
+export function sellersForArea<T extends AreaSeller>(area: (typeof AREAS)[AreaSlug], sellers: T[]): (T & { distanceKm: number })[] {
+  return sellers
+    .filter((s) => s.lat != null && s.lng != null)
+    .map((s) => ({ ...s, distanceKm: haversineKm(area.lat, area.lng, s.lat!, s.lng!) }))
+    .filter((s) => {
+      const addressText = `${s.location || ""} ${s.location_name || ""}`.toLowerCase();
+      return s.distanceKm <= area.radius && (area.keywords.length === 0 || area.keywords.some((kw) => addressText.includes(kw.toLowerCase())));
+    })
+    .sort((a, b) => a.distanceKm - b.distanceKm);
 }

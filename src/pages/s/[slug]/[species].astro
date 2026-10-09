@@ -7,7 +7,7 @@ import AppShell from "../../../components/ui/AppShell.astro";
 import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 import { getSellerBySlug, getSellerListings } from "../../../lib/supabase";
 import { cleanSellerName, stripContactInfo } from "../../../lib/seller-display";
-import { getSpeciesDisplay } from "../../../lib/species";
+import { SPECIES, getSpeciesDisplay } from "../../../lib/species";
 import { formatBuyerMenuUnitSuffix } from "../../../lib/listing-pricing";
 import { SITE_URL, canonicalFor } from "../../../lib/brand";
 import { productJsonLd, speciesOffer } from "../../../lib/product-offer";
@@ -89,7 +89,7 @@ const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLower
         <p style="font:400 13px/1.5 Inter;color:var(--v2-ink-2);margin:0;">Pre-orders are priced as a range. You pay the top of the range; the seller sets the final price after the morning catch and any difference is refunded.</p>
       )}
       <a href={sellerPath} class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">Order from {sellerName}</a>
-      <a href={`/fish/${species}`} style="font:600 13px Inter;color:var(--v2-brand);">Compare all sellers of {fishName} →</a>
+      {Object.hasOwn(SPECIES, species) && <a href={`/fish/${species}`} style="font:600 13px Inter;color:var(--v2-brand);">Compare all sellers of {fishName} →</a>}
       {otherFish.length > 0 && (
         <section>
           <h2 style="font:700 15px Inter;margin:8px 0 6px;">More fish from {sellerName}</h2>

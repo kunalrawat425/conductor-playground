@@ -55,6 +55,6 @@ Relifish is a marketplace where you order directly from local fish sellers. Each
 
 Sellers on Relifish currently serve parts of [Thane](/area/thane), [Tardeo](/area/tardeo) and [Kamothe](/area/kamothe). Compare sellers for [pomfret](/fish/pomfret), [surmai](/fish/surmai) or [bangda](/fish/bangda), or read [how ordering works](/blog/first-relifish-order-guide-thane).
 
-Questions? WhatsApp [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or email [contact@relifish.store](mailto:contact@relifish.store).
+Questions? WhatsApp [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or email [relifishstore@gmail.com](mailto:relifishstore@gmail.com).
 
 **→ [See which sellers serve you](/shop?utm_source=blog&utm_medium=article&utm_campaign=article1_awareness)**

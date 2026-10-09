@@ -69,6 +69,6 @@ You can order same-day while a seller is open, or pre-order tonight for tomorrow
 
 Sellers on Relifish currently serve parts of [Thane](/area/thane), [Tardeo](/area/tardeo) and [Kamothe](/area/kamothe).
 
-Questions? WhatsApp [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or email [contact@relifish.store](mailto:contact@relifish.store).
+Questions? WhatsApp [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or email [relifishstore@gmail.com](mailto:relifishstore@gmail.com).
 
 **→ [See which sellers serve you](/shop?utm_source=blog&utm_medium=article&utm_campaign=monsoon_guide)**

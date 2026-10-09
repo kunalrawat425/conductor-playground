@@ -101,7 +101,7 @@ export const GET: APIRoute = async () => {
     markdown += `- **Listed daily**: Sellers list what they have each day. Order same-day during opening hours, or pre-order for tomorrow.\n`;
     markdown += `- **Pre-order pricing**: Pre-order prices are a range. You pay the top of the range and the difference is refunded once the seller sets the final price.\n`;
     markdown += `- **Refunds**: If a seller declines or you cancel before they confirm, the full amount is refunded via Razorpay, usually within 5 to 7 working days.\n`;
-    markdown += `- **Contact**: WhatsApp 9152207607, contact@relifish.store, 7:30 AM to 9 PM.\n`;
+    markdown += `- **Contact**: WhatsApp 9152207607, relifishstore@gmail.com, 7:30 AM to 9 PM.\n`;
 
     return new Response(markdown, {
       status: 200,
