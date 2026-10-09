@@ -49,6 +49,17 @@ export async function refundRazorpayPayment(
 
     const body = await res.json().catch(() => ({}));
     const desc = (body as any)?.error?.description || "unknown";
+    // Refunded by hand from the Razorpay dashboard: the money is back, so a
+    // full-refund retry must count as done, not "delayed" forever.
+    if (!amountPaise) {
+      const pr = await fetch(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}`, {
+        headers: { Authorization: `Basic ${authHex}` },
+      }).catch(() => null);
+      const p = pr?.ok ? await pr.json().catch(() => null) : null;
+      if (p && p.amount > 0 && Number(p.amount_refunded) >= Number(p.amount)) {
+        return { refundId: null, ok: true, note: "Already refunded on Razorpay" };
+      }
+    }
     console.warn(`[${tag}] razorpay refund failed`, { ...ctx, status: res.status, desc });
     return {
       refundId: null,
