@@ -22,7 +22,7 @@ export function perKgRange(listings: SpeciesListing[]): { low: number; high: num
   for (const l of set) for (const o of l.pricing_options ?? []) {
     if (o.unit !== "kg") continue;
     const kg = optionBundleAmount(o);
-    const ps = useSame || !pre.length ? [o.price] : [o.preorder_price_min ?? o.price, o.preorder_price_max ?? o.price];
+    const ps = [o.price > 0 ? o.price : o.preorder_price_max ?? 0]; // latest regular price, never the pre-order range
     for (const p of ps) if (typeof p === "number" && p > 0 && kg > 0) vals.push(Math.round(p / kg));
   }
   return vals.length ? { low: Math.min(...vals), high: Math.max(...vals) } : null;

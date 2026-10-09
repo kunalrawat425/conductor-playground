@@ -10,7 +10,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 import { getSellerBySlug, getSellerListings } from "../../../lib/supabase";
 import { cleanSellerName, stripContactInfo } from "../../../lib/seller-display";
 import { SPECIES, getSpeciesDisplay } from "../../../lib/species";
-import { formatBuyerMenuUnitSuffix } from "../../../lib/listing-pricing";
+import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../../lib/listing-pricing";
 import { SITE_URL, canonicalFor } from "../../../lib/brand";
 import { productJsonLd, speciesOffer } from "../../../lib/product-offer";
 
@@ -80,10 +80,13 @@ const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLower
         <div style="font:600 13px Inter;color:var(--v2-ink-3);">{statusText}</div>
       </div>
       <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
-        {forSpecies.flatMap((l: any) => l.pricing_options).map((o: any) => (
+        {forSpecies.flatMap((l: any) => getListingPriceOptions(l)).map((o: any) => (
           <li style="font:600 15px Inter;">
-            ₹{offer!.availability === "PreOrder" && o.preorder_price_min && o.preorder_price_max ? `${o.preorder_price_min}–${o.preorder_price_max}` : o.price}
+            ₹{o.price > 0 ? o.price : o.preorder_price_max}
             <span style="font:400 13px Inter;color:var(--v2-ink-3);"> {formatBuyerMenuUnitSuffix(o)}</span>
+            {offer!.availability === "PreOrder" && o.preorder_price_min && o.preorder_price_max && (
+              <span style="font:400 12px Inter;color:var(--v2-ink-3);"> · pre-order today ₹{o.preorder_price_min}–{o.preorder_price_max}</span>
+            )}
           </li>
         ))}
       </ul>
