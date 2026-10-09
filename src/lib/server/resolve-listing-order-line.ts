@@ -77,26 +77,40 @@ export async function resolveListingOrderLine(
   const { data: listing } = await supabase
     .from("fish_listings")
     .select(
-      "pricing_options, seller_id, species, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold"
+      "pricing_options, seller_id, species, weight_avail, is_available, buyer_daily_qty_limit, oos_threshold, is_order_paused, is_preorder_enabled, deleted_at"
     )
     .eq("id", listing_id)
     .single();
 
-  if (!listing) {
+  if (!listing || (listing as any).deleted_at) {
     return { ok: false, status: 404, error: "Listing not found" };
   }
+  if ((listing as any).is_order_paused) {
+    return { ok: false, status: 400, error: "The seller has paused orders for this item." };
+  }
 
+  // `*` so is_test is read when migration 071 has added it, and absent (falsy) before.
   const { data: seller } = await supabase
     .from("sellers")
-    .select("opens_at, closes_at, accepts_preorder, min_order_amount, open_days, preorder_days, preorder_cutoff_time")
+    .select("*")
     .eq("id", listing.seller_id)
     .single();
+
+  // Nothing checked seller status at order time: unapproved or deactivated
+  // sellers took orders through direct links. Test sellers stay inactive
+  // (hidden from every public list) but must accept orders for QA.
+  if (seller && (seller as any).is_active === false && !(seller as any).is_test) {
+    return { ok: false, status: 400, error: "This seller is not taking orders right now." };
+  }
 
   const placementResult = seller ? classifyPlacementAtOrderTime(seller, nowMs) : "same_day";
   if (placementResult === "closed") {
     return { ok: false, status: 400, error: seller ? closedSellerMessage(seller) : "Seller is not available." };
   }
   const placement: PlacementKind = placementResult;
+  if (placement === "preorder" && (listing as any).is_preorder_enabled === false) {
+    return { ok: false, status: 400, error: "This item is not available for pre-order." };
+  }
 
   let chosen = getListingOptionById(listing as ListingPricingSource, clientPricingOptionId);
   if (!chosen) {

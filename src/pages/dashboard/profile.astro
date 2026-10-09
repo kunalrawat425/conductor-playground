@@ -3,8 +3,6 @@ export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import Toast from "../../components/ui/atoms/Toast.astro";
 import Input from "../../components/ui/atoms/Input.astro";
-
-const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
 ---
 <style is:global>
   .v2-day-pill {
@@ -81,11 +79,6 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
         <input type="file" id="p-store-file" accept="image/jpeg,image/png,image/webp" style="display:none;" />
       </label>
       <div id="p-store-error" style="display:none;font:500 11px Inter;color:var(--v2-red);"></div>
-    </div>
-
-    <div style={razorpayEnabled ? "display:none;" : ""}>
-      <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Payment</h3>
-      <Input id="p-upi-id" name="upi_id" label="UPI ID (shown to buyers on payment page)" type="text" placeholder="e.g. 9876543210@upi or name@bank" />
     </div>
 
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Order settings</h3>
@@ -224,7 +217,6 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
       (document.getElementById("p-email") as HTMLInputElement).value = seller?.email || "";
       (document.getElementById("p-opens") as HTMLInputElement).value = seller?.opens_at || "05:00";
       (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
-      (document.getElementById("p-upi-id") as HTMLInputElement).value = seller?.upi_id || "";
       // Store photo
       if (seller?.store_image_url) {
         const preview = document.getElementById("p-store-preview") as HTMLElement;
@@ -320,7 +312,6 @@ const razorpayEnabled = import.meta.env.PUBLIC_ENABLE_RAZORPAY === "true";
       email: (document.getElementById("p-email") as HTMLInputElement).value.trim(),
       opens_at: (document.getElementById("p-opens") as HTMLInputElement).value,
       closes_at: (document.getElementById("p-closes") as HTMLInputElement).value,
-      upi_id: (document.getElementById("p-upi-id") as HTMLInputElement).value.trim() || null,
       min_order_amount: parseInt((document.getElementById("p-min-order") as HTMLInputElement).value) || 0,
       accepts_preorder: (document.getElementById("p-preorder") as HTMLInputElement).checked,
       open_days: getCheckedDays("open"),

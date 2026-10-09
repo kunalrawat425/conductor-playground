@@ -59,8 +59,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Locate order — either by explicit order_id or by razorpay_payment_id
   const orderQuery = body.order_id
-    ? sb.from("orders").select("id, status").eq("id", body.order_id)
-    : sb.from("orders").select("id, status").eq("razorpay_payment_id", payment_id);
+    ? sb.from("orders").select("id, status, razorpay_order_id").eq("id", body.order_id)
+    : sb.from("orders").select("id, status, razorpay_order_id").eq("razorpay_payment_id", payment_id);
   const { data: rows } = await orderQuery;
 
   if (!rows || rows.length === 0) {
@@ -88,6 +88,12 @@ export const POST: APIRoute = async ({ request }) => {
     .select("id, status, refund_amt, refund_sent_at");
 
   if (uErr) return new Response(JSON.stringify({ error: `db: ${uErr.message}` }), { status: 500 });
+
+  const { recordRazorpayPayment } = await import("../../../lib/server/razorpay-ledger");
+  await recordRazorpayPayment(sb, { razorpay_payment_id: payment_id, razorpay_order_id: (rows[0] as any).razorpay_order_id || "", order_id: orderId, source: "admin" });
+  if (refund_id) {
+    await sb.from("razorpay_payments").update({ refund_id, refunded_at: new Date().toISOString() }).eq("razorpay_payment_id", payment_id);
+  }
 
   return new Response(JSON.stringify({ ok: true, updated: upd?.[0], refund_id, payment_id, amount_rupees: refundAmtRupees }, null, 2), { status: 200 });
 };

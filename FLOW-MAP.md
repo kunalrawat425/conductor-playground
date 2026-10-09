@@ -168,8 +168,8 @@ separate keys.
 
 Currently in `.env`:
 ```
-PUBLIC_RAZORPAY_KEY_ID=rzp_live_SqLAzccW5HWyNC   ← LIVE
-RAZORPAY_KEY_SECRET=8Wry1ooITTDzZjZ22ddgT9b6      ← LIVE
+PUBLIC_RAZORPAY_KEY_ID=rzp_live_<REDACTED>   ← LIVE
+RAZORPAY_KEY_SECRET=<REDACTED — rotated>      ← LIVE
 ```
 
 **Cannot complete a real payment without spending real INR.** Live keys reject
@@ -179,8 +179,8 @@ test cards (4111 1111 1111 1111). For sandbox testing you must:
 2. Settings → API Keys → Generate Test Key
 3. Give me the two values:
 ```
-PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxxx
-RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxxx
+PUBLIC_RAZORPAY_KEY_ID=rzp_test_<REDACTED>
+RAZORPAY_KEY_SECRET=<REDACTED — rotated>
 ```
 
 With test keys I can complete an end-to-end payment against Razorpay's sandbox

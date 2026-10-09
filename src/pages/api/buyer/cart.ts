@@ -20,24 +20,26 @@ export const GET: APIRoute = async ({ url }) => {
     if (!buyer_id) return new Response(JSON.stringify({ error: "buyer_id required" }), { status: 400 });
 
     const supabase = client();
-    const { data, error } = await supabase
-      .from("buyer_cart")
-      .select(`
+    const cols = `
         listing_id,
+        pricing_option_id,
         qty,
         qty_unit,
         price_snapshot,
         created_at,
         updated_at,
         listing:fish_listings ( id, species, photo_url, weight_avail, is_available, pricing_options, seller_id, seller:sellers ( id, name, store_image_url, is_active, opens_at, closes_at, has_delivery, accepts_preorder, min_order_amount ) )
-      `)
-      .eq("buyer_id", buyer_id)
-      .order("updated_at", { ascending: false });
+      `;
+    const run = (c: string) => supabase.from("buyer_cart").select(c).eq("buyer_id", buyer_id).order("updated_at", { ascending: false });
+    let { data, error } = await run(cols);
+    // Before migration 071: no pricing_option_id column yet.
+    if (error?.code === "42703") ({ data, error } = await run(cols.replace("pricing_option_id,", "")));
 
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
     const items = (data || []).map((r: any) => ({
       listing_id: r.listing_id,
+      pricing_option_id: r.pricing_option_id || "",
       qty: Number(r.qty),
       qty_unit: r.qty_unit,
       price_snapshot: Number(r.price_snapshot),
@@ -72,6 +74,10 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const { buyer_id, listing_id, qty, qty_unit, price_snapshot } = body || {};
+    // One server row per listing + price tier (migration 071), matching the
+    // client's cartKey. "default" and missing both mean the listing's base tier.
+    const rawOpt = String(body?.pricing_option_id ?? "");
+    const pricing_option_id = rawOpt === "default" ? "" : rawOpt.slice(0, 64);
     if (!buyer_id || !listing_id) {
       return new Response(JSON.stringify({ error: "buyer_id and listing_id required" }), { status: 400 });
     }
@@ -94,17 +100,23 @@ export const POST: APIRoute = async ({ request }) => {
     const row = {
       buyer_id,
       listing_id,
+      pricing_option_id,
       qty: qtyNum,
       qty_unit: String(qty_unit || "kg"),
       price_snapshot: Number(price_snapshot) || 0,
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("buyer_cart")
-      .upsert(row, { onConflict: "buyer_id,listing_id" })
+      .upsert(row, { onConflict: "buyer_id,listing_id,pricing_option_id" })
       .select()
       .single();
+    // Before migration 071 is applied: no pricing_option_id column / 3-col key yet.
+    if (error && (error.code === "42P10" || error.code === "42703" || error.code === "PGRST204")) {
+      const { pricing_option_id: _o, ...legacy } = row;
+      ({ data, error } = await supabase.from("buyer_cart").upsert(legacy, { onConflict: "buyer_id,listing_id" }).select().single());
+    }
 
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     return new Response(JSON.stringify({ item: data }), { status: 200 });
@@ -130,11 +142,14 @@ export const DELETE: APIRoute = async ({ url }) => {
     const supabase = client();
 
     if (listing_id) {
-      const { error } = await supabase
-        .from("buyer_cart")
-        .delete()
-        .eq("buyer_id", buyer_id)
-        .eq("listing_id", listing_id);
+      // With pricing_option_id: remove that tier only. Without: every tier of the listing.
+      const opt = url.searchParams.get("pricing_option_id");
+      let q = supabase.from("buyer_cart").delete().eq("buyer_id", buyer_id).eq("listing_id", listing_id);
+      if (opt !== null) q = q.eq("pricing_option_id", opt === "default" ? "" : opt);
+      let { error } = await q;
+      if (error?.code === "42703") {
+        ({ error } = await supabase.from("buyer_cart").delete().eq("buyer_id", buyer_id).eq("listing_id", listing_id));
+      }
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }

@@ -11,8 +11,8 @@ const CRON_SECRET = import.meta.env.CRON_SECRET || "";
  * Nightly cron: auto-cancel `pending_payment` orders older than 24h
  * that never got a Razorpay order created (buyer walked away pre-payment).
  *
- * Rows with `razorpay_order_id` set are LEFT ALONE — they may still capture
- * via the webhook (razorpay-webhook.ts) or manual reconcile.
+ * Rows with `razorpay_order_id` get 48h, then Razorpay is asked: captured
+ * payments are settled, otherwise the order expires too.
  *
  * Vercel cron schedule (add to vercel.json):
  *   { "path": "/api/cron/expire-pending-orders", "schedule": "0 3 * * *" }
@@ -44,7 +44,50 @@ async function run(request: Request, origin: string) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 
-  const rows = data ?? [];
+  const rows = [...(data ?? [])];
+
+  // Rows WITH a razorpay_order_id were left alone forever: an abandoned
+  // checkout stayed `pending_payment` indefinitely (3 on prod). After 48h, ask
+  // Razorpay. Captured money is settled (confirm or refund) by the shared rules;
+  // nothing captured and nothing in flight → expire like any unpaid order.
+  const keyId = import.meta.env.PUBLIC_RAZORPAY_KEY_ID || "";
+  const keySecret = import.meta.env.RAZORPAY_KEY_SECRET || "";
+  if (keyId && keySecret) {
+    const { settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
+    const auth = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`;
+    const { data: stale } = await sb
+      .from("orders")
+      .select("id, status, razorpay_order_id")
+      .in("status", ["pending", "pending_payment"])
+      .not("razorpay_order_id", "is", null)
+      .lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+      .limit(100);
+    for (const o of stale ?? []) {
+      let items: any[];
+      try {
+        const res = await fetch(`https://api.razorpay.com/v1/orders/${(o as any).razorpay_order_id}/payments`, { headers: { Authorization: auth } });
+        if (!res.ok) continue; // can't see Razorpay → never expire blind (BUG-41)
+        items = (await res.json())?.items ?? [];
+      } catch { continue; }
+      const captured = items.filter((p) => p?.status === "captured");
+      if (captured.length) {
+        for (const p of captured) {
+          await settleCapturedPayment(sb, { razorpay_order_id: (o as any).razorpay_order_id, razorpay_payment_id: p.id, source: "cron" })
+            .catch((err: any) => console.error("[cron/expire-pending] settle failed", { order_id: (o as any).id, err: err?.message }));
+        }
+        continue;
+      }
+      if (items.some((p) => p?.status === "authorized")) continue; // still in flight
+      const { data: expired } = await sb
+        .from("orders")
+        .update({ status: "cancelled", cancel_reason: "auto_expired_payment", cancelled_by: "system" })
+        .eq("id", (o as any).id)
+        .eq("status", (o as any).status)
+        .select("id, listing_id, quantity, inventory_deducted");
+      if (expired?.[0]) rows.push(expired[0]);
+    }
+  }
+
   const n = rows.length;
 
   // BUG-33 was WRONG and is reverted here. Stock is already returned by the

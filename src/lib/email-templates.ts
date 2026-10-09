@@ -209,26 +209,6 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
   `);
 }
 
-/** Seller alert when buyer uploads or replaces payment proof (matches branded shell). */
-export function paymentProofReceivedEmailSeller(args: {
-  species: string;
-  orderIdShort: string;
-  sellerName?: string | null;
-}): string {
-  const fishName = capitalizeFishName(args.species);
-  const id = args.orderIdShort.toUpperCase();
-  const greet = args.sellerName ? `Hi ${cleanSellerName(args.sellerName)},` : "Hi,";
-  return shell(`
-    ${transactionIntro(
-      "Action needed",
-      "Payment screenshot received",
-      `${greet} a buyer uploaded UPI payment proof for <strong>${fishName}</strong> (order <strong>#${id}</strong>). Open your dashboard to verify payment before confirming.`
-    )}
-    <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("Review in dashboard →", "https://www.relifish.store/dashboard/orders")}
-    </div>
-  `);
-}
 
 export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string }): string {
   const {
@@ -294,108 +274,14 @@ export function verifyEmailTemplate(email: string, verifyUrl: string): string {
 
 // ── Proof uploaded — buyer confirmation ───────────────────────────────
 
-export function proofUploadedEmailBuyer(args: {
-  species: string;
-  orderId?: string;
-}): string {
-  const fishName = capitalizeFishName(args.species);
-  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
-  return shell(`
-    ${orderStatusHeader("Proof received")}
-    ${orderIntro(
-      `${fishName} — payment proof received`,
-      "Your payment screenshot was uploaded successfully. The seller will verify and confirm your order shortly."
-    )}
-    ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:var(--v2-ink-3);">Order #${orderIdShort}</div>` : ""}
-    <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
-    </div>
-  `);
-}
 
 // ── Payment verified — buyer confirmation ──────────────────────────────
 
-export function paymentVerifiedEmailBuyer(args: {
-  species: string;
-  orderId?: string;
-}): string {
-  const fishName = capitalizeFishName(args.species);
-  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
-  return shell(`
-    ${orderStatusHeader("Payment Verified")}
-    ${orderIntro(
-      `${fishName} — payment verified & confirmed`,
-      "The seller has verified your payment. Your order is confirmed and being prepared."
-    )}
-    ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:var(--v2-ink-3);">Order #${orderIdShort}</div>` : ""}
-    <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
-    </div>
-  `);
-}
 
-export function paymentVerifiedEmailSeller(args: {
-  species: string;
-  orderId?: string;
-  sellerName?: string | null;
-}): string {
-  const fishName = capitalizeFishName(args.species);
-  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
-  const greet = args.sellerName ? `Hi ${cleanSellerName(args.sellerName)},` : "Hi,";
-  return shell(`
-    ${transactionIntro(
-      "Payment Verified",
-      "Order confirmed",
-      `${greet} you verified the payment for <strong>${fishName}</strong>${orderIdShort ? ` (order <strong>#${orderIdShort}</strong>)` : ""}. The order is now confirmed — prepare and fulfill when ready.`
-    )}
-    <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
-    </div>
-  `);
-}
 
 // ── Refund sent notifications ──────────────────────────────────────────
 
-export function refundSentEmailBuyer(args: {
-  species: string;
-  orderId?: string;
-  refundNote?: string | null;
-}): string {
-  const fishName = capitalizeFishName(args.species);
-  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
-  return shell(`
-    ${orderStatusHeader("Refund Sent")}
-    ${orderIntro(
-      `${fishName} — refund on the way`,
-      "The seller has marked your refund as sent via UPI. It typically reflects within 1–3 business days."
-    )}
-    ${args.refundNote ? calloutBox(`Seller note: ${args.refundNote}`, "note") : ""}
-    ${orderIdShort ? `<div style="text-align:center;margin:8px 0;font:600 12px Inter;color:var(--v2-ink-3);">Order #${orderIdShort}</div>` : ""}
-    <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("Track Order →", `https://www.relifish.store/track${args.orderId ? "/" + args.orderId : ""}`)}
-    </div>
-  `);
-}
 
-export function refundSentEmailSeller(args: {
-  species: string;
-  orderId?: string;
-  sellerName?: string | null;
-}): string {
-  const fishName = capitalizeFishName(args.species);
-  const orderIdShort = args.orderId ? args.orderId.slice(0, 8).toUpperCase() : "";
-  const greet = args.sellerName ? `Hi ${cleanSellerName(args.sellerName)},` : "Hi,";
-  return shell(`
-    ${transactionIntro(
-      "Refund Marked Sent",
-      "Refund confirmation",
-      `${greet} you marked the refund for <strong>${fishName}</strong>${orderIdShort ? ` (order <strong>#${orderIdShort}</strong>)` : ""} as sent. The buyer will receive it within 1–3 business days.`
-    )}
-    <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("View Orders →", "https://www.relifish.store/dashboard/orders")}
-    </div>
-  `);
-}
 
 // ── Razorpay Payment Receipt (buyer) ─────────────────────────────────
 

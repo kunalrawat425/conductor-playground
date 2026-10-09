@@ -186,7 +186,7 @@ describe("resolveBuyerStepper", () => {
       "pickup"
     );
     expect(r.variant).toBe("payment");
-    expect(r.labels).toEqual(["Placed", "Payment proof", "Confirmed", "Ready", "Picked up"]);
+    expect(r.labels).toEqual(["Placed", "Paid", "Confirmed", "Ready", "Picked up"]);
     expect(r.step).toBe(0);
   });
 
@@ -249,7 +249,7 @@ describe("resolveBuyerStepper", () => {
       },
       "pickup"
     );
-    expect(r.labels[1]).toBe("Payment proof");
+    expect(r.labels[1]).toBe("Paid");
     expect(r.step).toBe(2);
   });
 

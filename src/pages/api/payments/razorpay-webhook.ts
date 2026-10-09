@@ -14,7 +14,7 @@ const RAZORPAY_WEBHOOK_SECRET = import.meta.env.RAZORPAY_WEBHOOK_SECRET || "";
  *
  * Configure at https://dashboard.razorpay.com → Settings → Webhooks:
  *   URL:    https://relifish.store/api/payments/razorpay-webhook
- *   Events: payment.captured, payment.failed
+ *   Events: payment.captured, payment.failed, refund.created, refund.processed
  *   Secret: same value as env RAZORPAY_WEBHOOK_SECRET
  */
 export const POST: APIRoute = async ({ request, url }) => {
@@ -61,59 +61,36 @@ export const POST: APIRoute = async ({ request, url }) => {
     const razorpay_order_id: string = payment.order_id;
     const razorpay_payment_id: string = payment.id;
 
-    const { data: updated, error } = await sb
-      .from("orders")
-      .update({
-        status: "confirmed",
-        payment_method: "razorpay",
-        razorpay_payment_id,
-        payment_verified_at: new Date().toISOString(),
-        payment_verified_by: null,
-      })
-      .eq("razorpay_order_id", razorpay_order_id)
-      // BUG-47: must match razorpay-verify's payable set, or a balance top-up
-      // whose client handler dropped would never be reconciled by the webhook.
-      .in("status", ["pending", "pending_payment", "payment_required"])
-      .select("id, buyer_id");
-
-    if (error) {
-      console.error("[razorpay-webhook] captured update failed", { razorpay_order_id, error: error.message });
+    // Confirm, attach, or refund — the same rules verify and the crons use.
+    const { settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
+    let settled;
+    try {
+      settled = await settleCapturedPayment(sb, { razorpay_order_id, razorpay_payment_id, source: "webhook" });
+    } catch (err: any) {
+      console.error("[razorpay-webhook] settle failed", { razorpay_order_id, razorpay_payment_id, err: err?.message });
       return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
     }
 
-    const n = updated?.length ?? 0;
-    if (n > 0) {
-      console.log(`[razorpay-webhook] captured: reconciled ${n} row(s) for ${razorpay_order_id}`);
+    if (settled.kind === "orphan") {
+      // No order carries this razorpay_order_id and its receipt matches nothing:
+      // captured money with nothing to attach it to (BUG-41). Loudly.
+      console.error(`[razorpay-webhook] ORPHANED PAYMENT: no order for razorpay_order_id ${razorpay_order_id} (payment ${razorpay_payment_id} captured). Manual reconcile required.`);
     } else {
-      // The old log said "already confirmed — OK" for every zero-match, which
-      // is a false all-clear: zero rows also means no order carries this
-      // razorpay_order_id at all, i.e. captured money with nothing to attach it
-      // to (see BUG-41). Distinguish the two, loudly.
-      const { data: anyRow } = await sb
-        .from("orders")
-        .select("id, status")
-        .eq("razorpay_order_id", razorpay_order_id)
-        .limit(1);
-      if (anyRow && anyRow.length > 0) {
-        console.log(`[razorpay-webhook] ${razorpay_order_id} already in status ${(anyRow[0] as any).status} — OK`);
-      } else {
-        console.error(`[razorpay-webhook] ORPHANED PAYMENT: no order carries razorpay_order_id ${razorpay_order_id} (payment ${razorpay_payment_id} captured). Manual reconcile required.`);
-      }
+      console.log(`[razorpay-webhook] captured ${razorpay_payment_id}: ${settled.kind} (order ${settled.order.id}, status ${settled.order.status})`);
     }
 
     // BUG-21: notify BOTH parties on BOTH channels. This is the recovery path
     // that fires when the buyer's browser died mid-payment, so the seller was
     // previously left blind on exactly the orders needing attention.
-    if (Array.isArray(updated) && updated.length > 0) {
+    if (settled.kind === "confirmed") {
       const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
-      for (const row of updated) {
-        await notifyOrderParties({
-          order_id: (row as any).id,
-          event: "payment_confirmed",
-          origin: url.origin,
-        }).catch((err: any) => console.warn("[razorpay-webhook] notify fan-out failed", { order_id: (row as any).id, err: err?.message }));
-      }
+      await notifyOrderParties({
+        order_id: settled.order.id,
+        event: "payment_confirmed",
+        origin: url.origin,
+      }).catch((err: any) => console.warn("[razorpay-webhook] notify fan-out failed", { order_id: settled.order.id, err: err?.message }));
     }
+    const n = settled.kind === "confirmed" ? 1 : 0;
 
     return new Response(JSON.stringify({ ok: true, event: "payment.captured", reconciled: n }), { status: 200 });
   }
@@ -128,41 +105,64 @@ export const POST: APIRoute = async ({ request, url }) => {
     const refund_id: string = refund.id;
     const refund_amt_paise = Number(refund.amount) || 0;
 
-    // Match by razorpay_payment_id (captured refunds always have this).
-    const { data: updated, error } = await sb
-      .from("orders")
-      .update({
-        status: "refunded",
-        refund_note: `Razorpay refund ${refund_id} (${evtType})`,
-        refund_amt: refund_amt_paise / 100,
-        refund_sent_at: new Date().toISOString(),
-      })
-      .eq("razorpay_payment_id", razorpay_payment_id)
-      .not("status", "eq", "refunded")
-      .select("id, buyer_id, buyer_phone, species");
+    const pay = event?.payload?.payment?.entity;
+    const fullyRefunded = !pay || Number(pay.amount_refunded || 0) >= Number(pay.amount || 0);
+    const now = new Date().toISOString();
 
+    // First sighting of this refund? Our own cancel/decline/extra-payment paths
+    // mark the ledger before Razorpay calls back, and refund.created is followed
+    // by refund.processed — neither should notify twice.
+    const { data: firstSeen } = await sb.from("razorpay_payments")
+      .update({ refund_id, refunded_at: now })
+      .eq("razorpay_payment_id", razorpay_payment_id)
+      .is("refund_id", null)
+      .select("order_id");
+
+    const { data: order, error } = await sb.from("orders")
+      .select("id, status, refund_sent_at")
+      .eq("razorpay_payment_id", razorpay_payment_id)
+      .maybeSingle();
     if (error) {
-      console.error("[razorpay-webhook] refund update failed", { razorpay_payment_id, error: error.message });
+      console.error("[razorpay-webhook] refund lookup failed", { razorpay_payment_id, error: error.message });
+      return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
+    }
+    if (!order) {
+      console.log(`[razorpay-webhook] ${evtType}: no order carries payment ${razorpay_payment_id} (extra/balance payment, legacy, or ledger-only)`);
+      return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: 0 }), { status: 200 });
+    }
+
+    // A refund never rewrites a closed order. It used to flip cancelled /
+    // declined / completed rows to `refunded`, which the buyer page rendered as
+    // "confirmed — being prepared", the seller dashboard offered Ready/Out
+    // buttons on, and which restored stock on fish already handed over.
+    // Only a FULL refund of a still-live order takes the order off.
+    const flip = fullyRefunded && !["cancelled", "declined", "refunded", "completed", "picked_up"].includes(order.status);
+    const firstSighting = (firstSeen?.length ?? 0) > 0 || !order.refund_sent_at;
+    if (!flip && !firstSighting) {
+      return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: 0 }), { status: 200 });
+    }
+    const fields: Record<string, unknown> = flip ? { status: "refunded" } : {};
+    if (firstSighting) {
+      fields.refund_note = `Razorpay refund ${refund_id} (${evtType})`;
+      fields.refund_amt = refund_amt_paise / 100;
+      fields.refund_sent_at = now;
+    }
+    const { error: uErr } = await sb.from("orders").update(fields).eq("id", order.id).eq("status", order.status);
+    if (uErr) {
+      console.error("[razorpay-webhook] refund update failed", { razorpay_payment_id, error: uErr.message });
       return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
     }
 
     // BUG-21: refunds also fan out to both parties on both channels.
-    if (Array.isArray(updated) && updated.length > 0) {
-      const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
-      for (const row of updated) {
-        await notifyOrderParties({
-          order_id: (row as any).id,
-          event: "refunded",
-          origin: url.origin,
-          amount: refund_amt_paise / 100,
-        }).catch((err: any) => console.warn("[razorpay-webhook] refund notify failed", { order_id: (row as any).id, err: err?.message }));
-      }
-    }
-    const n = updated?.length ?? 0;
-    console.log(n === 0
-      ? `[razorpay-webhook] no matching order for payment ${razorpay_payment_id} (may be legacy or already refunded)`
-      : `[razorpay-webhook] ${evtType}: reconciled ${n} row(s) for payment ${razorpay_payment_id}`);
-    return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: n }), { status: 200 });
+    const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+    await notifyOrderParties({
+      order_id: order.id,
+      event: "refunded",
+      origin: url.origin,
+      amount: refund_amt_paise / 100,
+    }).catch((err: any) => console.warn("[razorpay-webhook] refund notify failed", { order_id: order.id, err: err?.message }));
+    console.log(`[razorpay-webhook] ${evtType}: payment ${razorpay_payment_id} on order ${order.id} (${order.status}${flip ? " → refunded" : ""})`);
+    return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: 1 }), { status: 200 });
   }
 
   // ── payment.failed — log for ops visibility, do NOT flip status ──

@@ -2,7 +2,7 @@
 
 **Local server:** http://127.0.0.1:4321 (running persistently — do not kill)
 **DB:** `nyavzumoljcrmmwcdcuj.supabase.co` (staging, connected via service key)
-**Razorpay:** test mode (`rzp_test_TYQ1rCCU011s9p`)
+**Razorpay:** test mode (`rzp_test_<REDACTED>`)
 
 To reproduce any bug, open the URL in your browser, run the JS snippet in
 console to set buyer/seller session, then follow the numbered steps. All bug
@@ -52,7 +52,7 @@ forever.
    → still shows "Complete payment" / "Pay ₹1,800 →" button.
 9. DB check: `node --import tsx scripts/qa-check-order.ts` → status still
    `pending_payment`, `razorpay_payment_id: null`.
-10. Razorpay side: `curl -su rzp_test_TYQ1rCCU011s9p:xTjFzNHUrIqwefvgtXTr8Aw1
+10. Razorpay side: `curl -su rzp_test_<KEY_ID>:<KEY_SECRET>
     https://api.razorpay.com/v1/orders/order_TYQ...jgt.../payments` — will
     show captured payment.
 

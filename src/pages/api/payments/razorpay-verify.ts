@@ -12,9 +12,6 @@ const RAZORPAY_KEY_SECRET = import.meta.env.RAZORPAY_KEY_SECRET || "";
 const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 
 export const POST: APIRoute = async ({ request, url }) => {
-  if (import.meta.env.PUBLIC_ENABLE_RAZORPAY !== "true") {
-    return new Response(JSON.stringify({ error: "Razorpay is not enabled" }), { status: 400 });
-  }
   if (!RAZORPAY_KEY_SECRET) {
     return new Response(JSON.stringify({ error: "Payment gateway not configured" }), { status: 503 });
   }
@@ -62,67 +59,49 @@ export const POST: APIRoute = async ({ request, url }) => {
   if (order.buyer_id !== buyer_id) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403 });
   }
-  // Cross-check: razorpay_order_id must match what was stored when the order was created.
-  // Prevents replay: attacker paying ₹1 on a real Razorpay order and replaying the valid
-  // signature against a different (higher-value) order_id they own as buyer.
-  if ((order as any).razorpay_order_id !== razorpay_order_id) {
+  // Cross-check: the signed Razorpay order must belong to THIS order. Prevents
+  // replay: paying ₹1 on one order and replaying that signature against a
+  // different (higher-value) order the same buyer owns. The receipt fallback in
+  // findOrderForRazorpayOrder also covers an id replaced after a price change.
+  const { findOrderForRazorpayOrder, settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
+  const owner = await findOrderForRazorpayOrder(supabase, razorpay_order_id);
+  if (!owner || owner.id !== order_id) {
     return new Response(JSON.stringify({ error: "Payment does not match this order" }), { status: 400 });
   }
-  // Replay guard — already confirmed orders must not be re-confirmed
-  if (!["pending", "pending_payment"].includes(order.status)) {
-    // If already confirmed via this payment, return success (idempotent)
-    if (order.status === "confirmed") {
-      return new Response(JSON.stringify({ ok: true }), { status: 200 });
-    }
-    return new Response(
-      JSON.stringify({ error: `Order already in status: ${order.status}` }),
-      { status: 400 }
-    );
-  }
 
-  // Atomically confirm the order.
-  // BUG-47: `payment_required` (a balance top-up) must be included here. It was
-  // not, so once the balance flow was enabled the money would be captured and
-  // the row would match 0 updates — paid, but never confirmed.
-  const isBalanceTopUp = (order as any).status === "payment_required";
-  const confirmUpdate: Record<string, unknown> = {
-    status: "confirmed",
-    payment_method: "razorpay",
-    razorpay_payment_id,
-    payment_verified_at: new Date().toISOString(),
-    payment_verified_by: null,
-  };
-  // After a balance payment the buyer has now paid the full final price.
-  if (isBalanceTopUp && (order as any).final_price != null) {
-    confirmUpdate.paid_amount = Number((order as any).final_price);
-  }
-
-  const { data: updatedRows, error: updateErr } = await supabase
-    .from("orders")
-    .update(confirmUpdate)
-    .eq("id", order_id)
-    .in("status", ["pending", "pending_payment", "payment_required"])
-    .select("id");
-
-  if (updateErr) {
+  // Confirm, attach, or refund — decided once, shared with the webhook and crons.
+  let settled;
+  try {
+    settled = await settleCapturedPayment(supabase, { razorpay_order_id, razorpay_payment_id, source: "verify" });
+  } catch (err: any) {
+    console.error("[razorpay-verify] settle failed", { order_id, razorpay_payment_id, err: err?.message });
     return new Response(JSON.stringify({ error: "Failed to confirm order" }), { status: 500 });
   }
-  // Race guard: if 0 rows updated, another concurrent request already confirmed — idempotent OK.
-  if (!updatedRows || updatedRows.length === 0) {
+  if (settled.kind === "refunded") {
+    return new Response(JSON.stringify({
+      error: settled.refund.ok
+        ? "This order was already closed or paid, so this payment is being refunded to you."
+        : "This order was already closed or paid. We could not refund this payment automatically — support will refund it.",
+      error_code: "payment_refunded",
+    }), { status: 409 });
+  }
+  // already / stamped / orphan: someone else did the work (or nothing to do) — idempotent OK.
+  if (settled.kind !== "confirmed") {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
-  // Fire buyer push notification (non-blocking)
-  try {
+  // Buyer push goes out after the response (waitUntil): awaiting it here held the
+  // "payment confirmed" screen for several seconds on staging.
+  afterResponse((async () => {
     const { sendBuyerOrderPush } = await import("../../../lib/server/buyer-push");
     await sendBuyerOrderPush({
       buyer_id,
       buyer_phone: undefined,
-      status: "confirmed",
+      status: settled.order.status === "confirmed" ? "confirmed" : "paid",
       species: (order as any).listing?.species || (order as any).species || "Fish",
       order_id,
     });
-  } catch (err) { console.warn("[razorpay-verify] buyer push failed", { order_id, err: (err as any)?.message || String(err) }); }
+  })(), "razorpay-verify:buyer-push");
 
   // BUG-27: these used to be fire-and-forget. Vercel freezes the function once
   // the response is returned, so the receipt email and the seller notification
@@ -187,7 +166,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           body: JSON.stringify({
             from: "Relifish <noreply@relifish.store>",
             to: emailTo,
-            subject: "Payment confirmed — your Relifish order is set ✓",
+            subject: "Payment received — waiting for the seller to confirm",
             html,
           }),
         }).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));
@@ -202,7 +181,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { orderEmailSeller, capitalizeFishName } = await import("../../../lib/email-templates");
       const species = (order as any).listing?.species || (order as any).species || "Fish";
       const html = orderEmailSeller({
-        statusLabel: "Paid via Razorpay — auto-confirmed",
+        statusLabel: "Paid — open your dashboard to confirm or decline",
         species,
         quantity: Number((order as any).quantity) || 1,
         quantity_unit: (order as any).quantity_unit || "kg",
@@ -218,7 +197,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         body: JSON.stringify({
           from: "Relifish <noreply@relifish.store>",
           to: _sellerForEmail.email,
-          subject: `New order paid: ${capitalizeFishName(species)}`,
+          subject: `New paid order — please confirm: ${capitalizeFishName(species)}`,
           html,
         }),
       }).catch((err) => console.warn("[razorpay-verify] seller email failed", { order_id, err: err?.message || String(err) }));

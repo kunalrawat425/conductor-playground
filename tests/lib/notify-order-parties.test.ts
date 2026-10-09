@@ -68,9 +68,9 @@ describe("notify-order-parties copy", () => {
     expect(c.sellerSubject).toContain("CANCELLED");
   });
 
-  it("tells the seller TO prepare a payment-confirmed order", () => {
+  it("asks the seller to confirm or decline a paid order (payment is not acceptance)", () => {
     const c = copyFor("payment_confirmed", "pomfret", "AB12CD34", 1990)!;
-    expect(c.sellerLine.toLowerCase()).toContain("prepare this order");
+    expect(c.sellerLine.toLowerCase()).toContain("confirm or decline");
   });
 
   it("mentions refund timing to the buyer only", () => {
@@ -83,7 +83,7 @@ describe("notify-order-parties copy", () => {
 describe("notify-order-parties push status mapping", () => {
   it("maps each event to a status the buyer push-copy module recognises", () => {
     const expected: Record<OrderEvent, string> = {
-      payment_confirmed: "confirmed",
+      payment_confirmed: "paid",
       cancelled_by_buyer: "cancelled",
       refunded: "refunded",
     };

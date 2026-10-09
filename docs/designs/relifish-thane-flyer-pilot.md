@@ -104,7 +104,7 @@ What this means:
   - The sitemap URLs match the canonicals, and `robots.txt` points to the www sitemap.
 - **Flyer attribution:**
   - The landing page stores the last-touch UTM in `localStorage`. This runs on every page, independent of `PUBLIC_ENABLE_TRACKING`. Checkout sends it with the order.
-  - `/api/orders/create-seller-cart` saves it best-effort to the new columns `orders.utm_source|medium|campaign|content` (migration `074`, applied automatically by the deploy pre-build step).
+  - `/api/orders/create-seller-cart` saves it best-effort to the new columns `orders.utm_source|medium|campaign|content` (migration `075`, applied automatically by the deploy pre-build step).
 - **Tests and build:** 237 tests pass, including tests for UTM parsing and its 30-day window, canonical URLs, the /shop crawl list, seller links, 404 vs 503, the apex redirect and sign-up events, and the production build passes.
 
 ## Success Criteria
@@ -172,7 +172,7 @@ from orders
 where utm_campaign = 'thane' and status in ('declined', 'refunded')
   and created_at >= date 'D' and created_at < date 'D' + interval '8 days';
 ```
-The query was syntax-checked against production on 2026-10-08 with `utm_campaign` stubbed, because that column only arrives with migration 074.
+The query was syntax-checked against production on 2026-10-08 with `utm_campaign` stubbed, because that column only arrives with migration 075.
 
 ## Open Questions
 
@@ -186,7 +186,7 @@ The query was syntax-checked against production on 2026-10-08 with `utm_campaign
 | # | Item | Owner |
 |---|---|---|
 | 1 | Review, commit and PR the branch (`/ship`) | Kunal + Claude |
-| 2 | Confirm `DATABASE_URL` is set in Vercel production, so migration 074 runs on deploy (`migrate-safe.ts` silently skips without it) | Kunal |
+| 2 | Confirm `DATABASE_URL` is set in Vercel production, so migration 075 runs on deploy (`migrate-safe.ts` silently skips without it) | Kunal |
 | 3 | Deploy. Then: scan a real flyer QR, place one test order **before D** (tell Fishtokri first, use a non-buyer phone, refund it immediately), and confirm (a) the apex → www 308 keeps the `?utm_` query and (b) the order row has `utm_campaign = 'thane'` | Claude (verify via DB) |
 | 4 | Vercel → Domains: make sure www does not redirect back to the apex (that would loop) | Kunal |
 | 5 | Submit `https://www.relifish.store/sitemap-index.xml` to Search Console | Claude (API) |

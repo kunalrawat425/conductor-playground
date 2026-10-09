@@ -1,5 +1,6 @@
 ---
 import { LOGO_URL, SITE_URL, canonicalFor } from "../lib/brand";
+import { jsonLdString } from "../lib/html";
 interface Props {
   title?: string;
   description?: string;
@@ -44,7 +45,7 @@ const canonicalUrl = canonicalFor(Astro.url.pathname);
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     {needsMap && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
-    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {jsonLd && <script type="application/ld+json" set:html={jsonLdString(jsonLd)} />}
     
     {import.meta.env.PUBLIC_ENABLE_TRACKING === "true" && (
       <>
