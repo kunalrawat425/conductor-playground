@@ -24,10 +24,10 @@ describe("pickUtm", () => {
 
 describe("canonicalFor", () => {
   it("one www URL per page, no trailing slash except root", () => {
-    expect(canonicalFor("/")).toBe("https://www.relifish.store/");
-    expect(canonicalFor("/shop/")).toBe("https://www.relifish.store/shop");
-    expect(canonicalFor("/shop")).toBe("https://www.relifish.store/shop");
-    expect(canonicalFor("/about//")).toBe("https://www.relifish.store/about");
+    expect(canonicalFor("/")).toBe("https://www.relifish.com/");
+    expect(canonicalFor("/shop/")).toBe("https://www.relifish.com/shop");
+    expect(canonicalFor("/shop")).toBe("https://www.relifish.com/shop");
+    expect(canonicalFor("/about//")).toBe("https://www.relifish.com/about");
   });
 });
 
@@ -64,9 +64,9 @@ describe("pickUtm: what the browser actually sends", () => {
 
 describe("canonicalFor edge cases", () => {
   it("empty path is the root; nested paths keep their segments", () => {
-    expect(canonicalFor("")).toBe("https://www.relifish.store/");
-    expect(canonicalFor("/blog/fish-guide/")).toBe("https://www.relifish.store/blog/fish-guide");
-    expect(canonicalFor("/s/ram-fish")).toBe("https://www.relifish.store/s/ram-fish");
+    expect(canonicalFor("")).toBe("https://www.relifish.com/");
+    expect(canonicalFor("/blog/fish-guide/")).toBe("https://www.relifish.com/blog/fish-guide");
+    expect(canonicalFor("/s/ram-fish")).toBe("https://www.relifish.com/s/ram-fish");
   });
 });
 

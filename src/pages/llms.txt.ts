@@ -6,7 +6,7 @@ import { HUB_MIN_SELLERS } from "../lib/fish-hub";
 
 export const prerender = false;
 
-const SITE = "https://www.relifish.store";
+const SITE = "https://www.relifish.com";
 
 /**
  * /llms.txt for AI assistants. Generated from the same live data as the sitemap so it never

@@ -116,7 +116,7 @@ const faqs = [
   },
 ];
 const areaDescription = area.metaDescription;
-const canonicalUrl = `https://www.relifish.store/area/${area.slug}`;
+const canonicalUrl = `https://www.relifish.com/area/${area.slug}`;
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -128,28 +128,28 @@ const jsonLd = {
       "name": areaTitle,
       "description": areaDescription,
       "inLanguage": "en-IN",
-      "isPartOf": { "@id": "https://www.relifish.store" },
+      "isPartOf": { "@id": "https://www.relifish.com" },
       "breadcrumb": {
         "@type": "BreadcrumbList",
         "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.store" },
-          { "@type": "ListItem", "position": 2, "name": "Shop", "item": "https://www.relifish.store/shop" },
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.com" },
+          { "@type": "ListItem", "position": 2, "name": "Shop", "item": "https://www.relifish.com/shop" },
           { "@type": "ListItem", "position": 3, "name": area.name, "item": canonicalUrl }
         ]
       }
     },
     {
       "@type": "Organization",
-      "@id": "https://www.relifish.store/#org",
+      "@id": "https://www.relifish.com/#org",
       "name": "Relifish",
-      "url": "https://www.relifish.store",
-      "logo": "https://www.relifish.store/favicon.png",
+      "url": "https://www.relifish.com",
+      "logo": "https://www.relifish.com/favicon.png",
       "description": "Mumbai's hyperlocal fresh fish marketplace"
     },
     hasSellers ? {
       "@type": "ItemList",
       "name": `Fish sellers serving ${area.name} on Relifish`,
-      "itemListElement": sellers.map((sl: any, i: number) => ({ "@type": "ListItem", "position": i + 1, "name": cleanSellerName(sl.name), "url": `https://www.relifish.store${sellerHref(sl.name, sl.id)}` })),
+      "itemListElement": sellers.map((sl: any, i: number) => ({ "@type": "ListItem", "position": i + 1, "name": cleanSellerName(sl.name), "url": `https://www.relifish.com${sellerHref(sl.name, sl.id)}` })),
     } : undefined,
     {
       "@type": "FAQPage",

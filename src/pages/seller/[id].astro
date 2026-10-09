@@ -256,7 +256,7 @@ const tags = [
         "name": sellerName,
         "description": (() => { const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 5).join(", "); return `Buy same-day fresh catch or pre-order tomorrow's fish (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : " in Mumbai"} with zero platform markup.`; })(),
         "url": canonicalUrl,
-        "image": seller.store_image_url || "https://www.relifish.store/og-image.png",
+        "image": seller.store_image_url || "https://www.relifish.com/og-image.png",
         "priceRange": "₹₹",
         "servesCuisine": "Seafood",
         "currenciesAccepted": "INR",
@@ -305,8 +305,8 @@ const tags = [
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.store/" },
-          { "@type": "ListItem", "position": 2, "name": "Browse Sellers", "item": "https://www.relifish.store/shop" },
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.relifish.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Browse Sellers", "item": "https://www.relifish.com/shop" },
           { "@type": "ListItem", "position": 3, "name": sellerName, "item": canonicalUrl }
         ]
       }

@@ -29,7 +29,7 @@ Sellers on Relifish currently serve parts of **Thane West**, **Tardeo (South Mum
 
 ## Step 1: Set your location
 
-Open [relifish.store/shop](/shop) and allow location, or pick your area. You will see the sellers who can deliver to you or who you can collect from.
+Open [relifish.com/shop](/shop) and allow location, or pick your area. You will see the sellers who can deliver to you or who you can collect from.
 
 ## Step 2: Log in with your mobile number
 
@@ -94,7 +94,7 @@ If something is wrong with your order, message us on WhatsApp at [9152207607](ht
 ## Questions people ask
 
 **Do I need an app?**
-No. Relifish works in your phone's browser at relifish.store.
+No. Relifish works in your phone's browser at relifish.com.
 
 **Does Relifish deliver the fish?**
 No. The seller delivers, or keeps your order ready for pickup. Relifish is the marketplace that connects you.

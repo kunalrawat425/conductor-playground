@@ -4,7 +4,7 @@ import { LOGO_URL } from "../lib/brand";
 import { jsonLdString } from "../lib/html";
 export const prerender = false;
 import Footer from "../components/Footer.astro";
-const SITE = "https://www.relifish.store";
+const SITE = "https://www.relifish.com";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 
 const homeFaqs = [
@@ -51,7 +51,7 @@ const homeFaqs = [
         "@type": "Organization",
         "@id": `${SITE}/#org`,
         "name": "Relifish",
-        "alternateName": ["Reli Fish", "Relifish Store", "relifish.store"],
+        "alternateName": ["Reli Fish", "Relifish Store", "relifish.com", "relifish.store"],
         "url": SITE,
         "logo": { "@type": "ImageObject", "url": `${SITE}/icon-192.svg` },
         "description": "Hyperlocal fish marketplace: buy fish online from local sellers in Thane, South Mumbai and Navi Mumbai. Order same-day or pre-order for tomorrow; sellers deliver or keep it ready for pickup.",

@@ -3,7 +3,7 @@ import vercel from "@astrojs/vercel";
 import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  site: "https://www.relifish.store",
+  site: "https://www.relifish.com",
   adapter: vercel(),
   integrations: [
     sitemap({
