@@ -51,7 +51,7 @@ const description = `${fishName} from ${sellerName}${where}. ${statusText}. See 
 const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLowerCase()))].filter((s) => s !== species);
 ---
 <AppShell
-  title={found ? `${fishName} from ${sellerName}${area ? `, ${area}` : ""}: Price Today & Delivery | Relifish` : "Fish not found · Relifish"}
+  title={found ? `${species.charAt(0).toUpperCase() + species.slice(1)} from ${sellerName}${area ? `, ${area}` : ""}: Price Today & Delivery | Relifish` : "Fish not found · Relifish"}
   description={description}
   canonical={url}
   noindex={!found}
