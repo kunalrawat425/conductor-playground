@@ -125,13 +125,8 @@ import Toast from "../components/ui/atoms/Toast.astro";
 </style>
 
 <script>
-  import { createClient } from "@supabase/supabase-js";
   import { resolveBuyerStepper } from "../lib/buyer-order-stepper";
   import { wasActuallyPaid, refundableAmount } from "../lib/order-payment-state";
-  const supabase = createClient(
-    import.meta.env.PUBLIC_SUPABASE_URL || "",
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
-  );
 
   function getBuyerPhone(): string | null {
     try { return localStorage.getItem("rlf_phone") || null; } catch { return null; }
@@ -176,11 +171,6 @@ import Toast from "../components/ui/atoms/Toast.astro";
     }
   })();
   // Orders may have phone stored with or without +91 prefix
-  function phoneVariants(phone: string): string[] {
-    const clean = phone.replace(/^\+91/, "").replace(/\D/g, "");
-    return [clean, `+91${clean}`];
-  }
-
   function escapeHtml(s: string) {
     return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
   }
@@ -268,17 +258,15 @@ import Toast from "../components/ui/atoms/Toast.astro";
 
     try {
       const offset = (currentPage - 1) * PAGE_SIZE;
-      const phones = phoneVariants(phone);
       const buyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
-      // Fetch all statuses — query by buyer_phone OR buyer_id
-      const phoneParts = phones.map(p => `buyer_phone.eq.${p}`).join(",");
-      const orFilter = buyerId ? `${phoneParts},buyer_id.eq.${buyerId}` : phoneParts;
-      const { data: allOrders, count } = await supabase
-        .from("orders")
-        .select("*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name, opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, accepts_preorder))", { count: "exact" })
-        .or(orFilter)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1);
+      // Through the API (buyer session), not straight from the database: the
+      // browser key can no longer read orders. Phone-only orders placed before
+      // login are matched server-side from the buyer's own phone.
+      const res = await fetch(`/api/buyer/orders?buyer_id=${encodeURIComponent(buyerId)}&page=${currentPage}&page_size=${PAGE_SIZE}`);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Could not load orders");
+      const allOrders = body.orders;
+      const count = body.total;
 
       loading.style.display = "none";
       empty.style.display = "none";
@@ -381,30 +369,11 @@ import Toast from "../components/ui/atoms/Toast.astro";
   function initTrack() {
     load();
 
-    // Supabase Realtime
-    const buyerPhone = getBuyerPhone();
-    const rtBuyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
-    if (buyerPhone) {
-      const pv = phoneVariants(buyerPhone);
-      pv.forEach(ph => {
-        supabase
-          .channel("buyer-orders-" + ph)
-          .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `buyer_phone=eq.${ph}` }, () => { load(); })
-          .subscribe();
-      });
-    }
-    if (rtBuyerId) {
-      supabase
-        .channel("buyer-orders-id-" + rtBuyerId)
-        .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `buyer_id=eq.${rtBuyerId}` }, () => { load(); })
-        .subscribe();
-    }
-
-    // Fallback poll every 30s
+    // Poll for status changes (browser realtime needed the open orders policy).
     setInterval(() => {
       const activeEl = document.getElementById("v2-track-active");
       if (activeEl && activeEl.children.length > 0) load();
-    }, 30000);
+    }, 20000);
   }
 
   // Safety net: if load() never hides the spinner (e.g. script error), show guest after 3s

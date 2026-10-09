@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { clientKey, overLimit } from "../../../lib/server/rate-limit";
@@ -42,7 +43,7 @@ export const POST: APIRoute = async ({ request }) => {
       .from("buyer_waitlist")
       .upsert(
         {
-          buyer_id: buyer_id || null,
+          buyer_id: buyer_id && !requireBuyer(request, buyer_id) ? buyer_id : null,
           phone: phoneE164,
           area,
           fish_wanted: fish_wanted || null,

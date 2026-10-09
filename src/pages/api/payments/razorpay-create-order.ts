@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -21,6 +22,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 
   const { order_id, buyer_id } = body;
+  { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
   if (!order_id || !buyer_id) {
     return new Response(JSON.stringify({ error: "order_id and buyer_id required" }), { status: 400 });
   }

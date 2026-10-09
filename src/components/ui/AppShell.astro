@@ -51,6 +51,39 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
     <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Signed login sessions (src/lib/server/session.ts): attach to every /api call,
+         and drop a stale login when the server asks for OTP again. Runs before page scripts. -->
+    <script is:inline>
+      (function () {
+        var raw = window.fetch.bind(window);
+        var KEYS = { buyer: ["rlf_buyer_id", "rlf_phone", "rlf_session_buyer"], seller: ["rlf_seller_id", "rlf_seller_phone", "rlf_seller_name", "rlf_seller_is_active", "rlf_session_seller"] };
+        window.fetch = function (input, init) {
+          var url = typeof input === "string" ? input : (input && input.url) || "";
+          if (url.indexOf("/api/") === 0 || url.indexOf(location.origin + "/api/") === 0) {
+            init = init || {};
+            var h = new Headers(init.headers || (typeof input !== "string" && input.headers) || undefined);
+            try {
+              var b = localStorage.getItem("rlf_session_buyer"), s = localStorage.getItem("rlf_session_seller");
+              if (b) h.set("x-rlf-buyer", b);
+              if (s) h.set("x-rlf-seller", s);
+            } catch (e) {}
+            init.headers = h;
+          }
+          return raw(input, init).then(function (res) {
+            var role = res.status === 401 && res.headers.get("x-rlf-login");
+            if (role && KEYS[role]) {
+              try { KEYS[role].forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
+              if (!window.__rlfRelogin) {
+                window.__rlfRelogin = true;
+                if (role === "seller") location.href = "/dashboard/login";
+                else location.reload();
+              }
+            }
+            return res;
+          });
+        };
+      })();
+    </script>
     <!-- Apply theme before paint to prevent FOUC -->
     <script is:inline>
       (function() {

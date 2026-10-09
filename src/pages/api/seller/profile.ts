@@ -58,16 +58,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Ownership: seller_phone must match the row (BUG-12).
-    // Strip leading +/91 prefixes both sides for comparison consistency.
-    const norm = (s: string) => (s || "").replace(/^\+?91/, "").replace(/^\+/, "").replace(/\D/g, "");
-    const { data: owner } = await supabase.from("sellers").select("phone").eq("id", seller_id).single();
-    if (!owner) {
-      return new Response(JSON.stringify({ error: "Seller not found" }), { status: 404 });
-    }
-    if (!seller_phone || norm(String(seller_phone)) !== norm(String(owner.phone))) {
-      return new Response(JSON.stringify({ error: "Unauthorized — seller phone mismatch" }), { status: 403 });
-    }
+    // Ownership: the signed seller session, not the (public) phone.
+    const { requireSeller } = await import("../../../lib/server/session");
+    const denied = requireSeller(request, seller_id);
+    if (denied) return denied;
 
     // Reset email_verified if email changed
     if (updates.email !== undefined) {

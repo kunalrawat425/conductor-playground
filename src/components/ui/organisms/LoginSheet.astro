@@ -248,9 +248,11 @@ const MAX_ATTEMPTS = 3;
         if (role === "seller") {
           localStorage.setItem("rlf_seller_id", data.seller_id);
           localStorage.setItem("rlf_seller_phone", currentPhone);
+          if (data.session) localStorage.setItem("rlf_session_seller", data.session);
         } else {
           localStorage.setItem("rlf_buyer_id", data.buyer_id);
           localStorage.setItem("rlf_phone", currentPhone);
+          if (data.session) localStorage.setItem("rlf_session_buyer", data.session);
         }
       } catch {}
 

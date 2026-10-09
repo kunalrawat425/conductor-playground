@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -14,9 +15,10 @@ function client() {
  * GET /api/buyer/cart?buyer_id=
  * Returns cart items joined with listing + seller info.
  */
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
     const buyer_id = url.searchParams.get("buyer_id");
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     if (!buyer_id) return new Response(JSON.stringify({ error: "buyer_id required" }), { status: 400 });
 
     const supabase = client();
@@ -74,6 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const { buyer_id, listing_id, qty, qty_unit, price_snapshot } = body || {};
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     // One server row per listing + price tier (migration 071), matching the
     // client's cartKey. "default" and missing both mean the listing's base tier.
     const rawOpt = String(body?.pricing_option_id ?? "");
@@ -130,9 +133,10 @@ export const POST: APIRoute = async ({ request }) => {
  * DELETE /api/buyer/cart?buyer_id=&seller_id=    (clear all items from a seller)
  * DELETE /api/buyer/cart?buyer_id=&clear=true    (wipe entire cart)
  */
-export const DELETE: APIRoute = async ({ url }) => {
+export const DELETE: APIRoute = async ({ url, request }) => {
   try {
     const buyer_id = url.searchParams.get("buyer_id");
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     const listing_id = url.searchParams.get("listing_id");
     const seller_id = url.searchParams.get("seller_id");
     const clear = url.searchParams.get("clear") === "true";

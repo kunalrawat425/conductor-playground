@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -49,9 +50,10 @@ async function clearOtherDefaults(supabase: ReturnType<typeof client>, buyer_id:
 /**
  * GET /api/buyer/addresses?buyer_id=
  */
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
     const buyer_id = url.searchParams.get("buyer_id");
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     if (!buyer_id) {
       return new Response(JSON.stringify({ error: "buyer_id required" }), { status: 400 });
     }
@@ -79,6 +81,7 @@ export const GET: APIRoute = async ({ url }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { buyer_id, address } = (await request.json()) as { buyer_id?: string; address?: AddressPayload };
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     if (!buyer_id || !address) {
       return new Response(JSON.stringify({ error: "buyer_id and address required" }), { status: 400 });
     }

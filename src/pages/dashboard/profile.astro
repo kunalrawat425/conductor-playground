@@ -576,7 +576,7 @@ import Input from "../../components/ui/atoms/Input.astro";
   // Logout
   document.getElementById("p-logout")?.addEventListener("click", () => {
     try {
-      localStorage.removeItem("rlf_seller_id");
+      localStorage.removeItem("rlf_seller_id"); localStorage.removeItem("rlf_session_seller");
       localStorage.removeItem("rlf_seller_phone");
     } catch {}
     window.location.href = "/dashboard/login";

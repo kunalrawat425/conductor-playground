@@ -6,6 +6,7 @@ import { isRazorpayPaid, refundRazorpayPayment } from "../../../lib/server/razor
 import { preorderNeedsFinalPrice } from "../../../lib/order-payment-state";
 import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
+import { toSellerView, STATUS_BY_TAB } from "../../../lib/seller-order-view";
 
 function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
@@ -39,6 +40,76 @@ const STATUS_LABELS: Record<string, string> = {
  * action=set_final_price: calls reconcile_preorder_price RPC (refunds a price drop on Razorpay)
  * Otherwise: status transition
  */
+/**
+ * GET /api/seller/orders?seller_id&tab&type&since&today_start&page&q
+ * The dashboard used to read `orders` straight from the browser with the
+ * public key — and so could anyone else. Now it reads here, behind the seller
+ * session, and gets buyer contact masked (toSellerView).
+ */
+const PAGE_SIZE = 10;
+export const GET: APIRoute = async ({ url, request }) => {
+  const p = url.searchParams;
+  const seller_id = p.get("seller_id");
+  const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+  const authCheck = await assertSellerOwns(seller_id, null, request);
+  if (authCheck instanceof Response) return authCheck;
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: listings } = await supabase.from("fish_listings").select("id").eq("seller_id", seller_id!);
+  const ids = (listings || []).map((l: any) => l.id);
+  if (!ids.length) return new Response(JSON.stringify({ has_listings: false, orders: [], total: 0, counts: {}, today_gmv: 0 }), { status: 200 });
+
+  const count = (statuses: string[]) =>
+    supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", ids).in("status", statuses);
+  const todayStart = p.get("today_start") || new Date(Date.now() - 86400_000).toISOString();
+  const [pending, accepted, completed, declined, preorders, today] = await Promise.all([
+    count(STATUS_BY_TAB.pending),
+    count(STATUS_BY_TAB.accepted),
+    count(["picked_up", "completed"]),
+    count(["declined", "cancelled", "refunded"]),
+    supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", ids).eq("is_preorder", true)
+      .not("status", "in", '("completed","picked_up","declined","cancelled","refunded")'),
+    supabase.from("orders").select("total_price").in("listing_id", ids).gte("created_at", todayStart),
+  ]);
+  const counts = {
+    pending: pending.count || 0, accepted: accepted.count || 0, completed: completed.count || 0,
+    declined: declined.count || 0, preorders: preorders.count || 0,
+  };
+  const today_gmv = (today.data || []).reduce((s: number, o: any) => s + (Number(o.total_price) || 0), 0);
+
+  const SELECT = "*, listing:fish_listings(species, pricing_options), order_feedback(rating, feedback, updated_at)";
+  const page = Math.max(1, Number(p.get("page")) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
+  const type = p.get("type") || "all";
+  const isPre = (o: any) => o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
+  const q = (p.get("q") || "").trim().toLowerCase();
+
+  let orders: any[] = [];
+  let total = 0;
+  if (q) {
+    // Search by order id or the last digits of the buyer phone (all a seller ever sees).
+    const { data } = await supabase.from("orders").select(SELECT).in("listing_id", ids)
+      .order("created_at", { ascending: false }).limit(500);
+    const matched = (data || []).map(toSellerView).filter((o: any) =>
+      o.id.toLowerCase().includes(q) || (q.length <= 4 && (o.buyer_phone || "").includes(q)))
+      .filter((o: any) => type === "order" ? !isPre(o) : type === "preorder" ? isPre(o) : true);
+    total = matched.length;
+    orders = matched.slice(offset, offset + PAGE_SIZE);
+  } else {
+    let query = supabase.from("orders").select(SELECT, { count: "exact" }).in("listing_id", ids)
+      .in("status", STATUS_BY_TAB[p.get("tab") || "pending"] || STATUS_BY_TAB.pending)
+      .order("created_at", { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
+    const since = p.get("since");
+    if (since) query = query.gte("created_at", since);
+    if (type === "order") query = query.not("is_preorder", "is", true);
+    if (type === "preorder") query = query.eq("is_preorder", true);
+    const { data, count: c } = await query;
+    orders = (data || []).map(toSellerView);
+    total = c || 0;
+  }
+  return new Response(JSON.stringify({ has_listings: true, counts, today_gmv, orders, total, page_size: PAGE_SIZE }), { status: 200 });
+};
+
 export const POST: APIRoute = async ({ request, url }) => {
   try {
     const { seller_id, seller_phone, order_id, status, action, final_price, refund_note, cancel_reason } = await request.json();
@@ -53,7 +124,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     // BUG-12: verify seller_phone matches the seller row.
     // seller_id is publicly exposed via /api/search so cannot be a bearer alone.
     const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
-    const authCheck = await assertSellerOwns(seller_id, seller_phone);
+    const authCheck = await assertSellerOwns(seller_id, seller_phone, request);
     if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -145,7 +216,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           });
         } catch (err) { console.warn("[seller/orders] set_final_price buyer push failed", { order_id, err: (err as any)?.message }); }
       }
-      return new Response(JSON.stringify({ order: data, reconciled_status: newStatus }), { status: 200 });
+      return new Response(JSON.stringify({ order: toSellerView(data), reconciled_status: newStatus }), { status: 200 });
     }
 
     // Razorpay is the only payment method: no manual UPI verification and no
@@ -269,7 +340,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
       await notifyOrderParties({ order_id, event: "cancelled_by_seller", origin: url.origin })
         .catch((err: any) => console.warn("[seller/orders] cancel notify failed", { order_id, err: err?.message }));
-      return new Response(JSON.stringify({ order: data }), { status: 200 });
+      return new Response(JSON.stringify({ order: toSellerView(data) }), { status: 200 });
     }
 
     // Notify buyer via push — never fail the order update if push throws
@@ -368,7 +439,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     } catch (err) { console.warn("[seller/orders] status-change email fan-out failed", { order_id, err: (err as any)?.message }); }
 
-    return new Response(JSON.stringify({ order: data }), { status: 200 });
+    return new Response(JSON.stringify({ order: toSellerView(data) }), { status: 200 });
   } catch (err: any) {
     console.error("Seller orders error:", err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });

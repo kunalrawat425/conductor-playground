@@ -106,7 +106,7 @@ export const POST: APIRoute = async ({ request }) => {
     // get_slots is read-only + used by public buyer flow; skip auth there.
     if (action !== "get_slots") {
       const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
-      const authCheck = await assertSellerOwns(seller_id, seller_phone);
+      const authCheck = await assertSellerOwns(seller_id, seller_phone, request);
       if (authCheck instanceof Response) return authCheck;
     }
 

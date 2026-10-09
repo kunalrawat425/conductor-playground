@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { signSession } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { otpDevBypassAllowed } from "../../../lib/server/otp-mode";
@@ -167,7 +168,7 @@ export const POST: APIRoute = async ({ request }) => {
 
       if (existing) {
         return new Response(
-          JSON.stringify({ success: true, seller_id: existing.id, name: existing.name, is_active: existing.is_active !== false }),
+          JSON.stringify({ success: true, seller_id: existing.id, name: existing.name, is_active: existing.is_active !== false, session: signSession("seller", existing.id) }),
           { status: 200 }
         );
       }
@@ -184,7 +185,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, seller_id: newSeller.id, name: newSeller.name, is_active: newSeller.is_active !== false, is_new: true }),
+        JSON.stringify({ success: true, seller_id: newSeller.id, name: newSeller.name, is_active: newSeller.is_active !== false, is_new: true, session: signSession("seller", newSeller.id) }),
         { status: 200 }
       );
     }
@@ -218,7 +219,7 @@ export const POST: APIRoute = async ({ request }) => {
       is_new = true;
     }
 
-    return new Response(JSON.stringify({ success: true, buyer_id, is_active, is_new }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, buyer_id, is_active, is_new, session: signSession("buyer", buyer_id) }), { status: 200 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("verify-otp error:", err);

@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { settleCapturedPayment, PAYABLE_STATUSES } from "../../../lib/server/razorpay-ledger";
 
@@ -23,6 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
   let body: any;
   try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
   const { order_id, buyer_id } = body || {};
+  { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
   if (!order_id || !buyer_id) return new Response(JSON.stringify({ error: "order_id and buyer_id required" }), { status: 400 });
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);

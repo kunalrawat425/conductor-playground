@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { isRazorpayPaid } from "../../../lib/server/razorpay-refund";
@@ -14,6 +15,7 @@ const resendApiKey = import.meta.env.RESEND_API_KEY || "";
 export const POST: APIRoute = async ({ request, url }) => {
   try {
     const { order_id, buyer_id, action, cancel_reason } = await request.json();
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     if (!order_id || !buyer_id) {
       return new Response(JSON.stringify({ error: "order_id and buyer_id required" }), { status: 400 });
     }

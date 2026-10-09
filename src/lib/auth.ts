@@ -30,6 +30,7 @@ export async function verifyOtp(phone: string, token: string) {
   // Store session in localStorage
   localStorage.setItem("rlf_buyer_id", data.buyer_id);
   localStorage.setItem("rlf_phone", data.phone);
+  if (data.session) localStorage.setItem("rlf_session_buyer", data.session);
 
   return data;
 }
@@ -105,5 +106,6 @@ export function saveBuyerAddressDetailToStorage(detail: BuyerAddressDetail) {
 
 export function signOut() {
   localStorage.removeItem("rlf_buyer_id");
+  localStorage.removeItem("rlf_session_buyer");
   localStorage.removeItem("rlf_phone");
 }

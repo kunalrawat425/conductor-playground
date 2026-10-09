@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { requireBuyer } from "../../../lib/server/session";
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { internalHeaders } from "../../../lib/server/internal-auth";
@@ -117,7 +118,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (!emailTo) return;
       // Patch email to buyers table if they don't have one yet
       if (!buyer?.email && emailTo) {
-        await supabase.from("buyers").update({ email: emailTo }).eq("id", buyer_id);
+        // Only the logged-in buyer may change their own email (client-supplied value).
+        if (!requireBuyer(request, buyer_id)) await supabase.from("buyers").update({ email: emailTo }).eq("id", buyer_id);
       }
       const { razorpayReceiptEmail } = await import("../../../lib/email-templates");
       const seller = (_order as any).listing?.seller;

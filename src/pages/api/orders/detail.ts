@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -11,10 +12,11 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
  * Returns full order detail (order + listing + seller + address) for the buyer who owns it.
  * 403 if buyer doesn't own the order, 404 if not found.
  */
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
     const id = url.searchParams.get("id");
     const buyer_id = url.searchParams.get("buyer_id");
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     if (!id || !buyer_id) {
       return new Response(JSON.stringify({ error: "id and buyer_id required" }), { status: 400 });
     }

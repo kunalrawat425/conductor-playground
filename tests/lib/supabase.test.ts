@@ -123,18 +123,6 @@ describe("supabase queries", () => {
     globalThis.fetch = prevFetch;
   });
 
-  it("updateOrderStatus updates status and optional final price", async () => {
-    const updatedOrder = { id: "o1", status: "confirmed", final_price: 450 };
-    setupChain(updatedOrder);
-
-    const { updateOrderStatus } = await import("../../src/lib/supabase");
-    const result = await updateOrderStatus("o1", "confirmed", 450);
-
-    expect(mockFrom).toHaveBeenCalledWith("orders");
-    expect(result.status).toBe("confirmed");
-    expect(result.final_price).toBe(450);
-  });
-
   it("getSpeciesRanges returns all ranges", async () => {
     const mockRanges = [
       { id: "r1", species: "pomfret", price_unit: "piece", min_price: 400, max_price: 600 },

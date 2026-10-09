@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -24,8 +25,9 @@ const ACTIVE_STATUSES = [
 ] as const;
 const PAST_STATUSES = ["picked_up", "completed", "declined", "cancelled", "refunded"] as const;
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   const buyer_id = url.searchParams.get("buyer_id");
+  { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
   const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
   const page_size = Math.min(50, Math.max(1, parseInt(url.searchParams.get("page_size") || "20")));
   const scope = (url.searchParams.get("scope") || "all").toLowerCase();
@@ -35,13 +37,8 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   try {
-    // Use anon key so Supabase RLS is enforced — service key bypasses RLS.
-    // Orders table RLS allows read where buyer_id matches or buyer_phone matches.
-    const sb = createClient(
-      import.meta.env.PUBLIC_SUPABASE_URL || "",
-      import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
-    );
-
+    // Service key: the open "read every order" RLS policy is gone (076). Access
+    // is the buyer's signed session above + their own phone on record below.
     const offset = (page - 1) * page_size;
 
     // Phone-matched orders (placed before login linked buyer_id) come from the
@@ -52,6 +49,7 @@ export const GET: APIRoute = async ({ url }) => {
       import.meta.env.PUBLIC_SUPABASE_URL || "",
       import.meta.env.SUPABASE_SERVICE_KEY || ""
     );
+    const sb = admin;
     const { data: me } = await admin.from("buyers").select("phone").eq("id", buyer_id).maybeSingle();
     const own = String(me?.phone || "").replace(/\D/g, "").slice(-10);
     const phoneClauses = /^[6-9]\d{9}$/.test(own)
@@ -62,8 +60,8 @@ export const GET: APIRoute = async ({ url }) => {
     let query = sb
       .from("orders")
       .select(
-        "id, status, created_at, total_price, delivery_fee, quantity, quantity_unit, cut_style, buyer_notes, placement_kind, is_preorder, razorpay_order_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls, paid_amount, final_price," +
-        "listing:fish_listings(species, seller:sellers(name))",
+        // The buyer's own orders, with what /track and /me render (seller hours for the stepper).
+        "*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name, opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, accepts_preorder))",
         { count: "exact" }
       )
       .or(orClause);

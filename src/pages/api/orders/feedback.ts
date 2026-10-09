@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -9,6 +10,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { order_id, buyer_id, rating, feedback } = await request.json();
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     const numericRating = Number(rating);
     const safeFeedback = typeof feedback === "string" ? feedback.slice(0, 500) : "";
 

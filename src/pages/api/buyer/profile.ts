@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 
 export const prerender = false;
@@ -16,6 +17,7 @@ const ALLOWED_BUYER_FIELDS = ["first_name", "last_name", "email"] as const;
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { buyer_id, updates } = await request.json();
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
 
     if (!buyer_id || !updates || typeof updates !== "object") {
       return new Response(JSON.stringify({ error: "buyer_id and updates required" }), { status: 400 });
@@ -122,9 +124,10 @@ export const POST: APIRoute = async ({ request }) => {
  * GET /api/buyer/profile?buyer_id=xxx
  * Fetch buyer profile
  */
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
     const buyer_id = url.searchParams.get("buyer_id");
+    { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
     if (!buyer_id) {
       return new Response(JSON.stringify({ error: "buyer_id required" }), { status: 400 });
     }

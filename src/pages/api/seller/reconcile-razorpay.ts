@@ -34,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   // BUG-12: verify seller_phone matches
   const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
-  const authCheck = await assertSellerOwns(seller_id, seller_phone);
+  const authCheck = await assertSellerOwns(seller_id, seller_phone, request);
   if (authCheck instanceof Response) return authCheck;
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);

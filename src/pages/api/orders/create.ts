@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { resolveOrderAddress, saveAddressSnapshot } from "../../../lib/server/order-address";
@@ -48,6 +49,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       buyer_notes,
       cut_style,
     } = body;
+    if (buyer_id) { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
 
     if (scheduled_for) {
       return new Response(

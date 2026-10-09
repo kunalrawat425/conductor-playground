@@ -1,7 +1,7 @@
 // Pay an order through the real Razorpay TEST checkout (Netbanking → mock bank).
 // usage: node pay.mjs <orderId> <buyerId> <phone> [success|failure]
 import { chromium } from "playwright";
-import { BASE } from "./api.mjs";
+import { BASE, login } from "./api.mjs";
 const [orderId, buyerId, phone, outcome = "success"] = process.argv.slice(2);
 const exe = process.env.HOME + "/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing";
 const browser = await chromium.launch({ headless: true, executablePath: exe });
@@ -16,7 +16,8 @@ page.on("response", async (r) => {
 });
 if (process.env.BLOCK_VERIFY) await page.route("**/api/payments/razorpay-verify", (route) => route.abort());
 await page.goto(BASE + "/");
-await page.evaluate(([b, p]) => { localStorage.setItem("rlf_buyer_id", b); localStorage.setItem("rlf_phone", p); }, [buyerId, phone]);
+const { json: auth } = await login(phone);
+await page.evaluate(([b, p, t]) => { localStorage.setItem("rlf_buyer_id", b); localStorage.setItem("rlf_phone", p); localStorage.setItem("rlf_session_buyer", t); }, [buyerId, phone, auth.session]);
 await page.goto(`${BASE}/track/${orderId}`);
 await page.getByRole("button", { name: /^Pay/ }).first().click({ timeout: 20000 });
 const rz = page.frameLocator('iframe[src*="api.razorpay.com"]');

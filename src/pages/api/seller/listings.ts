@@ -47,7 +47,7 @@ export const POST: APIRoute = async ({ request }) => {
     const body = await request.json();
     const { action, seller_id, seller_phone } = body;
 
-    const authCheck = await assertSellerOwns(seller_id, seller_phone);
+    const authCheck = await assertSellerOwns(seller_id, seller_phone, request);
     if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

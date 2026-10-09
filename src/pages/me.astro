@@ -509,7 +509,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
     // Logout
     document.getElementById("v2-me-logout")?.addEventListener("click", () => {
       try {
-        localStorage.removeItem("rlf_buyer_id");
+        localStorage.removeItem("rlf_buyer_id"); localStorage.removeItem("rlf_session_buyer");
         localStorage.removeItem("rlf_phone");
         localStorage.removeItem("rlf_buyer_first_name");
         localStorage.removeItem("rlf_buyer_last_name");

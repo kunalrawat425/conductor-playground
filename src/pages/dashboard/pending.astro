@@ -46,7 +46,7 @@ import EmptyState from "../../components/ui/molecules/EmptyState.astro";
       if (text.includes("Sign out")) {
         el.addEventListener("click", (e) => {
           e.preventDefault();
-          try { localStorage.removeItem("rlf_seller_id"); localStorage.removeItem("rlf_seller_phone"); } catch {}
+          try { localStorage.removeItem("rlf_seller_id"); localStorage.removeItem("rlf_session_seller"); localStorage.removeItem("rlf_seller_phone"); } catch {}
           location.href = "/dashboard/login";
         });
       }

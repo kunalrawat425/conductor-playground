@@ -165,13 +165,8 @@ const { id } = Astro.params;
 <script>
   import { wasActuallyPaid, refundableAmount, paymentMethodLabel, refundStatus } from "../../lib/order-payment-state";
   import { buyerCancelRule, cancelledByText, cancelReasonText } from "../../lib/order-cancel";
-  import { createClient } from "@supabase/supabase-js";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
   import { cleanSellerName } from "../../lib/seller-display";
-  const supabase = createClient(
-    import.meta.env.PUBLIC_SUPABASE_URL || "",
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ""
-  );
   const RAZORPAY_KEY_ID  = import.meta.env.PUBLIC_RAZORPAY_KEY_ID  || "";
   // Extract order ID from URL path: /track/{id}
   const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
@@ -956,25 +951,7 @@ const { id } = Astro.params;
     initPage();
   }
 
-  // Supabase Realtime: instant order status updates
-  const terminalStatuses = ["picked_up", "completed", "cancelled", "declined", "refunded"];
-  const channel = supabase
-    .channel(`order-${orderId}`)
-    .on("postgres_changes", {
-      event: "UPDATE",
-      schema: "public",
-      table: "orders",
-      filter: `id=eq.${orderId}`,
-    }, (payload: any) => {
-      load(); // re-render with new data
-      const newStatus = payload.new?.status;
-      if (newStatus && terminalStatuses.includes(newStatus)) {
-        channel.unsubscribe();
-      }
-    })
-    .subscribe();
-
-  // Fallback poll every 30s in case realtime connection drops
+  // Poll for status changes (browser realtime needed the open orders policy).
   pollTimer = setInterval(() => {
     const statusEl = document.getElementById("v2-od-status");
     const text = statusEl?.textContent || "";
@@ -983,5 +960,5 @@ const { id } = Astro.params;
       return;
     }
     load();
-  }, 30000);
+  }, 15000);
 </script>
