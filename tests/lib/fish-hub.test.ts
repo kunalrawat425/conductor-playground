@@ -28,3 +28,13 @@ describe("hubRows", () => {
     expect(rows[0].perKg).toEqual({ low: 1200, high: 1200 });
   });
 });
+
+describe("hubIndexable", () => {
+  it("needs 2 sellers, or 1 seller plus a written guide", async () => {
+    const { hubIndexable } = await import("../../src/lib/fish-hub");
+    expect(hubIndexable("surmai", 1)).toBe(true); // has a guide
+    expect(hubIndexable("lobster", 1)).toBe(false); // no guide yet
+    expect(hubIndexable("lobster", 2)).toBe(true);
+    expect(hubIndexable("surmai", 0)).toBe(false);
+  });
+});

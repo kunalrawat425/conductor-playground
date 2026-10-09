@@ -31,7 +31,7 @@ export const SPECIES: Record<string, Species> = {
   halwa: { english: "Halwa (Black Pomfret)", marathi: "हलवा", defaultUnit: "piece" },
   katla: { english: "Katla", marathi: "कटला", defaultUnit: "kg" },
   salmon: { english: "Salmon", marathi: "सॅलमन", defaultUnit: "kg" },
-  bhetki: { english: "Bhetki (Indian Basa)", marathi: "भेटकी", defaultUnit: "kg" },
+  bhetki: { english: "Bhetki (Barramundi)", marathi: "भेटकी", defaultUnit: "kg" },
   ghol: { english: "Ghol", marathi: "घोळ", defaultUnit: "kg" },
   basa: { english: "Basa", marathi: "बासा", defaultUnit: "kg" },
   shark: { english: "Shark (Mushi)", marathi: "मुशी", defaultUnit: "kg" },

@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { supabase } from "../lib/supabase";
 import { sellerHref } from "../lib/seller-display";
-import { HUB_MIN_SELLERS } from "../lib/fish-hub";
+import { hubIndexable } from "../lib/fish-hub";
 import { SPECIES } from "../lib/species";
 import { AREAS, sellersForArea } from "../lib/areas";
 
@@ -16,7 +16,7 @@ export const GET: APIRoute = async () => {
   const { data: sellers } = await supabase
     .from("sellers")
     .select("id, name, lat, lng, location, location_name")
-    .eq("is_active", true)
+    .eq("is_active", true).or("is_test.is.null,is_test.eq.false")
     .order("name");
 
   // Fetch distinct species from active listings
@@ -24,6 +24,7 @@ export const GET: APIRoute = async () => {
     // Core pages
     { loc: "/", changefreq: "daily", priority: "1.0" },
     { loc: "/shop", changefreq: "daily", priority: "0.9" },
+    { loc: "/fish-price-today", changefreq: "daily", priority: "0.9" },
     // Marketing pages
     { loc: "/for-sellers", changefreq: "weekly", priority: "0.8" },
     { loc: "/about", changefreq: "monthly", priority: "0.7" },
@@ -50,7 +51,7 @@ export const GET: APIRoute = async () => {
     speciesBySeller.get(r.seller_id)!.add(String(r.species).toLowerCase());
   }
 
-  // Fish hubs: only those the hub page itself marks indexable (>= HUB_MIN_SELLERS active sellers with a price).
+  // Fish hubs: only those the hub page itself marks indexable (hubIndexable).
   const activeIds = new Set((sellers || []).map((s) => s.id));
   const sellersPerSpecies = new Map<string, number>();
   for (const [sid, set] of speciesBySeller) {
@@ -58,7 +59,7 @@ export const GET: APIRoute = async () => {
     for (const sp of set) sellersPerSpecies.set(sp, (sellersPerSpecies.get(sp) || 0) + 1);
   }
   for (const [sp, n] of sellersPerSpecies) {
-    if (n >= HUB_MIN_SELLERS && SPECIES[sp]) urls.push({ loc: `/fish/${sp}`, changefreq: "daily", priority: "0.8" });
+    if (hubIndexable(sp, n) && SPECIES[sp]) urls.push({ loc: `/fish/${sp}`, changefreq: "daily", priority: "0.8" });
   }
 
   for (const seller of sellers || []) {

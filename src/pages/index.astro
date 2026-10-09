@@ -10,7 +10,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 const homeFaqs = [
   { q: "How does Relifish work?", a: "Local fish sellers list the fish they have each day. You order same-day during a seller's opening hours, or pre-order before the seller's cutoff (shown on their page) for tomorrow. You pay online when you order, the seller confirms, then delivers or keeps it ready for pickup. No subscription." },
   { q: "How do I know the fish is fresh?", a: "Each seller lists only what they have that day, and you choose how it is prepared (whole, cleaned or cut). Before cooking, check for clear eyes, red gills, firm flesh and a clean sea smell." },
-  { q: "Why do I need to log in to see prices?", a: "Prices vary by seller and change daily. Log in with your mobile number (OTP, no password) to see live prices from sellers near you." },
+  { q: "Can I see prices before I log in?", a: "Yes. Each seller's live prices are shown on their page and on our fish price today page. Prices vary by seller and change daily. You log in with your mobile number (OTP, no password) only when you place an order." },
   { q: "What fish can I order?", a: "It depends on what each seller lists that day: commonly pomfret, surmai, bangda, prawns, rawas, crab, halwa and bombil." },
   { q: "What if my order can't be fulfilled?", a: "If the seller declines, or you cancel before they confirm, the full amount is refunded to your original payment method, usually within 5 to 7 working days." },
   { q: "Is there a minimum order?", a: "Each seller sets their own minimum. You will see it on the seller's page before ordering." },
@@ -808,7 +808,7 @@ const homeFaqs = [
       </div>
       <div class="hero-ctas">
         <a href="/shop" class="btn-primary">Order fresh fish →</a>
-        <a href="#waitlist" class="btn-ghost">Join waitlist</a>
+        <a href="/fish-price-today" class="btn-ghost">Fish price today</a>
       </div>
       <div class="hero-stats">
         <div class="hs"><div class="hs-n">3</div><div class="hs-l">Areas: Thane, South Mumbai, Kamothe</div></div>
@@ -1156,7 +1156,7 @@ const homeFaqs = [
           </div>
         </div>
         <h3>Browse & pick fish</h3>
-        <p>See sellers open tonight near you. Login to view prices and add fish.</p>
+        <p>See sellers near you and today's prices. Log in with your phone only when you order.</p>
       </div>
 
       <!-- STEP 3: Checkout -->
@@ -1417,7 +1417,7 @@ const homeFaqs = [
           <div class="dl-icon buy"><img src={LOGO_URL} alt="Relifish" style="height:28px;width:auto;filter:brightness(0) invert(1);" /></div>
           <div>
             <div class="dl-title">Browse sellers now</div>
-            <div class="dl-sub">See which sellers are open tonight near you. Login to view prices and pre-order.</div>
+            <div class="dl-sub">See which sellers are open near you and today's prices. Log in only to order.</div>
           </div>
           <div class="dl-arrow">→</div>
         </div>
