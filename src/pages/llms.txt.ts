@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { supabase } from "../lib/supabase";
 import { cleanSellerName, sellerHref, stripContactInfo } from "../lib/seller-display";
 import { getSpeciesDisplay, SPECIES } from "../lib/species";
-import { HUB_MIN_SELLERS } from "../lib/fish-hub";
+import { hubIndexable } from "../lib/fish-hub";
 
 export const prerender = false;
 
@@ -17,7 +17,7 @@ export const GET: APIRoute = async () => {
   let fishRows: { seller_id: string; species: string; pricing_options: unknown }[] = [];
   try {
     const [s, f] = await Promise.all([
-      supabase.from("sellers").select("id, name, location_name").eq("is_active", true).order("name"),
+      supabase.from("sellers").select("id, name, location_name").eq("is_active", true).or("is_test.is.null,is_test.eq.false").order("name"),
       supabase.from("fish_listings").select("seller_id, species, pricing_options"),
     ]);
     if (s.error || f.error) throw s.error || f.error;
@@ -38,7 +38,7 @@ export const GET: APIRoute = async () => {
     seen.add(`${r.seller_id}:${sp}`);
     perSpecies.set(sp, (perSpecies.get(sp) || 0) + 1);
   }
-  const hubs = [...perSpecies].filter(([sp, n]) => n >= HUB_MIN_SELLERS && SPECIES[sp]).map(([sp]) => sp);
+  const hubs = [...perSpecies].filter(([sp, n]) => hubIndexable(sp, n) && SPECIES[sp]).map(([sp]) => sp);
   const species = [...perSpecies.keys()].filter((sp) => SPECIES[sp]).map(getSpeciesDisplay);
 
   const body = `# Relifish

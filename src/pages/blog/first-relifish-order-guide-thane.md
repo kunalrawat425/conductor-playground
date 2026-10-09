@@ -31,9 +31,9 @@ Sellers on Relifish currently serve parts of **Thane West**, **Tardeo (South Mum
 
 Open [relifish.com/shop](/shop) and allow location, or pick your area. You will see the sellers who can deliver to you or who you can collect from.
 
-## Step 2: Log in with your mobile number
+## Step 2: See today's prices
 
-Log in with your mobile number and a one-time code (OTP). There is no password. You need to be logged in to see each seller's live prices, because prices change daily.
+Each seller's page shows their live prices, with no login needed. Prices change daily, so check [today's fish prices](/fish-price-today) to compare sellers. You log in with your mobile number and a one-time code (OTP) only when you place an order. There is no password.
 
 ## Step 3: Choose same-day or pre-order
 

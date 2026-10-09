@@ -22,3 +22,16 @@ describe("sellerLookupOutcome (404 vs 503)", () => {
     expect(sellerLookupOutcome(null)).toBe("unavailable");
   });
 });
+
+describe("validateSellerName", () => {
+  it("accepts real business names", async () => {
+    const { validateSellerName } = await import("../../src/lib/seller-display");
+    for (const n of ["Fishtokri", "Ram & Sons", "D'Souza Fish", "Sea-Fresh Fish 2", "मासे वाला", "Seller 0263"]) expect(validateSellerName(n)).toBeNull();
+  });
+  it("rejects domains, phone numbers, symbols and bad lengths", async () => {
+    const { validateSellerName } = await import("../../src/lib/seller-display");
+    for (const n of ["Fishtokri.com", "www.fish", "fish.in shop", "https://x", "Ram Fish 9876543210", "Ram 98765-43210", "Fish@Home", "Fish!!", "A", "x".repeat(61), "", null]) {
+      expect(validateSellerName(n), String(n)).not.toBeNull();
+    }
+  });
+});

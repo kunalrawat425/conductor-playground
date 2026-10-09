@@ -19,3 +19,14 @@ describe("sellersForArea", () => {
     expect(sellersForArea(th, [{ id: "x", lat: th.lat, lng: th.lng, location_name: "anything" }])).toHaveLength(1);
   });
 });
+
+describe("coveredLocalities", () => {
+  it("lists only localities inside a seller's delivery radius", async () => {
+    const { coveredLocalities } = await import("../../src/lib/areas");
+    const kamothe = coveredLocalities("kamothe", [{ lat: 19.022, lng: 73.089, delivery_rad: 5 }]);
+    expect(kamothe).toContain("Kamothe");
+    expect(kamothe).toContain("Kharghar");
+    expect(coveredLocalities("kamothe", [{ lat: 19.022, lng: 73.089, delivery_rad: 1 }])).not.toContain("Kharghar");
+    expect(coveredLocalities("thane", [])).toEqual([]);
+  });
+});

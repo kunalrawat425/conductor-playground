@@ -1,11 +1,11 @@
 ---
 layout: ../../layouts/Layout.astro
-title: "Why Your Fish Curry Doesn't Taste the Same Anymore (It's Probably the Fish)"
-description: "Same masala, same pan, same recipe, but the curry tastes flat. The usual reason is the fish: how long since it was caught, and how it was stored. How to tell, and what to do about it."
+title: "Best Fish for Curry in Mumbai, and Why Your Curry Tastes Different"
+description: "Which fish is best for curry in Mumbai (surmai, pomfret, bangda, rawas, prawns, rohu) and which cut to ask for, plus why a curry tastes flat when the fish is old and how to check freshness."
 pubDate: 2026-06-20
 updatedDate: 2026-10-09
 author: "Relifish Team"
-tags: ["Fresh Fish", "Fish Curry", "Freshness"]
+tags: ["Fish Curry", "Fish Guide", "Freshness"]
 image: "/blog-why-fish-curry-doesnt-taste-same-anymore-mumbai-hero.png"
 ---
 
@@ -46,6 +46,28 @@ If two of these fail, the fish will not give you the curry you remember.
 **Buy closer to when you cook.** Pre-ordering for the next morning means the seller buys for your order, rather than you picking from whatever is left.
 
 **Ask for the cut you need.** Curry pieces cut from a whole fish hold up better than pre-cut pieces that have been sitting out.
+
+---
+
+## Best fish for curry, and the cut to ask for
+
+| Fish | Why it works in curry | Ask for |
+|---|---|---|
+| [Surmai (kingfish)](/fish/surmai) | Firm and meaty; holds its shape in gravy | Steaks or curry cut |
+| [Pomfret](/fish/pomfret) | Soft and mild; best in light coconut or green curries | Curry pieces, or whole small pomfret |
+| [Bangda (mackerel)](/fish/bangda) | Oily and full-flavoured; classic for tikhla and Malvani curry | Whole cleaned, or curry pieces |
+| [Rawas](/fish/rawas) | Mild, firm white flesh; good for thicker gravies | Steaks |
+| [Prawns](/fish/prawns) | Sweet; cook in minutes, add at the end | Peeled and deveined |
+| [Rohu](/fish/rohu) / [Katla](/fish/katla) | Freshwater carp; the base of Bengali-style curry; available in the monsoon | Curry pieces (has fine bones) |
+| [Mushi (shark)](/fish/shark) | Firm, no bones (cartilage); traditional spicy Konkani curry | Curry pieces |
+
+**Quick rules:**
+- **Firm fish** (surmai, rawas, ghol, mushi) suit long-simmered gravies.
+- **Delicate fish** (pomfret, bombil) go in at the end, or are better fried.
+- **Oily fish** (bangda) match strong, sour masalas like kokum or tamarind.
+- **Ask for even-sized pieces** so everything cooks in the same time.
+
+See [today's fish prices](/fish-price-today) before you choose.
 
 ---
 

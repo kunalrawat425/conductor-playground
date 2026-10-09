@@ -6,8 +6,10 @@ import AppShell from "../../components/ui/AppShell.astro";
 import SellerCard from "../../components/ui/molecules/SellerCard.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 import { supabase } from "../../lib/supabase";
-import { getAreaBySlug, sellersForArea } from "../../lib/areas";
-import { cleanSellerName, sellerHref } from "../../lib/seller-display";
+import { areaNameForPoint, coveredLocalities, getAreaBySlug, sellersForArea } from "../../lib/areas";
+import { perKgRange } from "../../lib/fish-hub";
+import { timeLabel } from "../../lib/server/sunday-reminder";
+import { cleanSellerName, sellerHref, stripContactInfo } from "../../lib/seller-display";
 import { SPECIES, getSpeciesDisplay } from "../../lib/species";
 
 const { city } = Astro.params;
@@ -26,7 +28,7 @@ try {
   const { data, error } = await supabase
     .from("sellers")
     .select("*")
-    .eq("is_active", true)
+    .eq("is_active", true).or("is_test.is.null,is_test.eq.false")
     .neq("name", "New Seller");
 
   if (error) throw error;
@@ -89,6 +91,27 @@ const areaTitle = `Fresh Fish Home Delivery in ${area.name}`;
 const hasSellers = sellers.length > 0;
 const sellerNames = sellers.map((s: any) => cleanSellerName(s.name));
 const speciesList = Array.from(speciesMap.keys());
+const localities = coveredLocalities(city || "", sellers);
+const perKgBySpecies = new Map(speciesList.map((sp) => [sp, perKgRange(areaListings.filter((l: any) => String(l.species).toLowerCase() === sp))]));
+const DAYS: Record<string, string> = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
+const sellerTerms = sellers.map((sl: any) => {
+  const days = Array.isArray(sl.open_days) && sl.open_days.length && sl.open_days.length < 7 ? sl.open_days.map((d: string) => DAYS[d] || d).join(", ") : "Every day";
+  const hours = sl.opens_at && sl.closes_at && sl.opens_at.slice(0, 5) !== "01:00" ? `${timeLabel(sl.opens_at)}–${timeLabel(sl.closes_at)}` : "Pre-order only";
+  const fee = !sl.has_delivery ? "Pickup only"
+    : sl.delivery_fee_enabled === false ? "Free delivery"
+    : sl.delivery_fee_type === "per_km" && Number(sl.delivery_fee_per_km) > 0 ? `₹${Number(sl.delivery_fee_per_km)}/km`
+    : Number(sl.delivery_fee_amount) > 0 ? `₹${Number(sl.delivery_fee_amount)}` : "Shown at checkout";
+  return {
+    name: cleanSellerName(sl.name),
+    href: sellerHref(sl.name, sl.id),
+    place: areaNameForPoint(sl.lat, sl.lng) || stripContactInfo(sl.location_name) || area.name,
+    days, hours,
+    cutoff: sl.accepts_preorder && sl.preorder_cutoff_time ? `Pre-order until ${timeLabel(sl.preorder_cutoff_time)}` : sl.accepts_preorder ? "Pre-orders open" : "Same-day only",
+    radius: Number(sl.delivery_rad) > 0 ? `${Number(sl.delivery_rad)} km` : "—",
+    fee: fee + (Number(sl.free_delivery_above) > 0 ? ` (free above ₹${Number(sl.free_delivery_above)})` : ""),
+    min: Number(sl.min_order_amount) > 0 ? `₹${Number(sl.min_order_amount)}` : "None",
+  };
+});
 const updatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const listJoin = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
@@ -201,7 +224,7 @@ const jsonLd = {
   <!-- Live Products section -->
   {areaListings.length > 0 && (
     <div style="padding: 16px; border-bottom: 1px solid var(--v2-border); background: var(--v2-bg-2);">
-      <h2 style="font: 700 13px Inter; text-transform: uppercase; letter-spacing: 0.05em; color: var(--v2-ink-3); margin: 0 0 12px 0;">Live Products in {area.name}</h2>
+      <h2 style="font: 700 13px Inter; text-transform: uppercase; letter-spacing: 0.05em; color: var(--v2-ink-3); margin: 0 0 12px 0;">Fish price today in {area.name}</h2>
       <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
         {Array.from(speciesMap.entries()).map(([species, data]) => {
           const emoji = species.includes("prawn") ? "🦐" : species.includes("crab") ? "🦀" : "🐟";
@@ -210,7 +233,7 @@ const jsonLd = {
               <span style="font-size: 24px; display: block; margin-bottom: 4px;">{emoji}</span>
               <span style="font: 700 12px Inter; color: var(--v2-ink); display: block;">{getSpeciesDisplay(species)}</span>
               <span style="font: 600 11px Inter; color: var(--v2-brand); display: block; margin-top: 2px;">
-                {data.min === data.max ? `₹${data.min}` : `₹${data.min}-₹${data.max}`}
+                {(() => { const k = perKgBySpecies.get(species); return k ? (k.low === k.high ? `₹${k.low}/kg` : `₹${k.low}–${k.high}/kg`) : (data.min === data.max ? `₹${data.min}` : `₹${data.min}–₹${data.max}`); })()}
               </span>
             </a>
           );
@@ -230,7 +253,7 @@ const jsonLd = {
           <SellerCard
             id={seller.id}
             name={seller.name}
-            location={seller.location_name || `${Math.round(seller.distanceKm)} km away`}
+            location={areaNameForPoint(seller.lat, seller.lng) || stripContactInfo(seller.location_name) || `${Math.round(seller.distanceKm)} km away`}
             distanceKm={seller.distanceKm}
             rating={seller.rating_avg || 0}
             status={seller.is_active ? "open" : "closed"}
@@ -256,6 +279,31 @@ const jsonLd = {
     </div>
   )}
 
+  {hasSellers && (
+    <section style="padding: 16px; border-top: 1px solid var(--v2-border);">
+      <h2 style="font: 700 16px/1.3 Inter; margin: 0 0 8px 0;">Online fish delivery in {area.name}</h2>
+      {localities.length > 0 && (
+        <p style="font: 400 14px/1.6 Inter; margin: 0 0 12px 0; color: var(--v2-ink-2);">
+          Within a seller's delivery radius: {localities.join(", ")}. Your exact address is checked at checkout.
+        </p>
+      )}
+      <table style="width:100%;border-collapse:collapse;font:400 13px/1.5 Inter;">
+        <thead><tr style="text-align:left;color:var(--v2-ink-3);"><th style="padding:6px 4px;">Seller</th><th style="padding:6px 4px;">Hours</th><th style="padding:6px 4px;">Delivery</th><th style="padding:6px 4px;">Min order</th></tr></thead>
+        <tbody>
+          {sellerTerms.map((t) => (
+            <tr style="border-top:1px solid var(--v2-border);vertical-align:top;">
+              <td style="padding:8px 4px;"><a href={t.href} style="font-weight:700;color:var(--v2-brand);">{t.name}</a><div style="color:var(--v2-ink-3);">{t.place}</div></td>
+              <td style="padding:8px 4px;">{t.days}<br/>{t.hours}<br/><span style="color:var(--v2-ink-3);">{t.cutoff}</span></td>
+              <td style="padding:8px 4px;">{t.fee}<br/><span style="color:var(--v2-ink-3);">Up to {t.radius}</span></td>
+              <td style="padding:8px 4px;">{t.min}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p style="font: 400 12px/1.5 Inter; margin: 8px 0 0 0; color: var(--v2-ink-3);">Terms are set by each seller and shown again at checkout before you pay.</p>
+    </section>
+  )}
+
   <!-- FAQ: visible, and the same text as the FAQPage schema -->
   <section style="padding: 20px 16px; border-top: 1px solid var(--v2-border);">
     <h2 style="font: 700 16px/1.3 Inter; margin: 0 0 12px 0;">Questions about fish delivery in {area.name}</h2>
@@ -265,7 +313,7 @@ const jsonLd = {
         <p style="font: 400 14px/1.6 Inter; margin: 8px 0 0 0; color: var(--v2-text-secondary);">{f.a}</p>
       </details>
     ))}
-    <p style="font: 400 13px/1.5 Inter; margin: 12px 0 0 0;"><a href="/blog/first-relifish-order-guide-thane">How ordering on Relifish works →</a></p>
+    <p style="font: 400 13px/1.5 Inter; margin: 12px 0 0 0;"><a href="/fish-price-today">Fish price today →</a> · <a href="/blog/first-relifish-order-guide-thane">How ordering on Relifish works →</a></p>
   </section>
   <SeoLinks />
 </AppShell>
