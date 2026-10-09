@@ -39,7 +39,7 @@ export const GET: APIRoute = async ({ url }) => {
     // Search fish_listings
     let listingsQuery = supabase
       .from("fish_listings")
-      .select("id, species, pricing_options, photo_url, weight_avail, is_available, is_preorder_enabled, seller:sellers(id, name, location_name, lat, lng, opens_at, closes_at, accepts_preorder, has_delivery, rating_avg, total_orders, is_active)");
+      .select("id, species, pricing_options, photo_url, weight_avail, is_available, is_preorder_enabled, seller:sellers(id, name, location_name, lat, lng, opens_at, closes_at, accepts_preorder, has_delivery, rating_avg, total_orders, is_active)").is("deleted_at", null);
 
     if (isKeywordMatch) {
       listingsQuery = listingsQuery.or("is_available.eq.true,is_preorder_enabled.eq.true");

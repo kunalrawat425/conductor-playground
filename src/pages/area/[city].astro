@@ -41,7 +41,7 @@ try {
   if (sellerIds.length > 0) {
     const { data: listData, error: listErr } = await supabase
       .from("fish_listings")
-      .select("*, seller:sellers(*)")
+      .select("*, seller:sellers(*)").is("deleted_at", null)
       .in("seller_id", sellerIds)
       .or("is_available.eq.true,is_preorder_enabled.eq.true");
     if (listErr) throw listErr;

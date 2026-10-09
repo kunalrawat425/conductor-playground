@@ -99,7 +99,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     const { data: listings, error: listingsErr } = await supabase
       .from("fish_listings")
-      .select("id, seller_id, species, is_available, weight_avail")
+      .select("id, seller_id, species, is_available, weight_avail").is("deleted_at", null)
       .eq("is_available", true)
       .gt("weight_avail", 0);
 

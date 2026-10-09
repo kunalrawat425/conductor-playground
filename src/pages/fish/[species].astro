@@ -24,7 +24,7 @@ if (known) {
       supabase.from("sellers").select("id, name, location_name, lat, lng").eq("is_active", true).or("is_test.is.null,is_test.eq.false"),
       supabase
         .from("fish_listings")
-        .select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options")
+        .select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options").is("deleted_at", null)
         .eq("species", species),
     ]);
     if (sellersRes.error || listingsRes.error) throw sellersRes.error || listingsRes.error;
