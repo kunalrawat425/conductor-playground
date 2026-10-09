@@ -1,0 +1,128 @@
+---
+// /fish/<species> — every seller on Relifish that lists this fish, with live price and availability.
+// Indexable only when HUB_MIN_SELLERS sellers list it (no thin pages); otherwise noindex,follow.
+export const prerender = false;
+
+import AppShell from "../../components/ui/AppShell.astro";
+import EmptyState from "../../components/ui/molecules/EmptyState.astro";
+import { supabase } from "../../lib/supabase";
+import { SPECIES, getSpeciesDisplay } from "../../lib/species";
+import { SITE_URL, canonicalFor } from "../../lib/brand";
+import { HUB_MIN_SELLERS, hubRows, type HubRow } from "../../lib/fish-hub";
+
+const species = (Astro.params.species || "").toLowerCase();
+const known = Object.hasOwn(SPECIES, species) ? SPECIES[species] : undefined;
+
+let rows: HubRow[] = [];
+let unavailable = false;
+if (known) {
+  try {
+    const [sellersRes, listingsRes] = await Promise.all([
+      supabase.from("sellers").select("id, name, location_name").eq("is_active", true),
+      supabase
+        .from("fish_listings")
+        .select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options")
+        .eq("species", species),
+    ]);
+    if (sellersRes.error || listingsRes.error) throw sellersRes.error || listingsRes.error;
+    rows = hubRows(sellersRes.data ?? [], (listingsRes.data ?? []) as any, species);
+  } catch {
+    unavailable = true;
+  }
+}
+
+if (!known) Astro.response.status = 404;
+else if (unavailable) {
+  Astro.response.status = 503;
+  Astro.response.headers.set("Retry-After", "120");
+}
+
+const name = known ? getSpeciesDisplay(species) : "Fish";
+const english = known?.english || "Fish";
+const indexable = !!known && !unavailable && rows.length >= HUB_MIN_SELLERS;
+const url = canonicalFor(`/fish/${species}`);
+const updatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const statusText = { InStock: "Available today", PreOrder: "Pre-order for tomorrow", OutOfStock: "Not today" } as const;
+const priceText = (r: HubRow) => (r.offer.lowPrice === r.offer.highPrice ? `₹${r.offer.lowPrice}` : `₹${r.offer.lowPrice}–₹${r.offer.highPrice}`);
+const description = rows.length
+  ? `${english} on Relifish: ${rows.length} local ${rows.length === 1 ? "seller lists" : "sellers list"} it. See today's price and availability, then order same-day or pre-order for tomorrow.`
+  : `${english} is not listed by any seller on Relifish right now.`;
+---
+<AppShell
+  title={known ? `${name} — Buy Fresh ${english} Online from Local Sellers | Relifish` : "Fish not found · Relifish"}
+  description={description}
+  canonical={url}
+  noindex={!indexable}
+  header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
+  nav={{ active: "shop" }}
+  jsonLd={known && rows.length ? {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ItemList",
+        "name": `${english} from local sellers on Relifish`,
+        "itemListElement": rows.map((r, i) => ({ "@type": "ListItem", "position": i + 1, "name": `${english} — ${r.seller}`, "url": SITE_URL + r.href })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": `${SITE_URL}/` },
+          { "@type": "ListItem", "position": 2, "name": english, "item": url },
+        ],
+      },
+    ],
+  } : undefined}
+>
+  {!known ? (
+    <div style="padding:24px 16px;"><EmptyState variant="server-error" title="Fish not found" description="We don't have a page for this fish." ctaText="Browse sellers" ctaHref="/shop" /></div>
+  ) : (
+    <article style="padding:16px;display:flex;flex-direction:column;gap:16px;">
+      <header>
+        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">{name}</h1>
+        <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
+          {rows.length
+            ? `${english} (${known.marathi}) from ${rows.length === 1 ? "one local seller" : `${rows.length} local sellers`} on Relifish. Prices and availability come from each seller's live listing. Updated ${updatedAt} IST.`
+            : unavailable
+              ? "We couldn't load sellers right now. Please try again in a minute."
+              : `No seller on Relifish lists ${english.toLowerCase()} right now.`}
+        </p>
+      </header>
+
+      {rows.length > 0 && (
+        <section>
+          <h2 style="font:700 16px Inter;margin:0 0 8px;">Who sells {english.toLowerCase()} on Relifish</h2>
+          <table style="width:100%;border-collapse:collapse;font:400 13px Inter;">
+            <thead>
+              <tr style="text-align:left;color:var(--v2-ink-3);">
+                <th style="padding:6px 4px;">Seller</th><th style="padding:6px 4px;">Today</th><th style="padding:6px 4px;">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr style="border-top:1px solid var(--v2-border);">
+                  <td style="padding:8px 4px;"><a href={r.href} style="font-weight:700;color:var(--v2-brand);">{r.seller}</a>{r.area && <div style="color:var(--v2-ink-3);font-size:12px;">{r.area}</div>}</td>
+                  <td style="padding:8px 4px;">{statusText[r.offer.availability]}</td>
+                  <td style="padding:8px 4px;white-space:nowrap;">{priceText(r)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style="font:400 12px/1.5 Inter;color:var(--v2-ink-3);margin:8px 0 0;">Prices are for the seller's listed pack or weight; open a seller to see each option. Pre-order prices are a range: you pay the top, and the difference is refunded once the seller sets the final price.</p>
+        </section>
+      )}
+
+      <section>
+        <h2 style="font:700 16px Inter;margin:0 0 8px;">How to check {english.toLowerCase()} is fresh</h2>
+        <ol style="font:400 14px/1.7 Inter;margin:0;padding-left:20px;color:var(--v2-ink-2);">
+          <li>Eyes are clear and full, not cloudy or sunken.</li>
+          <li>Gills are bright red or pink, not brown or grey.</li>
+          <li>Flesh is firm and springs back when pressed.</li>
+          <li>Skin is shiny with scales attached; prawns are firm with heads still attached and no black patches.</li>
+          <li>It smells of the sea, not sour or of ammonia.</li>
+        </ol>
+      </section>
+
+      <p style="font:400 13px/1.5 Inter;margin:0;"><a href="/blog/first-relifish-order-guide-thane">How ordering on Relifish works →</a></p>
+    </article>
+  )}
+</AppShell>

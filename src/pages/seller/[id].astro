@@ -131,7 +131,6 @@ const isClosed = !isEffectivelyOpen && !isPreorderMode;
 
 // SEO listings: all listings with pricing (for schema + SSR cards — crawlable regardless of open state)
 const seoListings = [...listings];
-const fishSpecies = fishBase ? [...new Set(seoListings.map((l: any) => String(l.species).toLowerCase()))] : [];
 
 // Filter UI listings to match current mode (what buyers interact with)
 if (isEffectivelyOpen) {
@@ -449,14 +448,6 @@ const tags = [
 
   <div id="v2-cart-bar-mount"></div>
 
-  {!notFound && fishSpecies.length > 0 && (
-    <nav aria-label={`Fish from ${sellerName}`} style="padding:16px;">
-      <h2 style="font:700 14px Inter;margin:0 0 8px;">Fish from {sellerName}</h2>
-      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px;">
-        {fishSpecies.map((sp) => <li><a href={`${fishBase}/${sp}`} style="font:600 13px Inter;color:var(--v2-brand);">{speciesDisplayById[sp] || sp}</a></li>)}
-      </ul>
-    </nav>
-  )}
 
   <!-- Hyperlocal footer -->
   {!notFound && (

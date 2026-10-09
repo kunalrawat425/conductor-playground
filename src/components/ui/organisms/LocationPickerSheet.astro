@@ -18,7 +18,7 @@ const { id = "v2-loc-picker" } = Astro.props;
       <input
         type="text"
         id={`${id}-area-input`}
-        placeholder="e.g. Tardeo, Kandivali, Thane, Kamothe"
+        placeholder="e.g. Thane West, Tardeo, Kamothe"
         class="v2-input"
         autocomplete="off"
       />
@@ -43,6 +43,7 @@ const { id = "v2-loc-picker" } = Astro.props;
 <script define:vars={{ id }}>
   let map, marker, selectedLat, selectedLng, selectedArea;
   let draggedOrSearched = false;
+  let typedUnresolved = false; // typed text not yet turned into coordinates
 
   async function initMap() {
     if (typeof L === "undefined") return;
@@ -78,7 +79,24 @@ const { id = "v2-loc-picker" } = Astro.props;
       selectedArea = area;
       const input = document.getElementById(`${id}-area-input`);
       if (input) input.value = area;
+      typedUnresolved = false;
     } catch {}
+  }
+
+  // Typed area -> coordinates (Mumbai, Thane, Navi Mumbai only). Without this a typed
+  // "Hiranandani, Thane" kept the default pin in central Mumbai and showed no sellers.
+  async function forwardGeocode(q) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&viewbox=72.75,19.45,73.25,18.85&bounded=1&q=${encodeURIComponent(q)}`);
+      const hit = (await res.json())?.[0];
+      if (!hit) return false;
+      selectedLat = Number(hit.lat); selectedLng = Number(hit.lon);
+      if (map && marker) { map.setView([selectedLat, selectedLng], 14); marker.setLatLng([selectedLat, selectedLng]); }
+      typedUnresolved = false;
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   document.getElementById(`${id}-use-current`)?.addEventListener("click", () => {
@@ -103,20 +121,27 @@ const { id = "v2-loc-picker" } = Astro.props;
   document.getElementById(`${id}-area-input`)?.addEventListener("change", (e) => {
     draggedOrSearched = true;
     selectedArea = e.target.value;
+    if (e.target.value.trim()) forwardGeocode(e.target.value.trim());
   });
 
   document.getElementById(`${id}-area-input`)?.addEventListener("input", (e) => {
     draggedOrSearched = true;
+    typedUnresolved = true;
   });
 
-  document.getElementById(`${id}-confirm`)?.addEventListener("click", () => {
+  document.getElementById(`${id}-confirm`)?.addEventListener("click", async () => {
     if (!draggedOrSearched) {
       window.v2Toast?.("warning", "Drag the pin", "Please drag the pin to set your precise location.");
       return;
     }
 
     const input = document.getElementById(`${id}-area-input`);
-    selectedArea = input?.value?.trim() || selectedArea || "Mumbai";
+    const typed = input?.value?.trim();
+    if (typedUnresolved && typed && !(await forwardGeocode(typed))) {
+      window.v2Toast?.("warning", "Area not found", "Try a nearby landmark, or drag the pin to your location.");
+      return;
+    }
+    selectedArea = typed || selectedArea || "Mumbai";
     try {
       localStorage.setItem("rlf_buyer_location", selectedArea);
       if (selectedLat) localStorage.setItem("rlf_buyer_lat", String(selectedLat));
