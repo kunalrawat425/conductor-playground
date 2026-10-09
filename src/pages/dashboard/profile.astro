@@ -193,6 +193,7 @@ import Input from "../../components/ui/atoms/Input.astro";
 
 <script>
   import { supabase } from "../../lib/supabase";
+  import { validateSellerName } from "../../lib/seller-display";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
@@ -340,6 +341,11 @@ import Input from "../../components/ui/atoms/Input.astro";
     }
     if (!updates.name) {
       (window as any).v2Toast?.("error", "Name required", "Business name is required");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+    const nameError = validateSellerName(updates.name);
+    if (nameError) {
+      (window as any).v2Toast?.("error", "Check business name", nameError);
       btn.disabled = false; btn.textContent = "Save changes"; return;
     }
     if (updates.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.email)) {
