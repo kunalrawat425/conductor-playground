@@ -14,6 +14,7 @@ import { getListingOptionById, type ListingPricingSource } from "../../../lib/li
 import type { PlacementKind } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { pickUtm } from "../../../lib/utm";
+import { pickPreferences } from "../../../lib/preferences";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
@@ -376,10 +377,11 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // Campaign attribution (e.g. flyer QR) — best effort, never fails the order.
     const utmRow = pickUtm(utm);
+    const prefs = pickPreferences(cut_style, buyer_notes);
     const orderIds = (orders as { id?: string }[]).map((o) => o?.id).filter(Boolean) as string[];
-    if (utmRow && orderIds.length) {
-      const { error: utmErr } = await supabase.from("orders").update(utmRow).in("id", orderIds);
-      if (utmErr) console.warn("[create-seller-cart] utm save failed", { err: utmErr.message });
+    if ((utmRow || prefs) && orderIds.length) {
+      const { error: metaErr } = await supabase.from("orders").update({ ...utmRow, ...prefs }).in("id", orderIds);
+      if (metaErr) console.warn("[create-seller-cart] utm/preferences save failed", { err: metaErr.message });
     }
 
     return new Response(JSON.stringify({ orders, cart_subtotal: cartSubtotal, placement_kind }), { status: 201 });

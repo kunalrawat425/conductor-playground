@@ -25,6 +25,15 @@ const { id = "v2-checkout" } = Astro.props;
       <div class="v2-co-row" id={`${id}-delivery-row`} style="display:none;"><span id={`${id}-delivery-label`}>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
       <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total`}>₹0</span></div>
     </div>
+    <fieldset class="v2-co-prefs" id={`${id}-prefs`}>
+      <legend class="v2-co-prefs-title">How should the seller prepare it? <span>(optional)</span></legend>
+      <div class="v2-co-prefs-opts">
+        <label><input type="checkbox" name={`${id}-cut`} value="whole" /> 🐟 Whole</label>
+        <label><input type="checkbox" name={`${id}-cut`} value="cleaned" /> ✂️ Cleaned</label>
+        <label><input type="checkbox" name={`${id}-cut`} value="cut" /> 🔪 Cut</label>
+      </div>
+      <textarea id={`${id}-notes`} rows="2" maxlength="500" placeholder="Special request, e.g. medium pieces, no head"></textarea>
+    </fieldset>
     <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" data-co-next="2">Next: Delivery →</button>
   </div>
 
@@ -158,6 +167,14 @@ const { id = "v2-checkout" } = Astro.props;
 </script>
 
 <style is:global>
+  .v2-co-prefs { border:1px solid var(--v2-border); border-radius:var(--v2-radius-sm); padding:12px; margin:12px 0; }
+  .v2-co-prefs-title { font:700 13px Inter; color:var(--v2-ink); padding:0 4px; }
+  .v2-co-prefs-title span { font:400 11px Inter; color:var(--v2-ink-3); }
+  .v2-co-prefs-opts { display:flex; gap:8px; margin:8px 0 10px; }
+  .v2-co-prefs-opts label { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 6px; border:1.5px solid var(--v2-border); border-radius:var(--v2-radius-sm); font:600 13px Inter; color:var(--v2-ink); cursor:pointer; }
+  .v2-co-prefs-opts label:has(input:checked) { border-color:var(--v2-brand); background:var(--v2-brand-l); color:var(--v2-brand); }
+  .v2-co-prefs-opts input { position:absolute; opacity:0; pointer-events:none; }
+  .v2-co-prefs textarea { width:100%; box-sizing:border-box; padding:10px; border:1.5px solid var(--v2-border); border-radius:var(--v2-radius-sm); font:400 16px Inter; color:var(--v2-ink); background:var(--v2-bg); resize:vertical; }
   .v2-co-steps {
     display: flex; gap: 8px;
     margin-bottom: 16px;

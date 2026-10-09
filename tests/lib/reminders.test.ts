@@ -60,3 +60,26 @@ describe("reminder guards", () => {
     expect(inSendingHours(Date.parse("2026-10-20T15:30:00Z"))).toBe(false); // 21:00 IST
   });
 });
+
+describe("test sellers on live", () => {
+  it("inactive test sellers work on staging/previews but never on production", async () => {
+    const { sellerBlocked } = await import("../../src/lib/test-sellers");
+    const qa = { is_active: false, is_test: true };
+    expect(sellerBlocked(qa, "preview")).toBe(false);
+    expect(sellerBlocked(qa, undefined)).toBe(false); // local dev
+    expect(sellerBlocked(qa, "production")).toBe(true);
+    expect(sellerBlocked({ is_active: false, is_test: false }, "preview")).toBe(true);
+    expect(sellerBlocked({ is_active: true }, "production")).toBe(false);
+    expect(sellerBlocked(null, "production")).toBe(false);
+  });
+});
+
+describe("pickPreferences (checkout prep choices)", () => {
+  it("keeps only known cut styles, dedupes, caps notes", async () => {
+    const { pickPreferences } = await import("../../src/lib/preferences");
+    expect(pickPreferences("cleaned,cut,cleaned,evil", "  no head ")).toEqual({ cut_style: "cleaned,cut", buyer_notes: "no head" });
+    expect(pickPreferences("", "")).toBeNull();
+    expect(pickPreferences(42, { x: 1 })).toBeNull();
+    expect(pickPreferences("whole", "a".repeat(900))?.buyer_notes).toHaveLength(500);
+  });
+});

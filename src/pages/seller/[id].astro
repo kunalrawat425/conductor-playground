@@ -15,6 +15,7 @@ import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
 import { cleanSellerName, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
 import { SITE_URL } from "../../lib/brand";
+import { sellerBlocked } from "../../lib/test-sellers";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -26,8 +27,8 @@ let unavailable = false;
 try {
   seller = await getSellerById(id!);
   // Unapproved / deactivated sellers had live, orderable pages. Test sellers
-  // stay reachable by direct link only (they are inactive, so hidden from lists).
-  if (seller && (seller as any).is_active === false && !(seller as any).is_test) seller = null;
+  // stay reachable by direct link only on staging/previews — never on production.
+  if (sellerBlocked(seller as any, (import.meta.env.VERCEL_ENV || process.env.VERCEL_ENV))) seller = null;
   if (seller) {
     listings = await getSellerListings(id!);
     // Keep menu broad so buyers can still place pre-orders when the seller is in
@@ -1488,6 +1489,8 @@ const tags = [
             buyer_addr: selectedAddressId,
             order_type: orderType,
             utm: (() => { try { return JSON.parse(localStorage.getItem("rf_utm") || "null"); } catch { return null; } })(),
+            cut_style: [...document.querySelectorAll('input[name="seller-checkout-cut"]:checked')].map((el) => el.value).join(","),
+            buyer_notes: (document.getElementById("seller-checkout-notes")?.value || "").trim(),
           }),
         });
         const data = await res.json();
