@@ -20,6 +20,7 @@
  */
 import { refundRazorpayPayment, type RefundOutcome } from "./razorpay-refund";
 import { gaPurchase } from "./ga-mp";
+import { afterResponse } from "./after-response";
 
 export const PAYABLE_STATUSES = ["pending", "pending_payment", "payment_required"];
 const CLOSED_STATUSES = ["cancelled", "declined", "refunded"];
@@ -135,7 +136,7 @@ export async function settleCapturedPayment(
       if (error) throw new Error(`confirm failed: ${error.message}`);
       if (data?.[0]) {
         // The guarded UPDATE succeeds once per payment, so GA gets exactly one purchase (whichever path won).
-        await gaPurchase(p.razorpay_order_id, { order_id: order.id });
+        afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase");
         return { kind: "confirmed", order: data[0] };
       }
     } else if (decision === "stamp") {
@@ -144,7 +145,7 @@ export async function settleCapturedPayment(
         .eq("id", order.id).is("razorpay_payment_id", null).select(ORDER_COLS);
       if (error) throw new Error(`stamp failed: ${error.message}`);
       if (data?.[0]) {
-        await gaPurchase(p.razorpay_order_id, { order_id: order.id }); // money kept on this order: a purchase too
+        afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase"); // money kept on this order: a purchase too
         return { kind: "stamped", order: data[0] };
       }
     } else {
