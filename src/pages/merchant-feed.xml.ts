@@ -19,12 +19,20 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 export const GET: APIRoute = async () => {
   const [sRes, lRes] = await Promise.all([
-    supabase.from("sellers").select("id, name, lat, lng, location_name, is_test").eq("is_active", true),
+    supabase.from("sellers").select("id, name, lat, lng, location_name, is_test, has_delivery, delivery_fee_enabled, delivery_fee_type, delivery_fee_amount, delivery_fee_per_km, free_delivery_above, delivery_rad").eq("is_active", true),
     supabase.from("fish_listings").select("id, seller_id, species, fish_size, photo_url, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options").is("deleted_at", null),
   ]);
   if (sRes.error || lRes.error) {
     return new Response("Temporarily unavailable", { status: 503, headers: { "Retry-After": "300", "Cache-Control": "no-store" } });
   }
+  // Google can't show AVIF; and a broken photo URL disapproves the item. Check each photo once (HEAD, 3s).
+  const okType = /\.(jpe?g|png|webp|gif)(\?|$)/i;
+  const photoUrls = [...new Set(((lRes.data ?? []) as any[]).map((l) => l.photo_url).filter((u) => u && okType.test(u)))];
+  const photoOk = new Map<string, boolean>(await Promise.all(photoUrls.map(async (u): Promise<[string, boolean]> => {
+    try { const r = await fetch(u, { method: "HEAD", signal: AbortSignal.timeout(3000) }); return [u, r.ok && /^image\//.test(r.headers.get("content-type") || "")]; }
+    catch { return [u, false]; }
+  })));
+
   const sellers = new Map((sRes.data ?? []).filter((s: any) => !s.is_test).map((s: any) => [s.id, s]));
   const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
   const items: string[] = [];
@@ -37,8 +45,16 @@ export const GET: APIRoute = async () => {
     const availability = sameDay ? "in_stock" : l.is_preorder_enabled ? "preorder" : "out_of_stock";
     const seller = cleanSellerName(s.name);
     const area = areaNameForPoint(s.lat, s.lng) || "Mumbai";
-    const image = l.photo_url || (STOCK_PHOTO.has(species) ? `${SITE_URL}/fish/${species}.jpg` : null);
-    if (!image) continue; // Google requires an image
+    const image = (l.photo_url && photoOk.get(l.photo_url)) ? l.photo_url : STOCK_PHOTO.has(species) ? `${SITE_URL}/fish/${species}.jpg` : null;
+    if (!image) continue; // Google requires a JPEG/PNG/WebP/GIF image that loads
+    // Delivery cost shown to Google: the seller's own fee. Per-km sellers: the maximum (radius × rate),
+    // so the listing never shows less than a buyer pays; checkout charges the real distance.
+    const fee = !s.has_delivery || s.delivery_fee_enabled === false ? 0
+      : s.delivery_fee_type === "per_km" ? Math.ceil(Number(s.delivery_fee_per_km || 0) * Number(s.delivery_rad || 0))
+      : Number(s.delivery_fee_amount || 0);
+    const freeAbove = Number(s.free_delivery_above || 0);
+    const shippingXml = `\n<g:shipping><g:country>IN</g:country><g:service>${s.has_delivery ? "Seller home delivery" : "Pickup from seller"}</g:service><g:price>${fee.toFixed(2)} INR</g:price></g:shipping>`
+      + (freeAbove > 0 ? `\n<g:free_shipping_threshold><g:country>IN</g:country><g:price_threshold>${freeAbove.toFixed(2)} INR</g:price_threshold></g:free_shipping_threshold>` : "");
     for (const o of getListingPriceOptions(l) as any[]) {
       const price = Number(o.price) > 0 ? Number(o.price) : Number(o.preorder_price_max) || 0;
       if (!(price > 0)) continue;
@@ -58,7 +74,7 @@ export const GET: APIRoute = async () => {
 <g:image_link>${esc(image)}</g:image_link>
 <g:price>${price.toFixed(2)} INR</g:price>
 <g:availability>${availability}</g:availability>${availability === "preorder" ? `\n<g:availability_date>${tomorrow}T08:00+05:30</g:availability_date>` : ""}
-<g:condition>new</g:condition>
+<g:condition>new</g:condition>${shippingXml}
 <g:brand>${esc(seller)}</g:brand>
 <g:identifier_exists>no</g:identifier_exists>
 <g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Meat, Seafood &amp; Eggs &gt; Seafood</g:google_product_category>${kg ? `\n<g:unit_pricing_measure>${Math.round(kg * 1000)}g</g:unit_pricing_measure>\n<g:unit_pricing_base_measure>1kg</g:unit_pricing_base_measure>` : ""}
