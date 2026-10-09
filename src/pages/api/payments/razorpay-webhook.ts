@@ -13,7 +13,9 @@ const RAZORPAY_WEBHOOK_SECRET = import.meta.env.RAZORPAY_WEBHOOK_SECRET || "";
  * Fires even when the client-side `handler` in track/[id].astro drops.
  *
  * Configure at https://dashboard.razorpay.com → Settings → Webhooks:
- *   URL:    https://relifish.store/api/payments/razorpay-webhook (any Relifish host works: /api is never redirected)
+ *   URL:    https://www.relifish.com/api/payments/razorpay-webhook
+ *           (relifish.store / www.relifish.store also work: /api is not redirected there.
+ *            NOT the bare relifish.com — it 308s even /api, and Razorpay does not follow redirects.)
  *   Events: payment.captured, payment.failed, refund.created, refund.processed
  *   Secret: same value as env RAZORPAY_WEBHOOK_SECRET
  */
