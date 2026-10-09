@@ -81,3 +81,33 @@ export function areaNameForPoint(lat: number | null | undefined, lng: number | n
   }
   return best?.name ?? null;
 }
+
+/**
+ * Neighbourhoods per area (approximate centre points). Only the ones inside a live seller's delivery
+ * radius are shown on the area page, so the list never claims coverage a seller doesn't offer.
+ */
+export const LOCALITIES: Record<string, [string, number, number][]> = {
+  thane: [
+    ["Hiranandani Estate", 19.2578, 72.9706], ["Manpada", 19.241, 72.9665], ["Kasarvadavali", 19.2717, 72.9677],
+    ["Patlipada (Ghodbunder Road)", 19.247, 72.969], ["Brahmand", 19.256, 72.981], ["Kolshet", 19.234, 72.987],
+    ["Majiwada", 19.2137, 72.9796], ["Balkum", 19.223, 72.977], ["Vasant Vihar", 19.227, 72.96],
+    ["Vartak Nagar", 19.2065, 72.958], ["Lokmanya Nagar", 19.214, 72.943], ["Wagle Estate", 19.205, 72.95],
+    ["Naupada", 19.193, 72.9715], ["Thane Station area", 19.186, 72.975], ["Kopri", 19.1855, 72.989], ["Kalwa", 19.2, 73.0],
+  ],
+  tardeo: [
+    ["Tardeo", 18.972, 72.814], ["Grant Road", 18.963, 72.816], ["Malabar Hill", 18.954, 72.8], ["Breach Candy", 18.97, 72.805],
+    ["Mahalaxmi", 18.983, 72.821], ["Byculla", 18.979, 72.833], ["Marine Lines", 18.945, 72.823], ["Churchgate", 18.935, 72.827],
+    ["Colaba", 18.9067, 72.8147], ["Lower Parel", 18.996, 72.83], ["Worli", 19.017, 72.817], ["Prabhadevi", 19.016, 72.829],
+  ],
+  kamothe: [
+    ["Kamothe", 19.02, 73.096], ["Kalamboli", 19.03, 73.1], ["Kharghar", 19.047, 73.07], ["Khanda Colony", 19.004, 73.106],
+    ["New Panvel", 18.998, 73.12], ["Panvel", 18.989, 73.117],
+  ],
+};
+
+/** Localities of an area that at least one of these sellers covers (within its delivery radius). */
+export function coveredLocalities(slug: string, sellers: { lat?: number | null; lng?: number | null; delivery_rad?: number | string | null }[]): string[] {
+  return (LOCALITIES[slug] ?? [])
+    .filter(([, lat, lng]) => sellers.some((s) => s.lat != null && s.lng != null && Number(s.delivery_rad) > 0 && haversineKm(lat, lng, Number(s.lat), Number(s.lng)) <= Number(s.delivery_rad)))
+    .map(([name]) => name);
+}

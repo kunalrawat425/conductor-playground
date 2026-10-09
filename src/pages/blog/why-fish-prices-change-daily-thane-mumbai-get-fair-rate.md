@@ -59,7 +59,7 @@ On Relifish, each local seller sets their own prices and updates them as their s
 - **Same-day orders** show the seller's price for today.
 - **Pre-orders** show a price range, because tomorrow's price isn't known yet. You pay the top of the range, and once the seller sets the final price, the difference is refunded.
 
-You can compare sellers for one fish on its own page, for example [surmai](/fish/surmai), [pomfret](/fish/pomfret) or [prawns](/fish/prawns). Log in with your mobile number to see live prices.
+You can compare sellers for one fish on its own page, for example [surmai](/fish/surmai), [pomfret](/fish/pomfret) or [prawns](/fish/prawns). Prices are shown without login; see [today's fish prices](/fish-price-today) for all sellers.
 
 Sellers on Relifish currently serve parts of [Thane](/area/thane), [Tardeo](/area/tardeo) and [Kamothe](/area/kamothe). Read [how ordering works](/blog/first-relifish-order-guide-thane), or contact us on WhatsApp at [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or at [relifishstore@gmail.com](mailto:relifishstore@gmail.com).
 

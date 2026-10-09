@@ -2,6 +2,7 @@ import { cleanSellerName, sellerHref, stripContactInfo } from "./seller-display"
 import { speciesOffer, type SpeciesListing, type SpeciesOffer } from "./product-offer";
 import { optionBundleAmount } from "./listing-pricing";
 import { areaNameForPoint } from "./areas";
+import { hasGuide } from "./species-guides";
 
 export interface HubRow {
   seller: string;
@@ -28,8 +29,13 @@ export function perKgRange(listings: SpeciesListing[]): { low: number; high: num
   return vals.length ? { low: Math.min(...vals), high: Math.max(...vals) } : null;
 }
 
-/** A /fish/<species> hub is indexable only when at least this many sellers list the fish with a price. */
+/** A /fish/<species> hub with no buyer guide needs this many priced sellers to be indexable. */
 export const HUB_MIN_SELLERS = 2;
+
+/** Indexable (and in the sitemap) when 2+ sellers list it, or 1+ seller plus a written buyer guide. */
+export function hubIndexable(species: string, sellerCount: number): boolean {
+  return sellerCount >= HUB_MIN_SELLERS || (sellerCount >= 1 && hasGuide(species));
+}
 
 /** One row per active seller that lists this fish with a price (link goes to their single-fish page when it exists). */
 export function hubRows(

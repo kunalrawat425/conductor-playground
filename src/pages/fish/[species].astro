@@ -1,6 +1,6 @@
 ---
 // /fish/<species> — every seller on Relifish that lists this fish, with live price and availability.
-// Indexable only when HUB_MIN_SELLERS sellers list it (no thin pages); otherwise noindex,follow.
+// Indexable per hubIndexable (2+ sellers, or 1+ seller with a written guide); otherwise noindex,follow.
 export const prerender = false;
 
 import SeoLinks from "../../components/ui/molecules/SeoLinks.astro";
@@ -9,17 +9,19 @@ import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 import { supabase } from "../../lib/supabase";
 import { SPECIES, getSpeciesDisplay } from "../../lib/species";
 import { SITE_URL, canonicalFor } from "../../lib/brand";
-import { HUB_MIN_SELLERS, hubRows, type HubRow } from "../../lib/fish-hub";
+import { hubIndexable, hubRows, type HubRow } from "../../lib/fish-hub";
+import { SPECIES_GUIDES } from "../../lib/species-guides";
 
 const species = (Astro.params.species || "").toLowerCase();
 const known = Object.hasOwn(SPECIES, species) ? SPECIES[species] : undefined;
+const guide = Object.hasOwn(SPECIES_GUIDES, species) ? SPECIES_GUIDES[species] : null;
 
 let rows: HubRow[] = [];
 let unavailable = false;
 if (known) {
   try {
     const [sellersRes, listingsRes] = await Promise.all([
-      supabase.from("sellers").select("id, name, location_name, lat, lng").eq("is_active", true),
+      supabase.from("sellers").select("id, name, location_name, lat, lng").eq("is_active", true).or("is_test.is.null,is_test.eq.false"),
       supabase
         .from("fish_listings")
         .select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options")
@@ -47,7 +49,7 @@ const SHELLFISH = new Set(["prawns", "crab", "lobster", "squid", "oyster", "clam
 const freshTips = SHELLFISH.has(species)
   ? ["Shells are firm and intact, not slimy or soft.", "Heads (if on) are firmly attached, with no black patches.", "The meat is firm and translucent, not mushy.", "It smells of the sea, not sour or of ammonia."]
   : ["Eyes are clear and full, not cloudy or sunken.", "Gills are bright red or pink, not brown or grey.", "Flesh is firm and springs back when pressed.", "Skin is shiny, with scales still attached.", "It smells of the sea, not sour or of ammonia."];
-const indexable = !!known && !unavailable && rows.length >= HUB_MIN_SELLERS;
+const indexable = !!known && !unavailable && hubIndexable(species, rows.length);
 const url = canonicalFor(`/fish/${species}`);
 const updatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const statusText = { InStock: "Available today", PreOrder: "Pre-order for tomorrow", OutOfStock: "Not today" } as const;
@@ -60,10 +62,14 @@ const faqs = known && rows.length ? [
   { q: `What is the price of ${local} per kg today?`, a: kgAll ? `On Relifish, ${local} is listed at ${kgText(kgAll)} today across ${kgRows.length === 1 ? "one local seller" : `${kgRows.length} local sellers`} (updated ${updatedAt} IST). Prices are set by each seller and change daily with the catch.` : `${local} is sold by the piece or pack on Relifish today; open a seller to see each option's price. Prices are set by each seller and change daily.` },
   ...(englishOnly.toLowerCase() !== local.toLowerCase() ? [{ q: `What is ${local} called in English?`, a: `${local} is ${englishOnly} in English and ${known.marathi} in Marathi.` }] : []),
   { q: `How do I know if ${local} is fresh?`, a: freshTips.join(" ") },
+  ...(guide ? [
+    { q: `Does ${local} have a lot of bones?`, a: guide.bones },
+    { q: `What is the best way to cook ${local}?`, a: `Popular ways: ${guide.dishes.join(", ")}. Common cuts: ${guide.cuts.join(", ")}.` },
+  ] : []),
   { q: `Where can I order ${local} online?`, a: `${rows.length === 1 ? "One local seller lists" : `${rows.length} local sellers list`} ${local} on Relifish${areasList.length ? `, in ${areasList.join(", ")}` : ""}. Order same-day while the seller is open, or pre-order for tomorrow; the seller delivers or keeps it ready for pickup.` },
 ] : [];
 const description = rows.length
-  ? `${english} on Relifish: ${rows.length} local ${rows.length === 1 ? "seller lists" : "sellers list"} it. See today's price and availability, then order same-day or pre-order for tomorrow.`
+  ? `${local} price today from ${rows.length} local ${rows.length === 1 ? "seller" : "sellers"} in Thane & Mumbai, per kg. ${guide ? guide.summary + " " : ""}Order same-day or pre-order; the seller delivers.`
   : `${english} is not listed by any seller on Relifish right now.`;
 ---
 <AppShell
@@ -133,6 +139,21 @@ const description = rows.length
         </section>
       )}
 
+      {guide && (
+        <section>
+          <h2 style="font:700 16px Inter;margin:0 0 8px;">{local} buying guide</h2>
+          <p style="font:400 14px/1.7 Inter;margin:0 0 8px;color:var(--v2-ink-2);"><strong>{guide.summary}</strong> Also called {guide.alsoCalled.join(", ")}{known?.marathi ? `; ${known.marathi} in Marathi` : ""}.</p>
+          <dl style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);display:grid;grid-template-columns:auto 1fr;gap:4px 12px;">
+            <dt style="font-weight:700;color:var(--v2-ink);">Taste</dt><dd style="margin:0;">{guide.taste}</dd>
+            <dt style="font-weight:700;color:var(--v2-ink);">Bones</dt><dd style="margin:0;">{guide.bones}</dd>
+            <dt style="font-weight:700;color:var(--v2-ink);">Cuts</dt><dd style="margin:0;">{guide.cuts.join(" · ")}</dd>
+            <dt style="font-weight:700;color:var(--v2-ink);">Cook it as</dt><dd style="margin:0;">{guide.dishes.join(" · ")}</dd>
+            <dt style="font-weight:700;color:var(--v2-ink);">When</dt><dd style="margin:0;">{guide.availability}</dd>
+            <dt style="font-weight:700;color:var(--v2-ink);">Tip</dt><dd style="margin:0;">{guide.buyingTip}</dd>
+          </dl>
+        </section>
+      )}
+
       <section>
         <h2 style="font:700 16px Inter;margin:0 0 8px;">How to check {english.toLowerCase()} is fresh</h2>
         <ol style="font:400 14px/1.7 Inter;margin:0;padding-left:20px;color:var(--v2-ink-2);">
@@ -152,7 +173,7 @@ const description = rows.length
         </section>
       )}
 
-      <p style="font:400 13px/1.5 Inter;margin:0;"><a href="/blog/first-relifish-order-guide-thane">How ordering on Relifish works →</a></p>
+      <p style="font:400 13px/1.5 Inter;margin:0;"><a href="/fish-price-today">All fish prices today →</a> · <a href="/blog/first-relifish-order-guide-thane">How ordering works →</a></p>
     </article>
   )}
   <SeoLinks />
