@@ -15,7 +15,7 @@ let bySpecies: { species: string; local: string; english: string; rows: HubRow[]
 try {
   const [sRes, lRes] = await Promise.all([
     supabase.from("sellers").select("id, name, location_name, lat, lng, is_test").eq("is_active", true),
-    supabase.from("fish_listings").select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options"),
+    supabase.from("fish_listings").select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options").is("deleted_at", null),
   ]);
   if (sRes.error || lRes.error) throw sRes.error || lRes.error;
   const sellers = (sRes.data ?? []).filter((s: any) => !s.is_test);

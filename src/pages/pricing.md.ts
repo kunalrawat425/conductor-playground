@@ -9,7 +9,7 @@ export const GET: APIRoute = async () => {
     const [{ data: listingsData }, { data: sellersData }] = await Promise.all([
       supabase
         .from("fish_listings")
-        .select("*, seller:sellers(*)")
+        .select("*, seller:sellers(*)").is("deleted_at", null)
         .or("is_available.eq.true,is_preorder_enabled.eq.true"),
       supabase
         .from("sellers")

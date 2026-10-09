@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { supabase } from "../lib/supabase";
 import { cleanSellerName, sellerHref } from "../lib/seller-display";
-import { getSpeciesDisplay } from "../lib/species";
+import { SPECIES } from "../lib/species";
 import { SITE_URL } from "../lib/brand";
 import { areaNameForPoint } from "../lib/areas";
 import { optionBundleAmount, formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
@@ -20,7 +20,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 export const GET: APIRoute = async () => {
   const [sRes, lRes] = await Promise.all([
     supabase.from("sellers").select("id, name, lat, lng, location_name, is_test").eq("is_active", true),
-    supabase.from("fish_listings").select("id, seller_id, species, photo_url, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options"),
+    supabase.from("fish_listings").select("id, seller_id, species, fish_size, photo_url, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options").is("deleted_at", null),
   ]);
   if (sRes.error || lRes.error) {
     return new Response("Temporarily unavailable", { status: 503, headers: { "Retry-After": "300", "Cache-Control": "no-store" } });
@@ -42,9 +42,13 @@ export const GET: APIRoute = async () => {
     for (const o of getListingPriceOptions(l) as any[]) {
       const price = Number(o.price) > 0 ? Number(o.price) : Number(o.preorder_price_max) || 0;
       if (!(price > 0)) continue;
-      const unit = formatBuyerMenuUnitSuffix(o).replace(/^\//, "");
-      const fish = getSpeciesDisplay(species);
-      const title = `${fish} ${unit ? `(${unit}) ` : ""}– ${seller}, ${area}`.slice(0, 150);
+      // "Prawns Jumbo, 1 kg – Bombay Sea Food, Tardeo" / "Surmai (Kingfish), 250 g – Fishtokri, Thane"
+      const unit = formatBuyerMenuUnitSuffix(o).replace(/^\//, "").replace(/^kg$/, "1 kg").replace(/ grams$/, " g").replace(/^pc$/, "1 piece").replace(/pc$/, " pieces");
+      const local = species.charAt(0).toUpperCase() + species.slice(1);
+      const english = SPECIES[species]?.english.match(/\(([^)]+)\)/)?.[1];
+      const size = l.fish_size ? ` ${String(l.fish_size).charAt(0).toUpperCase()}${String(l.fish_size).slice(1)}` : "";
+      const fish = `${local}${size}${english ? ` (${english})` : ""}`;
+      const title = `${fish}, ${unit} – ${seller}, ${area}`.slice(0, 150);
       const kg = o.unit === "kg" ? optionBundleAmount(o) : null;
       items.push(`<item>
 <g:id>${esc(`${l.id}-${o.id ?? "0"}`)}</g:id>

@@ -191,6 +191,7 @@ export async function getActiveListings() {
   const { data, error } = await supabase
     .from("fish_listings")
     .select("*, seller:sellers(*)")
+    .is("deleted_at", null)
     .or("is_available.eq.true,is_preorder_enabled.eq.true")
     .order("created_at", { ascending: false });
 
@@ -254,6 +255,7 @@ export async function getSellerListings(sellerId: string) {
   const { data, error } = await supabase
     .from("fish_listings")
     .select("*")
+    .is("deleted_at", null)
     .eq("seller_id", sellerId)
     .order("created_at", { ascending: false });
 
@@ -324,6 +326,7 @@ export async function getSellersForSpecies(species: string) {
     .select(
       "id, seller_id, pricing_options, weight_avail, pickup_loc, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)"
     )
+    .is("deleted_at", null)
     .eq("species", species)
     .or("is_available.eq.true,is_preorder_enabled.eq.true")
     .order("created_at", { ascending: false });
@@ -338,6 +341,7 @@ export async function getSellersForSpecies(species: string) {
     .select(
       "seller_id, pricing_options, seller:sellers(id, name, location_name, lat, lng, rating_avg, total_orders, has_delivery, delivery_rad, opens_at, closes_at)"
     )
+    .is("deleted_at", null)
     .eq("species", species)
     .order("created_at", { ascending: false });
 

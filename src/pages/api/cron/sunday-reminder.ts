@@ -34,7 +34,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const [{ data: buyerRows, error: bErr }, { data: sellerRows, error: sErr }, { data: listingRows, error: lErr }] = await Promise.all([
     bq,
     sb.from("sellers").select("id, name, lat, lng, delivery_rad, opens_at, closes_at, open_days, accepts_preorder, preorder_days, preorder_cutoff_time").eq("is_active", true).or("is_test.is.null,is_test.eq.false"),
-    sb.from("fish_listings").select("seller_id, is_available, is_preorder_enabled, is_order_paused"),
+    sb.from("fish_listings").select("seller_id, is_available, is_preorder_enabled, is_order_paused").is("deleted_at", null),
   ]);
   const err = bErr || sErr || lErr;
   if (err) return new Response(JSON.stringify({ error: err.message }), { status: 500 });
