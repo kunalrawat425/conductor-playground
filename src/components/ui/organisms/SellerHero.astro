@@ -1,4 +1,5 @@
 ---
+import { resizedImageUrl } from "../../../lib/seller-display";
 import { LOGO_URL } from "../../../lib/brand";
 import type { SellerHeroProps } from "../../../types/components";
 interface Props extends SellerHeroProps {}
@@ -41,7 +42,7 @@ const subParts = [
   <div style="position:relative;margin:-16px -16px 0 -16px;height:200px;overflow:hidden;">
     {storeImageUrl
       ? <>
-          <img src={storeImageUrl} alt={name} style="width:100%;height:100%;object-fit:cover;object-position:center;" loading="eager" />
+          <img src={resizedImageUrl(storeImageUrl, 800)} alt={name} style="width:100%;height:100%;object-fit:cover;object-position:center;" loading="eager" fetchpriority="high" />
           <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.55) 100%);"></div>
         </>
       : <>
@@ -64,7 +65,7 @@ const subParts = [
   <div class="v2-sh-top" style="margin-top:14px;">
     <div class="v2-sh-avatar" aria-hidden="true">
       {storeImageUrl
-        ? <img src={storeImageUrl} alt={name} style="width:100%;height:100%;object-fit:cover;border-radius:14px;" loading="lazy" />
+        ? <img src={resizedImageUrl(storeImageUrl, 160)} alt={name} style="width:100%;height:100%;object-fit:cover;border-radius:14px;" loading="lazy" />
         : <span style="font-size:40px;line-height:1;">🐟</span>}
     </div>
     <div class="v2-sh-info">

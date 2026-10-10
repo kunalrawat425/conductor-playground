@@ -225,8 +225,8 @@ const tags = [
         const feeType = seller.delivery_fee_type || "fixed";
         if (feeType === "per_km") {
           return seller.free_delivery_above > 0
-            ? `Distance-based delivery · Free above ₹${seller.free_delivery_above}`
-            : `Distance-based delivery fee`;
+            ? `₹${seller.delivery_fee_per_km}/km delivery · Free above ₹${seller.free_delivery_above}`
+            : `₹${seller.delivery_fee_per_km}/km delivery`;
         }
         if (seller.delivery_fee_amount > 0) {
           return seller.free_delivery_above > 0
@@ -860,9 +860,12 @@ const tags = [
       const sizeMap = { small: "S", medium: "M", large: "L" };
       const sizeBadge = l.fish_size && sizeMap[l.fish_size] ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;">${sizeMap[l.fish_size]}</span>` : '';
 
-      // Low stock warning (oos_threshold)
-      const stockWarn = l.oos_threshold && l.weight_avail > 0 && l.weight_avail <= l.oos_threshold
-        ? `<div style="font:600 10px Inter;color:var(--v2-orange);margin-top:2px;">⚡ Stock clearing soon</div>` : '';
+      // Today's stock left (seller-entered weight_avail): "15 kg left today"; orange when at/below oos_threshold
+      const stockLeft = Number(l.weight_avail);
+      const stockUnit = firstOpt.unit === "kg" ? "kg" : firstOpt.unit === "piece" ? "pcs" : null;
+      const lowStock = l.oos_threshold && stockLeft <= Number(l.oos_threshold);
+      const stockWarn = hasStock && !isListingPreorder && l.weight_avail != null && stockLeft > 0 && stockUnit
+        ? `<div style="font:600 10px Inter;color:${lowStock ? "var(--v2-orange)" : "var(--v2-ink-3)"};margin-top:2px;">${lowStock ? "⚡ Only " : ""}${+stockLeft.toFixed(2)} ${stockUnit} left today</div>` : '';
 
       // Daily limit hint
       const limitHint = l.buyer_daily_qty_limit
@@ -1080,14 +1083,15 @@ const tags = [
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
       const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
-      const feeEstimate = !isPreorderMode && hasDelivery ? estimateDeliveryFee(sellerSubtotal) : null;
+      // Pre-orders are charged delivery too (create-seller-cart.ts), so show the fee in both modes.
+      const feeEstimate = hasDelivery ? estimateDeliveryFee(sellerSubtotal) : null;
 
-      // Status line (pre-order window is pickup-only — don't imply a delivery savings perk)
+      // Status line
       let statusLine = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""}`;
       let statusColor = "var(--v2-ink-3)";
       if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
-      else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
+      else if (isPreorderMode) { statusLine = `🌙 Pre-order for tomorrow${feeEstimate ? ` · Delivery ${feeEstimate.label}` : ""}`; statusColor = "#7C3AED"; }
       else if (feeEstimate) {
         // Show the delivery fee before checkout so it is never a surprise at step 2.
         statusLine += ` · Delivery ${feeEstimate.label}`;

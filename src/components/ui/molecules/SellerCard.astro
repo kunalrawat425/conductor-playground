@@ -1,6 +1,6 @@
 ---
 import Badge from "../atoms/Badge.astro";
-import { cleanSellerName, sellerHref, stripContactInfo } from "../../../lib/seller-display";
+import { cleanSellerName, resizedImageUrl, sellerHref, stripContactInfo } from "../../../lib/seller-display";
 interface Props {
   id: string;
   name: string;
@@ -56,7 +56,7 @@ const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "ind
   <div class="v2-sc-img" style={`background:${cardImgBg};`}>
     {offerLabel && <Badge variant="offer" color={offerColor}>{offerLabel}</Badge>}
     {storeImageUrl ? (
-      <img src={storeImageUrl} alt={name} style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />
+      <img src={resizedImageUrl(storeImageUrl, 480)} alt={name} style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" loading="lazy" />
     ) : (
       <span style="font-size:32px;line-height:1;position:relative;z-index:2;">🐟</span>
     )}

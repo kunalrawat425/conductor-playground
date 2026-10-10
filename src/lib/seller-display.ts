@@ -73,3 +73,13 @@ export function validateSellerName(raw: unknown): string | null {
   if (!/^[\p{L}\p{M}\p{N} &'-]+$/u.test(name)) return "Use only letters, numbers, spaces and & ' - in your business name.";
   return null;
 }
+
+/**
+ * Supabase Storage photo, resized and served as WebP by Supabase's image transform
+ * (fishtokri_banner.png: 2.1 MB → ~40 KB at 800 px). Other URLs are returned unchanged.
+ */
+export function resizedImageUrl(url: string | null | undefined, width: number): string | null {
+  if (!url) return null;
+  if (!url.includes(".supabase.co/storage/v1/object/public/")) return url;
+  return `${url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/")}${url.includes("?") ? "&" : "?"}width=${width}&quality=70`;
+}
