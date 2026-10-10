@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sellerHref, sellerLookupOutcome } from "../../src/lib/seller-display";
+import { resizedImageUrl, sellerHref, sellerLookupOutcome } from "../../src/lib/seller-display";
 
 describe("sellerHref", () => {
   it("uses /s/<slug> when the name has latin chars", () => {
@@ -33,5 +33,16 @@ describe("validateSellerName", () => {
     for (const n of ["Fishtokri.com", "www.fish", "fish.in shop", "https://x", "Ram Fish 9876543210", "Ram 98765-43210", "Fish@Home", "Fish!!", "A", "x".repeat(61), "", null]) {
       expect(validateSellerName(n), String(n)).not.toBeNull();
     }
+  });
+});
+
+describe("resizedImageUrl", () => {
+  it("routes Supabase Storage photos through the image transform", () => {
+    expect(resizedImageUrl("https://x.supabase.co/storage/v1/object/public/fish-photos/sellers/b.png", 800))
+      .toBe("https://x.supabase.co/storage/v1/render/image/public/fish-photos/sellers/b.png?width=800&quality=70&resize=contain");
+  });
+  it("leaves other URLs and empty values alone", () => {
+    expect(resizedImageUrl("https://www.relifish.com/fish/pomfret.jpg", 800)).toBe("https://www.relifish.com/fish/pomfret.jpg");
+    expect(resizedImageUrl(null, 800)).toBeNull();
   });
 });
