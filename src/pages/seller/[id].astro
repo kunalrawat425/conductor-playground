@@ -220,22 +220,7 @@ const tags = [
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
   seller?.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null,
-  seller?.delivery_fee_enabled
-    ? (() => {
-        const feeType = seller.delivery_fee_type || "fixed";
-        if (feeType === "per_km") {
-          return seller.free_delivery_above > 0
-            ? `₹${seller.delivery_fee_per_km}/km delivery · Free above ₹${seller.free_delivery_above}`
-            : `₹${seller.delivery_fee_per_km}/km delivery`;
-        }
-        if (seller.delivery_fee_amount > 0) {
-          return seller.free_delivery_above > 0
-            ? `₹${seller.delivery_fee_amount} delivery · Free above ₹${seller.free_delivery_above}`
-            : `₹${seller.delivery_fee_amount} delivery fee`;
-        }
-        return null;
-      })()
-    : null,
+  // Delivery fee is not shown on the store header; checkout shows it before payment.
   // seller?.schedule_pickup_slots ? "Scheduled pickup" : null, // hidden for now
 ].filter(Boolean) as string[];
 ---
