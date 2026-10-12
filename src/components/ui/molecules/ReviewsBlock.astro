@@ -1,0 +1,27 @@
+---
+/**
+ * Real buyer ratings (from delivered, non-test orders). Renders nothing until
+ * at least one exists — no placeholder or sample reviews, ever.
+ */
+import type { ReviewSummary } from "../../../lib/server/seller-reviews";
+import { getSpeciesDisplay } from "../../../lib/species";
+
+interface Props { summary: ReviewSummary; title: string; sellerNames?: Record<string, string> }
+const { summary, title, sellerNames = {} } = Astro.props;
+const stars = (n: number) => "★".repeat(Math.round(n)) + "☆".repeat(5 - Math.round(n));
+const month = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" });
+---
+{summary.count > 0 && (
+  <section style="padding:20px 16px;border-top:1px solid var(--v2-border);">
+    <h2 style="font:700 16px/1.3 Inter;margin:0 0 4px;">{title}</h2>
+    <p style="font:600 14px Inter;margin:0 0 12px;color:var(--v2-ink-2);">
+      <span style="color:#F59E0B;">{stars(summary.average || 0)}</span> {summary.average} out of 5 · {summary.count} {summary.count === 1 ? "rating" : "ratings"} from buyers after delivery
+    </p>
+    {summary.reviews.map((r) => (
+      <div style="border-top:1px solid var(--v2-border);padding:10px 0;">
+        <div style="font:600 13px Inter;"><span style="color:#F59E0B;">{stars(r.rating)}</span> {r.species ? getSpeciesDisplay(r.species) : "Order"}{sellerNames[r.sellerId] ? ` · ${sellerNames[r.sellerId]}` : ""} · <span style="color:var(--v2-ink-3);font-weight:400;">{month(r.date)}</span></div>
+        {r.text && <p style="font:400 14px/1.5 Inter;margin:4px 0 0;color:var(--v2-text-secondary);">{r.text}</p>}
+      </div>
+    ))}
+  </section>
+)}
