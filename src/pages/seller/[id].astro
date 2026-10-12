@@ -18,6 +18,9 @@ import { cleanSellerName, sellerHref, sellerLookupOutcome, stripContactInfo } fr
 import { SITE_URL } from "../../lib/brand";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
+import { getAreaBySlug } from "../../lib/areas";
+import { getSellerReviews } from "../../lib/server/seller-reviews";
+import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -52,6 +55,8 @@ const sellerName = cleanSellerName(seller?.name) || "Seller";
 // Live area from the seller's coordinates (e.g. "Thane") beats a vague profile text like "Mumbai".
 const sellerLocation = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const SITE = SITE_URL;
+const sellerArea = sellerLocation ? getAreaBySlug(sellerLocation.toLowerCase()) : null;
+const reviewSummary = seller ? await getSellerReviews([seller.id]) : { count: 0, average: null, reviews: [] };
 const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
 // Per-fish product pages live under /s/<slug>/<species> (single-product pages for Google).
 const fishBase = seller && sellerHref(seller.name, seller.id).startsWith("/s/") ? sellerHref(seller.name, seller.id) : null;
@@ -133,7 +138,7 @@ const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isTodayPreorderD
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
 
 // SEO listings: all listings with pricing (for schema + SSR cards — crawlable regardless of open state)
-const seoListings = [...listings];
+const seoListings = listings.filter((l: any) => l?.is_available === true || l?.is_preorder_enabled === true);
 
 // Filter UI listings to match current mode (what buyers interact with)
 if (isEffectivelyOpen) {
@@ -251,7 +256,7 @@ const tags = [
         "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressRegion": "Maharashtra", "addressCountry": "IN" },
         "geo": seller.lat && seller.lng ? { "@type": "GeoCoordinates", "latitude": Number(Number(seller.lat).toFixed(2)), "longitude": Number(Number(seller.lng).toFixed(2)) } : undefined,
         "areaServed": seller.lat && seller.lng && seller.delivery_rad ? { "@type": "GeoCircle", "geoMidpoint": { "@type": "GeoCoordinates", "latitude": Number(Number(seller.lat).toFixed(2)), "longitude": Number(Number(seller.lng).toFixed(2)) }, "geoRadius": `${Number(seller.delivery_rad)} km` } : undefined,
-        "potentialAction": { "@type": "OrderAction", "target": { "@type": "EntryPoint", "urlTemplate": canonicalUrl, "actionPlatform": ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"] }, "deliveryMethod": ["http://purl.org/goodrelations/v1#DeliveryModePickUp", "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"] },
+        "potentialAction": { "@type": "OrderAction", "target": { "@type": "EntryPoint", "urlTemplate": canonicalUrl, "actionPlatform": ["https://schema.org/DesktopWebPlatform", "https://schema.org/MobileWebPlatform"] }, "deliveryMethod": ["http://purl.org/goodrelations/v1#DeliveryModePickUp", "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"] },
         "openingHours": seller.opens_at && seller.closes_at
           ? `${openDays.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 2)).join(",") || "Mo,Tu,We,Th,Fr,Sa,Su"} ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}`
           : undefined,
@@ -273,9 +278,11 @@ const tags = [
               const sp = speciesDisplayById[l.species] || l.species || "Fish";
               const opts = l.pricing_options || [];
               const firstOpt = opts[0];
+              const size = ({ small: "Small", medium: "Medium", large: "Large" } as Record<string, string>)[l.fish_size] || "";
+              const packKg = Number(firstOpt?.bundle_size) || 0;
               return {
                 "@type": "MenuItem",
-                "name": sp,
+                "name": size ? `${sp}, ${size}` : sp,
                 "url": fishBase ? `${SITE}${fishBase}/${String(l.species).toLowerCase()}` : undefined,
                 "description": l.description || `Fresh ${sp} from ${sellerName}`,
                 "image": l.photo_url || undefined,
@@ -283,6 +290,12 @@ const tags = [
                   "@type": "Offer",
                   "price": firstOpt.price,
                   "priceCurrency": "INR",
+                  "priceSpecification": packKg > 0 && firstOpt.unit === "kg" ? {
+                    "@type": "UnitPriceSpecification",
+                    "price": firstOpt.price,
+                    "priceCurrency": "INR",
+                    "referenceQuantity": { "@type": "QuantitativeValue", "value": packKg * 1000, "unitCode": "GRM" }
+                  } : undefined,
                   "availability": isPreorderMode ? "https://schema.org/PreOrder" : "https://schema.org/InStock"
                 } : undefined
               };
@@ -437,6 +450,12 @@ const tags = [
   <div id="v2-cart-bar-mount"></div>
 
 
+  {!notFound && <ReviewsBlock summary={reviewSummary} title={`Buyer ratings for ${sellerName}`} />}
+  {!notFound && sellerArea && (
+    <p style="font:400 13px/1.5 Inter;margin:0;padding:12px 16px;border-top:1px solid var(--v2-border);">
+      {sellerName} delivers in {sellerArea.name}. <a href={`/area/${sellerArea.slug}`} style="color:var(--v2-brand);font-weight:600;">See all fish sellers and today's prices in {sellerArea.name} →</a>
+    </p>
+  )}
   <!-- Hyperlocal footer -->
   {!notFound && (
     <div style="background:var(--v2-bg-2);border-top:1px solid var(--v2-border);padding:20px 16px;text-align:center;">

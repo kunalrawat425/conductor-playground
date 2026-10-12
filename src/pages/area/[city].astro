@@ -11,6 +11,9 @@ import { perKgRange } from "../../lib/fish-hub";
 import { timeLabel } from "../../lib/server/sunday-reminder";
 import { cleanSellerName, sellerHref, stripContactInfo } from "../../lib/seller-display";
 import { SPECIES, getSpeciesDisplay } from "../../lib/species";
+import { isSellerEffectivelyOpen } from "../../lib/order-timing";
+import { getSellerReviews } from "../../lib/server/seller-reviews";
+import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 
 const { city } = Astro.params;
 const area = getAreaBySlug(city || "");
@@ -112,6 +115,8 @@ const sellerTerms = sellers.map((sl: any) => {
     min: Number(sl.min_order_amount) > 0 ? `₹${Number(sl.min_order_amount)}` : "None",
   };
 });
+const reviewSummary = hasSellers ? await getSellerReviews(sellers.map((s: any) => s.id)) : { count: 0, average: null, reviews: [] };
+const reviewSellerNames = Object.fromEntries(sellers.map((s: any) => [s.id, cleanSellerName(s.name)]));
 const updatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const listJoin = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
@@ -152,7 +157,7 @@ const jsonLd = {
       "name": areaTitle,
       "description": areaDescription,
       "inLanguage": "en-IN",
-      "isPartOf": { "@id": "https://www.relifish.com" },
+      "isPartOf": { "@id": "https://www.relifish.com/#web" },
       "breadcrumb": {
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -163,13 +168,21 @@ const jsonLd = {
       }
     },
     {
+      "@type": "WebSite",
+      "@id": "https://www.relifish.com/#web",
+      "name": "Relifish",
+      "url": "https://www.relifish.com/",
+      "publisher": { "@id": "https://www.relifish.com/#org" },
+      "inLanguage": "en-IN"
+    },
+    {
       "@type": "Organization",
       "@id": "https://www.relifish.com/#org",
       "name": "Relifish",
       "url": "https://www.relifish.com",
-      "logo": "https://www.relifish.com/favicon.png",
+      "logo": "https://www.relifish.com/icon-512.png",
       "description": "Hyperlocal fish marketplace: order fish online from local sellers in Thane, South Mumbai and Navi Mumbai.",
-      "sameAs": ["https://www.instagram.com/relifish_/", "https://wa.me/919152207607"],
+      "sameAs": ["https://www.instagram.com/relifish_/"],
       "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "telephone": "+91-9152207607", "email": "relifishstore@gmail.com", "areaServed": "IN", "availableLanguage": ["en", "hi", "mr"] }
     },
     hasSellers ? {
@@ -178,7 +191,7 @@ const jsonLd = {
       "serviceType": "Fresh fish online ordering and delivery from local sellers",
       "name": areaTitle,
       "provider": { "@id": "https://www.relifish.com/#org" },
-      "areaServed": { "@type": "Place", "name": area.name },
+      "areaServed": { "@type": "City", "name": area.name, "containedInPlace": { "@type": "State", "name": "Maharashtra" } },
       "url": canonicalUrl,
     } : undefined,
     hasSellers ? {
@@ -196,7 +209,7 @@ const jsonLd = {
 ---
 
 <AppShell
-  title={`Fish Delivery in ${area.name}: Today's Sellers & Prices | Relifish`}
+  title={`Fresh Fish Home Delivery in ${area.name}: Today's Prices & Sellers | Relifish`}
   description={areaDescription}
   needsMap={false}
   jsonLd={jsonLd}
@@ -256,7 +269,7 @@ const jsonLd = {
             location={areaNameForPoint(seller.lat, seller.lng) || stripContactInfo(seller.location_name) || `${Math.round(seller.distanceKm)} km away`}
             distanceKm={seller.distanceKm}
             rating={seller.rating_avg || 0}
-            status={seller.is_active ? "open" : "closed"}
+            status={isSellerEffectivelyOpen(seller) ? "open" : "closed"}
             acceptsPreorder={seller.accepts_preorder}
             hasDelivery={seller.has_delivery}
             itemCount={0}
@@ -304,6 +317,19 @@ const jsonLd = {
     </section>
   )}
 
+  {hasSellers && (
+    <section style="padding: 20px 16px; border-top: 1px solid var(--v2-border);">
+      <h2 style="font: 700 16px/1.3 Inter; margin: 0 0 10px 0;">How to order fresh fish in {area.name}</h2>
+      <ol style="font: 400 14px/1.6 Inter; margin: 0; padding-left: 20px; color: var(--v2-ink-2);">
+        <li style="margin-bottom: 8px;"><strong>Pick a seller and your fish.</strong> Each seller's page shows today's fish, the price for each pack size and how much stock is left.</li>
+        <li style="margin-bottom: 8px;"><strong>Choose same-day or pre-order.</strong> During the seller's opening hours you order for today. After they close, you can pre-order for the next morning until their cutoff ({listJoin([...new Set(sellerTerms.map((t) => t.cutoff))])}).</li>
+        <li style="margin-bottom: 8px;"><strong>Check the costs before you pay.</strong> The delivery fee and minimum order are set by each seller (see the table above) and shown again at checkout.</li>
+        <li style="margin-bottom: 8px;"><strong>Pay online.</strong> You pay through Razorpay and the seller confirms the order. If the seller declines, or you cancel before they confirm, the full amount is refunded. For pre-orders you pay the top of the price range, and any difference from the final morning price is refunded.</li>
+        <li><strong>The seller delivers</strong> to your address, or keeps it ready for pickup where the seller offers pickup.</li>
+      </ol>
+    </section>
+  )}
+  <ReviewsBlock summary={reviewSummary} title={`What buyers in ${area.name} say`} sellerNames={reviewSellerNames} />
   <!-- FAQ: visible, and the same text as the FAQPage schema -->
   <section style="padding: 20px 16px; border-top: 1px solid var(--v2-border);">
     <h2 style="font: 700 16px/1.3 Inter; margin: 0 0 12px 0;">Questions about fish delivery in {area.name}</h2>
