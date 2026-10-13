@@ -704,8 +704,9 @@ const tags = [
       const opts = l.pricing_options || [];
       const firstOpt = opts[0] || {};
       const name = getName(l.species);
-      // Cart / checkout line: two pomfret listings must not both read "Pomfret".
-      const cartName = l.size_label ? `${name} (${l.size_label})` : name;
+      // Cart / checkout line: two pomfret (or bombil whole vs fry cut) listings must not read the same.
+      const cartTag = [l.size_label, l.description].filter(Boolean).join(", ");
+      const cartName = cartTag ? `${name} (${cartTag})` : name;
       const sellerItems = getSellerItems();
       const emoji = speciesEmoji(l.species);
       // Menu mode is timing-first:
