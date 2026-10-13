@@ -46,6 +46,8 @@ import Toast from "../../../components/ui/atoms/Toast.astro";
           const species = formData.get("species") as string;
           const fishSizeRaw = (formData.get("fish_size") as string)?.trim() || "";
           const fish_size = ["small", "medium", "large"].includes(fishSizeRaw) ? fishSizeRaw : null;
+          const size_label = ((formData.get("size_label") as string) || "").trim().slice(0, 60) || null;
+          const description = ((formData.get("description") as string) || "").trim().slice(0, 300) || null;
           const photoFile = formData.get("photo") as File;
 
           const validated = validateSellerListingForm({
@@ -95,6 +97,8 @@ import Toast from "../../../components/ui/atoms/Toast.astro";
               seller_id: sellerId,
               species,
               fish_size,
+              size_label,
+              description,
               pricing_options: pricingOptions,
               weight_avail: weightAvail,
               photo_url: photoUrl,

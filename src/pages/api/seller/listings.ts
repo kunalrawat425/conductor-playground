@@ -9,7 +9,7 @@ import { SPECIES } from "../../../lib/species";
 // a listing to another seller), and any species string — which flows unescaped
 // into JSON-LD and the /shop category strip (stored XSS).
 const LISTING_EDITABLE = [
-  "species", "fish_size", "pricing_options", "weight_avail", "photo_url", "listed_date",
+  "species", "fish_size", "size_label", "description", "pricing_options", "weight_avail", "photo_url", "listed_date",
   "is_available", "pickup_loc", "buyer_daily_qty_limit", "oos_threshold",
   "is_preorder_enabled", "is_order_paused",
 ] as const;

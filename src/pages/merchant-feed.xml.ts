@@ -20,7 +20,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 export const GET: APIRoute = async () => {
   const [sRes, lRes] = await Promise.all([
     supabase.from("sellers").select("id, name, lat, lng, location_name, is_test, has_delivery, delivery_fee_enabled, delivery_fee_type, delivery_fee_amount, delivery_fee_per_km, free_delivery_above, delivery_rad").eq("is_active", true),
-    supabase.from("fish_listings").select("id, seller_id, species, fish_size, photo_url, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options").is("deleted_at", null),
+    supabase.from("fish_listings").select("id, seller_id, species, fish_size, size_label, description, photo_url, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options").is("deleted_at", null),
   ]);
   if (sRes.error || lRes.error) {
     return new Response("Temporarily unavailable", { status: 503, headers: { "Retry-After": "300", "Cache-Control": "no-store" } });
@@ -62,14 +62,14 @@ export const GET: APIRoute = async () => {
       const unit = formatBuyerMenuUnitSuffix(o).replace(/^\//, "").replace(/^kg$/, "1 kg").replace(/ grams$/, " g").replace(/^pc$/, "1 piece").replace(/pc$/, " pieces");
       const local = species.charAt(0).toUpperCase() + species.slice(1);
       const english = SPECIES[species]?.english.match(/\(([^)]+)\)/)?.[1];
-      const size = l.fish_size ? ` ${String(l.fish_size).charAt(0).toUpperCase()}${String(l.fish_size).slice(1)}` : "";
+      const size = l.size_label ? ` ${String(l.size_label).trim()}` : l.fish_size ? ` ${String(l.fish_size).charAt(0).toUpperCase()}${String(l.fish_size).slice(1)}` : "";
       const fish = `${local}${size}${english ? ` (${english})` : ""}`;
-      const title = `${fish}, ${unit} – ${seller}, ${area}`.slice(0, 150);
+      const title = (l.size_label ? `${fish} – ${seller}, ${area}` : `${fish}, ${unit} – ${seller}, ${area}`).slice(0, 150);
       const kg = o.unit === "kg" ? optionBundleAmount(o) : null;
       items.push(`<item>
 <g:id>${esc(`${l.id}-${o.id ?? "0"}`)}</g:id>
 <g:title>${esc(title)}</g:title>
-<g:description>${esc(`Fresh ${fish} from ${seller}, a local fish seller in ${area}. Order same-day or pre-order for tomorrow on Relifish; the seller delivers or keeps it ready for pickup.`)}</g:description>
+<g:description>${esc(`Fresh ${fish}${l.description ? ` (${String(l.description).trim()})` : ""} from ${seller}, a local fish seller in ${area}. Order same-day or pre-order for tomorrow on Relifish; the seller delivers or keeps it ready for pickup.`)}</g:description>
 <g:link>${esc(`${SITE_URL}${base}/${species}?opt=${encodeURIComponent(`${l.id}-${o.id ?? "0"}`)}`)}</g:link>
 <g:image_link>${esc(image)}</g:image_link>
 <g:price>${price.toFixed(2)} INR</g:price>

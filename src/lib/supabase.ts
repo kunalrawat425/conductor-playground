@@ -90,6 +90,8 @@ export interface FishListing {
   pricing_options: ListingPriceOption[] | null;
   /** Buyer-visible grade: small / medium / large (optional). */
   fish_size?: "small" | "medium" | "large" | null;
+  size_label?: string | null;
+  description?: string | null;
   weight_avail: number;
   photo_url: string | null;
   listed_date: string;

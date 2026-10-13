@@ -54,6 +54,15 @@ const initialPricingJson = JSON.stringify(
       </select>
       <p class="form-hint">Shown on the public menu.</p>
     </div>
+    <div class="listing-field">
+      <label for="size_label">Size / weight shown to buyers <span class="listing-opt">(optional)</span></label>
+      <input id="size_label" name="size_label" type="text" maxlength="60" placeholder="e.g. 200–300 g, Pack of 30–40 pcs" value={listing?.size_label || ""} />
+    </div>
+    <div class="listing-field">
+      <label for="description">Description <span class="listing-opt">(optional)</span></label>
+      <input id="description" name="description" type="text" maxlength="300" placeholder="e.g. Cut pieces + head & tail" value={listing?.description || ""} />
+      <p class="form-hint">Shown under the fish name on your shop page.</p>
+    </div>
   </section>
 
   <section class="listing-card" id="stock-section" aria-labelledby="listing-h-stock" style="border:2px solid var(--v2-brand, #0066cc); background:#f4f9ff; box-shadow:0 4px 12px rgba(0,102,204,0.1);">

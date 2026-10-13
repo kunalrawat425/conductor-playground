@@ -153,7 +153,8 @@ for (const l of seoListings) {
   if (opts.length > 0) {
     l.pricing_options = opts.map((o) => ({
       ...o,
-      buyer_menu_suffix: formatBuyerMenuUnitSuffix(o),
+      // A seller-written size ("200–300 g", "Pack of 30–40 pcs") is the unit; never show the internal pack weight next to it.
+      buyer_menu_suffix: l.size_label ? "" : formatBuyerMenuUnitSuffix(o),
     }));
   }
 }
@@ -282,7 +283,7 @@ const tags = [
               const packKg = Number(firstOpt?.bundle_size) || 0;
               return {
                 "@type": "MenuItem",
-                "name": size ? `${sp}, ${size}` : sp,
+                "name": l.size_label ? `${sp}, ${l.size_label}` : size ? `${sp}, ${size}` : sp,
                 "url": fishBase ? `${SITE}${fishBase}/${String(l.species).toLowerCase()}` : undefined,
                 "description": l.description || `Fresh ${sp} from ${sellerName}`,
                 "image": l.photo_url || undefined,
@@ -703,6 +704,8 @@ const tags = [
       const opts = l.pricing_options || [];
       const firstOpt = opts[0] || {};
       const name = getName(l.species);
+      // Cart / checkout line: two pomfret listings must not both read "Pomfret".
+      const cartName = l.size_label ? `${name} (${l.size_label})` : name;
       const sellerItems = getSellerItems();
       const emoji = speciesEmoji(l.species);
       // Menu mode is timing-first:
@@ -753,7 +756,7 @@ const tags = [
                          <button class="v2-item-inc" aria-label="Increase">+</button>
                        </div>`;
                       })()
-                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(cartName)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
                 </div>`;
               })()
             : (() => {
@@ -786,7 +789,7 @@ const tags = [
                              <button class="v2-item-inc" aria-label="Increase">+</button>
                            </div>`;
                           })()
-                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(cartName)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
                     </div>`;
                   }).join("")}
                 </div>`;
@@ -813,7 +816,7 @@ const tags = [
                          <button class="v2-item-inc" aria-label="Increase">+</button>
                        </div>`;
                       })()
-                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`)}
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(cartName)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`)}
                 </div>`;
               })()
             : (() => {
@@ -843,7 +846,7 @@ const tags = [
                              <button class="v2-item-inc" aria-label="Increase" ${atMax ? 'disabled style="opacity:.35;cursor:not-allowed;"' : ''}>+</button>
                            </div>`;
                           })()
-                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`)}
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(cartName)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`)}
                     </div>`;
                   }).join("")}
                 </div>`;
@@ -862,11 +865,13 @@ const tags = [
 
       // Fish size badge
       const sizeMap = { small: "S", medium: "M", large: "L" };
-      const sizeBadge = l.fish_size && sizeMap[l.fish_size] ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;">${sizeMap[l.fish_size]}</span>` : '';
+      const sizeText = (l.size_label || "").trim() || (l.fish_size && sizeMap[l.fish_size]) || "";
+      const sizeBadge = sizeText ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;">${escape(sizeText)}</span>` : '';
+      const descHtml = l.description ? `<div style="font:400 11px/1.4 Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(l.description)}</div>` : '';
 
       // Today's stock left (seller-entered weight_avail): "15 kg left today"; orange when at/below oos_threshold
       const stockLeft = Number(l.weight_avail);
-      const stockUnit = firstOpt.unit === "kg" ? "kg" : firstOpt.unit === "piece" ? "pcs" : null;
+      const stockUnit = firstOpt.unit === "kg" ? "kg" : firstOpt.unit === "piece" ? (l.size_label ? "packs" : "pcs") : null;
       const lowStock = l.oos_threshold && stockLeft <= Number(l.oos_threshold);
       const stockWarn = hasStock && !isListingPreorder && l.weight_avail != null && stockLeft > 0 && stockUnit
         ? `<div style="font:600 10px Inter;color:${lowStock ? "var(--v2-orange)" : "var(--v2-ink-3)"};margin-top:2px;">${lowStock ? "⚡ Only " : ""}${+stockLeft.toFixed(2)} ${stockUnit} left today</div>` : '';
@@ -899,6 +904,7 @@ const tags = [
           </div>
           <div class="v2-item-body">
             <div class="v2-item-name">${escape(name)}${sizeBadge}</div>
+            ${descHtml}
             ${preorderRangeHtml}
             ${stockWarn}${limitHint}
             ${pricingHtml}
