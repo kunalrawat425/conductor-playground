@@ -63,7 +63,8 @@ export const GET: APIRoute = async () => {
       const local = species.charAt(0).toUpperCase() + species.slice(1);
       const english = SPECIES[species]?.english.match(/\(([^)]+)\)/)?.[1];
       const size = l.size_label ? ` ${String(l.size_label).trim()}` : l.fish_size ? ` ${String(l.fish_size).charAt(0).toUpperCase()}${String(l.fish_size).slice(1)}` : "";
-      const fish = `${local}${size}${english ? ` (${english})` : ""}`;
+      // Cut/description keeps sibling listings (Bombil whole vs fry cut) from sharing one title.
+      const fish = `${local}${size}${english ? ` (${english})` : ""}${l.description ? `, ${String(l.description).trim()}` : ""}`;
       const title = (l.size_label ? `${fish} – ${seller}, ${area}` : `${fish}, ${unit} – ${seller}, ${area}`).slice(0, 150);
       const kg = o.unit === "kg" ? optionBundleAmount(o) : null;
       items.push(`<item>
