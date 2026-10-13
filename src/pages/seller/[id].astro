@@ -776,8 +776,8 @@ const tags = [
                     const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${o.price}`;
 
                     return `<div class="v2-item-tier">
-                      <div style="flex:1; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
-                        <span class="v2-item-tier-label" style="flex:none;">${escape(label)}${bSize}</span>
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                        <span class="v2-item-tier-label" style="flex:none;white-space:normal;">${escape(label)}${bSize}</span>
                         <span class="v2-item-tier-price" style="color:#7C3AED;margin-right:0;">🌙 ${rangeDisplay}</span>
                       </div>
                       ${tierQty > 0
@@ -790,7 +790,7 @@ const tags = [
                              <button class="v2-item-inc" aria-label="Increase">+</button>
                            </div>`;
                           })()
-                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(cartName)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(`${name} (${label})`)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
                     </div>`;
                   }).join("")}
                 </div>`;
@@ -831,8 +831,8 @@ const tags = [
                     const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.unit === 'kg' && o.bundle_size > 0 && o.bundle_size < 1 ? Math.round(o.bundle_size * 1000) + 'g' : o.bundle_size + (o.unit === 'kg' ? 'kg' : 'pc')})` : '';
                     const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
                     return `<div class="v2-item-tier">
-                      <div style="flex:1; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
-                        <span class="v2-item-tier-label" style="flex:none;">${escape(label)}${bSize}</span>
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                        <span class="v2-item-tier-label" style="flex:none;white-space:normal;">${escape(label)}${bSize}</span>
                         <span class="v2-item-tier-price" style="margin-right:0;">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
                       </div>
                       ${sellerFullyClosed ? '' : (tierQty > 0
@@ -847,7 +847,7 @@ const tags = [
                              <button class="v2-item-inc" aria-label="Increase" ${atMax ? 'disabled style="opacity:.35;cursor:not-allowed;"' : ''}>+</button>
                            </div>`;
                           })()
-                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(cartName)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`)}
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(`${name} (${label})`)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`)}
                     </div>`;
                   }).join("")}
                 </div>`;
@@ -872,7 +872,7 @@ const tags = [
 
       // Today's stock left (seller-entered weight_avail): "15 kg left today"; orange when at/below oos_threshold
       const stockLeft = Number(l.weight_avail);
-      const stockUnit = firstOpt.unit === "kg" ? "kg" : firstOpt.unit === "piece" ? (l.size_label ? "packs" : "pcs") : null;
+      const stockUnit = firstOpt.unit === "kg" ? "kg" : firstOpt.unit === "piece" ? (l.size_label || opts.length > 1 ? "packs" : "pcs") : null;
       const lowStock = l.oos_threshold && stockLeft <= Number(l.oos_threshold);
       const stockWarn = hasStock && !isListingPreorder && l.weight_avail != null && stockLeft > 0 && stockUnit
         ? `<div style="font:600 10px Inter;color:${lowStock ? "var(--v2-orange)" : "var(--v2-ink-3)"};margin-top:2px;">${lowStock ? "⚡ Only " : ""}${+stockLeft.toFixed(2)} ${stockUnit} left today</div>` : '';
