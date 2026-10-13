@@ -1,10 +1,11 @@
 import { getSession } from "./auth";
+import { getOrCreateSubscription } from "./push-subscription";
 
 /**
  * Subscribe the current buyer to Web Push notifications.
  * Uses /api/buyer/push-subscribe (service role key) to bypass RLS.
  */
-export async function subscribePush(): Promise<boolean> {
+export async function subscribePush(askPermission = true): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
     return false;
   }
@@ -13,43 +14,8 @@ export async function subscribePush(): Promise<boolean> {
     const session = getSession();
     if (!session) return false;
 
-    await navigator.serviceWorker.register("/sw.js").catch(() => {});
-
-    const registration = await navigator.serviceWorker.ready;
-    let subscription = await registration.pushManager.getSubscription();
-
-    if (subscription) {
-      try {
-        await subscription.unsubscribe();
-      } catch (unsubErr) {
-        console.warn("Failed to unsubscribe old push subscription:", unsubErr);
-      }
-      subscription = null;
-    }
-
-    if (!subscription) {
-      if (typeof Notification !== "undefined") {
-        if (Notification.permission === "denied") return false;
-        if (Notification.permission === "default") {
-          const p = await Notification.requestPermission();
-          if (p !== "granted") return false;
-        }
-      }
-      const vapidKey = import.meta.env.PUBLIC_VAPID_KEY;
-      if (!vapidKey) {
-        console.warn("VAPID public key not configured");
-        return false;
-      }
-
-      const keyBytes = urlBase64ToUint8Array(vapidKey);
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: keyBytes.buffer.slice(
-          keyBytes.byteOffset,
-          keyBytes.byteOffset + keyBytes.byteLength
-        ) as ArrayBuffer,
-      });
-    }
+    const subscription = await getOrCreateSubscription(import.meta.env.PUBLIC_VAPID_KEY || "", askPermission);
+    if (!subscription) return false;
 
     const res = await fetch("/api/buyer/push-subscribe", {
       method: "POST",
@@ -76,10 +42,8 @@ export async function unsubscribePush(): Promise<void> {
     await navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
   const registration = await navigator.serviceWorker?.ready;
-  const subscription = await registration?.pushManager?.getSubscription();
-  if (subscription) {
-    await subscription.unsubscribe();
-  }
+  // The browser subscription is shared with a seller login on this device: only clear ours.
+  void registration;
 
   const session = getSession();
   if (!session) return;
@@ -103,16 +67,4 @@ export async function isPushSubscribed(): Promise<boolean> {
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
   return !!subscription;
-}
-
-// Convert VAPID key from base64 URL to Uint8Array
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; i++) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }

@@ -103,6 +103,23 @@ self.addEventListener("push", (event) => {
   );
 });
 
+// The browser replaced (or dropped) our subscription. Re-subscribe with the same key and tell the
+// server, which swaps the old endpoint for the new one on whichever buyer/seller held it.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil((async () => {
+    const old = event.oldSubscription;
+    let sub = event.newSubscription;
+    const key = old && old.options ? old.options.applicationServerKey : null;
+    if (!sub && key) sub = await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    if (!sub || !old || !old.endpoint) return;
+    await fetch("/api/push/resubscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ old_endpoint: old.endpoint, subscription: sub.toJSON() }),
+    });
+  })().catch(() => {}));
+});
+
 function resolvePushTarget(raw) {
   // BUG-30: was "/v2/track", a route removed when the v2 prefix was dropped —
   // any push without a usable url opened a 404. /me lists the buyer's orders.

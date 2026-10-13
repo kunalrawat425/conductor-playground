@@ -263,6 +263,27 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
     </script>
+    <!-- Keep push alive: re-save the browser's subscription for logged-in buyers/sellers who
+         already allowed notifications. Before, only /shop and login did this, so buyers who came
+         back via a seller page or ad never refreshed and their subscriptions went stale (410). -->
+    <script>
+      (async () => {
+        try {
+          if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+          const KEY = "rlf_push_refreshed_at";
+          if (Date.now() - Number(localStorage.getItem(KEY) || 0) < 12 * 3600_000) return;
+          localStorage.setItem(KEY, String(Date.now()));
+          const { subscribePush } = await import("../../lib/push");
+          await subscribePush(false); // no-op without a buyer session
+          const { getSession } = await import("../../lib/seller-auth");
+          const seller = getSession();
+          if (seller) {
+            const { subscribeSellerPush } = await import("../../lib/seller-push");
+            await subscribeSellerPush(seller.seller_id, false);
+          }
+        } catch {}
+      })();
+    </script>
     {enableTracking && <VercelAnalytics />}
   </body>
 </html>

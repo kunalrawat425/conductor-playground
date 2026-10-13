@@ -1,49 +1,18 @@
 import { updateSellerProfile } from "./supabase";
+import { getOrCreateSubscription } from "./push-subscription";
 
 /**
  * Subscribe the current seller to Web Push notifications.
  * Uses /api/seller/profile (service role key) to bypass RLS.
  */
-export async function subscribeSellerPush(sellerId: string): Promise<boolean> {
+export async function subscribeSellerPush(sellerId: string, askPermission = true): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
     return false;
   }
 
   try {
-    await navigator.serviceWorker.register("/sw.js").catch(() => {});
-
-    const registration = await navigator.serviceWorker.ready;
-    let subscription = await registration.pushManager.getSubscription();
-
-    if (subscription) {
-      try {
-        await subscription.unsubscribe();
-      } catch (unsubErr) {
-        console.warn("Failed to unsubscribe old push subscription:", unsubErr);
-      }
-      subscription = null;
-    }
-
-    if (!subscription) {
-      if (typeof Notification !== "undefined") {
-        if (Notification.permission === "denied") return false;
-        if (Notification.permission === "default") {
-          const p = await Notification.requestPermission();
-          if (p !== "granted") return false;
-        }
-      }
-      const vapidKey = import.meta.env.PUBLIC_VAPID_KEY;
-      if (!vapidKey) return false;
-
-      const keyBytes = urlBase64ToUint8Array(vapidKey);
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: keyBytes.buffer.slice(
-          keyBytes.byteOffset,
-          keyBytes.byteOffset + keyBytes.byteLength
-        ) as ArrayBuffer,
-      });
-    }
+    const subscription = await getOrCreateSubscription(import.meta.env.PUBLIC_VAPID_KEY || "", askPermission);
+    if (!subscription) return false;
 
     await updateSellerProfile(sellerId, {
       push_subscription: subscription.toJSON(),
@@ -65,10 +34,8 @@ export async function unsubscribeSellerPush(sellerId: string): Promise<void> {
     await navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
   const registration = await navigator.serviceWorker?.ready;
-  const subscription = await registration?.pushManager?.getSubscription();
-  if (subscription) {
-    await subscription.unsubscribe();
-  }
+  // The browser subscription is shared with a buyer login on this device: only clear ours.
+  void registration;
 
   await updateSellerProfile(sellerId, {
     push_subscription: null,
@@ -85,15 +52,4 @@ export async function isSellerPushSubscribed(): Promise<boolean> {
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
   return !!subscription;
-}
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; i++) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }
