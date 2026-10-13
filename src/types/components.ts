@@ -167,6 +167,8 @@ export interface SellerHeroProps {
   deliveryEtaMin?: number;
   rating: number;
   status: 'open' | 'closed';
+  /** Closed for same-day but taking pre-orders now: show that instead of a flat "Closed". */
+  preorderOpen?: boolean;
   closesAt?: string;
   opensAt?: string;
   totalOrders?: number;
