@@ -870,12 +870,7 @@ const tags = [
       const sizeBadge = sizeText ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;text-transform:none;">${escape(sizeText)}</span>` : '';
       const descHtml = l.description ? `<div style="font:400 11px/1.4 Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(l.description)}</div>` : '';
 
-      // Today's stock left (seller-entered weight_avail): "15 kg left today"; orange when at/below oos_threshold
-      const stockLeft = Number(l.weight_avail);
-      const stockUnit = firstOpt.unit === "kg" ? "kg" : firstOpt.unit === "piece" ? (l.size_label || opts.length > 1 ? "packs" : "pcs") : null;
-      const lowStock = l.oos_threshold && stockLeft <= Number(l.oos_threshold);
-      const stockWarn = hasStock && !isListingPreorder && l.weight_avail != null && stockLeft > 0 && stockUnit
-        ? `<div style="font:600 10px Inter;color:${lowStock ? "var(--v2-orange)" : "var(--v2-ink-3)"};margin-top:2px;">${lowStock ? "⚡ Only " : ""}${+stockLeft.toFixed(2)} ${stockUnit} left today</div>` : '';
+      // Stock left is not shown on cards (founder's call, 2026-10-13); stock still caps quantity and hides sold-out fish.
 
       // Daily limit hint
       // Limit is stored in base units (kg or pieces); say it the way buyers add it (packs).
@@ -916,7 +911,7 @@ const tags = [
             <div class="v2-item-name">${escape(name)}${sizeBadge}</div>
             ${descHtml}
             ${preorderRangeHtml}
-            ${stockWarn}${limitHint}
+            ${limitHint}
             ${pricingHtml}
           </div>
         </div>`;
