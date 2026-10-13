@@ -195,7 +195,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
  */
 export async function sendCustomBuyerPush(
   buyerId: string,
-  notification: { title: string; body: string },
+  notification: { title: string; body: string; image?: string; icon?: string },
   urlPath: string,
   opts: { markPromo?: boolean } = {}
 ): Promise<BuyerPushResult> {

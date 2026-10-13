@@ -12,7 +12,7 @@ const PROMO_GAP_HOURS = 20;
 
 /**
  * POST /api/admin/push-area   (Authorization: Bearer $ADMIN_SECRET)
- * Body: { lat, lng, radius_km?=10, title, body, url?="/shop", dry_run?=true }
+ * Body: { lat, lng, radius_km?=10, title, body, url?="/shop", image?, all_buyers?=false, dry_run?=true }
  *
  * Push to every buyer with notifications on whose location — the map pick saved
  * by AppShell, else their default address — is within radius_km of (lat, lng).
@@ -32,9 +32,13 @@ export const POST: APIRoute = async ({ request }) => {
   const radius = Math.min(50, Math.max(0.5, Number(b.radius_km) || 10));
   const title = String(b.title || "").trim().slice(0, 80);
   const body = String(b.body || "").trim().slice(0, 200);
+  // Optional large picture (https, or a site path) shown under the text on Android/desktop.
+  const image = typeof b.image === "string" && /^(https:\/\/|\/)/.test(b.image) ? b.image : undefined;
+  // all_buyers: ignore location (buyers who never set one are otherwise skipped).
+  const allBuyers = b.all_buyers === true;
   const url = typeof b.url === "string" && b.url.startsWith("/") ? b.url : "/shop";
   const dryRun = b.dry_run !== false;
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || !title || !body) {
+  if ((!allBuyers && (!Number.isFinite(lat) || !Number.isFinite(lng))) || !title || !body) {
     return new Response(JSON.stringify({ error: "lat, lng, title and body are required" }), { status: 400 });
   }
 
@@ -53,15 +57,17 @@ export const POST: APIRoute = async ({ request }) => {
     if ((x as any).is_test) continue;
     const addr = ((x as any).buyer_addresses || []).find((a: any) => a.is_default) || ((x as any).buyer_addresses || [])[0];
     const bl = x.lat ?? addr?.lat, bg = x.lng ?? addr?.lng;
-    if (bl == null || bg == null) { noLocation++; continue; }
-    if (haversineKm(lat, lng, Number(bl), Number(bg)) > radius) continue;
+    if (!allBuyers) {
+      if (bl == null || bg == null) { noLocation++; continue; }
+      if (haversineKm(lat, lng, Number(bl), Number(bg)) > radius) continue;
+    }
     if (x.last_promo_push_sent_at && new Date(x.last_promo_push_sent_at).getTime() > cutoff) { recentlyPushed++; continue; }
     targets.push(x.id);
   }
 
   if (!dryRun) {
     for (const id of targets) {
-      const r = await sendCustomBuyerPush(id, { title, body }, url);
+      const r = await sendCustomBuyerPush(id, { title, body, ...(image ? { image } : {}) }, url);
       if (r.ok && (r as any).sent) {
         sent++;
         await sb.from("buyers").update({ last_promo_push_sent_at: new Date().toISOString() }).eq("id", id);

@@ -91,8 +91,10 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: "/icon-192.png",
+      icon: typeof data.icon === "string" && data.icon ? data.icon : "/icon-192.png",
       badge: "/badge-96.png",
+      // Large picture under the text (Android Chrome / desktop; iOS ignores it).
+      ...(typeof data.image === "string" && data.image ? { image: data.image } : {}),
       tag,
       data: { url: data.url },
       vibrate: [200, 100, 200],
