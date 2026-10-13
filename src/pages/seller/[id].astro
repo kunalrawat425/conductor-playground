@@ -757,7 +757,7 @@ const tags = [
                          <button class="v2-item-inc" aria-label="Increase">+</button>
                        </div>`;
                       })()
-                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(cartName)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(cartName)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(l.size_label && unit === "piece" ? "pack" : unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
                 </div>`;
               })()
             : (() => {
@@ -817,7 +817,7 @@ const tags = [
                          <button class="v2-item-inc" aria-label="Increase">+</button>
                        </div>`;
                       })()
-                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(cartName)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`)}
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(cartName)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(l.size_label && unit === "piece" ? "pack" : unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`)}
                 </div>`;
               })()
             : (() => {
