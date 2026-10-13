@@ -64,7 +64,7 @@ export const GET: APIRoute = async () => {
       const english = SPECIES[species]?.english.match(/\(([^)]+)\)/)?.[1];
       const size = l.size_label ? ` ${String(l.size_label).trim()}` : l.fish_size ? ` ${String(l.fish_size).charAt(0).toUpperCase()}${String(l.fish_size).slice(1)}` : "";
       const fish = `${local}${size}${english ? ` (${english})` : ""}`;
-      const title = `${fish}, ${unit} – ${seller}, ${area}`.slice(0, 150);
+      const title = (l.size_label ? `${fish} – ${seller}, ${area}` : `${fish}, ${unit} – ${seller}, ${area}`).slice(0, 150);
       const kg = o.unit === "kg" ? optionBundleAmount(o) : null;
       items.push(`<item>
 <g:id>${esc(`${l.id}-${o.id ?? "0"}`)}</g:id>
