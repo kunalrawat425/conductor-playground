@@ -154,7 +154,7 @@ for (const l of seoListings) {
     l.pricing_options = opts.map((o) => ({
       ...o,
       // A seller-written size ("200–300 g", "Pack of 30–40 pcs") is the unit; never show the internal pack weight next to it.
-      buyer_menu_suffix: l.size_label ? "" : formatBuyerMenuUnitSuffix(o),
+      buyer_menu_suffix: l.size_label ? "/pack" : formatBuyerMenuUnitSuffix(o),
     }));
   }
 }
@@ -866,7 +866,7 @@ const tags = [
       // Fish size badge
       const sizeMap = { small: "S", medium: "M", large: "L" };
       const sizeText = (l.size_label || "").trim() || (l.fish_size && sizeMap[l.fish_size]) || "";
-      const sizeBadge = sizeText ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;">${escape(sizeText)}</span>` : '';
+      const sizeBadge = sizeText ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;text-transform:none;">${escape(sizeText)}</span>` : '';
       const descHtml = l.description ? `<div style="font:400 11px/1.4 Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(l.description)}</div>` : '';
 
       // Today's stock left (seller-entered weight_avail): "15 kg left today"; orange when at/below oos_threshold
@@ -877,8 +877,17 @@ const tags = [
         ? `<div style="font:600 10px Inter;color:${lowStock ? "var(--v2-orange)" : "var(--v2-ink-3)"};margin-top:2px;">${lowStock ? "⚡ Only " : ""}${+stockLeft.toFixed(2)} ${stockUnit} left today</div>` : '';
 
       // Daily limit hint
-      const limitHint = l.buyer_daily_qty_limit
-        ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:1px;">Max ${l.buyer_daily_qty_limit} per buyer/day</div>` : '';
+      // Limit is stored in base units (kg or pieces); say it the way buyers add it (packs).
+      const limitText = (() => {
+        const lim = Number(l.buyer_daily_qty_limit);
+        if (!(lim > 0)) return "";
+        const bs = Number(firstOpt.bundle_size) || 0;
+        if (firstOpt.unit === "kg" && bs > 0 && bs < 1) { const n = Math.floor(lim / bs + 1e-9); return `${n} ${n === 1 ? "pack" : "packs"}`; }
+        if (firstOpt.unit === "piece") return l.size_label ? `${lim} ${lim === 1 ? "pack" : "packs"}` : `${lim} pcs`;
+        return `${lim} kg`;
+      })();
+      const limitHint = limitText
+        ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:1px;">Max ${limitText} per buyer/day</div>` : '';
 
       // Compare-at-price (discount) — hide on pre-order cards; final price is set after catch, list/was pricing is misleading.
       const hasDiscount =
