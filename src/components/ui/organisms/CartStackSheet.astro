@@ -162,7 +162,9 @@ const { id = "v2-cart-stack" } = Astro.props;
       
       const itemsHtml = g.items.map(item => {
         const itemKey = item.pricing_option_id && item.pricing_option_id !== "default" ? item.listing_id + ":" + item.pricing_option_id : item.listing_id;
-        let qtyDisplay = `${Math.round(item.qty * 100) / 100} ${escape(item.pricing_label || item.qty_unit)}`;
+        const qtyN = Math.round(item.qty * 100) / 100;
+        const qtyLabel = String(item.pricing_label || item.qty_unit || "");
+        let qtyDisplay = `${qtyN} ${escape(qtyLabel === "pack" && qtyN !== 1 ? "packs" : qtyLabel)}`;
         if ((item.qty_unit || "").toLowerCase() === "kg" && item.qty > 0 && item.qty < 1) {
           qtyDisplay = `${Math.round(item.qty * 1000)} grams`;
         }
