@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import { loadWebPush } from "../../../lib/server/load-web-push";
+import { loadWebPush, PUSH_SEND_OPTIONS } from "../../../lib/server/load-web-push";
 import { logPush } from "../../../lib/server/push-log";
 import { absoluteUrl } from "../../../lib/server/site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../../lib/server/vapid-env";
@@ -181,7 +181,8 @@ export const GET: APIRoute = async ({ request }) => {
                     body: pushBody,
                     url: dashboardUrl,
                     tag: `seller-reminder-60min-${seller.id}-${Date.now()}`,
-                  })
+                  }),
+                  PUSH_SEND_OPTIONS
                 );
 
                 // Log success in DB (non-blocking)

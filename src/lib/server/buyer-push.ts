@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { buyerOrderPushNotification } from "./buyer-order-push-copy";
-import { loadWebPush } from "./load-web-push";
+import { loadWebPush, PUSH_SEND_OPTIONS } from "./load-web-push";
 import { absoluteUrl } from "./site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "./vapid-env";
 import { resolveBuyerIdForPush } from "./resolve-buyer-push-id";
@@ -165,7 +165,8 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
         ...notification,
         url: openUrl,
         tag: uniqueTag,
-      })
+      }),
+      PUSH_SEND_OPTIONS
     );
     
     // Log success in background (non-blocking)
@@ -237,7 +238,8 @@ export async function sendCustomBuyerPush(
         ...notification,
         url: openUrl,
         tag: uniqueTag,
-      })
+      }),
+      PUSH_SEND_OPTIONS
     );
 
     // Update last_promo_push_sent_at upon successful delivery (gracefully catch if migration not applied yet)
