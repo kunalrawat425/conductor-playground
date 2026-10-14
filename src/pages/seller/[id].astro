@@ -694,7 +694,7 @@ const tags = [
       const bs = bundleSize && bundleSize > 1 ? Number(bundleSize) : 1;
       if (u === "piece" || u === "pc" || u === "pcs") {
         const packs = bs > 1 ? Math.round(Number(qty) / bs) : Number(qty);
-        return `${fmtQty(packs)} pack`;
+        return `${fmtQty(packs)} pack${packs === 1 ? "" : "s"}`;
       }
       if (u === "kg" && qty > 0 && qty < 1) {
         return `${Math.round(qty * 1000)} grams`;
@@ -1105,8 +1105,9 @@ const tags = [
       const sellerItems = Object.values(getSellerItems());
       const sellerQty = sellerItems.reduce((s, i) => s + i.qty, 0);
       const sellerSubtotal = sellerItems.reduce((s, i) => s + i.qty * i.price, 0);
-      // Unique item count: distinct listings in cart (4 packs of Pomfret = 1 item)
-      const sellerPackCount = new Set(sellerItems.map(i => i.listing_id)).size;
+      // Item count = cart lines (4 packs of one Pomfret size = 1 item; two pack sizes
+      // = 2 items), matching the checkout and the order page, which list each line.
+      const sellerPackCount = sellerItems.length;
 
       if (totalQty === 0) {
         if (!removedHtml || removedDismissed) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
