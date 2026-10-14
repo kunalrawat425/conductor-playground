@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { notifyOrderParties } from "../../../lib/server/notify-order-parties";
 import { settleCapturedPayment, PAYABLE_STATUSES, refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 import { refundRazorpayPayment } from "../../../lib/server/razorpay-refund";
+import { paymentSiblings, refundedPaiseForOrder } from "../../../lib/server/order-cart";
 
 export const prerender = false;
 
@@ -106,12 +107,19 @@ async function run(request: Request, origin: string) {
       outcome = await refundOrderRazorpay(sb, o, { caller: "cron:refund-retry" });
     } else {
       const dueBack = Math.round(Number(o.refund_amt) * 100);
-      let already = 0;
-      try {
-        const pr = await fetch(`https://api.razorpay.com/v1/payments/${o.razorpay_payment_id}`, { headers: { Authorization: `Basic ${rzpAuth}` } });
-        if (pr.ok) already = Number((await pr.json())?.amount_refunded) || 0;
-      } catch { /* treat as nothing refunded yet */ }
-      outcome = already >= dueBack
+      let already: number | null = 0;
+      if ((await paymentSiblings(sb, o.razorpay_payment_id, o.id)).length) {
+        // Cart paid in one go: only this item's refunds count (notes.order_id).
+        already = await refundedPaiseForOrder(o.razorpay_payment_id, o.id);
+      } else {
+        try {
+          const pr = await fetch(`https://api.razorpay.com/v1/payments/${o.razorpay_payment_id}`, { headers: { Authorization: `Basic ${rzpAuth}` } });
+          if (pr.ok) already = Number((await pr.json())?.amount_refunded) || 0;
+        } catch { /* treat as nothing refunded yet */ }
+      }
+      outcome = already === null
+        ? { ok: false, refundId: null, note: "could not check earlier refunds on Razorpay" }
+        : already >= dueBack
         ? { ok: true, refundId: null, note: "already refunded on Razorpay" }
         : await refundRazorpayPayment(o.razorpay_payment_id, { order_id: o.id, caller: "cron:refund-retry" }, dueBack - already);
     }

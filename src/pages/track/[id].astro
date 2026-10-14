@@ -221,7 +221,7 @@ const { id } = Astro.params;
         const res = await fetch("/api/orders/cancel", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel", cancel_reason: reason.trim() }),
+          body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel", cancel_reason: reason.trim(), whole_cart: true }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Cancel failed");
@@ -365,7 +365,9 @@ const { id } = Astro.params;
     // Call option removed per user request
 
     // Items
-    const items = (o.items && o.items.length > 0) ? o.items : [{
+    // A cart (one checkout, several items): every item with its own status/refund.
+    const cartItems = o.cart?.items || null;
+    const items = cartItems ? cartItems : (o.items && o.items.length > 0) ? o.items : [{
       species: o.listing?.species || o.species,
       quantity: o.quantity,
       quantity_unit: o.quantity_unit,
@@ -378,20 +380,51 @@ const { id } = Astro.params;
     const pricingOpts = o.listing?.pricing_options || [];
     const opt = pricingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
     const bundle = opt?.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
+    const liveCartItems = cartItems ? cartItems.filter((it) => !["cancelled", "declined", "refunded"].includes(it.status)) : [];
     document.getElementById("v2-od-items").innerHTML = items.map(it => {
       const unit = it.quantity_unit || 'kg';
-      const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(it.quantity) / bundle)} pack` : (unit === "kg" && Number(it.quantity) > 0 && Number(it.quantity) < 1 ? `${Math.round(Number(it.quantity) * 1000)} grams` : `${escape(it.quantity)} ${escape(unit)}`);
+      const qtyLabel = cartItems
+        ? (it.pricing_label ? escape(it.pricing_label) : `${escape(it.quantity)} ${escape(unit)}`)
+        : unit === "piece" && bundle > 1 ? `${Math.round(Number(it.quantity) / bundle)} pack` : (unit === "kg" && Number(it.quantity) > 0 && Number(it.quantity) < 1 ? `${Math.round(Number(it.quantity) * 1000)} grams` : `${escape(it.quantity)} ${escape(unit)}`);
+      const off = cartItems && ["cancelled", "declined", "refunded"].includes(it.status);
+      const refund = Number(it.refund_amt) || 0;
+      const offNote = off
+        ? `<div style="font:600 11px Inter;color:var(--v2-red);margin-top:2px;">${it.cancelled_by === "seller" ? "Removed by the seller" : "Cancelled"}${it.cancel_reason ? ` · ${escape(it.cancel_reason)}` : ""}${it.paid ? (it.refund_sent_at && refund > 0 ? ` · ₹${refund.toLocaleString("en-IN")} refunded` : " · refund pending") : ""}</div>`
+        : "";
+      const canRemove = cartItems && !off && liveCartItems.length > 1 && ["pending_payment", "pending", "paid"].includes(it.status);
       return `
       <div class="v2-od-item-row">
         <div>
-          <div class="v2-od-item-name" style="text-transform:capitalize;">${escape(it.species || "Fish")}</div>
+          <div class="v2-od-item-name" style="text-transform:capitalize;${off ? "text-decoration:line-through;color:var(--v2-ink-3);" : ""}">${escape(it.species || "Fish")}</div>
           <div class="v2-od-item-qty">${qtyLabel}</div>
+          ${offNote}
+          ${canRemove ? `<button type="button" class="v2-od-remove-item" data-item="${escape(it.id)}" style="font:600 11px Inter;color:var(--v2-red);background:none;border:0;padding:4px 0 0;cursor:pointer;">Remove item</button>` : ""}
         </div>
-        <div style="font-weight:700;">₹${(it.total_price || 0).toLocaleString("en-IN")}</div>
+        <div style="font-weight:700;${off ? "text-decoration:line-through;color:var(--v2-ink-3);" : ""}">₹${Number(it.total_price || 0).toLocaleString("en-IN")}</div>
       </div>`;
     }).join("")
       + (cutStyle ? `<div style="font:600 12px Inter;color:var(--v2-ink-2);margin-top:8px;">✂️ ${escape(cutStyle.split(",").map(c => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : "")
       + (buyerNotes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(buyerNotes)}</div>` : "");
+    document.querySelectorAll(".v2-od-remove-item").forEach((btn) => btn.addEventListener("click", async () => {
+      const it = cartItems.find((x) => x.id === btn.getAttribute("data-item"));
+      if (!it) return;
+      const paidItem = it.paid;
+      if (!confirm(`Remove ${it.species || "this item"} from your order?${paidItem ? " Its share of your payment is refunded to your original payment method (5–7 working days)." : ""}`)) return;
+      try {
+        const buyerId = localStorage.getItem("rlf_buyer_id") || "";
+        const res = await fetch("/api/orders/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_id: it.id, buyer_id: buyerId, action: "cancel" }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not remove the item");
+        window.v2Toast?.("success", "Item removed", paidItem ? "Refund started" : "");
+        setTimeout(() => load(), 600);
+      } catch (err) {
+        window.v2Toast?.("error", "Could not remove", err.message);
+      }
+    }));
 
     // Fulfillment
     const fulfillEl = document.getElementById("v2-od-fulfill");
@@ -443,9 +476,14 @@ const { id } = Astro.params;
     }
 
     // Bill
-    const subtotal = o.total_price || 0;
-    const delivery = o.delivery_fee || 0;
+    // A cart bills its live items together; removed items show what came back.
+    const billRows = cartItems ? liveCartItems : [o];
+    const subtotal = billRows.reduce((s2, r) => s2 + (Number(r.total_price) || 0), 0);
+    const delivery = billRows.reduce((s2, r) => s2 + (Number(r.delivery_fee) || 0), 0);
     const grand = subtotal + delivery;
+    const cartRefunded = cartItems
+      ? cartItems.filter((r) => r.paid && r.refund_sent_at).reduce((s2, r) => s2 + (Number(r.refund_amt) || 0), 0)
+      : 0;
     const finalPrice = o.final_price ? Number(o.final_price) : null;
     const paidAmount = o.paid_amount ? Number(o.paid_amount) : null;
     // Only show "You paid" after actual payment — not for pending_payment (paid_amount is pre-set at creation)
@@ -456,6 +494,7 @@ const { id } = Astro.params;
       <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
       ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}
       <div class="total"><span>Total</span><span>₹${grand.toLocaleString("en-IN")}</span></div>
+      ${cartRefunded > 0 ? `<div><span style="color:var(--v2-green);">Refunded for removed items</span><span style="font-weight:700;color:var(--v2-green);">₹${cartRefunded.toLocaleString("en-IN")}</span></div>` : ''}
       ${finalPrice ? `<div style="padding-top:6px;border-top:1px solid var(--v2-border);margin-top:4px;"><span style="color:var(--v2-ink-2);">Final price (seller)</span><span style="font-weight:700;color:var(--v2-ink);">₹${finalPrice.toLocaleString("en-IN")}</span></div>` : ''}
       ${showPaidAmount ? `<div><span style="color:var(--v2-ink-2);">You paid</span><span style="color:var(--v2-green);">₹${paidAmount.toLocaleString("en-IN")}</span></div>` : ''}
       ${balance && balance > 0 ? `<div><span style="color:var(--v2-red);">Balance due</span><span style="font-weight:700;color:var(--v2-red);">₹${balance.toLocaleString("en-IN")}</span></div>` : ''}
@@ -484,7 +523,7 @@ const { id } = Astro.params;
           const res = await fetch("/api/orders/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel" }),
+            body: JSON.stringify({ order_id: o.id, buyer_id: buyerId, action: "cancel", whole_cart: true }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Cancel failed");
@@ -732,6 +771,7 @@ const { id } = Astro.params;
       // order is unpayable from the UI.
       const balance = kind === "balance"
         ? Math.max(0, Number(o.final_price || 0) - Number(o.paid_amount || 0))
+        : o.cart ? Number(o.cart.payable_total) || 0 // one payment for every unpaid item in the cart
         : Number(o.total_price) + Number(o.delivery_fee || 0);
       // Nothing actually owed — render nothing rather than a ₹0 Pay button.
       if (balance > 0) renderRazorpayButton(o, balance, root);

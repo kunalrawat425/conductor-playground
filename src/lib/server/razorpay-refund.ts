@@ -41,7 +41,13 @@ export async function refundRazorpayPayment(
     const res = await fetch(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}/refund`, {
       method: "POST",
       headers: { Authorization: `Basic ${authHex}`, "Content-Type": "application/json" },
-      body: JSON.stringify(amountPaise && amountPaise > 0 ? { speed: "normal", amount: Math.round(amountPaise) } : { speed: "normal" }),
+      // notes.order_id: one cart payment can cover several orders; per-order refunds
+      // are found (and never repeated) by this tag. See order-cart.ts.
+      body: JSON.stringify({
+        speed: "normal",
+        ...(amountPaise && amountPaise > 0 ? { amount: Math.round(amountPaise) } : {}),
+        ...(ctx.order_id ? { notes: { order_id: ctx.order_id } } : {}),
+      }),
     });
 
     if (res.ok) {

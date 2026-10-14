@@ -1,3 +1,11 @@
+export type BuyerCancelInfo = {
+  by?: string | null;
+  reason?: string | null;
+  refunded?: boolean;
+  /** One item of a cart was cancelled and the rest goes ahead. */
+  item?: { order_short: string; amount?: number | null } | null;
+};
+
 /**
  * Pure copy for buyer order-status Web Push (tested independently of Supabase / web-push).
  */
@@ -6,11 +14,15 @@ export function buyerOrderPushNotification(
   species?: string | null,
   final_price?: number | null,
   /** Cancellations: who did it and why, so the buyer sees it on the lock screen. */
-  cancel?: { by?: string | null; reason?: string | null; refunded?: boolean } | null
+  cancel?: BuyerCancelInfo | null
 ): { title: string; body: string } {
   if (cancel && (status === "cancelled" || status === "declined")) {
     const fish = species ? `${species} ` : "";
     const reason = cancel.reason ? ` Reason: ${cancel.reason.replace(/[.!?]*$/, ".")}` : "";
+    if (cancel.item) {
+      const amt = cancel.item.amount ? ` — ₹${cancel.item.amount.toLocaleString("en-IN")} refunded` : "";
+      return { title: "Item removed from your order", body: `${species || "An item"} was removed from your order #${cancel.item.order_short}${amt}.${reason}` };
+    }
     const refund = cancel.refunded ? " Your payment is being refunded in full." : "";
     if (cancel.by === "seller") {
       return { title: "Order cancelled by the seller", body: `The seller cancelled your ${fish}order.${reason}${refund}`.trim() };

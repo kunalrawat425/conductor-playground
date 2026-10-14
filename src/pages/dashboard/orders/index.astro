@@ -526,7 +526,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   function renderOrders(ordersToShow: any[], totalPages: number) {
     const list = document.getElementById("v2-orders-list")!;
 
-    const orderHtml = ordersToShow.map((o: any) => renderSingleOrder(o)).join("");
+    const orderHtml = ordersToShow.map((o: any) => o.cart_items ? renderCartOrder(o.cart_items) : renderSingleOrder(o)).join("");
 
     const pagerHtml = totalPages > 1 ? `
       <div class="v2-pagination">
@@ -556,23 +556,50 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         } else if (btn.dataset.action === "reconcile-razorpay") {
           reconcileRazorpay(btn.dataset.orderId!, btn);
         } else {
-          updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn);
+          updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn, btn.dataset.cart === "1");
         }
       });
     });
     tryFocusOrderFromQuery();
   }
 
-  function renderSingleOrder(o: any) {
-        const needsFinalPrice = preorderNeedsFinalPrice(o);
+  const CLOSED = ["cancelled", "declined", "refunded"];
+  // Statuses an item can still be cancelled from, and whether that is a decline (not yet accepted).
+  const REMOVABLE = ["pending", "pending_payment", "pre_order", "scheduled", "paid", "confirmed", "payment_required", "ready_for_pickup", "out_for_delivery"];
+  const DECLINE_FROM = ["pending", "pending_payment", "pre_order", "scheduled"];
+
+  function qtyLabelOf(o: any) {
+    const listingOpts = o.listing?.pricing_options || [];
+    const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
+    const bundle = opt?.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
+    const unit = o.quantity_unit || "kg";
+    return unit === "piece" && bundle > 1 ? `${Math.round(Number(o.quantity) / bundle)} pack` : (unit === "kg" && Number(o.quantity) > 0 && Number(o.quantity) < 1 ? `${Math.round(Number(o.quantity) * 1000)} grams` : `${o.quantity}${escape(unit)}`);
+  }
+
+  /**
+   * One checkout with 2+ items = one card. The header and the cart-level buttons
+   * act on the first live row (the server applies them to every live row with
+   * cart: true); each item line has its own status, price setting and remove.
+   */
+  function renderCartOrder(rows: any[]) {
+    const lead = rows.find((r) => !CLOSED.includes(r.status)) || rows[0];
+    return renderSingleOrder(lead, rows);
+  }
+
+  function renderSingleOrder(o: any, cart?: any[]) {
+        const live = (cart || []).filter((r) => !CLOSED.includes(r.status));
+        const needsFinalPrice = cart ? live.some((r) => preorderNeedsFinalPrice(r)) : preorderNeedsFinalPrice(o);
         const isPreorder = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
         const time = o.scheduled_for
           ? new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
           : new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
         const cls = isUrgent ? "v2-order-urgent" : "";
-        const total = o.total_price || o.final_price || 0;
-        const id6 = String(o.id || "").slice(0, 8).toUpperCase();
+        const total = cart
+          ? live.reduce((s, r) => s + (Number(r.total_price || r.final_price) || 0) + (Number(r.delivery_fee) || 0), 0)
+          : o.total_price || o.final_price || 0;
+        const cardId = cart ? cart[0].id : o.id;
+        const id6 = String(cardId || "").slice(0, 8).toUpperCase();
 
         // Badge per status
         const statusBadges: Record<string, [string, string]> = {
@@ -626,7 +653,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           }
         } else if (o.status === "paid") {
           // Buyer paid; the seller decides. Accept → confirmed, decline → full refund.
-          actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Buyer paid ₹${(Number(o.paid_amount) || 0).toLocaleString("en-IN")} — confirm to accept the order</div>
+          actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Buyer paid ₹${(cart ? live.reduce((s, r) => s + (Number(r.paid_amount) || 0), 0) : Number(o.paid_amount) || 0).toLocaleString("en-IN")} — confirm to accept the order</div>
             <div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
               <div style="display:flex;gap:8px;">
                 <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="accept" data-order-id="${o.id}">✓ Confirm order</button>
@@ -660,7 +687,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               })()
             : "";
           if (needsFinalPrice) {
-            actionsHtml = preorderPriceBlock;
+            // A cart sets the price on each item line below.
+            actionsHtml = cart ? "" : preorderPriceBlock;
           } else {
             const fulfill = isDelivery
               ? `<div class="v2-oc-actions">
@@ -674,7 +702,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             // restore trigger on an order still being fulfilled. It now stays
             // `confirmed` with the difference recorded in refund_amt — so the
             // amount owed has to be surfaced here, or it becomes invisible.
-            const dueBack = Number(o.refund_amt) || 0;
+            const dueBack = cart ? 0 : Number(o.refund_amt) || 0;
             const owedBlock = dueBack > 0
               ? `<div style="padding:10px;background:${o.refund_sent_at ? "#F0FDF4" : "#FFF7ED"};border:1px solid ${o.refund_sent_at ? "#86EFAC" : "#FED7AA"};border-radius:var(--v2-radius-sm);display:flex;flex-direction:column;gap:6px;">
                   ${o.refund_sent_at
@@ -708,6 +736,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           const finalAmt = Number(o.final_price) || 0;
           actionsHtml = refundStatusHtml(o, finalAmt > 0 ? Math.max(0, paidAmt - finalAmt) : paidAmt);
         }
+        // Cart buttons act on every live item; refunds are shown per item line.
+        if (cart) actionsHtml = live.length ? actionsHtml.replace(/data-action="(accept|decline|ready|out_for_delivery|picked_up|delivered|seller_cancel)"/g, 'data-cart="1" $&') : "";
         if (["cancelled", "declined"].includes(o.status)) {
           const who = cancelledByText(o.cancelled_by, "seller", o.cancel_reason);
           const why = cancelReasonText(o.cancel_reason);
@@ -717,11 +747,35 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           </div>${actionsHtml}`;
         }
 
-        const listingOpts = o.listing?.pricing_options || [];
-        const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
-        const bundle = opt?.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
-        const unit = o.quantity_unit || "kg";
-        const qtyLabel = unit === "piece" && bundle > 1 ? `${Math.round(Number(o.quantity) / bundle)} pack` : (unit === "kg" && Number(o.quantity) > 0 && Number(o.quantity) < 1 ? `${Math.round(Number(o.quantity) * 1000)} grams` : `${o.quantity}${escape(unit)}`);
+        const qtyLabel = qtyLabelOf(o);
+        const itemLine = (r: any) => {
+          const [bt, bc] = statusBadges[r.status] || [r.status, "v2-oc-badge-new"];
+          const opts = r.listing?.pricing_options || [];
+          const opt = opts.find((x: any) => x?.id && x.id === r.pricing_option_id);
+          const pack = opt?.label;
+          const closed = CLOSED.includes(r.status);
+          const why = closed ? cancelReasonText(r.cancel_reason) : "";
+          const dueBack = Number(r.refund_amt) || 0;
+          const ro = opt || opts[0];
+          const range = ro?.preorder_price_min && ro?.preorder_price_max ? ` · your range ₹${Number(ro.preorder_price_min).toLocaleString("en-IN")}–₹${Number(ro.preorder_price_max).toLocaleString("en-IN")}` : "";
+          return `<div data-order-id="${r.id}" style="padding:8px 0;border-top:1px solid var(--v2-border);">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+              <div style="font:600 13px Inter;text-transform:capitalize;${closed ? "text-decoration:line-through;color:var(--v2-ink-3);" : ""}">${escape(r.listing?.species || r.species || "")} · ${qtyLabelOf(r)}${pack ? ` · ${escape(pack)}` : ""}</div>
+              <div style="display:flex;gap:6px;align-items:center;white-space:nowrap;"><span style="font:700 13px Inter;">₹${(Number(r.total_price || r.final_price) || 0).toLocaleString("en-IN")}</span><span class="v2-oc-badge ${bc}">${bt}</span></div>
+            </div>
+            ${why ? `<div style="font:400 11px Inter;color:var(--v2-ink-2);margin-top:2px;">Reason: ${escape(why)}</div>` : ""}
+            ${closed && wasActuallyPaid(r) ? refundStatusHtml(r, refundableAmount(r)) : ""}
+            ${!closed && dueBack > 0 ? `<div style="font:600 11px Inter;color:${r.refund_sent_at ? "var(--v2-green)" : "var(--v2-orange)"};margin-top:2px;">↩ ₹${dueBack.toLocaleString("en-IN")} price difference ${r.refund_sent_at ? "refunded" : "refunding"} via Razorpay</div>` : ""}
+            ${r.status === "confirmed" && preorderNeedsFinalPrice(r) ? `<div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+                <input type="number" placeholder="Final price (₹)" id="final-price-${r.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
+                <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;white-space:nowrap;" data-action="set_final_price" data-order-id="${r.id}">Set price</button>
+              </div>
+              <div style="font:400 11px Inter;color:#D97706;margin-top:4px;">Paid ₹${(Number(r.paid_amount) || 0).toLocaleString("en-IN")}${range}. Lower → the difference is refunded automatically; higher → buyer pays the difference.</div>` : ""}
+            ${live.length > 1 && REMOVABLE.includes(r.status) ? `<button class="v2-btn v2-btn-sm" style="margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="item_cancel" data-cancel-status="${DECLINE_FROM.includes(r.status) ? "declined" : "cancelled"}" data-order-id="${r.id}">Remove this item · refund buyer</button>` : ""}
+          </div>`;
+        };
+        const addr = cart?.map((r) => r.delivery_address).find(Boolean);
+        const addrText = addr ? [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ") : "";
         let nextStepHint = "";
         if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
           nextStepHint = isPaidViaRazorpay ? "Next: Confirm the order." : "Waiting for buyer to complete Razorpay payment.";
@@ -756,7 +810,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         else if (['pending_payment', 'payment_required'].includes(o.status) && !isPaidViaRazorpay) payStatusText = "Payment pending";
         else if (wasActuallyPaid(o) || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status)) payStatusText = "Paid";
 
-        return `<div class="v2-seller-order ${cls}" data-order-id="${o.id}">
+        return `<div class="v2-seller-order ${cls}" data-order-id="${cardId}">
           <div class="v2-oc-top">
             <div>
               <div class="v2-oc-id">${isPreorder ? "🌙 " : ""}#${id6}${o.buyer_phone ? ' · ' + escape(o.buyer_phone.slice(-4)) : ''}</div>
@@ -767,11 +821,14 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               <span class="v2-oc-badge ${badgeCls}">${badgeText}</span>
             </div>
           </div>
-          <div class="v2-oc-items" style="text-transform:capitalize;">${escape(o.listing?.species || o.species || "")} · ${qtyLabel}</div>
+          ${cart
+            ? `<div class="v2-oc-items">${cart.length} items</div><div style="margin-top:4px;">${cart.map(itemLine).join("")}</div>`
+            : `<div class="v2-oc-items" style="text-transform:capitalize;">${escape(o.listing?.species || o.species || "")} · ${qtyLabel}</div>`}
           <div class="v2-oc-meta">
             <span class="v2-oc-meta-pill ${isPreorder ? "v2-oc-meta-pill-preorder" : "v2-oc-meta-pill-order"}">${isPreorder ? "Pre-order" : "Order"}</span>
             <span class="v2-oc-meta-pill ${isDelivery ? "v2-oc-meta-pill-delivery" : "v2-oc-meta-pill-pickup"}">${isDelivery ? "Delivery" : "Pickup"}</span>
           </div>
+          ${addrText ? `<div style="font:500 11px Inter;color:var(--v2-ink-2);margin-top:4px;">📍 ${escape(addrText)}</div>` : ""}
           ${o.cut_style ? `<div style="font:600 11px Inter;color:var(--v2-ink-2);margin-top:4px;">✂️ ${escape(o.cut_style.split(",").map((c: string) => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : ''}
           ${o.buyer_notes ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
           ${buyerRatingHtml}
@@ -809,7 +866,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     }
   }
 
-  async function updateStatus(orderId: string, action: string, btn?: HTMLButtonElement) {
+  async function updateStatus(orderId: string, action: string, btn?: HTMLButtonElement, cart = false) {
     if (!sellerId) return;
     if (!orderId) {
       (window as any).v2Toast?.("error", "Order action failed", "Missing order id on this action. Refresh and retry.");
@@ -825,10 +882,13 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       picked_up: "completed",
       delivered: "completed",
       seller_cancel: "cancelled",
+      item_cancel: btn?.dataset.cancelStatus || "cancelled",
     };
     let sellerCancelReason = "";
-    if (action === "seller_cancel") {
-      const r = window.prompt("Why are you cancelling? The buyer sees this reason and is refunded in full.", "");
+    if (action === "seller_cancel" || action === "item_cancel") {
+      const r = window.prompt(action === "item_cancel"
+        ? "Why are you removing this item? The buyer sees this reason and is refunded for it; the rest of the order goes ahead."
+        : "Why are you cancelling? The buyer sees this reason and is refunded in full.", "");
       if (r === null) return;
       sellerCancelReason = r.trim();
       if (!sellerCancelReason) { (window as any).v2Toast?.("error", "Reason needed", "Tell the buyer why the order is cancelled"); return; }
@@ -837,12 +897,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     const loadingLabels: Record<string, string> = {
       accept: "Confirming…", decline: "Declining…", ready: "Updating…",
       out_for_delivery: "Updating…", picked_up: "Completing…", delivered: "Completing…",
-      set_final_price: "Setting…", seller_cancel: "Cancelling…",
+      set_final_price: "Setting…", seller_cancel: "Cancelling…", item_cancel: "Removing…",
     };
     const successLabels: Record<string, string> = {
       accept: "Confirmed", decline: "Declined", ready: "Marked ready",
       out_for_delivery: "Out for delivery", picked_up: "Completed", delivered: "Delivered",
-      set_final_price: "Price set", seller_cancel: "Cancelled",
+      set_final_price: "Price set", seller_cancel: "Cancelled", item_cancel: "Item removed",
     };
     if (btn) {
       btn.disabled = true;
@@ -850,6 +910,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     }
     try {
       let body: Record<string, any> = { seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", order_id: orderId };
+      if (cart) body.cart = true;
       if (apiActions.has(action)) {
         body.action = action;
         if (action === "set_final_price") {
@@ -886,7 +947,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       };
       // For action-based calls, derive status from returned order or action semantics
       const resolvedStatus = data.order?.status ?? body.status;
-      const targetTab = tabForStatus[resolvedStatus];
+      // Removing one item leaves the rest of the cart where it is.
+      const targetTab = action === "item_cancel" ? null : tabForStatus[resolvedStatus];
       if (targetTab && targetTab !== currentTab) {
         currentTab = targetTab as any;
         currentPage = 1;

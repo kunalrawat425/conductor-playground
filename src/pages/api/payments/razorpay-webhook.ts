@@ -114,21 +114,30 @@ export const POST: APIRoute = async ({ request, url }) => {
     // First sighting of this refund? Our own cancel/decline/extra-payment paths
     // mark the ledger before Razorpay calls back, and refund.created is followed
     // by refund.processed — neither should notify twice.
-    const { data: firstSeen } = await sb.from("razorpay_payments")
-      .update({ refund_id, refunded_at: now })
-      .eq("razorpay_payment_id", razorpay_payment_id)
-      .is("refund_id", null)
-      .select("order_id");
-
-    const { data: order, error } = await sb.from("orders")
+    // A cart paid in one go puts the same payment on several items; our refunds
+    // carry notes.order_id saying which item each one is for.
+    const { data: payRows, error } = await sb.from("orders")
       .select("id, status, refund_sent_at")
-      .eq("razorpay_payment_id", razorpay_payment_id)
-      .maybeSingle();
+      .eq("razorpay_payment_id", razorpay_payment_id);
     if (error) {
       console.error("[razorpay-webhook] refund lookup failed", { razorpay_payment_id, error: error.message });
       return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
     }
+    const shared = (payRows?.length ?? 0) > 1;
+    const order = shared
+      ? (payRows || []).find((r: any) => r.id === refund?.notes?.order_id) ?? null
+      : payRows?.[0] ?? null;
+    // The ledger's refund_id is per payment: one item's refund on a shared payment
+    // must not mark the whole payment refunded (the other items' shares are still held).
+    const { data: firstSeen } = shared
+      ? { data: [] as any[] }
+      : await sb.from("razorpay_payments")
+        .update({ refund_id, refunded_at: now })
+        .eq("razorpay_payment_id", razorpay_payment_id)
+        .is("refund_id", null)
+        .select("order_id");
     if (!order) {
+      if (shared) console.warn(`[razorpay-webhook] ${evtType}: refund ${refund_id} on cart payment ${razorpay_payment_id} has no notes.order_id (manual dashboard refund?) — not attributed to an item`);
       console.log(`[razorpay-webhook] ${evtType}: no order carries payment ${razorpay_payment_id} (extra/balance payment, legacy, or ledger-only)`);
       return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: 0 }), { status: 200 });
     }
@@ -138,7 +147,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     // "confirmed — being prepared", the seller dashboard offered Ready/Out
     // buttons on, and which restored stock on fish already handed over.
     // Only a FULL refund of a still-live order takes the order off.
-    const flip = fullyRefunded && !["cancelled", "declined", "refunded", "completed", "picked_up"].includes(order.status);
+    const flip = !shared && fullyRefunded && !["cancelled", "declined", "refunded", "completed", "picked_up"].includes(order.status);
     const firstSighting = (firstSeen?.length ?? 0) > 0 || !order.refund_sent_at;
     if (!flip && !firstSighting) {
       return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: 0 }), { status: 200 });

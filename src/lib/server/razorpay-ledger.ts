@@ -21,10 +21,11 @@
 import { refundRazorpayPayment, type RefundOutcome } from "./razorpay-refund";
 import { gaPurchase } from "./ga-mp";
 import { afterResponse } from "./after-response";
+import { paymentSiblings, refundedPaiseForOrder, rowPaise, CART_PAYABLE } from "./order-cart";
 
 export const PAYABLE_STATUSES = ["pending", "pending_payment", "payment_required"];
 const CLOSED_STATUSES = ["cancelled", "declined", "refunded"];
-const ORDER_COLS = "id, buyer_id, status, final_price, paid_amount, razorpay_order_id, razorpay_payment_id, refund_note";
+const ORDER_COLS = "id, buyer_id, status, final_price, paid_amount, razorpay_order_id, razorpay_payment_id, refund_note, total_price, delivery_fee, created_at";
 
 export type SettleOrder = {
   id: string;
@@ -33,9 +34,29 @@ export type SettleOrder = {
   razorpay_payment_id?: string | null;
   final_price?: number | string | null;
   refund_note?: string | null;
+  total_price?: number | string | null;
+  delivery_fee?: number | string | null;
 };
 
 export type Settlement = "confirm" | "already" | "stamp" | "refund";
+
+/**
+ * One Razorpay payment can cover a whole cart (several order rows, see order-cart.ts).
+ * Each row is decided on its own; rows that can't keep the money get their share back.
+ * Pure, so the money rules are unit-testable.
+ */
+export function planCartSettlement<T extends SettleOrder>(
+  rows: T[],
+  p: { razorpay_order_id: string; razorpay_payment_id: string }
+): Record<Settlement, T[]> {
+  const plan: Record<Settlement, T[]> = { confirm: [], already: [], stamp: [], refund: [] };
+  for (const r of rows) {
+    const d = decideSettlement(r, p);
+    // A cart payment never settles a balance top-up: those have their own Razorpay order.
+    plan[d === "confirm" && !CART_PAYABLE.includes(r.status) ? "refund" : d].push(r);
+  }
+  return plan;
+}
 
 /** Pure decision, so the money rules are unit-testable without a database. */
 export function decideSettlement(
@@ -82,25 +103,33 @@ async function orderIdFromReceipt(razorpayOrderId: string): Promise<string | nul
  * id was since replaced (amount changed, second tab), fall back to the receipt.
  */
 export async function findOrderForRazorpayOrder(sb: any, razorpayOrderId: string): Promise<SettleOrder | null> {
-  const { data } = await sb.from("orders").select(ORDER_COLS).eq("razorpay_order_id", razorpayOrderId).limit(1);
-  if (data?.[0]) return data[0];
+  return (await findOrdersForRazorpayOrder(sb, razorpayOrderId))[0] ?? null;
+}
+
+/** Every row a Razorpay order charges for: one row, or a whole cart (oldest first). */
+export async function findOrdersForRazorpayOrder(sb: any, razorpayOrderId: string): Promise<SettleOrder[]> {
+  const { data } = await sb.from("orders").select(ORDER_COLS).eq("razorpay_order_id", razorpayOrderId)
+    .order("created_at", { ascending: true });
+  if (data?.length) return data;
   const receipt = await orderIdFromReceipt(razorpayOrderId);
-  if (!receipt) return null;
+  if (!receipt) return [];
   const { data: byReceipt } = await sb.from("orders").select(ORDER_COLS).eq("id", receipt).limit(1);
-  return byReceipt?.[0] ?? null;
+  return byReceipt ?? [];
 }
 
 export type SettleResult =
-  | { kind: "confirmed" | "already" | "stamped"; order: SettleOrder }
+  /** `orders`: every row this call moved (2+ for a cart paid in one go). */
+  | { kind: "confirmed" | "already" | "stamped"; order: SettleOrder; orders?: SettleOrder[] }
   | { kind: "refunded"; order: SettleOrder; refund: RefundOutcome }
   | { kind: "orphan" };
 
-export async function settleCapturedPayment(
-  sb: any,
-  p: { razorpay_order_id: string; razorpay_payment_id: string; source: string; verified_by?: string | null }
-): Promise<SettleResult> {
-  let order = await findOrderForRazorpayOrder(sb, p.razorpay_order_id);
-  if (!order) return { kind: "orphan" };
+type SettleInput = { razorpay_order_id: string; razorpay_payment_id: string; source: string; verified_by?: string | null };
+
+export async function settleCapturedPayment(sb: any, p: SettleInput): Promise<SettleResult> {
+  const rows = await findOrdersForRazorpayOrder(sb, p.razorpay_order_id);
+  if (!rows.length) return { kind: "orphan" };
+  if (rows.length > 1) return settleCart(sb, rows, p);
+  let order = rows[0];
 
   await recordRazorpayPayment(sb, {
     razorpay_payment_id: p.razorpay_payment_id,
@@ -160,6 +189,108 @@ export async function settleCapturedPayment(
   return refundLatePayment(sb, order, p);
 }
 
+/**
+ * A cart paid by one payment. Rows still awaiting it move to paid in ONE guarded
+ * UPDATE, so of two concurrent settles (verify + webhook) exactly one gets them and
+ * notifies. Rows that can't keep the money (closed meanwhile, paid by another
+ * payment) get their own share refunded; if none can keep it, the whole payment is.
+ */
+async function settleCart(sb: any, rows: SettleOrder[], p: SettleInput): Promise<SettleResult> {
+  const primary = rows[0];
+  await recordRazorpayPayment(sb, {
+    razorpay_payment_id: p.razorpay_payment_id,
+    razorpay_order_id: p.razorpay_order_id,
+    order_id: primary.id,
+    source: p.source,
+  });
+  const plan = planCartSettlement(rows, p);
+  if (plan.refund.length === rows.length) return refundLatePayment(sb, primary, p);
+
+  const now = new Date().toISOString();
+  const confirmed: SettleOrder[] = [];
+  const stamped: SettleOrder[] = [];
+  if (plan.confirm.length) {
+    const { data, error } = await sb.from("orders").update({
+      status: "paid",
+      payment_method: "razorpay",
+      razorpay_payment_id: p.razorpay_payment_id,
+      payment_verified_at: now,
+      payment_verified_by: p.verified_by ?? null,
+    })
+      .in("id", plan.confirm.map((r) => r.id))
+      .in("status", CART_PAYABLE)
+      .eq("razorpay_order_id", p.razorpay_order_id)
+      .is("razorpay_payment_id", null)
+      .select(ORDER_COLS);
+    if (error) throw new Error(`cart confirm failed: ${error.message}`);
+    confirmed.push(...(data || []));
+  }
+  if (plan.stamp.length) {
+    const { data, error } = await sb.from("orders")
+      .update({ payment_method: "razorpay", razorpay_payment_id: p.razorpay_payment_id })
+      .in("id", plan.stamp.map((r) => r.id)).is("razorpay_payment_id", null).select(ORDER_COLS);
+    if (error) throw new Error(`cart stamp failed: ${error.message}`);
+    stamped.push(...(data || []));
+  }
+  if (confirmed.length || stamped.length) {
+    afterResponse(gaPurchase(p.razorpay_order_id, { order_id: (confirmed[0] || stamped[0]).id }), "ga-mp:purchase");
+  }
+
+  // Rows another writer changed between our read and our UPDATE: theirs if this
+  // payment is now on them, otherwise this payment can't stay on them.
+  const moved = new Set([...confirmed, ...stamped].map((r) => r.id));
+  const lost = [...plan.confirm, ...plan.stamp].filter((r) => !moved.has(r.id));
+  const refundRows = [...plan.refund];
+  if (lost.length) {
+    const { data: fresh } = await sb.from("orders").select(ORDER_COLS).in("id", lost.map((r) => r.id));
+    for (const f of fresh || []) if (f.razorpay_payment_id !== p.razorpay_payment_id) refundRows.push(f);
+  }
+  let lastRefund: RefundOutcome | null = null;
+  for (const r of refundRows) lastRefund = await refundCartShare(sb, r, p);
+
+  if (confirmed.length) return { kind: "confirmed", order: confirmed[0], orders: confirmed };
+  if (stamped.length) return { kind: "stamped", order: stamped[0], orders: stamped };
+  if (lastRefund) return { kind: "refunded", order: refundRows[0], refund: lastRefund };
+  return { kind: "already", order: plan.already[0] ?? primary };
+}
+
+/** Refund one row's share of a cart payment (never repeated: refunds carry notes.order_id). */
+async function refundCartShare(sb: any, row: SettleOrder, p: { razorpay_payment_id: string; source: string }): Promise<RefundOutcome> {
+  const outcome = await refundShare(row, p.razorpay_payment_id, `settle:${p.source}`);
+  console.warn("[razorpay-ledger] cart payment share could not be applied to its item — refunding", {
+    order_id: row.id, status: row.status, razorpay_payment_id: p.razorpay_payment_id, ok: outcome.ok,
+  });
+  const line = `Cart payment ${p.razorpay_payment_id} share on a ${row.status} item: ${outcome.note}`;
+  const patch: Record<string, unknown> = { refund_note: (row.refund_note ? `${row.refund_note} | ${line}` : line).slice(0, 1000) };
+  // Attach the payment to an item that has none, so the buyer sees "Refund pending"
+  // and the daily cron retries a failed refund.
+  if (!row.razorpay_payment_id) {
+    patch.payment_method = "razorpay";
+    patch.razorpay_payment_id = p.razorpay_payment_id;
+    if (outcome.ok) {
+      patch.refund_amt = rowPaise(row) / 100;
+      patch.refund_sent_at = new Date().toISOString();
+    }
+  }
+  const { error } = await sb.from("orders").update(patch).eq("id", row.id);
+  if (error) console.error("[razorpay-ledger] cart share refund note write failed", { order_id: row.id, err: error.message });
+  return outcome;
+}
+
+/** Partial refund of what one row paid on a shared payment, minus what it already got back. */
+async function refundShare(
+  row: { id: string; total_price?: number | string | null; delivery_fee?: number | string | null },
+  paymentId: string,
+  caller: string
+): Promise<RefundOutcome> {
+  const due = rowPaise({ total_price: row.total_price ?? 0, delivery_fee: row.delivery_fee });
+  const already = await refundedPaiseForOrder(paymentId, row.id);
+  // Never refund blind on a shared payment: a repeat would hand back another item's money.
+  if (already === null) return { refundId: null, ok: false, note: "Razorpay refund FAILED (could not check earlier refunds) — retried automatically" };
+  if (already >= due) return { refundId: null, ok: true, note: "Already refunded on Razorpay" };
+  return refundRazorpayPayment(paymentId, { order_id: row.id, caller }, due - already);
+}
+
 async function refundLatePayment(
   sb: any,
   order: SettleOrder,
@@ -205,12 +336,21 @@ export async function refundOrderRazorpay(
   if (error) console.warn("[razorpay-ledger] ledger read failed, using order row only", { order_id: order.id, err: error.message });
 
   const ledger: { razorpay_payment_id: string; refund_id: string | null }[] = rows || [];
-  const ids = ledger.filter((r) => !r.refund_id).map((r) => r.razorpay_payment_id);
   const pid = order.razorpay_payment_id;
-  if (pid && !ledger.some((r) => r.razorpay_payment_id === pid)) ids.push(pid);
-  if (!ids.length) return { refundId: null, ok: true, note: "Nothing left to refund on Razorpay" };
+  // A cart paid in one go: this item gets back only its own share of that payment.
+  // The ledger's refund_id is per payment, so it can't say whether THIS share is done.
+  const shared = pid ? (await paymentSiblings(sb, pid, order.id)).length > 0 : false;
+  const ids = ledger.filter((r) => !r.refund_id && !(shared && r.razorpay_payment_id === pid)).map((r) => r.razorpay_payment_id);
+  if (pid && !shared && !ledger.some((r) => r.razorpay_payment_id === pid)) ids.push(pid);
+  if (!ids.length && !shared) return { refundId: null, ok: true, note: "Nothing left to refund on Razorpay" };
 
   const outcomes: RefundOutcome[] = [];
+  if (shared && pid) {
+    const { data: row } = await sb.from("orders").select("id, total_price, delivery_fee").eq("id", order.id).maybeSingle();
+    outcomes.push(row
+      ? await refundShare(row, pid, ctx.caller)
+      : { refundId: null, ok: false, note: "Razorpay refund FAILED (order row not found) — retried automatically" });
+  }
   for (const id of ids) {
     const outcome = await refundRazorpayPayment(id, { order_id: order.id, caller: ctx.caller });
     outcomes.push(outcome);
