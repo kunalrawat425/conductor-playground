@@ -11,6 +11,11 @@ function client() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+/** Same-day and pre-order carts are separate (migration 079). Anything else = same-day. */
+const modeOf = (v: unknown) => (v === "preorder" ? "preorder" : "same_day");
+// Column / conflict key not there yet (migration 071 or 079 not applied): retry the older shape.
+const SCHEMA_BEHIND = new Set(["42703", "42P10", "PGRST204"]);
+
 /**
  * GET /api/buyer/cart?buyer_id=
  * Returns cart items joined with listing + seller info.
@@ -25,6 +30,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     const cols = `
         listing_id,
         pricing_option_id,
+        placement_kind,
         qty,
         qty_unit,
         price_snapshot,
@@ -34,14 +40,17 @@ export const GET: APIRoute = async ({ url, request }) => {
       `;
     const run = (c: string) => supabase.from("buyer_cart").select(c).eq("buyer_id", buyer_id).order("updated_at", { ascending: false });
     let { data, error } = await run(cols);
+    // Before migration 079: no placement_kind (items then report null = unknown).
+    if (error?.code === "42703") ({ data, error } = await run(cols.replace("placement_kind,", "")));
     // Before migration 071: no pricing_option_id column yet.
-    if (error?.code === "42703") ({ data, error } = await run(cols.replace("pricing_option_id,", "")));
+    if (error?.code === "42703") ({ data, error } = await run(cols.replace("placement_kind,", "").replace("pricing_option_id,", "")));
 
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
     const items = (data || []).map((r: any) => ({
       listing_id: r.listing_id,
       pricing_option_id: r.pricing_option_id || "",
+      placement_kind: r.placement_kind ?? null,
       qty: Number(r.qty),
       qty_unit: r.qty_unit,
       price_snapshot: Number(r.price_snapshot),
@@ -69,8 +78,8 @@ export const GET: APIRoute = async ({ url, request }) => {
 
 /**
  * POST /api/buyer/cart
- * Body: { buyer_id, listing_id, qty, qty_unit, price_snapshot }
- * Upserts a cart line.
+ * Body: { buyer_id, listing_id, pricing_option_id, placement_kind, qty, qty_unit, price_snapshot }
+ * Upserts a cart line (one per listing + price tier + same-day/pre-order).
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -110,15 +119,18 @@ export const POST: APIRoute = async ({ request }) => {
       updated_at: new Date().toISOString(),
     };
 
-    let { data, error } = await supabase
-      .from("buyer_cart")
-      .upsert(row, { onConflict: "buyer_id,listing_id,pricing_option_id" })
-      .select()
-      .single();
+    const upsert = (r: Record<string, unknown>, onConflict: string) =>
+      supabase.from("buyer_cart").upsert(r, { onConflict }).select().single();
+    let { data, error } = await upsert(
+      { ...row, placement_kind: modeOf(body?.placement_kind) },
+      "buyer_id,listing_id,pricing_option_id,placement_kind"
+    );
+    // Before migration 079: no placement_kind / 4-col key — one row per tier, as before.
+    if (error && SCHEMA_BEHIND.has(error.code)) ({ data, error } = await upsert(row, "buyer_id,listing_id,pricing_option_id"));
     // Before migration 071 is applied: no pricing_option_id column / 3-col key yet.
-    if (error && (error.code === "42P10" || error.code === "42703" || error.code === "PGRST204")) {
+    if (error && SCHEMA_BEHIND.has(error.code)) {
       const { pricing_option_id: _o, ...legacy } = row;
-      ({ data, error } = await supabase.from("buyer_cart").upsert(legacy, { onConflict: "buyer_id,listing_id" }).select().single());
+      ({ data, error } = await upsert(legacy, "buyer_id,listing_id"));
     }
 
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
@@ -132,6 +144,7 @@ export const POST: APIRoute = async ({ request }) => {
  * DELETE /api/buyer/cart?buyer_id=&listing_id=   (remove single item)
  * DELETE /api/buyer/cart?buyer_id=&seller_id=    (clear all items from a seller)
  * DELETE /api/buyer/cart?buyer_id=&clear=true    (wipe entire cart)
+ * &placement_kind=same_day|preorder limits listing/seller deletes to that cart (both when absent).
  */
 export const DELETE: APIRoute = async ({ url, request }) => {
   try {
@@ -140,6 +153,8 @@ export const DELETE: APIRoute = async ({ url, request }) => {
     const listing_id = url.searchParams.get("listing_id");
     const seller_id = url.searchParams.get("seller_id");
     const clear = url.searchParams.get("clear") === "true";
+    const modeParam = url.searchParams.get("placement_kind");
+    const mode = modeParam ? modeOf(modeParam) : null;
 
     if (!buyer_id) return new Response(JSON.stringify({ error: "buyer_id required" }), { status: 400 });
 
@@ -148,12 +163,16 @@ export const DELETE: APIRoute = async ({ url, request }) => {
     if (listing_id) {
       // With pricing_option_id: remove that tier only. Without: every tier of the listing.
       const opt = url.searchParams.get("pricing_option_id");
-      let q = supabase.from("buyer_cart").delete().eq("buyer_id", buyer_id).eq("listing_id", listing_id);
-      if (opt !== null) q = q.eq("pricing_option_id", opt === "default" ? "" : opt);
-      let { error } = await q;
-      if (error?.code === "42703") {
-        ({ error } = await supabase.from("buyer_cart").delete().eq("buyer_id", buyer_id).eq("listing_id", listing_id));
-      }
+      const del = (withOpt: boolean, withMode: boolean) => {
+        let q = supabase.from("buyer_cart").delete().eq("buyer_id", buyer_id).eq("listing_id", listing_id);
+        if (withOpt && opt !== null) q = q.eq("pricing_option_id", opt === "default" ? "" : opt);
+        if (withMode && mode) q = q.eq("placement_kind", mode);
+        return q;
+      };
+      let { error } = await del(true, true);
+      // Before migration 079 (no placement_kind), then before 071 (no pricing_option_id).
+      if (error?.code === "42703") ({ error } = await del(true, false));
+      if (error?.code === "42703") ({ error } = await del(false, false));
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
@@ -163,11 +182,12 @@ export const DELETE: APIRoute = async ({ url, request }) => {
       const { data: listings } = await supabase.from("fish_listings").select("id").eq("seller_id", seller_id);
       const ids = (listings || []).map((l: any) => l.id);
       if (ids.length === 0) return new Response(JSON.stringify({ ok: true }), { status: 200 });
-      const { error } = await supabase
-        .from("buyer_cart")
-        .delete()
-        .eq("buyer_id", buyer_id)
-        .in("listing_id", ids);
+      const del = (withMode: boolean) => {
+        const q = supabase.from("buyer_cart").delete().eq("buyer_id", buyer_id).in("listing_id", ids);
+        return withMode && mode ? q.eq("placement_kind", mode) : q;
+      };
+      let { error } = await del(true);
+      if (error?.code === "42703") ({ error } = await del(false)); // before migration 079
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }

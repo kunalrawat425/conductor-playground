@@ -956,7 +956,9 @@ const categories = [
     if (!el) return;
     const Cart = (window as any).RelifishCart;
     if (!Cart) { el.style.display = "none"; return; }
-    const groups = Cart.groupBySeller();
+    // Same-day and pre-order carts are separate: one row per seller per cart.
+    const groups = (["same_day", "preorder"] as const).flatMap((mode) =>
+      Cart.groupBySeller(Cart.getCart(mode)).map((g: any) => ({ ...g, mode })));
     if (groups.length === 0) { el.style.display = "none"; return; }
 
     el.style.display = "block";
@@ -984,12 +986,12 @@ const categories = [
             <div style="width:50px;height:50px;border-radius:10px;background:linear-gradient(135deg,var(--v2-brand-l),#DBEAFE);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">${avatarInner}</div>
             <div style="flex:1;min-width:0;">
               <div style="font:700 13px Inter;color:var(--v2-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(cleanSellerName(g.seller_name) || "Seller")}</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/seller/${g.seller_id}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
+              <div style="font:400 11px Inter;color:var(--v2-ink-3);">${g.mode === "preorder" ? `<span style="color:#7C3AED;font-weight:600;">Pre-order</span> · ` : ""}${itemCount} item${itemCount !== 1 ? "s" : ""} · <a href="/seller/${g.seller_id}" style="color:var(--v2-brand);font-weight:600;text-decoration:none;">View Menu ›</a></div>
             </div>
             <a href="/seller/${g.seller_id}" style="background:var(--v2-brand);color:#fff;font:800 12px Inter;padding:5px 10px;border-radius:var(--v2-radius-sm);text-decoration:none;text-align:center;flex-shrink:0;">
               ₹${g.subtotal.toLocaleString("en-IN")}<br><span style="font:600 9px Inter;opacity:.85;">View Cart</span>
             </a>
-            <button data-hc-remove="${g.seller_id}" style="background:none;border:none;color:var(--v2-ink-4);font-size:16px;cursor:pointer;padding:2px;flex-shrink:0;" aria-label="Remove">✕</button>
+            <button data-hc-remove="${g.seller_id}" data-hc-mode="${g.mode}" style="background:none;border:none;color:var(--v2-ink-4);font-size:16px;cursor:pointer;padding:2px;flex-shrink:0;" aria-label="Remove">✕</button>
           </div>`;
         }).join("")}
       </div>`;
@@ -997,14 +999,14 @@ const categories = [
     // Wire remove buttons
     el.querySelectorAll<HTMLButtonElement>("[data-hc-remove]").forEach(b => {
       b.addEventListener("click", () => {
-        Cart.clearCart({ sellerId: b.dataset.hcRemove });
+        Cart.clearCart({ sellerId: b.dataset.hcRemove, mode: b.dataset.hcMode });
         renderHomeCarts();
         (window as any).v2Toast?.("success", "Cart removed");
       });
     });
     // Wire clear all
     document.getElementById("v2-home-clear-all")?.addEventListener("click", () => {
-      groups.forEach((g: any) => Cart.clearCart({ sellerId: g.seller_id }));
+      groups.forEach((g: any) => Cart.clearCart({ sellerId: g.seller_id, mode: g.mode }));
       renderHomeCarts();
       (window as any).v2Toast?.("success", "All carts cleared");
     });

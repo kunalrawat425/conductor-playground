@@ -17,6 +17,9 @@ import {
 } from "../order-timing";
 
 
+const OPTION_CHANGED =
+  "The seller changed this item's pack size or price option. Remove it from your cart and add it again.";
+
 /** Resolved line that will use create_order_atomic / fallback insert (in-stock or low-stock path). */
 export type StandardOrderLinePayload = {
   kind: "standard";
@@ -49,7 +52,7 @@ export type PreorderLinePayload = {
 };
 
 export type ResolveListingOrderLineResult =
-  | { ok: false; status: number; error: string }
+  | { ok: false; status: number; error: string; code?: "option_changed" }
   | { ok: true; line: StandardOrderLinePayload | PreorderLinePayload };
 
 /**
@@ -119,12 +122,17 @@ export async function resolveListingOrderLine(
 
   let chosen = getListingOptionById(listing as ListingPricingSource, clientPricingOptionId);
   if (!chosen) {
-    return { ok: false, status: 400, error: "Invalid price option for this listing" };
+    if (getListingPriceOptions(listing as ListingPricingSource).length === 0) {
+      return { ok: false, status: 400, error: "Invalid price option for this listing" };
+    }
+    return { ok: false, status: 409, code: "option_changed", error: OPTION_CHANGED };
   }
   // If the resolved option is a bundle option whose bundle_size doesn't divide the
   // requested quantity, try to find a better-matching option by quantity divisibility.
   // This handles stale cart entries that stored "default" before the opt_N fix.
-  if (!isPerBaseUnitPricing(chosen)) {
+  // A named option is never swapped for another; a quantity that doesn't fit it fails the pack checks below.
+  const legacyOptionId = !clientPricingOptionId || clientPricingOptionId === "default";
+  if (legacyOptionId && !isPerBaseUnitPricing(chosen)) {
     const rawQty = typeof input.rawQuantity === "number" ? input.rawQuantity : parseFloat(String(input.rawQuantity));
     if (Number.isFinite(rawQty) && rawQty > 0) {
       const qFloor = Math.floor(rawQty);
@@ -165,8 +173,15 @@ export async function resolveListingOrderLine(
   const bundleAmount = optionBundleAmount(chosen);
   const perBase = isPerBaseUnitPricing(chosen);
 
-  const skipBundleCheck = placement === "preorder";
-  if (!perBase && !skipBundleCheck) {
+  // Pre-orders too: a quantity that isn't whole packs means the pack size changed after
+  // the item went into the cart (fractional packs were charged before).
+  if (placement === "preorder" && !perBase) {
+    const fits = quantity_unit === "kg"
+      ? Math.round(bundleAmount * 100) >= 1 && Math.round(quantity * 100) % Math.round(bundleAmount * 100) === 0
+      : quantity % bundleAmount === 0;
+    if (!fits) return { ok: false, status: 409, code: "option_changed", error: OPTION_CHANGED };
+  }
+  if (!perBase && placement !== "preorder") {
     if (quantity_unit === "kg") {
       const qCent = Math.round(quantity * 100);
       const bCent = Math.round(bundleAmount * 100);

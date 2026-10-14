@@ -111,7 +111,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         priorQty: qtyByListing.get(raw.listing_id) || 0,
       });
       if (!r.ok) {
-        return new Response(JSON.stringify({ error: r.error }), { status: r.status });
+        return new Response(JSON.stringify({ error: r.error, ...((r as any).code ? { code: (r as any).code } : {}) }), { status: r.status });
       }
       if (r.line.seller_id !== clientSellerId) {
         return new Response(JSON.stringify({ error: "All items must be from the same seller" }), { status: 400 });

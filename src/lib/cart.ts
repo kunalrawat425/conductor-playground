@@ -5,7 +5,15 @@
  *
  * Sync: when buyer is signed in, every mutation also POSTs/DELETEs to /api/buyer/cart.
  * On init for signed-in buyers, server cart is fetched and merged (server wins).
+ *
+ * Two carts per seller: same-day ("order window") and pre-order. A line's `mode` is part
+ * of its key, so one listing can sit in both; lines saved before modes existed are same-day.
+ * The seller page shows only the cart of the mode its menu is in; the other one is kept.
  */
+
+import { classifyPlacementAtOrderTime, istDayStartISO, type SellerTimingInput } from "./order-timing";
+
+export type CartMode = "same_day" | "preorder";
 
 export type CartItem = {
   listing_id: string;
@@ -20,6 +28,10 @@ export type CartItem = {
   pricing_option_id: string;
   pricing_label: string;
   added_at: number;
+  /** Missing on lines saved before separate carts: those are same-day. */
+  mode?: CartMode;
+  /** Pack size when added; a different live bundle_size means the pack changed. */
+  bundle_size?: number;
 };
 
 export type CartMap = Record<string, CartItem>;
@@ -40,11 +52,31 @@ function getBuyerId(): string | null {
   try { return localStorage.getItem("rlf_buyer_id"); } catch { return null; }
 }
 
-export function getCart(): CartMap {
+export function lineMode(i: { mode?: string | null }): CartMode {
+  return i.mode === "preorder" ? "preorder" : "same_day";
+}
+
+// The seller page pins default reads (getCart, groupBySeller, totals, clearCart) to its
+// menu's mode, so code that doesn't pass a mode still sees only that cart. null = all lines.
+let activeMode: CartMode | null = null;
+export function setCartMode(mode: CartMode | null): void { activeMode = mode; }
+// Lines validation removed during this page visit (see getRemovedLines).
+let removedLines: RemovedLine[] = [];
+
+function readAll(): CartMap {
   try {
     const raw = localStorage.getItem(KEY);
     return raw ? JSON.parse(raw) : {};
   } catch { return {}; }
+}
+
+/** Lines of one mode (default: the page's mode, or every line when none is set). */
+export function getCart(mode: CartMode | null = activeMode): CartMap {
+  const all = readAll();
+  if (!mode) return all;
+  const out: CartMap = {};
+  for (const k of Object.keys(all)) if (lineMode(all[k]) === mode) out[k] = all[k];
+  return out;
 }
 
 function saveCart(c: CartMap) {
@@ -56,7 +88,7 @@ function saveCart(c: CartMap) {
 /** Migrate any old per-seller carts (`v2_cart_<sellerId>`) into the global cart, then drop them. */
 export function migrateLegacyCarts(opts: { sellerLookup?: (sellerId: string) => string }): void {
   try {
-    const global = getCart();
+    const global = readAll();
     let touched = false;
     const toRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -101,9 +133,11 @@ async function syncMutation(action: "upsert" | "remove" | "clear", payload?: any
         body: JSON.stringify({ buyer_id: buyerId, ...payload }),
       });
     } else if (action === "remove") {
-      await fetch(`/api/buyer/cart?buyer_id=${buyerId}&listing_id=${payload.listing_id}&pricing_option_id=${encodeURIComponent(payload.pricing_option_id ?? "")}`, { method: "DELETE" });
+      await fetch(`/api/buyer/cart?buyer_id=${buyerId}&listing_id=${payload.listing_id}&pricing_option_id=${encodeURIComponent(payload.pricing_option_id ?? "")}&placement_kind=${payload.placement_kind}`, { method: "DELETE" });
     } else if (action === "clear") {
-      const sellerParam = payload?.seller_id ? `&seller_id=${payload.seller_id}` : "&clear=true";
+      const sellerParam = payload?.seller_id
+        ? `&seller_id=${payload.seller_id}${payload.placement_kind ? `&placement_kind=${payload.placement_kind}` : ""}`
+        : "&clear=true";
       await fetch(`/api/buyer/cart?buyer_id=${buyerId}${sellerParam}`, { method: "DELETE" });
     }
   } catch {
@@ -111,15 +145,35 @@ async function syncMutation(action: "upsert" | "remove" | "clear", payload?: any
   }
 }
 
-/** Cart key = listing_id:pricing_option_id so different bundles of the same listing are separate lines. */
-function cartKey(listingId: string, pricingOptionId?: string): string {
-  return pricingOptionId && pricingOptionId !== "default"
+/** Cart key = listing_id:pricing_option_id so different bundles of the same listing are separate lines.
+ *  Pre-order lines get a "|preorder" suffix; same-day keys are unchanged (old carts keep working). */
+function cartKey(listingId: string, pricingOptionId?: string, mode: CartMode = "same_day"): string {
+  const base = pricingOptionId && pricingOptionId !== "default"
     ? `${listingId}:${pricingOptionId}`
     : listingId;
+  return mode === "preorder" ? `${base}|preorder` : base;
 }
 
+export function lineKey(i: Pick<CartItem, "listing_id" | "pricing_option_id" | "mode">): string {
+  return cartKey(i.listing_id, i.pricing_option_id, lineMode(i));
+}
+
+const upsertPayload = (i: CartItem) => ({
+  listing_id: i.listing_id,
+  pricing_option_id: i.pricing_option_id || "",
+  qty: i.qty,
+  qty_unit: i.qty_unit,
+  price_snapshot: i.price,
+  placement_kind: lineMode(i),
+});
+const removePayload = (i: CartItem) => ({
+  listing_id: i.listing_id,
+  pricing_option_id: i.pricing_option_id || "",
+  placement_kind: lineMode(i),
+});
+
 export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: number }): CartItem {
-  let cart = getCart();
+  let cart = readAll();
 
   // Single-seller cart: if the new item belongs to a different seller than what's
   // already in the cart, clear the old seller's items first. One seller per checkout.
@@ -130,20 +184,16 @@ export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: numbe
     try { window.dispatchEvent(new CustomEvent("v2-cart-seller-switched", { detail: { newSellerId: item.seller_id } })); } catch {}
   }
 
-  const key = cartKey(item.listing_id, item.pricing_option_id);
+  const mode = lineMode(item);
+  const key = cartKey(item.listing_id, item.pricing_option_id, mode);
   const existing = cart[key];
   const next: CartItem = existing
     ? { ...existing, qty: existing.qty + (item.qty ?? 1) }
-    : { ...item, qty: item.qty ?? 1, added_at: Date.now() };
+    : { ...item, mode, qty: item.qty ?? 1, added_at: Date.now() };
   cart[key] = next;
+  removedLines = removedLines.filter((r) => r.key !== key);
   saveCart(cart);
-  syncMutation("upsert", {
-    listing_id: next.listing_id,
-    pricing_option_id: next.pricing_option_id || "",
-    qty: next.qty,
-    qty_unit: next.qty_unit,
-    price_snapshot: next.price,
-  });
+  syncMutation("upsert", upsertPayload(next));
   return next;
 }
 
@@ -151,83 +201,75 @@ export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: numbe
  *  or a composite key "listing_id:pricing_option_id". They find the matching cart entry. */
 function findCartKey(cart: CartMap, id: string): string | null {
   if (cart[id]) return id;
-  // Legacy: try as listing_id (matches first entry for that listing)
+  // Legacy: try as listing_id (matches first entry for that listing, in the page's cart)
+  const mode = activeMode ?? "same_day";
   for (const k of Object.keys(cart)) {
+    if (lineMode(cart[k]) !== mode) continue;
     if (k === id || k.startsWith(id + ":") || cart[k].listing_id === id) return k;
   }
   return null;
 }
 
 export function setQty(id: string, qty: number): void {
-  const cart = getCart();
+  const cart = readAll();
   const key = findCartKey(cart, id);
   if (!key) return;
   if (qty <= 0) {
     const item = cart[key];
     delete cart[key];
     saveCart(cart);
-    syncMutation("remove", { listing_id: item.listing_id, pricing_option_id: item.pricing_option_id || "" });
+    syncMutation("remove", removePayload(item));
     return;
   }
   cart[key].qty = qty;
   saveCart(cart);
-  syncMutation("upsert", {
-    listing_id: cart[key].listing_id,
-    pricing_option_id: cart[key].pricing_option_id || "",
-    qty,
-    qty_unit: cart[key].qty_unit,
-    price_snapshot: cart[key].price,
-  });
+  syncMutation("upsert", upsertPayload(cart[key]));
 }
 
 export function updateItemPrice(id: string, price: number): void {
-  const cart = getCart();
+  const cart = readAll();
   const key = findCartKey(cart, id);
   if (!key) return;
   if (cart[key].price === price) return;
   cart[key].price = price;
   saveCart(cart);
-  syncMutation("upsert", {
-    listing_id: cart[key].listing_id,
-    pricing_option_id: cart[key].pricing_option_id || "",
-    qty: cart[key].qty,
-    qty_unit: cart[key].qty_unit,
-    price_snapshot: price,
-  });
+  syncMutation("upsert", upsertPayload(cart[key]));
 }
 
 export function incQty(id: string): void {
-  const cart = getCart();
+  const cart = readAll();
   const key = findCartKey(cart, id);
   if (!key) return;
   setQty(key, cart[key].qty + 1);
 }
 
 export function decQty(id: string): void {
-  const cart = getCart();
+  const cart = readAll();
   const key = findCartKey(cart, id);
   if (!key) return;
   setQty(key, cart[key].qty - 1);
 }
 
 export function removeItem(id: string): void {
-  const cart = getCart();
+  const cart = readAll();
   const key = findCartKey(cart, id);
   if (!key) return;
   const item = cart[key];
   delete cart[key];
   saveCart(cart);
-  syncMutation("remove", { listing_id: item.listing_id, pricing_option_id: item.pricing_option_id || "" });
+  syncMutation("remove", removePayload(item));
 }
 
-export function clearCart(opts?: { sellerId?: string }): void {
-  const cart = getCart();
+/** With sellerId: that seller's lines of `mode` (default: the page's mode; null = both carts). */
+export function clearCart(opts?: { sellerId?: string; mode?: CartMode | null }): void {
+  const cart = readAll();
   if (opts?.sellerId) {
+    const mode = opts.mode === undefined ? activeMode : opts.mode;
     for (const lid of Object.keys(cart)) {
-      if (cart[lid].seller_id === opts.sellerId) delete cart[lid];
+      if (cart[lid].seller_id === opts.sellerId && (!mode || lineMode(cart[lid]) === mode)) delete cart[lid];
     }
     saveCart(cart);
-    syncMutation("clear", { seller_id: opts.sellerId });
+    syncMutation("clear", { seller_id: opts.sellerId, placement_kind: mode || undefined });
   } else {
     saveCart({});
     syncMutation("clear");
@@ -284,14 +326,19 @@ export async function hydrateFromServer(): Promise<void> {
     const items: any[] = data.items || [];
     if (items.length === 0) return;
 
-    const local = getCart();
+    const local = readAll();
     for (const it of items) {
-      // Server wins. Key by listing + price tier exactly like addItem does —
+      // Server wins. Key by listing + price tier + mode exactly like addItem does —
       // writing local[listing_id] next to an existing "listing:opt" line made a
       // second line for the same item, i.e. two orders and two charges.
       // Legacy server rows have no tier: reuse the local line for that listing.
       const opt = it.pricing_option_id || "";
-      const k = opt ? cartKey(it.listing_id, opt) : (findCartKey(local, it.listing_id) ?? it.listing_id);
+      // Before migration 079 the server has no mode (placement_kind null): keep a
+      // local pre-order line's mode rather than duplicating it into the same-day cart.
+      const mode: CartMode = it.placement_kind
+        ? lineMode({ mode: it.placement_kind })
+        : (local[cartKey(it.listing_id, opt, "preorder")] && !local[cartKey(it.listing_id, opt)] ? "preorder" : "same_day");
+      const k = opt ? cartKey(it.listing_id, opt, mode) : (findCartKey(local, it.listing_id) ?? cartKey(it.listing_id, "", mode));
       local[k] = {
         listing_id: it.listing_id,
         seller_id: it.seller_id,
@@ -307,6 +354,8 @@ export async function hydrateFromServer(): Promise<void> {
         pricing_option_id: opt || local[k]?.pricing_option_id || "",
         pricing_label: it.pricing_label || local[k]?.pricing_label || "",
         added_at: it.created_at ? new Date(it.created_at).getTime() : Date.now(),
+        mode: local[k]?.mode ?? mode,
+        bundle_size: local[k]?.bundle_size,
       };
     }
     saveCart(local);
@@ -317,76 +366,151 @@ export async function hydrateFromServer(): Promise<void> {
 export async function pushLocalToServer(): Promise<void> {
   const buyerId = getBuyerId();
   if (!buyerId) return;
-  const cart = getCart();
-  for (const item of Object.values(cart)) {
-    await syncMutation("upsert", {
-      listing_id: item.listing_id,
-      pricing_option_id: item.pricing_option_id || "",
-      qty: item.qty,
-      qty_unit: item.qty_unit,
-      price_snapshot: item.price,
-    });
+  for (const item of Object.values(readAll())) {
+    await syncMutation("upsert", upsertPayload(item));
   }
 }
 
-export async function validateCartLive(sellerId?: string, isPreorderMode?: boolean): Promise<{ oosMessages: string[], priceChangedCount: number }> {
-  let oosMessages: string[] = [];
-  let priceChangedCount = 0;
+/** A line validation took out of the cart. Shown crossed out for the rest of the visit. */
+export type RemovedLine = { key: string; seller_id: string; mode: CartMode; name: string; reason: string };
+export type PriceChange = { key: string; name: string; from: number; to: number };
+
+export function getRemovedLines(sellerId?: string, mode?: CartMode): RemovedLine[] {
+  return removedLines.filter((r) => (!sellerId || r.seller_id === sellerId) && (!mode || r.mode === mode));
+}
+
+export const REMOVED_OUT_OF_STOCK = "Out of stock — removed";
+export const REMOVED_NOT_LISTED = "No longer listed — removed";
+export const REMOVED_NOT_PREORDER = "Not open for pre-order — removed";
+export const REMOVED_PACK_CHANGED = "Pack size changed — add it again";
+
+const positive = (v: unknown) => (Number(v) > 0 ? Number(v) : null);
+
+/**
+ * Check one cart line against the live listing. Returns why it can't be ordered, or the
+ * live price per base unit (same-day: option price; pre-order: top of the range).
+ * Never falls back to another pack: a missing option or changed bundle drops the line.
+ */
+export function checkLine(item: CartItem, live: any, mode: CartMode): { reason: string } | { price: number; bundle: number } {
+  if (!live || live.deleted_at) return { reason: REMOVED_NOT_LISTED };
+  if (mode === "preorder") {
+    if (!live.is_preorder_enabled) return { reason: REMOVED_NOT_PREORDER };
+  } else if (!live.is_available || live.is_order_paused || (live.weight_avail != null && Number(live.weight_avail) < item.qty)) {
+    return { reason: REMOVED_OUT_OF_STOCK };
+  }
+  const opts: any[] = Array.isArray(live.pricing_options) ? live.pricing_options : [];
+  const want = item.pricing_option_id;
+  // Lines saved as "default"/"" predate per-tier ids and always meant the first option.
+  // Options without an id get `opt_<index>`, as the menu and server (canonicalPricingOptionsFromPayload) do.
+  const opt = !want || want === "default" ? opts[0] : opts.find((o, i) => String(o?.id ?? `opt_${i}`) === want);
+  if (!opt) return { reason: REMOVED_PACK_CHANGED };
+  const bs = positive(opt.bundle_size) ?? 1;
+  const packChanged = item.bundle_size != null
+    ? Math.abs(Number(item.bundle_size) - bs) > 1e-9
+    : Math.round(item.qty * 100) % Math.round(bs * 100) !== 0; // older lines: qty must still be whole packs
+  if (packChanged) return { reason: REMOVED_PACK_CHANGED };
+  const packPrice = mode === "preorder"
+    ? positive(opt.preorder_price_max) ?? positive(opt.preorder_price_min) ?? positive(opt.price) ?? 0
+    : positive(opt.price) ?? 0;
+  return { price: packPrice / bs, bundle: bs };
+}
+
+const money = (n: number) => `₹${(Math.round(n * 100) / 100).toLocaleString("en-IN")}`;
+
+/**
+ * Re-check cart lines against the live catalog: drop what can't be ordered (kept in
+ * getRemovedLines() for display) and reprice the rest to today's price.
+ * With `mode`: only that cart. Without (a page that doesn't know the seller's mode): each
+ * seller's mode comes from its hours; a closed seller's lines are left untouched.
+ */
+export async function validateCartLive(sellerId?: string, mode?: CartMode): Promise<{
+  oosMessages: string[];
+  priceChangedCount: number;
+  priceMessages: string[];
+  removed: RemovedLine[];
+  priceChanges: PriceChange[];
+  /** Mode each seller is in right now, when the server sent its hours. */
+  sellerModes: Record<string, CartMode | "closed">;
+}> {
+  const out = {
+    oosMessages: [] as string[],
+    priceChangedCount: 0,
+    priceMessages: [] as string[],
+    removed: [] as RemovedLine[],
+    priceChanges: [] as PriceChange[],
+    sellerModes: {} as Record<string, CartMode | "closed">,
+  };
   try {
-    const cart = getCart();
-    const items = Object.values(cart).filter(i => !sellerId || i.seller_id === sellerId);
-    if (items.length === 0) return { oosMessages, priceChangedCount };
-    
-    const listingIds = items.map(i => i.listing_id);
+    const all = Object.values(readAll()).filter((i) => (!sellerId || i.seller_id === sellerId) && (!mode || lineMode(i) === mode));
+    if (all.length === 0) return out;
+
     const valRes = await fetch("/api/buyer/validate-cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listing_ids: listingIds })
+      body: JSON.stringify({ listing_ids: [...new Set(all.map((i) => i.listing_id))] }),
     });
-    
-    if (valRes.ok) {
-      const valData = await valRes.json();
-      for (const item of items) {
-        const live = valData.listings.find((l: any) => l.id === item.listing_id);
-        const keyToUse = item.pricing_option_id && item.pricing_option_id !== "default" ? item.listing_id + ":" + item.pricing_option_id : item.listing_id;
-        
-        // Pre-order items are normally unavailable / at 0 stock today — that is the
-        // point of a pre-order. Treating them as out of stock removed them at checkout.
-        const preorderLine = !!(isPreorderMode && live?.is_preorder_enabled);
-        // Callers that don't know the seller's mode (the global cart sheet) must not
-        // reprice or drop pre-order-capable lines; the seller page re-validates with the mode.
-        if (isPreorderMode === undefined && live?.is_preorder_enabled) continue;
-        // Mirror the order API: a pre-order needs is_preorder_enabled; same-day needs
-        // stock and no "Pause same-day orders". A line from the other mode (cart kept
-        // across closing time) would otherwise only fail at "Place order".
-        const unavailable = !live || live.deleted_at
-          || (isPreorderMode ? !preorderLine
-            : (!live.is_available || live.is_order_paused || (live.weight_avail != null && live.weight_avail < item.qty)));
-        if (unavailable) {
-           removeItem(keyToUse);
-           oosMessages.push(`"${item.name}" is not available right now and was removed.`);
-        } else {
-           const opts = live.pricing_options || [];
-           const opt = opts.find((o: any) => o.id === item.pricing_option_id) || opts[0];
-           if (opt) {
-             let poPrice = 0;
-             if (live.is_preorder_enabled && isPreorderMode) {
-               poPrice = opt.preorder_price_max || opt.preorder_price_min || opt.price || 0;
-             } else {
-               poPrice = opt.price || 0;
-             }
-             const bs = opt.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
-             const pricePerUnit = poPrice / bs;
-             if (pricePerUnit !== item.price) {
-                updateItemPrice(keyToUse, pricePerUnit);
-                priceChangedCount++;
-             }
-           }
-        }
+    if (!valRes.ok) return out;
+    const valData = await valRes.json();
+    const listings: any[] = valData.listings || [];
+    const now = Date.now();
+    for (const l of listings) {
+      if (l?.seller && l.seller_id && !(l.seller_id in out.sellerModes)) {
+        out.sellerModes[l.seller_id] = classifyPlacementAtOrderTime(l.seller as SellerTimingInput, now);
+      }
+    }
+
+    for (const item of all) {
+      const itemMode = lineMode(item);
+      // No mode given: only check a line in the mode its seller is in now. Unknown hours or
+      // a closed shop: leave it (the seller page re-validates with its mode).
+      if (!mode && out.sellerModes[item.seller_id] !== itemMode) continue;
+      const key = lineKey(item);
+      const live = listings.find((l) => l.id === item.listing_id);
+      const r = checkLine(item, live, itemMode);
+      if ("reason" in r) {
+        removeItem(key);
+        const line: RemovedLine = { key, seller_id: item.seller_id, mode: itemMode, name: item.name, reason: r.reason };
+        removedLines = [...removedLines.filter((x) => x.key !== key), line];
+        out.removed.push(line);
+        out.oosMessages.push(`"${item.name}": ${r.reason}`);
+      } else if (Math.abs(r.price - item.price) > 1e-6) {
+        updateItemPrice(key, r.price);
+        const bs = r.bundle;
+        const change = { key, name: item.name, from: item.price * bs, to: r.price * bs };
+        out.priceChanges.push(change);
+        out.priceMessages.push(`"${item.name}" ${money(change.from)} → ${money(change.to)}`);
+        out.priceChangedCount++;
       }
     }
   } catch (err) {
     console.error("Cart validation failed", err);
   }
-  return { oosMessages, priceChangedCount };
+  return out;
+}
+
+/** Mode a seller is in at `nowMs` (same rule the order API applies). */
+export function placementAt(seller: SellerTimingInput, nowMs = Date.now()): CartMode | "closed" {
+  return classifyPlacementAtOrderTime(seller, nowMs);
+}
+
+/**
+ * Next moment the seller's mode can change: store open, close, pre-order cutoff or IST
+ * midnight (day-based rules). The seller page reloads then so menu, cart and prices switch.
+ */
+export function nextModeBoundaryMs(seller: SellerTimingInput, nowMs = Date.now()): number {
+  const dayStart = Date.parse(istDayStartISO(nowMs));
+  const mins = [0];
+  for (const t of [seller.opens_at, seller.closes_at, seller.preorder_cutoff_time]) {
+    if (!t) continue;
+    const [h, m] = String(t).split(":").map(Number);
+    if (Number.isFinite(h)) mins.push(h * 60 + (m || 0));
+  }
+  let next = Infinity;
+  for (const d of [0, 1]) {
+    for (const m of mins) {
+      const at = dayStart + d * 86_400_000 + m * 60_000;
+      if (at > nowMs && at < next) next = at;
+    }
+  }
+  return next;
 }

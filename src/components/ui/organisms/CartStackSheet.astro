@@ -137,6 +137,21 @@ const { id = "v2-cart-stack" } = Astro.props;
     return `<div class="v2-cs-avatar" aria-hidden="true">🐟</div>`;
   }
 
+  // Mode each seller is in now (from validate-cart's seller hours). The seller page knows its own.
+  let sellerModes = {};
+  const MODE_LABEL = { same_day: "Today", preorder: "Pre-order" };
+
+  /** Same-day and pre-order carts are separate: show the one the seller is in now, or
+   *  both under "Today" / "Pre-order" when that isn't known (nothing is dropped). */
+  function sectionsFor(g, Cart) {
+    const page = window.__sellerPageData;
+    const mode = page?.id === g.seller_id && page.mode ? page.mode : sellerModes[g.seller_id];
+    const by = { same_day: [], preorder: [] };
+    g.items.forEach((i) => by[Cart.lineMode(i)].push(i));
+    if (mode === "same_day" || mode === "preorder") return by[mode].length ? [{ mode, items: by[mode] }] : [];
+    return ["same_day", "preorder"].filter((m) => by[m].length).map((m) => ({ mode: m, items: by[m] }));
+  }
+
   function render() {
     const body = document.getElementById(`${id}-body`);
     const header = document.getElementById(`${id}-header`);
@@ -147,8 +162,12 @@ const { id = "v2-cart-stack" } = Astro.props;
       if (header) header.style.display = "none";
       return;
     }
-    const groups = Cart.groupBySeller();
-    if (groups.length === 0) {
+    const groups = Cart.groupBySeller(Cart.getCart(null))
+      .map((g) => ({ ...g, sections: sectionsFor(g, Cart) }))
+      .filter((g) => g.sections.length);
+    // Removed by validation this visit: crossed out with the reason.
+    const removed = Cart.getRemovedLines ? Cart.getRemovedLines() : [];
+    if (groups.length === 0 && removed.length === 0) {
       if (header) header.style.display = "none";
       window.v2CloseSheet?.(id);
       return;
@@ -156,12 +175,27 @@ const { id = "v2-cart-stack" } = Astro.props;
 
     if (header) header.style.display = "block";
 
+    const removedHtml = removed.length
+      ? `<div style="margin-bottom:16px;padding:8px 12px;border:1px dashed var(--v2-border);border-radius:12px;">
+          <div style="font:700 12px Inter;color:var(--v2-ink);margin-bottom:4px;">Removed from your cart</div>
+          ${removed.map((r) => `<div style="font:500 12px Inter;color:var(--v2-ink-3);padding:3px 0;"><s>${escape(r.name)}</s> · <span style="color:var(--v2-red);">${escape(r.reason)}</span></div>`).join("")}
+        </div>`
+      : "";
+
     body.innerHTML = groups.map((g) => {
-      const itemCount = g.items.length;
+      const shown = g.sections.flatMap((sec) => sec.items);
+      const subtotal = shown.reduce((s, i) => s + i.qty * i.price, 0);
+      const itemCount = shown.length;
       const itemLabel = `${itemCount} item${itemCount !== 1 ? "s" : ""}`;
-      
-      const itemsHtml = g.items.map(item => {
-        const itemKey = item.pricing_option_id && item.pricing_option_id !== "default" ? item.listing_id + ":" + item.pricing_option_id : item.listing_id;
+      // ✕ clears exactly what is shown: one cart, or both when both are listed.
+      const clearMode = g.sections.length === 1 ? g.sections[0].mode : "";
+
+      const itemsHtml = g.sections.map((sec) => {
+        const head = g.sections.length > 1 || sec.mode === "preorder"
+          ? `<div style="font:700 10px Inter;color:${sec.mode === "preorder" ? "#7C3AED" : "var(--v2-ink-3)"};text-transform:uppercase;letter-spacing:.06em;margin:6px 0 0 56px;">${MODE_LABEL[sec.mode]}</div>`
+          : "";
+        return head + sec.items.map(item => {
+        const itemKey = Cart.lineKey(item);
         const qtyN = Math.round(item.qty * 100) / 100;
         const qtyLabel = String(item.pricing_label || item.qty_unit || "");
         let qtyDisplay = `${qtyN} ${escape(qtyLabel === "pack" && qtyN !== 1 ? "packs" : qtyLabel)}`;
@@ -175,6 +209,7 @@ const { id = "v2-cart-stack" } = Astro.props;
           </div>
           <button class="v2-cs-remove-item" data-item-key="${escape(itemKey)}" style="background:none;border:1px solid var(--v2-border);border-radius:4px;color:var(--v2-ink-3);font:500 11px Inter;padding:4px 8px;cursor:pointer;">Remove</button>
         </div>`;
+        }).join("");
       }).join("");
 
       return `<div style="margin-bottom:16px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;padding:8px 12px;">
@@ -185,16 +220,16 @@ const { id = "v2-cart-stack" } = Astro.props;
             <div class="v2-cs-meta">${itemLabel} · <a href="/seller/${escape(g.seller_id)}">View Menu ›</a></div>
           </div>
           <button class="v2-cs-price-badge" data-cs-checkout="${escape(g.seller_id)}" style="padding:6px 16px;">
-            ₹${g.subtotal.toLocaleString("en-IN")}
+            ₹${subtotal.toLocaleString("en-IN")}
             <span class="v2-cs-price-label">Checkout</span>
           </button>
-          <button class="v2-cs-del" data-cs-remove="${escape(g.seller_id)}" aria-label="Remove seller cart" title="Remove seller">✕</button>
+          <button class="v2-cs-del" data-cs-remove="${escape(g.seller_id)}" data-cs-mode="${clearMode}" aria-label="Remove seller cart" title="Remove seller">✕</button>
         </div>
         <div style="padding-bottom:4px;">
           ${itemsHtml}
         </div>
       </div>`;
-    }).join("");
+    }).join("") + removedHtml;
 
     // Checkout per seller
     body.querySelectorAll("[data-cs-checkout]").forEach((b) => {
@@ -209,7 +244,7 @@ const { id = "v2-cart-stack" } = Astro.props;
     body.querySelectorAll("[data-cs-remove]").forEach((b) => {
       b.addEventListener("click", () => {
         const sellerId = b.getAttribute("data-cs-remove");
-        window.RelifishCart?.clearCart({ sellerId });
+        window.RelifishCart?.clearCart({ sellerId, mode: b.getAttribute("data-cs-mode") || null });
         render();
         window.v2Toast?.("success", "Cart removed");
       });
@@ -229,9 +264,9 @@ const { id = "v2-cart-stack" } = Astro.props;
   document.getElementById(`${id}-clear-all`)?.addEventListener("click", () => {
     const Cart = window.RelifishCart;
     if (!Cart) return;
-    const groups = Cart.groupBySeller();
+    const groups = Cart.groupBySeller(Cart.getCart(null));
     if (groups.length === 0) return;
-    groups.forEach(g => Cart.clearCart({ sellerId: g.seller_id }));
+    groups.forEach(g => Cart.clearCart({ sellerId: g.seller_id, mode: null }));
     render();
     window.v2Toast?.("success", "All carts cleared");
   });
@@ -245,13 +280,11 @@ const { id = "v2-cart-stack" } = Astro.props;
   document.addEventListener("v2-sheet-opened", async (e) => {
     if (e.detail?.id === id) {
       if (window.RelifishCart && typeof window.RelifishCart.validateCartLive === "function") {
-        const { oosMessages, priceChangedCount } = await window.RelifishCart.validateCartLive();
-        if (oosMessages.length > 0 || priceChangedCount > 0) {
-          let msg = [];
-          if (oosMessages.length) msg.push(oosMessages.join("\\n"));
-          if (priceChangedCount) msg.push(`Prices updated for ${priceChangedCount} item(s)`);
-          window.v2Toast?.("info", "Cart updated", msg.join(" · "));
-        }
+        // No mode: each seller's lines are checked in the mode its hours put it in now.
+        const r = await window.RelifishCart.validateCartLive();
+        sellerModes = { ...sellerModes, ...r.sellerModes };
+        const parts = [...r.oosMessages, ...(r.priceMessages || [])];
+        if (parts.length) window.v2Toast?.("info", r.oosMessages.length ? "Cart updated" : "Prices updated", parts.join(" · "));
       }
       render();
     }

@@ -18,10 +18,14 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const supabase = client();
-    const { data, error } = await supabase
-      .from("fish_listings")
-      .select("id, is_available, weight_avail, pricing_options, is_preorder_enabled, is_order_paused, deleted_at")
-      .in("id", listing_ids);
+    // Seller hours let a page that doesn't know the seller's mode (the cart sheet)
+    // work out same-day vs pre-order the way the order API does.
+    const cols = "id, seller_id, is_available, weight_avail, pricing_options, is_preorder_enabled, is_order_paused, deleted_at";
+    const run = (c: string) => supabase.from("fish_listings").select(c).in("id", listing_ids);
+    let { data, error } = await run(
+      `${cols}, seller:sellers ( opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, accepts_preorder )`
+    );
+    if (error) ({ data, error } = await run(cols));
 
     if (error) throw error;
 
