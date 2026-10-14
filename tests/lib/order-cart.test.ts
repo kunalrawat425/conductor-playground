@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { pickPayableCartRows, cartLabel, rowPaise } from "../../src/lib/server/order-cart";
-import { planCartSettlement, settleCapturedPayment, refundOrderRazorpay } from "../../src/lib/server/razorpay-ledger";
+import { pickPayableCartRows, cartLabel, rowPaise, moveFeeOffClosedRow } from "../../src/lib/server/order-cart";
+import { planCartSettlement, settleCapturedPayment, refundOrderRazorpay, refundCartFee } from "../../src/lib/server/razorpay-ledger";
 import { orderEmailBuyer, orderEmailSeller } from "../../src/lib/email-templates";
 import { sellerPushNotification } from "../../src/lib/server/seller-push-copy";
 
@@ -38,6 +38,12 @@ function q(table: string) {
     neq: (k: string, v: any) => { filters.push((r) => r[k] !== v); return b; },
     in: (k: string, vs: any[]) => { filters.push((r) => vs.includes(r[k])); return b; },
     is: (k: string, v: any) => { filters.push((r) => (r[k] ?? null) === v); return b; },
+    // Only the shape refundCartFee uses: "refund_amt.is.null,refund_amt.lt.<n>".
+    or: (expr: string) => {
+      const lt = Number(expr.match(/lt\.([\d.]+)/)?.[1]);
+      filters.push((r) => r.refund_amt == null || Number(r.refund_amt) < lt);
+      return b;
+    },
     single: async () => { const d = run()[0]; return d ? { data: d, error: null } : { data: null, error: { message: "none" } }; },
     maybeSingle: async () => ({ data: run()[0] ?? null, error: null }),
     then: (res: any, rej: any) => Promise.resolve({ data: run(), error: null }).then(res, rej),
@@ -48,6 +54,7 @@ const sb = { from: (t: string) => q(t) };
 
 /** Razorpay stub: refunds are recorded and listed back with their notes. */
 let refunds: { payment: string; amount: number; notes: any }[];
+let paymentAmount = 61400;
 function stubRazorpay() {
   refunds = [];
   vi.stubGlobal("fetch", vi.fn(async (url: string, init?: any) => {
@@ -60,6 +67,11 @@ function stubRazorpay() {
     if (m) {
       const items = refunds.filter((r) => r.payment === m[1]).map((r) => ({ amount: r.amount, notes: r.notes, status: "processed" }));
       return new Response(JSON.stringify({ items }), { status: 200 });
+    }
+    const pm = String(url).match(/payments\/([^/?]+)$/);
+    if (pm) {
+      const refunded = refunds.filter((r) => r.payment === pm[1]).reduce((s, r) => s + (r.amount || paymentAmount), 0);
+      return new Response(JSON.stringify({ id: pm[1], amount: paymentAmount, amount_refunded: refunded }), { status: 200 });
     }
     return new Response("{}", { status: 404 });
   }));
@@ -208,6 +220,80 @@ describe("refundOrderRazorpay on a cart paid in one go", () => {
     refunds.push({ payment: "pay_1", amount: 10000, notes: { order_id: "o1" } }); // seller priced it ₹100 lower
     await refundOrderRazorpay(sb, db.orders[0] as any, { caller: "cancel" });
     expect(refunds[1]).toEqual({ payment: "pay_1", amount: 50000, notes: { order_id: "o1" } });
+  });
+});
+
+describe("review findings (pre-release)", () => {
+  it("B2: a balance top-up keeps the cart's upfront payment id and is settled once", async () => {
+    db.orders = [
+      cartRow("o1", { status: "payment_required", razorpay_order_id: "order_TOPUP", razorpay_payment_id: "pay_1", final_price: 700 }),
+      cartRow("o2", { status: "paid", total_price: 1, razorpay_order_id: "order_X", razorpay_payment_id: "pay_1" }),
+    ];
+    const p = { razorpay_order_id: "order_TOPUP", razorpay_payment_id: "pay_top", source: "verify" };
+    expect((await settleCapturedPayment(sb, p)).kind).toBe("confirmed");
+    expect(db.orders[0]).toMatchObject({ status: "confirmed", razorpay_payment_id: "pay_1", balance_razorpay_payment_id: "pay_top" });
+    expect((await settleCapturedPayment(sb, { ...p, source: "webhook" })).kind).toBe("already");
+    expect(refunds).toHaveLength(0);
+  });
+
+  it("B2: cancelling that item refunds its upfront share (partial) and the whole top-up", async () => {
+    db.orders = [
+      cartRow("o1", { status: "cancelled", razorpay_payment_id: "pay_1", balance_razorpay_payment_id: "pay_top" }),
+      cartRow("o2", { status: "paid", total_price: 1, razorpay_payment_id: "pay_1" }),
+    ];
+    db.razorpay_payments = [
+      { razorpay_payment_id: "pay_1", razorpay_order_id: "order_X", order_id: "o1", refund_id: null },
+      { razorpay_payment_id: "pay_top", razorpay_order_id: "order_TOPUP", order_id: "o1", refund_id: null },
+    ];
+    await refundOrderRazorpay(sb, db.orders[0] as any, { caller: "cancel" });
+    expect(refunds).toEqual([
+      { payment: "pay_1", amount: 60000, notes: { order_id: "o1" } },
+      { payment: "pay_top", amount: undefined, notes: { order_id: "o1" } },
+    ]);
+  });
+
+  it("H1: verify and webhook settling at once refund a closed item's share only once", async () => {
+    db.orders = [cartRow("o1"), cartRow("o2", { status: "cancelled", total_price: 120 })];
+    const p = { razorpay_order_id: "order_X", razorpay_payment_id: "pay_1" };
+    await Promise.all([settleCapturedPayment(sb, { ...p, source: "verify" }), settleCapturedPayment(sb, { ...p, source: "webhook" })]);
+    expect(refunds).toEqual([{ payment: "pay_1", amount: 12000, notes: { order_id: "o2" } }]);
+  });
+
+  it("H3: a hand refund from the dashboard (no tag) stops automatic share refunds", async () => {
+    db.orders = [
+      cartRow("o1", { status: "cancelled", razorpay_payment_id: "pay_1" }),
+      cartRow("o2", { status: "paid", razorpay_payment_id: "pay_1" }),
+    ];
+    refunds.push({ payment: "pay_1", amount: 60000, notes: undefined });
+    const out = await refundOrderRazorpay(sb, db.orders[0] as any, { caller: "cron:refund-retry" });
+    expect(out.ok).toBe(false);
+    expect(out.note).toContain("NEEDS REVIEW");
+    expect(refunds).toHaveLength(1);
+  });
+
+  it("M1: removing the unpaid item that carries the fee moves the fee to the next item, once", async () => {
+    db.orders = [
+      cartRow("o1", { status: "cancelled", delivery_fee: 13, paid_amount: 613, razorpay_order_id: null }),
+      cartRow("o2", { total_price: 1, paid_amount: 1, razorpay_order_id: null }),
+    ];
+    await moveFeeOffClosedRow(sb, "o1");
+    await moveFeeOffClosedRow(sb, "o1");
+    expect(db.orders[0]).toMatchObject({ delivery_fee: 0, paid_amount: 600 });
+    expect(db.orders[1]).toMatchObject({ delivery_fee: 13, paid_amount: 14 });
+    expect(pickPayableCartRows(db.orders[1] as any, db.orders as any).reduce((t, r) => t + rowPaise(r), 0)).toBe(1400);
+  });
+
+  it("M2: two last removals at the same moment send the delivery fee once", async () => {
+    db.orders = [
+      cartRow("o1", { status: "cancelled", delivery_fee: 13, razorpay_payment_id: "pay_1", refund_amt: 600 }),
+      cartRow("o2", { status: "cancelled", total_price: 1, razorpay_payment_id: "pay_1" }),
+    ];
+    refunds.push({ payment: "pay_1", amount: 60000, notes: { order_id: "o1" } });
+    await Promise.all([refundCartFee(sb, { ...db.orders[0] } as any, "pay_1", "a"), refundCartFee(sb, { ...db.orders[0] } as any, "pay_1", "b")]);
+    expect(refunds.filter((r) => r.notes?.order_id === "o1")).toEqual([
+      { payment: "pay_1", amount: 60000, notes: { order_id: "o1" } },
+      { payment: "pay_1", amount: 1300, notes: { order_id: "o1" } },
+    ]);
   });
 });
 

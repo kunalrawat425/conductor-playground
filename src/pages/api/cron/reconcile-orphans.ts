@@ -129,7 +129,26 @@ async function run(request: Request, origin: string) {
     outcome.ok ? refundRetried++ : refundStillFailing++;
   }
 
-  console.log(`[cron/reconcile-orphans] scanned=${orphans?.length ?? 0} flipped=${flipped} refunded=${refunded} skipped=${skipped} errors=${errors} refund_retried=${refundRetried} refund_failing=${refundStillFailing}`);
+  // Carts that are fully off but whose delivery fee never came back (the last two
+  // items were removed at the same moment and each saw the other still live).
+  let feeRefunded = 0;
+  const { data: feeRows } = await sb.from("orders")
+    .select("id, cart_id, total_price, delivery_fee, refund_amt, refund_note, razorpay_payment_id")
+    .not("cart_id", "is", null).gt("delivery_fee", 0).not("razorpay_payment_id", "is", null)
+    .in("status", ["cancelled", "declined", "refunded"])
+    .gt("created_at", new Date(Date.now() - 30 * 86400_000).toISOString())
+    .limit(50);
+  const { refundCartFee } = await import("../../../lib/server/razorpay-ledger");
+  const { isLiveRow } = await import("../../../lib/server/order-cart");
+  for (const f of (feeRows || []) as any[]) {
+    if (Number(f.refund_amt || 0) >= Number(f.total_price) + Number(f.delivery_fee)) continue;
+    const { data: cart } = await sb.from("orders").select("status").eq("cart_id", f.cart_id);
+    if ((cart || []).some((r: any) => isLiveRow(r.status))) continue;
+    const r = await refundCartFee(sb, f, f.razorpay_payment_id, "cron:cart-fee");
+    if (r.ok) feeRefunded++;
+  }
+
+  console.log(`[cron/reconcile-orphans] fee_refunded=${feeRefunded} scanned=${orphans?.length ?? 0} flipped=${flipped} refunded=${refunded} skipped=${skipped} errors=${errors} refund_retried=${refundRetried} refund_failing=${refundStillFailing}`);
   return new Response(JSON.stringify({ ok: true, scanned: orphans?.length ?? 0, flipped, refunded, skipped, errors, refund_retried: refundRetried, refund_failing: refundStillFailing }), { status: 200 });
 }
 

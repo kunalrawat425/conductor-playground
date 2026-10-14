@@ -5,6 +5,7 @@ import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { isRazorpayPaid } from "../../../lib/server/razorpay-refund";
 import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 import { buyerCancelRule } from "../../../lib/order-cancel";
+import { isLiveRow, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
 
 export const prerender = false;
 
@@ -39,6 +40,20 @@ export const POST: APIRoute = async ({ request, url }) => {
           .eq("cart_id", order.cart_id).eq("buyer_id", buyer_id)
           .not("status", "in", "(cancelled,declined,refunded,completed,picked_up)");
         if (siblings?.length) targets = siblings;
+      }
+      // Removing one item must not take the rest of the cart under the seller's minimum.
+      if (!whole_cart && order.cart_id && order.listing_id) {
+        const { data: rest } = await sb.from("orders").select("id, status, total_price")
+          .eq("cart_id", order.cart_id).eq("buyer_id", buyer_id).neq("id", order.id);
+        const live = (rest || []).filter((r: any) => isLiveRow(r.status));
+        if (live.length) {
+          const { data: l } = await sb.from("fish_listings").select("seller:sellers(min_order_amount)").eq("id", order.listing_id).maybeSingle();
+          const min = Number((l as any)?.seller?.min_order_amount) || 0;
+          const left = live.reduce((sum: number, r: any) => sum + Number(r.total_price || 0), 0);
+          if (min > 0 && left < min) {
+            return new Response(JSON.stringify({ error: `The rest of the order would be under the seller's ₹${min} minimum. Cancel the whole order instead.` }), { status: 400 });
+          }
+        }
       }
       const reason = String(cancel_reason || "").trim().slice(0, 200) || null;
       const done: { id: string; paid: boolean; refundId: string | null; refundNote: string | null; refundAmt: number }[] = [];
@@ -181,6 +196,8 @@ async function cancelRow(sb: any, order: any, reason: string | null) {
   if (!claimed?.length) return { error: "The seller just updated this order. Refresh to see its status.", status: 409 };
 
   const paid = isRazorpayPaid(order);
+  // Unpaid: the delivery fee must not leave the cart with this item.
+  if (!paid) await moveFeeOffClosedRow(sb, order.id);
   let refundId: string | null = null;
   let refundNote: string | null = null;
   let refundAmt = Number(order.paid_amount) || (Number(order.total_price) + Number(order.delivery_fee || 0));

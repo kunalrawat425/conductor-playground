@@ -21,17 +21,19 @@
 import { refundRazorpayPayment, type RefundOutcome } from "./razorpay-refund";
 import { gaPurchase } from "./ga-mp";
 import { afterResponse } from "./after-response";
-import { paymentSiblings, refundedPaiseForOrder, CART_PAYABLE, isLiveRow } from "./order-cart";
+import { paymentSiblings, refundStateForOrder, CART_PAYABLE, isLiveRow } from "./order-cart";
 
 export const PAYABLE_STATUSES = ["pending", "pending_payment", "payment_required"];
 const CLOSED_STATUSES = ["cancelled", "declined", "refunded"];
-const ORDER_COLS = "id, buyer_id, status, final_price, paid_amount, razorpay_order_id, razorpay_payment_id, refund_note, total_price, delivery_fee, created_at";
+const ORDER_COLS = "id, buyer_id, status, final_price, paid_amount, razorpay_order_id, razorpay_payment_id, balance_razorpay_payment_id, refund_note, total_price, delivery_fee, created_at";
 
 export type SettleOrder = {
   id: string;
   status: string;
   razorpay_order_id?: string | null;
   razorpay_payment_id?: string | null;
+  /** A pre-order balance top-up's own payment (migration 078); the upfront id stays in razorpay_payment_id. */
+  balance_razorpay_payment_id?: string | null;
   final_price?: number | string | null;
   refund_note?: string | null;
   total_price?: number | string | null;
@@ -63,7 +65,7 @@ export function decideSettlement(
   order: SettleOrder,
   p: { razorpay_order_id: string; razorpay_payment_id: string }
 ): Settlement {
-  if (order.razorpay_payment_id === p.razorpay_payment_id) return "already";
+  if (order.razorpay_payment_id === p.razorpay_payment_id || order.balance_razorpay_payment_id === p.razorpay_payment_id) return "already";
   const forCurrentAmount = order.razorpay_order_id === p.razorpay_order_id;
   if (forCurrentAmount && PAYABLE_STATUSES.includes(order.status)) return "confirm";
   if (forCurrentAmount && !order.razorpay_payment_id && !CLOSED_STATUSES.includes(order.status)) return "stamp";
@@ -149,10 +151,12 @@ export async function settleCapturedPayment(sb: any, p: SettleInput): Promise<Se
       // Business rule: a payment makes the order PAID; only the seller's accept
       // makes it CONFIRMED. A balance top-up returns an already-accepted
       // pre-order to confirmed.
+      const isTopUp = order.status === "payment_required" && !!order.razorpay_payment_id;
       const update: Record<string, unknown> = {
         status: order.status === "payment_required" ? "confirmed" : "paid",
         payment_method: "razorpay",
-        razorpay_payment_id: p.razorpay_payment_id,
+        // A top-up keeps the upfront id: on a cart it is shared, and refunds must still see that.
+        ...(isTopUp ? { balance_razorpay_payment_id: p.razorpay_payment_id } : { razorpay_payment_id: p.razorpay_payment_id }),
         payment_verified_at: new Date().toISOString(),
         payment_verified_by: p.verified_by ?? null,
       };
@@ -260,6 +264,16 @@ async function settleCart(sb: any, rows: SettleOrder[], p: SettleInput): Promise
 
 /** Refund one row's share of a cart payment (never repeated: refunds carry notes.order_id). */
 async function refundCartShare(sb: any, row: SettleOrder, p: { razorpay_payment_id: string; source: string }): Promise<RefundOutcome> {
+  // Claim first: verify and the webhook settle the same payment at the same time,
+  // and both would refund this share (the second one out of another item's money).
+  if (!row.razorpay_payment_id) {
+    const { data: claimed } = await sb.from("orders")
+      .update({ payment_method: "razorpay", razorpay_payment_id: p.razorpay_payment_id })
+      .eq("id", row.id).is("razorpay_payment_id", null).select("id");
+    if (!claimed?.length) return { refundId: null, ok: true, note: "handled by a concurrent settle" };
+  } else if (row.razorpay_payment_id === p.razorpay_payment_id) {
+    return { refundId: null, ok: true, note: "handled by a concurrent settle" };
+  }
   // Other items of the cart kept the payment, so the delivery still happens: item price only.
   const outcome = await refundShare(row, p.razorpay_payment_id, `settle:${p.source}`, false);
   console.warn("[razorpay-ledger] cart payment share could not be applied to its item — refunding", {
@@ -267,11 +281,9 @@ async function refundCartShare(sb: any, row: SettleOrder, p: { razorpay_payment_
   });
   const line = `Cart payment ${p.razorpay_payment_id} share on a ${row.status} item: ${outcome.note}`;
   const patch: Record<string, unknown> = { refund_note: (row.refund_note ? `${row.refund_note} | ${line}` : line).slice(0, 1000) };
-  // Attach the payment to an item that has none, so the buyer sees "Refund pending"
+  // The claim attached the payment to the item, so the buyer sees "Refund pending"
   // and the daily cron retries a failed refund.
   if (!row.razorpay_payment_id) {
-    patch.payment_method = "razorpay";
-    patch.razorpay_payment_id = p.razorpay_payment_id;
     if (outcome.ok) {
       patch.refund_amt = outcome.refundedRupees ?? Number(row.total_price || 0);
       patch.refund_sent_at = new Date().toISOString();
@@ -295,12 +307,40 @@ async function refundShare(
   includeFee: boolean
 ): Promise<RefundOutcome> {
   const due = Math.round((Number(row.total_price || 0) + (includeFee ? Number(row.delivery_fee || 0) : 0)) * 100);
-  const already = await refundedPaiseForOrder(paymentId, row.id);
-  // Never refund blind on a shared payment: a repeat would hand back another item's money.
-  if (already === null) return { refundId: null, ok: false, note: "Razorpay refund FAILED (could not check earlier refunds) — retried automatically" };
-  if (already >= due) return { refundId: null, ok: true, note: "Already refunded on Razorpay", refundedRupees: already / 100 };
-  const out = await refundRazorpayPayment(paymentId, { order_id: row.id, caller }, due - already);
-  return { ...out, refundedRupees: (out.ok ? due : already) / 100 };
+  const state = await refundStateForOrder(paymentId, row.id);
+  // Never refund blind on a shared payment: a repeat (or a hand refund we can't
+  // attribute) would hand back another item's money.
+  if (state === null) return { refundId: null, ok: false, note: "Razorpay refund NEEDS REVIEW (could not check earlier refunds, or a manual refund exists) — support must refund this item by hand" };
+  if (state.forOrder >= due) return { refundId: null, ok: true, note: "Already refunded on Razorpay", refundedRupees: state.forOrder / 100 };
+  const amount = Math.min(due - state.forOrder, state.remaining);
+  if (amount <= 0) return { refundId: null, ok: false, note: "Razorpay refund NEEDS REVIEW (nothing left on the payment) — support must check" };
+  const out = await refundRazorpayPayment(paymentId, { order_id: row.id, caller }, amount);
+  return { ...out, refundedRupees: (out.ok ? state.forOrder + amount : state.forOrder) / 100 };
+}
+
+/**
+ * Refund the delivery fee carried by an item removed earlier, once the whole cart
+ * is off. Claimed on the row first (refund_amt moves to item + fee) so two last
+ * removals at the same moment can't both send it. The daily cron calls this too,
+ * for carts where both last removals still saw each other live.
+ */
+export async function refundCartFee(
+  sb: any,
+  f: { id: string; total_price?: number | string | null; delivery_fee?: number | string | null; refund_amt?: number | string | null; refund_note?: string | null },
+  pid: string,
+  caller: string
+): Promise<RefundOutcome> {
+  const target = Number(f.total_price || 0) + Number(f.delivery_fee || 0);
+  const before = f.refund_amt;
+  const { data: claimed } = await sb.from("orders").update({ refund_amt: target })
+    .eq("id", f.id).or(`refund_amt.is.null,refund_amt.lt.${target}`).select("id");
+  if (!claimed?.length) return { refundId: null, ok: true, note: "Delivery fee already refunded" };
+  const fee = await refundShare(f, pid, caller, true);
+  await sb.from("orders").update({
+    ...(fee.ok ? {} : { refund_amt: before ?? null }),
+    refund_note: `${f.refund_note ? f.refund_note + " | " : ""}Delivery fee with the last item: ${fee.note}`.slice(0, 1000),
+  }).eq("id", f.id);
+  return fee;
 }
 
 async function refundLatePayment(
@@ -354,6 +394,9 @@ export async function refundOrderRazorpay(
   const shared = pid ? (await paymentSiblings(sb, pid, order.id)).length > 0 : false;
   const ids = ledger.filter((r) => !r.refund_id && !(shared && r.razorpay_payment_id === pid)).map((r) => r.razorpay_payment_id);
   if (pid && !shared && !ledger.some((r) => r.razorpay_payment_id === pid)) ids.push(pid);
+  const { data: bal } = await sb.from("orders").select("balance_razorpay_payment_id").eq("id", order.id).maybeSingle();
+  const topUp = bal?.balance_razorpay_payment_id;
+  if (topUp && !ledger.some((r) => r.razorpay_payment_id === topUp)) ids.push(topUp);
   if (!ids.length && !shared) return { refundId: null, ok: true, note: "Nothing left to refund on Razorpay" };
 
   const outcomes: RefundOutcome[] = [];
@@ -372,14 +415,7 @@ export async function refundOrderRazorpay(
     // Last item gone: the delivery fee sits on an item removed earlier — give it back now.
     if (last) {
       for (const f of (others || []).filter((o: any) => Number(o.delivery_fee) > 0 && o.razorpay_payment_id === pid)) {
-        const fee = await refundShare(f, pid, ctx.caller, true);
-        outcomes.push(fee);
-        if (fee.ok && fee.refundedRupees != null) {
-          await sb.from("orders").update({
-            refund_amt: fee.refundedRupees,
-            refund_note: `${f.refund_note ? f.refund_note + " | " : ""}Delivery fee refunded with the last item: ${fee.note}`.slice(0, 1000),
-          }).eq("id", f.id);
-        }
+        outcomes.push(await refundCartFee(sb, f, pid, ctx.caller));
       }
     }
   }

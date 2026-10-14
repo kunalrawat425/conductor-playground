@@ -219,7 +219,10 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     // Amount drifted (or the cart changed) and Razorpay holds nothing — safe to
     // replace on every row that carried it.
-    await supabase.from("orders").update({ razorpay_order_id: null }).eq("razorpay_order_id", order.razorpay_order_id);
+    // A balance top-up only ever touches its own row: the cached id there is the
+    // cart's spent upfront order, still carried by the cart's other (paid) items.
+    if (isBalanceDue) await supabase.from("orders").update({ razorpay_order_id: null }).eq("id", order_id);
+    else await supabase.from("orders").update({ razorpay_order_id: null }).eq("razorpay_order_id", order.razorpay_order_id);
   }
 
   if (amountPaise <= 0) {
@@ -263,11 +266,10 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Store the Razorpay order id on every row it charges for. Only rows still
   // unpaid and not tied to another Razorpay order (BUG-41: never overwrite an id
   // that may have money against it).
-  const { error: updateErr } = await supabase
-    .from("orders")
-    .update({ razorpay_order_id })
-    .in("id", payIds)
-    .is("razorpay_payment_id", null);
+  const { error: updateErr } = isBalanceDue
+    // The top-up row already carries its upfront payment id.
+    ? await supabase.from("orders").update({ razorpay_order_id }).eq("id", order_id)
+    : await supabase.from("orders").update({ razorpay_order_id }).in("id", payIds).is("razorpay_payment_id", null);
 
   if (updateErr) {
     return new Response(JSON.stringify({ error: "Failed to save payment reference" }), { status: 500 });

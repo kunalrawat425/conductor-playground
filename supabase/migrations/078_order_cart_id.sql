@@ -7,11 +7,17 @@ SET LOCAL lock_timeout = '3s';
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS cart_id uuid;
 CREATE INDEX IF NOT EXISTS orders_cart_id_idx ON public.orders (cart_id) WHERE cart_id IS NOT NULL;
 
+-- A pre-order balance top-up is its own Razorpay payment. It used to overwrite
+-- razorpay_payment_id (the upfront payment), which on a cart hides that the
+-- upfront payment is shared — a later refund then took the other items' money.
+-- The upfront id now stays put; the top-up is recorded here (and in the ledger).
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS balance_razorpay_payment_id text;
+
 -- 069 allowed one order row per Razorpay order / payment. A cart is paid once for
 -- all its rows, so the rule becomes: rows sharing a Razorpay order or payment must
 -- be the SAME cart (a row without cart_id is its own cart, so single orders keep
 -- the old one-row guarantee).
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA extensions;
 ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS ex_orders_razorpay_order_one_cart;
 ALTER TABLE public.orders ADD CONSTRAINT ex_orders_razorpay_order_one_cart
   EXCLUDE USING gist (razorpay_order_id WITH =, (coalesce(cart_id::text, id::text)) WITH <>)

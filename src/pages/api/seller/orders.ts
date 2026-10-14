@@ -7,7 +7,7 @@ import { preorderNeedsFinalPrice } from "../../../lib/order-payment-state";
 import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 import { toSellerView, STATUS_BY_TAB } from "../../../lib/seller-order-view";
-import { cartLabel, isLiveRow, rowPaise } from "../../../lib/server/order-cart";
+import { cartLabel, isLiveRow, rowPaise, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
 import { cancelReasonText } from "../../../lib/order-cancel";
 
 function capitalizeFishName(s: string): string {
@@ -206,28 +206,11 @@ async function transitionRow(
     // to be written into refund_note, mixed with refund gateway text.
     updates.cancel_reason = why || null;
 
-    // BUG-44: this branch used to write cancelled_by/refund_note and stop —
-    // no Razorpay refund was ever issued. The dashboard button says
-    // "✓ Confirm — refund buyer" and the resulting card tells the seller to
-    // send the money over UPI, but for a Razorpay order the funds sit in the
-    // PLATFORM's Razorpay account, not the seller's, so the buyer got nothing
-    // unless someone noticed and refunded by hand. The buyer-initiated cancel
-    // path has always refunded properly; now both use the same helper.
-    if (isRazorpayPaid(currentOrder as any)) {
-      // Every payment on the order: upfront plus any balance top-up.
-      const outcome = await refundOrderRazorpay(
-        supabase,
-        { id: order_id, razorpay_payment_id: (currentOrder as any).razorpay_payment_id, razorpay_order_id: (currentOrder as any).razorpay_order_id },
-        { caller: `seller/orders:${status}` }
-      );
-      updates.refund_note = outcome.note;
-      if (outcome.ok) {
-        // A cart item gets back its own share (the delivery fee only with the last item).
-        updates.refund_amt = outcome.refundedRupees ?? (Number((currentOrder as any).paid_amount)
-          || (Number((currentOrder as any).total_price) + Number((currentOrder as any).delivery_fee || 0)));
-        updates.refund_sent_at = new Date().toISOString();
-      }
-    }
+    // BUG-44: refunds go through the same helper as the buyer cancel (the funds
+    // sit in the platform's Razorpay account, not the seller's). They run AFTER
+    // the guarded status claim below: refunding first let a double tap (or a
+    // buyer cancel at the same moment) refund twice — harmless when every refund
+    // was "everything left", not when an item gets a partial share of a cart payment.
   }
   // Stamp payment_verified_at if a paid row reached here without it.
   if (status === "confirmed" && !(currentOrder as any)?.payment_verified_at) {
@@ -245,8 +228,32 @@ async function transitionRow(
     .select();
 
   if (error) return { error: error.message, code: 500 };
-  const data = rows?.[0];
+  let data = rows?.[0];
   if (!data) return { error: "This order was just updated. Refresh and try again.", code: 409 };
+
+  if (status === "declined" || status === "cancelled") {
+    if (isRazorpayPaid(currentOrder as any)) {
+      // Every payment on the order: upfront (its share, on a cart) plus any balance top-up.
+      const outcome = await refundOrderRazorpay(
+        supabase,
+        { id: order_id, razorpay_payment_id: (currentOrder as any).razorpay_payment_id, razorpay_order_id: (currentOrder as any).razorpay_order_id },
+        { caller: `seller/orders:${status}` }
+      );
+      const refundFields: Record<string, unknown> = { refund_note: outcome.note };
+      if (outcome.ok) {
+        // A cart item gets back its own share (the delivery fee only with the last item).
+        refundFields.refund_amt = outcome.refundedRupees ?? (Number((currentOrder as any).paid_amount)
+          || (Number((currentOrder as any).total_price) + Number((currentOrder as any).delivery_fee || 0)));
+        refundFields.refund_sent_at = new Date().toISOString();
+      }
+      const upd = await supabase.from("orders").update(refundFields).eq("id", order_id).select();
+      if (upd.error) console.error("[seller/orders] refund recorded on Razorpay but not on the order", { order_id, err: upd.error.message });
+      else if (upd.data?.[0]) data = upd.data[0];
+    } else {
+      // Unpaid: the delivery fee must not leave the cart with this item.
+      await moveFeeOffClosedRow(supabase, order_id);
+    }
+  }
   return { data, currentOrder };
 }
 

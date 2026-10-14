@@ -15,7 +15,13 @@ declare
   v_new_status text;
   v_refund_due numeric := 0;
 begin
-  select paid_amount - coalesce(delivery_fee, 0) into v_paid from orders where id = p_order_id;
+  -- Row lock + "not set yet": a double-submitted final price used to reconcile
+  -- (and refund the difference) twice.
+  select paid_amount - coalesce(delivery_fee, 0) into v_paid from orders
+    where id = p_order_id and final_price is null for update;
+  if not found then
+    raise exception 'Final price already set for order %', p_order_id;
+  end if;
   if v_paid is null then
     raise exception 'Order % has no paid_amount — not a pre-order', p_order_id;
   end if;

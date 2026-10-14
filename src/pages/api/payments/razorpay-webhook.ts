@@ -118,7 +118,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     // carry notes.order_id saying which item each one is for.
     const { data: payRows, error } = await sb.from("orders")
       .select("id, status, refund_sent_at")
-      .eq("razorpay_payment_id", razorpay_payment_id);
+      .or(`razorpay_payment_id.eq.${razorpay_payment_id},balance_razorpay_payment_id.eq.${razorpay_payment_id}`);
     if (error) {
       console.error("[razorpay-webhook] refund lookup failed", { razorpay_payment_id, error: error.message });
       return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
@@ -129,7 +129,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       : payRows?.[0] ?? null;
     // The ledger's refund_id is per payment: one item's refund on a shared payment
     // must not mark the whole payment refunded (the other items' shares are still held).
-    const { data: firstSeen } = shared
+    // Only a FULL refund marks the payment refunded in the ledger: a partial one
+    // (a cheaper pre-order catch) used to make a later cancel skip the rest of the money.
+    const { data: firstSeen } = shared || !fullyRefunded
       ? { data: [] as any[] }
       : await sb.from("razorpay_payments")
         .update({ refund_id, refunded_at: now })

@@ -75,21 +75,34 @@ function rzpAuth(): string | null {
 
 /**
  * Paise already refunded on a payment for ONE row (refunds carry notes.order_id).
- * null = Razorpay could not be asked; callers must not refund blind on null.
+ * null = unsafe to refund automatically: Razorpay could not be asked, or someone
+ * refunded by hand from the dashboard (no tag), so we can't tell whose money it was.
+ * `remaining` caps any new refund at what is still on the payment.
  */
-export async function refundedPaiseForOrder(paymentId: string, orderId: string): Promise<number | null> {
+export async function refundStateForOrder(paymentId: string, orderId: string): Promise<{ forOrder: number; remaining: number } | null> {
   const auth = rzpAuth();
   if (!auth) return null;
   try {
-    const res = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}/refunds?count=100`, { headers: { Authorization: auth } });
-    if (!res.ok) return null;
-    const items: any[] = (await res.json())?.items ?? [];
-    return items
-      .filter((r) => r?.notes?.order_id === orderId && r?.status !== "failed")
-      .reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    const [rRes, pRes] = await Promise.all([
+      fetch(`https://api.razorpay.com/v1/payments/${paymentId}/refunds?count=100`, { headers: { Authorization: auth } }),
+      fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, { headers: { Authorization: auth } }),
+    ]);
+    if (!rRes.ok || !pRes.ok) return null;
+    const items: any[] = ((await rRes.json())?.items ?? []).filter((r: any) => r?.status !== "failed");
+    if (items.some((r) => !r?.notes?.order_id)) return null;
+    const pay = await pRes.json();
+    return {
+      forOrder: items.filter((r) => r.notes.order_id === orderId).reduce((sum, r) => sum + (Number(r.amount) || 0), 0),
+      remaining: Math.max(0, (Number(pay?.amount) || 0) - (Number(pay?.amount_refunded) || 0)),
+    };
   } catch {
     return null;
   }
+}
+
+/** Paise refunded for one row on a payment, or null when unsafe to tell (see refundStateForOrder). */
+export async function refundedPaiseForOrder(paymentId: string, orderId: string): Promise<number | null> {
+  return (await refundStateForOrder(paymentId, orderId))?.forOrder ?? null;
 }
 
 /** "Pomfret + Surmai" / "Pomfret + 2 more" — one label for a cart in pushes and subjects. */
@@ -98,4 +111,32 @@ export function cartLabel(species: (string | null | undefined)[]): string {
     .map((s) => s.charAt(0).toUpperCase() + s.slice(1));
   if (names.length <= 2) return names.join(" + ") || "Fish";
   return `${names[0]} + ${names.length - 1} more`;
+}
+
+/**
+ * An UNPAID item that carries the cart's delivery fee was just closed: move the fee
+ * to the oldest item still awaiting payment, so the cart is still charged for
+ * delivery (removing a cheap first item used to make delivery free).
+ */
+export async function moveFeeOffClosedRow(sb: any, orderId: string): Promise<void> {
+  const { data: row } = await sb.from("orders")
+    .select("id, cart_id, delivery_fee, paid_amount, razorpay_payment_id").eq("id", orderId).maybeSingle();
+  const fee = Number(row?.delivery_fee || 0);
+  if (!row?.cart_id || fee <= 0 || row.razorpay_payment_id) return;
+  const { data: siblings } = await sb.from("orders")
+    .select("id, status, delivery_fee, paid_amount, created_at")
+    .eq("cart_id", row.cart_id).neq("id", orderId).in("status", CART_PAYABLE).is("razorpay_payment_id", null)
+    .order("created_at", { ascending: true });
+  const to = siblings?.[0];
+  if (!to) return;
+  // Guarded on the fee still being on the closed row, so a repeat moves nothing.
+  const { data: moved } = await sb.from("orders")
+    .update({ delivery_fee: 0, ...(row.paid_amount != null ? { paid_amount: Number(row.paid_amount) - fee } : {}) })
+    .eq("id", orderId).eq("delivery_fee", row.delivery_fee).select("id");
+  if (!moved?.length) return;
+  const { error } = await sb.from("orders").update({
+    delivery_fee: Number(to.delivery_fee || 0) + fee,
+    ...(to.paid_amount != null ? { paid_amount: Number(to.paid_amount) + fee } : {}),
+  }).eq("id", to.id);
+  if (error) console.error("[order-cart] delivery fee move failed", { from: orderId, to: to.id, fee, err: error.message });
 }

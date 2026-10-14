@@ -4,7 +4,7 @@ import { sendBuyerOrderPush } from "./buyer-push";
 import { internalHeaders } from "./internal-auth";
 import { sendTransactionalEmail as sendEmail } from "./send-email";
 import { absoluteUrl } from "./site-origin";
-import { cartLabel } from "./order-cart";
+import { cartLabel, isLiveRow } from "./order-cart";
 
 /**
  * BUG-20 / BUG-21 fix.
@@ -163,8 +163,10 @@ export async function notifyOrderParties(opts: {
   // One cart → one notification: gather the rows this event covers.
   let ids = opts.order_ids?.length ? opts.order_ids : [order_id];
   if (!opts.order_ids?.length && event === "payment_confirmed" && o.razorpay_payment_id) {
-    const { data: paidTogether } = await sb.from("orders").select("id").eq("razorpay_payment_id", o.razorpay_payment_id);
-    if (paidTogether?.length) ids = paidTogether.map((r: any) => r.id);
+    // Items closed before the payment landed carry it too (their share was refunded): not "paid".
+    const { data: paidTogether } = await sb.from("orders").select("id, status").eq("razorpay_payment_id", o.razorpay_payment_id);
+    const live = (paidTogether || []).filter((r: any) => isLiveRow(r.status));
+    if (live.length) ids = live.map((r: any) => r.id);
   }
   let group: any[] = [o];
   if (ids.length > 1) {
