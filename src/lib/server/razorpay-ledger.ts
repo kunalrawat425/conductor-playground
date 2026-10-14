@@ -158,7 +158,7 @@ export async function settleCapturedPayment(sb: any, p: SettleInput): Promise<Se
       };
       // BUG-47: after a balance top-up the buyer has paid the full final price.
       if (order.status === "payment_required" && order.final_price != null) {
-        update.paid_amount = Number(order.final_price);
+        update.paid_amount = Number(order.final_price) + Number(order.delivery_fee || 0); // fish + delivery
       }
       const { data, error } = await sb.from("orders").update(update)
         .eq("id", order.id).eq("status", order.status).select(ORDER_COLS);
@@ -248,6 +248,10 @@ async function settleCart(sb: any, rows: SettleOrder[], p: SettleInput): Promise
   let lastRefund: RefundOutcome | null = null;
   for (const r of refundRows) lastRefund = await refundCartShare(sb, r, p);
 
+  // Oldest row first: it is the order number the buyer saw at checkout.
+  const byAge = (a: SettleOrder, b: SettleOrder) => String((a as any).created_at || "").localeCompare(String((b as any).created_at || ""));
+  confirmed.sort(byAge);
+  stamped.sort(byAge);
   if (confirmed.length) return { kind: "confirmed", order: confirmed[0], orders: confirmed };
   if (stamped.length) return { kind: "stamped", order: stamped[0], orders: stamped };
   if (lastRefund) return { kind: "refunded", order: refundRows[0], refund: lastRefund };

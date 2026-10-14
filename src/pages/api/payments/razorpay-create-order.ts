@@ -71,7 +71,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     : await loadPayableCartRows(supabase, order as any, "id, buyer_id, cart_id, status, total_price, delivery_fee, razorpay_order_id, razorpay_payment_id, created_at");
   const payIds = payRows.map((r) => r.id);
   const amountPaise = isBalanceDue
-    ? Math.round(Math.max(0, Number(order.final_price || 0) - Number(order.paid_amount || 0)) * 100)
+    // final_price is the fish price; paid_amount also holds the delivery fee (migration 080).
+    ? Math.round(Math.max(0, Number(order.final_price || 0) - (Number(order.paid_amount || 0) - Number(order.delivery_fee || 0))) * 100)
     : payRows.reduce((sum, r) => sum + rowPaise(r), 0);
   if (order.razorpay_order_id) {
     // Ask Razorpay for the cached order's amount

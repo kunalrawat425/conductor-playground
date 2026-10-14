@@ -726,7 +726,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           // seller to refund orders the buyer had never paid for.
           actionsHtml = refundStatusHtml(o, refundableAmount(o));
         } else if (o.status === "payment_required") {
-          const balanceAmt = o.final_price && o.paid_amount ? (Number(o.final_price) - Number(o.paid_amount)).toLocaleString("en-IN") : "—";
+          const balanceAmt = o.final_price && o.paid_amount ? (Number(o.final_price) - (Number(o.paid_amount) - Number(o.delivery_fee || 0))).toLocaleString("en-IN") : "—";
           actionsHtml = `<div style="padding:10px;background:var(--v2-bg-2);border-radius:var(--v2-radius-sm);margin-top:6px;display:flex;flex-direction:column;gap:6px;">
             <div style="font:700 12px Inter;color:var(--v2-orange);">⏳ Waiting for balance ₹${balanceAmt}</div>
             <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyer notified. Will confirm once they pay the difference.</div>
