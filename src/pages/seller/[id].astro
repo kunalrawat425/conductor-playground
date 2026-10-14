@@ -110,7 +110,7 @@ const isOpenByTime = (() => {
   const openMin = oh * 60 + om;
   const closeMin = ch * 60 + cm;
   if (openMin <= closeMin) return curMin >= openMin && curMin < closeMin;
-  return curMin >= openMin || curMin <= closeMin; // overnight e.g. 17:00–02:59
+  return curMin >= openMin || curMin < closeMin; // overnight e.g. 17:00–03:00 (matches isSellerOpenByClock)
 })();
 const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
 const isEffectivelyOpen = isOpenByTime && isTodayOrderDay;
@@ -1474,6 +1474,11 @@ const tags = [
 
       const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');
       const orderType = methodEl?.value === "delivery" ? "delivery" : "pickup";
+      // A checked-but-hidden option means fulfillment didn't load; never guess pickup/delivery.
+      if (!methodEl || methodEl.closest("label")?.style.display === "none") {
+        window.v2Toast?.("error", "Choose delivery or pickup", "Go back a step and pick one");
+        return;
+      }
       if (orderType === "delivery" && !selectedAddressId) {
         window.v2Toast?.("error", "Address needed", "Pick a delivery address");
         return;
