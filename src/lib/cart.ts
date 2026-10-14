@@ -356,9 +356,15 @@ export async function validateCartLive(sellerId?: string, isPreorderMode?: boole
         // Callers that don't know the seller's mode (the global cart sheet) must not
         // reprice or drop pre-order-capable lines; the seller page re-validates with the mode.
         if (isPreorderMode === undefined && live?.is_preorder_enabled) continue;
-        if (!live || (!preorderLine && (!live.is_available || (live.weight_avail != null && live.weight_avail < item.qty)))) {
+        // Mirror the order API: a pre-order needs is_preorder_enabled; same-day needs
+        // stock and no "Pause same-day orders". A line from the other mode (cart kept
+        // across closing time) would otherwise only fail at "Place order".
+        const unavailable = !live || live.deleted_at
+          || (isPreorderMode ? !preorderLine
+            : (!live.is_available || live.is_order_paused || (live.weight_avail != null && live.weight_avail < item.qty)));
+        if (unavailable) {
            removeItem(keyToUse);
-           oosMessages.push(`"${item.name}" is out of stock and was removed.`);
+           oosMessages.push(`"${item.name}" is not available right now and was removed.`);
         } else {
            const opts = live.pricing_options || [];
            const opt = opts.find((o: any) => o.id === item.pricing_option_id) || opts[0];

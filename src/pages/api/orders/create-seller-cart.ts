@@ -57,6 +57,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       buyer_notes,
       cut_style,
       utm,
+      placement_kind: expectedPlacement,
     } = body;
     if (buyer_id) { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
 
@@ -84,8 +85,15 @@ export const POST: APIRoute = async ({ request, url }) => {
       return new Response(JSON.stringify({ error: "lines array required" }), { status: 400 });
     }
 
+    if (order_type === "delivery" && !buyer_addr) {
+      return new Response(JSON.stringify({ error: "Pick a delivery address" }), { status: 400 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resolved: ResolvedRow[] = [];
+    // One clock for the whole cart, so lines can't straddle closing time.
+    const nowMs = Date.now();
+    const qtyByListing = new Map<string, number>();
 
     for (const raw of rawLines as CartLineInput[]) {
       if (!raw?.listing_id) {
@@ -97,6 +105,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         rawQuantity: raw.quantity,
         buyer_phone,
         buyer_id,
+        nowMs,
+        priorQty: qtyByListing.get(raw.listing_id) || 0,
       });
       if (!r.ok) {
         return new Response(JSON.stringify({ error: r.error }), { status: r.status });
@@ -105,12 +115,27 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: "All items must be from the same seller" }), { status: 400 });
       }
       resolved.push({ line: r.line });
+      qtyByListing.set(raw.listing_id, (qtyByListing.get(raw.listing_id) || 0) + r.line.quantity);
     }
 
     const cartSubtotal = resolved.reduce((s, x) => s + x.line.total_price, 0);
     const placement_kind: PlacementKind = resolved.some((x) => x.line.placement_kind === "preorder")
       ? "preorder"
       : "same_day";
+    // The page decides same-day vs pre-order when it loads. If the shop opened or
+    // closed since, the cart's prices and promise ("today" vs "tomorrow's catch")
+    // are stale: refuse instead of silently charging the other price.
+    if (expectedPlacement && expectedPlacement !== placement_kind) {
+      return new Response(
+        JSON.stringify({
+          error: placement_kind === "preorder"
+            ? "The shop just closed for today. Refresh to pre-order for tomorrow."
+            : "The shop is open now. Refresh to order for today.",
+          code: "placement_changed",
+        }),
+        { status: 409 }
+      );
+    }
 
     const { data: seller } = await supabase
       .from("sellers")
@@ -162,7 +187,17 @@ export const POST: APIRoute = async ({ request, url }) => {
       : Promise.resolve(null);
 
     const orders: unknown[] = [];
-
+    // Rows already written for this cart. If a later line fails, cancel them so a
+    // retry doesn't leave unpaid duplicates (which also count toward daily limits).
+    const createdIds: string[] = [];
+    const failCart = async (error: string, status: number) => {
+      if (createdIds.length) {
+        await supabase.from("orders")
+          .update({ status: "cancelled", cancelled_by: "system", cancel_reason: "checkout_failed" })
+          .in("id", createdIds);
+      }
+      return new Response(JSON.stringify({ error }), { status });
+    };
 
     // Delivery fee applies once per cart, computed from the whole subtotal so it
     // matches what the buyer was shown (and honours free_delivery_above).
@@ -207,8 +242,9 @@ export const POST: APIRoute = async ({ request, url }) => {
           .single();
 
         if (preErr) {
-          return new Response(JSON.stringify({ error: preErr.message }), { status: 500 });
+          return failCart(preErr.message, 500);
         }
+        createdIds.push(preOrder.id);
         orders.push(preOrder);
 
         try {
@@ -253,7 +289,7 @@ export const POST: APIRoute = async ({ request, url }) => {
               quantity: line.quantity,
               quantity_unit: line.quantity_unit,
               total_price: line.total_price,
-              delivery_fee: 0,
+              delivery_fee: preFee,
               statusLabel: "Pre-order placed — catch reserved for tomorrow",
               scheduled_for,
               buyer_phone,
@@ -306,8 +342,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (rpcError) {
         const msg = rpcError.message || "";
         const isStockError = msg.includes("in stock") || msg.includes("Listing not found");
-        return new Response(JSON.stringify({ error: msg }), { status: isStockError ? 400 : 500 });
+        return failCart(msg, isStockError ? 400 : 500);
       }
+      createdIds.push(orderId);
 
       const { data: fetchedOrder, error: fetchErr } = await supabase
         .from("orders")
@@ -315,7 +352,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         .eq("id", orderId)
         .single();
       if (fetchErr) {
-        return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
+        return failCart(fetchErr.message, 500);
       }
       await supabase.from("orders").update({ placement_kind: "same_day", is_preorder: false }).eq("id", orderId);
       orders.push(fetchedOrder);

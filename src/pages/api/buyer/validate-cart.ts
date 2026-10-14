@@ -20,7 +20,7 @@ export const POST: APIRoute = async ({ request }) => {
     const supabase = client();
     const { data, error } = await supabase
       .from("fish_listings")
-      .select("id, is_available, weight_avail, pricing_options, is_preorder_enabled")
+      .select("id, is_available, weight_avail, pricing_options, is_preorder_enabled, is_order_paused, deleted_at")
       .in("id", listing_ids);
 
     if (error) throw error;

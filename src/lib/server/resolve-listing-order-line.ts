@@ -65,10 +65,13 @@ export async function resolveListingOrderLine(
     buyer_phone: string;
     buyer_id?: string | null;
     nowMs?: number;
+    /** Base units of this listing already on earlier lines of the same cart (other price tiers). */
+    priorQty?: number;
   }
 ): Promise<ResolveListingOrderLineResult> {
   const { listing_id, pricing_option_id: clientPricingOptionId, rawQuantity, buyer_phone, buyer_id, nowMs } =
     input;
+  const priorQty = Number(input.priorQty) || 0;
 
   let quantity = typeof rawQuantity === "number" ? rawQuantity : parseFloat(String(rawQuantity));
   if (!Number.isFinite(quantity) || quantity <= 0) {
@@ -86,10 +89,6 @@ export async function resolveListingOrderLine(
   if (!listing || (listing as any).deleted_at) {
     return { ok: false, status: 404, error: "Listing not found" };
   }
-  if ((listing as any).is_order_paused) {
-    return { ok: false, status: 400, error: "The seller has paused orders for this item." };
-  }
-
   // `*` so is_test is read when migration 071 has added it, and absent (falsy) before.
   const { data: seller } = await supabase
     .from("sellers")
@@ -109,6 +108,11 @@ export async function resolveListingOrderLine(
     return { ok: false, status: 400, error: seller ? closedSellerMessage(seller) : "Seller is not available." };
   }
   const placement: PlacementKind = placementResult;
+  // The seller's switch is "Pause same-day orders"; pre-orders still show on the
+  // seller page, so rejecting them here failed every pre-order of a paused item.
+  if (placement === "same_day" && (listing as any).is_order_paused) {
+    return { ok: false, status: 400, error: "The seller has paused orders for this item." };
+  }
   if (placement === "preorder" && (listing as any).is_preorder_enabled === false) {
     return { ok: false, status: 400, error: "This item is not available for pre-order." };
   }
@@ -223,6 +227,7 @@ export async function resolveListingOrderLine(
         : o.buyer_phone === buyer_phone;
       if (match) usedToday += Number(o.quantity);
     }
+    usedToday += priorQty;
     if (usedToday + quantity > cap) {
       return {
         ok: false,
@@ -238,7 +243,8 @@ export async function resolveListingOrderLine(
   const sellerOpen = seller ? isSellerEffectivelyOpen(seller, nowMs) : false;
 
   if (placement === "same_day") {
-    if (!listing.is_available || availOk <= 0 || availOk < quantity) {
+    // priorQty: two price tiers of one listing in one cart share the same stock.
+    if (!listing.is_available || availOk <= 0 || availOk < quantity + priorQty) {
       return {
         ok: false,
         status: 400,

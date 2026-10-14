@@ -1508,13 +1508,19 @@ const tags = [
             buyer_id: buyerId,
             buyer_addr: selectedAddressId,
             order_type: orderType,
+            // Lets the server refuse if the shop opened/closed since this page loaded.
+            placement_kind: isPreorderMode ? "preorder" : "same_day",
             utm: (() => { try { return JSON.parse(localStorage.getItem("rf_utm") || "null"); } catch { return null; } })(),
             cut_style: [...document.querySelectorAll('input[name="seller-checkout-cut"]:checked')].map((el) => el.value).join(","),
             buyer_notes: (document.getElementById("seller-checkout-notes")?.value || "").trim(),
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed");
+        if (!res.ok) {
+          // Page is stale (shop opened/closed): reload so menu, prices and mode are current.
+          if (data.code === "placement_changed") setTimeout(() => window.location.reload(), 2500);
+          throw new Error(data.error || "Failed");
+        }
 
         // Success: clear cart, show fullscreen success animation, redirect
         const orderTotal = (data.orders || []).reduce((s, o) => s + (Number(o.total_price) || 0) + (Number(o.delivery_fee) || 0), 0);
@@ -1563,6 +1569,18 @@ const tags = [
       }
     }
 
+    // Same-day stock is shared by every price tier of a listing. Pre-orders are for
+    // tomorrow's catch, so today's stock must not cap them.
+    function overStock(listingId, addQty, unit) {
+      if (isPreorderMode) return false;
+      const listing = listings.find(l => l.id === listingId);
+      const avail = listing?.weight_avail != null ? Number(listing.weight_avail) : Infinity;
+      const inCart = Object.values(getSellerItems()).filter(i => i.listing_id === listingId).reduce((s, i) => s + i.qty, 0);
+      if (!Number.isFinite(avail) || inCart + addQty <= avail + 1e-9) return false;
+      window.v2Toast?.("info", "Stock limit", `Only ${avail} ${unit || "kg"} available`);
+      return true;
+    }
+
     function add(id, price, name, unit, optId, optLabel, bundleSize) {
       if (sellerFullyClosed) {
         window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
@@ -1570,6 +1588,7 @@ const tags = [
       }
       const c = Cart(); if (!c) return;
       const bs = parseFloat(bundleSize) || 1;
+      if (overStock(id, bs, unit)) return;
       // Store price per base unit so qty × price always gives correct total
       const pricePerUnit = bs > 0 ? price / bs : price;
       c.addItem({
@@ -1611,13 +1630,7 @@ const tags = [
       const item = cart[id];
       if (!item) return;
       const step = getBundleStep(item);
-      // Stock cap: don't exceed weight_avail
-      const listing = listings.find(l => l.id === item.listing_id);
-      const avail = listing?.weight_avail != null ? Number(listing.weight_avail) : Infinity;
-      if (Number.isFinite(avail) && item.qty + step > avail) {
-        window.v2Toast?.("info", "Stock limit", `Only ${avail} ${item.qty_unit || "kg"} available`);
-        return;
-      }
+      if (overStock(item.listing_id, step, item.qty_unit)) return;
       c.setQty(id, item.qty + step);
       render();
       triggerBackgroundValidation(c);
