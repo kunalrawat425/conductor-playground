@@ -997,14 +997,15 @@ const tags = [
 
     /**
      * Show/hide pickup vs delivery from live API flags. `fromRefetch` preserves a valid
-     * buyer choice when step 2 loads; initial open defaults to pickup when both exist.
+     * buyer choice when step 2 loads; initial open defaults to delivery when both exist.
+     * Pre-orders can be delivered too: hiding delivery in pre-order mode left delivery-only
+     * sellers with no option, so checkout fell back to pickup and the server rejected it.
      */
     function applyCheckoutFulfillment(sid, fulfill, fromRefetch) {
       if (!fulfill) return;
       const has_pickup = fulfill.has_pickup !== false;
       const has_delivery = !!fulfill.has_delivery;
-      const preorderHere = isPreorderMode && sid === sellerId;
-      const canDeliver = sid === sellerId && has_delivery && !preorderHere;
+      const canDeliver = sid === sellerId && has_delivery;
       const showPickup = has_pickup;
       const showDelivery = canDeliver;
 
@@ -1034,8 +1035,7 @@ const tags = [
         else if (showDelivery) next = "delivery";
         else if (showPickup) next = "pickup";
       } else {
-        if (showPickup && showDelivery) next = "pickup";
-        else if (showDelivery) next = "delivery";
+        if (showDelivery) next = "delivery";
         else if (showPickup) next = "pickup";
       }
 
@@ -1358,7 +1358,7 @@ const tags = [
         const freeDelivBanner2 = document.getElementById("seller-checkout-free-delivery-banner");
         const delivHint2 = document.getElementById("seller-checkout-delivery-hint");
         const step2Visible = document.getElementById("seller-checkout-step2")?.offsetParent !== null;
-        if (isDelivery && !isPreorderMode && step2Visible) {
+        if (isDelivery && step2Visible) {
           if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
             if (freeDelivBanner2) freeDelivBanner2.style.display = "block";
             if (delivHint2) delivHint2.style.display = "none";
