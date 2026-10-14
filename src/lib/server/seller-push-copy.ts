@@ -43,6 +43,8 @@ export type SellerPushOpts = {
   amount?: number | null;
   /** Buyer's cancellation reason, shown on the seller's lock screen. */
   reason?: string | null;
+  /** Items in one cart; 2+ means `species` is a cart label and quantity is omitted. */
+  item_count?: number | null;
 };
 
 export function sellerPushNotification(
@@ -103,9 +105,12 @@ export function sellerPushNotification(
       const unitLabel = u === "piece" || u === "kg" ? priceUnitShortLabel(u as PriceUnit) : u;
       const isPreorder = opts.placement_kind === "preorder";
       const schedLabel = opts.scheduled_for ? ` (${fmtDateTimeFullIST(opts.scheduled_for)})` : "";
+      const many = (opts.item_count ?? 1) > 1;
       return {
         title: isPreorder ? "New pre-order" : "New order",
-        body: species
+        body: species && many
+          ? `New${isPreorder ? " pre-order" : " order"}: ${species} (${opts.item_count} items)${amt ? ` ·${amt}` : ""}${schedLabel}`
+          : species
           ? `New${isPreorder ? " pre-order" : " order"}: ${species} ${opts.quantity ?? ""}${unitLabel}${schedLabel}`
           : `You have a new${isPreorder ? " pre-order" : " order"}${schedLabel}`,
       };

@@ -74,9 +74,13 @@ export function isPastPreorderCutoffIST(
 }
 
 /** Seller is open for same-day orders (order day + clock window). */
+// The day must come from the same clock as the time, or a caller passing nowMs
+// got today's real weekday with the passed time-of-day.
+const dayAt = (nowMs?: number) => todayDayName(nowMs == null ? undefined : new Date(nowMs));
+
 export function isSellerEffectivelyOpen(seller: SellerTimingInput, nowMs?: number): boolean {
   return (
-    isTodayOrderDay(seller) &&
+    isTodayOrderDay(seller, dayAt(nowMs)) &&
     isSellerOpenByClock(seller.opens_at ?? null, seller.closes_at ?? null, nowMs)
   );
 }
@@ -95,10 +99,11 @@ export function isAfterCloseTimeIST(seller: SellerTimingInput, nowMs?: number): 
  */
 export function isPreorderShoppingWindow(seller: SellerTimingInput, nowMs?: number): boolean {
   if (isSellerEffectivelyOpen(seller, nowMs)) return false;
-  if (!isTodayPreorderDay(seller)) return false;
+  const day = dayAt(nowMs);
+  if (!isTodayPreorderDay(seller, day)) return false;
   if (isPastPreorderCutoffIST(seller.preorder_cutoff_time, nowMs)) return false;
   // On order days: window only opens after store closes (not before it opens)
-  if (isTodayOrderDay(seller) && !isAfterCloseTimeIST(seller, nowMs)) return false;
+  if (isTodayOrderDay(seller, day) && !isAfterCloseTimeIST(seller, nowMs)) return false;
   return true;
 }
 

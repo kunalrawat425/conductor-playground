@@ -17,6 +17,9 @@ import {
 } from "../order-timing";
 
 
+const OPTION_CHANGED =
+  "The seller changed this item's pack size or price option. Remove it from your cart and add it again.";
+
 /** Resolved line that will use create_order_atomic / fallback insert (in-stock or low-stock path). */
 export type StandardOrderLinePayload = {
   kind: "standard";
@@ -49,7 +52,7 @@ export type PreorderLinePayload = {
 };
 
 export type ResolveListingOrderLineResult =
-  | { ok: false; status: number; error: string }
+  | { ok: false; status: number; error: string; code?: "option_changed" }
   | { ok: true; line: StandardOrderLinePayload | PreorderLinePayload };
 
 /**
@@ -65,10 +68,13 @@ export async function resolveListingOrderLine(
     buyer_phone: string;
     buyer_id?: string | null;
     nowMs?: number;
+    /** Base units of this listing already on earlier lines of the same cart (other price tiers). */
+    priorQty?: number;
   }
 ): Promise<ResolveListingOrderLineResult> {
   const { listing_id, pricing_option_id: clientPricingOptionId, rawQuantity, buyer_phone, buyer_id, nowMs } =
     input;
+  const priorQty = Number(input.priorQty) || 0;
 
   let quantity = typeof rawQuantity === "number" ? rawQuantity : parseFloat(String(rawQuantity));
   if (!Number.isFinite(quantity) || quantity <= 0) {
@@ -86,10 +92,6 @@ export async function resolveListingOrderLine(
   if (!listing || (listing as any).deleted_at) {
     return { ok: false, status: 404, error: "Listing not found" };
   }
-  if ((listing as any).is_order_paused) {
-    return { ok: false, status: 400, error: "The seller has paused orders for this item." };
-  }
-
   // `*` so is_test is read when migration 071 has added it, and absent (falsy) before.
   const { data: seller } = await supabase
     .from("sellers")
@@ -109,18 +111,28 @@ export async function resolveListingOrderLine(
     return { ok: false, status: 400, error: seller ? closedSellerMessage(seller) : "Seller is not available." };
   }
   const placement: PlacementKind = placementResult;
+  // The seller's switch is "Pause same-day orders"; pre-orders still show on the
+  // seller page, so rejecting them here failed every pre-order of a paused item.
+  if (placement === "same_day" && (listing as any).is_order_paused) {
+    return { ok: false, status: 400, error: "The seller has paused orders for this item." };
+  }
   if (placement === "preorder" && (listing as any).is_preorder_enabled === false) {
     return { ok: false, status: 400, error: "This item is not available for pre-order." };
   }
 
   let chosen = getListingOptionById(listing as ListingPricingSource, clientPricingOptionId);
   if (!chosen) {
-    return { ok: false, status: 400, error: "Invalid price option for this listing" };
+    if (getListingPriceOptions(listing as ListingPricingSource).length === 0) {
+      return { ok: false, status: 400, error: "Invalid price option for this listing" };
+    }
+    return { ok: false, status: 409, code: "option_changed", error: OPTION_CHANGED };
   }
   // If the resolved option is a bundle option whose bundle_size doesn't divide the
   // requested quantity, try to find a better-matching option by quantity divisibility.
   // This handles stale cart entries that stored "default" before the opt_N fix.
-  if (!isPerBaseUnitPricing(chosen)) {
+  // A named option is never swapped for another; a quantity that doesn't fit it fails the pack checks below.
+  const legacyOptionId = !clientPricingOptionId || clientPricingOptionId === "default";
+  if (legacyOptionId && !isPerBaseUnitPricing(chosen)) {
     const rawQty = typeof input.rawQuantity === "number" ? input.rawQuantity : parseFloat(String(input.rawQuantity));
     if (Number.isFinite(rawQty) && rawQty > 0) {
       const qFloor = Math.floor(rawQty);
@@ -161,8 +173,15 @@ export async function resolveListingOrderLine(
   const bundleAmount = optionBundleAmount(chosen);
   const perBase = isPerBaseUnitPricing(chosen);
 
-  const skipBundleCheck = placement === "preorder";
-  if (!perBase && !skipBundleCheck) {
+  // Pre-orders too: a quantity that isn't whole packs means the pack size changed after
+  // the item went into the cart (fractional packs were charged before).
+  if (placement === "preorder" && !perBase) {
+    const fits = quantity_unit === "kg"
+      ? Math.round(bundleAmount * 100) >= 1 && Math.round(quantity * 100) % Math.round(bundleAmount * 100) === 0
+      : quantity % bundleAmount === 0;
+    if (!fits) return { ok: false, status: 409, code: "option_changed", error: OPTION_CHANGED };
+  }
+  if (!perBase && placement !== "preorder") {
     if (quantity_unit === "kg") {
       const qCent = Math.round(quantity * 100);
       const bCent = Math.round(bundleAmount * 100);
@@ -223,6 +242,7 @@ export async function resolveListingOrderLine(
         : o.buyer_phone === buyer_phone;
       if (match) usedToday += Number(o.quantity);
     }
+    usedToday += priorQty;
     if (usedToday + quantity > cap) {
       return {
         ok: false,
@@ -238,11 +258,14 @@ export async function resolveListingOrderLine(
   const sellerOpen = seller ? isSellerEffectivelyOpen(seller, nowMs) : false;
 
   if (placement === "same_day") {
-    if (!listing.is_available || availOk <= 0 || availOk < quantity) {
+    // priorQty: two price tiers of one listing in one cart share the same stock.
+    if (!listing.is_available || availOk <= 0 || availOk < quantity + priorQty) {
       return {
         ok: false,
         status: 400,
-        error: `Only ${availOk} ${quantity_unit} in stock. Reduce quantity or try again later.`,
+        error: !listing.is_available || availOk <= 0
+          ? "This item is not available right now. Remove it from your cart."
+          : `Only ${availOk} ${quantity_unit} in stock. Reduce quantity or try again later.`,
       };
     }
     const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";

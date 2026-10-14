@@ -526,9 +526,14 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode }}>
+<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
+  // Same-day and pre-order carts are separate; this page uses the one its menu is in.
+  cartMode: isPreorderMode ? "preorder" : "same_day",
+  pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
+  serverNowMs: nowIST.getTime() - 5.5 * 3600 * 1000,
+  sellerHours: { opens_at: seller?.opens_at ?? null, closes_at: seller?.closes_at ?? null, open_days: seller?.open_days ?? null, preorder_days: seller?.preorder_days ?? null, preorder_cutoff_time: seller?.preorder_cutoff_time ?? null, accepts_preorder: !!seller?.accepts_preorder } }}>
   // Expose current seller image so CartStackSheet can use fresh DB value even when localStorage is stale
-  window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl };
+  window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl, mode: cartMode };
 
   function withCart(fn) {
     if (window.RelifishCart) return fn(window.RelifishCart);
@@ -538,12 +543,13 @@ const tags = [
   const grid = document.getElementById("v2-menu-grid");
   const cartMount = document.getElementById("v2-cart-bar-mount");
   if (grid && listings) {
-    function Cart() { return window.RelifishCart; }
+    // Pins the cart module's default reads (getCart, groupBySeller, clearCart) to this page's mode.
+    function Cart() { const c = window.RelifishCart; c?.setCartMode?.(cartMode); return c; }
 
     function getSellerItems() {
       const c = Cart();
       if (!c) return {};
-      const cart = c.getCart();
+      const cart = c.getCart(cartMode);
       const out = {};
       for (const lid of Object.keys(cart)) {
         if (cart[lid].seller_id === sellerId) out[lid] = cart[lid];
@@ -688,7 +694,7 @@ const tags = [
       const bs = bundleSize && bundleSize > 1 ? Number(bundleSize) : 1;
       if (u === "piece" || u === "pc" || u === "pcs") {
         const packs = bs > 1 ? Math.round(Number(qty) / bs) : Number(qty);
-        return `${fmtQty(packs)} pack`;
+        return `${fmtQty(packs)} pack${packs === 1 ? "" : "s"}`;
       }
       if (u === "kg" && qty > 0 && qty < 1) {
         return `${Math.round(qty * 1000)} grams`;
@@ -696,9 +702,9 @@ const tags = [
       return `${fmtQty(qty)} ${unit || "kg"}`;
     }
 
-    // Build composite cart key matching cart.ts logic
+    // Build composite cart key matching cart.ts logic (pre-order lines carry a "|preorder" suffix)
     function ck(listingId, optId) {
-      return optId && optId !== "default" ? listingId + ":" + optId : listingId;
+      return (optId && optId !== "default" ? listingId + ":" + optId : listingId) + (cartMode === "preorder" ? "|preorder" : "");
     }
 
     function renderItem(l) {
@@ -1082,19 +1088,40 @@ const tags = [
       return deliveryFeeAmount > 0 ? { fee: deliveryFeeAmount, label: `₹${deliveryFeeAmount}` } : { fee: 0, label: "free" };
     }
 
+    // Lines live validation took out this visit: shown crossed out with the reason.
+    let removedDismissed = false;
+    function removedLinesHtml(c) {
+      const removed = c.getRemovedLines ? c.getRemovedLines(sellerId, cartMode) : [];
+      return removed.map((r) => `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-bottom:4px;"><s>${escape(r.name)}</s> · <span style="color:var(--v2-red);">${escape(r.reason)}</span></div>`).join("");
+    }
+
     function renderCart() {
       const c = Cart(); if (!c) return;
-      const cart = c.getCart();
+      const cart = c.getCart(cartMode);
       const totalQty = c.totalQty(cart);
+      const removedHtml = removedLinesHtml(c);
 
       // Single-seller cart: all items belong to one seller.
       const sellerItems = Object.values(getSellerItems());
       const sellerQty = sellerItems.reduce((s, i) => s + i.qty, 0);
       const sellerSubtotal = sellerItems.reduce((s, i) => s + i.qty * i.price, 0);
-      // Unique item count: distinct listings in cart (4 packs of Pomfret = 1 item)
-      const sellerPackCount = new Set(sellerItems.map(i => i.listing_id)).size;
+      // Item count = cart lines (4 packs of one Pomfret size = 1 item; two pack sizes
+      // = 2 items), matching the checkout and the order page, which list each line.
+      const sellerPackCount = sellerItems.length;
 
-      if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
+      if (totalQty === 0) {
+        if (!removedHtml || removedDismissed) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
+        // Everything was removed: say why instead of the cart silently vanishing.
+        document.body.classList.add("v2-has-cart");
+        cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div><div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:6px;">Removed from your cart</div>${removedHtml}</div>
+            <button id="v2-cart-removed-ok" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;flex-shrink:0;" aria-label="Dismiss">✕</button>
+          </div>
+        </div>`;
+        document.getElementById("v2-cart-removed-ok")?.addEventListener("click", () => { removedDismissed = true; renderCart(); });
+        return;
+      }
       document.body.classList.add("v2-has-cart");
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
@@ -1115,6 +1142,7 @@ const tags = [
       }
 
       cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
+        ${removedHtml ? `<div style="margin-bottom:6px;">${removedHtml}</div>` : ""}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div>
             <div style="font:800 16px Inter;color:var(--v2-ink);">₹${sellerSubtotal.toLocaleString("en-IN")}</div>
@@ -1134,7 +1162,7 @@ const tags = [
       });
       document.getElementById("v2-cart-clear")?.addEventListener("click", () => {
         const c = Cart(); if (!c) return;
-        c.clearCart({ sellerId });
+        c.clearCart({ sellerId, mode: cartMode });
         render();
         window.v2Toast?.("success", "Cart cleared");
       });
@@ -1183,16 +1211,9 @@ const tags = [
 
       // -- LIVE VALIDATION --
       if (typeof c.validateCartLive === "function") {
-        const { oosMessages, priceChangedCount } = await c.validateCartLive(sid, isPreorderMode);
-        if (oosMessages.length > 0 || priceChangedCount > 0) {
-          let msg = [];
-          if (oosMessages.length) msg.push(oosMessages.join("\\n"));
-          if (priceChangedCount) msg.push(`Prices updated for ${priceChangedCount} item(s)`);
-          window.v2Toast?.("info", "Cart updated", msg.join(" · "));
-          
-          // Wait briefly for storage event to propagate
-          await new Promise(r => setTimeout(r, 50));
-          
+        const result = await c.validateCartLive(sid, cartMode);
+        if (announceValidation(result)) {
+          render();
           const groups2 = c.groupBySeller();
           group = groups2.find((g) => g.seller_id === sid);
           if (!group || group.items.length === 0) {
@@ -1244,7 +1265,8 @@ const tags = [
                 </div>
               </div>
               <div style="font:800 15px Inter;color:var(--v2-ink);flex-shrink:0;white-space:nowrap;padding-top:1px;">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
-            </div>`).join("")}`;
+            </div>`).join("")}
+          ${(() => { const h = removedLinesHtml(c); return h ? `<div style="padding-top:10px;">${h}</div>` : ""; })()}`;
       }
       const subtotal = group.subtotal;
       const subOut = document.getElementById("seller-checkout-subtotal");
@@ -1508,13 +1530,19 @@ const tags = [
             buyer_id: buyerId,
             buyer_addr: selectedAddressId,
             order_type: orderType,
+            // Lets the server refuse if the shop opened/closed since this page loaded.
+            placement_kind: isPreorderMode ? "preorder" : "same_day",
             utm: (() => { try { return JSON.parse(localStorage.getItem("rf_utm") || "null"); } catch { return null; } })(),
             cut_style: [...document.querySelectorAll('input[name="seller-checkout-cut"]:checked')].map((el) => el.value).join(","),
             buyer_notes: (document.getElementById("seller-checkout-notes")?.value || "").trim(),
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed");
+        if (!res.ok) {
+          // Page is stale (shop opened/closed): reload so menu, prices and mode are current.
+          if (data.code === "placement_changed" || data.code === "option_changed") setTimeout(() => window.location.reload(), 2500);
+          throw new Error(data.error || "Failed");
+        }
 
         // Success: clear cart, show fullscreen success animation, redirect
         const orderTotal = (data.orders || []).reduce((s, o) => s + (Number(o.total_price) || 0) + (Number(o.delivery_fee) || 0), 0);
@@ -1553,14 +1581,33 @@ const tags = [
       }
     });
 
+    /** Tell the buyer what validation changed: removed items (with reason) and old → new prices. */
+    function announceValidation(r) {
+      const parts = [...(r.oosMessages || []), ...(r.priceMessages || [])];
+      if (!parts.length) return false;
+      if (r.oosMessages?.length) removedDismissed = false;
+      window.v2Toast?.("info", r.oosMessages?.length ? "Cart updated" : "Prices updated", parts.join(" · "));
+      return true;
+    }
+
     function triggerBackgroundValidation(c) {
-      if (typeof c.validateCartLive === "function") {
-        c.validateCartLive(sellerId, isPreorderMode).then(({ oosMessages, priceChangedCount }) => {
-          if (oosMessages.length > 0 || priceChangedCount > 0) {
-            render();
-          }
-        });
-      }
+      // Closed shop: nothing can be ordered now; keep the cart as is until a window opens.
+      if (pageMode === "closed" || typeof c.validateCartLive !== "function") return Promise.resolve();
+      return c.validateCartLive(sellerId, cartMode).then((r) => {
+        if (announceValidation(r)) render();
+      });
+    }
+
+    // Same-day stock is shared by every price tier of a listing. Pre-orders are for
+    // tomorrow's catch, so today's stock must not cap them.
+    function overStock(listingId, addQty, unit) {
+      if (isPreorderMode) return false;
+      const listing = listings.find(l => l.id === listingId);
+      const avail = listing?.weight_avail != null ? Number(listing.weight_avail) : Infinity;
+      const inCart = Object.values(getSellerItems()).filter(i => i.listing_id === listingId).reduce((s, i) => s + i.qty, 0);
+      if (!Number.isFinite(avail) || inCart + addQty <= avail + 1e-9) return false;
+      window.v2Toast?.("info", "Stock limit", `Only ${avail} ${unit || "kg"} available`);
+      return true;
     }
 
     function add(id, price, name, unit, optId, optLabel, bundleSize) {
@@ -1570,6 +1617,7 @@ const tags = [
       }
       const c = Cart(); if (!c) return;
       const bs = parseFloat(bundleSize) || 1;
+      if (overStock(id, bs, unit)) return;
       // Store price per base unit so qty × price always gives correct total
       const pricePerUnit = bs > 0 ? price / bs : price;
       c.addItem({
@@ -1583,6 +1631,8 @@ const tags = [
         pricing_option_id: optId || "default",
         pricing_label: optLabel || unit,
         qty: bs,
+        mode: cartMode,
+        bundle_size: bs,
       });
       track("add_to_cart", { item_name: name, item_id: id, price, quantity: bs, price_unit: unit });
       render();
@@ -1611,13 +1661,7 @@ const tags = [
       const item = cart[id];
       if (!item) return;
       const step = getBundleStep(item);
-      // Stock cap: don't exceed weight_avail
-      const listing = listings.find(l => l.id === item.listing_id);
-      const avail = listing?.weight_avail != null ? Number(listing.weight_avail) : Infinity;
-      if (Number.isFinite(avail) && item.qty + step > avail) {
-        window.v2Toast?.("info", "Stock limit", `Only ${avail} ${item.qty_unit || "kg"} available`);
-        return;
-      }
+      if (overStock(item.listing_id, step, item.qty_unit)) return;
       c.setQty(id, item.qty + step);
       render();
       triggerBackgroundValidation(c);
@@ -1659,11 +1703,39 @@ const tags = [
       openCheckout(m.sid);
     }
 
+    // Shop opens / closes / pre-order cutoff / midnight: reload at that moment so the menu,
+    // the cart for the new mode and its prices switch. Times are on the server's clock (offset
+    // below), and the rule is compared with itself at render time, never with the page's own
+    // flags, so a rule mismatch can't cause a reload loop.
+    const clockOffset = serverNowMs - Date.now();
+    const nowMs = () => Date.now() + clockOffset;
+    let modeTimer = null;
+    let renderedMode = null;
+    /** True when it is reloading the page. */
+    function checkModeSwitch(c) {
+      clearTimeout(modeTimer);
+      renderedMode = renderedMode || c.placementAt(sellerHours, serverNowMs);
+      if (c.placementAt(sellerHours, nowMs()) !== renderedMode) {
+        window.location.reload();
+        return true;
+      }
+      const wait = c.nextModeBoundaryMs(sellerHours, nowMs()) - nowMs() + 1000;
+      modeTimer = setTimeout(() => checkModeSwitch(c), Math.min(Math.max(wait, 1000), 2147483647));
+      return false;
+    }
+
     // Once cart module loads: migrate legacy + hydrate from server, then re-render
     withCart((c) => {
       c.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
-      c.hydrateFromServer().then(() => { render(); resumeCheckout(); });
+      if (checkModeSwitch(c)) return;
+      // Latest rates and stock on every visit, not only at add/checkout.
+      c.hydrateFromServer().then(() => { render(); return triggerBackgroundValidation(c); }).then(resumeCheckout);
       render();
+      // Back on the tab (phone unlocked, app switched): timers may have slept through a boundary.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible") return;
+        if (!checkModeSwitch(c)) triggerBackgroundValidation(c);
+      });
     });
   }
 </script>
