@@ -31,6 +31,7 @@ function query(table: string) {
     not: () => q,
     order: (k: string) => { order = k; return q; },
     range: (a: number, b: number) => { range = [a, b]; return q; },
+    limit: () => q,
     single: async () => { const d = run()[0]; return d ? { data: d, error: null } : { data: null, error: { message: "not found" } }; },
     maybeSingle: async () => ({ data: run()[0] ?? null, error: null }),
     then: (res: any, rej: any) => Promise.resolve().then(() => { const d = run(); return { data: d, count: d.length, error: null }; }).then(res, rej),
@@ -182,9 +183,12 @@ describe("GET groups a cart into one card", () => {
       url: new URL("http://x/api/seller/orders?seller_id=s1&tab=pending"),
       request: new Request("http://x"),
     } as any);
-    const { orders } = await res.json();
+    const { orders, total, counts } = await res.json();
     const cart = orders.find((o: Row) => o.cart_items);
     expect(orders).toHaveLength(2);
+    // Badges and pages count orders (one per cart), not item rows.
+    expect(total).toBe(2);
+    expect(counts.pending).toBe(orders.filter((o: Row) => ["pending", "pending_payment", "paid", "pre_order", "scheduled"].includes(o.status)).length);
     expect(cart.id).toBe("o1");
     expect(cart.cart_items.map((r: Row) => r.id)).toEqual(["o1", "o2", "o3"]);
     expect(orders.find((o: Row) => o.id === "solo").cart_items).toBeUndefined();

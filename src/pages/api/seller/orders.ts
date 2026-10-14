@@ -62,21 +62,21 @@ export const GET: APIRoute = async ({ url, request }) => {
   const ids = (listings || []).map((l: any) => l.id);
   if (!ids.length) return new Response(JSON.stringify({ has_listings: false, orders: [], total: 0, counts: {}, today_gmv: 0 }), { status: 200 });
 
-  const count = (statuses: string[]) =>
-    supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", ids).in("status", statuses);
+  // Tab badges count ORDERS the seller sees (one per cart), not item rows.
+  // ponytail: reads every row's status for this seller; fine at today's volume, move to an RPC past ~10k rows.
   const todayStart = p.get("today_start") || new Date(Date.now() - 86400_000).toISOString();
-  const [pending, accepted, completed, declined, preorders, today] = await Promise.all([
-    count(STATUS_BY_TAB.pending),
-    count(STATUS_BY_TAB.accepted),
-    count(["picked_up", "completed"]),
-    count(["declined", "cancelled", "refunded"]),
-    supabase.from("orders").select("id", { count: "exact", head: true }).in("listing_id", ids).eq("is_preorder", true)
-      .not("status", "in", '("completed","picked_up","declined","cancelled","refunded")'),
+  const [{ data: allRows }, today] = await Promise.all([
+    supabase.from("orders").select("id, cart_id, status, is_preorder").in("listing_id", ids),
     supabase.from("orders").select("total_price").in("listing_id", ids).gte("created_at", todayStart),
   ]);
+  const count = (keep: (r: any) => boolean) => new Set((allRows || []).filter(keep).map((r: any) => r.cart_id || r.id)).size;
+  const closed = ["completed", "picked_up", "declined", "cancelled", "refunded"];
   const counts = {
-    pending: pending.count || 0, accepted: accepted.count || 0, completed: completed.count || 0,
-    declined: declined.count || 0, preorders: preorders.count || 0,
+    pending: count((r) => STATUS_BY_TAB.pending.includes(r.status)),
+    accepted: count((r) => STATUS_BY_TAB.accepted.includes(r.status)),
+    completed: count((r) => ["picked_up", "completed"].includes(r.status)),
+    declined: count((r) => ["declined", "cancelled", "refunded"].includes(r.status)),
+    preorders: count((r) => r.is_preorder === true && !closed.includes(r.status)),
   };
   const today_gmv = (today.data || []).reduce((s: number, o: any) => s + (Number(o.total_price) || 0), 0);
 
@@ -99,21 +99,28 @@ export const GET: APIRoute = async ({ url, request }) => {
     total = matched.length;
     orders = matched.slice(offset, offset + PAGE_SIZE);
   } else {
-    let query = supabase.from("orders").select(SELECT, { count: "exact" }).in("listing_id", ids)
+    // Whole tab, then one card per cart, then the page: a page is 10 orders, not 10 item rows.
+    let query = supabase.from("orders").select(SELECT).in("listing_id", ids)
       .in("status", STATUS_BY_TAB[p.get("tab") || "pending"] || STATUS_BY_TAB.pending)
-      .order("created_at", { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
+      .order("created_at", { ascending: false }).limit(1000);
     const since = p.get("since");
     if (since) query = query.gte("created_at", since);
     if (type === "order") query = query.not("is_preorder", "is", true);
     if (type === "preorder") query = query.eq("is_preorder", true);
-    const { data, count: c } = await query;
-    orders = (data || []).map(toSellerView);
-    total = c || 0;
+    const { data } = await query;
+    const seenCart = new Set<string>();
+    const cards = (data || []).map(toSellerView).filter((o: any) => {
+      if (!o.cart_id) return true;
+      if (seenCart.has(o.cart_id)) return false;
+      seenCart.add(o.cart_id);
+      return true;
+    });
+    total = cards.length;
+    orders = cards.slice(offset, offset + PAGE_SIZE);
   }
   // One card per cart: the first row of a cart on this page carries every row
   // of that cart (any status) as cart_items, in checkout order. A cart still in
   // progress stays off History even when one of its items was cancelled.
-  // ponytail: total/pages still count rows, so a page can show fewer than 10 cards.
   const cartIds = [...new Set(orders.map((o) => o.cart_id).filter(Boolean))];
   if (cartIds.length) {
     const { data: cartRows } = await supabase.from("orders").select(SELECT).in("cart_id", cartIds).in("listing_id", ids)
@@ -215,8 +222,9 @@ async function transitionRow(
       );
       updates.refund_note = outcome.note;
       if (outcome.ok) {
-        updates.refund_amt = Number((currentOrder as any).paid_amount)
-          || (Number((currentOrder as any).total_price) + Number((currentOrder as any).delivery_fee || 0));
+        // A cart item gets back its own share (the delivery fee only with the last item).
+        updates.refund_amt = outcome.refundedRupees ?? (Number((currentOrder as any).paid_amount)
+          || (Number((currentOrder as any).total_price) + Number((currentOrder as any).delivery_fee || 0)));
         updates.refund_sent_at = new Date().toISOString();
       }
     }
@@ -275,7 +283,8 @@ function emailItem({ data, currentOrder }: { data: any; currentOrder: any }) {
 async function notifyItemRemoved(sb: any, order: any, removed: any, cartRows: any[]) {
   const fish = capitalizeFishName(String(removed.species || "Fish"));
   const short = String(cartRows[0].id).slice(0, 8).toUpperCase();
-  const amount = isRazorpayPaid(removed) ? Number(removed.refund_amt) || rowPaise(removed) / 100 : null;
+  // Other items are still delivered, so only the item's price comes back (fee stays).
+  const amount = isRazorpayPaid(removed) ? Number(removed.refund_amt) || Number(removed.total_price) || null : null;
   const refunded = amount ? ` — ₹${amount.toLocaleString("en-IN")} refunded` : "";
   const reason = cancelReasonText(removed.cancel_reason);
   if (order.buyer_id || order.buyer_phone) {

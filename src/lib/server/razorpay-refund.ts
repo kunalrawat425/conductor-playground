@@ -20,6 +20,8 @@ export type RefundOutcome = {
   note: string;
   /** true only when Razorpay confirmed the refund; false means manual action needed. */
   ok: boolean;
+  /** Item share refunds on a cart payment: rupees this order has got back in total. */
+  refundedRupees?: number;
 };
 
 export async function refundRazorpayPayment(

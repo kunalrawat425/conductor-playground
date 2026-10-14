@@ -183,11 +183,13 @@ async function cancelRow(sb: any, order: any, reason: string | null) {
   const paid = isRazorpayPaid(order);
   let refundId: string | null = null;
   let refundNote: string | null = null;
-  const refundAmt = Number(order.paid_amount) || (Number(order.total_price) + Number(order.delivery_fee || 0));
+  let refundAmt = Number(order.paid_amount) || (Number(order.total_price) + Number(order.delivery_fee || 0));
   if (paid) {
     const outcome = await refundOrderRazorpay(sb, order, { caller: "cancel" });
     refundId = outcome.refundId;
     refundNote = outcome.note;
+    // A cart item gets back its own share (the delivery fee only with the last item).
+    if (outcome.refundedRupees != null) refundAmt = outcome.refundedRupees;
     const refundFields: Record<string, unknown> = { refund_note: refundNote };
     if (outcome.ok) {
       refundFields.refund_amt = refundAmt;

@@ -162,10 +162,42 @@ describe("refundOrderRazorpay on a cart paid in one go", () => {
     db.razorpay_payments = [{ razorpay_payment_id: "pay_1", razorpay_order_id: "order_X", order_id: "o1", refund_id: null }];
     const out = await refundOrderRazorpay(sb, db.orders[0] as any, { caller: "cancel" });
     expect(out.ok).toBe(true);
-    expect(refunds).toEqual([{ payment: "pay_1", amount: 61300, notes: { order_id: "o1" } }]);
+    // The other item is still delivered: the item's price comes back, the ₹13 fee stays.
+    expect(refunds).toEqual([{ payment: "pay_1", amount: 60000, notes: { order_id: "o1" } }]);
+    expect(out.refundedRupees).toBe(600);
     // A retry finds the tagged refund and does nothing.
     await refundOrderRazorpay(sb, db.orders[0] as any, { caller: "cron:refund-retry" });
     expect(refunds).toHaveLength(1);
+  });
+
+  it("removing the last item also returns the delivery fee from the item removed earlier, once", async () => {
+    db.orders = [
+      cartRow("o1", { status: "cancelled", delivery_fee: 13, razorpay_payment_id: "pay_1" }),
+      cartRow("o2", { status: "paid", total_price: 1, razorpay_payment_id: "pay_1" }),
+    ];
+    await refundOrderRazorpay(sb, db.orders[0] as any, { caller: "seller/orders:cancelled" }); // o1 out, o2 still live
+    db.orders[1].status = "cancelled";
+    const out = await refundOrderRazorpay(sb, db.orders[1] as any, { caller: "cancel" }); // last item
+    expect(out.ok).toBe(true);
+    expect(refunds).toEqual([
+      { payment: "pay_1", amount: 60000, notes: { order_id: "o1" } },
+      { payment: "pay_1", amount: 100, notes: { order_id: "o2" } },
+      { payment: "pay_1", amount: 1300, notes: { order_id: "o1" } }, // the fee
+    ]);
+    expect(db.orders[0].refund_amt).toBe(613);
+    // Retries (cron) never hand anything back twice: total refunded = everything paid.
+    await refundOrderRazorpay(sb, db.orders[0] as any, { caller: "cron:refund-retry" });
+    await refundOrderRazorpay(sb, db.orders[1] as any, { caller: "cron:refund-retry" });
+    expect(refunds.reduce((s, r) => s + r.amount, 0)).toBe(61400);
+  });
+
+  it("removing the item that carries the fee while others stay keeps the fee", async () => {
+    db.orders = [
+      cartRow("o1", { status: "paid", delivery_fee: 13, razorpay_payment_id: "pay_1" }),
+      cartRow("o2", { status: "paid", total_price: 1, razorpay_payment_id: "pay_1" }),
+    ];
+    await refundOrderRazorpay(sb, db.orders[0] as any, { caller: "seller/orders:cancelled" });
+    expect(refunds).toEqual([{ payment: "pay_1", amount: 60000, notes: { order_id: "o1" } }]);
   });
 
   it("a pre-order difference already refunded is subtracted from the item's share", async () => {
