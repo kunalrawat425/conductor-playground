@@ -263,7 +263,9 @@ export async function resolveListingOrderLine(
       return {
         ok: false,
         status: 400,
-        error: `Only ${availOk} ${quantity_unit} in stock. Reduce quantity or try again later.`,
+        error: !listing.is_available || availOk <= 0
+          ? "This item is not available right now. Remove it from your cart."
+          : `Only ${availOk} ${quantity_unit} in stock. Reduce quantity or try again later.`,
       };
     }
     const pre_order_reason = !listing.is_available ? "unavailable" : "out_of_stock";
