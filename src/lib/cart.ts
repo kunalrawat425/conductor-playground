@@ -347,7 +347,8 @@ export async function hydrateFromServer(): Promise<void> {
           it.seller_image_url
           ?? local[k]?.seller_image_url
           ?? null,
-        name: it.species_display || it.name || local[k]?.name || "",
+        // The name the buyer saw on the menu wins; the server only knows the species ("surmai").
+        name: local[k]?.name || (s => s.charAt(0).toUpperCase() + s.slice(1))(String(it.species_display || it.name || "")),
         qty: Number(it.qty) || 0,
         qty_unit: it.qty_unit || "kg",
         price: Number(it.price_snapshot) || 0,
