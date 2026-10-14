@@ -41,18 +41,18 @@ const { id = "v2-checkout" } = Astro.props;
   <div id={`${id}-step2`} class="v2-co-step-content" style="display:none;">
     <h4 class="v2-co-step-title">Delivery method</h4>
     <div class="v2-co-method">
-      <label class="v2-co-method-opt" id={`${id}-pickup-opt`}>
-        <input type="radio" name={`${id}-method`} value="pickup" checked />
-        <div>
-          <div class="v2-co-m-name">🧊 Pickup</div>
-          <div class="v2-co-m-desc">Collect from seller · No delivery fee</div>
-        </div>
-      </label>
       <label class="v2-co-method-opt" id={`${id}-delivery-opt`} style="display:none;">
-        <input type="radio" name={`${id}-method`} value="delivery" />
+        <input type="radio" name={`${id}-method`} value="delivery" checked />
         <div>
           <div class="v2-co-m-name">🚲 Delivery</div>
           <div class="v2-co-m-desc" id={`${id}-delivery-desc`}>To your address · Fee applies</div>
+        </div>
+      </label>
+      <label class="v2-co-method-opt" id={`${id}-pickup-opt`}>
+        <input type="radio" name={`${id}-method`} value="pickup" />
+        <div>
+          <div class="v2-co-m-name">🧊 Pickup</div>
+          <div class="v2-co-m-desc">Collect from seller · No delivery fee</div>
         </div>
       </label>
     </div>
