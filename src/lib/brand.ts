@@ -9,8 +9,9 @@
  * `import.meta` as a syntactic form, so `typeof import.meta` is a parse error.
  */
 
+// Resized by Supabase's image transform: the original PNG is 2752 px / 1.3 MB, shown at most ~150 px wide.
 const DEFAULT_LOGO =
-  "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/meta/logo_horizontal.png";
+  "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/render/image/public/meta/logo_horizontal.png?width=480&quality=80&resize=contain";
 
 // Astro inlines PUBLIC_* into client bundles; server reads them at runtime.
 export const LOGO_URL: string = import.meta.env.PUBLIC_LOGO_URL || DEFAULT_LOGO;

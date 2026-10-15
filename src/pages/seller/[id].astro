@@ -14,7 +14,7 @@ import Modal from "../../components/ui/atoms/Modal.astro";
 import { getSellerById, getSellerListings } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
-import { cleanSellerName, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
+import { cleanSellerName, resizedImageUrl, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
 import { SITE_URL } from "../../lib/brand";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
@@ -424,7 +424,7 @@ const tags = [
                 if (!mn && !mx) return null;
                 return mn && mx && mn !== mx ? `₹${mn}–₹${mx}` : `₹${mn || mx}`;
               })();
-              const ssrImg = l.photo_url || getSsrSpeciesPhoto(l.species);
+              const ssrImg = resizedImageUrl(l.photo_url, 300) || getSsrSpeciesPhoto(l.species);
               return (
                 <article class="v2-item-card v2-ssr-card" data-listing-id={l.id}
                   style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);overflow:hidden;display:flex;flex-direction:row;">
@@ -526,7 +526,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
+<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
   // Same-day and pre-order carts are separate; this page uses the one its menu is in.
   cartMode: isPreorderMode ? "preorder" : "same_day",
   pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
