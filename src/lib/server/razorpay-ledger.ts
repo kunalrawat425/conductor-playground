@@ -25,7 +25,7 @@ import { paymentSiblings, refundStateForOrder, CART_PAYABLE, isLiveRow } from ".
 
 export const PAYABLE_STATUSES = ["pending", "pending_payment", "payment_required"];
 const CLOSED_STATUSES = ["cancelled", "declined", "refunded"];
-const ORDER_COLS = "id, buyer_id, status, final_price, paid_amount, razorpay_order_id, razorpay_payment_id, balance_razorpay_payment_id, refund_note, total_price, delivery_fee, created_at";
+const ORDER_COLS = "id, buyer_id, status, final_price, paid_amount, razorpay_order_id, razorpay_payment_id, balance_razorpay_payment_id, refund_note, total_price, delivery_fee, created_at, is_test";
 
 export type SettleOrder = {
   id: string;
@@ -38,6 +38,8 @@ export type SettleOrder = {
   refund_note?: string | null;
   total_price?: number | string | null;
   delivery_fee?: number | string | null;
+  /** Test buyer/seller order (migration 071): never reported to GA. */
+  is_test?: boolean | null;
 };
 
 export type Settlement = "confirm" | "already" | "stamp" | "refund";
@@ -169,7 +171,7 @@ export async function settleCapturedPayment(sb: any, p: SettleInput): Promise<Se
       if (error) throw new Error(`confirm failed: ${error.message}`);
       if (data?.[0]) {
         // The guarded UPDATE succeeds once per payment, so GA gets exactly one purchase (whichever path won).
-        afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase");
+        if (!order.is_test) afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase");
         return { kind: "confirmed", order: data[0] };
       }
     } else if (decision === "stamp") {
@@ -178,7 +180,7 @@ export async function settleCapturedPayment(sb: any, p: SettleInput): Promise<Se
         .eq("id", order.id).is("razorpay_payment_id", null).select(ORDER_COLS);
       if (error) throw new Error(`stamp failed: ${error.message}`);
       if (data?.[0]) {
-        afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase"); // money kept on this order: a purchase too
+        if (!order.is_test) afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase"); // money kept on this order: a purchase too
         return { kind: "stamped", order: data[0] };
       }
     } else {
@@ -236,8 +238,9 @@ async function settleCart(sb: any, rows: SettleOrder[], p: SettleInput): Promise
     if (error) throw new Error(`cart stamp failed: ${error.message}`);
     stamped.push(...(data || []));
   }
-  if (confirmed.length || stamped.length) {
-    afterResponse(gaPurchase(p.razorpay_order_id, { order_id: (confirmed[0] || stamped[0]).id }), "ga-mp:purchase");
+  const first = confirmed[0] || stamped[0];
+  if (first && !first.is_test) {
+    afterResponse(gaPurchase(p.razorpay_order_id, { order_id: first.id }), "ga-mp:purchase");
   }
 
   // Rows another writer changed between our read and our UPDATE: theirs if this
