@@ -80,6 +80,11 @@ export function validateSellerName(raw: unknown): string | null {
  */
 export function resizedImageUrl(url: string | null | undefined, width: number): string | null {
   if (!url) return null;
+  // Photos saved as an already-transformed URL (e.g. ?width=700) are re-sized to the size shown here.
+  if (url.includes(".supabase.co/storage/v1/render/image/public/")) {
+    const base = url.split("?")[0];
+    return `${base}?width=${width}&quality=70&resize=contain`;
+  }
   if (!url.includes(".supabase.co/storage/v1/object/public/")) return url;
   return `${url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/")}${url.includes("?") ? "&" : "?"}width=${width}&quality=70&resize=contain`;
 }
