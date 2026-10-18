@@ -18,6 +18,13 @@ export const LOGO_URL: string = import.meta.env.PUBLIC_LOGO_URL || DEFAULT_LOGO;
 
 export const BRAND_NAME: string = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
+/**
+ * Business WhatsApp (digits only, with 91) for "Order on WhatsApp" in the seller-page cart.
+ * Same number as the Contact page. Empty string hides the button.
+ * TODO(founder): confirm this support number should also take cart orders.
+ */
+export const ORDER_WHATSAPP = "919152207607";
+
 /** Canonical origin. relifish.com, relifish.store and www.relifish.store 308-redirect here (Vercel domains + vercel.json). */
 export const SITE_URL = "https://www.relifish.com";
 

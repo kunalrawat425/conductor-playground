@@ -515,3 +515,13 @@ export function nextModeBoundaryMs(seller: SellerTimingInput, nowMs = Date.now()
   }
   return next;
 }
+
+/** First moment after `nowMs` that the seller enters `mode` (scans ~10 days of boundaries), or null. */
+export function nextPlacementStartMs(seller: SellerTimingInput, mode: CartMode, nowMs = Date.now()): number | null {
+  let t = nowMs;
+  for (let i = 0; i < 40; i++) {
+    t = nextModeBoundaryMs(seller, t);
+    if (placementAt(seller, t) === mode) return t;
+  }
+  return null;
+}

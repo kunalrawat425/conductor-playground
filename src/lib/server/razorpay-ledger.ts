@@ -20,6 +20,7 @@
  */
 import { refundRazorpayPayment, type RefundOutcome } from "./razorpay-refund";
 import { gaPurchase } from "./ga-mp";
+import { metaPurchase } from "./meta-capi";
 import { afterResponse } from "./after-response";
 import { paymentSiblings, refundStateForOrder, CART_PAYABLE, isLiveRow } from "./order-cart";
 
@@ -171,7 +172,7 @@ export async function settleCapturedPayment(sb: any, p: SettleInput): Promise<Se
       if (error) throw new Error(`confirm failed: ${error.message}`);
       if (data?.[0]) {
         // The guarded UPDATE succeeds once per payment, so GA gets exactly one purchase (whichever path won).
-        if (!order.is_test) afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase");
+        if (!order.is_test) { afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase"); afterResponse(metaPurchase(p.razorpay_order_id), "meta-capi:purchase"); }
         return { kind: "confirmed", order: data[0] };
       }
     } else if (decision === "stamp") {
@@ -180,7 +181,7 @@ export async function settleCapturedPayment(sb: any, p: SettleInput): Promise<Se
         .eq("id", order.id).is("razorpay_payment_id", null).select(ORDER_COLS);
       if (error) throw new Error(`stamp failed: ${error.message}`);
       if (data?.[0]) {
-        if (!order.is_test) afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase"); // money kept on this order: a purchase too
+        if (!order.is_test) { afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase"); afterResponse(metaPurchase(p.razorpay_order_id), "meta-capi:purchase"); } // money kept on this order: a purchase too
         return { kind: "stamped", order: data[0] };
       }
     } else {
@@ -241,6 +242,7 @@ async function settleCart(sb: any, rows: SettleOrder[], p: SettleInput): Promise
   const first = confirmed[0] || stamped[0];
   if (first && !first.is_test) {
     afterResponse(gaPurchase(p.razorpay_order_id, { order_id: first.id }), "ga-mp:purchase");
+    afterResponse(metaPurchase(p.razorpay_order_id), "meta-capi:purchase");
   }
 
   // Rows another writer changed between our read and our UPDATE: theirs if this
