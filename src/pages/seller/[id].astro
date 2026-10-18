@@ -543,7 +543,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, deliveryRad: Number(seller?.delivery_rad) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
+<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
   // Same-day and pre-order carts are separate; this page uses the one its menu is in.
   cartMode: isPreorderMode ? "preorder" : "same_day",
   pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
@@ -1158,13 +1158,12 @@ const tags = [
       else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
 
       // Delivery fee before login/OTP, from the seller's own settings (the server recomputes it at place-order).
-      // per_km without a known buyer location: the most it can be is the delivery radius × rate.
+      // per_km without a known buyer location: show the seller's rate, not radius × rate (reads as a scary maximum).
       let feeLine = "";
       if (feeEstimate && !(freeHit && !isPreorderMode)) {
-        const perKmCap = feeEstimate.fee == null && deliveryRad > 0 ? Math.ceil(deliveryRad * deliveryFeePerKm) : 0;
-        const amt = feeEstimate.fee === 0 ? "" : perKmCap ? `up to ₹${perKmCap} (₹${deliveryFeePerKm}/km)` : feeEstimate.label;
+        const amt = feeEstimate.fee === 0 ? "" : feeEstimate.fee == null ? `₹${deliveryFeePerKm}/km from the seller` : feeEstimate.label;
         feeLine = amt ? `🚲 Delivery ${amt}, shown before you pay` : "🚲 Free delivery";
-        if (amt && deliveryFreeAbove > sellerSubtotal) feeLine += ` · free above ₹${deliveryFreeAbove}`;
+        if (amt && deliveryFreeAbove > 0 && deliveryFreeAbove > sellerSubtotal) feeLine += ` · free above ₹${deliveryFreeAbove}`;
       }
 
       // Below the minimum: say the gap and offer the cheapest one-tap item (not yet in the cart) that closes it.
