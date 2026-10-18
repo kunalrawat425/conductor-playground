@@ -8,6 +8,8 @@ export interface HubRow {
   seller: string;
   area: string;
   href: string;
+  /** The seller's shop page (/s/<slug>, or /seller/<id> without a latin slug). */
+  shopHref: string;
   offer: SpeciesOffer;
   /** Price per kg when the seller sells this fish by weight (packs converted to ₹/kg). */
   perKg: { low: number; high: number } | null;
@@ -27,6 +29,22 @@ export function perKgRange(listings: SpeciesListing[]): { low: number; high: num
     for (const p of ps) if (typeof p === "number" && p > 0 && kg > 0) vals.push(Math.round(p / kg));
   }
   return vals.length ? { low: Math.min(...vals), high: Math.max(...vals) } : null;
+}
+
+/**
+ * One price range over several sellers' rows: ₹/kg when any of them sells by weight, else the pack prices.
+ * Null when there are no rows. Callers pass only the rows they mean (e.g. in stock today).
+ */
+export function hubPriceRange(rows: HubRow[]): { low: number; high: number; unit: "kg" | "pack" } | null {
+  const kg = rows.filter((r) => r.perKg);
+  if (kg.length) return { low: Math.min(...kg.map((r) => r.perKg!.low)), high: Math.max(...kg.map((r) => r.perKg!.high)), unit: "kg" };
+  if (!rows.length) return null;
+  return { low: Math.min(...rows.map((r) => r.offer.lowPrice)), high: Math.max(...rows.map((r) => r.offer.highPrice)), unit: "pack" };
+}
+
+/** "₹1200–₹1400/kg", "₹350 per pack". */
+export function hubPriceText(r: { low: number; high: number; unit: "kg" | "pack" }): string {
+  return `${r.low === r.high ? `₹${r.low}` : `₹${r.low}–₹${r.high}`}${r.unit === "kg" ? "/kg" : " per pack"}`;
 }
 
 /** A /fish/<species> hub with no buyer guide needs this many priced sellers to be indexable. */
@@ -53,6 +71,7 @@ export function hubRows(
       seller: cleanSellerName(s.name),
       area: areaNameForPoint(s.lat, s.lng) || stripContactInfo(s.location_name) || "",
       href: base.startsWith("/s/") ? `${base}/${species}` : base,
+      shopHref: base,
       offer,
       perKg: perKgRange(mine),
     });

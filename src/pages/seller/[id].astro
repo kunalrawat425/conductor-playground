@@ -251,7 +251,7 @@ const tags = [
     return `Order fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""}: ${speciesList || "pomfret, surmai, rawas, prawns"}. See today's menu, pre-order tonight for tomorrow's catch, home delivery or pickup.`;
   })()}
   canonical={canonicalUrl}
-  noindex={notFound || seller?.is_active === false}
+  noindex={notFound || seller?.is_active === false || !!seller?.is_test}
   needsMap={true}
   header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
   nav={{ active: "home" }}

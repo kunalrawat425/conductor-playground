@@ -1,5 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { perKgRange, hubRows } from "../../src/lib/fish-hub";
+import { perKgRange, hubRows, hubPriceRange, hubPriceText } from "../../src/lib/fish-hub";
+
+describe("hubPriceRange", () => {
+  const row = (low: number, high: number, perKg: { low: number; high: number } | null) =>
+    ({ offer: { availability: "InStock", lowPrice: low, highPrice: high, offerCount: 1 }, perKg }) as any;
+  it("uses ₹/kg across sellers when any sells by weight, else the pack prices; null for none", () => {
+    expect(hubPriceRange([row(300, 600, { low: 1200, high: 1400 }), row(250, 250, { low: 1000, high: 1000 }), row(90, 90, null)])).toEqual({ low: 1000, high: 1400, unit: "kg" });
+    expect(hubPriceRange([row(300, 600, null), row(250, 250, null)])).toEqual({ low: 250, high: 600, unit: "pack" });
+    expect(hubPriceRange([])).toBeNull();
+    expect(hubPriceText({ low: 1000, high: 1400, unit: "kg" })).toBe("₹1000–₹1400/kg");
+    expect(hubPriceText({ low: 350, high: 350, unit: "pack" })).toBe("₹350 per pack");
+  });
+});
 
 const kg = (price: number, bundle_size = 1, extra = {}) => ({ id: "o", unit: "kg", price, bundle_size, ...extra }) as any;
 
