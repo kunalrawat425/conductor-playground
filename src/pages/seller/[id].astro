@@ -16,6 +16,7 @@ import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
 import { cleanSellerName, resizedImageUrl, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
 import { SITE_URL } from "../../lib/brand";
+import { nextPlacementStartMs } from "../../lib/cart";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
 import { getAreaBySlug } from "../../lib/areas";
@@ -220,6 +221,19 @@ if (seller?.opens_at) {
   }
 }
 
+// Closed with pre-orders on: when the next pre-order window opens (same rule the order API applies),
+// so the closed banner and the checkout tap point there instead of a dead end.
+let nextPreorderLabel: string | null = null;
+if (isClosed && acceptsPreorder) {
+  const t = nextPlacementStartMs(seller, "preorder");
+  if (t != null) {
+    const at = new Date(t + 5.5 * 3600 * 1000);
+    const days = Math.round((Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate()) - Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate())) / 86400000);
+    const dayStr = days === 0 ? "today" : days === 1 ? "tomorrow" : DAY_LABELS[DAY_NAMES_SHORT[at.getUTCDay()]];
+    nextPreorderLabel = `${dayStr} at ${fmtTime12(`${at.getUTCHours()}:${at.getUTCMinutes()}`)}`;
+  }
+}
+
 const status: "open" | "closed" = isEffectivelyOpen ? "open" : "closed";
 const tags = [
   acceptsPreorder && isPreorderMode ? "Pre-order available" : (acceptsPreorder ? "Pre-order" : null),
@@ -394,13 +408,16 @@ const tags = [
             <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
           {isClosed && (
-            <div style="margin: 0 16px 16px; padding: 12px 14px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--v2-radius); display: flex; align-items: center; gap: 10px;">
+            <div id="v2-closed-block" style="margin: 0 16px 16px; padding: 12px 14px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--v2-radius); display: flex; align-items: center; gap: 10px;">
               <span style="font-size:20px;">🌅</span>
               <div>
                 <div style="font:700 13px Inter; color: #166534;">Store Closed</div>
                 <div style="font:400 11px Inter; color: #15803D; margin-top: 2px;">
                   {seller?.opens_at ? `Shop will open ${nextOpenLabel}.` : "Check back during opening hours."} Prices are estimates and may change.
                 </div>
+                {nextPreorderLabel && (
+                  <div style="font:600 11px Inter; color:#7C3AED; margin-top:4px;">🌙 Pre-orders for the next catch open {nextPreorderLabel}. Come back then to reserve yours.</div>
+                )}
               </div>
             </div>
           )}
@@ -491,7 +508,7 @@ const tags = [
     flex: 1;
     min-width: 0;
   }
-  body.v2-has-cart .v2-main { padding-bottom: 144px; }
+  body.v2-has-cart .v2-main { padding-bottom: 200px; }
 
   /* Multi-tier pricing rows inside item cards */
   .v2-item-tiers {
@@ -526,7 +543,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
+<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
   // Same-day and pre-order carts are separate; this page uses the one its menu is in.
   cartMode: isPreorderMode ? "preorder" : "same_day",
   pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
@@ -972,13 +989,17 @@ const tags = [
 
     // Analytics helper — fire-and-forget, never throws
     function track(event, params) {
+      const { event_id, ...p } = params || {};
       try {
-        if (typeof gtag === "function") gtag("event", event, { seller_id: sellerId, seller_name: sellerName, ...params });
+        if (typeof gtag === "function") gtag("event", event, { seller_id: sellerId, seller_name: sellerName, ...p });
       } catch {}
       try {
-        if (typeof fbq === "function" && event === "purchase") fbq("track", "Purchase", { value: params?.value, currency: "INR" });
-        if (typeof fbq === "function" && event === "checkout_started") fbq("track", "InitiateCheckout");
-        if (typeof fbq === "function" && event === "add_to_cart") fbq("track", "AddToCart", { content_name: params?.item_name, value: params?.price, currency: "INR" });
+        // eventID lets Meta dedupe a pixel event against the same event sent server-side (CAPI).
+        const opts = { eventID: event_id || `${event}.${Date.now()}.${Math.random().toString(36).slice(2, 10)}` };
+        if (typeof fbq === "function" && event === "purchase") fbq("track", "Purchase", { value: p.value, currency: "INR" }, opts);
+        if (typeof fbq === "function" && event === "checkout_started") fbq("track", "InitiateCheckout", { value: p.subtotal, currency: "INR" }, opts);
+        if (typeof fbq === "function" && event === "add_to_cart") fbq("track", "AddToCart", { content_name: p.item_name, value: p.price, currency: "INR" }, opts);
+        if (typeof fbq === "function" && event === "view_item") fbq("track", "ViewContent", { content_name: p.item_name, value: p.price, currency: "INR" }, opts);
       } catch {}
     }
 
@@ -1132,14 +1153,26 @@ const tags = [
       // Status line
       let statusLine = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""}`;
       let statusColor = "var(--v2-ink-3)";
-      if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
+      if (belowMin) { statusLine = `Min order ₹${minOrder}`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
-      else if (isPreorderMode) { statusLine = `🌙 Pre-order for tomorrow${feeEstimate ? ` · Delivery ${feeEstimate.label}` : ""}`; statusColor = "#7C3AED"; }
-      else if (feeEstimate) {
-        // Show the delivery fee before checkout so it is never a surprise at step 2.
-        statusLine += ` · Delivery ${feeEstimate.label}`;
-        if (feeEstimate.fee !== 0 && deliveryFreeAbove > sellerSubtotal) statusLine += ` · free above ₹${deliveryFreeAbove}`;
+      else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
+
+      // Delivery fee before login/OTP, from the seller's own settings (the server recomputes it at place-order).
+      // per_km without a known buyer location: show the seller's rate, not radius × rate (reads as a scary maximum).
+      let feeLine = "";
+      if (feeEstimate && !(freeHit && !isPreorderMode)) {
+        const amt = feeEstimate.fee === 0 ? "" : feeEstimate.fee == null ? `₹${deliveryFeePerKm}/km from the seller` : feeEstimate.label;
+        feeLine = amt ? `🚲 Delivery ${amt}, shown before you pay` : "🚲 Free delivery";
+        if (amt && deliveryFreeAbove > 0 && deliveryFreeAbove > sellerSubtotal) feeLine += ` · free above ₹${deliveryFreeAbove}`;
       }
+
+      // Below the minimum: say the gap and offer the cheapest one-tap item (not yet in the cart) that closes it.
+      const gap = belowMin ? Math.ceil(minOrder - sellerSubtotal) : 0;
+      const filler = gap > 0
+        ? [...grid.querySelectorAll(".v2-item-add:not([disabled])")]
+            .filter((b) => parseFloat(b.dataset.price) >= gap)
+            .sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price))[0]
+        : null;
 
       cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
         ${removedHtml ? `<div style="margin-bottom:6px;">${removedHtml}</div>` : ""}
@@ -1150,11 +1183,22 @@ const tags = [
           </div>
           <button id="v2-cart-clear" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;" aria-label="Clear cart">✕</button>
         </div>
+        ${gap > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font:600 12px Inter;color:var(--v2-orange);">Add ₹${gap} more to checkout</span>
+          ${filler ? `<button id="v2-cart-filler" type="button" style="background:var(--v2-brand-l);border:none;color:var(--v2-brand);padding:6px 10px;border-radius:999px;font:700 11px Inter;cursor:pointer;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">+ ${escape(filler.dataset.name)} ₹${escape(filler.dataset.price)}</button>` : ""}
+        </div>` : ""}
+        ${feeLine ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-bottom:8px;">${escape(feeLine)}</div>` : ""}
         <div style="display:flex;gap:8px;">
           <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
-          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.55;' : ''}">${belowMin ? `Add ₹${minOrder - sellerSubtotal} more` : "Checkout →"}</button>
+          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.55;' : ''}">${belowMin ? `Add ₹${gap} more` : "Checkout →"}</button>
         </div>
       </div>`;
+
+      document.getElementById("v2-cart-filler")?.addEventListener("click", () => {
+        const d = filler.dataset;
+        track("min_order_filler_add", { item_name: d.name, price: parseFloat(d.price), gap });
+        add(d.id, parseFloat(d.price), d.name, d.unit, d.optId, d.optLabel, d.bundleSize);
+      });
 
       document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
       document.getElementById("v2-cart-manage")?.addEventListener("click", () => {
@@ -1198,7 +1242,9 @@ const tags = [
 
       if (sellerFullyClosed && sid === sellerId) {
         blocked("closed");
-        window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
+        // Point at when they can order (closed banner) instead of a dead end.
+        document.getElementById("v2-closed-block")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.v2Toast?.("info", "Closed right now", nextPreorderLabel ? `Pre-orders open ${nextPreorderLabel}` : `Shop opens ${nextOpenLabel}`);
         return;
       }
 
@@ -1568,7 +1614,8 @@ const tags = [
         document.body.appendChild(overlay);
         const firstOrderId = Array.isArray(data.orders) && data.orders[0]?.id ? String(data.orders[0].id) : "";
         setTimeout(() => {
-          window.location.href = firstOrderId ? `/track/${encodeURIComponent(firstOrderId)}` : "/track";
+          // ?pay=1: the order page opens Razorpay straight away (no second "Pay" tap).
+          window.location.href = firstOrderId ? `/track/${encodeURIComponent(firstOrderId)}?pay=1` : "/track";
         }, 2000);
       } catch (err) {
         track("order_failed", { error: err?.message || "unknown" });
@@ -1667,9 +1714,17 @@ const tags = [
       triggerBackgroundValidation(c);
     }
 
+    const viewedListings = new Set();
     grid.addEventListener("click", (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
+      // First tap on an item card = Meta ViewContent (the menu has no item detail page).
+      const lid = t.closest(".v2-item-card")?.dataset.listingId;
+      if (lid && !viewedListings.has(lid)) {
+        viewedListings.add(lid);
+        const l = listings.find((x) => x.id === lid);
+        track("view_item", { item_id: lid, item_name: getName(l?.species), price: Number(l?.pricing_options?.[0]?.price) || 0 });
+      }
       if (t.classList.contains("v2-item-add")) {
         add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit, t.dataset.optId, t.dataset.optLabel, t.dataset.bundleSize);
       } else if (t.classList.contains("v2-item-inc")) {

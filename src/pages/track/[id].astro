@@ -170,6 +170,7 @@ const { id } = Astro.params;
   const RAZORPAY_KEY_ID  = import.meta.env.PUBLIC_RAZORPAY_KEY_ID  || "";
   // Extract order ID from URL path: /track/{id}
   const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
+  let autoPay = new URLSearchParams(window.location.search).get("pay") === "1";
   function escape(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
@@ -919,7 +920,8 @@ const { id } = Astro.params;
             try {
               const value = Number(createData.amount) / 100;
               if (!verifyData.ga_server && typeof gtag === "function") gtag("event", "purchase", { transaction_id: createData.razorpay_order_id || o.id, value, currency: "INR", seller_id: o.seller_id });
-              if (typeof fbq === "function") fbq("track", "Purchase", { value, currency: "INR" });
+              // eventID = Razorpay order id, the same event_id the server-side Purchase (lib/server/meta-capi.ts) sends.
+              if (typeof fbq === "function") fbq("track", "Purchase", { value, currency: "INR" }, { eventID: createData.razorpay_order_id || o.id });
             } catch {}
 
             // Success — show confirmation and reload
@@ -964,6 +966,13 @@ const { id } = Astro.params;
       });
       rzp.open();
     });
+
+    // Arrived from "Place order & pay" (?pay=1): open Razorpay once, no second tap.
+    if (autoPay) {
+      autoPay = false;
+      history.replaceState(null, "", location.pathname);
+      btn.click();
+    }
   }
 
   /** Ask the server to settle a captured-but-unrecorded payment. true = order changed. */
