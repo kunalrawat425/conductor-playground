@@ -9,7 +9,7 @@ import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 import { supabase } from "../../lib/supabase";
 import { SPECIES, getSpeciesDisplay } from "../../lib/species";
 import { SITE_URL, canonicalFor } from "../../lib/brand";
-import { hubIndexable, hubRows, type HubRow } from "../../lib/fish-hub";
+import { hubIndexable, hubPriceRange, hubPriceText, hubRows, type HubRow } from "../../lib/fish-hub";
 import { SPECIES_GUIDES } from "../../lib/species-guides";
 
 const species = (Astro.params.species || "").toLowerCase();
@@ -48,24 +48,32 @@ const englishOnly = english.match(/\(([^)]+)\)/)?.[1] || english;
 const SHELLFISH = new Set(["prawns", "crab", "lobster", "squid", "oyster", "clam"]);
 const freshTips = SHELLFISH.has(species)
   ? ["Shells are firm and intact, not slimy or soft.", "Heads (if on) are firmly attached, with no black patches.", "The meat is firm and translucent, not mushy.", "It smells of the sea, not sour or of ammonia."]
-  : ["Eyes are clear and full, not cloudy or sunken.", "Gills are bright red or pink, not brown or grey.", "Flesh is firm and springs back when pressed.", "Skin is shiny, with scales still attached.", "It smells of the sea, not sour or of ammonia."];
+  : ["Eyes are clear and full, not cloudy or sunken.", "Gills are bright red or pink, not brown or grey.", "Flesh is firm and springs back when pressed.", "Skin is shiny and moist, not dull or dry.", "It smells mildly of the sea, not sour or of ammonia."];
 const indexable = !!known && !unavailable && hubIndexable(species, rows.length);
 const url = canonicalFor(`/fish/${species}`);
 const updatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const today = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "long", year: "numeric" });
+// Today's price = sellers with this fish in stock today (live listing); Thane first, where buyers search.
+const live = rows.filter((r) => r.offer.availability === "InStock");
+const thane = live.filter((r) => r.area === "Thane");
+const thaneRange = hubPriceRange(thane);
+const liveRange = hubPriceRange(live);
+const names = (rs: HubRow[]) => rs.map((r) => r.seller).join(", ");
+const thanePriceAnswer = thaneRange
+  ? `On ${today}, ${local} in Thane is listed at ${hubPriceText(thaneRange)} on Relifish by ${names(thane)} (live listing, updated ${updatedAt} IST). Each seller sets the price, and it changes daily with the catch.`
+  : liveRange
+    ? `No seller in Thane has ${local} in stock on Relifish right now (${today}). Other local sellers list it at ${hubPriceText(liveRange)} today: ${names(live)}.`
+    : `No seller on Relifish has ${local} in stock right now (${today}), so there is no live price to show. The shop page lists what is available today.`;
+// Other names buyers search for (English and local names), without repeating the page name.
+const localNames = [englishOnly, ...(guide?.alsoCalled ?? [])].filter((n, i, a) => n.toLowerCase() !== local.toLowerCase() && a.findIndex((m) => m.toLowerCase() === n.toLowerCase()) === i);
 const statusText = { InStock: "Available today", PreOrder: "Pre-order for tomorrow", OutOfStock: "Not today" } as const;
 const priceText = (r: HubRow) => (r.offer.lowPrice === r.offer.highPrice ? `₹${r.offer.lowPrice}` : `₹${r.offer.lowPrice}–₹${r.offer.highPrice}`);
-const kgText = (k: { low: number; high: number }) => (k.low === k.high ? `₹${k.low}/kg` : `₹${k.low}–₹${k.high}/kg`);
-const kgRows = rows.filter((r) => r.perKg);
-const kgAll = kgRows.length ? { low: Math.min(...kgRows.map((r) => r.perKg!.low)), high: Math.max(...kgRows.map((r) => r.perKg!.high)) } : null;
+const kgText = (k: { low: number; high: number }) => hubPriceText({ ...k, unit: "kg" });
 const areasList = [...new Set(rows.map((r) => r.area).filter(Boolean))];
 const faqs = known && rows.length ? [
-  { q: `What is the price of ${local} per kg today?`, a: kgAll ? `On Relifish, ${local} is listed at ${kgText(kgAll)} today across ${kgRows.length === 1 ? "one local seller" : `${kgRows.length} local sellers`} (updated ${updatedAt} IST). Prices are set by each seller and change daily with the catch.` : `${local} is sold by the piece or pack on Relifish today; open a seller to see each option's price. Prices are set by each seller and change daily.` },
-  ...(englishOnly.toLowerCase() !== local.toLowerCase() ? [{ q: `What is ${local} called in English?`, a: `${local} is ${englishOnly} in English and ${known.marathi} in Marathi.` }] : []),
+  { q: `What is the ${local} price today in Thane?`, a: thanePriceAnswer },
+  ...(englishOnly.toLowerCase() !== local.toLowerCase() ? [{ q: `What is ${local} called in English?`, a: `${local} is ${englishOnly} in English.${localNames.length > 1 ? ` It is also called ${localNames.filter((n) => n !== englishOnly).join(", ")}.` : ""}` }] : []),
   { q: `How do I know if ${local} is fresh?`, a: freshTips.join(" ") },
-  ...(guide ? [
-    { q: `Does ${local} have a lot of bones?`, a: guide.bones },
-    { q: `What is the best way to cook ${local}?`, a: `Popular ways: ${guide.dishes.join(", ")}. Common cuts: ${guide.cuts.join(", ")}.` },
-  ] : []),
   { q: `Where can I order ${local} online?`, a: `${rows.length === 1 ? "One local seller lists" : `${rows.length} local sellers list`} ${local} on Relifish${areasList.length ? `, in ${areasList.join(", ")}` : ""}. Order same-day while the seller is open, or pre-order for tomorrow; the seller delivers or keeps it ready for pickup.` },
 ] : [];
 const description = rows.length
@@ -87,6 +95,26 @@ const description = rows.length
         "name": `${english} from local sellers on Relifish`,
         "itemListElement": rows.map((r, i) => ({ "@type": "ListItem", "position": i + 1, "name": `${english} — ${r.seller}`, "url": SITE_URL + r.href })),
       },
+      ...(live.length ? [{
+        "@type": "Product",
+        "@id": `${url}#product`,
+        "name": english,
+        "description": description,
+        "url": url,
+        // One Offer per seller with it in stock today, at the price the table shows (₹/kg when sold by weight).
+        "offers": live.map((r) => {
+          const price = r.perKg ? r.perKg.low : r.offer.lowPrice;
+          return {
+            "@type": "Offer",
+            "price": price,
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/InStock",
+            "url": SITE_URL + r.href,
+            "seller": { "@type": "Organization", "name": r.seller },
+            ...(r.perKg ? { "priceSpecification": { "@type": "UnitPriceSpecification", "price": price, "priceCurrency": "INR", "referenceQuantity": { "@type": "QuantitativeValue", "value": 1, "unitCode": "KGM" } } } : {}),
+          };
+        }),
+      }] : []),
       ...(faqs.length ? [{
         "@type": "FAQPage",
         "mainEntity": faqs.map((f) => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } })),
@@ -106,15 +134,34 @@ const description = rows.length
   ) : (
     <article style="padding:16px;display:flex;flex-direction:column;gap:16px;">
       <header>
-        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">Buy {local}{englishOnly.toLowerCase() !== local.toLowerCase() ? ` (${englishOnly})` : ""} online from local sellers</h1>
+        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">{local} price today in Thane &amp; Mumbai</h1>
+        {localNames.length > 0 && <p style="font:400 13px/1.5 Inter;margin:0 0 6px;color:var(--v2-ink-3);">Also called {localNames.join(", ")}.</p>}
         <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
           {rows.length
-            ? `${english} (${known.marathi}) from ${rows.length === 1 ? "one local seller" : `${rows.length} local sellers`} on Relifish. Prices and availability come from each seller's live listing. Updated ${updatedAt} IST.`
+            ? `${english} from ${rows.length === 1 ? "one local seller" : `${rows.length} local sellers`} on Relifish. Prices and availability come from each seller's live listing. Updated ${updatedAt} IST.`
             : unavailable
               ? "We couldn't load sellers right now. Please try again in a minute."
               : `No seller on Relifish lists ${english.toLowerCase()} right now.`}
         </p>
       </header>
+
+      {!unavailable && (
+        <section style="border:1px solid var(--v2-border);border-radius:12px;padding:12px;">
+          <h2 style="font:700 16px Inter;margin:0 0 6px;">Today's price in Thane · {today}</h2>
+          {thaneRange ? (
+            <>
+              <p style="font:800 20px/1.3 Inter;margin:0 0 4px;">{hubPriceText(thaneRange)}</p>
+              <p style="font:400 13px/1.5 Inter;margin:0;color:var(--v2-ink-2);">
+                From {thane.map((r, i) => <>{i > 0 && ", "}<a href={r.shopHref} style="font-weight:700;color:var(--v2-brand);">{r.seller}</a></>)}, live listing updated {updatedAt} IST. Prices change daily with the catch.
+              </p>
+            </>
+          ) : (
+            <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
+              No seller in Thane has {local} in stock on Relifish right now.{liveRange && ` Other local sellers list it at ${hubPriceText(liveRange)} today (see below).`} <a href="/shop" style="font-weight:700;color:var(--v2-brand);">See what's available today →</a>
+            </p>
+          )}
+        </section>
+      )}
 
       {rows.length > 0 && (
         <section>
@@ -142,7 +189,7 @@ const description = rows.length
       {guide && (
         <section>
           <h2 style="font:700 16px Inter;margin:0 0 8px;">{local} buying guide</h2>
-          <p style="font:400 14px/1.7 Inter;margin:0 0 8px;color:var(--v2-ink-2);"><strong>{guide.summary}</strong> Also called {guide.alsoCalled.join(", ")}{known?.marathi ? `; ${known.marathi} in Marathi` : ""}.</p>
+          <p style="font:400 14px/1.7 Inter;margin:0 0 8px;color:var(--v2-ink-2);"><strong>{guide.summary}</strong></p>
           <dl style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);display:grid;grid-template-columns:auto 1fr;gap:4px 12px;">
             <dt style="font-weight:700;color:var(--v2-ink);">Taste</dt><dd style="margin:0;">{guide.taste}</dd>
             <dt style="font-weight:700;color:var(--v2-ink);">Bones</dt><dd style="margin:0;">{guide.bones}</dd>
@@ -155,7 +202,7 @@ const description = rows.length
       )}
 
       <section>
-        <h2 style="font:700 16px Inter;margin:0 0 8px;">How to check {english.toLowerCase()} is fresh</h2>
+        <h2 style="font:700 16px Inter;margin:0 0 8px;">How to pick {local} fresh</h2>
         <ol style="font:400 14px/1.7 Inter;margin:0;padding-left:20px;color:var(--v2-ink-2);">
           {freshTips.map((t) => <li>{t}</li>)}
         </ol>
@@ -173,7 +220,7 @@ const description = rows.length
         </section>
       )}
 
-      <p style="font:400 13px/1.5 Inter;margin:0;"><a href="/fish-price-today">All fish prices today →</a> · <a href="/blog/first-relifish-order-guide-thane">How ordering works →</a></p>
+      <p style="font:400 13px/1.5 Inter;margin:0;"><a href="/fish-price-today">All fish prices today →</a> · <a href="/area/thane">Fish delivery in Thane →</a> · <a href="/blog/first-relifish-order-guide-thane">How ordering works →</a></p>
     </article>
   )}
   <SeoLinks />

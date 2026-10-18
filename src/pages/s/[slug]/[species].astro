@@ -72,7 +72,7 @@ const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLower
   title={found ? `${species.charAt(0).toUpperCase() + species.slice(1)} from ${sellerName}${area ? `, ${area}` : ""}: Price Today & Delivery | Relifish` : "Fish not found · Relifish"}
   description={description}
   canonical={url}
-  noindex={!found}
+  noindex={!found || !!seller?.is_test}
   header={{ variant: "page", backHref: found ? sellerPath : "/shop", title: "Relifish" }}
   nav={{ active: "home" }}
   jsonLd={found ? {
