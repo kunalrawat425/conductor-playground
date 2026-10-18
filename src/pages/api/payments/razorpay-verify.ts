@@ -5,6 +5,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { afterResponse } from "../../../lib/server/after-response";
+import { metaClientFromRequest } from "../../../lib/server/meta-capi";
 
 export const prerender = false;
 
@@ -76,7 +77,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Confirm, attach, or refund — decided once, shared with the webhook and crons.
   let settled;
   try {
-    settled = await settleCapturedPayment(supabase, { razorpay_order_id, razorpay_payment_id, source: "verify" });
+    settled = await settleCapturedPayment(supabase, { razorpay_order_id, razorpay_payment_id, source: "verify", meta_client: metaClientFromRequest(request) });
   } catch (err: any) {
     console.error("[razorpay-verify] settle failed", { order_id, razorpay_payment_id, err: err?.message });
     return new Response(JSON.stringify({ error: "Failed to confirm order" }), { status: 500 });
