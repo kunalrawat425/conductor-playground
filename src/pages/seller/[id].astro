@@ -15,7 +15,7 @@ import { getSellerById, getSellerListings } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
 import { cleanSellerName, resizedImageUrl, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
-import { ORDER_WHATSAPP, SITE_URL } from "../../lib/brand";
+import { SITE_URL } from "../../lib/brand";
 import { nextPlacementStartMs } from "../../lib/cart";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
@@ -543,7 +543,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, deliveryRad: Number(seller?.delivery_rad) || 0, orderWhatsApp: ORDER_WHATSAPP, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
+<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, deliveryRad: Number(seller?.delivery_rad) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
   // Same-day and pre-order carts are separate; this page uses the one its menu is in.
   cartMode: isPreorderMode ? "preorder" : "same_day",
   pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
@@ -1175,14 +1175,6 @@ const tags = [
             .sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price))[0]
         : null;
 
-      // WhatsApp fallback with the cart lines pre-filled.
-      const waText = [
-        `Hi Relifish, I'd like to ${isPreorderMode ? "pre-order" : "order"} from ${sellerName}:`,
-        ...sellerItems.map((i) => `- ${i.name}: ${counterQtyLabel(i.qty, i.qty_unit, i.bundle_size)} · ₹${Math.round(i.qty * i.price)}`),
-        `Subtotal: ₹${Math.round(sellerSubtotal)}`,
-        window.location.origin + window.location.pathname,
-      ].join("\n");
-
       cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
         ${removedHtml ? `<div style="margin-bottom:6px;">${removedHtml}</div>` : ""}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -1201,7 +1193,6 @@ const tags = [
           <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
           <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.55;' : ''}">${belowMin ? `Add ₹${gap} more` : "Checkout →"}</button>
         </div>
-        ${orderWhatsApp ? `<a id="v2-cart-wa" href="https://wa.me/${orderWhatsApp}?text=${encodeURIComponent(waText)}" target="_blank" rel="noopener" style="display:block;text-align:center;font:600 12px Inter;color:var(--v2-green);margin-top:8px;text-decoration:none;">Or order on WhatsApp</a>` : ""}
       </div>`;
 
       document.getElementById("v2-cart-filler")?.addEventListener("click", () => {
@@ -1209,7 +1200,6 @@ const tags = [
         track("min_order_filler_add", { item_name: d.name, price: parseFloat(d.price), gap });
         add(d.id, parseFloat(d.price), d.name, d.unit, d.optId, d.optLabel, d.bundleSize);
       });
-      document.getElementById("v2-cart-wa")?.addEventListener("click", () => track("whatsapp_order_tap", { subtotal: sellerSubtotal, item_count: sellerPackCount }));
 
       document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
       document.getElementById("v2-cart-manage")?.addEventListener("click", () => {
