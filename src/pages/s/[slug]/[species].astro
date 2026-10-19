@@ -12,7 +12,7 @@ import { cleanSellerName, sellerHref, stripContactInfo } from "../../../lib/sell
 import { SPECIES, getSpeciesDisplay } from "../../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../../lib/listing-pricing";
 import { SITE_URL, canonicalFor } from "../../../lib/brand";
-import { productJsonLd, speciesOffer } from "../../../lib/product-offer";
+import { listingAvailability, productJsonLd, speciesOffer } from "../../../lib/product-offer";
 
 const slug = (Astro.params.slug || "").toLowerCase();
 const species = (Astro.params.species || "").toLowerCase();
@@ -33,7 +33,7 @@ if (seller) {
 }
 
 const forSpecies = listings.filter((l: any) => String(l.species).toLowerCase() === species);
-const offer = speciesOffer(forSpecies);
+const offer = speciesOffer(forSpecies, seller);
 // ?opt=<listingId>-<optionId> (from the Google product feed): the Product schema describes exactly that
 // option, so Merchant Center's automatic item updates compare like with like. Canonical stays the bare URL.
 const optParam = Astro.url.searchParams.get("opt");
@@ -43,8 +43,7 @@ const optMatch = optParam
 const schemaOffer = optMatch
   ? (() => {
       const price = Number(optMatch.o.price) > 0 ? Number(optMatch.o.price) : Number(optMatch.o.preorder_price_max) || 0;
-      const sameDay = optMatch.l.is_available && !optMatch.l.is_order_paused && Number(optMatch.l.weight_avail) > 0;
-      return price > 0 ? { availability: sameDay ? "InStock" : optMatch.l.is_preorder_enabled ? "PreOrder" : "OutOfStock", lowPrice: price, highPrice: price, offerCount: 1 } as const : offer;
+      return price > 0 ? { availability: listingAvailability(optMatch.l, seller), lowPrice: price, highPrice: price, offerCount: 1 } : offer;
     })()
   : offer;
 const found = !!seller && !!offer;
