@@ -22,6 +22,7 @@ import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { afterResponse } from "../../../lib/server/after-response";
 import { cartLabel } from "../../../lib/server/order-cart";
+import { metaEvent, metaUserFromRequest } from "../../../lib/server/meta-capi";
 
 type ResolvedRow = Awaited<ReturnType<typeof resolveListingOrderLine>> extends { ok: true; line: infer L }
   ? { line: L }
@@ -60,6 +61,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       cut_style,
       utm,
       placement_kind: expectedPlacement,
+      meta_event_id,
     } = body;
     if (buyer_id) { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
 
@@ -405,6 +407,18 @@ export const POST: APIRoute = async ({ request, url }) => {
           })
         ), "create-seller-cart:order-email");
       }
+    }
+
+    // Meta InitiateCheckout with the eventID the pixel used when checkout opened (Meta dedupes).
+    // No id = internal device (rf_internal) or an old page; test buyers/sellers make is_test orders.
+    if (typeof meta_event_id === "string" && meta_event_id && meta_event_id.length <= 64
+        && placed.length && !placed.some((x) => x.order?.is_test)) {
+      afterResponse(metaEvent("InitiateCheckout", meta_event_id, {
+        value: cartSubtotal,
+        contents: placed.map(({ line }) => ({ id: String(line.listing_id), quantity: Number(line.quantity) })),
+        ...metaUserFromRequest(request),
+        event_source_url: request.headers.get("referer")?.slice(0, 500) || undefined,
+      }), "meta-capi:InitiateCheckout");
     }
 
     return new Response(JSON.stringify({ orders, cart_id, cart_subtotal: cartSubtotal, cart_total: cartTotal, placement_kind }), { status: 201 });

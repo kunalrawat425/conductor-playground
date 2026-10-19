@@ -998,6 +998,8 @@ const tags = [
     let selectedAddressLat = null;
     let selectedAddressLng = null;
 
+    // eventID of the last InitiateCheckout pixel event, sent with the order so the server copy dedupes.
+    let checkoutEventId = null;
     // Analytics helper — fire-and-forget, never throws
     function track(event, params) {
       const { event_id, ...p } = params || {};
@@ -1011,6 +1013,14 @@ const tags = [
         if (typeof fbq === "function" && event === "checkout_started") fbq("track", "InitiateCheckout", { value: p.subtotal, currency: "INR" }, opts);
         if (typeof fbq === "function" && event === "add_to_cart") fbq("track", "AddToCart", { content_name: p.item_name, value: p.price, currency: "INR" }, opts);
         if (typeof fbq === "function" && event === "view_item") fbq("track", "ViewContent", { content_name: p.item_name, value: p.price, currency: "INR" }, opts);
+        // Server copy (CAPI) with the same eventID, so it still counts when the pixel is blocked.
+        // InitiateCheckout goes with the place-order request (checkoutEventId); internal devices send nothing.
+        if (event === "checkout_started") checkoutEventId = window.rfInternal ? null : opts.eventID;
+        const capiName = event === "add_to_cart" ? "AddToCart" : event === "view_item" ? "ViewContent" : null;
+        if (capiName && !window.rfInternal) {
+          const body = JSON.stringify({ event_name: capiName, event_id: opts.eventID, value: p.price, contents: [{ id: p.item_id, quantity: p.quantity || 1 }] });
+          if (!navigator.sendBeacon?.("/api/meta/event", body)) fetch("/api/meta/event", { method: "POST", body, keepalive: true }).catch(() => {});
+        }
       } catch {}
     }
 
@@ -1592,6 +1602,7 @@ const tags = [
             utm: (() => { try { return JSON.parse(localStorage.getItem("rf_utm") || "null"); } catch { return null; } })(),
             cut_style: [...document.querySelectorAll('input[name="seller-checkout-cut"]:checked')].map((el) => el.value).join(","),
             buyer_notes: (document.getElementById("seller-checkout-notes")?.value || "").trim(),
+            meta_event_id: checkoutEventId,
           }),
         });
         const data = await res.json();
