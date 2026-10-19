@@ -26,3 +26,10 @@ export function canonicalFor(pathname: string): string {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : "/";
   return new URL(path, SITE_URL).href;
 }
+
+/** Who runs Relifish, shown in the footer and on /contact, /about and /terms (Merchant Center business identity). */
+export const BUSINESS_OPERATOR = "Kunal Rawat (founder)";
+// TODO founder: full public address before merge
+export const BUSINESS_ADDRESS = "";
+/** "Relifish is operated by Kunal Rawat (founder)", plus ", <address>" once BUSINESS_ADDRESS is set. */
+export const OPERATED_BY = `Relifish is operated by ${BUSINESS_OPERATOR}${BUSINESS_ADDRESS ? `, ${BUSINESS_ADDRESS}` : ""}`;

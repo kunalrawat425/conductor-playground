@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { productJsonLd, speciesOffer } from "../../src/lib/product-offer";
+import { listingAvailability, productJsonLd, speciesOffer } from "../../src/lib/product-offer";
 
 const opt = (price: number, extra: Record<string, unknown> = {}) => ({ id: "x", label: "Option", price, unit: "kg" as const, ...extra });
 
@@ -37,5 +37,24 @@ describe("productJsonLd", () => {
   it("price range -> AggregateOffer with seller", () => {
     const p = productJsonLd({ ...base, offer: { availability: "PreOrder", lowPrice: 650, highPrice: 800, offerCount: 2 } });
     expect(p.offers).toMatchObject({ "@type": "AggregateOffer", lowPrice: 650, highPrice: 800, seller: { name: "Fishtokri" } });
+  });
+});
+
+describe("listingAvailability (merchant feed + /s/<slug>/<species>)", () => {
+  // Tue 20 Oct 2026, 10:00 IST (04:30 UTC)
+  const tue10am = Date.UTC(2026, 9, 20, 4, 30);
+  const listing = { is_available: true, weight_avail: 5, is_preorder_enabled: true };
+  const hours = { opens_at: "07:00", closes_at: "13:00", preorder_cutoff_time: "23:00" };
+  const all = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+  const noTue = all.filter((d) => d !== "tue");
+
+  it("open day, before closing time: in stock", () => {
+    expect(listingAvailability(listing, { ...hours, open_days: all, accepts_preorder: true }, tue10am)).toBe("InStock");
+  });
+  it("closed day with pre-orders on: pre-order, even with stock", () => {
+    expect(listingAvailability(listing, { ...hours, open_days: noTue, accepts_preorder: true, preorder_days: all }, tue10am)).toBe("PreOrder");
+  });
+  it("closed day with pre-orders off: out of stock", () => {
+    expect(listingAvailability(listing, { ...hours, open_days: noTue, accepts_preorder: false, preorder_days: all }, tue10am)).toBe("OutOfStock");
   });
 });

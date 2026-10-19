@@ -366,8 +366,8 @@ const tags = [
       {/* Schedule strip */}
       <div style="padding:8px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:6px;">
         {googleRating && (
-          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:600;background:#FFF8E1;color:#7A5200;border-color:#FFE08A;" title={`Google Maps rating as of ${googleRating.asOf}`}>
-            ★ {googleRating.stars.toFixed(1)} on Google
+          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:600;background:#FFF8E1;color:#7A5200;border-color:#FFE08A;" title={`${sellerName}'s own Google Maps rating (not a Relifish rating), as of ${googleRating.asOf}`}>
+            {sellerName}: ★ {googleRating.stars.toFixed(1)} on Google ({googleRating.count} reviews)
           </span>
         )}
         <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">

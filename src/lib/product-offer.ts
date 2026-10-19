@@ -1,4 +1,5 @@
 import type { ListingPriceOption } from "./listing-pricing";
+import { hasSameDayToday, isPreorderShoppingWindow, type SellerTimingInput } from "./order-timing";
 
 export type Availability = "InStock" | "PreOrder" | "OutOfStock";
 
@@ -20,14 +21,28 @@ export interface SpeciesOffer {
 const positive = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
 
 /**
+ * One listing, right now. Seller hours (IST) come first: on a day off or past closes_at there is no
+ * same-day stock, only pre-order (if the seller takes pre-orders now and the listing allows it).
+ * The merchant feed and /s/<slug>/<species> both use this, so Google sees one answer.
+ */
+export function listingAvailability(l: SpeciesListing, seller?: SellerTimingInput | null, nowMs?: number): Availability {
+  if (seller && !hasSameDayToday(seller, nowMs)) {
+    return l.is_preorder_enabled && isPreorderShoppingWindow(seller, nowMs) ? "PreOrder" : "OutOfStock";
+  }
+  if (l.is_available && !l.is_order_paused && Number(l.weight_avail) > 0) return "InStock";
+  return l.is_preorder_enabled ? "PreOrder" : "OutOfStock";
+}
+
+/**
  * One fish from one seller can have several listings (sizes / kg vs piece) and tiers.
  * Same-day stock wins (InStock, tier prices); otherwise pre-order (PreOrder, the regular tier prices);
  * otherwise OutOfStock with the last listed prices. Null when nothing is priced.
+ * Pass the seller to apply its hours (see listingAvailability).
  */
-export function speciesOffer(listings: SpeciesListing[]): SpeciesOffer | null {
+export function speciesOffer(listings: SpeciesListing[], seller?: SellerTimingInput | null, nowMs?: number): SpeciesOffer | null {
   const opts = (l: SpeciesListing) => l.pricing_options ?? [];
-  const sameDay = listings.filter((l) => l.is_available && !l.is_order_paused && Number(l.weight_avail) > 0);
-  const preorder = listings.filter((l) => l.is_preorder_enabled);
+  const sameDay = listings.filter((l) => listingAvailability(l, seller, nowMs) === "InStock");
+  const preorder = listings.filter((l) => listingAvailability(l, seller, nowMs) === "PreOrder");
 
   let availability: Availability;
   let prices: number[];

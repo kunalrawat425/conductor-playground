@@ -93,6 +93,11 @@ export function isAfterCloseTimeIST(seller: SellerTimingInput, nowMs?: number): 
   return cur >= ch * 60 + (cm || 0);
 }
 
+/** Seller still sells same-day today: an order day and not yet past closes_at (before opening counts). */
+export function hasSameDayToday(seller: SellerTimingInput, nowMs?: number): boolean {
+  return isSellerEffectivelyOpen(seller, nowMs) || (isTodayOrderDay(seller, dayAt(nowMs)) && !isAfterCloseTimeIST(seller, nowMs));
+}
+
 /**
  * Preorder window: store has CLOSED for today (past closes_at) AND before cutoff.
  * On non-order-days the whole day is the preorder window (no close time constraint).
