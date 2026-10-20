@@ -68,18 +68,24 @@ import Input from "../../components/ui/atoms/Input.astro";
       <div style="flex:1;"><Input id="p-closes" name="closes_at" label="Closes" type="time" /></div>
     </div>
 
-    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Store photo</h3>
-    <div id="p-store-photo-section" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px;">
-      <div id="p-store-preview" style="display:none;position:relative;width:100%;max-width:240px;">
-        <img id="p-store-preview-img" src="" alt="Store photo" style="width:100%;border-radius:var(--v2-radius-sm);object-fit:cover;max-height:140px;" />
-        <button type="button" id="p-store-remove" style="position:absolute;top:6px;right:6px;background:#DC2626;color:#fff;border:none;border-radius:50%;width:24px;height:24px;font:700 14px Inter;cursor:pointer;line-height:24px;text-align:center;">×</button>
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Store logo &amp; photo</h3>
+    {[
+      { k: "logo", title: "Logo", hint: "Logo: square, shown next to your store name", previewStyle: "width:80px;height:80px;border-radius:14px;" },
+      { k: "store", title: "Store photo", hint: "Store photo: wide banner at the top of your store page", previewStyle: "width:100%;aspect-ratio:2/1;border-radius:var(--v2-radius-sm);" },
+    ].map(({ k, title, hint, previewStyle }) => (
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">{hint}</div>
+        <div id={`p-${k}-preview`} style="display:none;position:relative;width:fit-content;max-width:240px;">
+          <img id={`p-${k}-preview-img`} src="" alt={title} style={`${previewStyle}display:block;object-fit:cover;`} />
+          <button type="button" id={`p-${k}-remove`} aria-label={`Remove ${title.toLowerCase()}`} style="position:absolute;top:6px;right:6px;background:#DC2626;color:#fff;border:none;border-radius:50%;width:24px;height:24px;font:700 14px Inter;cursor:pointer;line-height:24px;text-align:center;">×</button>
+        </div>
+        <label style="cursor:pointer;">
+          <div id={`p-${k}-drop`} style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;text-align:center;font:500 12px Inter;color:var(--v2-ink-3);">📷 Upload {title.toLowerCase()}</div>
+          <input type="file" id={`p-${k}-file`} accept="image/jpeg,image/png,image/webp" style="display:none;" />
+        </label>
+        <div id={`p-${k}-error`} style="display:none;font:500 11px Inter;color:var(--v2-red);"></div>
       </div>
-      <label style="cursor:pointer;">
-        <div id="p-store-drop" style="border:1.5px dashed var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;text-align:center;font:500 12px Inter;color:var(--v2-ink-3);">📷 Upload store photo (max 5 MB)</div>
-        <input type="file" id="p-store-file" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-      </label>
-      <div id="p-store-error" style="display:none;font:500 11px Inter;color:var(--v2-red);"></div>
-    </div>
+    ))}
 
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Order settings</h3>
     <Input id="p-min-order" name="min_order_amount" label="Minimum order (₹)" type="number" />
@@ -189,12 +195,34 @@ import Input from "../../components/ui/atoms/Input.astro";
       Log out
     </button>
   </form>
+
+  <!-- Crop step for the logo / store photo: the frame is the exact shape buyers see. -->
+  <div id="p-crop" role="dialog" aria-modal="true" aria-labelledby="p-crop-title" style="display:none;position:fixed;inset:0;z-index:var(--v2-z-modal);background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:16px;">
+    <div style="background:var(--v2-bg);color:var(--v2-ink);border-radius:var(--v2-radius-lg);padding:16px;width:100%;max-width:440px;box-shadow:var(--v2-shadow-lg);">
+      <h3 id="p-crop-title" style="font:700 15px Inter;margin:0 0 4px;"></h3>
+      <p id="p-crop-hint" style="font:400 12px/1.4 Inter;color:var(--v2-ink-3);margin:0 0 10px;"></p>
+      <canvas id="p-crop-canvas" style="width:100%;display:block;border-radius:var(--v2-radius-sm);touch-action:none;cursor:grab;background:var(--v2-bg-3);"></canvas>
+      <label style="display:flex;align-items:center;gap:8px;margin:12px 0;font:600 12px Inter;color:var(--v2-ink-2);">
+        Zoom <input id="p-crop-zoom" type="range" min="1" max="4" step="0.01" value="1" style="flex:1;" />
+      </label>
+      <div style="display:flex;align-items:center;gap:10px;font:600 11px Inter;color:var(--v2-ink-3);">
+        <canvas id="p-crop-preview" style="border:1px solid var(--v2-border);"></canvas>
+        <span id="p-crop-preview-label"></span>
+      </div>
+      <div id="p-crop-error" role="alert" style="display:none;font:500 12px Inter;color:var(--v2-red);margin-top:10px;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+        <button type="button" id="p-crop-cancel" class="v2-btn v2-btn-secondary v2-btn-md">Cancel</button>
+        <button type="button" id="p-crop-ok" class="v2-btn v2-btn-primary v2-btn-md" disabled>Use this</button>
+      </div>
+    </div>
+  </div>
 </AppShell>
 
 <script>
   import { supabase } from "../../lib/supabase";
   import { validateSellerName } from "../../lib/seller-display";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
+  import { CROP, cropRect, imageFileError, imageDimensionsError, MAX_IMAGE_BYTES, TARGET_IMAGE_BYTES } from "../../lib/image-crop";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
   const sellerId = getSellerId();
@@ -218,14 +246,9 @@ import Input from "../../components/ui/atoms/Input.astro";
       (document.getElementById("p-email") as HTMLInputElement).value = seller?.email || "";
       (document.getElementById("p-opens") as HTMLInputElement).value = seller?.opens_at || "05:00";
       (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
-      // Store photo
-      if (seller?.store_image_url) {
-        const preview = document.getElementById("p-store-preview") as HTMLElement;
-        const img = document.getElementById("p-store-preview-img") as HTMLImageElement;
-        img.src = seller.store_image_url;
-        preview.style.display = "block";
-        document.getElementById("p-store-drop")!.textContent = "📷 Replace store photo";
-      }
+      // Logo (null until migration 081 / first upload) and store photo
+      showImagePreview("logo", seller?.logo_url || null);
+      showImagePreview("store", seller?.store_image_url || null);
       (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
       (document.getElementById("p-preorder") as HTMLInputElement).checked = !!seller?.accepts_preorder;
       // Day schedule
@@ -358,26 +381,23 @@ import Input from "../../components/ui/atoms/Input.astro";
     }
 
     try {
-      // Upload store photo if a new file was selected
-      const storeFile = (document.getElementById("p-store-file") as HTMLInputElement)?.files?.[0];
-      if (storeFile) {
-        if (storeFile.size > 5 * 1024 * 1024) {
-          (window as any).v2Toast?.("error", "File too large", "Store photo must be under 5 MB");
-          btn.disabled = false; btn.textContent = "Save changes"; return;
-        }
-        const storeErrEl = document.getElementById("p-store-error") as HTMLElement;
-        const form = new FormData();
-        form.append("seller_id", sellerId!);
-        form.append("seller_phone", localStorage.getItem("rlf_seller_phone") || "");
-        form.append("file", storeFile);
-        const upRes = await fetch("/api/seller/upload-store-photo", { method: "POST", body: form });
-        const upData = await upRes.json();
+      // Upload cropped logo / store photo picked since the last save
+      for (const f of Object.keys(IMAGE_FIELDS) as ImageField[]) {
+        const blob = pendingImage[f];
+        if (!blob) continue;
+        const fd = new FormData();
+        fd.append("seller_id", sellerId!);
+        fd.append("seller_phone", localStorage.getItem("rlf_seller_phone") || "");
+        fd.append("kind", IMAGE_FIELDS[f].crop);
+        fd.append("file", new File([blob], `${f}.jpg`, { type: "image/jpeg" }));
+        const upRes = await fetch("/api/seller/upload-store-photo", { method: "POST", body: fd });
+        const upData = await upRes.json().catch(() => ({}));
         if (!upRes.ok) {
-          storeErrEl.textContent = upData.error || "Store photo upload failed";
-          storeErrEl.style.display = "block";
+          imageFieldError(f, upData.error || `Couldn't upload the ${IMAGE_FIELDS[f].title}. Please try again.`);
           btn.disabled = false; btn.textContent = "Save changes"; return;
         }
-        storeErrEl.style.display = "none";
+        delete pendingImage[f];
+        imageFieldError(f, null);
       }
 
       const res = await fetch("/api/seller/profile", {
@@ -434,30 +454,164 @@ import Input from "../../components/ui/atoms/Input.astro";
     return Array.from(document.querySelectorAll(`input[data-day-prefix="${prefix}"]:checked`)).map((el: any) => el.dataset.day);
   }
 
-  // Store photo file picker
-  document.getElementById("p-store-file")?.addEventListener("change", (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    const drop = document.getElementById("p-store-drop")!;
-    const preview = document.getElementById("p-store-preview") as HTMLElement;
-    const img = document.getElementById("p-store-preview-img") as HTMLImageElement;
-    drop.textContent = file.name;
-    img.src = URL.createObjectURL(file);
-    preview.style.display = "block";
-  });
-  document.getElementById("p-store-remove")?.addEventListener("click", async () => {
-    if (!confirm("Remove store photo?")) return;
-    const form = new FormData();
-    form.append("seller_id", sellerId!);
-    form.append("seller_phone", localStorage.getItem("rlf_seller_phone") || "");
-    form.append("remove", "1");
-    await fetch("/api/seller/upload-store-photo", { method: "POST", body: form });
-    (document.getElementById("p-store-preview") as HTMLElement).style.display = "none";
-    (document.getElementById("p-store-preview-img") as HTMLImageElement).src = "";
-    (document.getElementById("p-store-file") as HTMLInputElement).value = "";
-    document.getElementById("p-store-drop")!.textContent = "📷 Upload store photo (max 5 MB)";
-    (window as any).v2Toast?.("success", "Photo removed");
-  });
+  // ── Logo + store photo: validate, crop to the shape buyers see, upload on save ──
+  const IMAGE_FIELDS = {
+    logo: { crop: "logo", title: "logo" },
+    store: { crop: "banner", title: "store photo" },
+  } as const;
+  type ImageField = keyof typeof IMAGE_FIELDS;
+  const pendingImage: Partial<Record<ImageField, Blob>> = {};
+  const byId = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  function imageFieldError(f: ImageField, msg: string | null) {
+    const el = byId(`p-${f}-error`);
+    el.textContent = msg || "";
+    el.style.display = msg ? "block" : "none";
+  }
+  function showImagePreview(f: ImageField, src: string | null) {
+    byId(`p-${f}-preview`).style.display = src ? "block" : "none";
+    byId<HTMLImageElement>(`p-${f}-preview-img`).src = src || "";
+    byId(`p-${f}-drop`).textContent = `📷 ${src ? "Replace" : "Upload"} ${IMAGE_FIELDS[f].title}`;
+  }
+
+  /** JPEG at falling quality until it is under the ~300 KB target; never over the 5 MB cap. */
+  async function encodeImage(c: HTMLCanvasElement): Promise<Blob | null> {
+    let blob: Blob | null = null;
+    for (const q of [0.85, 0.75, 0.65, 0.55, 0.45]) {
+      blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/jpeg", q));
+      if (!blob || blob.size <= TARGET_IMAGE_BYTES) break;
+    }
+    return blob && blob.size <= MAX_IMAGE_BYTES ? blob : null;
+  }
+
+  function openCrop(f: ImageField, img: HTMLImageElement) {
+    const kind = IMAGE_FIELDS[f].crop;
+    const { aspect, outW } = CROP[kind];
+    const modal = byId("p-crop");
+    const canvas = byId<HTMLCanvasElement>("p-crop-canvas");
+    const preview = byId<HTMLCanvasElement>("p-crop-preview");
+    const zoomEl = byId<HTMLInputElement>("p-crop-zoom");
+    const okBtn = byId<HTMLButtonElement>("p-crop-ok");
+    const errEl = byId("p-crop-error");
+    const W = img.naturalWidth, H = img.naturalHeight;
+    let zoom = 1, cx = W / 2, cy = H / 2;
+
+    byId("p-crop-title").textContent = kind === "logo" ? "Crop your logo" : "Crop your store photo";
+    byId("p-crop-hint").textContent = kind === "logo"
+      ? "Drag to position, use the slider to zoom. Square, shown next to your store name."
+      : "Drag to position, use the slider to zoom. Phones show the whole frame; wide screens show the part between the dashed lines.";
+    byId("p-crop-preview-label").textContent = kind === "logo" ? "Next to your store name" : "Top of your store page";
+    errEl.style.display = "none";
+    okBtn.disabled = true;
+    zoomEl.value = "1";
+    modal.style.display = "flex";
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(canvas.clientWidth * dpr);
+    canvas.height = Math.round(canvas.width / aspect);
+    const pw = kind === "logo" ? 60 : 120;
+    preview.style.width = `${pw}px`;
+    preview.style.height = `${pw / aspect}px`;
+    preview.style.borderRadius = kind === "logo" ? "14px" : "4px";
+    preview.width = Math.round(pw * dpr);
+    preview.height = Math.round((pw / aspect) * dpr);
+
+    const rect = () => cropRect(W, H, aspect, zoom, cx, cy);
+    function draw() {
+      const r = rect();
+      cx = r.x + r.w / 2; cy = r.y + r.h / 2; // keep the centre clamped so drags don't build up past an edge
+      for (const c of [canvas, preview]) c.getContext("2d")!.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height);
+      if (kind === "banner") {
+        const ctx = canvas.getContext("2d")!;
+        ctx.save();
+        ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = dpr; ctx.setLineDash([6 * dpr, 4 * dpr]);
+        for (const y of [canvas.height / 4, (canvas.height * 3) / 4]) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+        ctx.restore();
+      }
+    }
+
+    let last: { x: number; y: number } | null = null;
+    canvas.onpointerdown = (e) => { last = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); };
+    canvas.onpointermove = (e) => {
+      if (!last) return;
+      const scale = rect().w / canvas.clientWidth; // CSS px -> source px
+      cx -= (e.clientX - last.x) * scale; cy -= (e.clientY - last.y) * scale;
+      last = { x: e.clientX, y: e.clientY };
+      draw();
+    };
+    canvas.onpointerup = canvas.onpointercancel = () => { last = null; };
+    zoomEl.oninput = () => { zoom = Number(zoomEl.value); draw(); };
+
+    const close = () => {
+      modal.style.display = "none";
+      URL.revokeObjectURL(img.src);
+      byId<HTMLInputElement>(`p-${f}-file`).value = "";
+    };
+    byId<HTMLButtonElement>("p-crop-cancel").onclick = close;
+    modal.onkeydown = (e) => { if (e.key === "Escape") close(); };
+    okBtn.onclick = async () => {
+      okBtn.disabled = true;
+      const r = rect();
+      const out = document.createElement("canvas");
+      out.width = Math.min(outW, Math.round(r.w)); // never upscale a small source
+      out.height = Math.round(out.width / aspect);
+      const ctx = out.getContext("2d")!;
+      ctx.fillStyle = "#fff"; // transparent PNG logos would turn black as JPEG
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, out.width, out.height);
+      const blob = await encodeImage(out);
+      if (!blob) {
+        errEl.textContent = "Couldn't make this image small enough. Please try another.";
+        errEl.style.display = "block";
+        okBtn.disabled = false;
+        return;
+      }
+      pendingImage[f] = blob;
+      showImagePreview(f, URL.createObjectURL(blob));
+      imageFieldError(f, null);
+      close();
+    };
+
+    draw();
+    okBtn.disabled = false; // a valid crop exists from here on
+    zoomEl.focus();
+  }
+
+  for (const f of Object.keys(IMAGE_FIELDS) as ImageField[]) {
+    byId<HTMLInputElement>(`p-${f}-file`).addEventListener("change", async (e) => {
+      const input = e.target as HTMLInputElement;
+      const file = input.files?.[0];
+      if (!file) return;
+      const fileErr = imageFileError(file);
+      imageFieldError(f, fileErr);
+      if (fileErr) { input.value = ""; return; }
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      try { await img.decode(); } catch {
+        imageFieldError(f, "Couldn't read this image. Please choose another JPEG, PNG or WebP.");
+        URL.revokeObjectURL(img.src); input.value = ""; return;
+      }
+      const dimErr = imageDimensionsError(IMAGE_FIELDS[f].crop, img.naturalWidth, img.naturalHeight);
+      if (dimErr) { imageFieldError(f, dimErr); URL.revokeObjectURL(img.src); input.value = ""; return; }
+      openCrop(f, img);
+    });
+
+    byId(`p-${f}-remove`).addEventListener("click", async () => {
+      const title = IMAGE_FIELDS[f].title;
+      if (!confirm(`Remove ${title}?`)) return;
+      delete pendingImage[f];
+      const fd = new FormData();
+      fd.append("seller_id", sellerId!);
+      fd.append("seller_phone", localStorage.getItem("rlf_seller_phone") || "");
+      fd.append("kind", IMAGE_FIELDS[f].crop);
+      fd.append("remove", "1");
+      const res = await fetch("/api/seller/upload-store-photo", { method: "POST", body: fd });
+      if (!res.ok) { imageFieldError(f, `Couldn't remove the ${title}. Please try again.`); return; }
+      showImagePreview(f, null);
+      imageFieldError(f, null);
+      (window as any).v2Toast?.("success", `${title[0].toUpperCase()}${title.slice(1)} removed`);
+    });
+  }
 
   // Toggle preorder schedule sub-section
   document.getElementById("p-preorder")?.addEventListener("change", (e) => {

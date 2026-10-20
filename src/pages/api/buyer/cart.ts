@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (!buyer_id) return new Response(JSON.stringify({ error: "buyer_id required" }), { status: 400 });
 
     const supabase = client();
-    const cols = `
+    let cols = `
         listing_id,
         pricing_option_id,
         placement_kind,
@@ -36,10 +36,12 @@ export const GET: APIRoute = async ({ url, request }) => {
         price_snapshot,
         created_at,
         updated_at,
-        listing:fish_listings ( id, species, photo_url, weight_avail, is_available, pricing_options, seller_id, seller:sellers ( id, name, store_image_url, is_active, opens_at, closes_at, has_delivery, accepts_preorder, min_order_amount ) )
+        listing:fish_listings ( id, species, photo_url, weight_avail, is_available, pricing_options, seller_id, seller:sellers ( id, name, store_image_url, logo_url, is_active, opens_at, closes_at, has_delivery, accepts_preorder, min_order_amount ) )
       `;
     const run = (c: string) => supabase.from("buyer_cart").select(c).eq("buyer_id", buyer_id).order("updated_at", { ascending: false });
     let { data, error } = await run(cols);
+    // Before migration 081: no sellers.logo_url.
+    if (error?.code === "42703") ({ data, error } = await run((cols = cols.replace(" logo_url,", ""))));
     // Before migration 079: no placement_kind (items then report null = unknown).
     if (error?.code === "42703") ({ data, error } = await run(cols.replace("placement_kind,", "")));
     // Before migration 071: no pricing_option_id column yet.
@@ -58,7 +60,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       updated_at: r.updated_at,
       seller_id: r.listing?.seller_id,
       seller_name: r.listing?.seller?.name || "",
-      seller_image_url: r.listing?.seller?.store_image_url || null,
+      seller_image_url: r.listing?.seller?.logo_url || r.listing?.seller?.store_image_url || null,
       seller_active: !!r.listing?.seller?.is_active,
       species: r.listing?.species,
       species_display: r.listing?.species,

@@ -39,6 +39,11 @@ export function summariseReviews(feedback: FeedbackRow[], orders: OrderRow[], li
   };
 }
 
+/** "Based on 1 rating from buyers after delivery" (singular / plural). */
+export function ratingsBasisLabel(count: number): string {
+  return `Based on ${count} ${count === 1 ? "rating" : "ratings"} from buyers after delivery`;
+}
+
 const EMPTY: ReviewSummary = { count: 0, average: null, reviews: [] };
 
 /** Never throws: a review fetch must not break a public page. */

@@ -2,26 +2,127 @@
 /**
  * Real buyer ratings (from delivered, non-test orders). Renders nothing until
  * at least one exists — no placeholder or sample reviews, ever.
+ * Buyer name / phone are never shown (the summary does not carry them).
  */
-import type { ReviewSummary } from "../../../lib/server/seller-reviews";
-import { getSpeciesDisplay } from "../../../lib/species";
+import { ratingsBasisLabel, type ReviewSummary } from "../../../lib/server/seller-reviews";
+import { getSpeciesById, getSpeciesDisplay } from "../../../lib/species";
 
 interface Props { summary: ReviewSummary; title: string; sellerNames?: Record<string, string> }
 const { summary, title, sellerNames = {} } = Astro.props;
-const stars = (n: number) => "★".repeat(Math.round(n)) + "☆".repeat(5 - Math.round(n));
+const VISIBLE = 3;
+const avg = summary.average || 0;
+const half = Math.round(avg * 2) / 2; // 4.5 shows four and a half stars
 const month = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" });
+const fishName = (id: string) => getSpeciesById(id)?.english || getSpeciesDisplay(id);
+// Only when every rating is loaded — otherwise the bars would describe a sample, not the seller.
+const dist = summary.count >= 3 && summary.count === summary.reviews.length
+  ? [5, 4, 3, 2, 1].map((s) => ({ s, n: summary.reviews.filter((r) => r.rating === s).length }))
+  : null;
+const shown = summary.reviews.slice(0, VISIBLE);
+const more = summary.reviews.slice(VISIBLE);
+const moreLabel = summary.reviews.length === summary.count
+  ? `Show all ${summary.count} reviews`
+  : `Show ${more.length} more ${more.length === 1 ? "review" : "reviews"}`;
 ---
 {summary.count > 0 && (
-  <section style="padding:20px 16px;border-top:1px solid var(--v2-border);">
-    <h2 style="font:700 16px/1.3 Inter;margin:0 0 4px;">{title}</h2>
-    <p style="font:600 14px Inter;margin:0 0 12px;color:var(--v2-ink-2);">
-      <span style="color:#F59E0B;">{stars(summary.average || 0)}</span> {summary.average} out of 5 · {summary.count} {summary.count === 1 ? "rating" : "ratings"} from buyers after delivery
-    </p>
-    {summary.reviews.map((r) => (
-      <div style="border-top:1px solid var(--v2-border);padding:10px 0;">
-        <div style="font:600 13px Inter;"><span style="color:#F59E0B;">{stars(r.rating)}</span> {r.species ? getSpeciesDisplay(r.species) : "Order"}{sellerNames[r.sellerId] ? ` · ${sellerNames[r.sellerId]}` : ""} · <span style="color:var(--v2-ink-3);font-weight:400;">{month(r.date)}</span></div>
-        {r.text && <p style="font:400 14px/1.5 Inter;margin:4px 0 0;color:var(--v2-text-secondary);">{r.text}</p>}
+  <section class="rv">
+    <h2 class="rv-title">{title}</h2>
+
+    <div class="rv-summary">
+      <div class="rv-avg">
+        <div class="rv-avg-num">{avg.toFixed(1)}</div>
+        <span class="rv-stars rv-stars-lg" role="img" aria-label={`Rated ${avg} out of 5`}>
+          {[1, 2, 3, 4, 5].map((i) => <span class:list={["rv-star", i <= half ? "on" : i - 0.5 === half && "half"]} aria-hidden="true">★</span>)}
+        </span>
+        <div class="rv-basis">{ratingsBasisLabel(summary.count)}</div>
       </div>
-    ))}
+      {dist && (
+        <div class="rv-dist" role="group" aria-label="Rating breakdown">
+          {dist.map(({ s, n }) => (
+            <div class="rv-dist-row">
+              <span class="rv-dist-s">{s}★</span>
+              <span class="rv-dist-bar"><span style={`width:${Math.round((n / summary.count) * 100)}%`}></span></span>
+              <span class="rv-dist-n">{n}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {[shown, more].map((list, i) => {
+      const cards = list.map((r) => (
+        <article class="rv-card">
+          <div class="rv-card-head">
+            <span class="rv-stars" role="img" aria-label={`Rated ${r.rating} out of 5`}>
+              {[1, 2, 3, 4, 5].map((j) => <span class:list={["rv-star", j <= r.rating && "on"]} aria-hidden="true">★</span>)}
+            </span>
+            <time class="rv-date" datetime={r.date}>{month(r.date)}</time>
+          </div>
+          {(r.species || sellerNames[r.sellerId]) && (
+            <div class="rv-chips">
+              {r.species && <span class="rv-chip">🐟 {fishName(r.species)}</span>}
+              {sellerNames[r.sellerId] && <span class="rv-chip">{sellerNames[r.sellerId]}</span>}
+            </div>
+          )}
+          {r.text && <p class="rv-text">{r.text}</p>}
+          <div class="rv-verified">✓ Verified buyer · after delivery</div>
+        </article>
+      ));
+      if (i === 0) return cards;
+      return list.length > 0 && (
+        <details class="rv-more">
+          <summary class="rv-more-btn"><span class="rv-more-show">{moreLabel}</span><span class="rv-more-hide">Show fewer reviews</span></summary>
+          {cards}
+        </details>
+      );
+    })}
   </section>
 )}
+
+<style>
+  .rv { padding: 20px 16px; border-top: 1px solid var(--v2-border); font-family: var(--v2-font); }
+  .rv-title { font: 700 16px/1.3 var(--v2-font); color: var(--v2-ink); margin: 0 0 12px; }
+  .rv-summary {
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    padding: 16px; margin-bottom: 12px;
+    background: var(--v2-bg); border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius); box-shadow: var(--v2-shadow-sm);
+  }
+  .rv-avg { flex: 1 1 160px; min-width: 0; }
+  .rv-avg-num { font: 800 36px/1 var(--v2-font); color: var(--v2-ink); letter-spacing: -0.02em; }
+  .rv-stars { display: inline-flex; gap: 1px; font-size: 14px; line-height: 1; }
+  .rv-stars-lg { font-size: 18px; margin: 6px 0 4px; }
+  .rv-star { color: var(--v2-border); }
+  .rv-star.on { color: #F59E0B; }
+  .rv-star.half { background: linear-gradient(90deg, #F59E0B 50%, var(--v2-border) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .rv-basis { font: 500 12px/1.4 var(--v2-font); color: var(--v2-ink-3); }
+  .rv-dist { flex: 1 1 160px; display: flex; flex-direction: column; gap: 4px; }
+  .rv-dist-row { display: flex; align-items: center; gap: 8px; font: 600 11px var(--v2-font); color: var(--v2-ink-3); }
+  .rv-dist-s { width: 22px; }
+  .rv-dist-n { width: 14px; text-align: right; }
+  .rv-dist-bar { flex: 1; height: 6px; border-radius: var(--v2-radius-full); background: var(--v2-bg-3); overflow: hidden; }
+  .rv-dist-bar > span { display: block; height: 100%; background: #F59E0B; border-radius: inherit; }
+  .rv-card {
+    padding: 14px; margin-top: 10px;
+    background: var(--v2-bg); border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius); box-shadow: var(--v2-shadow-sm);
+  }
+  .rv-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .rv-date { font: 500 12px var(--v2-font); color: var(--v2-ink-3); }
+  .rv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .rv-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+    font: 600 12px var(--v2-font); color: var(--v2-ink-2);
+    background: var(--v2-brand-l); border-radius: var(--v2-radius-full);
+  }
+  .rv-text { font: 400 15px/1.55 var(--v2-font); color: var(--v2-ink-2); margin: 8px 0 0; overflow-wrap: anywhere; }
+  .rv-verified { font: 600 11px var(--v2-font); color: var(--v2-green); margin-top: 8px; }
+  .rv-more-btn {
+    list-style: none; cursor: pointer; margin-top: 12px; padding: 10px; text-align: center;
+    font: 700 13px var(--v2-font); color: var(--v2-brand);
+    border: 1px solid var(--v2-border); border-radius: var(--v2-radius-sm); background: var(--v2-bg);
+  }
+  .rv-more-btn::-webkit-details-marker { display: none; }
+  .rv-more-hide, .rv-more[open] .rv-more-show { display: none; }
+  .rv-more[open] .rv-more-hide { display: inline; }
+</style>

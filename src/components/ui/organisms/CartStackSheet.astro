@@ -120,7 +120,8 @@ const { id = "v2-cart-stack" } = Astro.props;
     const allGroups = window.__v2allGroups;
     if (Array.isArray(allGroups)) {
       const match = allGroups.find((row) => row?.seller?.id === g.seller_id);
-      if (match?.seller?.store_image_url) return match.seller.store_image_url;
+      const img = match?.seller?.logo_url || match?.seller?.store_image_url;
+      if (img) return img;
     }
     // Current seller page fresh DB value (covers stale localStorage)
     const pageData = window.__sellerPageData;
