@@ -8,7 +8,7 @@ import { CROP, cropRect, MAX_IMAGE_BYTES, TARGET_IMAGE_BYTES, type CropKind } fr
 const COPY: Record<CropKind, { title: string; hint: string; preview: string; previewW: number; radius: string }> = {
   logo: { title: "Crop your logo", hint: "Drag to position, use the slider to zoom. Square, shown next to your store name.", preview: "Next to your store name", previewW: 60, radius: "14px" },
   banner: { title: "Crop your store photo", hint: "Drag to position, use the slider to zoom. Phones show the whole frame; wide screens show the part between the dashed lines.", preview: "Top of your store page", previewW: 120, radius: "4px" },
-  listing: { title: "Crop your fish photo", hint: "Drag to position, use the slider to zoom. Keep the whole fish inside the square: buyers see exactly this on your menu.", preview: "On your menu", previewW: 64, radius: "8px" },
+  listing: { title: "Crop your fish photo", hint: "Drag to position, use the slider to zoom. Square photo, shown on your menu. Keep the whole fish inside the square.", preview: "On your menu", previewW: 120, radius: "8px" },
 };
 
 /** JPEG at falling quality until it is under the ~300 KB target; never over the 5 MB cap. */
@@ -61,7 +61,8 @@ export function cropImage(kind: CropKind, img: HTMLImageElement): Promise<Blob |
       const ctx = canvas.getContext("2d")!;
       ctx.save();
       ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = dpr; ctx.setLineDash([6 * dpr, 4 * dpr]);
-      for (const y of [canvas.height / 4, (canvas.height * 3) / 4]) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+      const cut = (1 - (aspect * 260) / 800) / 2; // part hidden above/below on the 800x260 wide-screen hero
+      for (const y of [canvas.height * cut, canvas.height * (1 - cut)]) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
       ctx.restore();
     }
   }
@@ -86,8 +87,8 @@ export function cropImage(kind: CropKind, img: HTMLImageElement): Promise<Blob |
       okBtn.disabled = true;
       const r = rect();
       const out = document.createElement("canvas");
-      out.width = Math.min(outW, Math.round(r.w)); // never upscale a small source
-      out.height = Math.round(out.width / aspect);
+      out.width = outW; // fixed size: listing 800x800, logo 512x512, banner 1500x1000
+      out.height = Math.round(outW / aspect);
       const ctx = out.getContext("2d")!;
       ctx.fillStyle = "#fff"; // transparent PNGs would turn black as JPEG
       ctx.fillRect(0, 0, out.width, out.height);
