@@ -1,0 +1,52 @@
+---
+/** Average, stars, "Based on N ratings…" and (3+ ratings, or when forced) the 5→1 breakdown over ALL ratings. */
+import { ratingsBasisLabel, type ReviewSummary } from "../../../lib/server/seller-reviews";
+
+interface Props { summary: ReviewSummary; showDistribution?: boolean }
+const { summary, showDistribution = summary.count >= 3 } = Astro.props;
+const avg = summary.average || 0;
+const half = Math.round(avg * 2) / 2; // 4.5 shows four and a half stars
+const dist = showDistribution ? [5, 4, 3, 2, 1].map((s, i) => ({ s, n: summary.distribution[i] || 0 })) : null;
+---
+<div class="rv-summary">
+  <div class="rv-avg">
+    <div class="rv-avg-num">{avg.toFixed(1)}</div>
+    <span class="rv-stars" role="img" aria-label={`Rated ${avg} out of 5`}>
+      {[1, 2, 3, 4, 5].map((i) => <span class:list={["rv-star", i <= half ? "on" : i - 0.5 === half && "half"]} aria-hidden="true">★</span>)}
+    </span>
+    <div class="rv-basis">{ratingsBasisLabel(summary.count)}</div>
+  </div>
+  {dist && (
+    <div class="rv-dist" role="group" aria-label="Rating breakdown">
+      {dist.map(({ s, n }) => (
+        <div class="rv-dist-row">
+          <span class="rv-dist-s">{s}★</span>
+          <span class="rv-dist-bar"><span style={`width:${summary.count ? Math.round((n / summary.count) * 100) : 0}%`}></span></span>
+          <span class="rv-dist-n">{n}</span>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+<style>
+  .rv-summary {
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    padding: 16px; margin-bottom: 12px; font-family: var(--v2-font);
+    background: var(--v2-bg); border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius); box-shadow: var(--v2-shadow-sm);
+  }
+  .rv-avg { flex: 1 1 160px; min-width: 0; }
+  .rv-avg-num { font: 800 36px/1 var(--v2-font); color: var(--v2-ink); letter-spacing: -0.02em; }
+  .rv-stars { display: inline-flex; gap: 1px; font-size: 18px; line-height: 1; margin: 6px 0 4px; }
+  .rv-star { color: var(--v2-border); }
+  .rv-star.on { color: #F59E0B; }
+  .rv-star.half { background: linear-gradient(90deg, #F59E0B 50%, var(--v2-border) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .rv-basis { font: 500 12px/1.4 var(--v2-font); color: var(--v2-ink-3); }
+  .rv-dist { flex: 1 1 160px; display: flex; flex-direction: column; gap: 4px; }
+  .rv-dist-row { display: flex; align-items: center; gap: 8px; font: 600 11px var(--v2-font); color: var(--v2-ink-3); }
+  .rv-dist-s { width: 22px; }
+  .rv-dist-n { min-width: 14px; text-align: right; }
+  .rv-dist-bar { flex: 1; height: 6px; border-radius: var(--v2-radius-full); background: var(--v2-bg-3); overflow: hidden; }
+  .rv-dist-bar > span { display: block; height: 100%; background: #F59E0B; border-radius: inherit; }
+</style>

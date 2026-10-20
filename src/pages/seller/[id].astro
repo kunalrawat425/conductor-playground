@@ -57,7 +57,7 @@ const sellerName = cleanSellerName(seller?.name) || "Seller";
 const sellerLocation = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const SITE = SITE_URL;
 const sellerArea = sellerLocation ? getAreaBySlug(sellerLocation.toLowerCase()) : null;
-const reviewSummary = seller ? await getSellerReviews([seller.id]) : { count: 0, average: null, reviews: [] };
+const reviewSummary = await getSellerReviews(seller ? [seller.id] : [], 2);
 const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
 // Per-fish product pages live under /s/<slug>/<species> (single-product pages for Google).
 const fishBase = seller && sellerHref(seller.name, seller.id).startsWith("/s/") ? sellerHref(seller.name, seller.id) : null;
@@ -364,6 +364,8 @@ const tags = [
         tags={tags}
         storeImageUrl={seller?.store_image_url}
         logoUrl={seller?.logo_url}
+        ratingCount={reviewSummary.count}
+        reviewsHref={seller ? `${sellerHref(seller.name, seller.id)}/reviews` : undefined}
       />
 
       {/* Schedule strip */}
@@ -486,7 +488,7 @@ const tags = [
   <div id="v2-cart-bar-mount"></div>
 
 
-  {!notFound && <ReviewsBlock summary={reviewSummary} title={`Buyer ratings for ${sellerName}`} />}
+  {!notFound && <ReviewsBlock summary={reviewSummary} title={`Buyer ratings for ${sellerName}`} allHref={`${sellerHref(seller.name, seller.id)}/reviews`} />}
   {!notFound && sellerArea && (
     <p style="font:400 13px/1.5 Inter;margin:0;padding:12px 16px;border-top:1px solid var(--v2-border);">
       {sellerName} delivers in {sellerArea.name}. <a href={`/area/${sellerArea.slug}`} style="color:var(--v2-brand);font-weight:600;">See all fish sellers and today's prices in {sellerArea.name} →</a>
