@@ -55,6 +55,21 @@ export function saveGpsDefault(get: Get, set: (k: string, v: string) => void, lo
   return true;
 }
 
+const OLD_COPIES = ["zepto_buyer_lat", "zepto_buyer_lng", "zepto_buyer_location", "zepto_location", "v2_buyer_location"];
+
+/**
+ * The buyer confirmed a spot on the map: it replaces every stored copy (canonical keys, the v1
+ * rlf_location JSON, old zepto_* keys that lib/auth would migrate back over it), so no older
+ * copy can win it back.
+ */
+export function writeConfirmedLocation(set: (k: string, v: string) => void, remove: (k: string) => void, loc: SavedLocation) {
+  set("rlf_buyer_lat", String(loc.lat));
+  set("rlf_buyer_lng", String(loc.lng));
+  set("rlf_buyer_location", loc.area);
+  set("rlf_location", JSON.stringify({ lat: loc.lat, lng: loc.lng, name: loc.area }));
+  for (const k of OLD_COPIES) remove(k);
+}
+
 const ls = () => (typeof localStorage === "undefined" ? null : localStorage);
 
 /**
@@ -76,4 +91,22 @@ export async function loadSavedLocation(): Promise<SavedLocation | null> {
     if (loc) writeSavedLocation((k, v) => store.setItem(k, v), loc);
     return loc;
   } catch { return null; }
+}
+
+/** Save a map pick on this device and, for a logged-in buyer, on their account right away. */
+export async function saveConfirmedLocation(loc: SavedLocation): Promise<void> {
+  const store = ls();
+  if (!store) return;
+  writeConfirmedLocation((k, v) => store.setItem(k, v), (k) => store.removeItem(k), loc);
+  const buyerId = store.getItem("rlf_buyer_id");
+  if (!buyerId) return;
+  try {
+    const res = await fetch("/api/buyer/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ buyer_id: buyerId, updates: { lat: loc.lat, lng: loc.lng, location_name: loc.area || null } }),
+    });
+    // Same key AppShell's page-load sync uses; if this fails, that sync retries on the next page.
+    if (res.ok) store.setItem("rlf_loc_synced", `${loc.lat},${loc.lng}`);
+  } catch {}
 }

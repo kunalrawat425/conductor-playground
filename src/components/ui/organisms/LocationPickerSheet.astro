@@ -165,11 +165,8 @@ const { id = "v2-loc-picker" } = Astro.props;
       return;
     }
     selectedArea = typed || selectedArea || "Mumbai";
-    try {
-      localStorage.setItem("rlf_buyer_location", selectedArea);
-      if (selectedLat) localStorage.setItem("rlf_buyer_lat", String(selectedLat));
-      if (selectedLng) localStorage.setItem("rlf_buyer_lng", String(selectedLng));
-    } catch {}
+    // Every stored copy + the account, so no older copy (GPS, v1 rlf_location, account) wins it back.
+    try { await window.RelifishLocation.save({ lat: selectedLat, lng: selectedLng, area: selectedArea }); } catch {}
     document.dispatchEvent(new CustomEvent("v2-location-confirmed", {
       detail: { area: selectedArea, lat: selectedLat, lng: selectedLng }
     }));

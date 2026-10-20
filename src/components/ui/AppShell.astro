@@ -261,13 +261,14 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
     <!-- Global cart module — exposed on window for inline scripts (define:vars) -->
     <script>
       import * as Cart from "../../lib/cart";
-      import { loadSavedLocation, readSavedLocation } from "../../lib/saved-location";
+      import { loadSavedLocation, readSavedLocation, saveConfirmedLocation } from "../../lib/saved-location";
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
 
       // Saved location for inline map scripts (LocationPickerSheet, AddressPickerSheet).
       (window as any).RelifishLocation = {
         load: loadSavedLocation,
+        save: saveConfirmedLocation,
         peek: () => { try { return readSavedLocation((k) => localStorage.getItem(k)); } catch { return null; } },
       };
       // Logged-in buyer with nothing saved on this device (new phone, cleared storage): take the

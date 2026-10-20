@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { readSavedLocation, loadSavedLocation, saveGpsDefault } from "../../src/lib/saved-location";
+import { readSavedLocation, loadSavedLocation, saveGpsDefault, saveConfirmedLocation } from "../../src/lib/saved-location";
 
 const from = (o: Record<string, string>) => (k: string) => (k in o ? o[k] : null);
 const mem = new Map<string, string>();
 (globalThis as any).localStorage = {
   getItem: (k: string) => mem.get(k) ?? null,
   setItem: (k: string, v: string) => void mem.set(k, String(v)),
+  removeItem: (k: string) => void mem.delete(k),
   clear: () => mem.clear(),
 };
 
@@ -70,5 +71,41 @@ describe("loadSavedLocation", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ profile: { lat: null, lng: null } })));
     expect(await loadSavedLocation()).toBeNull();
     expect(localStorage.getItem("rlf_buyer_lat")).toBeNull();
+  });
+});
+
+describe("saveConfirmedLocation", () => {
+  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  const thane = { lat: 19.2183, lng: 72.9781, area: "Thane West" };
+
+  it("replaces every older copy on the device, so none can win the map pick back", async () => {
+    // Two locations: GPS "current" on the navbar keys and the v1 JSON, plus old zepto keys.
+    localStorage.setItem("rlf_buyer_lat", "19.1197"); localStorage.setItem("rlf_buyer_lng", "72.8464"); localStorage.setItem("rlf_buyer_location", "Andheri West");
+    localStorage.setItem("rlf_location", '{"lat":19.1197,"lng":72.8464,"name":"Your location"}');
+    localStorage.setItem("zepto_buyer_lat", "19.1"); localStorage.setItem("zepto_buyer_lng", "72.8"); localStorage.setItem("zepto_location", '{"lat":19.1,"lng":72.8}');
+    const f = vi.spyOn(globalThis, "fetch");
+    await saveConfirmedLocation(thane);
+    const get = (k: string) => localStorage.getItem(k);
+    expect(readSavedLocation(get)).toEqual(thane);
+    expect(JSON.parse(get("rlf_location")!)).toEqual({ lat: 19.2183, lng: 72.9781, name: "Thane West" });
+    expect([get("zepto_buyer_lat"), get("zepto_buyer_lng"), get("zepto_location")]).toEqual([null, null, null]);
+    expect(f).not.toHaveBeenCalled(); // guest: nothing to sync
+  });
+
+  it("saves a logged-in buyer's pick on the account right away", async () => {
+    localStorage.setItem("rlf_buyer_id", "b1");
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    await saveConfirmedLocation(thane);
+    expect(f).toHaveBeenCalledWith("/api/buyer/profile", expect.objectContaining({ method: "POST" }));
+    expect(JSON.parse((f.mock.calls[0][1] as RequestInit).body as string)).toEqual({ buyer_id: "b1", updates: { lat: 19.2183, lng: 72.9781, location_name: "Thane West" } });
+    expect(localStorage.getItem("rlf_loc_synced")).toBe("19.2183,72.9781");
+  });
+
+  it("leaves the sync key unset when the account save fails, so the page-load sync retries", async () => {
+    localStorage.setItem("rlf_buyer_id", "b1");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 500 }));
+    await saveConfirmedLocation(thane);
+    expect(localStorage.getItem("rlf_buyer_lat")).toBe("19.2183");
+    expect(localStorage.getItem("rlf_loc_synced")).toBeNull();
   });
 });
