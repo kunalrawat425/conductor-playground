@@ -44,6 +44,8 @@ const { id = "v2-loc-picker" } = Astro.props;
   let map, marker, selectedLat, selectedLng, selectedArea;
   let draggedOrSearched = false;
   let typedUnresolved = false; // typed text not yet turned into coordinates
+  let moved = false; // buyer moved the pin / typed / used GPS since this open
+  let pendingName = null; // reverse geocode for the latest pin, awaited by Confirm
 
   // The buyer's saved location from any source (lib/saved-location: this device's keys, else
   // their account). Before, only rlf_buyer_lat/lng were read, so a location saved under
@@ -53,10 +55,11 @@ const { id = "v2-loc-picker" } = Astro.props;
   }
 
   // Open on the saved pin (if any) so the buyer sees where they are, not central Mumbai.
-  // Runs on every open: an unconfirmed drag is dropped, the saved pin is never lost.
+  // Runs once per open. Never after the buyer has moved the pin: that reset the drag, so
+  // Confirm saved the old spot (it used to also run on every bubbled transitionend).
   async function showSaved() {
     const saved = await savedLocation();
-    if (!saved || !map || !marker) return;
+    if (!saved || !map || !marker || moved) return;
     selectedLat = saved.lat; selectedLng = saved.lng;
     if (saved.area) selectedArea = saved.area;
     map.setView([saved.lat, saved.lng], 15);
@@ -78,19 +81,14 @@ const { id = "v2-loc-picker" } = Astro.props;
     selectedLat = mumbai[0]; selectedLng = mumbai[1];
     showSaved();
     
-    marker.on("dragend", async () => {
-      draggedOrSearched = true;
-      const ll = marker.getLatLng();
+    // The pin is the buyer's latest choice: it beats any earlier typed text.
+    const pinTo = (ll) => {
+      draggedOrSearched = true; moved = true; typedUnresolved = false;
       selectedLat = ll.lat; selectedLng = ll.lng;
-      await reverseGeocode(ll.lat, ll.lng);
-    });
-    
-    map.on("click", (e) => {
-      draggedOrSearched = true;
-      marker.setLatLng(e.latlng);
-      selectedLat = e.latlng.lat; selectedLng = e.latlng.lng;
-      reverseGeocode(e.latlng.lat, e.latlng.lng);
-    });
+      pendingName = reverseGeocode(ll.lat, ll.lng);
+    };
+    marker.on("dragend", () => pinTo(marker.getLatLng()));
+    map.on("click", (e) => { marker.setLatLng(e.latlng); pinTo(e.latlng); });
     
     setTimeout(() => map.invalidateSize(), 100);
   }
@@ -129,27 +127,27 @@ const { id = "v2-loc-picker" } = Astro.props;
       return;
     }
     navigator.geolocation.getCurrentPosition(async (pos) => {
-      draggedOrSearched = true;
+      draggedOrSearched = true; moved = true; typedUnresolved = false;
       const { latitude, longitude } = pos.coords;
       selectedLat = latitude; selectedLng = longitude;
       if (map && marker) {
         map.setView([latitude, longitude], 14);
         marker.setLatLng([latitude, longitude]);
       }
-      await reverseGeocode(latitude, longitude);
+      await (pendingName = reverseGeocode(latitude, longitude));
     }, () => {
       window.v2Toast?.("error", "Location denied", "Allow location or type manually");
     });
   });
 
   document.getElementById(`${id}-area-input`)?.addEventListener("change", (e) => {
-    draggedOrSearched = true;
+    draggedOrSearched = true; moved = true;
     selectedArea = e.target.value;
     if (e.target.value.trim()) forwardGeocode(e.target.value.trim());
   });
 
   document.getElementById(`${id}-area-input`)?.addEventListener("input", (e) => {
-    draggedOrSearched = true;
+    draggedOrSearched = true; moved = true;
     typedUnresolved = true;
   });
 
@@ -159,6 +157,7 @@ const { id = "v2-loc-picker" } = Astro.props;
       return;
     }
 
+    await pendingName; // area name for a just-dragged pin, so the header matches the pin
     const input = document.getElementById(`${id}-area-input`);
     const typed = input?.value?.trim();
     if (typedUnresolved && typed && !(await forwardGeocode(typed))) {
@@ -181,10 +180,12 @@ const { id = "v2-loc-picker" } = Astro.props;
 
   // Init map when sheet opens (Leaflet is lazy)
   document.addEventListener("relifish:open-location-picker", () => {
+    moved = false; pendingName = null;
     window.v2OpenSheet?.(id);
     setTimeout(initMap, 200);
   });
-  document.querySelector(`[data-sheet-backdrop="${id}"]`)?.addEventListener("transitionend", initMap);
+  // No transitionend -> initMap here: the backdrop has no transition, so it only caught events
+  // bubbling up from inside (Confirm hover, input focus, Leaflet zoom) and snapped the pin back.
 
   // Initial init if open
   if (document.getElementById(`${id}-backdrop`)?.classList.contains("v2-sheet-open")) {
