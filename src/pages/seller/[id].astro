@@ -390,6 +390,19 @@ const tags = [
         })()}
       </div>
 
+      {/* Same-day context banner: repeats the ad's promise for visitors landing from ads */}
+      {isEffectivelyOpen && seller?.has_delivery && (
+        <div style="margin:12px 16px 0;padding:12px 14px;background:#DCFCE7;border:1px solid #BBF7D0;border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">🐟</span>
+          <div>
+            <div style="font:700 13px Inter;color:#166534;">Today's fresh catch, delivered to your door</div>
+            <div style="font:400 11px Inter;color:#15803D;margin-top:2px;">
+              {closesAtFmt ? `Order before ${closesAtFmt} for delivery today.` : "Order now for delivery today."}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pre-order context banner */}
       {isPreorderMode && (
         <div style="margin:12px 16px 0;padding:12px 14px;background:#F3E8FF;border:1px solid #DDD6FE;border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;">
