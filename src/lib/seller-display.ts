@@ -77,9 +77,19 @@ export function validateSellerName(raw: unknown): string | null {
 /**
  * Supabase Storage photo, resized and served as WebP by Supabase's image transform
  * (fishtokri_banner.png: 2.1 MB → ~30 KB at 800 px); "contain" keeps the aspect ratio (width alone crops). Other URLs are returned unchanged.
+ * Only prod has image transforms: staging's /render/image answers 403 FeatureNotEnabled, so
+ * staging photos are served as the plain object URL instead of showing broken images.
  */
+const TRANSFORM_HOST = "witoghpdfocywiosmrzv.supabase.co";
+
 export function resizedImageUrl(url: string | null | undefined, width: number): string | null {
   if (!url) return null;
+  if (!url.includes(TRANSFORM_HOST)) {
+    // Another Supabase project (staging): undo any saved transform URL, serve the original.
+    return url.includes(".supabase.co/storage/v1/render/image/public/")
+      ? url.split("?")[0].replace("/storage/v1/render/image/public/", "/storage/v1/object/public/")
+      : url;
+  }
   // Photos saved as an already-transformed URL (e.g. ?width=700) are re-sized to the size shown here.
   if (url.includes(".supabase.co/storage/v1/render/image/public/")) {
     const base = url.split("?")[0];
