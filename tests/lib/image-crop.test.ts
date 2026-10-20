@@ -6,8 +6,8 @@ describe("cropRect", () => {
     expect(cropRect(4000, 3000, CROP.logo.aspect, 1, 2000, 1500)).toEqual({ x: 500, y: 0, w: 3000, h: 3000 });
   });
 
-  it("takes a full-width 2:1 band from a portrait photo for the banner", () => {
-    expect(cropRect(1000, 2000, CROP.banner.aspect, 1, 500, 1000)).toEqual({ x: 0, y: 750, w: 1000, h: 500 });
+  it("takes a full-width 3:2 band from a portrait photo for the banner", () => {
+    expect(cropRect(1200, 2000, CROP.banner.aspect, 1, 600, 1000)).toEqual({ x: 0, y: 600, w: 1200, h: 800 });
   });
 
   it("shrinks with zoom and keeps the rect inside the image when dragged past an edge", () => {
@@ -44,7 +44,9 @@ describe("imageDimensionsError", () => {
     expect(imageDimensionsError("logo", 400, 150)).toMatch(/^Image too small: use at least 200×200 px/);
   });
   it("needs a listing photo of at least 400x400, cropped square", () => {
-    expect(CROP.listing.aspect).toBe(1);
+    expect(CROP.listing).toMatchObject({ aspect: 1, outW: 800 }); // 800x800 export
+    expect(CROP.logo).toMatchObject({ aspect: 1, outW: 512 });
+    expect(CROP.banner).toMatchObject({ aspect: 1.5, outW: 1500 }); // 3:2, matches the 260 px hero on a 390 px phone
     expect(imageDimensionsError("listing", 400, 400)).toBeNull();
     expect(imageDimensionsError("listing", 1200, 399)).toBe("Image too small: use at least 400×400 px (this one is 1200×399).");
   });
