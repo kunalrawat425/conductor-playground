@@ -1,0 +1,21 @@
+<!-- Crop step for seller photos (logo, store photo, listing photo): the frame is the exact
+     shape buyers see. One per page; driven by cropImage() in lib/crop-dialog.ts. -->
+<div id="p-crop" role="dialog" aria-modal="true" aria-labelledby="p-crop-title" style="display:none;position:fixed;inset:0;z-index:var(--v2-z-modal);background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--v2-bg);color:var(--v2-ink);border-radius:var(--v2-radius-lg);padding:16px;width:100%;max-width:440px;box-shadow:var(--v2-shadow-lg);">
+    <h3 id="p-crop-title" style="font:700 15px Inter;margin:0 0 4px;"></h3>
+    <p id="p-crop-hint" style="font:400 12px/1.4 Inter;color:var(--v2-ink-3);margin:0 0 10px;"></p>
+    <canvas id="p-crop-canvas" style="width:100%;display:block;border-radius:var(--v2-radius-sm);touch-action:none;cursor:grab;background:var(--v2-bg-3);"></canvas>
+    <label style="display:flex;align-items:center;gap:8px;margin:12px 0;font:600 12px Inter;color:var(--v2-ink-2);">
+      Zoom <input id="p-crop-zoom" type="range" min="1" max="4" step="0.01" value="1" style="flex:1;" />
+    </label>
+    <div style="display:flex;align-items:center;gap:10px;font:600 11px Inter;color:var(--v2-ink-3);">
+      <canvas id="p-crop-preview" style="border:1px solid var(--v2-border);"></canvas>
+      <span id="p-crop-preview-label"></span>
+    </div>
+    <div id="p-crop-error" role="alert" style="display:none;font:500 12px Inter;color:var(--v2-red);margin-top:10px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button type="button" id="p-crop-cancel" class="v2-btn v2-btn-secondary v2-btn-md">Cancel</button>
+      <button type="button" id="p-crop-ok" class="v2-btn v2-btn-primary v2-btn-md" disabled>Use this</button>
+    </div>
+  </div>
+</div>

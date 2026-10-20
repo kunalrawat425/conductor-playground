@@ -202,6 +202,8 @@ const categories = [
   import { cleanSellerName, sellerHref } from "../lib/seller-display";
   import { LOGO_URL } from "../lib/brand";
   import { isTodayOrderDay as orderDayFor } from "../lib/order-timing";
+  import { menuBySeller } from "../lib/menu-order";
+  import { readSavedLocation } from "../lib/saved-location";
   import type { Seller, FishListing } from "../lib/supabase";
 
   type SellerHue = "sky" | "green" | "orange" | "indigo";
@@ -244,17 +246,13 @@ const categories = [
     return cur >= ch * 60 + cm;
   }
 
-  function getBuyerLocation(): { lat: number; lng: number } | null {
-    try {
-      const lat = localStorage.getItem("rlf_buyer_lat");
-      const lng = localStorage.getItem("rlf_buyer_lng");
-      if (lat && lng) return { lat: parseFloat(lat), lng: parseFloat(lng) };
-    } catch {}
-    return null;
+  // Same sources as the navbar map (lib/saved-location), so header, seller list and map agree.
+  function getBuyerLocation() {
+    try { return readSavedLocation((k) => localStorage.getItem(k)); } catch { return null; }
   }
 
   function getBuyerArea(): string {
-    try { return localStorage.getItem("rlf_buyer_location") || "Set location"; } catch { return "Set location"; }
+    return getBuyerLocation()?.area || "Set location";
   }
 
   function pickHue(seed: string): SellerHue {
@@ -443,14 +441,8 @@ const categories = [
       const listings = (listingsData || []) as (FishListing & { seller: Seller })[];
       const sellers = (sellersData || []) as Seller[];
 
-      // Group listings by seller
-      const sellerListings = new Map<string, FishListing[]>();
-      for (const l of listings) {
-        const sid = (l as any).seller?.id;
-        if (!sid) continue;
-        if (!sellerListings.has(sid)) sellerListings.set(sid, []);
-        sellerListings.get(sid)!.push(l);
-      }
+      // Group listings by seller, each in the seller's menu order (the first chips on a card).
+      const sellerListings = menuBySeller(listings, (l) => (l as any).seller?.id);
 
       // Filter sellers: must have listings OR accept pre-orders
       const filtered = sellers.filter(s => {
@@ -933,6 +925,8 @@ const categories = [
     loadSellers();
     setTimeout(maybeAskNotifications, 2000);
   });
+  // Location taken from the buyer's account (AppShell, first visit on this device).
+  document.addEventListener("v2-location-restored", () => loadSellers());
   // Also if user already has location, ask after page load
   if (getBuyerLocation()) {
     maybeAskNotifications();
