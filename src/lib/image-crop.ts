@@ -4,10 +4,12 @@
  *  - logo: the square avatar next to the store name (SellerHero .v2-sh-avatar, cart avatars).
  *  - banner: SellerHero banner, full app width x 200px. On a 390px phone that is 1.95:1,
  *    so 2:1. Wider screens (up to the 800px app width, 4:1) show the middle half of it.
+ *  - listing: the square photo on each buyer menu card (and the seller cards on /shop).
  */
 export const CROP = {
   logo: { aspect: 1, outW: 512, minW: 200, minH: 200 },
   banner: { aspect: 2, outW: 1600, minW: 800, minH: 0 },
+  listing: { aspect: 1, outW: 800, minW: 400, minH: 400 },
 } as const;
 export type CropKind = keyof typeof CROP;
 
@@ -46,7 +48,7 @@ export function imageFileError(file: { name: string; type: string; size: number 
 export function imageDimensionsError(kind: CropKind, w: number, h: number): string | null {
   const { minW, minH } = CROP[kind];
   if (w >= minW && h >= minH) return null;
-  return kind === "logo"
+  return minH > 0
     ? `Image too small: use at least ${minW}×${minH} px (this one is ${w}×${h}).`
     : `Image too small: use at least ${minW} px wide (this one is ${w} px).`;
 }

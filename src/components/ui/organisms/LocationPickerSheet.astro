@@ -45,26 +45,25 @@ const { id = "v2-loc-picker" } = Astro.props;
   let draggedOrSearched = false;
   let typedUnresolved = false; // typed text not yet turned into coordinates
 
-  // The buyer's saved location (set earlier from this sheet), or null.
-  function savedLocation() {
-    try {
-      const lat = Number(localStorage.getItem("rlf_buyer_lat"));
-      const lng = Number(localStorage.getItem("rlf_buyer_lng"));
-      if (!Number.isFinite(lat) || !Number.isFinite(lng) || (!lat && !lng)) return null;
-      return { lat, lng, area: localStorage.getItem("rlf_buyer_location") || "" };
-    } catch { return null; }
+  // The buyer's saved location from any source (lib/saved-location: this device's keys, else
+  // their account). Before, only rlf_buyer_lat/lng were read, so a location saved under
+  // rlf_location, the old zepto_* keys or only on the account opened on central Mumbai.
+  async function savedLocation() {
+    try { return (await window.RelifishLocation?.load()) || window.RelifishLocation?.peek() || null; } catch { return null; }
   }
 
   // Open on the saved pin (if any) so the buyer sees where they are, not central Mumbai.
-  function showSaved() {
-    const saved = savedLocation();
+  // Runs on every open: an unconfirmed drag is dropped, the saved pin is never lost.
+  async function showSaved() {
+    const saved = await savedLocation();
     if (!saved || !map || !marker) return;
     selectedLat = saved.lat; selectedLng = saved.lng;
     if (saved.area) selectedArea = saved.area;
     map.setView([saved.lat, saved.lng], 15);
     marker.setLatLng([saved.lat, saved.lng]);
     const input = document.getElementById(`${id}-area-input`);
-    if (input && saved.area && !input.value) input.value = saved.area;
+    if (input && saved.area) input.value = saved.area;
+    else if (input && !input.value) reverseGeocode(saved.lat, saved.lng); // pin without a name (account sync)
     draggedOrSearched = true; // already a precise pin: confirming it again is fine
     typedUnresolved = false;
   }
