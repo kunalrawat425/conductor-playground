@@ -237,13 +237,6 @@ if (isClosed && acceptsPreorder) {
 }
 
 const status: "open" | "closed" = isEffectivelyOpen ? "open" : "closed";
-// Seller's public Google Maps rating, copied by hand with the date checked. Shown as text only:
-// no link out (it points at the seller's own site) and not in aggregateRating (Google disallows
-// third-party reviews in a page's own review markup).
-const GOOGLE_RATINGS: Record<string, { stars: number; count: number; asOf: string }> = {
-  "2f39dfce-15c0-4f9a-a5b3-e95280479dbd": { stars: 4.9, count: 303, asOf: "18 Oct 2026" }, // Fishtokri
-};
-const googleRating = seller?.id ? GOOGLE_RATINGS[seller.id] : undefined;
 const tags = [
   acceptsPreorder && isPreorderMode ? "Pre-order available" : (acceptsPreorder ? "Pre-order" : null),
   !seller?.has_delivery ? "Pickup only" : null,
@@ -370,11 +363,6 @@ const tags = [
 
       {/* Schedule strip */}
       <div style="padding:8px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:6px;">
-        {googleRating && (
-          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:600;background:#FFF8E1;color:#7A5200;border-color:#FFE08A;" title={`${sellerName}'s own Google Maps rating (not a Relifish rating), as of ${googleRating.asOf}`}>
-            {sellerName}: ★ {googleRating.stars.toFixed(1)} on Google ({googleRating.count} reviews)
-          </span>
-        )}
         {openDays.length > 0 && (
           <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
             🗓 Same day orders · {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
