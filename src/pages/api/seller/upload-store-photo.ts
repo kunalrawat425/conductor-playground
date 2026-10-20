@@ -16,9 +16,10 @@ async function ensureFishPhotosBucket(supabase: ReturnType<typeof createClient>)
 }
 
 /**
- * POST /api/seller/upload-store-photo (multipart: seller_id, file)
- * Uploads seller store cover photo to fish-photos bucket.
- * Saves public URL to sellers.store_image_url.
+ * POST /api/seller/upload-store-photo (multipart: seller_id, file, kind?)
+ * kind=banner (default): wide store photo -> sellers.store_image_url
+ * kind=logo: square store logo -> sellers.logo_url (migration 081)
+ * Uploads to the fish-photos bucket under sellers/<id>/<store|logo>.<ext>.
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -27,6 +28,9 @@ export const POST: APIRoute = async ({ request }) => {
     const seller_phone = form.get("seller_phone")?.toString();
     const file = form.get("file") as File | null;
     const remove = form.get("remove")?.toString();
+    const isLogo = form.get("kind")?.toString() === "logo";
+    const name = isLogo ? "logo" : "store";
+    const column = isLogo ? "logo_url" : "store_image_url";
 
     if (!seller_id) {
       return new Response(JSON.stringify({ error: "seller_id required" }), { status: 400 });
@@ -40,9 +44,10 @@ export const POST: APIRoute = async ({ request }) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (remove === "1") {
-      const path = `sellers/${seller_id}/store`;
+      const path = `sellers/${seller_id}/${name}`;
       await supabase.storage.from("fish-photos").remove([`${path}.jpg`, `${path}.png`, `${path}.webp`, `${path}.jpeg`]);
-      await supabase.from("sellers").update({ store_image_url: null }).eq("id", seller_id);
+      const { error } = await supabase.from("sellers").update({ [column]: null }).eq("id", seller_id);
+      if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       return new Response(JSON.stringify({ removed: true }), { status: 200 });
     }
 
@@ -52,14 +57,14 @@ export const POST: APIRoute = async ({ request }) => {
     if (file.size > 5 * 1024 * 1024) {
       return new Response(JSON.stringify({ error: "File too large (max 5 MB)" }), { status: 400 });
     }
-
-    await ensureFishPhotosBucket(supabase);
-
+    // Declared type must be allowed AND the bytes must really be JPEG / PNG / WebP.
     const ext = await imageExtension(file);
-    if (!ext) {
+    if (!ext || (file.type && !Object.values(IMAGE_MIME).includes(file.type as any))) {
       return new Response(JSON.stringify({ error: "Only JPEG, PNG or WebP images allowed" }), { status: 400 });
     }
-    const path = `sellers/${seller_id}/store.${ext}`;
+
+    await ensureFishPhotosBucket(supabase);
+    const path = `sellers/${seller_id}/${name}.${ext}`;
 
     const { error: uploadErr } = await supabase.storage
       .from("fish-photos")
@@ -69,9 +74,14 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: uploadErr.message }), { status: 500 });
     }
 
-    const publicUrl = supabase.storage.from("fish-photos").getPublicUrl(path).data.publicUrl;
+    // ?v= busts browser/CDN caches: the path is reused on every re-upload.
+    const publicUrl = `${supabase.storage.from("fish-photos").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
 
-    await supabase.from("sellers").update({ store_image_url: publicUrl }).eq("id", seller_id);
+    const { error: saveErr } = await supabase.from("sellers").update({ [column]: publicUrl }).eq("id", seller_id);
+    if (saveErr) {
+      // e.g. logo_url column missing before migration 081 is applied.
+      return new Response(JSON.stringify({ error: isLogo ? "Logo upload isn't available yet. Please try later." : saveErr.message }), { status: 500 });
+    }
 
     return new Response(JSON.stringify({ url: publicUrl }), { status: 200 });
   } catch (err: any) {

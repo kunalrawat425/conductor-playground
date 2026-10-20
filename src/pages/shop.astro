@@ -976,7 +976,7 @@ const categories = [
             const allGroups = (window as any).__v2allGroups;
             if (Array.isArray(allGroups)) {
               const match = allGroups.find((row: any) => row?.seller?.id === g.seller_id);
-              storeImg = match?.seller?.store_image_url || null;
+              storeImg = match?.seller?.logo_url || match?.seller?.store_image_url || null;
             }
           }
           const avatarInner = storeImg
