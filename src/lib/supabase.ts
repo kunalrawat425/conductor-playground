@@ -6,6 +6,7 @@ import {
   SELLER_ORDERS_PAGE_SIZE,
 } from "./seller-orders-pagination";
 import type { ListingPriceOption } from "./listing-pricing";
+import { compareMenuOrder } from "./menu-order";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || "";
@@ -98,6 +99,8 @@ export interface FishListing {
   is_available: boolean;
   pickup_loc: string;
   created_at: string;
+  /** Seller-set menu position (migration 082); null/absent = not arranged, falls back to created_at. */
+  sort_order?: number | null;
   /** Max units (same as listing unit) one buyer may order per calendar day for this listing; optional */
   buyer_daily_qty_limit?: number | null;
   oos_threshold?: number | null;
@@ -258,11 +261,11 @@ export async function getSellerListings(sellerId: string) {
     .from("fish_listings")
     .select("*")
     .is("deleted_at", null)
-    .eq("seller_id", sellerId)
-    .order("created_at", { ascending: false });
+    .eq("seller_id", sellerId);
 
   if (error) throw error;
-  return data as FishListing[];
+  // Sorted here, not in SQL, so it works before and after sort_order exists (migration 082).
+  return (data as FishListing[]).sort(compareMenuOrder);
 }
 
 function getSellerPhone(): string {

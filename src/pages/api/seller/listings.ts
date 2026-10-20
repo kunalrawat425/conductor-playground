@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import { canonicalPricingOptionsFromPayload, pricingOptionsUniformUnit } from "../../../lib/listing-pricing";
+import { canonicalPricingOptionsFromPayload, pricingOptionsUniformUnit, MAX_PACK_OPTIONS, TOO_MANY_PACKS_MESSAGE } from "../../../lib/listing-pricing";
+import { moveInMenu } from "../../../lib/menu-order";
 import { assertSellerOwns } from "../../../lib/server/assert-seller";
 import { SPECIES } from "../../../lib/species";
 
@@ -38,7 +39,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
 /**
  * POST /api/seller/listings
- * Body: { action: "create" | "update" | "delete", seller_id, seller_phone, listing?, listing_id?, updates? }
+ * Body: { action: "create" | "update" | "delete" | "move", seller_id, seller_phone, listing?, listing_id?, updates?, direction? }
  * Uses service_role key to bypass RLS (seller auth is localStorage-based, not Supabase Auth).
  * BUG-12: seller_phone required — seller_id alone is publicly exposed via /api/search.
  */
@@ -68,11 +69,8 @@ export const POST: APIRoute = async ({ request }) => {
           { status: 400 }
         );
       }
-      if (tiers.length > 3) {
-        return new Response(
-          JSON.stringify({ error: "Maximum 3 price tiers allowed per listing." }),
-          { status: 400 }
-        );
+      if (tiers.length > MAX_PACK_OPTIONS) {
+        return new Response(JSON.stringify({ error: TOO_MANY_PACKS_MESSAGE }), { status: 400 });
       }
       if (!pricingOptionsUniformUnit(tiers)) {
         return new Response(
@@ -150,6 +148,9 @@ export const POST: APIRoute = async ({ request }) => {
             { status: 400 }
           );
         }
+        if (tiers.length > MAX_PACK_OPTIONS) {
+          return new Response(JSON.stringify({ error: TOO_MANY_PACKS_MESSAGE }), { status: 400 });
+        }
         patch = { ...patch, pricing_options: tiers };
       }
 
@@ -192,6 +193,41 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       }
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+
+    if (action === "move") {
+      // Move one item a step up/down the seller's menu, then rewrite sort_order
+      // 1..n across her live listings so the order is total and stable.
+      const { listing_id, direction } = body;
+      if (!listing_id || (direction !== "up" && direction !== "down")) {
+        return new Response(JSON.stringify({ error: "listing_id and direction (up|down) required" }), { status: 400 });
+      }
+      const { data: rows, error: readErr } = await supabase
+        .from("fish_listings")
+        .select("id, sort_order, created_at")
+        .eq("seller_id", seller_id)
+        .is("deleted_at", null);
+      if (readErr) {
+        // Before migration 082 the column doesn't exist.
+        const missing = readErr.message?.includes("sort_order");
+        return new Response(
+          JSON.stringify({ error: missing ? "Menu ordering isn't switched on yet. Try again later." : readErr.message }),
+          { status: missing ? 503 : 500 }
+        );
+      }
+      const ids = moveInMenu(rows || [], listing_id, direction);
+      if (!ids) return new Response(JSON.stringify({ error: "Not your listing" }), { status: 403 });
+      const current = new Map((rows || []).map((r) => [r.id, r.sort_order]));
+      // ponytail: one update per changed row; menus are a handful of items. Batch via an RPC if they grow large.
+      const results = await Promise.all(
+        ids
+          .map((id, i) => ({ id, sort_order: i + 1 }))
+          .filter((r) => current.get(r.id) !== r.sort_order)
+          .map((r) => supabase.from("fish_listings").update({ sort_order: r.sort_order }).eq("id", r.id).eq("seller_id", seller_id))
+      );
+      const failed = results.find((r) => r.error);
+      if (failed) return new Response(JSON.stringify({ error: failed.error!.message }), { status: 500 });
+      return new Response(JSON.stringify({ ok: true, order: ids }), { status: 200 });
     }
 
     return new Response(JSON.stringify({ error: "Invalid action" }), { status: 400 });

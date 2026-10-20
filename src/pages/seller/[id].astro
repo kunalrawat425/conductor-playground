@@ -462,8 +462,8 @@ const tags = [
                 <article class="v2-item-card v2-ssr-card" data-listing-id={l.id}
                   style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);overflow:hidden;display:flex;flex-direction:row;">
                   {ssrImg && (
-                    <img src={ssrImg} alt={`${sp} from ${sellerName}`} width="90" height="90"
-                      loading="lazy" style="width:90px;height:90px;object-fit:cover;flex-shrink:0;" />
+                    <img src={ssrImg} alt={`${sp} from ${sellerName}`} width="104" height="104"
+                      loading="lazy" style="width:104px;height:104px;object-fit:cover;flex-shrink:0;align-self:flex-start;" />
                   )}
                   <div class="v2-item-body" style="padding:12px;flex:1;min-width:0;">
                     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:0 0 2px;">{sp}</h3>
@@ -513,12 +513,13 @@ const tags = [
     display: flex;
     flex-direction: row;
   }
+  /* Fixed square, pinned to the top: with 2–3 packs the card grows taller and
+     the photo used to stretch with it into a tall vertical crop. */
   .v2-item-img {
-    width: 100px;
-    height: auto;
-    min-height: 80px;
+    width: 104px;
+    height: 104px;
+    align-self: flex-start;
     flex-shrink: 0;
-    border-radius: var(--v2-radius) 0 0 var(--v2-radius);
   }
   .v2-item-body {
     flex: 1;
