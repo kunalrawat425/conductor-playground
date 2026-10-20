@@ -363,6 +363,7 @@ const tags = [
         itemCount={itemCount}
         tags={tags}
         storeImageUrl={seller?.store_image_url}
+        logoUrl={seller?.logo_url}
       />
 
       {/* Schedule strip */}
@@ -559,7 +560,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
+<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.logo_url || seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
   // Same-day and pre-order carts are separate; this page uses the one its menu is in.
   cartMode: isPreorderMode ? "preorder" : "same_day",
   pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",

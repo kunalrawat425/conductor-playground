@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { summariseReviews } from "../../src/lib/server/seller-reviews";
+import { summariseReviews, ratingsBasisLabel } from "../../src/lib/server/seller-reviews";
 
 const fb = (order_id: string, rating: number, created_at: string, feedback = "") => ({ order_id, seller_id: "s1", rating, feedback, created_at });
 
@@ -18,5 +18,12 @@ describe("summariseReviews", () => {
   it("returns no average when every rating is from a test order or unknown order", () => {
     const out = summariseReviews([fb("t1", 5, "2026-10-01"), fb("gone", 5, "2026-10-02")], [{ id: "t1", is_test: true, species: null }]);
     expect(out).toEqual({ count: 0, average: null, reviews: [] });
+  });
+});
+
+describe("ratingsBasisLabel", () => {
+  it("uses singular for one rating and plural otherwise", () => {
+    expect(ratingsBasisLabel(1)).toBe("Based on 1 rating from buyers after delivery");
+    expect(ratingsBasisLabel(4)).toBe("Based on 4 ratings from buyers after delivery");
   });
 });

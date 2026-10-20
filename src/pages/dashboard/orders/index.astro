@@ -774,8 +774,13 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             ${live.length > 1 && REMOVABLE.includes(r.status) ? `<button class="v2-btn v2-btn-sm" style="margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="item_cancel" data-cancel-status="${DECLINE_FROM.includes(r.status) ? "declined" : "cancelled"}" data-order-id="${r.id}">Remove this item · refund buyer</button>` : ""}
           </div>`;
         };
-        const addr = cart?.map((r) => r.delivery_address).find(Boolean);
+        // Single-item orders have no `cart`, so fall back to the order itself (the API only sends an address once the seller has accepted a delivery).
+        const addr = (cart || [o]).map((r: any) => r.delivery_address).find(Boolean);
         const addrText = addr ? [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ") : "";
+        const addrLat = Number(addr?.lat), addrLng = Number(addr?.lng);
+        const mapsUrl = addr && Number.isFinite(addrLat) && Number.isFinite(addrLng) && (addrLat || addrLng)
+          ? `https://www.google.com/maps/dir/?api=1&destination=${addrLat},${addrLng}`
+          : addrText ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrText)}` : "";
         let nextStepHint = "";
         if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
           nextStepHint = isPaidViaRazorpay ? "Next: Confirm the order." : "Waiting for buyer to complete Razorpay payment.";
@@ -828,7 +833,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             <span class="v2-oc-meta-pill ${isPreorder ? "v2-oc-meta-pill-preorder" : "v2-oc-meta-pill-order"}">${isPreorder ? "Pre-order" : "Order"}</span>
             <span class="v2-oc-meta-pill ${isDelivery ? "v2-oc-meta-pill-delivery" : "v2-oc-meta-pill-pickup"}">${isDelivery ? "Delivery" : "Pickup"}</span>
           </div>
-          ${addrText ? `<div style="font:500 11px Inter;color:var(--v2-ink-2);margin-top:4px;">📍 ${escape(addrText)}</div>` : ""}
+          ${addrText ? `<div style="font:500 11px Inter;color:var(--v2-ink-2);margin-top:4px;">📍 ${escape(addrText)}${mapsUrl ? ` · <a href="${mapsUrl}" target="_blank" rel="noopener" style="color:var(--v2-brand,#0066FF);font-weight:600;">Open in Maps</a>` : ""}</div>` : ""}
           ${o.cut_style ? `<div style="font:600 11px Inter;color:var(--v2-ink-2);margin-top:4px;">✂️ ${escape(o.cut_style.split(",").map((c: string) => ({whole:"Whole",cleaned:"Cleaned",cut:"Cut"})[c] || c).join(", "))}</div>` : ''}
           ${o.buyer_notes ? `<div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:2px;">📝 ${escape(o.buyer_notes)}</div>` : ''}
           ${buyerRatingHtml}

@@ -176,7 +176,10 @@ export interface SellerHeroProps {
   catchTime?: string;
   tags?: string[];
   phone?: string;
+  /** Wide store photo: the banner. */
   storeImageUrl?: string | null;
+  /** Square logo for the avatar; falls back to storeImageUrl. */
+  logoUrl?: string | null;
 }
 
 export interface BottomSheetProps {

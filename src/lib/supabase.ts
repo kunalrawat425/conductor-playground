@@ -78,8 +78,10 @@ export interface Seller {
   preorder_cutoff_time?: string;
   /** UPI ID shown to buyers on payment-pending orders. */
   upi_id?: string | null;
-  /** Store cover photo URL. */
+  /** Store cover photo URL (wide banner). */
   store_image_url?: string | null;
+  /** Square store logo (migration 081). Null / missing = use store_image_url. */
+  logo_url?: string | null;
 }
 
 export interface FishListing {

@@ -45,14 +45,39 @@ const { id = "v2-loc-picker" } = Astro.props;
   let draggedOrSearched = false;
   let typedUnresolved = false; // typed text not yet turned into coordinates
 
+  // The buyer's saved location (set earlier from this sheet), or null.
+  function savedLocation() {
+    try {
+      const lat = Number(localStorage.getItem("rlf_buyer_lat"));
+      const lng = Number(localStorage.getItem("rlf_buyer_lng"));
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || (!lat && !lng)) return null;
+      return { lat, lng, area: localStorage.getItem("rlf_buyer_location") || "" };
+    } catch { return null; }
+  }
+
+  // Open on the saved pin (if any) so the buyer sees where they are, not central Mumbai.
+  function showSaved() {
+    const saved = savedLocation();
+    if (!saved || !map || !marker) return;
+    selectedLat = saved.lat; selectedLng = saved.lng;
+    if (saved.area) selectedArea = saved.area;
+    map.setView([saved.lat, saved.lng], 15);
+    marker.setLatLng([saved.lat, saved.lng]);
+    const input = document.getElementById(`${id}-area-input`);
+    if (input && saved.area && !input.value) input.value = saved.area;
+    draggedOrSearched = true; // already a precise pin: confirming it again is fine
+    typedUnresolved = false;
+  }
+
   async function initMap() {
     if (typeof L === "undefined") return;
-    if (map) return;
+    if (map) { showSaved(); setTimeout(() => map.invalidateSize(), 100); return; }
     const mumbai = [19.07, 72.87];
     map = L.map(`${id}-map`).setView(mumbai, 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(map);
     marker = L.marker(mumbai, { draggable: true }).addTo(map);
     selectedLat = mumbai[0]; selectedLng = mumbai[1];
+    showSaved();
     
     marker.on("dragend", async () => {
       draggedOrSearched = true;
