@@ -283,6 +283,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   import { wasActuallyPaid, refundableAmount, paymentMethodLabel, preorderNeedsFinalPrice, refundStatus } from "../../../lib/order-payment-state";
   import { supabase } from "../../../lib/supabase";
   import { cancelledByText, cancelReasonText } from "../../../lib/order-cancel";
+  import { isTodayOrderDay } from "../../../lib/order-timing";
 
   let sellerId: string | null = null;
   let sellerData: any = null;
@@ -305,7 +306,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       return h * 60 + (m || 0);
     }
     const preorderDays: string[] = seller.preorder_days || [];
-    const openDays: string[] = seller.open_days || [];
     const isPreorderDay = preorderDays.length > 0
       ? preorderDays.includes(dayName)
       : !!seller.accepts_preorder;
@@ -314,7 +314,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     const cutoffMin = toMin(seller.preorder_cutoff_time);
     if (cutoffMin !== null && timeMin >= cutoffMin) return false;
     // On order days: window only starts after store closes (same rule as order-timing.ts)
-    const isOrderDay = openDays.length === 0 || openDays.includes(dayName);
+    const isOrderDay = isTodayOrderDay(seller, dayName);
     if (isOrderDay) {
       const closeMin = toMin(seller.closes_at);
       if (closeMin !== null && timeMin < closeMin) return false;

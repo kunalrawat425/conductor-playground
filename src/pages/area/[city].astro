@@ -98,8 +98,10 @@ const localities = coveredLocalities(city || "", sellers);
 const perKgBySpecies = new Map(speciesList.map((sp) => [sp, perKgRange(areaListings.filter((l: any) => String(l.species).toLowerCase() === sp))]));
 const DAYS: Record<string, string> = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
 const sellerTerms = sellers.map((sl: any) => {
-  const days = Array.isArray(sl.open_days) && sl.open_days.length && sl.open_days.length < 7 ? sl.open_days.map((d: string) => DAYS[d] || d).join(", ") : "Every day";
-  const hours = sl.opens_at && sl.closes_at && sl.opens_at.slice(0, 5) !== "01:00" ? `${timeLabel(sl.opens_at)}–${timeLabel(sl.closes_at)}` : "Pre-order only";
+  // null = every day (legacy); [] = no same-day orders (pre-order only).
+  const noSameDay = Array.isArray(sl.open_days) && !sl.open_days.length;
+  const days = noSameDay ? "No same-day orders" : Array.isArray(sl.open_days) && sl.open_days.length < 7 ? sl.open_days.map((d: string) => DAYS[d] || d).join(", ") : "Every day";
+  const hours = !noSameDay && sl.opens_at && sl.closes_at && sl.opens_at.slice(0, 5) !== "01:00" ? `${timeLabel(sl.opens_at)}–${timeLabel(sl.closes_at)}` : "Pre-order only";
   const fee = !sl.has_delivery ? "Pickup only"
     : sl.delivery_fee_enabled === false ? "Free delivery"
     : sl.delivery_fee_type === "per_km" && Number(sl.delivery_fee_per_km) > 0 ? `₹${Number(sl.delivery_fee_per_km)}/km`

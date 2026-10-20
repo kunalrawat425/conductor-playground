@@ -81,9 +81,15 @@ describe("placement matrix — days and switches", () => {
     expect(classifyPlacementAtOrderTime(s, at(9, 0))).toBe("same_day");
   });
 
-  it("empty open_days means every day", () => {
-    const s = { ...base, open_days: [] };
+  it("null open_days means every day (legacy)", () => {
+    const s = { ...base, open_days: null };
     expect(classifyPlacementAtOrderTime(s, at(9, 0))).toBe("same_day");
+  });
+
+  it("empty open_days means no same-day: pre-orders all day until cutoff", () => {
+    const s = { ...base, open_days: [] };
+    expect(classifyPlacementAtOrderTime(s, at(9, 0))).toBe("preorder");
+    expect(classifyPlacementAtOrderTime(s, at(22, 0))).toBe("closed");
   });
 
   it("uses the IST day, not UTC: 00:30 IST Tuesday is Tuesday", () => {

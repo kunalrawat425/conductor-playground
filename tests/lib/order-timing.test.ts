@@ -6,6 +6,7 @@ import {
   isPreorderShoppingWindow,
   isSellerEffectivelyOpen,
   isAfterCloseTimeIST,
+  isTodayOrderDay,
   todayDayName,
 } from "../../src/lib/order-timing";
 
@@ -135,5 +136,41 @@ describe("istDayStartISO", () => {
     const twoAmIst = Date.UTC(2026, 8, 7, 2, 0) - IST;
     const sixAmIst = Date.UTC(2026, 8, 7, 6, 0) - IST;
     expect(istDayStartISO(twoAmIst)).toBe(istDayStartISO(sixAmIst));
+  });
+});
+
+describe("open_days: null vs [] (pre-order-only sellers)", () => {
+  it("null/undefined open_days = order day (legacy)", () => {
+    expect(isTodayOrderDay({ open_days: null }, "wed")).toBe(true);
+    expect(isTodayOrderDay({}, "wed")).toBe(true);
+  });
+  it("[] = never an order day", () => {
+    expect(isTodayOrderDay({ open_days: [] }, "wed")).toBe(false);
+  });
+  it("subset of days", () => {
+    expect(isTodayOrderDay({ open_days: ["tue"] }, "tue")).toBe(true);
+    expect(isTodayOrderDay({ open_days: ["tue"] }, "wed")).toBe(false);
+  });
+
+  // The Nomadic Catch: no same-day days, pre-orders Tue + Sat until 22:00.
+  const preorderOnly = {
+    open_days: [],
+    opens_at: "08:00",
+    closes_at: "22:00",
+    accepts_preorder: true,
+    preorder_days: ["tue", "sat"],
+    preorder_cutoff_time: "22:00",
+  };
+  const tue = (h: number, m: number) => Date.UTC(2026, 9, 20, h, m) - 5.5 * 3_600_000; // IST on Tue 20 Oct 2026
+  it("pre-order window all day on a pre-order day until cutoff", () => {
+    expect(isPreorderShoppingWindow(preorderOnly, tue(11, 0))).toBe(true);
+    expect(classifyPlacementAtOrderTime(preorderOnly, tue(11, 0))).toBe("preorder");
+    expect(isPreorderShoppingWindow(preorderOnly, tue(22, 30))).toBe(false);
+  });
+  it("closed on a non-pre-order day, never same-day", () => {
+    const wed = tue(11, 0) + 86_400_000;
+    expect(todayDayName(new Date(wed))).toBe("wed");
+    expect(isPreorderShoppingWindow(preorderOnly, wed)).toBe(false);
+    expect(classifyPlacementAtOrderTime(preorderOnly, wed)).toBe("closed");
   });
 });

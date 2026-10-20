@@ -201,6 +201,7 @@ const categories = [
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
   import { cleanSellerName, sellerHref } from "../lib/seller-display";
   import { LOGO_URL } from "../lib/brand";
+  import { isTodayOrderDay as orderDayFor } from "../lib/order-timing";
   import type { Seller, FishListing } from "../lib/supabase";
 
   type SellerHue = "sky" | "green" | "orange" | "indigo";
@@ -463,10 +464,9 @@ const categories = [
           ? distanceKm(buyerLoc.lat, buyerLoc.lng, Number(s.lat), Number(s.lng))
           : null;
         const rawListings = sellerListings.get(s.id) || [];
-        const openDays: string[] = Array.isArray((s as any).open_days) ? (s as any).open_days : [];
         const preorderDays: string[] = Array.isArray((s as any).preorder_days) ? (s as any).preorder_days : [];
         const day = todayDayName();
-        const isTodayOrderDay = !openDays.length || openDays.includes(day);
+        const isTodayOrderDay = orderDayFor(s as any, day);
         const isTodayPreorderDay = preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder;
         const openNow = isOpen(s.opens_at, s.closes_at) && isTodayOrderDay;
         const isAfterClose = (() => {
