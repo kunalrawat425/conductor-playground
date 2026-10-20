@@ -42,8 +42,9 @@ export const POST: APIRoute = async ({ request }) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     await ensureFishPhotosBucket(supabase);
 
-    const ext = await imageExtension(file);
-    if (!ext) {
+    // Declared type must be allowed AND the bytes must really be JPEG / PNG / WebP.
+    const ext = typeof file === "string" || !file.size ? null : await imageExtension(file);
+    if (!ext || (file.type && !Object.values(IMAGE_MIME).includes(file.type as any))) {
       return new Response(JSON.stringify({ error: "Only JPEG, PNG or WebP images allowed" }), { status: 400 });
     }
     const path = `listings/${seller_id}/${Date.now()}.${ext}`;

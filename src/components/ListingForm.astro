@@ -2,6 +2,7 @@
 import { SPECIES_LIST } from "../lib/species";
 import type { FishListing } from "../lib/supabase";
 import { getListingPriceOptions } from "../lib/listing-pricing";
+import CropDialog from "./ui/molecules/CropDialog.astro";
 
 interface Props {
   listing?: FishListing;
@@ -113,16 +114,22 @@ const initialPricingJson = JSON.stringify(
       <label for="photo"
         >Upload {isEdit ? <span class="listing-opt">(optional — replaces current)</span> : <span class="listing-opt">(optional)</span>}</label
       >
-      <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" class="listing-file-input" />
-      <p class="form-hint">JPEG, PNG, WebP, or GIF — max 5MB.</p>
+      <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" class="listing-file-input" />
+      <p class="form-hint">JPEG, PNG or WebP, at least 400×400 px, max 5 MB. You'll crop it to the square buyers see.</p>
+      <p id="photo-error" class="listing-inline-error" role="alert" style="display:none;margin-top:6px;"></p>
+      <div class="listing-photo-preview" id="photo-new-preview" style="display:none;">
+        <span class="listing-photo-preview-label">New photo (cropped)</span>
+        <img id="photo-new-img" alt="New listing photo" class="current-photo" width="120" height="120" />
+      </div>
       {listing?.photo_url && (
         <div class="listing-photo-preview">
           <span class="listing-photo-preview-label">Current</span>
-          <img src={listing.photo_url} alt="Current listing photo" class="current-photo" loading="lazy" width="160" height="120" />
+          <img src={listing.photo_url} alt="Current listing photo" class="current-photo" loading="lazy" width="120" height="120" />
         </div>
       )}
     </div>
   </section>
+  <CropDialog />
 
   <section class="listing-card listing-card--compact" id="listing-section-limits" aria-labelledby="listing-h-limits">
     <h2 class="listing-section-title" id="listing-h-limits">Display &amp; limits</h2>
@@ -417,6 +424,46 @@ const initialPricingJson = JSON.stringify(
   });
 </script>
 
+<script>
+  // Listing photo: same checks and crop step as the store logo (dashboard/profile), cropped
+  // to the square buyers see on the menu. The cropped JPEG replaces the picked file in the
+  // input, so the new/edit submit handlers upload it unchanged.
+  import { imageFileError, imageDimensionsError } from "../lib/image-crop";
+  import { cropImage } from "../lib/crop-dialog";
+
+  const input = document.getElementById("photo") as HTMLInputElement | null;
+  const errEl = document.getElementById("photo-error")!;
+  const previewBox = document.getElementById("photo-new-preview")!;
+  const previewImg = document.getElementById("photo-new-img") as HTMLImageElement;
+  const showError = (msg: string | null) => { errEl.textContent = msg || ""; errEl.style.display = msg ? "block" : "none"; };
+  const reset = () => { if (input) input.value = ""; previewBox.style.display = "none"; };
+
+  input?.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const fileErr = imageFileError(file);
+    showError(fileErr);
+    if (fileErr) return reset();
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    try { await img.decode(); } catch {
+      URL.revokeObjectURL(img.src);
+      showError("Couldn't read this image. Please choose another JPEG, PNG or WebP.");
+      return reset();
+    }
+    const dimErr = imageDimensionsError("listing", img.naturalWidth, img.naturalHeight);
+    if (dimErr) { URL.revokeObjectURL(img.src); showError(dimErr); return reset(); }
+    const blob = await cropImage("listing", img);
+    URL.revokeObjectURL(img.src);
+    if (!blob) return reset();
+    const dt = new DataTransfer();
+    dt.items.add(new File([blob], "listing-photo.jpg", { type: "image/jpeg" }));
+    input.files = dt.files;
+    previewImg.src = URL.createObjectURL(blob);
+    previewBox.style.display = "flex";
+  });
+</script>
+
 <style>
   .listing-form--dashboard {
     max-width: 520px;
@@ -595,7 +642,7 @@ const initialPricingJson = JSON.stringify(
   }
 
   .current-photo {
-    width: 160px;
+    width: 120px;
     height: 120px;
     object-fit: cover;
     border-radius: var(--radius);

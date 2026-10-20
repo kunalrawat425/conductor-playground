@@ -1,0 +1,163 @@
+---
+// All buyer ratings for one seller: summary, 5→1 breakdown, star / fish filters and ?page=.
+// Public URL is /s/<slug>/reviews (rewrites here); /seller/<id>/reviews kept like /seller/<id>.
+// Works without JS: filters and pages are plain links.
+export const prerender = false;
+
+import AppShell from "../../../components/ui/AppShell.astro";
+import ReviewCard from "../../../components/ui/molecules/ReviewCard.astro";
+import ReviewSummaryCard from "../../../components/ui/molecules/ReviewSummaryCard.astro";
+import { getSellerById } from "../../../lib/supabase";
+import { cleanSellerName, sellerHref, sellerLookupOutcome } from "../../../lib/seller-display";
+import { sellerBlocked } from "../../../lib/test-sellers";
+import { SITE_URL } from "../../../lib/brand";
+import { getSpeciesById, getSpeciesDisplay } from "../../../lib/species";
+import {
+  EMPTY_REVIEWS, REVIEWS_PER_PAGE, getAllSellerReviews, pageReviews, parseReviewFilters, reviewFilterHref, reviewFishOptions,
+} from "../../../lib/server/seller-reviews";
+
+const { id } = Astro.params;
+let seller: any = null;
+let unavailable = false;
+try {
+  seller = await getSellerById(id!);
+  if (sellerBlocked(seller as any, (import.meta.env.VERCEL_ENV || process.env.VERCEL_ENV))) seller = null;
+} catch (e) {
+  seller = null;
+  unavailable = sellerLookupOutcome(e) === "unavailable";
+}
+if (!seller) {
+  Astro.response.status = unavailable ? 503 : 404;
+  if (unavailable) Astro.response.headers.set("Retry-After", "120");
+}
+
+const sellerName = cleanSellerName(seller?.name) || "Seller";
+const storePath = seller ? sellerHref(seller.name, seller.id) : "/shop";
+const basePath = `${storePath}/reviews`;
+const all = seller ? await getAllSellerReviews(seller.id) : EMPTY_REVIEWS;
+const fishOptions = reviewFishOptions(all.reviews);
+const f = parseReviewFilters(Astro.url.searchParams, fishOptions);
+const pg = pageReviews(all.reviews, f);
+const href = (over: Partial<typeof f>) => reviewFilterHref(basePath, { ...f, page: 1, ...over });
+const fishName = (s: string) => getSpeciesById(s)?.english || getSpeciesDisplay(s);
+const filtered = f.stars !== null || f.fish !== null;
+const first = (pg.page - 1) * REVIEWS_PER_PAGE + 1;
+const canonical = SITE_URL + basePath;
+const description = all.count
+  ? `${all.count} verified buyer ${all.count === 1 ? "rating" : "ratings"} for ${sellerName} on Relifish, average ${all.average} out of 5. Only buyers who received their order can rate.`
+  : `Buyer ratings for ${sellerName} on Relifish. Only buyers who received their order can rate.`;
+---
+<AppShell
+  title={seller ? `${sellerName} reviews · Relifish` : (unavailable ? "Temporarily unavailable · Relifish" : "Seller not found · Relifish")}
+  description={description}
+  canonical={canonical}
+  noindex={!seller || all.count < 3 || seller.is_active === false || !!seller.is_test}
+  header={{ variant: "page", backHref: storePath, title: seller ? sellerName : "Relifish" }}
+  nav={{ active: "home" }}
+  jsonLd={seller && all.count > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    "@id": `${SITE_URL}${storePath}#seller`,
+    "name": sellerName,
+    "url": SITE_URL + storePath,
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": Number(all.average).toFixed(1), "bestRating": "5", "worstRating": "1", "ratingCount": all.count },
+  } : undefined}
+>
+  <main class="rp">
+    {!seller ? (
+      <div class="rp-empty">
+        <p class="rp-empty-title">{unavailable ? "Couldn't load this seller" : "Seller not found"}</p>
+        <p class="rp-empty-text">{unavailable ? "Please try again in a minute." : "This seller isn't taking orders on Relifish right now."}</p>
+        <a class="rp-btn" href="/shop">Browse sellers</a>
+      </div>
+    ) : (
+      <>
+        <a class="rp-back" href={storePath}>← Back to {sellerName}</a>
+        <h1 class="rp-title">{sellerName} reviews</h1>
+
+        {all.count === 0 ? (
+          <div class="rp-empty">
+            <p class="rp-empty-title">No ratings yet</p>
+            <p class="rp-empty-text">Buyers can rate {sellerName} after their order is delivered. Their ratings will show here.</p>
+            <a class="rp-btn" href={storePath}>See today's menu</a>
+          </div>
+        ) : (
+          <>
+            <ReviewSummaryCard summary={all} showDistribution={true} />
+
+            <nav class="rp-filters" aria-label="Filter reviews">
+              <div class="rp-chips">
+                <a class:list={["rp-chip", f.stars === null && "on"]} href={href({ stars: null })} aria-current={f.stars === null ? "true" : undefined}>All</a>
+                {[5, 4, 3, 2, 1].map((s, i) => (
+                  <a class:list={["rp-chip", f.stars === s && "on"]} href={href({ stars: s })} aria-current={f.stars === s ? "true" : undefined} aria-label={`${s} star reviews (${all.distribution[i]})`}>
+                    {s}★ <span class="rp-chip-n">{all.distribution[i]}</span>
+                  </a>
+                ))}
+              </div>
+              {fishOptions.length > 1 && (
+                <div class="rp-chips">
+                  <a class:list={["rp-chip", f.fish === null && "on"]} href={href({ fish: null })} aria-current={f.fish === null ? "true" : undefined}>All fish</a>
+                  {fishOptions.map((s) => (
+                    <a class:list={["rp-chip", f.fish === s && "on"]} href={href({ fish: s })} aria-current={f.fish === s ? "true" : undefined}>🐟 {fishName(s)}</a>
+                  ))}
+                </div>
+              )}
+            </nav>
+
+            {pg.total === 0 ? (
+              <div class="rp-empty">
+                <p class="rp-empty-text">No reviews match these filters.</p>
+                <a class="rp-btn" href={basePath}>Show all reviews</a>
+              </div>
+            ) : (
+              <>
+                <p class="rp-count">
+                  {pg.pages > 1 ? `Showing ${first}–${first + pg.items.length - 1} of ${pg.total}` : `${pg.total} ${pg.total === 1 ? "review" : "reviews"}`}{filtered ? " (filtered)" : ""} · newest first
+                </p>
+                {pg.items.map((r) => <ReviewCard review={r} />)}
+                {pg.pages > 1 && (
+                  <nav class="rp-pager" aria-label="Review pages">
+                    {pg.page > 1 ? <a class="rp-btn" rel="prev" href={href({ page: pg.page - 1 })}>← Newer</a> : <span></span>}
+                    <span class="rp-pager-n">Page {pg.page} of {pg.pages}</span>
+                    {pg.page < pg.pages ? <a class="rp-btn" rel="next" href={href({ page: pg.page + 1 })}>Older →</a> : <span></span>}
+                  </nav>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </>
+    )}
+  </main>
+</AppShell>
+
+<style>
+  .rp { max-width: 640px; margin: 0 auto; padding: 16px 16px 32px; font-family: var(--v2-font); }
+  .rp-back { display: inline-block; font: 600 13px var(--v2-font); color: var(--v2-link); text-decoration: none; padding: 4px 0; }
+  .rp-title { font: 800 22px/1.25 var(--v2-font); color: var(--v2-ink); margin: 6px 0 14px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .rp-filters { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+  .rp-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px; }
+  .rp-chips::-webkit-scrollbar { display: none; }
+  .rp-chip {
+    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 14px;
+    font: 600 13px var(--v2-font); color: var(--v2-ink-2); text-decoration: none; white-space: nowrap;
+    background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: var(--v2-radius-full);
+  }
+  .rp-chip.on { background: var(--v2-brand); border-color: var(--v2-link); color: #fff; }
+  .rp-chip-n { font-weight: 500; opacity: 0.7; }
+  .rp-count { font: 500 12px var(--v2-font); color: var(--v2-ink-3); margin: 0 0 2px; }
+  .rp-pager { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin-top: 16px; }
+  .rp-pager > :last-child { justify-self: end; }
+  .rp-pager-n { font: 600 12px var(--v2-font); color: var(--v2-ink-3); }
+  .rp-btn {
+    display: inline-block; padding: 10px 14px; text-align: center; text-decoration: none;
+    font: 700 13px var(--v2-font); color: var(--v2-link);
+    border: 1px solid var(--v2-border); border-radius: var(--v2-radius-sm); background: var(--v2-bg);
+  }
+  .rp-empty {
+    text-align: center; padding: 24px 16px; margin-top: 8px;
+    background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: var(--v2-radius);
+  }
+  .rp-empty-title { font: 700 16px var(--v2-font); color: var(--v2-ink); margin: 0 0 6px; }
+  .rp-empty-text { font: 400 14px/1.5 var(--v2-font); color: var(--v2-ink-3); margin: 0 0 14px; }
+</style>

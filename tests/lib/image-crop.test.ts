@@ -43,6 +43,11 @@ describe("imageDimensionsError", () => {
     expect(imageDimensionsError("logo", 200, 200)).toBeNull();
     expect(imageDimensionsError("logo", 400, 150)).toMatch(/^Image too small: use at least 200×200 px/);
   });
+  it("needs a listing photo of at least 400x400, cropped square", () => {
+    expect(CROP.listing.aspect).toBe(1);
+    expect(imageDimensionsError("listing", 400, 400)).toBeNull();
+    expect(imageDimensionsError("listing", 1200, 399)).toBe("Image too small: use at least 400×400 px (this one is 1200×399).");
+  });
   it("needs a banner at least 800 px wide", () => {
     expect(imageDimensionsError("banner", 800, 300)).toBeNull();
     expect(imageDimensionsError("banner", 640, 1200)).toMatch(/^Image too small: use at least 800 px wide/);

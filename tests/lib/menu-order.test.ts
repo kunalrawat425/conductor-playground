@@ -1,5 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { compareMenuOrder, moveInMenu } from "../../src/lib/menu-order";
+import { compareMenuOrder, menuBySeller, moveInMenu } from "../../src/lib/menu-order";
+
+describe("menuBySeller (/shop seller cards)", () => {
+  it("returns each seller's items in menu order, whatever order the query returned them", () => {
+    // Storage order after the seller moved pomfret to the top: updated rows come back last.
+    const fromDb = [
+      { id: "surmai", seller: "a", created_at: "2026-10-01T10:00:00Z", sort_order: 2 },
+      { id: "x1", seller: "b", created_at: "2026-10-01T09:00:00Z", sort_order: null },
+      { id: "prawns", seller: "a", created_at: "2026-10-01T10:02:00Z", sort_order: 3 },
+      { id: "pomfret", seller: "a", created_at: "2026-10-01T10:01:00Z", sort_order: 1 },
+      { id: "nosell", seller: "", created_at: "2026-10-01T09:00:00Z" },
+    ];
+    const m = menuBySeller(fromDb, (r) => r.seller);
+    expect(m.get("a")!.map((r) => r.id)).toEqual(["pomfret", "surmai", "prawns"]);
+    expect(m.get("b")!.map((r) => r.id)).toEqual(["x1"]);
+    expect(m.size).toBe(2);
+  });
+});
 import { validateListingPricingJson } from "../../src/lib/listing-pricing";
 
 // The Nomadic Catch: added surmai first, halwa last.

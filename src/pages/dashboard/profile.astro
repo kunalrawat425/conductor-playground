@@ -3,6 +3,7 @@ export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import Toast from "../../components/ui/atoms/Toast.astro";
 import Input from "../../components/ui/atoms/Input.astro";
+import CropDialog from "../../components/ui/molecules/CropDialog.astro";
 ---
 <style is:global>
   .v2-day-pill {
@@ -196,33 +197,15 @@ import Input from "../../components/ui/atoms/Input.astro";
     </button>
   </form>
 
-  <!-- Crop step for the logo / store photo: the frame is the exact shape buyers see. -->
-  <div id="p-crop" role="dialog" aria-modal="true" aria-labelledby="p-crop-title" style="display:none;position:fixed;inset:0;z-index:var(--v2-z-modal);background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:16px;">
-    <div style="background:var(--v2-bg);color:var(--v2-ink);border-radius:var(--v2-radius-lg);padding:16px;width:100%;max-width:440px;box-shadow:var(--v2-shadow-lg);">
-      <h3 id="p-crop-title" style="font:700 15px Inter;margin:0 0 4px;"></h3>
-      <p id="p-crop-hint" style="font:400 12px/1.4 Inter;color:var(--v2-ink-3);margin:0 0 10px;"></p>
-      <canvas id="p-crop-canvas" style="width:100%;display:block;border-radius:var(--v2-radius-sm);touch-action:none;cursor:grab;background:var(--v2-bg-3);"></canvas>
-      <label style="display:flex;align-items:center;gap:8px;margin:12px 0;font:600 12px Inter;color:var(--v2-ink-2);">
-        Zoom <input id="p-crop-zoom" type="range" min="1" max="4" step="0.01" value="1" style="flex:1;" />
-      </label>
-      <div style="display:flex;align-items:center;gap:10px;font:600 11px Inter;color:var(--v2-ink-3);">
-        <canvas id="p-crop-preview" style="border:1px solid var(--v2-border);"></canvas>
-        <span id="p-crop-preview-label"></span>
-      </div>
-      <div id="p-crop-error" role="alert" style="display:none;font:500 12px Inter;color:var(--v2-red);margin-top:10px;"></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
-        <button type="button" id="p-crop-cancel" class="v2-btn v2-btn-secondary v2-btn-md">Cancel</button>
-        <button type="button" id="p-crop-ok" class="v2-btn v2-btn-primary v2-btn-md" disabled>Use this</button>
-      </div>
-    </div>
-  </div>
+  <CropDialog />
 </AppShell>
 
 <script>
   import { supabase } from "../../lib/supabase";
   import { validateSellerName } from "../../lib/seller-display";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
-  import { CROP, cropRect, imageFileError, imageDimensionsError, MAX_IMAGE_BYTES, TARGET_IMAGE_BYTES } from "../../lib/image-crop";
+  import { imageFileError, imageDimensionsError } from "../../lib/image-crop";
+  import { cropImage } from "../../lib/crop-dialog";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
   const sellerId = getSellerId();
@@ -474,107 +457,14 @@ import Input from "../../components/ui/atoms/Input.astro";
     byId(`p-${f}-drop`).textContent = `📷 ${src ? "Replace" : "Upload"} ${IMAGE_FIELDS[f].title}`;
   }
 
-  /** JPEG at falling quality until it is under the ~300 KB target; never over the 5 MB cap. */
-  async function encodeImage(c: HTMLCanvasElement): Promise<Blob | null> {
-    let blob: Blob | null = null;
-    for (const q of [0.85, 0.75, 0.65, 0.55, 0.45]) {
-      blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/jpeg", q));
-      if (!blob || blob.size <= TARGET_IMAGE_BYTES) break;
-    }
-    return blob && blob.size <= MAX_IMAGE_BYTES ? blob : null;
-  }
-
-  function openCrop(f: ImageField, img: HTMLImageElement) {
-    const kind = IMAGE_FIELDS[f].crop;
-    const { aspect, outW } = CROP[kind];
-    const modal = byId("p-crop");
-    const canvas = byId<HTMLCanvasElement>("p-crop-canvas");
-    const preview = byId<HTMLCanvasElement>("p-crop-preview");
-    const zoomEl = byId<HTMLInputElement>("p-crop-zoom");
-    const okBtn = byId<HTMLButtonElement>("p-crop-ok");
-    const errEl = byId("p-crop-error");
-    const W = img.naturalWidth, H = img.naturalHeight;
-    let zoom = 1, cx = W / 2, cy = H / 2;
-
-    byId("p-crop-title").textContent = kind === "logo" ? "Crop your logo" : "Crop your store photo";
-    byId("p-crop-hint").textContent = kind === "logo"
-      ? "Drag to position, use the slider to zoom. Square, shown next to your store name."
-      : "Drag to position, use the slider to zoom. Phones show the whole frame; wide screens show the part between the dashed lines.";
-    byId("p-crop-preview-label").textContent = kind === "logo" ? "Next to your store name" : "Top of your store page";
-    errEl.style.display = "none";
-    okBtn.disabled = true;
-    zoomEl.value = "1";
-    modal.style.display = "flex";
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(canvas.clientWidth * dpr);
-    canvas.height = Math.round(canvas.width / aspect);
-    const pw = kind === "logo" ? 60 : 120;
-    preview.style.width = `${pw}px`;
-    preview.style.height = `${pw / aspect}px`;
-    preview.style.borderRadius = kind === "logo" ? "14px" : "4px";
-    preview.width = Math.round(pw * dpr);
-    preview.height = Math.round((pw / aspect) * dpr);
-
-    const rect = () => cropRect(W, H, aspect, zoom, cx, cy);
-    function draw() {
-      const r = rect();
-      cx = r.x + r.w / 2; cy = r.y + r.h / 2; // keep the centre clamped so drags don't build up past an edge
-      for (const c of [canvas, preview]) c.getContext("2d")!.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height);
-      if (kind === "banner") {
-        const ctx = canvas.getContext("2d")!;
-        ctx.save();
-        ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = dpr; ctx.setLineDash([6 * dpr, 4 * dpr]);
-        for (const y of [canvas.height / 4, (canvas.height * 3) / 4]) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
-        ctx.restore();
-      }
-    }
-
-    let last: { x: number; y: number } | null = null;
-    canvas.onpointerdown = (e) => { last = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); };
-    canvas.onpointermove = (e) => {
-      if (!last) return;
-      const scale = rect().w / canvas.clientWidth; // CSS px -> source px
-      cx -= (e.clientX - last.x) * scale; cy -= (e.clientY - last.y) * scale;
-      last = { x: e.clientX, y: e.clientY };
-      draw();
-    };
-    canvas.onpointerup = canvas.onpointercancel = () => { last = null; };
-    zoomEl.oninput = () => { zoom = Number(zoomEl.value); draw(); };
-
-    const close = () => {
-      modal.style.display = "none";
-      URL.revokeObjectURL(img.src);
-      byId<HTMLInputElement>(`p-${f}-file`).value = "";
-    };
-    byId<HTMLButtonElement>("p-crop-cancel").onclick = close;
-    modal.onkeydown = (e) => { if (e.key === "Escape") close(); };
-    okBtn.onclick = async () => {
-      okBtn.disabled = true;
-      const r = rect();
-      const out = document.createElement("canvas");
-      out.width = Math.min(outW, Math.round(r.w)); // never upscale a small source
-      out.height = Math.round(out.width / aspect);
-      const ctx = out.getContext("2d")!;
-      ctx.fillStyle = "#fff"; // transparent PNG logos would turn black as JPEG
-      ctx.fillRect(0, 0, out.width, out.height);
-      ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, out.width, out.height);
-      const blob = await encodeImage(out);
-      if (!blob) {
-        errEl.textContent = "Couldn't make this image small enough. Please try another.";
-        errEl.style.display = "block";
-        okBtn.disabled = false;
-        return;
-      }
-      pendingImage[f] = blob;
-      showImagePreview(f, URL.createObjectURL(blob));
-      imageFieldError(f, null);
-      close();
-    };
-
-    draw();
-    okBtn.disabled = false; // a valid crop exists from here on
-    zoomEl.focus();
+  async function openCrop(f: ImageField, img: HTMLImageElement) {
+    const blob = await cropImage(IMAGE_FIELDS[f].crop, img);
+    URL.revokeObjectURL(img.src);
+    byId<HTMLInputElement>(`p-${f}-file`).value = "";
+    if (!blob) return;
+    pendingImage[f] = blob;
+    showImagePreview(f, URL.createObjectURL(blob));
+    imageFieldError(f, null);
   }
 
   for (const f of Object.keys(IMAGE_FIELDS) as ImageField[]) {

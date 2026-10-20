@@ -261,8 +261,23 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
     <!-- Global cart module — exposed on window for inline scripts (define:vars) -->
     <script>
       import * as Cart from "../../lib/cart";
+      import { loadSavedLocation, readSavedLocation } from "../../lib/saved-location";
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
+
+      // Saved location for inline map scripts (LocationPickerSheet, AddressPickerSheet).
+      (window as any).RelifishLocation = {
+        load: loadSavedLocation,
+        peek: () => { try { return readSavedLocation((k) => localStorage.getItem(k)); } catch { return null; } },
+      };
+      // Logged-in buyer with nothing saved on this device (new phone, cleared storage): take the
+      // location from their account once per tab session, so the header and seller list use it.
+      try {
+        if (localStorage.getItem("rlf_buyer_id") && !(window as any).RelifishLocation.peek() && !sessionStorage.getItem("rlf_loc_restore")) {
+          sessionStorage.setItem("rlf_loc_restore", "1");
+          loadSavedLocation().then((loc) => { if (loc) document.dispatchEvent(new CustomEvent("v2-location-restored", { detail: loc })); });
+        }
+      } catch {}
     </script>
     <!-- Keep push alive: re-save the browser's subscription for logged-in buyers/sellers who
          already allowed notifications. Before, only /shop and login did this, so buyers who came

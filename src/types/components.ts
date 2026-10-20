@@ -180,6 +180,9 @@ export interface SellerHeroProps {
   storeImageUrl?: string | null;
   /** Square logo for the avatar; falls back to storeImageUrl. */
   logoUrl?: string | null;
+  /** Buyer ratings count + reviews page: with both (count > 0) the rating badge links there. */
+  ratingCount?: number;
+  reviewsHref?: string;
 }
 
 export interface BottomSheetProps {

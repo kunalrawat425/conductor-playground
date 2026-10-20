@@ -1193,6 +1193,30 @@ body.v2-has-cart {
   flex: 1;
   min-width: 0;
 }
+/* Rating badge + "See all reviews ›" → reviews page. One 44px+ tap target; the negative margin keeps the layout. */
+.v2-sh-rating-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-height: 44px;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.v2-sh-rating-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font: 600 12px/1 var(--v2-font);
+  color: var(--v2-link);
+  white-space: nowrap;
+}
+.v2-sh-rating-link:hover .v2-sh-rating-all { text-decoration: underline; }
+.v2-sh-rating-link:focus-visible { outline: 2px solid var(--v2-brand); outline-offset: -2px; border-radius: 8px; }
+.v2-sh-rating-n { display: none; margin-left: 3px; font-weight: 500; opacity: 0.9; }
+@media (min-width: 480px) { .v2-sh-rating-n { display: inline; } }
 .v2-sh-name {
   font-family: var(--v2-font);
   font-weight: 800;

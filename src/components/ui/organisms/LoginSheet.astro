@@ -265,7 +265,9 @@ const MAX_ATTEMPTS = 3;
 
       if (role === "buyer") {
         try {
-          if (!localStorage.getItem("v2_buyer_location")) {
+          // v2_buyer_location is never written, so this asked after every login, even with a saved
+          // pin. Ask only when nothing is saved on this device (the sheet also checks the account).
+          if (!window.RelifishLocation?.peek?.()) {
             localStorage.setItem("v2_prompt_location", "1");
           }
         } catch {}

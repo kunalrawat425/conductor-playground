@@ -23,3 +23,20 @@ export function moveInMenu(rows: MenuOrderRow[], id: string, direction: "up" | "
   if (j >= 0 && j < ids.length) [ids[i], ids[j]] = [ids[j], ids[i]];
   return ids;
 }
+
+/**
+ * Rows grouped by seller, each group in menu order. A query without an ORDER BY comes back
+ * in Postgres storage order, which changes whenever a row is updated (a reorder, a pause),
+ * so /shop seller cards showed a different "first item" from the seller's menu.
+ */
+export function menuBySeller<T extends MenuOrderRow>(rows: T[], sellerOf: (row: T) => string | null | undefined): Map<string, T[]> {
+  const out = new Map<string, T[]>();
+  for (const r of rows) {
+    const sid = sellerOf(r);
+    if (!sid) continue;
+    if (!out.has(sid)) out.set(sid, []);
+    out.get(sid)!.push(r);
+  }
+  for (const list of out.values()) list.sort(compareMenuOrder);
+  return out;
+}
