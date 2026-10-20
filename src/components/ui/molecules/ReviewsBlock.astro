@@ -11,6 +11,7 @@ interface Props { summary: ReviewSummary; title: string; sellerNames?: Record<st
 const { summary, title, sellerNames = {} } = Astro.props;
 const VISIBLE = 3;
 const avg = summary.average || 0;
+const half = Math.round(avg * 2) / 2; // 4.5 shows four and a half stars
 const month = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" });
 const fishName = (id: string) => getSpeciesById(id)?.english || getSpeciesDisplay(id);
 // Only when every rating is loaded — otherwise the bars would describe a sample, not the seller.
@@ -31,7 +32,7 @@ const moreLabel = summary.reviews.length === summary.count
       <div class="rv-avg">
         <div class="rv-avg-num">{avg.toFixed(1)}</div>
         <span class="rv-stars rv-stars-lg" role="img" aria-label={`Rated ${avg} out of 5`}>
-          {[1, 2, 3, 4, 5].map((i) => <span class:list={["rv-star", i <= Math.round(avg) && "on"]} aria-hidden="true">★</span>)}
+          {[1, 2, 3, 4, 5].map((i) => <span class:list={["rv-star", i <= half ? "on" : i - 0.5 === half && "half"]} aria-hidden="true">★</span>)}
         </span>
         <div class="rv-basis">{ratingsBasisLabel(summary.count)}</div>
       </div>
@@ -93,6 +94,7 @@ const moreLabel = summary.reviews.length === summary.count
   .rv-stars-lg { font-size: 18px; margin: 6px 0 4px; }
   .rv-star { color: var(--v2-border); }
   .rv-star.on { color: #F59E0B; }
+  .rv-star.half { background: linear-gradient(90deg, #F59E0B 50%, var(--v2-border) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .rv-basis { font: 500 12px/1.4 var(--v2-font); color: var(--v2-ink-3); }
   .rv-dist { flex: 1 1 160px; display: flex; flex-direction: column; gap: 4px; }
   .rv-dist-row { display: flex; align-items: center; gap: 8px; font: 600 11px var(--v2-font); color: var(--v2-ink-3); }
@@ -110,7 +112,7 @@ const moreLabel = summary.reviews.length === summary.count
   .rv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .rv-chip {
     display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
-    font: 600 12px var(--v2-font); color: var(--v2-brand);
+    font: 600 12px var(--v2-font); color: var(--v2-ink-2);
     background: var(--v2-brand-l); border-radius: var(--v2-radius-full);
   }
   .rv-text { font: 400 15px/1.55 var(--v2-font); color: var(--v2-ink-2); margin: 8px 0 0; overflow-wrap: anywhere; }
