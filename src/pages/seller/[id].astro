@@ -57,7 +57,7 @@ const sellerName = cleanSellerName(seller?.name) || "Seller";
 const sellerLocation = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const SITE = SITE_URL;
 const sellerArea = sellerLocation ? getAreaBySlug(sellerLocation.toLowerCase()) : null;
-const reviewSummary = await getSellerReviews(seller ? [seller.id] : [], 3);
+const reviewSummary = await getSellerReviews(seller ? [seller.id] : [], 2);
 const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
 // Per-fish product pages live under /s/<slug>/<species> (single-product pages for Google).
 const fishBase = seller && sellerHref(seller.name, seller.id).startsWith("/s/") ? sellerHref(seller.name, seller.id) : null;
