@@ -1,4 +1,5 @@
 import type { ListingPriceOption } from "./listing-pricing";
+import { MAX_PACK_OPTIONS, TOO_MANY_PACKS_MESSAGE } from "./listing-pricing";
 import type { PriceUnit } from "./species";
 
 /**
@@ -11,8 +12,9 @@ export function setupListingPricingEditor(opts: {
   addButton: HTMLElement;
   initial: ListingPriceOption[];
   onUnitChange?: () => void;
+  limitHint?: HTMLElement | null;
 }): { sync: () => void; addRow: () => void } {
-  const { container, hiddenInput, addButton, initial, onUnitChange } = opts;
+  const { container, hiddenInput, addButton, initial, onUnitChange, limitHint } = opts;
 
   function resolvedUnit(): PriceUnit {
     const basis = container.querySelector(".listing-pricing-basis") as HTMLSelectElement | null;
@@ -351,16 +353,23 @@ export function setupListingPricingEditor(opts: {
   initial.forEach((o) => renderRow(o));
   syncHidden();
 
-  const MAX_TIERS = 3;
+  const MAX_TIERS = MAX_PACK_OPTIONS;
 
   function syncAddButton() {
     const count = container.querySelectorAll(".pricing-row").length;
     const disabled = count >= MAX_TIERS;
     (addButton as HTMLButtonElement).disabled = disabled;
     addButton.setAttribute("aria-disabled", String(disabled));
-    addButton.title = disabled ? "Maximum 3 price tiers allowed" : "";
+    addButton.title = disabled ? `Up to ${MAX_TIERS} pack sizes per item` : "";
     addButton.style.opacity = disabled ? "0.4" : "";
     addButton.style.cursor = disabled ? "not-allowed" : "";
+    // Older listings can have more than 3: they still sell, but saving needs the extras removed.
+    if (limitHint) {
+      const over = count > MAX_TIERS;
+      limitHint.textContent = over ? TOO_MANY_PACKS_MESSAGE : `Up to ${MAX_TIERS} pack sizes per item.`;
+      limitHint.style.color = over ? "var(--red)" : "";
+      limitHint.style.fontWeight = over ? "600" : "";
+    }
   }
 
   function addRow() {
