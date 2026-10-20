@@ -46,9 +46,10 @@ export function isSellerOpenByClock(
 }
 
 export function isTodayOrderDay(seller: SellerTimingInput, day?: string): boolean {
-  const d = day || todayDayName();
-  const openDays = Array.isArray(seller.open_days) ? seller.open_days : [];
-  return !openDays.length || openDays.includes(d);
+  // null/undefined (legacy rows) = every day. An explicit [] means the seller
+  // unticked every same-day day: pre-order only, never same-day.
+  if (!Array.isArray(seller.open_days)) return true;
+  return seller.open_days.includes(day || todayDayName());
 }
 
 export function isTodayPreorderDay(seller: SellerTimingInput, day?: string): boolean {

@@ -8,7 +8,7 @@
  *  - no prices (brand rule), one push per buyer, skipped if a promo went out recently.
  */
 import { haversineKm } from "../order-pricing";
-import { classifyPlacementAtOrderTime, type SellerTimingInput } from "../order-timing";
+import { classifyPlacementAtOrderTime, isTodayOrderDay, type SellerTimingInput } from "../order-timing";
 import { cleanSellerName, sellerHref } from "../seller-display";
 
 export const PROMO_GAP_HOURS = 20;
@@ -53,8 +53,7 @@ export function timeLabel(hhmm: string | null | undefined): string {
 }
 
 function opensSunday(s: SellerTimingInput): boolean {
-  const days = Array.isArray(s.open_days) ? s.open_days : [];
-  return !days.length || days.includes("sun");
+  return isTodayOrderDay(s, "sun");
 }
 
 export function planSundayReminders(buyers: ReminderBuyer[], sellers: ReminderSeller[], nowMs: number): ReminderPush[] {

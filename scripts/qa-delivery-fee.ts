@@ -74,12 +74,12 @@ async function main() {
 
   try {
     // ---- Case A: flat fee, 2-line cart. Total fee across rows must equal ONE fee.
-    // Force the seller open for the whole run: an empty open_days means "every
-    // day" (isTodayOrderDay), and 00:00-23:59 covers any clock time.
+    // Force the seller open for the whole run: null open_days means "every
+    // day" (isTodayOrderDay; [] means no same-day), and 00:00-23:59 covers any clock time.
     await sb.from("sellers").update({
       delivery_fee_enabled: true, delivery_fee_amount: 30, delivery_fee_type: "fixed",
       free_delivery_above: null, min_order_amount: 0,
-      opens_at: "00:00:00", closes_at: "23:59:00", open_days: [],
+      opens_at: "00:00:00", closes_at: "23:59:00", open_days: null,
     }).eq("id", target.id);
 
     console.log("\n=== A. Flat ₹30 fee, 2-line cart ===");

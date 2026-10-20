@@ -100,6 +100,7 @@ const DAY_NAMES_SHORT = ['sun','mon','tue','wed','thu','fri','sat'];
 const DAY_LABELS: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
 // Use IST day (not UTC day — they differ near midnight)
 const todayDayName = DAY_NAMES_SHORT[nowIST.getUTCDay()];
+// null (legacy) = every day; [] = no same-day orders at all (pre-order only). Same rule as order-timing.
 const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
 const preorderDays: string[] = seller?.preorder_days ?? [];
 
@@ -113,7 +114,7 @@ const isOpenByTime = (() => {
   if (openMin <= closeMin) return curMin >= openMin && curMin < closeMin;
   return curMin >= openMin || curMin < closeMin; // overnight e.g. 17:00–03:00 (matches isSellerOpenByClock)
 })();
-const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
+const isTodayOrderDay = openDays.includes(todayDayName);
 const isEffectivelyOpen = isOpenByTime && isTodayOrderDay;
 
 // Priority 2: preorder window — store closed for same-day, preorders enabled, cutoff not yet passed
@@ -177,7 +178,8 @@ for (const l of listings) {
 // Schedule display strings
 const ALL_DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun'];
 function fmtDays(days: string[]): string {
-  if (!days.length || days.length === 7) return "Every day";
+  if (!days.length) return "No same-day orders";
+  if (days.length === 7) return "Every day";
   const closedDays = ALL_DAY_NAMES.filter(d => !days.includes(d));
   // Show whichever list is shorter — fewer words
   if (closedDays.length < days.length) {
@@ -370,12 +372,15 @@ const tags = [
             {sellerName}: ★ {googleRating.stars.toFixed(1)} on Google ({googleRating.count} reviews)
           </span>
         )}
-        <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
-          🗓 Same day orders · {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
-        </span>
+        {openDays.length > 0 && (
+          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
+            🗓 Same day orders · {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
+          </span>
+        )}
         {preorderDaysLabel && (() => {
           const sameDays = orderDaysLabel === preorderDaysLabel;
-          const showCutoff = cutoffLabel && cutoffLabel !== closesAtFmt;
+          // No same-day days: the pre-order window is the whole day, so "from <close>" would be wrong.
+          const showCutoff = cutoffLabel && (!openDays.length || cutoffLabel !== closesAtFmt);
           return (
             <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
               🌙 Pre-orders (next day) · {sameDays ? "Same days" : preorderDaysLabel}
@@ -392,7 +397,7 @@ const tags = [
           <div>
             <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              {closesAtFmt && cutoffLabel
+              {closesAtFmt && cutoffLabel && isTodayOrderDay
                 ? `Pre-order window: ${closesAtFmt} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
                 : cutoffLabel
                   ? `Place before ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
