@@ -275,6 +275,10 @@ export function canonicalPricingOptionsFromPayload(raw: unknown): ListingPriceOp
   return out.length > 0 ? out : null;
 }
 
+/** Packs (price options) a seller may offer per item. Older listings with more still display. */
+export const MAX_PACK_OPTIONS = 3;
+export const TOO_MANY_PACKS_MESSAGE = `Up to ${MAX_PACK_OPTIONS} pack sizes per item. Remove the extra ones before saving.`;
+
 export type PricingJsonValidation =
   | { ok: true; options: ListingPriceOption[] }
   | { ok: false; message: string };
@@ -307,8 +311,8 @@ export function validateListingPricingJson(json: string): PricingJsonValidation 
       message: "Add at least one price with a positive ₹ amount (minimum ₹1 per tier).",
     };
   }
-  if (opts.length > 3) {
-    return { ok: false, message: "Maximum 3 price tiers allowed per listing." };
+  if (opts.length > MAX_PACK_OPTIONS) {
+    return { ok: false, message: TOO_MANY_PACKS_MESSAGE };
   }
   for (const o of opts) {
     if (o.price < 1) {

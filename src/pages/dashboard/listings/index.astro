@@ -22,6 +22,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       <div style="margin-top:8px;">Loading listings...</div>
     </div>
 
+    <p id="v2-listings-order-hint" style="display:none;font:500 12px Inter;color:var(--v2-ink-3);margin:0 0 10px;">Use ▲ ▼ to set the order buyers see on your menu.</p>
     <div id="v2-listings-list" style="display:none;"></div>
 
     <div id="v2-listings-empty" style="display:none;">
@@ -75,8 +76,19 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       }
 
       const offset = (currentPage - 1) * PAGE_SIZE;
-      const baseQ = () => supabase.from("fish_listings").select("*", { count: "exact" }).eq("seller_id", sellerId).order("created_at", { ascending: false });
-      const r1 = await baseQ().is("deleted_at", null).range(offset, offset + PAGE_SIZE - 1);
+      // Same order buyers see (lib/menu-order): sort_order, unset last, then oldest first.
+      // Before migration 082 there is no sort_order column, so retry without it.
+      let bySortOrder = true;
+      const baseQ = () => {
+        let q = supabase.from("fish_listings").select("*", { count: "exact" }).eq("seller_id", sellerId);
+        if (bySortOrder) q = q.order("sort_order", { ascending: true, nullsFirst: false });
+        return q.order("created_at", { ascending: true });
+      };
+      let r1 = await baseQ().is("deleted_at", null).range(offset, offset + PAGE_SIZE - 1);
+      if (r1.error?.message?.includes("sort_order")) {
+        bySortOrder = false;
+        r1 = await baseQ().is("deleted_at", null).range(offset, offset + PAGE_SIZE - 1);
+      }
       let listings: any[] = [];
       let error: any = null;
       let totalCount = 0;
@@ -134,7 +146,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             ? `<span style="font:700 9px Inter;color:#7C3AED;background:#F3E8FF;padding:1px 6px;border-radius:4px;">Pre-order</span>`
             : "",
         ].join("");
+        const pos = offset + _listings.indexOf(l);
         return `<div class="v2-listing-card${!l.is_available ? " v2-lc-paused" : ""}" data-listing-id="${l.id}">
+          <div class="v2-lc-move-col">
+            <button class="v2-lc-move" data-move-id="${l.id}" data-move-dir="up" aria-label="Move ${escape(l.species)} up" ${pos <= 0 ? "disabled" : ""}>▲</button>
+            <button class="v2-lc-move" data-move-id="${l.id}" data-move-dir="down" aria-label="Move ${escape(l.species)} down" ${pos >= totalCount - 1 ? "disabled" : ""}>▼</button>
+          </div>
           <a href="/dashboard/listings/${l.id}" class="v2-lc-main" style="text-decoration:none;color:inherit;display:flex;gap:12px;align-items:center;flex:1;min-width:0;">
             <div class="v2-lc-img">${l.photo_url ? `<img src="${l.photo_url}" alt="${escape(l.species)}">` : emoji}</div>
             <div style="flex:1;min-width:0;">
@@ -158,6 +175,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       }
 
       list.style.display = "block";
+      document.getElementById("v2-listings-order-hint")!.style.display = totalCount > 1 ? "block" : "none";
       list.innerHTML = _listings.map(renderCard).join("")
         + (totalPages > 1 ? `
           <div class="v2-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:8px;">
@@ -186,7 +204,44 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         }
       }
 
+      let moving = false;
       function wireCardActions() {
+        list.querySelectorAll<HTMLButtonElement>("[data-move-id]").forEach((btn) => {
+          btn.onclick = async () => {
+            if (moving) return;
+            const lid = btn.dataset.moveId!;
+            const direction = btn.dataset.moveDir as "up" | "down";
+            const i = _listings.findIndex((x) => x.id === lid);
+            const j = direction === "up" ? i - 1 : i + 1;
+            // Neighbour on this page: swap now so the seller sees it instantly.
+            // Crossing a page edge: the reload after saving shows it.
+            if (i >= 0 && j >= 0 && j < _listings.length) {
+              const other = _listings[j];
+              [_listings[i], _listings[j]] = [_listings[j], _listings[i]];
+              const a = list.querySelector(`[data-listing-id="${lid}"]`);
+              const b = list.querySelector(`[data-listing-id="${other.id}"]`);
+              if (a && b) direction === "up" ? b.before(a) : b.after(a);
+              rerenderOne(lid);
+              rerenderOne(other.id);
+            }
+            moving = true;
+            try {
+              const res = await fetch("/api/seller/listings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "move", seller_id: sellerId, seller_phone: localStorage.getItem("rlf_seller_phone") || "", listing_id: lid, direction }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Could not move");
+              if (j < 0 || j >= _listings.length) load();
+            } catch (err: any) {
+              (window as any).v2Toast?.("error", "Order not saved", err.message);
+              load();
+            } finally {
+              moving = false;
+            }
+          };
+        });
         list.querySelectorAll<HTMLButtonElement>("[data-toggle-id]").forEach((btn) => {
           btn.onclick = async () => {
             const lid = btn.dataset.toggleId!;
@@ -285,4 +340,17 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     transition: background var(--v2-dur-fast) var(--v2-ease);
   }
   .v2-lc-action-btn:hover { background: var(--v2-bg-3); }
+  .v2-lc-move-col { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; margin: -4px 0; }
+  .v2-lc-move {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--v2-bg-2);
+    color: var(--v2-ink-2);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .v2-lc-move:hover:not(:disabled) { background: var(--v2-bg-3); }
+  .v2-lc-move:disabled { opacity: .3; cursor: default; }
 </style>
