@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { readSavedLocation, loadSavedLocation } from "../../src/lib/saved-location";
+import { readSavedLocation, loadSavedLocation, saveGpsDefault } from "../../src/lib/saved-location";
 
 const from = (o: Record<string, string>) => (k: string) => (k in o ? o[k] : null);
 const mem = new Map<string, string>();
@@ -29,6 +29,21 @@ describe("readSavedLocation", () => {
     expect(readSavedLocation(from({ rlf_location: "{not json" }))).toBeNull();
     // area name alone (no pin) is not a location to centre on
     expect(readSavedLocation(from({ rlf_buyer_location: "Thane" }))).toBeNull();
+  });
+});
+
+describe("saveGpsDefault", () => {
+  it("stores GPS only when nothing is saved", () => {
+    const o: Record<string, string> = {};
+    expect(saveGpsDefault(from(o), (k, v) => void (o[k] = v), { lat: 19.12, lng: 72.85, area: "Andheri West" })).toBe(true);
+    expect(o).toEqual({ rlf_buyer_lat: "19.12", rlf_buyer_lng: "72.85", rlf_buyer_location: "Andheri West" });
+  });
+
+  it("never overwrites a location the buyer picked on the map", () => {
+    const o: Record<string, string> = { rlf_buyer_lat: "19.2183", rlf_buyer_lng: "72.9781", rlf_buyer_location: "Thane West" };
+    expect(saveGpsDefault(from(o), (k, v) => void (o[k] = v), { lat: 19.12, lng: 72.85, area: "Andheri West" })).toBe(false);
+    expect(o.rlf_buyer_lat).toBe("19.2183");
+    expect(o.rlf_buyer_location).toBe("Thane West");
   });
 });
 

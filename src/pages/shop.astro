@@ -203,7 +203,7 @@ const categories = [
   import { LOGO_URL } from "../lib/brand";
   import { isTodayOrderDay as orderDayFor } from "../lib/order-timing";
   import { menuBySeller } from "../lib/menu-order";
-  import { readSavedLocation } from "../lib/saved-location";
+  import { readSavedLocation, saveGpsDefault } from "../lib/saved-location";
   import type { Seller, FishListing } from "../lib/supabase";
 
   type SellerHue = "sky" | "green" | "orange" | "indigo";
@@ -371,11 +371,8 @@ const categories = [
               const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
               const data = await r.json();
               const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
-              try {
-                localStorage.setItem("rlf_buyer_location", a);
-                localStorage.setItem("rlf_buyer_lat", String(latitude));
-                localStorage.setItem("rlf_buyer_lng", String(longitude));
-              } catch {}
+              // Picked on the map while GPS was resolving? Keep the buyer's pick.
+              if (!saveGpsDefault((k) => localStorage.getItem(k), (k, v) => localStorage.setItem(k, v), { lat: latitude, lng: longitude, area: a })) return;
               if (locText) { locText.textContent = a; if (locSub) locSub.style.display = "none"; }
               loadSellers();
             } catch {}
@@ -385,44 +382,6 @@ const categories = [
         );
       }
       return;
-    }
-
-    // First-visit location prompt — try geolocation API, fallback to manual on deny.
-    // Only auto-prompt if user has never set location and never dismissed prompt.
-    let promptedKey = "v2_loc_prompted";
-    let promptedThisSession = false;
-    try { promptedThisSession = sessionStorage.getItem(promptedKey) === "1"; } catch {}
-    const needsLocation = !getBuyerLocation();
-    if (needsLocation && !promptedThisSession && navigator.geolocation) {
-      try { sessionStorage.setItem(promptedKey, "1"); } catch {}
-      // Friendly delay so page paints first
-      setTimeout(() => {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            // Allowed: reverse geocode → save → reload data
-            const { latitude, longitude } = pos.coords;
-            try {
-              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-              const data = await r.json();
-              const a = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || data.address?.city || data.display_name?.split(",")[0] || "Your area";
-              try {
-                localStorage.setItem("rlf_buyer_location", a);
-                localStorage.setItem("rlf_buyer_lat", String(latitude));
-                localStorage.setItem("rlf_buyer_lng", String(longitude));
-              } catch {}
-              if (locText) { locText.textContent = a; if (locSub) locSub.style.display = "none"; }
-              (window as any).v2Toast?.("success", "Location set", a);
-              loadSellers();
-            } catch {}
-          },
-          () => {
-            // Denied: reset to prompt state
-            if (locText) locText.textContent = "Set location";
-            if (locSub) { locSub.textContent = "Tap to choose your area"; locSub.style.display = ""; }
-          },
-          { timeout: 7000, maximumAge: 60_000 * 5 }
-        );
-      }, 800);
     }
 
     try {
