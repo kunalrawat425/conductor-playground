@@ -14,7 +14,7 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
 const OTP_EXPIRY_MINUTES = 10;
-const MAX_SENDS_PER_DAY = 10;
+const MAX_SENDS_PER_DAY = 3; // founder 20 Oct: 3 codes per phone per IST day
 const RESEND_COOLDOWN_SECONDS = 30;
 // SMS pumping guards: limits were per phone only, so a script looping over
 // numbers could send unlimited paid SMS. Per-IP (per instance) + a global
