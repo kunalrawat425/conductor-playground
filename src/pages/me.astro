@@ -580,7 +580,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
             </div>
             <div class="v2-me-addr-actions">
               ${!a.is_default ? `<button class="v2-me-addr-btn" data-act="default" data-id="${a.id}" aria-label="Set as default address" title="Set as default" style="font:600 10px Inter;color:var(--v2-ink-3);padding:4px 7px;border:1px solid var(--v2-border);border-radius:6px;background:var(--v2-bg-2);">Default</button>` : ''}
-              <button class="v2-me-addr-btn v2-me-addr-btn-del" data-act="delete" data-id="${a.id}" aria-label="Delete">🗑</button>
+              <button class="v2-me-addr-btn v2-me-addr-btn-del" data-act="delete" data-id="${a.id}" aria-label="Delete address" style="display:inline-flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
             </div>
           </div>`).join("");
 
