@@ -43,6 +43,18 @@ export function writeSavedLocation(set: (k: string, v: string) => void, loc: Sav
   set("rlf_loc_synced", `${loc.lat},${loc.lng}`); // came from the account: nothing to sync back
 }
 
+/**
+ * GPS is only a first-visit default: store it only if nothing is saved yet. The silent /shop
+ * GPS lookup can finish after the buyer picked a spot on the map; it must not overwrite it.
+ */
+export function saveGpsDefault(get: Get, set: (k: string, v: string) => void, loc: SavedLocation): boolean {
+  if (readSavedLocation(get)) return false;
+  set("rlf_buyer_lat", String(loc.lat));
+  set("rlf_buyer_lng", String(loc.lng));
+  set("rlf_buyer_location", loc.area);
+  return true;
+}
+
 const ls = () => (typeof localStorage === "undefined" ? null : localStorage);
 
 /**
