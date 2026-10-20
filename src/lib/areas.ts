@@ -8,9 +8,9 @@ export const AREAS = {
     lng: 72.9781,
     radius: 9, // km
     slug: "thane",
-    metaDescription: "Order fresh fish online in Thane from local sellers on Relifish. Same-day orders or pre-order tonight for tomorrow; sellers deliver or keep it ready for pickup.",
-    contentHeadline: "Fresh Fish Delivery in Thane",
-    contentSubheading: "Same-day & next-day pre-order from local Thane fish sellers",
+    metaDescription: "Order fresh fish online in Thane: pomfret, surmai, bombil and more from local sellers. Home delivery to Majiwada, Pokhran Road and Vartak Nagar. See today's prices, or pre-order tonight.",
+    contentHeadline: "Fresh Fish Home Delivery in Thane",
+    contentSubheading: "Order fish online from local Thane sellers: same-day, or pre-order tonight for tomorrow",
     keywords: [],
   },
   kandivali: {

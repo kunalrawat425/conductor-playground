@@ -98,16 +98,18 @@ import Footer from "../components/Footer.astro";
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-JG2ZTX3F');</script>
   <!-- Google Analytics (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DGS7557PZ6"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7MXZDZ1S4N"></script>
   <script is:inline>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
+    // Team devices: open any page once with ?rf_internal=1 (=0 undoes it) to keep test visits out of GA and the Meta pixel.
+    var rfInternal = (function () { try { var q = new URLSearchParams(location.search).get('rf_internal'); if (q) localStorage.setItem('rf_internal', q); return localStorage.getItem('rf_internal') === '1'; } catch (e) { return false; } })();
+    if (rfInternal) window['ga-disable-G-7MXZDZ1S4N'] = true;
     // Buyer vs seller split in GA: content_group goes on the config call (gtag "set" was ignored), user_type per user.
     var relifishSeller = /^\/(dashboard|for-sellers)(\/|$)/.test(location.pathname);
     var relifishGroup = relifishSeller ? 'seller' : 'buyer';
     if (location.pathname.indexOf('/dashboard') === 0) gtag('set', 'user_properties', { user_type: 'seller' });
-    gtag('config', 'G-DGS7557PZ6', { content_group: relifishGroup });
     gtag('config', 'G-7MXZDZ1S4N', { content_group: relifishGroup }); // GA4 property 539604989 (relifish), stream 14975067322
     (function() {
       var p = new URLSearchParams(location.search);
@@ -135,8 +137,7 @@ import Footer from "../components/Footer.astro";
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window,document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init','1197248829088195');
-    fbq('track','PageView');
+    if (!window.rfInternal) { fbq('init','1197248829088195'); fbq('track','PageView'); }
   </script>
   <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=1197248829088195&ev=PageView&noscript=1"/></noscript>

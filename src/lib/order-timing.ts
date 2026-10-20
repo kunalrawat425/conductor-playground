@@ -46,9 +46,10 @@ export function isSellerOpenByClock(
 }
 
 export function isTodayOrderDay(seller: SellerTimingInput, day?: string): boolean {
-  const d = day || todayDayName();
-  const openDays = Array.isArray(seller.open_days) ? seller.open_days : [];
-  return !openDays.length || openDays.includes(d);
+  // null/undefined (legacy rows) = every day. An explicit [] means the seller
+  // unticked every same-day day: pre-order only, never same-day.
+  if (!Array.isArray(seller.open_days)) return true;
+  return seller.open_days.includes(day || todayDayName());
 }
 
 export function isTodayPreorderDay(seller: SellerTimingInput, day?: string): boolean {
@@ -74,9 +75,13 @@ export function isPastPreorderCutoffIST(
 }
 
 /** Seller is open for same-day orders (order day + clock window). */
+// The day must come from the same clock as the time, or a caller passing nowMs
+// got today's real weekday with the passed time-of-day.
+const dayAt = (nowMs?: number) => todayDayName(nowMs == null ? undefined : new Date(nowMs));
+
 export function isSellerEffectivelyOpen(seller: SellerTimingInput, nowMs?: number): boolean {
   return (
-    isTodayOrderDay(seller) &&
+    isTodayOrderDay(seller, dayAt(nowMs)) &&
     isSellerOpenByClock(seller.opens_at ?? null, seller.closes_at ?? null, nowMs)
   );
 }
@@ -89,16 +94,22 @@ export function isAfterCloseTimeIST(seller: SellerTimingInput, nowMs?: number): 
   return cur >= ch * 60 + (cm || 0);
 }
 
+/** Seller still sells same-day today: an order day and not yet past closes_at (before opening counts). */
+export function hasSameDayToday(seller: SellerTimingInput, nowMs?: number): boolean {
+  return isSellerEffectivelyOpen(seller, nowMs) || (isTodayOrderDay(seller, dayAt(nowMs)) && !isAfterCloseTimeIST(seller, nowMs));
+}
+
 /**
  * Preorder window: store has CLOSED for today (past closes_at) AND before cutoff.
  * On non-order-days the whole day is the preorder window (no close time constraint).
  */
 export function isPreorderShoppingWindow(seller: SellerTimingInput, nowMs?: number): boolean {
   if (isSellerEffectivelyOpen(seller, nowMs)) return false;
-  if (!isTodayPreorderDay(seller)) return false;
+  const day = dayAt(nowMs);
+  if (!isTodayPreorderDay(seller, day)) return false;
   if (isPastPreorderCutoffIST(seller.preorder_cutoff_time, nowMs)) return false;
   // On order days: window only opens after store closes (not before it opens)
-  if (isTodayOrderDay(seller) && !isAfterCloseTimeIST(seller, nowMs)) return false;
+  if (isTodayOrderDay(seller, day) && !isAfterCloseTimeIST(seller, nowMs)) return false;
   return true;
 }
 

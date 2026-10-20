@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { buyerOrderPushNotification } from "./buyer-order-push-copy";
-import { loadWebPush } from "./load-web-push";
+import { buyerOrderPushNotification, type BuyerCancelInfo } from "./buyer-order-push-copy";
+import { loadWebPush, PUSH_SEND_OPTIONS } from "./load-web-push";
 import { absoluteUrl } from "./site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "./vapid-env";
 import { resolveBuyerIdForPush } from "./resolve-buyer-push-id";
@@ -79,7 +79,7 @@ export type BuyerPushPayload = {
   /** When set, notification opens this order on `/track/[id]` (else track list). */
   order_id?: string | null;
   /** Cancellations: who cancelled and why (shown in the notification). */
-  cancel?: { by?: string | null; reason?: string | null; refunded?: boolean } | null;
+  cancel?: BuyerCancelInfo | null;
 };
 
 export type BuyerPushResult =
@@ -165,7 +165,8 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
         ...notification,
         url: openUrl,
         tag: uniqueTag,
-      })
+      }),
+      PUSH_SEND_OPTIONS
     );
     
     // Log success in background (non-blocking)
@@ -195,7 +196,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
  */
 export async function sendCustomBuyerPush(
   buyerId: string,
-  notification: { title: string; body: string },
+  notification: { title: string; body: string; image?: string; icon?: string },
   urlPath: string,
   opts: { markPromo?: boolean } = {}
 ): Promise<BuyerPushResult> {
@@ -237,7 +238,8 @@ export async function sendCustomBuyerPush(
         ...notification,
         url: openUrl,
         tag: uniqueTag,
-      })
+      }),
+      PUSH_SEND_OPTIONS
     );
 
     // Update last_promo_push_sent_at upon successful delivery (gracefully catch if migration not applied yet)

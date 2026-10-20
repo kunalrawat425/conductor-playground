@@ -1,5 +1,6 @@
 ---
 import LandingLayout from "../layouts/LandingLayout.astro";
+import { BUSINESS_ADDRESS, BUSINESS_OPERATOR } from "../lib/brand";
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 <LandingLayout
@@ -17,10 +18,11 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
         <li><strong>WhatsApp / phone:</strong> <a href="https://wa.me/919152207607">+91 9152207607</a></li>
         <li><strong>Email:</strong> <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></li>
         <li><strong>Hours:</strong> 7:30 AM to 9 PM, every day</li>
-        <li><strong>Based in:</strong> Mumbai, Maharashtra, India</li>
+        <li><strong>Operated by:</strong> {BUSINESS_OPERATOR}</li>
+        <li><strong>Based in:</strong> {BUSINESS_ADDRESS || "Mumbai, Maharashtra, India"}</li>
       </ul>
       <h2>Order questions</h2>
-      <p>Please include your order ID (shown on your order tracking page) so we can help faster. For delivery timing, you can also message the seller directly from your order page.</p>
+      <p>Please include your order ID (shown on your order tracking page) so we can help faster. For delivery timing, message us and we'll check with the seller.</p>
       <h2>Payments and refunds</h2>
       <p>Payments are processed by Razorpay. See our <a href="/refund-policy">Refund &amp; Cancellation Policy</a> and <a href="/shipping-policy">Delivery Policy</a>.</p>
       <h2>Sellers</h2>

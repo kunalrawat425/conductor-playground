@@ -101,10 +101,20 @@ async function run(request: Request, origin: string) {
   // and no email — from their side the order simply vanished, which is exactly
   // the "my order disappeared" complaint. The seller was never told either, so
   // a held-back catch was never released.
+  // One notification per cart, not per item (rows of one checkout share cart_id).
   let notified = 0;
   const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
-  for (const row of rows) {
-    await notifyOrderParties({ order_id: (row as any).id, event: "expired_unpaid", origin })
+  const { data: cartOf } = rows.length
+    ? await sb.from("orders").select("id, cart_id").in("id", rows.map((r: any) => r.id))
+    : { data: [] as any[] };
+  const groups = new Map<string, string[]>();
+  for (const r of cartOf ?? []) {
+    const key = (r as any).cart_id || (r as any).id;
+    groups.set(key, [...(groups.get(key) ?? []), (r as any).id]);
+  }
+  for (const ids of groups.values()) {
+    const row = { id: ids[0] };
+    await notifyOrderParties({ order_id: (row as any).id, event: "expired_unpaid", origin, order_ids: ids })
       .then(() => { notified++; })
       .catch((err: any) => console.warn("[cron/expire-pending] notify failed", { order_id: (row as any).id, err: err?.message }));
   }

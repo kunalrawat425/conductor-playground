@@ -4,6 +4,7 @@ import { sendBuyerOrderPush } from "./buyer-push";
 import { internalHeaders } from "./internal-auth";
 import { sendTransactionalEmail as sendEmail } from "./send-email";
 import { absoluteUrl } from "./site-origin";
+import { cartLabel, isLiveRow } from "./order-cart";
 
 /**
  * BUG-20 / BUG-21 fix.
@@ -94,11 +95,11 @@ export function copyFor(event: OrderEvent, species: string, orderIdShort: string
   }
 }
 
-function shell(heading: string, line: string, orderId: string, cta: string): string {
+function shell(heading: string, line: string, orderId: string, cta: string, items = ""): string {
   const url = absoluteUrl(`/track/${orderId}`);
   return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px;">
   <h1 style="font-size:22px;margin:0 0 12px;color:#0F172A;">${heading}</h1>
-  <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px;">${line}</p>
+  <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px;">${line}</p>${items}
   <a href="${url}" style="display:inline-block;background:#0066cc;color:#fff;padding:12px 26px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">${cta}</a>
   <p style="font-size:12px;color:#94A3B8;margin:24px 0 0;line-height:1.5;">Relifish · Mumbai<br/>Questions? relifishstore@gmail.com</p>
 </div>`;
@@ -130,6 +131,12 @@ export async function notifyOrderParties(opts: {
   /** Absolute origin for the internal notify-seller self-call. */
   origin: string;
   amount?: number | null;
+  /**
+   * Rows that this one event covers (a cart paid or expired together). Defaults:
+   * payment_confirmed → every row paid by the same Razorpay payment; else just order_id.
+   * Both parties get ONE notification listing all of them, with the cart total.
+   */
+  order_ids?: string[];
 }): Promise<NotifyResult> {
   const { order_id, event, origin, amount = null } = opts;
   const out: NotifyResult = {
@@ -153,9 +160,30 @@ export async function notifyOrderParties(opts: {
   }
 
   const o: any = order;
-  const species = String(o.listing?.species || o.species || "fish");
+  // One cart → one notification: gather the rows this event covers.
+  let ids = opts.order_ids?.length ? opts.order_ids : [order_id];
+  if (!opts.order_ids?.length && event === "payment_confirmed" && o.razorpay_payment_id) {
+    // Items closed before the payment landed carry it too (their share was refunded): not "paid".
+    const { data: paidTogether } = await sb.from("orders").select("id, status").eq("razorpay_payment_id", o.razorpay_payment_id);
+    const live = (paidTogether || []).filter((r: any) => isLiveRow(r.status));
+    if (live.length) ids = live.map((r: any) => r.id);
+  }
+  let group: any[] = [o];
+  if (ids.length > 1) {
+    const { data: rows } = await sb.from("orders")
+      .select("id, species, quantity, quantity_unit, total_price, delivery_fee, created_at, listing:fish_listings(species)")
+      .in("id", ids).order("created_at", { ascending: true });
+    if (rows?.length) group = rows;
+  }
+  const species = group.length > 1
+    ? cartLabel(group.map((r: any) => r.listing?.species || r.species))
+    : String(o.listing?.species || o.species || "fish");
   const orderIdShort = String(order_id).slice(0, 8).toUpperCase();
-  const amt = amount ?? ((Number(o.total_price || 0) + Number(o.delivery_fee || 0)) || null);
+  const amt = amount ?? (group.reduce((sum: number, r: any) => sum + Number(r.total_price || 0) + Number(r.delivery_fee || 0), 0) || null);
+  const itemsHtml = group.length > 1
+    ? `<ul style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 20px;padding-left:18px;">${group.map((r: any) =>
+        `<li>${String(r.listing?.species || r.species || "Fish")} · ${Number(r.quantity)} ${r.quantity_unit || ""} · ₹${Number(r.total_price || 0).toLocaleString("en-IN")}</li>`).join("")}</ul>`
+    : "";
   const reason = cancelReasonText(o.cancel_reason);
   const c = copyFor(event, species, orderIdShort, amt, reason);
   const isCancel = event === "cancelled_by_buyer" || event === "cancelled_by_seller";
@@ -183,7 +211,7 @@ export async function notifyOrderParties(opts: {
     try {
       const { data: buyer } = await sb.from("buyers").select("email").eq("id", o.buyer_id).single();
       out.buyer_email = buyer?.email
-        ? await sendEmail(buyer.email, c.buyerSubject, shell(c.buyerHeading, c.buyerLine, order_id, "View order"), "buyer")
+        ? await sendEmail(buyer.email, c.buyerSubject, shell(c.buyerHeading, c.buyerLine, order_id, "View order", itemsHtml), "buyer")
         : "skipped: buyer has no email";
     } catch (err: any) {
       out.buyer_email = `failed: ${err?.message}`;
@@ -205,7 +233,7 @@ export async function notifyOrderParties(opts: {
   }
 
   out.seller_email = sellerEmail
-    ? await sendEmail(sellerEmail, c.sellerSubject, shell(c.sellerHeading, c.sellerLine, order_id, "Open dashboard"), "seller")
+    ? await sendEmail(sellerEmail, c.sellerSubject, shell(c.sellerHeading, c.sellerLine, order_id, "Open dashboard", itemsHtml), "seller")
     : "skipped: seller has no email";
 
   if (sellerId) {
@@ -224,6 +252,7 @@ export async function notifyOrderParties(opts: {
           quantity_unit: o.quantity_unit,
           order_id,
           order_id_short: orderIdShort,
+          item_count: group.length,
           amount: amt,
           reason,
         }),

@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import { loadWebPush } from "../../lib/server/load-web-push";
+import { loadWebPush, PUSH_SEND_OPTIONS } from "../../lib/server/load-web-push";
 import { logPush } from "../../lib/server/push-log";
 import { absoluteUrl } from "../../lib/server/site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
@@ -77,6 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
       placement_kind,
       order_id_short,
       amount: typeof body.amount === "number" ? body.amount : null,
+      item_count: typeof body.item_count === "number" ? body.item_count : null,
       reason: typeof body.reason === "string" ? body.reason.slice(0, 200) : null,
     });
 
@@ -121,7 +122,8 @@ export const POST: APIRoute = async ({ request }) => {
           body: pushBody,
           url: dashboardUrl,
           tag: `seller-${kind}-${Date.now()}`,
-        })
+        }),
+        PUSH_SEND_OPTIONS
       );
     } catch (pushErr: any) {
       console.error("notify-seller push failed:", pushErr?.message || pushErr);

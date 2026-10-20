@@ -13,13 +13,18 @@ const STREAM_SUFFIX = MEASUREMENT_ID.slice(2); // cookie _ga_7MXZDZ1S4N
 
 export type GaIds = { cid?: string; sid?: string };
 
-/** Client id from `_ga` (GA1.1.<cid>) and session id from `_ga_<stream>` (GS1.1.<sid>. or GS2.1.s<sid>$). */
-export function gaIdsFromCookies(cookieHeader: string | null | undefined): GaIds {
+export function cookieJar(cookieHeader: string | null | undefined): Map<string, string> {
   const jar = new Map<string, string>();
   for (const part of (cookieHeader || "").split(";")) {
     const i = part.indexOf("=");
     if (i > 0) jar.set(part.slice(0, i).trim(), decodeURIComponent(part.slice(i + 1).trim()));
   }
+  return jar;
+}
+
+/** Client id from `_ga` (GA1.1.<cid>) and session id from `_ga_<stream>` (GS1.1.<sid>. or GS2.1.s<sid>$). */
+export function gaIdsFromCookies(cookieHeader: string | null | undefined): GaIds {
+  const jar = cookieJar(cookieHeader);
   const ga = jar.get("_ga")?.match(/^GA\d\.\d\.(\d+\.\d+)$/)?.[1];
   const sess = jar.get(`_ga_${STREAM_SUFFIX}`);
   const sid = sess?.match(/^GS\d\.\d\.s?(\d+)/)?.[1];
@@ -32,7 +37,7 @@ function rzpAuth(): string | null {
   return id && secret ? `Basic ${Buffer.from(`${id}:${secret}`).toString("base64")}` : null;
 }
 
-async function rzpGet(path: string): Promise<any | null> {
+export async function rzpGet(path: string): Promise<any | null> {
   const auth = rzpAuth();
   if (!auth) return null;
   try {

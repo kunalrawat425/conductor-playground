@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { settleCapturedPayment, PAYABLE_STATUSES } from "../../../lib/server/razorpay-ledger";
+import { metaClientFromRequest } from "../../../lib/server/meta-capi";
 
 export const prerender = false;
 
@@ -45,7 +46,7 @@ export const POST: APIRoute = async ({ request }) => {
   let status = order.status;
   for (const p of items.filter((x) => x?.status === "captured")) {
     try {
-      const r = await settleCapturedPayment(sb, { razorpay_order_id: order.razorpay_order_id, razorpay_payment_id: p.id, source: "sync" });
+      const r = await settleCapturedPayment(sb, { razorpay_order_id: order.razorpay_order_id, razorpay_payment_id: p.id, source: "sync", meta_client: metaClientFromRequest(request) });
       if (r.kind !== "orphan") status = r.order.status;
     } catch (err: any) {
       console.error("[razorpay-sync] settle failed", { order_id, payment: p.id, err: err?.message });

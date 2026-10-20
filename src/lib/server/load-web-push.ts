@@ -39,3 +39,11 @@ export async function loadWebPush(): Promise<WebPushApi> {
   }
   return api;
 }
+
+/**
+ * Deliver now, not when the phone next wakes: without `urgency: "high"` Android
+ * batches web pushes while in Doze, so an order alert or a 6–10 PM pre-order
+ * nudge can arrive minutes late. TTL 24h: a stale fish alert is useless.
+ */
+export const PUSH_SEND_OPTIONS = { urgency: "high", TTL: 86400 } as const;
+

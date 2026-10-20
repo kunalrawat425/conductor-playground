@@ -91,14 +91,33 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: "/icon-192.png",
+      icon: typeof data.icon === "string" && data.icon ? data.icon : "/icon-192.png",
       badge: "/badge-96.png",
+      // Large picture under the text (Android Chrome / desktop; iOS ignores it).
+      ...(typeof data.image === "string" && data.image ? { image: data.image } : {}),
       tag,
       data: { url: data.url },
       vibrate: [200, 100, 200],
       actions: [{ action: "open", title: "View" }],
     })
   );
+});
+
+// The browser replaced (or dropped) our subscription. Re-subscribe with the same key and tell the
+// server, which swaps the old endpoint for the new one on whichever buyer/seller held it.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil((async () => {
+    const old = event.oldSubscription;
+    let sub = event.newSubscription;
+    const key = old && old.options ? old.options.applicationServerKey : null;
+    if (!sub && key) sub = await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    if (!sub || !old || !old.endpoint) return;
+    await fetch("/api/push/resubscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ old_endpoint: old.endpoint, subscription: sub.toJSON() }),
+    });
+  })().catch(() => {}));
 });
 
 function resolvePushTarget(raw) {

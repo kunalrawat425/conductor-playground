@@ -140,7 +140,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:6px;">
                 <span class="v2-lc-name" style="text-transform:capitalize;">${escape(l.species)}</span>
-                ${l.fish_size ? `<span style="font:600 9px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:1px 5px;border-radius:4px;text-transform:uppercase;">${l.fish_size[0]}</span>` : ''}
+                ${l.size_label ? `<span style="font:600 9px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:1px 5px;border-radius:4px;">${escape(l.size_label)}</span>` : l.fish_size ? `<span style="font:600 9px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:1px 5px;border-radius:4px;text-transform:uppercase;">${l.fish_size[0]}</span>` : ''}
                 ${tagHtml}
               </div>
               <div style="display:flex;gap:8px;margin-top:3px;font:500 11px Inter;align-items:center;">

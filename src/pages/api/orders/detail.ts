@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
+import { pickPayableCartRows, rowPaise } from "../../../lib/server/order-cart";
 
 export const prerender = false;
 
@@ -78,6 +79,32 @@ export const GET: APIRoute = async ({ url, request }) => {
     // Razorpay is the only payment method: never send the seller's UPI id.
     const seller = rawSeller ? { ...rawSeller, upi_id: undefined } : null;
 
+    // The whole checkout this order belongs to: every item with its own status and
+    // refund, and what one Pay press charges now (all items still awaiting payment).
+    let cart: any = null;
+    if ((order as any).cart_id) {
+      const { data: items } = await sb
+        .from("orders")
+        .select("id, cart_id, buyer_id, species, quantity, quantity_unit, pricing_label, total_price, delivery_fee, status, created_at, cancelled_by, cancel_reason, refund_amt, refund_sent_at, razorpay_order_id, razorpay_payment_id, payment_method, final_price, listing:fish_listings(species)")
+        .eq("cart_id", (order as any).cart_id)
+        .eq("buyer_id", (order as any).buyer_id)
+        .order("created_at", { ascending: true });
+      if (items && items.length > 1) {
+        const payable = pickPayableCartRows(order as any, items as any[]);
+        cart = {
+          id: (order as any).cart_id,
+          items: items.map((i: any) => ({
+            id: i.id, species: i.listing?.species || i.species, quantity: i.quantity, quantity_unit: i.quantity_unit,
+            pricing_label: i.pricing_label, total_price: i.total_price, delivery_fee: i.delivery_fee, status: i.status,
+            cancelled_by: i.cancelled_by, cancel_reason: i.cancel_reason, refund_amt: i.refund_amt, refund_sent_at: i.refund_sent_at,
+            final_price: i.final_price, paid: !!i.razorpay_payment_id,
+          })),
+          payable_ids: payable.map((r: any) => r.id),
+          payable_total: payable.reduce((sum: number, r: any) => sum + rowPaise(r), 0) / 100,
+        };
+      }
+    }
+
     const { data: feedback } = await sb
       .from("order_feedback")
       .select("rating, feedback, created_at, updated_at")
@@ -90,6 +117,7 @@ export const GET: APIRoute = async ({ url, request }) => {
         order: {
           ...order,
           buyer_feedback: feedback || null,
+          cart,
           seller,
           address,
           listing: order.listing

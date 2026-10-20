@@ -2,6 +2,8 @@ import type { APIRoute } from "astro";
 import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { gaIdsFromCookies } from "../../../lib/server/ga-mp";
+import { metaNotesFromRequest } from "../../../lib/server/meta-capi";
+import { loadPayableCartRows, rowPaise } from "../../../lib/server/order-cart";
 
 export const prerender = false;
 
@@ -33,7 +35,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and status
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, total_price, delivery_fee, status, razorpay_order_id, razorpay_payment_id, final_price, paid_amount")
+    .select("id, buyer_id, total_price, delivery_fee, status, razorpay_order_id, razorpay_payment_id, final_price, paid_amount, cart_id, created_at")
     .eq("id", order_id)
     .single();
 
@@ -63,9 +65,16 @@ export const POST: APIRoute = async ({ request, url }) => {
   // A balance payment must charge only the DIFFERENCE. Charging
   // total_price + delivery_fee again would take the full amount a second time.
   const isBalanceDue = order.status === "payment_required";
+  // One payment for the whole cart: every item of this checkout still awaiting
+  // payment (order-cart.ts). A balance top-up stays per item.
+  const payRows: any[] = isBalanceDue
+    ? [order]
+    : await loadPayableCartRows(supabase, order as any, "id, buyer_id, cart_id, status, total_price, delivery_fee, razorpay_order_id, razorpay_payment_id, created_at");
+  const payIds = payRows.map((r) => r.id);
   const amountPaise = isBalanceDue
-    ? Math.round(Math.max(0, Number(order.final_price || 0) - Number(order.paid_amount || 0)) * 100)
-    : Math.round((Number(order.total_price) + Number(order.delivery_fee || 0)) * 100);
+    // final_price is the fish price; paid_amount also holds the delivery fee (migration 080).
+    ? Math.round(Math.max(0, Number(order.final_price || 0) - (Number(order.paid_amount || 0) - Number(order.delivery_fee || 0))) * 100)
+    : payRows.reduce((sum, r) => sum + rowPaise(r), 0);
   if (order.razorpay_order_id) {
     // Ask Razorpay for the cached order's amount
     const authHex = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
@@ -127,6 +136,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           amount: amountPaise,
           currency: "INR",
           key_id: RAZORPAY_KEY_ID,
+          order_ids: payIds,
         }),
         { status: 200 }
       );
@@ -208,8 +218,12 @@ export const POST: APIRoute = async ({ request, url }) => {
       );
     }
 
-    // Amount drifted and Razorpay holds nothing — safe to replace.
-    await supabase.from("orders").update({ razorpay_order_id: null }).eq("id", order_id);
+    // Amount drifted (or the cart changed) and Razorpay holds nothing — safe to
+    // replace on every row that carried it.
+    // A balance top-up only ever touches its own row: the cached id there is the
+    // cart's spent upfront order, still carried by the cart's other (paid) items.
+    if (isBalanceDue) await supabase.from("orders").update({ razorpay_order_id: null }).eq("id", order_id);
+    else await supabase.from("orders").update({ razorpay_order_id: null }).eq("razorpay_order_id", order.razorpay_order_id);
   }
 
   if (amountPaise <= 0) {
@@ -230,8 +244,13 @@ export const POST: APIRoute = async ({ request, url }) => {
         amount: amountPaise,
         currency: "INR",
         receipt: order_id.slice(0, 40), // Razorpay receipt max 40 chars
-        // The server-side GA purchase/refund (lib/server/ga-mp.ts) joins the buyer's GA session with these.
-        notes: (({ cid, sid }) => ({ ...(cid ? { ga_cid: cid } : {}), ...(sid ? { ga_sid: sid } : {}) }))(gaIdsFromCookies(request.headers.get("cookie"))),
+        // The server-side GA purchase/refund (lib/server/ga-mp.ts) joins the buyer's GA session with these,
+        // and the Meta CAPI purchase (lib/server/meta-capi.ts) matches the buyer with fbp/fbc.
+        notes: {
+          ...(({ cid, sid }) => ({ ...(cid ? { ga_cid: cid } : {}), ...(sid ? { ga_sid: sid } : {}) }))(gaIdsFromCookies(request.headers.get("cookie"))),
+          ...metaNotesFromRequest(request),
+          ...(payIds.length > 1 ? { cart_id: String((order as any).cart_id), items: String(payIds.length) } : {}),
+        },
       }),
     });
   } catch {
@@ -247,11 +266,13 @@ export const POST: APIRoute = async ({ request, url }) => {
   const rzpOrder = await rzpResponse.json();
   const razorpay_order_id: string = rzpOrder.id;
 
-  // Store Razorpay order ID on our order row
-  const { error: updateErr } = await supabase
-    .from("orders")
-    .update({ razorpay_order_id })
-    .eq("id", order_id);
+  // Store the Razorpay order id on every row it charges for. Only rows still
+  // unpaid and not tied to another Razorpay order (BUG-41: never overwrite an id
+  // that may have money against it).
+  const { error: updateErr } = isBalanceDue
+    // The top-up row already carries its upfront payment id.
+    ? await supabase.from("orders").update({ razorpay_order_id }).eq("id", order_id)
+    : await supabase.from("orders").update({ razorpay_order_id }).in("id", payIds).is("razorpay_payment_id", null);
 
   if (updateErr) {
     return new Response(JSON.stringify({ error: "Failed to save payment reference" }), { status: 500 });
@@ -263,6 +284,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       amount: amountPaise,
       currency: "INR",
       key_id: RAZORPAY_KEY_ID,
+      order_ids: payIds,
     }),
     { status: 200 }
   );

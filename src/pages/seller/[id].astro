@@ -14,10 +14,14 @@ import Modal from "../../components/ui/atoms/Modal.astro";
 import { getSellerById, getSellerListings } from "../../lib/supabase";
 import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
-import { cleanSellerName, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
+import { cleanSellerName, resizedImageUrl, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
 import { SITE_URL } from "../../lib/brand";
+import { nextPlacementStartMs } from "../../lib/cart";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
+import { getAreaBySlug } from "../../lib/areas";
+import { getSellerReviews } from "../../lib/server/seller-reviews";
+import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -52,6 +56,8 @@ const sellerName = cleanSellerName(seller?.name) || "Seller";
 // Live area from the seller's coordinates (e.g. "Thane") beats a vague profile text like "Mumbai".
 const sellerLocation = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const SITE = SITE_URL;
+const sellerArea = sellerLocation ? getAreaBySlug(sellerLocation.toLowerCase()) : null;
+const reviewSummary = seller ? await getSellerReviews([seller.id]) : { count: 0, average: null, reviews: [] };
 const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
 // Per-fish product pages live under /s/<slug>/<species> (single-product pages for Google).
 const fishBase = seller && sellerHref(seller.name, seller.id).startsWith("/s/") ? sellerHref(seller.name, seller.id) : null;
@@ -94,6 +100,7 @@ const DAY_NAMES_SHORT = ['sun','mon','tue','wed','thu','fri','sat'];
 const DAY_LABELS: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
 // Use IST day (not UTC day — they differ near midnight)
 const todayDayName = DAY_NAMES_SHORT[nowIST.getUTCDay()];
+// null (legacy) = every day; [] = no same-day orders at all (pre-order only). Same rule as order-timing.
 const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
 const preorderDays: string[] = seller?.preorder_days ?? [];
 
@@ -105,9 +112,9 @@ const isOpenByTime = (() => {
   const openMin = oh * 60 + om;
   const closeMin = ch * 60 + cm;
   if (openMin <= closeMin) return curMin >= openMin && curMin < closeMin;
-  return curMin >= openMin || curMin <= closeMin; // overnight e.g. 17:00–02:59
+  return curMin >= openMin || curMin < closeMin; // overnight e.g. 17:00–03:00 (matches isSellerOpenByClock)
 })();
-const isTodayOrderDay = !openDays.length || openDays.includes(todayDayName);
+const isTodayOrderDay = openDays.includes(todayDayName);
 const isEffectivelyOpen = isOpenByTime && isTodayOrderDay;
 
 // Priority 2: preorder window — store closed for same-day, preorders enabled, cutoff not yet passed
@@ -133,7 +140,7 @@ const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isTodayPreorderD
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
 
 // SEO listings: all listings with pricing (for schema + SSR cards — crawlable regardless of open state)
-const seoListings = [...listings];
+const seoListings = listings.filter((l: any) => l?.is_available === true || l?.is_preorder_enabled === true);
 
 // Filter UI listings to match current mode (what buyers interact with)
 if (isEffectivelyOpen) {
@@ -148,7 +155,8 @@ for (const l of seoListings) {
   if (opts.length > 0) {
     l.pricing_options = opts.map((o) => ({
       ...o,
-      buyer_menu_suffix: formatBuyerMenuUnitSuffix(o),
+      // A seller-written size ("200–300 g", "Pack of 30–40 pcs") is the unit; never show the internal pack weight next to it.
+      buyer_menu_suffix: l.size_label ? "/pack" : formatBuyerMenuUnitSuffix(o),
     }));
   }
 }
@@ -170,7 +178,8 @@ for (const l of listings) {
 // Schedule display strings
 const ALL_DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun'];
 function fmtDays(days: string[]): string {
-  if (!days.length || days.length === 7) return "Every day";
+  if (!days.length) return "No same-day orders";
+  if (days.length === 7) return "Every day";
   const closedDays = ALL_DAY_NAMES.filter(d => !days.includes(d));
   // Show whichever list is shorter — fewer words
   if (closedDays.length < days.length) {
@@ -214,28 +223,33 @@ if (seller?.opens_at) {
   }
 }
 
+// Closed with pre-orders on: when the next pre-order window opens (same rule the order API applies),
+// so the closed banner and the checkout tap point there instead of a dead end.
+let nextPreorderLabel: string | null = null;
+if (isClosed && acceptsPreorder) {
+  const t = nextPlacementStartMs(seller, "preorder");
+  if (t != null) {
+    const at = new Date(t + 5.5 * 3600 * 1000);
+    const days = Math.round((Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate()) - Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate())) / 86400000);
+    const dayStr = days === 0 ? "today" : days === 1 ? "tomorrow" : DAY_LABELS[DAY_NAMES_SHORT[at.getUTCDay()]];
+    nextPreorderLabel = `${dayStr} at ${fmtTime12(`${at.getUTCHours()}:${at.getUTCMinutes()}`)}`;
+  }
+}
+
 const status: "open" | "closed" = isEffectivelyOpen ? "open" : "closed";
+// Seller's public Google Maps rating, copied by hand with the date checked. Shown as text only:
+// no link out (it points at the seller's own site) and not in aggregateRating (Google disallows
+// third-party reviews in a page's own review markup).
+const GOOGLE_RATINGS: Record<string, { stars: number; count: number; asOf: string }> = {
+  "2f39dfce-15c0-4f9a-a5b3-e95280479dbd": { stars: 4.9, count: 303, asOf: "18 Oct 2026" }, // Fishtokri
+};
+const googleRating = seller?.id ? GOOGLE_RATINGS[seller.id] : undefined;
 const tags = [
   acceptsPreorder && isPreorderMode ? "Pre-order available" : (acceptsPreorder ? "Pre-order" : null),
   !seller?.has_delivery ? "Pickup only" : null,
   seller?.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null,
   seller?.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null,
-  seller?.delivery_fee_enabled
-    ? (() => {
-        const feeType = seller.delivery_fee_type || "fixed";
-        if (feeType === "per_km") {
-          return seller.free_delivery_above > 0
-            ? `₹${seller.delivery_fee_per_km}/km delivery · Free above ₹${seller.free_delivery_above}`
-            : `₹${seller.delivery_fee_per_km}/km delivery`;
-        }
-        if (seller.delivery_fee_amount > 0) {
-          return seller.free_delivery_above > 0
-            ? `₹${seller.delivery_fee_amount} delivery · Free above ₹${seller.free_delivery_above}`
-            : `₹${seller.delivery_fee_amount} delivery fee`;
-        }
-        return null;
-      })()
-    : null,
+  // Delivery fee is not shown on the store header; checkout shows it before payment.
   // seller?.schedule_pickup_slots ? "Scheduled pickup" : null, // hidden for now
 ].filter(Boolean) as string[];
 ---
@@ -246,7 +260,7 @@ const tags = [
     return `Order fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""}: ${speciesList || "pomfret, surmai, rawas, prawns"}. See today's menu, pre-order tonight for tomorrow's catch, home delivery or pickup.`;
   })()}
   canonical={canonicalUrl}
-  noindex={notFound || seller?.is_active === false}
+  noindex={notFound || seller?.is_active === false || !!seller?.is_test}
   needsMap={true}
   header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
   nav={{ active: "home" }}
@@ -266,7 +280,7 @@ const tags = [
         "address": { "@type": "PostalAddress", "addressLocality": sellerLocation || "Mumbai", "addressRegion": "Maharashtra", "addressCountry": "IN" },
         "geo": seller.lat && seller.lng ? { "@type": "GeoCoordinates", "latitude": Number(Number(seller.lat).toFixed(2)), "longitude": Number(Number(seller.lng).toFixed(2)) } : undefined,
         "areaServed": seller.lat && seller.lng && seller.delivery_rad ? { "@type": "GeoCircle", "geoMidpoint": { "@type": "GeoCoordinates", "latitude": Number(Number(seller.lat).toFixed(2)), "longitude": Number(Number(seller.lng).toFixed(2)) }, "geoRadius": `${Number(seller.delivery_rad)} km` } : undefined,
-        "potentialAction": { "@type": "OrderAction", "target": { "@type": "EntryPoint", "urlTemplate": canonicalUrl, "actionPlatform": ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"] }, "deliveryMethod": ["http://purl.org/goodrelations/v1#DeliveryModePickUp", "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"] },
+        "potentialAction": { "@type": "OrderAction", "target": { "@type": "EntryPoint", "urlTemplate": canonicalUrl, "actionPlatform": ["https://schema.org/DesktopWebPlatform", "https://schema.org/MobileWebPlatform"] }, "deliveryMethod": ["http://purl.org/goodrelations/v1#DeliveryModePickUp", "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"] },
         "openingHours": seller.opens_at && seller.closes_at
           ? `${openDays.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 2)).join(",") || "Mo,Tu,We,Th,Fr,Sa,Su"} ${seller.opens_at.slice(0,5)}-${seller.closes_at.slice(0,5)}`
           : undefined,
@@ -288,9 +302,11 @@ const tags = [
               const sp = speciesDisplayById[l.species] || l.species || "Fish";
               const opts = l.pricing_options || [];
               const firstOpt = opts[0];
+              const size = ({ small: "Small", medium: "Medium", large: "Large" } as Record<string, string>)[l.fish_size] || "";
+              const packKg = Number(firstOpt?.bundle_size) || 0;
               return {
                 "@type": "MenuItem",
-                "name": sp,
+                "name": l.size_label ? `${sp}, ${l.size_label}` : size ? `${sp}, ${size}` : sp,
                 "url": fishBase ? `${SITE}${fishBase}/${String(l.species).toLowerCase()}` : undefined,
                 "description": l.description || `Fresh ${sp} from ${sellerName}`,
                 "image": l.photo_url || undefined,
@@ -298,6 +314,12 @@ const tags = [
                   "@type": "Offer",
                   "price": firstOpt.price,
                   "priceCurrency": "INR",
+                  "priceSpecification": packKg > 0 && firstOpt.unit === "kg" ? {
+                    "@type": "UnitPriceSpecification",
+                    "price": firstOpt.price,
+                    "priceCurrency": "INR",
+                    "referenceQuantity": { "@type": "QuantitativeValue", "value": packKg * 1000, "unitCode": "GRM" }
+                  } : undefined,
                   "availability": isPreorderMode ? "https://schema.org/PreOrder" : "https://schema.org/InStock"
                 } : undefined
               };
@@ -335,22 +357,30 @@ const tags = [
         location={sellerLocation || seller?.location || ""}
         rating={seller?.rating_avg || 0}
         status={status}
+        preorderOpen={isPreorderMode}
         opensAt={seller?.opens_at}
         closesAt={seller?.closes_at}
         itemCount={itemCount}
         tags={tags}
-        phone={seller?.phone}
         storeImageUrl={seller?.store_image_url}
       />
 
       {/* Schedule strip */}
       <div style="padding:8px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:6px;">
-        <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
-          🗓 Same day orders · {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
-        </span>
+        {googleRating && (
+          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:600;background:#FFF8E1;color:#7A5200;border-color:#FFE08A;" title={`${sellerName}'s own Google Maps rating (not a Relifish rating), as of ${googleRating.asOf}`}>
+            {sellerName}: ★ {googleRating.stars.toFixed(1)} on Google ({googleRating.count} reviews)
+          </span>
+        )}
+        {openDays.length > 0 && (
+          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
+            🗓 Same day orders · {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
+          </span>
+        )}
         {preorderDaysLabel && (() => {
           const sameDays = orderDaysLabel === preorderDaysLabel;
-          const showCutoff = cutoffLabel && cutoffLabel !== closesAtFmt;
+          // No same-day days: the pre-order window is the whole day, so "from <close>" would be wrong.
+          const showCutoff = cutoffLabel && (!openDays.length || cutoffLabel !== closesAtFmt);
           return (
             <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
               🌙 Pre-orders (next day) · {sameDays ? "Same days" : preorderDaysLabel}
@@ -367,7 +397,7 @@ const tags = [
           <div>
             <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              {closesAtFmt && cutoffLabel
+              {closesAtFmt && cutoffLabel && isTodayOrderDay
                 ? `Pre-order window: ${closesAtFmt} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
                 : cutoffLabel
                   ? `Place before ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
@@ -394,13 +424,16 @@ const tags = [
             <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
           {isClosed && (
-            <div style="margin: 0 16px 16px; padding: 12px 14px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--v2-radius); display: flex; align-items: center; gap: 10px;">
+            <div id="v2-closed-block" style="margin: 0 16px 16px; padding: 12px 14px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--v2-radius); display: flex; align-items: center; gap: 10px;">
               <span style="font-size:20px;">🌅</span>
               <div>
                 <div style="font:700 13px Inter; color: #166534;">Store Closed</div>
                 <div style="font:400 11px Inter; color: #15803D; margin-top: 2px;">
                   {seller?.opens_at ? `Shop will open ${nextOpenLabel}.` : "Check back during opening hours."} Prices are estimates and may change.
                 </div>
+                {nextPreorderLabel && (
+                  <div style="font:600 11px Inter; color:#7C3AED; margin-top:4px;">🌙 Pre-orders for the next catch open {nextPreorderLabel}. Come back then to reserve yours.</div>
+                )}
               </div>
             </div>
           )}
@@ -424,7 +457,7 @@ const tags = [
                 if (!mn && !mx) return null;
                 return mn && mx && mn !== mx ? `₹${mn}–₹${mx}` : `₹${mn || mx}`;
               })();
-              const ssrImg = l.photo_url || getSsrSpeciesPhoto(l.species);
+              const ssrImg = resizedImageUrl(l.photo_url, 300) || getSsrSpeciesPhoto(l.species);
               return (
                 <article class="v2-item-card v2-ssr-card" data-listing-id={l.id}
                   style="background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius);overflow:hidden;display:flex;flex-direction:row;">
@@ -452,6 +485,12 @@ const tags = [
   <div id="v2-cart-bar-mount"></div>
 
 
+  {!notFound && <ReviewsBlock summary={reviewSummary} title={`Buyer ratings for ${sellerName}`} />}
+  {!notFound && sellerArea && (
+    <p style="font:400 13px/1.5 Inter;margin:0;padding:12px 16px;border-top:1px solid var(--v2-border);">
+      {sellerName} delivers in {sellerArea.name}. <a href={`/area/${sellerArea.slug}`} style="color:var(--v2-brand);font-weight:600;">See all fish sellers and today's prices in {sellerArea.name} →</a>
+    </p>
+  )}
   <!-- Hyperlocal footer -->
   {!notFound && (
     <div style="background:var(--v2-bg-2);border-top:1px solid var(--v2-border);padding:20px 16px;text-align:center;">
@@ -485,7 +524,7 @@ const tags = [
     flex: 1;
     min-width: 0;
   }
-  body.v2-has-cart .v2-main { padding-bottom: 144px; }
+  body.v2-has-cart .v2-main { padding-bottom: 200px; }
 
   /* Multi-tier pricing rows inside item cards */
   .v2-item-tiers {
@@ -520,9 +559,14 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings, speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode }}>
+<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
+  // Same-day and pre-order carts are separate; this page uses the one its menu is in.
+  cartMode: isPreorderMode ? "preorder" : "same_day",
+  pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
+  serverNowMs: nowIST.getTime() - 5.5 * 3600 * 1000,
+  sellerHours: { opens_at: seller?.opens_at ?? null, closes_at: seller?.closes_at ?? null, open_days: seller?.open_days ?? null, preorder_days: seller?.preorder_days ?? null, preorder_cutoff_time: seller?.preorder_cutoff_time ?? null, accepts_preorder: !!seller?.accepts_preorder } }}>
   // Expose current seller image so CartStackSheet can use fresh DB value even when localStorage is stale
-  window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl };
+  window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl, mode: cartMode };
 
   function withCart(fn) {
     if (window.RelifishCart) return fn(window.RelifishCart);
@@ -532,12 +576,13 @@ const tags = [
   const grid = document.getElementById("v2-menu-grid");
   const cartMount = document.getElementById("v2-cart-bar-mount");
   if (grid && listings) {
-    function Cart() { return window.RelifishCart; }
+    // Pins the cart module's default reads (getCart, groupBySeller, clearCart) to this page's mode.
+    function Cart() { const c = window.RelifishCart; c?.setCartMode?.(cartMode); return c; }
 
     function getSellerItems() {
       const c = Cart();
       if (!c) return {};
-      const cart = c.getCart();
+      const cart = c.getCart(cartMode);
       const out = {};
       for (const lid of Object.keys(cart)) {
         if (cart[lid].seller_id === sellerId) out[lid] = cart[lid];
@@ -682,7 +727,7 @@ const tags = [
       const bs = bundleSize && bundleSize > 1 ? Number(bundleSize) : 1;
       if (u === "piece" || u === "pc" || u === "pcs") {
         const packs = bs > 1 ? Math.round(Number(qty) / bs) : Number(qty);
-        return `${fmtQty(packs)} pack`;
+        return `${fmtQty(packs)} pack${packs === 1 ? "" : "s"}`;
       }
       if (u === "kg" && qty > 0 && qty < 1) {
         return `${Math.round(qty * 1000)} grams`;
@@ -690,15 +735,18 @@ const tags = [
       return `${fmtQty(qty)} ${unit || "kg"}`;
     }
 
-    // Build composite cart key matching cart.ts logic
+    // Build composite cart key matching cart.ts logic (pre-order lines carry a "|preorder" suffix)
     function ck(listingId, optId) {
-      return optId && optId !== "default" ? listingId + ":" + optId : listingId;
+      return (optId && optId !== "default" ? listingId + ":" + optId : listingId) + (cartMode === "preorder" ? "|preorder" : "");
     }
 
     function renderItem(l) {
       const opts = l.pricing_options || [];
       const firstOpt = opts[0] || {};
       const name = getName(l.species);
+      // Cart / checkout line: two pomfret (or bombil whole vs fry cut) listings must not read the same.
+      const cartTag = [l.size_label, l.description].filter(Boolean).join(", ");
+      const cartName = cartTag ? `${name} (${cartTag})` : name;
       const sellerItems = getSellerItems();
       const emoji = speciesEmoji(l.species);
       // Menu mode is timing-first:
@@ -749,7 +797,7 @@ const tags = [
                          <button class="v2-item-inc" aria-label="Increase">+</button>
                        </div>`;
                       })()
-                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(cartName)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(l.size_label && unit === "piece" ? "pack" : unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`}
                 </div>`;
               })()
             : (() => {
@@ -768,8 +816,8 @@ const tags = [
                     const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${o.price}`;
 
                     return `<div class="v2-item-tier">
-                      <div style="flex:1; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
-                        <span class="v2-item-tier-label" style="flex:none;">${escape(label)}${bSize}</span>
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                        <span class="v2-item-tier-label" style="flex:none;white-space:normal;">${escape(label)}${bSize}</span>
                         <span class="v2-item-tier-price" style="color:#7C3AED;margin-right:0;">🌙 ${rangeDisplay}</span>
                       </div>
                       ${tierQty > 0
@@ -782,7 +830,7 @@ const tags = [
                              <button class="v2-item-inc" aria-label="Increase">+</button>
                            </div>`;
                           })()
-                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${poPrice}" data-name="${escape(`${name} (${label})`)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`}
                     </div>`;
                   }).join("")}
                 </div>`;
@@ -809,7 +857,7 @@ const tags = [
                          <button class="v2-item-inc" aria-label="Increase">+</button>
                        </div>`;
                       })()
-                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(name)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`)}
+                    : `<button class="v2-item-add" data-id="${l.id}" data-price="${price}" data-name="${escape(cartName)}" data-unit="${escape(unit)}" data-opt-id="${optId}" data-opt-label="${escape(l.size_label && unit === "piece" ? "pack" : unit)}" data-bundle-size="${firstOpt.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`)}
                 </div>`;
               })()
             : (() => {
@@ -823,8 +871,8 @@ const tags = [
                     const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.unit === 'kg' && o.bundle_size > 0 && o.bundle_size < 1 ? Math.round(o.bundle_size * 1000) + 'g' : o.bundle_size + (o.unit === 'kg' ? 'kg' : 'pc')})` : '';
                     const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
                     return `<div class="v2-item-tier">
-                      <div style="flex:1; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
-                        <span class="v2-item-tier-label" style="flex:none;">${escape(label)}${bSize}</span>
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                        <span class="v2-item-tier-label" style="flex:none;white-space:normal;">${escape(label)}${bSize}</span>
                         <span class="v2-item-tier-price" style="margin-right:0;">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
                       </div>
                       ${sellerFullyClosed ? '' : (tierQty > 0
@@ -839,7 +887,7 @@ const tags = [
                              <button class="v2-item-inc" aria-label="Increase" ${atMax ? 'disabled style="opacity:.35;cursor:not-allowed;"' : ''}>+</button>
                            </div>`;
                           })()
-                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(name)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`)}
+                        : `<button class="v2-item-add" data-id="${l.id}" data-price="${o.price}" data-name="${escape(`${name} (${label})`)}" data-unit="${escape(tierUnit)}" data-opt-id="${optId}" data-opt-label="${escape(label)}" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)} ${escape(label)}">+</button>`)}
                     </div>`;
                   }).join("")}
                 </div>`;
@@ -858,18 +906,24 @@ const tags = [
 
       // Fish size badge
       const sizeMap = { small: "S", medium: "M", large: "L" };
-      const sizeBadge = l.fish_size && sizeMap[l.fish_size] ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;">${sizeMap[l.fish_size]}</span>` : '';
+      const sizeText = (l.size_label || "").trim() || (l.fish_size && sizeMap[l.fish_size]) || "";
+      const sizeBadge = sizeText ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;text-transform:none;">${escape(sizeText)}</span>` : '';
+      const descHtml = l.description ? `<div style="font:400 11px/1.4 Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(l.description)}</div>` : '';
 
-      // Today's stock left (seller-entered weight_avail): "15 kg left today"; orange when at/below oos_threshold
-      const stockLeft = Number(l.weight_avail);
-      const stockUnit = firstOpt.unit === "kg" ? "kg" : firstOpt.unit === "piece" ? "pcs" : null;
-      const lowStock = l.oos_threshold && stockLeft <= Number(l.oos_threshold);
-      const stockWarn = hasStock && !isListingPreorder && l.weight_avail != null && stockLeft > 0 && stockUnit
-        ? `<div style="font:600 10px Inter;color:${lowStock ? "var(--v2-orange)" : "var(--v2-ink-3)"};margin-top:2px;">${lowStock ? "⚡ Only " : ""}${+stockLeft.toFixed(2)} ${stockUnit} left today</div>` : '';
+      // Stock left is not shown on cards (founder's call, 2026-10-13); stock still caps quantity and hides sold-out fish.
 
       // Daily limit hint
-      const limitHint = l.buyer_daily_qty_limit
-        ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:1px;">Max ${l.buyer_daily_qty_limit} per buyer/day</div>` : '';
+      // Limit is stored in base units (kg or pieces); say it the way buyers add it (packs).
+      const limitText = (() => {
+        const lim = Number(l.buyer_daily_qty_limit);
+        if (!(lim > 0)) return "";
+        const bs = Number(firstOpt.bundle_size) || 0;
+        if (firstOpt.unit === "kg" && bs > 0 && bs < 1) { const n = Math.floor(lim / bs + 1e-9); return `${n} ${n === 1 ? "pack" : "packs"}`; }
+        if (firstOpt.unit === "piece") return l.size_label ? `${lim} ${lim === 1 ? "pack" : "packs"}` : `${lim} pcs`;
+        return `${lim} kg`;
+      })();
+      const limitHint = limitText
+        ? `<div style="font:400 10px Inter;color:var(--v2-ink-3);margin-top:1px;">Max ${limitText} per buyer/day</div>` : '';
 
       // Compare-at-price (discount) — hide on pre-order cards; final price is set after catch, list/was pricing is misleading.
       const hasDiscount =
@@ -895,8 +949,9 @@ const tags = [
           </div>
           <div class="v2-item-body">
             <div class="v2-item-name">${escape(name)}${sizeBadge}</div>
+            ${descHtml}
             ${preorderRangeHtml}
-            ${stockWarn}${limitHint}
+            ${limitHint}
             ${pricingHtml}
           </div>
         </div>`;
@@ -948,15 +1003,29 @@ const tags = [
     let selectedAddressLat = null;
     let selectedAddressLng = null;
 
+    // eventID of the last InitiateCheckout pixel event, sent with the order so the server copy dedupes.
+    let checkoutEventId = null;
     // Analytics helper — fire-and-forget, never throws
     function track(event, params) {
+      const { event_id, ...p } = params || {};
       try {
-        if (typeof gtag === "function") gtag("event", event, { seller_id: sellerId, seller_name: sellerName, ...params });
+        if (typeof gtag === "function") gtag("event", event, { seller_id: sellerId, seller_name: sellerName, ...p });
       } catch {}
       try {
-        if (typeof fbq === "function" && event === "purchase") fbq("track", "Purchase", { value: params?.value, currency: "INR" });
-        if (typeof fbq === "function" && event === "checkout_started") fbq("track", "InitiateCheckout");
-        if (typeof fbq === "function" && event === "add_to_cart") fbq("track", "AddToCart", { content_name: params?.item_name, value: params?.price, currency: "INR" });
+        // eventID lets Meta dedupe a pixel event against the same event sent server-side (CAPI).
+        const opts = { eventID: event_id || `${event}.${Date.now()}.${Math.random().toString(36).slice(2, 10)}` };
+        if (typeof fbq === "function" && event === "purchase") fbq("track", "Purchase", { value: p.value, currency: "INR" }, opts);
+        if (typeof fbq === "function" && event === "checkout_started") fbq("track", "InitiateCheckout", { value: p.subtotal, currency: "INR" }, opts);
+        if (typeof fbq === "function" && event === "add_to_cart") fbq("track", "AddToCart", { content_name: p.item_name, value: p.price, currency: "INR" }, opts);
+        if (typeof fbq === "function" && event === "view_item") fbq("track", "ViewContent", { content_name: p.item_name, value: p.price, currency: "INR" }, opts);
+        // Server copy (CAPI) with the same eventID, so it still counts when the pixel is blocked.
+        // InitiateCheckout goes with the place-order request (checkoutEventId); internal devices send nothing.
+        if (event === "checkout_started") checkoutEventId = window.rfInternal ? null : opts.eventID;
+        const capiName = event === "add_to_cart" ? "AddToCart" : event === "view_item" ? "ViewContent" : null;
+        if (capiName && !window.rfInternal) {
+          const body = JSON.stringify({ event_name: capiName, event_id: opts.eventID, value: p.price, contents: [{ id: p.item_id, quantity: p.quantity || 1 }] });
+          if (!navigator.sendBeacon?.("/api/meta/event", body)) fetch("/api/meta/event", { method: "POST", body, keepalive: true }).catch(() => {});
+        }
       } catch {}
     }
 
@@ -981,14 +1050,15 @@ const tags = [
 
     /**
      * Show/hide pickup vs delivery from live API flags. `fromRefetch` preserves a valid
-     * buyer choice when step 2 loads; initial open defaults to pickup when both exist.
+     * buyer choice when step 2 loads; initial open defaults to delivery when both exist.
+     * Pre-orders can be delivered too: hiding delivery in pre-order mode left delivery-only
+     * sellers with no option, so checkout fell back to pickup and the server rejected it.
      */
     function applyCheckoutFulfillment(sid, fulfill, fromRefetch) {
       if (!fulfill) return;
       const has_pickup = fulfill.has_pickup !== false;
       const has_delivery = !!fulfill.has_delivery;
-      const preorderHere = isPreorderMode && sid === sellerId;
-      const canDeliver = sid === sellerId && has_delivery && !preorderHere;
+      const canDeliver = sid === sellerId && has_delivery;
       const showPickup = has_pickup;
       const showDelivery = canDeliver;
 
@@ -1018,8 +1088,7 @@ const tags = [
         else if (showDelivery) next = "delivery";
         else if (showPickup) next = "pickup";
       } else {
-        if (showPickup && showDelivery) next = "pickup";
-        else if (showDelivery) next = "delivery";
+        if (showDelivery) next = "delivery";
         else if (showPickup) next = "pickup";
       }
 
@@ -1066,19 +1135,40 @@ const tags = [
       return deliveryFeeAmount > 0 ? { fee: deliveryFeeAmount, label: `₹${deliveryFeeAmount}` } : { fee: 0, label: "free" };
     }
 
+    // Lines live validation took out this visit: shown crossed out with the reason.
+    let removedDismissed = false;
+    function removedLinesHtml(c) {
+      const removed = c.getRemovedLines ? c.getRemovedLines(sellerId, cartMode) : [];
+      return removed.map((r) => `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-bottom:4px;"><s>${escape(r.name)}</s> · <span style="color:var(--v2-red);">${escape(r.reason)}</span></div>`).join("");
+    }
+
     function renderCart() {
       const c = Cart(); if (!c) return;
-      const cart = c.getCart();
+      const cart = c.getCart(cartMode);
       const totalQty = c.totalQty(cart);
+      const removedHtml = removedLinesHtml(c);
 
       // Single-seller cart: all items belong to one seller.
       const sellerItems = Object.values(getSellerItems());
       const sellerQty = sellerItems.reduce((s, i) => s + i.qty, 0);
       const sellerSubtotal = sellerItems.reduce((s, i) => s + i.qty * i.price, 0);
-      // Unique item count: distinct listings in cart (4 packs of Pomfret = 1 item)
-      const sellerPackCount = new Set(sellerItems.map(i => i.listing_id)).size;
+      // Item count = cart lines (4 packs of one Pomfret size = 1 item; two pack sizes
+      // = 2 items), matching the checkout and the order page, which list each line.
+      const sellerPackCount = sellerItems.length;
 
-      if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
+      if (totalQty === 0) {
+        if (!removedHtml || removedDismissed) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
+        // Everything was removed: say why instead of the cart silently vanishing.
+        document.body.classList.add("v2-has-cart");
+        cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div><div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:6px;">Removed from your cart</div>${removedHtml}</div>
+            <button id="v2-cart-removed-ok" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;flex-shrink:0;" aria-label="Dismiss">✕</button>
+          </div>
+        </div>`;
+        document.getElementById("v2-cart-removed-ok")?.addEventListener("click", () => { removedDismissed = true; renderCart(); });
+        return;
+      }
       document.body.classList.add("v2-has-cart");
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
@@ -1089,16 +1179,29 @@ const tags = [
       // Status line
       let statusLine = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""}`;
       let statusColor = "var(--v2-ink-3)";
-      if (belowMin) { statusLine = `Add ₹${minOrder - sellerSubtotal} more for min order`; statusColor = "var(--v2-orange)"; }
+      if (belowMin) { statusLine = `Min order ₹${minOrder}`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
-      else if (isPreorderMode) { statusLine = `🌙 Pre-order for tomorrow${feeEstimate ? ` · Delivery ${feeEstimate.label}` : ""}`; statusColor = "#7C3AED"; }
-      else if (feeEstimate) {
-        // Show the delivery fee before checkout so it is never a surprise at step 2.
-        statusLine += ` · Delivery ${feeEstimate.label}`;
-        if (feeEstimate.fee !== 0 && deliveryFreeAbove > sellerSubtotal) statusLine += ` · free above ₹${deliveryFreeAbove}`;
+      else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
+
+      // Delivery fee before login/OTP, from the seller's own settings (the server recomputes it at place-order).
+      // per_km without a known buyer location: show the seller's rate, not radius × rate (reads as a scary maximum).
+      let feeLine = "";
+      if (feeEstimate && !(freeHit && !isPreorderMode)) {
+        const amt = feeEstimate.fee === 0 ? "" : feeEstimate.fee == null ? `₹${deliveryFeePerKm}/km from the seller` : feeEstimate.label;
+        feeLine = amt ? `🚲 Delivery ${amt}, shown before you pay` : "🚲 Free delivery";
+        if (amt && deliveryFreeAbove > 0 && deliveryFreeAbove > sellerSubtotal) feeLine += ` · free above ₹${deliveryFreeAbove}`;
       }
 
+      // Below the minimum: say the gap and offer the cheapest one-tap item (not yet in the cart) that closes it.
+      const gap = belowMin ? Math.ceil(minOrder - sellerSubtotal) : 0;
+      const filler = gap > 0
+        ? [...grid.querySelectorAll(".v2-item-add:not([disabled])")]
+            .filter((b) => parseFloat(b.dataset.price) >= gap)
+            .sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price))[0]
+        : null;
+
       cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
+        ${removedHtml ? `<div style="margin-bottom:6px;">${removedHtml}</div>` : ""}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div>
             <div style="font:800 16px Inter;color:var(--v2-ink);">₹${sellerSubtotal.toLocaleString("en-IN")}</div>
@@ -1106,11 +1209,22 @@ const tags = [
           </div>
           <button id="v2-cart-clear" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;" aria-label="Clear cart">✕</button>
         </div>
+        ${gap > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font:600 12px Inter;color:var(--v2-orange);">Add ₹${gap} more to checkout</span>
+          ${filler ? `<button id="v2-cart-filler" type="button" style="background:var(--v2-brand-l);border:none;color:var(--v2-brand);padding:6px 10px;border-radius:999px;font:700 11px Inter;cursor:pointer;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">+ ${escape(filler.dataset.name)} ₹${escape(filler.dataset.price)}</button>` : ""}
+        </div>` : ""}
+        ${feeLine ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-bottom:8px;">${escape(feeLine)}</div>` : ""}
         <div style="display:flex;gap:8px;">
           <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
-          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.55;' : ''}">${belowMin ? `Add ₹${minOrder - sellerSubtotal} more` : "Checkout →"}</button>
+          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.55;' : ''}">${belowMin ? `Add ₹${gap} more` : "Checkout →"}</button>
         </div>
       </div>`;
+
+      document.getElementById("v2-cart-filler")?.addEventListener("click", () => {
+        const d = filler.dataset;
+        track("min_order_filler_add", { item_name: d.name, price: parseFloat(d.price), gap });
+        add(d.id, parseFloat(d.price), d.name, d.unit, d.optId, d.optLabel, d.bundleSize);
+      });
 
       document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
       document.getElementById("v2-cart-manage")?.addEventListener("click", () => {
@@ -1118,7 +1232,7 @@ const tags = [
       });
       document.getElementById("v2-cart-clear")?.addEventListener("click", () => {
         const c = Cart(); if (!c) return;
-        c.clearCart({ sellerId });
+        c.clearCart({ sellerId, mode: cartMode });
         render();
         window.v2Toast?.("success", "Cart cleared");
       });
@@ -1154,7 +1268,9 @@ const tags = [
 
       if (sellerFullyClosed && sid === sellerId) {
         blocked("closed");
-        window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
+        // Point at when they can order (closed banner) instead of a dead end.
+        document.getElementById("v2-closed-block")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.v2Toast?.("info", "Closed right now", nextPreorderLabel ? `Pre-orders open ${nextPreorderLabel}` : `Shop opens ${nextOpenLabel}`);
         return;
       }
 
@@ -1167,16 +1283,9 @@ const tags = [
 
       // -- LIVE VALIDATION --
       if (typeof c.validateCartLive === "function") {
-        const { oosMessages, priceChangedCount } = await c.validateCartLive(sid, isPreorderMode);
-        if (oosMessages.length > 0 || priceChangedCount > 0) {
-          let msg = [];
-          if (oosMessages.length) msg.push(oosMessages.join("\\n"));
-          if (priceChangedCount) msg.push(`Prices updated for ${priceChangedCount} item(s)`);
-          window.v2Toast?.("info", "Cart updated", msg.join(" · "));
-          
-          // Wait briefly for storage event to propagate
-          await new Promise(r => setTimeout(r, 50));
-          
+        const result = await c.validateCartLive(sid, cartMode);
+        if (announceValidation(result)) {
+          render();
           const groups2 = c.groupBySeller();
           group = groups2.find((g) => g.seller_id === sid);
           if (!group || group.items.length === 0) {
@@ -1228,7 +1337,8 @@ const tags = [
                 </div>
               </div>
               <div style="font:800 15px Inter;color:var(--v2-ink);flex-shrink:0;white-space:nowrap;padding-top:1px;">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
-            </div>`).join("")}`;
+            </div>`).join("")}
+          ${(() => { const h = removedLinesHtml(c); return h ? `<div style="padding-top:10px;">${h}</div>` : ""; })()}`;
       }
       const subtotal = group.subtotal;
       const subOut = document.getElementById("seller-checkout-subtotal");
@@ -1342,7 +1452,7 @@ const tags = [
         const freeDelivBanner2 = document.getElementById("seller-checkout-free-delivery-banner");
         const delivHint2 = document.getElementById("seller-checkout-delivery-hint");
         const step2Visible = document.getElementById("seller-checkout-step2")?.offsetParent !== null;
-        if (isDelivery && !isPreorderMode && step2Visible) {
+        if (isDelivery && step2Visible) {
           if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
             if (freeDelivBanner2) freeDelivBanner2.style.display = "block";
             if (delivHint2) delivHint2.style.display = "none";
@@ -1458,6 +1568,11 @@ const tags = [
 
       const methodEl = document.querySelector('input[name="seller-checkout-method"]:checked');
       const orderType = methodEl?.value === "delivery" ? "delivery" : "pickup";
+      // A checked-but-hidden option means fulfillment didn't load; never guess pickup/delivery.
+      if (!methodEl || methodEl.closest("label")?.style.display === "none") {
+        window.v2Toast?.("error", "Choose delivery or pickup", "Go back a step and pick one");
+        return;
+      }
       if (orderType === "delivery" && !selectedAddressId) {
         window.v2Toast?.("error", "Address needed", "Pick a delivery address");
         return;
@@ -1487,13 +1602,20 @@ const tags = [
             buyer_id: buyerId,
             buyer_addr: selectedAddressId,
             order_type: orderType,
+            // Lets the server refuse if the shop opened/closed since this page loaded.
+            placement_kind: isPreorderMode ? "preorder" : "same_day",
             utm: (() => { try { return JSON.parse(localStorage.getItem("rf_utm") || "null"); } catch { return null; } })(),
             cut_style: [...document.querySelectorAll('input[name="seller-checkout-cut"]:checked')].map((el) => el.value).join(","),
             buyer_notes: (document.getElementById("seller-checkout-notes")?.value || "").trim(),
+            meta_event_id: checkoutEventId,
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed");
+        if (!res.ok) {
+          // Page is stale (shop opened/closed): reload so menu, prices and mode are current.
+          if (data.code === "placement_changed" || data.code === "option_changed") setTimeout(() => window.location.reload(), 2500);
+          throw new Error(data.error || "Failed");
+        }
 
         // Success: clear cart, show fullscreen success animation, redirect
         const orderTotal = (data.orders || []).reduce((s, o) => s + (Number(o.total_price) || 0) + (Number(o.delivery_fee) || 0), 0);
@@ -1519,7 +1641,8 @@ const tags = [
         document.body.appendChild(overlay);
         const firstOrderId = Array.isArray(data.orders) && data.orders[0]?.id ? String(data.orders[0].id) : "";
         setTimeout(() => {
-          window.location.href = firstOrderId ? `/track/${encodeURIComponent(firstOrderId)}` : "/track";
+          // ?pay=1: the order page opens Razorpay straight away (no second "Pay" tap).
+          window.location.href = firstOrderId ? `/track/${encodeURIComponent(firstOrderId)}?pay=1` : "/track";
         }, 2000);
       } catch (err) {
         track("order_failed", { error: err?.message || "unknown" });
@@ -1532,14 +1655,33 @@ const tags = [
       }
     });
 
+    /** Tell the buyer what validation changed: removed items (with reason) and old → new prices. */
+    function announceValidation(r) {
+      const parts = [...(r.oosMessages || []), ...(r.priceMessages || [])];
+      if (!parts.length) return false;
+      if (r.oosMessages?.length) removedDismissed = false;
+      window.v2Toast?.("info", r.oosMessages?.length ? "Cart updated" : "Prices updated", parts.join(" · "));
+      return true;
+    }
+
     function triggerBackgroundValidation(c) {
-      if (typeof c.validateCartLive === "function") {
-        c.validateCartLive(sellerId, isPreorderMode).then(({ oosMessages, priceChangedCount }) => {
-          if (oosMessages.length > 0 || priceChangedCount > 0) {
-            render();
-          }
-        });
-      }
+      // Closed shop: nothing can be ordered now; keep the cart as is until a window opens.
+      if (pageMode === "closed" || typeof c.validateCartLive !== "function") return Promise.resolve();
+      return c.validateCartLive(sellerId, cartMode).then((r) => {
+        if (announceValidation(r)) render();
+      });
+    }
+
+    // Same-day stock is shared by every price tier of a listing. Pre-orders are for
+    // tomorrow's catch, so today's stock must not cap them.
+    function overStock(listingId, addQty, unit) {
+      if (isPreorderMode) return false;
+      const listing = listings.find(l => l.id === listingId);
+      const avail = listing?.weight_avail != null ? Number(listing.weight_avail) : Infinity;
+      const inCart = Object.values(getSellerItems()).filter(i => i.listing_id === listingId).reduce((s, i) => s + i.qty, 0);
+      if (!Number.isFinite(avail) || inCart + addQty <= avail + 1e-9) return false;
+      window.v2Toast?.("info", "Stock limit", `Only ${avail} ${unit || "kg"} available`);
+      return true;
     }
 
     function add(id, price, name, unit, optId, optLabel, bundleSize) {
@@ -1549,6 +1691,7 @@ const tags = [
       }
       const c = Cart(); if (!c) return;
       const bs = parseFloat(bundleSize) || 1;
+      if (overStock(id, bs, unit)) return;
       // Store price per base unit so qty × price always gives correct total
       const pricePerUnit = bs > 0 ? price / bs : price;
       c.addItem({
@@ -1562,6 +1705,8 @@ const tags = [
         pricing_option_id: optId || "default",
         pricing_label: optLabel || unit,
         qty: bs,
+        mode: cartMode,
+        bundle_size: bs,
       });
       track("add_to_cart", { item_name: name, item_id: id, price, quantity: bs, price_unit: unit });
       render();
@@ -1590,21 +1735,23 @@ const tags = [
       const item = cart[id];
       if (!item) return;
       const step = getBundleStep(item);
-      // Stock cap: don't exceed weight_avail
-      const listing = listings.find(l => l.id === item.listing_id);
-      const avail = listing?.weight_avail != null ? Number(listing.weight_avail) : Infinity;
-      if (Number.isFinite(avail) && item.qty + step > avail) {
-        window.v2Toast?.("info", "Stock limit", `Only ${avail} ${item.qty_unit || "kg"} available`);
-        return;
-      }
+      if (overStock(item.listing_id, step, item.qty_unit)) return;
       c.setQty(id, item.qty + step);
       render();
       triggerBackgroundValidation(c);
     }
 
+    const viewedListings = new Set();
     grid.addEventListener("click", (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
+      // First tap on an item card = Meta ViewContent (the menu has no item detail page).
+      const lid = t.closest(".v2-item-card")?.dataset.listingId;
+      if (lid && !viewedListings.has(lid)) {
+        viewedListings.add(lid);
+        const l = listings.find((x) => x.id === lid);
+        track("view_item", { item_id: lid, item_name: getName(l?.species), price: Number(l?.pricing_options?.[0]?.price) || 0 });
+      }
       if (t.classList.contains("v2-item-add")) {
         add(t.dataset.id, parseFloat(t.dataset.price), t.dataset.name, t.dataset.unit, t.dataset.optId, t.dataset.optLabel, t.dataset.bundleSize);
       } else if (t.classList.contains("v2-item-inc")) {
@@ -1638,11 +1785,39 @@ const tags = [
       openCheckout(m.sid);
     }
 
+    // Shop opens / closes / pre-order cutoff / midnight: reload at that moment so the menu,
+    // the cart for the new mode and its prices switch. Times are on the server's clock (offset
+    // below), and the rule is compared with itself at render time, never with the page's own
+    // flags, so a rule mismatch can't cause a reload loop.
+    const clockOffset = serverNowMs - Date.now();
+    const nowMs = () => Date.now() + clockOffset;
+    let modeTimer = null;
+    let renderedMode = null;
+    /** True when it is reloading the page. */
+    function checkModeSwitch(c) {
+      clearTimeout(modeTimer);
+      renderedMode = renderedMode || c.placementAt(sellerHours, serverNowMs);
+      if (c.placementAt(sellerHours, nowMs()) !== renderedMode) {
+        window.location.reload();
+        return true;
+      }
+      const wait = c.nextModeBoundaryMs(sellerHours, nowMs()) - nowMs() + 1000;
+      modeTimer = setTimeout(() => checkModeSwitch(c), Math.min(Math.max(wait, 1000), 2147483647));
+      return false;
+    }
+
     // Once cart module loads: migrate legacy + hydrate from server, then re-render
     withCart((c) => {
       c.migrateLegacyCarts({ sellerLookup: (sid) => sid === sellerId ? sellerName : "" });
-      c.hydrateFromServer().then(() => { render(); resumeCheckout(); });
+      if (checkModeSwitch(c)) return;
+      // Latest rates and stock on every visit, not only at add/checkout.
+      c.hydrateFromServer().then(() => { render(); return triggerBackgroundValidation(c); }).then(resumeCheckout);
       render();
+      // Back on the tab (phone unlocked, app switched): timers may have slept through a boundary.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible") return;
+        if (!checkModeSwitch(c)) triggerBackgroundValidation(c);
+      });
     });
   }
 </script>

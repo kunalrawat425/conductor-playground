@@ -378,14 +378,19 @@ export function getListingPriceOptions(listing: ListingPricingSource): ListingPr
   return canonicalPricingOptionsFromPayload(listing.pricing_options as unknown) ?? [];
 }
 
+/**
+ * No id / "default" (lines saved before per-tier ids) = the first option. Any other id must
+ * still exist: falling back to option 0 charged a removed pack at another pack's price.
+ * Options stored without an id are `opt_<index>` (canonicalPricingOptionsFromPayload).
+ */
 export function getListingOptionById(
   listing: ListingPricingSource,
   optionId: string | null | undefined
 ): ListingPriceOption | undefined {
   const opts = getListingPriceOptions(listing);
   if (opts.length === 0) return undefined;
-  if (!optionId) return opts[0];
-  return opts.find((o) => o.id === optionId) ?? opts[0];
+  if (!optionId || optionId === "default") return opts[0];
+  return opts.find((o) => o.id === optionId);
 }
 
 /** True when menu should show strikethrough list price + badge. */

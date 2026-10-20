@@ -5,6 +5,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { afterResponse } from "../../../lib/server/after-response";
+import { metaClientFromRequest } from "../../../lib/server/meta-capi";
 
 export const prerender = false;
 
@@ -65,16 +66,18 @@ export const POST: APIRoute = async ({ request, url }) => {
   // replay: paying ₹1 on one order and replaying that signature against a
   // different (higher-value) order the same buyer owns. The receipt fallback in
   // findOrderForRazorpayOrder also covers an id replaced after a price change.
-  const { findOrderForRazorpayOrder, settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
-  const owner = await findOrderForRazorpayOrder(supabase, razorpay_order_id);
-  if (!owner || owner.id !== order_id) {
+  // A cart paid in one go: the signed Razorpay order covers every row of the
+  // cart, so this order must be one of them.
+  const { findOrdersForRazorpayOrder, settleCapturedPayment } = await import("../../../lib/server/razorpay-ledger");
+  const owners = await findOrdersForRazorpayOrder(supabase, razorpay_order_id);
+  if (!owners.some((r) => r.id === order_id) || owners.some((r) => r.buyer_id !== buyer_id)) {
     return new Response(JSON.stringify({ error: "Payment does not match this order" }), { status: 400 });
   }
 
   // Confirm, attach, or refund — decided once, shared with the webhook and crons.
   let settled;
   try {
-    settled = await settleCapturedPayment(supabase, { razorpay_order_id, razorpay_payment_id, source: "verify" });
+    settled = await settleCapturedPayment(supabase, { razorpay_order_id, razorpay_payment_id, source: "verify", meta_client: metaClientFromRequest(request) });
   } catch (err: any) {
     console.error("[razorpay-verify] settle failed", { order_id, razorpay_payment_id, err: err?.message });
     return new Response(JSON.stringify({ error: "Failed to confirm order" }), { status: 500 });
@@ -92,6 +95,30 @@ export const POST: APIRoute = async ({ request, url }) => {
     return new Response(JSON.stringify({ ok: true, ga_server: !!import.meta.env.GA4_API_SECRET }), { status: 200 });
   }
 
+  // Every row this payment confirmed (a whole cart → ONE push, ONE receipt, ONE seller email).
+  const paidIds = (settled.orders?.length ? settled.orders : [settled.order]).map((r) => r.id);
+  const { data: paidRowsData } = await supabase
+    .from("orders")
+    .select("id, species, quantity, quantity_unit, total_price, delivery_fee, pricing_option_id, pricing_label, cut_style, buyer_notes, created_at, listing:fish_listings(species, pricing_options)")
+    .in("id", paidIds)
+    .order("created_at", { ascending: true });
+  const paidRows: any[] = paidRowsData?.length ? paidRowsData : [order];
+  const { cartLabel } = await import("../../../lib/server/order-cart");
+  const speciesOf = (r: any) => r.listing?.species || r.species || "Fish";
+  const label = paidRows.length > 1 ? cartLabel(paidRows.map(speciesOf)) : speciesOf(order);
+  const cartFee = paidRows.reduce((s: number, r: any) => s + (Number(r.delivery_fee) || 0), 0);
+  const cartTotal = paidRows.reduce((s: number, r: any) => s + (Number(r.total_price) || 0), 0) + cartFee;
+  const bundleOf = (r: any) => {
+    const opts = r.listing?.pricing_options;
+    if (!Array.isArray(opts) || !opts.length) return { size: null as number | null, count: null as number | null };
+    // Find option by id or by canonical opt_N index
+    const opt = r.pricing_option_id
+      ? opts.find((o: any, i: number) => o.id === r.pricing_option_id || `opt_${i}` === r.pricing_option_id)
+      : opts[0];
+    const size = opt?.bundle_size && Number(opt.bundle_size) > 1 ? Number(opt.bundle_size) : null;
+    return { size, count: size ? Math.round((Number(r.quantity) || 1) / size) : null };
+  };
+
   // Buyer push goes out after the response (waitUntil): awaiting it here held the
   // "payment confirmed" screen for several seconds on staging.
   afterResponse((async () => {
@@ -100,7 +127,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       buyer_id,
       buyer_phone: undefined,
       status: settled.order.status === "confirmed" ? "confirmed" : "paid",
-      species: (order as any).listing?.species || (order as any).species || "Fish",
+      species: label,
       order_id,
     });
   })(), "razorpay-verify:buyer-push");
@@ -124,35 +151,22 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
       const { razorpayReceiptEmail } = await import("../../../lib/email-templates");
       const seller = (_order as any).listing?.seller;
-      const qty = Number((_order as any).quantity) || 1;
-      const qtyUnit = (_order as any).quantity_unit || "kg";
-      const pricingOptionId = (_order as any).pricing_option_id || null;
-      const pricingOptions = (_order as any).listing?.pricing_options;
-      let bundleSize: number | null = null;
-      let bundleCount: number | null = null;
-      if (Array.isArray(pricingOptions) && pricingOptions.length > 0) {
-        // Find option by id or by canonical opt_N index
-        const opt = pricingOptionId
-          ? pricingOptions.find((o: any, i: number) => o.id === pricingOptionId || `opt_${i}` === pricingOptionId)
-          : pricingOptions[0];
-        if (opt?.bundle_size && Number(opt.bundle_size) > 1) {
-          bundleSize = Number(opt.bundle_size);
-          bundleCount = Math.round(qty / bundleSize);
-        }
-      }
       const html = razorpayReceiptEmail({
-        line_items: [{
-          species: (_order as any).listing?.species || (_order as any).species || "Fish",
-          quantity: qty,
-          quantity_unit: qtyUnit,
-          total_price: Number((_order as any).total_price) || 0,
-          cut_style: null,
-          buyer_notes: null,
-          order_id,
-          bundle_size: bundleSize,
-          bundle_count: bundleCount,
-        }],
-        delivery_fee: Number((_order as any).delivery_fee) || 0,
+        line_items: paidRows.map((r: any) => {
+          const b = bundleOf(r);
+          return {
+            species: speciesOf(r),
+            quantity: Number(r.quantity) || 1,
+            quantity_unit: r.quantity_unit || "kg",
+            total_price: Number(r.total_price) || 0,
+            cut_style: r.cut_style || null,
+            buyer_notes: r.buyer_notes || null,
+            order_id: r.id,
+            bundle_size: b.size,
+            bundle_count: b.count,
+          };
+        }),
+        delivery_fee: cartFee,
         order_type: ((_order as any).order_type === "delivery" ? "delivery" : "pickup") as "pickup" | "delivery",
         seller_name: seller?.name || "Your seller",
         seller_location: seller?.location_name || null,
@@ -160,7 +174,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         scheduled_for: (_order as any).scheduled_for || null,
         razorpay_payment_id,
         paid_at: new Date().toISOString(),
-        primary_order_id: order_id,
+        primary_order_id: paidRows[0]?.id || order_id,
       });
       if (html) {
         fetch("https://api.resend.com/emails", {
@@ -182,17 +196,22 @@ export const POST: APIRoute = async ({ request, url }) => {
   if (_sellerForEmail?.email && resendApiKey) {
     pending.push((async () => {
       const { orderEmailSeller, capitalizeFishName } = await import("../../../lib/email-templates");
-      const species = (order as any).listing?.species || (order as any).species || "Fish";
+      const species = label;
       const html = orderEmailSeller({
         statusLabel: "Paid — open your dashboard to confirm or decline",
         species,
         quantity: Number((order as any).quantity) || 1,
         quantity_unit: (order as any).quantity_unit || "kg",
-        totalAmount: Number((order as any).total_price) + Number((order as any).delivery_fee || 0),
-        deliveryFee: Number((order as any).delivery_fee) || 0,
-        orderId: order_id,
+        totalAmount: cartTotal,
+        deliveryFee: cartFee,
+        orderId: paidRows[0]?.id || order_id,
         scheduled_for: (order as any).scheduled_for || null,
         buyerPhone: undefined,
+        items: paidRows.map((r: any) => {
+          const b = bundleOf(r);
+          return { species: speciesOf(r), quantity: Number(r.quantity) || 1, quantity_unit: r.quantity_unit || "kg",
+            total_price: Number(r.total_price) || 0, pricingLabel: r.pricing_label || null, bundleSize: b.size, bundleCount: b.count };
+        }),
       });
       const sellerEmailReq = fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -214,7 +233,8 @@ export const POST: APIRoute = async ({ request, url }) => {
           headers: { "Content-Type": "application/json", ...internalHeaders() },
           body: JSON.stringify({
             seller_id: sellerId,
-            species: (order as any).listing?.species || (order as any).species || "Fish",
+            species: label,
+            item_count: paidRows.length,
             quantity: (order as any).quantity,
             quantity_unit: (order as any).quantity_unit,
             placement_kind: (order as any).placement_kind || "same_day",
@@ -223,7 +243,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             // BUG-26: the seller already got a "New order" push at creation time;
             // this one is the payment landing, so it must read differently.
             kind: "payment_confirmed",
-            amount: Number((order as any).total_price) + Number((order as any).delivery_fee || 0),
+            amount: cartTotal,
           }),
         }).catch((err) => console.warn("[razorpay-verify] seller push failed", { order_id, err: err?.message || String(err) }));
       }
