@@ -1193,6 +1193,20 @@ body.v2-has-cart {
   flex: 1;
   min-width: 0;
 }
+/* Rating badge → reviews page. Padding gives a 40px+ tap target; the negative margin keeps the layout. */
+.v2-sh-rating-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 44px;
+  padding: 10px 8px;
+  margin: -10px -8px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.v2-sh-rating-link:focus-visible { outline: 2px solid var(--v2-brand); outline-offset: -2px; border-radius: 8px; }
+.v2-sh-rating-n { display: none; margin-left: 3px; font-weight: 500; opacity: 0.9; }
+@media (min-width: 480px) { .v2-sh-rating-n { display: inline; } }
 .v2-sh-name {
   font-family: var(--v2-font);
   font-weight: 800;

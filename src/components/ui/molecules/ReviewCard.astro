@@ -1,0 +1,47 @@
+---
+/** One buyer rating. Never carries buyer name / phone; Astro escapes the text. */
+import type { PublicReview } from "../../../lib/server/seller-reviews";
+import { getSpeciesById, getSpeciesDisplay } from "../../../lib/species";
+
+interface Props { review: PublicReview; sellerName?: string }
+const { review: r, sellerName } = Astro.props;
+const month = new Date(r.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" });
+const fish = r.species ? getSpeciesById(r.species)?.english || getSpeciesDisplay(r.species) : null;
+---
+<article class="rv-card">
+  <div class="rv-card-head">
+    <span class="rv-stars" role="img" aria-label={`Rated ${r.rating} out of 5`}>
+      {[1, 2, 3, 4, 5].map((j) => <span class:list={["rv-star", j <= r.rating && "on"]} aria-hidden="true">★</span>)}
+    </span>
+    <time class="rv-date" datetime={r.date}>{month}</time>
+  </div>
+  {(fish || sellerName) && (
+    <div class="rv-chips">
+      {fish && <span class="rv-chip">🐟 {fish}</span>}
+      {sellerName && <span class="rv-chip">{sellerName}</span>}
+    </div>
+  )}
+  {r.text && <p class="rv-text">{r.text}</p>}
+  <div class="rv-verified">✓ Verified buyer · after delivery</div>
+</article>
+
+<style>
+  .rv-card {
+    padding: 14px; margin-top: 10px; font-family: var(--v2-font);
+    background: var(--v2-bg); border: 1px solid var(--v2-border);
+    border-radius: var(--v2-radius); box-shadow: var(--v2-shadow-sm);
+  }
+  .rv-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .rv-stars { display: inline-flex; gap: 1px; font-size: 14px; line-height: 1; }
+  .rv-star { color: var(--v2-border); }
+  .rv-star.on { color: #F59E0B; }
+  .rv-date { font: 500 12px var(--v2-font); color: var(--v2-ink-3); }
+  .rv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .rv-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+    font: 600 12px var(--v2-font); color: var(--v2-ink-2);
+    background: var(--v2-brand-l); border-radius: var(--v2-radius-full);
+  }
+  .rv-text { font: 400 15px/1.55 var(--v2-font); color: var(--v2-ink-2); margin: 8px 0 0; overflow-wrap: anywhere; }
+  .rv-verified { font: 600 11px var(--v2-font); color: var(--v2-green); margin-top: 8px; }
+</style>
