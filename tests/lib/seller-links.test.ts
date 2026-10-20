@@ -38,12 +38,12 @@ describe("validateSellerName", () => {
 
 describe("resizedImageUrl", () => {
   it("routes Supabase Storage photos through the image transform", () => {
-    expect(resizedImageUrl("https://x.supabase.co/storage/v1/object/public/fish-photos/sellers/b.png", 800))
-      .toBe("https://x.supabase.co/storage/v1/render/image/public/fish-photos/sellers/b.png?width=800&quality=70&resize=contain");
+    expect(resizedImageUrl("https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/sellers/b.png", 800))
+      .toBe("https://witoghpdfocywiosmrzv.supabase.co/storage/v1/render/image/public/fish-photos/sellers/b.png?width=800&quality=70&resize=contain");
   });
   it("re-sizes photos already saved as a transformed URL", () => {
-    expect(resizedImageUrl("https://x.supabase.co/storage/v1/render/image/public/fish-photos/listings/p.png?width=700&quality=80&resize=contain", 300))
-      .toBe("https://x.supabase.co/storage/v1/render/image/public/fish-photos/listings/p.png?width=300&quality=70&resize=contain");
+    expect(resizedImageUrl("https://witoghpdfocywiosmrzv.supabase.co/storage/v1/render/image/public/fish-photos/listings/p.png?width=700&quality=80&resize=contain", 300))
+      .toBe("https://witoghpdfocywiosmrzv.supabase.co/storage/v1/render/image/public/fish-photos/listings/p.png?width=300&quality=70&resize=contain");
   });
   it("leaves other URLs and empty values alone", () => {
     expect(resizedImageUrl("https://www.relifish.com/fish/pomfret.jpg", 800)).toBe("https://www.relifish.com/fish/pomfret.jpg");
