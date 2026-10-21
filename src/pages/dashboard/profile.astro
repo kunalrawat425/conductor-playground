@@ -105,8 +105,13 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     <div id="p-preorder-schedule" style="display:none;margin-left:16px;padding:12px;border-left:2px solid var(--v2-border);margin-bottom:12px;background:var(--v2-bg-2);border-radius:0 var(--v2-radius-sm) var(--v2-radius-sm) 0;">
       <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-order days <span style="font-weight:400;color:var(--v2-ink-3);">(which days buyers can pre-order for next-day catch)</span></div>
       <div id="p-preorder-days" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px;"></div>
-      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Cutoff time <span style="font-weight:400;color:var(--v2-ink-3);">(no pre-orders after this time)</span></div>
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-orders open at <span style="font-weight:400;color:var(--v2-ink-3);">(optional; empty = when you close, or all day if you have no same-day days)</span></div>
+      <input type="time" id="p-preorder-opens" style="padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;margin-bottom:12px;" />
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Cutoff time <span style="font-weight:400;color:var(--v2-ink-3);">(no pre-orders after this time; can be after midnight, e.g. 3 AM)</span></div>
       <input type="time" id="p-preorder-cutoff" value="22:00" style="padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;" />
+      <div id="p-preorder-cutoff-hint" style="font:500 11px Inter;color:#7C3AED;margin-top:4px;"></div>
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin:12px 0 4px;">Delivery days <span style="font-weight:400;color:var(--v2-ink-3);">(optional; none ticked = pre-orders are delivered the next morning)</span></div>
+      <div id="p-delivery-days" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;"></div>
     </div>
     <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
       <input type="checkbox" id="p-pickup" />
@@ -206,6 +211,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
   import { imageFileError, imageDimensionsError } from "../../lib/image-crop";
   import { cropImage } from "../../lib/crop-dialog";
+  import { isOvernightCutoff, preorderHoursLabel, timeLabel } from "../../lib/order-timing";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
   const sellerId = getSellerId();
@@ -242,6 +248,9 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       renderDayPills("p-open-days", allDays, dayLabels, openDays, "open");
       renderDayPills("p-preorder-days", allDays, dayLabels, preorderDays, "preorder");
       (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value = seller?.preorder_cutoff_time?.slice(0,5) || "22:00";
+      (document.getElementById("p-preorder-opens") as HTMLInputElement).value = seller?.preorder_opens_at?.slice(0,5) || "";
+      renderDayPills("p-delivery-days", allDays, dayLabels, seller?.delivery_days ?? [], "delivery");
+      updateCutoffHint();
       document.getElementById("p-preorder-schedule")!.style.display = seller?.accepts_preorder ? "block" : "none";
       (document.getElementById("p-pickup") as HTMLInputElement).checked = seller?.has_pickup !== false;
       (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
@@ -324,6 +333,8 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       open_days: getCheckedDays("open"),
       preorder_days: getCheckedDays("preorder"),
       preorder_cutoff_time: (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value || "22:00",
+      preorder_opens_at: (document.getElementById("p-preorder-opens") as HTMLInputElement).value || null,
+      delivery_days: getCheckedDays("delivery").length ? getCheckedDays("delivery") : null,
       has_pickup: (document.getElementById("p-pickup") as HTMLInputElement).checked,
       has_delivery: (document.getElementById("p-delivery") as HTMLInputElement).checked,
       delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
@@ -433,6 +444,21 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       });
     });
   }
+  /** "Next morning" note when the cutoff is earlier than the window start (same rule as order-timing). */
+  function updateCutoffHint() {
+    const val = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.value || null;
+    const seller = { preorder_cutoff_time: val("p-preorder-cutoff"), preorder_opens_at: val("p-preorder-opens"), closes_at: val("p-closes") };
+    const hint = document.getElementById("p-preorder-cutoff-hint");
+    if (!hint) return;
+    const hours = preorderHoursLabel({ ...seller, open_days: getCheckedDays("open") });
+    hint.textContent = isOvernightCutoff(seller)
+      ? `Next morning: pre-orders run ${hours} and close at ${timeLabel(seller.preorder_cutoff_time)} the next morning.`
+      : "";
+  }
+  for (const id of ["p-preorder-cutoff", "p-preorder-opens", "p-closes"]) {
+    document.getElementById(id)?.addEventListener("input", updateCutoffHint);
+  }
+
   function getCheckedDays(prefix: string): string[] {
     return Array.from(document.querySelectorAll(`input[data-day-prefix="${prefix}"]:checked`)).map((el: any) => el.dataset.day);
   }

@@ -10,6 +10,10 @@ export type SellerTimingInput = {
   open_days?: string[] | null;
   preorder_days?: string[] | null;
   preorder_cutoff_time?: string | null;
+  /** Pre-order window opens at this time each pre-order day (null = closes_at / all day). */
+  preorder_opens_at?: string | null;
+  /** Weekdays pre-orders are delivered (null/[] = the next morning). */
+  delivery_days?: string[] | null;
 };
 
 export type PlacementKind = "same_day" | "preorder";
@@ -99,18 +103,131 @@ export function hasSameDayToday(seller: SellerTimingInput, nowMs?: number): bool
   return isSellerEffectivelyOpen(seller, nowMs) || (isTodayOrderDay(seller, dayAt(nowMs)) && !isAfterCloseTimeIST(seller, nowMs));
 }
 
+const DAY_MS = 86_400_000;
+
+function toMinutes(t: string | null | undefined): number | null {
+  if (!t) return null;
+  const [h, m] = String(t).split(":").map(Number);
+  return Number.isFinite(h) ? h * 60 + (m || 0) : null;
+}
+
+/** "13:00" → "1 PM", "02:30" → "2:30 AM". */
+export function timeLabel(hhmm: string | null | undefined): string {
+  const [h, m] = String(hhmm || "").split(":").map(Number);
+  if (!Number.isFinite(h)) return "";
+  const hr = h % 12 || 12;
+  return `${hr}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`;
+}
+
 /**
- * Preorder window: store has CLOSED for today (past closes_at) AND before cutoff.
- * On non-order-days the whole day is the preorder window (no close time constraint).
+ * Minute the pre-order window of `day` opens: preorder_opens_at when set; otherwise
+ * closes_at on order days and 00:00 on days without same-day orders.
  */
+function preorderStartMinutes(seller: SellerTimingInput, day: string): number {
+  const opensAt = toMinutes(seller.preorder_opens_at);
+  if (opensAt != null) return opensAt;
+  return isTodayOrderDay(seller, day) ? toMinutes(seller.closes_at) ?? 0 : 0;
+}
+
+/**
+ * Overnight cutoff: earlier than the window start (preorder_opens_at, else closes_at, else
+ * 08:00), e.g. close 18:00 + cutoff 03:00. The window that opens on pre-order day D then runs
+ * past midnight and ends at the cutoff on D+1. Same-day cutoffs (22:00) are unchanged.
+ */
+export function isOvernightCutoff(seller: SellerTimingInput): boolean {
+  const cut = toMinutes(seller.preorder_cutoff_time);
+  if (cut == null) return false;
+  return cut < (toMinutes(seller.preorder_opens_at) ?? toMinutes(seller.closes_at) ?? 8 * 60);
+}
+
+/**
+ * Which pre-order day's window is open at `nowMs`: 0 = today's, 1 = yesterday's (still
+ * running past midnight, overnight cutoff), null = none.
+ * Window of pre-order day D: from preorderStartMinutes until the cutoff on D (same-day
+ * cutoff) or until the cutoff on D+1 (overnight cutoff).
+ */
+export function preorderWindowDaysBack(seller: SellerTimingInput, nowMs?: number): 0 | 1 | null {
+  if (isSellerEffectivelyOpen(seller, nowMs)) return null;
+  const at = nowMs ?? Date.now();
+  const overnight = isOvernightCutoff(seller);
+  const pastCutoff = isPastPreorderCutoffIST(seller.preorder_cutoff_time, at);
+  if (overnight && !pastCutoff && isTodayPreorderDay(seller, dayAt(at - DAY_MS))) return 1;
+  const day = dayAt(at);
+  if (!isTodayPreorderDay(seller, day)) return null;
+  if (!overnight && pastCutoff) return null;
+  if (minutesNowIST(at) < preorderStartMinutes(seller, day)) return null;
+  return 0;
+}
+
+const istDate = (ms: number) => new Date(ms + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/**
+ * IST date (YYYY-MM-DD) a pre-order placed at `nowMs` is delivered (its scheduled morning):
+ * the first delivery_days day from the morning after its window's pre-order day
+ * (null/[] delivery_days = that next morning). Tue 21:00 and Wed 01:30 (overnight cutoff)
+ * both give Wed. Null outside a pre-order window.
+ */
+export function preorderDeliveryDateIST(seller: SellerTimingInput, nowMs = Date.now()): string | null {
+  const back = preorderWindowDaysBack(seller, nowMs);
+  if (back == null) return null;
+  const nextMorning = nowMs + (1 - back) * DAY_MS;
+  const days = Array.isArray(seller.delivery_days) && seller.delivery_days.length ? seller.delivery_days : null;
+  for (let i = 0; i < 7; i++) {
+    const ms = nextMorning + i * DAY_MS;
+    if (!days || days.includes(dayAt(ms))) return istDate(ms);
+  }
+  return istDate(nextMorning);
+}
+
+/** "this morning" / "tomorrow morning" / "Tue morning" for an IST date (YYYY-MM-DD), seen at `nowMs`. */
+export function deliveryMorningLabel(date: string, nowMs = Date.now()): string {
+  if (date === istDate(nowMs)) return "this morning";
+  if (date === istDate(nowMs + DAY_MS)) return "tomorrow morning";
+  return `${DAY_LABELS[new Date(`${date}T00:00:00Z`).getUTCDay()]} morning`;
+}
+
+/** Order-placed status line for pre-order emails, with the delivery morning. */
+export function preorderPlacedLabel(deliveryDate: string | null | undefined, nowMs = Date.now()): string {
+  return `Pre-order placed — catch reserved for ${deliveryDate ? deliveryMorningLabel(deliveryDate, nowMs) : "tomorrow"}`;
+}
+
+/** Delivery morning label for a pre-order placed at `nowMs`, or null outside a window. */
+export function preorderDeliveryLabel(seller: SellerTimingInput, nowMs = Date.now()): string | null {
+  const d = preorderDeliveryDateIST(seller, nowMs);
+  return d ? deliveryMorningLabel(d, nowMs) : null;
+}
+
+/** Pre-order hours, e.g. "1 PM–2 AM" or "6 PM–3 AM"; "till 10 PM" when it opens at 00:00. */
+export function preorderHoursLabel(seller: SellerTimingInput): string | null {
+  if (!seller.preorder_cutoff_time) return null;
+  const hasSameDay = !Array.isArray(seller.open_days) || seller.open_days.length > 0;
+  const start = seller.preorder_opens_at || (hasSameDay ? seller.closes_at : null);
+  const cut = timeLabel(seller.preorder_cutoff_time);
+  return start ? `${timeLabel(start)}–${cut}` : `till ${cut}`;
+}
+
+/**
+ * Pre-order line for the seller page and lists: "Pre-order 1 PM–2 AM · next delivery Tue morning"
+ * inside a window, "Pre-orders open at 1 PM" earlier on a pre-order day, else null.
+ */
+export function preorderStatusLabel(seller: SellerTimingInput, nowMs = Date.now()): string | null {
+  const delivery = preorderDeliveryDateIST(seller, nowMs);
+  if (delivery) {
+    const hours = preorderHoursLabel(seller);
+    return `Pre-order${hours ? ` ${hours}` : ""} · next delivery ${deliveryMorningLabel(delivery, nowMs)}`;
+  }
+  const start = toMinutes(seller.preorder_opens_at);
+  if (start == null || isSellerEffectivelyOpen(seller, nowMs)) return null;
+  if (isTodayPreorderDay(seller, dayAt(nowMs)) && minutesNowIST(nowMs) < start) {
+    return `Pre-orders open at ${timeLabel(seller.preorder_opens_at)}`;
+  }
+  return null;
+}
+
+/** Preorder window open now (see preorderWindowDaysBack). */
 export function isPreorderShoppingWindow(seller: SellerTimingInput, nowMs?: number): boolean {
-  if (isSellerEffectivelyOpen(seller, nowMs)) return false;
-  const day = dayAt(nowMs);
-  if (!isTodayPreorderDay(seller, day)) return false;
-  if (isPastPreorderCutoffIST(seller.preorder_cutoff_time, nowMs)) return false;
-  // On order days: window only opens after store closes (not before it opens)
-  if (isTodayOrderDay(seller, day) && !isAfterCloseTimeIST(seller, nowMs)) return false;
-  return true;
+  return preorderWindowDaysBack(seller, nowMs) != null;
 }
 
 export function classifyPlacementAtOrderTime(
@@ -122,18 +239,32 @@ export function classifyPlacementAtOrderTime(
   return "closed";
 }
 
-export function closedSellerMessage(seller: SellerTimingInput): string {
-  const dayOff = !isTodayOrderDay(seller);
-  if (dayOff && !isTodayPreorderDay(seller)) {
+export function closedSellerMessage(seller: SellerTimingInput, nowMs?: number): string {
+  const at = nowMs ?? Date.now();
+  const day = dayAt(at);
+  const t = seller.preorder_cutoff_time || "cutoff";
+  const beforeClose = isTodayOrderDay(seller, day) && !isAfterCloseTimeIST(seller, at);
+  const opens = beforeClose && seller.opens_at ? ` Opens at ${seller.opens_at}.` : "";
+  const preStart = toMinutes(seller.preorder_opens_at);
+  const later =
+    preStart != null && isTodayPreorderDay(seller, day) && minutesNowIST(at) < preStart
+      ? ` Pre-orders open at ${timeLabel(seller.preorder_opens_at)}.`
+      : "";
+  const overnight = isOvernightCutoff(seller);
+  const pastCutoff = isPastPreorderCutoffIST(seller.preorder_cutoff_time, at);
+  // Overnight cutoff: last night's window just ended (e.g. 03:30 after a 03:00 cutoff).
+  if (overnight && pastCutoff && isTodayPreorderDay(seller, dayAt(at - DAY_MS))) {
+    return `Pre-order cutoff (${t} IST) has passed.${opens}${later}`;
+  }
+  if (!isTodayOrderDay(seller, day) && !isTodayPreorderDay(seller, day)) {
     return "This seller is not open today and does not accept pre-orders.";
   }
-  if (isPastPreorderCutoffIST(seller.preorder_cutoff_time)) {
-    const t = seller.preorder_cutoff_time || "cutoff";
+  if (later) return `Not taking orders right now.${opens}${later}`;
+  if (!overnight && pastCutoff) {
     return `Pre-order cutoff (${t} IST) has passed. Try again tomorrow.`;
   }
   // Before store closes on an order day — same-day window not yet open, preorder not yet open
-  if (isTodayOrderDay(seller) && !isAfterCloseTimeIST(seller)) {
-    const opens = seller.opens_at ? ` Opens at ${seller.opens_at}.` : "";
+  if (beforeClose) {
     return `Store not yet open for orders.${opens}`;
   }
   return "This seller is closed now and is not accepting pre-orders.";

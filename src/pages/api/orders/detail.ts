@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       .select(`
         *,
         listing:fish_listings ( id, species, photo_url, pricing_options, is_preorder_enabled,
-          seller:sellers ( id, name, phone, location, location_name, opens_at, closes_at, upi_id, accepts_preorder, open_days, preorder_days, preorder_cutoff_time )
+          seller:sellers ( id, name, phone, location, location_name, opens_at, closes_at, upi_id, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days )
         )
       `)
       .eq("id", id)

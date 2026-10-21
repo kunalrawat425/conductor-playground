@@ -17,6 +17,13 @@ import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/lis
 import { cleanSellerName, resizedImageUrl, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
 import { SITE_URL } from "../../lib/brand";
 import { nextPlacementStartMs } from "../../lib/cart";
+import {
+  isPreorderShoppingWindow,
+  isSellerEffectivelyOpen,
+  preorderDeliveryLabel,
+  preorderHoursLabel,
+  preorderStatusLabel,
+} from "../../lib/order-timing";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
 import { getAreaBySlug } from "../../lib/areas";
@@ -104,37 +111,18 @@ const todayDayName = DAY_NAMES_SHORT[nowIST.getUTCDay()];
 const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
 const preorderDays: string[] = seller?.preorder_days ?? [];
 
-// Priority 1: store open by time + day?
-const isOpenByTime = (() => {
-  if (!seller?.opens_at || !seller?.closes_at) return true;
-  const [oh, om] = seller.opens_at.split(":").map(Number);
-  const [ch, cm] = seller.closes_at.split(":").map(Number);
-  const openMin = oh * 60 + om;
-  const closeMin = ch * 60 + cm;
-  if (openMin <= closeMin) return curMin >= openMin && curMin < closeMin;
-  return curMin >= openMin || curMin < closeMin; // overnight e.g. 17:00–03:00 (matches isSellerOpenByClock)
-})();
-const isTodayOrderDay = openDays.includes(todayDayName);
-const isEffectivelyOpen = isOpenByTime && isTodayOrderDay;
+// Same rules as the order API (order-timing), including pre-order windows that run past midnight.
+const nowMs = nowIST.getTime() - 5.5 * 3600 * 1000;
+// Priority 1: same-day open (order day + hours)
+const isEffectivelyOpen = !!seller && isSellerEffectivelyOpen(seller, nowMs);
 
-// Priority 2: preorder window — store closed for same-day, preorders enabled, cutoff not yet passed
-// Preorders are opt-in: seller must explicitly enable accepts_preorder.
+// Priority 2: preorder window. Preorders are opt-in: seller must explicitly enable accepts_preorder.
 // is_preorder_enabled on listings controls which items appear, not whether mode activates.
 const acceptsPreorder = !!seller?.accepts_preorder;
-const isTodayPreorderDay = preorderDays.length > 0 ? preorderDays.includes(todayDayName) : acceptsPreorder;
-const isBeforeCutoff = (() => {
-  if (!seller?.preorder_cutoff_time) return true; // no cutoff = always before cutoff
-  const [ch, cm] = seller.preorder_cutoff_time.split(":").map(Number);
-  return curMin < ch * 60 + cm;
-})();
-// Preorder window only starts after store closes on order days (not before store opens)
-const isAfterCloseTime = (() => {
-  if (!seller?.closes_at) return true;
-  const [ch, cm] = seller.closes_at.split(":").map(Number);
-  return curMin >= ch * 60 + cm;
-})();
-const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isTodayPreorderDay && isBeforeCutoff
-  && (!isTodayOrderDay || isAfterCloseTime);
+const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isPreorderShoppingWindow(seller, nowMs);
+// "Pre-order 6 PM–3 AM · next delivery tomorrow morning" / "Pre-orders open at 1 PM"
+const preorderLine = acceptsPreorder ? preorderStatusLabel(seller, nowMs) : null;
+const deliveryFor = (isPreorderMode && preorderDeliveryLabel(seller, nowMs)) || "tomorrow morning";
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
@@ -197,7 +185,10 @@ function fmtTime12(t: string | undefined | null): string {
 }
 const orderDaysLabel = fmtDays(openDays);
 const preorderDaysLabel = preorderDays.length ? fmtDays(preorderDays) : null;
-const cutoffLabel = seller?.preorder_cutoff_time ? fmtTime12(seller.preorder_cutoff_time) : null;
+const deliveryDays: string[] = Array.isArray(seller?.delivery_days) ? seller.delivery_days : [];
+const deliveryDaysLabel = deliveryDays.length
+  ? `delivered ${ALL_DAY_NAMES.filter((d) => deliveryDays.includes(d)).map((d) => DAY_LABELS[d] || d).join(" & ")} mornings`
+  : "delivered next morning";
 const opensAtFmt = fmtTime12(seller?.opens_at);
 const closesAtFmt = fmtTime12(seller?.closes_at);
 
@@ -351,6 +342,7 @@ const tags = [
         rating={seller?.rating_avg || 0}
         status={status}
         preorderOpen={isPreorderMode}
+        preorderFor={deliveryFor}
         opensAt={seller?.opens_at}
         closesAt={seller?.closes_at}
         itemCount={itemCount}
@@ -370,33 +362,32 @@ const tags = [
         )}
         {preorderDaysLabel && (() => {
           const sameDays = orderDaysLabel === preorderDaysLabel;
-          // No same-day days: the pre-order window is the whole day, so "from <close>" would be wrong.
-          const showCutoff = cutoffLabel && (!openDays.length || cutoffLabel !== closesAtFmt);
+          const hours = preorderHoursLabel(seller);
           return (
             <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
-              🌙 Pre-orders (next day) · {sameDays ? "Same days" : preorderDaysLabel}
-              {showCutoff ? ` · cutoff ${cutoffLabel}` : (closesAtFmt && cutoffLabel ? ` · from ${closesAtFmt}` : "")}
+              🌙 Pre-orders · {sameDays ? "Same days" : preorderDaysLabel}
+              {hours ? ` · ${hours}` : ""} · {deliveryDaysLabel}
             </span>
           );
         })()}
       </div>
 
-      {/* Pre-order context banner */}
-      {isPreorderMode && (
+      {/* Pre-order context banner (open window), or when the next window opens */}
+      {isPreorderMode ? (
         <div style="margin:12px 16px 0;padding:12px 14px;background:#F3E8FF;border:1px solid #DDD6FE;border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;">
           <span style="font-size:20px;">🌙</span>
           <div>
-            <div style="font:700 13px Inter;color:#7C3AED;">Pre-ordering for tomorrow's catch</div>
+            <div style="font:700 13px Inter;color:#7C3AED;">{preorderLine || `Pre-ordering for ${deliveryFor}`}</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              {closesAtFmt && cutoffLabel && isTodayOrderDay
-                ? `Pre-order window: ${closesAtFmt} – ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
-                : cutoffLabel
-                  ? `Place before ${cutoffLabel}. Your order is reserved from tomorrow's fresh catch.`
-                  : "Your order is reserved from tomorrow's fresh catch."}
+              {`For ${deliveryFor}. Your order is reserved from that morning's fresh catch.`}
             </div>
           </div>
         </div>
-      )}
+      ) : preorderLine && !isEffectivelyOpen ? (
+        <div style="margin:12px 16px 0;padding:10px 14px;background:#F3E8FF;border:1px solid #DDD6FE;border-radius:var(--v2-radius);font:700 13px Inter;color:#7C3AED;">
+          🌙 {preorderLine}
+        </div>
+      ) : null}
 
       {itemCount === 0 ? (
         <div style="padding:0 16px;margin-top:16px;">
@@ -559,9 +550,10 @@ const tags = [
 <script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.logo_url || seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
   // Same-day and pre-order carts are separate; this page uses the one its menu is in.
   cartMode: isPreorderMode ? "preorder" : "same_day",
+  deliveryFor,
   pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
   serverNowMs: nowIST.getTime() - 5.5 * 3600 * 1000,
-  sellerHours: { opens_at: seller?.opens_at ?? null, closes_at: seller?.closes_at ?? null, open_days: seller?.open_days ?? null, preorder_days: seller?.preorder_days ?? null, preorder_cutoff_time: seller?.preorder_cutoff_time ?? null, accepts_preorder: !!seller?.accepts_preorder } }}>
+  sellerHours: { opens_at: seller?.opens_at ?? null, closes_at: seller?.closes_at ?? null, open_days: seller?.open_days ?? null, preorder_days: seller?.preorder_days ?? null, preorder_cutoff_time: seller?.preorder_cutoff_time ?? null, preorder_opens_at: seller?.preorder_opens_at ?? null, delivery_days: seller?.delivery_days ?? null, accepts_preorder: !!seller?.accepts_preorder } }}>
   // Expose current seller image so CartStackSheet can use fresh DB value even when localStorage is stale
   window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl, mode: cartMode };
 
@@ -1178,7 +1170,7 @@ const tags = [
       let statusColor = "var(--v2-ink-3)";
       if (belowMin) { statusLine = `Min order ₹${minOrder}`; statusColor = "var(--v2-orange)"; }
       else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
-      else if (isPreorderMode) { statusLine = "🌙 Pre-order for tomorrow"; statusColor = "#7C3AED"; }
+      else if (isPreorderMode) { statusLine = `🌙 Pre-order for ${deliveryFor}`; statusColor = "#7C3AED"; }
 
       // Delivery fee before login/OTP, from the seller's own settings (the server recomputes it at place-order).
       // per_km without a known buyer location: show the seller's rate, not radius × rate (reads as a scary maximum).
