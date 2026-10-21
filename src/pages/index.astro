@@ -143,7 +143,7 @@ const homeFaqs = [
 
     /* fish chips */
     .fish-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
-    .ftag{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:6px 14px;font:500 13px Inter;color:#fff}
+    .ftag{text-decoration:none;display:inline-block;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:6px 14px;font:500 13px Inter;color:#fff}
 
     .hero-ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
     .btn-primary{display:inline-flex;align-items:center;gap:8px;font:700 16px Inter;padding:14px 28px;border-radius:12px;background:var(--blue);color:#fff;box-shadow:0 8px 32px var(--blue-glow);transition:all .2s;border:none;cursor:pointer}
@@ -802,8 +802,8 @@ const homeFaqs = [
       <!-- Citable prose for AI search engines — do not remove -->
       <p class="hero-cite">Relifish is a marketplace for fresh fish from local sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order tonight for tomorrow's catch, and the seller delivers to your home or keeps it ready for pickup.</p>
       <div class="fish-tags">
-        {["🐟 Pomfret","🐠 Surmai","🦐 Prawns","🐡 Bangda","🐟 Rawas","🦀 Crab"].map(f=>(
-          <span class="ftag">{f}</span>
+        {[["🐟 Pomfret","pomfret"],["🐠 Surmai","surmai"],["🦐 Prawns","prawns"],["🐡 Bangda","bangda"],["🐟 Rawas","rawas"],["🦀 Crab","crab"]].map(([f,k])=>(
+          <a class="ftag" href={`/shop?species=${k}`}>{f}</a>
         ))}
       </div>
       <div class="hero-ctas">
@@ -1195,7 +1195,7 @@ const homeFaqs = [
           </div>
         </div>
         <h3>Pay securely</h3>
-        <p>Pay securely via Razorpay (UPI, cards, net banking). Login to see price. Instant confirmation.</p>
+        <p>Pay securely via Razorpay (UPI, cards, net banking). Instant confirmation.</p>
       </div>
 
       <!-- STEP 4: Confirmed -->
@@ -1246,33 +1246,33 @@ const homeFaqs = [
   <div class="wrap">
     <div class="slabel">What's on the menu</div>
     <h2>Fresh fish, <span class="hl">every morning</span></h2>
-    <p class="ssub">Availability changes daily. Login to see today's prices and reserve your portion before it sells out.</p>
+    <p class="ssub">Availability changes daily. See today's prices from sellers near you and reserve your portion before it sells out.</p>
     <div class="fish-grid">
       {[
-        {e:"🐟",n:"Pomfret",m:"पापलेट",bg:"fi1",p:"/fish/pomfret.jpg"},
-        {e:"🐠",n:"Surmai (Kingfish)",m:"सुरमई",bg:"fi2",p:"/fish/surmai.jpg"},
-        {e:"🦐",n:"Jumbo Prawns",m:"कोळंबी",bg:"fi3",p:"/fish/prawns.jpg"},
-        {e:"🐡",n:"Bangda (Mackerel)",m:"बांगडा",bg:"fi4",p:"/fish/bangda.jpg"},
-        {e:"🐟",n:"Rawas (Salmon)",m:"रावस",bg:"fi3",p:"/fish/rawas.jpg"},
-        {e:"🦀",n:"Crab",m:"खेकडा",bg:"fi5",p:""},
+        {e:"🐟",n:"Pomfret",k:"pomfret",m:"पापलेट",bg:"fi1",p:"/fish/pomfret.jpg"},
+        {e:"🐠",n:"Surmai (Kingfish)",k:"surmai",m:"सुरमई",bg:"fi2",p:"/fish/surmai.jpg"},
+        {e:"🦐",n:"Jumbo Prawns",k:"prawns",m:"कोळंबी",bg:"fi3",p:"/fish/prawns.jpg"},
+        {e:"🐡",n:"Bangda (Mackerel)",k:"bangda",m:"बांगडा",bg:"fi4",p:"/fish/bangda.jpg"},
+        {e:"🐟",n:"Rawas (Salmon)",k:"rawas",m:"रावस",bg:"fi3",p:"/fish/rawas.jpg"},
+        {e:"🦀",n:"Crab",k:"crab",m:"खेकडा",bg:"fi5",p:""},
         // {e:"🐠",n:"Halwa (Silver Pomfret)",m:"हलवा",bg:"fi7"},
         // {e:"🐡",n:"Bombay Duck",m:"बोंबील",bg:"fi8"},
       ].map(f=>(
-        <a href="/me" class="fish-card">
+        <a href={`/shop?species=${f.k}`} class="fish-card">
           <div class={`fish-img ${f.bg}`}>
             {f.p ? <img src={f.p} alt={f.n} /> : f.e}
           </div>
           <div class="fish-body">
             <div class="fish-name">{f.n}</div>
             <div class="fish-marathi">{f.m}</div>
-            <div class="fish-login">🔒 Login to see price</div>
+            <div class="fish-login">See today's price →</div>
             <div class="fish-cta">Pre-order tonight →</div>
           </div>
         </a>
       ))}
     </div>
     <div style="text-align:center;margin-top:36px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a href="/me" class="btn-primary" style="font-size:15px">🔒 Login to see prices</a>
+      <a href="/shop" class="btn-primary" style="font-size:15px">See today's prices →</a>
       <a href="/shop" class="btn-ghost" style="font-size:15px;color:var(--ink-2);border-color:var(--border);background:transparent">Browse sellers →</a>
     </div>
   </div>
