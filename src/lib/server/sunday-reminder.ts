@@ -8,7 +8,9 @@
  *  - no prices (brand rule), one push per buyer, skipped if a promo went out recently.
  */
 import { haversineKm } from "../order-pricing";
-import { classifyPlacementAtOrderTime, isTodayOrderDay, type SellerTimingInput } from "../order-timing";
+import { classifyPlacementAtOrderTime, isTodayOrderDay, preorderDeliveryLabel, timeLabel, type SellerTimingInput } from "../order-timing";
+
+export { timeLabel };
 import { cleanSellerName, sellerHref } from "../seller-display";
 
 export const PROMO_GAP_HOURS = 20;
@@ -44,14 +46,6 @@ export function preorderOpenUntil(seller: SellerTimingInput, nowMs: number): num
   return last;
 }
 
-/** "10 PM", "6:30 PM" from "22:00:00". */
-export function timeLabel(hhmm: string | null | undefined): string {
-  const [h, m] = String(hhmm || "").split(":").map(Number);
-  if (!Number.isFinite(h)) return "";
-  const hr = h % 12 || 12;
-  return `${hr}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`;
-}
-
 function opensSunday(s: SellerTimingInput): boolean {
   return isTodayOrderDay(s, "sun");
 }
@@ -61,9 +55,11 @@ export function planSundayReminders(buyers: ReminderBuyer[], sellers: ReminderSe
   // What each seller can offer for Sunday right now.
   const offers = sellers.flatMap((s) => {
     const name = cleanSellerName(s.name);
-    if (s.has_preorder_listing && preorderOpenUntil(s, nowMs) != null) {
-      const until = timeLabel(s.preorder_cutoff_time);
-      return [{ s, name, line: `${name} is taking pre-orders for Sunday${until ? ` until ${until} tonight` : " tonight"}.` }];
+    const until = preorderOpenUntil(s, nowMs);
+    // Delivery-day sellers (e.g. Tue + Sat only) deliver tonight's pre-orders later than Sunday.
+    if (s.has_preorder_listing && until != null && preorderDeliveryLabel(s, until) === "tomorrow morning") {
+      const cut = timeLabel(s.preorder_cutoff_time);
+      return [{ s, name, line: `${name} is taking pre-orders for Sunday${cut ? ` until ${cut} tonight` : " tonight"}.` }];
     }
     if (s.has_sameday_listing && opensSunday(s)) {
       const from = timeLabel(s.opens_at);

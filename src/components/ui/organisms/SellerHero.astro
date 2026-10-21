@@ -11,6 +11,7 @@ const {
   rating,
   status,
   preorderOpen = false,
+  preorderFor = "tomorrow morning",
   closesAt: closesAtRaw,
   opensAt: opensAtRaw,
   totalOrders,
@@ -136,7 +137,7 @@ const subParts = [
       <div class:list={["v2-sh-v", (status === "open" || preorderOpen) && "v2-sh-live"]}>
         {status === "open" ? "Open" : preorderOpen ? "Pre-order now" : "Closed"}
       </div>
-      <div class="v2-sh-l">{status === "open" ? `Until ${closesAt}` : preorderOpen ? "for tomorrow morning" : `Opens ${opensAt}`}</div>
+      <div class="v2-sh-l">{status === "open" ? `Until ${closesAt}` : preorderOpen ? `for ${preorderFor}` : `Opens ${opensAt}`}</div>
     </div>
   </div>
 

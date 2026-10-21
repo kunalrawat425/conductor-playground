@@ -61,7 +61,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       .from("orders")
       .select(
         // The buyer's own orders, with what /track and /me render (seller hours for the stepper).
-        "*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name, opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, accepts_preorder))",
+        "*, listing:fish_listings(species, pricing_options, is_preorder_enabled, seller:sellers(name, opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days, accepts_preorder))",
         { count: "exact" }
       )
       .or(orClause);

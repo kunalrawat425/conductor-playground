@@ -283,7 +283,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   import { wasActuallyPaid, refundableAmount, paymentMethodLabel, preorderNeedsFinalPrice, refundStatus } from "../../../lib/order-payment-state";
   import { supabase } from "../../../lib/supabase";
   import { cancelledByText, cancelReasonText } from "../../../lib/order-cancel";
-  import { isTodayOrderDay } from "../../../lib/order-timing";
+  import { preorderDeliveryDateIST } from "../../../lib/order-timing";
 
   let sellerId: string | null = null;
   let sellerData: any = null;
@@ -294,33 +294,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   let currentType: "all" | "order" | "preorder" = "all";
   const PAGE_SIZE = 10;
 
-  function wasPreorderWindow(createdAt: string, seller: any): boolean {
-    if (!seller) return false;
-    const ist = new Date(new Date(createdAt).getTime() + 5.5 * 60 * 60 * 1000);
-    const DAY_NAMES = ['sun','mon','tue','wed','thu','fri','sat'];
-    const dayName = DAY_NAMES[ist.getUTCDay()];
-    const timeMin = ist.getUTCHours() * 60 + ist.getUTCMinutes();
-    function toMin(t: string | null | undefined): number | null {
-      if (!t) return null;
-      const [h, m] = String(t).split(':').map(Number);
-      return h * 60 + (m || 0);
-    }
-    const preorderDays: string[] = seller.preorder_days || [];
-    const isPreorderDay = preorderDays.length > 0
-      ? preorderDays.includes(dayName)
-      : !!seller.accepts_preorder;
-    if (!isPreorderDay) return false;
-    // Must be before cutoff
-    const cutoffMin = toMin(seller.preorder_cutoff_time);
-    if (cutoffMin !== null && timeMin >= cutoffMin) return false;
-    // On order days: window only starts after store closes (same rule as order-timing.ts)
-    const isOrderDay = isTodayOrderDay(seller, dayName);
-    if (isOrderDay) {
-      const closeMin = toMin(seller.closes_at);
-      if (closeMin !== null && timeMin < closeMin) return false;
-    }
-    return true;
-  }
   let pollTimer: any;
   /** One-shot scroll/highlight from `?order=<uuid>` (e.g. seller Web Push deep link). */
   let didFocusFromOrderQuery = false;
@@ -590,6 +563,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         const live = (cart || []).filter((r) => !CLOSED.includes(r.status));
         const needsFinalPrice = cart ? live.some((r) => preorderNeedsFinalPrice(r)) : preorderNeedsFinalPrice(o);
         const isPreorder = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
+        // Delivery morning from the order time: a 1:30 AM order in last night's window is for that morning.
+        // ponytail: uses the seller's current hours, not the hours at order time; store it on the order if hours change often.
+        const deliverOn = isPreorder && sellerData && o.created_at ? preorderDeliveryDateIST(sellerData, Date.parse(o.created_at)) : null;
+        const deliverLabel = deliverOn
+          ? new Date(`${deliverOn}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" })
+          : "";
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
         const time = o.scheduled_for
           ? new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
@@ -830,7 +809,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             ? `<div class="v2-oc-items">${cart.length} items</div><div style="margin-top:4px;">${cart.map(itemLine).join("")}</div>`
             : `<div class="v2-oc-items" style="text-transform:capitalize;">${escape(o.listing?.species || o.species || "")} · ${qtyLabel}</div>`}
           <div class="v2-oc-meta">
-            <span class="v2-oc-meta-pill ${isPreorder ? "v2-oc-meta-pill-preorder" : "v2-oc-meta-pill-order"}">${isPreorder ? "Pre-order" : "Order"}</span>
+            <span class="v2-oc-meta-pill ${isPreorder ? "v2-oc-meta-pill-preorder" : "v2-oc-meta-pill-order"}">${isPreorder ? `Pre-order${deliverLabel ? ` · for ${deliverLabel}` : ""}` : "Order"}</span>
             <span class="v2-oc-meta-pill ${isDelivery ? "v2-oc-meta-pill-delivery" : "v2-oc-meta-pill-pickup"}">${isDelivery ? "Delivery" : "Pickup"}</span>
           </div>
           ${addrText ? `<div style="font:500 11px Inter;color:var(--v2-ink-2);margin-top:4px;">📍 ${escape(addrText)}${mapsUrl ? ` · <a href="${mapsUrl}" target="_blank" rel="noopener" style="color:var(--v2-brand,#0066FF);font-weight:600;">Open in Maps</a>` : ""}</div>` : ""}

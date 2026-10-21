@@ -13,6 +13,7 @@ import {
   classifyPlacementAtOrderTime,
   closedSellerMessage,
   isSellerEffectivelyOpen,
+  preorderDeliveryDateIST,
   type PlacementKind,
 } from "../order-timing";
 
@@ -49,6 +50,8 @@ export type PreorderLinePayload = {
   pre_order_reason: "unavailable" | "out_of_stock";
   preorder_price_min?: number | null;
   preorder_price_max?: number | null;
+  /** IST date (YYYY-MM-DD) of the delivery morning (see preorderDeliveryDateIST). */
+  delivery_date?: string | null;
 };
 
 export type ResolveListingOrderLineResult =
@@ -108,7 +111,7 @@ export async function resolveListingOrderLine(
 
   const placementResult = seller ? classifyPlacementAtOrderTime(seller, nowMs) : "same_day";
   if (placementResult === "closed") {
-    return { ok: false, status: 400, error: seller ? closedSellerMessage(seller) : "Seller is not available." };
+    return { ok: false, status: 400, error: seller ? closedSellerMessage(seller, nowMs) : "Seller is not available." };
   }
   const placement: PlacementKind = placementResult;
   // The seller's switch is "Pause same-day orders"; pre-orders still show on the
@@ -312,6 +315,7 @@ export async function resolveListingOrderLine(
       pricing_option_id: orderPricingOptionId,
       pricing_label: orderPricingLabel,
       bundle_size: bundleAmount,
+      delivery_date: seller ? preorderDeliveryDateIST(seller, nowMs) : null,
     },
   };
 }

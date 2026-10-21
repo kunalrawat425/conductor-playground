@@ -19,6 +19,7 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const SELLER_EDITABLE = [
   "name", "location", "location_name", "first_name", "last_name", "email",
   "opens_at", "closes_at", "open_days", "accepts_preorder", "preorder_days", "preorder_cutoff_time",
+  "preorder_opens_at", "delivery_days",
   "has_pickup", "has_delivery", "delivery_rad", "min_order_amount",
   "delivery_fee_enabled", "delivery_fee_amount", "delivery_fee_type", "delivery_fee_per_km", "free_delivery_above",
   "lat", "lng", "push_subscription", "push_enabled", "schedule_pickup_slots",
@@ -55,6 +56,22 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: `${k} must be a non-negative number` }), { status: 400 });
       }
       updates[k] = n;
+    }
+    // Pre-order start: null (= at close / all day) or HH:MM. Delivery days: null (= next morning) or weekdays.
+    if (updates.preorder_opens_at !== undefined) {
+      const v = updates.preorder_opens_at;
+      if (v !== null && v !== "" && !/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(String(v))) {
+        return new Response(JSON.stringify({ error: "Pre-order start must be a time (HH:MM)" }), { status: 400 });
+      }
+      updates.preorder_opens_at = v || null;
+    }
+    if (updates.delivery_days !== undefined) {
+      const v = updates.delivery_days;
+      const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+      if (v !== null && (!Array.isArray(v) || v.some((d) => !DAYS.includes(d)))) {
+        return new Response(JSON.stringify({ error: "delivery_days must be weekdays (mon…sun)" }), { status: 400 });
+      }
+      updates.delivery_days = Array.isArray(v) && v.length ? [...new Set(v)] : null;
     }
     // Same open/close time means "always open" to the server but "never open" to
     // the seller page (timing logic disagreed). The dashboard blocks it; so does the API now.

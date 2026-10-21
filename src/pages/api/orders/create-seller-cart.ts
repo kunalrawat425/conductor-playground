@@ -13,11 +13,11 @@ import {
   type OrderEmailItem,
 } from "../../../lib/email-templates";
 import { getListingOptionById, type ListingPricingSource } from "../../../lib/listing-pricing";
-import type { PlacementKind } from "../../../lib/order-timing";
+import { preorderPlacedLabel, type PlacementKind } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { pickUtm } from "../../../lib/utm";
 import { pickPreferences } from "../../../lib/preferences";
-import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
+import { resolveListingOrderLine, type PreorderLinePayload } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { afterResponse } from "../../../lib/server/after-response";
@@ -371,7 +371,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
       if (resendApiKey) {
         const statusLabel = isPreorder
-          ? "Pre-order placed — catch reserved for tomorrow"
+          ? preorderPlacedLabel((resolved.find((x) => x.line.kind === "preorder")?.line as PreorderLinePayload | undefined)?.delivery_date)
           : scheduled_for
           ? "Pickup scheduled — complete payment to confirm 🗓️"
           : "Order placed — complete payment to confirm";
