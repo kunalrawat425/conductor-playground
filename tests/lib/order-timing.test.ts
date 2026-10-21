@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
+  closedSellerMessage,
+  isOvernightCutoff,
+  preorderDeliveryDateIST,
+  preorderDeliveryLabel,
+  preorderHoursLabel,
+  preorderPlacedLabel,
+  preorderStatusLabel,
+  preorderWindowDaysBack,
   istDayStartISO,
   classifyPlacementAtOrderTime,
   isPastPreorderCutoffIST,
@@ -9,6 +17,7 @@ import {
   isTodayOrderDay,
   todayDayName,
 } from "../../src/lib/order-timing";
+import { nextModeBoundaryMs, nextPlacementStartMs } from "../../src/lib/cart";
 
 const seller = {
   opens_at: "06:00",
@@ -172,5 +181,163 @@ describe("open_days: null vs [] (pre-order-only sellers)", () => {
     expect(todayDayName(new Date(wed))).toBe("wed");
     expect(isPreorderShoppingWindow(preorderOnly, wed)).toBe(false);
     expect(classifyPlacementAtOrderTime(preorderOnly, wed)).toBe("closed");
+  });
+});
+
+/**
+ * Overnight pre-order cutoff (founder, 22 Oct): the window opened on pre-order day D runs
+ * past midnight to the cutoff on D+1, and 00:00–cutoff counts as D's window.
+ * Week of Mon 15 Jan 2024 (IST).
+ */
+describe("overnight pre-order cutoff", () => {
+  const DAYS: Record<string, number> = { mon: 15, tue: 16, wed: 17, thu: 18, fri: 19, sat: 20, sun: 21 };
+  /** IST wall-clock time on a weekday of that week, as epoch ms. */
+  const at = (day: string, hh: number, mm = 0) => Date.UTC(2024, 0, DAYS[day], hh, mm) - 5.5 * 3_600_000;
+  const date = (day: string) => `2024-01-${DAYS[day]}`;
+
+  const fishtokri = {
+    opens_at: "08:00",
+    closes_at: "18:00",
+    open_days: ["tue", "wed", "thu", "fri", "sat", "sun"],
+    preorder_days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+    accepts_preorder: true,
+    preorder_cutoff_time: "03:00",
+  };
+
+  describe("Fishtokri (same-day 8 AM–6 PM Tue–Sun, pre-orders Mon–Sat till 3 AM)", () => {
+    it("is an overnight cutoff", () => {
+      expect(isOvernightCutoff(fishtokri)).toBe(true);
+      expect(isOvernightCutoff({ ...fishtokri, preorder_cutoff_time: "22:00" })).toBe(false);
+    });
+    it("Tue 19:00 → preorder for Wed", () => {
+      expect(classifyPlacementAtOrderTime(fishtokri, at("tue", 19))).toBe("preorder");
+      expect(preorderDeliveryDateIST(fishtokri, at("tue", 19))).toBe(date("wed"));
+    });
+    it("Tue 23:30 → preorder", () => {
+      expect(classifyPlacementAtOrderTime(fishtokri, at("tue", 23, 30))).toBe("preorder");
+    });
+    it("Wed 01:30 → preorder in Tuesday's window, scheduled for Wed morning (not Thu)", () => {
+      const t = at("wed", 1, 30);
+      expect(classifyPlacementAtOrderTime(fishtokri, t)).toBe("preorder");
+      expect(preorderWindowDaysBack(fishtokri, t)).toBe(1);
+      expect(preorderDeliveryDateIST(fishtokri, t)).toBe(date("wed"));
+      expect(preorderDeliveryLabel(fishtokri, t)).toBe("this morning");
+      expect(preorderPlacedLabel(preorderDeliveryDateIST(fishtokri, t), t)).toBe("Pre-order placed — catch reserved for this morning");
+    });
+    it("Wed 03:30 → closed until same-day opens at 8 AM", () => {
+      const t = at("wed", 3, 30);
+      expect(classifyPlacementAtOrderTime(fishtokri, t)).toBe("closed");
+      expect(closedSellerMessage(fishtokri, t)).toBe("Pre-order cutoff (03:00 IST) has passed. Opens at 08:00.");
+      expect(classifyPlacementAtOrderTime(fishtokri, at("wed", 8))).toBe("same_day");
+    });
+    it("Mon 19:00 → preorder (Mon is a pre-order day, no same-day)", () => {
+      expect(classifyPlacementAtOrderTime(fishtokri, at("mon", 19))).toBe("preorder");
+      expect(preorderDeliveryDateIST(fishtokri, at("mon", 19))).toBe(date("tue"));
+    });
+    it("Sun 19:00 → closed (Sun is not a pre-order day)", () => {
+      expect(classifyPlacementAtOrderTime(fishtokri, at("sun", 19))).toBe("closed");
+    });
+    it("Tue 10:00 → same-day, 17:59 same-day, 18:00 preorder", () => {
+      expect(classifyPlacementAtOrderTime(fishtokri, at("tue", 10))).toBe("same_day");
+      expect(classifyPlacementAtOrderTime(fishtokri, at("tue", 17, 59))).toBe("same_day");
+      expect(classifyPlacementAtOrderTime(fishtokri, at("tue", 18))).toBe("preorder");
+    });
+    it("labels: hours and next delivery", () => {
+      expect(preorderHoursLabel(fishtokri)).toBe("6 PM–3 AM");
+      expect(preorderStatusLabel(fishtokri, at("tue", 19))).toBe("Pre-order 6 PM–3 AM · next delivery tomorrow morning");
+      expect(preorderStatusLabel(fishtokri, at("wed", 1, 30))).toBe("Pre-order 6 PM–3 AM · next delivery this morning");
+    });
+  });
+
+  describe("the old 22:00 cutoff is unchanged", () => {
+    const old = { ...fishtokri, preorder_cutoff_time: "22:00" };
+    it("after close until 22:00, then closed; nothing after midnight", () => {
+      expect(classifyPlacementAtOrderTime(old, at("tue", 19))).toBe("preorder");
+      expect(classifyPlacementAtOrderTime(old, at("tue", 21, 59))).toBe("preorder");
+      expect(classifyPlacementAtOrderTime(old, at("tue", 22))).toBe("closed");
+      expect(classifyPlacementAtOrderTime(old, at("tue", 23, 30))).toBe("closed");
+      expect(classifyPlacementAtOrderTime(old, at("wed", 1, 30))).toBe("closed");
+      expect(closedSellerMessage(old, at("tue", 23))).toBe("Pre-order cutoff (22:00 IST) has passed. Try again tomorrow.");
+    });
+    it("non-order pre-order day: all day until 22:00, delivered next morning", () => {
+      expect(classifyPlacementAtOrderTime(old, at("mon", 1))).toBe("preorder");
+      expect(classifyPlacementAtOrderTime(old, at("mon", 12))).toBe("preorder");
+      expect(classifyPlacementAtOrderTime(old, at("mon", 22, 30))).toBe("closed");
+      expect(preorderDeliveryDateIST(old, at("mon", 12))).toBe(date("tue"));
+      expect(preorderWindowDaysBack(old, at("mon", 12))).toBe(0);
+    });
+    it("before close on an order day: closed", () => {
+      expect(classifyPlacementAtOrderTime(old, at("wed", 5))).toBe("closed");
+      expect(closedSellerMessage(old, at("wed", 5))).toBe("Store not yet open for orders. Opens at 08:00.");
+    });
+  });
+
+  // Founder spec (22 Oct): pre-orders 1 PM–2 AM every day, delivered only Tue and Sat mornings.
+  const nomadic = {
+    opens_at: "08:00",
+    closes_at: "22:00",
+    open_days: [] as string[],
+    preorder_days: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+    accepts_preorder: true,
+    preorder_opens_at: "13:00",
+    preorder_cutoff_time: "02:00",
+    delivery_days: ["tue", "sat"],
+  };
+
+  describe("The Nomadic Catch (pre-orders 1 PM–2 AM daily, delivery Tue + Sat)", () => {
+    const cases: [string, number, number, "preorder" | "closed", string | null][] = [
+      // [day, hh, mm, placement, delivery date]: Tue 16, Sat 20, next Tue 23 Jan
+      ["sat", 14, 0, "preorder", "2024-01-23"],
+      ["mon", 23, 0, "preorder", "2024-01-16"],
+      ["tue", 1, 30, "preorder", "2024-01-16"],
+      ["tue", 2, 30, "closed", null],
+      ["tue", 13, 30, "preorder", "2024-01-20"],
+      ["fri", 23, 0, "preorder", "2024-01-20"],
+      ["sat", 1, 59, "preorder", "2024-01-20"],
+      ["sat", 2, 1, "closed", null],
+      ["sat", 13, 1, "preorder", "2024-01-23"],
+    ];
+    for (const [day, hh, mm, kind, deliver] of cases) {
+      it(`${day} ${hh}:${String(mm).padStart(2, "0")} → ${kind}${deliver ? `, delivers ${deliver}` : ""}`, () => {
+        const t = at(day, hh, mm);
+        expect(classifyPlacementAtOrderTime(nomadic, t)).toBe(kind);
+        expect(preorderDeliveryDateIST(nomadic, t)).toBe(deliver);
+      });
+    }
+    it("never same-day", () => {
+      expect(classifyPlacementAtOrderTime(nomadic, at("wed", 10))).toBe("closed");
+    });
+    it("labels: in the window and before it opens", () => {
+      expect(preorderStatusLabel(nomadic, at("tue", 13, 30))).toBe("Pre-order 1 PM–2 AM · next delivery Sat morning");
+      expect(preorderStatusLabel(nomadic, at("mon", 23))).toBe("Pre-order 1 PM–2 AM · next delivery tomorrow morning");
+      expect(preorderStatusLabel(nomadic, at("tue", 2, 30))).toBe("Pre-orders open at 1 PM");
+      expect(closedSellerMessage(nomadic, at("tue", 2, 30))).toBe("Pre-order cutoff (02:00 IST) has passed. Pre-orders open at 1 PM.");
+      expect(closedSellerMessage({ ...nomadic, preorder_days: ["fri"] }, at("fri", 10))).toBe("Not taking orders right now. Pre-orders open at 1 PM.");
+    });
+    it("the seller page switches mode at 1 PM and 2 AM", () => {
+      expect(nextModeBoundaryMs(nomadic, at("tue", 2, 30))).toBeLessThanOrEqual(at("tue", 8));
+      expect(nextPlacementStartMs(nomadic, "preorder", at("tue", 2, 30))).toBe(at("tue", 13));
+    });
+  });
+
+  describe("Nomadic, earlier spec (pre-order days Tue + Sat till 3 AM, no start time)", () => {
+    const v1 = { ...nomadic, preorder_days: ["tue", "sat"], preorder_opens_at: null, delivery_days: null, preorder_cutoff_time: "03:00" };
+    const cases: [string, number, number, "preorder" | "closed"][] = [
+      ["tue", 10, 0, "preorder"],
+      ["wed", 2, 0, "preorder"],
+      ["wed", 4, 0, "closed"],
+      ["fri", 23, 0, "closed"],
+      ["sat", 23, 59, "preorder"],
+      ["sun", 2, 59, "preorder"],
+    ];
+    for (const [day, hh, mm, kind] of cases) {
+      it(`${day} ${hh}:${String(mm).padStart(2, "0")} → ${kind}`, () => {
+        expect(classifyPlacementAtOrderTime(v1, at(day, hh, mm))).toBe(kind);
+      });
+    }
+    it("Wed 02:00 (Tue window) delivers Wed morning", () => {
+      expect(preorderDeliveryDateIST(v1, at("wed", 2))).toBe(date("wed"));
+      expect(preorderDeliveryDateIST(v1, at("tue", 10))).toBe(date("wed"));
+    });
   });
 });

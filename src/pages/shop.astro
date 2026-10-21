@@ -201,7 +201,7 @@ const categories = [
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
   import { cleanSellerName, sellerHref } from "../lib/seller-display";
   import { LOGO_URL } from "../lib/brand";
-  import { isTodayOrderDay as orderDayFor } from "../lib/order-timing";
+  import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderStatusLabel, todayDayName } from "../lib/order-timing";
   import { menuBySeller } from "../lib/menu-order";
   import { readSavedLocation, saveGpsDefault } from "../lib/saved-location";
   import type { Seller, FishListing } from "../lib/supabase";
@@ -216,35 +216,6 @@ const categories = [
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
-  const DAY_NAMES_SHORT = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-
-  function minutesNowIST(): number {
-    const nowIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
-    return nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
-  }
-
-  function todayDayName(): string {
-    const nowIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
-    return DAY_NAMES_SHORT[nowIST.getUTCDay()];
-  }
-
-  function isOpen(opens?: string | null, closes?: string | null): boolean {
-    if (!opens || !closes) return true;
-    const cur = minutesNowIST();
-    const [oh, om] = opens.split(":").map(Number);
-    const [ch, cm] = closes.split(":").map(Number);
-    const openMin = oh * 60 + om;
-    const closeMin = ch * 60 + cm;
-    if (openMin <= closeMin) return cur >= openMin && cur < closeMin;
-    return cur >= openMin || cur < closeMin;
-  }
-
-  function isPastCutoff(cutoffTime?: string | null): boolean {
-    if (!cutoffTime) return false;
-    const cur = minutesNowIST();
-    const [ch, cm] = cutoffTime.split(":").map(Number);
-    return cur >= ch * 60 + cm;
-  }
 
   // Same sources as the navbar map (lib/saved-location), so header, seller list and map agree.
   function getBuyerLocation() {
@@ -417,17 +388,11 @@ const categories = [
         const rawListings = sellerListings.get(s.id) || [];
         const preorderDays: string[] = Array.isArray((s as any).preorder_days) ? (s as any).preorder_days : [];
         const day = todayDayName();
-        const isTodayOrderDay = orderDayFor(s as any, day);
-        const isTodayPreorderDay = preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder;
-        const openNow = isOpen(s.opens_at, s.closes_at) && isTodayOrderDay;
-        const isAfterClose = (() => {
-          if (!s.closes_at) return true;
-          const cur = minutesNowIST();
-          const [ch, cm] = (s.closes_at as string).split(":").map(Number);
-          return cur >= ch * 60 + cm;
-        })();
-        const preorderMode = !openNow && isTodayPreorderDay && !isPastCutoff((s as any).preorder_cutoff_time)
-          && (!isTodayOrderDay || isAfterClose);
+        const openNow = isSellerEffectivelyOpen(s as any);
+        // Same rule as checkout, incl. windows past midnight (a 1:30 AM pre-order is last night's window).
+        const preorderMode = !openNow && isPreorderShoppingWindow(s as any);
+        const isTodayPreorderDay = preorderMode || (preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder);
+        const preorderLine = s.accepts_preorder ? preorderStatusLabel(s as any) : null;
         const listings = rawListings.filter((l: any) =>
           preorderMode
             ? Array.isArray(l?.pricing_options) &&
@@ -444,6 +409,7 @@ const categories = [
           open: openNow,
           preorderMode,
           preorderAvailableToday: isTodayPreorderDay,
+          preorderLine,
         };
       });
 
@@ -732,7 +698,8 @@ const categories = [
           offerLabel = "Pre-order only";
           offerColor = "v2-badge-indigo";
         } else if (!g.open && g.preorderAvailableToday) {
-          offerLabel = "Pre-order available";
+          // "Pre-order 1 PM–2 AM · next delivery Tue morning" / "Pre-orders open at 1 PM"
+          offerLabel = g.preorderLine || "Pre-order available";
           offerColor = "v2-badge-indigo";
         } else {
           offerLabel = "Closed today";

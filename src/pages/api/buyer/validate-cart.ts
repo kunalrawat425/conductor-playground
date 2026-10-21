@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ request }) => {
     const cols = "id, seller_id, is_available, weight_avail, pricing_options, is_preorder_enabled, is_order_paused, deleted_at";
     const run = (c: string) => supabase.from("fish_listings").select(c).in("id", listing_ids);
     let { data, error } = await run(
-      `${cols}, seller:sellers ( opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, accepts_preorder )`
+      `${cols}, seller:sellers ( opens_at, closes_at, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days, accepts_preorder )`
     );
     if (error) ({ data, error } = await run(cols));
 

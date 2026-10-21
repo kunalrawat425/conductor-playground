@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ url }) => {
   try {
     const { data: sellers, error } = await supabase
       .from("sellers")
-      .select("id, name, lat, lng, opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, has_delivery, delivery_rad")
+      .select("id, name, lat, lng, opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days, has_delivery, delivery_rad")
       .eq("is_active", true)
       .neq("name", "New Seller");
 

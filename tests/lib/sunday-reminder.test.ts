@@ -38,6 +38,13 @@ describe("planSundayReminders", () => {
     expect(p.title).not.toMatch(/Pre-order/);
   });
 
+  it("no Sunday pre-order promise from a seller that delivers on other days (e.g. Tue + Sat only)", () => {
+    const s = seller({ delivery_days: ["tue"], has_sameday_listing: false });
+    // Date-independent: tonight's pre-orders are delivered Tue, so they only count when tomorrow is Tue.
+    const dayAfter = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date(NOW + 5.5 * 3_600_000 + 86_400_000).getUTCDay()];
+    expect(planSundayReminders([near], [s], NOW)).toHaveLength(dayAfter === "tue" ? 1 : 0);
+  });
+
   it("skips buyers outside every seller's radius, without location, or with a recent promo", () => {
     const s = seller({});
     expect(planSundayReminders([{ id: "far", lat: 19.25, lng: 72.97 }], [s], NOW)).toEqual([]);

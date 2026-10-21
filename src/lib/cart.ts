@@ -495,13 +495,13 @@ export function placementAt(seller: SellerTimingInput, nowMs = Date.now()): Cart
 }
 
 /**
- * Next moment the seller's mode can change: store open, close, pre-order cutoff or IST
+ * Next moment the seller's mode can change: store open, close, pre-order start or cutoff, or IST
  * midnight (day-based rules). The seller page reloads then so menu, cart and prices switch.
  */
 export function nextModeBoundaryMs(seller: SellerTimingInput, nowMs = Date.now()): number {
   const dayStart = Date.parse(istDayStartISO(nowMs));
   const mins = [0];
-  for (const t of [seller.opens_at, seller.closes_at, seller.preorder_cutoff_time]) {
+  for (const t of [seller.opens_at, seller.closes_at, seller.preorder_cutoff_time, seller.preorder_opens_at]) {
     if (!t) continue;
     const [h, m] = String(t).split(":").map(Number);
     if (Number.isFinite(h)) mins.push(h * 60 + (m || 0));

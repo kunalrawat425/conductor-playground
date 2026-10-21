@@ -6,6 +6,7 @@ import { SITE_URL } from "../lib/brand";
 import { areaNameForPoint } from "../lib/areas";
 import { optionBundleAmount, formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
 import { listingAvailability } from "../lib/product-offer";
+import { preorderDeliveryDateIST } from "../lib/order-timing";
 
 export const prerender = false;
 
@@ -23,7 +24,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 export const GET: APIRoute = async () => {
   const [sRes, lRes] = await Promise.all([
-    supabase.from("sellers").select("id, name, lat, lng, location_name, is_test, has_delivery, delivery_fee_enabled, delivery_fee_type, delivery_fee_amount, delivery_fee_per_km, free_delivery_above, delivery_rad, opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time").eq("is_active", true),
+    supabase.from("sellers").select("id, name, lat, lng, location_name, is_test, has_delivery, delivery_fee_enabled, delivery_fee_type, delivery_fee_amount, delivery_fee_per_km, free_delivery_above, delivery_rad, opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days").eq("is_active", true),
     supabase.from("fish_listings").select("id, seller_id, species, fish_size, size_label, description, photo_url, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options").is("deleted_at", null),
   ]);
   if (sRes.error || lRes.error) {
@@ -79,7 +80,7 @@ export const GET: APIRoute = async () => {
 <g:link>${esc(`${SITE_URL}${base}/${species}?opt=${encodeURIComponent(`${l.id}-${o.id ?? "0"}`)}`)}</g:link>
 <g:image_link>${esc(image)}</g:image_link>
 <g:price>${price.toFixed(2)} INR</g:price>
-<g:availability>${availability}</g:availability>${availability === "preorder" ? `\n<g:availability_date>${tomorrow}T08:00+05:30</g:availability_date>` : ""}
+<g:availability>${availability}</g:availability>${availability === "preorder" ? `\n<g:availability_date>${preorderDeliveryDateIST(s) ?? tomorrow}T08:00+05:30</g:availability_date>` : ""}
 <g:condition>new</g:condition>${shippingXml}
 <g:brand>${esc(seller)}</g:brand>
 <g:identifier_exists>no</g:identifier_exists>

@@ -77,6 +77,10 @@ export interface Seller {
   preorder_days?: string[];
   /** Latest time buyer can place a pre-order for next day (HH:MM). Default 22:00. */
   preorder_cutoff_time?: string;
+  /** Pre-order window opens at this time (migration 083). Null = at closes_at / all day. */
+  preorder_opens_at?: string | null;
+  /** Weekdays pre-orders are delivered (migration 083). Null = next morning. */
+  delivery_days?: string[] | null;
   /** UPI ID shown to buyers on payment-pending orders. */
   upi_id?: string | null;
   /** Store cover photo URL (wide banner). */

@@ -169,6 +169,8 @@ export interface SellerHeroProps {
   status: 'open' | 'closed';
   /** Closed for same-day but taking pre-orders now: show that instead of a flat "Closed". */
   preorderOpen?: boolean;
+  /** When an open pre-order is delivered, e.g. "this morning" or "Tue morning". */
+  preorderFor?: string;
   closesAt?: string;
   opensAt?: string;
   totalOrders?: number;

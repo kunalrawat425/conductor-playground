@@ -234,7 +234,7 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     ${orderIntro(
       args.isPreorder ? `${fishName} pre-order` : `${fishName} order update`,
       args.isPreorder
-        ? "Your pre-order for tomorrow's catch has been placed. The final price depends on tomorrow's availability — you will only be charged up to the max estimate shown."
+        ? "Your pre-order for the next catch has been placed. The final price depends on that morning's availability — you will only be charged up to the max estimate shown."
         : "Your order status has changed. You can track every step in the app with live updates."
     )}
     ${orderSummaryTable(rows)}
@@ -268,7 +268,7 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
     ${orderIntro(
       args.isPreorder ? `${fishName} pre-order needs attention` : `${fishName} order needs attention`,
       args.isPreorder 
-        ? "A customer placed a pre-order for tomorrow's catch. Confirm it in your dashboard — you can update the final price once the catch arrives tomorrow morning."
+        ? "A customer placed a pre-order for the next catch. Confirm it in your dashboard — you can update the final price once the catch arrives that morning."
         : "A customer order moved to a new state. Review the card below and take the next action from your dashboard."
     )}
     ${orderSummaryTable(rows)}

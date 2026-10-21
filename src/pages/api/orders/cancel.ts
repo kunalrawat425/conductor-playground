@@ -182,7 +182,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 async function cancelRow(sb: any, order: any, reason: string | null) {
   const { data: seller } = order.listing_id
     ? await sb.from("fish_listings")
-        .select("seller:sellers(opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time)")
+        .select("seller:sellers(opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days)")
         .eq("id", order.listing_id).maybeSingle().then((r: any) => ({ data: r.data?.seller ?? null }))
     : { data: null };
   const rule = buyerCancelRule(order, seller);

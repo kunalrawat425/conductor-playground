@@ -12,7 +12,7 @@ import {
 } from "../../../lib/email-templates";
 import { getListingOptionById, type ListingPricingSource } from "../../../lib/listing-pricing";
 import type { PlacementKind } from "../../../lib/order-timing";
-import { classifyPlacementAtOrderTime, closedSellerMessage } from "../../../lib/order-timing";
+import { classifyPlacementAtOrderTime, closedSellerMessage, preorderDeliveryDateIST, preorderPlacedLabel } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
 import { internalHeaders } from "../../../lib/server/internal-auth";
@@ -205,7 +205,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           const pLine = line as import("../../../lib/server/resolve-listing-order-line").PreorderLinePayload;
           const bs = (line as any).bundle_size && (line as any).bundle_size > 0 && (line as any).bundle_size !== 1 ? (line as any).bundle_size : null;
           const poEmailArgs: OrderEmailArgs = {
-            statusLabel: "Pre-order placed — catch reserved for tomorrow",
+            statusLabel: preorderPlacedLabel(pLine.delivery_date),
             species: species || "Fish",
             quantity,
             quantity_unit,
@@ -264,13 +264,14 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Pay-first: new orders are pending_payment until the Razorpay payment is captured.
     let status = "pending_payment";
     let isPreorderBranch = false;
+    let preorderDeliveryDate: string | null = null;
     let delivery_fee = 0;
 
     if (seller_id) {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, preorder_cutoff_time, open_days, preorder_days, lat, lng"
+          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, preorder_cutoff_time, preorder_opens_at, delivery_days, open_days, preorder_days, lat, lng"
         )
         .eq("id", seller_id)
         .single();
@@ -313,6 +314,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           }
           status = "pending_payment";
           isPreorderBranch = true;
+          preorderDeliveryDate = preorderDeliveryDateIST(seller!);
         }
       }
       placement_kind = placementKind as PlacementKind;
@@ -456,7 +458,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Send emails non-blocking — fire and forget so order response is instant
     if (resendApiKey && order) {
       const statusLabel = isPreorderBranch
-        ? "Pre-order placed — catch reserved for tomorrow"
+        ? preorderPlacedLabel(preorderDeliveryDate)
         : "Order placed — complete payment to confirm";
       const emailArgs = {
         statusLabel,
