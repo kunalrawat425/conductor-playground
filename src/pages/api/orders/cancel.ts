@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { isRazorpayPaid } from "../../../lib/server/razorpay-refund";
 import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
-import { buyerCancelRule } from "../../../lib/order-cancel";
+import { buyerCancelRule, checkCancelReason, lateCancelReason } from "../../../lib/order-cancel";
 import { isLiveRow, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
 
 export const prerender = false;
@@ -33,6 +33,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Confirmed state: allowed ONLY if seller has not yet marked ready / dispatched.
     //   If paid via Razorpay, trigger auto-refund.
     if (action === "cancel") {
+      const typed = checkCancelReason(cancel_reason);
+      if (!typed.ok) return new Response(JSON.stringify({ error: typed.error }), { status: 400 });
       // whole_cart: cancel every live item of this checkout in one go, ONE notification.
       let targets: any[] = [order];
       if (whole_cart && order.cart_id) {
@@ -55,7 +57,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           }
         }
       }
-      const reason = String(cancel_reason || "").trim().slice(0, 200) || null;
+      const reason = typed.reason;
       const done: { id: string; paid: boolean; refundId: string | null; refundNote: string | null; refundAmt: number }[] = [];
       let firstError: { error: string; status: number } | null = null;
       for (const row of targets) {
@@ -179,7 +181,7 @@ export const POST: APIRoute = async ({ request, url }) => {
  * on a cart paid in one go, only this item's share); on failure the item stays
  * cancelled with a note and the daily cron retries.
  */
-async function cancelRow(sb: any, order: any, reason: string | null) {
+async function cancelRow(sb: any, order: any, reason: string) {
   const { data: seller } = order.listing_id
     ? await sb.from("fish_listings")
         .select("seller:sellers(opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days)")
@@ -189,7 +191,8 @@ async function cancelRow(sb: any, order: any, reason: string | null) {
   if (!rule.ok) return { error: rule.reason as string, status: 400 };
 
   const { data: claimed, error: cancelErr } = await sb.from("orders")
-    .update({ status: "cancelled", cancelled_by: "buyer", cancel_reason: reason })
+    // A late cancel is marked in the reason so the seller reads "order was late".
+    .update({ status: "cancelled", cancelled_by: "buyer", cancel_reason: rule.late ? lateCancelReason(reason) : reason })
     .eq("id", order.id).eq("status", order.status)
     .select("id");
   if (cancelErr) return { error: "Could not cancel the order. Please try again.", status: 500 };
