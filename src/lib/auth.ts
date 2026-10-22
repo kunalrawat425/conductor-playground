@@ -31,6 +31,7 @@ export async function verifyOtp(phone: string, token: string) {
   localStorage.setItem("rlf_buyer_id", data.buyer_id);
   localStorage.setItem("rlf_phone", data.phone);
   if (data.session) localStorage.setItem("rlf_session_buyer", data.session);
+  try { (window as any).relifishClarityTag?.(); } catch {}
 
   return data;
 }
