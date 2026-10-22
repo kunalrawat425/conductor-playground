@@ -167,6 +167,7 @@ const { id } = Astro.params;
   import { buyerCancelRule, cancelledByText, cancelReasonText } from "../../lib/order-cancel";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
   import { cleanSellerName } from "../../lib/seller-display";
+  import { orderSlotText } from "../../lib/delivery-slots";
   const RAZORPAY_KEY_ID  = import.meta.env.PUBLIC_RAZORPAY_KEY_ID  || "";
   // Extract order ID from URL path: /track/{id}
   const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
@@ -432,7 +433,12 @@ const { id } = Astro.params;
     if (o.order_type === "delivery" && o.address) {
       const a = o.address;
       const text = [a.flat, a.building, a.landmark, a.location_name].filter(Boolean).map(escape).join(", ");
+      const slot = ["cancelled", "declined", "refunded", "completed"].includes(o.status) ? null : orderSlotText(o);
       fulfillEl.innerHTML = `
+        ${slot ? `<div style="background:var(--v2-brand-l);border:1px solid var(--v2-brand);border-radius:var(--v2-radius-sm);padding:10px 12px;margin-bottom:12px;">
+          <div style="font:600 11px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.04em;">${escape(slot.label)}</div>
+          <div style="font:800 15px Inter;color:var(--v2-ink);margin-top:2px;">🕘 ${escape(slot.value)}</div>
+        </div>` : ""}
         <div class="v2-od-section-h">Deliver to</div>
         <div style="font:600 13px Inter;color:var(--v2-ink);">${escape(a.label || "Address")}</div>
         <div class="v2-od-sub">${text || "Saved address"}</div>`;

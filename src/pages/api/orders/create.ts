@@ -19,6 +19,7 @@ import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { sellerRejectionReason, deliveryDistanceRejection } from "../../../lib/server/assert-seller-accepts";
 import { afterResponse } from "../../../lib/server/after-response";
+import { checkDeliverySlot, slotDateIST, slotLabel, SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 
 export const prerender = false;
 
@@ -48,6 +49,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       pricing_option_id: clientPricingOptionId,
       buyer_notes,
       cut_style,
+      delivery_slot_start,
     } = body;
     if (buyer_id) { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
 
@@ -124,7 +126,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         // delivery pre-order under their own minimum, with no delivery fee.
         const { data: preorderSeller } = await supabase
           .from("sellers")
-          .select("min_order_amount, has_delivery, has_pickup, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, lat, lng")
+          .select(`min_order_amount, has_delivery, has_pickup, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, lat, lng, ${SLOT_SELLER_COLUMNS}`)
           .eq("id", line.seller_id)
           .single();
 
@@ -146,6 +148,12 @@ export const POST: APIRoute = async ({ request, url }) => {
         const preDistErr = deliveryDistanceRejection(preorderSeller, order_type, preorderDistanceKm);
         if (preDistErr) {
           return new Response(JSON.stringify({ error: preDistErr }), { status: 400 });
+        }
+        // ponytail: this single-item route keeps the clock's kind; only the cart checkout lets the
+        // picked day turn an order into a pre-order. A slot of the other kind is refused.
+        const preSlot = checkDeliverySlot(preorderSeller, order_type, delivery_slot_start);
+        if (preSlot.error || (preSlot.kind && preSlot.kind !== "preorder")) {
+          return new Response(JSON.stringify({ error: preSlot.error || "Pick a pre-order delivery time.", code: "slot_unavailable" }), { status: 400 });
         }
         const preorderDeliveryFee = preorderSeller
           ? computeDeliveryFee(preorderSeller, total_price, order_type, preorderDistanceKm)
@@ -172,6 +180,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             paid_amount: total_price + preorderDeliveryFee,
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
+            ...(preSlot.slot ? { delivery_slot_start: preSlot.slot.start, delivery_slot_end: preSlot.slot.end } : {}),
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
             ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
@@ -205,7 +214,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           const pLine = line as import("../../../lib/server/resolve-listing-order-line").PreorderLinePayload;
           const bs = (line as any).bundle_size && (line as any).bundle_size > 0 && (line as any).bundle_size !== 1 ? (line as any).bundle_size : null;
           const poEmailArgs: OrderEmailArgs = {
-            statusLabel: preorderPlacedLabel(pLine.delivery_date),
+            statusLabel: preorderPlacedLabel(preSlot.slot ? slotDateIST(preSlot.slot.start) : pLine.delivery_date),
             species: species || "Fish",
             quantity,
             quantity_unit,
@@ -214,6 +223,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             orderId: preOrder.id,
             scheduled_for: null,
             isPreorder: true,
+            deliverySlot: preSlot.slot ? slotLabel(preSlot.slot.start, preSlot.slot.end) : null,
             preorderMin: pLine.preorder_price_min ?? null,
             preorderMax: pLine.preorder_price_max ?? null,
             bundleSize: bs,
@@ -266,12 +276,13 @@ export const POST: APIRoute = async ({ request, url }) => {
     let isPreorderBranch = false;
     let preorderDeliveryDate: string | null = null;
     let delivery_fee = 0;
+    let slotCols: { delivery_slot_start?: string; delivery_slot_end?: string } = {};
 
     if (seller_id) {
       const { data: seller } = await supabase
         .from("sellers")
         .select(
-          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, preorder_cutoff_time, preorder_opens_at, delivery_days, open_days, preorder_days, lat, lng"
+          "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, preorder_cutoff_time, preorder_opens_at, delivery_days, open_days, preorder_days, lat, lng, delivery_slots_enabled, delivery_slot_minutes, preorder_delivery_start, preorder_delivery_end, preorder_days_ahead"
         )
         .eq("id", seller_id)
         .single();
@@ -339,6 +350,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: distErr }), { status: 400 });
       }
       delivery_fee = seller ? computeDeliveryFee(seller, total_price, order_type, deliveryDistanceKm) : 0;
+      const slotCheck = checkDeliverySlot(seller, order_type, delivery_slot_start);
+      if (slotCheck.error || (slotCheck.kind && slotCheck.kind !== placement_kind)) {
+        return new Response(JSON.stringify({ error: slotCheck.error || "Pick a delivery time for this kind of order.", code: "slot_unavailable" }), { status: 400 });
+      }
+      if (slotCheck.slot) slotCols = { delivery_slot_start: slotCheck.slot.start, delivery_slot_end: slotCheck.slot.end };
     }
 
     let order: { id: string; buyer_id?: string | null; status?: string } | null = null;
@@ -389,6 +405,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             pricing_option_id: orderPricingOptionId,
             pricing_label: orderPricingLabel,
             is_preorder: isPreorderBranch,
+            ...slotCols,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
             ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
@@ -412,8 +429,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
       }
       order = fetchedOrder;
-      await supabase.from("orders").update({ placement_kind, is_preorder: isPreorderBranch }).eq("id", orderId);
-      order = { ...order, placement_kind, is_preorder: isPreorderBranch };
+      await supabase.from("orders").update({ placement_kind, is_preorder: isPreorderBranch, ...slotCols }).eq("id", orderId);
+      order = { ...order, placement_kind, is_preorder: isPreorderBranch, ...slotCols };
     }
 
     if (!order) {
@@ -458,7 +475,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Send emails non-blocking — fire and forget so order response is instant
     if (resendApiKey && order) {
       const statusLabel = isPreorderBranch
-        ? preorderPlacedLabel(preorderDeliveryDate)
+        ? preorderPlacedLabel(slotCols.delivery_slot_start ? slotDateIST(slotCols.delivery_slot_start) : preorderDeliveryDate)
         : "Order placed — complete payment to confirm";
       const emailArgs = {
         statusLabel,
@@ -470,6 +487,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         orderId: order.id,
         scheduled_for,
         isPreorder: isPreorderBranch,
+        deliverySlot: slotCols.delivery_slot_start ? slotLabel(slotCols.delivery_slot_start, slotCols.delivery_slot_end!) : null,
         buyerNotes: buyer_notes ? String(buyer_notes).slice(0, 500) : null,
         cutStyle: cut_style ? String(cut_style).slice(0, 50) : null,
         bundleSize: null,
