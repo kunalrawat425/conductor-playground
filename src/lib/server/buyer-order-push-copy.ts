@@ -126,13 +126,14 @@ export function buyerOrderPushNotification(
     const m = messages[status];
     const changed = slot.changed ? " (new time from the seller)" : "";
     return status === "confirmed"
-      ? { title: m.title, body: `${m.body}. Delivery: ${slot.when}${changed}` }
+      ? { title: m.title, body: `${m.body}. Delivery time: ${slot.when}${changed}` }
       : { title: m.title, body: `${m.body}, arriving by ${slot.when}${changed}` };
   }
   return (
     messages[status] || {
       title: "Order Update",
-      body: `Your order status: ${status}`,
+      // Never show a raw status code to the buyer.
+      body: species ? `There's an update on your ${species} order. Tap to see it.` : "There's an update on your order. Tap to see it.",
     }
   );
 }

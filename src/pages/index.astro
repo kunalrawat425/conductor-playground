@@ -25,10 +25,10 @@ const homeFaqs = [
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <UtmCapture />
   <title>Fresh Fish Online in Thane &amp; Mumbai | Relifish</title>
-  <meta name="description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta name="description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <link rel="canonical" href={SITE} />
   <meta property="og:title" content="Fresh Fish Online in Thane &amp; Mumbai | Relifish" />
-  <meta property="og:description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta property="og:description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <meta property="og:image" content={`${SITE}/og-image.png`} />
   <meta property="og:url" content={SITE} />
   <meta property="og:type" content="website" />
@@ -36,7 +36,7 @@ const homeFaqs = [
   <meta property="og:locale" content="en_IN" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Fresh Fish Online in Thane &amp; Mumbai | Relifish" />
-  <meta name="twitter:description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order tonight for tomorrow — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta name="twitter:description" content="Order fresh fish online from local sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <meta name="twitter:image" content={`${SITE}/og-image.png`} />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="manifest" href="/manifest.json" />
@@ -680,12 +680,14 @@ const homeFaqs = [
       <a href="#waitlist" class="nl">Join waitlist</a>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <a href="/me" class="nl" style="color:rgba(255,255,255,.7)">Login</a>
+      <a href="/me?next=/shop" id="nav-login" class="nl" style="color:rgba(255,255,255,.7)">Login</a>
       <a href="/shop" class="btn-nav">Order now →</a>
     </div>
   </div>
 </nav>
 <script>
+  // Logged in: "Login" goes straight to the shop (logged out: /me?next=/shop logs in, then the shop).
+  try { if (localStorage.getItem('rlf_buyer_id') && localStorage.getItem('rlf_phone')) document.getElementById('nav-login')?.setAttribute('href', '/shop'); } catch {}
   const nav = document.getElementById('nav');
   window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>40),{passive:true});
 </script>
@@ -800,7 +802,7 @@ const homeFaqs = [
         <strong>Order today or pre-order for tomorrow. No platform markup.</strong>
       </p>
       <!-- Citable prose for AI search engines — do not remove -->
-      <p class="hero-cite">Relifish is a marketplace for fresh fish from local sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order tonight for tomorrow's catch, and the seller delivers to your home or keeps it ready for pickup.</p>
+      <p class="hero-cite">Relifish is a marketplace for fresh fish from local sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order for tomorrow or later, and the seller delivers to your home or keeps it ready for pickup.</p>
       <div class="fish-tags">
         {[["🐟 Pomfret","pomfret"],["🐠 Surmai","surmai"],["🦐 Prawns","prawns"],["🐡 Bangda","bangda"],["🐟 Rawas","rawas"],["🦀 Crab","crab"]].map(([f,k])=>(
           <a class="ftag" href={`/shop?species=${k}`}>{f}</a>
@@ -902,25 +904,21 @@ const homeFaqs = [
             <div class="ds-light" style="position:relative">
               <div class="dh">
                 <div class="dh-back">← Fishtokri</div>
-                <div class="dh-title">🌙 Tonight's menu</div>
+                <div class="dh-title">🌙 Pre-order menu</div>
               </div>
               <div class="d3-item tap">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🐟</span><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">500 grams–800 grams · Cleaned on request</div></div></div>
-                <div style="text-align:right"><div class="d3-lock">🔒 Login</div><div class="d3-add added" style="margin-top:3px">✓ Added</div></div>
+                <div style="display:flex;align-items:center"><span class="d3-emoji">🐟</span><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">200–250 g · Whole &amp; cleaned</div></div></div>
+                <div style="text-align:right"><div class="d3-lock">₹375</div><div class="d3-add added" style="margin-top:3px">✓ Added</div></div>
               </div>
               <div class="d3-item">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🐠</span><div><div class="d3-name">Surmai Fillet</div><div class="d3-cut">Per kg · Boneless</div></div></div>
-                <div style="text-align:right"><div class="d3-lock">🔒 Login</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
+                <div style="display:flex;align-items:center"><span class="d3-emoji">🦐</span><div><div class="d3-name">Prawns</div><div class="d3-cut">Pack of 10–20 pcs</div></div></div>
+                <div style="text-align:right"><div class="d3-lock">₹410</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
               </div>
               <div class="d3-item">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🦐</span><div><div class="d3-name">Jumbo Prawns</div><div class="d3-cut">Per kg · Deveined</div></div></div>
-                <div style="text-align:right"><div class="d3-lock">🔒 Login</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
+                <div style="display:flex;align-items:center"><span class="d3-emoji">🐠</span><div><div class="d3-name">Bombil</div><div class="d3-cut">500 g · Whole</div></div></div>
+                <div style="text-align:right"><div class="d3-lock">₹240</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
               </div>
-              <div class="d3-item">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🐡</span><div><div class="d3-name">Bangda (Mackerel)</div><div class="d3-cut">Per kg · Whole</div></div></div>
-                <div style="text-align:right"><div class="d3-lock">🔒 Login</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
-              </div>
-              <div class="demo-cta"><div class="d3-bar"><span class="d3-bar-t">🛒 1 item · Pomfret</span><span class="d3-bar-p">Login to see price →</span></div></div>
+              <div class="demo-cta"><div class="d3-bar"><span class="d3-bar-t">🛒 1 item · Pomfret</span><span class="d3-bar-p">Checkout →</span></div></div>
             </div>
           </div>
 
@@ -930,18 +928,18 @@ const homeFaqs = [
               <div class="dh"><div class="dh-back">← Menu</div><div class="dh-title">Your cart</div></div>
               <div class="d4-item">
                 <div><div class="d4-name">🐟 Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
-                <div style="text-align:right"><div class="d4-lock">🔒 Login for price</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">1 kg</span><div class="d4-q">+</div></div></div>
+                <div style="text-align:right"><div class="d4-lock">₹375</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">1 pc</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-item">
-                <div><div class="d4-name">🐡 Bangda (Mackerel)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
-                <div style="text-align:right"><div class="d4-lock">🔒 Login for price</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">500 grams</span><div class="d4-q">+</div></div></div>
+                <div><div class="d4-name">🐠 Bombil</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
+                <div style="text-align:right"><div class="d4-lock">₹240</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">500 grams</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-summary">
-                <div class="d4-row"><span>Subtotal</span><span style="color:var(--blue)">Login to see →</span></div>
+                <div class="d4-row"><span>Subtotal</span><span>₹615</span></div>
                 <div class="d4-row"><span>Delivery</span><span>by seller</span></div>
-                <div class="d4-row" style="font-weight:700"><span>Total</span><span style="color:var(--blue)">Login to see →</span></div>
+                <div class="d4-row" style="font-weight:700"><span>Total</span><span>₹615</span></div>
               </div>
-              <div class="demo-cta"><div class="demo-cta-btn" style="animation:pulseblue 2s infinite">Login & checkout →</div></div>
+              <div class="demo-cta"><div class="demo-cta-btn" style="animation:pulseblue 2s infinite">Checkout →</div></div>
             </div>
           </div>
 
@@ -952,8 +950,8 @@ const homeFaqs = [
                 <div class="d5-to">Paying to</div>
                 <div class="d5-seller">Fishtokri</div>
                 <div class="d5-amt-label">Amount</div>
-                <div class="d5-amt">₹<span style="font-size:28px;font-weight:900;color:#0A0F1E">—</span></div>
-                <div style="font:400 7px Inter;color:#9CA3AF;margin-top:2px">Login to confirm price · Pre-order 2 items</div>
+                <div class="d5-amt">₹<span style="font-size:28px;font-weight:900;color:#0A0F1E">615</span></div>
+                <div style="font:400 7px Inter;color:#9CA3AF;margin-top:2px">Pre-order · 2 items</div>
               </div>
               <div class="d5-upi-apps">
                 <div class="d5-app tap">
@@ -1053,9 +1051,9 @@ const homeFaqs = [
 <div class="ticker">
   <div class="ticker-track">
     {[
-      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order tonight"],["🐡","Bangda","Zero middleman"],
+      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order ahead"],["🐡","Bangda","Zero middleman"],
       ["🐟","Rawas","Limited daily"],["🦀","Crab","Seasonal catch"],["🐠","Halwa","Reserve yours"],["🐡","Bombay Duck","Fresh daily"],
-      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order tonight"],["🐡","Bangda","Zero middleman"],
+      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order ahead"],["🐡","Bangda","Zero middleman"],
       ["🐟","Rawas","Limited daily"],["🦀","Crab","Seasonal catch"],["🐠","Halwa","Reserve yours"],["🐡","Bombay Duck","Fresh daily"],
     ].map(([e,n,t])=>(
       <div class="ti"><span class="fish">{e} {n}</span><span>{t}</span><span class="dot"></span></div>
@@ -1175,20 +1173,20 @@ const homeFaqs = [
             </div>
             <div class="s3-items">
               <div class="s3-item">
-                <div class="s3-il"><div class="s3-ie">🐟</div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">1 kg · Cleaned</div></div></div>
-                <div class="s3-lock">🔒 Login</div>
+                <div class="s3-il"><div class="s3-ie">🐟</div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">200–250 g · Cleaned</div></div></div>
+                <div class="s3-lock">₹375</div>
               </div>
               <div class="s3-item">
-                <div class="s3-il"><div class="s3-ie">🐡</div><div><div class="s3-in">Bangda (Mackerel)</div><div class="s3-id">500 grams · Whole</div></div></div>
-                <div class="s3-lock">🔒 Login</div>
+                <div class="s3-il"><div class="s3-ie">🐠</div><div><div class="s3-in">Bombil</div><div class="s3-id">500 grams · Whole</div></div></div>
+                <div class="s3-lock">₹240</div>
               </div>
               <div class="s3-tot">
                 <div class="s3-tot-l">Total (2 items)</div>
-                <div class="s3-tot-r">Login to see →</div>
+                <div class="s3-tot-r">₹615</div>
               </div>
             </div>
             <div class="s3-pay-sticky">
-              <div class="s3-pay tap-zone">⚡ Login & Pay securely online →</div>
+              <div class="s3-pay tap-zone">⚡ Pay securely online →</div>
               <div class="s3-nt" style="padding:4px 0 0">Secure Razorpay checkout · No platform fee</div>
             </div>
           </div>
@@ -1265,7 +1263,7 @@ const homeFaqs = [
             <div class="fish-name">{f.n}</div>
             <div class="fish-marathi">{f.m}</div>
             <div class="fish-login">See today's price →</div>
-            <div class="fish-cta">Pre-order tonight →</div>
+            <div class="fish-cta">Pre-order →</div>
           </div>
         </a>
       ))}
@@ -1286,9 +1284,9 @@ const homeFaqs = [
     <div class="why-grid">
       {[
         {i:"💰",t:"No platform markup",d:"You pay the seller's own price. Relifish charges sellers 0% commission and adds nothing to your bill.",g:"Seller's own price",b:"Platform markup"},
-        {i:"🌊",t:"Today's stock, listed daily",d:"Sellers list what they have each day. Pre-order tonight and the seller fills your order from tomorrow's stock.",g:"Listed daily",b:"Unknown stock age"},
+        {i:"🌊",t:"Today's stock, listed daily",d:"Sellers list what they have each day. Pre-order for a later day and the seller fills it from that day's stock.",g:"Listed daily",b:"Unknown stock age"},
         {i:"📍",t:"Your neighbourhood seller",d:"The fish seller your family has trusted for years, now online with pre-order convenience. Same quality, smarter system.",g:"Known local seller",b:"Anonymous warehouse"},
-        {i:"🌙",t:"Reserve before it sells out",d:"The best fish goes first. Pre-order tonight and your seller holds your portion from the morning landing.",g:"Reserved for you",b:"First come first served"},
+        {i:"🌙",t:"Reserve before it sells out",d:"Popular fish goes first. Pre-order and your seller holds your portion for your delivery day.",g:"Reserved for you",b:"First come first served"},
         {i:"🛵",t:"Pickup or home delivery",d:"Each seller sets their own delivery terms. Collect from the seller or get it delivered. Clear before you order.",g:"Your choice",b:"Fixed delivery windows"},
         {i:"💬",t:"Direct contact",d:"WhatsApp your seller for cuts, special requests, freshness questions. Real people.",g:"Direct WhatsApp",b:"Chatbot support"},
       ].map(c=>(

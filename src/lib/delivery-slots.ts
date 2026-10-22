@@ -26,7 +26,7 @@ export type DeliverySlot = { start: string; end: string };
 export const SLOT_SELLER_COLUMNS =
   "opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days, delivery_slots_enabled, delivery_slot_minutes, preorder_delivery_start, preorder_delivery_end, preorder_days_ahead";
 
-/** The earliest same-day slot starts at least this long after the order. */
+/** A slot is offered while it ends at least this long after the order (Today 4–6 PM: until 4 PM). */
 export const SLOT_LEAD_MINUTES = 120;
 export const PREORDER_DELIVERY_DEFAULT = { start: "07:00", end: "13:00" };
 
@@ -80,7 +80,7 @@ function isDeliveryDay(seller: SlotSeller, ms: number): boolean {
  * i.e. D at the cutoff when it runs past midnight (Fishtokri 03:00, Nomadic 02:00), else the day
  * before at the cutoff (22:00). No cutoff = midnight before D.
  */
-function preorderDeadlineMs(seller: SlotSeller, date: string): number {
+export function preorderDeadlineMs(seller: SlotSeller, date: string): number {
   const midnight = Date.parse(`${date}T00:00:00+05:30`);
   const cut = toMin(seller.preorder_cutoff_time, 24 * 60);
   return (isOvernightCutoff(seller) ? midnight : midnight - DAY_MS) + cut * 60_000;
@@ -110,12 +110,13 @@ export type DeliveryDay = { date: string; kind: "same_day" | "preorder"; slots: 
 
 /**
  * The checkout's "When do you want it?" picker: Today (a same-day order, while the shop is open
- * and a slot at least `leadMin` away is left), then the pre-order delivery days. [] = slots off.
+ * and a slot ending at least `leadMin` from now is left), then the pre-order delivery days. [] = slots off.
  */
 export function deliveryDaysAt(seller: SlotSeller, nowMs = Date.now(), leadMin = SLOT_LEAD_MINUTES): DeliveryDay[] {
   if (!seller?.delivery_slots_enabled) return [];
   const earliest = nowMs + leadMin * 60_000;
-  const later = (s: DeliverySlot) => Date.parse(s.start) >= earliest;
+  // Founder, 22 Oct: a slot stays on until 2 h before it ENDS (at 15:10 Today's 4–6 PM is still offered).
+  const later = (s: DeliverySlot) => Date.parse(s.end) >= earliest;
   const out: DeliveryDay[] = [];
   if (isSellerEffectivelyOpen(seller, nowMs)) {
     let date = istDate(nowMs);
@@ -168,12 +169,12 @@ export function checkDeliverySlot(
 ): { slot: DeliverySlot | null; kind?: DeliveryDay["kind"]; error?: string } {
   if (orderType !== "delivery" || !seller?.delivery_slots_enabled) return { slot: null };
   const t = Date.parse(String(slotStart || ""));
-  if (!Number.isFinite(t)) return { slot: null, error: "Pick a delivery time slot." };
+  if (!Number.isFinite(t)) return { slot: null, error: "Pick a delivery time." };
   for (const day of deliveryDaysAt(seller, nowMs, SLOT_LEAD_MINUTES - 15)) {
     const slot = day.slots.find((s) => Date.parse(s.start) === t);
     if (slot) return { slot, kind: day.kind };
   }
-  return { slot: null, error: "That delivery slot is no longer available. Pick another time." };
+  return { slot: null, error: "This time is no longer available — pick another." };
 }
 
 /** Seller-set slot / "arriving by" window: a real range of at most 6 hours, not in the past. */
@@ -247,5 +248,31 @@ export function orderSlotText(o: SlotOrder | null | undefined): { label: string;
   if (!o?.delivery_slot_start || !o.delivery_slot_end) return null;
   return o.status === "out_for_delivery"
     ? { label: "Arriving by", value: arrivingByLabel(o.delivery_slot_end) }
-    : { label: "Delivery slot", value: slotLabel(o.delivery_slot_start, o.delivery_slot_end) };
+    : { label: "Delivery time", value: slotLabel(o.delivery_slot_start, o.delivery_slot_end) };
+}
+
+/**
+ * Other slots a seller can move an order to when accepting it: the order's day, starting
+ * after `nowMs` (a slot already under way is not offered; "Keep" covers the current one).
+ */
+export function sellerSlotChoices(seller: SlotSeller, current: DeliverySlot, preorder: boolean, nowMs = Date.now()): DeliverySlot[] {
+  return sellerSlotsOn(seller, slotDateIST(current.start), preorder)
+    .filter((s) => Date.parse(s.start) !== Date.parse(current.start) && Date.parse(s.start) > nowMs);
+}
+
+/**
+ * Store-page pre-order line when slots are on (pre-orders can be placed any time for a later
+ * day): "Pre-order anytime · pick your day & time", or "Pre-order anytime · delivered Tue & Sat"
+ * with delivery days. Null when slots are off (order-timing wording applies).
+ */
+export function slotPreorderLabel(seller: SlotSeller | null | undefined): string | null {
+  if (!seller?.delivery_slots_enabled || !seller.accepts_preorder) return null;
+  const dd = Array.isArray(seller.delivery_days) ? seller.delivery_days : [];
+  const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"].map((k, i) => (dd.includes(k) ? DAYS[i] : "")).filter(Boolean);
+  return `Pre-order anytime · ${days.length ? `delivered ${days.join(" & ")}` : "pick your day & time"}`;
+}
+
+/** "Sat 24 Oct" for an IST date (YYYY-MM-DD). */
+export function dateLabelIST(date: string): string {
+  return slotDayLabel(`${date}T12:00:00+05:30`);
 }

@@ -5,6 +5,7 @@ import { logPush } from "../../lib/server/push-log";
 import { absoluteUrl } from "../../lib/server/site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
 import { normalizeSellerPushKind, sellerPushNotification } from "../../lib/server/seller-push-copy";
+import { slotLabel } from "../../lib/delivery-slots";
 
 export const prerender = false;
 
@@ -69,7 +70,15 @@ export const POST: APIRoute = async ({ request }) => {
       .eq("id", seller_id)
       .single();
 
+    // New / paid order: say when to deliver (the buyer's delivery time), read from the order so every caller gets it.
+    let slot: string | null = null;
+    if ((kind === "new_order" || kind === "payment_confirmed") && typeof order_id === "string" && /^[0-9a-f-]{36}$/i.test(order_id.trim())) {
+      const { data: o } = await supabase.from("orders").select("delivery_slot_start, delivery_slot_end").eq("id", order_id.trim()).maybeSingle();
+      if (o?.delivery_slot_start && o?.delivery_slot_end) slot = slotLabel(o.delivery_slot_start, o.delivery_slot_end);
+    }
+
     const { title, body: pushBody } = sellerPushNotification(kind, {
+      slot,
       species,
       quantity,
       quantity_unit,

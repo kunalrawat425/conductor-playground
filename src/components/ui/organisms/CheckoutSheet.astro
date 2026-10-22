@@ -85,12 +85,13 @@ const { id = "v2-checkout" } = Astro.props;
         <h4 class="v2-co-step-title">When do you want it?</h4>
         <div id={`${id}-slot-days`} class="v2-day-picker"></div>
         <div id={`${id}-slots`} class="v2-slot-grid"></div>
+        <div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:6px;">The seller aims for this time and will let you know if it changes.</div>
         <div id={`${id}-slot-note`} style="display:none;font:500 12px Inter;color:var(--v2-ink-3);margin-top:6px;"></div>
       </div>
     </div>
 
     <div class="v2-co-rows" style="margin-top:12px;">
-      <div class="v2-co-row v2-co-total-row"><span id={`${id}-total-label`}>Total · Pay at orders page</span><span id={`${id}-total-final`}>₹0</span></div>
+      <div class="v2-co-row v2-co-total-row"><span id={`${id}-total-label`}>Total</span><span id={`${id}-total-final`}>₹0</span></div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">

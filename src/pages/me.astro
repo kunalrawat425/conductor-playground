@@ -334,6 +334,10 @@ import Toast from "../components/ui/atoms/Toast.astro";
 </style>
 
 <script>
+  import { safeNextPath } from "../lib/auth";
+  // ?next=/shop (home "Login"): logged in → go there now; logged out → the login sheet goes there after login.
+  const nextPath = safeNextPath(new URLSearchParams(location.search).get("next"));
+  if (nextPath) (window as any).v2LoginRedirect = nextPath;
   // If user is a seller, redirect to seller profile instead
   try {
     if (localStorage.getItem("rlf_seller_id")) {
@@ -359,11 +363,17 @@ import Toast from "../components/ui/atoms/Toast.astro";
   const buyerId = getBuyerId();
   loading.style.display = "none";
 
-  if (!phone || !buyerId) {
+  if (phone && buyerId && nextPath) {
+    location.replace(nextPath);
+  } else if (!phone || !buyerId) {
     guest.style.display = "block";
     document.getElementById("v2-me-signin-btn")?.addEventListener("click", () => {
       (window as any).v2OpenSheet?.("v2-me-login");
     });
+    if (nextPath) {
+      const open = () => (window as any).v2OpenSheet?.("v2-me-login");
+      if ((window as any).v2OpenSheet) open(); else window.addEventListener("load", open, { once: true });
+    }
   } else {
     content.style.display = "block";
     initSignedIn(buyerId, phone);

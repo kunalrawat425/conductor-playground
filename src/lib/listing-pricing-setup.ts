@@ -291,7 +291,7 @@ export function setupListingPricingEditor(opts: {
       </div>
       <div class="preorder-price-tier" style="display:none;margin-top:8px;padding:12px;background:#EEF2FF;border-radius:8px;border:1px solid #C7D2FE;">
         <div style="font-size:12px;font-weight:700;color:#4F46E5;margin-bottom:4px;">🌙 Pre-order price range (this tier)</div>
-        <p style="font-size:11px;color:#4338CA;margin:0 0 8px;line-height:1.4;">Buyer pays max price upfront. You set actual price after morning catch. No discount in pre-order.</p>
+        <p style="font-size:11px;color:#4338CA;margin:0 0 8px;line-height:1.4;">Buyer pays max price upfront. You set the actual price when you get the fish. No discount in pre-order.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div>
             <label style="font-size:11px;font-weight:600;color:#4338CA;display:block;margin-bottom:4px;">Min estimate (₹)</label>

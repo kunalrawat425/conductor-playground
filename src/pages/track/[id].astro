@@ -167,7 +167,7 @@ const { id } = Astro.params;
   import { buyerCancelRule, cancelledByText, cancelReasonText } from "../../lib/order-cancel";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
   import { cleanSellerName } from "../../lib/seller-display";
-  import { orderSlotText } from "../../lib/delivery-slots";
+  import { dateLabelIST, orderDeliveryDateIST, orderSlotText } from "../../lib/delivery-slots";
   const RAZORPAY_KEY_ID  = import.meta.env.PUBLIC_RAZORPAY_KEY_ID  || "";
   // Extract order ID from URL path: /track/{id}
   const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
@@ -383,6 +383,9 @@ const { id } = Astro.params;
     const opt = pricingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
     const bundle = opt?.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
     const liveCartItems = cartItems ? cartItems.filter((it) => !["cancelled", "declined", "refunded"].includes(it.status)) : [];
+    // What the buyer paid: every paid item of a cart, not just this row (paid_amount includes the row's delivery fee).
+    const paidOf = (rows) => rows.reduce((s2, r) => s2 + (!cartItems || r.paid ? Number(r.paid_amount) || 0 : 0), 0);
+    const paidTotal = paidOf(cartItems || [o]);
     document.getElementById("v2-od-items").innerHTML = items.map(it => {
       const unit = it.quantity_unit || 'kg';
       const qtyLabel = cartItems
@@ -460,7 +463,10 @@ const { id } = Astro.params;
         (["pending_payment", "payment_required", "pre_order"].includes(o.status) || awaitingFinal)
       ) {
         // A cart pays every unpaid item at once: show that amount, not this row's.
-        const dueNum = o.cart && o.status === "pending_payment" ? Number(o.cart.payable_total) : Number(o.paid_amount);
+        const unpaid = ["pending_payment", "pre_order"].includes(o.status);
+        const dueNum = o.cart && o.status === "pending_payment" ? Number(o.cart.payable_total) : paidTotal;
+        // The real delivery day (a pre-order can be for a later day than tomorrow).
+        const deliverOn = orderDeliveryDateIST(o, o.seller);
         const amountDue = dueNum ? `₹${dueNum.toLocaleString("en-IN")}` : "";
         // Per-unit preorder range from pricing_options (matched by pricing_option_id used on this order)
         const popts: any[] = o.listing?.pricing_options || [];
@@ -474,10 +480,10 @@ const { id } = Astro.params;
           : priceMin ? `<div style="font:700 13px Inter;color:#7C3AED;margin:8px 0 4px;">Min estimate: ₹${Number(priceMin).toLocaleString("en-IN")}</div>` : "";
         preorderEl.innerHTML = `
           <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
-            <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Next-day catch pre-order</div>
+            <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Pre-order${deliverOn ? ` for ${escape(dateLabelIST(deliverOn))}` : ""}</div>
             ${rangeHtml}
-            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">Pay via Razorpay to place your pre-order, then the seller will set the final price after the morning catch.${amountDue ? ` Amount: <strong>${amountDue}</strong>.` : ""}</div>
-            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → <strong>the difference is refunded automatically</strong> to your original payment method (5–7 working days). If <strong>higher</strong> → you'll approve the difference.</div>
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">${unpaid ? "Pay now to place your pre-order. " : ""}The seller sets the final price when your fish comes in.${amountDue ? ` ${unpaid ? "Amount" : "You paid"}: <strong>${amountDue}</strong>.` : ""}</div>
+            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">Final price <strong>lower</strong> than you paid → the difference is refunded automatically (5–7 working days). <strong>Higher</strong> → you approve the difference.</div>
           </div>`;
         preorderEl.style.display = "block";
       } else {
@@ -495,13 +501,15 @@ const { id } = Astro.params;
     const cartRefunded = cartItems
       ? cartItems.filter((r) => r.paid && r.refund_sent_at).reduce((s2, r) => s2 + (Number(r.refund_amt) || 0), 0)
       : 0;
-    const finalPrice = o.final_price ? Number(o.final_price) : null;
-    const paidAmount = o.paid_amount ? Number(o.paid_amount) : null;
+    // A cart's final price once every live item has one.
+    const finalPrice = billRows.length && billRows.every((r) => Number(r.final_price) > 0)
+      ? billRows.reduce((s2, r) => s2 + Number(r.final_price), 0) : null;
+    const paidAmount = paidTotal || null;
     // Only show "You paid" after actual payment — not for pending_payment (paid_amount is pre-set at creation)
     const paymentConfirmed = o.status !== "pending_payment" && o.status !== "pending" && o.payment_verified_at;
     const showPaidAmount = paidAmount && paymentConfirmed;
     // final_price is the fish price; paidAmount includes the delivery fee.
-    const balance = finalPrice && showPaidAmount ? finalPrice - (paidAmount - (Number(o.delivery_fee) || 0)) : null;
+    const balance = finalPrice && showPaidAmount ? finalPrice - (paidOf(billRows) - delivery) : null;
     document.getElementById("v2-od-bill").innerHTML = `
       <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
       ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}

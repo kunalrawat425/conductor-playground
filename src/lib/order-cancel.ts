@@ -1,4 +1,5 @@
 import { isPreorderShoppingWindow, type SellerTimingInput } from "./order-timing";
+import { preorderDeadlineMs, slotDateIST } from "./delivery-slots";
 
 /**
  * Can the BUYER cancel this order right now? Mirrors the published Refund &
@@ -10,14 +11,16 @@ import { isPreorderShoppingWindow, type SellerTimingInput } from "./order-timing
  *  - Seller raised the pre-order price (payment_required): yes — rejecting the
  *    updated price cancels with a full refund.
  *  - Confirmed, same-day: yes until the seller marks it Ready / out for delivery.
- *  - Confirmed pre-order: yes while the seller's pre-order window is still open
- *    (before their daily cutoff), or once the seller has set the morning price
+ *  - Confirmed pre-order: yes until the pre-order cutoff for its own delivery day
+ *    (the slot's day when it has one: a Sunday pre-order placed on Thursday can be
+ *    cancelled until Sunday's cutoff), else while the seller's pre-order window is
+ *    still open (before their daily cutoff); or once the seller has set the price
  *    (the price-confirmation window). After cutoff with no price yet: no.
  *  - Ready / out for delivery / finished: no.
  * Any paid amount is refunded in full.
  */
 export function buyerCancelRule(
-  o: { status?: string | null; is_preorder?: boolean | null; placement_kind?: string | null; final_price?: number | string | null },
+  o: { status?: string | null; is_preorder?: boolean | null; placement_kind?: string | null; final_price?: number | string | null; delivery_slot_start?: string | null },
   seller?: SellerTimingInput | null,
   nowMs?: number
 ): { ok: true } | { ok: false; reason: string } {
@@ -28,8 +31,10 @@ export function buyerCancelRule(
   const preorder = o.is_preorder === true || o.placement_kind === "preorder";
   if (!preorder) return { ok: true };
   if (o.final_price !== null && o.final_price !== undefined) return { ok: true };
-  if (seller && isPreorderShoppingWindow(seller, nowMs)) return { ok: true };
-  return { ok: false, reason: "The pre-order cutoff has passed — the seller is already sourcing your catch." };
+  if (seller && o.delivery_slot_start) {
+    if ((nowMs ?? Date.now()) < preorderDeadlineMs(seller, slotDateIST(o.delivery_slot_start))) return { ok: true };
+  } else if (seller && isPreorderShoppingWindow(seller, nowMs)) return { ok: true };
+  return { ok: false, reason: "The pre-order cutoff has passed — the seller is already getting your fish." };
 }
 
 export type CancelActor = "buyer" | "seller" | "system" | "admin" | "unknown" | null | undefined;

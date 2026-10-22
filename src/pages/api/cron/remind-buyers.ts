@@ -72,7 +72,7 @@ async function run(request: Request) {
         if (!ordersSince[o.buyer_id] || o.created_at > ordersSince[o.buyer_id]) ordersSince[o.buyer_id] = o.created_at;
       }
       for (const buyerId of abandonedCartBuyers(cartRows ?? [], ordersSince, now)) {
-        const r = await push(buyerId, "Your fish is still in your cart", "Finish your order, or pre-order tonight for tomorrow's catch.", "/shop");
+        const r = await push(buyerId, "Your fish is still in your cart", "Finish your order, or pre-order for tomorrow or later.", "/shop");
         if (r?.sent) carts++;
       }
     }

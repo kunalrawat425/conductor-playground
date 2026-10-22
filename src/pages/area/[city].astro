@@ -132,7 +132,7 @@ const faqs = [
   },
   {
     q: `How long does fish delivery take in ${area.name}?`,
-    a: "Sellers deliver their own orders. Same-day orders are placed during the seller's opening hours and the seller confirms the timing after you pay. Pre-orders are prepared from the next morning's stock.",
+    a: "Sellers deliver their own orders. Same-day orders are placed during the seller's opening hours and the seller confirms the timing after you pay. Pre-orders are prepared from the stock on your delivery day. Where the seller offers it, you pick a delivery time at checkout.",
   },
   {
     q: `How do I pay for fish on Relifish?`,
@@ -324,7 +324,7 @@ const jsonLd = {
       <h2 style="font: 700 16px/1.3 Inter; margin: 0 0 10px 0;">How to order fresh fish in {area.name}</h2>
       <ol style="font: 400 14px/1.6 Inter; margin: 0; padding-left: 20px; color: var(--v2-ink-2);">
         <li style="margin-bottom: 8px;"><strong>Pick a seller and your fish.</strong> Each seller's page shows today's fish, the price for each pack size and how much stock is left.</li>
-        <li style="margin-bottom: 8px;"><strong>Choose same-day or pre-order.</strong> During the seller's opening hours you order for today. After they close, you can pre-order for the next morning until their cutoff ({listJoin([...new Set(sellerTerms.map((t) => t.cutoff))])}).</li>
+        <li style="margin-bottom: 8px;"><strong>Choose same-day or pre-order.</strong> During the seller's opening hours you order for today. You can also pre-order for a later day, before the cutoff ({listJoin([...new Set(sellerTerms.map((t) => t.cutoff))])}).</li>
         <li style="margin-bottom: 8px;"><strong>Check the costs before you pay.</strong> The delivery fee and minimum order are set by each seller (see the table above) and shown again at checkout.</li>
         <li style="margin-bottom: 8px;"><strong>Pay online.</strong> You pay through Razorpay and the seller confirms the order. If the seller declines, or you cancel before they confirm, the full amount is refunded. For pre-orders you pay the top of the price range, and any difference from the final morning price is refunded.</li>
         <li><strong>The seller delivers</strong> to your address, or keeps it ready for pickup where the seller offers pickup.</li>

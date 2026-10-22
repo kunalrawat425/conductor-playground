@@ -207,11 +207,11 @@ function orderRows(args: OrderEmailArgs, totalLabel: string): string {
   ].join("");
 }
 
-/** Delivery slot / arriving-by time, above the order table so it is seen first. */
+/** Delivery time / arriving-by time, above the order table so it is seen first. */
 function slotBox(args: OrderEmailArgs): string {
   if (!args.deliverySlot) return "";
   return `<div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:12px 16px;margin-bottom:12px;">
-    <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.6px;text-transform:uppercase;">${args.deliverySlotLabel || "Delivery slot"}</div>
+    <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.6px;text-transform:uppercase;">${args.deliverySlotLabel || "Delivery time"}</div>
     <div style="font-size:17px;font-weight:800;color:#0f172a;margin-top:2px;">🕘 ${args.deliverySlot}</div>
   </div>`;
 }
@@ -246,7 +246,7 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     ${orderIntro(
       args.isPreorder ? `${fishName} pre-order` : `${fishName} order update`,
       args.isPreorder
-        ? "Your pre-order for the next catch has been placed. The final price depends on that morning's availability — you will only be charged up to the max estimate shown."
+        ? "Your pre-order has been placed. The seller sets the final price on your delivery day — you will only be charged up to the max estimate shown."
         : "Your order status has changed. You can track every step in the app with live updates."
     )}
     ${slotBox(args)}${orderSummaryTable(rows)}
@@ -440,7 +440,7 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
         <div style="font-size:12px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧊 Pickup Details</div>
         <div style="font-size:13px;color:#166534;font-weight:600;margin-bottom:2px;">📍 ${safeSeller}${safeLocation ? ` — ${safeLocation}` : ""}</div>
         ${safeScheduled
-          ? `<div style="font-size:13px;color:#166534;">🕐 Pickup slot: ${safeScheduled}</div>`
+          ? `<div style="font-size:13px;color:#166534;">🕐 Pickup: ${safeScheduled}</div>`
           : `<div style="font-size:13px;color:#166534;">Seller will notify you when your order is ready for pickup.</div>`}
       </div>`;
 
