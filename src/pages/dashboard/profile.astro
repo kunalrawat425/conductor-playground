@@ -136,9 +136,6 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
         <div class="t-label" style="margin-top:16px;">When can buyers pre-order?</div>
         <div data-mode="afterClose">
           <div class="t-row"><span>From closing time (<span id="t-close-label"></span>) until</span> <select id="t-until" class="t-select"></select></div>
-          <div class="t-label" style="margin-top:12px;">On which days?</div>
-          <div id="p-preorder-days" class="t-chips"></div>
-          <div id="t-err-preorderDays" class="t-err"></div>
         </div>
         <div data-mode="pause">
           <div class="t-note">Open all week. On delivery days, pause while that morning's orders go out:</div>
@@ -151,6 +148,11 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
           <div class="t-row">Stop taking pre-orders at <select id="t-win-to" class="t-select"></select></div>
         </div>
         <div id="t-err-preorderTimes" class="t-err"></div>
+        <div data-mode="afterClose">
+          <div class="t-label" style="margin-top:12px;">On which days?</div>
+          <div id="p-preorder-days" class="t-chips"></div>
+          <div id="t-err-preorderDays" class="t-err"></div>
+        </div>
       </div>
     </div>
 
@@ -376,7 +378,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     };
 
     if (showTimingErrors()) {
-      document.getElementById("t-same-day")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.querySelector(".t-err:not(:empty)")?.scrollIntoView({ behavior: "smooth", block: "center" });
       (window as any).v2Toast?.("error", "Check your store timings", "See the message in red");
       btn.disabled = false; btn.textContent = "Save changes"; return;
     }
