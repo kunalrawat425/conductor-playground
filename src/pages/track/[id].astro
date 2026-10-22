@@ -459,7 +459,7 @@ const { id } = Astro.params;
         Number(o.paid_amount) > 0 &&
         (o.final_price == null || o.final_price === "");
       if (
-        isPreorderCatchFlow(o) &&
+        isPreorderCatchFlow(o) && !["cancelled", "declined", "refunded"].includes(o.status) &&
         (["pending_payment", "payment_required", "pre_order"].includes(o.status) || awaitingFinal)
       ) {
         // A cart pays every unpaid item at once: show that amount, not this row's.
