@@ -22,6 +22,26 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     color: var(--v2-brand);
     border-color: var(--v2-brand);
   }
+  .t-card { background:var(--v2-bg); border:1px solid var(--v2-border); border-radius:var(--v2-radius-sm); margin-bottom:12px; }
+  .t-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px; cursor:pointer; }
+  .t-toggle b { display:block; font:700 14px Inter; color:var(--v2-ink); }
+  .t-toggle small { display:block; font:400 12px Inter; color:var(--v2-ink-3); margin-top:2px; }
+  .t-switch { appearance:none; -webkit-appearance:none; flex:none; width:46px; height:28px; border-radius:14px; background:var(--v2-border); position:relative; cursor:pointer; transition:background .15s; margin:0; }
+  .t-switch::before { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s; }
+  .t-switch:checked { background:var(--v2-brand); }
+  .t-switch:checked::before { transform:translateX(18px); }
+  .t-body { padding:12px 14px 14px; border-top:1px solid var(--v2-border); }
+  .t-label { font:700 12px Inter; color:var(--v2-ink-2); margin-bottom:8px; }
+  .t-note { font:500 13px Inter; color:var(--v2-ink-2); margin-bottom:8px; }
+  .t-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .t-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px; font:500 13px Inter; color:var(--v2-ink); margin:8px 0; }
+  .t-select { padding:8px 10px; border:1.5px solid var(--v2-border); border-radius:var(--v2-radius-sm); font:600 13px Inter; color:var(--v2-ink); background:var(--v2-bg); }
+  .t-radio { display:flex; align-items:center; gap:8px; font:500 13px Inter; color:var(--v2-ink); padding:6px 0; cursor:pointer; }
+  .t-radio input { accent-color:var(--v2-brand); width:18px; height:18px; margin:0; }
+  .t-err { font:600 12px Inter; color:var(--v2-red); margin:4px 0 8px; }
+  .t-err:empty { display:none; }
+  .t-preview { background:var(--v2-brand-l); border:1px solid var(--v2-brand); border-radius:var(--v2-radius-sm); padding:12px 14px; margin-bottom:16px; }
+  .t-preview-line { font:500 13px Inter; color:var(--v2-ink); margin:4px 0; }
 </style>
 
 <AppShell
@@ -63,12 +83,6 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       <button type="button" id="p-email-verify-btn" style="display:none;background:none;border:1px solid var(--v2-brand);color:var(--v2-brand);font:600 11px Inter;padding:4px 12px;border-radius:20px;cursor:pointer;">Send verification</button>
     </div>
 
-    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Operating hours</h3>
-    <div style="display:flex;gap:12px;">
-      <div style="flex:1;"><Input id="p-opens" name="opens_at" label="Opens" type="time" /></div>
-      <div style="flex:1;"><Input id="p-closes" name="closes_at" label="Closes" type="time" /></div>
-    </div>
-
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Store logo &amp; photo</h3>
     {[
       { k: "logo", title: "Logo", hint: "Logo: square, shown next to your store name", previewStyle: "width:80px;height:80px;border-radius:14px;" },
@@ -88,31 +102,66 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       </div>
     ))}
 
+    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Store timings</h3>
+    <div id="t-err-toggles" class="t-err"></div>
+
+    <div class="t-card">
+      <label class="t-toggle">
+        <span><b>Same-day orders</b><small>Buyers order and get fish today</small></span>
+        <input type="checkbox" id="t-same-day" class="t-switch" role="switch" aria-label="I take same-day orders" />
+      </label>
+      <div id="t-same-day-body" class="t-body">
+        <div class="t-label">Which days?</div>
+        <div id="p-open-days" class="t-chips"></div>
+        <div id="t-err-openDays" class="t-err"></div>
+        <div class="t-row">Open from <select id="t-opens" class="t-select"></select> to <select id="t-closes" class="t-select"></select></div>
+        <div id="t-err-hours" class="t-err"></div>
+      </div>
+    </div>
+
+    <div class="t-card">
+      <label class="t-toggle">
+        <span><b>Pre-orders</b><small>Buyers order now, fish delivered on a later morning</small></span>
+        <input type="checkbox" id="t-preorder" class="t-switch" role="switch" aria-label="I take pre-orders" />
+      </label>
+      <div id="t-preorder-body" class="t-body">
+        <div class="t-label">When do you deliver pre-orders?</div>
+        <label class="t-radio"><input type="radio" name="t-deliver" value="next" /> The next morning</label>
+        <label class="t-radio"><input type="radio" name="t-deliver" value="days" /> Only on certain days</label>
+        <div id="t-delivery-days-wrap" style="margin:4px 0 0 26px;">
+          <div id="p-delivery-days" class="t-chips"></div>
+          <div id="t-err-deliveryDays" class="t-err"></div>
+        </div>
+
+        <div class="t-label" style="margin-top:16px;">When can buyers pre-order?</div>
+        <div data-mode="afterClose">
+          <div class="t-row">From closing time (<span id="t-close-label"></span>) until <select id="t-until" class="t-select"></select></div>
+          <div class="t-label" style="margin-top:12px;">On which days?</div>
+          <div id="p-preorder-days" class="t-chips"></div>
+          <div id="t-err-preorderDays" class="t-err"></div>
+        </div>
+        <div data-mode="pause">
+          <div class="t-note">Open all week. On delivery days, pause while that morning's orders go out:</div>
+          <div class="t-row">Stop taking pre-orders at <select id="t-pause-from" class="t-select"></select></div>
+          <div class="t-row">Start again at <select id="t-pause-to" class="t-select"></select></div>
+        </div>
+        <div data-mode="window">
+          <div class="t-note">Every day:</div>
+          <div class="t-row">Start taking pre-orders at <select id="t-win-from" class="t-select"></select></div>
+          <div class="t-row">Stop taking pre-orders at <select id="t-win-to" class="t-select"></select></div>
+        </div>
+        <div id="t-err-preorderTimes" class="t-err"></div>
+      </div>
+    </div>
+
+    <div id="t-preview" class="t-preview">
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:8px;">What buyers will see</div>
+      <div id="t-preview-lines"></div>
+    </div>
+
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Order settings</h3>
     <Input id="p-min-order" name="min_order_amount" label="Minimum order (₹)" type="number" />
 
-    <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:6px;">Order days</div>
-    <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Days you're open for same-day orders</div>
-    <div id="p-open-days" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
-
-    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:4px;">
-      <input type="checkbox" id="p-preorder" />
-      <div>
-        <div style="font:700 13px Inter;color:var(--v2-ink);">Accept pre-orders 🌙</div>
-        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyers can reserve tomorrow's catch tonight</div>
-      </div>
-    </label>
-    <div id="p-preorder-schedule" style="display:none;margin-left:16px;padding:12px;border-left:2px solid var(--v2-border);margin-bottom:12px;background:var(--v2-bg-2);border-radius:0 var(--v2-radius-sm) var(--v2-radius-sm) 0;">
-      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-order days <span style="font-weight:400;color:var(--v2-ink-3);">(which days buyers can pre-order for next-day catch)</span></div>
-      <div id="p-preorder-days" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px;"></div>
-      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-orders open at <span style="font-weight:400;color:var(--v2-ink-3);">(optional; empty = when you close, or all day if you have no same-day days)</span></div>
-      <input type="time" id="p-preorder-opens" style="padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;margin-bottom:12px;" />
-      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Cutoff time <span style="font-weight:400;color:var(--v2-ink-3);">(no pre-orders after this time; can be after midnight, e.g. 3 AM)</span></div>
-      <input type="time" id="p-preorder-cutoff" value="22:00" style="padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;" />
-      <div id="p-preorder-cutoff-hint" style="font:500 11px Inter;color:#7C3AED;margin-top:4px;"></div>
-      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin:12px 0 4px;">Delivery days <span style="font-weight:400;color:var(--v2-ink-3);">(optional; none ticked = pre-orders are delivered the next morning)</span></div>
-      <div id="p-delivery-days" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;"></div>
-    </div>
     <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
       <input type="checkbox" id="p-pickup" />
       <div>
@@ -211,7 +260,8 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
   import { imageFileError, imageDimensionsError } from "../../lib/image-crop";
   import { cropImage } from "../../lib/crop-dialog";
-  import { isOvernightCutoff, preorderHoursLabel, preorderPauseLabel, timeLabel } from "../../lib/order-timing";
+  import { preorderScheduleLabel, sameDayScheduleLabel } from "../../lib/order-timing";
+  import { WEEK, dbFromForm, formFromDb, preorderMode, timingFormErrors, type TimingForm } from "../../lib/store-timing-form";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
   const sellerId = getSellerId();
@@ -233,25 +283,11 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       (document.getElementById("p-first-name") as HTMLInputElement).value = seller?.first_name || "";
       (document.getElementById("p-last-name") as HTMLInputElement).value = seller?.last_name || "";
       (document.getElementById("p-email") as HTMLInputElement).value = seller?.email || "";
-      (document.getElementById("p-opens") as HTMLInputElement).value = seller?.opens_at || "05:00";
-      (document.getElementById("p-closes") as HTMLInputElement).value = seller?.closes_at || "11:00";
       // Logo (null until migration 081 / first upload) and store photo
       showImagePreview("logo", seller?.logo_url || null);
       showImagePreview("store", seller?.store_image_url || null);
       (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
-      (document.getElementById("p-preorder") as HTMLInputElement).checked = !!seller?.accepts_preorder;
-      // Day schedule
-      const allDays = ['mon','tue','wed','thu','fri','sat','sun'];
-      const dayLabels = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
-      const openDays: string[] = seller?.open_days ?? allDays;
-      const preorderDays: string[] = seller?.preorder_days ?? [];
-      renderDayPills("p-open-days", allDays, dayLabels, openDays, "open");
-      renderDayPills("p-preorder-days", allDays, dayLabels, preorderDays, "preorder");
-      (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value = seller?.preorder_cutoff_time?.slice(0,5) || "22:00";
-      (document.getElementById("p-preorder-opens") as HTMLInputElement).value = seller?.preorder_opens_at?.slice(0,5) || "";
-      renderDayPills("p-delivery-days", allDays, dayLabels, seller?.delivery_days ?? [], "delivery");
-      updateCutoffHint();
-      document.getElementById("p-preorder-schedule")!.style.display = seller?.accepts_preorder ? "block" : "none";
+      fillTimings(formFromDb(seller || {}));
       (document.getElementById("p-pickup") as HTMLInputElement).checked = seller?.has_pickup !== false;
       (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
       (document.getElementById("p-delivery-rad") as HTMLInputElement).value = String(seller?.delivery_rad || 5);
@@ -326,15 +362,8 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       first_name: (document.getElementById("p-first-name") as HTMLInputElement).value.trim(),
       last_name: (document.getElementById("p-last-name") as HTMLInputElement).value.trim(),
       email: (document.getElementById("p-email") as HTMLInputElement).value.trim(),
-      opens_at: (document.getElementById("p-opens") as HTMLInputElement).value,
-      closes_at: (document.getElementById("p-closes") as HTMLInputElement).value,
       min_order_amount: parseInt((document.getElementById("p-min-order") as HTMLInputElement).value) || 0,
-      accepts_preorder: (document.getElementById("p-preorder") as HTMLInputElement).checked,
-      open_days: getCheckedDays("open"),
-      preorder_days: getCheckedDays("preorder"),
-      preorder_cutoff_time: (document.getElementById("p-preorder-cutoff") as HTMLInputElement).value || "22:00",
-      preorder_opens_at: (document.getElementById("p-preorder-opens") as HTMLInputElement).value || null,
-      delivery_days: getCheckedDays("delivery").length ? getCheckedDays("delivery") : null,
+      ...dbFromForm(readTimings()),
       has_pickup: (document.getElementById("p-pickup") as HTMLInputElement).checked,
       has_delivery: (document.getElementById("p-delivery") as HTMLInputElement).checked,
       delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
@@ -346,14 +375,9 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       // schedule_pickup_slots: hidden for now
     };
 
-    // Validation — allow cross-midnight hours (e.g. 17:00 → 01:58 is valid for fish markets).
-    // Only reject if both are exactly the same.
-    function timeToMin(t: string): number {
-      const [h, m] = String(t || "").split(":").map(Number);
-      return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
-    }
-    if (timeToMin(updates.opens_at) === timeToMin(updates.closes_at)) {
-      (window as any).v2Toast?.("error", "Invalid hours", "Open and close time can't be the same");
+    if (showTimingErrors()) {
+      document.getElementById("t-same-day")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      (window as any).v2Toast?.("error", "Check your store timings", "See the message in red");
       btn.disabled = false; btn.textContent = "Save changes"; return;
     }
     if (!updates.name) {
@@ -444,27 +468,91 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       });
     });
   }
-  /** "Next morning" note when the cutoff is earlier than the window start (same rule as order-timing). */
-  function updateCutoffHint() {
-    const val = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.value || null;
-    const seller = { preorder_cutoff_time: val("p-preorder-cutoff"), preorder_opens_at: val("p-preorder-opens"), closes_at: val("p-closes") };
-    const hint = document.getElementById("p-preorder-cutoff-hint");
-    if (!hint) return;
-    const hours = preorderHoursLabel({ ...seller, open_days: getCheckedDays("open") });
-    // No same-day days + delivery days ticked: the pause applies only on delivery days.
-    const pause = preorderPauseLabel({ ...seller, open_days: getCheckedDays("open"), delivery_days: getCheckedDays("delivery") });
-    hint.textContent = pause
-      ? `Pre-orders stay open all day, every day. They are ${pause} (from the cutoff until "Pre-orders open at") while that morning's orders go out. Each order is delivered on the next delivery morning.`
-      : isOvernightCutoff(seller)
-      ? `Next morning: pre-orders run ${hours} and close at ${timeLabel(seller.preorder_cutoff_time)} the next morning.`
-      : "";
+  // ── Store timings: plain-words form, mapped to the DB by store-timing-form ──
+  const DAY_LABELS: Record<string, string> = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
+  const sel = (id: string) => document.getElementById(id) as HTMLSelectElement;
+  const checked = (id: string) => (document.getElementById(id) as HTMLInputElement).checked;
+  /** "8:00 AM"; with `nextMorning`, times before 6 AM get a "next morning" tag. */
+  const optLabel = (t: string, nextMorning: boolean) => {
+    const [h, m] = t.split(":").map(Number);
+    const base = `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+    return nextMorning && h * 60 + m <= 6 * 60 ? `${base} · next morning` : base;
+  };
+  /** Half-hour options from `from` for `hours` hours, plus the saved value if it is off the grid. */
+  function fillTimeSelect(id: string, value: string, from = 0, hours = 24, nextMorning = false) {
+    const times: string[] = [];
+    for (let i = 0; i < (hours === 24 ? 48 : hours * 2 + 1); i++) {
+      const min = (from * 60 + i * 30) % 1440;
+      times.push(`${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`);
+    }
+    if (value && !times.includes(value)) times.push(value);
+    sel(id).innerHTML = times.map((t) => `<option value="${t}">${optLabel(t, nextMorning)}</option>`).join("");
+    sel(id).value = value;
   }
-  for (const id of ["p-preorder-cutoff", "p-preorder-opens", "p-closes"]) {
-    document.getElementById(id)?.addEventListener("input", updateCutoffHint);
+  function fillTimings(f: TimingForm) {
+    (document.getElementById("t-same-day") as HTMLInputElement).checked = f.sameDay;
+    (document.getElementById("t-preorder") as HTMLInputElement).checked = f.preorder;
+    renderDayPills("p-open-days", WEEK, DAY_LABELS, f.openDays, "open");
+    renderDayPills("p-preorder-days", WEEK, DAY_LABELS, f.preorderDays, "preorder");
+    renderDayPills("p-delivery-days", WEEK, DAY_LABELS, f.deliveryDays, "delivery");
+    fillTimeSelect("t-opens", f.opensAt);
+    fillTimeSelect("t-closes", f.closesAt);
+    fillTimeSelect("t-until", f.stopAt, 18, 12, true); // 6 PM … 6 AM
+    fillTimeSelect("t-win-to", f.stopAt, 18, 12, true);
+    fillTimeSelect("t-win-from", f.startAt);
+    fillTimeSelect("t-pause-from", f.stopAt);
+    fillTimeSelect("t-pause-to", f.startAt);
+    (document.querySelector(`input[name="t-deliver"][value="${f.deliverOn}"]`) as HTMLInputElement).checked = true;
+    updateTimings();
   }
-  for (const id of ["p-open-days", "p-delivery-days"]) {
-    document.getElementById(id)?.addEventListener("change", updateCutoffHint);
+  function readTimings(): TimingForm {
+    const sameDay = checked("t-same-day");
+    const deliverOn = (document.querySelector('input[name="t-deliver"]:checked') as HTMLInputElement)?.value === "days" ? "days" : "next";
+    const mode = preorderMode({ sameDay, deliverOn });
+    return {
+      sameDay,
+      openDays: getCheckedDays("open"),
+      opensAt: sel("t-opens").value,
+      closesAt: sel("t-closes").value,
+      preorder: checked("t-preorder"),
+      deliverOn,
+      deliveryDays: getCheckedDays("delivery"),
+      preorderDays: getCheckedDays("preorder"),
+      stopAt: sel(mode === "afterClose" ? "t-until" : mode === "pause" ? "t-pause-from" : "t-win-to").value,
+      startAt: sel(mode === "window" ? "t-win-from" : "t-pause-to").value,
+    };
   }
+  /** Writes the inline messages; true when there is something to fix. */
+  function showTimingErrors(): boolean {
+    const errors = timingFormErrors(readTimings());
+    document.querySelectorAll<HTMLElement>('[id^="t-err-"]').forEach((el) => {
+      el.textContent = (errors as Record<string, string>)[el.id.slice(6)] || "";
+    });
+    return Object.keys(errors).length > 0;
+  }
+  /** Show the parts that apply, refresh the buyer preview and the messages. */
+  function updateTimings() {
+    const f = readTimings();
+    const mode = preorderMode(f);
+    document.getElementById("t-same-day-body")!.style.display = f.sameDay ? "block" : "none";
+    document.getElementById("t-preorder-body")!.style.display = f.preorder ? "block" : "none";
+    document.getElementById("t-delivery-days-wrap")!.style.display = f.deliverOn === "days" ? "block" : "none";
+    document.querySelectorAll<HTMLElement>("[data-mode]").forEach((el) => {
+      el.style.display = el.dataset.mode === mode ? "block" : "none";
+    });
+    document.getElementById("t-close-label")!.textContent = optLabel(f.closesAt, false);
+    const db = dbFromForm(f);
+    // Same text as the schedule strip on the store page.
+    const html = [["🗓", sameDayScheduleLabel(db)], ["🌙", preorderScheduleLabel(db)]]
+      .map(([icon, line]) => (line ? `<div class="t-preview-line">${icon} ${line}</div>` : ""))
+      .join("");
+    document.getElementById("t-preview-lines")!.innerHTML = html || `<div class="t-preview-line">Buyers can't order from you right now.</div>`;
+    showTimingErrors();
+  }
+  for (const id of ["t-same-day", "t-preorder", "t-opens", "t-closes", "t-until", "t-win-from", "t-win-to", "t-pause-from", "t-pause-to", "p-open-days", "p-preorder-days", "p-delivery-days"]) {
+    document.getElementById(id)?.addEventListener("change", updateTimings);
+  }
+  document.querySelectorAll('input[name="t-deliver"]').forEach((r) => r.addEventListener("change", updateTimings));
 
   function getCheckedDays(prefix: string): string[] {
     return Array.from(document.querySelectorAll(`input[data-day-prefix="${prefix}"]:checked`)).map((el: any) => el.dataset.day);
@@ -535,11 +623,6 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       (window as any).v2Toast?.("success", `${title[0].toUpperCase()}${title.slice(1)} removed`);
     });
   }
-
-  // Toggle preorder schedule sub-section
-  document.getElementById("p-preorder")?.addEventListener("change", (e) => {
-    document.getElementById("p-preorder-schedule")!.style.display = (e.target as HTMLInputElement).checked ? "block" : "none";
-  });
 
   // Toggle delivery sub-settings visibility when checkbox changes
   document.getElementById("p-delivery")?.addEventListener("change", (e) => {
