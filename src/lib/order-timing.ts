@@ -12,8 +12,10 @@ export type SellerTimingInput = {
   preorder_cutoff_time?: string | null;
   /** Pre-order window opens at this time each pre-order day (null = closes_at / all day). */
   preorder_opens_at?: string | null;
-  /** Weekdays pre-orders are delivered (null/[] = the next morning). */
+  /** Weekdays pre-orders are delivered (null/[] = the next day). */
   delivery_days?: string[] | null;
+  /** Delivery times on (lib/delivery-slots): labels name the real delivery day. */
+  delivery_slots_enabled?: boolean | null;
 };
 
 export type PlacementKind = "same_day" | "preorder";
@@ -199,19 +201,20 @@ export function preorderDeliveryDateIST(seller: SellerTimingInput, nowMs = Date.
   return istDate(nextMorning);
 }
 
-/** "this morning" / "tomorrow morning" / "Tue morning" for an IST date (YYYY-MM-DD), seen at `nowMs`. */
+/** "today" / "tomorrow" / "Tue" for an IST delivery date (YYYY-MM-DD), seen at `nowMs`. No "morning":
+ *  delivery windows can run past it. */
 export function deliveryMorningLabel(date: string, nowMs = Date.now()): string {
-  if (date === istDate(nowMs)) return "this morning";
-  if (date === istDate(nowMs + DAY_MS)) return "tomorrow morning";
-  return `${DAY_LABELS[new Date(`${date}T00:00:00Z`).getUTCDay()]} morning`;
+  if (date === istDate(nowMs)) return "today";
+  if (date === istDate(nowMs + DAY_MS)) return "tomorrow";
+  return DAY_LABELS[new Date(`${date}T00:00:00Z`).getUTCDay()];
 }
 
-/** Order-placed status line for pre-order emails, with the delivery morning. */
+/** Order-placed status line for pre-order emails, with the delivery day. */
 export function preorderPlacedLabel(deliveryDate: string | null | undefined, nowMs = Date.now()): string {
   return `Pre-order placed — catch reserved for ${deliveryDate ? deliveryMorningLabel(deliveryDate, nowMs) : "tomorrow"}`;
 }
 
-/** Delivery morning label for a pre-order placed at `nowMs`, or null outside a window. */
+/** Delivery day label for a pre-order placed at `nowMs`, or null outside a window. */
 export function preorderDeliveryLabel(seller: SellerTimingInput, nowMs = Date.now()): string | null {
   const d = preorderDeliveryDateIST(seller, nowMs);
   return d ? deliveryMorningLabel(d, nowMs) : null;
@@ -227,17 +230,18 @@ export function preorderHoursLabel(seller: SellerTimingInput): string | null {
 }
 
 /**
- * Pre-order line for the seller page and lists: "Pre-order 1 PM–2 AM · next delivery Tue morning"
- * inside a window, "Pre-orders open at 1 PM" earlier on a pre-order day, else null.
- * pausesOnlyOnDeliveryDays sellers: "Pre-order now · next delivery Tue morning", and
- * "Pre-orders reopen at 1 PM · delivering today" during the delivery-day pause.
+ * Short pre-order line for the seller page and lists (founder: small text, no "morning"):
+ * inside a window "Pre-order · delivers Sat" / "· delivers tomorrow" when delivery times are on
+ * or the seller delivers on set days, else "Pre-order · next day". Earlier on a pre-order day
+ * "Pre-orders open at 1 PM"; pausesOnlyOnDeliveryDays sellers during the delivery-day pause
+ * "Pre-orders reopen at 1 PM · delivering today". Else null.
  */
 export function preorderStatusLabel(seller: SellerTimingInput, nowMs = Date.now()): string | null {
   const delivery = preorderDeliveryDateIST(seller, nowMs);
   const pauses = pausesOnlyOnDeliveryDays(seller);
   if (delivery) {
-    const hours = pauses ? "now" : preorderHoursLabel(seller);
-    return `Pre-order${hours ? ` ${hours}` : ""} · next delivery ${deliveryMorningLabel(delivery, nowMs)}`;
+    const setDays = seller.delivery_slots_enabled || (Array.isArray(seller.delivery_days) && seller.delivery_days.length > 0);
+    return setDays ? `Pre-order · delivers ${deliveryMorningLabel(delivery, nowMs)}` : "Pre-order · next day";
   }
   const start = toMinutes(seller.preorder_opens_at);
   if (start == null || isSellerEffectivelyOpen(seller, nowMs)) return null;
@@ -270,14 +274,14 @@ export function sameDayScheduleLabel(seller: SellerTimingInput): string | null {
 }
 
 /**
- * Store-page pre-order line: "Pre-orders · Closed Sun · 6 PM–3 AM · delivered next morning", or
- * "Pre-orders open all week · paused Tue & Sat 2 AM–1 PM · delivered Tue & Sat mornings". Null when off.
+ * Store-page pre-order line: "Pre-orders · Closed Sun · 6 PM–3 AM · delivered next day", or
+ * "Pre-orders open all week · paused Tue & Sat 2 AM–1 PM · delivered Tue & Sat". Null when off.
  */
 export function preorderScheduleLabel(seller: SellerTimingInput): string | null {
   const days = Array.isArray(seller.preorder_days) ? seller.preorder_days : [];
   if (!seller.accepts_preorder || !days.length) return null;
   const dd = Array.isArray(seller.delivery_days) ? seller.delivery_days : [];
-  const delivered = dd.length ? `delivered ${WEEK.filter((d) => dd.includes(d)).map(dayLabel).join(" & ")} mornings` : "delivered next morning";
+  const delivered = dd.length ? `delivered ${WEEK.filter((d) => dd.includes(d)).map(dayLabel).join(" & ")}` : "delivered next day";
   const pause = preorderPauseLabel(seller);
   if (pause) return `Pre-orders open ${days.length === 7 ? "all week" : daysLabel(days)} · ${pause} · ${delivered}`;
   const sameDays = daysLabel(Array.isArray(seller.open_days) ? seller.open_days : WEEK) === daysLabel(days);

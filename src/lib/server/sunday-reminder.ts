@@ -57,7 +57,7 @@ export function planSundayReminders(buyers: ReminderBuyer[], sellers: ReminderSe
     const name = cleanSellerName(s.name);
     const until = preorderOpenUntil(s, nowMs);
     // Delivery-day sellers (e.g. Tue + Sat only) deliver tonight's pre-orders later than Sunday.
-    if (s.has_preorder_listing && until != null && preorderDeliveryLabel(s, until) === "tomorrow morning") {
+    if (s.has_preorder_listing && until != null && preorderDeliveryLabel(s, until) === "tomorrow") {
       const cut = timeLabel(s.preorder_cutoff_time);
       return [{ s, name, line: `${name} is taking pre-orders for Sunday${cut ? ` until ${cut} tonight` : " tonight"}.` }];
     }

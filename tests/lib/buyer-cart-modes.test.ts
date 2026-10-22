@@ -176,3 +176,40 @@ describe("nextModeBoundaryMs", () => {
     expect(Cart.placementAt(s, Cart.nextModeBoundaryMs(s, at(13, 59)))).toBe("preorder");
   });
 });
+
+describe("hydrateFromServer", () => {
+  // One listing, two packs: the base pack (id "default", stored as "" on the server) and Half kg.
+  const quarter = line({ pricing_option_id: "default", pricing_label: "Quarter kg", qty: 0.25, bundle_size: 0.25, price: 800, mode: "preorder" });
+  const half = line({ name: "Pomfret (Half kg)", pricing_option_id: "half", pricing_label: "Half kg", qty: 0.5, bundle_size: 0.5, price: 760, mode: "preorder" });
+  const row = (i: any) => ({
+    listing_id: i.listing_id, seller_id: "s1", seller_name: "Sea", species_display: "pomfret",
+    pricing_option_id: i.pricing_option_id === "default" ? "" : i.pricing_option_id,
+    placement_kind: i.mode, qty: i.qty, qty_unit: "kg", price_snapshot: i.price, pricing_label: i.pricing_label,
+  });
+  const lines = () => Object.values(Cart.getCart("preorder"))
+    .map((i) => [i.pricing_option_id, i.qty, i.price, i.bundle_size])
+    .sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+  const serveCart = (items: any[]) => vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ items }))));
+
+  beforeEach(() => {
+    store.set("rlf_buyer_id", "b1");
+    Cart.setCartMode("preorder");
+  });
+
+  for (const [label, order] of [["half row first", [half, quarter]], ["base row first", [quarter, half]]] as const) {
+    it(`base pack + Half kg keep their own qty and price after reload (${label})`, async () => {
+      serveCart([]);
+      Cart.addItem(half);
+      Cart.addItem(quarter);
+      serveCart(order.map(row));
+      await Cart.hydrateFromServer();
+      expect(lines()).toEqual([["default", 0.25, 800, 0.25], ["half", 0.5, 760, 0.5]]);
+    });
+  }
+
+  it("empty local cart (new device): the base row does not land on the Half kg line", async () => {
+    serveCart([row(half), row(quarter)]);
+    await Cart.hydrateFromServer();
+    expect(lines()).toEqual([["", 0.25, 800, undefined], ["half", 0.5, 760, undefined]]);
+  });
+});

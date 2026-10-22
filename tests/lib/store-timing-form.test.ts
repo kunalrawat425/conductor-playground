@@ -53,10 +53,10 @@ describe("store timings form: existing sellers round-trip unchanged", () => {
 
   it("preview lines match the store page", () => {
     expect(sameDayScheduleLabel(dbFromForm(formFromDb(fishtokri)))).toBe("Same day orders · Closed Mon · 8 AM–6 PM");
-    expect(preorderScheduleLabel(dbFromForm(formFromDb(fishtokri)))).toBe("Pre-orders · Closed Sun · 6 PM–3 AM · delivered next morning");
+    expect(preorderScheduleLabel(dbFromForm(formFromDb(fishtokri)))).toBe("Pre-orders · Closed Sun · 6 PM–3 AM · delivered next day");
     expect(sameDayScheduleLabel(dbFromForm(formFromDb(nomadic)))).toBeNull();
     expect(preorderScheduleLabel(dbFromForm(formFromDb(nomadic)))).toBe(
-      "Pre-orders open all week · paused Tue & Sat 2 AM–1 PM · delivered Tue & Sat mornings"
+      "Pre-orders open all week · paused Tue & Sat 2 AM–1 PM · delivered Tue & Sat"
     );
     expect(preorderScheduleLabel({ ...nomadic, accepts_preorder: false })).toBeNull();
   });
@@ -67,7 +67,7 @@ describe("store timings form: existing sellers round-trip unchanged", () => {
     expect(storePreorderLabel(fishtokriSlots)).toBe("Pre-order anytime · pick your day & time");
     expect(storePreorderLabel(nomadicSlots)).toBe("Pre-order anytime · delivered Tue & Sat · paused Tue & Sat 2 AM–1 PM");
     // Slots off: the schedule line, as before.
-    expect(storePreorderLabel(fishtokri)).toBe("Pre-orders · Closed Sun · 6 PM–3 AM · delivered next morning");
+    expect(storePreorderLabel(fishtokri)).toBe("Pre-orders · Closed Sun · 6 PM–3 AM · delivered next day");
     expect(storePreorderLabel({ ...fishtokriSlots, accepts_preorder: false })).toBeNull();
   });
 });
@@ -91,7 +91,7 @@ describe("store timings form → DB values", () => {
   it("no same-day + next morning: every day from start to stop", () => {
     const db = dbFromForm(f({ sameDay: false, deliverOn: "next", stopAt: "02:00", startAt: "13:00" }));
     expect(db).toMatchObject({ open_days: [], preorder_days: ALL, preorder_cutoff_time: "02:00", preorder_opens_at: "13:00", delivery_days: null });
-    expect(preorderScheduleLabel(db)).toBe("Pre-orders · Every day · 1 PM–2 AM · delivered next morning");
+    expect(preorderScheduleLabel(db)).toBe("Pre-orders · Every day · 1 PM–2 AM · delivered next day");
   });
 
   it("legacy null open_days loads as every day", () => {

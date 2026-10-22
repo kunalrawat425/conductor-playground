@@ -201,7 +201,7 @@ const categories = [
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
   import { cleanSellerName, sellerHref } from "../lib/seller-display";
   import { LOGO_URL } from "../lib/brand";
-  import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderStatusLabel, todayDayName } from "../lib/order-timing";
+  import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderStatusLabel, timeLabel, todayDayName } from "../lib/order-timing";
   import { menuBySeller } from "../lib/menu-order";
   import { readSavedLocation, saveGpsDefault } from "../lib/saved-location";
   import type { Seller, FishListing } from "../lib/supabase";
@@ -678,14 +678,17 @@ const categories = [
           ? (g.preorderMode ? "closed-preorder" : "closed")
           : (g.listings.length === 0 && g.preorderAvailableToday ? "pre-order-only" : "open");
 
-        // ONE status tag per card — mutually exclusive states.
-        const statusBadge = status === "open"
-          ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md v2-badge-bold">Open now</span>`
+        // ONE short status badge per card (founder: small text, no "morning"), e.g.
+        // "Open now · same day", "Pre-order · delivers Sat", "Pre-order · next day", "Opens 6 AM".
+        const [statusText, statusColor] = status === "open"
+          ? ["Open now · same day", "v2-badge-green"]
           : status === "closed-preorder"
-            ? `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-orders open</span>`
+            ? [g.preorderLine || "Pre-order", "v2-badge-indigo"]
             : status === "closed"
-              ? (s.opens_at ? `<span class="v2-badge v2-badge-tag v2-badge-green v2-badge-size-md v2-badge-bold">Opens at ${s.opens_at.slice(0, 5)}</span>` : ``)
-              : `<span class="v2-badge v2-badge-tag v2-badge-indigo v2-badge-size-md v2-badge-bold">Pre-order only</span>`;
+              ? [s.opens_at ? `Opens ${timeLabel(s.opens_at)}` : "", "v2-badge-green"]
+              : ["Pre-order only", "v2-badge-indigo"];
+        const statusBadge = statusText
+          ? `<span class="v2-badge v2-badge-tag ${statusColor} v2-badge-size-md v2-badge-bold">${escapeHtml(statusText)}</span>` : "";
 
         const pickupTag = !s.has_delivery
           ? `<span class="v2-badge v2-badge-tag v2-badge-size-md">Pickup only</span>` : "";
@@ -696,26 +699,13 @@ const categories = [
         const distStr = g.dist != null ? `${g.dist.toFixed(1)} km` : "";
         const subParts = [stripContactInfo(s.location_name || s.location || ""), distStr].filter(Boolean).join(" · ");
 
-        // Offer badge logic
-        let offerLabel = "", offerColor = "v2-badge-brand";
-        if (g.open && g.listings.length > 0) {
-          offerLabel = "Same-day catch";
-          offerColor = "v2-badge-brand";
-        } else if (g.open && g.preorderAvailableToday) {
-          offerLabel = "Pre-order only";
-          offerColor = "v2-badge-indigo";
-        } else if (!g.open && g.preorderAvailableToday) {
-          // "Pre-order 1 PM–2 AM · next delivery Tue morning" / "Pre-orders open at 1 PM"
-          offerLabel = g.preorderLine || "Pre-order available";
-          offerColor = "v2-badge-indigo";
-        } else {
-          offerLabel = "Closed today";
-          offerColor = "v2-badge-red";
-        }
-        const offerBadge = status === "closed" ? "" : `<span class="v2-badge v2-badge-offer ${offerColor} v2-badge-size-md">${offerLabel}</span>`;
-
+        // "Min ₹400 · free delivery over ₹1500" (sentence case), "Home delivery" with neither.
+        const deliveryText = [
+          Number(s.min_order_amount) > 0 ? `min ₹${s.min_order_amount}` : "",
+          Number(s.free_delivery_above) > 0 ? `free delivery over ₹${s.free_delivery_above}` : "",
+        ].filter(Boolean).join(" · ") || "home delivery";
         const deliveryBar = s.has_delivery
-          ? `<div class="v2-sc-delivery">🚲 Delivery available${Number(s.free_delivery_above) > 0 ? ` · Free above ₹${s.free_delivery_above}` : ''}${Number(s.min_order_amount) > 0 ? ` · Min ₹${s.min_order_amount}` : ''}</div>`
+          ? `<div class="v2-sc-delivery">🚲 ${deliveryText.charAt(0).toUpperCase() + deliveryText.slice(1)}</div>`
           : "";
 
         const fullyClosed = false; // We no longer grey out or disable the card
@@ -733,7 +723,6 @@ const categories = [
               : `<img src="${LOGO_URL}" alt="Relifish" class="v2-sc-relifish-logo" />`
             }
             <div class="v2-sc-img-badges">
-              ${offerBadge}
               ${ratingBadge}
             </div>
           </div>

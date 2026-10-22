@@ -328,17 +328,17 @@ export async function hydrateFromServer(): Promise<void> {
 
     const local = readAll();
     for (const it of items) {
-      // Server wins. Key by listing + price tier + mode exactly like addItem does —
-      // writing local[listing_id] next to an existing "listing:opt" line made a
-      // second line for the same item, i.e. two orders and two charges.
-      // Legacy server rows have no tier: reuse the local line for that listing.
+      // Server wins. Key by listing + price tier + mode exactly like addItem does, so each
+      // pack stays its own line. "" is the base pack ("default"), never "any line of this
+      // listing": matching by listing put the base pack's qty on another pack's line
+      // (Half kg became 0.25 kg at the Half kg price).
       const opt = it.pricing_option_id || "";
       // Before migration 079 the server has no mode (placement_kind null): keep a
       // local pre-order line's mode rather than duplicating it into the same-day cart.
       const mode: CartMode = it.placement_kind
         ? lineMode({ mode: it.placement_kind })
         : (local[cartKey(it.listing_id, opt, "preorder")] && !local[cartKey(it.listing_id, opt)] ? "preorder" : "same_day");
-      const k = opt ? cartKey(it.listing_id, opt, mode) : (findCartKey(local, it.listing_id) ?? cartKey(it.listing_id, "", mode));
+      const k = cartKey(it.listing_id, opt, mode);
       local[k] = {
         listing_id: it.listing_id,
         seller_id: it.seller_id,
