@@ -692,18 +692,12 @@ const { id } = Astro.params;
       const savedCuts2 = (o.cut_style || "").split(",").filter(Boolean);
       const cutLabels2: Record<string, string> = { whole: "🐟 Whole", cleaned: "✂️ Cleaned", cut: "🔪 Cut" };
       const cutDisplay2 = savedCuts2.map(c => cutLabels2[c] || c).join(", ");
-      const statusMsg = o.status === "out_for_delivery"
-        ? "🛵 On the way — preferences locked"
-        : "✅ Order ready — preferences locked";
-      const hasAnyPref = cutDisplay2 || o.buyer_notes;
+      const statusMsg = o.status === "out_for_delivery" ? "🛵 On the way" : "✅ Ready for pickup";
       actions.innerHTML = `
         <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
-          <div style="font:700 13px Inter;color:#059669;margin-bottom:6px;">${statusMsg}</div>
-          ${hasAnyPref
-            ? `${cutDisplay2 ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Cut: ${cutDisplay2}</div>` : ""}
-               ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);">📝 ${escape(o.buyer_notes)}</div>` : ""}`
-            : `<div style="font:400 12px Inter;color:var(--v2-ink-3);">No preference added</div>`}
-          <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:8px;">No changes possible after this point.</div>
+          <div style="font:700 13px Inter;color:#059669;">${statusMsg}</div>
+          ${cutDisplay2 ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-top:6px;">Cut: ${cutDisplay2}</div>` : ""}
+          ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(o.buyer_notes)}</div>` : ""}
         </div>`;
     } else if (["confirmed", "paid", "scheduled"].includes(o.status)) {
       // Preferences are chosen in checkout, before payment. After payment they are read-only here.
@@ -712,7 +706,8 @@ const { id } = Astro.params;
       const headline = o.status === "paid"
         ? "✅ Payment received — waiting for the seller to confirm"
         : o.status === "confirmed"
-          ? "✅ Seller confirmed — your fish is being prepared"
+          // A pre-order can be days away: don't say "being prepared" on Thursday for Sunday.
+          ? (isPreorderCatchFlow(o) || o.is_preorder || o.placement_kind === "preorder" ? "✅ Seller confirmed your pre-order" : "✅ Seller confirmed — your fish is being prepared")
           : "🗓️ Order scheduled";
       actions.innerHTML = `
         <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">

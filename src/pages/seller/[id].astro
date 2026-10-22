@@ -378,17 +378,17 @@ const tags = [
           const pause = preorderPauseLabel(seller);
           // Slots on: pre-orders any time for a later day; the hours/"next morning" wording no longer applies.
           if (slotLine) return (
-            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
+            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;white-space:normal;line-height:1.35;">
               🌙 {slotLine}{pause ? ` · ${pause}` : ""}
             </span>
           );
           if (pause) return (
-            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
+            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;white-space:normal;line-height:1.35;">
               🌙 Pre-orders open {preorderDays.length === 7 ? "all week" : preorderDaysLabel} · {pause} · {deliveryDaysLabel}
             </span>
           );
           return (
-            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
+            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;white-space:normal;line-height:1.35;">
               🌙 Pre-orders · {sameDays ? "Same days" : preorderDaysLabel}
               {hours ? ` · ${hours}` : ""} · {deliveryDaysLabel}
             </span>

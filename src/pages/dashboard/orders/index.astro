@@ -671,7 +671,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         } else if (o.status === "confirmed") {
           const preorderPriceBlock = needsFinalPrice
             ? (() => {
-                const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "—";
+                // The fish part of the payment (the delivery fee is separate), the same base the server prices against.
+                const paidAmt = o.paid_amount ? Math.max(0, Number(o.paid_amount) - (Number(o.delivery_fee) || 0)).toLocaleString("en-IN") : "—";
                 const listingOpts2 = o.listing?.pricing_options || [];
                 const matchedOpt = listingOpts2.find((x: any) => x?.id && x.id === o.pricing_option_id) || listingOpts2[0] || null;
                 const priceMin = matchedOpt?.preorder_price_min;
@@ -681,7 +682,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                   : "";
                 return `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;margin-top:8px;">
                   <div style="font:500 11px Inter;color:var(--v2-ink-3);">🌙 Pre-order${deliverLabel ? ` for ${deliverLabel}` : ""}. Set the actual price once you have the fish.</div>
-                  <div style="font:600 12px Inter;color:#7C3AED;">Amount received: ₹${paidAmt}</div>
+                  <div style="font:600 12px Inter;color:#7C3AED;">Paid for the fish: ₹${paidAmt}</div>
                   ${rangeHtml}
                   <div style="display:flex;gap:8px;align-items:center;">
                     <input type="number" placeholder="Final price (₹)" id="final-price-${o.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
@@ -777,7 +778,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                 <input type="number" placeholder="Final price (₹)" id="final-price-${r.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
                 <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;white-space:nowrap;" data-action="set_final_price" data-order-id="${r.id}">Set price</button>
               </div>
-              <div style="font:400 11px Inter;color:#D97706;margin-top:4px;">Paid ₹${(Number(r.paid_amount) || 0).toLocaleString("en-IN")}${range}. Lower → the difference is refunded automatically; higher → buyer pays the difference.</div>` : ""}
+              <div style="font:400 11px Inter;color:#D97706;margin-top:4px;">Paid ₹${Math.max(0, (Number(r.paid_amount) || 0) - (Number(r.delivery_fee) || 0)).toLocaleString("en-IN")} for the fish${range}. Lower → the difference is refunded automatically; higher → buyer pays the difference.</div>` : ""}
             ${live.length > 1 && REMOVABLE.includes(r.status) ? `<button class="v2-btn v2-btn-sm" style="margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="item_cancel" data-cancel-status="${DECLINE_FROM.includes(r.status) ? "declined" : "cancelled"}" data-order-id="${r.id}">Remove this item · refund buyer</button>` : ""}
           </div>`;
         };
