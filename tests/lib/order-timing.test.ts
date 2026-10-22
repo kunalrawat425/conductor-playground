@@ -223,8 +223,8 @@ describe("overnight pre-order cutoff", () => {
       expect(classifyPlacementAtOrderTime(fishtokri, t)).toBe("preorder");
       expect(preorderWindowDaysBack(fishtokri, t)).toBe(1);
       expect(preorderDeliveryDateIST(fishtokri, t)).toBe(date("wed"));
-      expect(preorderDeliveryLabel(fishtokri, t)).toBe("this morning");
-      expect(preorderPlacedLabel(preorderDeliveryDateIST(fishtokri, t), t)).toBe("Pre-order placed — catch reserved for this morning");
+      expect(preorderDeliveryLabel(fishtokri, t)).toBe("today");
+      expect(preorderPlacedLabel(preorderDeliveryDateIST(fishtokri, t), t)).toBe("Pre-order placed — catch reserved for today");
     });
     it("Wed 03:30 → closed until same-day opens at 8 AM", () => {
       const t = at("wed", 3, 30);
@@ -246,8 +246,12 @@ describe("overnight pre-order cutoff", () => {
     });
     it("labels: hours and next delivery", () => {
       expect(preorderHoursLabel(fishtokri)).toBe("6 PM–3 AM");
-      expect(preorderStatusLabel(fishtokri, at("tue", 19))).toBe("Pre-order 6 PM–3 AM · next delivery tomorrow morning");
-      expect(preorderStatusLabel(fishtokri, at("wed", 1, 30))).toBe("Pre-order 6 PM–3 AM · next delivery this morning");
+      expect(preorderStatusLabel(fishtokri, at("tue", 19))).toBe("Pre-order · next day");
+      expect(preorderStatusLabel(fishtokri, at("wed", 1, 30))).toBe("Pre-order · next day");
+      // Delivery times on: the real day, no "morning".
+      const slots = { ...fishtokri, delivery_slots_enabled: true };
+      expect(preorderStatusLabel(slots, at("tue", 19))).toBe("Pre-order · delivers tomorrow");
+      expect(preorderStatusLabel(slots, at("wed", 1, 30))).toBe("Pre-order · delivers today");
     });
   });
 
@@ -330,10 +334,10 @@ describe("overnight pre-order cutoff", () => {
     it("labels: in the window and during the delivery-day pause", () => {
       expect(pausesOnlyOnDeliveryDays(nomadic)).toBe(true);
       expect(preorderPauseLabel(nomadic)).toBe("paused Tue & Sat 2 AM–1 PM");
-      expect(preorderStatusLabel(nomadic, at("sun", 6))).toBe("Pre-order now · next delivery Tue morning");
-      expect(preorderStatusLabel(nomadic, at("tue", 13, 30))).toBe("Pre-order now · next delivery Sat morning");
-      expect(preorderStatusLabel(nomadic, at("wed", 4))).toBe("Pre-order now · next delivery Sat morning");
-      expect(preorderStatusLabel(nomadic, at("mon", 23))).toBe("Pre-order now · next delivery tomorrow morning");
+      expect(preorderStatusLabel(nomadic, at("sun", 6))).toBe("Pre-order · delivers Tue");
+      expect(preorderStatusLabel(nomadic, at("tue", 13, 30))).toBe("Pre-order · delivers Sat");
+      expect(preorderStatusLabel(nomadic, at("wed", 4))).toBe("Pre-order · delivers Sat");
+      expect(preorderStatusLabel(nomadic, at("mon", 23))).toBe("Pre-order · delivers tomorrow");
       expect(preorderStatusLabel(nomadic, at("tue", 2, 30))).toBe("Pre-orders reopen at 1 PM · delivering today");
       expect(preorderStatusLabel(nomadic, at("sat", 12, 59))).toBe("Pre-orders reopen at 1 PM · delivering today");
       expect(closedSellerMessage(nomadic, at("tue", 2, 30))).toBe("Pre-orders reopen at 1 PM today.");
@@ -349,7 +353,7 @@ describe("overnight pre-order cutoff", () => {
       expect(classifyPlacementAtOrderTime(daily, at("wed", 13))).toBe("preorder");
       expect(preorderDeliveryDateIST(daily, at("wed", 13))).toBe(date("thu"));
       expect(preorderStatusLabel(daily, at("wed", 4))).toBe("Pre-orders open at 1 PM");
-      expect(preorderStatusLabel(daily, at("wed", 13))).toBe("Pre-order 1 PM–2 AM · next delivery tomorrow morning");
+      expect(preorderStatusLabel(daily, at("wed", 13))).toBe("Pre-order · next day");
     });
     it("Fishtokri is unchanged, even with delivery days set (it has same-day days)", () => {
       for (const s of [fishtokri, { ...fishtokri, delivery_days: ["wed"] }]) {
@@ -362,7 +366,7 @@ describe("overnight pre-order cutoff", () => {
         expect(classifyPlacementAtOrderTime(s, at("sun", 19))).toBe("closed");
         expect(classifyPlacementAtOrderTime(s, at("mon", 19))).toBe("preorder");
       }
-      expect(preorderStatusLabel(fishtokri, at("tue", 19))).toBe("Pre-order 6 PM–3 AM · next delivery tomorrow morning");
+      expect(preorderStatusLabel(fishtokri, at("tue", 19))).toBe("Pre-order · next day");
       expect(preorderDeliveryDateIST(fishtokri, at("wed", 1, 30))).toBe(date("wed"));
     });
     it("the seller page switches mode at 1 PM and 2 AM", () => {
