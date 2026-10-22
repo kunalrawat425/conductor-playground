@@ -107,8 +107,8 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
 
     <div class="t-card">
       <label class="t-toggle">
-        <span><b>Same-day orders</b><small>Buyers order and get fish today</small></span>
-        <input type="checkbox" id="t-same-day" class="t-switch" role="switch" aria-label="I take same-day orders" />
+        <span><b>I take same-day orders</b><small>Buyers order and get fish today</small></span>
+        <input type="checkbox" id="t-same-day" class="t-switch" role="switch" />
       </label>
       <div id="t-same-day-body" class="t-body">
         <div class="t-label">Which days?</div>
@@ -121,8 +121,8 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
 
     <div class="t-card">
       <label class="t-toggle">
-        <span><b>Pre-orders</b><small>Buyers order now, fish delivered on a later morning</small></span>
-        <input type="checkbox" id="t-preorder" class="t-switch" role="switch" aria-label="I take pre-orders" />
+        <span><b>I take pre-orders</b><small>Buyers order now, fish delivered on a later morning</small></span>
+        <input type="checkbox" id="t-preorder" class="t-switch" role="switch" />
       </label>
       <div id="t-preorder-body" class="t-body">
         <div class="t-label">When do you deliver pre-orders?</div>
@@ -135,7 +135,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
 
         <div class="t-label" style="margin-top:16px;">When can buyers pre-order?</div>
         <div data-mode="afterClose">
-          <div class="t-row">From closing time (<span id="t-close-label"></span>) until <select id="t-until" class="t-select"></select></div>
+          <div class="t-row"><span>From closing time (<span id="t-close-label"></span>) until</span> <select id="t-until" class="t-select"></select></div>
           <div class="t-label" style="margin-top:12px;">On which days?</div>
           <div id="p-preorder-days" class="t-chips"></div>
           <div id="t-err-preorderDays" class="t-err"></div>
