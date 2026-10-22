@@ -9,8 +9,7 @@ import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates"
 import { toSellerView, STATUS_BY_TAB } from "../../../lib/seller-order-view";
 import { cartLabel, isLiveRow, rowPaise, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
 import { cancelReasonText } from "../../../lib/order-cancel";
-import { orderDeliveryDateIST, orderSlotText, sellerSlotError, slotDayLabel, SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
-import { sendOrderSms } from "../../../lib/server/sms";
+import { orderSlotText, sellerSlotError } from "../../../lib/delivery-slots";
 
 function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
@@ -516,12 +515,12 @@ export const POST: APIRoute = async ({ request, url }) => {
       return ok();
     }
 
-    // One push, one email and one SMS per party for the whole batch (a cart lists its items).
+    // One push and one email per party for the whole batch (a cart lists its items).
     const many = moved.length > 1;
     const species = many ? cartLabel(moved.map((m) => m.data.species)) : order.species || "Fish";
     // Slot / arriving-by time: told on confirm and out for delivery (not on delivered).
     const slotText = status === "confirmed" || status === "out_for_delivery" ? orderSlotText(data) : null;
-    const { data: seller } = await supabase.from("sellers").select(`email, ${SLOT_SELLER_COLUMNS}`).eq("id", seller_id).single();
+    const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
 
     // Notify buyer via push — never fail the order update if push throws
     if (order.buyer_id || order.buyer_phone) {
@@ -589,20 +588,6 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
     } catch (err) { console.warn("[seller/orders] status-change email fan-out failed", { order_id, err: (err as any)?.message }); }
-
-    // Buyer SMS (confirmed / out for delivery / delivered). sendOrderSms never throws.
-    if (["confirmed", "out_for_delivery", "completed"].includes(status)) {
-      const day = !slotText ? orderDeliveryDateIST(data, seller) : null;
-      const sms = await sendOrderSms(status, {
-        id: data.id,
-        phone: data.buyer_phone || order.buyer_phone,
-        fish: many ? species : capitalizeFishName(species),
-        when: slotText?.value || (day ? `${slotDayLabel(`${day}T12:00:00+05:30`)} morning` : "today"),
-        is_test: data.is_test,
-        order_type: data.order_type,
-      });
-      if (sms !== "sent") console.info("[seller/orders] buyer SMS", { order_id: data.id, status, sms });
-    }
 
     return ok();
   } catch (err: any) {
