@@ -10,7 +10,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
   <div class="legal-page">
     <div class="legal-header">
       <h1>Terms of Service</h1>
-      <p class="legal-updated">Last updated: April 2026</p>
+      <p class="legal-updated">Last updated: 22 October 2026</p>
     </div>
     <div class="legal-body">
       <h2>1. Introduction & Platform Nature</h2>
@@ -40,22 +40,35 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       <h2>5. Delivery, Pickup & Hyperlocal Shipping</h2>
       <ul>
-        <li><strong>Fulfillment Options:</strong> Buyers can choose scheduled self-pickup from the seller's local market/stall location, or choose hyperlocal home delivery (where offered by the seller).</li>
-        <li><strong>Fulfillment Terms:</strong> Each seller defines their own pickup windows, delivery radius (typically up to 5km), delivery fees, and free-delivery thresholds. These terms are presented transparently on each seller's page prior to order placement.</li>
-        <li><strong>Timeliness:</strong> While sellers aim to meet estimated slots (e.g., morning 7–9 AM), exact times are subject to morning catch landings and local logistics.</li>
+        <li><strong>Who delivers:</strong> {brandName} does not deliver orders. Each seller delivers their own orders, with their own staff or with a courier or bike-taxi service they book themselves (for example, Porter), at the seller's own cost. The order is the seller's responsibility, and at the seller's risk, until it is handed over to you.</li>
+        <li><strong>Fulfillment Options:</strong> Buyers can choose home delivery (where the seller offers it) or pick up the order from the seller's shop or stall (where the seller offers pickup). Pickup has no time slot; your order page shows when it is ready.</li>
+        <li><strong>Fulfillment Terms:</strong> Each seller sets their own timings, delivery radius (typically up to 5km), delivery fees, and free-delivery thresholds. These are shown on each seller's page and at checkout before you pay.</li>
+        <li><strong>Delivery Slots:</strong> For delivery orders, you pick a delivery slot at checkout. The slot is the seller's target window, not a guarantee. The seller may change the slot when accepting your order, or set an "arriving by" time when sending it out, and you will be notified.</li>
       </ul>
 
       <h2>6. Quality & Inspection</h2>
       <p>Seafood is highly perishable. Buyers are strongly encouraged to inspect all items immediately upon pickup or delivery. Any disputes regarding quality, freshness, weight, sizing, cleaning, or custom cuts must be raised directly with the seller at the time of receipt.</p>
 
-      <h2>7. Disclaimers & Limitation of Liability</h2>
+      <h2 id="sellers">7. For Sellers</h2>
+      <p>If you sell on {brandName}, these points apply to you in addition to the rest of these Terms:</p>
+      <ul>
+        <li><strong>Accurate Listings:</strong> Keep your menu, prices, stock and timings accurate and up to date.</li>
+        <li><strong>Licences:</strong> Hold any licence the law requires to sell food, such as FSSAI registration, and keep it valid.</li>
+        <li><strong>Orders:</strong> Accept or decline orders promptly. For pre-orders, confirm the final price before you start preparing.</li>
+        <li><strong>Delivery:</strong> You deliver your own orders, with your own staff or a courier you book (for example, Porter), at your own cost. Deliver within the buyer's chosen slot, or change the slot in your dashboard before it starts. Mark the order "Out for delivery" when it leaves and "Delivered" when the buyer receives it. The order is your responsibility until it is handed over.</li>
+        <li><strong>Couriers:</strong> If you use a courier, you are responsible for how they handle the order, its timing and food safety. You may share the buyer's delivery address with that courier only to deliver that order.</li>
+        <li><strong>Buyer Data:</strong> Use buyer details only to fulfil the order. Do not use them for marketing, and do not contact buyers outside the order.</li>
+        <li><strong>Refunds:</strong> If you cannot fulfil an order, you decline it, or it is not delivered, the buyer gets a full refund to their original payment method.</li>
+      </ul>
+
+      <h2>8. Disclaimers & Limitation of Liability</h2>
       <p><strong>THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE."</strong> TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, {brandName} DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.</p>
       <p>{brandName} shall not be liable for the quality, safety, healthfulness, preparation, freshness, weight, or delivery of seafood listed by independent sellers. Any transactions, agreements, or disputes are strictly between you and the respective seller.</p>
 
-      <h2>8. Changes to Terms</h2>
+      <h2>9. Changes to Terms</h2>
       <p>We may update these Terms from time to time to reflect operational or regulatory changes. Any updates will be posted on this page with an updated "Last updated" date. Continued use of the platform after updates implies acceptance of the revised Terms.</p>
 
-      <h2>9. Contact & Support</h2>
+      <h2>10. Contact & Support</h2>
       <p>{brandName} · Mumbai, India · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
     </div>
   </div>
@@ -92,6 +105,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
     margin: 36px 0 12px;
     padding-bottom: 6px;
     border-bottom: 1px solid #f1f5f9;
+    scroll-margin-top: 76px; /* clear the 60px sticky nav for /terms#sellers */
   }
   .legal-body p { margin: 0 0 16px; }
   .legal-body ul { padding-left: 22px; margin: 0 0 16px; }
