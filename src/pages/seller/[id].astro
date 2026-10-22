@@ -27,7 +27,6 @@ import {
 } from "../../lib/order-timing";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
-import { getAreaBySlug } from "../../lib/areas";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 import { deliveryDaysAt } from "../../lib/delivery-slots";
@@ -66,7 +65,6 @@ const sellerName = cleanSellerName(seller?.name) || "Seller";
 // Live area from the seller's coordinates (e.g. "Thane") beats a vague profile text like "Mumbai".
 const sellerLocation = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const SITE = SITE_URL;
-const sellerArea = sellerLocation ? getAreaBySlug(sellerLocation.toLowerCase()) : null;
 const reviewSummary = await getSellerReviews(seller ? [seller.id] : [], 2);
 const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
 // Per-fish product pages live under /s/<slug>/<species> (single-product pages for Google).
@@ -481,11 +479,6 @@ const tags = [
 
 
   {!notFound && <ReviewsBlock summary={reviewSummary} title={`Buyer ratings for ${sellerName}`} allHref={`${sellerHref(seller.name, seller.id)}/reviews`} />}
-  {!notFound && sellerArea && (
-    <p style="font:400 13px/1.5 Inter;margin:0;padding:12px 16px;border-top:1px solid var(--v2-border);">
-      {sellerName} delivers in {sellerArea.name}. <a href={`/area/${sellerArea.slug}`} style="color:var(--v2-brand);font-weight:600;">See all fish sellers and today's prices in {sellerArea.name} →</a>
-    </p>
-  )}
   <!-- Hyperlocal footer -->
   {!notFound && (
     <div style="background:var(--v2-bg-2);border-top:1px solid var(--v2-border);padding:20px 16px;text-align:center;">
