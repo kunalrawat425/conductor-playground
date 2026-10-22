@@ -2043,6 +2043,14 @@ body.v2-has-cart {
 .v2-sheet-open {
   display: flex;
 }
+/* Non-dismissible sheet (login wall): the page behind can't scroll while it's up. */
+.v2-sheet-backdrop[data-sheet-locked] {
+  overscroll-behavior: contain;
+}
+html:has(.v2-sheet-backdrop[data-sheet-locked].v2-sheet-open),
+html:has(.v2-sheet-backdrop[data-sheet-locked].v2-sheet-open) body {
+  overflow: hidden;
+}
 .v2-sheet {
   background: var(--v2-bg);
   border-radius: var(--v2-radius-lg) var(--v2-radius-lg) 0 0;
