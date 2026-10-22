@@ -313,7 +313,7 @@ const tags = [
 >
   <Toast />
   <Modal />
-  <LoginSheet id="seller-login-sheet" role="buyer" redirectTo={`/seller/${id}`} />
+  <LoginSheet id="seller-login-sheet" role="buyer" redirectTo={`/seller/${id}`} dismissible={false} />
   <CartStackSheet id="seller-cart-stack" />
   <CheckoutSheet id="seller-checkout" />
   <!-- Elevated z-index so address picker paints above checkout (main stacking context). -->
@@ -1285,7 +1285,7 @@ const tags = [
     function markResume(sid) { try { sessionStorage.setItem(RESUME_KEY, JSON.stringify({ sid, t: Date.now() })); } catch {} }
 
     // One login sheet serves both checkout (reloads the page after login) and the "+" gate
-    // (finishes the tapped add in place via window.v2AfterLogin). Closing it runs nothing.
+    // (finishes the tapped add in place via window.v2AfterLogin). It can't be dismissed; only login closes it.
     const loginTitleEl = document.getElementById("seller-login-sheet-title");
     const loginTitleDefault = loginTitleEl?.textContent || "Sign in";
     function openLogin(title, afterLogin) {
@@ -1623,6 +1623,7 @@ const tags = [
       try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
       if (!buyerId || !buyerPhone) {
         markResume(activeCheckoutSellerId || sellerId);
+        window.v2CloseSheet?.("seller-checkout"); // else checkout (later in the DOM) paints over the login wall
         openLogin();
         return;
       }
@@ -1849,22 +1850,12 @@ const tags = [
     render();
 
     // Logged-out buyers: ask for the phone once the menu is on screen (client-side only, so the
-    // server-rendered menu stays crawlable; never for bots/prerenderers). Dismissed → not again this
-    // session; the "+" gate still asks.
-    const LOGIN_PROMPT_KEY = "rf_login_prompt_dismissed";
+    // server-rendered menu stays crawlable; never for bots/prerenderers). The sheet can't be
+    // dismissed (founder): it closes only on login; Back leaves the page.
     function promptLoginOnLoad() {
       if (isSignedIn() || /bot|crawl|spider|slurp|facebookexternalhit|preview|prerender|lighthouse|headlesschrome/i.test(navigator.userAgent)) return;
-      try { if (sessionStorage.getItem(LOGIN_PROMPT_KEY)) return; } catch {}
       track("page_login_prompt", {});
       openLogin("Log in with your phone to see today's fish", () => render());
-      const bd = document.getElementById("seller-login-sheet-backdrop");
-      if (!bd) return;
-      const mo = new MutationObserver(() => {
-        if (bd.classList.contains("v2-sheet-open")) return;
-        mo.disconnect();
-        if (!isSignedIn()) try { sessionStorage.setItem(LOGIN_PROMPT_KEY, "1"); } catch {}
-      });
-      mo.observe(bd, { attributes: true, attributeFilter: ["class"] });
     }
     setTimeout(promptLoginOnLoad, 600);
 

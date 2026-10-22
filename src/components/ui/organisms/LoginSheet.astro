@@ -6,8 +6,10 @@ interface Props {
   id?: string;
   role?: "buyer" | "seller";
   redirectTo?: string;
+  /** false = login wall (store page + checkout): no drag/swipe/backdrop close; only logging in closes it. */
+  dismissible?: boolean;
 }
-const { id = "v2-login", role = "buyer", redirectTo = "/shop" } = Astro.props;
+const { id = "v2-login", role = "buyer", redirectTo = "/shop", dismissible = true } = Astro.props;
 const title = role === "seller" ? "Seller sign in" : "Sign in";
 const termsHref = role === "seller" ? "/terms#sellers" : "/terms";
 const termsLabel = role === "seller" ? "Terms (incl. seller responsibilities)" : "Terms";
@@ -15,8 +17,9 @@ const SESSION_KEY = `otp_session_${role}`;
 const RESEND_COOLDOWN = 30;
 const MAX_ATTEMPTS = 3;
 ---
-<!-- No ✕ (founder): back out by tapping outside, swiping down, or the phone's back button. -->
-<BottomSheet id={id} title={title} showClose={false}>
+<!-- No ✕ (founder): back out by tapping outside, swiping down, or the phone's back button.
+     dismissible={false}: none of those close it; Back just leaves the page. -->
+<BottomSheet id={id} title={title} showClose={false} dismissible={dismissible}>
   <!-- Step 1: phone entry -->
   <div id={`${id}-step1`}>
     <p style="font:400 13px Inter;color:var(--v2-ink-2);margin:0 0 16px;line-height:1.5;">
@@ -63,7 +66,7 @@ const MAX_ATTEMPTS = 3;
   </div>
 </BottomSheet>
 
-<script define:vars={{ id, role, redirectTo, SESSION_KEY, RESEND_COOLDOWN, MAX_ATTEMPTS }}>
+<script define:vars={{ id, role, redirectTo, dismissible, SESSION_KEY, RESEND_COOLDOWN, MAX_ATTEMPTS }}>
   let currentPhone = "";
   let otpAttempts = 0;
   let countdownTimer = null;
@@ -141,8 +144,9 @@ const MAX_ATTEMPTS = 3;
 
   // Back out without a ✕: swipe the sheet down from its top, or press the browser/phone back
   // button (opening adds a history entry; back closes the sheet instead of leaving the page).
+  // Not dismissible: no history entry (Back leaves the page as normal) and no drag.
   const backdrop = document.getElementById(`${id}-backdrop`);
-  const panel = backdrop?.querySelector(".v2-sheet");
+  const panel = dismissible ? backdrop?.querySelector(".v2-sheet") : null;
   const isOpen = () => !!backdrop?.classList.contains("v2-sheet-open");
   const closeSheet = () => window.v2CloseSheet ? window.v2CloseSheet(id) : backdrop?.classList.remove("v2-sheet-open");
   let wasOpen = false;
@@ -152,13 +156,13 @@ const MAX_ATTEMPTS = 3;
     wasOpen = open;
     if (open) {
       if (panel) panel.style.transform = "";
-      try { history.pushState({ ...(history.state || {}), rlfSheet: id }, ""); } catch {}
+      if (dismissible) try { history.pushState({ ...(history.state || {}), rlfSheet: id }, ""); } catch {}
     } else {
       window.v2AfterLogin = null; // closed without logging in: the pending action is dropped
       if (history.state?.rlfSheet === id) history.back();
     }
   }).observe(backdrop, { attributes: true, attributeFilter: ["class"] });
-  window.addEventListener("popstate", () => { if (isOpen()) closeSheet(); });
+  if (dismissible) window.addEventListener("popstate", () => { if (isOpen()) closeSheet(); });
   let dragY = null;
   panel?.addEventListener("touchstart", (e) => {
     // Only from the handle/title row, so typing and scrolling inside the form still work.
