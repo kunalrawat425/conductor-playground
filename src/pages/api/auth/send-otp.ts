@@ -4,12 +4,11 @@ import { randomInt } from "node:crypto";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { otpDevBypassAllowed } from "../../../lib/server/otp-mode";
 import { clientKey, overLimit } from "../../../lib/server/rate-limit";
+import { sendSms } from "../../../lib/server/sms";
 
 export const prerender = false;
 
-const msg91AuthKey = import.meta.env.MSG91_AUTH_KEY || "";
 const msg91TemplateId = import.meta.env.MSG91_TEMPLATE_ID || "";
-const msg91SenderId = import.meta.env.MSG91_SENDER_ID || "RELFSH";
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 
@@ -39,32 +38,9 @@ function todayIST(): string {
   return ist.toISOString().slice(0, 10);
 }
 
-async function sendViaMSG91(phone: string, otp: string): Promise<{ ok: boolean; error?: string }> {
-  // Use Flow API — works with any approved DLT template (not OTP-type-specific)
-  const payload = {
-    flow_id: msg91TemplateId,
-    sender: msg91SenderId,
-    mobiles: phone,   // 91XXXXXXXXXX format
-    var: otp,         // maps to ##var## in template
-    otp,              // maps to ##otp## in template
-    VAR1: otp,        // fallback if template uses ##VAR1##
-  };
-
-  const res = await fetch("https://api.msg91.com/api/v5/flow/", {
-    method: "POST",
-    headers: {
-      "authkey": msg91AuthKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json().catch(() => ({}));
-  
-  // Never log the payload or the full response: both carry the OTP / phone.
-  if (data.type !== "success") console.warn("[send-otp] MSG91 rejected", { status: res.status, type: data.type });
-
-  if (data.type === "success") return { ok: true };
-  return { ok: false, error: data.message || `MSG91 error (${res.status})` };
+/** Flow API: works with any approved DLT template; the vars cover ##var##, ##otp## and ##VAR1##. */
+function sendViaMSG91(phone: string, otp: string) {
+  return sendSms(phone, msg91TemplateId, { var: otp, otp, VAR1: otp });
 }
 
 /**
