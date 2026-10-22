@@ -51,7 +51,7 @@ export function copyFor(event: OrderEvent, species: string, orderIdShort: string
       return {
         buyerSubject: `Payment received — ${fish} · #${orderIdShort}`,
         buyerHeading: "Payment received",
-        buyerLine: `We received your payment${amt} for ${fish} (order #${orderIdShort}). The seller will confirm your order shortly.`,
+        buyerLine: `We received your payment${amt} for ${fish} (order #${orderIdShort}). Your order will be confirmed shortly.`,
         sellerSubject: `New paid order — please confirm · ${fish} · #${orderIdShort}`,
         sellerHeading: "New paid order — confirm it",
         sellerLine: `The buyer paid${amt} for ${fish} (order #${orderIdShort}). Open your dashboard to confirm or decline it.`,
@@ -67,9 +67,9 @@ export function copyFor(event: OrderEvent, species: string, orderIdShort: string
       };
     case "cancelled_by_seller":
       return {
-        buyerSubject: `Order cancelled by the seller — ${fish} · #${orderIdShort}`,
-        buyerHeading: "Order cancelled by the seller",
-        buyerLine: `The seller cancelled your ${fish} order #${orderIdShort}.${why}${amt ? " Your payment" + amt + " is being refunded in full." : ""}`,
+        buyerSubject: `Order cancelled — ${fish} · #${orderIdShort}`,
+        buyerHeading: "Order cancelled",
+        buyerLine: `Your ${fish} order #${orderIdShort} couldn't be fulfilled and is cancelled.${why}${amt ? " Your payment" + amt + " is being refunded in full." : ""}`,
         sellerSubject: `You cancelled order #${orderIdShort} — ${fish}`,
         sellerHeading: "Order cancelled",
         sellerLine: `You cancelled ${fish} order #${orderIdShort}.${why} The buyer has been notified and refunded.`,

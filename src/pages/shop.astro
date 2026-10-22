@@ -16,7 +16,7 @@ const categories = [
 ---
 <AppShell
   title="Order Fresh Fish Online from Local Sellers in Thane and Mumbai | Relifish"
-  description="Order fresh fish online from local sellers in Thane and Mumbai. Same-day catch or pre-order tonight for tomorrow — pomfret, surmai, rawas, prawns, home delivery or pickup."
+  description="Order fresh fish online from local sellers in Thane and Mumbai. Same-day catch or pre-order for tomorrow or later — pomfret, surmai, rawas, prawns, home delivery or pickup."
   needsMap={true}
   header={{
     locationLabel: "Set location",
@@ -35,7 +35,7 @@ const categories = [
         "name": "Relifish",
         "url": "https://www.relifish.com",
         "logo": "https://www.relifish.com/icon-192.svg",
-        "description": "Mumbai's fresh fish marketplace — order directly from local sellers, pre-order tonight's catch for morning pickup or delivery.",
+        "description": "Mumbai's fresh fish marketplace — order directly from local sellers, pre-order for tomorrow or later, pickup or delivery.",
         "areaServed": { "@type": "City", "name": "Mumbai" },
         "contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "availableLanguage": ["English", "Marathi"] }
       },
@@ -110,7 +110,7 @@ const categories = [
 
   <!-- Markets closed -->
   <div id="v2-closed" style="display:none;padding: 0 16px;">
-    <EmptyState variant="closed" ctaHref="/v2?mode=preorder" />
+    <EmptyState variant="closed" ctaHref="/shop?mode=preorder" />
   </div>
 
 
@@ -509,6 +509,9 @@ const categories = [
       .sort((a, b) => b[1] - a[1])
       .map(([id]) => id);
     const sorted = [...priorityWithListings, ...rest].slice(0, 7);
+    // ?species=X from a link: keep its chip even when it isn't in the top 7.
+    const linked = filterState.category;
+    if (linked !== "all" && counts[linked] && !sorted.includes(linked)) sorted.push(linked);
 
     const strip = document.querySelector(".v2-cat-strip");
     if (!strip) return;
@@ -536,6 +539,12 @@ const categories = [
         <div class="v2-cat-name">${escapeHtml(item.name)}</div>
       </button>`;
     }).join("");
+    // Bring the linked species into view: scroll the strip sideways only (scrollIntoView would jump the page).
+    const activeEl = strip.querySelector<HTMLElement>(".v2-cat-active");
+    if (activeEl && activeCat !== "all") {
+      const a = activeEl.getBoundingClientRect(), s = strip.getBoundingClientRect();
+      strip.scrollLeft += a.left - s.left - (s.width - a.width) / 2;
+    }
 
     // Re-wire click handlers for rebuilt strip
     strip.querySelectorAll<HTMLElement>(".v2-cat-item").forEach(cat => {

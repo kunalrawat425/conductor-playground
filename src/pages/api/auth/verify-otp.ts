@@ -181,7 +181,7 @@ export const POST: APIRoute = async ({ request }) => {
         .single();
 
       if (error) {
-        return new Response(JSON.stringify({ error: "Failed to create seller: " + error.message }), { status: 500 });
+        console.error("[verify-otp] seller create failed", error.message); return new Response(JSON.stringify({ error: "Could not log you in right now. Please try again." }), { status: 500 });
       }
 
       return new Response(
@@ -212,7 +212,7 @@ export const POST: APIRoute = async ({ request }) => {
         .single();
 
       if (error) {
-        return new Response(JSON.stringify({ error: "Failed to create buyer: " + error.message }), { status: 500 });
+        console.error("[verify-otp] buyer create failed", error.message); return new Response(JSON.stringify({ error: "Could not log you in right now. Please try again." }), { status: 500 });
       }
       buyer_id = newBuyer.id;
       is_active = newBuyer.is_active !== false;

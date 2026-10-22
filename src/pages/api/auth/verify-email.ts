@@ -106,7 +106,7 @@ export const GET: APIRoute = async ({ url }) => {
 
     await supabase.from(table).update({ email_verified: true }).eq("id", id);
 
-    const redirect = role === "seller" ? "/dashboard/profile" : "/me";
+    const redirect = role === "seller" ? "/dashboard/profile" : "/shop";
     return new Response(`
       <html><head><meta charset="utf-8"><meta http-equiv="refresh" content="2;url=${redirect}"></head>
       <body style="font-family:Inter,sans-serif;text-align:center;padding:60px 24px;">

@@ -16,14 +16,24 @@ describe("buyer push copy — coverage", () => {
       expect(n.body, s).toBeTruthy();
       expect(n.body, s).not.toContain("undefined");
       // A body equal to the generic fallback means the status has no entry.
-      expect(n.body, s).not.toBe(`Your order status: ${s}`);
+      expect(n.title, s).not.toBe("Order Update");
     }
   });
 
-  it("falls back gracefully on an unknown status", () => {
+  it("falls back gracefully on an unknown status, without showing the status code", () => {
     const n = buyerOrderPushNotification("teleported", "pomfret");
     expect(n.title).toBe("Order Update");
-    expect(n.body).toContain("teleported");
+    expect(n.body).toContain("pomfret");
+    expect(n.body).not.toContain("teleported");
+  });
+
+  it("never says 'seller' to the buyer (founder: order-centric wording)", () => {
+    const cancels = [{ by: "seller", reason: "Sold out", refunded: true }, { by: "buyer", reason: null, refunded: false }] as any[];
+    for (const s of ALL_STATUSES) {
+      const all = [buyerOrderPushNotification(s, "pomfret", null, null, { when: "Sat 24 Oct, 8–10 AM", changed: true }),
+        ...cancels.map((c) => buyerOrderPushNotification(s, "pomfret", null, c))];
+      for (const n of all) expect(`${n.title} ${n.body}`, s).not.toMatch(/seller/i);
+    }
   });
 
   it("works with a null species for every status", () => {

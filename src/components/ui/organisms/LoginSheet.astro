@@ -7,7 +7,7 @@ interface Props {
   role?: "buyer" | "seller";
   redirectTo?: string;
 }
-const { id = "v2-login", role = "buyer", redirectTo = "/v2" } = Astro.props;
+const { id = "v2-login", role = "buyer", redirectTo = "/shop" } = Astro.props;
 const title = role === "seller" ? "Seller sign in" : "Sign in";
 const termsHref = role === "seller" ? "/terms#sellers" : "/terms";
 const termsLabel = role === "seller" ? "Terms (incl. seller responsibilities)" : "Terms";
@@ -147,7 +147,7 @@ const MAX_ATTEMPTS = 3;
         ? localStorage.getItem("rlf_seller_id")
         : localStorage.getItem("rlf_buyer_id");
       if (alreadyIn) {
-        window.location.href = redirectTo;
+        window.location.href = window.v2LoginRedirect || redirectTo;
         return;
       }
     } catch {}
@@ -228,7 +228,8 @@ const MAX_ATTEMPTS = 3;
         otpAttempts++;
         const left = MAX_ATTEMPTS - otpAttempts;
         const hint = getEl("hint");
-        hint.textContent = data.error || (left > 0
+        // Plain server text only (lib/friendly-error via Toast.astro); technical text falls back to the attempts line.
+        hint.textContent = (window.v2FriendlyError ? window.v2FriendlyError(data.error, "") : data.error) || (left > 0
           ? `Wrong code — ${left} ${left === 1 ? "try" : "tries"} left`
           : "No tries left — tap Resend for a new code");
         document.querySelectorAll(`#${id}-step2 .v2-otp-cell`).forEach((c) => {
@@ -277,7 +278,7 @@ const MAX_ATTEMPTS = 3;
 
       btn.textContent = "✓ Signed in!";
       window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
-      setTimeout(() => { window.location.href = redirectTo; }, 500);
+      setTimeout(() => { window.location.href = window.v2LoginRedirect || redirectTo; }, 500);
     } catch (err) {
       otpAttempts++;
       window.v2Toast?.("error", "Network error", err.message || "Try again");

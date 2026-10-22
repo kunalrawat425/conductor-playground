@@ -99,11 +99,11 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       <input type="checkbox" id="p-preorder" />
       <div>
         <div style="font:700 13px Inter;color:var(--v2-ink);">Accept pre-orders 🌙</div>
-        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyers can reserve tomorrow's catch tonight</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Buyers can reserve upcoming catch</div>
       </div>
     </label>
     <div id="p-preorder-schedule" style="display:none;margin-left:16px;padding:12px;border-left:2px solid var(--v2-border);margin-bottom:12px;background:var(--v2-bg-2);border-radius:0 var(--v2-radius-sm) var(--v2-radius-sm) 0;">
-      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-order days <span style="font-weight:400;color:var(--v2-ink-3);">(which days buyers can pre-order for next-day catch)</span></div>
+      <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-order days <span style="font-weight:400;color:var(--v2-ink-3);">(which days buyers can place pre-orders)</span></div>
       <div id="p-preorder-days" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px;"></div>
       <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:4px;">Pre-orders open at <span style="font-weight:400;color:var(--v2-ink-3);">(optional; empty = when you close, or all day if you have no same-day days)</span></div>
       <input type="time" id="p-preorder-opens" style="padding:8px 12px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:500 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;margin-bottom:12px;" />
@@ -181,7 +181,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
             <label class="ds-radio"><input type="radio" name="p-slot-len" value="60" /> 1 hour</label>
             <label class="ds-radio"><input type="radio" name="p-slot-len" value="120" /> 2 hours</label>
           </div>
-          <div class="ds-note">Same-day orders: slots run during your open hours. The first slot is at least 2 hours after the buyer orders.</div>
+          <div class="ds-note">Same day: times run during your open hours. A time is offered until 2 hours before it ends.</div>
           <div class="ds-label" style="margin-top:12px;">Pre-orders: deliver between</div>
           <div class="ds-row"><select id="p-slot-pre-start" class="ds-select"></select> and <select id="p-slot-pre-end" class="ds-select"></select> on the delivery morning</div>
           <div class="ds-label" style="margin-top:12px;">Buyers can pre-order for</div>
@@ -198,17 +198,6 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
         </div>
       </div>
     </div>
-
-    <!-- Scheduled pickup — hidden for now
-    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Pickup settings</h3>
-    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
-      <input type="checkbox" id="p-schedule-pickup" />
-      <div>
-        <div style="font:700 13px Inter;color:var(--v2-ink);">Scheduled pickup slots 🗓️</div>
-        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Let buyers choose a pickup time slot</div>
-      </div>
-    </label>
-    -->
 
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">🔔 Notifications</h3>
     <div style="display:flex;align-items:center;justify-content:space-between;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
@@ -745,7 +734,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     const line = (preorder: boolean) => sellerSlotsOn(seller, day, preorder).map((x) => slotTimeLabel(x.start, x.end)).join(" · ");
     const ahead = s.preorder_days_ahead > 1 ? `, for any of the next ${s.preorder_days_ahead} delivery days` : "";
     slotEl("p-slot-preview").innerHTML = [
-      seller.opens_at && seller.closes_at ? `🗓 Same day: ${line(false)}` : "",
+      seller.opens_at && seller.closes_at && getCheckedDays("open").length ? `🗓 Same day: ${line(false)}` : "",
       `🌙 Pre-orders${ahead}: ${line(true)}`,
     ].filter(Boolean).map((l) => `<div>${l}</div>`).join("");
   }

@@ -167,7 +167,7 @@ const { id } = Astro.params;
   import { buyerCancelRule, cancelledByText, cancelReasonText } from "../../lib/order-cancel";
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
   import { cleanSellerName } from "../../lib/seller-display";
-  import { orderSlotText } from "../../lib/delivery-slots";
+  import { dateLabelIST, orderDeliveryDateIST, orderSlotText } from "../../lib/delivery-slots";
   const RAZORPAY_KEY_ID  = import.meta.env.PUBLIC_RAZORPAY_KEY_ID  || "";
   // Extract order ID from URL path: /track/{id}
   const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
@@ -187,13 +187,13 @@ const { id } = Astro.params;
       pre_order: "Pre-order placed",
       scheduled: "Scheduled pickup",
       confirmed: "Confirmed ✓",
-      paid: "Paid — waiting for seller to confirm",
+      paid: "Paid — waiting for confirmation",
       payment_required: "Additional payment needed",
       ready_for_pickup: "Ready for pickup",
       out_for_delivery: "Out for delivery",
       picked_up: "Picked up",
       completed: "Completed",
-      declined: "Declined by seller",
+      declined: "Declined",
       cancelled: "Cancelled",
       refunded: "Refund processed",
     })[s] || s;
@@ -216,7 +216,7 @@ const { id } = Astro.params;
         ? "Cancel this order? Your payment is refunded in full to your original payment method (5–7 working days)."
         : "Cancel this order? This cannot be undone.";
       if (!confirm(msg)) return;
-      const reason = prompt("Why are you cancelling? The seller sees this (optional).", "");
+      const reason = prompt("Why are you cancelling? (optional)", "");
       if (reason === null) return;
       try {
         const buyerId = localStorage.getItem("rlf_buyer_id") || "";
@@ -383,6 +383,9 @@ const { id } = Astro.params;
     const opt = pricingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
     const bundle = opt?.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
     const liveCartItems = cartItems ? cartItems.filter((it) => !["cancelled", "declined", "refunded"].includes(it.status)) : [];
+    // What the buyer paid: every paid item of a cart, not just this row (paid_amount includes the row's delivery fee).
+    const paidOf = (rows) => rows.reduce((s2, r) => s2 + (!cartItems || r.paid ? Number(r.paid_amount) || 0 : 0), 0);
+    const paidTotal = paidOf(cartItems || [o]);
     document.getElementById("v2-od-items").innerHTML = items.map(it => {
       const unit = it.quantity_unit || 'kg';
       const qtyLabel = cartItems
@@ -391,7 +394,7 @@ const { id } = Astro.params;
       const off = cartItems && ["cancelled", "declined", "refunded"].includes(it.status);
       const refund = Number(it.refund_amt) || 0;
       const offNote = off
-        ? `<div style="font:600 11px Inter;color:var(--v2-red);margin-top:2px;">${it.cancelled_by === "seller" ? "Removed by the seller" : "Cancelled"}${it.cancel_reason ? ` · ${escape(it.cancel_reason)}` : ""}${it.paid ? (it.refund_sent_at && refund > 0 ? ` · ₹${refund.toLocaleString("en-IN")} refunded` : " · refund pending") : ""}</div>`
+        ? `<div style="font:600 11px Inter;color:var(--v2-red);margin-top:2px;">${it.cancelled_by === "seller" ? "Removed" : "Cancelled"}${it.cancel_reason ? ` · ${escape(it.cancel_reason)}` : ""}${it.paid ? (it.refund_sent_at && refund > 0 ? ` · ₹${refund.toLocaleString("en-IN")} refunded` : " · refund pending") : ""}</div>`
         : "";
       const canRemove = cartItems && !off && liveCartItems.length > 1 && ["pending_payment", "pending", "paid"].includes(it.status);
       return `
@@ -456,11 +459,14 @@ const { id } = Astro.params;
         Number(o.paid_amount) > 0 &&
         (o.final_price == null || o.final_price === "");
       if (
-        isPreorderCatchFlow(o) &&
+        isPreorderCatchFlow(o) && !["cancelled", "declined", "refunded"].includes(o.status) &&
         (["pending_payment", "payment_required", "pre_order"].includes(o.status) || awaitingFinal)
       ) {
         // A cart pays every unpaid item at once: show that amount, not this row's.
-        const dueNum = o.cart && o.status === "pending_payment" ? Number(o.cart.payable_total) : Number(o.paid_amount);
+        const unpaid = ["pending_payment", "pre_order"].includes(o.status);
+        const dueNum = o.cart && o.status === "pending_payment" ? Number(o.cart.payable_total) : paidTotal;
+        // The real delivery day (a pre-order can be for a later day than tomorrow).
+        const deliverOn = orderDeliveryDateIST(o, o.seller);
         const amountDue = dueNum ? `₹${dueNum.toLocaleString("en-IN")}` : "";
         // Per-unit preorder range from pricing_options (matched by pricing_option_id used on this order)
         const popts: any[] = o.listing?.pricing_options || [];
@@ -474,10 +480,10 @@ const { id } = Astro.params;
           : priceMin ? `<div style="font:700 13px Inter;color:#7C3AED;margin:8px 0 4px;">Min estimate: ₹${Number(priceMin).toLocaleString("en-IN")}</div>` : "";
         preorderEl.innerHTML = `
           <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
-            <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Next-day catch pre-order</div>
+            <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Pre-order${deliverOn ? ` for ${escape(dateLabelIST(deliverOn))}` : ""}</div>
             ${rangeHtml}
-            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">Pay via Razorpay to place your pre-order, then the seller will set the final price after the morning catch.${amountDue ? ` Amount: <strong>${amountDue}</strong>.` : ""}</div>
-            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">If the final price is <strong>lower</strong> than you paid → <strong>the difference is refunded automatically</strong> to your original payment method (5–7 working days). If <strong>higher</strong> → you'll approve the difference.</div>
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">${unpaid ? "Pay now to place your pre-order. " : ""}The final price is set when your fish comes in.${amountDue ? ` ${unpaid ? "Amount" : "You paid"}: <strong>${amountDue}</strong>.` : ""}</div>
+            <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">Final price <strong>lower</strong> than you paid → the difference is refunded automatically (5–7 working days). <strong>Higher</strong> → you approve the difference.</div>
           </div>`;
         preorderEl.style.display = "block";
       } else {
@@ -495,19 +501,21 @@ const { id } = Astro.params;
     const cartRefunded = cartItems
       ? cartItems.filter((r) => r.paid && r.refund_sent_at).reduce((s2, r) => s2 + (Number(r.refund_amt) || 0), 0)
       : 0;
-    const finalPrice = o.final_price ? Number(o.final_price) : null;
-    const paidAmount = o.paid_amount ? Number(o.paid_amount) : null;
+    // A cart's final price once every live item has one.
+    const finalPrice = billRows.length && billRows.every((r) => Number(r.final_price) > 0)
+      ? billRows.reduce((s2, r) => s2 + Number(r.final_price), 0) : null;
+    const paidAmount = paidTotal || null;
     // Only show "You paid" after actual payment — not for pending_payment (paid_amount is pre-set at creation)
     const paymentConfirmed = o.status !== "pending_payment" && o.status !== "pending" && o.payment_verified_at;
     const showPaidAmount = paidAmount && paymentConfirmed;
     // final_price is the fish price; paidAmount includes the delivery fee.
-    const balance = finalPrice && showPaidAmount ? finalPrice - (paidAmount - (Number(o.delivery_fee) || 0)) : null;
+    const balance = finalPrice && showPaidAmount ? finalPrice - (paidOf(billRows) - delivery) : null;
     document.getElementById("v2-od-bill").innerHTML = `
       <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
       ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}
       <div class="total"><span>Total</span><span>₹${grand.toLocaleString("en-IN")}</span></div>
       ${cartRefunded > 0 ? `<div><span style="color:var(--v2-green);">Refunded for removed items</span><span style="font-weight:700;color:var(--v2-green);">₹${cartRefunded.toLocaleString("en-IN")}</span></div>` : ''}
-      ${finalPrice ? `<div style="padding-top:6px;border-top:1px solid var(--v2-border);margin-top:4px;"><span style="color:var(--v2-ink-2);">Final price (seller)</span><span style="font-weight:700;color:var(--v2-ink);">₹${finalPrice.toLocaleString("en-IN")}</span></div>` : ''}
+      ${finalPrice ? `<div style="padding-top:6px;border-top:1px solid var(--v2-border);margin-top:4px;"><span style="color:var(--v2-ink-2);">Final price</span><span style="font-weight:700;color:var(--v2-ink);">₹${finalPrice.toLocaleString("en-IN")}</span></div>` : ''}
       ${showPaidAmount ? `<div><span style="color:var(--v2-ink-2);">You paid</span><span style="color:var(--v2-green);">₹${paidAmount.toLocaleString("en-IN")}</span></div>` : ''}
       ${balance && balance > 0 ? `<div><span style="color:var(--v2-red);">Balance due</span><span style="font-weight:700;color:var(--v2-red);">₹${balance.toLocaleString("en-IN")}</span></div>` : ''}
       ${balance && balance < 0 ? `<div><span style="color:var(--v2-green);">Refund</span><span style="font-weight:700;color:var(--v2-green);">₹${Math.abs(balance).toLocaleString("en-IN")}</span></div>` : ''}
@@ -551,7 +559,8 @@ const { id } = Astro.params;
     } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
       // Finished/cancelled order — show refund notice if paid, ask rating for completed/picked_up, then offer re-order.
       // BUG-42: gate on real payment, not the pre-set paid_amount.
-      const paidForRefund = refundableAmount(o);
+      // A cart cancelled as a whole refunds every paid item, not just this row.
+      const paidForRefund = o.cart && o.cart.items.every((it) => ["cancelled", "declined", "refunded"].includes(it.status)) ? paidOf(o.cart.items) : refundableAmount(o);
       let refundHtml = "";
       const isDelivered = ["completed", "picked_up"].includes(o.status);
       const existingFeedback = o.buyer_feedback || null;
@@ -642,7 +651,7 @@ const { id } = Astro.params;
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to save feedback");
-            window.v2Toast?.("success", "Thanks for rating", "Your feedback helps improve seller quality");
+            window.v2Toast?.("success", "Thanks for rating", "Your feedback helps us improve");
             setTimeout(() => load(), 500);
           } catch (err: any) {
             window.v2Toast?.("error", "Failed", err.message || "Could not save feedback");
@@ -684,27 +693,22 @@ const { id } = Astro.params;
       const savedCuts2 = (o.cut_style || "").split(",").filter(Boolean);
       const cutLabels2: Record<string, string> = { whole: "🐟 Whole", cleaned: "✂️ Cleaned", cut: "🔪 Cut" };
       const cutDisplay2 = savedCuts2.map(c => cutLabels2[c] || c).join(", ");
-      const statusMsg = o.status === "out_for_delivery"
-        ? "🛵 On the way — preferences locked"
-        : "✅ Order ready — preferences locked";
-      const hasAnyPref = cutDisplay2 || o.buyer_notes;
+      const statusMsg = o.status === "out_for_delivery" ? "🛵 On the way" : "✅ Ready for pickup";
       actions.innerHTML = `
         <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
-          <div style="font:700 13px Inter;color:#059669;margin-bottom:6px;">${statusMsg}</div>
-          ${hasAnyPref
-            ? `${cutDisplay2 ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-bottom:4px;">Cut: ${cutDisplay2}</div>` : ""}
-               ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);">📝 ${escape(o.buyer_notes)}</div>` : ""}`
-            : `<div style="font:400 12px Inter;color:var(--v2-ink-3);">No preference added</div>`}
-          <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-top:8px;">No changes possible after this point.</div>
+          <div style="font:700 13px Inter;color:#059669;">${statusMsg}</div>
+          ${cutDisplay2 ? `<div style="font:500 13px Inter;color:var(--v2-ink);margin-top:6px;">Cut: ${cutDisplay2}</div>` : ""}
+          ${o.buyer_notes ? `<div style="font:400 12px Inter;color:var(--v2-ink-3);margin-top:4px;">📝 ${escape(o.buyer_notes)}</div>` : ""}
         </div>`;
     } else if (["confirmed", "paid", "scheduled"].includes(o.status)) {
       // Preferences are chosen in checkout, before payment. After payment they are read-only here.
       const cutLabels: Record<string, string> = { whole: "🐟 Whole", cleaned: "✂️ Cleaned", cut: "🔪 Cut" };
       const cutDisplay = (o.cut_style || "").split(",").filter(Boolean).map((c: string) => cutLabels[c] || c).join(", ");
       const headline = o.status === "paid"
-        ? "✅ Payment received — waiting for the seller to confirm"
+        ? "✅ Payment received — waiting for confirmation"
         : o.status === "confirmed"
-          ? "✅ Seller confirmed — your fish is being prepared"
+          // A pre-order can be days away: don't say "being prepared" on Thursday for Sunday.
+          ? (isPreorderCatchFlow(o) || o.is_preorder || o.placement_kind === "preorder" ? "✅ Pre-order confirmed" : "✅ Order confirmed — your fish is being prepared")
           : "🗓️ Order scheduled";
       actions.innerHTML = `
         <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
@@ -935,9 +939,9 @@ const { id } = Astro.params;
               <div style="background:#f0fdf4;border:1.5px solid #86EFAC;border-radius:var(--v2-radius);padding:16px;margin-top:8px;text-align:center;">
                 <div style="font-size:32px;margin-bottom:8px;">✅</div>
                 <div style="font:800 15px Inter;color:#15803d;margin-bottom:4px;">Payment received!</div>
-                <div style="font:400 12px Inter;color:#166534;">The seller has been notified and will confirm your order shortly.</div>
+                <div style="font:400 12px Inter;color:#166534;">Your order will be confirmed shortly.</div>
               </div>`;
-            (window as any).v2Toast?.("success", "Payment received", "Waiting for the seller to confirm.");
+            (window as any).v2Toast?.("success", "Payment received", "Waiting for confirmation.");
             setTimeout(() => load(), 1200);
 
           } catch (err: any) {
@@ -991,7 +995,7 @@ const { id } = Astro.params;
       });
       const data = await res.json();
       if (res.ok && data.changed) {
-        window.v2Toast?.("success", "Payment received", "Waiting for the seller to confirm.");
+        window.v2Toast?.("success", "Payment received", "Waiting for confirmation.");
         load();
         return true;
       }

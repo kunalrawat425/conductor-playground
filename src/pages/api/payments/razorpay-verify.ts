@@ -183,7 +183,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           body: JSON.stringify({
             from: MAIL_FROM,
             to: emailTo,
-            subject: "Payment received — waiting for the seller to confirm",
+            subject: "Payment received — waiting for confirmation",
             html,
           }),
         }).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));

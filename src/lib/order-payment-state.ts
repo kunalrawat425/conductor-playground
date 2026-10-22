@@ -57,9 +57,9 @@ export type PaymentLabelFields = PaymentEvidenceFields & { payment_method?: stri
 export function paymentMethodLabel(o: PaymentLabelFields): string | null {
   if (o?.payment_method === "razorpay" && o.razorpay_payment_id) return "Paid online · Razorpay";
   if (o?.payment_method === "cod_legacy") return "Cash on delivery (legacy order)";
-  if (o?.payment_verified_at) return "Paid via UPI · verified by seller";
+  if (o?.payment_verified_at) return "Paid via UPI · verified";
   const hasScreenshot = Array.isArray(o?.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
-  if (hasScreenshot) return "UPI proof submitted — seller will verify";
+  if (hasScreenshot) return "UPI proof submitted — awaiting verification";
   return null;
 }
 

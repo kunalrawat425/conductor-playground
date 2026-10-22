@@ -63,7 +63,7 @@ const photo = forSpecies.find((l: any) => l.photo_url)?.photo_url || (SELF_HOSTE
 const photoAbs = photo ? (photo.startsWith("http") ? photo : SITE_URL + photo) : undefined;
 const where = area ? ` in ${area}` : "";
 const statusText =
-  offer?.availability === "InStock" ? "Available today" : offer?.availability === "PreOrder" ? "Pre-order tonight for tomorrow's catch" : "Not available right now";
+  offer?.availability === "InStock" ? "Available today" : offer?.availability === "PreOrder" ? "Pre-order for tomorrow or later" : "Not available right now";
 const description = `${fishName} from ${sellerName}${where}. ${statusText}. See the price, then order for home delivery or pickup on Relifish.`;
 const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLowerCase()))].filter((s) => s !== species);
 ---
@@ -109,7 +109,7 @@ const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLower
         ))}
       </ul>
       {offer!.availability === "PreOrder" && (
-        <p style="font:400 13px/1.5 Inter;color:var(--v2-ink-2);margin:0;">Pre-orders are priced as a range. You pay the top of the range; the seller sets the final price after the morning catch and any difference is refunded.</p>
+        <p style="font:400 13px/1.5 Inter;color:var(--v2-ink-2);margin:0;">Pre-orders are priced as a range. You pay the top of the range; the seller sets the final price when the fish comes in and any difference is refunded.</p>
       )}
       <a href={sellerPath} class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">Order from {sellerName}</a>
       {Object.hasOwn(SPECIES, species) && <a href={`/fish/${species}`} style="font:600 13px Inter;color:var(--v2-brand);">Compare all sellers of {fishName} →</a>}
