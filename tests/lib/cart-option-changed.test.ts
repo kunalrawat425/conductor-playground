@@ -69,6 +69,11 @@ describe("resolveListingOrderLine: option_changed", () => {
     expect(r).toMatchObject({ ok: false, status: 409, code: "option_changed" });
   });
 
+  it("Half kg line carrying another pack's qty (0.25 kg) is refused, never priced", async () => {
+    expect(await resolve("opt_1", 0.25, PREORDER)).toMatchObject({ ok: false, status: 409, code: "option_changed" });
+    expect(await resolve("opt_1", 0.25)).toMatchObject({ ok: false, status: 400 });
+  });
+
   it("pre-order in whole packs is charged the top of the range per pack", async () => {
     const r = await resolve("opt_1", 1, PREORDER);
     expect(r.ok && r.line.total_price).toBe(720);
