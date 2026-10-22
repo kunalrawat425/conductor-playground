@@ -250,6 +250,41 @@ export function preorderStatusLabel(seller: SellerTimingInput, nowMs = Date.now(
   return null;
 }
 
+const WEEK = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const dayLabel = (d: string) => DAY_LABELS[DAY_NAMES.indexOf(d as (typeof DAY_NAMES)[number])] || d;
+
+/** "Every day", "Closed Mon" or "Tue, Sat" (whichever list is shorter). */
+export function daysLabel(days: string[]): string {
+  if (!days.length) return "No same-day orders";
+  if (days.length === 7) return "Every day";
+  const closed = WEEK.filter((d) => !days.includes(d));
+  return closed.length < days.length ? `Closed ${closed.map(dayLabel).join(", ")}` : days.map(dayLabel).join(", ");
+}
+
+/** Store-page schedule line: "Same day orders · Closed Mon · 8 AM–6 PM"; null with no same-day days. */
+export function sameDayScheduleLabel(seller: SellerTimingInput): string | null {
+  const days = Array.isArray(seller.open_days) ? seller.open_days : WEEK;
+  if (!days.length) return null;
+  const hours = seller.opens_at && seller.closes_at ? ` · ${timeLabel(seller.opens_at)}–${timeLabel(seller.closes_at)}` : "";
+  return `Same day orders · ${daysLabel(days)}${hours}`;
+}
+
+/**
+ * Store-page pre-order line: "Pre-orders · Closed Sun · 6 PM–3 AM · delivered next morning", or
+ * "Pre-orders open all week · paused Tue & Sat 2 AM–1 PM · delivered Tue & Sat mornings". Null when off.
+ */
+export function preorderScheduleLabel(seller: SellerTimingInput): string | null {
+  const days = Array.isArray(seller.preorder_days) ? seller.preorder_days : [];
+  if (!seller.accepts_preorder || !days.length) return null;
+  const dd = Array.isArray(seller.delivery_days) ? seller.delivery_days : [];
+  const delivered = dd.length ? `delivered ${WEEK.filter((d) => dd.includes(d)).map(dayLabel).join(" & ")} mornings` : "delivered next morning";
+  const pause = preorderPauseLabel(seller);
+  if (pause) return `Pre-orders open ${days.length === 7 ? "all week" : daysLabel(days)} · ${pause} · ${delivered}`;
+  const sameDays = daysLabel(Array.isArray(seller.open_days) ? seller.open_days : WEEK) === daysLabel(days);
+  const hours = preorderHoursLabel(seller);
+  return `Pre-orders · ${sameDays ? "Same days" : daysLabel(days)}${hours ? ` · ${hours}` : ""} · ${delivered}`;
+}
+
 /** Preorder window open now (see preorderWindowDaysBack). */
 export function isPreorderShoppingWindow(seller: SellerTimingInput, nowMs?: number): boolean {
   return preorderWindowDaysBack(seller, nowMs) != null;
@@ -275,6 +310,10 @@ export function closedSellerMessage(seller: SellerTimingInput, nowMs?: number): 
     preStart != null && isTodayPreorderDay(seller, day) && minutesNowIST(at) < preStart
       ? ` Pre-orders open at ${timeLabel(seller.preorder_opens_at)}.`
       : "";
+  // Delivery-day pause (e.g. Nomadic, Tue 2 AM–1 PM): not a cutoff, pre-orders come back today.
+  if (later && pausesOnlyOnDeliveryDays(seller) && seller.delivery_days!.includes(day)) {
+    return `Pre-orders reopen at ${timeLabel(seller.preorder_opens_at)} today.`;
+  }
   const overnight = isOvernightCutoff(seller);
   const pastCutoff = isPastPreorderCutoffIST(seller.preorder_cutoff_time, at);
   // Overnight cutoff: last night's window just ended (e.g. 03:30 after a 03:00 cutoff).

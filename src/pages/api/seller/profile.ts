@@ -84,6 +84,14 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Opening and closing time cannot be the same" }), { status: 400 });
     }
 
+    // Full store-timings save (the dashboard always sends all of them): same checks as the form.
+    const { formFromDb, timingFormErrors } = await import("../../../lib/store-timing-form");
+    const TIMING_KEYS = ["open_days", "opens_at", "closes_at", "accepts_preorder", "preorder_days", "preorder_opens_at", "preorder_cutoff_time", "delivery_days"];
+    if (TIMING_KEYS.every((k) => k in updates)) {
+      const timingError = Object.values(timingFormErrors(formFromDb(updates)))[0];
+      if (timingError) return new Response(JSON.stringify({ error: timingError }), { status: 400 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Ownership: the signed seller session, not the (public) phone.
