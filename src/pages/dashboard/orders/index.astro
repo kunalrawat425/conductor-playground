@@ -569,7 +569,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     let opts: string[][];
     if (mode === "accept") {
       const others = sellerData
-        ? sellerSlotsOn(sellerData, slotDateIST(o.delivery_slot_start), isPreorder).filter((s) => Date.parse(s.start) !== Date.parse(o.delivery_slot_start))
+        ? sellerSlotsOn(sellerData, slotDateIST(o.delivery_slot_start), isPreorder)
+          .filter((s) => Date.parse(s.start) !== Date.parse(o.delivery_slot_start) && Date.parse(s.end) > Date.now())
         : [];
       opts = [["", `Keep ${slotTimeLabel(o.delivery_slot_start, o.delivery_slot_end)}, ${slotDayLabel(o.delivery_slot_start)}`],
         ...others.map((s) => [`${s.start}|${s.end}`, `Change to ${slotTimeLabel(s.start, s.end)}`])];
@@ -839,7 +840,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             <span class="v2-oc-meta-pill ${isPreorder ? "v2-oc-meta-pill-preorder" : "v2-oc-meta-pill-order"}">${isPreorder ? `Pre-order${deliverLabel ? ` · for ${deliverLabel}` : ""}` : "Order"}</span>
             <span class="v2-oc-meta-pill ${isDelivery ? "v2-oc-meta-pill-delivery" : "v2-oc-meta-pill-pickup"}">${isDelivery ? "Delivery" : "Pickup"}</span>
           </div>
-          ${isDelivery && o.delivery_slot_start && o.delivery_slot_end ? `<div style="font:700 13px Inter;color:var(--v2-ink);margin-top:6px;">🕘 ${o.status === "out_for_delivery"
+          ${isDelivery && o.delivery_slot_start && o.delivery_slot_end && !["completed", "picked_up", ...CLOSED].includes(o.status) ? `<div style="font:700 13px Inter;color:var(--v2-ink);margin-top:6px;">🕘 ${o.status === "out_for_delivery"
             ? `Arriving by ${escape(arrivingByLabel(o.delivery_slot_end))}, ${escape(slotDayLabel(o.delivery_slot_end))}`
             : `Deliver ${escape(slotTimeLabel(o.delivery_slot_start, o.delivery_slot_end))}, ${escape(slotDayLabel(o.delivery_slot_start))}`}</div>` : ""}
           ${addrText ? `<div style="font:500 11px Inter;color:var(--v2-ink-2);margin-top:4px;">📍 ${escape(addrText)}${mapsUrl ? ` · <a href="${mapsUrl}" target="_blank" rel="noopener" style="color:var(--v2-brand,#0066FF);font-weight:600;">Open in Maps</a>` : ""}</div>` : ""}

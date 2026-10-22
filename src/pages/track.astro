@@ -320,7 +320,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
               </div>
               <h3>${escapeHtml(seller)}</h3>
               <div class="sub">Order #${o.id.slice(0, 8).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
-              ${isDelivery && orderSlotText(o) ? `<div style="font:700 12px Inter;margin-top:4px;">🕘 ${escapeHtml(orderSlotText(o)!.label)}: ${escapeHtml(orderSlotText(o)!.value)}</div>` : ""}
+              ${isDelivery && !["completed", "picked_up"].includes(o.status) && orderSlotText(o) ? `<div style="font:700 12px Inter;margin-top:4px;">🕘 ${escapeHtml(orderSlotText(o)!.label)}: ${escapeHtml(orderSlotText(o)!.value)}</div>` : ""}
               ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
               ${stepperHtml}
             </a>`;
