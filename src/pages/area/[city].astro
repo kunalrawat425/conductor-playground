@@ -10,7 +10,7 @@ import { areaNameForPoint, coveredLocalities, getAreaBySlug, sellersForArea } fr
 import { perKgRange } from "../../lib/fish-hub";
 import { cleanSellerName, sellerHref, stripContactInfo } from "../../lib/seller-display";
 import { SPECIES, getSpeciesDisplay } from "../../lib/species";
-import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderHoursLabel, preorderStatusLabel, timeLabel } from "../../lib/order-timing";
+import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderHoursLabel, preorderPauseLabel, preorderStatusLabel, timeLabel } from "../../lib/order-timing";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 
@@ -110,7 +110,7 @@ const sellerTerms = sellers.map((sl: any) => {
     href: sellerHref(sl.name, sl.id),
     place: areaNameForPoint(sl.lat, sl.lng) || stripContactInfo(sl.location_name) || area.name,
     days, hours,
-    cutoff: sl.accepts_preorder && sl.preorder_cutoff_time ? `Pre-order ${preorderHoursLabel(sl)}` : sl.accepts_preorder ? "Pre-orders open" : "Same-day only",
+    cutoff: sl.accepts_preorder && preorderPauseLabel(sl) ? `Pre-orders open, ${preorderPauseLabel(sl)}` : sl.accepts_preorder && sl.preorder_cutoff_time ? `Pre-order ${preorderHoursLabel(sl)}` : sl.accepts_preorder ? "Pre-orders open" : "Same-day only",
     radius: Number(sl.delivery_rad) > 0 ? `${Number(sl.delivery_rad)} km` : "—",
     fee: fee + (Number(sl.free_delivery_above) > 0 ? ` (free above ₹${Number(sl.free_delivery_above)})` : ""),
     min: Number(sl.min_order_amount) > 0 ? `₹${Number(sl.min_order_amount)}` : "None",

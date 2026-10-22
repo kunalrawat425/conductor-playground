@@ -141,6 +141,24 @@ export function isOvernightCutoff(seller: SellerTimingInput): boolean {
 }
 
 /**
+ * Delivery-day sellers with no same-day orders (e.g. The Nomadic Catch): pre-orders stay open
+ * all day, and the off-window (cutoff → window start) applies only on delivery days.
+ */
+export function pausesOnlyOnDeliveryDays(seller: SellerTimingInput): boolean {
+  return (
+    Array.isArray(seller.open_days) && seller.open_days.length === 0 &&
+    Array.isArray(seller.delivery_days) && seller.delivery_days.length > 0
+  );
+}
+
+/** "paused Tue & Sat 2 AM–1 PM" for pausesOnlyOnDeliveryDays sellers, else null. */
+export function preorderPauseLabel(seller: SellerTimingInput): string | null {
+  if (!pausesOnlyOnDeliveryDays(seller) || !seller.preorder_cutoff_time || !seller.preorder_opens_at) return null;
+  const days = DAY_LABELS.filter((_, i) => seller.delivery_days!.includes(DAY_NAMES[i]));
+  return `paused ${days.join(" & ")} ${timeLabel(seller.preorder_cutoff_time)}–${timeLabel(seller.preorder_opens_at)}`;
+}
+
+/**
  * Which pre-order day's window is open at `nowMs`: 0 = today's, 1 = yesterday's (still
  * running past midnight, overnight cutoff), null = none.
  * Window of pre-order day D: from preorderStartMinutes until the cutoff on D (same-day
@@ -154,6 +172,7 @@ export function preorderWindowDaysBack(seller: SellerTimingInput, nowMs?: number
   if (overnight && !pastCutoff && isTodayPreorderDay(seller, dayAt(at - DAY_MS))) return 1;
   const day = dayAt(at);
   if (!isTodayPreorderDay(seller, day)) return null;
+  if (pausesOnlyOnDeliveryDays(seller) && !seller.delivery_days!.includes(day)) return 0;
   if (!overnight && pastCutoff) return null;
   if (minutesNowIST(at) < preorderStartMinutes(seller, day)) return null;
   return 0;
@@ -210,17 +229,23 @@ export function preorderHoursLabel(seller: SellerTimingInput): string | null {
 /**
  * Pre-order line for the seller page and lists: "Pre-order 1 PM–2 AM · next delivery Tue morning"
  * inside a window, "Pre-orders open at 1 PM" earlier on a pre-order day, else null.
+ * pausesOnlyOnDeliveryDays sellers: "Pre-order now · next delivery Tue morning", and
+ * "Pre-orders reopen at 1 PM · delivering today" during the delivery-day pause.
  */
 export function preorderStatusLabel(seller: SellerTimingInput, nowMs = Date.now()): string | null {
   const delivery = preorderDeliveryDateIST(seller, nowMs);
+  const pauses = pausesOnlyOnDeliveryDays(seller);
   if (delivery) {
-    const hours = preorderHoursLabel(seller);
+    const hours = pauses ? "now" : preorderHoursLabel(seller);
     return `Pre-order${hours ? ` ${hours}` : ""} · next delivery ${deliveryMorningLabel(delivery, nowMs)}`;
   }
   const start = toMinutes(seller.preorder_opens_at);
   if (start == null || isSellerEffectivelyOpen(seller, nowMs)) return null;
   if (isTodayPreorderDay(seller, dayAt(nowMs)) && minutesNowIST(nowMs) < start) {
-    return `Pre-orders open at ${timeLabel(seller.preorder_opens_at)}`;
+    // For `pauses` sellers only a delivery day gets here: today's catch is out for delivery.
+    return pauses
+      ? `Pre-orders reopen at ${timeLabel(seller.preorder_opens_at)} · delivering today`
+      : `Pre-orders open at ${timeLabel(seller.preorder_opens_at)}`;
   }
   return null;
 }
