@@ -284,6 +284,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   import { supabase } from "../../../lib/supabase";
   import { cancelledByText, cancelReasonText } from "../../../lib/order-cancel";
   import { friendlyError } from "../../../lib/friendly-error";
+  import { askCancelReason } from "../../../lib/reason-dialog";
   import { arrivingByLabel, dateLabelIST, orderDeliveryDateIST, sellerSlotChoices, slotDayLabel, slotTimeLabel } from "../../../lib/delivery-slots";
 
   let sellerId: string | null = null;
@@ -520,14 +521,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     // Action delegation for all order cards (including session group cards)
     list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        if (btn.dataset.action === "decline-show-reason") {
-          const orderId = btn.dataset.orderId!;
-          const noteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
-          const confirmBtn = document.getElementById(`decline-confirm-${orderId}`) as HTMLButtonElement | null;
-          if (noteInput) noteInput.style.display = "block";
-          if (confirmBtn) confirmBtn.style.display = "block";
-          btn.style.display = "none";
-        } else if (btn.dataset.action === "reconcile-razorpay") {
+        if (btn.dataset.action === "reconcile-razorpay") {
           reconcileRazorpay(btn.dataset.orderId!, btn);
         } else {
           updateStatus(btn.dataset.orderId!, btn.dataset.action!, btn, btn.dataset.cart === "1");
@@ -650,10 +644,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               <div style="display:flex;gap:8px;">${reconcileBtn}</div>
               <div id="reconcile-result-${o.id}" style="font:500 11px Inter;margin-top:4px;"></div>
               <div style="display:flex;gap:8px;">
-                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline-show-reason" data-order-id="${o.id}">Can't fulfill</button>
+                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline" data-order-id="${o.id}">Can't fulfill</button>
               </div>
-              <input type="text" placeholder="Decline reason (shown to buyer, optional)" id="decline-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;display:none;" />
-              <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Confirm — refund buyer</button>
             </div>`;
           }
         } else if (o.status === "paid") {
@@ -663,10 +655,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             <div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
               <div style="display:flex;gap:8px;">
                 <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="accept" data-order-id="${o.id}">✓ Confirm order</button>
-                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline-show-reason" data-order-id="${o.id}">Can't fulfill</button>
+                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline" data-order-id="${o.id}">Can't fulfill</button>
               </div>
-              <input type="text" placeholder="Reason (shown to buyer, optional)" id="decline-note-${o.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 12px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;display:none;" />
-              <button class="v2-btn v2-btn-sm" style="display:none;background:var(--v2-red);color:#fff;" data-action="decline" data-order-id="${o.id}" id="decline-confirm-${o.id}">✓ Decline — refund buyer in full</button>
             </div>`;
         } else if (o.status === "confirmed") {
           const preorderPriceBlock = needsFinalPrice
@@ -900,14 +890,17 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       seller_cancel: "cancelled",
       item_cancel: btn?.dataset.cancelStatus || "cancelled",
     };
+    // Decline / cancel / remove: a written reason is required (the buyer reads it).
     let sellerCancelReason = "";
-    if (action === "seller_cancel" || action === "item_cancel") {
-      const r = window.prompt(action === "item_cancel"
-        ? "Why are you removing this item? The buyer sees this reason and is refunded for it; the rest of the order goes ahead."
-        : "Why are you cancelling? The buyer sees this reason and is refunded in full.", "");
+    if (action === "decline" || action === "seller_cancel" || action === "item_cancel") {
+      const ask = {
+        decline: { title: "Can't fulfill this order?", note: "The order is declined and the buyer is refunded in full.", confirmText: "Decline · refund buyer" },
+        seller_cancel: { title: "Cancel this order?", note: "The buyer is refunded in full.", confirmText: "Cancel · refund buyer" },
+        item_cancel: { title: "Remove this item?", note: "The buyer is refunded for it; the rest of the order goes ahead.", confirmText: "Remove · refund buyer" },
+      }[action]!;
+      const r = await askCancelReason({ ...ask, label: "Reason (the buyer sees this)" });
       if (r === null) return;
-      sellerCancelReason = r.trim();
-      if (!sellerCancelReason) { (window as any).v2Toast?.("error", "Reason needed", "Tell the buyer why the order is cancelled"); return; }
+      sellerCancelReason = r;
     }
     const originalText = btn?.textContent || "";
     const loadingLabels: Record<string, string> = {
@@ -941,11 +934,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         }
       } else {
         body.status = statusMap[action] || "declined";
-        if (body.status === "declined" || body.status === "cancelled") {
-          const declineNoteInput = document.getElementById(`decline-note-${orderId}`) as HTMLInputElement | null;
-          const note = sellerCancelReason || declineNoteInput?.value?.trim();
-          if (note) body.cancel_reason = note;
-        }
+        if (body.status === "declined" || body.status === "cancelled") body.cancel_reason = sellerCancelReason;
         // Changed delivery slot / arriving-by time ("" = keep).
         const slotSel = document.querySelector<HTMLSelectElement>(`select[data-slot-for="${orderId}"]`);
         if (slotSel?.value && (action === "accept" || action === "out_for_delivery")) {

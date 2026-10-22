@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { cancelReasonText } from "../order-cancel";
+import { cancelReasonText, isLateCancel } from "../order-cancel";
 import { sendBuyerOrderPush } from "./buyer-push";
 import { internalHeaders } from "./internal-auth";
 import { sendTransactionalEmail as sendEmail } from "./send-email";
@@ -184,7 +184,8 @@ export async function notifyOrderParties(opts: {
     ? `<ul style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 20px;padding-left:18px;">${group.map((r: any) =>
         `<li>${String(r.listing?.species || r.species || "Fish")} · ${Number(r.quantity)} ${r.quantity_unit || ""} · ₹${Number(r.total_price || 0).toLocaleString("en-IN")}</li>`).join("")}</ul>`
     : "";
-  const reason = cancelReasonText(o.cancel_reason);
+  const typed = cancelReasonText(o.cancel_reason);
+  const reason = typed && isLateCancel(o.cancel_reason) ? `Order was late — ${typed}` : typed;
   const c = copyFor(event, species, orderIdShort, amt, reason);
   const isCancel = event === "cancelled_by_buyer" || event === "cancelled_by_seller";
 
