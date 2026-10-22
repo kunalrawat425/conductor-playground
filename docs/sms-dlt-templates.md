@@ -31,5 +31,7 @@ Longest filled-in message (template 1, 30-character fish and slot) is under 160 
    - `MSG91_FLOW_DELIVERED`
 3. `MSG91_AUTH_KEY`, `MSG91_SENDER_ID` (`RELFSH`) and `PUBLIC_ENABLE_MSG91=true` are the same ones the login OTP uses.
 
-A flow id that is not set is skipped (logged as info); the status change still goes through.
-No SMS for test orders (QA seller or test buyer, `orders.is_test`) or pickup orders.
+Nothing is sent (a **dry run**: the exact MSG91 request body is logged as `[sms] DRY RUN`, phone
+masked, no authkey) when `SMS_DRY_RUN=true`, `PUBLIC_ENABLE_MSG91` is not `true`, the flow id is
+not set, or the order is a test order (QA seller or test buyer, `orders.is_test`). Pickup orders get
+no SMS. The status change always goes through.

@@ -59,8 +59,10 @@ export function renderOrderSms(status: OrderSmsStatus, vars: string[]): string {
 
 /**
  * Buyer SMS for a delivery order moving to confirmed / out_for_delivery / completed.
- * Skips (returns why) when MSG91 is off, the order is a test order (QA seller or test buyer:
- * orders.is_test), the flow id env var is unset, or the phone is invalid. Never throws.
+ * Dry run (nothing sent; the MSG91 request body is logged as "[sms] DRY RUN", phone masked, no
+ * authkey) when SMS_DRY_RUN=true, MSG91 is off, the flow id env var is unset, or the order is a
+ * test order (QA seller or test buyer: orders.is_test). Pickup orders and bad phones: skipped.
+ * Never throws.
  */
 export async function sendOrderSms(
   status: string,
@@ -68,19 +70,22 @@ export async function sendOrderSms(
 ): Promise<string> {
   try {
     if (!(status in env.flow)) return "skipped: no SMS for this status";
-    if (!env.enabled()) return "skipped: MSG91 disabled";
-    if (o.is_test) return "skipped: test order";
     if (o.order_type !== "delivery") return "skipped: not a delivery order";
-    const flowId = env.flow[status as OrderSmsStatus]();
-    if (!flowId) {
-      console.info(`[sms] no flow id for ${status}; set the MSG91_FLOW_* env var to send it`);
-      return "skipped: flow id unset";
-    }
     const phone = normalizeIndianMobile(String(o.phone || ""));
     if (!phone.ok) return "skipped: no valid phone";
+    const flowId = env.flow[status as OrderSmsStatus]();
     const vars = orderSmsVars(status as OrderSmsStatus, o);
     // MSG91 flows name variables var1, var2…; send VAR1… too, like the OTP flow.
     const named = Object.fromEntries(vars.flatMap((v, i) => [[`var${i + 1}`, v], [`VAR${i + 1}`, v]]));
+    const dry = (import.meta.env?.SMS_DRY_RUN || process.env.SMS_DRY_RUN) === "true" ? "SMS_DRY_RUN"
+      : !env.enabled() ? "MSG91 disabled" : !flowId ? "flow id unset" : o.is_test ? "test order" : null;
+    if (dry) {
+      console.info("[sms] DRY RUN", JSON.stringify({
+        reason: dry, order_id: o.id, status, text: renderOrderSms(status as OrderSmsStatus, vars),
+        request: { flow_id: flowId || `<${status} flow id unset>`, sender: env.sender(), mobiles: `91******${phone.digits10.slice(-4)}`, ...named },
+      }));
+      return `dry-run: ${dry}`;
+    }
     const r = await sendSms(`91${phone.digits10}`, flowId, named);
     return r.ok ? "sent" : `failed: ${r.error}`;
   } catch (err: any) {
