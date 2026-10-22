@@ -15,7 +15,8 @@ const SESSION_KEY = `otp_session_${role}`;
 const RESEND_COOLDOWN = 30;
 const MAX_ATTEMPTS = 3;
 ---
-<BottomSheet id={id} title={title} showClose={true}>
+<!-- No ✕ (founder): back out by tapping outside, swiping down, or the phone's back button. -->
+<BottomSheet id={id} title={title} showClose={false}>
   <!-- Step 1: phone entry -->
   <div id={`${id}-step1`}>
     <p style="font:400 13px Inter;color:var(--v2-ink-2);margin:0 0 16px;line-height:1.5;">
@@ -137,6 +138,43 @@ const MAX_ATTEMPTS = 3;
     const elapsed = (Date.now() - sentAtMs) / 1000;
     startCountdown(RESEND_COOLDOWN - elapsed);
   }
+
+  // Back out without a ✕: swipe the sheet down from its top, or press the browser/phone back
+  // button (opening adds a history entry; back closes the sheet instead of leaving the page).
+  const backdrop = document.getElementById(`${id}-backdrop`);
+  const panel = backdrop?.querySelector(".v2-sheet");
+  const isOpen = () => !!backdrop?.classList.contains("v2-sheet-open");
+  const closeSheet = () => window.v2CloseSheet ? window.v2CloseSheet(id) : backdrop?.classList.remove("v2-sheet-open");
+  let wasOpen = false;
+  if (backdrop) new MutationObserver(() => {
+    const open = isOpen();
+    if (open === wasOpen) return;
+    wasOpen = open;
+    if (open) {
+      if (panel) panel.style.transform = "";
+      try { history.pushState({ ...(history.state || {}), rlfSheet: id }, ""); } catch {}
+    } else {
+      window.v2AfterLogin = null; // closed without logging in: the pending action is dropped
+      if (history.state?.rlfSheet === id) history.back();
+    }
+  }).observe(backdrop, { attributes: true, attributeFilter: ["class"] });
+  window.addEventListener("popstate", () => { if (isOpen()) closeSheet(); });
+  let dragY = null;
+  panel?.addEventListener("touchstart", (e) => {
+    // Only from the handle/title row, so typing and scrolling inside the form still work.
+    dragY = e.target.closest?.(".v2-sheet-handle, .v2-sheet-head") ? e.touches[0].clientY : null;
+  }, { passive: true });
+  panel?.addEventListener("touchmove", (e) => {
+    if (dragY == null) return;
+    panel.style.transform = `translateY(${Math.max(0, e.touches[0].clientY - dragY)}px)`;
+  }, { passive: true });
+  panel?.addEventListener("touchend", (e) => {
+    if (dragY == null) return;
+    const dy = e.changedTouches[0].clientY - dragY;
+    dragY = null;
+    panel.style.transform = "";
+    if (dy > 80) closeSheet();
+  });
 
   // On sheet open: restore session if OTP was sent recently
   const sheet = document.getElementById(id);
