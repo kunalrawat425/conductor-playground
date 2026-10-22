@@ -8,7 +8,7 @@ import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 import { toSellerView, STATUS_BY_TAB } from "../../../lib/seller-order-view";
 import { cartLabel, isLiveRow, rowPaise, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
-import { cancelReasonText } from "../../../lib/order-cancel";
+import { cancelReasonText, checkCancelReason } from "../../../lib/order-cancel";
 import { orderSlotText, sellerSlotError } from "../../../lib/delivery-slots";
 
 function capitalizeFishName(s: string): string {
@@ -471,6 +471,11 @@ export const POST: APIRoute = async ({ request, url }) => {
     const slotErr = newSlot ? sellerSlotError(newSlot) : null;
     if (slotErr) return new Response(JSON.stringify({ error: slotErr }), { status: 400 });
     const why = String(cancel_reason ?? refund_note ?? "").trim().slice(0, 200);
+    // The buyer reads the seller's reason, so a cancel or decline needs one.
+    if (status === "declined" || status === "cancelled") {
+      const typed = checkCancelReason(why);
+      if (!typed.ok) return new Response(JSON.stringify({ error: typed.error }), { status: 400 });
+    }
     const moved: { data: any; currentOrder: any }[] = [];
     let firstErr: { error: string; code: number } | null = null;
     for (const id of rowIds) {
