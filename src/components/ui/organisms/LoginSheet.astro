@@ -303,6 +303,7 @@ const MAX_ATTEMPTS = 3;
           if (data.session) localStorage.setItem("rlf_session_buyer", data.session);
         }
       } catch {}
+      try { window.relifishClarityTag && window.relifishClarityTag(); } catch {}
 
       if (role === "buyer" && window.RelifishCart) {
         try { await window.RelifishCart.pushLocalToServer(); } catch {}

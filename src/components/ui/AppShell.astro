@@ -159,6 +159,18 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
               t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
               y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
           })(window, document, "clarity", "script", "wryvhcf3k8");
+          // Tag the Clarity visit with our own IDs (never the phone number) so a buyer's session can be found
+          // from the DB, and mark team devices (?rf_internal=1) so they can be filtered out.
+          window.relifishClarityTag = function () {
+          try {
+          var b = localStorage.getItem("rlf_buyer_id"), s = localStorage.getItem("rlf_seller_id");
+          if (b) { clarity("identify", b); clarity("set", "buyer_id", b); }
+          if (s) clarity("set", "seller_id", s);
+          clarity("set", "logged_in", b || s ? "yes" : "no");
+          if (localStorage.getItem("rf_internal") === "1") clarity("set", "team", "yes");
+          } catch (e) {}
+          };
+          window.relifishClarityTag();
         </script>
         <!-- Facebook Pixel -->
         <script is:inline>
