@@ -352,18 +352,19 @@ const tags = [
         )}
       </div>
 
-      {/* Pre-order context banner (open window), or when the next window opens */}
-      {isPreorderMode ? (
+      {/* Pre-order context banner (open window), or when the next window opens. With delivery times on,
+          the hero ("Pre-order now · for …") and the badge ("pick your day & time") already say it all. */}
+      {isPreorderMode ? (slotLine ? null : (
         <div style="margin:12px 16px 0;padding:12px 14px;background:#F3E8FF;border:1px solid #DDD6FE;border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;">
           <span style="font-size:20px;">🌙</span>
           <div>
-            <div style="font:700 13px Inter;color:#7C3AED;">{slotLine ? `Pre-order for ${deliveryFor}` : preorderLine || `Pre-ordering for ${deliveryFor}`}</div>
+            <div style="font:700 13px Inter;color:#7C3AED;">{preorderLine || `Pre-ordering for ${deliveryFor}`}</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              {slotLine ? "Pick your delivery day and time at checkout." : `For ${deliveryFor}. Your order is reserved from that morning's fresh catch.`}
+              {`For ${deliveryFor}. Your order is reserved from that morning's fresh catch.`}
             </div>
           </div>
         </div>
-      ) : preorderLine && !isEffectivelyOpen ? (
+      )) : preorderLine && !isEffectivelyOpen ? (
         <div style="margin:12px 16px 0;padding:10px 14px;background:#F3E8FF;border:1px solid #DDD6FE;border-radius:var(--v2-radius);font:700 13px Inter;color:#7C3AED;">
           🌙 {preorderLine}
         </div>
@@ -499,20 +500,27 @@ const tags = [
     gap: 6px;
     padding: 4px 0;
   }
-  .v2-item-tier-label {
-    flex: 1;
-    font: 500 12px Inter;
-    color: var(--v2-ink-2);
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .v2-item-tier-price {
     font: 800 16px Inter;
     color: var(--v2-ink);
     white-space: nowrap;
   }
+  .v2-item-tappable { cursor: pointer; }
+  /* A pack size to pick: looks like a button because it is one (adds that pack). */
+  .v2-item-tier-chip {
+    align-self: flex-start;
+    font: 600 12px Inter;
+    color: var(--v2-brand);
+    background: var(--v2-brand-l);
+    border: 1px solid var(--v2-brand);
+    border-radius: 999px;
+    padding: 3px 10px;
+    cursor: pointer;
+    text-align: left;
+    white-space: normal;
+  }
+  .v2-tiers-flash { animation: v2-tiers-flash 0.9s ease-out; border-radius: 8px; }
+  @keyframes v2-tiers-flash { from { box-shadow: 0 0 0 3px var(--v2-brand); } to { box-shadow: 0 0 0 3px transparent; } }
   .v2-item-add-sm {
     width: 28px !important;
     height: 28px !important;
@@ -627,10 +635,6 @@ const tags = [
       if (speciesDisplayById && speciesDisplayById[id]) return speciesDisplayById[id];
       return id.charAt(0).toUpperCase() + id.slice(1);
     }
-    function bundleStepFromOpt(opt) {
-      const n = Number(opt?.bundle_size);
-      return Number.isFinite(n) && n > 1 ? n : 1;
-    }
     function isGenericTierLabel(lab) {
       const s = String(lab || "").trim();
       if (!s) return true;
@@ -649,17 +653,12 @@ const tags = [
         null;
       if (!opt) {
         const pl = String(i.pricing_label || i.qty_unit || "").trim();
-        const u = String(i.qty_unit || "kg").toLowerCase();
-        let qtyPart = `${fmtQty(i.qty)} ${i.qty_unit || "kg"}`;
-        if (u === "kg" && i.qty > 0 && i.qty < 1) {
-          qtyPart = `${Math.round(i.qty * 1000)} grams`;
-        }
+        const qtyPart = counterQtyLabel(i.qty, i.qty_unit, i.bundle_size, pl === "pack" ? "/pack" : undefined);
         if (!pl || isGenericTierLabel(pl)) return escape(qtyPart);
         return `${escape(qtyPart)} · ${escape(titleCaseWords(pl))}`;
       }
       const unit = resolveUnit(opt);
-      const bs = bundleStepFromOpt(opt);
-      const qtyPart = counterQtyLabel(i.qty, unit, bs);
+      const qtyPart = counterQtyLabel(i.qty, unit, Number(opt.bundle_size) || 1, opt.buyer_menu_suffix);
       const lab = String(opt.label || opt.unit_label || "").trim();
       const stored = String(i.pricing_label || "").trim();
       const tierCandidate = !isGenericTierLabel(lab) ? lab : !isGenericTierLabel(stored) ? stored : "";
@@ -687,17 +686,10 @@ const tags = [
       const n = Number(v) || 0;
       return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
     }
-    function counterQtyLabel(qty, unit, bundleSize) {
-      const u = String(unit || "").toLowerCase();
-      const bs = bundleSize && bundleSize > 1 ? Number(bundleSize) : 1;
-      if (u === "piece" || u === "pc" || u === "pcs") {
-        const packs = bs > 1 ? Math.round(Number(qty) / bs) : Number(qty);
-        return `${fmtQty(packs)} pack${packs === 1 ? "" : "s"}`;
-      }
-      if (u === "kg" && qty > 0 && qty < 1) {
-        return `${Math.round(qty * 1000)} grams`;
-      }
-      return `${fmtQty(qty)} ${unit || "kg"}`;
+    // Quantity in the unit the price shows (cart.ts qtyLabel): "₹240 /pack" counts packs, "/kg" counts kg.
+    function counterQtyLabel(qty, unit, bundleSize, suffix) {
+      const perPack = suffix ? !/^\/(kg|pc)$/.test(suffix) : undefined;
+      return Cart()?.qtyLabel(qty, unit, bundleSize, perPack) || `${fmtQty(qty)} ${unit || "kg"}`;
     }
 
     // Build composite cart key matching cart.ts logic (pre-order lines carry a "|preorder" suffix)
@@ -755,7 +747,7 @@ const tags = [
                   ${inCart > 0
                     ? (() => {
                         const bs = firstOpt.bundle_size && firstOpt.bundle_size > 0 ? firstOpt.bundle_size : 1;
-                        const packLabel = counterQtyLabel(inCart, unit, bs);
+                        const packLabel = counterQtyLabel(inCart, unit, bs, firstOpt.buyer_menu_suffix);
                         return `<div class="v2-item-counter" data-id="${key}">
                          <button class="v2-item-dec" aria-label="Decrease">−</button>
                          <span class="v2-item-count">${packLabel}</span>
@@ -782,13 +774,13 @@ const tags = [
 
                     return `<div class="v2-item-tier">
                       <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
-                        <span class="v2-item-tier-label" style="flex:none;white-space:normal;">${escape(label)}${bSize}</span>
+                        <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
                         <span class="v2-item-tier-price" style="color:#7C3AED;margin-right:0;">🌙 ${rangeDisplay}</span>
                       </div>
                       ${tierQty > 0
                         ? (() => {
                             const bs = o.bundle_size && o.bundle_size > 0 ? o.bundle_size : 1;
-                            const packLabel = counterQtyLabel(tierQty, tierUnit, bs);
+                            const packLabel = counterQtyLabel(tierQty, tierUnit, bs, o.buyer_menu_suffix);
                             return `<div class="v2-item-counter" data-id="${key}">
                              <button class="v2-item-dec" aria-label="Decrease">−</button>
                              <span class="v2-item-count">${packLabel}</span>
@@ -815,7 +807,7 @@ const tags = [
                   ${sellerFullyClosed ? '' : (inCart > 0
                     ? (() => {
                         const bs = firstOpt.bundle_size && firstOpt.bundle_size > 0 ? firstOpt.bundle_size : 1;
-                        const packLabel = counterQtyLabel(inCart, unit, bs);
+                        const packLabel = counterQtyLabel(inCart, unit, bs, firstOpt.buyer_menu_suffix);
                         return `<div class="v2-item-counter" data-id="${key}">
                          <button class="v2-item-dec" aria-label="Decrease">−</button>
                          <span class="v2-item-count">${packLabel}</span>
@@ -837,13 +829,13 @@ const tags = [
                     const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
                     return `<div class="v2-item-tier">
                       <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
-                        <span class="v2-item-tier-label" style="flex:none;white-space:normal;">${escape(label)}${bSize}</span>
+                        <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
                         <span class="v2-item-tier-price" style="margin-right:0;">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
                       </div>
                       ${sellerFullyClosed ? '' : (tierQty > 0
                         ? (() => {
                             const bs = o.bundle_size && o.bundle_size > 0 ? o.bundle_size : 1;
-                            const packLabel = counterQtyLabel(tierQty, tierUnit, bs);
+                            const packLabel = counterQtyLabel(tierQty, tierUnit, bs, o.buyer_menu_suffix);
                             const avail = l.weight_avail != null ? Number(l.weight_avail) : Infinity;
                             const atMax = Number.isFinite(avail) && tierQty + bs > avail;
                             return `<div class="v2-item-counter" data-id="${key}">
@@ -872,7 +864,10 @@ const tags = [
       // Fish size badge
       const sizeMap = { small: "S", medium: "M", large: "L" };
       const sizeText = (l.size_label || "").trim() || (l.fish_size && sizeMap[l.fish_size]) || "";
-      const sizeBadge = sizeText ? `<span style="font:600 10px Inter;color:var(--v2-ink-3);background:var(--v2-bg-3);padding:2px 6px;border-radius:4px;margin-left:4px;text-transform:none;">${escape(sizeText)}</span>` : '';
+      // Plain text on its own line under the name (a chip next to a long name got cut to "50…" and
+      // drew taps), and left out when the line below already says it ("Bombil · Fry cut · 500 g").
+      const sizeShown = sizeText && !String(l.description || "").toLowerCase().includes(sizeText.toLowerCase());
+      const sizeLine = sizeShown ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(sizeText)}</div>` : '';
       const descHtml = l.description ? `<div style="font:400 11px/1.4 Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(l.description)}</div>` : '';
 
       // Stock left is not shown on cards (founder's call, 2026-10-13); stock still caps quantity and hides sold-out fish.
@@ -906,14 +901,15 @@ const tags = [
           : `<span class="v2-item-emoji">${emoji}</span>`;
 
       return `
-        <div class="v2-item-card${totalInCart > 0 ? ' v2-item-incart' : ''}" data-listing-id="${l.id}">
+        <div class="v2-item-card${totalInCart > 0 ? ' v2-item-incart' : ''}${canAddItem ? ' v2-item-tappable' : ''}" data-listing-id="${l.id}">
           <div class="v2-item-img" style="background:${isListingPreorder ? 'linear-gradient(135deg,#F3E8FF,#E9D5FF)' : 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'};position:relative;overflow:hidden;">
             ${imgContent}
             ${isListingPreorder ? '<span class="v2-item-cut" style="background:#F3E8FF;color:#7C3AED;">Pre-order</span>' : ''}
             ${discountBadge}
           </div>
           <div class="v2-item-body">
-            <div class="v2-item-name">${escape(name)}${sizeBadge}</div>
+            <div class="v2-item-name">${escape(name)}</div>
+            ${sizeLine}
             ${descHtml}
             ${preorderRangeHtml}
             ${limitHint}
@@ -1176,18 +1172,10 @@ const tags = [
       return deliveryFeeAmount > 0 ? { fee: deliveryFeeAmount, label: `₹${deliveryFeeAmount}` } : { fee: 0, label: "free" };
     }
 
-    // Lines live validation took out this visit: shown crossed out with the reason.
-    let removedDismissed = false;
-    function removedLinesHtml(c) {
-      const removed = c.getRemovedLines ? c.getRemovedLines(sellerId, cartMode) : [];
-      return removed.map((r) => `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-bottom:4px;"><s>${escape(r.name)}</s> · <span style="color:var(--v2-red);">${escape(r.reason)}</span></div>`).join("");
-    }
-
     function renderCart() {
       const c = Cart(); if (!c) return;
       const cart = c.getCart(cartMode);
       const totalQty = c.totalQty(cart);
-      const removedHtml = removedLinesHtml(c);
 
       // Single-seller cart: all items belong to one seller.
       const sellerItems = Object.values(getSellerItems());
@@ -1197,19 +1185,8 @@ const tags = [
       // = 2 items), matching the checkout and the order page, which list each line.
       const sellerPackCount = sellerItems.length;
 
-      if (totalQty === 0) {
-        if (!removedHtml || removedDismissed) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
-        // Everything was removed: say why instead of the cart silently vanishing.
-        document.body.classList.add("v2-has-cart");
-        cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-            <div><div style="font:700 13px Inter;color:var(--v2-ink);margin-bottom:6px;">Removed from your cart</div>${removedHtml}</div>
-            <button id="v2-cart-removed-ok" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;flex-shrink:0;" aria-label="Dismiss">✕</button>
-          </div>
-        </div>`;
-        document.getElementById("v2-cart-removed-ok")?.addEventListener("click", () => { removedDismissed = true; renderCart(); });
-        return;
-      }
+      // Removed items are told once in a toast (announceValidation), never kept in the bar.
+      if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
       document.body.classList.add("v2-has-cart");
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
@@ -1242,7 +1219,6 @@ const tags = [
         : null;
 
       cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
-        ${removedHtml ? `<div style="margin-bottom:6px;">${removedHtml}</div>` : ""}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div>
             <div style="font:800 16px Inter;color:var(--v2-ink);">₹${sellerSubtotal.toLocaleString("en-IN")}</div>
@@ -1732,13 +1708,12 @@ const tags = [
       }
     });
 
-    /** Tell the buyer what validation changed: removed items (with reason) and old → new prices. */
+    /** One plain toast for what validation changed: items taken out of the cart, then old → new prices. */
     function announceValidation(r) {
-      const parts = [...(r.oosMessages || []), ...(r.priceMessages || [])];
-      if (!parts.length) return false;
-      if (r.oosMessages?.length) removedDismissed = false;
-      window.v2Toast?.("info", r.oosMessages?.length ? "Cart updated" : "Prices updated", parts.join(" · "));
-      return true;
+      const prices = (r.priceMessages || []).join(" · ");
+      if (r.removed?.length) window.v2Toast?.("info", Cart().removedNotice(r.removed), prices ? `New prices: ${prices}` : undefined);
+      else if (prices) window.v2Toast?.("info", "Prices updated", prices);
+      return !!(r.removed?.length || prices);
     }
 
     function triggerBackgroundValidation(c) {
@@ -1837,8 +1812,24 @@ const tags = [
         inc(t.closest(".v2-item-counter")?.dataset.id);
       } else if (t.classList.contains("v2-item-dec")) {
         dec(t.closest(".v2-item-counter")?.dataset.id);
+      } else if (t.closest(".v2-item-tier-chip") || !t.closest("button, a, .v2-item-counter")) {
+        const card = t.closest(".v2-item-card");
+        if (card) tapCard(card, t.closest(".v2-item-tier"));
       }
     });
+
+    // A tap anywhere on a card (photo, name, size, price) = its "+" (or "+1" once in the cart);
+    // on a pack row or its size chip, that pack's "+". Several packs and a tap elsewhere: show the
+    // pack rows to pick from. Clicking the real button keeps one path (login wall, stock checks).
+    function tapCard(card, row) {
+      const tiers = card.querySelector(".v2-item-tiers");
+      if (tiers && !row) {
+        tiers.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        tiers.classList.remove("v2-tiers-flash"); void tiers.offsetWidth; tiers.classList.add("v2-tiers-flash");
+        return;
+      }
+      (row || card).querySelector(".v2-item-inc:not([disabled]), .v2-item-add:not([disabled])")?.click();
+    }
 
     // Re-render if cart changes from another tab/window or hydration completes
     window.addEventListener("v2-cart-changed", () => render());
