@@ -14,7 +14,9 @@ export function buyerOrderPushNotification(
   species?: string | null,
   final_price?: number | null,
   /** Cancellations: who did it and why, so the buyer sees it on the lock screen. */
-  cancel?: BuyerCancelInfo | null
+  cancel?: BuyerCancelInfo | null,
+  /** Delivery time: the slot ("Sat 25 Oct, 9–11 AM") when confirmed, "11 AM" when out for delivery. */
+  slot?: { when: string; changed?: boolean } | null
 ): { title: string; body: string } {
   if (cancel && (status === "cancelled" || status === "declined")) {
     const fish = species ? `${species} ` : "";
@@ -120,6 +122,13 @@ export function buyerOrderPushNotification(
     },
   };
 
+  if (slot?.when && (status === "confirmed" || status === "out_for_delivery")) {
+    const m = messages[status];
+    const changed = slot.changed ? " (new time from the seller)" : "";
+    return status === "confirmed"
+      ? { title: m.title, body: `${m.body}. Delivery: ${slot.when}${changed}` }
+      : { title: m.title, body: `${m.body}, arriving by ${slot.when}${changed}` };
+  }
   return (
     messages[status] || {
       title: "Order Update",

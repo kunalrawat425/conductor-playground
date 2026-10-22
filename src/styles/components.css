@@ -1676,6 +1676,14 @@ body.v2-has-cart {
   color: var(--v2-green);
   margin-top: 2px;
 }
+/* Day pills above a slot grid (checkout delivery time; same look as SlotPickerSheet). */
+.v2-day-picker { display: flex; gap: 6px; padding: 0 0 12px; overflow-x: auto; scrollbar-width: none; }
+.v2-day-picker:empty { display: none; }
+.v2-day-picker .v2-day-pill {
+  flex-shrink: 0; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--v2-border);
+  background: var(--v2-bg); font: 600 12px Inter; color: var(--v2-ink-2); cursor: pointer; line-height: 1.3;
+}
+.v2-day-picker .v2-day-selected { background: var(--v2-brand); color: #fff; border-color: var(--v2-brand); }
 
 /* === AddressCard === */
 .v2-addr-card {
