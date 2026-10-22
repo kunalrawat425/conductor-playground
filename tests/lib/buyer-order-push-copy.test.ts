@@ -27,6 +27,15 @@ describe("buyer push copy — coverage", () => {
     expect(n.body).not.toContain("teleported");
   });
 
+  it("never says 'seller' to the buyer (founder: order-centric wording)", () => {
+    const cancels = [{ by: "seller", reason: "Sold out", refunded: true }, { by: "buyer", reason: null, refunded: false }] as any[];
+    for (const s of ALL_STATUSES) {
+      const all = [buyerOrderPushNotification(s, "pomfret", null, null, { when: "Sat 24 Oct, 8–10 AM", changed: true }),
+        ...cancels.map((c) => buyerOrderPushNotification(s, "pomfret", null, c))];
+      for (const n of all) expect(`${n.title} ${n.body}`, s).not.toMatch(/seller/i);
+    }
+  });
+
   it("works with a null species for every status", () => {
     for (const s of ALL_STATUSES) {
       const n = buyerOrderPushNotification(s, null);

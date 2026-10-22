@@ -27,7 +27,7 @@ export function buyerOrderPushNotification(
     }
     const refund = cancel.refunded ? " Your payment is being refunded in full." : "";
     if (cancel.by === "seller") {
-      return { title: "Order cancelled by the seller", body: `The seller cancelled your ${fish}order.${reason}${refund}`.trim() };
+      return { title: "Order cancelled", body: `Your ${fish}order couldn't be fulfilled and is cancelled.${reason}${refund}`.trim() };
     }
     if (cancel.by === "buyer") {
       return { title: "You cancelled your order", body: `Your ${fish}order is cancelled.${reason}${refund}`.trim() };
@@ -77,8 +77,8 @@ export function buyerOrderPushNotification(
     paid: {
       title: "Payment received",
       body: species
-        ? `We got your payment for ${species}. Waiting for the seller to confirm your order.`
-        : "We got your payment. Waiting for the seller to confirm your order.",
+        ? `We got your payment for ${species}. Waiting for confirmation.`
+        : "We got your payment. Waiting for confirmation.",
     },
     completed: {
       title: "Order completed",
@@ -96,7 +96,7 @@ export function buyerOrderPushNotification(
     },
     pending: {
       title: "Order received",
-      body: species ? `Your ${species} order is pending seller action` : "Your order is pending seller action",
+      body: species ? `Your ${species} order is waiting for confirmation` : "Your order is waiting for confirmation",
     },
     pending_payment: {
       title: "Payment pending",
@@ -124,7 +124,7 @@ export function buyerOrderPushNotification(
 
   if (slot?.when && (status === "confirmed" || status === "out_for_delivery")) {
     const m = messages[status];
-    const changed = slot.changed ? " (new time from the seller)" : "";
+    const changed = slot.changed ? " (new delivery time)" : "";
     return status === "confirmed"
       ? { title: m.title, body: `${m.body}. Delivery time: ${slot.when}${changed}` }
       : { title: m.title, body: `${m.body}, arriving by ${slot.when}${changed}` };

@@ -162,16 +162,16 @@ export const POST: APIRoute = async ({ request, url }) => {
     const minAmt = Number(seller?.min_order_amount) || 0;
     if (minAmt > 0 && cartSubtotal < minAmt) {
       return new Response(
-        JSON.stringify({ error: `Minimum order for this seller is ₹${minAmt}` }),
+        JSON.stringify({ error: `Minimum order is ₹${minAmt}` }),
         { status: 400 }
       );
     }
 
     if (order_type === "delivery" && !seller?.has_delivery) {
-      return new Response(JSON.stringify({ error: "This seller does not offer delivery" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Delivery isn't available for this shop" }), { status: 400 });
     }
     if (order_type === "pickup" && seller?.has_pickup === false) {
-      return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Pickup isn't available for this shop" }), { status: 400 });
     }
     const status: "pending_payment" = "pending_payment";
 

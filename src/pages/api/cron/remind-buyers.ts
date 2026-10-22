@@ -51,7 +51,7 @@ async function run(request: Request) {
   if (pErr) console.warn("[cron/remind-buyers] orders query failed", pErr.message);
   for (const o of unpaidOrdersToRemind(pending ?? [], now)) {
     const fish = o.species ? getSpeciesDisplay(o.species) : "fish";
-    const r = await push(o.buyer_id!, "Complete payment to confirm", `Your ${fish} order is waiting. Pay now so the seller can confirm it.`, `/track/${o.id}`);
+    const r = await push(o.buyer_id!, "Complete payment to confirm", `Your ${fish} order is waiting. Pay now to confirm it.`, `/track/${o.id}`);
     if (r?.sent) unpaid++;
   }
 

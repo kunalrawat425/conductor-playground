@@ -303,7 +303,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
         return terminated
           ? `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardStyle}">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined by seller" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
+                <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
                 <div>${paymentPillHtml(o)}${statusToTag(o.status)}</div>
               </div>
               <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>

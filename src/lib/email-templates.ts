@@ -246,7 +246,7 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     ${orderIntro(
       args.isPreorder ? `${fishName} pre-order` : `${fishName} order update`,
       args.isPreorder
-        ? "Your pre-order has been placed. The seller sets the final price on your delivery day — you will only be charged up to the max estimate shown."
+        ? "Your pre-order has been placed. The final price is set on your delivery day — you will only be charged up to the max estimate shown."
         : "Your order status has changed. You can track every step in the app with live updates."
     )}
     ${slotBox(args)}${orderSummaryTable(rows)}
@@ -434,14 +434,14 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
         ${safeBuyerAddr ? `<div style="font-size:13px;color:#1e40af;font-weight:600;margin-bottom:2px;">📍 ${safeBuyerAddr}</div>` : ""}
         ${safeScheduled
           ? `<div style="font-size:13px;color:#1e40af;">🕐 Scheduled: ${safeScheduled}</div>`
-          : `<div style="font-size:13px;color:#1e40af;">Your order will be delivered after the seller confirms.</div>`}
+          : `<div style="font-size:13px;color:#1e40af;">Your order will be delivered once it's confirmed.</div>`}
       </div>`
     : `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin-top:16px;">
         <div style="font-size:12px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧊 Pickup Details</div>
         <div style="font-size:13px;color:#166534;font-weight:600;margin-bottom:2px;">📍 ${safeSeller}${safeLocation ? ` — ${safeLocation}` : ""}</div>
         ${safeScheduled
           ? `<div style="font-size:13px;color:#166534;">🕐 Pickup: ${safeScheduled}</div>`
-          : `<div style="font-size:13px;color:#166534;">Seller will notify you when your order is ready for pickup.</div>`}
+          : `<div style="font-size:13px;color:#166534;">We'll let you know when your order is ready for pickup.</div>`}
       </div>`;
 
   // Order meta strip

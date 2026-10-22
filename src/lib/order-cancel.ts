@@ -34,7 +34,7 @@ export function buyerCancelRule(
   if (seller && o.delivery_slot_start) {
     if ((nowMs ?? Date.now()) < preorderDeadlineMs(seller, slotDateIST(o.delivery_slot_start))) return { ok: true };
   } else if (seller && isPreorderShoppingWindow(seller, nowMs)) return { ok: true };
-  return { ok: false, reason: "The pre-order cutoff has passed — the seller is already getting your fish." };
+  return { ok: false, reason: "The pre-order cutoff has passed — your fish is already being arranged." };
 }
 
 export type CancelActor = "buyer" | "seller" | "system" | "admin" | "unknown" | null | undefined;
@@ -43,7 +43,7 @@ export type CancelActor = "buyer" | "seller" | "system" | "admin" | "unknown" | 
 export function cancelledByText(by: CancelActor, viewer: "buyer" | "seller", cancelReason?: string | null): string {
   if (cancelReason === "auto_expired_payment" || by === "system") return "Cancelled automatically — payment was not completed in time";
   if (by === "buyer") return viewer === "buyer" ? "Cancelled by you" : "Cancelled by the buyer";
-  if (by === "seller") return viewer === "seller" ? "Cancelled by you" : "Cancelled by the seller";
+  if (by === "seller") return viewer === "seller" ? "Cancelled by you" : "Cancelled — your order couldn't be fulfilled";
   if (by === "admin") return "Cancelled by Relifish support";
   return "Cancelled";
 }

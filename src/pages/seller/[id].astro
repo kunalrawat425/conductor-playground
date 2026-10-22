@@ -1166,7 +1166,7 @@ const tags = [
       setCheckoutSubtotal(Math.round(subtotal * 100) / 100);
       show(bad.length
         ? `<span style="color:var(--v2-red);font-weight:700;">Not available for ${escape(day.label)}: ${bad.map((i) => escape(String(i.name || "").split(" (")[0])).join(", ")}.</span> Pick another day, or remove ${bad.length > 1 ? "them" : "it"} from your cart.`
-        : `🌙 Pre-order for ${escape(day.label === "Tomorrow" ? "tomorrow" : day.label)}: you pay up to ₹${subtotal.toLocaleString("en-IN")} now; the seller sets the final price on the day.`);
+        : `🌙 Pre-order for ${escape(day.label === "Tomorrow" ? "tomorrow" : day.label)}: you pay up to ₹${subtotal.toLocaleString("en-IN")} now; the final price is set on the day.`);
     }
     document.getElementById("seller-checkout-slot-section")?.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-slot-day],[data-slot-start]");
@@ -1271,7 +1271,7 @@ const tags = [
       // per_km without a known buyer location: show the seller's rate, not radius × rate (reads as a scary maximum).
       let feeLine = "";
       if (feeEstimate && !(freeHit && !isPreorderMode)) {
-        const amt = feeEstimate.fee === 0 ? "" : feeEstimate.fee == null ? `₹${deliveryFeePerKm}/km from the seller` : feeEstimate.label;
+        const amt = feeEstimate.fee === 0 ? "" : feeEstimate.fee == null ? `₹${deliveryFeePerKm}/km` : feeEstimate.label;
         feeLine = amt ? `🚲 Delivery ${amt}, shown before you pay` : "🚲 Free delivery";
         if (amt && deliveryFreeAbove > 0 && deliveryFreeAbove > sellerSubtotal) feeLine += ` · free above ₹${deliveryFreeAbove}`;
       }
