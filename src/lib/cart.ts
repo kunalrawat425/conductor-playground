@@ -60,8 +60,6 @@ export function lineMode(i: { mode?: string | null }): CartMode {
 // menu's mode, so code that doesn't pass a mode still sees only that cart. null = all lines.
 let activeMode: CartMode | null = null;
 export function setCartMode(mode: CartMode | null): void { activeMode = mode; }
-// Lines validation removed during this page visit (see getRemovedLines).
-let removedLines: RemovedLine[] = [];
 
 function readAll(): CartMap {
   try {
@@ -191,7 +189,6 @@ export function addItem(item: Omit<CartItem, "qty" | "added_at"> & { qty?: numbe
     ? { ...existing, qty: existing.qty + (item.qty ?? 1) }
     : { ...item, mode, qty: item.qty ?? 1, added_at: Date.now() };
   cart[key] = next;
-  removedLines = removedLines.filter((r) => r.key !== key);
   saveCart(cart);
   syncMutation("upsert", upsertPayload(next));
   return next;
@@ -372,13 +369,9 @@ export async function pushLocalToServer(): Promise<void> {
   }
 }
 
-/** A line validation took out of the cart. Shown crossed out for the rest of the visit. */
+/** A line validation took out of the cart (local and server). Told once in a toast, never kept on screen. */
 export type RemovedLine = { key: string; seller_id: string; mode: CartMode; name: string; reason: string };
 export type PriceChange = { key: string; name: string; from: number; to: number };
-
-export function getRemovedLines(sellerId?: string, mode?: CartMode): RemovedLine[] {
-  return removedLines.filter((r) => (!sellerId || r.seller_id === sellerId) && (!mode || r.mode === mode));
-}
 
 export const REMOVED_OUT_OF_STOCK = "Out of stock — removed";
 export const REMOVED_NOT_LISTED = "No longer listed — removed";
@@ -416,16 +409,54 @@ export function checkLine(item: CartItem, live: any, mode: CartMode): { reason: 
   return { price: packPrice / bs, bundle: bs };
 }
 
+/**
+ * One plain sentence per kind of removal, for a single toast:
+ * "Surmai is no longer on the menu, so we removed it from your cart."
+ */
+export function removedNotice(removed: Pick<RemovedLine, "name" | "reason">[]): string {
+  const groups = new Map<string, string[]>();
+  for (const r of removed) {
+    const why = r.reason === REMOVED_PACK_CHANGED ? "pack" : r.reason === REMOVED_OUT_OF_STOCK ? "sold out" : "no longer on the menu";
+    const name = String(r.name || "An item").split(" (")[0]; // "Bombil (500 g)" → "Bombil"
+    const names = groups.get(why) ?? [];
+    if (!names.includes(name)) names.push(name);
+    groups.set(why, names);
+  }
+  return [...groups].map(([why, names]) => {
+    const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+    const it = names.length > 1 ? "them" : "it";
+    return why === "pack"
+      ? `The pack size of ${list} changed, so we removed ${it} from your cart. Please add ${it} again.`
+      : `${list} ${names.length > 1 ? "are" : "is"} ${why}, so we removed ${it} from your cart.`;
+  }).join(" ");
+}
+
+/**
+ * Quantity in the unit the price is in: "2 packs" for pack-priced lines (a 500 g pack at
+ * ₹240/pack is never "1 kg"), "1.5 kg" or "3 pcs" for loose ones.
+ * perPack defaults to "the pack isn't 1 kg / 1 piece"; pass true for a single named-size pack.
+ */
+export function qtyLabel(qty: number, unit?: string | null, bundleSize?: number | null, perPack?: boolean): string {
+  const q = Number(qty) || 0;
+  const bs = Number(bundleSize) > 0 ? Number(bundleSize) : 1;
+  const n = (v: number) => String(Math.round(v * 100) / 100);
+  if (perPack ?? Math.abs(bs - 1) > 1e-9) {
+    const packs = Math.round((q / bs) * 100) / 100;
+    return `${n(packs)} pack${packs === 1 ? "" : "s"}`;
+  }
+  if (/^p/i.test(String(unit || ""))) return `${n(q)} pc${q === 1 ? "" : "s"}`;
+  return q > 0 && q < 1 ? `${Math.round(q * 1000)} g` : `${n(q)} kg`;
+}
+
 const money = (n: number) => `₹${(Math.round(n * 100) / 100).toLocaleString("en-IN")}`;
 
 /**
- * Re-check cart lines against the live catalog: drop what can't be ordered (kept in
- * getRemovedLines() for display) and reprice the rest to today's price.
+ * Re-check cart lines against the live catalog: drop what can't be ordered (local cart and
+ * server row; `removed` → removedNotice for one toast) and reprice the rest to today's price.
  * With `mode`: only that cart. Without (a page that doesn't know the seller's mode): each
  * seller's mode comes from its hours; a closed seller's lines are left untouched.
  */
 export async function validateCartLive(sellerId?: string, mode?: CartMode): Promise<{
-  oosMessages: string[];
   priceChangedCount: number;
   priceMessages: string[];
   removed: RemovedLine[];
@@ -434,7 +465,6 @@ export async function validateCartLive(sellerId?: string, mode?: CartMode): Prom
   sellerModes: Record<string, CartMode | "closed">;
 }> {
   const out = {
-    oosMessages: [] as string[],
     priceChangedCount: 0,
     priceMessages: [] as string[],
     removed: [] as RemovedLine[],
@@ -470,10 +500,7 @@ export async function validateCartLive(sellerId?: string, mode?: CartMode): Prom
       const r = checkLine(item, live, itemMode);
       if ("reason" in r) {
         removeItem(key);
-        const line: RemovedLine = { key, seller_id: item.seller_id, mode: itemMode, name: item.name, reason: r.reason };
-        removedLines = [...removedLines.filter((x) => x.key !== key), line];
-        out.removed.push(line);
-        out.oosMessages.push(`"${item.name}": ${r.reason}`);
+        out.removed.push({ key, seller_id: item.seller_id, mode: itemMode, name: item.name, reason: r.reason });
       } else if (Math.abs(r.price - item.price) > 1e-6) {
         updateItemPrice(key, r.price);
         const bs = r.bundle;

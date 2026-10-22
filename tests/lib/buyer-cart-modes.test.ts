@@ -100,7 +100,6 @@ describe("validateCartLive", () => {
     expect(r.priceChanges).toEqual([{ key: "l1:opt_0", name: "Pomfret", from: 600, to: 650 }]);
     expect(r.priceMessages[0]).toContain("₹600 → ₹650");
     expect(Object.values(Cart.getCart("same_day")).map((i) => [i.name, i.price])).toEqual([["Pomfret", 650]]);
-    expect(Cart.getRemovedLines("s1", "same_day").map((x) => x.name)).toEqual(["Surmai", "Rawas", "Bangda"]);
   });
 
   it("pre-order: priced at the top of the range, today's stock ignored, not-enabled removed", async () => {
@@ -110,6 +109,21 @@ describe("validateCartLive", () => {
     const r = await Cart.validateCartLive("s1", "preorder");
     expect(r.removed.map((x) => x.reason)).toEqual(["Not open for pre-order — removed"]);
     expect(Object.values(Cart.getCart("preorder")).map((i) => i.price)).toEqual([700]);
+  });
+
+  it("an item taken off the menu leaves the cart and the server cart, and is told once", async () => {
+    Cart.addItem(line({ mode: "preorder", price: 700 }));
+    Cart.addItem(line({ listing_id: "l2", name: "Surmai", mode: "preorder", price: 1000 }));
+    store.set("rlf_buyer_id", "b1"); // signed in: removals also delete the server cart row
+    const f = serve([live(), live({ id: "l2", is_preorder_enabled: false })]);
+    const r = await Cart.validateCartLive("s1", "preorder");
+    expect(Cart.removedNotice(r.removed)).toBe("Surmai is no longer on the menu, so we removed it from your cart.");
+    expect(Object.values(Cart.getCart("preorder")).map((i) => i.name)).toEqual(["Pomfret"]);
+    expect(Cart.totalPrice(Cart.getCart("preorder"))).toBe(700);
+    const deletes = f.mock.calls.filter((c: any[]) => c[1]?.method === "DELETE").map((c: any[]) => String(c[0]));
+    expect(deletes).toEqual(["/api/buyer/cart?buyer_id=b1&listing_id=l2&pricing_option_id=opt_0&placement_kind=preorder"]);
+    // Next check: nothing left to remove, so no second toast.
+    expect((await Cart.validateCartLive("s1", "preorder")).removed).toEqual([]);
   });
 
   it("only touches the mode asked for", async () => {
@@ -211,5 +225,29 @@ describe("hydrateFromServer", () => {
     serveCart([row(half), row(quarter)]);
     await Cart.hydrateFromServer();
     expect(lines()).toEqual([["", 0.25, 800, undefined], ["half", 0.5, 760, undefined]]);
+  });
+});
+
+describe("removedNotice", () => {
+  const R = (name: string, reason: string) => ({ name, reason });
+  it("one plain sentence per kind, names without the size tag, no internal reason text", () => {
+    expect(Cart.removedNotice([R("Bombil (500 g)", Cart.REMOVED_NOT_LISTED), R("Surmai", Cart.REMOVED_NOT_PREORDER)]))
+      .toBe("Bombil and Surmai are no longer on the menu, so we removed them from your cart.");
+    expect(Cart.removedNotice([R("Rawas", Cart.REMOVED_OUT_OF_STOCK), R("Pomfret (Half kg)", Cart.REMOVED_PACK_CHANGED)]))
+      .toBe("Rawas is sold out, so we removed it from your cart. The pack size of Pomfret changed, so we removed it from your cart. Please add it again.");
+  });
+});
+
+describe("qtyLabel", () => {
+  it("pack-priced lines count packs, never kg", () => {
+    expect(Cart.qtyLabel(1, "kg", 0.5)).toBe("2 packs"); // ₹240 /pack bombil, two taps
+    expect(Cart.qtyLabel(0.5, "kg", 0.5)).toBe("1 pack");
+    expect(Cart.qtyLabel(2, "piece", 1, true)).toBe("2 packs"); // "Pack of 10–20 pcs"
+  });
+  it("per-kg and per-piece lines keep their unit", () => {
+    expect(Cart.qtyLabel(1.5, "kg", 1)).toBe("1.5 kg");
+    expect(Cart.qtyLabel(0.5, "kg")).toBe("500 g");
+    expect(Cart.qtyLabel(3, "piece", 1)).toBe("3 pcs");
+    expect(Cart.qtyLabel(1, "pc")).toBe("1 pc");
   });
 });
