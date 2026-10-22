@@ -849,7 +849,9 @@ body.v2-has-cart.v2-has-bottom-nav {
   background: none;
   border: none;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
+.v2-cat-item:focus { outline: none; }
 .v2-cat-tile {
   width: 64px;
   height: 64px;
@@ -878,14 +880,13 @@ body.v2-has-cart.v2-has-bottom-nav {
   font-size: 24px;
   line-height: 1;
 }
-.v2-cat-item:hover .v2-cat-tile {
-  transform: scale(1.06);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 0 0 0 transparent;
-  border-color: var(--v2-brand-m);
-}
-.v2-cat-active .v2-cat-tile {
-  border-color: var(--v2-brand);
-  box-shadow: 0 0 0 3px var(--v2-brand-m), 0 2px 8px rgba(0,0,0,0.12);
+/* Hover only on real pointers: on phones :hover sticks after a tap and hid the selected ring. */
+@media (hover: hover) {
+  .v2-cat-item:hover .v2-cat-tile {
+    transform: scale(1.06);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 0 0 0 transparent;
+    border-color: var(--v2-brand-m);
+  }
 }
 .v2-cat-name {
   font-family: var(--v2-font);
@@ -913,6 +914,15 @@ body.v2-has-cart.v2-has-bottom-nav {
     border-color: #475569;
     box-shadow: 0 1px 4px rgba(0,0,0,0.4);
   }
+}
+/* Selected fish: after the hover and dark-mode rules, and specific enough to beat them. */
+.v2-cat-item.v2-cat-active .v2-cat-tile,
+.v2-cat-item.v2-cat-active:hover .v2-cat-tile {
+  border-color: var(--v2-brand);
+  box-shadow: 0 0 0 3px var(--v2-brand-m), 0 2px 8px rgba(0,0,0,0.12);
+}
+.v2-cat-item:focus-visible .v2-cat-tile {
+  box-shadow: 0 0 0 3px var(--v2-brand);
 }
 
 /* === MenuItem === */
