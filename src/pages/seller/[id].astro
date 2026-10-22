@@ -20,7 +20,7 @@ import { nextPlacementStartMs } from "../../lib/cart";
 import {
   isPreorderShoppingWindow,
   isSellerEffectivelyOpen,
-  preorderDeliveryLabel,
+  preorderDeliveryDateIST,
   preorderStatusLabel,
   sameDayScheduleLabel,
   timeLabel,
@@ -30,7 +30,6 @@ import { sellerBlocked } from "../../lib/test-sellers";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 import { dateLabelIST, deliveryDaysAt, slotPreorderLabel, storePreorderLabel } from "../../lib/delivery-slots";
-import { deliveryMorningLabel } from "../../lib/order-timing";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -132,7 +131,11 @@ const preDays = slotDays.filter((d) => d.kind === "preorder");
 const dayWord = (date: string) => date === new Date(nowMs + 5.5 * 3600_000 + 86_400_000).toISOString().slice(0, 10) ? "tomorrow" : dateLabelIST(date);
 const deliveryFor = slotLine && preDays.length
   ? `${dayWord(preDays[0].date)}${preDays.length > 1 ? " or later" : ""}`
-  : (isPreorderMode && (preorderDeliveryLabel(seller, nowMs) || (slotDays[0] && deliveryMorningLabel(slotDays[0].date, nowMs)))) || "tomorrow morning";
+  // The delivery day only, no "morning": delivery windows can run past the morning.
+  : (() => {
+      const d = isPreorderMode ? preorderDeliveryDateIST(seller, nowMs) || slotDays[0]?.date : null;
+      return !d ? "tomorrow" : d === new Date(nowMs + 5.5 * 3600_000).toISOString().slice(0, 10) ? "today" : dayWord(d);
+    })();
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
@@ -1842,6 +1845,26 @@ const tags = [
 
     // First paint: render whatever we know (works even before cart module loads)
     render();
+
+    // Logged-out buyers: ask for the phone once the menu is on screen (client-side only, so the
+    // server-rendered menu stays crawlable; never for bots/prerenderers). Dismissed → not again this
+    // session; the "+" gate still asks.
+    const LOGIN_PROMPT_KEY = "rf_login_prompt_dismissed";
+    function promptLoginOnLoad() {
+      if (isSignedIn() || /bot|crawl|spider|slurp|facebookexternalhit|preview|prerender|lighthouse|headlesschrome/i.test(navigator.userAgent)) return;
+      try { if (sessionStorage.getItem(LOGIN_PROMPT_KEY)) return; } catch {}
+      track("page_login_prompt", {});
+      openLogin("Log in with your phone to see today's fish", () => render());
+      const bd = document.getElementById("seller-login-sheet-backdrop");
+      if (!bd) return;
+      const mo = new MutationObserver(() => {
+        if (bd.classList.contains("v2-sheet-open")) return;
+        mo.disconnect();
+        if (!isSignedIn()) try { sessionStorage.setItem(LOGIN_PROMPT_KEY, "1"); } catch {}
+      });
+      mo.observe(bd, { attributes: true, attributeFilter: ["class"] });
+    }
+    setTimeout(promptLoginOnLoad, 600);
 
     // Back from the OTP login reload: reopen checkout instead of making the buyer find it again.
     function resumeCheckout() {
