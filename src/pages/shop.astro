@@ -393,13 +393,10 @@ const categories = [
         const preorderMode = !openNow && isPreorderShoppingWindow(s as any);
         const isTodayPreorderDay = preorderMode || (preorderDays.length ? preorderDays.includes(day) : !!s.accepts_preorder);
         const preorderLine = s.accepts_preorder ? preorderStatusLabel(s as any) : null;
+        // Pre-order mode follows the listing's pre-order switch; a pre-order price is optional
+        // (checkout falls back to the regular price), so don't hide listings that lack one.
         const listings = rawListings.filter((l: any) =>
-          preorderMode
-            ? Array.isArray(l?.pricing_options) &&
-              l.pricing_options.some(
-                (o: any) => o?.preorder_price_min != null || o?.preorder_price_max != null
-              )
-            : l?.is_available === true
+          preorderMode ? l?.is_preorder_enabled === true : l?.is_available === true
         );
         return {
           seller: s,
