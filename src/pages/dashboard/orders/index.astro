@@ -576,7 +576,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     } else {
       // Every 15 minutes for the next 3 hours.
       const step = 15 * 60_000, first = Math.ceil((Date.now() + step) / step) * step;
-      opts = [["", `Keep: by ${arrivingByLabel(o.delivery_slot_end)}`],
+      opts = [["", `Keep: by ${arrivingByLabel(o.delivery_slot_end)}, ${slotDayLabel(o.delivery_slot_end)}`],
         ...Array.from({ length: 12 }, (_, i) => { const end = new Date(first + i * step).toISOString(); return [`now|${end}`, `By ${arrivingByLabel(end)}`]; })];
     }
     return `<label style="display:flex;align-items:center;gap:8px;margin:6px 0;font:600 12px Inter;color:var(--v2-ink-2);">${mode === "accept" ? "Delivery slot" : "Arriving by"}

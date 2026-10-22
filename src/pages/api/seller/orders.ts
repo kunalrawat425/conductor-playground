@@ -519,7 +519,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     // One push, one email and one SMS per party for the whole batch (a cart lists its items).
     const many = moved.length > 1;
     const species = many ? cartLabel(moved.map((m) => m.data.species)) : order.species || "Fish";
-    const slotText = orderSlotText(data);
+    // Slot / arriving-by time: told on confirm and out for delivery (not on delivered).
+    const slotText = status === "confirmed" || status === "out_for_delivery" ? orderSlotText(data) : null;
     const { data: seller } = await supabase.from("sellers").select(`email, ${SLOT_SELLER_COLUMNS}`).eq("id", seller_id).single();
 
     // Notify buyer via push — never fail the order update if push throws
