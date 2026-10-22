@@ -73,6 +73,11 @@ export async function resolveListingOrderLine(
     nowMs?: number;
     /** Base units of this listing already on earlier lines of the same cart (other price tiers). */
     priorQty?: number;
+    /**
+     * The checkout's delivery day decided the kind (delivery slots, checkDeliverySlot): a
+     * later day is a pre-order at any hour; Today must still be in same-day hours.
+     */
+    placement?: PlacementKind;
   }
 ): Promise<ResolveListingOrderLineResult> {
   const { listing_id, pricing_option_id: clientPricingOptionId, rawQuantity, buyer_phone, buyer_id, nowMs } =
@@ -109,9 +114,13 @@ export async function resolveListingOrderLine(
     return { ok: false, status: 400, error: "This seller is not taking orders right now." };
   }
 
-  const placementResult = seller ? classifyPlacementAtOrderTime(seller, nowMs) : "same_day";
+  const byClock = seller ? classifyPlacementAtOrderTime(seller, nowMs) : "same_day";
+  const placementResult = input.placement === "preorder" ? "preorder" : byClock;
   if (placementResult === "closed") {
     return { ok: false, status: 400, error: seller ? closedSellerMessage(seller, nowMs) : "Seller is not available." };
+  }
+  if (input.placement === "same_day" && placementResult !== "same_day") {
+    return { ok: false, status: 409, error: "The shop isn't taking orders for today right now. Pick another day." };
   }
   const placement: PlacementKind = placementResult;
   // The seller's switch is "Pause same-day orders"; pre-orders still show on the
@@ -296,7 +305,7 @@ export async function resolveListingOrderLine(
   }
 
   // Pre-order shopping window — inventory-independent; sellerOpen should be false here
-  if (sellerOpen) {
+  if (sellerOpen && input.placement !== "preorder") {
     return { ok: false, status: 400, error: "Use same-day checkout while the seller is open." };
   }
 

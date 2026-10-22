@@ -489,6 +489,28 @@ export async function validateCartLive(sellerId?: string, mode?: CartMode): Prom
   return out;
 }
 
+/**
+ * A seller's cart lines checked for another mode, without changing the cart: the checkout's
+ * delivery-day picker, where a same-day cart delivered on a later day becomes a pre-order.
+ * Per line key: the price per base unit in `mode`, or why the line can't be ordered then.
+ * null = the catalog couldn't be read.
+ */
+export async function checkCartForMode(sellerId: string, mode: CartMode): Promise<Record<string, { reason: string } | { price: number; bundle: number }> | null> {
+  const items = Object.values(getCart()).filter((i) => i.seller_id === sellerId);
+  try {
+    const res = await fetch("/api/buyer/validate-cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listing_ids: [...new Set(items.map((i) => i.listing_id))] }),
+    });
+    if (!res.ok) return null;
+    const listings: any[] = (await res.json()).listings || [];
+    return Object.fromEntries(items.map((i) => [lineKey(i), checkLine(i, listings.find((l) => l.id === i.listing_id), mode)]));
+  } catch {
+    return null;
+  }
+}
+
 /** Mode a seller is in at `nowMs` (same rule the order API applies). */
 export function placementAt(seller: SellerTimingInput, nowMs = Date.now()): CartMode | "closed" {
   return classifyPlacementAtOrderTime(seller, nowMs);

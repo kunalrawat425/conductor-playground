@@ -23,6 +23,7 @@ const SELLER_EDITABLE = [
   "has_pickup", "has_delivery", "delivery_rad", "min_order_amount",
   "delivery_fee_enabled", "delivery_fee_amount", "delivery_fee_type", "delivery_fee_per_km", "free_delivery_above",
   "lat", "lng", "push_subscription", "push_enabled", "schedule_pickup_slots",
+  "delivery_slots_enabled", "delivery_slot_minutes", "preorder_delivery_start", "preorder_delivery_end", "preorder_days_ahead",
 ] as const;
 
 export const POST: APIRoute = async ({ request }) => {
@@ -57,6 +58,10 @@ export const POST: APIRoute = async ({ request }) => {
       }
       updates[k] = n;
     }
+    const { slotSettingsError } = await import("../../../lib/delivery-slots");
+    const slotError = slotSettingsError(updates);
+    if (slotError) return new Response(JSON.stringify({ error: slotError }), { status: 400 });
+    if (updates.delivery_slots_enabled !== undefined) updates.delivery_slots_enabled = updates.delivery_slots_enabled === true;
     // Pre-order start: null (= at close / all day) or HH:MM. Delivery days: null (= next morning) or weekdays.
     if (updates.preorder_opens_at !== undefined) {
       const v = updates.preorder_opens_at;

@@ -17,7 +17,8 @@ export type SellerPushKind =
   | "payment_confirmed"
   | "cancelled"
   | "expired_unpaid"
-  | "refunded";
+  | "refunded"
+  | "preorders_tomorrow";
 
 const KINDS = new Set<SellerPushKind>([
   "new_order",
@@ -26,6 +27,7 @@ const KINDS = new Set<SellerPushKind>([
   "cancelled",
   "expired_unpaid",
   "refunded",
+  "preorders_tomorrow",
 ]);
 
 /** Unknown/missing kinds fall back to new_order (previous behaviour for that value). */
@@ -45,6 +47,8 @@ export type SellerPushOpts = {
   reason?: string | null;
   /** Items in one cart; 2+ means `species` is a cart label and quantity is omitted. */
   item_count?: number | null;
+  /** preorders_tomorrow: earliest delivery slot, e.g. "9–11 AM". */
+  first_slot?: string | null;
 };
 
 export function sellerPushNotification(
@@ -98,6 +102,14 @@ export function sellerPushNotification(
           ? `A refund${amt} was processed for ${species}${idSuffix}.`
           : `A refund${amt} was processed${idSuffix}.`,
       };
+
+    case "preorders_tomorrow": {
+      const n = opts.item_count ?? 0;
+      return {
+        title: "Tomorrow's deliveries",
+        body: `Tomorrow: ${n} pre-order${n === 1 ? "" : "s"}${opts.first_slot ? `, first slot ${opts.first_slot}` : ""}`,
+      };
+    }
 
     case "new_order":
     default: {

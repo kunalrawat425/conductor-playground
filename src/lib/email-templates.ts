@@ -152,6 +152,9 @@ export type OrderEmailArgs = {
   buyerNotes?: string | null;
   cutStyle?: string | null;
   isPreorder?: boolean;
+  /** "Sat 25 Oct, 9–11 AM" (or "11 AM" with deliverySlotLabel "Arriving by"). */
+  deliverySlot?: string | null;
+  deliverySlotLabel?: string;
   preorderMin?: number | null;
   preorderMax?: number | null;
   bundleSize?: number | null;
@@ -204,6 +207,15 @@ function orderRows(args: OrderEmailArgs, totalLabel: string): string {
   ].join("");
 }
 
+/** Delivery slot / arriving-by time, above the order table so it is seen first. */
+function slotBox(args: OrderEmailArgs): string {
+  if (!args.deliverySlot) return "";
+  return `<div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:12px 16px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.6px;text-transform:uppercase;">${args.deliverySlotLabel || "Delivery slot"}</div>
+    <div style="font-size:17px;font-weight:800;color:#0f172a;margin-top:2px;">🕘 ${args.deliverySlot}</div>
+  </div>`;
+}
+
 function statusColor(label: string): string {
   if (label.includes("Declined") || label.includes("Cancelled")) return "#dc3545";
   if (label.includes("Confirmed") || label.includes("Completed") || label.includes("Picked Up")) return "#28a745";
@@ -237,7 +249,7 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
         ? "Your pre-order for the next catch has been placed. The final price depends on that morning's availability — you will only be charged up to the max estimate shown."
         : "Your order status has changed. You can track every step in the app with live updates."
     )}
-    ${orderSummaryTable(rows)}
+    ${slotBox(args)}${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}
     <div style="text-align:center;margin-top:18px;">
       ${ctaButton("Track Order →", "https://www.relifish.com/track")}
@@ -271,7 +283,7 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
         ? "A customer placed a pre-order for the next catch. Confirm it in your dashboard — you can update the final price once the catch arrives that morning."
         : "A customer order moved to a new state. Review the card below and take the next action from your dashboard."
     )}
-    ${orderSummaryTable(rows)}
+    ${slotBox(args)}${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}
     <div style="text-align:center;margin-top:18px;">
       ${ctaButton("View Orders →", "https://www.relifish.com/dashboard/orders")}

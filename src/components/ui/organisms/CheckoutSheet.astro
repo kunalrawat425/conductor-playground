@@ -80,6 +80,13 @@ const { id = "v2-checkout" } = Astro.props;
         </div>
         <div style="color:var(--v2-ink-4);align-self:center;">›</div>
       </button>
+      <!-- Delivery time: filled by the page when the seller has slots on (lib/delivery-slots.ts). -->
+      <div id={`${id}-slot-section`} style="display:none;margin-top:16px;">
+        <h4 class="v2-co-step-title">When do you want it?</h4>
+        <div id={`${id}-slot-days`} class="v2-day-picker"></div>
+        <div id={`${id}-slots`} class="v2-slot-grid"></div>
+        <div id={`${id}-slot-note`} style="display:none;font:500 12px Inter;color:var(--v2-ink-3);margin-top:6px;"></div>
+      </div>
     </div>
 
     <div class="v2-co-rows" style="margin-top:12px;">
