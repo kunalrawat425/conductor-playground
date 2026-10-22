@@ -126,30 +126,30 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       </label>
       <div id="t-preorder-body" class="t-body">
         <div class="t-label">When do you deliver pre-orders?</div>
-        <label class="t-radio"><input type="radio" name="t-deliver" value="next" /> The next morning</label>
+        <label class="t-radio"><input type="radio" name="t-deliver" value="next" /> Any day I'm open</label>
         <label class="t-radio"><input type="radio" name="t-deliver" value="days" /> Only on certain days</label>
         <div id="t-delivery-days-wrap" style="margin:4px 0 0 26px;">
           <div id="p-delivery-days" class="t-chips"></div>
           <div id="t-err-deliveryDays" class="t-err"></div>
         </div>
 
-        <div class="t-label" style="margin-top:16px;">When can buyers pre-order?</div>
+        <div id="t-when-label" class="t-label" style="margin-top:16px;">When can buyers pre-order?</div>
         <div data-mode="afterClose">
-          <div class="t-row"><span>From closing time (<span id="t-close-label"></span>) until</span> <select id="t-until" class="t-select"></select></div>
+          <div class="t-row"><span id="t-until-text"></span> <select id="t-until" class="t-select"></select></div>
         </div>
         <div data-mode="pause">
-          <div class="t-note">Open all week. On delivery days, pause while that morning's orders go out:</div>
+          <div class="t-note">Open all week. On delivery days, pause while that day's orders go out:</div>
           <div class="t-row">Stop taking pre-orders at <select id="t-pause-from" class="t-select"></select></div>
           <div class="t-row">Start again at <select id="t-pause-to" class="t-select"></select></div>
         </div>
         <div data-mode="window">
-          <div class="t-note">Every day:</div>
-          <div class="t-row">Start taking pre-orders at <select id="t-win-from" class="t-select"></select></div>
-          <div class="t-row">Stop taking pre-orders at <select id="t-win-to" class="t-select"></select></div>
+          <div class="t-note" data-slots-off>Every day:</div>
+          <div class="t-row" data-slots-off>Start taking pre-orders at <select id="t-win-from" class="t-select"></select></div>
+          <div class="t-row"><span id="t-win-to-text"></span> <select id="t-win-to" class="t-select"></select></div>
         </div>
         <div id="t-err-preorderTimes" class="t-err"></div>
         <div data-mode="afterClose">
-          <div class="t-label" style="margin-top:12px;">On which days?</div>
+          <div class="t-label" style="margin-top:12px;">Days you take pre-orders</div>
           <div id="p-preorder-days" class="t-chips"></div>
           <div id="t-err-preorderDays" class="t-err"></div>
         </div>
@@ -500,21 +500,20 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
   const DAY_LABELS: Record<string, string> = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
   const sel = (id: string) => document.getElementById(id) as HTMLSelectElement;
   const checked = (id: string) => (document.getElementById(id) as HTMLInputElement).checked;
-  /** "8:00 AM"; with `nextMorning`, times before 6 AM get a "next morning" tag. */
-  const optLabel = (t: string, nextMorning: boolean) => {
+  /** "8:00 AM". */
+  const optLabel = (t: string) => {
     const [h, m] = t.split(":").map(Number);
-    const base = `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
-    return nextMorning && h * 60 + m <= 6 * 60 ? `${base} · next morning` : base;
+    return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
   };
   /** Half-hour options from `from` for `hours` hours, plus the saved value if it is off the grid. */
-  function fillTimeSelect(id: string, value: string, from = 0, hours = 24, nextMorning = false) {
+  function fillTimeSelect(id: string, value: string, from = 0, hours = 24) {
     const times: string[] = [];
     for (let i = 0; i < (hours === 24 ? 48 : hours * 2 + 1); i++) {
       const min = (from * 60 + i * 30) % 1440;
       times.push(`${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`);
     }
     if (value && !times.includes(value)) times.push(value);
-    sel(id).innerHTML = times.map((t) => `<option value="${t}">${optLabel(t, nextMorning)}</option>`).join("");
+    sel(id).innerHTML = times.map((t) => `<option value="${t}">${optLabel(t)}</option>`).join("");
     sel(id).value = value;
   }
   function fillTimings(f: TimingForm) {
@@ -525,8 +524,8 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     renderDayPills("p-delivery-days", WEEK, DAY_LABELS, f.deliveryDays, "delivery");
     fillTimeSelect("t-opens", f.opensAt);
     fillTimeSelect("t-closes", f.closesAt);
-    fillTimeSelect("t-until", f.stopAt, 18, 12, true); // 6 PM … 6 AM
-    fillTimeSelect("t-win-to", f.stopAt, 18, 12, true);
+    fillTimeSelect("t-until", f.stopAt, 18, 12); // 6 PM … 6 AM
+    fillTimeSelect("t-win-to", f.stopAt, 18, 12);
     fillTimeSelect("t-win-from", f.startAt);
     fillTimeSelect("t-pause-from", f.stopAt);
     fillTimeSelect("t-pause-to", f.startAt);
@@ -568,9 +567,19 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     document.querySelectorAll<HTMLElement>("[data-mode]").forEach((el) => {
       el.style.display = el.dataset.mode === mode ? "block" : "none";
     });
-    document.getElementById("t-close-label")!.textContent = optLabel(f.closesAt, false);
     // Delivery time: show the parts for what the seller takes (same day / pre-order).
     const slots = readSlotSettings();
+    // Delivery times on: later days can be pre-ordered any time, so the stop time is only the
+    // last time to pre-order for the next day (same column, preorder_cutoff_time).
+    const slotsOn = slots.delivery_slots_enabled;
+    const lastTime = "Last time to pre-order for the next day:";
+    document.getElementById("t-when-label")!.style.display = slotsOn && mode !== "pause" ? "none" : "block";
+    document.getElementById("t-until-text")!.textContent = slotsOn ? lastTime : `From closing time (${optLabel(f.closesAt)}) until`;
+    document.getElementById("t-win-to-text")!.textContent = slotsOn ? lastTime : "Stop taking pre-orders at";
+    // The window start doesn't apply with delivery times on (kept as saved); shown again only if it clashes.
+    document.querySelectorAll<HTMLElement>("[data-slots-off]").forEach((el) => {
+      el.style.display = slotsOn && f.startAt !== f.stopAt ? "none" : "block";
+    });
     document.getElementById("p-slots-body")!.style.display = slots.delivery_slots_enabled ? "block" : "none";
     document.querySelectorAll<HTMLElement>("[data-slots]").forEach((el) => {
       el.style.display = (el.dataset.slots === "same_day" ? f.sameDay : f.preorder) ? "block" : "none";

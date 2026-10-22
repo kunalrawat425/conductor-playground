@@ -23,7 +23,7 @@ export type TimingForm = {
   opensAt: string;
   closesAt: string;
   preorder: boolean;
-  /** "next" = the next morning (delivery_days null), "days" = only on deliveryDays. */
+  /** "next" = any day the seller is open ("Any day I'm open", delivery_days null), "days" = only on deliveryDays. */
   deliverOn: "next" | "days";
   deliveryDays: string[];
   preorderDays: string[];
