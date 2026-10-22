@@ -559,7 +559,8 @@ const { id } = Astro.params;
     } else if (["completed", "picked_up", "cancelled", "declined"].includes(o.status)) {
       // Finished/cancelled order — show refund notice if paid, ask rating for completed/picked_up, then offer re-order.
       // BUG-42: gate on real payment, not the pre-set paid_amount.
-      const paidForRefund = refundableAmount(o);
+      // A cart cancelled as a whole refunds every paid item, not just this row.
+      const paidForRefund = o.cart && o.cart.items.every((it) => ["cancelled", "declined", "refunded"].includes(it.status)) ? paidOf(o.cart.items) : refundableAmount(o);
       let refundHtml = "";
       const isDelivered = ["completed", "picked_up"].includes(o.status);
       const existingFeedback = o.buyer_feedback || null;

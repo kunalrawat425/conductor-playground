@@ -734,7 +734,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     const line = (preorder: boolean) => sellerSlotsOn(seller, day, preorder).map((x) => slotTimeLabel(x.start, x.end)).join(" · ");
     const ahead = s.preorder_days_ahead > 1 ? `, for any of the next ${s.preorder_days_ahead} delivery days` : "";
     slotEl("p-slot-preview").innerHTML = [
-      seller.opens_at && seller.closes_at ? `🗓 Same day: ${line(false)}` : "",
+      seller.opens_at && seller.closes_at && getCheckedDays("open").length ? `🗓 Same day: ${line(false)}` : "",
       `🌙 Pre-orders${ahead}: ${line(true)}`,
     ].filter(Boolean).map((l) => `<div>${l}</div>`).join("");
   }
