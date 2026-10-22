@@ -336,7 +336,8 @@ describe("overnight pre-order cutoff", () => {
       expect(preorderStatusLabel(nomadic, at("mon", 23))).toBe("Pre-order now · next delivery tomorrow morning");
       expect(preorderStatusLabel(nomadic, at("tue", 2, 30))).toBe("Pre-orders reopen at 1 PM · delivering today");
       expect(preorderStatusLabel(nomadic, at("sat", 12, 59))).toBe("Pre-orders reopen at 1 PM · delivering today");
-      expect(closedSellerMessage(nomadic, at("tue", 2, 30))).toBe("Pre-order cutoff (02:00 IST) has passed. Pre-orders open at 1 PM.");
+      expect(closedSellerMessage(nomadic, at("tue", 2, 30))).toBe("Pre-orders reopen at 1 PM today.");
+      expect(closedSellerMessage(nomadic, at("sat", 12, 59))).toBe("Pre-orders reopen at 1 PM today.");
       const noDelivery = { ...nomadic, delivery_days: null, preorder_days: ["fri"] };
       expect(closedSellerMessage(noDelivery, at("fri", 10))).toBe("Not taking orders right now. Pre-orders open at 1 PM.");
     });

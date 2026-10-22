@@ -7,7 +7,7 @@
  * (orders.delivery_slot_start / _end). Slots off: order-timing.ts alone decides, as before.
  */
 import {
-  classifyPlacementAtOrderTime, isOvernightCutoff, isSellerEffectivelyOpen, pausesOnlyOnDeliveryDays, isTodayPreorderDay, preorderDeliveryDateIST, timeLabel, todayDayName,
+  classifyPlacementAtOrderTime, isOvernightCutoff, isSellerEffectivelyOpen, pausesOnlyOnDeliveryDays, isTodayPreorderDay, preorderDeliveryDateIST, preorderPauseLabel, preorderScheduleLabel, timeLabel, todayDayName,
   type SellerTimingInput,
 } from "./order-timing";
 
@@ -270,6 +270,19 @@ export function slotPreorderLabel(seller: SlotSeller | null | undefined): string
   const dd = Array.isArray(seller.delivery_days) ? seller.delivery_days : [];
   const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"].map((k, i) => (dd.includes(k) ? DAYS[i] : "")).filter(Boolean);
   return `Pre-order anytime · ${days.length ? `delivered ${days.join(" & ")}` : "pick your day & time"}`;
+}
+
+/**
+ * The store page's 🌙 line (and the dashboard's "What buyers will see"): the slot wording when
+ * slots are on ("Pre-order anytime · delivered Tue & Sat · paused Tue & Sat 2 AM–1 PM"), else
+ * order-timing's schedule line. Null when pre-orders are off.
+ */
+export function storePreorderLabel(seller: SlotSeller): string | null {
+  const line = preorderScheduleLabel(seller);
+  const slot = line && slotPreorderLabel(seller);
+  if (!slot) return line;
+  const pause = preorderPauseLabel(seller);
+  return pause ? `${slot} · ${pause}` : slot;
 }
 
 /** "Sat 24 Oct" for an IST date (YYYY-MM-DD). */

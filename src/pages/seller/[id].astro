@@ -21,15 +21,15 @@ import {
   isPreorderShoppingWindow,
   isSellerEffectivelyOpen,
   preorderDeliveryLabel,
-  preorderHoursLabel,
-  preorderPauseLabel,
   preorderStatusLabel,
+  sameDayScheduleLabel,
+  timeLabel,
 } from "../../lib/order-timing";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
-import { dateLabelIST, deliveryDaysAt, slotPreorderLabel } from "../../lib/delivery-slots";
+import { dateLabelIST, deliveryDaysAt, slotPreorderLabel, storePreorderLabel } from "../../lib/delivery-slots";
 import { deliveryMorningLabel } from "../../lib/order-timing";
 
 const { id } = Astro.params;
@@ -110,7 +110,6 @@ const DAY_LABELS: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', th
 const todayDayName = DAY_NAMES_SHORT[nowIST.getUTCDay()];
 // null (legacy) = every day; [] = no same-day orders at all (pre-order only). Same rule as order-timing.
 const openDays: string[] = seller?.open_days ?? DAY_NAMES_SHORT;
-const preorderDays: string[] = seller?.preorder_days ?? [];
 
 // Same rules as the order API (order-timing), including pre-order windows that run past midnight.
 const nowMs = nowIST.getTime() - 5.5 * 3600 * 1000;
@@ -174,34 +173,9 @@ for (const l of listings) {
   }
 }
 
-// Schedule display strings
-const ALL_DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun'];
-function fmtDays(days: string[]): string {
-  if (!days.length) return "No same-day orders";
-  if (days.length === 7) return "Every day";
-  const closedDays = ALL_DAY_NAMES.filter(d => !days.includes(d));
-  // Show whichever list is shorter — fewer words
-  if (closedDays.length < days.length) {
-    return `Closed ${closedDays.map(d => DAY_LABELS[d] || d).join(", ")}`;
-  }
-  return days.map(d => DAY_LABELS[d] || d).join(", ");
-}
-function fmtTime12(t: string | undefined | null): string {
-  if (!t) return "";
-  const [h, m] = String(t).split(":").map(Number);
-  if (Number.isNaN(h)) return String(t).slice(0, 5);
-  const period = h >= 12 ? "PM" : "AM";
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return m && m > 0 ? `${h12}:${String(m).padStart(2,"0")} ${period}` : `${h12} ${period}`;
-}
-const orderDaysLabel = fmtDays(openDays);
-const preorderDaysLabel = preorderDays.length ? fmtDays(preorderDays) : null;
-const deliveryDays: string[] = Array.isArray(seller?.delivery_days) ? seller.delivery_days : [];
-const deliveryDaysLabel = deliveryDays.length
-  ? `delivered ${ALL_DAY_NAMES.filter((d) => deliveryDays.includes(d)).map((d) => DAY_LABELS[d] || d).join(" & ")} mornings`
-  : "delivered next morning";
-const opensAtFmt = fmtTime12(seller?.opens_at);
-const closesAtFmt = fmtTime12(seller?.closes_at);
+// Same lines as the dashboard's "What buyers will see" preview.
+const sameDayLine = seller ? sameDayScheduleLabel(seller) : null;
+const preorderScheduleLine = seller ? storePreorderLabel(seller) : null;
 
 // Calculate next opening time string for banner
 let nextOpenLabel = "soon";
@@ -212,13 +186,13 @@ if (seller?.opens_at) {
   const openMin = oh * 60 + om;
   
   if (openDaysSet.has(DAY_NAMES_SHORT[nextOpenDayIdx]) && openMin > curMin) {
-    nextOpenLabel = `today at ${fmtTime12(seller.opens_at)}`;
+    nextOpenLabel = `today at ${timeLabel(seller.opens_at)}`;
   } else {
     for (let i = 1; i <= 7; i++) {
       const idx = (nextOpenDayIdx + i) % 7;
       if (openDaysSet.has(DAY_NAMES_SHORT[idx])) {
         const dayStr = i === 1 ? "tomorrow" : DAY_LABELS[DAY_NAMES_SHORT[idx]];
-        nextOpenLabel = `${dayStr} at ${fmtTime12(seller.opens_at)}`;
+        nextOpenLabel = `${dayStr} at ${timeLabel(seller.opens_at)}`;
         break;
       }
     }
@@ -234,7 +208,7 @@ if (isClosed && acceptsPreorder) {
     const at = new Date(t + 5.5 * 3600 * 1000);
     const days = Math.round((Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate()) - Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate())) / 86400000);
     const dayStr = days === 0 ? "today" : days === 1 ? "tomorrow" : DAY_LABELS[DAY_NAMES_SHORT[at.getUTCDay()]];
-    nextPreorderLabel = `${dayStr} at ${fmtTime12(`${at.getUTCHours()}:${at.getUTCMinutes()}`)}`;
+    nextPreorderLabel = `${dayStr} at ${timeLabel(`${at.getUTCHours()}:${at.getUTCMinutes()}`)}`;
   }
 }
 
@@ -366,34 +340,12 @@ const tags = [
 
       {/* Schedule strip */}
       <div style="padding:8px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:6px;">
-        {openDays.length > 0 && (
-          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">
-            🗓 Same day orders · {orderDaysLabel}{opensAtFmt && closesAtFmt && ` · ${opensAtFmt}–${closesAtFmt}`}
-          </span>
+        {sameDayLine && (
+          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;white-space:normal;line-height:1.35;">🗓 {sameDayLine}</span>
         )}
-        {preorderDaysLabel && (() => {
-          const sameDays = orderDaysLabel === preorderDaysLabel;
-          const hours = preorderHoursLabel(seller);
-          // "Pre-orders open all week · paused Tue & Sat 2 AM–1 PM · delivered Tue & Sat mornings"
-          const pause = preorderPauseLabel(seller);
-          // Slots on: pre-orders any time for a later day; the hours/"next morning" wording no longer applies.
-          if (slotLine) return (
-            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;white-space:normal;line-height:1.35;">
-              🌙 {slotLine}{pause ? ` · ${pause}` : ""}
-            </span>
-          );
-          if (pause) return (
-            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;white-space:normal;line-height:1.35;">
-              🌙 Pre-orders open {preorderDays.length === 7 ? "all week" : preorderDaysLabel} · {pause} · {deliveryDaysLabel}
-            </span>
-          );
-          return (
-            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;white-space:normal;line-height:1.35;">
-              🌙 Pre-orders · {sameDays ? "Same days" : preorderDaysLabel}
-              {hours ? ` · ${hours}` : ""} · {deliveryDaysLabel}
-            </span>
-          );
-        })()}
+        {preorderScheduleLine && (
+          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;white-space:normal;line-height:1.35;">🌙 {preorderScheduleLine}</span>
+        )}
       </div>
 
       {/* Pre-order context banner (open window), or when the next window opens */}
