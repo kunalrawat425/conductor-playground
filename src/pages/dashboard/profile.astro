@@ -211,7 +211,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
   import { imageFileError, imageDimensionsError } from "../../lib/image-crop";
   import { cropImage } from "../../lib/crop-dialog";
-  import { isOvernightCutoff, preorderHoursLabel, timeLabel } from "../../lib/order-timing";
+  import { isOvernightCutoff, preorderHoursLabel, preorderPauseLabel, timeLabel } from "../../lib/order-timing";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
   const sellerId = getSellerId();
@@ -451,12 +451,19 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     const hint = document.getElementById("p-preorder-cutoff-hint");
     if (!hint) return;
     const hours = preorderHoursLabel({ ...seller, open_days: getCheckedDays("open") });
-    hint.textContent = isOvernightCutoff(seller)
+    // No same-day days + delivery days ticked: the pause applies only on delivery days.
+    const pause = preorderPauseLabel({ ...seller, open_days: getCheckedDays("open"), delivery_days: getCheckedDays("delivery") });
+    hint.textContent = pause
+      ? `Pre-orders stay open all day, every day. They are ${pause} (from the cutoff until "Pre-orders open at") while that morning's orders go out. Each order is delivered on the next delivery morning.`
+      : isOvernightCutoff(seller)
       ? `Next morning: pre-orders run ${hours} and close at ${timeLabel(seller.preorder_cutoff_time)} the next morning.`
       : "";
   }
   for (const id of ["p-preorder-cutoff", "p-preorder-opens", "p-closes"]) {
     document.getElementById(id)?.addEventListener("input", updateCutoffHint);
+  }
+  for (const id of ["p-open-days", "p-delivery-days"]) {
+    document.getElementById(id)?.addEventListener("change", updateCutoffHint);
   }
 
   function getCheckedDays(prefix: string): string[] {

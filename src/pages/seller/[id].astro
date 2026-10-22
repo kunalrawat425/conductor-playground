@@ -22,6 +22,7 @@ import {
   isSellerEffectivelyOpen,
   preorderDeliveryLabel,
   preorderHoursLabel,
+  preorderPauseLabel,
   preorderStatusLabel,
 } from "../../lib/order-timing";
 import { areaNameForPoint } from "../../lib/areas";
@@ -363,6 +364,13 @@ const tags = [
         {preorderDaysLabel && (() => {
           const sameDays = orderDaysLabel === preorderDaysLabel;
           const hours = preorderHoursLabel(seller);
+          // "Pre-orders open all week · paused Tue & Sat 2 AM–1 PM · delivered Tue & Sat mornings"
+          const pause = preorderPauseLabel(seller);
+          if (pause) return (
+            <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
+              🌙 Pre-orders open {preorderDays.length === 7 ? "all week" : preorderDaysLabel} · {pause} · {deliveryDaysLabel}
+            </span>
+          );
           return (
             <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">
               🌙 Pre-orders · {sameDays ? "Same days" : preorderDaysLabel}
