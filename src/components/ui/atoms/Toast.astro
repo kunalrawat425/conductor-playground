@@ -5,6 +5,7 @@
 <div id="v2-toast-container" class="v2-toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <script>
+  import { friendlyError } from "../../../lib/friendly-error";
   type Variant = "success" | "error" | "warning" | "info";
   interface ToastDetail {
     variant: Variant;
@@ -26,7 +27,15 @@
 
   function show(detail: ToastDetail) {
     if (!container) return;
-    const { variant, title, description = "", duration = (variant === "error" || variant === "warning") ? 6000 : 4000 } = detail;
+    const { variant, title, duration = (variant === "error" || variant === "warning") ? 6000 : 4000 } = detail;
+    // Every error toast passes here: callers hand over raw API/JS errors (err.message, data.error), so
+    // technical text (codes, HTTP, Postgres, "Failed to fetch") becomes a plain sentence; the raw text stays in the console.
+    let description = detail.description || "";
+    if (variant === "error" && description) {
+      const plain = friendlyError(description);
+      if (plain !== description) console.warn("[toast] technical error hidden from user:", description);
+      description = plain;
+    }
 
     // Dedupe: skip if same title shown in last 2s
     const dedupeKey = `${variant}:${title}`;
@@ -70,8 +79,9 @@
     show(e.detail as ToastDetail);
   });
 
-  // Expose helper
-  (window as any).v2Toast = (variant: Variant, title: string, description?: string) => {
+  // Expose helpers (define:vars scripts can't import modules).
+  (window as any).v2FriendlyError = friendlyError;
+  (window as any).v2Toast =(variant: Variant, title: string, description?: string) => {
     show({ variant, title, description });
   };
 </script>

@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   checkDeliverySlot, deliveryDaysAt, deliverySlotsAt, orderDeliveryDateIST, orderSlotText, preorderDeliveryDates,
-  sellerSlotError, slotLabel, slotSettingsError, slotTimeLabel, tomorrowPreorders, type SlotSeller,
+  sellerSlotChoices, sellerSlotError, slotLabel, slotPreorderLabel, slotSettingsError, slotTimeLabel, tomorrowPreorders, type SlotSeller,
 } from "../../src/lib/delivery-slots";
-import { preorderStatusLabel } from "../../src/lib/order-timing";
+import { preorderPauseLabel, preorderStatusLabel } from "../../src/lib/order-timing";
+import { buyerCancelRule } from "../../src/lib/order-cancel";
 
 const ist = (s: string) => Date.parse(`${s}+05:30`); // "2026-10-22T10:15:00" (Thu)
 const times = (slots: { start: string; end: string }[]) => slots.map((s) => slotTimeLabel(s.start, s.end));
@@ -69,16 +70,63 @@ describe("the day picker (Today = same-day, later days = pre-order)", () => {
   });
 });
 
-describe("Today's slots", () => {
-  it("start at least 2 hours out, rounded up to a slot boundary", () => {
-    expect(today(fishtokri, "2026-10-22T10:15:00")).toEqual(["2–4 PM", "4–6 PM"]);
-    expect(today(fishtokri, "2026-10-22T08:00:00")).toEqual(["10 AM–12 PM", "12–2 PM", "2–4 PM", "4–6 PM"]);
+describe("Today's slots (founder decision A: offered while the slot ENDS at least 2 h from now)", () => {
+  it("a slot stays until 2 hours before its end", () => {
+    expect(today(fishtokri, "2026-10-22T10:15:00")).toEqual(["12–2 PM", "2–4 PM", "4–6 PM"]);
+    expect(today(fishtokri, "2026-10-22T08:00:00")).toEqual(["8–10 AM", "10 AM–12 PM", "12–2 PM", "2–4 PM", "4–6 PM"]);
+  });
+  it("at 15:10 the 4–6 PM slot is offered; at 16:01 it isn't (and Today drops out)", () => {
+    expect(today(fishtokri, "2026-10-22T15:10:00")).toEqual(["4–6 PM"]);
+    expect(today(fishtokri, "2026-10-22T16:00:00")).toEqual(["4–6 PM"]);
+    expect(today(fishtokri, "2026-10-22T16:01:00")).toEqual([]);
+    expect(picker(fishtokri, "2026-10-22T16:01:00")).toEqual(["Fri 23 Oct"]);
+  });
+  it("never offers a slot that has already started", () => {
+    for (const at of ["10:15", "13:59", "15:10"]) {
+      const now = ist(`2026-10-22T${at}:00`);
+      for (const len of [60, 120]) {
+        const slots = deliveryDaysAt({ ...fishtokri, delivery_slot_minutes: len }, now).flatMap((d) => d.slots);
+        expect(slots.every((s) => Date.parse(s.start) >= now)).toBe(true);
+      }
+    }
   });
   it("1-hour slots end at closing time", () => {
-    expect(today({ ...fishtokri, delivery_slot_minutes: 60 }, "2026-10-22T10:15:00")).toEqual(["1–2 PM", "2–3 PM", "3–4 PM", "4–5 PM", "5–6 PM"]);
+    expect(today({ ...fishtokri, delivery_slot_minutes: 60 }, "2026-10-22T10:15:00")).toEqual(["12–1 PM", "1–2 PM", "2–3 PM", "3–4 PM", "4–5 PM", "5–6 PM"]);
   });
-  it("no Today within 2 hours of closing", () => {
-    expect(picker(fishtokri, "2026-10-22T16:30:00")).toEqual(["Fri 23 Oct"]);
+  it("server check uses the same rule: 4–6 PM accepted at 15:10, refused at 16:20", () => {
+    const fourPm = new Date(ist("2026-10-22T16:00:00")).toISOString();
+    expect(checkDeliverySlot(fishtokri, "delivery", fourPm, ist("2026-10-22T15:10:00")).kind).toBe("same_day");
+    expect(checkDeliverySlot(fishtokri, "delivery", fourPm, ist("2026-10-22T16:20:00")).error).toMatch(/no longer available/);
+  });
+});
+
+describe("sellerSlotChoices (seller changes the time on accept)", () => {
+  const iso = (s: string) => new Date(ist(s)).toISOString();
+  const current = { start: iso("2026-10-22T18:00:00"), end: iso("2026-10-22T20:00:00") };
+  const late = { ...fishtokri, closes_at: "22:00" };
+  it("offers only slots that haven't started (not the one under way)", () => {
+    // 16:33: 4–6 PM has started, so it is not offered; 8–10 PM is.
+    expect(times(sellerSlotChoices(late, current, false, ist("2026-10-22T16:33:00")))).toEqual(["8–10 PM"]);
+    expect(times(sellerSlotChoices(late, current, false, ist("2026-10-22T13:00:00")))).toEqual(["2–4 PM", "4–6 PM", "8–10 PM"]);
+  });
+  it("pre-order: the delivery window of the order's day", () => {
+    const pre = { start: iso("2026-10-25T07:00:00"), end: iso("2026-10-25T09:00:00") };
+    expect(times(sellerSlotChoices(fishtokri, pre, true, ist("2026-10-22T20:00:00")))).toEqual(["9–11 AM", "11 AM–1 PM"]);
+  });
+});
+
+describe("slotPreorderLabel (store page pre-order badge)", () => {
+  it("slots on: pre-order anytime, pick a day or the delivery days", () => {
+    expect(slotPreorderLabel(fishtokri)).toBe("Pre-order anytime · pick your day & time");
+    expect(slotPreorderLabel(nomadic)).toBe("Pre-order anytime · delivered Tue & Sat");
+  });
+  it("slots off or no pre-orders: null (current wording stays)", () => {
+    expect(slotPreorderLabel({ ...fishtokri, delivery_slots_enabled: false })).toBeNull();
+    expect(slotPreorderLabel({ ...fishtokri, accepts_preorder: false })).toBeNull();
+    expect(slotPreorderLabel(null)).toBeNull();
+  });
+  it("Nomadic keeps its pause info alongside", () => {
+    expect(preorderPauseLabel(nomadic)).toBe("paused Tue & Sat 2 AM–1 PM");
   });
 });
 
@@ -102,7 +150,7 @@ describe("checkDeliverySlot (order create)", () => {
   });
   it("rejects a missing, past or made-up slot", () => {
     expect(checkDeliverySlot(fishtokri, "delivery", null, now).error).toMatch(/Pick a delivery time/);
-    expect(checkDeliverySlot(fishtokri, "delivery", new Date(ist("2026-10-22T10:00:00")).toISOString(), now).error).toMatch(/no longer available/);
+    expect(checkDeliverySlot(fishtokri, "delivery", new Date(ist("2026-10-22T08:00:00")).toISOString(), now).error).toMatch(/no longer available/);
     expect(checkDeliverySlot(fishtokri, "delivery", new Date(ist("2026-10-22T14:30:00")).toISOString(), now).error).toBeTruthy();
   });
   it("pickup, or slots off: no slot, no error", () => {
@@ -123,7 +171,7 @@ describe("labels and seller edits", () => {
   const end = new Date(ist("2026-10-25T11:00:00")).toISOString();
   it("slot text for buyers", () => {
     expect(slotLabel(start, end)).toBe("Sun 25 Oct, 9–11 AM");
-    expect(orderSlotText({ status: "confirmed", delivery_slot_start: start, delivery_slot_end: end })).toEqual({ label: "Delivery slot", value: "Sun 25 Oct, 9–11 AM" });
+    expect(orderSlotText({ status: "confirmed", delivery_slot_start: start, delivery_slot_end: end })).toEqual({ label: "Delivery time", value: "Sun 25 Oct, 9–11 AM" });
     expect(orderSlotText({ status: "out_for_delivery", delivery_slot_start: start, delivery_slot_end: end })).toEqual({ label: "Arriving by", value: "11 AM" });
     expect(orderSlotText({ status: "confirmed" })).toBeNull();
   });
@@ -158,5 +206,26 @@ describe("tomorrowPreorders (seller push the evening before)", () => {
       { id: "e", is_preorder: true, delivery_slot_start: iso("2026-10-25T07:00:00"), delivery_slot_end: iso("2026-10-25T09:00:00") },
     ];
     expect(tomorrowPreorders(orders, fishtokri, ist("2026-10-22T20:00:00"))).toEqual({ count: 3, firstSlot: "7–9 AM" });
+  });
+});
+
+describe("buyerCancelRule with a delivery time (A1: the order's own delivery day decides)", () => {
+  const sunSlot = new Date(ist("2026-10-25T08:00:00")).toISOString();
+  const order = { status: "confirmed", is_preorder: true, delivery_slot_start: sunSlot };
+  it("a Sunday pre-order can be cancelled on Thursday, also during shop hours", () => {
+    expect(buyerCancelRule(order, fishtokri3, ist("2026-10-22T16:50:00")).ok).toBe(true);
+    expect(buyerCancelRule(order, fishtokri3, ist("2026-10-25T02:59:00")).ok).toBe(true);
+  });
+  it("not after that day's cutoff (Sun 3 AM)", () => {
+    expect(buyerCancelRule(order, fishtokri3, ist("2026-10-25T03:30:00")).ok).toBe(false);
+  });
+  it("Nomadic Tue pre-order: until Tue 2 AM", () => {
+    const tue = { ...order, delivery_slot_start: new Date(ist("2026-10-27T09:00:00")).toISOString() };
+    expect(buyerCancelRule(tue, nomadic, ist("2026-10-26T23:00:00")).ok).toBe(true);
+    expect(buyerCancelRule(tue, nomadic, ist("2026-10-27T02:30:00")).ok).toBe(false);
+  });
+  it("no slot: the old rule (pre-order window open now)", () => {
+    expect(buyerCancelRule({ status: "confirmed", is_preorder: true }, fishtokri3, ist("2026-10-22T11:00:00")).ok).toBe(false);
+    expect(buyerCancelRule({ status: "confirmed", is_preorder: true }, fishtokri3, ist("2026-10-22T21:00:00")).ok).toBe(true);
   });
 });

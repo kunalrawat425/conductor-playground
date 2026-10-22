@@ -23,7 +23,7 @@
         <span class="order-method-icon">🏪</span>
         <div class="order-method-body">
           <div class="order-method-title">Pickup</div>
-          <div class="order-method-sub">Collect from the seller</div>
+          <div class="order-method-sub">Collect from the shop</div>
         </div>
         <div class="order-method-check" aria-hidden="true"></div>
       </div>
@@ -581,6 +581,7 @@
 </style>
 
 <script>
+  import { friendlyError } from "../lib/friendly-error";
   import { getSession, getBuyerAddressFromStorage, saveBuyerAddressDetailToStorage, getBuyerAddressDetailFromStorage } from "../lib/auth";
   import {
     formatSavedBuyerAddress,
@@ -1083,7 +1084,8 @@
         confirmBtn.textContent = origText ?? "Place order";
         confirmBtn.disabled = false;
         backBtn.disabled = false;
-        errEl.textContent = err.message || "Order failed. Try again.";
+        console.warn("[order-address] place order failed", err);
+        errEl.textContent = friendlyError(err, "Order failed. Try again.");
         errEl.style.display = "block";
       }
     } else {

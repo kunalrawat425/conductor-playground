@@ -85,7 +85,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     if ((order as any).cart_id) {
       const { data: items } = await sb
         .from("orders")
-        .select("id, cart_id, buyer_id, species, quantity, quantity_unit, pricing_label, total_price, delivery_fee, status, created_at, cancelled_by, cancel_reason, refund_amt, refund_sent_at, razorpay_order_id, razorpay_payment_id, payment_method, final_price, listing:fish_listings(species)")
+        .select("id, cart_id, buyer_id, species, quantity, quantity_unit, pricing_label, total_price, delivery_fee, paid_amount, status, created_at, cancelled_by, cancel_reason, refund_amt, refund_sent_at, razorpay_order_id, razorpay_payment_id, payment_method, final_price, listing:fish_listings(species)")
         .eq("cart_id", (order as any).cart_id)
         .eq("buyer_id", (order as any).buyer_id)
         .order("created_at", { ascending: true });
@@ -97,7 +97,7 @@ export const GET: APIRoute = async ({ url, request }) => {
             id: i.id, species: i.listing?.species || i.species, quantity: i.quantity, quantity_unit: i.quantity_unit,
             pricing_label: i.pricing_label, total_price: i.total_price, delivery_fee: i.delivery_fee, status: i.status,
             cancelled_by: i.cancelled_by, cancel_reason: i.cancel_reason, refund_amt: i.refund_amt, refund_sent_at: i.refund_sent_at,
-            final_price: i.final_price, paid: !!i.razorpay_payment_id,
+            final_price: i.final_price, paid: !!i.razorpay_payment_id, paid_amount: i.paid_amount,
           })),
           payable_ids: payable.map((r: any) => r.id),
           payable_total: payable.reduce((sum: number, r: any) => sum + rowPaise(r), 0) / 100,
