@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { dbFromForm, formFromDb, preorderMode, timingFormErrors, type TimingForm } from "../../src/lib/store-timing-form";
 import { preorderScheduleLabel, sameDayScheduleLabel } from "../../src/lib/order-timing";
+import { storePreorderLabel } from "../../src/lib/delivery-slots";
 
 const ALL = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
-// Prod rows as Supabase returns them (time columns come back as HH:MM:SS).
+// Prod rows (read 22 Oct 2026) as Supabase returns them (time columns come back as HH:MM:SS).
 const fishtokri = {
   open_days: ["tue", "wed", "thu", "fri", "sat", "sun"],
   opens_at: "08:00:00",
@@ -59,6 +60,16 @@ describe("store timings form: existing sellers round-trip unchanged", () => {
     );
     expect(preorderScheduleLabel({ ...nomadic, accepts_preorder: false })).toBeNull();
   });
+
+  it("delivery time on (prod slot settings): the store page's pre-order line", () => {
+    const fishtokriSlots = { ...fishtokri, delivery_slots_enabled: true, delivery_slot_minutes: 120, preorder_delivery_start: "08:00:00", preorder_delivery_end: "18:00:00", preorder_days_ahead: 3 };
+    const nomadicSlots = { ...nomadic, delivery_slots_enabled: true, delivery_slot_minutes: 120, preorder_delivery_start: "07:00:00", preorder_delivery_end: "13:00:00", preorder_days_ahead: 2 };
+    expect(storePreorderLabel(fishtokriSlots)).toBe("Pre-order anytime · pick your day & time");
+    expect(storePreorderLabel(nomadicSlots)).toBe("Pre-order anytime · delivered Tue & Sat · paused Tue & Sat 2 AM–1 PM");
+    // Slots off: the schedule line, as before.
+    expect(storePreorderLabel(fishtokri)).toBe("Pre-orders · Closed Sun · 6 PM–3 AM · delivered next morning");
+    expect(storePreorderLabel({ ...fishtokriSlots, accepts_preorder: false })).toBeNull();
+  });
 });
 
 describe("store timings form → DB values", () => {
@@ -96,9 +107,17 @@ describe("store timings form: friendly validation", () => {
     expect(errs({ sameDay: false, preorder: false }).toggles).toMatch(/Turn on same-day orders or pre-orders/);
   });
   it("blocks a stop time equal to closing time (the old 6 PM–6 PM bug)", () => {
-    expect(errs({ stopAt: "18:00" }).preorderTimes).toBe("Pick a stop time after your closing time (6 PM).");
+    expect(errs({ stopAt: "18:00" }).preorderTimes).toBe("Pick a stop time after you close at 6 PM (up to 12 hours later).");
     expect(errs({ stopAt: "17:00" }).preorderTimes).toBeDefined();
     expect(errs({ stopAt: "22:00" }).preorderTimes).toBeUndefined();
+  });
+  it("prod sellers with broken timings are blocked with a plain message", () => {
+    // Bombay Sea Food: pre-orders stop at closing time (10 PM–10 PM).
+    const bombay = { ...fishtokri, open_days: ALL, opens_at: "08:00:00", closes_at: "22:00:00", preorder_days: ALL, preorder_cutoff_time: "22:00:00" };
+    expect(timingFormErrors(formFromDb(bombay))).toEqual({ preorderTimes: "Pick a stop time after you close at 10 PM (up to 12 hours later)." });
+    // The fishy spot: open 1:00–1:01 AM, pre-orders until 11:59 PM (almost a day after closing).
+    const fishy = { ...bombay, opens_at: "01:00:00", closes_at: "01:01:00", preorder_cutoff_time: "23:59:00" };
+    expect(timingFormErrors(formFromDb(fishy))).toEqual({ preorderTimes: "Pick a stop time after you close at 1:01 AM (up to 12 hours later)." });
   });
   it("pre-orders off: their times are not checked", () => {
     expect(errs({ preorder: false, stopAt: "18:00" })).toEqual({});

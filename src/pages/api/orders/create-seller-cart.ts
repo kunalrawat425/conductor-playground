@@ -23,6 +23,7 @@ import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { afterResponse } from "../../../lib/server/after-response";
 import { cartLabel } from "../../../lib/server/order-cart";
 import { metaEvent, metaUserFromRequest } from "../../../lib/server/meta-capi";
+import { checkDeliverySlot, slotDateIST, slotLabel, SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 
 type ResolvedRow = Awaited<ReturnType<typeof resolveListingOrderLine>> extends { ok: true; line: infer L }
   ? { line: L }
@@ -62,6 +63,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       utm,
       placement_kind: expectedPlacement,
       meta_event_id,
+      delivery_slot_start,
     } = body;
     if (buyer_id) { const denied = requireBuyer(request, buyer_id); if (denied) return denied; }
 
@@ -99,6 +101,21 @@ export const POST: APIRoute = async ({ request, url }) => {
     const nowMs = Date.now();
     const qtyByListing = new Map<string, number>();
 
+    const { data: seller } = await supabase
+      .from("sellers")
+      .select(
+        `has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, lat, lng, ${SLOT_SELLER_COLUMNS}`
+      )
+      .eq("id", clientSellerId)
+      .single();
+    // Delivery time slot: required when the seller has slots on, and must be one offered now.
+    // Its day decides the kind: Today = same-day, a later delivery day = pre-order (any hour).
+    const slotCheck = checkDeliverySlot(seller, order_type, delivery_slot_start, nowMs);
+    if (slotCheck.error) {
+      return new Response(JSON.stringify({ error: slotCheck.error, code: "slot_unavailable" }), { status: 400 });
+    }
+    const slotCols = slotCheck.slot ? { delivery_slot_start: slotCheck.slot.start, delivery_slot_end: slotCheck.slot.end } : {};
+
     for (const raw of rawLines as CartLineInput[]) {
       if (!raw?.listing_id) {
         return new Response(JSON.stringify({ error: "Each line needs listing_id" }), { status: 400 });
@@ -111,6 +128,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         buyer_id,
         nowMs,
         priorQty: qtyByListing.get(raw.listing_id) || 0,
+        placement: slotCheck.kind,
       });
       if (!r.ok) {
         return new Response(JSON.stringify({ error: r.error, ...((r as any).code ? { code: (r as any).code } : {}) }), { status: r.status });
@@ -141,29 +159,20 @@ export const POST: APIRoute = async ({ request, url }) => {
       );
     }
 
-    const { data: seller } = await supabase
-      .from("sellers")
-      .select(
-        "opens_at, closes_at, accepts_preorder, has_delivery, has_pickup, min_order_amount, delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, delivery_rad, lat, lng"
-      )
-      .eq("id", clientSellerId)
-      .single();
-
     const minAmt = Number(seller?.min_order_amount) || 0;
     if (minAmt > 0 && cartSubtotal < minAmt) {
       return new Response(
-        JSON.stringify({ error: `Minimum order for this seller is ₹${minAmt}` }),
+        JSON.stringify({ error: `Minimum order is ₹${minAmt}` }),
         { status: 400 }
       );
     }
 
     if (order_type === "delivery" && !seller?.has_delivery) {
-      return new Response(JSON.stringify({ error: "This seller does not offer delivery" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Delivery isn't available for this shop" }), { status: 400 });
     }
     if (order_type === "pickup" && seller?.has_pickup === false) {
-      return new Response(JSON.stringify({ error: "This seller does not offer pickup" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Pickup isn't available for this shop" }), { status: 400 });
     }
-
     const status: "pending_payment" = "pending_payment";
 
     // For per-km delivery fee: resolve buyer address coordinates once.
@@ -243,6 +252,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             pricing_option_id: line.pricing_option_id,
             pricing_label: line.pricing_label,
             is_preorder: true,
+            ...slotCols,
             ...(buyer_notes ? { buyer_notes: String(buyer_notes).slice(0, 500) } : {}),
             ...(cut_style ? { cut_style: String(cut_style).slice(0, 50) } : {}),
           })
@@ -306,7 +316,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (fetchErr) {
         return failCart(fetchErr.message, 500);
       }
-      await supabase.from("orders").update({ placement_kind: "same_day", is_preorder: false }).eq("id", orderId);
+      await supabase.from("orders").update({ placement_kind: "same_day", is_preorder: false, ...slotCols }).eq("id", orderId);
       orders.push(fetchedOrder);
       placed.push({ line, order: fetchedOrder });
     }
@@ -371,7 +381,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
       if (resendApiKey) {
         const statusLabel = isPreorder
-          ? preorderPlacedLabel((resolved.find((x) => x.line.kind === "preorder")?.line as PreorderLinePayload | undefined)?.delivery_date)
+          // A slot can be on a later delivery day than the next one (preorder_days_ahead).
+          ? preorderPlacedLabel(slotCheck.slot ? slotDateIST(slotCheck.slot.start) : (resolved.find((x) => x.line.kind === "preorder")?.line as PreorderLinePayload | undefined)?.delivery_date)
           : scheduled_for
           ? "Pickup scheduled — complete payment to confirm 🗓️"
           : "Order placed — complete payment to confirm";
@@ -389,6 +400,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             buyer_phone,
             sellerEmail: sEmail,
             isPreorder,
+            deliverySlot: slotCheck.slot ? slotLabel(slotCheck.slot.start, slotCheck.slot.end) : null,
             preorderMin: many ? null : first.line.preorder_price_min,
             preorderMax: many ? null : first.line.preorder_price_max,
             bundleSize: many ? null : (first.line as any).bundle_size || null,
@@ -444,6 +456,7 @@ async function sendCartOrderEmail(
     buyer_phone: string;
     sellerEmail: string | null | undefined;
     isPreorder?: boolean;
+    deliverySlot?: string | null;
     preorderMin?: number | null;
     preorderMax?: number | null;
     bundleSize?: number | null;
@@ -468,6 +481,7 @@ async function sendCartOrderEmail(
     orderId: args.order?.id,
     scheduled_for: scheduled_for || null,
     isPreorder: args.isPreorder,
+    deliverySlot: args.deliverySlot,
     preorderMin: args.preorderMin,
     preorderMax: args.preorderMax,
     bundleSize: bs,

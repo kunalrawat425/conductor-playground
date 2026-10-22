@@ -21,16 +21,16 @@ import {
   isPreorderShoppingWindow,
   isSellerEffectivelyOpen,
   preorderDeliveryLabel,
-  preorderScheduleLabel,
   preorderStatusLabel,
   sameDayScheduleLabel,
   timeLabel,
 } from "../../lib/order-timing";
 import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
-import { getAreaBySlug } from "../../lib/areas";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
+import { dateLabelIST, deliveryDaysAt, slotPreorderLabel, storePreorderLabel } from "../../lib/delivery-slots";
+import { deliveryMorningLabel } from "../../lib/order-timing";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -65,7 +65,6 @@ const sellerName = cleanSellerName(seller?.name) || "Seller";
 // Live area from the seller's coordinates (e.g. "Thane") beats a vague profile text like "Mumbai".
 const sellerLocation = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const SITE = SITE_URL;
-const sellerArea = sellerLocation ? getAreaBySlug(sellerLocation.toLowerCase()) : null;
 const reviewSummary = await getSellerReviews(seller ? [seller.id] : [], 2);
 const canonicalUrl = SITE + (seller ? sellerHref(seller.name, seller.id) : `/seller/${id}`);
 // Per-fish product pages live under /s/<slug>/<species> (single-product pages for Google).
@@ -120,10 +119,20 @@ const isEffectivelyOpen = !!seller && isSellerEffectivelyOpen(seller, nowMs);
 // Priority 2: preorder window. Preorders are opt-in: seller must explicitly enable accepts_preorder.
 // is_preorder_enabled on listings controls which items appear, not whether mode activates.
 const acceptsPreorder = !!seller?.accepts_preorder;
-const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && isPreorderShoppingWindow(seller, nowMs);
+// Delivery slots on: later delivery days can be pre-ordered at any hour (lib/delivery-slots), so the
+// shop is in pre-order mode outside the usual window too while such a day is left.
+const slotDays = seller ? deliveryDaysAt(seller, nowMs) : [];
+const isPreorderMode = !isEffectivelyOpen && acceptsPreorder && (isPreorderShoppingWindow(seller, nowMs) || slotDays.length > 0);
 // "Pre-order 6 PM–3 AM · next delivery tomorrow morning" / "Pre-orders open at 1 PM"
 const preorderLine = acceptsPreorder ? preorderStatusLabel(seller, nowMs) : null;
-const deliveryFor = (isPreorderMode && preorderDeliveryLabel(seller, nowMs)) || "tomorrow morning";
+// Slots on: "Pre-order anytime · pick your day & time" (null when off); the buyer picks the day at checkout,
+// so "for tomorrow or later" / "for Sat 24 Oct or later" rather than one morning.
+const slotLine = slotPreorderLabel(seller);
+const preDays = slotDays.filter((d) => d.kind === "preorder");
+const dayWord = (date: string) => date === new Date(nowMs + 5.5 * 3600_000 + 86_400_000).toISOString().slice(0, 10) ? "tomorrow" : dateLabelIST(date);
+const deliveryFor = slotLine && preDays.length
+  ? `${dayWord(preDays[0].date)}${preDays.length > 1 ? " or later" : ""}`
+  : (isPreorderMode && (preorderDeliveryLabel(seller, nowMs) || (slotDays[0] && deliveryMorningLabel(slotDays[0].date, nowMs)))) || "tomorrow morning";
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
@@ -166,7 +175,7 @@ for (const l of listings) {
 
 // Same lines as the dashboard's "What buyers will see" preview.
 const sameDayLine = seller ? sameDayScheduleLabel(seller) : null;
-const preorderScheduleLine = seller ? preorderScheduleLabel(seller) : null;
+const preorderScheduleLine = seller ? storePreorderLabel(seller) : null;
 
 // Calculate next opening time string for banner
 let nextOpenLabel = "soon";
@@ -217,7 +226,7 @@ const tags = [
   title={`${sellerName}${sellerLocation ? `, ${sellerLocation}` : ""}: Today's Fish Menu & Home Delivery | Relifish`}
   description={(() => {
     const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 4).join(", ");
-    return `Order fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""}: ${speciesList || "pomfret, surmai, rawas, prawns"}. See today's menu, pre-order tonight for tomorrow's catch, home delivery or pickup.`;
+    return `Order fresh fish from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""}: ${speciesList || "pomfret, surmai, rawas, prawns"}. See today's menu, pre-order for tomorrow or later, home delivery or pickup.`;
   })()}
   canonical={canonicalUrl}
   noindex={notFound || seller?.is_active === false || !!seller?.is_test}
@@ -332,10 +341,10 @@ const tags = [
       {/* Schedule strip */}
       <div style="padding:8px 16px;background:var(--v2-bg-2);border-bottom:1px solid var(--v2-border);display:flex;flex-wrap:wrap;gap:6px;">
         {sameDayLine && (
-          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;">🗓 {sameDayLine}</span>
+          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;white-space:normal;line-height:1.35;">🗓 {sameDayLine}</span>
         )}
         {preorderScheduleLine && (
-          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;">🌙 {preorderScheduleLine}</span>
+          <span class="v2-badge v2-badge-tag v2-badge-size-md" style="font-weight:500;background:#F3E8FF;color:#7C3AED;border-color:#C4B5FD;white-space:normal;line-height:1.35;">🌙 {preorderScheduleLine}</span>
         )}
       </div>
 
@@ -344,9 +353,9 @@ const tags = [
         <div style="margin:12px 16px 0;padding:12px 14px;background:#F3E8FF;border:1px solid #DDD6FE;border-radius:var(--v2-radius);display:flex;align-items:center;gap:10px;">
           <span style="font-size:20px;">🌙</span>
           <div>
-            <div style="font:700 13px Inter;color:#7C3AED;">{preorderLine || `Pre-ordering for ${deliveryFor}`}</div>
+            <div style="font:700 13px Inter;color:#7C3AED;">{slotLine ? `Pre-order for ${deliveryFor}` : preorderLine || `Pre-ordering for ${deliveryFor}`}</div>
             <div style="font:400 11px Inter;color:#6D28D9;margin-top:2px;">
-              {`For ${deliveryFor}. Your order is reserved from that morning's fresh catch.`}
+              {slotLine ? "Pick your delivery day and time at checkout." : `For ${deliveryFor}. Your order is reserved from that morning's fresh catch.`}
             </div>
           </div>
         </div>
@@ -361,7 +370,7 @@ const tags = [
           <EmptyState
             variant="no-results"
             title="No items available"
-            description={acceptsPreorder ? "Pre-order tomorrow's catch instead." : "Check back during opening hours."}
+            description={acceptsPreorder ? "Pre-order for tomorrow or later instead." : "Check back during opening hours."}
             ctaText={acceptsPreorder ? "Pre-order" : "Browse sellers"}
             ctaHref={acceptsPreorder ? "/preorder" : "/"}
           />
@@ -435,11 +444,6 @@ const tags = [
 
 
   {!notFound && <ReviewsBlock summary={reviewSummary} title={`Buyer ratings for ${sellerName}`} allHref={`${sellerHref(seller.name, seller.id)}/reviews`} />}
-  {!notFound && sellerArea && (
-    <p style="font:400 13px/1.5 Inter;margin:0;padding:12px 16px;border-top:1px solid var(--v2-border);">
-      {sellerName} delivers in {sellerArea.name}. <a href={`/area/${sellerArea.slug}`} style="color:var(--v2-brand);font-weight:600;">See all fish sellers and today's prices in {sellerArea.name} →</a>
-    </p>
-  )}
   <!-- Hyperlocal footer -->
   {!notFound && (
     <div style="background:var(--v2-bg-2);border-top:1px solid var(--v2-border);padding:20px 16px;text-align:center;">
@@ -1023,6 +1027,7 @@ const tags = [
       const noDelivNote = document.getElementById("seller-checkout-no-delivery-note");
       const noPickupNote = document.getElementById("seller-checkout-no-pickup-note");
 
+      renderCheckoutSlots(fulfill.delivery_days);
       if (pickupOpt) pickupOpt.style.display = showPickup ? "flex" : "none";
       if (delivOpt) delivOpt.style.display = showDelivery ? "flex" : "none";
       if (noDelivNote) noDelivNote.style.display = showPickup && !showDelivery ? "block" : "none";
@@ -1056,6 +1061,81 @@ const tags = [
         pickupRadio.dispatchEvent(new Event("change", { bubbles: true }));
       }
     }
+
+    // "When do you want it?" (seller has delivery slots on): days from /api/seller/fulfillment,
+    // [{ date, kind, label, slots: [{ start, end, time }] }]; null = slots off (checkout as before).
+    // The day decides the order: Today = same-day, a later day = pre-order. The server re-checks it all.
+    let checkoutDays = null, pickedDay = null, pickedSlot = null;
+    // The cart checked for the picked day when that day is the other kind (lineKey → price | reason).
+    let dayCheck = null;
+    const chosenDay = () => (checkoutDays || []).find((d) => d.date === pickedDay) || null;
+    function renderCheckoutSlots(days) {
+      checkoutDays = Array.isArray(days) ? days : null;
+      const sec = document.getElementById("seller-checkout-slot-section");
+      if (!sec) return;
+      // Pickup has no time step: only delivery shows "When do you want it?".
+      const delivery = document.querySelector('input[name="seller-checkout-method"]:checked')?.value === "delivery";
+      sec.style.display = checkoutDays && delivery ? "block" : "none";
+      if (!checkoutDays) return;
+      if (!chosenDay()) { pickedDay = checkoutDays[0]?.date || null; pickedSlot = null; }
+      const day = chosenDay();
+      if (!day?.slots.some((s) => s.start === pickedSlot)) pickedSlot = null;
+      document.getElementById("seller-checkout-slot-days").innerHTML = checkoutDays.map((d) =>
+        `<button type="button" class="v2-day-pill${d.date === pickedDay ? " v2-day-selected" : ""}" data-slot-day="${escape(d.date)}">${escape(d.label)}<br><span style="font-weight:500;font-size:10px;">${d.kind === "preorder" ? "Pre-order" : "Same day"}</span></button>`).join("");
+      document.getElementById("seller-checkout-slots").innerHTML = (day?.slots || []).map((s) =>
+        `<button type="button" class="v2-slot${s.start === pickedSlot ? " v2-slot-selected" : ""}" data-slot-start="${escape(s.start)}" aria-pressed="${s.start === pickedSlot}"><div class="v2-slot-time">${escape(s.time)}</div></button>`).join("");
+      updateDayItems();
+    }
+    /** Cart subtotal as shown at checkout; re-runs the method handler so fee and total follow. */
+    function setCheckoutSubtotal(amount) {
+      const subEl = document.getElementById("seller-checkout-subtotal");
+      if (!subEl || Number(subEl.dataset.amount) === amount) return;
+      subEl.textContent = `₹${amount.toLocaleString("en-IN")}`;
+      subEl.dataset.amount = String(amount);
+      document.getElementById("seller-checkout-total").textContent = `₹${amount.toLocaleString("en-IN")}`;
+      document.querySelector('input[name="seller-checkout-method"]:checked')?.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    /**
+     * A day of the other kind than this cart (same-day cart, later day): check every item for that
+     * day (cart.ts checkLine, same rules as the separate pre-order cart) and show its price.
+     */
+    async function updateDayItems() {
+      const note = document.getElementById("seller-checkout-slot-note");
+      const day = chosenDay();
+      const c = Cart();
+      const group = c?.groupBySeller().find((g) => g.seller_id === activeCheckoutSellerId);
+      dayCheck = null;
+      const show = (html) => { note.style.display = html ? "block" : "none"; note.innerHTML = html; };
+      if (!checkoutDays.length) return show("No delivery times left for now. Choose pickup if you can, or order again later.");
+      if (!day || !group || day.kind === cartMode) { if (group) setCheckoutSubtotal(group.subtotal); return show(""); }
+      show("Checking your items for this day…");
+      const res = await c.checkCartForMode(activeCheckoutSellerId, day.kind);
+      if (chosenDay() !== day) return; // picked another day meanwhile
+      if (!res) return show("Couldn't check your items for this day. Try again.");
+      dayCheck = res;
+      const bad = group.items.filter((i) => !("price" in (res[c.lineKey(i)] || {})));
+      const subtotal = group.items.reduce((s, i) => s + i.qty * (res[c.lineKey(i)]?.price || 0), 0);
+      setCheckoutSubtotal(Math.round(subtotal * 100) / 100);
+      show(bad.length
+        ? `<span style="color:var(--v2-red);font-weight:700;">Not available for ${escape(day.label)}: ${bad.map((i) => escape(String(i.name || "").split(" (")[0])).join(", ")}.</span> Pick another day, or remove ${bad.length > 1 ? "them" : "it"} from your cart.`
+        : `🌙 Pre-order for ${escape(day.label === "Tomorrow" ? "tomorrow" : day.label)}: you pay up to ₹${subtotal.toLocaleString("en-IN")} now; the final price is set on the day.`);
+    }
+    document.getElementById("seller-checkout-slot-section")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-slot-day],[data-slot-start]");
+      if (!btn) return;
+      if (btn.dataset.slotDay) { if (btn.dataset.slotDay !== pickedDay) { pickedDay = btn.dataset.slotDay; pickedSlot = null; } }
+      else pickedSlot = btn.dataset.slotStart;
+      renderCheckoutSlots(checkoutDays);
+    });
+    // Pickup keeps the cart's own kind and prices; delivery follows the picked day.
+    document.querySelectorAll('input[name="seller-checkout-method"]').forEach((r) => r.addEventListener("change", () => {
+      if (!r.checked || !checkoutDays) return;
+      const sec = document.getElementById("seller-checkout-slot-section");
+      if (sec) sec.style.display = r.value === "delivery" ? "block" : "none";
+      if (r.value === "delivery") { updateDayItems(); return; }
+      const group = Cart()?.groupBySeller().find((g) => g.seller_id === activeCheckoutSellerId);
+      if (group) setCheckoutSubtotal(group.subtotal);
+    }));
 
     document.addEventListener("v2-checkout-step2", (e) => {
       if (e.detail?.checkoutId !== "seller-checkout") return;
@@ -1143,7 +1223,7 @@ const tags = [
       // per_km without a known buyer location: show the seller's rate, not radius × rate (reads as a scary maximum).
       let feeLine = "";
       if (feeEstimate && !(freeHit && !isPreorderMode)) {
-        const amt = feeEstimate.fee === 0 ? "" : feeEstimate.fee == null ? `₹${deliveryFeePerKm}/km from the seller` : feeEstimate.label;
+        const amt = feeEstimate.fee === 0 ? "" : feeEstimate.fee == null ? `₹${deliveryFeePerKm}/km` : feeEstimate.label;
         feeLine = amt ? `🚲 Delivery ${amt}, shown before you pay` : "🚲 Free delivery";
         if (amt && deliveryFreeAbove > 0 && deliveryFreeAbove > sellerSubtotal) feeLine += ` · free above ₹${deliveryFreeAbove}`;
       }
@@ -1533,6 +1613,18 @@ const tags = [
         window.v2Toast?.("error", "Address needed", "Pick a delivery address");
         return;
       }
+      // Delivery with slots on: a slot is required, and a day of the other kind needs every item valid for it.
+      const day = orderType === "delivery" && checkoutDays ? chosenDay() : null;
+      if (orderType === "delivery" && checkoutDays && !pickedSlot) {
+        document.getElementById("seller-checkout-slot-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.v2Toast?.("error", "Pick a delivery time", checkoutDays.length ? "Choose a day and a time" : "No delivery times left for now");
+        return;
+      }
+      if (day && day.kind !== cartMode && (!dayCheck || group.items.some((i) => !("price" in (dayCheck[c.lineKey(i)] || {}))))) {
+        document.getElementById("seller-checkout-slot-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.v2Toast?.("error", `Not all items are available for ${day.label}`, "Pick another day, or remove those items");
+        return;
+      }
 
       const btn = document.getElementById("seller-checkout-place-order");
       btn.disabled = true;
@@ -1558,8 +1650,9 @@ const tags = [
             buyer_id: buyerId,
             buyer_addr: selectedAddressId,
             order_type: orderType,
+            delivery_slot_start: orderType === "delivery" ? pickedSlot : null,
             // Lets the server refuse if the shop opened/closed since this page loaded.
-            placement_kind: isPreorderMode ? "preorder" : "same_day",
+            placement_kind: day ? day.kind : isPreorderMode ? "preorder" : "same_day",
             utm: (() => { try { return JSON.parse(localStorage.getItem("rf_utm") || "null"); } catch { return null; } })(),
             cut_style: [...document.querySelectorAll('input[name="seller-checkout-cut"]:checked')].map((el) => el.value).join(","),
             buyer_notes: (document.getElementById("seller-checkout-notes")?.value || "").trim(),
@@ -1570,6 +1663,8 @@ const tags = [
         if (!res.ok) {
           // Page is stale (shop opened/closed): reload so menu, prices and mode are current.
           if (data.code === "placement_changed" || data.code === "option_changed") setTimeout(() => window.location.reload(), 2500);
+          // The picked time just passed: show the times still open.
+          if (data.code === "slot_unavailable") fetchSellerFulfillment(activeCheckoutSellerId).then((f) => f && renderCheckoutSlots(f.delivery_days));
           throw new Error(data.error || "Failed");
         }
 

@@ -156,6 +156,33 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       </div>
     </div>
 
+    <!-- Delivery time (migration 084): buyers pick a time at checkout; the seller can change it on the order. -->
+    <div class="t-card">
+      <label class="t-toggle">
+        <span><b>Let buyers pick a delivery time</b><small>For delivery orders. You can change the time when you accept the order or send it out.</small></span>
+        <input type="checkbox" id="p-slots" class="t-switch" role="switch" />
+      </label>
+      <div id="p-slots-body" class="t-body">
+        <div class="t-label">Each delivery time is</div>
+        <div class="t-row">
+          <label class="ds-radio"><input type="radio" name="p-slot-len" value="60" /> 1 hour</label>
+          <label class="ds-radio"><input type="radio" name="p-slot-len" value="120" /> 2 hours</label>
+        </div>
+        <div data-slots="same_day" class="t-note" style="margin-top:8px;">Same day: times run during your open hours. A time is offered until 2 hours before it ends.</div>
+        <div data-slots="preorder">
+          <div class="t-label" style="margin-top:12px;">Pre-order: deliver between</div>
+          <div class="t-row"><select id="p-slot-pre-start" class="t-select"></select> and <select id="p-slot-pre-end" class="t-select"></select> on the delivery day</div>
+          <div class="t-label" style="margin-top:12px;">Buyers can pre-order for</div>
+          <select id="p-slot-days-ahead" class="t-select">
+            <option value="1">The next delivery day only</option>
+            <option value="2">Up to 2 delivery days ahead</option>
+            <option value="3">Up to 3 delivery days ahead</option>
+          </select>
+        </div>
+        <div id="p-slot-err" class="t-err"></div>
+      </div>
+    </div>
+
     <div id="t-preview" class="t-preview">
       <div style="font:700 12px Inter;color:var(--v2-ink-2);margin-bottom:8px;">What buyers will see</div>
       <div id="t-preview-lines"></div>
@@ -218,17 +245,6 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       </div>
     </div>
 
-    <!-- Scheduled pickup — hidden for now
-    <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">Pickup settings</h3>
-    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
-      <input type="checkbox" id="p-schedule-pickup" />
-      <div>
-        <div style="font:700 13px Inter;color:var(--v2-ink);">Scheduled pickup slots 🗓️</div>
-        <div style="font:400 11px Inter;color:var(--v2-ink-3);">Let buyers choose a pickup time slot</div>
-      </div>
-    </label>
-    -->
-
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">🔔 Notifications</h3>
     <div style="display:flex;align-items:center;justify-content:space-between;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
       <div>
@@ -258,11 +274,12 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
 
 <script>
   import { supabase } from "../../lib/supabase";
+  import { PREORDER_DELIVERY_DEFAULT, sellerSlotsOn, slotSettingsError, slotTimeLabel, storePreorderLabel, type SlotSeller } from "../../lib/delivery-slots";
   import { validateSellerName } from "../../lib/seller-display";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
   import { imageFileError, imageDimensionsError } from "../../lib/image-crop";
   import { cropImage } from "../../lib/crop-dialog";
-  import { preorderScheduleLabel, sameDayScheduleLabel } from "../../lib/order-timing";
+  import { sameDayScheduleLabel } from "../../lib/order-timing";
   import { WEEK, dbFromForm, formFromDb, preorderMode, timingFormErrors, type TimingForm } from "../../lib/store-timing-form";
 
   function getSellerId() { try { return localStorage.getItem("rlf_seller_id"); } catch { return null; } }
@@ -289,6 +306,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       showImagePreview("logo", seller?.logo_url || null);
       showImagePreview("store", seller?.store_image_url || null);
       (document.getElementById("p-min-order") as HTMLInputElement).value = String(seller?.min_order_amount || 0);
+      fillSlotSettings(seller || {});
       fillTimings(formFromDb(seller || {}));
       (document.getElementById("p-pickup") as HTMLInputElement).checked = seller?.has_pickup !== false;
       (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
@@ -374,6 +392,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       delivery_fee_type: (document.querySelector('input[name="p-fee-type"]:checked') as HTMLInputElement)?.value || "fixed",
       delivery_fee_per_km: parseFloat((document.getElementById("p-delivery-fee-perkm") as HTMLInputElement).value) || 0,
       free_delivery_above: parseFloat((document.getElementById("p-free-above") as HTMLInputElement).value) || 0,
+      ...readSlotSettings(),
       // schedule_pickup_slots: hidden for now
     };
 
@@ -397,6 +416,13 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     }
     if (!updates.has_pickup && !updates.has_delivery) {
       (window as any).v2Toast?.("error", "Pickup or delivery required", "Enable at least pickup or delivery so buyers can get orders");
+      btn.disabled = false; btn.textContent = "Save changes"; return;
+    }
+    const slotError = slotSettingsError(updates);
+    if (slotError) {
+      document.getElementById("p-slot-err")!.textContent = slotError;
+      document.getElementById("p-slot-err")!.scrollIntoView({ behavior: "smooth", block: "center" });
+      (window as any).v2Toast?.("error", "Check delivery time", slotError);
       btn.disabled = false; btn.textContent = "Save changes"; return;
     }
 
@@ -543,18 +569,29 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
       el.style.display = el.dataset.mode === mode ? "block" : "none";
     });
     document.getElementById("t-close-label")!.textContent = optLabel(f.closesAt, false);
-    const db = dbFromForm(f);
-    // Same text as the schedule strip on the store page.
-    const html = [["🗓", sameDayScheduleLabel(db)], ["🌙", preorderScheduleLabel(db)]]
-      .map(([icon, line]) => (line ? `<div class="t-preview-line">${icon} ${line}</div>` : ""))
-      .join("");
+    // Delivery time: show the parts for what the seller takes (same day / pre-order).
+    const slots = readSlotSettings();
+    document.getElementById("p-slots-body")!.style.display = slots.delivery_slots_enabled ? "block" : "none";
+    document.querySelectorAll<HTMLElement>("[data-slots]").forEach((el) => {
+      el.style.display = (el.dataset.slots === "same_day" ? f.sameDay : f.preorder) ? "block" : "none";
+    });
+    document.getElementById("p-slot-err")!.textContent = slotSettingsError(slots) || "";
+    const db = { ...dbFromForm(f), ...slots };
+    // Same text as the schedule strip on the store page, then the times buyers pick from at checkout.
+    const times = (preorder: boolean) => sellerSlotsOn(db, "2026-01-01", preorder).map((x) => slotTimeLabel(x.start, x.end)).join(" · ");
+    const ahead = slots.preorder_days_ahead > 1 ? ` (up to ${slots.preorder_days_ahead} delivery days ahead)` : "";
+    const lines = [
+      ["🗓", sameDayScheduleLabel(db)],
+      ["🌙", storePreorderLabel(db)],
+      ["🕘", slots.delivery_slots_enabled && f.sameDay && `Delivery time, same day: ${times(false)}`],
+      ["🕘", slots.delivery_slots_enabled && f.preorder && `Delivery time, pre-order${ahead}: ${times(true)}`],
+    ];
+    const html = lines.map(([icon, line]) => (line ? `<div class="t-preview-line">${icon} ${line}</div>` : "")).join("");
     document.getElementById("t-preview-lines")!.innerHTML = html || `<div class="t-preview-line">Buyers can't order from you right now.</div>`;
     showTimingErrors();
   }
-  for (const id of ["t-same-day", "t-preorder", "t-opens", "t-closes", "t-until", "t-win-from", "t-win-to", "t-pause-from", "t-pause-to", "p-open-days", "p-preorder-days", "p-delivery-days"]) {
-    document.getElementById(id)?.addEventListener("change", updateTimings);
-  }
-  document.querySelectorAll('input[name="t-deliver"]').forEach((r) => r.addEventListener("change", updateTimings));
+  // Any change on the form (timings, days, delivery time) refreshes the preview and messages.
+  document.getElementById("v2-profile-form")?.addEventListener("change", updateTimings);
 
   function getCheckedDays(prefix: string): string[] {
     return Array.from(document.querySelectorAll(`input[data-day-prefix="${prefix}"]:checked`)).map((el: any) => el.dataset.day);
@@ -750,5 +787,38 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     window.location.href = "/dashboard/login";
   });
 
+  // ── Delivery time (lib/delivery-slots.ts); shown and previewed by updateTimings ──
+  const slotEl = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  function hourOptions(id: string, value: string) {
+    const opts = Array.from({ length: 17 }, (_, i) => `${String(i + 5).padStart(2, "0")}:00`); // 5 AM … 9 PM
+    if (value && !opts.includes(value)) opts.push(value);
+    const label = (t: string) => { const [h, m] = t.split(":").map(Number); return `${h % 12 || 12}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
+    slotEl<HTMLSelectElement>(id).innerHTML = opts.map((t) => `<option value="${t}">${label(t)}</option>`).join("");
+    slotEl<HTMLSelectElement>(id).value = value;
+  }
+  function fillSlotSettings(s: SlotSeller) {
+    slotEl<HTMLInputElement>("p-slots").checked = !!s.delivery_slots_enabled;
+    const len = Number(s.delivery_slot_minutes) === 60 ? "60" : "120";
+    (document.querySelector(`input[name="p-slot-len"][value="${len}"]`) as HTMLInputElement).checked = true;
+    hourOptions("p-slot-pre-start", s.preorder_delivery_start?.slice(0, 5) || PREORDER_DELIVERY_DEFAULT.start);
+    hourOptions("p-slot-pre-end", s.preorder_delivery_end?.slice(0, 5) || PREORDER_DELIVERY_DEFAULT.end);
+    slotEl<HTMLSelectElement>("p-slot-days-ahead").value = String(s.preorder_days_ahead || 1);
+  }
+  function readSlotSettings() {
+    return {
+      delivery_slots_enabled: slotEl<HTMLInputElement>("p-slots").checked,
+      delivery_slot_minutes: Number((document.querySelector('input[name="p-slot-len"]:checked') as HTMLInputElement)?.value) || 120,
+      preorder_delivery_start: slotEl<HTMLSelectElement>("p-slot-pre-start").value,
+      preorder_delivery_end: slotEl<HTMLSelectElement>("p-slot-pre-end").value,
+      preorder_days_ahead: Number(slotEl<HTMLSelectElement>("p-slot-days-ahead").value) || 1,
+    };
+  }
+
   load();
 </script>
+
+<style is:global>
+  .ds-radio { display:flex; align-items:center; gap:6px; font:600 13px Inter; color:var(--v2-ink); padding:6px 12px; border:1.5px solid var(--v2-border); border-radius:20px; cursor:pointer; }
+  .ds-radio:has(input:checked) { border-color:var(--v2-brand); background:var(--v2-brand-l); color:var(--v2-brand); }
+  .ds-radio input { accent-color:var(--v2-brand); margin:0; }
+</style>

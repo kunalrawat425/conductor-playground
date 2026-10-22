@@ -17,7 +17,8 @@ export type SellerPushKind =
   | "payment_confirmed"
   | "cancelled"
   | "expired_unpaid"
-  | "refunded";
+  | "refunded"
+  | "preorders_tomorrow";
 
 const KINDS = new Set<SellerPushKind>([
   "new_order",
@@ -26,6 +27,7 @@ const KINDS = new Set<SellerPushKind>([
   "cancelled",
   "expired_unpaid",
   "refunded",
+  "preorders_tomorrow",
 ]);
 
 /** Unknown/missing kinds fall back to new_order (previous behaviour for that value). */
@@ -45,6 +47,10 @@ export type SellerPushOpts = {
   reason?: string | null;
   /** Items in one cart; 2+ means `species` is a cart label and quantity is omitted. */
   item_count?: number | null;
+  /** preorders_tomorrow: earliest delivery slot, e.g. "9–11 AM". */
+  first_slot?: string | null;
+  /** new_order / payment_confirmed: the buyer's delivery time, e.g. "Sat 24 Oct, 8–10 AM". */
+  slot?: string | null;
 };
 
 export function sellerPushNotification(
@@ -55,6 +61,7 @@ export function sellerPushNotification(
   const id = opts.order_id_short ? String(opts.order_id_short).toUpperCase() : "";
   const idSuffix = id ? ` (order #${id})` : "";
   const amt = opts.amount != null ? ` ₹${opts.amount}` : "";
+  const deliver = opts.slot ? ` · Deliver ${opts.slot}` : "";
 
   switch (kind) {
     case "payment_proof":
@@ -69,8 +76,8 @@ export function sellerPushNotification(
       return {
         title: "New paid order — confirm it",
         body: species
-          ? `Buyer paid${amt} for ${species}${idSuffix}. Open the dashboard to confirm or decline.`
-          : `Buyer paid${amt}${idSuffix}. Open the dashboard to confirm or decline.`,
+          ? `Buyer paid${amt} for ${species}${idSuffix}${deliver}. Open the dashboard to confirm or decline.`
+          : `Buyer paid${amt}${idSuffix}${deliver}. Open the dashboard to confirm or decline.`,
       };
 
     case "cancelled": {
@@ -99,6 +106,14 @@ export function sellerPushNotification(
           : `A refund${amt} was processed${idSuffix}.`,
       };
 
+    case "preorders_tomorrow": {
+      const n = opts.item_count ?? 0;
+      return {
+        title: "Tomorrow's deliveries",
+        body: `Tomorrow: ${n} pre-order${n === 1 ? "" : "s"}${opts.first_slot ? `, first delivery ${opts.first_slot}` : ""}`,
+      };
+    }
+
     case "new_order":
     default: {
       const u = String(opts.quantity_unit || "piece");
@@ -109,10 +124,10 @@ export function sellerPushNotification(
       return {
         title: isPreorder ? "New pre-order" : "New order",
         body: species && many
-          ? `New${isPreorder ? " pre-order" : " order"}: ${species} (${opts.item_count} items)${amt ? ` ·${amt}` : ""}${schedLabel}`
+          ? `New${isPreorder ? " pre-order" : " order"}: ${species} (${opts.item_count} items)${amt ? ` ·${amt}` : ""}${schedLabel}${deliver}`
           : species
-          ? `New${isPreorder ? " pre-order" : " order"}: ${species} ${opts.quantity ?? ""}${unitLabel}${schedLabel}`
-          : `You have a new${isPreorder ? " pre-order" : " order"}${schedLabel}`,
+          ? `New${isPreorder ? " pre-order" : " order"}: ${species} ${opts.quantity ?? ""}${unitLabel}${schedLabel}${deliver}`
+          : `You have a new${isPreorder ? " pre-order" : " order"}${schedLabel}${deliver}`,
       };
     }
   }

@@ -103,7 +103,7 @@ export function timingFormErrors(f: TimingForm): Partial<Record<TimingField, str
     // Minutes from closing to the stop time; 0 was the old "6 PM–6 PM" bug.
     const gap = (toMin(f.stopAt) - toMin(f.closesAt) + 1440) % 1440;
     if (gap === 0 || gap > 12 * 60) {
-      e.preorderTimes = `Pick a stop time after your closing time (${timeLabel(f.closesAt)}).`;
+      e.preorderTimes = `Pick a stop time after you close at ${timeLabel(f.closesAt)} (up to 12 hours later).`;
     }
   } else if (f.stopAt === f.startAt) {
     e.preorderTimes = mode === "pause" ? "The pause can't start and end at the same time." : "Start and stop times can't be the same.";

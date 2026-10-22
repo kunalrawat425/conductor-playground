@@ -36,7 +36,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
   <div id="v2-track-empty" style="display:none;padding:0 16px;margin-top:16px;">
     <EmptyState
       variant="no-orders"
-      ctaHref="/v2"
+      ctaHref="/shop"
     />
   </div>
 
@@ -127,6 +127,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
 <script>
   import { resolveBuyerStepper } from "../lib/buyer-order-stepper";
   import { wasActuallyPaid, refundableAmount } from "../lib/order-payment-state";
+  import { orderSlotText } from "../lib/delivery-slots";
 
   function getBuyerPhone(): string | null {
     try { return localStorage.getItem("rlf_phone") || null; } catch { return null; }
@@ -302,7 +303,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
         return terminated
           ? `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardStyle}">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined by seller" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
+                <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
                 <div>${paymentPillHtml(o)}${statusToTag(o.status)}</div>
               </div>
               <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
@@ -319,6 +320,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
               </div>
               <h3>${escapeHtml(seller)}</h3>
               <div class="sub">Order #${o.id.slice(0, 8).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
+              ${isDelivery && !["completed", "picked_up"].includes(o.status) && orderSlotText(o) ? `<div style="font:700 12px Inter;margin-top:4px;">🕘 ${escapeHtml(orderSlotText(o)!.label)}: ${escapeHtml(orderSlotText(o)!.value)}</div>` : ""}
               ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
               ${stepperHtml}
             </a>`;

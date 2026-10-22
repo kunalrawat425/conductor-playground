@@ -9,6 +9,7 @@ import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates"
 import { toSellerView, STATUS_BY_TAB } from "../../../lib/seller-order-view";
 import { cartLabel, isLiveRow, rowPaise, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
 import { cancelReasonText } from "../../../lib/order-cancel";
+import { orderSlotText, sellerSlotError } from "../../../lib/delivery-slots";
 
 function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
@@ -38,8 +39,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 /**
  * POST /api/seller/orders
- * Body: { seller_id, order_id, status?, action?, final_price?, cancel_reason?, cart? }
+ * Body: { seller_id, order_id, status?, action?, final_price?, cancel_reason?, cart?, delivery_slot? }
  * cart=true: the status change applies to every live row of order_id's cart.
+ * delivery_slot={start,end}: with confirmed / out_for_delivery, the seller's new delivery
+ * slot or "arriving by" window for the moved rows (the buyer hears it in the same notification).
  * action=set_final_price: calls reconcile_preorder_price RPC (refunds a price drop on Razorpay)
  * Otherwise: status transition
  */
@@ -115,6 +118,11 @@ export const GET: APIRoute = async ({ url, request }) => {
       seenCart.add(o.cart_id);
       return true;
     });
+    // Active tabs: orders with a delivery slot first, earliest first (stable sort keeps the rest newest-first).
+    if ((p.get("tab") || "pending") !== "completed") {
+      const at = (o: any) => (o.delivery_slot_start ? Date.parse(o.delivery_slot_start) : Infinity);
+      cards.sort((a: any, b: any) => (at(a) === at(b) ? 0 : at(a) - at(b)));
+    }
     total = cards.length;
     orders = cards.slice(offset, offset + PAGE_SIZE);
   }
@@ -334,7 +342,7 @@ async function notifyItemRemoved(sb: any, order: any, removed: any, cartRows: an
 
 export const POST: APIRoute = async ({ request, url }) => {
   try {
-    const { seller_id, seller_phone, order_id, status, action, final_price, refund_note, cancel_reason, cart } = await request.json();
+    const { seller_id, seller_phone, order_id, status, action, final_price, refund_note, cancel_reason, cart, delivery_slot } = await request.json();
 
     if (!seller_id || !order_id) {
       return new Response(JSON.stringify({ error: "seller_id and order_id required" }), { status: 400 });
@@ -459,6 +467,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       const live = (cartRows || []).filter((r: any) => isLiveRow(r.status)).map((r: any) => r.id);
       if (live.length) rowIds = live;
     }
+    const newSlot = delivery_slot && (status === "confirmed" || status === "out_for_delivery") ? delivery_slot : null;
+    const slotErr = newSlot ? sellerSlotError(newSlot) : null;
+    if (slotErr) return new Response(JSON.stringify({ error: slotErr }), { status: 400 });
     const why = String(cancel_reason ?? refund_note ?? "").trim().slice(0, 200);
     const moved: { data: any; currentOrder: any }[] = [];
     let firstErr: { error: string; code: number } | null = null;
@@ -468,6 +479,19 @@ export const POST: APIRoute = async ({ request, url }) => {
       else moved.push(r);
     }
     if (!moved.length) return new Response(JSON.stringify({ error: firstErr!.error }), { status: firstErr!.code });
+    // The seller kept or changed the delivery slot / "arriving by" time.
+    let slotChanged = false;
+    if (newSlot && moved[0].data.order_type === "delivery") {
+      const next = { delivery_slot_start: new Date(newSlot.start).toISOString(), delivery_slot_end: new Date(newSlot.end).toISOString() };
+      const cur = moved[0].data;
+      slotChanged = Date.parse(cur.delivery_slot_start) !== Date.parse(next.delivery_slot_start)
+        || Date.parse(cur.delivery_slot_end) !== Date.parse(next.delivery_slot_end);
+      if (slotChanged) {
+        const { error: slotWriteErr } = await supabase.from("orders").update(next).in("id", moved.map((m) => m.data.id));
+        if (slotWriteErr) { console.error("[seller/orders] delivery slot not saved", { order_id, err: slotWriteErr.message }); slotChanged = false; }
+        else for (const m of moved) Object.assign(m.data, next);
+      }
+    }
     const data = moved[0].data;
     const ok = () => new Response(JSON.stringify({ order: toSellerView(data), orders: moved.map((m) => toSellerView(m.data)) }), { status: 200 });
 
@@ -494,6 +518,9 @@ export const POST: APIRoute = async ({ request, url }) => {
     // One push and one email per party for the whole batch (a cart lists its items).
     const many = moved.length > 1;
     const species = many ? cartLabel(moved.map((m) => m.data.species)) : order.species || "Fish";
+    // Slot / arriving-by time: told on confirm and out for delivery (not on delivered).
+    const slotText = status === "confirmed" || status === "out_for_delivery" ? orderSlotText(data) : null;
+    const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
 
     // Notify buyer via push — never fail the order update if push throws
     if (order.buyer_id || order.buyer_phone) {
@@ -505,6 +532,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           species,
           final_price: final_price ?? null,
           order_id: data.id,
+          slot: slotText ? { when: slotText.value, changed: slotChanged } : null,
         });
         if (!pushResult.ok) {
           console.error("Buyer push failed:", pushResult.error);
@@ -539,6 +567,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         buyerNotes: data.buyer_notes || null,
         cutStyle: data.cut_style || null,
         isPreorder,
+        deliverySlot: slotText?.value || null,
+        deliverySlotLabel: slotText ? `${slotText.label}${slotChanged ? " (new time)" : ""}` : undefined,
         bundleSize: items[0].bundleSize,
         bundleCount: items[0].bundleCount,
         items: many ? items : undefined,
@@ -553,7 +583,6 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
 
       // Email seller
-      const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
       if (seller?.email) {
         await sendTransactionalEmail(seller.email, `Order Update: ${statusLabel} — ${speciesLabel}`, orderEmailSeller(emailArgs));
       }

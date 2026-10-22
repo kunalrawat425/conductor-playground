@@ -51,7 +51,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           const min = Number((l as any)?.seller?.min_order_amount) || 0;
           const left = live.reduce((sum: number, r: any) => sum + Number(r.total_price || 0), 0);
           if (min > 0 && left < min) {
-            return new Response(JSON.stringify({ error: `The rest of the order would be under the seller's ₹${min} minimum. Cancel the whole order instead.` }), { status: 400 });
+            return new Response(JSON.stringify({ error: `The rest of the order would be under the ₹${min} minimum. Cancel the whole order instead.` }), { status: 400 });
           }
         }
       }
@@ -193,7 +193,7 @@ async function cancelRow(sb: any, order: any, reason: string | null) {
     .eq("id", order.id).eq("status", order.status)
     .select("id");
   if (cancelErr) return { error: "Could not cancel the order. Please try again.", status: 500 };
-  if (!claimed?.length) return { error: "The seller just updated this order. Refresh to see its status.", status: 409 };
+  if (!claimed?.length) return { error: "This order was just updated. Refresh to see its status.", status: 409 };
 
   const paid = isRazorpayPaid(order);
   // Unpaid: the delivery fee must not leave the cart with this item.
