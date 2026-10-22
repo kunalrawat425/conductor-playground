@@ -104,6 +104,16 @@ export function saveBuyerAddressDetailToStorage(detail: BuyerAddressDetail) {
   localStorage.setItem(ADDRESS_DETAIL_KEY, JSON.stringify({ flat, building, landmark }));
 }
 
+/**
+ * Where to go after login (`?next=`): a path on this site only. Must start with "/" and not
+ * "//" or "/\" (another host), no control characters. Anything else → null (stay on the page).
+ */
+export function safeNextPath(raw: string | null | undefined): string | null {
+  const p = String(raw ?? "").trim();
+  if (!p.startsWith("/") || p.startsWith("//") || p.startsWith("/\\") || /[\u0000-\u001f\u007f]/.test(p)) return null;
+  return p;
+}
+
 export function signOut() {
   localStorage.removeItem("rlf_buyer_id");
   localStorage.removeItem("rlf_session_buyer");

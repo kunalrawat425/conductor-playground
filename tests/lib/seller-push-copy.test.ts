@@ -129,3 +129,14 @@ describe("BUG-26: cancel/refund must never render as payment-proof copy", () => 
     }
   });
 });
+
+describe("new order push carries the delivery time (A5)", () => {
+  it("cart order with a slot", () => {
+    const n = sellerPushNotification("new_order", { species: "Prawns", item_count: 2, amount: 543, slot: "Sat 24 Oct, 8–10 AM" });
+    expect(n.body).toBe("New order: Prawns (2 items) · ₹543 · Deliver Sat 24 Oct, 8–10 AM");
+  });
+  it("paid push too; no slot = unchanged", () => {
+    expect(sellerPushNotification("payment_confirmed", { species: "Pomfret", amount: 375, slot: "Sun 25 Oct, 9–11 AM" }).body).toContain("· Deliver Sun 25 Oct, 9–11 AM");
+    expect(sellerPushNotification("new_order", { species: "Pomfret", quantity: 1, quantity_unit: "kg" }).body).not.toContain("Deliver");
+  });
+});

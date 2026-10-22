@@ -283,7 +283,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   import { wasActuallyPaid, refundableAmount, paymentMethodLabel, preorderNeedsFinalPrice, refundStatus } from "../../../lib/order-payment-state";
   import { supabase } from "../../../lib/supabase";
   import { cancelledByText, cancelReasonText } from "../../../lib/order-cancel";
-  import { arrivingByLabel, orderDeliveryDateIST, sellerSlotsOn, slotDateIST, slotDayLabel, slotTimeLabel } from "../../../lib/delivery-slots";
+  import { friendlyError } from "../../../lib/friendly-error";
+  import { arrivingByLabel, dateLabelIST, orderDeliveryDateIST, sellerSlotChoices, slotDayLabel, slotTimeLabel } from "../../../lib/delivery-slots";
 
   let sellerId: string | null = null;
   let sellerData: any = null;
@@ -568,9 +569,9 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     if (o.order_type !== "delivery" || !o.delivery_slot_start || !o.delivery_slot_end) return "";
     let opts: string[][];
     if (mode === "accept") {
+      // Only slots that haven't started; "Keep" stays even if the current one has.
       const others = sellerData
-        ? sellerSlotsOn(sellerData, slotDateIST(o.delivery_slot_start), isPreorder)
-          .filter((s) => Date.parse(s.start) !== Date.parse(o.delivery_slot_start) && Date.parse(s.end) > Date.now())
+        ? sellerSlotChoices(sellerData, { start: o.delivery_slot_start, end: o.delivery_slot_end }, isPreorder)
         : [];
       opts = [["", `Keep ${slotTimeLabel(o.delivery_slot_start, o.delivery_slot_end)}, ${slotDayLabel(o.delivery_slot_start)}`],
         ...others.map((s) => [`${s.start}|${s.end}`, `Change to ${slotTimeLabel(s.start, s.end)}`])];
@@ -580,7 +581,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       opts = [["", `Keep: by ${arrivingByLabel(o.delivery_slot_end)}, ${slotDayLabel(o.delivery_slot_end)}`],
         ...Array.from({ length: 12 }, (_, i) => { const end = new Date(first + i * step).toISOString(); return [`now|${end}`, `By ${arrivingByLabel(end)}`]; })];
     }
-    return `<label style="display:flex;align-items:center;gap:8px;margin:6px 0;font:600 12px Inter;color:var(--v2-ink-2);">${mode === "accept" ? "Delivery slot" : "Arriving by"}
+    return `<label style="display:flex;align-items:center;gap:8px;margin:6px 0;font:600 12px Inter;color:var(--v2-ink-2);">${mode === "accept" ? "Delivery time" : "Arriving by"}
       <select data-slot-for="${o.id}" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:600 13px Inter;color:var(--v2-ink);background:var(--v2-bg);">${opts.map(([v, l]) => `<option value="${v}">${escape(l)}</option>`).join("")}</select></label>`;
   }
 
@@ -592,9 +593,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         // from the order time (a 1:30 AM order in last night's window is for that morning).
         // ponytail: uses the seller's current hours, not the hours at order time; store it on the order if hours change often.
         const deliverOn = isPreorder ? orderDeliveryDateIST(o, sellerData) : null;
-        const deliverLabel = deliverOn
-          ? new Date(`${deliverOn}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" })
-          : "";
+        const deliverLabel = deliverOn ? dateLabelIST(deliverOn) : "";
         const isUrgent = o.scheduled_for && new Date(o.scheduled_for).getTime() - Date.now() < 60 * 60 * 1000;
         const time = o.scheduled_for
           ? new Date(o.scheduled_for).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
@@ -672,7 +671,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         } else if (o.status === "confirmed") {
           const preorderPriceBlock = needsFinalPrice
             ? (() => {
-                const paidAmt = o.paid_amount ? Number(o.paid_amount).toLocaleString("en-IN") : "—";
+                // The fish part of the payment (the delivery fee is separate), the same base the server prices against.
+                const paidAmt = o.paid_amount ? Math.max(0, Number(o.paid_amount) - (Number(o.delivery_fee) || 0)).toLocaleString("en-IN") : "—";
                 const listingOpts2 = o.listing?.pricing_options || [];
                 const matchedOpt = listingOpts2.find((x: any) => x?.id && x.id === o.pricing_option_id) || listingOpts2[0] || null;
                 const priceMin = matchedOpt?.preorder_price_min;
@@ -681,8 +681,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                   ? `<div style="font:500 11px Inter;color:#7C3AED;">Your listed range: ₹${Number(priceMin).toLocaleString("en-IN")} – ₹${Number(priceMax).toLocaleString("en-IN")}</div>`
                   : "";
                 return `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;margin-top:8px;">
-                  <div style="font:500 11px Inter;color:var(--v2-ink-3);">🌙 Next-day catch. Set actual price after receiving the fish.</div>
-                  <div style="font:600 12px Inter;color:#7C3AED;">Amount received: ₹${paidAmt}</div>
+                  <div style="font:500 11px Inter;color:var(--v2-ink-3);">🌙 Pre-order${deliverLabel ? ` for ${deliverLabel}` : ""}. Set the actual price once you have the fish.</div>
+                  <div style="font:600 12px Inter;color:#7C3AED;">Paid for the fish: ₹${paidAmt}</div>
                   ${rangeHtml}
                   <div style="display:flex;gap:8px;align-items:center;">
                     <input type="number" placeholder="Final price (₹)" id="final-price-${o.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
@@ -694,8 +694,9 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               })()
             : "";
           if (needsFinalPrice) {
-            // A cart sets the price on each item line below.
-            actionsHtml = cart ? "" : preorderPriceBlock;
+            // A cart sets the price on each item line below. Can't get the fish: cancel with a full refund
+            // (the per-item remove disappears on the last item, so this is the only way out).
+            actionsHtml = `${cart ? "" : preorderPriceBlock}<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Can't fulfill · refund buyer</button>`;
           } else {
             const fulfill = isDelivery
               ? `${slotEditorHtml(o, isPreorder, "arrive")}<div class="v2-oc-actions">
@@ -777,7 +778,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                 <input type="number" placeholder="Final price (₹)" id="final-price-${r.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
                 <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;white-space:nowrap;" data-action="set_final_price" data-order-id="${r.id}">Set price</button>
               </div>
-              <div style="font:400 11px Inter;color:#D97706;margin-top:4px;">Paid ₹${(Number(r.paid_amount) || 0).toLocaleString("en-IN")}${range}. Lower → the difference is refunded automatically; higher → buyer pays the difference.</div>` : ""}
+              <div style="font:400 11px Inter;color:#D97706;margin-top:4px;">Paid ₹${Math.max(0, (Number(r.paid_amount) || 0) - (Number(r.delivery_fee) || 0)).toLocaleString("en-IN")} for the fish${range}. Lower → the difference is refunded automatically; higher → buyer pays the difference.</div>` : ""}
             ${live.length > 1 && REMOVABLE.includes(r.status) ? `<button class="v2-btn v2-btn-sm" style="margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="item_cancel" data-cancel-status="${DECLINE_FROM.includes(r.status) ? "declined" : "cancelled"}" data-order-id="${r.id}">Remove this item · refund buyer</button>` : ""}
           </div>`;
         };
@@ -837,7 +838,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             ? `<div class="v2-oc-items">${cart.length} items</div><div style="margin-top:4px;">${cart.map(itemLine).join("")}</div>`
             : `<div class="v2-oc-items" style="text-transform:capitalize;">${escape(o.listing?.species || o.species || "")} · ${qtyLabel}</div>`}
           <div class="v2-oc-meta">
-            <span class="v2-oc-meta-pill ${isPreorder ? "v2-oc-meta-pill-preorder" : "v2-oc-meta-pill-order"}">${isPreorder ? `Pre-order${deliverLabel ? ` · for ${deliverLabel}` : ""}` : "Order"}</span>
+            <span class="v2-oc-meta-pill ${isPreorder ? "v2-oc-meta-pill-preorder" : "v2-oc-meta-pill-order"}">${isPreorder ? `Pre-order${deliverLabel ? ` · for ${deliverLabel}` : ""}` : "Same day"}</span>
             <span class="v2-oc-meta-pill ${isDelivery ? "v2-oc-meta-pill-delivery" : "v2-oc-meta-pill-pickup"}">${isDelivery ? "Delivery" : "Pickup"}</span>
           </div>
           ${isDelivery && o.delivery_slot_start && o.delivery_slot_end && !["completed", "picked_up", ...CLOSED].includes(o.status) ? `<div style="font:700 13px Inter;color:var(--v2-ink);margin-top:6px;">🕘 ${o.status === "out_for_delivery"
@@ -875,7 +876,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         if (resultEl) { resultEl.style.color = "var(--v2-ink-3)"; resultEl.textContent = data.reason || "No captured payment on Razorpay yet"; }
       }
     } catch (err: any) {
-      if (resultEl) { resultEl.style.color = "var(--v2-red)"; resultEl.textContent = `Failed: ${err.message}`; }
+      if (resultEl) { resultEl.style.color = "var(--v2-red)"; resultEl.textContent = friendlyError(err, "Couldn't check Razorpay. Try again."); }
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = "🔄 Check Razorpay for payment"; }
     }

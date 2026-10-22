@@ -99,8 +99,8 @@ describe("paymentMethodLabel", () => {
     expect(paymentMethodLabel({ payment_method: "razorpay", razorpay_payment_id: null })).toBeNull();
   });
   it("distinguishes verified UPI from a submitted screenshot", () => {
-    expect(paymentMethodLabel({ payment_verified_at: "2026-10-01T00:00:00Z" })).toBe("Paid via UPI · verified by seller");
-    expect(paymentMethodLabel({ payment_screenshot_urls: ["a.jpg"] })).toBe("UPI proof submitted — seller will verify");
+    expect(paymentMethodLabel({ payment_verified_at: "2026-10-01T00:00:00Z" })).toBe("Paid via UPI · verified");
+    expect(paymentMethodLabel({ payment_screenshot_urls: ["a.jpg"] })).toBe("UPI proof submitted — awaiting verification");
   });
   it("labels legacy COD rows", () => {
     expect(paymentMethodLabel({ payment_method: "cod_legacy" })).toBe("Cash on delivery (legacy order)");

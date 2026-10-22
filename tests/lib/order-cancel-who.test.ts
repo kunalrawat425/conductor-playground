@@ -7,7 +7,7 @@ describe("who cancelled + why", () => {
   it("names the actor from each viewer's side", () => {
     expect(cancelledByText("buyer", "buyer")).toBe("Cancelled by you");
     expect(cancelledByText("buyer", "seller")).toBe("Cancelled by the buyer");
-    expect(cancelledByText("seller", "buyer")).toBe("Cancelled by the seller");
+    expect(cancelledByText("seller", "buyer")).toBe("Cancelled — your order couldn't be fulfilled"); // buyers never see "seller" in the order flow
     expect(cancelledByText("seller", "seller")).toBe("Cancelled by you");
     expect(cancelledByText("system", "buyer", "auto_expired_payment")).toMatch(/automatically/);
   });
@@ -21,7 +21,8 @@ describe("who cancelled + why", () => {
 
   it("buyer push says who cancelled and why", () => {
     const n = buyerOrderPushNotification("cancelled", "Surmai", null, { by: "seller", reason: "Boat did not go out", refunded: true });
-    expect(n.title).toBe("Order cancelled by the seller");
+    expect(n.title).toBe("Order cancelled");
+    expect(n.body).not.toMatch(/seller/i);
     expect(n.body).toContain("Reason: Boat did not go out. Your payment");
     expect(n.body).toContain("refunded");
     const mine = buyerOrderPushNotification("cancelled", "Surmai", null, { by: "buyer", reason: null, refunded: false });

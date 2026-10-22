@@ -6,7 +6,7 @@ import { internalHeaders } from "../../../lib/server/internal-auth";
 export const prerender = false;
 
 /**
- * Daily 8 PM IST (vercel.json cron): push each seller "Tomorrow: N pre-orders, first slot 9–11 AM"
+ * Daily 8 PM IST (vercel.json cron): push each seller "Tomorrow: N pre-orders, first delivery 9–11 AM"
  * when pre-orders are due the next morning (slot date, else the pre-order delivery morning).
  * Auth: `Authorization: Bearer $CRON_SECRET` (Vercel cron sends it). `?dry_run=1` returns the plan.
  */
