@@ -783,7 +783,12 @@ const categories = [
   (document.querySelector('.v2-pb-inline') as HTMLAnchorElement | null)?.addEventListener('click', (e) => {
     e.preventDefault();
     // While notifications are undecided the banner asks for them (see showNotifyBanner).
-    if ((e.currentTarget as HTMLElement).dataset.mode === "notify") { askNotifications(); return; }
+    const mode = (e.currentTarget as HTMLElement).dataset.mode;
+    if (mode === "notify") { askNotifications(); return; }
+    if (mode === "blocked") {
+      (window as any).v2Toast?.("info", "Turn on notifications", "Tap the lock icon next to the address → Notifications → Allow, then reload.");
+      return;
+    }
     const preorderChip = document.querySelector('#v2-filter-chips .v2-fchip[data-filter="preorder"]') as HTMLButtonElement | null;
     if (preorderChip) preorderChip.click();
   });
@@ -807,20 +812,21 @@ const categories = [
 
   loadSellers();
 
-  // Notifications: the browser's own "Allow notifications" popup. It used to fire 2 s after
-  // "location confirmed", but the picker reloads the page at 0.8 s, so almost no buyer saw it.
-  // Now: while the choice is open, the top banner asks for it (founder, 24 Oct) and its button
-  // opens the popup; it also pops up 3 s into the visit, or on the first tap where a browser
-  // only allows it after one (iPhone home-screen app, Firefox).
+  // Notifications: while the choice is open, the top banner asks for it (founder, 24 Oct) and
+  // its "Allow" button opens the browser's own popup.
   const canNotify = () => "Notification" in window && "serviceWorker" in navigator; // not iPhone Safari outside the home-screen app
   let asking = false;
   async function askNotifications() {
     if (!canNotify() || asking || Notification.permission !== "default") return;
     asking = true;
     try {
-      if ((await Notification.requestPermission()) === "granted") {
+      const result = await Notification.requestPermission();
+      if (result === "granted") {
         (window as any).v2Toast?.("success", "Notifications on", "We'll send you fresh listings and prices");
         if (getSession()) subscribePush(false).catch(() => {});
+      } else if (result === "default") {
+        // Chrome "quiet" mode hides the popup behind a bell in the address bar.
+        (window as any).v2Toast?.("info", "One more tap", "Tap the bell or lock icon in the address bar, then Allow.");
       }
     } catch {}
     asking = false;
@@ -834,9 +840,17 @@ const categories = [
     el.dataset.mode = "notify";
     el.innerHTML = `<div class="v2-pb-icon">🔔</div><div class="v2-pb-text"><h4>Allow notifications</h4><p>Get the latest updates on fresh listings and prices</p></div><span class="v2-pb-btn">Allow</span>`;
   }
+  // Blocked earlier (by the buyer or by Chrome): only the buyer can switch it back on, so say how.
+  function showBlockedBanner() {
+    const el = document.querySelector<HTMLElement>(".v2-pb-inline");
+    if (!el) return;
+    preorderBannerHtml = el.innerHTML;
+    el.dataset.mode = "blocked";
+    el.innerHTML = `<div class="v2-pb-icon">🔕</div><div class="v2-pb-text"><h4>Notifications are off</h4><p>Turn them on to get fresh listings and prices first</p></div><span class="v2-pb-btn">How</span>`;
+  }
   function restorePreorderBanner() {
     const el = document.querySelector<HTMLElement>(".v2-pb-inline");
-    if (!el || el.dataset.mode !== "notify") return;
+    if (!el || !el.dataset.mode) return;
     el.innerHTML = preorderBannerHtml;
     delete el.dataset.mode;
   }
@@ -846,10 +860,11 @@ const categories = [
       if (getSession()) subscribePush(false).catch(() => {});
       return;
     }
-    if (Notification.permission !== "default") return; // allowed or blocked already: never nag
+    if (Notification.permission === "denied") { showBlockedBanner(); return; } // the site can't ask again
     showNotifyBanner();
-    setTimeout(askNotifications, 3000);
-    document.addEventListener("pointerup", askNotifications, { once: true });
+    // Asked only when the buyer taps "Allow" on the banner: Chrome hides (quiet-blocks) a popup
+    // the page opens on its own, as seen on stage 24 Oct ("Notifications blocked … requests are
+    // hidden"). A popup that follows the buyer's tap shows normally.
   }
 
   // After location set or skipped, prompt notifications
