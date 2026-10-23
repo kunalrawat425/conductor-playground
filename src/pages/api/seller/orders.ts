@@ -527,6 +527,12 @@ export const POST: APIRoute = async ({ request, url }) => {
     const slotText = status === "confirmed" || status === "out_for_delivery" ? orderSlotText(data) : null;
     const { data: seller } = await supabase.from("sellers").select("email").eq("id", seller_id).single();
 
+    // WhatsApp order update (opted-in buyers), next to push + email.
+    if (status === "confirmed" || status === "out_for_delivery" || status === "completed") {
+      const { notifyOrderWhatsApp } = await import("../../../lib/server/notify-order-whatsapp");
+      await notifyOrderWhatsApp(data.id, status);
+    }
+
     // Notify buyer via push — never fail the order update if push throws
     if (order.buyer_id || order.buyer_phone) {
       try {

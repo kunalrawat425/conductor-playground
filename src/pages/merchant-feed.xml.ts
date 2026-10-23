@@ -5,7 +5,7 @@ import { SPECIES } from "../lib/species";
 import { SITE_URL } from "../lib/brand";
 import { areaNameForPoint } from "../lib/areas";
 import { optionBundleAmount, formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
-import { listingAvailability } from "../lib/product-offer";
+import { listingAvailability, sellerDeliveryFee } from "../lib/product-offer";
 import { preorderDeliveryDateIST } from "../lib/order-timing";
 
 export const prerender = false;
@@ -42,6 +42,9 @@ export const GET: APIRoute = async () => {
   const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
   const items: string[] = [];
   for (const l of (lRes.data ?? []) as any[]) {
+    // Hidden from the menu (neither for sale today nor pre-order) = not offered at all (founder:
+    // a seller's list is the whole menu), so it isn't in the feed even as "out of stock".
+    if (!l.is_available && !l.is_preorder_enabled) continue;
     const s: any = sellers.get(l.seller_id);
     const base = s && sellerHref(s.name, s.id);
     if (!s || !base?.startsWith("/s/")) continue; // only sellers with a public /s/ page
@@ -55,9 +58,7 @@ export const GET: APIRoute = async () => {
     if (!image) continue; // Google requires a JPEG/PNG/WebP/GIF image that loads
     // Delivery cost shown to Google: the seller's own fee. Per-km sellers: the maximum (radius × rate),
     // so the listing never shows less than a buyer pays; checkout charges the real distance.
-    const fee = !s.has_delivery || s.delivery_fee_enabled === false ? 0
-      : s.delivery_fee_type === "per_km" ? Math.ceil(Number(s.delivery_fee_per_km || 0) * Number(s.delivery_rad || 0))
-      : Number(s.delivery_fee_amount || 0);
+    const fee = sellerDeliveryFee(s);
     const freeAbove = Number(s.free_delivery_above || 0);
     const shippingXml = `\n<g:shipping><g:country>IN</g:country><g:service>${s.has_delivery ? "Seller home delivery" : "Pickup from seller"}</g:service><g:price>${fee.toFixed(2)} INR</g:price></g:shipping>`
       + (freeAbove > 0 ? `\n<g:free_shipping_threshold><g:country>IN</g:country><g:price_threshold>${freeAbove.toFixed(2)} INR</g:price_threshold></g:free_shipping_threshold>` : "");

@@ -63,6 +63,35 @@ export function speciesOffer(listings: SpeciesListing[], seller?: SellerTimingIn
   return { availability, lowPrice: Math.min(...prices), highPrice: Math.max(...prices), offerCount: prices.length };
 }
 
+/** Perishable seafood: no returns (refund-policy page: refunds for cancellations, missing items or
+ *  verified quality problems, to the original payment). Google merchant listings need this. */
+export const RETURN_POLICY = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "IN",
+  returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+  merchantReturnLink: "https://www.relifish.com/refund-policy",
+};
+
+/** Delivery fee a buyer can expect from this seller (per-km sellers: the maximum, radius × rate). */
+export function sellerDeliveryFee(s: any): number {
+  if (!s?.has_delivery || s.delivery_fee_enabled === false) return 0;
+  return s.delivery_fee_type === "per_km" ? Math.ceil(Number(s.delivery_fee_per_km || 0) * Number(s.delivery_rad || 0)) : Number(s.delivery_fee_amount || 0);
+}
+
+/** schema.org OfferShippingDetails: India, seller's fee, same day or next day. */
+export function shippingDetails(fee: number) {
+  return {
+    "@type": "OfferShippingDetails",
+    shippingRate: { "@type": "MonetaryAmount", value: fee, currency: "INR" },
+    shippingDestination: { "@type": "DefinedRegion", addressCountry: "IN" },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+      transitTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+    },
+  };
+}
+
 /** schema.org Product for a single fish page (Google product snippets / merchant listings). */
 export function productJsonLd(p: {
   name: string;
@@ -71,12 +100,16 @@ export function productJsonLd(p: {
   image?: string;
   sellerName: string;
   offer: SpeciesOffer;
+  /** Seller's delivery fee (sellerDeliveryFee); adds shipping details for merchant listings. */
+  shippingFee?: number | null;
 }) {
   const base = {
     priceCurrency: "INR",
     availability: `https://schema.org/${p.offer.availability}`,
     seller: { "@type": "Organization", name: p.sellerName },
     url: p.url,
+    hasMerchantReturnPolicy: RETURN_POLICY,
+    ...(p.shippingFee != null ? { shippingDetails: shippingDetails(p.shippingFee) } : {}),
   };
   const offers =
     p.offer.lowPrice === p.offer.highPrice
@@ -89,6 +122,7 @@ export function productJsonLd(p: {
     description: p.description,
     url: p.url,
     image: p.image,
+    brand: { "@type": "Brand", name: "Relifish" },
     offers,
   };
 }
