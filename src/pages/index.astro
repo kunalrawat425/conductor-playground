@@ -353,6 +353,7 @@ const homeFaqs = [
     @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
     .ti{display:inline-flex;align-items:center;gap:8px;padding:0 20px;font:500 12px Inter;color:rgba(255,255,255,.45);white-space:nowrap}
     .ti .fish{color:var(--blue-light);font-weight:700}
+    .ti-img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0}
     .ti .dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.15)}
 
     /* ── Sections ── */
@@ -893,15 +894,15 @@ const homeFaqs = [
               <div class="d2-tabs"><div class="d2t on">🌙 Pre-order</div><div class="d2t">⚡ Same Day</div></div>
               <div class="d2-list">
                 <div class="d2-card tap">
-                  <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)"><img src={LOGO_URL} alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);" /><div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/pomfret.jpg) center/cover"><div class="d2-badge op">🟢 Open</div></div>
                   <div class="d2-info"><div class="d2-name">Local fish seller</div><div class="d2-sub">Thane West · Delivery in 2 hours</div></div>
                 </div>
                 <div class="d2-card">
-                  <div class="d2-img" style="background:linear-gradient(135deg,#1A0D4A,#2A1A6A)">🦐<div class="d2-badge pr">🌙 Pre-order</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/prawns.jpg) center/cover"><div class="d2-badge pr">🌙 Pre-order</div></div>
                   <div class="d2-info"><div class="d2-name">Pre-order seller</div><div class="d2-sub">Thane West · Pick a delivery day</div></div>
                 </div>
                 <div class="d2-card">
-                  <div class="d2-img" style="background:linear-gradient(135deg,#002020,#00403A)">🦀<div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/crab.jpg) center/cover"><div class="d2-badge op">🟢 Open</div></div>
                   <div class="d2-info"><div class="d2-name">Seller near you</div><div class="d2-sub">Crab · Bombil · Prawns</div></div>
                 </div>
               </div>
@@ -936,11 +937,11 @@ const homeFaqs = [
             <div class="ds-light">
               <div class="dh"><div class="dh-back">← Menu</div><div class="dh-title">Your cart</div></div>
               <div class="d4-item">
-                <div><div class="d4-name">🐟 Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
+                <div><div class="d4-name"><img class="d3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" style="vertical-align:middle" />Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
                 <div style="text-align:right"><div class="d4-lock">₹375</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">1 pc</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-item">
-                <div><div class="d4-name">🐠 Bombil</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
+                <div><div class="d4-name"><img class="d3-img" src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg" alt="" loading="lazy" style="vertical-align:middle" />Bombil</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
                 <div style="text-align:right"><div class="d4-lock">₹240</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">500 grams</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-summary">
@@ -1059,13 +1060,10 @@ const homeFaqs = [
 <!-- TICKER -->
 <div class="ticker">
   <div class="ticker-track">
-    {[
-      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order ahead"],["🐡","Bangda","Zero middleman"],
-      ["🐟","Rawas","Limited daily"],["🦀","Crab","Seasonal catch"],["🐠","Halwa","Reserve yours"],["🐡","Bombay Duck","Fresh daily"],
-      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order ahead"],["🐡","Bangda","Zero middleman"],
-      ["🐟","Rawas","Limited daily"],["🦀","Crab","Seasonal catch"],["🐠","Halwa","Reserve yours"],["🐡","Bombay Duck","Fresh daily"],
-    ].map(([e,n,t])=>(
-      <div class="ti"><span class="fish">{e} {n}</span><span>{t}</span><span class="dot"></span></div>
+    {[...[["/fish/pomfret.jpg","Pomfret","Morning fresh"],["/fish/surmai.jpg","Surmai","Direct from seller"],["/fish/prawns.jpg","Prawns","Pre-order ahead"],["/fish/bangda.jpg","Bangda","Zero middleman"],
+      ["/fish/rawas.jpg","Rawas","Limited daily"],["/fish/crab.jpg","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]], ...[["/fish/pomfret.jpg","Pomfret","Morning fresh"],["/fish/surmai.jpg","Surmai","Direct from seller"],["/fish/prawns.jpg","Prawns","Pre-order ahead"],["/fish/bangda.jpg","Bangda","Zero middleman"],
+      ["/fish/rawas.jpg","Rawas","Limited daily"],["/fish/crab.jpg","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]]].map(([e,n,t])=>(
+      <div class="ti"><img class="ti-img" src={e} alt="" loading="lazy" /><span class="fish">{n}</span><span>{t}</span><span class="dot"></span></div>
     ))}
   </div>
 </div>
@@ -1136,7 +1134,7 @@ const homeFaqs = [
             </div>
             <div class="s2-list">
               <div class="s2-card">
-                <div class="s2-cover g"><img src={LOGO_URL} alt="Relifish" style="height:24px;width:auto;filter:brightness(0) invert(1);" /><div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/pomfret.jpg) center/cover"><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Local fish seller</div>
                   <div class="s2-sub">Thane West · Delivery in 2 hours</div>
@@ -1144,7 +1142,7 @@ const homeFaqs = [
                 </div>
               </div>
               <div class="s2-card tap-zone">
-                <div class="s2-cover p">🦐<div class="s2-st pr">🌙 Pre-order</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/prawns.jpg) center/cover"><div class="s2-st pr">🌙 Pre-order</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Pre-order seller</div>
                   <div class="s2-sub">Thane West · Pick a delivery day</div>
@@ -1152,7 +1150,7 @@ const homeFaqs = [
                 </div>
               </div>
               <div class="s2-card">
-                <div class="s2-cover t">🦀<div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/crab.jpg) center/cover"><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Seller near you</div>
                   <div class="s2-sub">Crab · Bombil · Prawns</div>
