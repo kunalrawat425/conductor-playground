@@ -457,6 +457,11 @@ const homeFaqs = [
     .s3-in{font:700 9px Inter;color:#0A0F1E}
     .s3-id{font:400 7px Inter;color:#9CA3AF;margin-top:1px}
     .s3-lock{display:flex;align-items:center;gap:3px;font:600 8px Inter;color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:3px 7px}
+    .s3-slot{padding:8px 10px;border-bottom:1px solid #F3F4F6}
+    .s3-slot-q{font:700 9px Inter;color:#0A0F1E;margin-bottom:6px}
+    .s3-slot-row{display:flex;gap:5px}
+    .s3-slot-c{flex:1;text-align:center;font:600 7.5px/1.35 Inter;color:#6B7280;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:7px;padding:5px 2px}
+    .s3-slot-c.on{color:#2563EB;background:#EFF6FF;border-color:#2563EB}
     .s3-tot{padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
     .s3-tot-l{font:700 10px Inter;color:#0A0F1E}
     .s3-tot-r{font:600 9px Inter;color:#2563EB}
@@ -858,15 +863,15 @@ const homeFaqs = [
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Tardeo</div><div class="d1-dist">South Mumbai · 1 seller</div></div>
+                  <div><div class="d1-name">Majiwada</div><div class="d1-dist">Thane West</div></div>
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Kamothe</div><div class="d1-dist">Navi Mumbai · 1 seller</div></div>
+                  <div><div class="d1-name">Manpada</div><div class="d1-dist">Thane West</div></div>
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Kandivali</div><div class="d1-dist">Coming soon · Join waitlist</div></div>
+                  <div><div class="d1-name">Vasant Vihar</div><div class="d1-dist">Thane West</div></div>
                 </div>
                 <div class="demo-cta"><div class="demo-cta-btn">Confirm — Hiranandani →</div></div>
               </div>
@@ -885,15 +890,15 @@ const homeFaqs = [
               <div class="d2-list">
                 <div class="d2-card tap">
                   <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)"><img src={LOGO_URL} alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);" /><div class="d2-badge op">🟢 Open</div></div>
-                  <div class="d2-info"><div class="d2-name">Fishtokri</div><div class="d2-sub">Thane West · Pre-order till 6 PM</div></div>
+                  <div class="d2-info"><div class="d2-name">Local fish seller</div><div class="d2-sub">Thane West · Delivery in 2 hours</div></div>
                 </div>
                 <div class="d2-card">
                   <div class="d2-img" style="background:linear-gradient(135deg,#1A0D4A,#2A1A6A)">🦐<div class="d2-badge pr">🌙 Pre-order</div></div>
-                  <div class="d2-info"><div class="d2-name">Bombay Sea Food</div><div class="d2-sub">Tardeo · Pre-order till 10 PM</div></div>
+                  <div class="d2-info"><div class="d2-name">Pre-order seller</div><div class="d2-sub">Thane West · Pick a delivery day</div></div>
                 </div>
                 <div class="d2-card">
                   <div class="d2-img" style="background:linear-gradient(135deg,#002020,#00403A)">🦀<div class="d2-badge op">🟢 Open</div></div>
-                  <div class="d2-info"><div class="d2-name">The Fishy Spot</div><div class="d2-sub">Kamothe · Crab · Bombil · Prawns</div></div>
+                  <div class="d2-info"><div class="d2-name">Seller near you</div><div class="d2-sub">Crab · Bombil · Prawns</div></div>
                 </div>
               </div>
             </div>
@@ -903,7 +908,7 @@ const homeFaqs = [
           <div class="demo-screen" data-screen="3">
             <div class="ds-light" style="position:relative">
               <div class="dh">
-                <div class="dh-back">← Fishtokri</div>
+                <div class="dh-back">← Seller</div>
                 <div class="dh-title">🌙 Pre-order menu</div>
               </div>
               <div class="d3-item tap">
@@ -927,16 +932,16 @@ const homeFaqs = [
             <div class="ds-light">
               <div class="dh"><div class="dh-back">← Menu</div><div class="dh-title">Your cart</div></div>
               <div class="d4-item">
-                <div><div class="d4-name">🐟 Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
+                <div><div class="d4-name">🐟 Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
                 <div style="text-align:right"><div class="d4-lock">₹375</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">1 pc</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-item">
-                <div><div class="d4-name">🐠 Bombil</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
+                <div><div class="d4-name">🐠 Bombil</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
                 <div style="text-align:right"><div class="d4-lock">₹240</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">500 grams</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-summary">
                 <div class="d4-row"><span>Subtotal</span><span>₹615</span></div>
-                <div class="d4-row"><span>Delivery</span><span>by seller</span></div>
+                <div class="d4-row"><span>Delivery time</span><span>Tomorrow 8–10 AM</span></div>
                 <div class="d4-row" style="font-weight:700"><span>Total</span><span>₹615</span></div>
               </div>
               <div class="demo-cta"><div class="demo-cta-btn" style="animation:pulseblue 2s infinite">Checkout →</div></div>
@@ -948,7 +953,7 @@ const homeFaqs = [
             <div class="ds-light">
               <div class="d5-amount">
                 <div class="d5-to">Paying to</div>
-                <div class="d5-seller">Fishtokri</div>
+                <div class="d5-seller">Relifish</div>
                 <div class="d5-amt-label">Amount</div>
                 <div class="d5-amt">₹<span style="font-size:28px;font-weight:900;color:#0A0F1E">615</span></div>
                 <div style="font:400 7px Inter;color:#9CA3AF;margin-top:2px">Pre-order · 2 items</div>
@@ -983,13 +988,13 @@ const homeFaqs = [
             <div class="ds-light d6-center">
               <div class="d6-icon">✅</div>
               <div class="d6-title">Order confirmed!</div>
-              <div class="d6-sub">Fishtokri has confirmed your pre-order for tomorrow.</div>
+              <div class="d6-sub">The seller has confirmed your pre-order for tomorrow.</div>
               <div class="d6-eta">
-                <div class="d6-eta-t">🛵 Seller delivers tomorrow</div>
+                <div class="d6-eta-t">🛵 Arriving tomorrow, 8–10 AM</div>
                 <div class="d6-eta-s">Hiranandani Estate, Thane</div>
               </div>
               <div style="background:#F3F4F6;border-radius:8px;padding:7px 10px;width:100%;font:400 8px Inter;color:#6B7280;text-align:center">
-                📲 You'll get a WhatsApp when it's ready
+                🔔 We'll tell you when it's on the way
               </div>
             </div>
           </div>
@@ -997,7 +1002,7 @@ const homeFaqs = [
           <!-- Screen 7: Tracking -->
           <div class="demo-screen" data-screen="7">
             <div class="ds-light">
-              <div class="dh"><div class="dh-title">📦 Track your order</div><div class="dh-sub">Fishtokri</div></div>
+              <div class="dh"><div class="dh-title">📦 Track your order</div><div class="dh-sub">Local seller</div></div>
               <div style="padding:8px 0">
                 <div class="d7-step">
                   <div class="d7-dot-wrap"><div class="d7-dot done"></div><div class="d7-line done"></div></div>
@@ -1013,7 +1018,7 @@ const homeFaqs = [
                 </div>
                 <div class="d7-step">
                   <div class="d7-dot-wrap"><div class="d7-dot pending"></div><div class="d7-line"></div></div>
-                  <div><div class="d7-label">Ready for pickup</div><div class="d7-sub">Expected by 7–9 AM</div></div>
+                  <div><div class="d7-label">Out for delivery</div><div class="d7-sub">Your time: 8–10 AM</div></div>
                 </div>
                 <div class="d7-step">
                   <div class="d7-dot-wrap"><div class="d7-dot pending"></div></div>
@@ -1028,7 +1033,7 @@ const homeFaqs = [
             <div class="ds-light d8-center">
               <div class="d8-icon"><img src={LOGO_URL} alt="Relifish" style="height:40px;width:auto;display:block;margin:0 auto;" /></div>
               <div class="d8-title">Fresh fish delivered!</div>
-              <div class="d8-sub">Your Pomfret and Surmai from Fishtokri.</div>
+              <div class="d8-sub">Your Pomfret and Bombil, cut the way you asked.</div>
             </div>
             <div class="demo-cta demo-cta-white"><div class="demo-cta-btn">Order again next week →</div></div>
           </div>
@@ -1087,27 +1092,27 @@ const homeFaqs = [
             <div class="s1-list">
               <div class="s1-row sel tap-zone">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Hiranandani Estate</div><div class="s1-rd">Thane West · 1 seller</div></div>
+                <div><div class="s1-rn">Hiranandani Estate</div><div class="s1-rd">Thane West</div></div>
                 <div class="s1-ck">✓</div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Tardeo</div><div class="s1-rd">South Mumbai · 1 seller</div></div>
+                <div><div class="s1-rn">Majiwada</div><div class="s1-rd">Thane West</div></div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Kamothe</div><div class="s1-rd">Navi Mumbai · 1 seller</div></div>
+                <div><div class="s1-rn">Manpada</div><div class="s1-rd">Thane West</div></div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Kandivali</div><div class="s1-rd">Waitlist · Coming soon</div></div>
+                <div><div class="s1-rn">Vasant Vihar</div><div class="s1-rd">Thane West</div></div>
               </div>
             </div>
             <div class="s1-btn">Confirm — Hiranandani →</div>
           </div>
         </div>
         <h3>Set your location</h3>
-        <p>Pick your Mumbai area once. We show sellers nearby with pickup or delivery.</p>
+        <p>Pick your area once. We show the fish sellers who deliver to you.</p>
       </div>
 
       <!-- STEP 2: Browse sellers -->
@@ -1129,31 +1134,31 @@ const homeFaqs = [
               <div class="s2-card">
                 <div class="s2-cover g"><img src={LOGO_URL} alt="Relifish" style="height:24px;width:auto;filter:brightness(0) invert(1);" /><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">Fishtokri</div>
-                  <div class="s2-sub">Thane West · Pre-order till 6 PM</div>
+                  <div class="s2-nm">Local fish seller</div>
+                  <div class="s2-sub">Thane West · Delivery in 2 hours</div>
                   <div class="s2-chips"><div class="s2-chip">Pomfret</div><div class="s2-chip">Surmai</div><div class="s2-chip">Prawns</div></div>
                 </div>
               </div>
               <div class="s2-card tap-zone">
                 <div class="s2-cover p">🦐<div class="s2-st pr">🌙 Pre-order</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">Bombay Sea Food</div>
-                  <div class="s2-sub">Tardeo · Pre-order till 10 PM</div>
+                  <div class="s2-nm">Pre-order seller</div>
+                  <div class="s2-sub">Thane West · Pick a delivery day</div>
                   <div class="s2-chips"><div class="s2-chip">Bangda</div><div class="s2-chip">Rawas</div><div class="s2-chip">Crab</div></div>
                 </div>
               </div>
               <div class="s2-card">
                 <div class="s2-cover t">🦀<div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">The Fishy Spot</div>
-                  <div class="s2-sub">Kamothe · Crab · Bombil · Prawns</div>
+                  <div class="s2-nm">Seller near you</div>
+                  <div class="s2-sub">Crab · Bombil · Prawns</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <h3>Browse & pick fish</h3>
-        <p>See sellers near you and today's prices. Log in with your phone only when you order.</p>
+        <p>See sellers near you and today's prices. Log in once with your phone number.</p>
       </div>
 
       <!-- STEP 3: Checkout -->
@@ -1164,12 +1169,8 @@ const homeFaqs = [
           <div class="fp-screen">
             <div class="sbar"><span class="sbar-t">9:48</span><span class="sbar-i">●●● 🔋</span></div>
             <div class="s3-top">
-              <div class="s3-bk">← Fishtokri</div>
+              <div class="s3-bk">← Seller</div>
               <div class="s3-ttl">Confirm your order</div>
-            </div>
-            <div class="s3-seller">
-              <div class="s3-s-icon"><img src={LOGO_URL} alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
-              <div><div class="s3-s-name">Fishtokri</div><div class="s3-s-sub">🌙 Pre-order · Home delivery</div></div>
             </div>
             <div class="s3-items">
               <div class="s3-item">
@@ -1180,19 +1181,23 @@ const homeFaqs = [
                 <div class="s3-il"><div class="s3-ie">🐠</div><div><div class="s3-in">Bombil</div><div class="s3-id">500 grams · Whole</div></div></div>
                 <div class="s3-lock">₹240</div>
               </div>
+              <div class="s3-slot">
+                <div class="s3-slot-q">🕘 When do you want it?</div>
+                <div class="s3-slot-row"><div class="s3-slot-c">Today<br>4–6 PM</div><div class="s3-slot-c on tap-zone">Tomorrow<br>8–10 AM</div><div class="s3-slot-c">Sun<br>8–10 AM</div></div>
+              </div>
               <div class="s3-tot">
                 <div class="s3-tot-l">Total (2 items)</div>
                 <div class="s3-tot-r">₹615</div>
               </div>
             </div>
             <div class="s3-pay-sticky">
-              <div class="s3-pay tap-zone">⚡ Pay securely online →</div>
+              <div class="s3-pay">⚡ Pay securely online →</div>
               <div class="s3-nt" style="padding:4px 0 0">Secure Razorpay checkout · No platform fee</div>
             </div>
           </div>
         </div>
-        <h3>Pay securely</h3>
-        <p>Pay securely via Razorpay (UPI, cards, net banking). Instant confirmation.</p>
+        <h3>Pick a time &amp; pay</h3>
+        <p>Choose when it arrives: today, or a pre-order for a later day. Pay via Razorpay (UPI, cards, net banking).</p>
       </div>
 
       <!-- STEP 4: Confirmed -->
@@ -1205,9 +1210,9 @@ const homeFaqs = [
             <div class="s4-wrap">
               <div class="s4-ring">✅</div>
               <div class="s4-ttl">Order confirmed!</div>
-              <div class="s4-sub">Fishtokri has confirmed your pre-order for tomorrow.</div>
+              <div class="s4-sub">The seller has confirmed your pre-order for tomorrow.</div>
               <div class="s4-eta">
-                <div class="s4-eta-m">🛵 Seller delivers tomorrow</div>
+                <div class="s4-eta-m">🛵 Tomorrow, 8–10 AM</div>
                 <div class="s4-eta-s">Hiranandani Estate, Thane</div>
               </div>
               <div class="s4-stepper">
@@ -1220,13 +1225,13 @@ const homeFaqs = [
                 <div class="s4st"><div class="s4st-d pe"></div><div class="s4st-lb">Delivered</div></div>
               </div>
               <div style="background:#F3F4F6;border-radius:9px;padding:8px 10px;width:100%;text-align:center;font:400 9px Inter;color:#6B7280">
-                📲 WhatsApp when it's ready
+                🔔 We'll tell you when it's on the way
               </div>
             </div>
           </div>
         </div>
         <h3>Delivered or ready for pickup</h3>
-        <p>The seller prepares your order the way you chose. Pickup or home delivery, your choice.</p>
+        <p>The seller cuts your fish the way you chose and delivers it in the time you picked, or keeps it ready for pickup.</p>
       </div>
 
     </div>
