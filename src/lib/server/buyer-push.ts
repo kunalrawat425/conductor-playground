@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { buyerOrderPushNotification, type BuyerCancelInfo } from "./buyer-order-push-copy";
+import { buyerOrderPushNotification, defaultFishImage, type BuyerCancelInfo } from "./buyer-order-push-copy";
 import { loadWebPush, PUSH_SEND_OPTIONS } from "./load-web-push";
 import { absoluteUrl } from "./site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "./vapid-env";
@@ -154,6 +154,8 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
   }
 
   const notification = buyerOrderPushNotification(status, species, final_price, cancel, slot);
+  // "Order Confirmed!" carries the fish photo as the big picture (Android / desktop; iPhone shows text).
+  const photo = status === "confirmed" ? defaultFishImage(species) : null;
   const trackPath = order_id ? `/track/${order_id}` : "/track";
   const openUrl = absoluteUrl(trackPath);
 
@@ -165,6 +167,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
       subscription,
       JSON.stringify({
         ...notification,
+        ...(photo ? { image: absoluteUrl(photo) } : {}),
         url: openUrl,
         tag: uniqueTag,
       }),
