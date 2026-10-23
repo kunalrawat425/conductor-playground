@@ -64,7 +64,7 @@ async function recordFailedAttempt(sb: any, phone: string, maxAttempts: number):
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { phone, code, role } = await request.json();
+    const { phone, code, role, whatsapp_opt_in } = await request.json();
 
     if (!phone || !code) {
       return new Response(JSON.stringify({ error: "Phone and code required" }), { status: 400 });
@@ -217,6 +217,12 @@ export const POST: APIRoute = async ({ request }) => {
       buyer_id = newBuyer.id;
       is_active = newBuyer.is_active !== false;
       is_new = true;
+    }
+
+    // WhatsApp consent: the buyer ticked the unticked box at login. Recorded once (time = proof);
+    // a later tick also clears an earlier "Stop updates".
+    if (whatsapp_opt_in === true) {
+      await sb.from("buyers").update({ whatsapp_opt_in_at: new Date().toISOString(), whatsapp_opt_out_at: null }).eq("id", buyer_id);
     }
 
     return new Response(JSON.stringify({ success: true, buyer_id, is_active, is_new, session: signSession("buyer", buyer_id) }), { status: 200 });

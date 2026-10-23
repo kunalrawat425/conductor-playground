@@ -1,0 +1,19 @@
+# WhatsApp + push promo engine (src/pages/api/cron/messaging.ts), every 30 min. Vercel Hobby
+# crons are daily-only. The endpoint sends only when MESSAGING_LIVE=true in Vercel; otherwise
+# each run is a dry-run report. Needs repo secret CRON_SECRET (same value as in Vercel).
+name: messaging-engine
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call messaging endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "CRON_SECRET secret not set; skipping"; exit 0; fi
+          curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://www.relifish.com/api/cron/messaging | head -c 3000
