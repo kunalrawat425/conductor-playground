@@ -1,9 +1,12 @@
 ---
 import BottomSheet from "./BottomSheet.astro";
+import { LOCALITIES } from "../../../lib/areas";
 interface Props {
   id?: string;
 }
 const { id = "v2-loc-picker" } = Astro.props;
+// Thane neighbourhoods for the type-ahead list (every live shop is in Thane West).
+const places = LOCALITIES.thane;
 ---
 <BottomSheet id={id} title="Set your location" showClose={true}>
   <div id={`${id}-map`} style="height:380px;border-radius:12px;background:var(--v2-bg-3);margin-bottom:12px;"></div>
@@ -18,11 +21,12 @@ const { id = "v2-loc-picker" } = Astro.props;
       <input
         type="text"
         id={`${id}-area-input`}
-        placeholder="e.g. Thane West, Tardeo, Kamothe"
+        placeholder="e.g. Majiwada, Manpada, Hiranandani"
         class="v2-input"
         autocomplete="off"
       />
     </div>
+    <div id={`${id}-sugg`} role="listbox" hidden style="margin-top:6px;border:1px solid var(--v2-border);border-radius:12px;overflow:hidden;background:var(--v2-bg);"></div>
   </div>
 
   <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-confirm`} style="margin-bottom:8px;">
@@ -40,11 +44,12 @@ const { id = "v2-loc-picker" } = Astro.props;
   </button>
 </BottomSheet>
 
-<script define:vars={{ id }}>
+<script define:vars={{ id, places }}>
   let map, marker, selectedLat, selectedLng, selectedArea;
   let draggedOrSearched = false;
   let typedUnresolved = false; // typed text not yet turned into coordinates
   let moved = false; // buyer moved the pin / typed / used GPS since this open
+  let pickedName = null; // area chosen from the type-ahead list
   let pendingName = null; // reverse geocode for the latest pin, awaited by Confirm
 
   // The buyer's saved location from any source (lib/saved-location: this device's keys, else
@@ -165,13 +170,72 @@ const { id = "v2-loc-picker" } = Astro.props;
   document.getElementById(`${id}-area-input`)?.addEventListener("change", (e) => {
     draggedOrSearched = true; moved = true;
     selectedArea = e.target.value;
+    if (e.target.value === pickedName) return; // picked from the list: keep that exact pin
     if (e.target.value.trim()) forwardGeocode(e.target.value.trim());
   });
 
   document.getElementById(`${id}-area-input`)?.addEventListener("input", (e) => {
     draggedOrSearched = true; moved = true;
     typedUnresolved = true;
+    showSuggestions(e.target.value);
   });
+
+  // Type-ahead: our Thane neighbourhoods first (instant, exact pins), then one map search on tap.
+  // Before, a typed area was geocoded blind on Confirm and "Majiwada" could land on the wrong place.
+  const sugg = document.getElementById(`${id}-sugg`);
+  const norm = (t) => String(t || "").toLowerCase().replace(/\b(thane|west|east|mumbai)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+  function pickPlace(name, lat, lng) {
+    selectedLat = lat; selectedLng = lng; selectedArea = name; pickedName = name;
+    draggedOrSearched = true; moved = true; typedUnresolved = false;
+    const input = document.getElementById(`${id}-area-input`);
+    if (input) input.value = name;
+    if (map && marker) { map.setView([lat, lng], 15); marker.setLatLng([lat, lng]); }
+    sugg.hidden = true;
+  }
+  function renderRows(rows) {
+    sugg.innerHTML = "";
+    for (const r of rows) {
+      const b = document.createElement("button");
+      b.type = "button"; b.setAttribute("role", "option");
+      b.style.cssText = "display:block;width:100%;text-align:left;padding:11px 14px;border:0;border-bottom:1px solid var(--v2-border);background:none;font:500 14px var(--v2-font,Inter);color:var(--v2-ink);cursor:pointer;";
+      b.innerHTML = r.label;
+      b.addEventListener("mousedown", (ev) => ev.preventDefault()); // keep focus so blur doesn't hide the list first
+      b.addEventListener("click", r.onPick);
+      sugg.appendChild(b);
+    }
+    sugg.hidden = rows.length === 0;
+  }
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function showSuggestions(text) {
+    const q = norm(text);
+    if (!q) { sugg.hidden = true; return; }
+    const local = places.filter(([n]) => norm(n).includes(q)).slice(0, 6).map(([n, lat, lng]) => ({
+      label: `📍 ${esc(n)} <span style="color:var(--v2-ink-3);font-size:12px">· Thane</span>`,
+      onPick: () => pickPlace(n, lat, lng),
+    }));
+    local.push({ label: `🔎 Search map for “${esc(text.trim())}”`, onPick: () => searchMap(text.trim()) });
+    renderRows(local);
+  }
+  async function searchMap(text) {
+    renderRows([{ label: "Searching…", onPick: () => {} }]);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=in&viewbox=72.75,19.45,73.25,18.85&bounded=1&q=${encodeURIComponent(text)}`);
+      const near = { lat: 19.2045, lng: 72.97 };
+      const hits = ((await res.json()) || [])
+        .map((h) => ({ h, d: (Number(h.lat) - near.lat) ** 2 + (Number(h.lon) - near.lng) ** 2 }))
+        .sort((a, b) => a.d - b.d).map((x) => x.h);
+      if (!hits.length) { renderRows([{ label: "No match. Try a nearby landmark, or drag the pin.", onPick: () => { sugg.hidden = true; } }]); return; }
+      renderRows(hits.map((h) => {
+        const parts = String(h.display_name || "").split(",").map((t) => t.trim());
+        const name = parts[0] || text;
+        return { label: `📍 ${esc(name)} <span style="color:var(--v2-ink-3);font-size:12px">· ${esc(parts.slice(1, 3).join(", "))}</span>`, onPick: () => pickPlace(name, Number(h.lat), Number(h.lon)) };
+      }));
+    } catch {
+      renderRows([{ label: "Couldn't search right now. Drag the pin instead.", onPick: () => { sugg.hidden = true; } }]);
+    }
+  }
+  document.getElementById(`${id}-area-input`)?.addEventListener("blur", () => setTimeout(() => { sugg.hidden = true; }, 150));
+  document.getElementById(`${id}-area-input`)?.addEventListener("keydown", (e) => { if (e.key === "Escape") sugg.hidden = true; });
 
   document.getElementById(`${id}-confirm`)?.addEventListener("click", async () => {
     if (!draggedOrSearched) {
