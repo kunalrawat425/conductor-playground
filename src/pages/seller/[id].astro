@@ -1260,8 +1260,8 @@ const tags = [
     const RESUME_KEY = "rf_resume_checkout";
     function markResume(sid) { try { sessionStorage.setItem(RESUME_KEY, JSON.stringify({ sid, t: Date.now() })); } catch {} }
 
-    // One login sheet serves both checkout (reloads the page after login) and the "+" gate
-    // (finishes the tapped add in place via window.v2AfterLogin). It can't be dismissed; only login closes it.
+    // One login sheet serves the page-load wall and checkout. It can't be dismissed; only login closes it.
+    // "+" never asks for login: the page-load wall already does (founder, 23 Oct).
     const loginTitleEl = document.getElementById("seller-login-sheet-title");
     const loginTitleDefault = loginTitleEl?.textContent || "Sign in";
     function openLogin(title, afterLogin) {
@@ -1271,13 +1271,6 @@ const tags = [
     }
     function isSignedIn() {
       try { return !!localStorage.getItem("rlf_buyer_id") && !!localStorage.getItem("rlf_phone"); } catch { return false; }
-    }
-    /** Logged out: ask for the phone first, then run `retry` (the same add). True when it asked. */
-    function loginToAdd(retry) {
-      if (isSignedIn()) return false;
-      track("add_login_prompt", {});
-      openLogin("Log in with your phone to add fish", retry);
-      return true;
     }
 
     // "Checkout" inside View Cart (CartStackSheet) dispatches v2-cs-checkout. Nothing listened, so it was a dead button.
@@ -1741,7 +1734,6 @@ const tags = [
         window.v2Toast?.("error", "Seller closed", "This seller is closed and not accepting orders");
         return;
       }
-      if (loginToAdd(() => add(id, price, name, unit, optId, optLabel, bundleSize))) return;
       const c = Cart(); if (!c) return;
       const bs = parseFloat(bundleSize) || 1;
       if (overStock(id, bs, unit)) return;
@@ -1787,7 +1779,6 @@ const tags = [
       const cart = c.getCart();
       const item = cart[id];
       if (!item) return;
-      if (loginToAdd(() => inc(id))) return;
       const step = getBundleStep(item);
       if (overStock(item.listing_id, step, item.qty_unit)) return;
       c.setQty(id, item.qty + step);

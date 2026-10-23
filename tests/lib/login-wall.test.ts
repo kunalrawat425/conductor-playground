@@ -38,6 +38,6 @@ describe("login wall", () => {
     expect(s).not.toMatch(/rf_login_prompt_dismissed/);
     expect(s).toMatch(/bot\|crawl\|spider[^/]*prerender[^/]*\/i\.test\(navigator\.userAgent\)/);
     expect(s).toContain("Log in with your phone to see today's fish");
-    expect(s).toContain("Log in with your phone to add fish");
+    expect(s).not.toContain("Log in with your phone to add fish"); // "+" no longer asks; the page-load wall does
   });
 });
