@@ -12,7 +12,7 @@ import { cleanSellerName, sellerHref, stripContactInfo } from "../../../lib/sell
 import { SPECIES, getSpeciesDisplay } from "../../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../../lib/listing-pricing";
 import { SITE_URL, canonicalFor } from "../../../lib/brand";
-import { listingAvailability, productJsonLd, speciesOffer } from "../../../lib/product-offer";
+import { listingAvailability, productJsonLd, speciesOffer, sellerDeliveryFee } from "../../../lib/product-offer";
 
 const slug = (Astro.params.slug || "").toLowerCase();
 const species = (Astro.params.species || "").toLowerCase();
@@ -77,7 +77,7 @@ const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLower
   jsonLd={found ? {
     "@context": "https://schema.org",
     "@graph": [
-      productJsonLd({ name: `${fishName} — ${sellerName}`, description, url: optMatch ? `${url}?opt=${encodeURIComponent(optParam!)}` : url, image: photoAbs, sellerName, offer: schemaOffer! }),
+      productJsonLd({ name: `${fishName} — ${sellerName}`, description, url: optMatch ? `${url}?opt=${encodeURIComponent(optParam!)}` : url, image: photoAbs, sellerName, offer: schemaOffer!, shippingFee: sellerDeliveryFee(seller) }),
       {
         "@type": "BreadcrumbList",
         "itemListElement": [

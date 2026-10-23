@@ -30,6 +30,12 @@ const MAX_ATTEMPTS = 3;
       <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-send-otp`}>
         Send OTP
       </button>
+      {role === "buyer" && (
+        <label style="display:flex;gap:8px;align-items:flex-start;margin:12px 2px 0;font:400 12px/1.45 Inter;color:var(--v2-ink-2);cursor:pointer;">
+          <input type="checkbox" id={`${id}-wa-optin`} style="margin-top:2px;width:16px;height:16px;flex-shrink:0;" />
+          <span>Send me fresh listings, offers and order updates from Relifish on WhatsApp. Reply STOP anytime.</span>
+        </label>
+      )}
       <p style="font:400 11px Inter;color:var(--v2-ink-3);margin:10px 0 0;text-align:center;line-height:1.5;">
         By continuing, you agree to Relifish's <a href={termsHref} target="_blank" style="color:inherit;text-decoration:underline;">{termsLabel}</a> and <a href="/privacy" target="_blank" style="color:inherit;text-decoration:underline;">Privacy Policy</a>.
       </p>
@@ -261,7 +267,8 @@ const MAX_ATTEMPTS = 3;
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: currentPhone, code, role }),
+        // Unticked by default (consent must be a choice); sent only when ticked.
+        body: JSON.stringify({ phone: currentPhone, code, role, whatsapp_opt_in: !!document.getElementById(`${id}-wa-optin`)?.checked }),
       });
       const data = await res.json();
 

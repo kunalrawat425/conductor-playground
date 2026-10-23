@@ -1,4 +1,5 @@
 ---
+import { RETURN_POLICY } from "../../lib/product-offer";
 // /fish/<species> — every seller on Relifish that lists this fish, with live price and availability.
 // Indexable per hubIndexable (2+ sellers, or 1+ seller with a written guide); otherwise noindex,follow.
 export const prerender = false;
@@ -101,6 +102,8 @@ const description = rows.length
         "name": english,
         "description": description,
         "url": url,
+        ...(["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"].includes(species) ? { "image": `${SITE_URL}/fish/${species}.jpg` } : {}),
+        "brand": { "@type": "Brand", "name": "Relifish" },
         // One Offer per seller with it in stock today, at the price the table shows (₹/kg when sold by weight).
         "offers": live.map((r) => {
           const price = r.perKg ? r.perKg.low : r.offer.lowPrice;
@@ -111,6 +114,7 @@ const description = rows.length
             "availability": "https://schema.org/InStock",
             "url": SITE_URL + r.href,
             "seller": { "@type": "Organization", "name": r.seller },
+            "hasMerchantReturnPolicy": RETURN_POLICY,
             ...(r.perKg ? { "priceSpecification": { "@type": "UnitPriceSpecification", "price": price, "priceCurrency": "INR", "referenceQuantity": { "@type": "QuantitativeValue", "value": 1, "unitCode": "KGM" } } } : {}),
           };
         }),
