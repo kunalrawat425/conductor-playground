@@ -29,7 +29,7 @@ const SVG_CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="
     {isPage && backHref ? (
       <a href={backHref} class="v2-back" aria-label="Back" set:html={SVG_BACK} />
     ) : (
-      <a href="/shop" class="v2-logo" aria-label="Relifish home">
+      <a href="/" class="v2-logo" aria-label="Relifish home">
         Relifish{isPreorder && <span style="font-size:14px;margin-left:4px;opacity:.85;">🌙</span>}
       </a>
     )}
@@ -41,7 +41,7 @@ const SVG_CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="
         <div class="v2-loc-main">
           {isPage && title ? (
             title === "Relifish" ? (
-              <a href="/shop" class="v2-logo" aria-label="Relifish home">Relifish</a>
+              <a href="/" class="v2-logo" aria-label="Relifish home">Relifish</a>
             ) : (
               title
             )
