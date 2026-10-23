@@ -105,12 +105,34 @@ const { id = "v2-loc-picker" } = Astro.props;
     } catch {}
   }
 
+  // Same rules as src/lib/geocode-pick.ts (this inline script can't import it; the tests cover that file).
+  function simplifyAreaQuery(q) {
+    return q.replace(/\b(west|east|\(w\)|\(e\))\b|\((w|e)\)/gi, " ").replace(/\s+/g, " ").replace(/[ ,]+$/, "").trim();
+  }
+  function pickGeocodeHit(hits) {
+    const near = { lat: 19.2045, lng: 72.97 }; // Thane West, where every live shop is
+    let best = null, bestD = Infinity;
+    for (const h of hits || []) {
+      const lat = Number(h.lat), lng = Number(h.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      const d = (lat - near.lat) ** 2 + ((lng - near.lng) * Math.cos((near.lat * Math.PI) / 180)) ** 2;
+      if (d < bestD) { bestD = d; best = h; }
+    }
+    return best;
+  }
+
   // Typed area -> coordinates (Mumbai, Thane, Navi Mumbai only). Without this a typed
   // "Hiranandani, Thane" kept the default pin in central Mumbai and showed no sellers.
   async function forwardGeocode(q) {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&viewbox=72.75,19.45,73.25,18.85&bounded=1&q=${encodeURIComponent(q)}`);
-      const hit = (await res.json())?.[0];
+      const search = async (text) => {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=in&viewbox=72.75,19.45,73.25,18.85&bounded=1&q=${encodeURIComponent(text)}`);
+        return (await res.json()) || [];
+      };
+      // Try the area without "West/East" too, and keep the place nearest Thane West.
+      const simple = simplifyAreaQuery(q);
+      const hits = [...(await search(q)), ...(simple && simple !== q ? await search(simple) : [])];
+      const hit = pickGeocodeHit(hits);
       if (!hit) return false;
       selectedLat = Number(hit.lat); selectedLng = Number(hit.lon);
       if (map && marker) { map.setView([selectedLat, selectedLng], 14); marker.setLatLng([selectedLat, selectedLng]); }
