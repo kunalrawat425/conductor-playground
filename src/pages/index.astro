@@ -143,7 +143,7 @@ const homeFaqs = [
 
     /* fish chips */
     .fish-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
-    .ftag{text-decoration:none;display:inline-block;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:6px 14px;font:500 13px Inter;color:#fff}
+    .ftag{text-decoration:none;display:inline-flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:5px 14px 5px 6px;font:500 13px Inter;color:#fff}
 
     .hero-ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
     .btn-primary{display:inline-flex;align-items:center;gap:8px;font:700 16px Inter;padding:14px 28px;border-radius:12px;background:var(--blue);color:#fff;box-shadow:0 8px 32px var(--blue-glow);transition:all .2s;border:none;cursor:pointer}
@@ -260,6 +260,7 @@ const homeFaqs = [
     .d3-item{display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#fff;border-bottom:1px solid #F3F4F6}
     .d3-item.tap{background:#EFF6FF;animation:d1tap .4s ease}
     .d3-emoji{font-size:18px;margin-right:6px}
+    .d3-img{width:22px;height:22px;border-radius:50%;object-fit:cover;margin-right:6px;flex-shrink:0}
     .d3-name{font:700 9px Inter;color:#0A0F1E}
     .d3-cut{font:400 7px Inter;color:#9CA3AF;margin-top:1px}
     .d3-lock{font:600 7px Inter;color:var(--blue);display:flex;align-items:center;gap:2px}
@@ -339,6 +340,8 @@ const homeFaqs = [
     .fish3d:nth-child(3){top:180px;right:-15px;animation-delay:2.8s}
     @keyframes floatfish{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
     .fish3d-e{font-size:28px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));transform:scaleX(-1)}
+    .ftag-img{width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle;flex-shrink:0}
+    .fish3d-img{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,.85);box-shadow:0 3px 8px rgba(0,0,0,.45)}
     .fish3d-n{font:700 10px Inter;color:#fff}
     .fish3d-t{font:400 8px Inter;color:rgba(255,255,255,.4);margin-top:1px}
     .fish3d-f{font:700 7px Inter;color:var(--blue-light);background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);border-radius:100px;padding:2px 6px;margin-top:3px;display:inline-block}
@@ -453,7 +456,8 @@ const homeFaqs = [
     .s3-items{margin:0 10px;background:#fff;border:1px solid #EAECF0;border-radius:10px;overflow:hidden}
     .s3-item{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-bottom:1px solid #F3F4F6}
     .s3-il{display:flex;align-items:center;gap:7px}
-    .s3-ie{width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font-size:13px}
+    .s3-ie{width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font-size:13px;overflow:hidden}
+    .s3-img{width:100%;height:100%;object-fit:cover}
     .s3-in{font:700 9px Inter;color:#0A0F1E}
     .s3-id{font:400 7px Inter;color:#9CA3AF;margin-top:1px}
     .s3-lock{display:flex;align-items:center;gap:3px;font:600 8px Inter;color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:3px 7px}
@@ -809,8 +813,8 @@ const homeFaqs = [
       <!-- Citable prose for AI search engines — do not remove -->
       <p class="hero-cite">Relifish is a marketplace for fresh fish from local sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order for tomorrow or later, and the seller delivers to your home or keeps it ready for pickup.</p>
       <div class="fish-tags">
-        {[["🐟 Pomfret","pomfret"],["🐠 Surmai","surmai"],["🦐 Prawns","prawns"],["🐡 Bangda","bangda"],["🐟 Rawas","rawas"],["🦀 Crab","crab"]].map(([f,k])=>(
-          <a class="ftag" href={`/shop?species=${k}`}>{f}</a>
+        {[["Pomfret","pomfret"],["Surmai","surmai"],["Prawns","prawns"],["Bangda","bangda"],["Rawas","rawas"],["Crab","crab"]].map(([f,k])=>(
+          <a class="ftag" href={`/shop?species=${k}`}><img class="ftag-img" src={`/fish/${k}.jpg`} alt="" loading="lazy" />{f}</a>
         ))}
       </div>
       <div class="hero-ctas">
@@ -826,9 +830,9 @@ const homeFaqs = [
     <!-- RIGHT — interactive phone demo -->
     <div class="hero-right">
       <!-- floating fish badges -->
-      <div class="fish3d"><span class="fish3d-e">🐟</span><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></div>
-      <div class="fish3d"><span class="fish3d-e">🦐</span><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></div>
-      <div class="fish3d"><span class="fish3d-e">🐠</span><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></div>
+      <div class="fish3d"><img class="fish3d-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></div>
+      <div class="fish3d"><img class="fish3d-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></div>
+      <div class="fish3d"><img class="fish3d-img" src="/fish/surmai.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></div>
 
       <!-- phone -->
       <div class="demo-phone" id="demo-phone">
@@ -858,7 +862,7 @@ const homeFaqs = [
               <div style="padding:8px 0">
                 <div class="d1-area tap" id="d1-tap">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Hiranandani Estate</div><div class="d1-dist">Thane · 1 seller</div></div>
+                  <div><div class="d1-name">Hiranandani Estate</div><div class="d1-dist">Thane West</div></div>
                   <div class="d1-check">✓</div>
                 </div>
                 <div class="d1-area">
@@ -912,15 +916,15 @@ const homeFaqs = [
                 <div class="dh-title">🌙 Pre-order menu</div>
               </div>
               <div class="d3-item tap">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🐟</span><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">200–250 g · Whole &amp; cleaned</div></div></div>
+                <div style="display:flex;align-items:center"><img class="d3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">200–250 g · Whole &amp; cleaned</div></div></div>
                 <div style="text-align:right"><div class="d3-lock">₹375</div><div class="d3-add added" style="margin-top:3px">✓ Added</div></div>
               </div>
               <div class="d3-item">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🦐</span><div><div class="d3-name">Prawns</div><div class="d3-cut">Pack of 10–20 pcs</div></div></div>
+                <div style="display:flex;align-items:center"><img class="d3-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="d3-name">Prawns</div><div class="d3-cut">Pack of 10–20 pcs</div></div></div>
                 <div style="text-align:right"><div class="d3-lock">₹410</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
               </div>
               <div class="d3-item">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🐠</span><div><div class="d3-name">Bombil</div><div class="d3-cut">500 g · Whole</div></div></div>
+                <div style="display:flex;align-items:center"><img class="d3-img" src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg" alt="" loading="lazy" /><div><div class="d3-name">Bombil</div><div class="d3-cut">500 g · Whole</div></div></div>
                 <div style="text-align:right"><div class="d3-lock">₹240</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
               </div>
               <div class="demo-cta"><div class="d3-bar"><span class="d3-bar-t">🛒 1 item · Pomfret</span><span class="d3-bar-p">Checkout →</span></div></div>
@@ -1174,11 +1178,11 @@ const homeFaqs = [
             </div>
             <div class="s3-items">
               <div class="s3-item">
-                <div class="s3-il"><div class="s3-ie">🐟</div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">200–250 g · Cleaned</div></div></div>
+                <div class="s3-il"><div class="s3-ie"><img class="s3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /></div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">200–250 g · Cleaned</div></div></div>
                 <div class="s3-lock">₹375</div>
               </div>
               <div class="s3-item">
-                <div class="s3-il"><div class="s3-ie">🐠</div><div><div class="s3-in">Bombil</div><div class="s3-id">500 grams · Whole</div></div></div>
+                <div class="s3-il"><div class="s3-ie"><img class="s3-img" src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg" alt="" loading="lazy" /></div><div><div class="s3-in">Bombil</div><div class="s3-id">500 grams · Whole</div></div></div>
                 <div class="s3-lock">₹240</div>
               </div>
               <div class="s3-slot">
