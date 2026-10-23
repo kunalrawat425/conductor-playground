@@ -79,8 +79,8 @@ const places = LOCALITIES.thane;
   async function initMap() {
     if (typeof L === "undefined") return;
     if (map) { showSaved(); setTimeout(() => map.invalidateSize(), 100); return; }
-    const mumbai = [19.07, 72.87];
-    map = L.map(`${id}-map`).setView(mumbai, 12);
+    const mumbai = [19.2045, 72.97]; // Thane West, where every live shop is (was central Mumbai)
+    map = L.map(`${id}-map`).setView(mumbai, 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(map);
     marker = L.marker(mumbai, { draggable: true }).addTo(map);
     selectedLat = mumbai[0]; selectedLng = mumbai[1];
