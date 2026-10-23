@@ -5,7 +5,7 @@ import SeoLinks from "../../components/ui/molecules/SeoLinks.astro";
 import AppShell from "../../components/ui/AppShell.astro";
 import SellerCard from "../../components/ui/molecules/SellerCard.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
-import { supabase } from "../../lib/supabase";
+import { SELLER_PUBLIC_COLUMNS, supabase } from "../../lib/supabase";
 import { areaNameForPoint, coveredLocalities, getAreaBySlug, sellersForArea } from "../../lib/areas";
 import { perKgRange } from "../../lib/fish-hub";
 import { cleanSellerName, sellerHref, stripContactInfo } from "../../lib/seller-display";
@@ -29,7 +29,7 @@ const speciesMap = new Map<string, { min: number; max: number; count: number }>(
 try {
   const { data, error } = await supabase
     .from("sellers")
-    .select("*")
+    .select(SELLER_PUBLIC_COLUMNS)
     .eq("is_active", true).or("is_test.is.null,is_test.eq.false")
     .neq("name", "New Seller");
 
@@ -43,7 +43,7 @@ try {
   if (sellerIds.length > 0) {
     const { data: listData, error: listErr } = await supabase
       .from("fish_listings")
-      .select("*, seller:sellers(*)").is("deleted_at", null)
+      .select(`*, seller:sellers(${SELLER_PUBLIC_COLUMNS})`).is("deleted_at", null)
       .in("seller_id", sellerIds)
       .or("is_available.eq.true,is_preorder_enabled.eq.true");
     if (listErr) throw listErr;

@@ -62,3 +62,10 @@ export function signOut() {
   localStorage.removeItem("rlf_seller_name");
   localStorage.removeItem("rlf_seller_is_active");
 }
+
+/** The logged-in seller's own row (phone, email included) via the session-checked API; null if not allowed. */
+export async function loadOwnSeller(sellerId: string): Promise<any | null> {
+  const res = await fetch(`/api/seller/profile?seller_id=${encodeURIComponent(sellerId)}`);
+  if (!res.ok) return null;
+  return (await res.json()).seller ?? null;
+}

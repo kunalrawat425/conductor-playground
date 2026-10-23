@@ -273,7 +273,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
 </AppShell>
 
 <script>
-  import { supabase } from "../../lib/supabase";
+  import { loadOwnSeller } from "../../lib/seller-auth";
   import { PREORDER_DELIVERY_DEFAULT, sellerSlotsOn, slotSettingsError, slotTimeLabel, storePreorderLabel, type SlotSeller } from "../../lib/delivery-slots";
   import { validateSellerName } from "../../lib/seller-display";
   import { subscribeSellerPush, unsubscribeSellerPush, isSellerPushSubscribed } from "../../lib/seller-push";
@@ -293,7 +293,7 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     const loading = document.getElementById("v2-profile-loading")!;
     const form = document.getElementById("v2-profile-form") as HTMLFormElement;
     try {
-      const { data: seller } = await supabase.from("sellers").select("*").eq("id", sellerId).single();
+      const seller = await loadOwnSeller(sellerId);
       loading.style.display = "none";
       form.style.display = "block";
       (document.getElementById("p-name") as HTMLInputElement).value = seller?.name || "";

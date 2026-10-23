@@ -281,7 +281,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
 
 <script>
   import { wasActuallyPaid, refundableAmount, paymentMethodLabel, preorderNeedsFinalPrice, refundStatus } from "../../../lib/order-payment-state";
-  import { supabase } from "../../../lib/supabase";
+  import { loadOwnSeller } from "../../../lib/seller-auth";
   import { cancelledByText, cancelReasonText } from "../../../lib/order-cancel";
   import { friendlyError } from "../../../lib/friendly-error";
   import { askCancelReason } from "../../../lib/reason-dialog";
@@ -393,8 +393,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       return;
     }
     try {
-      const { data } = await supabase.from("sellers").select("*").eq("id", sellerId).single();
-      sellerData = data;
+      sellerData = await loadOwnSeller(sellerId);
       if (!sellerData?.is_active) {
         document.getElementById("v2-dash-not-active")!.style.display = "block";
         return;

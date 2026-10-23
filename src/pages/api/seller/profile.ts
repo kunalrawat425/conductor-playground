@@ -26,6 +26,24 @@ const SELLER_EDITABLE = [
   "delivery_slots_enabled", "delivery_slot_minutes", "preorder_delivery_start", "preorder_delivery_end", "preorder_days_ahead",
 ] as const;
 
+/**
+ * GET /api/seller/profile?seller_id=uuid
+ * The logged-in seller's own row, phone and email included. The public key can't read
+ * those columns (migration 085), so the dashboard loads its profile here.
+ */
+export const GET: APIRoute = async ({ url, request }) => {
+  const seller_id = url.searchParams.get("seller_id");
+  const { requireSeller } = await import("../../../lib/server/session");
+  const denied = requireSeller(request, seller_id);
+  if (denied) return denied;
+  const { data, error } = await createClient(supabaseUrl, supabaseServiceKey)
+    .from("sellers").select("*").eq("id", seller_id!).maybeSingle();
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  if (!data) return new Response(JSON.stringify({ error: "Seller not found" }), { status: 404 });
+  const { auth_id: _a, push_subscription: _p, ...seller } = data;
+  return new Response(JSON.stringify({ seller }), { status: 200, headers: { "Content-Type": "application/json" } });
+};
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { seller_id, seller_phone, updates: rawUpdates } = await request.json();
