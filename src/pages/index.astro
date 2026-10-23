@@ -334,7 +334,9 @@ const homeFaqs = [
       position:absolute;border-radius:14px;display:flex;align-items:center;gap:9px;padding:9px 13px;
       background:rgba(13,22,41,.92);border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 36px rgba(0,0,0,.5);
       backdrop-filter:blur(12px);z-index:10;animation:floatfish 4s ease-in-out infinite;
+      text-decoration:none;color:inherit;cursor:pointer;
     }
+    .fish3d:hover{border-color:rgba(96,165,250,.6)}
     .fish3d:nth-child(1){top:20px;right:-10px;animation-delay:0s}
     .fish3d:nth-child(2){bottom:80px;right:-20px;animation-delay:1.4s}
     .fish3d:nth-child(3){top:180px;right:-15px;animation-delay:2.8s}
@@ -831,9 +833,9 @@ const homeFaqs = [
     <!-- RIGHT — interactive phone demo -->
     <div class="hero-right">
       <!-- floating fish badges -->
-      <div class="fish3d"><img class="fish3d-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></div>
-      <div class="fish3d"><img class="fish3d-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></div>
-      <div class="fish3d"><img class="fish3d-img" src="/fish/surmai.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></div>
+      <a class="fish3d" href="/shop?species=pomfret" aria-label="Shop pomfret"><img class="fish3d-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></a>
+      <a class="fish3d" href="/shop?species=prawns" aria-label="Shop prawns"><img class="fish3d-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></a>
+      <a class="fish3d" href="/shop?species=surmai" aria-label="Shop surmai"><img class="fish3d-img" src="/fish/surmai.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></a>
 
       <!-- phone -->
       <div class="demo-phone" id="demo-phone">
