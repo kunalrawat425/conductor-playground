@@ -268,7 +268,7 @@ const MAX_ATTEMPTS = 3;
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Unticked by default (consent must be a choice); sent only when ticked.
-        body: JSON.stringify({ phone: currentPhone, code, role, whatsapp_opt_in: !!(document.getElementById(`${id}-wa-optin`) as HTMLInputElement | null)?.checked }),
+        body: JSON.stringify({ phone: currentPhone, code, role, whatsapp_opt_in: !!document.getElementById(`${id}-wa-optin`)?.checked }),
       });
       const data = await res.json();
 
