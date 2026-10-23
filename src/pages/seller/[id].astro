@@ -1367,8 +1367,7 @@ const tags = [
                 </div>
               </div>
               <div style="font:800 15px Inter;color:var(--v2-ink);flex-shrink:0;white-space:nowrap;padding-top:1px;">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
-            </div>`).join("")}
-          ${(() => { const h = removedLinesHtml(c); return h ? `<div style="padding-top:10px;">${h}</div>` : ""; })()}`;
+            </div>`).join("")}`;
       }
       const subtotal = group.subtotal;
       const subOut = document.getElementById("seller-checkout-subtotal");
