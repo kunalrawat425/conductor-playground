@@ -783,7 +783,12 @@ const categories = [
   (document.querySelector('.v2-pb-inline') as HTMLAnchorElement | null)?.addEventListener('click', (e) => {
     e.preventDefault();
     // While notifications are undecided the banner asks for them (see showNotifyBanner).
-    if ((e.currentTarget as HTMLElement).dataset.mode === "notify") { askNotifications(); return; }
+    const mode = (e.currentTarget as HTMLElement).dataset.mode;
+    if (mode === "notify") { askNotifications(); return; }
+    if (mode === "blocked") {
+      (window as any).v2Toast?.("info", "Turn on notifications", "Tap the lock icon next to the address → Notifications → Allow, then reload.");
+      return;
+    }
     const preorderChip = document.querySelector('#v2-filter-chips .v2-fchip[data-filter="preorder"]') as HTMLButtonElement | null;
     if (preorderChip) preorderChip.click();
   });
@@ -835,9 +840,17 @@ const categories = [
     el.dataset.mode = "notify";
     el.innerHTML = `<div class="v2-pb-icon">🔔</div><div class="v2-pb-text"><h4>Allow notifications</h4><p>Get the latest updates on fresh listings and prices</p></div><span class="v2-pb-btn">Allow</span>`;
   }
+  // Blocked earlier (by the buyer or by Chrome): only the buyer can switch it back on, so say how.
+  function showBlockedBanner() {
+    const el = document.querySelector<HTMLElement>(".v2-pb-inline");
+    if (!el) return;
+    preorderBannerHtml = el.innerHTML;
+    el.dataset.mode = "blocked";
+    el.innerHTML = `<div class="v2-pb-icon">🔕</div><div class="v2-pb-text"><h4>Notifications are off</h4><p>Turn them on to get fresh listings and prices first</p></div><span class="v2-pb-btn">How</span>`;
+  }
   function restorePreorderBanner() {
     const el = document.querySelector<HTMLElement>(".v2-pb-inline");
-    if (!el || el.dataset.mode !== "notify") return;
+    if (!el || !el.dataset.mode) return;
     el.innerHTML = preorderBannerHtml;
     delete el.dataset.mode;
   }
@@ -847,7 +860,7 @@ const categories = [
       if (getSession()) subscribePush(false).catch(() => {});
       return;
     }
-    if (Notification.permission !== "default") return; // allowed or blocked already: never nag
+    if (Notification.permission === "denied") { showBlockedBanner(); return; } // the site can't ask again
     showNotifyBanner();
     // Asked only when the buyer taps "Allow" on the banner: Chrome hides (quiet-blocks) a popup
     // the page opens on its own, as seen on stage 24 Oct ("Notifications blocked … requests are
