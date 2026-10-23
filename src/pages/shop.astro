@@ -782,6 +782,8 @@ const categories = [
   // PreorderBanner click — activate the preorder filter chip on this page
   (document.querySelector('.v2-pb-inline') as HTMLAnchorElement | null)?.addEventListener('click', (e) => {
     e.preventDefault();
+    // While notifications are undecided the banner asks for them (see showNotifyBanner).
+    if ((e.currentTarget as HTMLElement).dataset.mode === "notify") { askNotifications(); return; }
     const preorderChip = document.querySelector('#v2-filter-chips .v2-fchip[data-filter="preorder"]') as HTMLButtonElement | null;
     if (preorderChip) preorderChip.click();
   });
@@ -805,31 +807,49 @@ const categories = [
 
   loadSellers();
 
-  // Order alerts: the browser's own "Allow notifications" popup. It used to fire 2 s after
+  // Notifications: the browser's own "Allow notifications" popup. It used to fire 2 s after
   // "location confirmed", but the picker reloads the page at 0.8 s, so almost no buyer saw it.
-  // Now it asks 3 s into every /shop visit while the choice is still open; browsers that only
-  // allow it after a tap (iPhone home-screen app, Firefox) get it on the first tap instead.
+  // Now: while the choice is open, the top banner asks for it (founder, 24 Oct) and its button
+  // opens the popup; it also pops up 3 s into the visit, or on the first tap where a browser
+  // only allows it after one (iPhone home-screen app, Firefox).
+  const canNotify = () => "Notification" in window && "serviceWorker" in navigator; // not iPhone Safari outside the home-screen app
+  let asking = false;
+  async function askNotifications() {
+    if (!canNotify() || asking || Notification.permission !== "default") return;
+    asking = true;
+    try {
+      if ((await Notification.requestPermission()) === "granted") {
+        (window as any).v2Toast?.("success", "Notifications on", "We'll send you fresh listings and prices");
+        if (getSession()) subscribePush(false).catch(() => {});
+      }
+    } catch {}
+    asking = false;
+    if (Notification.permission !== "default") restorePreorderBanner();
+  }
+  let preorderBannerHtml = "";
+  function showNotifyBanner() {
+    const el = document.querySelector<HTMLElement>(".v2-pb-inline");
+    if (!el) return;
+    preorderBannerHtml = el.innerHTML;
+    el.dataset.mode = "notify";
+    el.innerHTML = `<div class="v2-pb-icon">🔔</div><div class="v2-pb-text"><h4>Allow notifications</h4><p>Get the latest updates on fresh listings and prices</p></div><span class="v2-pb-btn">Allow</span>`;
+  }
+  function restorePreorderBanner() {
+    const el = document.querySelector<HTMLElement>(".v2-pb-inline");
+    if (!el || el.dataset.mode !== "notify") return;
+    el.innerHTML = preorderBannerHtml;
+    delete el.dataset.mode;
+  }
   function maybeAskNotifications() {
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) return; // e.g. iPhone Safari outside the home-screen app
+    if (!canNotify()) return;
     if (Notification.permission === "granted") {
       if (getSession()) subscribePush(false).catch(() => {});
       return;
     }
     if (Notification.permission !== "default") return; // allowed or blocked already: never nag
-    let asking = false;
-    const ask = async () => {
-      if (asking || Notification.permission !== "default") return;
-      asking = true;
-      try {
-        if ((await Notification.requestPermission()) === "granted") {
-          (window as any).v2Toast?.("success", "Notifications on", "We'll ping you about your orders");
-          if (getSession()) subscribePush(false).catch(() => {});
-        }
-      } catch {}
-      asking = false;
-    };
-    setTimeout(ask, 3000);
-    document.addEventListener("pointerup", ask, { once: true });
+    showNotifyBanner();
+    setTimeout(askNotifications, 3000);
+    document.addEventListener("pointerup", askNotifications, { once: true });
   }
 
   // After location set or skipped, prompt notifications
