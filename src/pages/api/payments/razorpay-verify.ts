@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { MAIL_FROM } from "../../../lib/server/send-email";
+import { postToResend } from "../../../lib/server/send-email";
 import { requireBuyer } from "../../../lib/server/session";
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
@@ -177,16 +177,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         primary_order_id: paidRows[0]?.id || order_id,
       });
       if (html) {
-        fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: MAIL_FROM,
-            to: emailTo,
-            subject: "Payment received — waiting for confirmation",
-            html,
-          }),
-        }).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));
+        // Returned so the pending list awaits it (an un-awaited send is killed when the function ends).
+        return postToResend({ to: emailTo, subject: "Payment received — waiting for confirmation", html }, resendApiKey).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));
       }
     }).catch((err) => console.warn("[razorpay-verify] buyer email lookup failed", { order_id, err: err?.message || String(err) })));
   }
@@ -213,16 +205,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             total_price: Number(r.total_price) || 0, pricingLabel: r.pricing_label || null, bundleSize: b.size, bundleCount: b.count };
         }),
       });
-      const sellerEmailReq = fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: MAIL_FROM,
-          to: _sellerForEmail.email,
-          subject: `New paid order — please confirm: ${capitalizeFishName(species)}`,
-          html,
-        }),
-      }).catch((err) => console.warn("[razorpay-verify] seller email failed", { order_id, err: err?.message || String(err) }));
+      const sellerEmailReq = postToResend({ to: _sellerForEmail.email, subject: `New paid order — please confirm: ${capitalizeFishName(species)}`, html }, resendApiKey).catch((err) => console.warn("[razorpay-verify] seller email failed", { order_id, err: err?.message || String(err) }));
       await sellerEmailReq;
 
       // Seller push — new order paid

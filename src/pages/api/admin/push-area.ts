@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { haversineKm } from "../../../lib/order-pricing";
 import { sendCustomBuyerPush } from "../../../lib/server/buyer-push";
+import { DEFAULT_PROMO_IMAGE } from "../../../lib/server/buyer-order-push-copy";
 
 export const prerender = false;
 
@@ -33,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
   const title = String(b.title || "").trim().slice(0, 80);
   const body = String(b.body || "").trim().slice(0, 200);
   // Optional large picture (https, or a site path) shown under the text on Android/desktop.
-  const image = typeof b.image === "string" && /^(https:\/\/|\/)/.test(b.image) ? b.image : undefined;
+  const image = typeof b.image === "string" && /^(https:\/\/|\/)/.test(b.image) ? b.image : DEFAULT_PROMO_IMAGE; // every promo has a picture
   // all_buyers: ignore location (buyers who never set one are otherwise skipped).
   const allBuyers = b.all_buyers === true;
   const url = typeof b.url === "string" && b.url.startsWith("/") ? b.url : "/shop";
