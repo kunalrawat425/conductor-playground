@@ -206,33 +206,47 @@ const places = LOCALITIES.thane;
     sugg.hidden = rows.length === 0;
   }
   const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  function showSuggestions(text) {
+  // Our Thane neighbourhoods first (instant, exact pins), then Photon (free OpenStreetMap
+  // search-as-you-type) inside Mumbai / Thane / Navi Mumbai, nearest Thane West first.
+  // Roads and flyovers are left out; the same name is shown once.
+  const BBOX = "72.75,18.85,73.25,19.45";
+  let photonTimer = null, photonSeq = 0;
+  function localRows(text) {
     const q = norm(text);
-    if (!q) { sugg.hidden = true; return; }
-    const local = places.filter(([n]) => norm(n).includes(q)).slice(0, 6).map(([n, lat, lng]) => ({
-      label: `📍 ${esc(n)} <span style="color:var(--v2-ink-3);font-size:12px">· Thane</span>`,
-      onPick: () => pickPlace(n, lat, lng),
+    if (!q) return [];
+    return places.filter(([n]) => norm(n).includes(q)).slice(0, 5).map(([n, lat, lng]) => ({
+      name: n, label: `📍 ${esc(n)} <span style="color:var(--v2-ink-3);font-size:12px">· Thane</span>`, onPick: () => pickPlace(n, lat, lng),
     }));
-    local.push({ label: `🔎 Search map for “${esc(text.trim())}”`, onPick: () => searchMap(text.trim()) });
-    renderRows(local);
   }
-  async function searchMap(text) {
-    renderRows([{ label: "Searching…", onPick: () => {} }]);
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=in&viewbox=72.75,19.45,73.25,18.85&bounded=1&q=${encodeURIComponent(text)}`);
-      const near = { lat: 19.2045, lng: 72.97 };
-      const hits = ((await res.json()) || [])
-        .map((h) => ({ h, d: (Number(h.lat) - near.lat) ** 2 + (Number(h.lon) - near.lng) ** 2 }))
-        .sort((a, b) => a.d - b.d).map((x) => x.h);
-      if (!hits.length) { renderRows([{ label: "No match. Try a nearby landmark, or drag the pin.", onPick: () => { sugg.hidden = true; } }]); return; }
-      renderRows(hits.map((h) => {
-        const parts = String(h.display_name || "").split(",").map((t) => t.trim());
-        const name = parts[0] || text;
-        return { label: `📍 ${esc(name)} <span style="color:var(--v2-ink-3);font-size:12px">· ${esc(parts.slice(1, 3).join(", "))}</span>`, onPick: () => pickPlace(name, Number(h.lat), Number(h.lon)) };
-      }));
-    } catch {
-      renderRows([{ label: "Couldn't search right now. Drag the pin instead.", onPick: () => { sugg.hidden = true; } }]);
-    }
+  function showSuggestions(text) {
+    const local = localRows(text);
+    renderRows(local);
+    clearTimeout(photonTimer);
+    const q = text.trim();
+    if (q.length < 3) return;
+    const seq = ++photonSeq;
+    photonTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=19.2045&lon=72.97&limit=10&bbox=${BBOX}`);
+        const data = await res.json();
+        if (seq !== photonSeq) return; // a newer keystroke is on its way
+        const seen = new Set(local.map((r) => norm(r.name)));
+        const rows = [...local];
+        for (const f of data?.features || []) {
+          const pr = f.properties || {};
+          if (pr.osm_key === "highway" || !pr.name) continue;
+          const key = norm(pr.name);
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          const [lng, lat] = f.geometry?.coordinates || [];
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+          const where = [pr.district || pr.locality, pr.city].filter((x) => x && x !== pr.name).join(", ");
+          rows.push({ name: pr.name, label: `📍 ${esc(pr.name)}${where ? ` <span style="color:var(--v2-ink-3);font-size:12px">· ${esc(where)}</span>` : ""}`, onPick: () => pickPlace(pr.name, lat, lng) });
+          if (rows.length >= 7) break;
+        }
+        renderRows(rows);
+      } catch {}
+    }, 300);
   }
   document.getElementById(`${id}-area-input`)?.addEventListener("blur", () => setTimeout(() => { sugg.hidden = true; }, 150));
   document.getElementById(`${id}-area-input`)?.addEventListener("keydown", (e) => { if (e.key === "Escape") sugg.hidden = true; });
