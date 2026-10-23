@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { supabase } from "../lib/supabase";
+import { SELLER_PUBLIC_COLUMNS, supabase } from "../lib/supabase";
 import { cleanSellerName, stripContactInfo } from "../lib/seller-display";
 
 export const prerender = false;
@@ -9,11 +9,11 @@ export const GET: APIRoute = async () => {
     const [{ data: listingsData }, { data: sellersData }] = await Promise.all([
       supabase
         .from("fish_listings")
-        .select("*, seller:sellers(*)").is("deleted_at", null)
+        .select(`*, seller:sellers(${SELLER_PUBLIC_COLUMNS})`).is("deleted_at", null)
         .or("is_available.eq.true,is_preorder_enabled.eq.true"),
       supabase
         .from("sellers")
-        .select("*")
+        .select(SELLER_PUBLIC_COLUMNS)
         .eq("is_active", true)
         .neq("name", "New Seller"),
     ]);

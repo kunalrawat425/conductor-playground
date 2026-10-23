@@ -207,8 +207,8 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
     if (typeof L === "undefined") return;
     // Start on the buyer's saved location (navbar pin), not central Mumbai.
     const saved = window.RelifishLocation?.peek?.() || null;
-    const start = saved ? [saved.lat, saved.lng] : [19.07, 72.87];
-    addrMap = L.map(`${id}-add-map`).setView(start, saved ? 15 : 12);
+    const start = saved ? [saved.lat, saved.lng] : [19.2045, 72.97];
+    addrMap = L.map(`${id}-add-map`).setView(start, saved ? 15 : 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(addrMap);
     addrMarker = L.marker(start, { draggable: true }).addTo(addrMap);
 
@@ -243,7 +243,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
   const editLocationInput = document.getElementById(`${id}-edit-location`);
 
   function initEditMap(lat, lng) {
-    const center = lat && lng ? [lat, lng] : [19.07, 72.87];
+    const center = lat && lng ? [lat, lng] : [19.2045, 72.97];
     const zoom = lat && lng ? 15 : 12;
     if (editMap) {
       editMap.setView(center, zoom);

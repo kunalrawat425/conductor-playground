@@ -1,50 +1,55 @@
 ---
 import BottomSheet from "./BottomSheet.astro";
+import { LOCALITIES } from "../../../lib/areas";
 interface Props {
   id?: string;
 }
 const { id = "v2-loc-picker" } = Astro.props;
+// Thane neighbourhoods for the type-ahead list (every live shop is in Thane West).
+const places = LOCALITIES.thane;
 ---
-<BottomSheet id={id} title="Set your location" showClose={true}>
-  <div id={`${id}-map`} style="height:380px;border-radius:12px;background:var(--v2-bg-3);margin-bottom:12px;"></div>
-  
-  <div style="font-size:12.5px;color:var(--v2-ink-3);margin-bottom:16px;text-align:center;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;">
-    📍 <span>Drag the pin to set your precise location</span>
+<BottomSheet id={id} title="Set your area" showClose={true}>
+  <!-- Founder, 24 Oct: buyers were hunting for their building on the map. The area is enough,
+       so typing comes first and the map is optional. -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">
+    <div style="font-size:13px;color:var(--v2-ink-2);line-height:1.4;">Your area is enough, e.g. <b>Thane West</b>, <b>Majiwada</b>, <b>Mulund</b></div>
+    <button class="v2-btn v2-btn-secondary v2-btn-sm" id={`${id}-use-current`} style="flex-shrink:0;white-space:nowrap;">📍 Use current location</button>
   </div>
-
-  <div class="v2-field">
-    <label class="v2-field-label">Or type your area</label>
-    <div class="v2-input-wrap">
-      <input
-        type="text"
-        id={`${id}-area-input`}
-        placeholder="e.g. Thane West, Tardeo, Kamothe"
-        class="v2-input"
-        autocomplete="off"
-      />
-    </div>
-  </div>
-
-  <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-confirm`} style="margin-bottom:8px;">
-    Confirm location
-  </button>
-
-  <div style="display:flex;align-items:center;margin:16px 0;color:var(--v2-ink-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8;">
+  <div style="display:flex;align-items:center;margin:2px 0 10px;color:var(--v2-ink-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8;">
     <div style="flex:1;height:1px;background:var(--v2-border);margin-right:12px;"></div>
     <span>or</span>
     <div style="flex:1;height:1px;background:var(--v2-border);margin-left:12px;"></div>
   </div>
-
-  <button class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" id={`${id}-use-current`}>
-    📍 Use my current location
+  <div class="v2-field" style="margin-bottom:12px;">
+    <label class="v2-field-label" for={`${id}-area-input`}>Type your area, e.g. Thane, Mulund</label>
+    <div class="v2-input-wrap">
+      <input
+        type="text"
+        id={`${id}-area-input`}
+        placeholder="e.g. Thane, Majiwada, Mulund"
+        class="v2-input"
+        autocomplete="off"
+      />
+    </div>
+    <div id={`${id}-sugg`} role="listbox" hidden style="margin-top:6px;border:1px solid var(--v2-border);border-radius:12px;overflow:hidden;background:var(--v2-bg);"></div>
+  </div>
+  <div style="display:flex;align-items:center;margin:4px 0 10px;color:var(--v2-ink-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8;">
+    <div style="flex:1;height:1px;background:var(--v2-border);margin-right:12px;"></div>
+    <span>or move the pin</span>
+    <div style="flex:1;height:1px;background:var(--v2-border);margin-left:12px;"></div>
+  </div>
+  <div id={`${id}-map`} style="height:220px;border-radius:12px;background:var(--v2-bg-3);margin-bottom:12px;"></div>
+  <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-confirm`} style="margin-bottom:8px;">
+    Confirm area
   </button>
 </BottomSheet>
 
-<script define:vars={{ id }}>
+<script define:vars={{ id, places }}>
   let map, marker, selectedLat, selectedLng, selectedArea;
   let draggedOrSearched = false;
   let typedUnresolved = false; // typed text not yet turned into coordinates
   let moved = false; // buyer moved the pin / typed / used GPS since this open
+  let pickedName = null; // area chosen from the type-ahead list
   let pendingName = null; // reverse geocode for the latest pin, awaited by Confirm
 
   // The buyer's saved location from any source (lib/saved-location: this device's keys, else
@@ -74,8 +79,8 @@ const { id = "v2-loc-picker" } = Astro.props;
   async function initMap() {
     if (typeof L === "undefined") return;
     if (map) { showSaved(); setTimeout(() => map.invalidateSize(), 100); return; }
-    const mumbai = [19.07, 72.87];
-    map = L.map(`${id}-map`).setView(mumbai, 12);
+    const mumbai = [19.2045, 72.97]; // Thane West, where every live shop is (was central Mumbai)
+    map = L.map(`${id}-map`).setView(mumbai, 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(map);
     marker = L.marker(mumbai, { draggable: true }).addTo(map);
     selectedLat = mumbai[0]; selectedLng = mumbai[1];
@@ -165,17 +170,93 @@ const { id = "v2-loc-picker" } = Astro.props;
   document.getElementById(`${id}-area-input`)?.addEventListener("change", (e) => {
     draggedOrSearched = true; moved = true;
     selectedArea = e.target.value;
+    if (e.target.value === pickedName) return; // picked from the list: keep that exact pin
     if (e.target.value.trim()) forwardGeocode(e.target.value.trim());
   });
 
   document.getElementById(`${id}-area-input`)?.addEventListener("input", (e) => {
     draggedOrSearched = true; moved = true;
     typedUnresolved = true;
+    showSuggestions(e.target.value);
   });
+
+  // Type-ahead: our Thane neighbourhoods first (instant, exact pins), then one map search on tap.
+  // Before, a typed area was geocoded blind on Confirm and "Majiwada" could land on the wrong place.
+  const sugg = document.getElementById(`${id}-sugg`);
+  const norm = (t) => String(t || "").toLowerCase().replace(/\b(thane|west|east|mumbai)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+  function pickPlace(name, lat, lng) {
+    selectedLat = lat; selectedLng = lng; selectedArea = name; pickedName = name;
+    draggedOrSearched = true; moved = true; typedUnresolved = false;
+    const input = document.getElementById(`${id}-area-input`);
+    if (input) input.value = name;
+    if (map && marker) { map.setView([lat, lng], 15); marker.setLatLng([lat, lng]); }
+    sugg.hidden = true;
+  }
+  function renderRows(rows) {
+    sugg.innerHTML = "";
+    for (const r of rows) {
+      const b = document.createElement("button");
+      b.type = "button"; b.setAttribute("role", "option");
+      b.style.cssText = "display:block;width:100%;text-align:left;padding:11px 14px;border:0;border-bottom:1px solid var(--v2-border);background:none;font:500 14px var(--v2-font,Inter);color:var(--v2-ink);cursor:pointer;";
+      b.innerHTML = r.label;
+      b.addEventListener("mousedown", (ev) => ev.preventDefault()); // keep focus so blur doesn't hide the list first
+      b.addEventListener("click", r.onPick);
+      sugg.appendChild(b);
+    }
+    sugg.hidden = rows.length === 0;
+  }
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // Our Thane neighbourhoods first (instant, exact pins), then Photon (free OpenStreetMap
+  // search-as-you-type) inside Mumbai / Thane / Navi Mumbai, nearest Thane West first.
+  // Roads and flyovers are left out; the same name is shown once.
+  const BBOX = "72.75,18.85,73.25,19.45";
+  let photonTimer = null, photonSeq = 0;
+  function localRows(text) {
+    const q = norm(text);
+    if (!q) return [];
+    return places.filter(([n]) => norm(n).includes(q)).slice(0, 5).map(([n, lat, lng]) => ({
+      name: n, label: `📍 ${esc(n)} <span style="color:var(--v2-ink-3);font-size:12px">· Thane</span>`, onPick: () => pickPlace(n, lat, lng),
+    }));
+  }
+  function showSuggestions(text) {
+    const local = localRows(text);
+    renderRows(local);
+    clearTimeout(photonTimer);
+    const q = text.trim();
+    if (q.length < 3) return;
+    const seq = ++photonSeq;
+    photonTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=19.2045&lon=72.97&limit=10&bbox=${BBOX}`);
+        const data = await res.json();
+        if (seq !== photonSeq) return; // a newer keystroke is on its way
+        const seen = new Set(local.map((r) => norm(r.name)));
+        const rows = [...local];
+        const feats = data?.features || [];
+        // Places first; roads only fill in (in OSM "Khopat" exists only as a road).
+        const ordered = [...feats.filter((f) => f.properties?.osm_key !== "highway"), ...feats.filter((f) => f.properties?.osm_key === "highway")];
+        for (const f of ordered) {
+          const pr = f.properties || {};
+          if (!pr.name) continue;
+          const key = norm(pr.name);
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          const [lng, lat] = f.geometry?.coordinates || [];
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+          const where = [pr.district || pr.locality, pr.city].filter((x) => x && x !== pr.name).join(", ");
+          rows.push({ name: pr.name, label: `📍 ${esc(pr.name)}${where ? ` <span style="color:var(--v2-ink-3);font-size:12px">· ${esc(where)}</span>` : ""}`, onPick: () => pickPlace(pr.name, lat, lng) });
+          if (rows.length >= 7) break;
+        }
+        renderRows(rows);
+      } catch {}
+    }, 300);
+  }
+  document.getElementById(`${id}-area-input`)?.addEventListener("blur", () => setTimeout(() => { sugg.hidden = true; }, 150));
+  document.getElementById(`${id}-area-input`)?.addEventListener("keydown", (e) => { if (e.key === "Escape") sugg.hidden = true; });
 
   document.getElementById(`${id}-confirm`)?.addEventListener("click", async () => {
     if (!draggedOrSearched) {
-      window.v2Toast?.("warning", "Drag the pin", "Please drag the pin to set your precise location.");
+      window.v2Toast?.("warning", "Pick your area", "Type your area, use your current location, or move the pin.");
       return;
     }
 

@@ -589,7 +589,7 @@ import LoginModal from "../components/LoginModal.astro";
   </style>
 
   <script>
-    import { getActiveListings, supabase } from "../lib/supabase";
+    import { getActiveListings, SELLER_PUBLIC_COLUMNS, supabase } from "../lib/supabase";
     import { SPECIES, getSpeciesDisplay } from "../lib/species";
     import type { FishListing, Seller } from "../lib/supabase";
     import { formatListingPriceSummary } from "../lib/listing-pricing";
@@ -719,7 +719,7 @@ import LoginModal from "../components/LoginModal.astro";
           getActiveListings().catch(() => [] as FishListing[]),
           supabase
             .from("sellers")
-            .select("*")
+            .select(SELLER_PUBLIC_COLUMNS)
             .eq("is_active", true)
             .neq("name", "New Seller")
             .then(r => r.data || []),

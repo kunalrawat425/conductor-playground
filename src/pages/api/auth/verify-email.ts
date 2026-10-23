@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { MAIL_FROM } from "../../../lib/server/send-email";
+import { postToResend } from "../../../lib/server/send-email";
 import { createClient } from "@supabase/supabase-js";
 import { createHmac } from "node:crypto";
 import { verifyEmailTemplate } from "../../../lib/email-templates";
@@ -49,16 +49,11 @@ export const POST: APIRoute = async ({ request, url }) => {
     const token = makeToken(role, id, email);
     const verifyUrl = `${url.origin}/api/auth/verify-email?token=${token}&role=${role}&id=${id}&email=${encodeURIComponent(email)}`;
 
-    const emailRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: MAIL_FROM,
-        to: email,
-        subject: "Verify your email — Relifish",
-        html: verifyEmailTemplate(email, verifyUrl),
-      }),
-    });
+    const emailRes = await postToResend({
+      to: email,
+      subject: "Verify your email — Relifish",
+      html: verifyEmailTemplate(email, verifyUrl),
+    }, resendApiKey);
 
     if (!emailRes.ok) {
       const errData = await emailRes.json().catch(() => ({}));

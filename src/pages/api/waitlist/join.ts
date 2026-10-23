@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { MAIL_FROM, MAIL_DOMAIN } from "../../../lib/server/send-email";
+import { postToResend } from "../../../lib/server/send-email";
 import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
@@ -76,14 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Send email notification
     if (resendApiKey) {
       try {
-        const sent = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: `Relifish Waitlist <noreply@${MAIL_DOMAIN}>`,
+        const sent = await postToResend({
             to: "relifishstore@gmail.com",
             subject: `New Waitlist: ${area} — ${phoneE164}`,
             html: `
@@ -100,8 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
                 <tr><td style="padding:8px;font-weight:bold;">People in area</td><td style="padding:8px;">${areaCount}</td></tr>
               </table>
             `,
-          }),
-        });
+          }, resendApiKey);
         // Only a mail Resend accepted counts as sent (a 401/403 used to be marked sent too).
         if (sent.ok) await sb.from("buyer_waitlist").update({ email_sent: true }).eq("id", data.id);
         else console.warn("[waitlist] notification email rejected", sent.status, (await sent.text()).slice(0, 200));
@@ -111,14 +103,7 @@ export const POST: APIRoute = async ({ request }) => {
         // to any address (phishing relay). All fields are escaped now; the
         // address must at least look like one.
         if (email && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(String(email))) {
-          await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${resendApiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: MAIL_FROM,
+          await postToResend({
               to: email,
               subject: "You're on the Relifish waitlist!",
               html: `
@@ -155,8 +140,7 @@ export const POST: APIRoute = async ({ request }) => {
                   </p>
                 </div>
               `,
-            }),
-          });
+            }, resendApiKey);
         }
       } catch (err) { console.warn("[waitlist/join] notify failed", { err: (err as any)?.message }); }
     }

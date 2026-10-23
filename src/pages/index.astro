@@ -62,7 +62,7 @@ const homeFaqs = [
           { "@type": "City", "name": "Thane" }
         ],
         "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "telephone": "+91-9152207607", "email": "relifishstore@gmail.com", "areaServed": "IN", "availableLanguage": ["en", "hi", "mr"] },
-        "sameAs": ["https://www.instagram.com/relifish_/"]
+        "sameAs": ["https://www.instagram.com/relifish_/", "https://www.facebook.com/p/ReliFish-61589987936346/"]
       },
       {
         "@type": "WebSite",
@@ -143,7 +143,7 @@ const homeFaqs = [
 
     /* fish chips */
     .fish-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
-    .ftag{text-decoration:none;display:inline-block;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:6px 14px;font:500 13px Inter;color:#fff}
+    .ftag{text-decoration:none;display:inline-flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:5px 14px 5px 6px;font:500 13px Inter;color:#fff}
 
     .hero-ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
     .btn-primary{display:inline-flex;align-items:center;gap:8px;font:700 16px Inter;padding:14px 28px;border-radius:12px;background:var(--blue);color:#fff;box-shadow:0 8px 32px var(--blue-glow);transition:all .2s;border:none;cursor:pointer}
@@ -260,6 +260,7 @@ const homeFaqs = [
     .d3-item{display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#fff;border-bottom:1px solid #F3F4F6}
     .d3-item.tap{background:#EFF6FF;animation:d1tap .4s ease}
     .d3-emoji{font-size:18px;margin-right:6px}
+    .d3-img{width:22px;height:22px;border-radius:50%;object-fit:cover;margin-right:6px;flex-shrink:0}
     .d3-name{font:700 9px Inter;color:#0A0F1E}
     .d3-cut{font:400 7px Inter;color:#9CA3AF;margin-top:1px}
     .d3-lock{font:600 7px Inter;color:var(--blue);display:flex;align-items:center;gap:2px}
@@ -333,12 +334,16 @@ const homeFaqs = [
       position:absolute;border-radius:14px;display:flex;align-items:center;gap:9px;padding:9px 13px;
       background:rgba(13,22,41,.92);border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 36px rgba(0,0,0,.5);
       backdrop-filter:blur(12px);z-index:10;animation:floatfish 4s ease-in-out infinite;
+      text-decoration:none;color:inherit;cursor:pointer;
     }
+    .fish3d:hover{border-color:rgba(96,165,250,.6)}
     .fish3d:nth-child(1){top:20px;right:-10px;animation-delay:0s}
     .fish3d:nth-child(2){bottom:80px;right:-20px;animation-delay:1.4s}
     .fish3d:nth-child(3){top:180px;right:-15px;animation-delay:2.8s}
     @keyframes floatfish{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
     .fish3d-e{font-size:28px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));transform:scaleX(-1)}
+    .ftag-img{width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle;flex-shrink:0}
+    .fish3d-img{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,.85);box-shadow:0 3px 8px rgba(0,0,0,.45)}
     .fish3d-n{font:700 10px Inter;color:#fff}
     .fish3d-t{font:400 8px Inter;color:rgba(255,255,255,.4);margin-top:1px}
     .fish3d-f{font:700 7px Inter;color:var(--blue-light);background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);border-radius:100px;padding:2px 6px;margin-top:3px;display:inline-block}
@@ -350,6 +355,7 @@ const homeFaqs = [
     @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
     .ti{display:inline-flex;align-items:center;gap:8px;padding:0 20px;font:500 12px Inter;color:rgba(255,255,255,.45);white-space:nowrap}
     .ti .fish{color:var(--blue-light);font-weight:700}
+    .ti-img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0}
     .ti .dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.15)}
 
     /* ── Sections ── */
@@ -453,10 +459,16 @@ const homeFaqs = [
     .s3-items{margin:0 10px;background:#fff;border:1px solid #EAECF0;border-radius:10px;overflow:hidden}
     .s3-item{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-bottom:1px solid #F3F4F6}
     .s3-il{display:flex;align-items:center;gap:7px}
-    .s3-ie{width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font-size:13px}
+    .s3-ie{width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font-size:13px;overflow:hidden}
+    .s3-img{width:100%;height:100%;object-fit:cover}
     .s3-in{font:700 9px Inter;color:#0A0F1E}
     .s3-id{font:400 7px Inter;color:#9CA3AF;margin-top:1px}
     .s3-lock{display:flex;align-items:center;gap:3px;font:600 8px Inter;color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:3px 7px}
+    .s3-slot{padding:8px 10px;border-bottom:1px solid #F3F4F6}
+    .s3-slot-q{font:700 9px Inter;color:#0A0F1E;margin-bottom:6px}
+    .s3-slot-row{display:flex;gap:5px}
+    .s3-slot-c{flex:1;text-align:center;font:600 7.5px/1.35 Inter;color:#6B7280;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:7px;padding:5px 2px}
+    .s3-slot-c.on{color:#2563EB;background:#EFF6FF;border-color:#2563EB}
     .s3-tot{padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
     .s3-tot-l{font:700 10px Inter;color:#0A0F1E}
     .s3-tot-r{font:600 9px Inter;color:#2563EB}
@@ -804,8 +816,8 @@ const homeFaqs = [
       <!-- Citable prose for AI search engines — do not remove -->
       <p class="hero-cite">Relifish is a marketplace for fresh fish from local sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order for tomorrow or later, and the seller delivers to your home or keeps it ready for pickup.</p>
       <div class="fish-tags">
-        {[["🐟 Pomfret","pomfret"],["🐠 Surmai","surmai"],["🦐 Prawns","prawns"],["🐡 Bangda","bangda"],["🐟 Rawas","rawas"],["🦀 Crab","crab"]].map(([f,k])=>(
-          <a class="ftag" href={`/shop?species=${k}`}>{f}</a>
+        {[["Pomfret","pomfret"],["Surmai","surmai"],["Prawns","prawns"],["Bangda","bangda"],["Rawas","rawas"],["Crab","crab"]].map(([f,k])=>(
+          <a class="ftag" href={`/shop?species=${k}`}><img class="ftag-img" src={`/fish/${k}.jpg`} alt="" loading="lazy" />{f}</a>
         ))}
       </div>
       <div class="hero-ctas">
@@ -821,9 +833,9 @@ const homeFaqs = [
     <!-- RIGHT — interactive phone demo -->
     <div class="hero-right">
       <!-- floating fish badges -->
-      <div class="fish3d"><span class="fish3d-e">🐟</span><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></div>
-      <div class="fish3d"><span class="fish3d-e">🦐</span><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></div>
-      <div class="fish3d"><span class="fish3d-e">🐠</span><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></div>
+      <a class="fish3d" href="/shop?species=pomfret" aria-label="Shop pomfret"><img class="fish3d-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></a>
+      <a class="fish3d" href="/shop?species=prawns" aria-label="Shop prawns"><img class="fish3d-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></a>
+      <a class="fish3d" href="/shop?species=surmai" aria-label="Shop surmai"><img class="fish3d-img" src="/fish/surmai.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></a>
 
       <!-- phone -->
       <div class="demo-phone" id="demo-phone">
@@ -853,20 +865,20 @@ const homeFaqs = [
               <div style="padding:8px 0">
                 <div class="d1-area tap" id="d1-tap">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Hiranandani Estate</div><div class="d1-dist">Thane · 1 seller</div></div>
+                  <div><div class="d1-name">Hiranandani Estate</div><div class="d1-dist">Thane West</div></div>
                   <div class="d1-check">✓</div>
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Tardeo</div><div class="d1-dist">South Mumbai · 1 seller</div></div>
+                  <div><div class="d1-name">Majiwada</div><div class="d1-dist">Thane West</div></div>
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Kamothe</div><div class="d1-dist">Navi Mumbai · 1 seller</div></div>
+                  <div><div class="d1-name">Manpada</div><div class="d1-dist">Thane West</div></div>
                 </div>
                 <div class="d1-area">
                   <div class="d1-icon">📍</div>
-                  <div><div class="d1-name">Kandivali</div><div class="d1-dist">Coming soon · Join waitlist</div></div>
+                  <div><div class="d1-name">Vasant Vihar</div><div class="d1-dist">Thane West</div></div>
                 </div>
                 <div class="demo-cta"><div class="demo-cta-btn">Confirm — Hiranandani →</div></div>
               </div>
@@ -884,16 +896,16 @@ const homeFaqs = [
               <div class="d2-tabs"><div class="d2t on">🌙 Pre-order</div><div class="d2t">⚡ Same Day</div></div>
               <div class="d2-list">
                 <div class="d2-card tap">
-                  <div class="d2-img" style="background:linear-gradient(135deg,#0D3B2E,#0A5940)"><img src={LOGO_URL} alt="Relifish" style="height:22px;width:auto;filter:brightness(0) invert(1);" /><div class="d2-badge op">🟢 Open</div></div>
-                  <div class="d2-info"><div class="d2-name">Fishtokri</div><div class="d2-sub">Thane West · Pre-order till 6 PM</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/pomfret.jpg) center/cover"><div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-info"><div class="d2-name">Local fish seller</div><div class="d2-sub">Thane West · Delivery in 2 hours</div></div>
                 </div>
                 <div class="d2-card">
-                  <div class="d2-img" style="background:linear-gradient(135deg,#1A0D4A,#2A1A6A)">🦐<div class="d2-badge pr">🌙 Pre-order</div></div>
-                  <div class="d2-info"><div class="d2-name">Bombay Sea Food</div><div class="d2-sub">Tardeo · Pre-order till 10 PM</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/prawns.jpg) center/cover"><div class="d2-badge pr">🌙 Pre-order</div></div>
+                  <div class="d2-info"><div class="d2-name">Pre-order seller</div><div class="d2-sub">Thane West · Pick a delivery day</div></div>
                 </div>
                 <div class="d2-card">
-                  <div class="d2-img" style="background:linear-gradient(135deg,#002020,#00403A)">🦀<div class="d2-badge op">🟢 Open</div></div>
-                  <div class="d2-info"><div class="d2-name">The Fishy Spot</div><div class="d2-sub">Kamothe · Crab · Bombil · Prawns</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/crab.jpg) center/cover"><div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-info"><div class="d2-name">Seller near you</div><div class="d2-sub">Crab · Bombil · Prawns</div></div>
                 </div>
               </div>
             </div>
@@ -903,19 +915,19 @@ const homeFaqs = [
           <div class="demo-screen" data-screen="3">
             <div class="ds-light" style="position:relative">
               <div class="dh">
-                <div class="dh-back">← Fishtokri</div>
+                <div class="dh-back">← Seller</div>
                 <div class="dh-title">🌙 Pre-order menu</div>
               </div>
               <div class="d3-item tap">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🐟</span><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">200–250 g · Whole &amp; cleaned</div></div></div>
+                <div style="display:flex;align-items:center"><img class="d3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">200–250 g · Whole &amp; cleaned</div></div></div>
                 <div style="text-align:right"><div class="d3-lock">₹375</div><div class="d3-add added" style="margin-top:3px">✓ Added</div></div>
               </div>
               <div class="d3-item">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🦐</span><div><div class="d3-name">Prawns</div><div class="d3-cut">Pack of 10–20 pcs</div></div></div>
+                <div style="display:flex;align-items:center"><img class="d3-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="d3-name">Prawns</div><div class="d3-cut">Pack of 10–20 pcs</div></div></div>
                 <div style="text-align:right"><div class="d3-lock">₹410</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
               </div>
               <div class="d3-item">
-                <div style="display:flex;align-items:center"><span class="d3-emoji">🐠</span><div><div class="d3-name">Bombil</div><div class="d3-cut">500 g · Whole</div></div></div>
+                <div style="display:flex;align-items:center"><img class="d3-img" src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg" alt="" loading="lazy" /><div><div class="d3-name">Bombil</div><div class="d3-cut">500 g · Whole</div></div></div>
                 <div style="text-align:right"><div class="d3-lock">₹240</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
               </div>
               <div class="demo-cta"><div class="d3-bar"><span class="d3-bar-t">🛒 1 item · Pomfret</span><span class="d3-bar-p">Checkout →</span></div></div>
@@ -927,16 +939,16 @@ const homeFaqs = [
             <div class="ds-light">
               <div class="dh"><div class="dh-back">← Menu</div><div class="dh-title">Your cart</div></div>
               <div class="d4-item">
-                <div><div class="d4-name">🐟 Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
+                <div><div class="d4-name"><img class="d3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" style="vertical-align:middle" />Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
                 <div style="text-align:right"><div class="d4-lock">₹375</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">1 pc</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-item">
-                <div><div class="d4-name">🐠 Bombil</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Fishtokri</div></div>
+                <div><div class="d4-name"><img class="d3-img" src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg" alt="" loading="lazy" style="vertical-align:middle" />Bombil</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
                 <div style="text-align:right"><div class="d4-lock">₹240</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">500 grams</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-summary">
                 <div class="d4-row"><span>Subtotal</span><span>₹615</span></div>
-                <div class="d4-row"><span>Delivery</span><span>by seller</span></div>
+                <div class="d4-row"><span>Delivery time</span><span>Tomorrow 8–10 AM</span></div>
                 <div class="d4-row" style="font-weight:700"><span>Total</span><span>₹615</span></div>
               </div>
               <div class="demo-cta"><div class="demo-cta-btn" style="animation:pulseblue 2s infinite">Checkout →</div></div>
@@ -948,7 +960,7 @@ const homeFaqs = [
             <div class="ds-light">
               <div class="d5-amount">
                 <div class="d5-to">Paying to</div>
-                <div class="d5-seller">Fishtokri</div>
+                <div class="d5-seller">Relifish</div>
                 <div class="d5-amt-label">Amount</div>
                 <div class="d5-amt">₹<span style="font-size:28px;font-weight:900;color:#0A0F1E">615</span></div>
                 <div style="font:400 7px Inter;color:#9CA3AF;margin-top:2px">Pre-order · 2 items</div>
@@ -983,13 +995,13 @@ const homeFaqs = [
             <div class="ds-light d6-center">
               <div class="d6-icon">✅</div>
               <div class="d6-title">Order confirmed!</div>
-              <div class="d6-sub">Fishtokri has confirmed your pre-order for tomorrow.</div>
+              <div class="d6-sub">The seller has confirmed your pre-order for tomorrow.</div>
               <div class="d6-eta">
-                <div class="d6-eta-t">🛵 Seller delivers tomorrow</div>
+                <div class="d6-eta-t">🛵 Arriving tomorrow, 8–10 AM</div>
                 <div class="d6-eta-s">Hiranandani Estate, Thane</div>
               </div>
               <div style="background:#F3F4F6;border-radius:8px;padding:7px 10px;width:100%;font:400 8px Inter;color:#6B7280;text-align:center">
-                📲 You'll get a WhatsApp when it's ready
+                🔔 We'll tell you when it's on the way
               </div>
             </div>
           </div>
@@ -997,7 +1009,7 @@ const homeFaqs = [
           <!-- Screen 7: Tracking -->
           <div class="demo-screen" data-screen="7">
             <div class="ds-light">
-              <div class="dh"><div class="dh-title">📦 Track your order</div><div class="dh-sub">Fishtokri</div></div>
+              <div class="dh"><div class="dh-title">📦 Track your order</div><div class="dh-sub">Local seller</div></div>
               <div style="padding:8px 0">
                 <div class="d7-step">
                   <div class="d7-dot-wrap"><div class="d7-dot done"></div><div class="d7-line done"></div></div>
@@ -1013,7 +1025,7 @@ const homeFaqs = [
                 </div>
                 <div class="d7-step">
                   <div class="d7-dot-wrap"><div class="d7-dot pending"></div><div class="d7-line"></div></div>
-                  <div><div class="d7-label">Ready for pickup</div><div class="d7-sub">Expected by 7–9 AM</div></div>
+                  <div><div class="d7-label">Out for delivery</div><div class="d7-sub">Your time: 8–10 AM</div></div>
                 </div>
                 <div class="d7-step">
                   <div class="d7-dot-wrap"><div class="d7-dot pending"></div></div>
@@ -1028,7 +1040,7 @@ const homeFaqs = [
             <div class="ds-light d8-center">
               <div class="d8-icon"><img src={LOGO_URL} alt="Relifish" style="height:40px;width:auto;display:block;margin:0 auto;" /></div>
               <div class="d8-title">Fresh fish delivered!</div>
-              <div class="d8-sub">Your Pomfret and Surmai from Fishtokri.</div>
+              <div class="d8-sub">Your Pomfret and Bombil, cut the way you asked.</div>
             </div>
             <div class="demo-cta demo-cta-white"><div class="demo-cta-btn">Order again next week →</div></div>
           </div>
@@ -1050,13 +1062,10 @@ const homeFaqs = [
 <!-- TICKER -->
 <div class="ticker">
   <div class="ticker-track">
-    {[
-      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order ahead"],["🐡","Bangda","Zero middleman"],
-      ["🐟","Rawas","Limited daily"],["🦀","Crab","Seasonal catch"],["🐠","Halwa","Reserve yours"],["🐡","Bombay Duck","Fresh daily"],
-      ["🐟","Pomfret","Morning fresh"],["🐠","Surmai","Direct from seller"],["🦐","Prawns","Pre-order ahead"],["🐡","Bangda","Zero middleman"],
-      ["🐟","Rawas","Limited daily"],["🦀","Crab","Seasonal catch"],["🐠","Halwa","Reserve yours"],["🐡","Bombay Duck","Fresh daily"],
-    ].map(([e,n,t])=>(
-      <div class="ti"><span class="fish">{e} {n}</span><span>{t}</span><span class="dot"></span></div>
+    {[...[["/fish/pomfret.jpg","Pomfret","Morning fresh"],["/fish/surmai.jpg","Surmai","Direct from seller"],["/fish/prawns.jpg","Prawns","Pre-order ahead"],["/fish/bangda.jpg","Bangda","Zero middleman"],
+      ["/fish/rawas.jpg","Rawas","Limited daily"],["/fish/crab.jpg","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]], ...[["/fish/pomfret.jpg","Pomfret","Morning fresh"],["/fish/surmai.jpg","Surmai","Direct from seller"],["/fish/prawns.jpg","Prawns","Pre-order ahead"],["/fish/bangda.jpg","Bangda","Zero middleman"],
+      ["/fish/rawas.jpg","Rawas","Limited daily"],["/fish/crab.jpg","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]]].map(([e,n,t])=>(
+      <div class="ti"><img class="ti-img" src={e} alt="" loading="lazy" /><span class="fish">{n}</span><span>{t}</span><span class="dot"></span></div>
     ))}
   </div>
 </div>
@@ -1087,27 +1096,27 @@ const homeFaqs = [
             <div class="s1-list">
               <div class="s1-row sel tap-zone">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Hiranandani Estate</div><div class="s1-rd">Thane West · 1 seller</div></div>
+                <div><div class="s1-rn">Hiranandani Estate</div><div class="s1-rd">Thane West</div></div>
                 <div class="s1-ck">✓</div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Tardeo</div><div class="s1-rd">South Mumbai · 1 seller</div></div>
+                <div><div class="s1-rn">Majiwada</div><div class="s1-rd">Thane West</div></div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Kamothe</div><div class="s1-rd">Navi Mumbai · 1 seller</div></div>
+                <div><div class="s1-rn">Manpada</div><div class="s1-rd">Thane West</div></div>
               </div>
               <div class="s1-row">
                 <div class="s1-pin">📍</div>
-                <div><div class="s1-rn">Kandivali</div><div class="s1-rd">Waitlist · Coming soon</div></div>
+                <div><div class="s1-rn">Vasant Vihar</div><div class="s1-rd">Thane West</div></div>
               </div>
             </div>
             <div class="s1-btn">Confirm — Hiranandani →</div>
           </div>
         </div>
         <h3>Set your location</h3>
-        <p>Pick your Mumbai area once. We show sellers nearby with pickup or delivery.</p>
+        <p>Pick your area once. We show the fish sellers who deliver to you.</p>
       </div>
 
       <!-- STEP 2: Browse sellers -->
@@ -1127,33 +1136,33 @@ const homeFaqs = [
             </div>
             <div class="s2-list">
               <div class="s2-card">
-                <div class="s2-cover g"><img src={LOGO_URL} alt="Relifish" style="height:24px;width:auto;filter:brightness(0) invert(1);" /><div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/pomfret.jpg) center/cover"><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">Fishtokri</div>
-                  <div class="s2-sub">Thane West · Pre-order till 6 PM</div>
+                  <div class="s2-nm">Local fish seller</div>
+                  <div class="s2-sub">Thane West · Delivery in 2 hours</div>
                   <div class="s2-chips"><div class="s2-chip">Pomfret</div><div class="s2-chip">Surmai</div><div class="s2-chip">Prawns</div></div>
                 </div>
               </div>
               <div class="s2-card tap-zone">
-                <div class="s2-cover p">🦐<div class="s2-st pr">🌙 Pre-order</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/prawns.jpg) center/cover"><div class="s2-st pr">🌙 Pre-order</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">Bombay Sea Food</div>
-                  <div class="s2-sub">Tardeo · Pre-order till 10 PM</div>
+                  <div class="s2-nm">Pre-order seller</div>
+                  <div class="s2-sub">Thane West · Pick a delivery day</div>
                   <div class="s2-chips"><div class="s2-chip">Bangda</div><div class="s2-chip">Rawas</div><div class="s2-chip">Crab</div></div>
                 </div>
               </div>
               <div class="s2-card">
-                <div class="s2-cover t">🦀<div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/crab.jpg) center/cover"><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
-                  <div class="s2-nm">The Fishy Spot</div>
-                  <div class="s2-sub">Kamothe · Crab · Bombil · Prawns</div>
+                  <div class="s2-nm">Seller near you</div>
+                  <div class="s2-sub">Crab · Bombil · Prawns</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <h3>Browse & pick fish</h3>
-        <p>See sellers near you and today's prices. Log in with your phone only when you order.</p>
+        <p>See sellers near you and today's prices. Log in once with your phone number.</p>
       </div>
 
       <!-- STEP 3: Checkout -->
@@ -1164,21 +1173,21 @@ const homeFaqs = [
           <div class="fp-screen">
             <div class="sbar"><span class="sbar-t">9:48</span><span class="sbar-i">●●● 🔋</span></div>
             <div class="s3-top">
-              <div class="s3-bk">← Fishtokri</div>
+              <div class="s3-bk">← Seller</div>
               <div class="s3-ttl">Confirm your order</div>
-            </div>
-            <div class="s3-seller">
-              <div class="s3-s-icon"><img src={LOGO_URL} alt="Relifish" style="height:36px;width:auto;display:block;" /></div>
-              <div><div class="s3-s-name">Fishtokri</div><div class="s3-s-sub">🌙 Pre-order · Home delivery</div></div>
             </div>
             <div class="s3-items">
               <div class="s3-item">
-                <div class="s3-il"><div class="s3-ie">🐟</div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">200–250 g · Cleaned</div></div></div>
+                <div class="s3-il"><div class="s3-ie"><img class="s3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /></div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">200–250 g · Cleaned</div></div></div>
                 <div class="s3-lock">₹375</div>
               </div>
               <div class="s3-item">
-                <div class="s3-il"><div class="s3-ie">🐠</div><div><div class="s3-in">Bombil</div><div class="s3-id">500 grams · Whole</div></div></div>
+                <div class="s3-il"><div class="s3-ie"><img class="s3-img" src="https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg" alt="" loading="lazy" /></div><div><div class="s3-in">Bombil</div><div class="s3-id">500 grams · Whole</div></div></div>
                 <div class="s3-lock">₹240</div>
+              </div>
+              <div class="s3-slot">
+                <div class="s3-slot-q">🕘 When do you want it?</div>
+                <div class="s3-slot-row"><div class="s3-slot-c">Today<br>4–6 PM</div><div class="s3-slot-c on tap-zone">Tomorrow<br>8–10 AM</div><div class="s3-slot-c">Sun<br>8–10 AM</div></div>
               </div>
               <div class="s3-tot">
                 <div class="s3-tot-l">Total (2 items)</div>
@@ -1186,13 +1195,13 @@ const homeFaqs = [
               </div>
             </div>
             <div class="s3-pay-sticky">
-              <div class="s3-pay tap-zone">⚡ Pay securely online →</div>
+              <div class="s3-pay">⚡ Pay securely online →</div>
               <div class="s3-nt" style="padding:4px 0 0">Secure Razorpay checkout · No platform fee</div>
             </div>
           </div>
         </div>
-        <h3>Pay securely</h3>
-        <p>Pay securely via Razorpay (UPI, cards, net banking). Instant confirmation.</p>
+        <h3>Pick a time &amp; pay</h3>
+        <p>Choose when it arrives: today, or a pre-order for a later day. Pay via Razorpay (UPI, cards, net banking).</p>
       </div>
 
       <!-- STEP 4: Confirmed -->
@@ -1205,9 +1214,9 @@ const homeFaqs = [
             <div class="s4-wrap">
               <div class="s4-ring">✅</div>
               <div class="s4-ttl">Order confirmed!</div>
-              <div class="s4-sub">Fishtokri has confirmed your pre-order for tomorrow.</div>
+              <div class="s4-sub">The seller has confirmed your pre-order for tomorrow.</div>
               <div class="s4-eta">
-                <div class="s4-eta-m">🛵 Seller delivers tomorrow</div>
+                <div class="s4-eta-m">🛵 Tomorrow, 8–10 AM</div>
                 <div class="s4-eta-s">Hiranandani Estate, Thane</div>
               </div>
               <div class="s4-stepper">
@@ -1220,13 +1229,13 @@ const homeFaqs = [
                 <div class="s4st"><div class="s4st-d pe"></div><div class="s4st-lb">Delivered</div></div>
               </div>
               <div style="background:#F3F4F6;border-radius:9px;padding:8px 10px;width:100%;text-align:center;font:400 9px Inter;color:#6B7280">
-                📲 WhatsApp when it's ready
+                🔔 We'll tell you when it's on the way
               </div>
             </div>
           </div>
         </div>
         <h3>Delivered or ready for pickup</h3>
-        <p>The seller prepares your order the way you chose. Pickup or home delivery, your choice.</p>
+        <p>The seller cuts your fish the way you chose and delivers it in the time you picked, or keeps it ready for pickup.</p>
       </div>
 
     </div>
