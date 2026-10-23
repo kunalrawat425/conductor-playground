@@ -8,39 +8,34 @@ const { id = "v2-loc-picker" } = Astro.props;
 // Thane neighbourhoods for the type-ahead list (every live shop is in Thane West).
 const places = LOCALITIES.thane;
 ---
-<BottomSheet id={id} title="Set your location" showClose={true}>
-  <div id={`${id}-map`} style="height:380px;border-radius:12px;background:var(--v2-bg-3);margin-bottom:12px;"></div>
-  
-  <div style="font-size:12.5px;color:var(--v2-ink-3);margin-bottom:16px;text-align:center;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;">
-    📍 <span>Drag the pin to set your precise location</span>
+<BottomSheet id={id} title="Set your area" showClose={true}>
+  <!-- Founder, 24 Oct: buyers were hunting for their building on the map. The area is enough,
+       so typing comes first and the map is optional. -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">
+    <div style="font-size:13px;color:var(--v2-ink-2);line-height:1.4;">Your area is enough, e.g. <b>Thane West</b>, <b>Majiwada</b>, <b>Mulund</b></div>
+    <button class="v2-btn v2-btn-secondary v2-btn-sm" id={`${id}-use-current`} style="flex-shrink:0;white-space:nowrap;">📍 Use current location</button>
   </div>
-
-  <div class="v2-field">
-    <label class="v2-field-label">Or type your area</label>
+  <div class="v2-field" style="margin-bottom:12px;">
+    <label class="v2-field-label" for={`${id}-area-input`}>Type your area</label>
     <div class="v2-input-wrap">
       <input
         type="text"
         id={`${id}-area-input`}
-        placeholder="e.g. Majiwada, Manpada, Hiranandani"
+        placeholder="e.g. Thane West, Majiwada, Mulund"
         class="v2-input"
         autocomplete="off"
       />
     </div>
     <div id={`${id}-sugg`} role="listbox" hidden style="margin-top:6px;border:1px solid var(--v2-border);border-radius:12px;overflow:hidden;background:var(--v2-bg);"></div>
   </div>
-
-  <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-confirm`} style="margin-bottom:8px;">
-    Confirm location
-  </button>
-
-  <div style="display:flex;align-items:center;margin:16px 0;color:var(--v2-ink-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8;">
+  <div style="display:flex;align-items:center;margin:4px 0 10px;color:var(--v2-ink-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8;">
     <div style="flex:1;height:1px;background:var(--v2-border);margin-right:12px;"></div>
-    <span>or</span>
+    <span>or move the pin</span>
     <div style="flex:1;height:1px;background:var(--v2-border);margin-left:12px;"></div>
   </div>
-
-  <button class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" id={`${id}-use-current`}>
-    📍 Use my current location
+  <div id={`${id}-map`} style="height:220px;border-radius:12px;background:var(--v2-bg-3);margin-bottom:12px;"></div>
+  <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-confirm`} style="margin-bottom:8px;">
+    Confirm area
   </button>
 </BottomSheet>
 
@@ -232,9 +227,12 @@ const places = LOCALITIES.thane;
         if (seq !== photonSeq) return; // a newer keystroke is on its way
         const seen = new Set(local.map((r) => norm(r.name)));
         const rows = [...local];
-        for (const f of data?.features || []) {
+        const feats = data?.features || [];
+        // Places first; roads only fill in (in OSM "Khopat" exists only as a road).
+        const ordered = [...feats.filter((f) => f.properties?.osm_key !== "highway"), ...feats.filter((f) => f.properties?.osm_key === "highway")];
+        for (const f of ordered) {
           const pr = f.properties || {};
-          if (pr.osm_key === "highway" || !pr.name) continue;
+          if (!pr.name) continue;
           const key = norm(pr.name);
           if (!key || seen.has(key)) continue;
           seen.add(key);
@@ -253,7 +251,7 @@ const places = LOCALITIES.thane;
 
   document.getElementById(`${id}-confirm`)?.addEventListener("click", async () => {
     if (!draggedOrSearched) {
-      window.v2Toast?.("warning", "Drag the pin", "Please drag the pin to set your precise location.");
+      window.v2Toast?.("warning", "Pick your area", "Type your area, use your current location, or move the pin.");
       return;
     }
 
