@@ -13,6 +13,9 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+export { SELLER_PUBLIC_COLUMNS } from "./seller-columns";
+import { SELLER_PUBLIC_COLUMNS } from "./seller-columns";
+
 /** Avoid repeating identical `fish_listings` id fetches (e.g. dashboard orders loads 4×). */
 const listingIdsCache = new Map<string, { ids: string[]; at: number }>();
 const LISTING_IDS_CACHE_MS = 60_000;
@@ -201,7 +204,7 @@ export async function getActiveListings() {
   // Include OOS listings where pre-orders are enabled (pre-orders are inventory-independent)
   const { data, error } = await supabase
     .from("fish_listings")
-    .select("*, seller:sellers(*)")
+    .select(`*, seller:sellers(${SELLER_PUBLIC_COLUMNS})`)
     .is("deleted_at", null)
     .or("is_available.eq.true,is_preorder_enabled.eq.true")
     .order("created_at", { ascending: false });
@@ -213,7 +216,7 @@ export async function getActiveListings() {
 export async function getListingById(id: string) {
   const { data, error } = await supabase
     .from("fish_listings")
-    .select("*, seller:sellers(*)")
+    .select(`*, seller:sellers(${SELLER_PUBLIC_COLUMNS})`)
     .eq("id", id)
     .single();
 
@@ -227,7 +230,7 @@ import { legacySellerSlug, sellerNameToSlug } from "./seller-display";
 export async function getSellerById(id: string) {
   const { data, error } = await supabase
     .from("sellers")
-    .select("*")
+    .select(SELLER_PUBLIC_COLUMNS)
     .eq("id", id)
     .single();
 
@@ -239,7 +242,7 @@ export async function getSellerBySlug(slug: string) {
   // Fetch all active sellers and match by generated slug (no DB column needed)
   const { data, error } = await supabase
     .from("sellers")
-    .select("*")
+    .select(SELLER_PUBLIC_COLUMNS)
     .eq("is_active", true);
   if (error) throw error;
   const all = data as Seller[];
