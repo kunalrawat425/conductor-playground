@@ -15,13 +15,18 @@ const places = LOCALITIES.thane;
     <div style="font-size:13px;color:var(--v2-ink-2);line-height:1.4;">Your area is enough, e.g. <b>Thane West</b>, <b>Majiwada</b>, <b>Mulund</b></div>
     <button class="v2-btn v2-btn-secondary v2-btn-sm" id={`${id}-use-current`} style="flex-shrink:0;white-space:nowrap;">📍 Use current location</button>
   </div>
+  <div style="display:flex;align-items:center;margin:2px 0 10px;color:var(--v2-ink-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8;">
+    <div style="flex:1;height:1px;background:var(--v2-border);margin-right:12px;"></div>
+    <span>or</span>
+    <div style="flex:1;height:1px;background:var(--v2-border);margin-left:12px;"></div>
+  </div>
   <div class="v2-field" style="margin-bottom:12px;">
-    <label class="v2-field-label" for={`${id}-area-input`}>Type your area</label>
+    <label class="v2-field-label" for={`${id}-area-input`}>Type your area, e.g. Thane, Mulund</label>
     <div class="v2-input-wrap">
       <input
         type="text"
         id={`${id}-area-input`}
-        placeholder="e.g. Thane West, Majiwada, Mulund"
+        placeholder="e.g. Thane, Majiwada, Mulund"
         class="v2-input"
         autocomplete="off"
       />
