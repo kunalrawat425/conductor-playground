@@ -2,9 +2,31 @@
 // modules outside the Astro/Vite env pipeline.
 const resendApiKey = import.meta.env?.RESEND_API_KEY || process.env.RESEND_API_KEY || "";
 
-/** Sending domain, verified in Resend (DKIM + send/rsend CNAMEs at Hostinger). */
+/** Sending domain. Its DKIM + send records must be at Hostinger and verified in Resend. */
 export const MAIL_DOMAIN = "relifish.com";
 export const MAIL_FROM = `Relifish <noreply@${MAIL_DOMAIN}>`;
+/** Verified in Resend since April. Used when Resend refuses MAIL_DOMAIN as unverified
+ * (relifish.com showed "Failed" from 9 Oct, so every order email bounced at the API). */
+export const MAIL_FROM_FALLBACK = "Relifish <noreply@relifish.store>";
+
+/**
+ * POST one email to Resend from MAIL_FROM; if Resend answers 403 "domain is not verified",
+ * send it again from MAIL_FROM_FALLBACK. Every send goes through here.
+ */
+export async function postToResend(email: { to: string; subject: string; html: string }, apiKey = resendApiKey): Promise<Response> {
+  const post = (from: string) =>
+    fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, ...email }),
+    });
+  const res = await post(MAIL_FROM);
+  if (res.status !== 403) return res;
+  const body = await res.clone().text().catch(() => "");
+  if (!/domain/i.test(body) || !/verif/i.test(body)) return res;
+  console.warn(`[email] ${MAIL_DOMAIN} not verified in Resend; sending from the fallback`, { to: email.to });
+  return post(MAIL_FROM_FALLBACK);
+}
 
 /**
  * Single entry point for transactional email.
@@ -33,11 +55,7 @@ export async function sendTransactionalEmail(
   if (!resendApiKey) return "skipped: no RESEND_API_KEY";
   if (!to || !to.includes("@")) return "skipped: no address";
   try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: MAIL_FROM, to, subject, html }),
-    });
+    const res = await postToResend({ to, subject, html });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       console.warn(`[email:${tag}] resend ${res.status}`, { to, subject, body: body.slice(0, 300) });
