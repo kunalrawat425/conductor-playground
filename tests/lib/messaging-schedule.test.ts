@@ -101,8 +101,8 @@ describe("Weekly weekend message (one per day)", () => {
   const h = [log("A1", T("10", "11:00")), log("A2", T("11", "11:00"))];
   it("Fri 19:00 pre-order; Sat & Sun 9:30 order today (Fishtokri)", () => {
     expect(run(T("23", "19:00"), old, h)).toMatchObject({ kind: "weekend", template: "rf_preorder_generic" });
-    expect(run(T("24", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_today_check" });
-    expect(run(T("25", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_today_check" });
+    expect(run(T("24", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_weekend_menu" });
+    expect(run(T("25", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_weekend_menu" });
   });
   it("only one promo a day: Saturday's evening slot is skipped after the morning one", () => {
     expect(run(T("24", "19:00"), old, [...h, log("weekend", T("24", "09:30"))]).skip).toBe("already messaged today");

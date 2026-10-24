@@ -52,7 +52,7 @@ export type Decision = {
   items: string[];
   species: string | null;            // fish of the first item named (its photo is the header picture)
   when: string | null;               // "Sun 25 Oct, 9–11 AM" for pre-orders
-  template: "rf_cart_today" | "rf_cart_preorder" | "rf_today_check" | "rf_preorder_generic";
+  template: "rf_cart_today" | "rf_cart_preorder" | "rf_today_check" | "rf_weekend_menu" | "rf_preorder_generic";
   path: string;                      // where the button lands (UTMs are added by /go/<id>)
 };
 export type Skip = { skip: string };
@@ -154,7 +154,7 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
     return {
       kind, slot_date: istDate(due), due_ms: due, mode, seller, personal, items, species: personal ? species : null,
       when: offer.mode === "preorder" ? offer.when : null,
-      template: personal ? (mode === "today" ? "rf_cart_today" : "rf_cart_preorder") : (mode === "today" ? "rf_today_check" : "rf_preorder_generic"),
+      template: personal ? (mode === "today" ? "rf_cart_today" : "rf_cart_preorder") : (mode === "today" ? (kind === "weekend" ? "rf_weekend_menu" : "rf_today_check") : "rf_preorder_generic"),
       path: personal ? `/s/${seller.slug}` : "/shop",
     };
   };

@@ -58,8 +58,8 @@ describe("numbers, payloads, signatures", () => {
 });
 
 describe("templates", () => {
-  it("all 12 pass Meta + brand checks", () => {
-    expect(TEMPLATES).toHaveLength(12);
+  it("all 15 pass Meta + brand checks", () => {
+    expect(TEMPLATES).toHaveLength(15);
     for (const t of TEMPLATES) expect(templateProblems(t), t.name).toEqual([]);
   });
   it("catch a price, a trailing variable and a promo in a utility template", () => {
@@ -67,7 +67,7 @@ describe("templates", () => {
     expect(templateProblems({ ...base, body: "Pomfret at ₹400 today." })[0]).toMatch(/brand/);
     expect(templateProblems({ ...base, body: "Get it on {{1}}", examples: ["x"] })).toContain("variable at start or end of body");
     expect(templateProblems({ ...base, body: "Get it on {{1}}.", examples: ["x"] })).toContain("variable at start or end of body");
-    expect(templateProblems({ ...TEMPLATES[4], body: "Big sale on order {{1}} now.", examples: ["x"] })).toContain("promo wording in a utility template");
+    expect(templateProblems({ ...TEMPLATES.find((t) => t.category === "UTILITY")!, body: "Big sale on order {{1}} now.", examples: ["x"] })).toContain("promo wording in a utility template");
   });
   it("fish name: description when it names the fish, else the species", () => {
     expect(fishName("Baby Rawas · Cut pcs + head & tail", "rawas")).toBe("Baby Rawas");
