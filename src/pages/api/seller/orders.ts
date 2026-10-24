@@ -84,6 +84,8 @@ export const GET: APIRoute = async ({ url, request }) => {
   const today_gmv = (today.data || []).reduce((s: number, o: any) => s + (Number(o.total_price) || 0), 0);
 
   const SELECT = "*, listing:fish_listings(species, pricing_options), order_feedback(rating, feedback, updated_at)";
+  const { data: me } = await supabase.from("sellers").select("lat, lng").eq("id", seller_id!).maybeSingle();
+  const view = (o: any) => toSellerView(o, me);
   const page = Math.max(1, Number(p.get("page")) || 1);
   const offset = (page - 1) * PAGE_SIZE;
   const type = p.get("type") || "all";
@@ -96,7 +98,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     // Search by order id or the last digits of the buyer phone (all a seller ever sees).
     const { data } = await supabase.from("orders").select(SELECT).in("listing_id", ids)
       .order("created_at", { ascending: false }).limit(500);
-    const matched = (data || []).map(toSellerView).filter((o: any) =>
+    const matched = (data || []).map(view).filter((o: any) =>
       o.id.toLowerCase().includes(q) || (q.length <= 4 && (o.buyer_phone || "").includes(q)))
       .filter((o: any) => type === "order" ? !isPre(o) : type === "preorder" ? isPre(o) : true);
     total = matched.length;
@@ -112,7 +114,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (type === "preorder") query = query.eq("is_preorder", true);
     const { data } = await query;
     const seenCart = new Set<string>();
-    const cards = (data || []).map(toSellerView).filter((o: any) => {
+    const cards = (data || []).map(view).filter((o: any) => {
       if (!o.cart_id) return true;
       if (seenCart.has(o.cart_id)) return false;
       seenCart.add(o.cart_id);
@@ -134,7 +136,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     const { data: cartRows } = await supabase.from("orders").select(SELECT).in("cart_id", cartIds).in("listing_id", ids)
       .order("created_at", { ascending: true });
     const byCart = new Map<string, any[]>();
-    for (const r of (cartRows || []).map(toSellerView) as any[]) byCart.set(r.cart_id, [...(byCart.get(r.cart_id) || []), r]);
+    for (const r of (cartRows || []).map(view) as any[]) byCart.set(r.cart_id, [...(byCart.get(r.cart_id) || []), r]);
     const tab = q ? null : p.get("tab") || "pending";
     const seen = new Set<string>();
     orders = orders.flatMap((o) => {
