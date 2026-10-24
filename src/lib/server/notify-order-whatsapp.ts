@@ -1,5 +1,7 @@
 /**
  * WhatsApp order updates (utility templates), sent next to the existing push + email.
+ * Buyers get only three: confirmed by the seller, out for delivery, delivered (founder, 24 Oct).
+ * Payment received and cancellations stay on push + email. Sellers get the new paid order.
  * Buyers get them when they ticked the WhatsApp box; sellers when the founder recorded their
  * yes (sellers.whatsapp_opt_in_at). Idempotent per (event, order, party) via message_log.
  * Never throws: an order update must not fail because WhatsApp did.
@@ -10,10 +12,10 @@ import { fishName, headerImage } from "../messaging/templates";
 import { istDate } from "../messaging/schedule";
 import { dispatch } from "./messaging";
 
-export type OrderWaEvent = "paid" | "confirmed" | "out_for_delivery" | "completed" | "cancelled";
+export type OrderWaEvent = "paid" | "confirmed" | "out_for_delivery" | "completed";
 const env = (k: string) => (import.meta as any).env?.[k] || process.env[k] || "";
 
-export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent, extra: { reason?: string | null; refund?: string | null } = {}) {
+export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent) {
   try {
     const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
     const { data: o } = await sb.from("orders")
@@ -37,7 +39,6 @@ export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent,
     });
     switch (event) {
       case "paid": {
-        await toBuyer("rf_order_paid", [short, fish]);
         if (seller) await dispatch(sb, {
           dedupe_key: `paid:${order_id}:seller`, kind: "seller_new_order", slot_date: today, order_id, seller_id: seller.id,
           phone: seller.phone, whatsappOk: !!seller.whatsapp_opt_in_at && !seller.whatsapp_opt_out_at,
@@ -49,7 +50,6 @@ export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent,
       case "confirmed": await toBuyer("rf_order_confirmed", [short, slot], headerImage(ord.listing?.photo_url, ord.listing?.species || ord.species)); break;
       case "out_for_delivery": await toBuyer("rf_order_out", [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"]); break;
       case "completed": await toBuyer("rf_order_delivered", [short]); break;
-      case "cancelled": await toBuyer("rf_order_cancelled", [short, extra.reason || "not given", extra.refund || "full refund to your original payment method"]); break;
     }
   } catch (err: any) {
     console.warn("[whatsapp] order update failed", { order_id, event, err: err?.message });

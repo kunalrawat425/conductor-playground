@@ -189,10 +189,10 @@ export async function notifyOrderParties(opts: {
   const c = copyFor(event, species, orderIdShort, amt, reason);
   const isCancel = event === "cancelled_by_buyer" || event === "cancelled_by_seller";
 
-  // ---- WhatsApp (opted-in buyer + seller), alongside push and email ----
-  if (event === "payment_confirmed" || isCancel) {
+  // ---- WhatsApp: the seller hears about a new paid order (buyers get confirmed/out/delivered only) ----
+  if (event === "payment_confirmed") {
     const { notifyOrderWhatsApp } = await import("./notify-order-whatsapp");
-    await notifyOrderWhatsApp(order_id, event === "payment_confirmed" ? "paid" : "cancelled", { reason });
+    await notifyOrderWhatsApp(order_id, "paid");
   }
 
   // ---- Buyer push ----
