@@ -57,7 +57,7 @@ if (cmd === "check") {
   console.log(`profile about ${PROFILE.about.length}/139, description ${PROFILE.description.length}/512`);
   process.exit(bad ? 1 : 0);
 }
-if (!WA_TOKEN || !WA_WABA_ID || !WA_PHONE_NUMBER_ID) { console.error("Set WA_TOKEN, WA_WABA_ID, WA_PHONE_NUMBER_ID (source .context/whatsapp.env)"); process.exit(1); }
+if (!WA_TOKEN || !WA_WABA_ID || (!WA_PHONE_NUMBER_ID && cmd !== "templates")) { console.error("Set WA_TOKEN, WA_WABA_ID" + (cmd === "templates" ? "" : ", WA_PHONE_NUMBER_ID") + " (source .context/whatsapp.env)"); process.exit(1); }
 if (cmd === "status") {
   console.log(await api(`${WA_WABA_ID}/phone_numbers?fields=display_phone_number,verified_name,quality_rating,code_verification_status,name_status,messaging_limit_tier`));
   console.log(await api(`${WA_PHONE_NUMBER_ID}/whatsapp_business_profile?fields=about,address,description,email,websites,vertical,profile_picture_url`));
@@ -72,7 +72,7 @@ if (cmd === "status") {
     if (existing.has(t.name)) { console.log(`= ${t.name} already exists`); continue; }
     if (templateProblems(t).length) { console.log(`✗ ${t.name} skipped: ${templateProblems(t)}`); continue; }
     if (!apply) { console.log(`+ would create ${t.name}`, JSON.stringify(components(t)).slice(0, 160)); continue; }
-    const handle = t.header === "IMAGE" ? await uploadHandle(t.name === "rf_order_confirmed" ? `${SITE}/fish/rawas.jpg` : PROMO_IMAGE) : undefined;
+    const handle = t.header === "IMAGE" ? await uploadHandle(t.name === "rf_order_confirmed" ? `${SITE}/fish/rawas.jpg` : `${SITE}/fish/pomfret.jpg`) : undefined;
     console.log(`+ ${t.name}:`, await api(`${WA_WABA_ID}/message_templates`, { method: "POST", body: JSON.stringify({ name: t.name, language: "en", category: t.category, components: components(t, handle) }) }));
   }
 }

@@ -36,23 +36,23 @@ export const TEMPLATES: TemplateDef[] = [
     body: "You left {{1}} in your cart 🐟 It can reach your kitchen today, in the 2-hour slot you pick.",
     examples: ["Baby Rawas"], footer: "Team Relifish", buttons: [{ type: "URL", text: "Finish my order" }, STOP] },
   { name: "rf_cart_preorder", category: "MARKETING", header: "IMAGE",
-    body: "You left {{1}} in your cart 🐟 Pre-order now and it reaches your kitchen on {{2}}.",
+    body: "You left {{1}} in your cart 🐟 Pre-order now and it reaches your kitchen on {{2}}, cleaned and cut your way.",
     examples: ["Baby Rawas", "Sat 24 Oct, 8–10 AM"], footer: "Team Relifish", buttons: [{ type: "URL", text: "Finish my order" }, STOP] },
   // ── Utility: buyer order updates ──
   { name: "rf_order_paid", category: "UTILITY",
     body: "We received your payment for order {{1}} ({{2}}). The seller will confirm it soon.",
     examples: ["#D39028F2", "Baby Rawas"], buttons: [{ type: "URL", text: "Track order" }] },
   { name: "rf_order_confirmed", category: "UTILITY", header: "IMAGE",
-    body: "Your order {{1}} is confirmed. Delivery time: {{2}}.",
+    body: "Your order {{1}} is confirmed for {{2}}. We'll let you know when it's on the way.",
     examples: ["#D39028F2", "Sat 24 Oct, 8–10 AM"], buttons: [{ type: "URL", text: "Track order" }] },
   { name: "rf_order_out", category: "UTILITY",
-    body: "Your order {{1}} is on the way, arriving by {{2}}.",
+    body: "Your order {{1}} is on the way and should reach you by {{2}}. Please keep your phone handy.",
     examples: ["#D39028F2", "10 AM"], buttons: [{ type: "URL", text: "Track order" }] },
   { name: "rf_order_delivered", category: "UTILITY",
     body: "Your order {{1}} was delivered. Thank you for ordering with Relifish.",
     examples: ["#D39028F2"], buttons: [{ type: "URL", text: "View order" }] },
   { name: "rf_order_cancelled", category: "UTILITY",
-    body: "Your order {{1}} was cancelled. Reason: {{2}}. Refund: {{3}}.",
+    body: "Your order {{1}} was cancelled ({{2}}). Refund: {{3}}. Reply here if you have any questions.",
     examples: ["#D39028F2", "Fish not available today", "full refund to your original payment method"], buttons: [{ type: "URL", text: "View order" }] },
   // ── Utility: seller ──
   { name: "rf_seller_new_order", category: "UTILITY",
@@ -62,7 +62,7 @@ export const TEMPLATES: TemplateDef[] = [
     body: "Order {{1}} is still waiting for you. The buyer has paid, please accept or decline it.",
     examples: ["#D39028F2"], buttons: [{ type: "URL", text: "Open order" }] },
   { name: "rf_seller_tomorrow", category: "UTILITY",
-    body: "Tomorrow you have {{1}} pre-orders. First delivery: {{2}}.",
+    body: "Tomorrow you have {{1}} pre-orders, first delivery {{2}}. Please check them in your dashboard.",
     examples: ["3", "8–10 AM"], buttons: [{ type: "URL", text: "See orders" }] },
 ];
 export const TEMPLATE = Object.fromEntries(TEMPLATES.map((t) => [t.name, t])) as Record<string, TemplateDef>;
@@ -72,7 +72,7 @@ export function templateProblems(t: TemplateDef): string[] {
   const p: string[] = [];
   const vars = [...t.body.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1]));
   if (t.body.length > 1024) p.push("body over 1024 chars");
-  if (/^\s*\{\{/.test(t.body) || /\{\{\d+\}\}\s*$/.test(t.body)) p.push("variable at start or end of body");
+  if (/^\s*\{\{/.test(t.body) || /\{\{\d+\}\}[\s.!?…)]*$/.test(t.body)) p.push("variable at start or end of body");
   if (vars.some((v, i) => v !== i + 1)) p.push("variables must be {{1}}, {{2}}… in order");
   if (vars.length !== t.examples.length) p.push("one example per variable");
   if (t.buttons.some((b) => b.text.length > 25)) p.push("button text over 25 chars");

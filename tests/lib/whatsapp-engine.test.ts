@@ -66,6 +66,7 @@ describe("templates", () => {
     const base = TEMPLATES[0];
     expect(templateProblems({ ...base, body: "Pomfret at ₹400 today." })[0]).toMatch(/brand/);
     expect(templateProblems({ ...base, body: "Get it on {{1}}", examples: ["x"] })).toContain("variable at start or end of body");
+    expect(templateProblems({ ...base, body: "Get it on {{1}}.", examples: ["x"] })).toContain("variable at start or end of body");
     expect(templateProblems({ ...TEMPLATES[4], body: "Big sale on order {{1}} now.", examples: ["x"] })).toContain("promo wording in a utility template");
   });
   it("fish name: description when it names the fish, else the species", () => {
