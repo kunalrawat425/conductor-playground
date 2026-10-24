@@ -152,7 +152,13 @@ const geoMsgs = { 1: geolocateErrorMessage(1), 2: geolocateErrorMessage(2), 3: g
     }
   }
 
-  document.getElementById(`${id}-use-current`)?.addEventListener("click", () => {
+  // Blocked or in-app browser: the browser won't show its popup again, so explain how to allow it.
+  const geoFail = (err, retry, typeArea) => {
+    const m = geoMsg(err);
+    if ((err?.code === 1 || m === geoMsgs.app) && window.rfGeoHelp) window.rfGeoHelp(m, { retry, typeArea });
+    else window.v2Toast?.("error", m.title, m.body);
+  };
+  const useCurrent = () => {
     if (!navigator.geolocation) {
       window.v2Toast?.("error", "Geolocation not supported", "Type your area instead");
       return;
@@ -166,11 +172,9 @@ const geoMsgs = { 1: geolocateErrorMessage(1), 2: geolocateErrorMessage(2), 3: g
         marker.setLatLng([latitude, longitude]);
       }
       await (pendingName = reverseGeocode(latitude, longitude));
-    }, (err) => {
-      const m = geoMsg(err);
-      window.v2Toast?.("error", m.title, m.body);
-    }, GEO_OPTIONS);
-  });
+    }, (err) => geoFail(err, useCurrent, () => document.getElementById(`${id}-area-input`)?.focus()), GEO_OPTIONS);
+  };
+  document.getElementById(`${id}-use-current`)?.addEventListener("click", useCurrent);
 
   document.getElementById(`${id}-area-input`)?.addEventListener("change", (e) => {
     draggedOrSearched = true; moved = true;

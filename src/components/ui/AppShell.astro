@@ -1,4 +1,5 @@
 ---
+import GeoHelpDialog from "./molecules/GeoHelpDialog.astro";
 import "../../styles/tokens.css";
 import { SITE_URL, canonicalFor } from "../../lib/brand";
 import UtmCapture from "../UtmCapture.astro";
@@ -322,6 +323,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
         } catch {}
       })();
     </script>
+    <GeoHelpDialog />
     {enableTracking && <VercelAnalytics />}
   </body>
 </html>
