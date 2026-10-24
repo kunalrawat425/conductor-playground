@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { clientKey, overLimit } from "../../../lib/server/rate-limit";
 import { escapeHtml } from "../../../lib/html";
-import { LOGO_URL } from "../../../lib/brand";
+import { LOGO_URL, SUPPORT_EMAIL, whatsappLink } from "../../../lib/brand";
 
 export const prerender = false;
 
@@ -111,7 +111,7 @@ export const POST: APIRoute = async ({ request }) => {
                   <div style="margin:0 0 16px;"><img src="${LOGO_URL}" alt="Relifish" style="height:40px;width:auto;display:block;" /></div>
                   <h1 style="font-size:24px;margin:0 0 16px;">Welcome to Relifish!</h1>
                   <p style="font-size:16px;color:#333;line-height:1.6;margin:0 0 16px;">
-                    You're officially on the waitlist. We're bringing the freshest fish from local sellers to <strong>${escapeHtml(area)}</strong>.
+                    You're officially on the waitlist. We're bringing fish from local sellers to <strong>${escapeHtml(area)}</strong>.
                   </p>
                   <div style="background:#f0f6ff;border-radius:12px;padding:20px;margin:0 0 16px;">
                     <p style="font-size:14px;font-weight:700;color:#0066cc;margin:0 0 10px;">What happens next:</p>
@@ -125,7 +125,7 @@ export const POST: APIRoute = async ({ request }) => {
                     <p style="font-size:14px;font-weight:700;color:#e65100;margin:0 0 6px;">🏷️ Your early bird perks:</p>
                     <p style="font-size:13px;color:#333;line-height:1.5;margin:0;">
                       ✅ Launch discounts from sellers<br/>
-                      ✅ Best introductory prices<br/>
+                      ✅ Introductory prices<br/>
                       ✅ First access before anyone else<br/>
                       ✅ Early pre-order for tomorrow's catch
                     </p>
@@ -134,8 +134,11 @@ export const POST: APIRoute = async ({ request }) => {
                     ${areaCount && areaCount > 1 ? `<strong>${areaCount} people</strong> near you are already waiting. ` : ""}The more interest we see, the faster we launch in your area.
                   </p>
                   <a href="https://www.relifish.com" style="display:inline-block;background:#0066cc;color:white;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">Browse Relifish</a>
+                  <p style="font-size:14px;color:#333;line-height:1.5;margin:16px 0 0;">
+                    💬 Want an update sooner? <a href="${whatsappLink(`Hi Relifish, please tell me when you deliver to ${String(area).slice(0, 80)}`)}" target="_blank" style="color:#0066cc;font-weight:700;">Message us on WhatsApp</a>
+                  </p>
                   <p style="font-size:12px;color:#999;margin:20px 0 0;line-height:1.5;">
-                    Questions? Reply to this email or reach us at relifishstore@gmail.com<br/>
+                    Questions? WhatsApp +91 91522 07607 or email ${SUPPORT_EMAIL}<br/>
                     — Team Relifish, Mumbai
                   </p>
                 </div>

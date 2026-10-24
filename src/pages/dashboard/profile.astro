@@ -4,6 +4,7 @@ import AppShell from "../../components/ui/AppShell.astro";
 import Toast from "../../components/ui/atoms/Toast.astro";
 import Input from "../../components/ui/atoms/Input.astro";
 import CropDialog from "../../components/ui/molecules/CropDialog.astro";
+import { whatsappLink } from "../../lib/brand";
 ---
 <style is:global>
   .v2-day-pill {
@@ -263,6 +264,8 @@ import CropDialog from "../../components/ui/molecules/CropDialog.astro";
     <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id="p-save" style="margin-top:16px;">
       Save changes
     </button>
+
+    <a href={whatsappLink("Hi Relifish, I'm a seller and need help")} target="_blank" rel="noopener" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" style="margin-top:16px;">💬 Seller help on WhatsApp</a>
 
     <button type="button" id="p-logout" style="width:100%;margin-top:16px;background:var(--v2-bg);border:1px solid var(--v2-red-l);color:var(--v2-red);padding:14px;border-radius:var(--v2-radius);font:700 13px Inter;cursor:pointer;">
       Log out

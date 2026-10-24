@@ -4,6 +4,7 @@ import { sendBuyerOrderPush } from "./buyer-push";
 import { internalHeaders } from "./internal-auth";
 import { sendTransactionalEmail as sendEmail } from "./send-email";
 import { absoluteUrl } from "./site-origin";
+import { SUPPORT_EMAIL, whatsappLink } from "../brand";
 import { cartLabel, isLiveRow } from "./order-cart";
 
 /**
@@ -95,13 +96,15 @@ export function copyFor(event: OrderEvent, species: string, orderIdShort: string
   }
 }
 
-function shell(heading: string, line: string, orderId: string, cta: string, items = ""): string {
+function shell(heading: string, line: string, orderId: string, cta: string, items = "", forSeller = false): string {
   const url = absoluteUrl(`/track/${orderId}`);
+  const short = String(orderId).slice(0, 8).toUpperCase();
+  const help = whatsappLink(forSeller ? `Hi Relifish, I'm a seller and need help with order #${short}` : `Hi Relifish, I need help with order #${short}`);
   return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px;">
   <h1 style="font-size:22px;margin:0 0 12px;color:#0F172A;">${heading}</h1>
   <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px;">${line}</p>${items}
   <a href="${url}" style="display:inline-block;background:#0066cc;color:#fff;padding:12px 26px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">${cta}</a>
-  <p style="font-size:12px;color:#94A3B8;margin:24px 0 0;line-height:1.5;">Relifish · Mumbai<br/>Questions? relifishstore@gmail.com</p>
+  <p style="font-size:12px;color:#94A3B8;margin:24px 0 0;line-height:1.5;">Relifish · Mumbai<br/>Need help? <a href="${help}" target="_blank" style="color:#0066cc;">Message us on WhatsApp</a> · ${SUPPORT_EMAIL}</p>
 </div>`;
 }
 
@@ -240,7 +243,7 @@ export async function notifyOrderParties(opts: {
   }
 
   out.seller_email = sellerEmail
-    ? await sendEmail(sellerEmail, c.sellerSubject, shell(c.sellerHeading, c.sellerLine, order_id, "Open dashboard", itemsHtml), "seller")
+    ? await sendEmail(sellerEmail, c.sellerSubject, shell(c.sellerHeading, c.sellerLine, order_id, "Open dashboard", itemsHtml, true), "seller")
     : "skipped: seller has no email";
 
   if (sellerId) {
