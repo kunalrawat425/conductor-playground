@@ -346,7 +346,11 @@ const categories = [
       let promptedKey = "v2_loc_prompted";
       let promptedThisSession = false;
       try { promptedThisSession = sessionStorage.getItem(promptedKey) === "1"; } catch {}
-      if (!promptedThisSession && navigator.geolocation) {
+      // Only when location is already allowed. An automatic popup on page load mostly gets dismissed,
+      // and after a few dismissals Chrome blocks the site, so "Use current location" can't ask any more.
+      const geoAllowed = await (navigator.permissions?.query({ name: "geolocation" as PermissionName })
+        .then((p) => p.state === "granted").catch(() => false) ?? Promise.resolve(false));
+      if (!promptedThisSession && geoAllowed && navigator.geolocation) {
         try { sessionStorage.setItem(promptedKey, "1"); } catch {}
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
