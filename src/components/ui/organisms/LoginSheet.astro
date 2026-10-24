@@ -79,6 +79,17 @@ const MAX_ATTEMPTS = 3;
 
   function getEl(suffix) { return document.getElementById(`${id}-${suffix}`); }
 
+  // GA: every time this login sheet opens, to measure who sees it but never enters a phone.
+  document.addEventListener("v2-sheet-opened", (e) => {
+    if (e.detail?.id !== id) return;
+    try { if (typeof gtag === "function") gtag("event", "login_shown", { role, page: location.pathname }); } catch {}
+  });
+  // Buyers tapped the title "Log in with your phone…" expecting it to act (Clarity dead clicks,
+  // 24 Oct): a tap on the title or the step-1 text puts the cursor in the phone box.
+  const focusPhone = (e) => { if (!e.target.closest("input,button,a,label,select,textarea")) getEl("phone")?.focus(); };
+  getEl("title")?.addEventListener("click", focusPhone);
+  getEl("step1")?.addEventListener("click", focusPhone);
+
   function showStep(n) {
     getEl("step1").style.display = n === 1 ? "block" : "none";
     getEl("step2").style.display = n === 2 ? "block" : "none";
