@@ -6,7 +6,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { arrivingByLabel, slotLabel } from "../delivery-slots";
-import { fishPhoto } from "../messaging/templates";
+import { fishName, headerImage } from "../messaging/templates";
 import { istDate } from "../messaging/schedule";
 import { dispatch } from "./messaging";
 
@@ -17,12 +17,12 @@ export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent,
   try {
     const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
     const { data: o } = await sb.from("orders")
-      .select("id, buyer_id, buyer_phone, species, is_test, delivery_slot_start, delivery_slot_end, pricing_label, listing:fish_listings(species, description, seller_id)")
+      .select("id, buyer_id, buyer_phone, species, is_test, delivery_slot_start, delivery_slot_end, pricing_label, listing:fish_listings(species, description, photo_url, seller_id)")
       .eq("id", order_id).maybeSingle();
     if (!o || (o as any).is_test) return;
     const ord: any = o;
     const short = `#${String(order_id).slice(0, 8).toUpperCase()}`;
-    const fish = String(ord.listing?.description || ord.listing?.species || ord.species || "fish").split(" · ")[0];
+    const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
     const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed with the seller";
     const today = istDate(Date.now());
     const [{ data: buyer }, { data: seller }] = await Promise.all([
@@ -46,7 +46,7 @@ export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent,
         });
         break;
       }
-      case "confirmed": await toBuyer("rf_order_confirmed", [short, slot], fishPhoto(ord.listing?.species || ord.species)); break;
+      case "confirmed": await toBuyer("rf_order_confirmed", [short, slot], headerImage(ord.listing?.photo_url, ord.listing?.species || ord.species)); break;
       case "out_for_delivery": await toBuyer("rf_order_out", [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"]); break;
       case "completed": await toBuyer("rf_order_delivered", [short]); break;
       case "cancelled": await toBuyer("rf_order_cancelled", [short, extra.reason || "not given", extra.refund || "full refund to your original payment method"]); break;

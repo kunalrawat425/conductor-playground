@@ -52,7 +52,7 @@ export type Decision = {
   items: string[];
   species: string | null;            // fish of the first item named (its photo is the header picture)
   when: string | null;               // "Sun 25 Oct, 9–11 AM" for pre-orders
-  template: "rf_cart_today" | "rf_cart_preorder" | "rf_today_generic" | "rf_preorder_generic";
+  template: "rf_cart_today" | "rf_cart_preorder" | "rf_today_check" | "rf_weekend_menu" | "rf_preorder_generic";
   path: string;                      // where the button lands (UTMs are added by /go/<id>)
 };
 export type Skip = { skip: string };
@@ -154,7 +154,7 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
     return {
       kind, slot_date: istDate(due), due_ms: due, mode, seller, personal, items, species: personal ? species : null,
       when: offer.mode === "preorder" ? offer.when : null,
-      template: personal ? (mode === "today" ? "rf_cart_today" : "rf_cart_preorder") : (mode === "today" ? "rf_today_generic" : "rf_preorder_generic"),
+      template: personal ? (mode === "today" ? "rf_cart_today" : "rf_cart_preorder") : (mode === "today" ? (kind === "weekend" ? "rf_weekend_menu" : "rf_today_check") : "rf_preorder_generic"),
       path: personal ? `/s/${seller.slug}` : "/shop",
     };
   };
@@ -202,7 +202,11 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const lastActive = Math.max(Date.parse(b.created_at), cartMs, orderMs);
   const deliveredMs = b.last_delivered_at ? Date.parse(b.last_delivered_at) : 0;
   const dow = istDow(now);
-  if ([5, 6, 0].includes(dow) && now - lastActive <= 30 * DAY_MS && now - deliveredMs >= 3 * DAY_MS) {
+  // No spam (founder 24 Oct): one weekend message per weekend, and none if any reminder went out in the last 2 days.
+  const ago = (x: SentLog) => now - Date.parse(x.created_at);
+  const weekendDone = history.some((x) => x.kind === "weekend" && ago(x) < 3 * DAY_MS);
+  const recentPromo = history.some((x) => ["A1", "A2", "B1", "B2", "weekend"].includes(x.kind) && ago(x) < 2 * DAY_MS);
+  if ([5, 6, 0].includes(dow) && now - lastActive <= 30 * DAY_MS && now - deliveredMs >= 3 * DAY_MS && !weekendDone && !recentPromo) {
     const slot = sellerSlot(seller, today, dow === 5 ? "evening" : undefined);
     if (slot && (dow !== 5 || slot.offer.mode === "preorder")) {
       const d = tryDue("weekend", slot.ms);

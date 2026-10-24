@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { templatePayload, validWebhookSignature, waNumber } from "../../src/lib/server/whatsapp";
-import { TEMPLATES, templateProblems, promoImage, fishPhoto } from "../../src/lib/messaging/templates";
+import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, SIGNUP_IMAGE, rotationImage } from "../../src/lib/messaging/templates";
 
 const pushes: any[] = [];
 vi.mock("../../src/lib/server/buyer-push", () => ({
@@ -58,20 +58,35 @@ describe("numbers, payloads, signatures", () => {
 });
 
 describe("templates", () => {
-  it("all 12 pass Meta + brand checks", () => {
-    expect(TEMPLATES).toHaveLength(12);
+  it("all 15 pass Meta + brand checks", () => {
+    expect(TEMPLATES).toHaveLength(15);
     for (const t of TEMPLATES) expect(templateProblems(t), t.name).toEqual([]);
   });
   it("catch a price, a trailing variable and a promo in a utility template", () => {
     const base = TEMPLATES[0];
     expect(templateProblems({ ...base, body: "Pomfret at ₹400 today." })[0]).toMatch(/brand/);
     expect(templateProblems({ ...base, body: "Get it on {{1}}", examples: ["x"] })).toContain("variable at start or end of body");
-    expect(templateProblems({ ...TEMPLATES[4], body: "Big sale on order {{1}} now.", examples: ["x"] })).toContain("promo wording in a utility template");
+    expect(templateProblems({ ...base, body: "Get it on {{1}}.", examples: ["x"] })).toContain("variable at start or end of body");
+    expect(templateProblems({ ...TEMPLATES.find((t) => t.category === "UTILITY")!, body: "Big sale on order {{1}} now.", examples: ["x"] })).toContain("promo wording in a utility template");
   });
-  it("header photo: their fish, else a different fish each day", () => {
-    expect(promoImage("rawas", "2026-10-24")).toMatch(/\/fish\/rawas\.jpg$/);
-    expect(promoImage("bombil", "2026-10-24")).toMatch(/\/fish\/(pomfret|surmai|rawas|prawns)\.jpg$/);
-    expect(promoImage(null, "2026-10-24")).not.toBe(promoImage(null, "2026-10-25"));
+  it("fish name: description when it names the fish, else the species", () => {
+    expect(fishName("Baby Rawas · Cut pcs + head & tail", "rawas")).toBe("Baby Rawas");
+    expect(fishName("Seawater tiger prawns · Tail on", "prawns")).toBe("Seawater tiger prawns");
+    expect(fishName("Halwa (Black Pomfret) · Cut pcs", "halwa")).toBe("Halwa (Black Pomfret)");
+    expect(fishName("Sassoon Dock, bought same morning · Never frozen", "surmai")).toBe("Surmai");
+    expect(fishName("Fresh bangda, Sassoon Dock same morning · Never frozen", "bangda")).toBe("Bangda");
+    expect(fishName("Pomfret, Sassoon Dock same morning", "pomfret")).toBe("Pomfret");
+    expect(fishName(null, "bombil")).toBe("Bombil");
+    expect(fishName(null, null)).toBe("fish");
+  });
+  it("no-cart offers rotate the fish: surmai, pomfret, crab…", () => {
+    expect([0, 1, 2].map(rotationImage).map((u) => u.split("/").pop())).toEqual(["surmai.jpg", "pomfret.jpg", "crab.jpg"]);
+    expect(rotationImage(6)).toMatch(/surmai\.jpg$/);
+  });
+  it("header photo: their listing photo, else our fish photo, else the poster", () => {
+    expect(headerImage("https://x/cut-pomfret.jpg", "pomfret")).toBe("https://x/cut-pomfret.jpg");
+    expect(headerImage(null, "rawas")).toMatch(/\/fish\/rawas\.jpg$/);
+    expect(headerImage(null, "bombil")).toBe(SIGNUP_IMAGE);
     expect(fishPhoto("Seawater red prawns")).toMatch(/prawns\.jpg$/);
   });
 });
