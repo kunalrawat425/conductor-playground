@@ -202,7 +202,11 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const lastActive = Math.max(Date.parse(b.created_at), cartMs, orderMs);
   const deliveredMs = b.last_delivered_at ? Date.parse(b.last_delivered_at) : 0;
   const dow = istDow(now);
-  if ([5, 6, 0].includes(dow) && now - lastActive <= 30 * DAY_MS && now - deliveredMs >= 3 * DAY_MS) {
+  // No spam (founder 24 Oct): one weekend message per weekend, and none if any reminder went out in the last 2 days.
+  const ago = (x: SentLog) => now - Date.parse(x.created_at);
+  const weekendDone = history.some((x) => x.kind === "weekend" && ago(x) < 3 * DAY_MS);
+  const recentPromo = history.some((x) => ["A1", "A2", "B1", "B2", "weekend"].includes(x.kind) && ago(x) < 2 * DAY_MS);
+  if ([5, 6, 0].includes(dow) && now - lastActive <= 30 * DAY_MS && now - deliveredMs >= 3 * DAY_MS && !weekendDone && !recentPromo) {
     const slot = sellerSlot(seller, today, dow === 5 ? "evening" : undefined);
     if (slot && (dow !== 5 || slot.offer.mode === "preorder")) {
       const d = tryDue("weekend", slot.ms);

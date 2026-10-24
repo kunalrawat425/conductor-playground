@@ -104,6 +104,12 @@ describe("Weekly weekend message (one per day)", () => {
     expect(run(T("24", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_weekend_menu" });
     expect(run(T("25", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_weekend_menu" });
   });
+  it("one weekend message per weekend; none within 2 days of another reminder", () => {
+    expect(run(T("24", "09:30"), old, [...h, log("weekend", T("23", "19:00"))]).skip).toBe("nothing due");
+    expect(run(T("25", "09:30"), old, [...h, log("weekend", T("24", "09:30"))]).skip).toBe("nothing due");
+    expect(run(T("25", "09:30"), old, [...h, log("B2", T("24", "09:30"))]).skip).toBe("nothing due");
+    expect(run(T("25", "09:30"), old, [...h, log("B2", T("22", "09:30"))])).toMatchObject({ kind: "weekend" });
+  });
   it("only one promo a day: Saturday's evening slot is skipped after the morning one", () => {
     expect(run(T("24", "19:00"), old, [...h, log("weekend", T("24", "09:30"))]).skip).toBe("already messaged today");
   });
