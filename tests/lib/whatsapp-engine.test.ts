@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { templatePayload, validWebhookSignature, waNumber } from "../../src/lib/server/whatsapp";
-import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, SIGNUP_IMAGE } from "../../src/lib/messaging/templates";
+import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, SIGNUP_IMAGE, priceLine } from "../../src/lib/messaging/templates";
 
 const pushes: any[] = [];
 vi.mock("../../src/lib/server/buyer-push", () => ({
@@ -64,7 +64,7 @@ describe("templates", () => {
   });
   it("catch a price, a trailing variable and a promo in a utility template", () => {
     const base = TEMPLATES[0];
-    expect(templateProblems({ ...base, body: "Pomfret at ₹400 today." })[0]).toMatch(/brand/);
+    expect(templateProblems({ ...base, body: "Pomfret at ₹400 today.", examples: [] })[0]).toMatch(/brand/);
     expect(templateProblems({ ...base, body: "Get it on {{1}}", examples: ["x"] })).toContain("variable at start or end of body");
     expect(templateProblems({ ...base, body: "Get it on {{1}}.", examples: ["x"] })).toContain("variable at start or end of body");
     expect(templateProblems({ ...TEMPLATES[4], body: "Big sale on order {{1}} now.", examples: ["x"] })).toContain("promo wording in a utility template");
@@ -78,6 +78,12 @@ describe("templates", () => {
     expect(fishName("Pomfret, Sassoon Dock same morning", "pomfret")).toBe("Pomfret");
     expect(fishName(null, "bombil")).toBe("Bombil");
     expect(fishName(null, null)).toBe("fish");
+  });
+  it("today's price line: lowest pack price of the most-asked-for fish", () => {
+    expect(priceLine([{ species: "bombil", price: 280 }, { species: "pomfret", price: 740 }, { species: "pomfret", price: 430 }, { species: "rawas", price: 890 }, { species: "prawns", price: 470 }, { species: "mandeli", price: 220 }]))
+      .toBe("Pomfret from ₹430, Prawns from ₹470, Rawas from ₹890");
+    expect(priceLine([{ species: "surmai", price: 1100 }])).toBe("Surmai from ₹1,100");
+    expect(priceLine([])).toBe("");
   });
   it("header photo: their listing photo, else our fish photo, else the poster", () => {
     expect(headerImage("https://x/cut-pomfret.jpg", "pomfret")).toBe("https://x/cut-pomfret.jpg");

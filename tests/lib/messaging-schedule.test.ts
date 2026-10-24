@@ -45,7 +45,7 @@ describe("Journey A: signed up, nothing else (generic)", () => {
   it("A1 at +1h, order-today text when the shop can deliver today", () => {
     expect(run(T("23", "10:30"), b)).toEqual({ skip: "nothing due" });
     const d = run(T("23", "11:00"), b);
-    expect(d).toMatchObject({ kind: "A1", template: "rf_today_generic", path: "/shop", personal: false });
+    expect(d).toMatchObject({ kind: "A1", template: "rf_today_prices", path: "/shop", personal: false });
   });
   it("A2 the next day at the same clock time", () => {
     const d = run(T("24", "10:00"), b, [log("A1", T("23", "11:00"))]);
@@ -86,7 +86,7 @@ describe("Journey B: cart, no order (personalised)", () => {
   });
   it("no item still on the menu → generic text and /shop", () => {
     expect(run(T("23", "11:15"), buyer({ cart: cart("ft", T("23", "10:15"), false) }))).toMatchObject({
-      kind: "B1", personal: false, template: "rf_today_generic", path: "/shop",
+      kind: "B1", personal: false, template: "rf_today_prices", path: "/shop",
     });
   });
   it("a job running up to 2h late still sends; later it doesn't", () => {
@@ -101,8 +101,8 @@ describe("Weekly weekend message (one per day)", () => {
   const h = [log("A1", T("10", "11:00")), log("A2", T("11", "11:00"))];
   it("Fri 19:00 pre-order; Sat & Sun 9:30 order today (Fishtokri)", () => {
     expect(run(T("23", "19:00"), old, h)).toMatchObject({ kind: "weekend", template: "rf_preorder_generic" });
-    expect(run(T("24", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_today_generic" });
-    expect(run(T("25", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_today_generic" });
+    expect(run(T("24", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_today_prices" });
+    expect(run(T("25", "09:30"), old, h)).toMatchObject({ kind: "weekend", template: "rf_today_prices" });
   });
   it("only one promo a day: Saturday's evening slot is skipped after the morning one", () => {
     expect(run(T("24", "19:00"), old, [...h, log("weekend", T("24", "09:30"))]).skip).toBe("already messaged today");
