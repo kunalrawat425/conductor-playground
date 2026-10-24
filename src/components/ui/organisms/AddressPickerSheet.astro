@@ -7,6 +7,8 @@ interface Props {
   elevated?: boolean;
 }
 const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Astro.props;
+import { geolocateErrorMessage, GEO_OPTIONS } from "../../../lib/geolocate-error";
+const geoMsgs = { 1: geolocateErrorMessage(1), 2: geolocateErrorMessage(2), 3: geolocateErrorMessage(3), app: geolocateErrorMessage(1, "Instagram") };
 ---
 <BottomSheet id={id} title={title} ctaText="Deliver here →" ctaAction="v2ConfirmAddress" elevated={elevated}>
   <div id={`${id}-list`}>
@@ -72,7 +74,9 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
   </div>
 </BottomSheet>
 
-<script define:vars={{ id }}>
+<script define:vars={{ id, geoMsgs, GEO_OPTIONS }}>
+  // Messages per GeolocationPositionError code (built server-side from lib/geolocate-error).
+  const geoMsg = (err) => /Instagram|FBAN|FBAV|WhatsApp/i.test(navigator.userAgent) ? geoMsgs.app : (geoMsgs[err?.code] || geoMsgs[3]);
   const list = document.getElementById(`${id}-list`);
 
   async function load() {
@@ -291,7 +295,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
       if (editLngInput) editLngInput.value = longitude;
       if (editMap && editMarker) { editMap.setView([latitude, longitude], 15); editMarker.setLatLng([latitude, longitude]); }
       reverseGeocodeEdit(latitude, longitude);
-    }, () => { window.v2Toast?.("error", "Location denied"); });
+    }, (err) => { const m = geoMsg(err); window.v2Toast?.("error", m.title, m.body); }, GEO_OPTIONS);
   });
 
   document.getElementById(`${id}-edit-cancel`)?.addEventListener("click", () => {
@@ -357,7 +361,7 @@ const { id = "v2-address-picker", title = "Deliver to", elevated = false } = Ast
         addrMarker.setLatLng([latitude, longitude]);
       }
       reverseGeocodeAddr(latitude, longitude);
-    }, () => { window.v2Toast?.("error", "Location denied", "Drag the pin instead"); });
+    }, (err) => { const m = geoMsg(err); window.v2Toast?.("error", m.title, m.body); }, GEO_OPTIONS);
   });
 
   // Add new address — inline form toggle

@@ -7,6 +7,8 @@ interface Props {
 const { id = "v2-loc-picker" } = Astro.props;
 // Thane neighbourhoods for the type-ahead list (every live shop is in Thane West).
 const places = LOCALITIES.thane;
+import { geolocateErrorMessage, GEO_OPTIONS } from "../../../lib/geolocate-error";
+const geoMsgs = { 1: geolocateErrorMessage(1), 2: geolocateErrorMessage(2), 3: geolocateErrorMessage(3), app: geolocateErrorMessage(1, "Instagram") };
 ---
 <BottomSheet id={id} title="Set your area" showClose={true}>
   <!-- Founder, 24 Oct: buyers were hunting for their building on the map. The area is enough,
@@ -44,7 +46,9 @@ const places = LOCALITIES.thane;
   </button>
 </BottomSheet>
 
-<script define:vars={{ id, places }}>
+<script define:vars={{ id, places, geoMsgs, GEO_OPTIONS }}>
+  // Messages per GeolocationPositionError code (built server-side from lib/geolocate-error).
+  const geoMsg = (err) => /Instagram|FBAN|FBAV|WhatsApp/i.test(navigator.userAgent) ? geoMsgs.app : (geoMsgs[err?.code] || geoMsgs[3]);
   let map, marker, selectedLat, selectedLng, selectedArea;
   let draggedOrSearched = false;
   let typedUnresolved = false; // typed text not yet turned into coordinates
@@ -162,9 +166,10 @@ const places = LOCALITIES.thane;
         marker.setLatLng([latitude, longitude]);
       }
       await (pendingName = reverseGeocode(latitude, longitude));
-    }, () => {
-      window.v2Toast?.("error", "Location denied", "Allow location or type manually");
-    });
+    }, (err) => {
+      const m = geoMsg(err);
+      window.v2Toast?.("error", m.title, m.body);
+    }, GEO_OPTIONS);
   });
 
   document.getElementById(`${id}-area-input`)?.addEventListener("change", (e) => {
