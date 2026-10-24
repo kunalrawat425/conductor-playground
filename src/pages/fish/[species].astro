@@ -82,7 +82,7 @@ const description = rows.length
   : `${english} is not listed by any seller on Relifish right now.`;
 ---
 <AppShell
-  title={known ? `${local} Price Today in Thane & Mumbai, Buy Online | Relifish` : "Fish not found · Relifish"}
+  title={known ? `${local}${englishOnly.toLowerCase() !== local.toLowerCase() ? ` (${englishOnly})` : ""} Price Today in Thane & Mumbai | Relifish` : "Fish not found · Relifish"}
   description={description}
   canonical={url}
   noindex={!indexable}

@@ -26,7 +26,7 @@ export const SPECIES_GUIDES: Record<string, SpeciesGuide> = {
     summary: "Surmai is a firm, meaty sea fish, one of Mumbai's favourite fish for fry and curry.",
     taste: "Rich, meaty and mildly flavoured; holds its shape when fried or cooked in gravy.",
     bones: "One central bone in steaks; very few small bones.",
-    cuts: ["Steaks (slices)", "Curry cut", "Whole (cleaned)"],
+    cuts: ["Steaks / slices (for fry and tawa)", "Curry cut", "Baby surmai, cut into pieces with head & tail", "Whole (cleaned)"],
     dishes: ["Surmai rava fry", "Malvani surmai curry", "Tawa fry", "Grilled steaks"],
     availability: `Sold through the year when boats go out. ${BAN}`,
     buyingTip: "Steaks should be firm, moist and pinkish-white, not dull or dry at the edges.",
