@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
 import { decide, istDate, offerAt, pickSeller, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
-import { fishName, promoImage } from "../../../lib/messaging/templates";
+import { fishName, promoImage, SIGNUP_IMAGE } from "../../../lib/messaging/templates";
 import { dispatch } from "../../../lib/server/messaging";
 import { waNumber } from "../../../lib/server/whatsapp";
 
@@ -100,7 +100,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const body = d.template === "rf_cart_today" ? [d.items.join(" and ")]
       : d.template === "rf_cart_preorder" ? [d.items.join(" and "), d.when!]
       : d.template === "rf_preorder_generic" ? [d.when!] : [];
-    const image = promoImage(d.species, d.slot_date);
+    const image = d.kind === "A1" || d.kind === "A2" ? SIGNUP_IMAGE : promoImage(d.species, d.slot_date);
     const line = { buyer: who, kind: d.kind, template: d.template, vars: body, link: d.path, image, channel: [whatsappOk && phone ? "whatsapp" : "", b.push_subscription ? "push" : ""].filter(Boolean).join("+") || "none" };
     if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
     const r = await dispatch(sb, {

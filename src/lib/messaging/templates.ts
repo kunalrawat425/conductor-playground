@@ -8,6 +8,8 @@
 export const SITE = "https://www.relifish.com";
 export const GO_URL = `${SITE}/go/{{1}}`; // /go/<message_id> records the click, then redirects with UTMs
 export const PROMO_IMAGE = `${SITE}/wa/relifish-slots.jpg`;
+/** New sign-ups (journey A): the "Craving fresh fish?" poster (founder 24 Oct). */
+export const SIGNUP_IMAGE = `${SITE}/wa/craving-fresh-fish.jpg`;
 
 type Button = { type: "URL"; text: string } | { type: "QUICK_REPLY"; text: string };
 export type TemplateDef = {
@@ -25,7 +27,7 @@ const STOP: Button = { type: "QUICK_REPLY", text: "Stop updates" };
 export const TEMPLATES: TemplateDef[] = [
   // ── Marketing (opted-in buyers only) ──
   { name: "rf_today_generic", category: "MARKETING", header: "IMAGE",
-    body: "Craving fish today? 🐟 Local Thane sellers have it on today's menu. Pick a 2-hour delivery slot and we'll bring it home, cleaned and cut your way.",
+    body: "Today's fish from local Thane sellers is on the menu 🐟 Order now, before it runs out. Pick a 2-hour delivery slot and we'll bring it home, cleaned and cut your way.",
     examples: [], footer: "Team Relifish", buttons: [{ type: "URL", text: "See today's fish" }, STOP] },
   { name: "rf_preorder_generic", category: "MARKETING", header: "IMAGE",
     body: "Plan your next fish meal 🐟 Pre-order from local Thane sellers and get it on {{1}}, cleaned and cut your way.",
