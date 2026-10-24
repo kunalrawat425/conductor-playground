@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { templatePayload, validWebhookSignature, waNumber } from "../../src/lib/server/whatsapp";
-import { TEMPLATES, templateProblems, promoImage, fishPhoto } from "../../src/lib/messaging/templates";
+import { TEMPLATES, templateProblems, promoImage, fishPhoto, fishName } from "../../src/lib/messaging/templates";
 
 const pushes: any[] = [];
 vi.mock("../../src/lib/server/buyer-push", () => ({
@@ -67,6 +67,16 @@ describe("templates", () => {
     expect(templateProblems({ ...base, body: "Pomfret at ₹400 today." })[0]).toMatch(/brand/);
     expect(templateProblems({ ...base, body: "Get it on {{1}}", examples: ["x"] })).toContain("variable at start or end of body");
     expect(templateProblems({ ...TEMPLATES[4], body: "Big sale on order {{1}} now.", examples: ["x"] })).toContain("promo wording in a utility template");
+  });
+  it("fish name: description when it names the fish, else the species", () => {
+    expect(fishName("Baby Rawas · Cut pcs + head & tail", "rawas")).toBe("Baby Rawas");
+    expect(fishName("Seawater tiger prawns · Tail on", "prawns")).toBe("Seawater tiger prawns");
+    expect(fishName("Halwa (Black Pomfret) · Cut pcs", "halwa")).toBe("Halwa (Black Pomfret)");
+    expect(fishName("Sassoon Dock, bought same morning · Never frozen", "surmai")).toBe("Surmai");
+    expect(fishName("Fresh bangda, Sassoon Dock same morning · Never frozen", "bangda")).toBe("Bangda");
+    expect(fishName("Pomfret, Sassoon Dock same morning", "pomfret")).toBe("Pomfret");
+    expect(fishName(null, "bombil")).toBe("Bombil");
+    expect(fishName(null, null)).toBe("fish");
   });
   it("header photo: their fish, else a different fish each day", () => {
     expect(promoImage("rawas", "2026-10-24")).toMatch(/\/fish\/rawas\.jpg$/);

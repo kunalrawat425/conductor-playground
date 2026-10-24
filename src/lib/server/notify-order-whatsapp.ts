@@ -6,7 +6,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { arrivingByLabel, slotLabel } from "../delivery-slots";
-import { fishPhoto } from "../messaging/templates";
+import { fishName, fishPhoto } from "../messaging/templates";
 import { istDate } from "../messaging/schedule";
 import { dispatch } from "./messaging";
 
@@ -22,7 +22,7 @@ export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent,
     if (!o || (o as any).is_test) return;
     const ord: any = o;
     const short = `#${String(order_id).slice(0, 8).toUpperCase()}`;
-    const fish = String(ord.listing?.description || ord.listing?.species || ord.species || "fish").split(" · ")[0];
+    const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
     const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed with the seller";
     const today = istDate(Date.now());
     const [{ data: buyer }, { data: seller }] = await Promise.all([

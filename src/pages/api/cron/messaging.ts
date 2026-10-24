@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
 import { decide, istDate, offerAt, pickSeller, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
-import { promoImage } from "../../../lib/messaging/templates";
+import { fishName, promoImage } from "../../../lib/messaging/templates";
 import { dispatch } from "../../../lib/server/messaging";
 import { waNumber } from "../../../lib/server/whatsapp";
 
@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!tb) return json({ error: "no buyer with that phone" }, 404);
     const cart = (cartRows || []).filter((c: any) => c.buyer_id === tb.id && c.listing && !c.listing.deleted_at && (c.listing.is_available || c.listing.is_preorder_enabled));
     const st: BuyerState = { id: tb.id, created_at: tb.created_at, lat: tb.lat, lng: tb.lng, last_order_at: null, open_order: false, last_delivered_at: null, opted_out: false,
-      cart: cart.map((c: any) => ({ seller_id: c.listing.seller_id, species: c.listing.species, name: String(c.listing.description || c.listing.species).split(" · ")[0], on_menu: true, updated_at: c.updated_at })) };
+      cart: cart.map((c: any) => ({ seller_id: c.listing.seller_id, species: c.listing.species, name: fishName(c.listing.description, c.listing.species), on_menu: true, updated_at: c.updated_at })) };
     const seller = pickSeller(st, sellers);
     const offer = seller ? offerAt(seller, Date.now()) ?? { mode: "preorder" as const, when: "your chosen day" } : null;
     if (!seller || !offer) return json({ error: "no seller for this buyer" }, 404);
@@ -82,7 +82,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       id: b.id, created_at: b.created_at, lat: b.lat, lng: b.lng,
       cart: (cartRows || []).filter((c: any) => c.buyer_id === b.id && c.listing).map((c: any) => ({
         seller_id: c.listing.seller_id, species: c.listing.species,
-        name: String(c.listing.description || c.listing.species || "fish").split(" · ")[0],
+        name: fishName(c.listing.description, c.listing.species),
         on_menu: !c.listing.deleted_at && (c.listing.is_available || c.listing.is_preorder_enabled),
         updated_at: c.updated_at,
       })),

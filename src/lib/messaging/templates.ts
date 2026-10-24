@@ -80,6 +80,19 @@ export function templateProblems(t: TemplateDef): string[] {
   return p;
 }
 
+/**
+ * The fish's name for a message ("Baby Rawas", "Bombil"). The listing description's first part
+ * when it names the fish (Fishtokri: "Baby Rawas · Cut pcs"); otherwise the species, because some
+ * sellers start with where it's from ("Sassoon Dock, bought same morning · ...").
+ */
+export function fishName(description: string | null | undefined, species: string | null | undefined): string {
+  const sp = String(species || "").trim().toLowerCase();
+  const head = String(description || "").split(" · ")[0].split(",")[0].replace(/^fresh\s+/i, "").trim();
+  const stem = sp.replace(/s$/, "");
+  if (head && (!stem || head.toLowerCase().includes(stem))) return head.charAt(0).toUpperCase() + head.slice(1);
+  return sp ? sp.charAt(0).toUpperCase() + sp.slice(1) : "fish";
+}
+
 /** Fish photo for the "order confirmed" header (public/fish). */
 export function fishPhoto(species: string | null | undefined): string {
   const w = String(species || "").toLowerCase();
