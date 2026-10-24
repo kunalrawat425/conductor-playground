@@ -26,9 +26,9 @@ const STOP: Button = { type: "QUICK_REPLY", text: "Stop updates" };
 
 export const TEMPLATES: TemplateDef[] = [
   // ── Marketing (opted-in buyers only) ──
-  { name: "rf_today_prices", category: "MARKETING", header: "IMAGE",
-    body: "Today's fish prices are out 🐟 {{1}} and more from local Thane sellers. Pick a 2-hour delivery slot and we'll bring it home, cleaned and cut your way.",
-    examples: ["Pomfret from ₹430, Prawns from ₹470, Rawas from ₹890"], footer: "Team Relifish", buttons: [{ type: "URL", text: "See today's prices" }, STOP] },
+  { name: "rf_today_check", category: "MARKETING", header: "IMAGE",
+    body: "Today's fish and prices are up 🐟 See what local Thane sellers have on the menu today, pick a 2-hour delivery slot and we'll bring it home, cleaned and cut your way.",
+    examples: [], footer: "Team Relifish", buttons: [{ type: "URL", text: "Check today's prices" }, STOP] },
   { name: "rf_preorder_generic", category: "MARKETING", header: "IMAGE",
     body: "Plan your next fish meal 🐟 Pre-order from local Thane sellers and get it on {{1}}, cleaned and cut your way.",
     examples: ["Sun 25 Oct, 9–11 AM"], footer: "Team Relifish", buttons: [{ type: "URL", text: "Pre-order now" }, STOP] },
@@ -93,19 +93,6 @@ export function fishName(description: string | null | undefined, species: string
   const stem = sp.replace(/s$/, "");
   if (head && (!stem || head.toLowerCase().includes(stem))) return head.charAt(0).toUpperCase() + head.slice(1);
   return sp ? sp.charAt(0).toUpperCase() + sp.slice(1) : "fish";
-}
-
-const PRICE_ORDER = ["pomfret", "surmai", "prawns", "rawas", "bombil", "halwa", "bangda", "ghol", "mandeli", "crab"];
-/**
- * "Pomfret from ₹430, Prawns from ₹470, Rawas from ₹890": the lowest pack price of the three most-asked-for
- * fish on today's menu (founder 24 Oct: new buyers should see today's prices). Live listings only.
- */
-export function priceLine(listings: { species: string; price: number }[], n = 3): string {
-  const low = new Map<string, number>();
-  for (const l of listings) if (l.price > 0) low.set(l.species, Math.min(low.get(l.species) ?? Infinity, l.price));
-  const rank = (sp: string) => (PRICE_ORDER.indexOf(sp) + 1 || 99);
-  return [...low.keys()].sort((a, b) => rank(a) - rank(b)).slice(0, n)
-    .map((sp) => `${sp.charAt(0).toUpperCase()}${sp.slice(1)} from ₹${low.get(sp)!.toLocaleString("en-IN")}`).join(", ");
 }
 
 /** Fish photo for the "order confirmed" header (public/fish). */

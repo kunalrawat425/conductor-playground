@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
 import { decide, istDate, offerAt, pickSeller, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
-import { fishName, headerImage, priceLine, SIGNUP_IMAGE } from "../../../lib/messaging/templates";
+import { fishName, headerImage, SIGNUP_IMAGE } from "../../../lib/messaging/templates";
 import { dispatch } from "../../../lib/server/messaging";
 import { waNumber } from "../../../lib/server/whatsapp";
 
@@ -36,11 +36,6 @@ export const POST: APIRoute = async ({ request, url }) => {
     sb.from("orders").select("id, buyer_id, status, created_at, updated_at, is_test, species, listing:fish_listings(seller_id)").gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
     sb.from("message_log").select("buyer_id, seller_id, order_id, kind, slot_date, created_at").gte("created_at", new Date(now - 35 * 86_400_000).toISOString()),
   ]);
-  const { data: menuRows } = await sb.from("fish_listings").select("seller_id, species, pricing_options").is("deleted_at", null).eq("is_available", true);
-  // "Pomfret from ₹430, …" per seller, from today's live menu (rf_today_prices).
-  const pricesFor = (sellerId: string) => priceLine((menuRows || []).filter((l: any) => l.seller_id === sellerId)
-    .map((l: any) => ({ species: l.species, price: Number(l.pricing_options?.[0]?.price) || 0 })));
-
   const sellers: MsgSeller[] = (sellerRows || []).filter((s: any) => !s.is_test).map((s: any) => ({ ...s, slug: sellerNameToSlug(s.name) }));
   const sellerPhones = new Set((sellerRows || []).map((s: any) => waNumber(s.phone)).filter(Boolean));
   const testOnly = String(env("WA_TEST_ONLY")).split(",").map((s) => waNumber(s.trim())).filter(Boolean);
@@ -63,9 +58,9 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!seller || !offer) return json({ error: "no seller for this buyer" }, 404);
     const items = [...new Set(st.cart.map((l) => l.name))].slice(0, 3);
     const personal = items.length > 0;
-    const template = personal ? (offer.mode === "today" ? "rf_cart_today" : "rf_cart_preorder") : (offer.mode === "today" ? "rf_today_prices" : "rf_preorder_generic");
+    const template = personal ? (offer.mode === "today" ? "rf_cart_today" : "rf_cart_preorder") : (offer.mode === "today" ? "rf_today_check" : "rf_preorder_generic");
     const when = offer.mode === "preorder" ? offer.when : null;
-    const body = template === "rf_cart_today" ? [items.join(" and ")] : template === "rf_cart_preorder" ? [items.join(" and "), when!] : template === "rf_preorder_generic" ? [when!] : [pricesFor(seller.id)];
+    const body = template === "rf_cart_today" ? [items.join(" and ")] : template === "rf_cart_preorder" ? [items.join(" and "), when!] : template === "rf_preorder_generic" ? [when!] : [];
     const first = st.cart.find((c: any) => c.seller_id === seller.id) as any;
     const image = personal ? headerImage(first?.photo, first?.species) : SIGNUP_IMAGE;
     const r = await dispatch(sb, {
@@ -104,8 +99,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const whatsappOk = !!b.whatsapp_opt_in_at && !b.whatsapp_opt_out_at;
     const body = d.template === "rf_cart_today" ? [d.items.join(" and ")]
       : d.template === "rf_cart_preorder" ? [d.items.join(" and "), d.when!]
-      : d.template === "rf_preorder_generic" ? [d.when!] : [pricesFor(d.seller.id)];
-    if (d.template === "rf_today_prices" && !body[0]) { report.push({ buyer: who, skip: "no menu prices today" }); continue; }
+      : d.template === "rf_preorder_generic" ? [d.when!] : [];
     const first = d.personal ? (state.cart.find((c: any) => c.on_menu && c.seller_id === d.seller.id) as any) : null;
     const image = d.personal ? headerImage(first?.photo, first?.species) : SIGNUP_IMAGE;
     const line = { buyer: who, kind: d.kind, template: d.template, vars: body, link: d.path, image, channel: [whatsappOk && phone ? "whatsapp" : "", b.push_subscription ? "push" : ""].filter(Boolean).join("+") || "none" };
