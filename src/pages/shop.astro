@@ -276,14 +276,13 @@ const categories = [
     return `<div class="v2-sc-chip">${chipImg}<div class="v2-sc-m-text"><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${unitPart}</div></div></div>`;
   }
 
-  /** The card's one item: the second-cheapest (founder 24 Oct: a fair "from" price, not the priciest
-   *  first-sorted fish). The seller page keeps the seller's own order. */
+  /** The card's one item: the 3rd most expensive (founder 24 Oct). The seller page keeps the seller's own order. */
   function cardPick(lst: any[]): any {
     const price = (l: any) => getListingPriceOptions(l)[0]?.price ?? (l.pricing_options as any[])?.[0]?.price ?? Infinity;
-    return [...lst].sort((a, b) => price(a) - price(b))[1] ?? lst[0];
+    return [...lst].sort((a, b) => price(b) - price(a))[2] ?? lst[0];
   }
 
-  /** 1 → 1 chip full-width. 2 → 2 chips. 3+ → second-cheapest + "+N more". */
+  /** 1 → 1 chip full-width. 2 → 2 chips. 3+ → 3rd most expensive + "+N more". */
   function sellerMenuChipsHtml(listings: any[] | undefined): string {
     const lst = listings || [];
     if (lst.length === 0) return "";
