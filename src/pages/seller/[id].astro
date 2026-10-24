@@ -246,7 +246,7 @@ const tags = [
         "name": sellerName,
         "description": (() => { const speciesList = [...new Set(seoListings.map((l: any) => speciesDisplayById[l.species] || l.species).filter(Boolean))].slice(0, 5).join(", "); return `Order same-day or pre-order for tomorrow (${speciesList || "pomfret, surmai, rawas, prawns"}) from ${sellerName}${sellerLocation ? ` in ${sellerLocation}` : ""} on Relifish, with no platform markup.`; })(),
         "url": canonicalUrl,
-        "image": seller.store_image_url || "https://www.relifish.com/og-image.png",
+        "image": seller.store_image_url || "https://www.relifish.com/og-image.jpg",
         "priceRange": "₹₹",
         "currenciesAccepted": "INR",
         "paymentAccepted": "UPI, Credit Card, Debit Card, Net Banking",
