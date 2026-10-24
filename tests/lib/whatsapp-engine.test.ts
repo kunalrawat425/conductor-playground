@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { templatePayload, validWebhookSignature, waNumber } from "../../src/lib/server/whatsapp";
-import { TEMPLATES, templateProblems, promoImage, fishPhoto, fishName } from "../../src/lib/messaging/templates";
+import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, SIGNUP_IMAGE } from "../../src/lib/messaging/templates";
 
 const pushes: any[] = [];
 vi.mock("../../src/lib/server/buyer-push", () => ({
@@ -79,10 +79,10 @@ describe("templates", () => {
     expect(fishName(null, "bombil")).toBe("Bombil");
     expect(fishName(null, null)).toBe("fish");
   });
-  it("header photo: their fish, else a different fish each day", () => {
-    expect(promoImage("rawas", "2026-10-24")).toMatch(/\/fish\/rawas\.jpg$/);
-    expect(promoImage("bombil", "2026-10-24")).toMatch(/\/fish\/(pomfret|surmai|rawas|prawns)\.jpg$/);
-    expect(promoImage(null, "2026-10-24")).not.toBe(promoImage(null, "2026-10-25"));
+  it("header photo: their listing photo, else our fish photo, else the poster", () => {
+    expect(headerImage("https://x/cut-pomfret.jpg", "pomfret")).toBe("https://x/cut-pomfret.jpg");
+    expect(headerImage(null, "rawas")).toMatch(/\/fish\/rawas\.jpg$/);
+    expect(headerImage(null, "bombil")).toBe(SIGNUP_IMAGE);
     expect(fishPhoto("Seawater red prawns")).toMatch(/prawns\.jpg$/);
   });
 });

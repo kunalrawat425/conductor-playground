@@ -102,11 +102,13 @@ export function fishPhoto(species: string | null | undefined): string {
   return k ? `${SITE}/fish/${k}.jpg` : PROMO_IMAGE;
 }
 
-const ROTATION = ["pomfret", "surmai", "rawas", "prawns"];
-/** Header picture: the first fish they carted (their own craving), else a different fish each day. */
-export function promoImage(species: string | null | undefined, date: string): string {
-  const own = species ? fishPhoto(species) : null;
-  if (own && own !== PROMO_IMAGE) return own;
-  const day = Number(date.replace(/-/g, "")) || 0;
-  return `${SITE}/fish/${ROTATION[day % ROTATION.length]}.jpg`;
+/**
+ * Header picture (founder 24 Oct): offers with no cart get the "Craving fresh fish?" poster; cart and
+ * order messages show the item they chose (its listing photo, e.g. the cut pomfret), else our photo
+ * of that fish, else the poster.
+ */
+export function headerImage(photo: string | null | undefined, species: string | null | undefined): string {
+  if (photo) return photo;
+  const own = species ? fishPhoto(species) : PROMO_IMAGE;
+  return own !== PROMO_IMAGE ? own : SIGNUP_IMAGE;
 }

@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
 import { decide, istDate, offerAt, pickSeller, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
-import { fishName, promoImage, SIGNUP_IMAGE } from "../../../lib/messaging/templates";
+import { fishName, headerImage, SIGNUP_IMAGE } from "../../../lib/messaging/templates";
 import { dispatch } from "../../../lib/server/messaging";
 import { waNumber } from "../../../lib/server/whatsapp";
 
@@ -32,7 +32,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   const [{ data: sellerRows }, { data: buyerRows }, { data: cartRows }, { data: orderRows }, { data: logRows }] = await Promise.all([
     sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, ${SLOT_SELLER_COLUMNS}`).eq("is_active", true),
     sb.from("buyers").select("id, phone, created_at, lat, lng, is_test, push_subscription, whatsapp_opt_in_at, whatsapp_opt_out_at").gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
-    sb.from("buyer_cart").select("buyer_id, updated_at, listing:fish_listings(seller_id, species, description, is_available, is_preorder_enabled, deleted_at)"),
+    sb.from("buyer_cart").select("buyer_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, is_available, is_preorder_enabled, deleted_at)"),
     sb.from("orders").select("id, buyer_id, status, created_at, updated_at, is_test, species, listing:fish_listings(seller_id)").gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
     sb.from("message_log").select("buyer_id, seller_id, order_id, kind, slot_date, created_at").gte("created_at", new Date(now - 35 * 86_400_000).toISOString()),
   ]);
@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!tb) return json({ error: "no buyer with that phone" }, 404);
     const cart = (cartRows || []).filter((c: any) => c.buyer_id === tb.id && c.listing && !c.listing.deleted_at && (c.listing.is_available || c.listing.is_preorder_enabled));
     const st: BuyerState = { id: tb.id, created_at: tb.created_at, lat: tb.lat, lng: tb.lng, last_order_at: null, open_order: false, last_delivered_at: null, opted_out: false,
-      cart: cart.map((c: any) => ({ seller_id: c.listing.seller_id, species: c.listing.species, name: fishName(c.listing.description, c.listing.species), on_menu: true, updated_at: c.updated_at })) };
+      cart: cart.map((c: any) => ({ seller_id: c.listing.seller_id, species: c.listing.species, photo: c.listing.photo_url, name: fishName(c.listing.description, c.listing.species), on_menu: true, updated_at: c.updated_at })) };
     const seller = pickSeller(st, sellers);
     const offer = seller ? offerAt(seller, Date.now()) ?? { mode: "preorder" as const, when: "your chosen day" } : null;
     if (!seller || !offer) return json({ error: "no seller for this buyer" }, 404);
@@ -62,7 +62,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     const template = personal ? (offer.mode === "today" ? "rf_cart_today" : "rf_cart_preorder") : (offer.mode === "today" ? "rf_today_generic" : "rf_preorder_generic");
     const when = offer.mode === "preorder" ? offer.when : null;
     const body = template === "rf_cart_today" ? [items.join(" and ")] : template === "rf_cart_preorder" ? [items.join(" and "), when!] : template === "rf_preorder_generic" ? [when!] : [];
-    const image = promoImage(st.cart[0]?.species ?? null, istDate(Date.now()));
+    const first = st.cart.find((c: any) => c.seller_id === seller.id) as any;
+    const image = personal ? headerImage(first?.photo, first?.species) : SIGNUP_IMAGE;
     const r = await dispatch(sb, {
       dedupe_key: `test:${tb.id}:${Date.now()}`, kind: "test", slot_date: istDate(Date.now()), buyer_id: tb.id, seller_id: seller.id,
       phone: tb.phone, whatsappOk: !!tb.whatsapp_opt_in_at, template, body, headerImage: image, link_path: personal ? `/s/${seller.slug}` : "/shop",
@@ -81,7 +82,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const state: BuyerState = {
       id: b.id, created_at: b.created_at, lat: b.lat, lng: b.lng,
       cart: (cartRows || []).filter((c: any) => c.buyer_id === b.id && c.listing).map((c: any) => ({
-        seller_id: c.listing.seller_id, species: c.listing.species,
+        seller_id: c.listing.seller_id, species: c.listing.species, photo: c.listing.photo_url,
         name: fishName(c.listing.description, c.listing.species),
         on_menu: !c.listing.deleted_at && (c.listing.is_available || c.listing.is_preorder_enabled),
         updated_at: c.updated_at,
@@ -100,7 +101,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     const body = d.template === "rf_cart_today" ? [d.items.join(" and ")]
       : d.template === "rf_cart_preorder" ? [d.items.join(" and "), d.when!]
       : d.template === "rf_preorder_generic" ? [d.when!] : [];
-    const image = d.kind === "A1" || d.kind === "A2" ? SIGNUP_IMAGE : promoImage(d.species, d.slot_date);
+    const first = d.personal ? (state.cart.find((c: any) => c.on_menu && c.seller_id === d.seller.id) as any) : null;
+    const image = d.personal ? headerImage(first?.photo, first?.species) : SIGNUP_IMAGE;
     const line = { buyer: who, kind: d.kind, template: d.template, vars: body, link: d.path, image, channel: [whatsappOk && phone ? "whatsapp" : "", b.push_subscription ? "push" : ""].filter(Boolean).join("+") || "none" };
     if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
     const r = await dispatch(sb, {
