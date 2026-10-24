@@ -4,7 +4,7 @@
  */
 import { fmtDateTimeFullIST, fmtDateTimeIST } from "./format-ist";
 import { cleanSellerName, stripContactInfo } from "./seller-display";
-import { LOGO_URL } from "./brand";
+import { LOGO_URL, SUPPORT_EMAIL, whatsappLink } from "./brand";
 
 const BRAND_BLUE = "#0066cc";
 const BRAND_DARK = "#0a0f1a";
@@ -12,10 +12,10 @@ const BRAND_LIGHT_BLUE = "#66b3ff";
 const BRAND_ORANGE = "#ff6b35";
 const BRAND_SURFACE = "#f8fafc";
 
-const SUPPORT_EMAIL = "relifishstore@gmail.com";
 const SUPPORT_PHONE = "+91 9152207607";
 
-function shell(content: string): string {
+/** helpText = the WhatsApp message prefilled by the "Need help?" link. */
+function shell(content: string, helpText = "Hi Relifish, I have a question"): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
@@ -41,6 +41,9 @@ function shell(content: string): string {
         <tr>
           <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 24px;text-align:center;">
             <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px;">Need help?</div>
+            <div style="font-size:13px;line-height:1.8;">
+              💬 <a href="${whatsappLink(helpText)}" target="_blank" style="color:#0066cc;text-decoration:none;font-weight:700;">Message us on WhatsApp</a>
+            </div>
             <div style="font-size:12px;color:#475569;line-height:1.8;">
               📧 <a href="mailto:${SUPPORT_EMAIL}" style="color:#0066cc;text-decoration:none;">${SUPPORT_EMAIL}</a>
               &nbsp;&nbsp;·&nbsp;&nbsp;
@@ -256,7 +259,7 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     <div style="text-align:center;margin-top:18px;">
       ${ctaButton("Track Order →", "https://www.relifish.com/track")}
     </div>
-  `);
+  `, orderIdShort ? `Hi Relifish, I need help with order #${orderIdShort.toUpperCase()}` : undefined);
 }
 
 
@@ -290,7 +293,7 @@ export function orderEmailSeller(args: OrderEmailArgs & { buyerPhone?: string })
     <div style="text-align:center;margin-top:18px;">
       ${ctaButton("View Orders →", "https://www.relifish.com/dashboard/orders")}
     </div>
-  `);
+  `, orderIdShort ? `Hi Relifish, I'm a seller and need help with order #${orderIdShort.toUpperCase()}` : "Hi Relifish, I'm a seller and need help");
 }
 
 // ── Verify Email ──────────────────────────────────────────────────────
@@ -503,5 +506,5 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
     <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:18px;line-height:1.8;">
       This is a payment receipt, not a tax invoice.
     </div>
-  `);
+  `, safeOrderId ? `Hi Relifish, I need help with order #${safeOrderId}` : undefined);
 }

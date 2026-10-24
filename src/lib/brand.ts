@@ -33,3 +33,13 @@ export const BUSINESS_OPERATOR = "Kunal Rawat (founder)";
 export const BUSINESS_ADDRESS = "";
 /** "Relifish is operated by Kunal Rawat (founder)", plus ", <address>" once BUSINESS_ADDRESS is set. */
 export const OPERATED_BY = `Relifish is operated by ${BUSINESS_OPERATOR}${BUSINESS_ADDRESS ? `, ${BUSINESS_ADDRESS}` : ""}`;
+
+/** Business WhatsApp (+91 91522 07607). All buyer, seller and lead support goes here. */
+export const SUPPORT_WHATSAPP = "919152207607";
+export const SUPPORT_EMAIL = "relifishstore@gmail.com";
+
+/** Opens a WhatsApp chat with us, optionally prefilled. api.whatsapp.com, not wa.me: wa.me mangled emoji in ?text=. */
+export function whatsappLink(text?: string): string {
+  const base = `https://api.whatsapp.com/send?phone=${SUPPORT_WHATSAPP}`;
+  return text ? `${base}&text=${encodeURIComponent(text)}` : base;
+}

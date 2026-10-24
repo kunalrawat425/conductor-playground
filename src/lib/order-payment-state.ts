@@ -106,7 +106,7 @@ export function refundStatus(o: { refund_sent_at?: string | null; refund_note?: 
   { state: "refunded" | "delayed" | "processing"; text: string } {
   if (o?.refund_sent_at) return { state: "refunded", text: "Refunded via Razorpay — reaches the original payment method in 5–7 working days." };
   if (/FAILED/i.test(o?.refund_note || "")) {
-    return { state: "delayed", text: "Refund delayed — Relifish retries it automatically. Contact support if it hasn't arrived in 2 days." };
+    return { state: "delayed", text: "Refund delayed — Relifish retries it automatically. Message us on WhatsApp if it hasn't arrived in 2 days." };
   }
   return { state: "processing", text: "Refund processing via Razorpay — reaches the original payment method in 5–7 working days." };
 }

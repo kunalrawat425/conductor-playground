@@ -139,6 +139,8 @@ export interface EmptyStateProps {
   ctaHref?: string;
   ghostCtaText?: string;
   ghostCtaHref?: string;
+  /** Adds an "Ask us on WhatsApp" link with this prefilled message. */
+  whatsappText?: string;
 }
 
 // === Organisms ===
