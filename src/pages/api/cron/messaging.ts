@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
 import { decide, istDate, offerAt, pickSeller, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
-import { fishName, headerImage, SIGNUP_IMAGE } from "../../../lib/messaging/templates";
+import { fishName, headerImage, rotationImage } from "../../../lib/messaging/templates";
 import { dispatch } from "../../../lib/server/messaging";
 import { waNumber } from "../../../lib/server/whatsapp";
 
@@ -62,7 +62,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     const when = offer.mode === "preorder" ? offer.when : null;
     const body = template === "rf_cart_today" ? [items.join(" and ")] : template === "rf_cart_preorder" ? [items.join(" and "), when!] : template === "rf_preorder_generic" ? [when!] : [];
     const first = st.cart.find((c: any) => c.seller_id === seller.id) as any;
-    const image = personal ? headerImage(first?.photo, first?.species) : SIGNUP_IMAGE;
+    const sentBefore = (logRows || []).filter((l: any) => l.buyer_id === tb.id && PROMO_KINDS.includes(l.kind)).length;
+    const image = personal ? headerImage(first?.photo, first?.species) : rotationImage(sentBefore);
     const r = await dispatch(sb, {
       dedupe_key: `test:${tb.id}:${Date.now()}`, kind: "test", slot_date: istDate(Date.now()), buyer_id: tb.id, seller_id: seller.id,
       phone: tb.phone, whatsappOk: !!tb.whatsapp_opt_in_at, template, body, headerImage: image, link_path: personal ? `/s/${seller.slug}` : "/shop",
@@ -101,7 +102,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       : d.template === "rf_cart_preorder" ? [d.items.join(" and "), d.when!]
       : d.template === "rf_preorder_generic" ? [d.when!] : [];
     const first = d.personal ? (state.cart.find((c: any) => c.on_menu && c.seller_id === d.seller.id) as any) : null;
-    const image = d.personal ? headerImage(first?.photo, first?.species) : SIGNUP_IMAGE;
+    const image = d.personal ? headerImage(first?.photo, first?.species) : rotationImage(history.length);
     const line = { buyer: who, kind: d.kind, template: d.template, vars: body, link: d.path, image, channel: [whatsappOk && phone ? "whatsapp" : "", b.push_subscription ? "push" : ""].filter(Boolean).join("+") || "none" };
     if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
     const r = await dispatch(sb, {

@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { templatePayload, validWebhookSignature, waNumber } from "../../src/lib/server/whatsapp";
-import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, SIGNUP_IMAGE } from "../../src/lib/messaging/templates";
+import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, SIGNUP_IMAGE, rotationImage } from "../../src/lib/messaging/templates";
 
 const pushes: any[] = [];
 vi.mock("../../src/lib/server/buyer-push", () => ({
@@ -78,6 +78,10 @@ describe("templates", () => {
     expect(fishName("Pomfret, Sassoon Dock same morning", "pomfret")).toBe("Pomfret");
     expect(fishName(null, "bombil")).toBe("Bombil");
     expect(fishName(null, null)).toBe("fish");
+  });
+  it("no-cart offers rotate the fish: surmai, pomfret, crab…", () => {
+    expect([0, 1, 2].map(rotationImage).map((u) => u.split("/").pop())).toEqual(["surmai.jpg", "pomfret.jpg", "crab.jpg"]);
+    expect(rotationImage(6)).toMatch(/surmai\.jpg$/);
   });
   it("header photo: their listing photo, else our fish photo, else the poster", () => {
     expect(headerImage("https://x/cut-pomfret.jpg", "pomfret")).toBe("https://x/cut-pomfret.jpg");

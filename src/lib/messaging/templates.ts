@@ -104,6 +104,12 @@ export function fishName(description: string | null | undefined, species: string
   return sp ? sp.charAt(0).toUpperCase() + sp.slice(1) : "fish";
 }
 
+/** No-cart offers rotate the fish photo per message (founder 24 Oct: surmai, then pomfret, then crab…). */
+const NO_CART_ROTATION = ["surmai", "pomfret", "crab", "prawns", "rawas", "bangda"];
+export function rotationImage(sentBefore: number): string {
+  return `${SITE}/fish/${NO_CART_ROTATION[Math.max(0, sentBefore) % NO_CART_ROTATION.length]}.jpg`;
+}
+
 /** Fish photo for the "order confirmed" header (public/fish). */
 export function fishPhoto(species: string | null | undefined): string {
   const w = String(species || "").toLowerCase();
