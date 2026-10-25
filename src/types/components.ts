@@ -175,6 +175,8 @@ export interface SellerHeroProps {
   preorderFor?: string;
   closesAt?: string;
   opensAt?: string;
+  /** Shown under "Closed" instead of "Opens <opensAt>" (e.g. "Pre-orders open 1 PM" for pre-order-only sellers). */
+  closedLabel?: string;
   totalOrders?: number;
   itemCount?: number;
   catchTime?: string;
