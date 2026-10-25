@@ -1,5 +1,6 @@
 ---
 import GeoHelpDialog from "./molecules/GeoHelpDialog.astro";
+import InAppBrowserBar from "./molecules/InAppBrowserBar.astro";
 import "../../styles/tokens.css";
 import { SITE_URL, canonicalFor } from "../../lib/brand";
 import UtmCapture from "../UtmCapture.astro";
@@ -235,6 +236,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
       }
     </script>
     <div class="v2-app">
+      <InAppBrowserBar />
       {!hideHeader && header && <AppHeader {...header} />}
       <main class="v2-main">
         <slot />

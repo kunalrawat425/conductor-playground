@@ -1,0 +1,40 @@
+---
+/**
+ * "Open in Chrome" bar for visitors inside the Instagram/Facebook in-app browser (founder, 25 Oct).
+ * GA 18–25 Oct: 432 sessions there, 0 checkouts (Chrome: 25). Shown on shop, seller and order pages,
+ * once per visit, dismissible; never covers the menu. Android opens the same URL in Chrome
+ * (intent://); iPhone has no direct link, so it says where to tap.
+ */
+---
+<div id="rf-inapp-bar" hidden style="position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:8px 12px;background:#FFF4D6;color:#5A4300;font:500 13px/1.35 Inter;border-bottom:1px solid #F0DFA8;">
+  <span style="flex:1;" id="rf-inapp-text">Paying is smoother in Chrome.</span>
+  <a id="rf-inapp-open" href="#" style="font:700 13px Inter;color:#0B5CD5;white-space:nowrap;">Open in Chrome</a>
+  <button type="button" id="rf-inapp-close" aria-label="Close" style="border:none;background:none;font-size:18px;line-height:1;color:#5A4300;padding:2px 4px;">×</button>
+</div>
+<script is:inline>
+  (function () {
+    var ua = navigator.userAgent || "";
+    if (!/FBAN|FBAV|FB_IAB|Instagram/i.test(ua)) return;
+    if (!/^\/(shop|seller\/|s\/|track\/)/.test(location.pathname)) return;
+    try { if (sessionStorage.getItem("rf_inapp_bar_closed")) return; } catch (e) {}
+    var bar = document.getElementById("rf-inapp-bar");
+    if (!bar) return;
+    var ga = function (name) { try { if (window.gtag) window.gtag("event", name, { page_path: location.pathname }); } catch (e) {} };
+    var link = document.getElementById("rf-inapp-open");
+    if (/Android/i.test(ua)) {
+      link.href = "intent://" + location.host + location.pathname + location.search + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(location.href) + ";end";
+      link.addEventListener("click", function () { ga("inapp_escape_tap"); });
+    } else {
+      // iPhone: no link can leave the in-app browser; say where to tap instead.
+      document.getElementById("rf-inapp-text").textContent = "Paying is smoother in Safari: tap ⋯ (top right) → Open in browser.";
+      link.remove();
+    }
+    document.getElementById("rf-inapp-close").addEventListener("click", function () {
+      bar.hidden = true;
+      try { sessionStorage.setItem("rf_inapp_bar_closed", "1"); } catch (e) {}
+    });
+    bar.hidden = false;
+    bar.style.display = "flex";
+    ga("inapp_bar_shown");
+  })();
+</script>
