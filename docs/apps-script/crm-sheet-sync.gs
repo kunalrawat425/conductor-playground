@@ -26,6 +26,18 @@ function syncBuyers() {
   var h = -1;
   for (var i = 0; i < all.length; i++) if (all[i][0] === 'Stage' && all[i][1] === 'Call goal') { h = i; break; }
   if (h < 0) throw new Error('Header row (Stage | Call goal) not found');
+
+  // Add any missing column headers ("Last activity" goes right after "Signed up"; others at the end), then re-read.
+  var want = Object.keys(rows[0]).concat(['DND']);
+  var missing = want.filter(function (name) { return all[h].indexOf(name) < 0; });
+  missing.forEach(function (name) {
+    var hdr = sh.getRange(h + 1, 1, 1, sh.getLastColumn()).getValues()[0];
+    var after = name === 'Last activity' ? hdr.indexOf('Signed up') : -1;
+    var at = after >= 0 ? after + 2 : hdr.length + 1;          // 1-based column for the new header
+    if (after >= 0) sh.insertColumnAfter(after + 1);
+    sh.getRange(h + 1, at).setValue(name);
+  });
+  if (missing.length) all = sh.getDataRange().getValues();
   var header = all[h];
   var col = {}; header.forEach(function (name, j) { if (name) col[name] = j; });
   if (col['Phone'] === undefined) throw new Error('No Phone column');
@@ -49,7 +61,7 @@ function syncBuyers() {
 
   // Write back one database column at a time, so your own columns are never touched.
   dbCols.forEach(function (name) {
-    var values = data.map(function (r) { return [r[col[name]]]; });
+    var values = data.map(function (r) { var v = r[col[name]]; return [v === undefined ? '' : v]; });
     sh.getRange(firstData + 1, col[name] + 1, values.length, 1).setValues(values);
   });
   sh.getRange(2, 1).setValue('Synced from relifish.com: ' + Utilities.formatDate(new Date(), 'Asia/Kolkata', 'd MMM yyyy, h:mm a') + ' · ' + rows.length + ' buyers · ' + added + ' new');
