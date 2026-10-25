@@ -16,7 +16,7 @@ import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
 import { cleanSellerName, resizedImageUrl, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
 import { SITE_URL } from "../../lib/brand";
-import { nextPlacementStartMs } from "../../lib/cart";
+import { closedStatusLabel, nextPlacementStartMs } from "../../lib/cart";
 import {
   isPreorderShoppingWindow,
   isSellerEffectivelyOpen,
@@ -140,6 +140,9 @@ const deliveryFor = slotLine && preDays.length
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
+// Pre-order only (open_days = []): never "opens" for same-day, so closed means pre-orders are paused.
+const preorderOnly = Array.isArray(seller?.open_days) && seller.open_days.length === 0;
+const closedLabel = seller ? closedStatusLabel(seller, nowMs) : "";
 
 // SEO listings: all listings with pricing (for schema + SSR cards — crawlable regardless of open state)
 const seoListings = listings.filter((l: any) => l?.is_available === true || l?.is_preorder_enabled === true);
@@ -333,6 +336,7 @@ const tags = [
         preorderOpen={isPreorderMode}
         preorderFor={deliveryFor}
         opensAt={seller?.opens_at}
+        closedLabel={closedLabel}
         closesAt={seller?.closes_at}
         itemCount={itemCount}
         tags={tags}
@@ -383,16 +387,16 @@ const tags = [
       ) : (
         <>
           <div style="padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">{isClosed ? "Menu (Closed)" : (isPreorderMode ? "Pre-order Menu" : "Today's Menu")}</h2>
+            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">{isClosed ? (preorderOnly ? "Menu (pre-orders paused)" : "Menu (Closed)") : (isPreorderMode ? "Pre-order Menu" : "Today's Menu")}</h2>
             <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
           {isClosed && (
             <div id="v2-closed-block" style="margin: 0 16px 16px; padding: 12px 14px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--v2-radius); display: flex; align-items: center; gap: 10px;">
               <span style="font-size:20px;">🌅</span>
               <div>
-                <div style="font:700 13px Inter; color: #166534;">Store Closed</div>
+                <div style="font:700 13px Inter; color: #166534;">{preorderOnly ? "Pre-orders paused" : "Store Closed"}</div>
                 <div style="font:400 11px Inter; color: #15803D; margin-top: 2px;">
-                  {seller?.opens_at ? `Shop will open ${nextOpenLabel}.` : "Check back during opening hours."} Prices are estimates and may change.
+                  {preorderOnly ? "This seller takes pre-orders only." : seller?.opens_at ? `Shop will open ${nextOpenLabel}.` : "Check back during opening hours."} Prices are estimates and may change.
                 </div>
                 {nextPreorderLabel && (
                   <div style="font:600 11px Inter; color:#7C3AED; margin-top:4px;">🌙 Pre-orders for the next catch open {nextPreorderLabel}. Come back then to reserve yours.</div>

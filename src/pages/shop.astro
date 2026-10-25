@@ -201,7 +201,8 @@ const categories = [
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
   import { cleanSellerName, sellerHref } from "../lib/seller-display";
   import { LOGO_URL, whatsappLink } from "../lib/brand";
-  import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderStatusLabel, timeLabel, todayDayName } from "../lib/order-timing";
+  import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderStatusLabel, todayDayName } from "../lib/order-timing";
+  import { closedStatusLabel } from "../lib/cart";
   import { menuBySeller } from "../lib/menu-order";
   import { readSavedLocation, saveGpsDefault } from "../lib/saved-location";
   import type { Seller, FishListing } from "../lib/supabase";
@@ -702,7 +703,7 @@ const categories = [
           : status === "closed-preorder"
             ? [g.preorderLine || "Pre-order", "v2-badge-indigo"]
             : status === "closed"
-              ? [s.opens_at ? `Opens ${timeLabel(s.opens_at)}` : "", "v2-badge-green"]
+              ? [closedStatusLabel(s), "v2-badge-green"]
               : ["Pre-order only", "v2-badge-indigo"];
         const statusBadge = statusText
           ? `<span class="v2-badge v2-badge-tag ${statusColor} v2-badge-size-md v2-badge-bold">${escapeHtml(statusText)}</span>` : "";
