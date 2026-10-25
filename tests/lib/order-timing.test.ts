@@ -297,13 +297,13 @@ describe("overnight pre-order cutoff", () => {
       // [day, hh, mm, placement, delivery date]: Tue 16, Sat 20, next Tue 23 Jan
       ["mon", 15, 0, "preorder", "2024-01-16"],
       ["tue", 1, 59, "preorder", "2024-01-16"],
-      ["tue", 2, 30, "closed", null],
+      ["tue", 2, 30, "preorder", "2024-01-20"], // after Tue's cutoff: next delivery day (founder, 25 Oct)
       ["tue", 13, 0, "preorder", "2024-01-20"],
       ["wed", 4, 0, "preorder", "2024-01-20"],
       ["fri", 23, 0, "preorder", "2024-01-20"],
       ["sat", 1, 0, "preorder", "2024-01-20"],
-      ["sat", 2, 1, "closed", null],
-      ["sat", 12, 59, "closed", null],
+      ["sat", 2, 1, "preorder", "2024-01-23"],
+      ["sat", 12, 59, "preorder", "2024-01-23"],
       ["sat", 13, 0, "preorder", "2024-01-23"],
       ["sun", 6, 0, "preorder", "2024-01-23"],
       ["mon", 3, 0, "preorder", "2024-01-16"],
@@ -328,20 +328,18 @@ describe("overnight pre-order cutoff", () => {
     }
     it("never same-day", () => {
       expect(classifyPlacementAtOrderTime(nomadic, at("wed", 10))).toBe("preorder");
-      expect(classifyPlacementAtOrderTime(nomadic, at("tue", 10))).toBe("closed");
+      expect(classifyPlacementAtOrderTime(nomadic, at("tue", 10))).toBe("preorder");
       expect(isSellerEffectivelyOpen(nomadic, at("wed", 10))).toBe(false);
     });
-    it("labels: in the window and during the delivery-day pause", () => {
+    it("labels: always a pre-order line with the next delivery day", () => {
       expect(pausesOnlyOnDeliveryDays(nomadic)).toBe(true);
       expect(preorderPauseLabel(nomadic)).toBe("paused Tue & Sat 2 AM–1 PM");
       expect(preorderStatusLabel(nomadic, at("sun", 6))).toBe("Pre-order · delivers Tue");
       expect(preorderStatusLabel(nomadic, at("tue", 13, 30))).toBe("Pre-order · delivers Sat");
       expect(preorderStatusLabel(nomadic, at("wed", 4))).toBe("Pre-order · delivers Sat");
       expect(preorderStatusLabel(nomadic, at("mon", 23))).toBe("Pre-order · delivers tomorrow");
-      expect(preorderStatusLabel(nomadic, at("tue", 2, 30))).toBe("Pre-orders reopen at 1 PM · delivering today");
-      expect(preorderStatusLabel(nomadic, at("sat", 12, 59))).toBe("Pre-orders reopen at 1 PM · delivering today");
-      expect(closedSellerMessage(nomadic, at("tue", 2, 30))).toBe("Pre-orders reopen at 1 PM today.");
-      expect(closedSellerMessage(nomadic, at("sat", 12, 59))).toBe("Pre-orders reopen at 1 PM today.");
+      expect(preorderStatusLabel(nomadic, at("tue", 2, 30))).toBe("Pre-order · delivers Sat");
+      expect(preorderStatusLabel(nomadic, at("sat", 12, 59))).toBe("Pre-order · delivers Tue");
       const noDelivery = { ...nomadic, delivery_days: null, preorder_days: ["fri"] };
       expect(closedSellerMessage(noDelivery, at("fri", 10))).toBe("Not taking orders right now. Pre-orders open at 1 PM.");
     });
@@ -369,9 +367,9 @@ describe("overnight pre-order cutoff", () => {
       expect(preorderStatusLabel(fishtokri, at("tue", 19))).toBe("Pre-order · next day");
       expect(preorderDeliveryDateIST(fishtokri, at("wed", 1, 30))).toBe(date("wed"));
     });
-    it("the seller page switches mode at 1 PM and 2 AM", () => {
+    it("never closes: the seller page stays in pre-order mode through the delivery morning", () => {
+      for (const [hh, mm] of [[2, 30], [8, 0], [12, 59], [13, 0]]) expect(classifyPlacementAtOrderTime(nomadic, at("tue", hh, mm))).toBe("preorder");
       expect(nextModeBoundaryMs(nomadic, at("tue", 2, 30))).toBeLessThanOrEqual(at("tue", 8));
-      expect(nextPlacementStartMs(nomadic, "preorder", at("tue", 2, 30))).toBe(at("tue", 13));
     });
   });
 

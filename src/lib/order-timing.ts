@@ -174,7 +174,9 @@ export function preorderWindowDaysBack(seller: SellerTimingInput, nowMs?: number
   if (overnight && !pastCutoff && isTodayPreorderDay(seller, dayAt(at - DAY_MS))) return 1;
   const day = dayAt(at);
   if (!isTodayPreorderDay(seller, day)) return null;
-  if (pausesOnlyOnDeliveryDays(seller) && !seller.delivery_days!.includes(day)) return 0;
+  // Delivery-day sellers (Nomadic): never paused. Founder, 25 Oct: after a delivery day's cutoff, take the
+  // pre-order for the next delivery day instead of closing (Sun 10 AM → delivers Wed).
+  if (pausesOnlyOnDeliveryDays(seller)) return 0;
   if (!overnight && pastCutoff) return null;
   if (minutesNowIST(at) < preorderStartMinutes(seller, day)) return null;
   return 0;
@@ -282,8 +284,7 @@ export function preorderScheduleLabel(seller: SellerTimingInput): string | null 
   if (!seller.accepts_preorder || !days.length) return null;
   const dd = Array.isArray(seller.delivery_days) ? seller.delivery_days : [];
   const delivered = dd.length ? `delivered ${WEEK.filter((d) => dd.includes(d)).map(dayLabel).join(" & ")}` : "delivered next day";
-  const pause = preorderPauseLabel(seller);
-  if (pause) return `Pre-orders open ${days.length === 7 ? "all week" : daysLabel(days)} · ${pause} · ${delivered}`;
+  if (pausesOnlyOnDeliveryDays(seller)) return `Pre-orders open ${days.length === 7 ? "all week" : daysLabel(days)} · ${delivered}`;
   const sameDays = daysLabel(Array.isArray(seller.open_days) ? seller.open_days : WEEK) === daysLabel(days);
   const hours = preorderHoursLabel(seller);
   return `Pre-orders · ${sameDays ? "Same days" : daysLabel(days)}${hours ? ` · ${hours}` : ""} · ${delivered}`;

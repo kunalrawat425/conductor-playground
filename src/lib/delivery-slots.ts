@@ -7,7 +7,7 @@
  * (orders.delivery_slot_start / _end). Slots off: order-timing.ts alone decides, as before.
  */
 import {
-  classifyPlacementAtOrderTime, isOvernightCutoff, isSellerEffectivelyOpen, pausesOnlyOnDeliveryDays, isTodayPreorderDay, preorderDeliveryDateIST, preorderPauseLabel, preorderScheduleLabel, timeLabel, todayDayName,
+  isOvernightCutoff, isSellerEffectivelyOpen, isTodayPreorderDay, preorderDeliveryDateIST, preorderPauseLabel, preorderScheduleLabel, timeLabel, todayDayName,
   type SellerTimingInput,
 } from "./order-timing";
 
@@ -89,13 +89,11 @@ export function preorderDeadlineMs(seller: SlotSeller, date: string): number {
 /**
  * IST dates a pre-order placed at `nowMs` can be delivered on (slots on): the seller's next
  * delivery days, up to preorder_days_ahead (1–3). Any time of day, also during shop hours; a day
- * whose cutoff has passed drops out (after 3 AM, this morning). Nomadic's delivery-morning pause
- * closes pre-orders completely.
+ * whose cutoff has passed drops out (after 3 AM, this morning); Nomadic after its 2 AM cutoff on a
+ * delivery day gets the next delivery day.
  */
 export function preorderDeliveryDates(seller: SlotSeller, nowMs = Date.now()): string[] {
   if (seller.accepts_preorder === false) return [];
-  // Nomadic-style delivery-morning pause (Tue/Sat 2 AM–1 PM): pre-orders stay fully closed, as without slots.
-  if (pausesOnlyOnDeliveryDays(seller) && classifyPlacementAtOrderTime(seller, nowMs) === "closed") return [];
   const ahead = Math.min(3, Math.max(1, Math.floor(Number(seller.preorder_days_ahead) || 1)));
   const out: string[] = [];
   const noon = Date.parse(`${istDate(nowMs)}T12:00:00+05:30`);
