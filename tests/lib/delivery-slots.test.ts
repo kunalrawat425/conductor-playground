@@ -44,10 +44,10 @@ describe("the day picker (Today = same-day, later days = pre-order)", () => {
     expect(picker(fishtokri, "2026-10-22T11:00:00")).toEqual(["Today", "Fri 23 Oct"]);
     expect(picker(fishtokri, "2026-10-23T04:00:00")).toEqual(["Sat 24 Oct"]);
   });
-  it("Nomadic: Tue & Sat only; fully closed during the delivery-morning pause", () => {
+  it("Nomadic: Tue & Sat only; after a delivery day's 2 AM cutoff the next delivery day", () => {
     expect(picker(nomadic, "2026-10-22T15:00:00")).toEqual(["Sat 24 Oct"]);
     expect(picker({ ...nomadic, preorder_days_ahead: 3 }, "2026-10-22T15:00:00")).toEqual(["Sat 24 Oct", "Tue 27 Oct", "Sat 31 Oct"]);
-    expect(picker({ ...nomadic, preorder_days_ahead: 2 }, "2026-10-24T09:00:00")).toEqual([]); // Sat pause
+    expect(picker({ ...nomadic, preorder_days_ahead: 2 }, "2026-10-24T09:00:00")).toEqual(["Tue 27 Oct", "Sat 31 Oct"]); // Sat after the cutoff: next slots
     expect(picker(nomadic, "2026-10-24T01:30:00")).toEqual(["Sat 24 Oct"]); // before the 2 AM cutoff
     expect(preorderDeliveryDates({ ...nomadic, preorder_days_ahead: 2 }, ist("2026-10-22T15:00:00"))).toEqual(["2026-10-24", "2026-10-27"]);
   });
@@ -57,11 +57,11 @@ describe("the day picker (Today = same-day, later days = pre-order)", () => {
     expect(picker(n2, "2026-10-27T14:00:00")).toEqual(["Sat 31 Oct", "Tue 3 Nov"]); // Tue after the pause
     expect(picker(n2, "2026-10-25T11:00:00")).toEqual(["Tue 27 Oct", "Sat 31 Oct"]); // Sun
     expect(picker(n2, "2026-10-27T01:30:00")).toEqual(["Tue 27 Oct", "Sat 31 Oct"]); // Tue before the 2 AM cutoff
-    // Tue pause 2 AM–1 PM: closed, as live today.
-    expect(picker(n2, "2026-10-27T02:00:00")).toEqual([]);
-    expect(picker(n2, "2026-10-27T10:00:00")).toEqual([]);
-    expect(preorderStatusLabel(n2, ist("2026-10-27T10:00:00"))).toMatch(/^Pre-orders reopen at 1 PM/);
-    expect(picker(n2, "2026-10-27T12:59:00")).toEqual([]);
+    // Founder, 25 Oct: no pause. After Tue's 2 AM cutoff the pre-order goes to the next delivery day.
+    expect(picker(n2, "2026-10-27T02:00:00")).toEqual(["Sat 31 Oct", "Tue 3 Nov"]);
+    expect(picker(n2, "2026-10-27T10:00:00")).toEqual(["Sat 31 Oct", "Tue 3 Nov"]);
+    expect(preorderStatusLabel(n2, ist("2026-10-27T10:00:00"))).toBe("Pre-order · delivers Sat");
+    expect(picker(n2, "2026-10-27T12:59:00")).toEqual(["Sat 31 Oct", "Tue 3 Nov"]);
     expect(picker(n2, "2026-10-27T13:00:00")).toEqual(["Sat 31 Oct", "Tue 3 Nov"]);
     expect(times(deliveryDaysAt(n2, ist("2026-10-28T11:00:00"))[0].slots)).toEqual(["7–9 AM", "9–11 AM", "11 AM–1 PM"]);
   });

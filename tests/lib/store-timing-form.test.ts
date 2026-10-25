@@ -56,7 +56,7 @@ describe("store timings form: existing sellers round-trip unchanged", () => {
     expect(preorderScheduleLabel(dbFromForm(formFromDb(fishtokri)))).toBe("Pre-orders · Closed Sun · 6 PM–3 AM · delivered next day");
     expect(sameDayScheduleLabel(dbFromForm(formFromDb(nomadic)))).toBeNull();
     expect(preorderScheduleLabel(dbFromForm(formFromDb(nomadic)))).toBe(
-      "Pre-orders open all week · paused Tue & Sat 2 AM–1 PM · delivered Tue & Sat"
+      "Pre-orders open all week · delivered Tue & Sat"
     );
     expect(preorderScheduleLabel({ ...nomadic, accepts_preorder: false })).toBeNull();
   });

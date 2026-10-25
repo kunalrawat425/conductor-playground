@@ -35,7 +35,7 @@ describe("seller slots come from DB timings", () => {
     expect(offerAt(FISHTOKRI, T("23", "09:30"))).toEqual({ mode: "today" });
     expect(offerAt(FISHTOKRI, T("23", "16:30"))?.mode).toBe("preorder"); // shop open, but no Today slot left
     expect(offerAt(FISHTOKRI, T("26", "09:30"))?.mode).toBe("preorder"); // Monday: no same-day
-    expect(offerAt(NOMADIC, T("25", "09:30"))).toBeNull();               // Sunday delivery-morning pause
+    expect(offerAt(NOMADIC, T("25", "09:30"))?.mode).toBe("preorder");   // Sunday after the 2 AM cutoff: next delivery day (no pause)
     expect(offerAt(NOMADIC, T("24", "19:00"))).toEqual({ mode: "preorder", when: "Sun 25 Oct, 9–11 AM" });
   });
 });
