@@ -411,11 +411,10 @@ const tags = [
               const sp = speciesDisplayById[l.species] || l.species || "Fish";
               const opts = l.pricing_options || [];
               const firstOpt = opts[0];
-              const priceText = firstOpt
-                ? (opts.length > 1
-                    ? `₹${firstOpt.price}–₹${opts[opts.length-1].price}`
-                    : `₹${firstOpt.price}`)
-                : "";
+              // Low–high across the options (they're stored in the seller's order, not by price); one price when equal.
+              const prices = opts.map((o: any) => Number(o.price)).filter((n: number) => Number.isFinite(n));
+              const lo = prices.length ? Math.min(...prices) : null, hi = prices.length ? Math.max(...prices) : null;
+              const priceText = lo == null ? "" : lo === hi ? `₹${lo}` : `₹${lo}–₹${hi}`;
               const suffixText = firstOpt?.buyer_menu_suffix || "";
               const preorderRange = (() => {
                 if (!isPreorderMode) return null;
