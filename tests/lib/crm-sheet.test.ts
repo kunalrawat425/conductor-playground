@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crmRow, crmStage, type CrmBuyer } from "../../src/lib/crm-sheet";
+import { crmRow, crmStage, lastActivity, type CrmBuyer } from "../../src/lib/crm-sheet";
 
 const base: CrmBuyer = { phone: "9819292817", name: "", email: "", area: "Neelam Nagar", created_at: "2026-10-25T05:37:00Z",
   whatsapp_opt_in: false, whatsapp_opt_out: false, push: false, society: [], cart: [], cart_updated: null, orders: [] };
@@ -20,5 +20,11 @@ describe("crm sheet rows", () => {
     expect(r["Signed up"]).toBe("2026-10-25 11:07");
     expect(r["Paid total (Rs)"]).toBe(313);
     expect(r["Stage"]).toBe("5 Delivered - review");
+  });
+  it("last activity is the latest step with its IST time", () => {
+    expect(lastActivity(base)).toBe("Signed up · 2026-10-25 11:07");
+    expect(lastActivity({ ...base, cart: ["Bombil (Fishtokri)"], cart_updated: "2026-10-25T05:53:00Z" })).toBe("Added to cart · 2026-10-25 11:23");
+    expect(lastActivity({ ...base, orders: [order("pending_payment", false)] })).toBe("Order created, not paid #EEB0F7AC · 2026-10-25 11:32");
+    expect(lastActivity({ ...base, orders: [{ ...order("completed", true), updated_at: "2026-10-25T08:58:00Z" }] })).toBe("Delivered #EEB0F7AC · 2026-10-25 14:28");
   });
 });

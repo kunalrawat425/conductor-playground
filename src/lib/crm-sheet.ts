@@ -2,7 +2,7 @@
  * Rows for the founder's buyer call sheet (Google Sheet, synced hourly by Apps Script).
  * Only the database columns; the founder's call notes live in the sheet and are never sent or overwritten.
  */
-export type CrmOrder = { id: string; species: string | null; status: string; paid: boolean; amount: number; created_at: string; seller: string | null; source: string };
+export type CrmOrder = { id: string; species: string | null; status: string; paid: boolean; amount: number; created_at: string; updated_at?: string | null; seller: string | null; source: string };
 export type CrmBuyer = {
   phone: string; name: string; email: string; area: string; created_at: string;
   whatsapp_opt_in: boolean; whatsapp_opt_out: boolean; push: boolean;
@@ -27,7 +27,25 @@ export function crmStage(b: Pick<CrmBuyer, "cart" | "orders">): 1 | 2 | 3 | 4 | 
   return 1;
 }
 
-const ist = (iso: string | null) => (iso ? new Date(Date.parse(iso) + 5.5 * 3600_000).toISOString().slice(0, 16).replace("T", " ") : "");
+const ist = (iso: string | null | undefined) => (iso ? new Date(Date.parse(iso) + 5.5 * 3600_000).toISOString().slice(0, 16).replace("T", " ") : "");
+
+const STATUS_LABEL: Record<string, string> = {
+  paid: "Paid", confirmed: "Seller confirmed", scheduled: "Seller confirmed", out_for_delivery: "Out for delivery",
+  completed: "Delivered", cancelled: "Order cancelled", declined: "Seller declined", refunded: "Refunded",
+};
+
+/** The buyer's latest step with its IST time, e.g. "Added to cart · 2026-10-25 11:23". */
+export function lastActivity(b: CrmBuyer): string {
+  const ev: [string, string][] = [["Signed up", b.created_at]];
+  if (b.cart_updated) ev.push(["Added to cart", b.cart_updated]);
+  for (const o of b.orders) {
+    ev.push([o.paid ? `Order placed #${o.id}` : `Order created, not paid #${o.id}`, o.created_at]);
+    const label = STATUS_LABEL[o.status];
+    if (label && o.updated_at) ev.push([`${label} #${o.id}`, o.updated_at]);
+  }
+  const [what, at] = ev.reduce((a, x) => (Date.parse(x[1]) > Date.parse(a[1]) ? x : a));
+  return `${what} · ${ist(at)}`;
+}
 
 /** One row per buyer, keyed by the sheet's column headers (grey columns only). */
 export function crmRow(b: CrmBuyer): Record<string, string | number> {
@@ -42,6 +60,7 @@ export function crmRow(b: CrmBuyer): Record<string, string | number> {
     "Area set": b.area,
     "Society / building (saved address)": b.society.join(" | "),
     "Signed up": ist(b.created_at),
+    "Last activity": lastActivity(b),
     "Cart (now)": b.cart.join(", "),
     "Cart updated": ist(b.cart_updated),
     "Orders": b.orders.map((x) => `#${x.id} ${x.species ?? ""} Rs${x.amount} ${x.status}${x.paid ? " PAID" : ""} ${ist(x.created_at).slice(5)} (${x.seller ?? "?"})`).join("; "),

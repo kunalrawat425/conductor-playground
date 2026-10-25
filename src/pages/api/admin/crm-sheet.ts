@@ -28,7 +28,7 @@ export const GET: APIRoute = async ({ request }) => {
   const ids = real.map((b: any) => b.id);
   const [{ data: carts }, { data: orders }, { data: addrs }] = await Promise.all([
     sb.from("buyer_cart").select("buyer_id, updated_at, listing:fish_listings(description, species, seller:sellers(name))").in("buyer_id", ids),
-    sb.from("orders").select("id, buyer_id, species, status, razorpay_payment_id, payment_verified_at, total_price, delivery_fee, created_at, utm_source, utm_campaign, is_test, listing:fish_listings(seller:sellers(name))").in("buyer_id", ids).eq("is_test", false).order("created_at"),
+    sb.from("orders").select("id, buyer_id, species, status, razorpay_payment_id, payment_verified_at, total_price, delivery_fee, created_at, updated_at, utm_source, utm_campaign, is_test, listing:fish_listings(seller:sellers(name))").in("buyer_id", ids).eq("is_test", false).order("created_at"),
     sb.from("buyer_addresses").select("buyer_id, building, location_name").in("buyer_id", ids),
   ]);
   const by = <T,>(rows: T[] | null, f: (r: T) => string) => (rows || []).reduce((m, r) => (m.get(f(r))?.push(r) ?? m.set(f(r), [r]), m), new Map<string, T[]>());
@@ -44,7 +44,7 @@ export const GET: APIRoute = async ({ request }) => {
       cart_updated: c.map((r: any) => r.updated_at).sort().pop() ?? null,
       orders: (ordersBy.get(b.id) || []).map((o: any) => ({
         id: String(o.id).slice(0, 8).toUpperCase(), species: o.species, status: o.status, paid: !!(o.razorpay_payment_id || o.payment_verified_at),
-        amount: Math.round(Number(o.total_price || 0) + Number(o.delivery_fee || 0)), created_at: o.created_at, seller: o.listing?.seller?.name ?? null,
+        amount: Math.round(Number(o.total_price || 0) + Number(o.delivery_fee || 0)), created_at: o.created_at, updated_at: o.updated_at, seller: o.listing?.seller?.name ?? null,
         source: [o.utm_source, o.utm_campaign].filter(Boolean).join(" / "),
       })),
     };
