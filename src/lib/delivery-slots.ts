@@ -7,9 +7,10 @@
  * (orders.delivery_slot_start / _end). Slots off: order-timing.ts alone decides, as before.
  */
 import {
-  isOvernightCutoff, isSellerEffectivelyOpen, isTodayPreorderDay, preorderDeliveryDateIST, preorderPauseLabel, preorderScheduleLabel, timeLabel, todayDayName,
+  hasSameDayToday, isOvernightCutoff, isSellerEffectivelyOpen, isTodayPreorderDay, isDeliveryDayMs, preorderDeadlineMs, preorderDeliveryDateIST, preorderPauseLabel, preorderScheduleLabel, timeLabel, todayDayName,
   type SellerTimingInput,
 } from "./order-timing";
+export { preorderDeadlineMs };
 
 export type SlotSeller = SellerTimingInput & {
   delivery_slots_enabled?: boolean | null;
@@ -68,24 +69,6 @@ export function sellerSlotsOn(seller: SlotSeller, date: string, preorder: boolea
   return slotsBetween(date, open, close <= open ? close + 24 * 60 : close, len);
 }
 
-/** Delivery mornings the seller runs: delivery_days when set, else the morning after each pre-order day. */
-function isDeliveryDay(seller: SlotSeller, ms: number): boolean {
-  const dd = seller.delivery_days;
-  if (Array.isArray(dd) && dd.length) return dd.includes(todayDayName(new Date(ms)));
-  return isTodayPreorderDay(seller, todayDayName(new Date(ms - DAY_MS)));
-}
-
-/**
- * Last moment to pre-order for delivery date D: the pre-order cutoff of the window that serves D,
- * i.e. D at the cutoff when it runs past midnight (Fishtokri 03:00, Nomadic 02:00), else the day
- * before at the cutoff (22:00). No cutoff = midnight before D.
- */
-export function preorderDeadlineMs(seller: SlotSeller, date: string): number {
-  const midnight = Date.parse(`${date}T00:00:00+05:30`);
-  const cut = toMin(seller.preorder_cutoff_time, 24 * 60);
-  return (isOvernightCutoff(seller) ? midnight : midnight - DAY_MS) + cut * 60_000;
-}
-
 /**
  * IST dates a pre-order placed at `nowMs` can be delivered on (slots on): the seller's next
  * delivery days, up to preorder_days_ahead (1–3). Any time of day, also during shop hours; a day
@@ -99,7 +82,7 @@ export function preorderDeliveryDates(seller: SlotSeller, nowMs = Date.now()): s
   const noon = Date.parse(`${istDate(nowMs)}T12:00:00+05:30`);
   for (let i = 0; out.length < ahead && i <= 14; i++) {
     const date = istDate(noon + i * DAY_MS);
-    if (isDeliveryDay(seller, noon + i * DAY_MS) && nowMs < preorderDeadlineMs(seller, date)) out.push(date);
+    if (isDeliveryDayMs(seller, noon + i * DAY_MS) && nowMs < preorderDeadlineMs(seller, date)) out.push(date);
   }
   return out;
 }
@@ -116,7 +99,9 @@ export function deliveryDaysAt(seller: SlotSeller, nowMs = Date.now(), leadMin =
   // Founder, 22 Oct: a slot stays on until 2 h before it ENDS (at 15:10 Today's 4–6 PM is still offered).
   const later = (s: DeliverySlot) => Date.parse(s.end) >= earliest;
   const out: DeliveryDay[] = [];
-  if (isSellerEffectivelyOpen(seller, nowMs)) {
+  // Today's slots also before opening on a same-day day (founder, 25 Oct: 5 AM order → today's first slot).
+  const preDates = preorderDeliveryDates(seller, nowMs);
+  if (isSellerEffectivelyOpen(seller, nowMs) || (hasSameDayToday(seller, nowMs) && !preDates.includes(istDate(nowMs)))) {
     let date = istDate(nowMs);
     // Hours past midnight (e.g. 17:00–01:00) at 00:30: today's hours opened yesterday.
     const open = toMin(seller.opens_at, 0), close = toMin(seller.closes_at, 24 * 60);
@@ -124,7 +109,7 @@ export function deliveryDaysAt(seller: SlotSeller, nowMs = Date.now(), leadMin =
     const slots = sellerSlotsOn(seller, date, false).filter(later);
     if (slots.length) out.push({ date, kind: "same_day", slots });
   }
-  for (const date of preorderDeliveryDates(seller, nowMs)) {
+  for (const date of preDates) {
     const slots = sellerSlotsOn(seller, date, true).filter(later);
     if (slots.length) out.push({ date, kind: "preorder", slots });
   }

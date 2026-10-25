@@ -193,7 +193,7 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
  */
 export function preorderDeliveryDateIST(seller: SellerTimingInput, nowMs = Date.now()): string | null {
   const back = preorderWindowDaysBack(seller, nowMs);
-  if (back == null) return null;
+  if (back == null) return isSellerEffectivelyOpen(seller, nowMs) ? null : nextPreorderDeliveryDateIST(seller, nowMs);
   const nextMorning = nowMs + (1 - back) * DAY_MS;
   const days = Array.isArray(seller.delivery_days) && seller.delivery_days.length ? seller.delivery_days : null;
   for (let i = 0; i < 7; i++) {
@@ -201,6 +201,35 @@ export function preorderDeliveryDateIST(seller: SellerTimingInput, nowMs = Date.
     if (!days || days.includes(dayAt(ms))) return istDate(ms);
   }
   return istDate(nextMorning);
+}
+
+/** Delivery mornings the seller runs: delivery_days when set, else the morning after each pre-order day. */
+export function isDeliveryDayMs(seller: SellerTimingInput, ms: number): boolean {
+  const dd = seller.delivery_days;
+  if (Array.isArray(dd) && dd.length) return dd.includes(dayAt(ms));
+  return isTodayPreorderDay(seller, dayAt(ms - DAY_MS));
+}
+
+/**
+ * Last moment to pre-order for delivery date D: the pre-order cutoff of the window that serves D,
+ * i.e. D at the cutoff when it runs past midnight (Fishtokri 03:00, Nomadic 02:00), else the day
+ * before at the cutoff (22:00). No cutoff = midnight before D.
+ */
+export function preorderDeadlineMs(seller: SellerTimingInput, date: string): number {
+  const midnight = Date.parse(`${date}T00:00:00+05:30`);
+  const cut = toMinutes(seller.preorder_cutoff_time) ?? 24 * 60;
+  return (isOvernightCutoff(seller) ? midnight : midnight - DAY_MS) + cut * 60_000;
+}
+
+/** Next IST delivery date a pre-order placed now can still make (cutoff not passed), or null. */
+export function nextPreorderDeliveryDateIST(seller: SellerTimingInput, nowMs = Date.now()): string | null {
+  if (seller.accepts_preorder === false || !Array.isArray(seller.preorder_days) || !seller.preorder_days.length) return null;
+  const noon = Date.parse(`${istDate(nowMs)}T12:00:00+05:30`);
+  for (let i = 0; i <= 14; i++) {
+    const ms = noon + i * DAY_MS, date = istDate(ms);
+    if (isDeliveryDayMs(seller, ms) && nowMs < preorderDeadlineMs(seller, date)) return date;
+  }
+  return null;
 }
 
 /** "today" / "tomorrow" / "Tue" for an IST delivery date (YYYY-MM-DD), seen at `nowMs`. No "morning":
@@ -301,6 +330,10 @@ export function classifyPlacementAtOrderTime(
 ): PlacementKind | "closed" {
   if (isSellerEffectivelyOpen(seller, nowMs)) return "same_day";
   if (isPreorderShoppingWindow(seller, nowMs)) return "preorder";
+  // Founder, 25 Oct: never closed. Before opening on a same-day day (Fishtokri 3–8 AM) it is a same-day
+  // order for today's first slot; otherwise (e.g. Sunday evening) a pre-order for the next delivery day.
+  if (hasSameDayToday(seller, nowMs)) return "same_day";
+  if (nextPreorderDeliveryDateIST(seller, nowMs)) return "preorder";
   return "closed";
 }
 

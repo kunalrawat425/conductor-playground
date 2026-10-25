@@ -47,14 +47,14 @@ describe("order-timing", () => {
     expect(classifyPlacementAtOrderTime(seller, now)).toBe("preorder");
   });
 
-  it("NOT preorder before store opens (same order day, before opens_at)", () => {
+  it("before the store opens on an order day: same-day order for today's first slot", () => {
     // UTC 00:00 = IST 05:30 — before opens_at 06:00 on an order day
     const now = Date.UTC(2024, 0, 15, 0, 0, 0);
     expect(isSellerEffectivelyOpen(seller, now)).toBe(false);
     expect(isAfterCloseTimeIST(seller, now)).toBe(false); // not past close time
     // preorder window should NOT be active before store opens on an order day
     expect(isPreorderShoppingWindow(seller, now)).toBe(false);
-    expect(classifyPlacementAtOrderTime(seller, now)).toBe("closed");
+    expect(classifyPlacementAtOrderTime(seller, now)).toBe("same_day");
   });
 
   it("NOT preorder between opens_at and closes_at", () => {
@@ -64,10 +64,10 @@ describe("order-timing", () => {
     expect(isPreorderShoppingWindow(seller, now)).toBe(false);
   });
 
-  it("closed after preorder cutoff", () => {
+  it("after the pre-order cutoff: pre-order for the next delivery day (never closed)", () => {
     const now = Date.UTC(2024, 0, 15, 18, 0, 0);
     expect(isPastPreorderCutoffIST(seller.preorder_cutoff_time, now)).toBe(true);
-    expect(classifyPlacementAtOrderTime(seller, now)).toBe("closed");
+    expect(classifyPlacementAtOrderTime(seller, now)).toBe("preorder");
   });
 });
 
@@ -178,11 +178,11 @@ describe("open_days: null vs [] (pre-order-only sellers)", () => {
     expect(classifyPlacementAtOrderTime(preorderOnly, tue(11, 0))).toBe("preorder");
     expect(isPreorderShoppingWindow(preorderOnly, tue(22, 30))).toBe(false);
   });
-  it("closed on a non-pre-order day, never same-day", () => {
+  it("non-pre-order day: pre-order for the next delivery day, never same-day", () => {
     const wed = tue(11, 0) + 86_400_000;
     expect(todayDayName(new Date(wed))).toBe("wed");
     expect(isPreorderShoppingWindow(preorderOnly, wed)).toBe(false);
-    expect(classifyPlacementAtOrderTime(preorderOnly, wed)).toBe("closed");
+    expect(classifyPlacementAtOrderTime(preorderOnly, wed)).toBe("preorder");
   });
 });
 
@@ -226,9 +226,9 @@ describe("overnight pre-order cutoff", () => {
       expect(preorderDeliveryLabel(fishtokri, t)).toBe("today");
       expect(preorderPlacedLabel(preorderDeliveryDateIST(fishtokri, t), t)).toBe("Pre-order placed — catch reserved for today");
     });
-    it("Wed 03:30 → closed until same-day opens at 8 AM", () => {
+    it("Wed 03:30 → same-day order for today's first slot (never closed)", () => {
       const t = at("wed", 3, 30);
-      expect(classifyPlacementAtOrderTime(fishtokri, t)).toBe("closed");
+      expect(classifyPlacementAtOrderTime(fishtokri, t)).toBe("same_day");
       expect(closedSellerMessage(fishtokri, t)).toBe("Pre-order cutoff (03:00 IST) has passed. Opens at 08:00.");
       expect(classifyPlacementAtOrderTime(fishtokri, at("wed", 8))).toBe("same_day");
     });
@@ -236,8 +236,8 @@ describe("overnight pre-order cutoff", () => {
       expect(classifyPlacementAtOrderTime(fishtokri, at("mon", 19))).toBe("preorder");
       expect(preorderDeliveryDateIST(fishtokri, at("mon", 19))).toBe(date("tue"));
     });
-    it("Sun 19:00 → closed (Sun is not a pre-order day)", () => {
-      expect(classifyPlacementAtOrderTime(fishtokri, at("sun", 19))).toBe("closed");
+    it("Sun 19:00 → pre-order for Tuesday (never closed)", () => {
+      expect(classifyPlacementAtOrderTime(fishtokri, at("sun", 19))).toBe("preorder");
     });
     it("Tue 10:00 → same-day, 17:59 same-day, 18:00 preorder", () => {
       expect(classifyPlacementAtOrderTime(fishtokri, at("tue", 10))).toBe("same_day");
@@ -257,23 +257,23 @@ describe("overnight pre-order cutoff", () => {
 
   describe("the old 22:00 cutoff is unchanged", () => {
     const old = { ...fishtokri, preorder_cutoff_time: "22:00" };
-    it("after close until 22:00, then closed; nothing after midnight", () => {
+    it("after close until 22:00, then the next delivery day", () => {
       expect(classifyPlacementAtOrderTime(old, at("tue", 19))).toBe("preorder");
       expect(classifyPlacementAtOrderTime(old, at("tue", 21, 59))).toBe("preorder");
-      expect(classifyPlacementAtOrderTime(old, at("tue", 22))).toBe("closed");
-      expect(classifyPlacementAtOrderTime(old, at("tue", 23, 30))).toBe("closed");
-      expect(classifyPlacementAtOrderTime(old, at("wed", 1, 30))).toBe("closed");
+      expect(classifyPlacementAtOrderTime(old, at("tue", 22))).toBe("preorder");
+      expect(classifyPlacementAtOrderTime(old, at("tue", 23, 30))).toBe("preorder");
+      expect(classifyPlacementAtOrderTime(old, at("wed", 1, 30))).toBe("same_day");
       expect(closedSellerMessage(old, at("tue", 23))).toBe("Pre-order cutoff (22:00 IST) has passed. Try again tomorrow.");
     });
     it("non-order pre-order day: all day until 22:00, delivered next morning", () => {
       expect(classifyPlacementAtOrderTime(old, at("mon", 1))).toBe("preorder");
       expect(classifyPlacementAtOrderTime(old, at("mon", 12))).toBe("preorder");
-      expect(classifyPlacementAtOrderTime(old, at("mon", 22, 30))).toBe("closed");
+      expect(classifyPlacementAtOrderTime(old, at("mon", 22, 30))).toBe("preorder");
       expect(preorderDeliveryDateIST(old, at("mon", 12))).toBe(date("tue"));
       expect(preorderWindowDaysBack(old, at("mon", 12))).toBe(0);
     });
-    it("before close on an order day: closed", () => {
-      expect(classifyPlacementAtOrderTime(old, at("wed", 5))).toBe("closed");
+    it("before opening on an order day: same-day", () => {
+      expect(classifyPlacementAtOrderTime(old, at("wed", 5))).toBe("same_day");
       expect(closedSellerMessage(old, at("wed", 5))).toBe("Store not yet open for orders. Opens at 08:00.");
     });
   });
@@ -343,14 +343,14 @@ describe("overnight pre-order cutoff", () => {
       const noDelivery = { ...nomadic, delivery_days: null, preorder_days: ["fri"] };
       expect(closedSellerMessage(noDelivery, at("fri", 10))).toBe("Not taking orders right now. Pre-orders open at 1 PM.");
     });
-    it("without delivery_days the 2 AM–1 PM off-window still applies every day", () => {
+    it("without delivery_days: off-window orders go to the next delivery day", () => {
       const daily = { ...nomadic, delivery_days: null };
       expect(pausesOnlyOnDeliveryDays(daily)).toBe(false);
       expect(preorderPauseLabel(daily)).toBeNull();
-      expect(classifyPlacementAtOrderTime(daily, at("wed", 4))).toBe("closed");
+      expect(classifyPlacementAtOrderTime(daily, at("wed", 4))).toBe("preorder");
       expect(classifyPlacementAtOrderTime(daily, at("wed", 13))).toBe("preorder");
       expect(preorderDeliveryDateIST(daily, at("wed", 13))).toBe(date("thu"));
-      expect(preorderStatusLabel(daily, at("wed", 4))).toBe("Pre-orders open at 1 PM");
+      expect(preorderStatusLabel(daily, at("wed", 4))).toBe("Pre-order · next day"); // never closed (founder, 25 Oct)
       expect(preorderStatusLabel(daily, at("wed", 13))).toBe("Pre-order · next day");
     });
     it("Fishtokri is unchanged, even with delivery days set (it has same-day days)", () => {
@@ -360,8 +360,8 @@ describe("overnight pre-order cutoff", () => {
         expect(classifyPlacementAtOrderTime(s, at("tue", 10))).toBe("same_day");
         expect(classifyPlacementAtOrderTime(s, at("tue", 18))).toBe("preorder");
         expect(classifyPlacementAtOrderTime(s, at("wed", 1, 30))).toBe("preorder");
-        expect(classifyPlacementAtOrderTime(s, at("wed", 3, 30))).toBe("closed");
-        expect(classifyPlacementAtOrderTime(s, at("sun", 19))).toBe("closed");
+        expect(classifyPlacementAtOrderTime(s, at("wed", 3, 30))).toBe("same_day");
+        expect(classifyPlacementAtOrderTime(s, at("sun", 19))).toBe("preorder");
         expect(classifyPlacementAtOrderTime(s, at("mon", 19))).toBe("preorder");
       }
       expect(preorderStatusLabel(fishtokri, at("tue", 19))).toBe("Pre-order · next day");
@@ -378,8 +378,8 @@ describe("overnight pre-order cutoff", () => {
     const cases: [string, number, number, "preorder" | "closed"][] = [
       ["tue", 10, 0, "preorder"],
       ["wed", 2, 0, "preorder"],
-      ["wed", 4, 0, "closed"],
-      ["fri", 23, 0, "closed"],
+      ["wed", 4, 0, "preorder"],
+      ["fri", 23, 0, "preorder"],
       ["sat", 23, 59, "preorder"],
       ["sun", 2, 59, "preorder"],
     ];

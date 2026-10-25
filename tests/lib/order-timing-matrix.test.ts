@@ -22,13 +22,13 @@ const base = {
 
 describe("placement matrix — day shop 06:00–14:00, cutoff 22:00", () => {
   it.each([
-    [5, 59, "closed"],      // before opening on an order day: not a pre-order window
+    [5, 59, "same_day"],    // before opening on an order day: an order for today's first slot (founder, 25 Oct)
     [6, 0, "same_day"],     // opens_at is inclusive
     [13, 59, "same_day"],
     [14, 0, "preorder"],    // closes_at is exclusive; pre-orders start right at close
     [21, 59, "preorder"],
-    [22, 0, "closed"],      // cutoff is exclusive
-    [23, 30, "closed"],
+    [22, 0, "preorder"],    // after the cutoff: pre-order for the next delivery day (never closed)
+    [23, 30, "preorder"],
   ] as const)("%i:%i IST → %s", (h, m, want) => {
     expect(classifyPlacementAtOrderTime(base, at(h, m))).toBe(want);
   });
@@ -36,7 +36,7 @@ describe("placement matrix — day shop 06:00–14:00, cutoff 22:00", () => {
   it("no cutoff: pre-orders run from close until midnight", () => {
     const s = { ...base, preorder_cutoff_time: null };
     expect(classifyPlacementAtOrderTime(s, at(23, 59))).toBe("preorder");
-    expect(classifyPlacementAtOrderTime(s, at(0, 30, 16))).toBe("closed"); // next day, before opening
+    expect(classifyPlacementAtOrderTime(s, at(0, 30, 16))).toBe("same_day"); // next day, before opening
   });
 });
 
@@ -67,12 +67,12 @@ describe("placement matrix — days and switches", () => {
   it("non-order day: whole day is pre-order (before cutoff)", () => {
     const s = { ...base, open_days: ["tue"] }; // 2024-01-15 is a Monday
     expect(classifyPlacementAtOrderTime(s, at(9, 0))).toBe("preorder");
-    expect(classifyPlacementAtOrderTime(s, at(22, 0))).toBe("closed");
+    expect(classifyPlacementAtOrderTime(s, at(22, 0))).toBe("preorder");
   });
 
-  it("non-order day and not a pre-order day: closed", () => {
+  it("non-order day and not a pre-order day: pre-order for the next delivery day", () => {
     const s = { ...base, open_days: ["tue"], preorder_days: ["tue"] };
-    expect(classifyPlacementAtOrderTime(s, at(9, 0))).toBe("closed");
+    expect(classifyPlacementAtOrderTime(s, at(9, 0))).toBe("preorder");
   });
 
   it("accepts_preorder=false wins over saved preorder_days", () => {
@@ -89,7 +89,7 @@ describe("placement matrix — days and switches", () => {
   it("empty open_days means no same-day: pre-orders all day until cutoff", () => {
     const s = { ...base, open_days: [] };
     expect(classifyPlacementAtOrderTime(s, at(9, 0))).toBe("preorder");
-    expect(classifyPlacementAtOrderTime(s, at(22, 0))).toBe("closed");
+    expect(classifyPlacementAtOrderTime(s, at(22, 0))).toBe("preorder");
   });
 
   it("uses the IST day, not UTC: 00:30 IST Tuesday is Tuesday", () => {
