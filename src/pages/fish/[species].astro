@@ -63,6 +63,7 @@ const names = (rs: HubRow[]) => rs.map((r) => r.seller).join(", ");
 // Google title only (founder, 25 Oct): "Rawas ₹450/kg Today in Thane". Per-kg prices only; Thane first, else any live seller.
 const titleRange = thaneRange?.unit === "kg" ? thaneRange : liveRange?.unit === "kg" ? liveRange : null;
 const titlePrice = titleRange ? hubPriceText(titleRange) : null;
+const THANE_AREAS: [string, string][] = [["majiwada", "Majiwada"], ["ghodbunder-road", "Ghodbunder Road"], ["kolshet", "Kolshet"], ["manpada", "Manpada"], ["mulund", "Mulund"]];
 const thanePriceAnswer = thaneRange
   ? `On ${today}, ${local} in Thane is listed at ${hubPriceText(thaneRange)} on Relifish by ${names(thane)} (live listing, updated ${updatedAt} IST). Each seller sets the price, and it changes daily with the catch.`
   : liveRange
@@ -82,7 +83,7 @@ const faqs = known && rows.length ? [
   { q: `Where can I order ${local} online?`, a: `${rows.length === 1 ? "One local seller lists" : `${rows.length} local sellers list`} ${local} on Relifish${areasList.length ? `, in ${areasList.join(", ")}` : ""}. Order same-day while the seller is open, or pre-order for tomorrow; the seller delivers or keeps it ready for pickup.` },
 ] : [];
 const description = rows.length
-  ? `${local} price today from ${rows.length} local ${rows.length === 1 ? "seller" : "sellers"} in Thane & Mumbai, per kg. ${guide ? guide.summary + " " : ""}Order same-day or pre-order; the seller delivers.`
+  ? `Buy ${local} online in Thane: price today from ${rows.length} local ${rows.length === 1 ? "seller" : "sellers"}, per kg. ${guide ? guide.summary + " " : ""}Order same-day or pre-order; the seller delivers.`
   : `${english} is not listed by any seller on Relifish right now.`;
 ---
 <AppShell
@@ -168,6 +169,16 @@ const description = rows.length
               No seller in Thane has {local} in stock on Relifish right now.{liveRange && ` Other local sellers list it at ${hubPriceText(liveRange)} today (see below).`} <a href="/shop" style="font-weight:700;color:var(--v2-brand);">See what's available today →</a>
             </p>
           )}
+        </section>
+      )}
+
+      {rows.length > 0 && (
+        <section>
+          <h2 style="font:700 16px Inter;margin:0 0 6px;">Buy {local} online in Thane</h2>
+          <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
+            Order {english.toLowerCase()} online from {rows.length === 1 ? "a local seller" : `${rows.length} local sellers`}, cleaned and cut the way you like. Get it delivered in a 2-hour slot today, or pre-order for tomorrow. Delivered across Thane, including{" "}
+            {THANE_AREAS.map(([slug, label], i) => <>{i > 0 && (i === THANE_AREAS.length - 1 ? " and " : ", ")}<a href={`/area/${slug}`} style="font-weight:700;color:var(--v2-brand);">{label}</a></>)}.
+          </p>
         </section>
       )}
 
