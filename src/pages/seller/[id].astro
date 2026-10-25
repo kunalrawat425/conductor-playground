@@ -411,11 +411,10 @@ const tags = [
               const sp = speciesDisplayById[l.species] || l.species || "Fish";
               const opts = l.pricing_options || [];
               const firstOpt = opts[0];
-              const priceText = firstOpt
-                ? (opts.length > 1
-                    ? `₹${firstOpt.price}–₹${opts[opts.length-1].price}`
-                    : `₹${firstOpt.price}`)
-                : "";
+              // Low–high across the options (they're stored in the seller's order, not by price); one price when equal.
+              const prices = opts.map((o: any) => Number(o.price)).filter((n: number) => Number.isFinite(n));
+              const lo = prices.length ? Math.min(...prices) : null, hi = prices.length ? Math.max(...prices) : null;
+              const priceText = lo == null ? "" : lo === hi ? `₹${lo}` : `₹${lo}–₹${hi}`;
               const suffixText = firstOpt?.buyer_menu_suffix || "";
               const preorderRange = (() => {
                 if (!isPreorderMode) return null;
@@ -438,7 +437,7 @@ const tags = [
                     <p style="font:700 14px Inter;color:var(--v2-blue);margin:0;">
                       {isPreorderMode && preorderRange ? `🌙 ${preorderRange}` : `${priceText}${suffixText}`}
                     </p>
-                    {l.description && <p style="font:400 11px Inter;color:var(--v2-ink-3);margin:4px 0 0;line-height:1.4;">{l.description}</p>}
+                    {l.description && <p style="font:700 14px/1.4 Inter;color:var(--v2-ink);margin:4px 0 0;">{l.description}</p>}
                   </div>
                 </article>
               );
@@ -872,7 +871,7 @@ const tags = [
       // drew taps), and left out when the line below already says it ("Bombil · Fry cut · 500 g").
       const sizeShown = sizeText && !String(l.description || "").toLowerCase().includes(sizeText.toLowerCase());
       const sizeLine = sizeShown ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(sizeText)}</div>` : '';
-      const descHtml = l.description ? `<div style="font:400 11px/1.4 Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(l.description)}</div>` : '';
+      const descHtml = l.description ? `<div style="font:700 14px/1.4 Inter;color:var(--v2-ink);margin-top:2px;">${escape(l.description)}</div>` : '';
 
       // Stock left is not shown on cards (founder's call, 2026-10-13); stock still caps quantity and hides sold-out fish.
 
