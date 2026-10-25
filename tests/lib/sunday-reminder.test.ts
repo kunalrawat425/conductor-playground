@@ -14,8 +14,8 @@ const seller = (o: Partial<ReminderSeller>): ReminderSeller => ({
 const near = { id: "b1", lat: 19.03, lng: 73.09 };
 
 describe("preorderOpenUntil", () => {
-  it("is null when the cutoff equals closing time (no pre-order window at all)", () => {
-    expect(preorderOpenUntil(seller({ opens_at: "08:00", closes_at: "18:00", preorder_cutoff_time: "18:00" }), at("16:00"))).toBeNull();
+  it("never closed: even with the cutoff at closing time, orders are taken for the next delivery day", () => {
+    expect(preorderOpenUntil(seller({ opens_at: "08:00", closes_at: "18:00", preorder_cutoff_time: "18:00" }), at("16:00"))).not.toBeNull();
   });
   it("finds the window when the shop is closed and the cutoff is later", () => {
     expect(preorderOpenUntil(seller({}), NOW)).not.toBeNull();

@@ -37,12 +37,13 @@ describe("the day picker (Today = same-day, later days = pre-order)", () => {
     expect(picker(fishtokri3, "2026-10-22T19:00:00")).toEqual(["Fri 23 Oct", "Sat 24 Oct", "Sun 25 Oct"]);
     expect(picker(fishtokri3, "2026-10-23T02:59:00")).toEqual(["Fri 23 Oct", "Sat 24 Oct", "Sun 25 Oct"]);
   });
-  it("Fishtokri Fri 4 AM: this morning is gone, later days stay", () => {
-    expect(picker(fishtokri3, "2026-10-23T04:00:00")).toEqual(["Sat 24 Oct", "Sun 25 Oct", "Tue 27 Oct"]);
+  it("Fishtokri Fri 4 AM: never closed, today's same-day slots plus later days (founder, 25 Oct)", () => {
+    expect(picker(fishtokri3, "2026-10-23T04:00:00")).toEqual(["Today", "Sat 24 Oct", "Sun 25 Oct", "Tue 27 Oct"]);
+    expect(deliveryDaysAt(fishtokri3, ist("2026-10-23T04:00:00"))[0].kind).toBe("same_day");
   });
   it("default 1 day ahead: only the next delivery day", () => {
     expect(picker(fishtokri, "2026-10-22T11:00:00")).toEqual(["Today", "Fri 23 Oct"]);
-    expect(picker(fishtokri, "2026-10-23T04:00:00")).toEqual(["Sat 24 Oct"]);
+    expect(picker(fishtokri, "2026-10-23T04:00:00")).toEqual(["Today", "Sat 24 Oct"]);
   });
   it("Nomadic: Tue & Sat only; after a delivery day's 2 AM cutoff the next delivery day", () => {
     expect(picker(nomadic, "2026-10-22T15:00:00")).toEqual(["Sat 24 Oct"]);
