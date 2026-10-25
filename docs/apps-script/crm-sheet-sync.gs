@@ -95,11 +95,11 @@ function applyRules(sh, headerRow) {
   var n = Math.max(sh.getLastRow() - headerRow, 1) + 200;     // room for new buyers
   Object.keys(LISTS).forEach(function (name) {
     var j = header.indexOf(name); if (j < 0) return;
-    sh.getRange(headerRow + 1, j + 1, n, 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(LISTS[name], true).setAllowInvalid(false).build());
+    sh.getRange(headerRow + 1, j + 1, n, 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(LISTS[name], true).setAllowInvalid(true).build());
   });
   DATES.forEach(function (name) {
     var j = header.indexOf(name); if (j < 0) return;
-    sh.getRange(headerRow + 1, j + 1, n, 1).setDataValidation(SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false).build()).setNumberFormat('d mmm yyyy');
+    sh.getRange(headerRow + 1, j + 1, n, 1).setDataValidation(SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true).build()).setNumberFormat('d mmm yyyy');
   });
 
   // Summary block (row starting "Stage | Buyers"): live COUNTIFS so the numbers always match the rows below.
@@ -126,47 +126,26 @@ function applyRules(sh, headerRow) {
   }
 }
 
-// ---- One-time clean-up (run once, 25 Oct): fix typos, restore names, fill from your call notes ----
-var OUTCOME = { 'reached': 'Reached', 'no answer': 'No answer', 'no answer, sms': 'No answer + SMS sent', 'no answer, sms sent': 'No answer + SMS sent',
-  'no anser, sms sent': 'No answer + SMS sent', 'sms sent, no reach': 'No answer + SMS sent', 'not conncetcr': 'Not reachable', 'ignore': 'Do not call',
-  'will cehck th price and get back': 'Reached', 'will order today': 'Reached' };
-var OUTCOME_NOTE = { 'will cehck th price and get back': 'Said: will check the price and get back', 'will order today': 'Said on 24 Oct: will order today' };
+// ---- One-time restore (run once, 25 Oct): puts back the 33 names the 8:24 PM sync blanked, and the DND numbers you gave.
+// It only fills EMPTY cells with your own earlier values. It never changes or invents anything else.
 var NAMES = {"9987137252": "Supriya wadhavkar", "9820841350": "Shweta Uchill", "9324292199": "Narsh more", "9969540051": "Reema rajput", "7738624028": "Ameya Lad", "7350246176": "Sayali sawant", "9833375988": "Raju Panchal", "9820984149": "Poonam karnik", "9920866618": "Manoj", "9029319204": "Life", "9029235101": "Aniket", "7499691808": "RAM", "9967021345": "vaibhav samant", "8976209025": "Aarti nithinwar", "9987042297": "Anu karwe", "9867325848": "Kirti koynade", "9867665621": "Pradnya pawar", "9820027803": "Suhail nathani", "9920582936": "kavita", "7506199592": "Rou qaudors", "9821012123": "Prakash samant", "9967801118": "Subha pillai", "9978901782": "Arkadev adkhikari", "9820976875": "Manoj das", "9841811432": "Raja sekar", "8104479906": "Reshma Walawalkar", "9833425455": "Rajesh Walawalkar", "8888708963": "Abhay kanta", "9324799195": "Kiran sawant", "9819486659": "Pravin Dias", "9867624786": "Adnan", "7021539902": "Ritika", "9734971122": "Supratik"};
-var FILL = {
-  '9821697970': { 'What stopped them / objection': 'Trust / wants COD', 'Next reminder date': new Date(2026, 9, 28), 'Reminder for': 'Order', 'Deal closed?': 'Follow-up' },
-  '9987137252': { 'What stopped them / objection': 'Cleaning & cut doubt', 'Deal closed?': 'Follow-up' },
-  '7738624028': { 'What stopped them / objection': 'Slot / timing' },
-  '9833375988': { 'What stopped them / objection': 'Just exploring' },
-  '9869746124': { 'What stopped them / objection': 'Buys from own fish seller', 'Next reminder date': new Date(2026, 9, 27), 'Reminder for': 'Order' },
-  '8976209025': { 'What stopped them / objection': 'Price' },
-  '9867665621': { 'What stopped them / objection': 'Price' },
-  '9821012123': { 'What stopped them / objection': 'Not needed now', 'Reminder for': 'Pre-order' },
-  '9978901782': { 'What stopped them / objection': 'Not needed now' },
-  '9867325848': { 'DND': 'Yes' }, '9820027803': { 'DND': 'Yes' }, '9923753706': { 'DND': 'Yes' }
-};
+var DND_PHONES = ['9867325848', '9820027803', '9923753706'];
 
-function tidyOnce() {
+function restoreOnce() {
   syncBuyers();                                 // adds Last activity / DND columns first
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
   var all = sh.getDataRange().getValues();
   var h = -1; for (var i = 0; i < all.length; i++) if (all[i][0] === 'Stage' && all[i][1] === 'Call goal') { h = i; break; }
   var header = all[h], col = {}; header.forEach(function (name, j) { if (name) col[name] = j; });
-  var data = all.slice(h + 1), touched = {}, changes = 0;
-  var set = function (r, name, v) { if (col[name] === undefined) return; r[col[name]] = v; touched[name] = true; changes++; };
+  var data = all.slice(h + 1), restored = 0;
   data.forEach(function (r) {
     var p = String(r[col['Phone']] || '').replace(/\D/g, '').slice(-10); if (!p) return;
-    if (!r[col['Name']] && NAMES[p]) set(r, 'Name', NAMES[p]);
-    var raw = String(r[col['Call outcome']] || '').trim(), key = raw.toLowerCase().replace(/\s+/g, ' ');
-    if (raw && OUTCOME[key] && OUTCOME[key] !== raw) {
-      set(r, 'Call outcome', OUTCOME[key]);
-      if (OUTCOME_NOTE[key]) set(r, 'Notes', [r[col['Notes']], OUTCOME_NOTE[key]].filter(String).join('; '));
-    }
-    var f = FILL[p] || {};
-    Object.keys(f).forEach(function (name) { if (col[name] !== undefined && !r[col[name]]) set(r, name, f[name]); });
+    if (!r[col['Name']] && NAMES[p]) { r[col['Name']] = NAMES[p]; restored++; }
+    if (col['DND'] !== undefined && !r[col['DND']] && DND_PHONES.indexOf(p) >= 0) { r[col['DND']] = 'Yes'; restored++; }
   });
-  Object.keys(touched).forEach(function (name) {
+  ['Name', 'DND'].forEach(function (name) {
+    if (col[name] === undefined) return;
     sh.getRange(h + 2, col[name] + 1, data.length, 1).setValues(data.map(function (r) { return [r[col[name]]]; }));
   });
-  applyRules(sh, h + 1);
-  Logger.log(changes + ' cells cleaned');
+  Logger.log(restored + ' empty cells restored');
 }
