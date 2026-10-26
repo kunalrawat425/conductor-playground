@@ -972,6 +972,7 @@ const tags = [
     // Analytics helper — fire-and-forget, never throws
     function track(event, params) {
       const { event_id, ...p } = params || {};
+      if (event === "add_to_cart" || event === "begin_checkout" || event === "checkout_started") window.rfTrack?.(event === "add_to_cart" ? "add_to_cart" : "checkout_started", { seller_id: sellerId, item: p.item_name || null });
       try {
         if (typeof gtag === "function") gtag("event", event, { seller_id: sellerId, seller_name: sellerName, ...p });
       } catch {}
