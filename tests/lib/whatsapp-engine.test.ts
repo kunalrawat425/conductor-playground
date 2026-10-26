@@ -58,8 +58,12 @@ describe("numbers, payloads, signatures", () => {
 });
 
 describe("templates", () => {
-  it("all 15 pass Meta + brand checks", () => {
-    expect(TEMPLATES).toHaveLength(15);
+  it("all 33 (15 v1 + 18 v2) pass Meta + brand checks; v2 has no seller templates and no Stop button", () => {
+    expect(TEMPLATES).toHaveLength(33);
+    const v2 = TEMPLATES.filter((t) => t.name.startsWith("rf2_"));
+    expect(v2).toHaveLength(18);
+    expect(v2.some((t) => /seller/.test(t.name))).toBe(false);
+    expect(v2.flatMap((t) => t.buttons).some((b) => /stop/i.test(b.text))).toBe(false);
     for (const t of TEMPLATES) expect(templateProblems(t), t.name).toEqual([]);
   });
   it("catch a price, a trailing variable and a promo in a utility template", () => {
