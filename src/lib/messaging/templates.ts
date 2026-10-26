@@ -102,6 +102,10 @@ export const TEMPLATES: TemplateDef[] = [
   { name: "rf2_catch_prices", category: "MARKETING", header: "IMAGE",
     body: "Hi {{1}}, happy {{2}}! Today's fresh catch is in 🐟\n{{3}}\nPrices are fixed by the seller; you see the size and cut before you pay. Order by {{4}} for delivery {{5}}.\nTell us your favourite fish and we'll tell you when it lands. Just send a Hi 👋",
     examples: ["Priya", "Wednesday", "Surmai ₹1,199 · Silver Pomfret ₹1,380 · Bombil ₹313", "4 PM", "today"], footer: RF2_FOOTER, buttons: [{ type: "URL", text: "See all fish & prices" }, { type: "QUICK_REPLY", text: "Tell me my fish lands" }] },
+  // Friday 7 PM (founder, 26 Oct): pre-order for Saturday morning, for buyers with no cart/unpaid order.
+  { name: "rf2_catch_preorder", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, happy {{2}}! 🐟 Tomorrow morning's fresh catch is open for pre-order:\n{{3}}\nPre-order by {{4}} and it reaches you {{5}}, cleaned and cut your way.\nWant help choosing? Just send a Hi 👋",
+    examples: ["Priya", "Friday", "Surmai ₹960 · Silver Pomfret ₹410 · Bombil ₹240", "2 AM", "tomorrow, 9–11 AM"], footer: RF2_FOOTER, buttons: [{ type: "URL", text: "Pre-order my fish" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
   { name: "rf2_order_again", category: "MARKETING", header: "IMAGE",
     body: "Hi {{1}}, hope the {{2}} was just the way you like it 😊\nReady for another round? {{3}} has fresh stock, same cut as last time. Just pick a slot: {{4}}.\nWant something different this time? Send us a Hi, we'll help 👋",
     examples: ["Sanjay", "Surmai", "The Nomadic Catch", "Sunday 9–11 AM"], footer: RF2_FOOTER, buttons: [{ type: "URL", text: "Order the same again" }, { type: "QUICK_REPLY", text: "Try something new" }] },
