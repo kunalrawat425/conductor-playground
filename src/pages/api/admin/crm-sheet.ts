@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { timingSafeEqual } from "node:crypto";
-import { crmRow, type CrmBuyer } from "../../../lib/crm-sheet";
+import { crmRow, isJunkWaitlist, waitlistRow, type CrmBuyer } from "../../../lib/crm-sheet";
 
 export const prerender = false;
 
@@ -50,5 +50,13 @@ export const GET: APIRoute = async ({ request }) => {
     };
     return crmRow(buyer);
   });
+  // Waitlist people who never signed up (founder, 26 Oct), after the buyers; founder, sellers and junk left out.
+  const { data: waitlist } = await sb.from("buyer_waitlist").select("phone, area, fish_wanted, frequency, created_at, converted_at").is("converted_at", null).order("created_at");
+  const buyerPhones = new Set((buyers || []).map((b: any) => last10(b.phone)));
+  for (const w of waitlist || []) {
+    const p = last10(w.phone);
+    if (p.length !== 10 || EXCLUDE.includes(p) || sellerPhones.has(p) || buyerPhones.has(p) || isJunkWaitlist(p, w.area)) continue;
+    rows.push(waitlistRow({ ...w, phone: p }));
+  }
   return new Response(JSON.stringify({ updated_at: new Date().toISOString(), rows }), { headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 };
