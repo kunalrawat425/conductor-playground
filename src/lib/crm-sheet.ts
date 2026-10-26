@@ -70,3 +70,34 @@ export function crmRow(b: CrmBuyer): Record<string, string | number> {
     "Push on": b.push ? "Yes" : "No",
   };
 }
+
+export type CrmWaitlist = { phone: string; area: string | null; fish_wanted: string | null; frequency: string | null; created_at: string };
+
+/** Waitlist sign-ups that never became buyers (founder, 26 Oct): stage "0 Waitlist", same columns as buyers. */
+export function waitlistRow(w: CrmWaitlist): Record<string, string | number> {
+  const wants = [w.fish_wanted ? `wants ${w.fish_wanted}` : "", w.frequency ? `(${w.frequency.toLowerCase()})` : ""].filter(Boolean).join(" ");
+  return {
+    "Stage": "0 Waitlist",
+    "Call goal": "waitlist lead, never signed up. Call or SMS: share today's menu and the /shop link; check we deliver to their area.",
+    "Phone": `+91 ${w.phone.slice(0, 5)} ${w.phone.slice(5)}`,
+    "Name": "",
+    "Email": "",
+    "Area set": (w.area || "").trim(),
+    "Society / building (saved address)": "",
+    "Signed up": ist(w.created_at),
+    "Last activity": `Joined waitlist${wants ? ` · ${wants}` : ""} · ${ist(w.created_at)}`,
+    "Cart (now)": "",
+    "Cart updated": "",
+    "Orders": "",
+    "Paid total (Rs)": "",
+    "Came from (order source)": "waitlist",
+    "WhatsApp opt-in": "No",
+    "Push on": "No",
+  };
+}
+
+/** Test or junk waitlist entries (QA phones like 9999999999, placeholder areas like "addd"). */
+export function isJunkWaitlist(phone: string, area: string | null): boolean {
+  const a = (area || "").trim();
+  return /(\d)\1{6,}/.test(phone) || a.length <= 4 || /test/i.test(a);
+}

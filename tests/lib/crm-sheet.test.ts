@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crmRow, crmStage, lastActivity, type CrmBuyer } from "../../src/lib/crm-sheet";
+import { crmRow, crmStage, isJunkWaitlist, lastActivity, waitlistRow, type CrmBuyer } from "../../src/lib/crm-sheet";
 
 const base: CrmBuyer = { phone: "9819292817", name: "", email: "", area: "Neelam Nagar", created_at: "2026-10-25T05:37:00Z",
   whatsapp_opt_in: false, whatsapp_opt_out: false, push: false, society: [], cart: [], cart_updated: null, orders: [] };
@@ -26,5 +26,15 @@ describe("crm sheet rows", () => {
     expect(lastActivity({ ...base, cart: ["Bombil (Fishtokri)"], cart_updated: "2026-10-25T05:53:00Z" })).toBe("Added to cart · 2026-10-25 11:23");
     expect(lastActivity({ ...base, orders: [order("pending_payment", false)] })).toBe("Order created, not paid #EEB0F7AC · 2026-10-25 11:32");
     expect(lastActivity({ ...base, orders: [{ ...order("completed", true), updated_at: "2026-10-25T08:58:00Z" }] })).toBe("Delivered #EEB0F7AC · 2026-10-25 14:28");
+  });
+  it("waitlist rows: stage 0, wants + frequency in Last activity, junk filtered", () => {
+    const r = waitlistRow({ phone: "9967743841", area: "Mulund West ", fish_wanted: "Surmai", frequency: "Occasionally", created_at: "2026-10-17T16:49:52Z" });
+    expect(r["Stage"]).toBe("0 Waitlist");
+    expect(r["Phone"]).toBe("+91 99677 43841");
+    expect(r["Area set"]).toBe("Mulund West");
+    expect(r["Last activity"]).toBe("Joined waitlist · wants Surmai (occasionally) · 2026-10-17 22:19");
+    expect(isJunkWaitlist("9999999999", "Validation Test")).toBe(true);
+    expect(isJunkWaitlist("7654345678", "addd")).toBe(true);
+    expect(isJunkWaitlist("9004561446", "Tagore Nagar group no 5 Vikhroli east 400083")).toBe(false);
   });
 });
