@@ -10,6 +10,7 @@ import { toSellerView, STATUS_BY_TAB } from "../../../lib/seller-order-view";
 import { cartLabel, isLiveRow, rowPaise, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
 import { cancelReasonText, checkCancelReason } from "../../../lib/order-cancel";
 import { orderSlotText, sellerSlotError } from "../../../lib/delivery-slots";
+import { buyerEmailCopy, deliveredOnTime, withPreview } from "../../../lib/email-subjects";
 
 function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
@@ -591,7 +592,14 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (order.buyer_id) {
         const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
         if (buyer?.email) {
-          await sendTransactionalEmail(buyer.email, `${statusLabel} — ${speciesLabel}`, orderEmailBuyer(emailArgs));
+          // Founder, 26 Oct: "Your Relifish order is confirmed / on the way / delivered, on time!" + a preview line.
+          const kind = status === "confirmed" ? "confirmed" : status === "out_for_delivery" ? "out_for_delivery" : status === "completed" ? "delivered" : null;
+          const copy = kind ? buyerEmailCopy(kind, {
+            fish: speciesLabel, slot: slotText?.value || null, by: status === "out_for_delivery" ? slotText?.value || null : null,
+            onTime: deliveredOnTime((data as any).delivery_slot_end),
+          }) : null;
+          const html = orderEmailBuyer(emailArgs);
+          await sendTransactionalEmail(buyer.email, copy ? copy.subject : `${statusLabel} — ${speciesLabel}`, copy ? withPreview(html, copy.preview) : html);
         }
       }
 
