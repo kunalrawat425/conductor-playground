@@ -96,7 +96,8 @@ describe("cart-level transitions", () => {
     expect(push).toHaveBeenCalledTimes(1);
     expect(push.mock.calls[0][0]).toMatchObject({ status: "confirmed", species: "Pomfret + Surmai" });
     expect(email).toHaveBeenCalledTimes(2); // one buyer + one seller
-    expect(email.mock.calls[0][1]).toBe("Order Confirmed — Pomfret + Surmai");
+    expect(email.mock.calls[0][1]).toBe("Your Relifish order is confirmed"); // founder, 26 Oct
+    expect(email.mock.calls[0][2]).toContain("Pomfret + Surmai, cleaned and cut your way"); // preview line
     expect(email.mock.calls[0][2]).toContain("Surmai");
     expect(email.mock.calls[0][2]).toContain("₹760"); // 600 + 120 + 40 delivery
   });
@@ -160,7 +161,7 @@ describe("single-item orders are unchanged", () => {
     expect(status).toBe(200);
     expect(data.order.status).toBe("confirmed");
     expect(push.mock.calls[0][0]).toMatchObject({ species: "pomfret", order_id: "solo" });
-    expect(email.mock.calls[0][1]).toBe("Order Confirmed — Pomfret");
+    expect(email.mock.calls[0][1]).toBe("Your Relifish order is confirmed");
   });
 
   it("cart: true on a row without a cart only moves that row", async () => {

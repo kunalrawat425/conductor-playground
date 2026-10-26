@@ -1,3 +1,4 @@
+import { buyerEmailCopy, withPreview, type BuyerEmailKind } from "../email-subjects";
 import { createClient } from "@supabase/supabase-js";
 import { cancelReasonText, isLateCancel } from "../order-cancel";
 import { sendBuyerOrderPush } from "./buyer-push";
@@ -42,8 +43,18 @@ export type NotifyResult = {
   seller_email: string;
 };
 
-/** Copy per event, per audience. Exported for unit tests. */
-export function copyFor(event: OrderEvent, species: string, orderIdShort: string, amount: number | null, reason: string | null = null) {
+const BUYER_KIND: Record<OrderEvent, BuyerEmailKind> = {
+  payment_confirmed: "placed", cancelled_by_buyer: "buyer_cancelled", cancelled_by_seller: "seller_cancelled",
+  expired_unpaid: "expired_unpaid", refunded: "refunded",
+};
+
+/** Copy per event, per audience; buyerSubject/buyerPreview follow email-subjects (founder, 26 Oct). Exported for unit tests. */
+export function copyFor(event: OrderEvent, species: string, orderIdShort: string, amount: number | null, reason: string | null = null, ctx: { seller?: string | null; eveningPreorder?: boolean } = {}) {
+  const b = buyerEmailCopy(BUYER_KIND[event], { fish: species ? species.charAt(0).toUpperCase() + species.slice(1) : "fish", seller: ctx.seller, amount, eveningPreorder: ctx.eveningPreorder });
+  return { ...copyLines(event, species, orderIdShort, amount, reason), buyerSubject: b.subject, buyerPreview: b.preview };
+}
+
+function copyLines(event: OrderEvent, species: string, orderIdShort: string, amount: number | null, reason: string | null) {
   const fish = species || "fish";
   const amt = amount != null ? ` (₹${amount})` : "";
   const why = reason ? ` Reason: ${reason}.` : "";
@@ -153,7 +164,7 @@ export async function notifyOrderParties(opts: {
 
   const { data: order, error } = await sb
     .from("orders")
-    .select("id, buyer_id, buyer_phone, species, quantity, quantity_unit, total_price, delivery_fee, cancel_reason, payment_method, razorpay_payment_id, listing:fish_listings(species, seller_id, seller:sellers(id, name, email))")
+    .select("id, buyer_id, buyer_phone, species, is_preorder, created_at, quantity, quantity_unit, total_price, delivery_fee, cancel_reason, payment_method, razorpay_payment_id, listing:fish_listings(species, seller_id, seller:sellers(id, name, email))")
     .eq("id", order_id)
     .single();
 
@@ -189,7 +200,8 @@ export async function notifyOrderParties(opts: {
     : "";
   const typed = cancelReasonText(o.cancel_reason);
   const reason = typed && isLateCancel(o.cancel_reason) ? `Order was late — ${typed}` : typed;
-  const c = copyFor(event, species, orderIdShort, amt, reason);
+  const istHour = Number(new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(11, 13));
+  const c = copyFor(event, species, orderIdShort, amt, reason, { seller: (o as any).listing?.seller?.name ?? null, eveningPreorder: !!(o as any).is_preorder && istHour >= 18 });
   const isCancel = event === "cancelled_by_buyer" || event === "cancelled_by_seller";
 
   // ---- WhatsApp: the seller hears about a new paid order (buyers get confirmed/out/delivered only) ----
@@ -221,7 +233,7 @@ export async function notifyOrderParties(opts: {
     try {
       const { data: buyer } = await sb.from("buyers").select("email").eq("id", o.buyer_id).single();
       out.buyer_email = buyer?.email
-        ? await sendEmail(buyer.email, c.buyerSubject, shell(c.buyerHeading, c.buyerLine, order_id, "View order", itemsHtml), "buyer")
+        ? await sendEmail(buyer.email, c.buyerSubject, withPreview(shell(c.buyerHeading, c.buyerLine, order_id, "View order", itemsHtml), c.buyerPreview), "buyer")
         : "skipped: buyer has no email";
     } catch (err: any) {
       out.buyer_email = `failed: ${err?.message}`;

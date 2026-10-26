@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { internalHeaders } from "../../../lib/server/internal-auth";
 import { afterResponse } from "../../../lib/server/after-response";
 import { metaClientFromRequest } from "../../../lib/server/meta-capi";
+import { buyerEmailCopy, withPreview } from "../../../lib/email-subjects";
 
 export const prerender = false;
 
@@ -52,7 +53,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and guard against replay
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, status, total_price, delivery_fee, final_price, paid_amount, species, quantity, quantity_unit, order_type, razorpay_order_id, scheduled_for, pricing_option_id, listing:fish_listings(species, pricing_options, seller:sellers(id, name, email, location_name))")
+    .select("id, buyer_id, status, is_preorder, total_price, delivery_fee, final_price, paid_amount, species, quantity, quantity_unit, order_type, razorpay_order_id, scheduled_for, pricing_option_id, listing:fish_listings(species, pricing_options, seller:sellers(id, name, email, location_name))")
     .eq("id", order_id)
     .single();
 
@@ -99,7 +100,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   const paidIds = (settled.orders?.length ? settled.orders : [settled.order]).map((r) => r.id);
   const { data: paidRowsData } = await supabase
     .from("orders")
-    .select("id, species, quantity, quantity_unit, total_price, delivery_fee, pricing_option_id, pricing_label, cut_style, buyer_notes, created_at, listing:fish_listings(species, pricing_options)")
+    .select("id, species, is_preorder, quantity, quantity_unit, total_price, delivery_fee, pricing_option_id, pricing_label, cut_style, buyer_notes, created_at, listing:fish_listings(species, pricing_options)")
     .in("id", paidIds)
     .order("created_at", { ascending: true });
   const paidRows: any[] = paidRowsData?.length ? paidRowsData : [order];
@@ -178,7 +179,11 @@ export const POST: APIRoute = async ({ request, url }) => {
       });
       if (html) {
         // Returned so the pending list awaits it (an un-awaited send is killed when the function ends).
-        return postToResend({ to: emailTo, subject: "Payment received — waiting for confirmation", html }, resendApiKey).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));
+        // Founder, 26 Oct: "Your Relifish order is placed ✅" + a preview line saying when the seller confirms.
+        const istHour = Number(new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(11, 13));
+        const fishName = paidRows.length > 1 ? `${paidRows.length} items` : String(speciesOf(paidRows[0]) || "fish").replace(/^./, (c: string) => c.toUpperCase());
+        const copy = buyerEmailCopy("placed", { fish: fishName, seller: seller?.name || null, eveningPreorder: paidRows.some((r: any) => r.is_preorder) && istHour >= 18 });
+        return postToResend({ to: emailTo, subject: copy.subject, html: withPreview(html, copy.preview) }, resendApiKey).catch((err) => console.warn("[razorpay-verify] buyer receipt email failed", { order_id, err: err?.message || String(err) }));
       }
     }).catch((err) => console.warn("[razorpay-verify] buyer email lookup failed", { order_id, err: err?.message || String(err) })));
   }
