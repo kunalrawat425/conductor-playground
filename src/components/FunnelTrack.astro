@@ -1,0 +1,32 @@
+---
+/**
+ * window.rfTrack(event, data): logs one funnel step to our DB (/api/track, sendBeacon) next to GA.
+ * Also logs the automatic steps: landing (once per visit), shop_view and seller_view.
+ * Team devices (?rf_internal=1) are marked internal and left out of reports.
+ */
+---
+<script is:inline>
+  (function () {
+    if (window.rfTrack) return;
+    if (/^\/(dashboard|admin)(\/|$)/.test(location.pathname)) { window.rfTrack = function () {}; return; } // sellers and ops, not buyers
+    var ls = function (k, v) { try { if (v !== undefined) localStorage.setItem(k, v); return localStorage.getItem(k); } catch (e) { return null; } };
+    var vid = ls("rlf_vid");
+    if (!vid) vid = ls("rlf_vid", (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2));
+    var q = new URLSearchParams(location.search);
+    var source = q.get("utm_source") || (document.referrer && document.referrer.indexOf(location.host) < 0 ? (function () { try { return new URL(document.referrer).hostname; } catch (e) { return null; } })() : null);
+    window.rfTrack = function (event, data) {
+      try {
+        var body = JSON.stringify({
+          event: event, visitor_id: vid, buyer_id: ls("rlf_buyer_id") || null, path: location.pathname,
+          seller_id: (data && data.seller_id) || null, source: source, internal: ls("rf_internal") === "1", meta: data || null,
+        });
+        if (!(navigator.sendBeacon && navigator.sendBeacon("/api/track", body))) fetch("/api/track", { method: "POST", body: body, keepalive: true }).catch(function () {});
+      } catch (e) {}
+    };
+    (window.rfq || []).forEach(function (a) { window.rfTrack(a[0], a[1]); }); window.rfq = [];
+    try { if (!sessionStorage.getItem("rlf_landed")) { sessionStorage.setItem("rlf_landed", "1"); window.rfTrack("landing"); } } catch (e) {}
+    var p = location.pathname;
+    if (p === "/shop" || p.indexOf("/shop/") === 0) window.rfTrack("shop_view");
+    else if (/^\/(seller\/[^/]+|s\/[^/]+)\/?$/.test(p)) window.rfTrack("seller_view");
+  })();
+</script>

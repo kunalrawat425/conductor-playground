@@ -1,4 +1,5 @@
 ---
+import FunnelTrack from "../FunnelTrack.astro";
 import GeoHelpDialog from "./molecules/GeoHelpDialog.astro";
 import "../../styles/tokens.css";
 import { SITE_URL, canonicalFor } from "../../lib/brand";
@@ -324,6 +325,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
       })();
     </script>
     <GeoHelpDialog />
+    <FunnelTrack />
     {enableTracking && <VercelAnalytics />}
   </body>
 </html>
