@@ -136,6 +136,17 @@ export function sellerPushKindFor(event: OrderEvent): "payment_confirmed" | "can
 }
 
 /**
+ * Sellers only hear about money that was paid (founder, 27 Oct): the payment itself, and a
+ * buyer cancel or refund of a paid order. Never an unpaid order expiring or being cancelled,
+ * and never their own cancel. Exported for unit tests.
+ */
+export function sellerHearsAbout(event: OrderEvent, paid: boolean): boolean {
+  if (event === "payment_confirmed") return true;
+  if (event === "cancelled_by_buyer" || event === "refunded") return paid;
+  return false;
+}
+
+/**
  * Fan out one order event to buyer + seller across push and email.
  * Never throws. Returns per-channel outcomes so callers can log them.
  */
@@ -247,9 +258,10 @@ export async function notifyOrderParties(opts: {
   const sellerId = o.listing?.seller_id || o.listing?.seller?.id;
   const sellerEmail = o.listing?.seller?.email;
 
-  if (event === "cancelled_by_seller") {
-    out.seller_email = "skipped: seller cancelled it";
-    out.seller_push = "skipped: seller cancelled it";
+  if (!sellerHearsAbout(event, !!o.razorpay_payment_id)) {
+    const why = event === "cancelled_by_seller" ? "skipped: seller cancelled it" : "skipped: order was never paid";
+    out.seller_email = why;
+    out.seller_push = why;
     console.log(`[notify] ${event} ${orderIdShort}`, JSON.stringify(out));
     return out;
   }
