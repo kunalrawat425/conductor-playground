@@ -83,6 +83,7 @@ const fulfilCard = "display:flex;align-items:center;gap:10px;padding:14px;backgr
     <h3 style="font:700 14px Inter;color:var(--v2-ink);margin:24px 0 12px;">About your fish</h3>
     <Textarea id="ap-fish" name="fish_sold" label="What fish do you sell?" required={true} rows={2} maxlength={300} placeholder="e.g. pomfret, surmai, prawns" />
     <Textarea id="ap-areas" name="areas_served" label="Which areas / localities do you serve?" required={true} rows={2} maxlength={300} placeholder="e.g. Majiwada, Manpada, Ghodbunder Road" />
+    <Input id="ap-weekly-orders" name="weekly_orders" label="Average orders per week (right now)" required={true} type="number" inputmode="numeric" placeholder="e.g. 40 (0 if you're just starting)" />
     <Input id="ap-fssai" name="fssai" label="FSSAI licence number" required={true} inputmode="numeric" maxlength={14} placeholder="14 digits" />
     <Input id="ap-email" name="email" label="Email" required={true} type="email" autocomplete="email" />
     <div id="ap-email-err" style="display:none;font:600 12px Inter;color:var(--v2-red);margin:-8px 0 12px;"></div>
@@ -249,7 +250,7 @@ const fulfilCard = "display:flex;align-items:center;gap:10px;padding:14px;backgr
       const fees = updates.has_delivery
         ? deliveryFeeUpdates(feeChoice(), $("ap-fee-amount").value, $("ap-fee-perkm-rate").value, $("ap-free-above").value)
         : {};
-      const app = cleanSellerApplication({ fish_sold: $("ap-fish").value, areas_served: $("ap-areas").value, fssai: $("ap-fssai").value });
+      const app = cleanSellerApplication({ fish_sold: $("ap-fish").value, areas_served: $("ap-areas").value, weekly_orders: $("ap-weekly-orders").value, fssai: $("ap-fssai").value });
 
       const badEmail = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(updates.email)) ? "Enter a valid email address." : null;
       emailError(badEmail);
