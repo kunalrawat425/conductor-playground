@@ -77,16 +77,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     </div>
   </div>
 
-  <div id="v2-dash-not-active" style="display:none;padding:24px 16px;">
-    <EmptyState
-      variant="server-error"
-      title="Account pending activation"
-      description="Your seller account is being reviewed. Meanwhile, set up your shop profile and add your fish."
-      ctaText="Refresh status"
-      ghostCtaText="Sign out"
-    />
-  </div>
-
   <div id="v2-dash-no-auth" style="display:none;padding:24px 16px;">
     <EmptyState
       variant="server-error"
@@ -394,10 +384,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     }
     try {
       sellerData = await loadOwnSeller(sellerId);
-      if (!sellerData?.is_active) {
-        document.getElementById("v2-dash-not-active")!.style.display = "block";
-        return;
-      }
+      // Not approved yet: SellerActiveGate covers the page with the application sheet.
+      if (!sellerData?.is_active) return;
       document.getElementById("v2-dash-content")!.style.display = "block";
       document.getElementById("v2-dash-name")!.textContent = sellerData.name || "seller";
       renderProfileCompletion(sellerData);
@@ -1031,23 +1019,6 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     }).catch((err) => (window as any).v2Toast?.("error", "Export failed", err.message));
   });
-
-  // Wire empty-state CTAs (Refresh status + Sign out on pending activation page)
-  document.querySelectorAll<HTMLElement>(".v2-empty-ghost").forEach((el) => {
-    if (el.textContent?.includes("Sign out")) {
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        try {
-          localStorage.removeItem("rlf_seller_id"); localStorage.removeItem("rlf_session_seller");
-          localStorage.removeItem("rlf_seller_phone");
-        } catch {}
-        window.location.href = "/dashboard/login";
-      });
-    }
-  });
-  // "Refresh status" button = reload
-  const refreshBtn = document.getElementById("v2-dash-not-active")?.querySelector(".v2-btn");
-  refreshBtn?.addEventListener("click", () => location.reload());
 
   // Stats panel toggle (hidden by default)
   document.getElementById("v2-stats-toggle")?.addEventListener("click", () => {

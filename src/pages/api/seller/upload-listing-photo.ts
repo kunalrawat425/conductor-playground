@@ -35,11 +35,13 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // BUG-12: prevent storage-spam by strangers with knowledge of seller_id
-    const { assertSellerOwns } = await import("../../../lib/server/assert-seller");
+    const { assertSellerApproved, assertSellerOwns } = await import("../../../lib/server/assert-seller");
     const authCheck = await assertSellerOwns(seller_id, seller_phone, request);
     if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const notApproved = await assertSellerApproved(supabase, seller_id);
+    if (notApproved) return notApproved;
     await ensureFishPhotosBucket(supabase);
 
     // Declared type must be allowed AND the bytes must really be JPEG / PNG / WebP.

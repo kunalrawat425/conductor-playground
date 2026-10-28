@@ -1,56 +1,14 @@
 ---
 export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
-import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 ---
+<!-- The application form / "we'll get back to you" sheet comes from SellerActiveGate (mounted by AppShell). -->
 <AppShell
   title="Account pending · Seller Dashboard"
   hideNav={true}
   hideHeader={true}
 >
-  <div style="padding:48px 16px;">
-    <EmptyState
-      variant="server-error"
-      title="Account awaiting activation"
-      description="Your seller account is being reviewed. Meanwhile, set up your shop profile and add your fish."
-      ctaText="Refresh status"
-      ghostCtaText="Sign out"
-      whatsappText="Hi Relifish, I'm a seller and need help activating my account"
-    />
+  <div style="text-align:center;padding:48px 16px;">
+    <span class="v2-spinner v2-spinner-md"></span>
   </div>
-  <script>
-    import { supabase } from "../../lib/supabase";
-
-    // If seller is already active, redirect to dashboard (don't trap them here)
-    async function checkActive() {
-      const sid = localStorage.getItem("rlf_seller_id");
-      if (!sid) {
-        location.href = "/dashboard/login";
-        return;
-      }
-      try {
-        const { data } = await supabase.from("sellers").select("is_active").eq("id", sid).single();
-        if (data?.is_active) {
-          location.href = "/dashboard/orders";
-          return;
-        }
-      } catch {}
-    }
-    checkActive();
-
-    // Wire Refresh + Sign out (EmptyState renders ghost as <a>, CTA as <button>)
-    document.querySelectorAll("button, a").forEach(el => {
-      const text = el.textContent || "";
-      if (text.includes("Refresh")) {
-        el.addEventListener("click", (e) => { e.preventDefault(); location.reload(); });
-      }
-      if (text.includes("Sign out")) {
-        el.addEventListener("click", (e) => {
-          e.preventDefault();
-          try { localStorage.removeItem("rlf_seller_id"); localStorage.removeItem("rlf_session_seller"); localStorage.removeItem("rlf_seller_phone"); } catch {}
-          location.href = "/dashboard/login";
-        });
-      }
-    });
-  </script>
 </AppShell>
