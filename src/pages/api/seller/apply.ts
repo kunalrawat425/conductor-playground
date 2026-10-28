@@ -17,7 +17,7 @@ const json = (body: unknown, status: number) =>
 
 /**
  * POST /api/seller/apply
- * Body: { seller_id, fish_sold, source_market, fssai }
+ * Body: { seller_id, fish_sold, areas_served, fssai }
  * Emails a new seller's application to us. The shop details are read from the row
  * (saved just before through /api/seller/profile); the extra answers have no column.
  */
@@ -37,13 +37,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { data: s, error } = await createClient(supabaseUrl, supabaseServiceKey)
       .from("sellers")
-      .select("name, first_name, last_name, phone, email, location_name, lat, lng, has_pickup, has_delivery, delivery_rad, is_active")
+      .select("name, first_name, last_name, phone, email, location_name, lat, lng, has_pickup, has_delivery, delivery_rad, delivery_fee_enabled, delivery_fee_type, delivery_fee_amount, delivery_fee_per_km, free_delivery_above, is_active")
       .eq("id", seller_id)
       .maybeSingle();
     if (error) return json({ error: error.message }, 500);
     if (!s) return json({ error: "Seller not found" }, 404);
+    // Email is required on the form; it is saved through /api/seller/profile just before this call.
+    if (!String(s.email || "").trim()) return json({ error: "Add your email address." }, 400);
 
     const fulfil = [s.has_pickup !== false && "Pickup", s.has_delivery && `Delivery (${s.delivery_rad || 5} km)`].filter(Boolean).join(" + ");
+    const charges = !s.has_delivery
+      ? ""
+      : !s.delivery_fee_enabled
+        ? "Free delivery"
+        : (s.delivery_fee_type === "per_km" ? `₹${s.delivery_fee_per_km}/km` : `₹${s.delivery_fee_amount} per order`) +
+          (Number(s.free_delivery_above) > 0 ? `, free above ₹${s.free_delivery_above}` : "");
     const rows: [string, unknown][] = [
       ["Shop", s.name],
       ["Owner", [s.first_name, s.last_name].filter(Boolean).join(" ")],
@@ -52,8 +60,9 @@ export const POST: APIRoute = async ({ request }) => {
       ["Area", s.location_name],
       ["GPS", s.lat != null && s.lng != null ? `${s.lat}, ${s.lng}` : ""],
       ["Fulfilment", fulfil],
+      ["Delivery charges", charges],
       ["Fish sold", app.fish_sold],
-      ["Buys from", app.source_market],
+      ["Areas served", app.areas_served],
       ["FSSAI", app.fssai],
       ["Seller id", seller_id],
       ["Active", s.is_active ? "yes" : "no (approve in admin)"],
