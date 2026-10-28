@@ -35,8 +35,8 @@ export const POST: APIRoute = async ({ request }) => {
   if (!appSecret) return json({ error: "WA_APP_SECRET not configured" }, 503);
 
   const code = typeof b?.code === "string" ? b.code.trim() : "";
-  const waba = digits(b?.waba_id);
-  if (!code || !waba) return json({ error: "code and waba_id are required" }, 400);
+  let waba = digits(b?.waba_id);
+  if (!code) return json({ error: "code is required" }, 400);
 
   const graph = async (path: string, token: string, body?: unknown) => {
     try {
@@ -61,6 +61,16 @@ export const POST: APIRoute = async ({ request }) => {
   if (!ex?.ok || !token) {
     let msg = ""; try { msg = JSON.parse(exText)?.error?.message || ""; } catch {}
     return json({ error: `code exchange failed: ${ex?.status ?? "network"} ${msg}`.trim(), waba_id: waba }, 502);
+  }
+
+  // 1b. No waba_id from the browser (Facebook didn't post the session event): the business token's
+  // granular scopes list the WhatsApp accounts it was granted, so read the id from there.
+  if (!waba) {
+    const dbg = await graph(`debug_token?input_token=${encodeURIComponent(token)}`, `${appId}|${appSecret}`);
+    const scopes: any[] = dbg.ok ? dbg.data?.granular_scopes || [] : [];
+    const ids: string[] = scopes.find((g) => g.scope === "whatsapp_business_management")?.target_ids || [];
+    waba = ids.map(digits).filter(Boolean).pop() || "";
+    if (!waba) return json({ error: `waba_id not in the session event or the token's scopes${dbg.ok ? "" : `: ${dbg.error}`}` }, 502);
   }
 
   // 2. Phone number id (the coexistence finish event carries only waba_id).

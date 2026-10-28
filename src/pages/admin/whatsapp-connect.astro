@@ -72,12 +72,13 @@ const configId = import.meta.env.PUBLIC_WA_ES_CONFIG_ID || "";
       submit();
     });
 
-    // Needs both the code (FB.login callback) and waba_id (session event). The code lives 30 s.
-    async function submit() {
-      if (posted || !code || !session?.waba_id) return;
+    // Needs the code (FB.login callback); waba_id comes from the session event when Facebook sends it,
+    // else the server reads it from the token. The code lives 30 s, so don't wait long for the event.
+    async function submit(force = false) {
+      if (posted || !code || (!session?.waba_id && !force)) return;
       posted = true;
-      show({ status: session.event, waba_id: session.waba_id, step: "Connecting: exchanging code, subscribing, starting contact + history sync…" });
-      const r = await api({ code, waba_id: session.waba_id, phone_number_id: session.phone_number_id, business_id: session.business_id });
+      show({ status: session?.event, waba_id: session?.waba_id, step: "Connecting: exchanging code, subscribing, starting contact + history sync…" });
+      const r = await api({ code, waba_id: session?.waba_id, phone_number_id: session?.phone_number_id, business_id: session?.business_id });
       show({ http: r.status, ...r.body, next: r.status === 200 ? "Send waba_id and phone_number_id to Kunal (WA_WABA_ID / WA_PHONE_NUMBER_ID)." : undefined });
     }
 
@@ -89,17 +90,18 @@ const configId = import.meta.env.PUBLIC_WA_ES_CONFIG_ID || "";
       if (!ping.body.app_secret_set) return show("WA_APP_SECRET is not set on the server; the code exchange would fail.");
       code = ""; session = null; posted = false;
       show("Facebook window open. Finish the steps there…");
-      // Coexistence: featureType whatsapp_business_app_onboarding + sessionInfoVersion "3" (Meta docs).
+      // Coexistence: featureType whatsapp_business_app_onboarding (Embedded Signup v4; v2/v3 retired 15 Oct 2026).
       FB.login((res: any) => {
         code = res?.authResponse?.code || "";
         if (!code) return show(session ? { status: session.event, error: session.error || "No code returned (flow not finished)." } : "Cancelled: no code returned.");
-        if (!session?.waba_id) show("Got the code; waiting for the WhatsApp account id from Facebook…");
+        if (!session?.waba_id) show("Got the code; finding the WhatsApp account…");
         submit();
+        setTimeout(() => submit(true), 3000);
       }, {
         config_id: CONFIG_ID,
         response_type: "code",
         override_default_response_type: true,
-        extras: { setup: {}, featureType: "whatsapp_business_app_onboarding", sessionInfoVersion: "3" },
+        extras: { setup: {}, featureType: "whatsapp_business_app_onboarding" },
       });
     });
   </script>
