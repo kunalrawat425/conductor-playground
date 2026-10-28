@@ -7,6 +7,7 @@
  * WA_TEST_ONLY=919870619974[,…] (only these numbers get real sends; everyone else is dry-run).
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { istDate } from "../messaging/schedule";
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 export const GRAPH = "https://graph.facebook.com/v26.0";
@@ -79,6 +80,41 @@ export async function sendText(to: string, text: string): Promise<SendResult> {
     body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body: text } }),
   }).catch(() => null);
   return res?.ok ? { status: "sent" } : { status: "failed", error: `text ${res?.status ?? "network"}` };
+}
+
+/**
+ * Coexistence webhook fields (history, smb_app_state_sync, smb_message_echoes, account_update)
+ * → one log line. Counts and event names only, never message text or contact numbers.
+ */
+export function webhookSummary(field: string, v: any): string {
+  const err = v?.errors?.[0] || v?.history?.[0]?.errors?.[0];
+  const h = v?.history?.[0]?.metadata;
+  const bits = [
+    v?.event && `event=${v.event}`,
+    v?.message_echoes && `echoes=${v.message_echoes.length}`,
+    v?.state_sync && `contacts=${v.state_sync.length}`,
+    h && `phase=${h.phase} chunk=${h.chunk_order} progress=${h.progress}`,
+    v?.history?.[0]?.threads && `threads=${v.history[0].threads.length}`,
+    err && `error=${err.code} ${err.title || err.message || ""}`.trim(),
+  ].filter(Boolean);
+  return `[wa-webhook] ${field} ${bits.join(" ")}`.trim();
+}
+
+/**
+ * A message the founder sent from the WhatsApp Business app (smb_message_echoes) → a message_log
+ * row (kind "manual"), so phone-app sends sit next to ours. dedupe_key makes duplicates no-ops.
+ * buyer_id stays null: promo caps only count PROMO_KINDS rows per buyer, so these never block a promo.
+ */
+export function echoLogRow(e: any) {
+  if (!e?.id) return null;
+  const ms = Number(e.timestamp) * 1000 || Date.now();
+  return {
+    dedupe_key: `echo:${e.id}`, kind: "manual", channel: "whatsapp",
+    template: e.type === "template" ? e.template?.name ?? null : null,
+    to_phone: waNumber(e.to) ?? (String(e.to || "") || null),
+    slot_date: istDate(ms),
+    status: "sent", provider_id: e.id,
+  };
 }
 
 /** Meta webhook signature: X-Hub-Signature-256 = "sha256=" + HMAC-SHA256(raw body, app secret). */

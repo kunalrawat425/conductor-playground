@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import { sendText, validWebhookSignature, waNumber } from "../../../lib/server/whatsapp";
+import { echoLogRow, sendText, validWebhookSignature, waNumber, webhookSummary } from "../../../lib/server/whatsapp";
 
 export const prerender = false;
 const env = (k: string) => (import.meta.env as any)[k] || process.env[k] || "";
@@ -19,6 +19,8 @@ const STOP_WORDS = /^\s*(stop|stop updates|unsubscribe|band karo)\s*$/i;
  * with the app secret). Statuses update message_log (idempotent: only move forward).
  * "Stop updates" (button or text) sets buyers.whatsapp_opt_out_at and confirms once.
  * Everything else inbound is left for the founder in the WhatsApp app (no auto-replies).
+ * Coexistence fields (history, smb_app_state_sync, smb_message_echoes, account_update) are
+ * logged as one line; echoes (the founder's sends from the phone app) also go into message_log.
  */
 export const POST: APIRoute = async ({ request }) => {
   const raw = await request.text();
@@ -30,6 +32,9 @@ export const POST: APIRoute = async ({ request }) => {
 
   for (const entry of body?.entry || []) for (const change of entry?.changes || []) {
     const v = change?.value || {};
+    if (change?.field && change.field !== "messages") console.log(webhookSummary(change.field, v));
+    const echoes = (v.message_echoes || []).map(echoLogRow).filter(Boolean);
+    if (echoes.length) await sb.from("message_log").upsert(echoes, { onConflict: "dedupe_key", ignoreDuplicates: true });
     for (const st of v.statuses || []) {
       if (!st?.id || !st?.status) continue;
       const { data: row } = await sb.from("message_log").select("id, status").eq("provider_id", st.id).maybeSingle();
