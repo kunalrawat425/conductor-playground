@@ -9,6 +9,7 @@ import { jsonLdString } from "../../lib/html";
 import AppHeader from "./organisms/AppHeader.astro";
 import BottomNav from "./organisms/BottomNav.astro";
 import VercelAnalytics from "../VercelAnalytics.astro";
+import SellerActiveGate from "../SellerActiveGate.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/components";
 
 interface Props {
@@ -42,6 +43,9 @@ const {
   canonical,
 } = Astro.props;
 const canonicalUrl = canonical || canonicalFor(Astro.url.pathname);
+// Seller dashboard (not the login page): unapproved sellers get the application sheet instead of the page.
+const path = Astro.url.pathname.replace(/\/$/, "");
+const sellerGated = path.startsWith("/dashboard/") && path !== "/dashboard/login";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 ---
 
@@ -235,6 +239,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
         navigator.serviceWorker.register("/sw.js").catch(function () {});
       }
     </script>
+    {sellerGated && <SellerActiveGate />}
     <div class="v2-app">
       {!hideHeader && header && <AppHeader {...header} />}
       <main class="v2-main">
