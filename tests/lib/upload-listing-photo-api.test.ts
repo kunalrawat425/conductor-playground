@@ -6,8 +6,11 @@ const storage = {
   getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn/${path}` } }),
 };
 const listBuckets = vi.fn(async () => ({ data: [{ id: "fish-photos" }] }));
-vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({ storage: { listBuckets, from: () => storage } }) }));
-vi.mock("../../src/lib/server/assert-seller", () => ({ assertSellerOwns: async () => ({ ok: true }) }));
+let sellerRow: { is_active: boolean } | null = { is_active: true };
+const sellers = { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: sellerRow, error: null }) }) }) };
+vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({ storage: { listBuckets, from: () => storage }, from: () => sellers }) }));
+// Real assertSellerApproved (reads is_active from the mocked client); ownership is assumed.
+vi.mock("../../src/lib/server/assert-seller", async (orig) => ({ ...(await orig<object>()), assertSellerOwns: async () => ({ ok: true }) }));
 const { POST } = await import("../../src/pages/api/seller/upload-listing-photo");
 
 const JPEG = [0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -41,5 +44,14 @@ describe("upload-listing-photo validation", () => {
     const r = await send(new File([new Uint8Array(JPEG)], "listing-photo.jpg", { type: "image/jpeg" }));
     expect(r.status).toBe(200);
     expect(r.body.url).toMatch(/^https:\/\/cdn\/listings\/s1\/\d+\.jpg$/);
+  });
+
+  it("refuses a seller awaiting approval (is_active false) before storing anything", async () => {
+    storage.upload.mockClear();
+    sellerRow = { is_active: false };
+    const r = await send(new File([new Uint8Array(JPEG)], "listing-photo.jpg", { type: "image/jpeg" }));
+    sellerRow = { is_active: true };
+    expect(r).toEqual({ status: 403, body: { error: "Your shop is awaiting approval. Listings open after approval." } });
+    expect(storage.upload).not.toHaveBeenCalled();
   });
 });

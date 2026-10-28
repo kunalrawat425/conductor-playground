@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { canonicalPricingOptionsFromPayload, pricingOptionsUniformUnit, MAX_PACK_OPTIONS, TOO_MANY_PACKS_MESSAGE } from "../../../lib/listing-pricing";
 import { moveInMenu } from "../../../lib/menu-order";
-import { assertSellerOwns } from "../../../lib/server/assert-seller";
+import { assertSellerApproved, assertSellerOwns } from "../../../lib/server/assert-seller";
 import { SPECIES } from "../../../lib/species";
 
 // Fields a seller may set on their own listing. The body used to be spread
@@ -52,6 +52,9 @@ export const POST: APIRoute = async ({ request }) => {
     if (authCheck instanceof Response) return authCheck;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Every action here writes; sellers awaiting approval can't touch listings.
+    const notApproved = await assertSellerApproved(supabase, seller_id);
+    if (notApproved) return notApproved;
 
     if (action === "create") {
       const { listing } = body;
