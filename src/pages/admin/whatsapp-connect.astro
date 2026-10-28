@@ -78,7 +78,7 @@ const configId = import.meta.env.PUBLIC_WA_ES_CONFIG_ID || "";
       if (posted || !code || (!session?.waba_id && !force)) return;
       posted = true;
       show({ status: session?.event, waba_id: session?.waba_id, step: "Connecting: exchanging code, subscribing, starting contact + history sync…" });
-      const r = await api({ code, waba_id: session?.waba_id, phone_number_id: session?.phone_number_id, business_id: session?.business_id });
+      const r = await api({ code, page_url: location.href, waba_id: session?.waba_id, phone_number_id: session?.phone_number_id, business_id: session?.business_id });
       show({ http: r.status, ...r.body, next: r.status === 200 ? "Send waba_id and phone_number_id to Kunal (WA_WABA_ID / WA_PHONE_NUMBER_ID)." : undefined });
     }
 

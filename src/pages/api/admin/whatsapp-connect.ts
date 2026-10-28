@@ -52,16 +52,26 @@ export const POST: APIRoute = async ({ request }) => {
     }
   };
 
-  // 1. Code → business token.
-  const q = new URLSearchParams({ client_id: appId, client_secret: appSecret, code });
-  const ex = await fetch(`${GRAPH}/oauth/access_token?${q}`).catch(() => null);
-  const exText = ex ? await ex.text() : "";
-  let token = "";
-  try { token = JSON.parse(exText)?.access_token || ""; } catch { token = /^[A-Za-z0-9]+$/.test(exText.trim()) ? exText.trim() : ""; }
-  if (!ex?.ok || !token) {
-    let msg = ""; try { msg = JSON.parse(exText)?.error?.message || ""; } catch {}
-    return json({ error: `code exchange failed: ${ex?.status ?? "network"} ${msg}`.trim(), waba_id: waba }, 502);
+  // 1. Code → business token. A code from the JS SDK is tied to the redirect_uri the SDK used, which
+  // Meta doesn't tell us; try without one, an empty one, then the page URL/origin the browser sent.
+  // A mismatch is rejected without using up the code, so trying a few within its 30 s is safe.
+  const page = typeof b?.page_url === "string" ? b.page_url.split("#")[0].slice(0, 300) : "";
+  let origin = ""; try { origin = page ? new URL(page).origin + "/" : ""; } catch {}
+  const tries: (string | null)[] = [null, "", page, origin, "https://www.relifish.com/", "https://relifish.com/"]
+    .filter((v, i, a) => (v === null || v === "" ? i === a.indexOf(v) : !!v && a.indexOf(v) === i));
+  let token = "", lastErr = "", lastStatus: number | string = "network";
+  for (const ru of tries) {
+    const q = new URLSearchParams({ client_id: appId, client_secret: appSecret, code });
+    if (ru !== null) q.set("redirect_uri", ru);
+    const ex = await fetch(`${GRAPH}/oauth/access_token?${q}`).catch(() => null);
+    const exText = ex ? await ex.text() : "";
+    try { token = JSON.parse(exText)?.access_token || ""; } catch { token = /^[A-Za-z0-9]+$/.test(exText.trim()) ? exText.trim() : ""; }
+    if (ex?.ok && token) break;
+    token = ""; lastStatus = ex?.status ?? "network";
+    try { lastErr = JSON.parse(exText)?.error?.message || ""; } catch {}
+    if (!/redirect_uri/i.test(lastErr)) break; // a different error (expired/used code): more tries won't help
   }
+  if (!token) return json({ error: `code exchange failed: ${lastStatus} ${lastErr}`.trim(), waba_id: waba }, 502);
 
   // 1b. No waba_id from the browser (Facebook didn't post the session event): the business token's
   // granular scopes list the WhatsApp accounts it was granted, so read the id from there.
