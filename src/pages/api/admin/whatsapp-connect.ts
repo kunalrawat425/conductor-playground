@@ -60,6 +60,7 @@ export const POST: APIRoute = async ({ request }) => {
   const tries: (string | null)[] = [null, "", page, origin, "https://www.relifish.com/", "https://relifish.com/"]
     .filter((v, i, a) => (v === null || v === "" ? i === a.indexOf(v) : !!v && a.indexOf(v) === i));
   let token = "", lastErr = "", lastStatus: number | string = "network";
+  const tried: string[] = [];
   for (const ru of tries) {
     const q = new URLSearchParams({ client_id: appId, client_secret: appSecret, code });
     if (ru !== null) q.set("redirect_uri", ru);
@@ -68,10 +69,14 @@ export const POST: APIRoute = async ({ request }) => {
     try { token = JSON.parse(exText)?.access_token || ""; } catch { token = /^[A-Za-z0-9]+$/.test(exText.trim()) ? exText.trim() : ""; }
     if (ex?.ok && token) break;
     token = ""; lastStatus = ex?.status ?? "network";
-    try { lastErr = JSON.parse(exText)?.error?.message || ""; } catch {}
-    if (!/redirect_uri/i.test(lastErr)) break; // a different error (expired/used code): more tries won't help
+    let code_ = 0;
+    try { const e = JSON.parse(exText)?.error || {}; lastErr = e.message || ""; code_ = e.code || 0; } catch {}
+    tried.push(`${ru === null ? "(none)" : ru === "" ? "(empty)" : ru}: ${String(lastErr).slice(0, 80)}`);
+    // An expired or already-used code (OAuth code 100 with "expired"/"used") won't work with any redirect_uri.
+    if (/expired|been used|already/i.test(lastErr) && !/redirect_uri/i.test(lastErr)) break;
+    void code_;
   }
-  if (!token) return json({ error: `code exchange failed: ${lastStatus} ${lastErr}`.trim(), waba_id: waba }, 502);
+  if (!token) return json({ error: `code exchange failed: ${lastStatus} ${lastErr}`.trim(), tried, waba_id: waba }, 502);
 
   // 1b. No waba_id from the browser (Facebook didn't post the session event): the business token's
   // granular scopes list the WhatsApp accounts it was granted, so read the id from there.
