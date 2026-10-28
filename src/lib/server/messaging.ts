@@ -62,10 +62,11 @@ async function sendOne(sb: any, d: Dispatch, channel: "whatsapp" | "push", to: s
   if (testOnly.length && !testOnly.includes(waNumber(d.phone))) {
     r = { status: "dry_run" };
   } else if (channel === "whatsapp") {
-    const marketing = TEMPLATE[d.template]?.category === "MARKETING";
+    // No quick-reply payload: rf2's second button is "I have a question" etc., not "Stop updates"
+    // (a STOP payload there would opt the buyer out). STOP is typed, per the footer.
     r = await sendTemplate({
       to: to!, name: d.template, body: d.body, headerImage: TEMPLATE[d.template]?.header ? d.headerImage : null,
-      urlSuffix: id, quickReplyPayload: marketing ? "STOP" : null,
+      urlSuffix: id,
     });
   } else {
     const p = await sendCustomBuyerPush(d.buyer_id!, { ...d.push! }, `/go/${id}`)

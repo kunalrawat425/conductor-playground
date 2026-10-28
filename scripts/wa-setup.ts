@@ -72,7 +72,7 @@ if (cmd === "status") {
     if (existing.has(t.name)) { console.log(`= ${t.name} already exists`); continue; }
     if (templateProblems(t).length) { console.log(`✗ ${t.name} skipped: ${templateProblems(t)}`); continue; }
     if (!apply) { console.log(`+ would create ${t.name}`, JSON.stringify(components(t)).slice(0, 160)); continue; }
-    const handle = t.header === "IMAGE" ? await uploadHandle(t.name === "rf_order_confirmed" ? `${SITE}/fish/rawas.jpg` : `${SITE}/fish/pomfret.jpg`) : undefined;
+    const handle = t.header === "IMAGE" ? await uploadHandle(t.name === "rf2_confirmed" ? `${SITE}/fish/rawas.jpg` : `${SITE}/fish/pomfret.jpg`) : undefined;
     console.log(`+ ${t.name}:`, await api(`${WA_WABA_ID}/message_templates`, { method: "POST", body: JSON.stringify({ name: t.name, language: "en", category: t.category, components: components(t, handle) }) }));
   }
 }
