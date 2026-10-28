@@ -1,0 +1,57 @@
+---
+import LandingLayout from "../layouts/LandingLayout.astro";
+import { SUPPORT_EMAIL, whatsappLink } from "../lib/brand";
+const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
+---
+<LandingLayout
+  title={`Data deletion · ${brandName}`}
+  description={`How to ask ${brandName} to delete your account and personal data.`}
+>
+  <div class="legal-page">
+    <div class="legal-header">
+      <h1>Data deletion</h1>
+      <p class="legal-updated">Last updated: 28 October 2026</p>
+    </div>
+    <div class="legal-body">
+      <h2>How to ask us to delete your data</h2>
+      <p>Send us a message from the phone number you use on {brandName}, or email us from any address and include that phone number:</p>
+      <ul>
+        <li><strong>Email:</strong> <a href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Delete my Relifish data")}`}>{SUPPORT_EMAIL}</a> with the subject "Delete my Relifish data".</li>
+        <li><strong>WhatsApp:</strong> <a href={whatsappLink("Hi Relifish, please delete my account and data.")} target="_blank" rel="noopener">+91 91522 07607</a></li>
+      </ul>
+      <p>We may ask you to confirm the request from that phone number, so that nobody else can delete your account.</p>
+
+      <h2>What we delete</h2>
+      <ul>
+        <li>Your account: phone number, name, email and preferences.</li>
+        <li>Your saved addresses and location.</li>
+        <li>Your cart, notification and WhatsApp settings, and the messages we sent you.</li>
+        <li>If you sell on {brandName}: your shop profile, listings and photos.</li>
+      </ul>
+
+      <h2>What we may keep</h2>
+      <p>Records of paid orders and payments that the law requires us to keep (for example for tax and accounting), with your personal details removed where we can. Payment details are held by our payment partner Razorpay, not by us.</p>
+
+      <h2>When it's done</h2>
+      <p>We'll confirm by email or WhatsApp once your data has been deleted. See our <a href="/privacy">Privacy policy</a> for more on how we handle your data.</p>
+    </div>
+  </div>
+</LandingLayout>
+
+<style>
+  .legal-page { max-width: 760px; margin: 0 auto; padding: 56px 24px 80px; }
+  .legal-header { border-bottom: 2px solid #e2e8f0; padding-bottom: 24px; margin-bottom: 36px; }
+  .legal-header h1 { font: 900 36px/1.2 Inter, sans-serif; color: #0f172a; margin: 0 0 8px; }
+  .legal-updated { font: 400 13px Inter, sans-serif; color: #94a3b8; margin: 0; }
+  .legal-body { font: 400 15px/1.7 Inter, sans-serif; color: #334155; }
+  .legal-body h2 { font: 700 18px Inter, sans-serif; color: #0f172a; margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
+  .legal-body p { margin: 0 0 16px; }
+  .legal-body ul { padding-left: 22px; margin: 0 0 16px; }
+  .legal-body li { margin-bottom: 10px; }
+  .legal-body a { color: #0066ff; font-weight: 500; }
+  .legal-body strong { color: #0f172a; font-weight: 600; }
+  @media (max-width: 600px) {
+    .legal-page { padding: 36px 16px 60px; }
+    .legal-header h1 { font-size: 28px; }
+  }
+</style>
