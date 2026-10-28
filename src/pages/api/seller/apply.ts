@@ -17,7 +17,7 @@ const json = (body: unknown, status: number) =>
 
 /**
  * POST /api/seller/apply
- * Body: { seller_id, fish_sold, areas_served, fssai }
+ * Body: { seller_id, fish_sold, areas_served, weekly_orders, fssai }
  * Emails a new seller's application to us. The shop details are read from the row
  * (saved just before through /api/seller/profile); the extra answers have no column.
  */
@@ -63,6 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
       ["Delivery charges", charges],
       ["Fish sold", app.fish_sold],
       ["Areas served", app.areas_served],
+      ["Avg orders / week", app.weekly_orders],
       ["FSSAI", app.fssai],
       ["Seller id", seller_id],
       ["Active", s.is_active ? "yes" : "no (approve in admin)"],

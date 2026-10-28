@@ -15,19 +15,22 @@ describe("hasSellerApplied", () => {
 });
 
 describe("cleanSellerApplication", () => {
-  const ok = { fish_sold: "prawns", areas_served: "Majiwada", fssai: "11523456789012" };
+  const ok = { fish_sold: "prawns", areas_served: "Majiwada", weekly_orders: "40", fssai: "11523456789012" };
   it("needs fish sold, areas served and a 14-digit FSSAI number", () => {
     expect(cleanSellerApplication(null)).toHaveProperty("error");
     expect(cleanSellerApplication({ ...ok, fish_sold: "  " })).toHaveProperty("error");
     expect(cleanSellerApplication({ ...ok, areas_served: "" })).toHaveProperty("error");
     expect(cleanSellerApplication({ ...ok, fssai: "" })).toHaveProperty("error");
+    expect(cleanSellerApplication({ ...ok, weekly_orders: "" })).toHaveProperty("error");
+    expect(cleanSellerApplication({ ...ok, weekly_orders: "abc" })).toHaveProperty("error");
+    expect(cleanSellerApplication({ ...ok, weekly_orders: "0" })).toMatchObject({ weekly_orders: 0 });
     expect(cleanSellerApplication({ ...ok, fssai: "12345" })).toHaveProperty("error");
     expect(cleanSellerApplication({ ...ok, fssai: "115234567890123" })).toHaveProperty("error");
     expect(cleanSellerApplication({ ...ok, fssai: 11523456789012 })).toHaveProperty("error");
   });
   it("trims, collapses spaces and caps length", () => {
-    expect(cleanSellerApplication({ fish_sold: " pomfret,\n surmai ", areas_served: "Majiwada,  Manpada", fssai: "1152 3456 7890 12" }))
-      .toEqual({ fish_sold: "pomfret, surmai", areas_served: "Majiwada, Manpada", fssai: "11523456789012" });
+    expect(cleanSellerApplication({ fish_sold: " pomfret,\n surmai ", areas_served: "Majiwada,  Manpada", weekly_orders: " 25 ", fssai: "1152 3456 7890 12" }))
+      .toEqual({ fish_sold: "pomfret, surmai", areas_served: "Majiwada, Manpada", weekly_orders: 25, fssai: "11523456789012" });
     expect((cleanSellerApplication({ ...ok, fish_sold: "x".repeat(5000) }) as any).fish_sold).toHaveLength(300);
   });
 });

@@ -12,7 +12,7 @@ export function hasSellerApplied(seller: { name?: string | null; location_name?:
   return !!seller && !isPlaceholderSellerName(seller.name) && String(seller.location_name ?? "").trim() !== "";
 }
 
-export type SellerApplication = { fish_sold: string; areas_served: string; fssai: string };
+export type SellerApplication = { fish_sold: string; areas_served: string; weekly_orders: number; fssai: string };
 
 /** Max length per free-text answer; longer text is cut, so a client can't mail us a novel. */
 export const APPLICATION_LIMITS = { fish_sold: 300, areas_served: 300 };
@@ -24,10 +24,12 @@ export function cleanSellerApplication(body: any): SellerApplication | { error: 
   const app: SellerApplication = {
     fish_sold: text("fish_sold"),
     areas_served: text("areas_served"),
+    weekly_orders: /^\d{1,5}$/.test(String(body?.weekly_orders ?? "").trim()) ? Number(String(body.weekly_orders).trim()) : -1,
     fssai: typeof body?.fssai === "string" ? body.fssai.replace(/\s+/g, "") : "",
   };
   if (app.fish_sold.length < 2) return { error: "Tell us which fish you sell (e.g. pomfret, surmai, prawns)." };
   if (app.areas_served.length < 2) return { error: "Tell us which areas you serve (e.g. Majiwada, Manpada)." };
+  if (app.weekly_orders < 0) return { error: "Enter your average orders per week (a number, 0 if you're just starting)." };
   if (!/^\d{14}$/.test(app.fssai)) return { error: "Enter your 14-digit FSSAI licence number." };
   return app;
 }
