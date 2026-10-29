@@ -4,16 +4,22 @@
  * Journeys (one promo per buyer per IST day, priority B > promo), rf2 templates:
  *  B  cart changed, no order since: B1 = last change +1 h (else next day at the seller's slot),
  *     B2 = the day after B1 at the seller's slot. rf2_cart_today / rf2_cart_preorder.
- *  P  Tue and Fri 7:30 PM (founder, 28 Oct): one promo chosen by stage. Cart → rf2_promo_cart,
- *     unpaid order → rf2_promo_unpaid, delivered before → rf2_order_again, else
- *     rf2_catch_preorder (pre-order for tomorrow). Paid and awaiting delivery → none.
+ *  P  Tue, Thu, Fri 7:30 PM and Sat 9:30 AM (founder, 30 Oct): one promo chosen by stage.
+ *     Cart → rf2_promo_cart, unpaid order → rf2_promo_unpaid, delivered before → rf2_order_again,
+ *     else generic: evenings rf2_catch_preorder (pre-order for tomorrow); Sat 9:30 AM
+ *     rf2_catch_prices when a Today slot is bookable ("order by" = last Today slot's end − 2 h,
+ *     the checkout's own cutoff), else rf2_catch_preorder. Paid and awaiting delivery → none.
+ *     Anti-spam (founder, 30 Oct): one of B1/B2/promo per IST day; a promo needs ≥ 20 h since
+ *     the buyer's last B1/B2/promo and < 3 of them in the last 7 days; none within 3 days of a
+ *     delivery or after 30 days inactive. B1/B2 go first (a promo waits if one is due later that
+ *     day) and are not held by the 20 h gap or the weekly cap.
  *  A  the welcome after sign-up (rf2_welcome / rf2_welcome_search) is ON HOLD (founder): not sent.
  *
  * "Order today" vs "pre-order" is never guessed from the buyer: it is what the checkout's own
  * picker (deliveryDaysAt) offers at the send time. classifyPlacementAtOrderTime alone is not
  * enough: at 16:30 Fishtokri is "open" but has no Today slot left (slots must end 2 h out).
  */
-import { deliveryDaysAt, slotLabel, slotTimeLabel, type SlotSeller } from "../delivery-slots";
+import { arrivingByLabel, deliveryDaysAt, slotLabel, slotTimeLabel, SLOT_LEAD_MINUTES, type SlotSeller } from "../delivery-slots";
 import { haversineKm } from "../order-pricing";
 import { timeLabel } from "../order-timing";
 
@@ -23,8 +29,10 @@ export const DAY_END = 21 * 60;         // quiet from 21:00
 export const MORNING = 9 * 60 + 30;     // Clarity: adds/checkouts peak 10–11 AM
 export const EVENING = 19 * 60;         // Clarity: adds/checkouts 6–7 PM; after Fishtokri's 6 PM close
 export const DUE_WINDOW_MIN = 120;      // a due message is still sent if the job runs up to 2 h late
-export const PROMO_DAYS = [2, 5];       // Tue, Fri (founder, 28 Oct)
-export const PROMO_AT = 19 * 60 + 30;   // 7:30 PM
+/** IST weekday (0 Sun … 6 Sat) → promo send minute (founder, 30 Oct). */
+export const PROMO_SLOTS: Record<number, number> = { 2: 19 * 60 + 30, 4: 19 * 60 + 30, 5: 19 * 60 + 30, 6: 9 * 60 + 30 };
+export const PROMO_GAP_MS = 20 * 3_600_000; // ≥ 20 h since the buyer's last B1/B2/promo
+export const PROMO_WEEK_MAX = 3;            // < 3 B1/B2/promo in the last 7 days
 const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAY_MS = 86_400_000;
 const IST_MS = 5.5 * 3_600_000;
@@ -54,7 +62,7 @@ export type BuyerState = {
 export type SentLog = { kind: string; slot_date: string; created_at: string };
 export type Kind = "B1" | "B2" | "promo";
 export const PROMO_KINDS: string[] = ["B1", "B2", "promo"];
-export type PromoTemplate = "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder";
+export type PromoTemplate = "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder" | "rf2_catch_prices";
 export type Decision = {
   kind: Kind;
   slot_date: string;
@@ -92,12 +100,17 @@ export function nextDayAt(fromMs: number, clockMin: number): number {
 }
 
 // ── What the seller can sell at a moment (the checkout picker's own answer) ──
-export type Offer = { mode: "today" | "preorder"; date: string; when: string };
+/** by (Today only): latest order time for a Today slot, "4 PM" = the last slot's end − SLOT_LEAD_MINUTES. */
+export type Offer = { mode: "today" | "preorder"; date: string; when: string; by?: string };
 export function offerAt(seller: SlotSeller, ms: number): Offer | null {
   const days = deliveryDaysAt(seller, ms);
   if (!seller.delivery_slots_enabled || days.length === 0) return null;
   const today = days.find((d) => d.kind === "same_day" && d.slots.length > 0);
-  if (today) return { mode: "today", date: today.date, when: `today, ${slotTimeLabel(today.slots[0].start, today.slots[0].end)}` };
+  if (today) {
+    const lastEnd = Date.parse(today.slots[today.slots.length - 1].end);
+    return { mode: "today", date: today.date, when: `today, ${slotTimeLabel(today.slots[0].start, today.slots[0].end)}`,
+      by: arrivingByLabel(new Date(lastEnd - SLOT_LEAD_MINUTES * 60_000).toISOString()) };
+  }
   const pre = days.find((d) => d.kind === "preorder" && d.slots.length > 0);
   return pre ? { mode: "preorder", date: pre.date, when: slotLabel(pre.slots[0].start, pre.slots[0].end) } : null;
 }
@@ -170,6 +183,10 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   }
   if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, fish, offer.when], path: `/track/${b.unpaid!.id}` };
   if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, fish, seller.name, offer.when] };
+  // Morning slot (Sat 9:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM".
+  if (offer.mode === "today" && offer.by && seller.menu && istMin(due) < 12 * 60) {
+    return { ...m, template: "rf2_catch_prices", body: [b.name, day, seller.menu, offer.by, offer.when], path: "/shop" };
+  }
   // "Tomorrow morning's fresh catch is open for pre-order".
   if (offer.mode !== "preorder" || offer.date !== addDays(istDate(due), 1) || !seller.menu) return null;
   return { ...m, template: "rf2_catch_preorder", body: [b.name, day, seller.menu, timeLabel(seller.preorder_cutoff_time) || "tonight", offer.when], path: "/shop" };
@@ -201,28 +218,36 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   };
 
   // ── B: cart ──
+  let bLaterToday = false; // a B1/B2 is due later today: the promo waits for it (B goes first)
   if (stage === "cart") {
     const b1 = sentSince(history, "B1", cartMs);
+    let kind: Kind | null = null, due: number | null = null;
     if (!b1) {
       const plus1h = cartMs + 3_600_000;
-      const due = istMin(plus1h) >= DAY_START && istMin(plus1h) <= LAST_SEND && istDate(plus1h) === istDate(cartMs)
+      kind = "B1";
+      due = istMin(plus1h) >= DAY_START && istMin(plus1h) <= LAST_SEND && istDate(plus1h) === istDate(cartMs)
         ? plus1h
         : sellerSlot(seller, istDate(nextDayAt(cartMs, 0)))?.ms ?? null;
-      const d = tryDue("B1", due);
-      if (d) return d;
     } else if (!sentSince(history, "B2", cartMs)) {
-      const d = tryDue("B2", sellerSlot(seller, addDays(b1.slot_date, 1))?.ms ?? null);
+      kind = "B2";
+      due = sellerSlot(seller, addDays(b1.slot_date, 1))?.ms ?? null;
+    }
+    if (kind) {
+      const d = tryDue(kind, due);
       if (d) return d;
+      bLaterToday = due != null && now < due && istDate(due) === today;
     }
   }
 
-  // ── P: Tue and Fri 7:30 PM, one promo by stage ──
+  // ── P: Tue/Thu/Fri 7:30 PM, Sat 9:30 AM, one promo by stage ──
   const lastActive = Math.max(Date.parse(b.created_at), cartMs, orderMs);
   const deliveredMs = b.last_delivered_at ? Date.parse(b.last_delivered_at) : 0;
-  // No spam (founder 24 Oct): none if any reminder went out in the last 2 days.
-  const recentPromo = history.some((x) => PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < 2 * DAY_MS);
-  if (PROMO_DAYS.includes(istDow(now)) && now - lastActive <= 30 * DAY_MS && now - deliveredMs >= 3 * DAY_MS && !recentPromo) {
-    const d = tryDue("promo", atIST(today, PROMO_AT));
+  // No spam (founder 30 Oct): ≥ 20 h since the last B1/B2/promo, fewer than 3 in the last 7 days.
+  const ages = history.filter((x) => PROMO_KINDS.includes(x.kind)).map((x) => now - Date.parse(x.created_at));
+  const spam = ages.some((a) => a < PROMO_GAP_MS) || ages.filter((a) => a < 7 * DAY_MS).length >= PROMO_WEEK_MAX;
+  const slot = PROMO_SLOTS[istDow(now)];
+  if (slot != null && !bLaterToday && now - lastActive <= 30 * DAY_MS && now - deliveredMs >= 3 * DAY_MS && !spam) {
+    const d = tryDue("promo", atIST(today, slot));
     if (d) return d;
   }
   return { skip: "nothing due" };
