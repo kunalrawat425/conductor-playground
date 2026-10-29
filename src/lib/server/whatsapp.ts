@@ -5,6 +5,10 @@
  * Env: WA_PHONE_NUMBER_ID, WA_TOKEN (system-user token), WA_APP_SECRET (webhook signatures),
  * WA_VERIFY_TOKEN (webhook handshake), WA_DRY_RUN=true (log, never send),
  * WA_TEST_ONLY=919870619974[,…] (only these numbers get real sends; everyone else is dry-run).
+ *
+ * WA_PROVIDER=wati sends through Wati (a Meta partner) instead: WATI_BASE_URL
+ * (https://live-mt-server.wati.io/api/ext/v3) and WATI_API_KEY. Same dry-run / test-only gates.
+ * Wati templates are created in Wati, with variables named 1, 2, 3… in body order.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { istDate } from "../messaging/schedule";
@@ -47,9 +51,37 @@ export function templatePayload(t: TemplateSend) {
 
 export type SendResult = { status: "sent" | "dry_run" | "failed"; id?: string; error?: string };
 
+const useWati = () => env("WA_PROVIDER") === "wati";
+
+/** Wati v3 send body (pure; tested). Body vars go as custom_params named "1", "2"…
+ * ponytail: image header and dynamic URL button aren't documented for Wati v3; ignored until Wati confirms the param names. */
+export function watiPayload(t: TemplateSend) {
+  return {
+    template_name: t.name,
+    broadcast_name: `rf_${t.name}`,
+    recipients: [{ phone_number: t.to, custom_params: (t.body ?? []).map((value, i) => ({ name: String(i + 1), value: String(value) })) }],
+  };
+}
+
+async function sendWati(t: TemplateSend): Promise<SendResult> {
+  try {
+    const res = await fetch(`${env("WATI_BASE_URL").replace(/\/$/, "")}/messageTemplates/send`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env("WATI_API_KEY")}`, "Content-Type": "application/json" },
+      body: JSON.stringify(watiPayload(t)),
+    });
+    const j: any = await res.json().catch(() => ({}));
+    const err = j?.error || j?.errors?.[0]?.error || j?.recipients?.[0]?.error;
+    if (!res.ok || j?.success === false || err) return { status: "failed", error: `wati ${res.status} ${typeof err === "string" ? err : JSON.stringify(err ?? j).slice(0, 200)}`.trim() };
+    return { status: "sent", id: j?.broadcast_id };
+  } catch (err: any) {
+    return { status: "failed", error: String(err?.message || err).slice(0, 300) };
+  }
+}
+
 /** Live only when configured, not WA_DRY_RUN, and (if WA_TEST_ONLY is set) the number is on it. */
 export function isLiveFor(to: string): boolean {
-  if (!env("WA_PHONE_NUMBER_ID") || !env("WA_TOKEN")) return false;
+  if (useWati() ? !env("WATI_BASE_URL") || !env("WATI_API_KEY") : !env("WA_PHONE_NUMBER_ID") || !env("WA_TOKEN")) return false;
   if (env("WA_DRY_RUN") === "true") return false;
   const allow = env("WA_TEST_ONLY").split(",").map((s) => waNumber(s.trim())).filter(Boolean);
   return allow.length === 0 || allow.includes(to);
@@ -57,6 +89,7 @@ export function isLiveFor(to: string): boolean {
 
 export async function sendTemplate(t: TemplateSend): Promise<SendResult> {
   if (!isLiveFor(t.to)) return { status: "dry_run" };
+  if (useWati()) return sendWati(t);
   try {
     const res = await fetch(`${GRAPH}/${env("WA_PHONE_NUMBER_ID")}/messages`, {
       method: "POST",
@@ -74,6 +107,8 @@ export async function sendTemplate(t: TemplateSend): Promise<SendResult> {
 /** Plain text reply. Allowed only inside the 24 h window after the user messaged us. */
 export async function sendText(to: string, text: string): Promise<SendResult> {
   if (!isLiveFor(to)) return { status: "dry_run" };
+  // ponytail: Wati v3 free-text endpoint not confirmed yet; the STOP reply is skipped on Wati until it is.
+  if (useWati()) return { status: "failed", error: "wati text: not wired yet" };
   const res = await fetch(`${GRAPH}/${env("WA_PHONE_NUMBER_ID")}/messages`, {
     method: "POST",
     headers: { Authorization: `Bearer ${env("WA_TOKEN")}`, "Content-Type": "application/json" },
