@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiPayload } from "../../src/lib/server/whatsapp";
+import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams } from "../../src/lib/server/whatsapp";
 import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, firstName, SIGNUP_IMAGE, rotationImage, varCount } from "../../src/lib/messaging/templates";
 import { orderMessage, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
 
@@ -190,18 +190,17 @@ describe("dispatch: both channels, once", () => {
 
 describe("Wati provider", () => {
   afterEach(() => vi.unstubAllEnvs());
-  it("maps body vars to custom_params 1, 2, 3 in order", () => {
-    expect(watiPayload({ to: "919870619974", name: "rf2_out", body: ["#AB12", "2 PM"] })).toEqual({
-      template_name: "rf2_out", broadcast_name: "rf_rf2_out",
-      recipients: [{ phone_number: "919870619974", custom_params: [{ name: "1", value: "#AB12" }, { name: "2", value: "2 PM" }] }],
-    });
+  it("numbers params across the template: image, body, then button (Wati support)", () => {
+    expect(watiParams({ to: "919870619974", name: "rf2_confirmed", headerImage: "https://x/p.jpg", body: ["Fishtokri", "#AB12", "Fri 8–10 AM"], urlSuffix: "abc123" }))
+      .toEqual([{ name: "1", value: "https://x/p.jpg" }, { name: "2", value: "Fishtokri" }, { name: "3", value: "#AB12" }, { name: "4", value: "Fri 8–10 AM" }, { name: "5", value: "abc123" }]);
+    expect(watiParams({ to: "919870619974", name: "rf2_out", body: ["#AB12", "2 PM"], urlSuffix: "x" }).map((p) => p.name)).toEqual(["1", "2", "3"]);
   });
   it("is live only with Wati keys, and still honours dry-run and the test-only list", () => {
     vi.stubEnv("WA_PROVIDER", "wati");
     vi.stubEnv("WA_PHONE_NUMBER_ID", ""); vi.stubEnv("WA_TOKEN", "");
-    vi.stubEnv("WATI_BASE_URL", ""); vi.stubEnv("WATI_API_KEY", "");
+    vi.stubEnv("WATI_API_URL", ""); vi.stubEnv("WATI_API_KEY", "");
     expect(isLiveFor("919870619974")).toBe(false);
-    vi.stubEnv("WATI_BASE_URL", "https://x/api/ext/v3"); vi.stubEnv("WATI_API_KEY", "k");
+    vi.stubEnv("WATI_API_URL", "https://x/10282905"); vi.stubEnv("WATI_API_KEY", "k");
     vi.stubEnv("WA_TEST_ONLY", "919870619974"); vi.stubEnv("WA_DRY_RUN", "");
     expect(isLiveFor("919870619974")).toBe(true);
     expect(isLiveFor("919999999999")).toBe(false);
