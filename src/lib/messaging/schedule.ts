@@ -4,15 +4,14 @@
  * Journeys (one promo per buyer per IST day, priority B > promo), rf2 templates:
  *  B  cart changed, no order since: B1 = last change +1 h (else next day at the seller's slot),
  *     B2 = the day after B1 at the seller's slot. rf2_cart_today / rf2_cart_preorder.
- *  P  Tue, Thu, Fri 7:30 PM and Sat 9:30 AM (founder, 30 Oct): one promo chosen by stage.
+ *  P  Tue and Fri 6:00 PM, Sat and Sun 8:30 AM (founder, 30 Oct): one promo chosen by stage.
  *     Cart → rf2_promo_cart, unpaid order → rf2_promo_unpaid, delivered before → rf2_order_again,
- *     else generic: evenings rf2_catch_preorder (pre-order for tomorrow); Sat 9:30 AM
+ *     else generic: evenings rf2_catch_preorder (pre-order for tomorrow); mornings
  *     rf2_catch_prices when a Today slot is bookable ("order by" = last Today slot's end − 2 h,
  *     the checkout's own cutoff), else rf2_catch_preorder. Paid and awaiting delivery → none.
- *     Anti-spam (founder, 30 Oct): one of B1/B2/promo per IST day; a promo needs ≥ 20 h since
- *     the buyer's last B1/B2/promo and < 3 of them in the last 7 days; none within 3 days of a
- *     delivery or after 30 days inactive. B1/B2 go first (a promo waits if one is due later that
- *     day) and are not held by the 20 h gap or the weekly cap.
+ *     Anti-spam (founder, 30 Oct): one of B1/B2/promo per IST day; a promo needs ≥ 72 h since
+ *     the buyer's last B1/B2/promo; none within 3 days of a delivery or after 30 days inactive.
+ *     B1/B2 go first (a promo waits if one is due later that day) and are not held by the 72 h gap.
  *  A  the welcome after sign-up (rf2_welcome / rf2_welcome_search) is ON HOLD (founder): not sent.
  *
  * "Order today" vs "pre-order" is never guessed from the buyer: it is what the checkout's own
@@ -30,9 +29,8 @@ export const MORNING = 9 * 60 + 30;     // Clarity: adds/checkouts peak 10–11 
 export const EVENING = 19 * 60;         // Clarity: adds/checkouts 6–7 PM; after Fishtokri's 6 PM close
 export const DUE_WINDOW_MIN = 120;      // a due message is still sent if the job runs up to 2 h late
 /** IST weekday (0 Sun … 6 Sat) → promo send minute (founder, 30 Oct). */
-export const PROMO_SLOTS: Record<number, number> = { 2: 19 * 60 + 30, 4: 19 * 60 + 30, 5: 19 * 60 + 30, 6: 9 * 60 + 30 };
-export const PROMO_GAP_MS = 20 * 3_600_000; // ≥ 20 h since the buyer's last B1/B2/promo
-export const PROMO_WEEK_MAX = 3;            // < 3 B1/B2/promo in the last 7 days
+export const PROMO_SLOTS: Record<number, number> = { 0: 8 * 60 + 30, 2: 18 * 60, 5: 18 * 60, 6: 8 * 60 + 30 };
+export const PROMO_GAP_MS = 72 * 3_600_000; // ≥ 3 days since the buyer's last B1/B2/promo
 const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAY_MS = 86_400_000;
 const IST_MS = 5.5 * 3_600_000;
@@ -183,7 +181,7 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   }
   if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, fish, offer.when], path: `/track/${b.unpaid!.id}` };
   if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, fish, seller.name, offer.when] };
-  // Morning slot (Sat 9:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM".
+  // Morning slot (Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM".
   if (offer.mode === "today" && offer.by && seller.menu && istMin(due) < 12 * 60) {
     return { ...m, template: "rf2_catch_prices", body: [b.name, day, seller.menu, offer.by, offer.when], path: "/shop" };
   }
@@ -239,12 +237,11 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
     }
   }
 
-  // ── P: Tue/Thu/Fri 7:30 PM, Sat 9:30 AM, one promo by stage ──
+  // ── P: Tue/Fri 6 PM, Sat/Sun 8:30 AM, one promo by stage ──
   const lastActive = Math.max(Date.parse(b.created_at), cartMs, orderMs);
   const deliveredMs = b.last_delivered_at ? Date.parse(b.last_delivered_at) : 0;
-  // No spam (founder 30 Oct): ≥ 20 h since the last B1/B2/promo, fewer than 3 in the last 7 days.
-  const ages = history.filter((x) => PROMO_KINDS.includes(x.kind)).map((x) => now - Date.parse(x.created_at));
-  const spam = ages.some((a) => a < PROMO_GAP_MS) || ages.filter((a) => a < 7 * DAY_MS).length >= PROMO_WEEK_MAX;
+  // No spam (founder 30 Oct): ≥ 72 h since the last B1/B2/promo.
+  const spam = history.some((x) => PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < PROMO_GAP_MS);
   const slot = PROMO_SLOTS[istDow(now)];
   if (slot != null && !bLaterToday && now - lastActive <= 30 * DAY_MS && now - deliveredMs >= 3 * DAY_MS && !spam) {
     const d = tryDue("promo", atIST(today, slot));
