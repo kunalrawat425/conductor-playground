@@ -1,56 +1,63 @@
 /**
- * WhatsApp order updates (utility templates), sent next to the existing push + email.
- * Buyers get only three: confirmed by the seller, out for delivery, delivered (founder, 24 Oct).
- * Payment received and cancellations stay on push + email. Sellers get the new paid order.
- * Buyers get them when they ticked the WhatsApp box; sellers when the founder recorded their
- * yes (sellers.whatsapp_opt_in_at). Idempotent per (event, order, party) via message_log.
+ * WhatsApp order updates (rf2 utility templates), sent next to the existing push + email.
+ * Buyers get: paid (rf2_paid, or rf2_paid_evening for a pre-order paid after 6 PM: the seller
+ * confirms next morning), confirmed, out for delivery, delivered, and seller declined/cancelled
+ * with the refund (rf2_cancelled). The unpaid-order nudge (rf2_unpaid) comes from the messaging
+ * cron. Sellers get no WhatsApp (founder: email only).
+ * Buyers get them when they ticked the WhatsApp box. Idempotent per (event, order) via message_log.
  * Never throws: an order update must not fail because WhatsApp did.
  */
 import { createClient } from "@supabase/supabase-js";
 import { arrivingByLabel, slotLabel } from "../delivery-slots";
-import { fishName, headerImage } from "../messaging/templates";
+import { firstName, fishName, headerImage } from "../messaging/templates";
 import { istDate } from "../messaging/schedule";
 import { dispatch } from "./messaging";
 
-export type OrderWaEvent = "paid" | "confirmed" | "out_for_delivery" | "completed";
+export type OrderWaEvent = "unpaid" | "paid" | "confirmed" | "out_for_delivery" | "completed" | "cancelled";
 const env = (k: string) => (import.meta as any).env?.[k] || process.env[k] || "";
 
-export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent) {
+export const ORDER_SELECT = "id, buyer_id, buyer_phone, species, is_test, is_preorder, delivery_slot_start, delivery_slot_end, listing:fish_listings(species, description, photo_url, seller_id, seller:sellers(name))";
+
+/**
+ * Template + variables (Meta's order) + header picture for one order update. Pure (tested).
+ * `cancel` carries the reason and refund line notifyOrderParties already worked out.
+ */
+export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, nowMs = Date.now(), cancel?: { reason?: string | null; refund?: string | null }): { template: string; body: string[]; image?: string } {
+  const short = `#${String(ord.id).slice(0, 8).toUpperCase()}`;
+  const name = firstName(buyerName);
+  const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
+  const seller = ord.listing?.seller?.name || "The seller";
+  const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed with the seller";
+  const image = headerImage(ord.listing?.photo_url, ord.listing?.species || ord.species);
+  const istHour = new Date(nowMs + 5.5 * 3_600_000).getUTCHours();
+  switch (event) {
+    case "unpaid": return { template: "rf2_unpaid", body: [name, short, fish, slot], image };
+    case "paid": return ord.is_preorder && istHour >= 18
+      ? { template: "rf2_paid_evening", body: [short, name, slot, seller] }
+      : { template: "rf2_paid", body: [short, name, seller] };
+    case "confirmed": return { template: "rf2_confirmed", body: [seller, short, slot], image };
+    case "out_for_delivery": return { template: "rf2_out", body: [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
+    case "completed": return { template: "rf2_delivered", body: [fish, name, seller], image };
+    case "cancelled": return { template: "rf2_cancelled", body: [name, short, cancel?.reason?.replace(/\.+$/, "") || "the seller couldn't take it", cancel?.refund || "none needed, nothing was charged"] };
+  }
+}
+
+export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent, cancel?: { reason?: string | null; refund?: string | null }) {
   try {
     const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
-    const { data: o } = await sb.from("orders")
-      .select("id, buyer_id, buyer_phone, species, is_test, delivery_slot_start, delivery_slot_end, pricing_label, listing:fish_listings(species, description, photo_url, seller_id)")
-      .eq("id", order_id).maybeSingle();
+    const { data: o } = await sb.from("orders").select(ORDER_SELECT).eq("id", order_id).maybeSingle();
     if (!o || (o as any).is_test) return;
     const ord: any = o;
-    const short = `#${String(order_id).slice(0, 8).toUpperCase()}`;
-    const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
-    const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed with the seller";
-    const today = istDate(Date.now());
-    const [{ data: buyer }, { data: seller }] = await Promise.all([
-      ord.buyer_id ? sb.from("buyers").select("id, phone, whatsapp_opt_in_at, whatsapp_opt_out_at").eq("id", ord.buyer_id).maybeSingle() : Promise.resolve({ data: null }),
-      ord.listing?.seller_id ? sb.from("sellers").select("id, phone, whatsapp_opt_in_at, whatsapp_opt_out_at").eq("id", ord.listing.seller_id).maybeSingle() : Promise.resolve({ data: null }),
-    ]);
+    const { data: buyer } = ord.buyer_id
+      ? await sb.from("buyers").select("id, phone, first_name, whatsapp_opt_in_at").eq("id", ord.buyer_id).maybeSingle()
+      : { data: null as any };
+    const m = orderMessage(event, ord, buyer?.first_name, Date.now(), cancel);
     // "Stop updates" stops promos only; updates about an order the buyer placed still come.
-    const buyerOk = !!buyer?.whatsapp_opt_in_at;
-    const toBuyer = (template: string, body: string[], headerImage?: string) => dispatch(sb, {
-      dedupe_key: `${event}:${order_id}:buyer`, kind: `order_${event}`, slot_date: today, order_id, buyer_id: buyer?.id,
-      phone: buyer?.phone || ord.buyer_phone, whatsappOk: buyerOk, template, body, headerImage, link_path: `/track/${order_id}`,
+    await dispatch(sb, {
+      dedupe_key: `${event}:${order_id}:buyer`, kind: `order_${event}`, slot_date: istDate(Date.now()), order_id, buyer_id: buyer?.id,
+      phone: buyer?.phone || ord.buyer_phone, whatsappOk: !!buyer?.whatsapp_opt_in_at,
+      template: m.template, body: m.body, headerImage: m.image, link_path: `/track/${order_id}`,
     });
-    switch (event) {
-      case "paid": {
-        if (seller) await dispatch(sb, {
-          dedupe_key: `paid:${order_id}:seller`, kind: "seller_new_order", slot_date: today, order_id, seller_id: seller.id,
-          phone: seller.phone, whatsappOk: !!seller.whatsapp_opt_in_at && !seller.whatsapp_opt_out_at,
-          template: "rf_seller_new_order", body: [short, ord.pricing_label ? `${fish} ${ord.pricing_label.split(" · ")[0]}` : fish, slot],
-          link_path: `/dashboard/orders?order=${order_id}`,
-        });
-        break;
-      }
-      case "confirmed": await toBuyer("rf_order_confirmed", [short, slot], headerImage(ord.listing?.photo_url, ord.listing?.species || ord.species)); break;
-      case "out_for_delivery": await toBuyer("rf_order_out", [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"]); break;
-      case "completed": await toBuyer("rf_order_delivered", [short]); break;
-    }
   } catch (err: any) {
     console.warn("[whatsapp] order update failed", { order_id, event, err: err?.message });
   }

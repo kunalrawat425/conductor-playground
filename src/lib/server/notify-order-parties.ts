@@ -215,10 +215,14 @@ export async function notifyOrderParties(opts: {
   const c = copyFor(event, species, orderIdShort, amt, reason, { seller: (o as any).listing?.seller?.name ?? null, eveningPreorder: !!(o as any).is_preorder && istHour >= 18 });
   const isCancel = event === "cancelled_by_buyer" || event === "cancelled_by_seller";
 
-  // ---- WhatsApp: the seller hears about a new paid order (buyers get confirmed/out/delivered only) ----
-  if (event === "payment_confirmed") {
+  // ---- WhatsApp (buyer only; sellers get email): paid, and a seller cancel or a paid buyer cancel with its refund ----
+  const paidOnline = o.payment_method === "razorpay" && !!o.razorpay_payment_id;
+  if (event === "payment_confirmed" || event === "cancelled_by_seller" || (event === "cancelled_by_buyer" && paidOnline)) {
     const { notifyOrderWhatsApp } = await import("./notify-order-whatsapp");
-    await notifyOrderWhatsApp(order_id, "paid");
+    await notifyOrderWhatsApp(order_id, event === "payment_confirmed" ? "paid" : "cancelled", {
+      reason: event === "cancelled_by_buyer" ? "you cancelled it" : reason,
+      refund: paidOnline && amt ? `₹${amt.toLocaleString("en-IN")}, started today, reaches your account in 5–7 working days` : null,
+    });
   }
 
   // ---- Buyer push ----
