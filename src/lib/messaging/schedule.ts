@@ -1,18 +1,19 @@
 /**
  * WhatsApp / push promo scheduler (founder rules, 24 Oct 2026). Pure: no I/O, all times IST.
  *
- * Journeys (one promo per buyer per IST day, priority B > promo), rf2 templates:
- *  B  cart changed, no order since: B1 = last change +1 h (else next day at the seller's slot),
- *     B2 = the day after B1 at the seller's slot. rf2_cart_today / rf2_cart_preorder.
+ * Journeys, rf2 templates:
  *  P  Tue and Fri 6:00 PM, Sat and Sun 8:30 AM (founder, 30 Oct): one promo chosen by stage.
  *     Cart → rf2_promo_cart, unpaid order → rf2_promo_unpaid, delivered before → rf2_order_again,
  *     else generic: evenings rf2_catch_preorder (pre-order for tomorrow); mornings
  *     rf2_catch_prices when a Today slot is bookable ("order by" = last Today slot's end − 2 h,
  *     the checkout's own cutoff), else rf2_catch_preorder. Paid and awaiting delivery → none.
- *     Anti-spam (founder, 30 Oct): one of B1/B2/promo per IST day; a promo needs ≥ 72 h since
- *     the buyer's last B1/B2/promo; none within 3 days of a delivery or after 30 days inactive.
- *     B1/B2 go first (a promo waits if one is due later that day) and are not held by the 72 h gap.
+ *     Anti-spam (founder, 30 Oct): one per IST day and ≥ 72 h since the buyer's last marketing
+ *     message (PROMO_KINDS, incl. old B1/B2 log rows); none within 3 days of a delivery or
+ *     after 30 days inactive.
+ *  B  cart reminders B1/B2 (rf2_cart_today / rf2_cart_preorder) are REMOVED (founder, 30 Oct):
+ *     carts are covered by the promo slots. Nothing schedules them.
  *  A  the welcome after sign-up (rf2_welcome / rf2_welcome_search) is ON HOLD (founder): not sent.
+ * Order updates and the unpaid reminder live elsewhere and are not affected.
  *
  * "Order today" vs "pre-order" is never guessed from the buyer: it is what the checkout's own
  * picker (deliveryDaysAt) offers at the send time. classifyPlacementAtOrderTime alone is not
@@ -23,10 +24,7 @@ import { haversineKm } from "../order-pricing";
 import { timeLabel } from "../order-timing";
 
 export const DAY_START = 8 * 60;        // no promos before 8:00
-export const LAST_SEND = 20 * 60 + 30;  // latest due time we schedule (the 30-min job still catches it)
 export const DAY_END = 21 * 60;         // quiet from 21:00
-export const MORNING = 9 * 60 + 30;     // Clarity: adds/checkouts peak 10–11 AM
-export const EVENING = 19 * 60;         // Clarity: adds/checkouts 6–7 PM; after Fishtokri's 6 PM close
 export const DUE_WINDOW_MIN = 120;      // a due message is still sent if the job runs up to 2 h late
 /** IST weekday (0 Sun … 6 Sat) → promo send minute (founder, 30 Oct). */
 export const PROMO_SLOTS: Record<number, number> = { 0: 8 * 60 + 30, 2: 18 * 60, 5: 18 * 60, 6: 8 * 60 + 30 };
@@ -84,18 +82,7 @@ export const istMin = (ms: number) => { const d = new Date(ms + IST_MS); return 
 export const istDow = (ms: number) => new Date(ms + IST_MS).getUTCDay(); // 0 Sun … 6 Sat
 export const atIST = (date: string, min: number) => Date.parse(`${date}T00:00:00+05:30`) + min * 60_000;
 const addDays = (date: string, n: number) => istDate(atIST(date, 12 * 60) + n * DAY_MS);
-const toMin = (t: string | null | undefined, dflt: number) => {
-  const [h, m] = String(t || "").split(":").map(Number);
-  return Number.isFinite(h) ? h * 60 + (m || 0) : dflt;
-};
-const clampDay = (min: number) => Math.min(LAST_SEND, Math.max(DAY_START, min));
 export const inSendHours = (ms: number) => { const m = istMin(ms); return m >= DAY_START && m < DAY_END; };
-
-/** "Next day, same clock time": an after-midnight sign-up's "next day" is that same morning. */
-export function nextDayAt(fromMs: number, clockMin: number): number {
-  const d = istDate(fromMs);
-  return atIST(istMin(fromMs) >= DAY_START ? addDays(d, 1) : d, clampDay(clockMin));
-}
 
 // ── What the seller can sell at a moment (the checkout picker's own answer) ──
 /** by (Today only): latest order time for a Today slot, "4 PM" = the last slot's end − SLOT_LEAD_MINUTES. */
@@ -113,30 +100,6 @@ export function offerAt(seller: SlotSeller, ms: number): Offer | null {
   return pre ? { mode: "preorder", date: pre.date, when: slotLabel(pre.slots[0].start, pre.slots[0].end) } : null;
 }
 
-/** Morning slot = later of 9:30 and opens_at. Evening = 19:00, after the pre-order window opens,
- *  at least 2 h before its cutoff. Both kept inside 8:00–20:30. */
-export function morningMin(s: MsgSeller) { return clampDay(Math.max(MORNING, toMin(s.opens_at, 0))); }
-export function eveningMin(s: MsgSeller) {
-  let m = Math.max(EVENING, toMin(s.preorder_opens_at, 0));
-  const cut = toMin(s.preorder_cutoff_time, 24 * 60);
-  const cutAbs = cut <= toMin(s.preorder_opens_at, 0) || cut < 12 * 60 ? cut + 24 * 60 : cut; // overnight cutoff
-  m = Math.min(m, cutAbs - 120);
-  return clampDay(m);
-}
-
-/** The seller's slot on `date`: morning if a Today order is possible then, else evening pre-order. */
-export function sellerSlot(s: MsgSeller, date: string, want?: "morning" | "evening"): { ms: number; offer: Offer } | null {
-  const tries: number[] = want === "evening" ? [eveningMin(s)] : want === "morning" ? [morningMin(s)] : [morningMin(s), eveningMin(s)];
-  for (const min of tries) {
-    const ms = atIST(date, min);
-    const offer = offerAt(s, ms);
-    if (!offer) continue;
-    if (min === morningMin(s) && want !== "evening" && offer.mode !== "today") continue; // a morning slot is for "order today"
-    return { ms, offer };
-  }
-  return null;
-}
-
 /** Seller for this buyer: their cart's seller; else the nearest seller that delivers to them;
  *  else (no location) the nearest to Thane West. */
 export function pickSeller(b: BuyerState, sellers: MsgSeller[]): MsgSeller | null {
@@ -152,7 +115,6 @@ export function pickSeller(b: BuyerState, sellers: MsgSeller[]): MsgSeller | nul
 }
 
 const lastCartMs = (b: BuyerState) => Math.max(0, ...b.cart.map((l) => Date.parse(l.updated_at)));
-const sentSince = (h: SentLog[], kind: string, sinceMs: number) => h.find((x) => x.kind === kind && Date.parse(x.created_at) >= sinceMs);
 const isDue = (now: number, due: number) => now >= due && now < due + DUE_WINDOW_MIN * 60_000;
 const onMenuLines = (b: BuyerState) => b.cart.filter((l) => l.on_menu).sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at));
 
@@ -175,6 +137,7 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   };
   if (stage === "cart") {
     if (!items.length) return null;
+    // B1/B2 are never scheduled any more; only the cron's manual test send still composes them.
     return kind === "promo"
       ? { ...m, template: "rf2_promo_cart", body: [day, b.name, fish, seller.name, offer.when] }
       : { ...m, template: offer.mode === "today" ? "rf2_cart_today" : "rf2_cart_preorder", body: [b.name, fish, seller.name, offer.when] };
@@ -208,44 +171,16 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const seller = orderSeller ? sellers.find((s) => s.id === orderSeller) ?? null : pickSeller(b, sellers);
   if (!seller) return { skip: "no seller delivers to them" };
 
-  // At send time the offer is re-read: what the message promises is what checkout offers now.
-  const tryDue = (kind: Kind, due: number | null) => {
-    if (due == null || !isDue(now, due)) return null;
-    const offer = offerAt(seller, now);
-    return offer ? compose(kind, stage, due, b, seller, offer) : null;
-  };
-
-  // ── B: cart ──
-  let bLaterToday = false; // a B1/B2 is due later today: the promo waits for it (B goes first)
-  if (stage === "cart") {
-    const b1 = sentSince(history, "B1", cartMs);
-    let kind: Kind | null = null, due: number | null = null;
-    if (!b1) {
-      const plus1h = cartMs + 3_600_000;
-      kind = "B1";
-      due = istMin(plus1h) >= DAY_START && istMin(plus1h) <= LAST_SEND && istDate(plus1h) === istDate(cartMs)
-        ? plus1h
-        : sellerSlot(seller, istDate(nextDayAt(cartMs, 0)))?.ms ?? null;
-    } else if (!sentSince(history, "B2", cartMs)) {
-      kind = "B2";
-      due = sellerSlot(seller, addDays(b1.slot_date, 1))?.ms ?? null;
-    }
-    if (kind) {
-      const d = tryDue(kind, due);
-      if (d) return d;
-      bLaterToday = due != null && now < due && istDate(due) === today;
-    }
-  }
-
   // ── P: Tue/Fri 6 PM, Sat/Sun 8:30 AM, one promo by stage ──
   const lastActive = Math.max(Date.parse(b.created_at), cartMs, orderMs);
   const deliveredMs = b.last_delivered_at ? Date.parse(b.last_delivered_at) : 0;
-  // No spam (founder 30 Oct): ≥ 72 h since the last B1/B2/promo.
+  // No spam (founder 30 Oct): ≥ 72 h since the last marketing message (old B1/B2 rows count too).
   const spam = history.some((x) => PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < PROMO_GAP_MS);
   const slot = PROMO_SLOTS[istDow(now)];
-  if (slot != null && !bLaterToday && now - lastActive <= 30 * DAY_MS && now - deliveredMs >= 3 * DAY_MS && !spam) {
-    const d = tryDue("promo", atIST(today, slot));
-    if (d) return d;
-  }
-  return { skip: "nothing due" };
+  if (slot == null || now - lastActive > 30 * DAY_MS || now - deliveredMs < 3 * DAY_MS || spam) return { skip: "nothing due" };
+  const due = atIST(today, slot);
+  if (!isDue(now, due)) return { skip: "nothing due" };
+  // At send time the offer is re-read: what the message promises is what checkout offers now.
+  const offer = offerAt(seller, now);
+  return (offer && compose("promo", stage, due, b, seller, offer)) || { skip: "nothing due" };
 }
