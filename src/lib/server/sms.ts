@@ -1,5 +1,5 @@
 /**
- * SMS through MSG91 (DLT sender RELFSH): the channel for buyers who aren't opted in to WhatsApp,
+ * SMS through MSG91 (DLT sender RLFISH): the channel for buyers who aren't opted in to WhatsApp,
  * and the one-time fallback when WhatsApp fails for a reminder or an order update (founder, 30 Oct).
  *
  * Each SMS is a DLT-approved MSG91 template. Its id is env MSG91_FLOW_<KEY>, and its variables are
@@ -17,14 +17,14 @@ export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT"
 
 /** The DLT template text for each key (founder registers these; {#var#} in this order, the link code last). */
 export const SMS_TEXT: Record<SmsKey, string> = {
-  SIGNUP: "Welcome to Relifish {#var#}! Fresh fish from {#var#}, cleaned, cut and delivered home. See today's fish: https://www.relifish.com/go/{#var#} - RELFSH",
-  CART: "Hi {#var#}, your {#var#} from {#var#} is still in your Relifish cart. Next slot: {#var#}. Order here: https://www.relifish.com/go/{#var#} - RELFSH",
-  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is not paid yet. Pay to keep your slot {#var#}: https://www.relifish.com/go/{#var#} - RELFSH",
-  PAID: "Payment received for your Relifish order {#var#} from {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/go/{#var#} - RELFSH",
-  CONFIRMED: "{#var#} has confirmed your Relifish order {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/go/{#var#} - RELFSH",
-  OUT: "Your Relifish order {#var#} is out for delivery, arriving {#var#}. Track: https://www.relifish.com/go/{#var#} - RELFSH",
-  DELIVERED: "Your Relifish order {#var#} ({#var#}) is delivered. Hope you enjoy it! Rate it: https://www.relifish.com/go/{#var#} - RELFSH",
-  CANCELLED: "Your Relifish order {#var#} was cancelled: {#var#}. Refund: {#var#}. Details: https://www.relifish.com/go/{#var#} - RELFSH",
+  SIGNUP: "Welcome to Relifish {#var#}! Fresh fish from {#var#}, cleaned, cut and delivered home. See today's fish: https://www.relifish.com/go/{#var#} - Relifish",
+  CART: "Hi {#var#}, your {#var#} from {#var#} is still in your Relifish cart. Next slot: {#var#}. Order here: https://www.relifish.com/go/{#var#} - Relifish",
+  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is not paid yet. Pay to keep your slot {#var#}: https://www.relifish.com/go/{#var#} - Relifish",
+  PAID: "Payment received for your Relifish order {#var#} from {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/go/{#var#} - Relifish",
+  CONFIRMED: "{#var#} has confirmed your Relifish order {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/go/{#var#} - Relifish",
+  OUT: "Your Relifish order {#var#} is out for delivery, arriving {#var#}. Track: https://www.relifish.com/go/{#var#} - Relifish",
+  DELIVERED: "Your Relifish order {#var#} ({#var#}) is delivered. Hope you enjoy it! Rate it: https://www.relifish.com/go/{#var#} - Relifish",
+  CANCELLED: "Your Relifish order {#var#} was cancelled: {#var#}. Refund: {#var#}. Details: https://www.relifish.com/go/{#var#} - Relifish",
 };
 /** Variables each key takes before the link code. */
 export const smsVarCount = (key: SmsKey) => SMS_TEXT[key].split("{#var#}").length - 2;
@@ -39,7 +39,7 @@ export const cut30 = (s: string) => {
 export function smsPayload(flowId: string, to: string, vars: string[], code: string) {
   const all = [...vars.map(cut30), code];
   const named = Object.fromEntries(all.flatMap((v, i) => [[`var${i + 1}`, v], [`VAR${i + 1}`, v]]));
-  return { flow_id: flowId, sender: env("MSG91_SENDER_ID") || "RELFSH", mobiles: to, ...named };
+  return { flow_id: flowId, sender: env("MSG91_SENDER_ID") || "RLFISH", mobiles: to, ...named };
 }
 
 /** The DLT template for this key is set up in MSG91 (env MSG91_FLOW_<KEY>). Until then SMS is skipped, not failed. */

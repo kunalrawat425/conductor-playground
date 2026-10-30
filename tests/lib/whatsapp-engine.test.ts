@@ -211,7 +211,7 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
     const [url, init] = (globalThis.fetch as any).mock.calls[0];
     expect(url).toBe("https://api.msg91.com/api/v5/flow/");
     const body = JSON.parse(init.body);
-    expect(body).toMatchObject({ flow_id: "flowcart", sender: "RELFSH", mobiles: "919870619974", var1: "Priya", var3: "Fishtokri", var5: sb.rows[0].short_id });
+    expect(body).toMatchObject({ flow_id: "flowcart", sender: "RLFISH", mobiles: "919870619974", var1: "Priya", var3: "Fishtokri", var5: sb.rows[0].short_id });
     expect(body.var2.length).toBeLessThanOrEqual(30);
     expect(sb.rows.map((x) => [x.channel, x.template, x.status, x.provider_id])).toEqual([["sms", "sms:CART", "sent", "req123"]]);
   });
@@ -271,7 +271,7 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
 describe("SMS (MSG91)", () => {
   it("every DLT text ends with the /go/ link variable and has ≤ 5 variables", () => {
     for (const [k, t] of Object.entries(SMS_TEXT)) {
-      expect(t, k).toMatch(/https:\/\/www\.relifish\.com\/go\/\{#var#\} - RELFSH$/);
+      expect(t, k).toMatch(/https:\/\/www\.relifish\.com\/go\/\{#var#\} - Relifish$/);
       expect(smsVarCount(k as any), k).toBeGreaterThanOrEqual(1);
     }
   });
