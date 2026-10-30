@@ -155,3 +155,6 @@ export const POST: APIRoute = async ({ request, url }) => {
 
 const count = (xs: string[]) => xs.reduce((m: Record<string, number>, x) => ((m[x] = (m[x] || 0) + 1), m), {});
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o, null, 2), { status, headers: { "Content-Type": "application/json" } });
+
+/** Vercel Cron calls GET (same Bearer $CRON_SECRET): Tue/Fri 6 PM and Sat/Sun 8:30 AM IST slots, vercel.json. */
+export const GET = POST;
