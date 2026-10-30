@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { templatePayload, validWebhookSignature, waNumber } from "../../src/lib/server/whatsapp";
+import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
 import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, firstName, SIGNUP_IMAGE, rotationImage, varCount } from "../../src/lib/messaging/templates";
 import { orderMessage, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
 
@@ -185,5 +185,30 @@ describe("dispatch: both channels, once", () => {
     expect((await dispatch(sb, { ...msg, buyer_id: "b2", phone: "9820138553", dedupe_key: "x" })).channel).toBe("whatsapp:dry_run,push:dry_run");
     expect(pushes).toHaveLength(0);
     expect((await dispatch(sb, msg)).channel).toBe("whatsapp:sent,push:sent");
+  });
+});
+
+describe("Wati provider", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("maps rf2 templates to Wati names and params: photo, text-only and no-header", () => {
+    const conf = { to: "919870619974", name: "rf2_confirmed", body: ["Fishtokri", "#AB12", "Fri 8–10 AM"], urlSuffix: "abc" };
+    expect(watiTemplate({ ...conf, headerImage: "https://x/p.jpg" })).toBe("rfw2_confirmed");
+    expect(watiParams({ ...conf, headerImage: "https://x/p.jpg" })).toEqual([{ name: "image_url", value: "https://x/p.jpg" }, { name: "1", value: "Fishtokri" }, { name: "2", value: "#AB12" }, { name: "3", value: "Fri 8–10 AM" }, { name: "4", value: "abc" }]);
+    expect(watiTemplate({ ...conf, headerImage: null })).toBe("rfwt_confirmed");
+    expect(watiParams({ ...conf, headerImage: null }).map((p) => p.name)).toEqual(["1", "2", "3", "4"]);
+    expect(watiTemplate({ to: "1", name: "rf2_out", body: ["#AB12", "2 PM"] })).toBe("rfw_out");
+    expect(watiTemplate({ to: "1", name: "rf_hello", body: ["Kiran"] })).toBe("rfw_hello");
+  });
+  it("is live only with Wati keys, and still honours dry-run and the test-only list", () => {
+    vi.stubEnv("WA_PROVIDER", "wati");
+    vi.stubEnv("WA_PHONE_NUMBER_ID", ""); vi.stubEnv("WA_TOKEN", "");
+    vi.stubEnv("WATI_API_URL", ""); vi.stubEnv("WATI_API_KEY", "");
+    expect(isLiveFor("919870619974")).toBe(false);
+    vi.stubEnv("WATI_API_URL", "https://x/10282905"); vi.stubEnv("WATI_API_KEY", "k");
+    vi.stubEnv("WA_TEST_ONLY", "919870619974"); vi.stubEnv("WA_DRY_RUN", "");
+    expect(isLiveFor("919870619974")).toBe(true);
+    expect(isLiveFor("919999999999")).toBe(false);
+    vi.stubEnv("WA_DRY_RUN", "true");
+    expect(isLiveFor("919870619974")).toBe(false);
   });
 });
