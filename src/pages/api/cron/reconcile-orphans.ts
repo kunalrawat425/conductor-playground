@@ -125,6 +125,8 @@ async function run(request: Request, origin: string) {
     }
     const patch: Record<string, unknown> = { refund_note: `${o.refund_note ? o.refund_note + " | " : ""}Retry: ${outcome.note}`.slice(0, 1000) };
     if (outcome.ok) patch.refund_sent_at = new Date().toISOString();
+    // A cart item's share: without refund_amt the track page kept saying "refund pending".
+    if (outcome.ok && closed && (outcome as any).refundedRupees != null) patch.refund_amt = (outcome as any).refundedRupees;
     await sb.from("orders").update(patch).eq("id", o.id).is("refund_sent_at", null);
     outcome.ok ? refundRetried++ : refundStillFailing++;
   }

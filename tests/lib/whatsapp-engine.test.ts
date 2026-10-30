@@ -115,6 +115,10 @@ describe("templates", () => {
     expect(orderMessage("completed", ord, "manoj", noon).body).toEqual(["Silver Pomfret", "Manoj", "Fishtokri"]);
     expect(orderMessage("cancelled", ord, "manoj", noon, { reason: "the seller ran out of pomfret today", refund: "₹1,380, started today, reaches your account in 5–7 working days" }).body)
       .toEqual(["Manoj", "#EEB0F7AC", "the seller ran out of pomfret today", "₹1,380, started today, reaches your account in 5–7 working days"]);
+    // One item removed, the rest goes ahead: the cart's order number and the reason name the item.
+    const removed = orderMessage("cancelled", ord, "manoj", noon, { reason: "Not available.", refund: "₹285 refund is being processed, it reaches you in 5–7 working days", removedFrom: "aa11bb22-0000-4000-8000-000000000000" });
+    expect(removed.template).toBe("rf2_cancelled");
+    expect(removed.body).toEqual(["Manoj", "#AA11BB22 (Silver Pomfret)", "the seller removed Silver Pomfret (Not available), the rest of your order goes ahead", "₹285 refund is being processed, it reaches you in 5–7 working days"]);
     expect(firstName("  ")).toBe("fish lover");
   });
   it("catch a price, a trailing variable and a promo in a utility template", () => {
