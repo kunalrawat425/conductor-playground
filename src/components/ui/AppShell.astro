@@ -254,9 +254,9 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
       (function () {
         var s = document.getElementById("rf-splash"); if (!s) return;
         var app = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
-        var seen = null; try { seen = sessionStorage.getItem("rf_splash"); } catch (e) {}
+        var seen = null; try { seen = sessionStorage.getItem("relifish-splash"); } catch (e) {}
         if (!app || seen) { s.remove(); return; }
-        try { sessionStorage.setItem("rf_splash", "1"); } catch (e) {}
+        try { sessionStorage.setItem("relifish-splash", "1"); } catch (e) {}
         s.classList.add("on");
         var t0 = Date.now(), done = false;
         function hide() {
