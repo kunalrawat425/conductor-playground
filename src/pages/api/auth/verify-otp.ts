@@ -219,6 +219,13 @@ export const POST: APIRoute = async ({ request }) => {
       is_new = true;
     }
 
+    // Meta CAPI: a new buyer's first login = CompleteRegistration, so Meta can see sign-ups
+    // (founder 24 Oct). One event per buyer (event_id); no phone or other PII is sent.
+    if (is_new) {
+      const { metaEvent, metaUserFromRequest } = await import("../../../lib/server/meta-capi");
+      await metaEvent("CompleteRegistration", `signup_${buyer_id}`, metaUserFromRequest(request));
+    }
+
     // WhatsApp consent: the buyer ticked the unticked box at login. Recorded once (time = proof);
     // a later tick also clears an earlier "Stop updates".
     if (whatsapp_opt_in === true) {

@@ -7,7 +7,6 @@ import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
   capitalizeFishName,
   orderEmailBuyer,
-  orderEmailSeller,
   type OrderEmailArgs,
 } from "../../../lib/email-templates";
 import { getListingOptionById, type ListingPricingSource } from "../../../lib/listing-pricing";
@@ -15,7 +14,6 @@ import type { PlacementKind } from "../../../lib/order-timing";
 import { classifyPlacementAtOrderTime, closedSellerMessage, preorderDeliveryDateIST, preorderPlacedLabel } from "../../../lib/order-timing";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { resolveListingOrderLine } from "../../../lib/server/resolve-listing-order-line";
-import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { sellerRejectionReason, deliveryDistanceRejection } from "../../../lib/server/assert-seller-accepts";
 import { afterResponse } from "../../../lib/server/after-response";
@@ -196,15 +194,6 @@ export const POST: APIRoute = async ({ request, url }) => {
         // moment the response is returned, so in-flight push/email requests were
         // killed and the notification simply never arrived. Awaited now.
         const preNotify: Promise<unknown>[] = [];
-        if (seller_id) {
-          preNotify.push(
-            fetch(`${url.origin}/api/notify-seller`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...internalHeaders() },
-              body: JSON.stringify({ seller_id, species: species || "Fish", quantity, quantity_unit, placement_kind: "preorder", order_id: preOrder.id }),
-            }).catch((err) => console.warn("[orders/create] preorder notify-seller failed", { order_id: preOrder.id, err: err?.message }))
-          );
-        }
         preNotify.push(
           sendBuyerOrderPush({ buyer_id: buyer_id || null, buyer_phone, status: "placed", species: species || "Fish", order_id: preOrder.id })
             .catch((err) => console.warn("[orders/create] preorder buyer push failed", { order_id: preOrder.id, err: err?.message }))
@@ -238,11 +227,6 @@ export const POST: APIRoute = async ({ request, url }) => {
               )
             );
           }
-          preNotify.push(
-            supabase.from("sellers").select("email").eq("id", seller_id).single().then(({ data: sd }) =>
-              sendTransactionalEmail(sd?.email, `New pre-order: ${speciesLabel}`, orderEmailSeller({ ...poEmailArgs, buyerPhone: buyer_phone }), "preorder-seller")
-            )
-          );
         }
 
         afterResponse(Promise.allSettled(preNotify), "orders/create:preorder");
@@ -438,26 +422,6 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
     await saveAddressSnapshot(supabase, [order.id], addr.snapshot);
 
-    if (seller_id) {
-      try {
-        await fetch(`${url.origin}/api/notify-seller`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...internalHeaders() },
-          body: JSON.stringify({
-            seller_id,
-            species: species || "Fish",
-            quantity,
-            quantity_unit,
-            placement_kind,
-            buyer_phone,
-            order_id: order.id,
-          }),
-        });
-      } catch (err) {
-        console.warn("[orders/create] notify-seller failed", { order_id: order.id, err: (err as any)?.message });
-      }
-    }
-
     if (order.id && (order.buyer_id || buyer_phone)) {
       try {
         await sendBuyerOrderPush({
@@ -507,21 +471,10 @@ export const POST: APIRoute = async ({ request, url }) => {
           ).catch((err) => console.warn("[orders/create] buyer email lookup failed", { err: err?.message }))
         );
       }
-      if (seller_id) {
-        mail.push(
-          supabase.from("sellers").select("email").eq("id", seller_id).single().then(({ data: sellerData }) =>
-            sendTransactionalEmail(
-              sellerData?.email,
-              isPreorderBranch ? `New pre-order: ${speciesForEmail}` : `New order: ${speciesForEmail}`,
-              orderEmailSeller(emailArgs),
-              "order-seller"
-            )
-          ).catch((err) => console.warn("[orders/create] seller email lookup failed", { err: err?.message }))
-        );
-      }
       afterResponse(Promise.allSettled(mail), "orders/create:email");
     }
 
+    // Sellers hear about an order only once it is paid (founder, 27 Oct).
     return new Response(JSON.stringify({ order, placement_kind }), { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

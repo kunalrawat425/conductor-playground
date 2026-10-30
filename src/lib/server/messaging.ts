@@ -1,14 +1,17 @@
 /**
- * One place that sends a Relifish message and records it in message_log.
- * - Idempotent: the row is inserted first with a unique dedupe_key; if it already exists the
- *   message was handled before and nothing is sent again (job re-runs, duplicate webhooks).
- * - Channels: WhatsApp (opted in, valid number) and web push (buyers with a subscription), both.
- * - Every button/link points at /go/<message id>, which records the tap and redirects.
+ * One place that sends a Relifish message to a buyer and records it in message_log.
+ * - One channel per message (founder, 30 Oct): WhatsApp when the buyer opted in, else SMS (MSG91).
+ *   A reminder or order update whose WhatsApp fails is re-sent once by SMS (smsFallback), now or
+ *   later when Wati reports the failure (smsFallbackFor, from the messaging cron).
+ * - Idempotent: each channel's row is inserted first with a unique dedupe_key (key + ":whatsapp" /
+ *   ":sms"); a message already handled on either channel is never sent again.
+ * - Every link points at /go/<id> (WhatsApp button) or /go/<short_id> (SMS), which records the tap.
  */
-import { sendCustomBuyerPush } from "./buyer-push";
-import { sendTemplate, waNumber } from "./whatsapp";
+import { sendTemplate, waNumber, type SendResult } from "./whatsapp";
+import { sendSms, smsReady, type SmsKey } from "./sms";
 import { TEMPLATE } from "../messaging/templates";
 
+export type SmsPart = { key: SmsKey; vars: string[] };
 export type Dispatch = {
   dedupe_key: string;
   kind: string;
@@ -17,60 +20,80 @@ export type Dispatch = {
   seller_id?: string | null;
   order_id?: string | null;
   phone?: string | null;
-  whatsappOk: boolean;              // opted in, not opted out
+  whatsappOk: boolean;              // opted in (and, for reminders/promos, not opted out)
   template: string;
   body: string[];
   headerImage?: string | null;
   link_path: string;
-  push?: { title: string; body: string; image?: string } | null; // buyer fallback
+  sms?: SmsPart | null;             // the SMS version; none → WhatsApp only (promos)
+  smsOk?: boolean;                  // false → never SMS (DND, STOP for reminders)
+  smsFallback?: boolean;            // WhatsApp failed → SMS once (reminders, order updates)
 };
+type Channel = "whatsapp" | "sms";
 export type DispatchResult = { status: "duplicate" | "sent" | "dry_run" | "failed" | "no_channel"; channel?: string; id?: string; error?: string };
 
-/**
- * Send on every channel the person has: WhatsApp (opted in + valid number) AND web push
- * (buyers with a subscription), founder 24 Oct. Each channel is its own message_log row
- * (dedupe_key + ":whatsapp" / ":push"), so a re-run never repeats either one.
- */
+const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
+
 export async function dispatch(sb: any, d: Dispatch): Promise<DispatchResult> {
   const to = waNumber(d.phone);
-  const channels: ("whatsapp" | "push")[] = [];
-  if (d.whatsappOk && to) channels.push("whatsapp");
-  if (d.push && d.buyer_id) channels.push("push");
-  if (!channels.length) return { status: "no_channel" };
-  const results = [];
-  for (const ch of channels) results.push(await sendOne(sb, d, ch, to));
-  const sent = results.find((r) => r.status === "sent");
-  return sent ? { ...sent, channel: results.map((r) => `${r.channel}:${r.status}`).join(",") }
-    : { ...results[0], channel: results.map((r) => `${r.channel}:${r.status}`).join(",") };
+  if (!to) return { status: "no_channel" };
+  // No SMS until its DLT template is set up in MSG91: nothing is logged, so the reminder can still go once it is.
+  const canSms = !!d.sms && d.smsOk !== false && smsReady(d.sms.key);
+  const { data: prior } = await sb.from("message_log").select("channel, status")
+    .in("dedupe_key", [`${d.dedupe_key}:whatsapp`, `${d.dedupe_key}:sms`]);
+  const wa = (prior || []).find((p: any) => p.channel === "whatsapp");
+  if ((prior || []).some((p: any) => p.channel === "sms")) return { status: "duplicate", channel: "sms" };
+  if (wa) {
+    // Handled on WhatsApp before; only a failed one may still go once by SMS.
+    return wa.status === "failed" && d.smsFallback && canSms ? sendOne(sb, d, "sms", to) : { status: "duplicate", channel: "whatsapp" };
+  }
+  if (d.whatsappOk) {
+    const r = await sendOne(sb, d, "whatsapp", to);
+    if (r.status !== "failed" || !d.smsFallback || !canSms) return r;
+    const s = await sendOne(sb, d, "sms", to);
+    return { ...s, channel: `whatsapp:failed,sms:${s.status}` };
+  }
+  return canSms ? sendOne(sb, d, "sms", to) : { status: "no_channel" };
 }
 
-async function sendOne(sb: any, d: Dispatch, channel: "whatsapp" | "push", to: string | null): Promise<DispatchResult> {
+/**
+ * A WhatsApp row Wati later reported as failed → the same message once by SMS, from its stored
+ * payload. Only rows whose payload has an SMS version and smsFallback (reminders, order updates).
+ */
+export async function smsFallbackFor(sb: any, row: any): Promise<DispatchResult> {
+  const p = row?.payload;
+  if (!p?.sms || !p?.smsFallback || p?.smsOk === false) return { status: "no_channel" };
+  const base = String(row.dedupe_key).replace(/:whatsapp$/, "");
+  return dispatch(sb, {
+    dedupe_key: base, kind: row.kind, slot_date: row.slot_date, buyer_id: row.buyer_id, seller_id: row.seller_id, order_id: row.order_id,
+    phone: row.to_phone, whatsappOk: false, template: row.template, body: p.body || [], link_path: row.link_path,
+    sms: p.sms, smsOk: true, smsFallback: true,
+  });
+}
+
+async function sendOne(sb: any, d: Dispatch, channel: Channel, to: string): Promise<DispatchResult> {
   const { data: rows, error } = await sb.from("message_log").upsert({
-    dedupe_key: `${d.dedupe_key}:${channel}`, kind: d.kind, slot_date: d.slot_date, channel, template: d.template,
+    dedupe_key: `${d.dedupe_key}:${channel}`, kind: d.kind, slot_date: d.slot_date, channel,
+    template: channel === "sms" ? `sms:${d.sms!.key}` : d.template,
     buyer_id: d.buyer_id ?? null, seller_id: d.seller_id ?? null, order_id: d.order_id ?? null,
-    to_phone: channel === "whatsapp" ? to : null, link_path: d.link_path, status: "queued",
-  }, { onConflict: "dedupe_key", ignoreDuplicates: true }).select("id");
+    to_phone: to, link_path: d.link_path, status: "queued",
+    payload: { template: d.template, body: d.body, headerImage: d.headerImage ?? null, sms: d.sms ?? null, smsOk: d.smsOk ?? true, smsFallback: !!d.smsFallback },
+  }, { onConflict: "dedupe_key", ignoreDuplicates: true }).select("id, short_id");
   if (error) return { status: "failed", channel, error: error.message };
   const id = rows?.[0]?.id as string | undefined;
   if (!id) return { status: "duplicate", channel };
 
-  let r: { status: "sent" | "dry_run" | "failed"; id?: string; error?: string };
-  // MESSAGING_TEST_ONLY=919870619974[,…]: while testing, only these people get real sends
-  // (WhatsApp and push); everyone else is recorded as dry_run.
-  const testOnly = String((import.meta as any).env?.MESSAGING_TEST_ONLY || process.env.MESSAGING_TEST_ONLY || "")
-    .split(",").map((x) => waNumber(x.trim())).filter(Boolean);
-  if (testOnly.length && !testOnly.includes(waNumber(d.phone))) {
+  let r: SendResult;
+  // MESSAGING_TEST_ONLY=919870619974[,…]: while testing, only these numbers get real sends.
+  const testOnly = env("MESSAGING_TEST_ONLY").split(",").map((x) => waNumber(x.trim())).filter(Boolean);
+  if (testOnly.length && !testOnly.includes(to)) {
     r = { status: "dry_run" };
   } else if (channel === "whatsapp") {
-    const marketing = TEMPLATE[d.template]?.category === "MARKETING";
-    r = await sendTemplate({
-      to: to!, name: d.template, body: d.body, headerImage: TEMPLATE[d.template]?.header ? d.headerImage : null,
-      urlSuffix: id, quickReplyPayload: marketing ? "STOP" : null,
-    });
+    // No quick-reply payload: rf2's second button is "I have a question" etc., not "Stop updates"
+    // (a STOP payload there would opt the buyer out). STOP is typed, per the footer.
+    r = await sendTemplate({ to, name: d.template, body: d.body, headerImage: TEMPLATE[d.template]?.header ? d.headerImage : null, urlSuffix: id });
   } else {
-    const p = await sendCustomBuyerPush(d.buyer_id!, { ...d.push! }, `/go/${id}`)
-      .catch((e: any) => ({ ok: false, error: e?.message }) as any);
-    r = p?.ok && p?.sent ? { status: "sent" } : { status: "failed", error: p?.error || p?.reason || "push not sent" };
+    r = await sendSms(to, d.sms!.key, d.sms!.vars, rows[0].short_id || id);
   }
   await sb.from("message_log").update({ status: r.status, provider_id: r.id ?? null, error: r.error ?? null, updated_at: new Date().toISOString() }).eq("id", id);
   return { status: r.status, channel, id, error: r.error };

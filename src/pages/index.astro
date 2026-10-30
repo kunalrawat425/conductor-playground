@@ -1,6 +1,7 @@
 ---
 import UtmCapture from "../components/UtmCapture.astro";
-import { LOGO_URL } from "../lib/brand";
+import WatiChatButton from "../components/WatiChatButton.astro";
+import { LOGO_URL, whatsappLink } from "../lib/brand";
 import { jsonLdString } from "../lib/html";
 export const prerender = false;
 import Footer from "../components/Footer.astro";
@@ -1368,6 +1369,7 @@ const homeFaqs = [
           </div>
           <button type="submit" class="wl-btn" id="wl-btn">📋 Join the waitlist — free</button>
           <div class="wl-note">No spam. WhatsApp only when we launch near you.</div>
+          <div class="wl-note">Or <a id="wl-wa" href={whatsappLink("Hi Relifish, please tell me when you deliver to my area")} target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">message us on WhatsApp</a></div>
         </form>
         <div class="wl-success" id="wl-success">
           <div class="wl-success-icon">🎉</div>
@@ -1380,7 +1382,10 @@ const homeFaqs = [
   </div>
 </section>
 <script>
+import { whatsappLink } from "../lib/brand";
 (function(){
+  const waLink=document.getElementById('wl-wa'),areaIn=document.getElementById('wl-area');
+  areaIn?.addEventListener('input',()=>{const a=areaIn.value.trim();waLink.href=whatsappLink(`Hi Relifish, please tell me when you deliver to ${a||'my area'}`);});
   const form=document.getElementById('wl-form'),btn=document.getElementById('wl-btn'),
         suc=document.getElementById('wl-success'),msg=document.getElementById('wl-msg');
   if(!form)return;
@@ -1583,5 +1588,6 @@ const homeFaqs = [
 -->
 
 {enableTracking && <script type="module" src="/_vercel/insights/script.js"></script>}
+{enableTracking && <WatiChatButton marginBottom="90" />}
 </body>
 </html>

@@ -19,3 +19,22 @@ export async function assertSellerOwns(
   }
   return requireSeller(request, seller_id) ?? { ok: true };
 }
+
+export const AWAITING_APPROVAL = "Your shop is awaiting approval. Listings open after approval.";
+
+/**
+ * After assertSellerOwns, for listing writes: a seller we haven't approved yet (is_active false)
+ * gets 403. The dashboard hides listings from them too; this stops direct API calls.
+ * Not for /api/seller/profile or /api/seller/apply: the application form needs those.
+ */
+export async function assertSellerApproved(
+  supabase: { from: (t: string) => any },
+  seller_id: string
+): Promise<Response | null> {
+  const { data, error } = await supabase.from("sellers").select("is_active").eq("id", seller_id).maybeSingle();
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  if (!data || data.is_active === false) {
+    return new Response(JSON.stringify({ error: AWAITING_APPROVAL }), { status: 403 });
+  }
+  return null;
+}

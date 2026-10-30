@@ -27,6 +27,7 @@ function query(table: string) {
     update: (p: Row) => { op = "update"; payload = p; return q; },
     eq: (k: string, v: any) => { filters.push((r) => r[k] === v); return q; },
     in: (k: string, vs: any[]) => { filters.push((r) => vs.includes(r[k])); return q; },
+    is: (k: string, v: any) => { filters.push((r) => (r[k] ?? null) === v); return q; },
     gte: () => q,
     not: () => q,
     order: (k: string) => { order = k; return q; },
@@ -44,6 +45,7 @@ const push = vi.fn(async (_p: any) => ({ ok: true, sent: true }));
 const email = vi.fn(async (_to: string, _subject: string, _html: string) => "sent");
 const refund = vi.fn(async (_sb: any, _o: any, _c: any) => ({ ok: true, refundId: "rfnd_1", note: "Refunded" }));
 const notify = vi.fn(async (_o: any) => ({}));
+const wa = vi.fn(async (_id: string, _event: string, _cancel?: any) => {});
 
 vi.mock("@supabase/supabase-js", () => ({ createClient: () => fake }));
 vi.mock("../../src/lib/server/assert-seller", () => ({ assertSellerOwns: async () => ({ ok: true }) }));
@@ -51,6 +53,7 @@ vi.mock("../../src/lib/server/buyer-push", () => ({ sendBuyerOrderPush: (p: any)
 vi.mock("../../src/lib/server/send-email", () => ({ sendTransactionalEmail: (to: string, s: string, h: string) => email(to, s, h) }));
 vi.mock("../../src/lib/server/razorpay-ledger", () => ({ refundOrderRazorpay: (sb: any, o: any, c: any) => refund(sb, o, c) }));
 vi.mock("../../src/lib/server/notify-order-parties", () => ({ notifyOrderParties: (o: any) => notify(o) }));
+vi.mock("../../src/lib/server/notify-order-whatsapp", () => ({ notifyOrderWhatsApp: (id: string, e: string, c?: any) => wa(id, e, c) }));
 
 const { POST, GET } = await import("../../src/pages/api/seller/orders");
 const { buyerOrderPushNotification } = await import("../../src/lib/server/buyer-order-push-copy");
@@ -84,7 +87,8 @@ beforeEach(() => {
     row("o2", { species: "surmai", listing_id: "l2", total_price: 120, paid_amount: 120 }),
     row("o3", { species: "prawns", status: "cancelled" }),
   );
-  [push, email, refund, notify].forEach((f) => f.mockClear());
+  [push, email, refund, notify, wa].forEach((f) => f.mockClear());
+  refund.mockImplementation(async () => ({ ok: true, refundId: "rfnd_1", note: "Refunded" }));
 });
 
 describe("cart-level transitions", () => {
@@ -96,9 +100,21 @@ describe("cart-level transitions", () => {
     expect(push).toHaveBeenCalledTimes(1);
     expect(push.mock.calls[0][0]).toMatchObject({ status: "confirmed", species: "Pomfret + Surmai" });
     expect(email).toHaveBeenCalledTimes(2); // one buyer + one seller
-    expect(email.mock.calls[0][1]).toBe("Order Confirmed — Pomfret + Surmai");
+    expect(email.mock.calls[0][1]).toBe("Your Relifish order is confirmed"); // founder, 26 Oct
+    expect(email.mock.calls[0][2]).toContain("Pomfret + Surmai, cleaned and cut your way"); // preview line
     expect(email.mock.calls[0][2]).toContain("Surmai");
     expect(email.mock.calls[0][2]).toContain("₹760"); // 600 + 120 + 40 delivery
+  });
+
+  it("confirm copy lists only live items, and the kept delivery fee", async () => {
+    // Pomfret (carried the ₹40 fee) was removed after payment; Surmai + Prawns go ahead.
+    db.orders.find((o) => o.id === "o1")!.status = "cancelled";
+    db.orders.find((o) => o.id === "o3")!.status = "paid";
+    await post({ order_id: "o2", status: "confirmed", cart: true });
+    expect(push.mock.calls[0][0].species).toBe("Surmai + Prawns");
+    const html = email.mock.calls[0][2];
+    expect(html).not.toMatch(/pomfret/i);
+    expect(html).toContain("₹760"); // 120 + 600 + 40 delivery
   });
 
   it("a row the seller does not own is never touched", async () => {
@@ -135,11 +151,33 @@ describe("item-level cancel", () => {
     expect(notify).not.toHaveBeenCalled();
     expect(push).toHaveBeenCalledTimes(1);
     const p = push.mock.calls[0][0];
-    expect(p.cancel.item).toEqual({ order_short: "O1", amount: 120 });
+    expect(p.cancel.item).toEqual({ order_short: "O1", amount: 120, sent: true });
     const copy = buyerOrderPushNotification(p.status, p.species, null, p.cancel);
     expect(copy.body).toBe("Surmai was removed from your order #O1 — ₹120 refunded. Reason: Surmai sold out.");
     expect(email).toHaveBeenCalledTimes(1);
     expect(email.mock.calls[0][1]).toBe("Surmai was removed from your order #O1 — ₹120 refunded");
+    // WhatsApp rf2_cancelled about the removed row, under the cart's order number.
+    expect(wa).toHaveBeenCalledTimes(1);
+    expect(wa.mock.calls[0]).toEqual(["o2", "cancelled", { reason: "Surmai sold out", refund: "₹120 refunded", removedFrom: "o1" }]);
+  });
+
+  it("a FAILED refund is never announced as refunded (30 Oct incident)", async () => {
+    refund.mockImplementation(async () => ({ ok: false, refundId: null, note: "Razorpay refund FAILED (400): not enough credits" }));
+    await post({ order_id: "o2", status: "cancelled", cancel_reason: "Not available" });
+    const o2 = db.orders.find((o) => o.id === "o2")!;
+    expect(o2.refund_sent_at ?? null).toBeNull();
+    const pending = "₹120 refund is being processed, it reaches you in 5–7 working days";
+    const p = push.mock.calls[0][0];
+    expect(buyerOrderPushNotification(p.status, p.species, null, p.cancel).body).toBe(`Surmai was removed from your order #O1 — ${pending}. Reason: Not available.`);
+    expect(email.mock.calls[0][1]).toBe(`Surmai was removed from your order #O1 — ${pending}`);
+    expect(email.mock.calls[0][1]).not.toMatch(/₹120 refunded/);
+    expect(wa.mock.calls[0][2]).toMatchObject({ refund: pending, removedFrom: "o1" });
+  });
+
+  it("removing the item that carried the delivery fee refunds its price only; the email still bills the fee", async () => {
+    await post({ order_id: "o1", status: "cancelled", cancel_reason: "Pomfret sold out" });
+    expect(push.mock.calls[0][0].cancel.item.amount).toBe(600);
+    expect(email.mock.calls[0][2]).toContain("₹160"); // Surmai 120 + delivery 40, still charged
   });
 
   it("cancelling the last live item is a whole-order cancel", async () => {
@@ -147,6 +185,46 @@ describe("item-level cancel", () => {
     await post({ order_id: "o2", status: "cancelled", cancel_reason: "Sold out" });
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify.mock.calls[0][0]).toMatchObject({ order_id: "o2", event: "cancelled_by_seller" });
+  });
+});
+
+describe("action=retry_refund", () => {
+  const retry = (order_id: string) => post({ order_id, action: "retry_refund" });
+
+  it("refunds a cancelled Razorpay item whose refund failed, records it and tells the buyer", async () => {
+    const { status, data } = await retry("o3");
+    expect(status).toBe(200);
+    expect(data).toMatchObject({ ok: true, refunded: 600 });
+    expect(refund).toHaveBeenCalledTimes(1);
+    expect(refund.mock.calls[0][1]).toMatchObject({ id: "o3", razorpay_payment_id: "pay_1" });
+    const o3 = db.orders.find((o) => o.id === "o3")!;
+    expect(o3.refund_amt).toBe(600);
+    expect(o3.refund_sent_at).toBeTruthy();
+    expect(notify.mock.calls[0][0]).toMatchObject({ order_id: "o3", event: "refunded", amount: 600 });
+  });
+
+  it("still failing: nothing recorded as sent, nobody told it is refunded", async () => {
+    refund.mockImplementation(async () => ({ ok: false, refundId: null, note: "Razorpay refund FAILED (400): not enough credits" }));
+    const { status, data } = await retry("o3");
+    expect(status).toBe(502);
+    expect(data.ok).toBe(false);
+    expect(db.orders.find((o) => o.id === "o3")!.refund_sent_at ?? null).toBeNull();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("refuses another seller's order, a live item and an already-refunded one", async () => {
+    db.orders.push(row("o4", { listing_id: "lx", status: "cancelled" }));
+    db.orders.find((o) => o.id === "o3")!.refund_sent_at = "2026-10-30T10:00:00Z";
+    expect((await retry("o4")).status).toBe(403);
+    expect((await retry("o1")).data.error).toBe("Only a cancelled or declined item can be refunded");
+    expect((await retry("o3")).data.error).toBe("This item is already refunded");
+    expect(refund).not.toHaveBeenCalled();
+  });
+
+  it("ignores any amount the seller sends", async () => {
+    await post({ order_id: "o3", action: "retry_refund", amount: 99999, final_price: 99999 });
+    expect(refund.mock.calls[0]).toHaveLength(3);
+    expect(db.orders.find((o) => o.id === "o3")!.refund_amt).toBe(600);
   });
 });
 
@@ -160,7 +238,7 @@ describe("single-item orders are unchanged", () => {
     expect(status).toBe(200);
     expect(data.order.status).toBe("confirmed");
     expect(push.mock.calls[0][0]).toMatchObject({ species: "pomfret", order_id: "solo" });
-    expect(email.mock.calls[0][1]).toBe("Order Confirmed — Pomfret");
+    expect(email.mock.calls[0][1]).toBe("Your Relifish order is confirmed");
   });
 
   it("cart: true on a row without a cart only moves that row", async () => {

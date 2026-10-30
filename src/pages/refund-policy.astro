@@ -1,5 +1,6 @@
 ---
 import LandingLayout from "../layouts/LandingLayout.astro";
+import { whatsappLink } from "../lib/brand";
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 <LandingLayout
@@ -65,7 +66,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 
       <h2>5. Support & Assistance</h2>
       <p>If you have a problem with an order or a dispute, message us and we'll check with the shop.</p>
-      <p>{brandName} · Mumbai, India · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
+      <p>{brandName} · Mumbai, India · <a href={whatsappLink("Hi Relifish, I have a question")} target="_blank" rel="noopener">WhatsApp +91 91522 07607</a> · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a></p>
     </div>
   </div>
 </LandingLayout>

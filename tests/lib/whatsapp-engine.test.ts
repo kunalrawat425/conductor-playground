@@ -1,13 +1,39 @@
 import { createHmac } from "node:crypto";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { templatePayload, validWebhookSignature, waNumber } from "../../src/lib/server/whatsapp";
-import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, SIGNUP_IMAGE } from "../../src/lib/messaging/templates";
+import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
+import { TEMPLATES, templateProblems, fishName, firstName, PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
+import { orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
+import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
-const pushes: any[] = [];
-vi.mock("../../src/lib/server/buyer-push", () => ({
-  sendCustomBuyerPush: async (id: string, n: any, path: string) => { pushes.push({ id, n, path }); return { ok: true, sent: true }; },
-}));
-import { dispatch } from "../../src/lib/server/messaging";
+/**
+ * The 19 templates APPROVED on WABA 1491951102724224 (Graph API message_templates, 29 Oct 2026):
+ * name → [category, image header?, body variable count].
+ */
+const APPROVED: Record<string, [string, boolean, number]> = {
+  rf2_welcome: ["MARKETING", true, 3], rf2_welcome_search: ["MARKETING", true, 3],
+  rf2_cart_today: ["MARKETING", true, 4], rf2_cart_preorder: ["MARKETING", true, 4],
+  rf2_promo_cart: ["MARKETING", true, 5], rf2_promo_unpaid: ["MARKETING", true, 4],
+  rf2_order_again: ["MARKETING", true, 4], rf2_weekend: ["MARKETING", true, 4],
+  rf2_catch_preorder: ["MARKETING", true, 5], rf2_catch_prices: ["MARKETING", true, 5],
+  rf2_login_otp: ["AUTHENTICATION", false, 1],
+  rf2_unpaid: ["UTILITY", true, 4], rf2_paid: ["UTILITY", false, 3], rf2_paid_evening: ["UTILITY", false, 4],
+  rf2_paid_fast: ["UTILITY", false, 4], rf2_confirmed: ["UTILITY", true, 3], rf2_out: ["UTILITY", false, 2],
+  rf2_delivered: ["UTILITY", true, 3], rf2_cancelled: ["UTILITY", false, 4],
+  rf2_cart_swap: ["MARKETING", true, 5], // submitted 30 Oct, Meta approval pending
+};
+/** rf_* strings in src that are not WhatsApp templates. */
+const NOT_TEMPLATES = new Set(["rf_internal", "rf_utm", "rf_resume_checkout"]);
+const srcFiles = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
+  const p = join(dir, f);
+  return statSync(p).isDirectory() ? srcFiles(p) : [p];
+});
+
+import { dispatch, smsFallbackFor } from "../../src/lib/server/messaging";
+import { cut30, SMS_TEXT, smsVarCount } from "../../src/lib/server/sms";
+import { orderSms } from "../../src/lib/server/notify-order-whatsapp";
+import { matchWatiItem, nextStatus } from "../../src/lib/server/wati-status";
 
 /** Tiny in-memory message_log with the unique dedupe_key the migration creates. */
 function fakeSb() {
@@ -16,10 +42,11 @@ function fakeSb() {
   return {
     rows,
     from: () => ({
+      select: () => ({ in: async (_k: string, keys: string[]) => ({ data: rows.filter((r) => keys.includes(r.dedupe_key)), error: null }) }),
       upsert: (row: any) => ({
         select: async () => {
           if (rows.some((r) => r.dedupe_key === row.dedupe_key)) return { data: [], error: null };
-          const r = { ...row, id: `00000000-0000-4000-8000-00000000000${++n}` }; rows.push(r); return { data: [{ id: r.id }], error: null };
+          const r = { ...row, id: `00000000-0000-4000-8000-00000000000${++n}`, short_id: `s${n}abcdefgh` }; rows.push(r); return { data: [{ id: r.id, short_id: r.short_id }], error: null };
         },
       }),
       update: (patch: any) => ({ eq: async (_k: string, id: string) => { Object.assign(rows.find((r) => r.id === id) || {}, patch); return {}; } }),
@@ -27,7 +54,7 @@ function fakeSb() {
   };
 }
 
-beforeEach(() => { pushes.length = 0; vi.stubGlobal("fetch", vi.fn()); });
+beforeEach(() => { vi.stubGlobal("fetch", vi.fn()); });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("numbers, payloads, signatures", () => {
@@ -38,14 +65,14 @@ describe("numbers, payloads, signatures", () => {
     expect(waNumber("0221234567")).toBeNull();
   });
   it("builds Meta's template body: image header, text vars, URL suffix, STOP quick reply", () => {
-    const p = templatePayload({ to: "919870619974", name: "rf_cart_today", headerImage: "https://x/fish.jpg", body: ["Baby Rawas"], urlSuffix: "abc", quickReplyPayload: "STOP" });
+    const p = templatePayload({ to: "919870619974", name: "rf2_cart_today", headerImage: "https://x/fish.jpg", body: ["Baby Rawas"], urlSuffix: "abc", quickReplyPayload: "STOP" });
     expect(p.template.components).toEqual([
       { type: "header", parameters: [{ type: "image", image: { link: "https://x/fish.jpg" } }] },
       { type: "body", parameters: [{ type: "text", text: "Baby Rawas" }] },
       { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: "abc" }] },
       { type: "button", sub_type: "quick_reply", index: "1", parameters: [{ type: "payload", payload: "STOP" }] },
     ]);
-    expect(p).toMatchObject({ messaging_product: "whatsapp", to: "919870619974", type: "template", template: { name: "rf_cart_today", language: { code: "en" } } });
+    expect(p).toMatchObject({ messaging_product: "whatsapp", to: "919870619974", type: "template", template: { name: "rf2_cart_today", language: { code: "en" } } });
   });
   it("accepts only Meta's HMAC-SHA256 signature made with the app secret", () => {
     const body = '{"entry":[]}';
@@ -58,13 +85,46 @@ describe("numbers, payloads, signatures", () => {
 });
 
 describe("templates", () => {
-  it("all 15 pass Meta + brand checks", () => {
-    expect(TEMPLATES).toHaveLength(15);
+  it("mirror the 19 approved rf2 templates + rf2_cart_swap (category, header, variable count) and pass Meta + brand checks", () => {
+    expect(Object.fromEntries(TEMPLATES.map((t) => [t.name, [t.category, t.header === "IMAGE", t.body.match(/\{\{\d+\}\}/g)?.length ?? 0]]))).toEqual(APPROVED);
     for (const t of TEMPLATES) expect(templateProblems(t), t.name).toEqual([]);
+  });
+  it("every template name in src is an approved rf2 template; no v1 rf_* names are left", () => {
+    const names = new Set<string>();
+    for (const f of srcFiles("src")) {
+      for (const m of readFileSync(f, "utf8").matchAll(/["'`](rf2?_[a-z_]+)/g)) if (!NOT_TEMPLATES.has(m[1])) names.add(m[1]);
+    }
+    expect([...names].filter((n) => !APPROVED[n])).toEqual([]);
+    expect(names.has("rf2_cart_today") && names.has("rf2_cancelled")).toBe(true); // the scan does see the senders
+  });
+  it("order updates fill exactly the variables Meta defines", () => {
+    const ord = { id: "eeb0f7ac-1111-4000-8000-000000000000", species: "pomfret", is_preorder: true,
+      delivery_slot_start: "2026-10-25T03:30:00Z", delivery_slot_end: "2026-10-25T05:30:00Z",
+      listing: { species: "pomfret", description: "Silver Pomfret · Cut pcs", photo_url: "https://x/p.jpg", seller: { name: "Fishtokri" } } };
+    const noon = Date.parse("2026-10-24T12:00:00+05:30"), night = Date.parse("2026-10-24T20:00:00+05:30");
+    const events: OrderWaEvent[] = ["unpaid", "paid", "confirmed", "out_for_delivery", "completed", "cancelled"];
+    for (const e of events) {
+      const m = orderMessage(e, ord, "manoj kumar", noon);
+      expect(m.body, m.template).toHaveLength(varCount(m.template));
+      expect(!!m.image, m.template).toBe(APPROVED[m.template][1]);
+    }
+    expect(orderMessage("paid", ord, "manoj", noon)).toEqual({ template: "rf2_paid", body: ["#EEB0F7AC", "Manoj", "Fishtokri"] });
+    expect(orderMessage("paid", ord, null, night)).toEqual({ template: "rf2_paid_evening", body: ["#EEB0F7AC", "fish lover", "Sun 25 Oct, 9–11 AM", "Fishtokri"] });
+    expect(orderMessage("paid", { ...ord, is_preorder: false }, "manoj", night).template).toBe("rf2_paid");
+    expect(orderMessage("confirmed", ord, "manoj", noon).body).toEqual(["Fishtokri", "#EEB0F7AC", "Sun 25 Oct, 9–11 AM"]);
+    expect(orderMessage("out_for_delivery", ord, "manoj", noon).body).toEqual(["#EEB0F7AC", "11 AM"]);
+    expect(orderMessage("completed", ord, "manoj", noon).body).toEqual(["Silver Pomfret", "Manoj", "Fishtokri"]);
+    expect(orderMessage("cancelled", ord, "manoj", noon, { reason: "the seller ran out of pomfret today", refund: "₹1,380, started today, reaches your account in 5–7 working days" }).body)
+      .toEqual(["Manoj", "#EEB0F7AC", "the seller ran out of pomfret today", "₹1,380, started today, reaches your account in 5–7 working days"]);
+    // One item removed, the rest goes ahead: the cart's order number and the reason name the item.
+    const removed = orderMessage("cancelled", ord, "manoj", noon, { reason: "Not available.", refund: "₹285 refund is being processed, it reaches you in 5–7 working days", removedFrom: "aa11bb22-0000-4000-8000-000000000000" });
+    expect(removed.template).toBe("rf2_cancelled");
+    expect(removed.body).toEqual(["Manoj", "#AA11BB22 (Silver Pomfret)", "the seller removed Silver Pomfret (Not available), the rest of your order goes ahead", "₹285 refund is being processed, it reaches you in 5–7 working days"]);
+    expect(firstName("  ")).toBe("fish lover");
   });
   it("catch a price, a trailing variable and a promo in a utility template", () => {
     const base = TEMPLATES[0];
-    expect(templateProblems({ ...base, body: "Pomfret at ₹400 today." })[0]).toMatch(/brand/);
+    expect(templateProblems({ ...base, body: "Pomfret at ₹400 today.", examples: [] })[0]).toMatch(/brand/);
     expect(templateProblems({ ...base, body: "Get it on {{1}}", examples: ["x"] })).toContain("variable at start or end of body");
     expect(templateProblems({ ...base, body: "Get it on {{1}}.", examples: ["x"] })).toContain("variable at start or end of body");
     expect(templateProblems({ ...TEMPLATES.find((t) => t.category === "UTILITY")!, body: "Big sale on order {{1}} now.", examples: ["x"] })).toContain("promo wording in a utility template");
@@ -79,51 +139,205 @@ describe("templates", () => {
     expect(fishName(null, "bombil")).toBe("Bombil");
     expect(fishName(null, null)).toBe("fish");
   });
-  it("header photo: their listing photo, else our fish photo, else the poster", () => {
-    expect(headerImage("https://x/cut-pomfret.jpg", "pomfret")).toBe("https://x/cut-pomfret.jpg");
-    expect(headerImage(null, "rawas")).toMatch(/\/fish\/rawas\.jpg$/);
-    expect(headerImage(null, "bombil")).toBe(SIGNUP_IMAGE);
-    expect(fishPhoto("Seawater red prawns")).toMatch(/prawns\.jpg$/);
+});
+
+describe("order update photo: the checkout's costliest live item, never stock (founder, 30 Oct)", () => {
+  const STOCK = [PROMO_IMAGE, SIGNUP_IMAGE, DEFAULT_PROMO_IMAGE];
+  const isStock = (u: unknown) => typeof u === "string" && (STOCK.some((s) => u.endsWith(s)) || /\/fish\/[a-z]+\.jpg$/.test(u));
+  const o = (id: string, price: number, photo: string | null, x: any = {}) => ({
+    id: `${id}0000000-1111-4000-8000-000000000000`, cart_id: "cart1", status: "confirmed", total_price: price, species: "pomfret",
+    delivery_slot_start: "2026-10-25T03:30:00Z", delivery_slot_end: "2026-10-25T05:30:00Z",
+    listing: { species: "pomfret", description: "Silver Pomfret", photo_url: photo, seller_id: "ft", seller: { name: "Fishtokri" } }, ...x,
+  });
+  const cheap = o("a", 300, "https://x/bombil.jpg");
+  const dear = o("b", 1380, "https://x/pomfret.jpg");
+  const other = o("c", 5000, "https://x/other-seller.jpg", { listing: { ...dear.listing, seller_id: "nm" } });
+  const otherCart = o("d", 4000, "https://x/other-cart.jpg", { cart_id: "cart2" });
+  const removed = o("e", 3000, "https://x/removed.jpg", { status: "cancelled" });
+  const noon = Date.parse("2026-10-24T12:00:00+05:30");
+
+  it("confirmed / delivered / unpaid use the costliest live item of the same checkout and seller", () => {
+    const checkout = [cheap, dear, other, otherCart, removed];
+    for (const e of ["unpaid", "confirmed", "completed"] as OrderWaEvent[]) {
+      expect(orderMessage(e, cheap, "manoj", noon, undefined, checkout).image, e).toBe("https://x/pomfret.jpg");
+    }
+  });
+  it("the costliest item has no photo → null, no cheaper or stock fallback", () => {
+    const checkout = [cheap, { ...dear, listing: { ...dear.listing, photo_url: null } }];
+    expect(orderMessage("confirmed", cheap, "manoj", noon, undefined, checkout).image).toBeNull();
+    expect(orderMessage("confirmed", { ...cheap, listing: { ...cheap.listing, photo_url: null } }, "manoj", noon).image).toBeNull();
+  });
+  it("an item the seller removed shows its own photo, or none", () => {
+    const cancel = { reason: "Not available", removedFrom: dear.id };
+    expect(orderPhoto(removed, [cheap, dear, removed], cancel)).toBe("https://x/removed.jpg");
+    expect(orderPhoto({ ...removed, listing: { ...removed.listing, photo_url: null } }, [cheap, dear], cancel)).toBeNull();
+    expect(orderMessage("cancelled", removed, "manoj", noon, cancel, [cheap, dear, removed]).image ?? null).toBeNull(); // rf2_cancelled has no image header
+  });
+  it("no stock URL in any order update", () => {
+    const bare = o("f", 500, null, { cart_id: null, listing: { species: "rawas", description: null, photo_url: null, seller_id: "ft", seller: { name: "Fishtokri" } } });
+    for (const e of ["unpaid", "paid", "confirmed", "out_for_delivery", "completed", "cancelled"] as OrderWaEvent[]) {
+      for (const ord of [bare, cheap]) expect(isStock(orderMessage(e, ord, "manoj", noon).image), e).toBe(false);
+    }
   });
 });
 
-describe("dispatch: both channels, once", () => {
-  const msg = { dedupe_key: "B1:b1:2026-10-24", kind: "B1", slot_date: "2026-10-24", buyer_id: "b1", phone: "9870619974", whatsappOk: true,
-    template: "rf_cart_today", body: ["Baby Rawas"], headerImage: "https://x/r.jpg", link_path: "/s/fishtokri", push: { title: "t", body: "b" } };
-  it("sends WhatsApp AND push, each logged, with /go/<id> links", async () => {
-    vi.stubEnv("WA_PHONE_NUMBER_ID", "123"); vi.stubEnv("WA_TOKEN", "tok");
-    (globalThis.fetch as any).mockResolvedValue(new Response(JSON.stringify({ messages: [{ id: "wamid.X" }] }), { status: 200 }));
+describe("dispatch: one channel, once (founder 30 Oct)", () => {
+  const msg = { dedupe_key: "act_cart:b1:2026-10-24", kind: "act_cart", slot_date: "2026-10-24", buyer_id: "b1", phone: "9870619974", whatsappOk: true,
+    template: "rf2_cart_today", body: ["Priya", "Baby Rawas", "Fishtokri", "today, 4–6 PM"], headerImage: "https://x/r.jpg", link_path: "/s/fishtokri",
+    sms: { key: "CART" as const, vars: ["Priya", "Baby Rawas", "Fishtokri", "today, 4–6 PM"] }, smsFallback: true };
+  const wa = () => { vi.stubEnv("WA_PHONE_NUMBER_ID", "123"); vi.stubEnv("WA_TOKEN", "tok"); };
+  const sms = () => { vi.stubEnv("SMS_LIVE", "true"); vi.stubEnv("MSG91_AUTH_KEY", "k"); vi.stubEnv("MSG91_FLOW_CART", "flowcart"); };
+  const ok = (body: any) => new Response(JSON.stringify(body), { status: 200 });
+  it("opted in → WhatsApp only, logged with payload, button = /go/<id>", async () => {
+    wa(); sms();
+    (globalThis.fetch as any).mockResolvedValue(ok({ messages: [{ id: "wamid.X" }] }));
     const sb = fakeSb();
     const r = await dispatch(sb, msg);
-    expect(r.channel).toBe("whatsapp:sent,push:sent");
-    expect(sb.rows.map((x) => [x.channel, x.status, x.dedupe_key])).toEqual([
-      ["whatsapp", "sent", "B1:b1:2026-10-24:whatsapp"], ["push", "sent", "B1:b1:2026-10-24:push"]]);
+    expect([r.status, r.channel]).toEqual(["sent", "whatsapp"]);
+    expect(sb.rows.map((x) => [x.channel, x.status, x.dedupe_key])).toEqual([["whatsapp", "sent", "act_cart:b1:2026-10-24:whatsapp"]]);
+    expect(sb.rows[0].payload.sms.key).toBe("CART");
     const sent = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body);
     expect(sent.template.components.find((c: any) => c.sub_type === "url").parameters[0].text).toBe(sb.rows[0].id);
-    expect(pushes[0].path).toBe(`/go/${sb.rows[1].id}`);
-  });
-  it("a re-run sends nothing again", async () => {
-    vi.stubEnv("WA_PHONE_NUMBER_ID", "123"); vi.stubEnv("WA_TOKEN", "tok");
-    (globalThis.fetch as any).mockResolvedValue(new Response(JSON.stringify({ messages: [{ id: "w" }] }), { status: 200 }));
-    const sb = fakeSb();
-    await dispatch(sb, msg);
-    const again = await dispatch(sb, msg);
-    expect(again.status).toBe("duplicate");
+    // rf2's second button is "I have a question": no STOP payload on it, or a tap would opt the buyer out.
+    expect(sent.template.components.some((c: any) => c.sub_type === "quick_reply")).toBe(false);
     expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
-    expect(pushes).toHaveLength(1);
   });
-  it("no WhatsApp consent → push only; no token → WhatsApp is dry_run", async () => {
+  it("not opted in → SMS only (MSG91 flow, vars cut to 30, link code = short_id)", async () => {
+    sms();
+    (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "req123" }));
     const sb = fakeSb();
-    expect((await dispatch(sb, { ...msg, whatsappOk: false })).channel).toBe("push:sent");
+    const r = await dispatch(sb, { ...msg, whatsappOk: false, sms: { key: "CART", vars: ["Priya", "Silver Pomfret Combo 300–400 g cut + White prawns", "Fishtokri", "today, 4–6 PM"] } });
+    expect([r.status, r.channel]).toEqual(["sent", "sms"]);
+    const [url, init] = (globalThis.fetch as any).mock.calls[0];
+    expect(url).toBe("https://api.msg91.com/api/v5/flow/");
+    const body = JSON.parse(init.body);
+    expect(body).toMatchObject({ flow_id: "flowcart", sender: "RLFISH", mobiles: "919870619974", var1: "Priya", var3: "Fishtokri", var5: sb.rows[0].short_id });
+    expect(body.var2.length).toBeLessThanOrEqual(30);
+    expect(sb.rows.map((x) => [x.channel, x.template, x.status, x.provider_id])).toEqual([["sms", "sms:CART", "sent", "req123"]]);
+  });
+  it("a re-run sends nothing again, on either channel (opt-in changed in between)", async () => {
+    sms();
+    (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "r" }));
+    const sb = fakeSb();
+    await dispatch(sb, { ...msg, whatsappOk: false });
+    wa();
+    expect((await dispatch(sb, msg)).status).toBe("duplicate");
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
+  });
+  it("WhatsApp fails → the same message once by SMS; a promo (no SMS part) doesn't fall back", async () => {
+    wa(); sms();
+    (globalThis.fetch as any).mockResolvedValueOnce(new Response(JSON.stringify({ error: { message: "blocked" } }), { status: 400 }))
+      .mockResolvedValueOnce(ok({ type: "success", message: "r" }));
+    const sb = fakeSb();
+    const r = await dispatch(sb, msg);
+    expect(r.channel).toBe("whatsapp:failed,sms:sent");
+    expect(sb.rows.map((x) => [x.channel, x.status])).toEqual([["whatsapp", "failed"], ["sms", "sent"]]);
+    expect((await dispatch(sb, msg)).status).toBe("duplicate");
     const sb2 = fakeSb();
-    expect((await dispatch(sb2, msg)).channel).toBe("whatsapp:dry_run,push:sent");
+    (globalThis.fetch as any).mockResolvedValueOnce(new Response("{}", { status: 400 }));
+    const promo = { ...msg, dedupe_key: "promo:b1:2026-10-24", kind: "promo", sms: null, smsFallback: false };
+    expect((await dispatch(sb2, promo)).channel).toBe("whatsapp");
+    expect(sb2.rows).toHaveLength(1);
+  });
+  it("a WhatsApp row Wati reports failed later → smsFallbackFor sends the SMS once", async () => {
+    sms();
+    (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "r" }));
+    const sb = fakeSb();
+    sb.rows.push({ id: "w1", dedupe_key: "act_cart:b1:2026-10-24:whatsapp", channel: "whatsapp", status: "failed", kind: "act_cart", slot_date: "2026-10-24",
+      buyer_id: "b1", to_phone: "919870619974", template: "rf2_cart_today", link_path: "/s/fishtokri", payload: { body: msg.body, sms: msg.sms, smsFallback: true, smsOk: true } });
+    expect((await smsFallbackFor(sb, sb.rows[0])).status).toBe("sent");
+    expect((await smsFallbackFor(sb, sb.rows[0])).status).toBe("duplicate");
+    expect(sb.rows.filter((x) => x.channel === "sms")).toHaveLength(1);
+    expect((await smsFallbackFor(sb, { ...sb.rows[0], payload: { sms: null } })).status).toBe("no_channel");
+  });
+  it("no SMS template configured yet → no channel and nothing logged; SMS_LIVE off → dry_run", async () => {
+    const sb = fakeSb();
+    vi.stubEnv("MSG91_FLOW_CART", "");
+    expect((await dispatch(sb, { ...msg, whatsappOk: false })).status).toBe("no_channel");
+    expect(sb.rows).toHaveLength(0);
+    vi.stubEnv("MSG91_FLOW_CART", "f");
+    expect((await dispatch(fakeSb(), { ...msg, whatsappOk: false })).status).toBe("dry_run");
   });
   it("MESSAGING_TEST_ONLY: only the founder gets real sends", async () => {
-    vi.stubEnv("MESSAGING_TEST_ONLY", "9870619974"); vi.stubEnv("WA_PHONE_NUMBER_ID", "123"); vi.stubEnv("WA_TOKEN", "tok");
-    (globalThis.fetch as any).mockResolvedValue(new Response(JSON.stringify({ messages: [{ id: "w" }] }), { status: 200 }));
+    vi.stubEnv("MESSAGING_TEST_ONLY", "9870619974"); wa();
+    (globalThis.fetch as any).mockResolvedValue(ok({ messages: [{ id: "w" }] }));
     const sb = fakeSb();
-    expect((await dispatch(sb, { ...msg, buyer_id: "b2", phone: "9820138553", dedupe_key: "x" })).channel).toBe("whatsapp:dry_run,push:dry_run");
-    expect(pushes).toHaveLength(0);
-    expect((await dispatch(sb, msg)).channel).toBe("whatsapp:sent,push:sent");
+    expect((await dispatch(sb, { ...msg, buyer_id: "b2", phone: "9820138553", dedupe_key: "x" })).status).toBe("dry_run");
+    expect((await dispatch(sb, msg)).status).toBe("sent");
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
+  });
+});
+
+describe("SMS (MSG91)", () => {
+  it("every DLT text ends with the /go/ link variable and has ≤ 5 variables", () => {
+    for (const [k, t] of Object.entries(SMS_TEXT)) {
+      expect(t, k).toMatch(/https:\/\/www\.relifish\.com\/go\/\{#var#\} - Relifish$/);
+      expect(smsVarCount(k as any), k).toBeGreaterThanOrEqual(1);
+    }
+  });
+  it("order updates fill exactly the SMS variables their template has, each ≤ 30 chars after cutting", () => {
+    const ord = { id: "1b26326f-948a-4c56", species: "pomfret", delivery_slot_start: "2026-10-31T02:30:00Z", delivery_slot_end: "2026-10-31T04:30:00Z",
+      listing: { description: "Silver Pomfret · Cut pcs + head & tail", species: "pomfret", seller: { name: "Fishtokri" } } };
+    for (const ev of ["unpaid", "paid", "confirmed", "out_for_delivery", "completed", "cancelled"] as OrderWaEvent[]) {
+      const s = orderSms(ev, ord, "kunal rawat", { reason: "Not available.", refund: "₹285, started today, reaches your account in 5–7 working days" });
+      expect(s.vars.length, ev).toBe(smsVarCount(s.key));
+      for (const v of s.vars) expect(cut30(v).length).toBeLessThanOrEqual(30);
+    }
+    expect(orderSms("cancelled", ord, "", { reason: "x", refund: "₹285, started today" }).vars[2]).toBe("₹285 in 5-7 working days");
+    expect(orderSms("cancelled", ord, "", { reason: "x", refund: "none needed, nothing was charged" }).vars[2]).toBe("not needed");
+    expect(cut30("a".repeat(40))).toHaveLength(30);
+  });
+  it("rf2_cancelled goes out on Wati as the utility copy rfw_cancelled_u", () => {
+    expect(watiTemplate({ to: "1", name: "rf2_cancelled", body: [] })).toBe("rfw_cancelled_u");
+  });
+});
+
+describe("Wati provider", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("maps rf2 templates to Wati names and params: photo, text-only and no-header", () => {
+    const conf = { to: "919870619974", name: "rf2_confirmed", body: ["Fishtokri", "#AB12", "Fri 8–10 AM"], urlSuffix: "abc" };
+    expect(watiTemplate({ ...conf, headerImage: "https://x/p.jpg" })).toBe("rfw2_confirmed");
+    expect(watiParams({ ...conf, headerImage: "https://x/p.jpg" })).toEqual([{ name: "image_url", value: "https://x/p.jpg" }, { name: "1", value: "Fishtokri" }, { name: "2", value: "#AB12" }, { name: "3", value: "Fri 8–10 AM" }, { name: "4", value: "abc" }]);
+    expect(watiTemplate({ ...conf, headerImage: null })).toBe("rfwt_confirmed");
+    expect(watiParams({ ...conf, headerImage: null }).map((p) => p.name)).toEqual(["1", "2", "3", "4"]);
+    expect(watiTemplate({ to: "1", name: "rf2_out", body: ["#AB12", "2 PM"] })).toBe("rfw_out");
+    expect(watiTemplate({ to: "1", name: "rf_hello", body: ["Kiran"] })).toBe("rfw_hello");
+  });
+  it("is live only with Wati keys, and still honours dry-run and the test-only list", () => {
+    vi.stubEnv("WA_PROVIDER", "wati");
+    vi.stubEnv("WA_PHONE_NUMBER_ID", ""); vi.stubEnv("WA_TOKEN", "");
+    vi.stubEnv("WATI_API_URL", ""); vi.stubEnv("WATI_API_KEY", "");
+    expect(isLiveFor("919870619974")).toBe(false);
+    vi.stubEnv("WATI_API_URL", "https://x/10282905"); vi.stubEnv("WATI_API_KEY", "k");
+    vi.stubEnv("WA_TEST_ONLY", "919870619974"); vi.stubEnv("WA_DRY_RUN", "");
+    expect(isLiveFor("919870619974")).toBe(true);
+    expect(isLiveFor("919999999999")).toBe(false);
+    vi.stubEnv("WA_DRY_RUN", "true");
+    expect(isLiveFor("919870619974")).toBe(false);
+  });
+});
+
+describe("Wati status read-back", () => {
+  // Real getMessages items (30 Oct 2026), trimmed.
+  const item = (id: string, tpl: string, created: string, status: string, failedDetail = "") =>
+    ({ id, eventType: "broadcastMessage", eventDescription: `Broadcast message with using "${tpl}" template was received 30|10|2026`, created, statusString: status, failedDetail });
+  const items = [
+    item("a", "rfw2_unpaid", "2026-10-30T04:30:02Z", "FAILED", "Message undeliverable as Meta has restricted it for higher quality messaging - retry again in a few days"),
+    item("b", "rfw2_unpaid", "2026-10-30T04:31:33Z", "DELIVERED"),
+    item("c", "rfwt_order_again", "2026-10-30T07:59:47.88Z", "FAILED"),
+    { id: "m", eventType: "message", text: "hi", created: "2026-10-30T05:00:00Z" },
+  ];
+  it("matches the same template (photo or text-only) sent after our row, each item once", () => {
+    expect(matchWatiItem(items, "rf2_unpaid", "2026-10-30T04:30:00Z")?.id).toBe("a");
+    expect(matchWatiItem(items, "rf2_unpaid", "2026-10-30T04:31:30Z")?.id).toBe("b"); // not checkout A's earlier message
+    expect(matchWatiItem(items, "rf2_unpaid", "2026-10-30T04:30:00Z", new Set(["a"]))?.id).toBe("b");
+    expect(matchWatiItem(items, "rf2_order_again", "2026-10-30T07:59:40Z")?.id).toBe("c");
+    expect(matchWatiItem(items, "rf2_cart_today", "2026-10-30T04:00:00Z")).toBeNull();
+  });
+  it("status only moves forward; failed is final", () => {
+    expect(nextStatus("sent", { statusString: "READ" })).toBe("read");
+    expect(nextStatus("read", { statusString: "DELIVERED" })).toBeNull();
+    expect(nextStatus("delivered", { statusString: "FAILED" })).toBe("failed");
+    expect(nextStatus("failed", { statusString: "READ" })).toBeNull();
   });
 });

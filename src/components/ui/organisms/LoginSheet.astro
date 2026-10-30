@@ -78,6 +78,21 @@ const MAX_ATTEMPTS = 3;
   let countdownTimer = null;
 
   function getEl(suffix) { return document.getElementById(`${id}-${suffix}`); }
+  let otpSentOnce = false; // second send = resend (funnel)
+  // Funnel step to our DB; queued if the tracker (FunnelTrack, end of page) hasn't loaded yet.
+  const rft = (e, d) => (window.rfTrack ? window.rfTrack(e, d) : (window.rfq = window.rfq || []).push([e, d]));
+
+  // GA: every time this login sheet opens, to measure who sees it but never enters a phone.
+  document.addEventListener("v2-sheet-opened", (e) => {
+    if (e.detail?.id !== id) return;
+    try { if (typeof gtag === "function") gtag("event", "login_shown", { role, page: location.pathname }); } catch {}
+    if (role !== "seller") rft("login_shown");
+  });
+  // Buyers tapped the title "Log in with your phone…" expecting it to act (Clarity dead clicks,
+  // 24 Oct): a tap on the title or the step-1 text puts the cursor in the phone box.
+  const focusPhone = (e) => { if (!e.target.closest("input,button,a,label,select,textarea")) getEl("phone")?.focus(); };
+  getEl("title")?.addEventListener("click", focusPhone);
+  getEl("step1")?.addEventListener("click", focusPhone);
 
   function showStep(n) {
     getEl("step1").style.display = n === 1 ? "block" : "none";
@@ -236,6 +251,7 @@ const MAX_ATTEMPTS = 3;
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
       try { if (typeof gtag === "function") gtag("event", "otp_sent", { role }); } catch {}
+      if (role !== "seller") { rft(otpSentOnce ? "otp_resend" : "otp_sent"); otpSentOnce = true; }
       const sentAt = Date.now();
       saveSession(phone, sentAt);
       enterStep2(phone, sentAt);
@@ -274,6 +290,7 @@ const MAX_ATTEMPTS = 3;
 
       if (!res.ok || !data.success) {
         try { if (typeof gtag === "function") gtag("event", "otp_failed", { role, step: "verify" }); } catch {}
+        if (role !== "seller") rft("otp_failed");
         otpAttempts++;
         const left = MAX_ATTEMPTS - otpAttempts;
         const hint = getEl("hint");
@@ -296,6 +313,7 @@ const MAX_ATTEMPTS = 3;
       try { if (typeof gtag === "function") { gtag("set", "user_properties", { user_type: role === "seller" ? "seller" : "buyer" }); gtag("event", "otp_verified", { role }); } } catch {}
       // Analytics: first-time account (GA4 recommended sign_up; seller_signup for the supply side).
       try { if (data.is_new && typeof gtag === "function") gtag("event", role === "seller" ? "seller_signup" : "sign_up", { method: "otp" }); } catch {}
+      if (role !== "seller") rft("otp_verified", { is_new: !!data.is_new });
       clearSession();
       clearInterval(countdownTimer);
 

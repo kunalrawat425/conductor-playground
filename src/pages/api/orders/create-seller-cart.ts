@@ -18,7 +18,6 @@ import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { pickUtm } from "../../../lib/utm";
 import { pickPreferences } from "../../../lib/preferences";
 import { resolveListingOrderLine, type PreorderLinePayload } from "../../../lib/server/resolve-listing-order-line";
-import { internalHeaders } from "../../../lib/server/internal-auth";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { afterResponse } from "../../../lib/server/after-response";
 import { cartLabel } from "../../../lib/server/order-cart";
@@ -195,9 +194,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const buyerEmailPromise = buyer_id
       ? supabase.from("buyers").select("email").eq("id", buyer_id).single().then(r => r.data?.email || null).catch(() => null)
       : Promise.resolve(null);
-    const sellerEmailPromise = clientSellerId
-      ? supabase.from("sellers").select("email").eq("id", clientSellerId).single().then(r => r.data?.email || null).catch(() => null)
-      : Promise.resolve(null);
+    // The seller hears about an order only once it is paid (notify-order-parties / razorpay-verify), founder 27 Oct.
 
     const orders: unknown[] = [];
     // Every row of this checkout shares one cart id: one payment, one notification,
@@ -350,26 +347,6 @@ export const POST: APIRoute = async ({ request, url }) => {
     const label = many ? cartLabel(placed.map((x) => x.line.species)) : (first?.line.species || "Fish");
     const cartTotal = cartSubtotal + cartDeliveryFee;
     if (first) {
-      try {
-        await fetch(`${url.origin}/api/notify-seller`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...internalHeaders() },
-          body: JSON.stringify({
-            seller_id: first.line.seller_id,
-            species: label,
-            item_count: placed.length,
-            quantity: first.line.quantity,
-            quantity_unit: first.line.quantity_unit,
-            placement_kind,
-            amount: many ? cartTotal : null,
-            buyer_phone,
-            scheduled_for: scheduled_for || null,
-            order_id: first.order.id,
-          }),
-        });
-      } catch (err) {
-        console.warn("[create-seller-cart] notify-seller failed", { err: (err as any)?.message });
-      }
       if (buyer_id || buyer_phone) {
         afterResponse(sendBuyerOrderPush({
           buyer_id: buyer_id || null,
@@ -386,7 +363,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           : scheduled_for
           ? "Pickup scheduled — complete payment to confirm 🗓️"
           : "Order placed — complete payment to confirm";
-        afterResponse(Promise.all([buyerEmailPromise, sellerEmailPromise]).then(([bEmail, sEmail]) =>
+        afterResponse(buyerEmailPromise.then((bEmail) =>
           sendCartOrderEmail(resendApiKey, {
             order: first.order,
             species: label,
@@ -398,7 +375,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             scheduled_for,
             buyerEmail: bEmail,
             buyer_phone,
-            sellerEmail: sEmail,
+            sellerEmail: null,
             isPreorder,
             deliverySlot: slotCheck.slot ? slotLabel(slotCheck.slot.start, slotCheck.slot.end) : null,
             preorderMin: many ? null : first.line.preorder_price_min,

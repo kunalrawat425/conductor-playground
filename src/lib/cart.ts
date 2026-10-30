@@ -11,7 +11,7 @@
  * The seller page shows only the cart of the mode its menu is in; the other one is kept.
  */
 
-import { classifyPlacementAtOrderTime, istDayStartISO, type SellerTimingInput } from "./order-timing";
+import { classifyPlacementAtOrderTime, istDayStartISO, timeLabel, type SellerTimingInput } from "./order-timing";
 
 export type CartMode = "same_day" | "preorder";
 
@@ -573,4 +573,22 @@ export function nextPlacementStartMs(seller: SellerTimingInput, mode: CartMode, 
     if (placementAt(seller, t) === mode) return t;
   }
   return null;
+}
+
+/**
+ * What a closed seller shows instead of "Open". A pre-order-only seller (open_days = []) never opens
+ * for same-day orders, so its opens_at is meaningless to buyers: name when pre-orders reopen
+ * ("Pre-orders open 1 PM", "… tomorrow 1 PM", "… Wed 1 PM") rather than "Opens 8 AM".
+ */
+export function closedStatusLabel(seller: SellerTimingInput, nowMs = Date.now()): string {
+  const preorderOnly = Array.isArray(seller.open_days) && seller.open_days.length === 0;
+  if (!preorderOnly) return seller.opens_at ? `Opens ${timeLabel(seller.opens_at)}` : "";
+  if (!seller.accepts_preorder) return "Closed";
+  const t = nextPlacementStartMs(seller, "preorder", nowMs);
+  if (t == null) return "Pre-order only";
+  const ist = (ms: number) => new Date(ms + 5.5 * 3600_000);
+  const at = ist(t), now = ist(nowMs);
+  const days = Math.round((Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate()) - Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) / 86_400_000);
+  const day = days === 0 ? "" : days === 1 ? "tomorrow " : `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][at.getUTCDay()]} `;
+  return `Pre-orders open ${day}${timeLabel(`${at.getUTCHours()}:${at.getUTCMinutes()}`)}`;
 }

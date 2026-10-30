@@ -1,4 +1,6 @@
 ---
+import FunnelTrack from "../components/FunnelTrack.astro";
+import WatiChatButton from "../components/WatiChatButton.astro";
 import { LOGO_URL, SITE_URL, canonicalFor } from "../lib/brand";
 import UtmCapture from "../components/UtmCapture.astro";
 import { jsonLdString } from "../lib/html";
@@ -53,6 +55,7 @@ const orgSchema = type === "website" ? JSON.stringify({
   "description": "Hyperlocal fish marketplace: local sellers in Mumbai, Thane and Navi Mumbai list the fish they have each day; buyers order same-day or pre-order for tomorrow, and sellers deliver or keep it ready for pickup.",
   "logo": `${siteUrl}/favicon.png`,
   "email": "relifishstore@gmail.com",
+  "telephone": "+91-91522-07607",
   "areaServed": ["Thane", "Mumbai", "Navi Mumbai"],
   "sameAs": ["https://www.instagram.com/relifish_/", "https://www.facebook.com/p/ReliFish-61589987936346/"]
 }) : null;
@@ -239,6 +242,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </main>
 
 <Footer />
+<FunnelTrack />
 
+  {import.meta.env.PUBLIC_ENABLE_TRACKING === "true" && <WatiChatButton marginBottom="20" />}
 </body>
 </html>

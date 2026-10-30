@@ -1,5 +1,6 @@
 ---
 import LandingLayout from "../layouts/LandingLayout.astro";
+import { whatsappLink } from "../lib/brand";
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 <LandingLayout
@@ -37,7 +38,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <p>Whoever cancels an order, you or the shop, gives a short written reason. If something else is wrong with a delivery, message us and we'll check with the shop. See also our <a href="/refund-policy">Refund &amp; Cancellation Policy</a>.</p>
 
       <h2>6. Contact</h2>
-      <p>WhatsApp <a href="https://wa.me/919152207607">+91 9152207607</a> · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a> · 7:30 AM to 9 PM. <a href="/contact">Contact page</a>.</p>
+      <p>WhatsApp <a href={whatsappLink("Hi Relifish, I have a question about delivery")} target="_blank" rel="noopener">+91 9152207607</a> · <a href="mailto:relifishstore@gmail.com">relifishstore@gmail.com</a> · 7:30 AM to 9 PM. <a href="/contact">Contact page</a>.</p>
     </div>
   </div>
 </LandingLayout>

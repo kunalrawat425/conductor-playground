@@ -1,10 +1,13 @@
+import { buyerEmailCopy, withPreview, type BuyerEmailKind } from "../email-subjects";
 import { createClient } from "@supabase/supabase-js";
 import { cancelReasonText, isLateCancel } from "../order-cancel";
 import { sendBuyerOrderPush } from "./buyer-push";
 import { internalHeaders } from "./internal-auth";
 import { sendTransactionalEmail as sendEmail } from "./send-email";
 import { absoluteUrl } from "./site-origin";
+import { SUPPORT_EMAIL, whatsappLink } from "../brand";
 import { cartLabel, isLiveRow } from "./order-cart";
+import { refundDueRupees, refundLine } from "../order-payment-state";
 
 /**
  * BUG-20 / BUG-21 fix.
@@ -41,10 +44,22 @@ export type NotifyResult = {
   seller_email: string;
 };
 
-/** Copy per event, per audience. Exported for unit tests. */
-export function copyFor(event: OrderEvent, species: string, orderIdShort: string, amount: number | null, reason: string | null = null) {
+const BUYER_KIND: Record<OrderEvent, BuyerEmailKind> = {
+  payment_confirmed: "placed", cancelled_by_buyer: "buyer_cancelled", cancelled_by_seller: "seller_cancelled",
+  expired_unpaid: "expired_unpaid", refunded: "refunded",
+};
+
+/** Copy per event, per audience; buyerSubject/buyerPreview follow email-subjects (founder, 26 Oct). Exported for unit tests. */
+export function copyFor(event: OrderEvent, species: string, orderIdShort: string, amount: number | null, reason: string | null = null, ctx: { seller?: string | null; eveningPreorder?: boolean; refundSent?: boolean } = {}) {
+  const b = buyerEmailCopy(BUYER_KIND[event], { fish: species ? species.charAt(0).toUpperCase() + species.slice(1) : "fish", seller: ctx.seller, amount, eveningPreorder: ctx.eveningPreorder, refundSent: ctx.refundSent });
+  return { ...copyLines(event, species, orderIdShort, amount, reason, !!ctx.refundSent), buyerSubject: b.subject, buyerPreview: b.preview };
+}
+
+function copyLines(event: OrderEvent, species: string, orderIdShort: string, amount: number | null, reason: string | null, refundSent: boolean) {
   const fish = species || "fish";
   const amt = amount != null ? ` (₹${amount})` : "";
+  // "₹X refunded" only once Razorpay accepted it (30 Oct: a failed refund was announced as done).
+  const refund = amount != null ? ` Refund: ${refundLine(amount, refundSent)}.` : "";
   const why = reason ? ` Reason: ${reason}.` : "";
   switch (event) {
     case "payment_confirmed":
@@ -60,7 +75,7 @@ export function copyFor(event: OrderEvent, species: string, orderIdShort: string
       return {
         buyerSubject: `You cancelled your order — ${fish} · #${orderIdShort}`,
         buyerHeading: "You cancelled your order",
-        buyerLine: `Your ${fish} order #${orderIdShort} is cancelled.${why}${amt ? " Refund" + amt + " is being processed." : ""}`,
+        buyerLine: `Your ${fish} order #${orderIdShort} is cancelled.${why}${refund}`,
         sellerSubject: `Order CANCELLED by the buyer — ${fish} · #${orderIdShort}`,
         sellerHeading: "Order cancelled by the buyer",
         sellerLine: `The buyer cancelled their ${fish} order #${orderIdShort}${amt}.${why} Do not prepare this order.`,
@@ -69,7 +84,7 @@ export function copyFor(event: OrderEvent, species: string, orderIdShort: string
       return {
         buyerSubject: `Order cancelled — ${fish} · #${orderIdShort}`,
         buyerHeading: "Order cancelled",
-        buyerLine: `Your ${fish} order #${orderIdShort} couldn't be fulfilled and is cancelled.${why}${amt ? " Your payment" + amt + " is being refunded in full." : ""}`,
+        buyerLine: `Your ${fish} order #${orderIdShort} couldn't be fulfilled and is cancelled.${why}${refund}`,
         sellerSubject: `You cancelled order #${orderIdShort} — ${fish}`,
         sellerHeading: "Order cancelled",
         sellerLine: `You cancelled ${fish} order #${orderIdShort}.${why} The buyer has been notified and refunded.`,
@@ -95,13 +110,15 @@ export function copyFor(event: OrderEvent, species: string, orderIdShort: string
   }
 }
 
-function shell(heading: string, line: string, orderId: string, cta: string, items = ""): string {
+function shell(heading: string, line: string, orderId: string, cta: string, items = "", forSeller = false): string {
   const url = absoluteUrl(`/track/${orderId}`);
+  const short = String(orderId).slice(0, 8).toUpperCase();
+  const help = whatsappLink(forSeller ? `Hi Relifish, I'm a seller and need help with order #${short}` : `Hi Relifish, I need help with order #${short}`);
   return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px;">
   <h1 style="font-size:22px;margin:0 0 12px;color:#0F172A;">${heading}</h1>
   <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px;">${line}</p>${items}
   <a href="${url}" style="display:inline-block;background:#0066cc;color:#fff;padding:12px 26px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">${cta}</a>
-  <p style="font-size:12px;color:#94A3B8;margin:24px 0 0;line-height:1.5;">Relifish · Mumbai<br/>Questions? relifishstore@gmail.com</p>
+  <p style="font-size:12px;color:#94A3B8;margin:24px 0 0;line-height:1.5;">Relifish · Mumbai<br/>Need help? <a href="${help}" target="_blank" style="color:#0066cc;">Message us on WhatsApp</a> · ${SUPPORT_EMAIL}</p>
 </div>`;
 }
 
@@ -119,6 +136,17 @@ export function sellerPushKindFor(event: OrderEvent): "payment_confirmed" | "can
   if (event === "cancelled_by_buyer" || event === "cancelled_by_seller") return "cancelled";
   if (event === "expired_unpaid") return "expired_unpaid";
   return "refunded";
+}
+
+/**
+ * Sellers only hear about money that was paid (founder, 27 Oct): the payment itself, and a
+ * buyer cancel or refund of a paid order. Never an unpaid order expiring or being cancelled,
+ * and never their own cancel. Exported for unit tests.
+ */
+export function sellerHearsAbout(event: OrderEvent, paid: boolean): boolean {
+  if (event === "payment_confirmed") return true;
+  if (event === "cancelled_by_buyer" || event === "refunded") return paid;
+  return false;
 }
 
 /**
@@ -150,7 +178,7 @@ export async function notifyOrderParties(opts: {
 
   const { data: order, error } = await sb
     .from("orders")
-    .select("id, buyer_id, buyer_phone, species, quantity, quantity_unit, total_price, delivery_fee, cancel_reason, payment_method, razorpay_payment_id, listing:fish_listings(species, seller_id, seller:sellers(id, name, email))")
+    .select("id, cart_id, status, refund_sent_at, buyer_id, buyer_phone, species, is_preorder, created_at, quantity, quantity_unit, total_price, delivery_fee, cancel_reason, payment_method, razorpay_payment_id, listing:fish_listings(species, seller_id, seller:sellers(id, name, email))")
     .eq("id", order_id)
     .single();
 
@@ -171,7 +199,7 @@ export async function notifyOrderParties(opts: {
   let group: any[] = [o];
   if (ids.length > 1) {
     const { data: rows } = await sb.from("orders")
-      .select("id, species, quantity, quantity_unit, total_price, delivery_fee, created_at, listing:fish_listings(species)")
+      .select("id, status, refund_sent_at, species, quantity, quantity_unit, total_price, delivery_fee, created_at, listing:fish_listings(species)")
       .in("id", ids).order("created_at", { ascending: true });
     if (rows?.length) group = rows;
   }
@@ -179,20 +207,35 @@ export async function notifyOrderParties(opts: {
     ? cartLabel(group.map((r: any) => r.listing?.species || r.species))
     : String(o.listing?.species || o.species || "fish");
   const orderIdShort = String(order_id).slice(0, 8).toUpperCase();
-  const amt = amount ?? (group.reduce((sum: number, r: any) => sum + Number(r.total_price || 0) + Number(r.delivery_fee || 0), 0) || null);
+  const isCancel = event === "cancelled_by_buyer" || event === "cancelled_by_seller";
+  const paidOnline = o.payment_method === "razorpay" && !!o.razorpay_payment_id;
+  // A cancel gives back the items' prices, plus the delivery fee only with the cart's last
+  // item; an unpaid cancel gives back nothing (it used to promise "your payment is refunded").
+  let cartRows: any[] = group;
+  if (isCancel && paidOnline && o.cart_id) {
+    const { data } = await sb.from("orders").select("id, status, total_price, delivery_fee").eq("cart_id", o.cart_id);
+    if (data?.length) cartRows = data;
+  }
+  const amt = amount ?? (isCancel
+    ? (paidOnline ? refundDueRupees(group, cartRows) || null : null)
+    : group.reduce((sum: number, r: any) => sum + Number(r.total_price || 0) + Number(r.delivery_fee || 0), 0) || null);
+  const refundSent = group.every((r: any) => !!r.refund_sent_at);
   const itemsHtml = group.length > 1
     ? `<ul style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 20px;padding-left:18px;">${group.map((r: any) =>
         `<li>${String(r.listing?.species || r.species || "Fish")} · ${Number(r.quantity)} ${r.quantity_unit || ""} · ₹${Number(r.total_price || 0).toLocaleString("en-IN")}</li>`).join("")}</ul>`
     : "";
   const typed = cancelReasonText(o.cancel_reason);
   const reason = typed && isLateCancel(o.cancel_reason) ? `Order was late — ${typed}` : typed;
-  const c = copyFor(event, species, orderIdShort, amt, reason);
-  const isCancel = event === "cancelled_by_buyer" || event === "cancelled_by_seller";
+  const istHour = Number(new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(11, 13));
+  const c = copyFor(event, species, orderIdShort, amt, reason, { seller: (o as any).listing?.seller?.name ?? null, eveningPreorder: !!(o as any).is_preorder && istHour >= 18, refundSent });
 
-  // ---- WhatsApp (opted-in buyer + seller), alongside push and email ----
-  if (event === "payment_confirmed" || isCancel) {
+  // ---- WhatsApp (buyer only; sellers get email): paid, and a seller cancel or a paid buyer cancel with its refund ----
+  if (event === "payment_confirmed" || event === "cancelled_by_seller" || (event === "cancelled_by_buyer" && paidOnline)) {
     const { notifyOrderWhatsApp } = await import("./notify-order-whatsapp");
-    await notifyOrderWhatsApp(order_id, event === "payment_confirmed" ? "paid" : "cancelled", { reason });
+    await notifyOrderWhatsApp(order_id, event === "payment_confirmed" ? "paid" : "cancelled", {
+      reason: event === "cancelled_by_buyer" ? "you cancelled it" : reason,
+      refund: paidOnline && amt ? refundLine(amt, refundSent) : null,
+    });
   }
 
   // ---- Buyer push ----
@@ -218,7 +261,7 @@ export async function notifyOrderParties(opts: {
     try {
       const { data: buyer } = await sb.from("buyers").select("email").eq("id", o.buyer_id).single();
       out.buyer_email = buyer?.email
-        ? await sendEmail(buyer.email, c.buyerSubject, shell(c.buyerHeading, c.buyerLine, order_id, "View order", itemsHtml), "buyer")
+        ? await sendEmail(buyer.email, c.buyerSubject, withPreview(shell(c.buyerHeading, c.buyerLine, order_id, "View order", itemsHtml), c.buyerPreview), "buyer")
         : "skipped: buyer has no email";
     } catch (err: any) {
       out.buyer_email = `failed: ${err?.message}`;
@@ -232,15 +275,16 @@ export async function notifyOrderParties(opts: {
   const sellerId = o.listing?.seller_id || o.listing?.seller?.id;
   const sellerEmail = o.listing?.seller?.email;
 
-  if (event === "cancelled_by_seller") {
-    out.seller_email = "skipped: seller cancelled it";
-    out.seller_push = "skipped: seller cancelled it";
+  if (!sellerHearsAbout(event, !!o.razorpay_payment_id)) {
+    const why = event === "cancelled_by_seller" ? "skipped: seller cancelled it" : "skipped: order was never paid";
+    out.seller_email = why;
+    out.seller_push = why;
     console.log(`[notify] ${event} ${orderIdShort}`, JSON.stringify(out));
     return out;
   }
 
   out.seller_email = sellerEmail
-    ? await sendEmail(sellerEmail, c.sellerSubject, shell(c.sellerHeading, c.sellerLine, order_id, "Open dashboard", itemsHtml), "seller")
+    ? await sendEmail(sellerEmail, c.sellerSubject, shell(c.sellerHeading, c.sellerLine, order_id, "Open dashboard", itemsHtml, true), "seller")
     : "skipped: seller has no email";
 
   if (sellerId) {

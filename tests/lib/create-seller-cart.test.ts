@@ -151,13 +151,12 @@ describe("fulfilment × placement matrix", () => {
     }
   });
 
-  it("after the pre-order cutoff the cart is refused with the cutoff message", async () => {
+  it("after the pre-order cutoff the cart is still taken (never closed, founder 25 Oct)", async () => {
     vi.setSystemTime(AFTER_CUTOFF);
     db.sellers.push(seller());
     db.fish_listings.push(listing());
     const { status, data } = await place(cart({ order_type: "pickup" }));
-    expect(status).toBe(400);
-    expect(data.error).toContain("cutoff");
+    expect(status, JSON.stringify(data)).toBe(201);
   });
 });
 

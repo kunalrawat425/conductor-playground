@@ -60,6 +60,9 @@ const thane = live.filter((r) => r.area === "Thane");
 const thaneRange = hubPriceRange(thane);
 const liveRange = hubPriceRange(live);
 const names = (rs: HubRow[]) => rs.map((r) => r.seller).join(", ");
+// Google title only (founder, 25 Oct): "Rawas ₹450/kg Today in Thane". Per-kg prices only; Thane first, else any live seller.
+const titleRange = thaneRange?.unit === "kg" ? thaneRange : liveRange?.unit === "kg" ? liveRange : null;
+const titlePrice = titleRange ? hubPriceText(titleRange) : null;
 const thanePriceAnswer = thaneRange
   ? `On ${today}, ${local} in Thane is listed at ${hubPriceText(thaneRange)} on Relifish by ${names(thane)} (live listing, updated ${updatedAt} IST). Each seller sets the price, and it changes daily with the catch.`
   : liveRange
@@ -75,6 +78,7 @@ const faqs = known && rows.length ? [
   { q: `What is the ${local} price today in Thane?`, a: thanePriceAnswer },
   ...(englishOnly.toLowerCase() !== local.toLowerCase() ? [{ q: `What is ${local} called in English?`, a: `${local} is ${englishOnly} in English.${localNames.length > 1 ? ` It is also called ${localNames.filter((n) => n !== englishOnly).join(", ")}.` : ""}` }] : []),
   { q: `How do I know if ${local} is fresh?`, a: freshTips.join(" ") },
+  ...(guide?.faqs ?? []),
   { q: `Where can I order ${local} online?`, a: `${rows.length === 1 ? "One local seller lists" : `${rows.length} local sellers list`} ${local} on Relifish${areasList.length ? `, in ${areasList.join(", ")}` : ""}. Order same-day while the seller is open, or pre-order for tomorrow; the seller delivers or keeps it ready for pickup.` },
 ] : [];
 const description = rows.length
@@ -82,7 +86,7 @@ const description = rows.length
   : `${english} is not listed by any seller on Relifish right now.`;
 ---
 <AppShell
-  title={known ? `${local} Price Today in Thane & Mumbai, Buy Online | Relifish` : "Fish not found · Relifish"}
+  title={known ? titlePrice ? `${local}${englishOnly.toLowerCase() !== local.toLowerCase() ? ` (${englishOnly})` : ""} ${titlePrice} Today in Thane | Relifish` : `${local}${englishOnly.toLowerCase() !== local.toLowerCase() ? ` (${englishOnly})` : ""} Price Today in Thane & Mumbai | Relifish` : "Fish not found · Relifish"}
   description={description}
   canonical={url}
   noindex={!indexable}

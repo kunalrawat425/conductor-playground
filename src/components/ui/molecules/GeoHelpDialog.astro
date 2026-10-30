@@ -1,0 +1,43 @@
+---
+/**
+ * "Location is off" help, shown when "Use current location" fails. A browser never re-shows its
+ * location popup once the site is blocked, so we explain how to allow it instead of a toast.
+ * Open with window.rfGeoHelp({ title, body }, { retry, typeArea }).
+ */
+---
+<dialog id="rf-geo-help" style="border:none;border-radius:16px;padding:0;max-width:360px;width:calc(100% - 32px);background:var(--v2-bg);color:var(--v2-ink);">
+  <div style="padding:22px 20px 18px;">
+    <div style="font-size:36px;line-height:1;margin-bottom:10px;">📍</div>
+    <div id="rf-geo-help-title" style="font:700 17px Inter;margin-bottom:6px;"></div>
+    <div id="rf-geo-help-body" style="font:400 14px/1.5 Inter;color:var(--v2-ink-2);margin-bottom:12px;"></div>
+    <ol id="rf-geo-help-steps" style="font:400 14px/1.55 Inter;color:var(--v2-ink);padding-left:20px;margin:0 0 16px;"></ol>
+    <div style="display:flex;gap:8px;">
+      <button type="button" id="rf-geo-help-type" class="v2-btn v2-btn-secondary" style="flex:1;">Type my area</button>
+      <button type="button" id="rf-geo-help-retry" class="v2-btn v2-btn-primary" style="flex:1;">Try again</button>
+    </div>
+  </div>
+</dialog>
+<script is:inline>
+  (function () {
+    var dlg = document.getElementById("rf-geo-help");
+    if (!dlg || typeof dlg.showModal !== "function") return;
+    var actions = {};
+    var ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    var inApp = /Instagram|FBAN|FBAV|WhatsApp/i.test(navigator.userAgent);
+    window.rfGeoHelp = function (msg, opts) {
+      actions = opts || {};
+      document.getElementById("rf-geo-help-title").textContent = msg.title;
+      document.getElementById("rf-geo-help-body").textContent = msg.body;
+      var steps = inApp
+        ? ["Tap ⋮ (or •••) at the top right", "Choose “Open in Chrome” (or “Open in browser”)", "Tap “Use current location” there"]
+        : ios
+          ? ["Tap “aA” next to the web address", "Website Settings → Location → Allow", "Come back and tap “Try again”"]
+          : ["Tap 🔒 (or ⓘ) next to the web address", "Permissions → Location → Allow", "Come back and tap “Try again”"];
+      document.getElementById("rf-geo-help-steps").innerHTML = steps.map(function (s) { return "<li>" + s + "</li>"; }).join("");
+      dlg.showModal();
+    };
+    document.getElementById("rf-geo-help-retry").addEventListener("click", function () { dlg.close(); if (actions.retry) actions.retry(); });
+    document.getElementById("rf-geo-help-type").addEventListener("click", function () { dlg.close(); if (actions.typeArea) actions.typeArea(); });
+    dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
+  })();
+</script>

@@ -36,6 +36,7 @@ try {
 }
 
 const today = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "long", year: "numeric" });
+const shortDate = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" });
 const updatedAt = new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" });
 const kg = (r: HubRow) => (r.perKg ? (r.perKg.low === r.perKg.high ? `₹${r.perKg.low}/kg` : `₹${r.perKg.low}–${r.perKg.high}/kg`) : `₹${r.offer.lowPrice}${r.offer.highPrice !== r.offer.lowPrice ? `–${r.offer.highPrice}` : ""} / pack`);
 // Today's range: only sellers with the fish in stock today (live listing).
@@ -48,7 +49,7 @@ const url = canonicalFor("/fish-price-today");
 const summary = bySpecies.filter((s) => range(s.rows)).slice(0, 4).map((s) => `${s.local} ${range(s.rows)}`).join(", ");
 ---
 <AppShell
-  title="Fish Price Today in Thane & Mumbai: Live Rates per kg | Relifish"
+  title={`Fish Price Today in Thane, ${shortDate}: Live Rates per kg | Relifish`}
   description={`Today's fish rates (${today}) from local sellers in Thane, South Mumbai and Navi Mumbai${summary ? `: ${summary}` : ""}. Updated live from each seller's listing.`}
   canonical={url}
   noindex={unavailable || bySpecies.length === 0}

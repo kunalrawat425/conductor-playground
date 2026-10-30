@@ -3,8 +3,10 @@ export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import Toast from "../../components/ui/atoms/Toast.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
+import { whatsappLink } from "../../lib/brand";
 
 const { id } = Astro.params;
+const shortId = String(id || "").slice(0, 8).toUpperCase();
 ---
 <AppShell
   noindex={true}
@@ -84,6 +86,8 @@ const { id } = Astro.params;
 
     <!-- Actions -->
     <div id="v2-od-actions" style="margin-top:16px;"></div>
+
+    <a href={whatsappLink(`Hi Relifish, I need help with order #${shortId}`)} target="_blank" rel="noopener" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full" style="margin-top:12px;">💬 Help with this order on WhatsApp</a>
   </div>
 </AppShell>
 
@@ -168,6 +172,7 @@ const { id } = Astro.params;
   import { isPreorderCatchFlow, resolveBuyerStepper } from "../../lib/buyer-order-stepper";
   import { cleanSellerName } from "../../lib/seller-display";
   import { dateLabelIST, orderDeliveryDateIST, orderSlotText } from "../../lib/delivery-slots";
+  import { SUPPORT_EMAIL, whatsappLink } from "../../lib/brand";
   const RAZORPAY_KEY_ID  = import.meta.env.PUBLIC_RAZORPAY_KEY_ID  || "";
   // Extract order ID from URL path: /track/{id}
   const orderId = window.location.pathname.split("/").filter(Boolean).pop() || "";
@@ -494,7 +499,9 @@ const { id } = Astro.params;
     // A cart bills its live items together; removed items show what came back.
     const billRows = cartItems ? liveCartItems : [o];
     const subtotal = billRows.reduce((s2, r) => s2 + (Number(r.total_price) || 0), 0);
-    const delivery = billRows.reduce((s2, r) => s2 + (Number(r.delivery_fee) || 0), 0);
+    const feeOf = (rows) => rows.reduce((s2, r) => s2 + (Number(r.delivery_fee) || 0), 0);
+    // The cart's one delivery fee stays while any item is live, even when the removed item carried it.
+    const delivery = feeOf(cartItems && liveCartItems.length ? cartItems : billRows);
     const grand = subtotal + delivery;
     const cartRefunded = cartItems
       ? cartItems.filter((r) => r.paid && r.refund_sent_at).reduce((s2, r) => s2 + (Number(r.refund_amt) || 0), 0)
@@ -507,7 +514,7 @@ const { id } = Astro.params;
     const paymentConfirmed = o.status !== "pending_payment" && o.status !== "pending" && o.payment_verified_at;
     const showPaidAmount = paidAmount && paymentConfirmed;
     // final_price is the fish price; paidAmount includes the delivery fee.
-    const balance = finalPrice && showPaidAmount ? finalPrice - (paidOf(billRows) - delivery) : null;
+    const balance = finalPrice && showPaidAmount ? finalPrice - (paidOf(billRows) - feeOf(billRows)) : null;
     document.getElementById("v2-od-bill").innerHTML = `
       <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
       ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}
@@ -914,9 +921,10 @@ const { id } = Astro.params;
             root.innerHTML = `
               <div style="background:var(--v2-bg);border:1.5px solid var(--v2-red);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
                 <div style="font:800 14px Inter;color:var(--v2-red);margin-bottom:6px;">⚠️ Payment received but confirmation failed</div>
-                <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:8px;">Your money was deducted. Please contact us immediately and share your payment ID.</div>
+                <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:8px;">Your money was deducted. Message us on WhatsApp now; your order and payment ID are filled in.</div>
                 ${payId ? `<div style="font:600 11px Inter;color:var(--v2-ink-3);background:var(--v2-bg-2);padding:8px;border-radius:var(--v2-radius-sm);margin-bottom:8px;word-break:break-all;">Payment ID: ${payId}</div>` : ""}
-                <div style="font:500 12px Inter;color:var(--v2-ink);">💬 WhatsApp 9152207607 (7:30 AM – 9 PM) &nbsp;·&nbsp; ✉️ relifishstore@gmail.com</div>
+                <a href="${escape(whatsappLink(`Hi Relifish, money was deducted for order #${String(o.id).slice(0, 8).toUpperCase()} but it's not confirmed${payId ? ` (payment ID ${payId})` : ""}`))}" target="_blank" rel="noopener" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">💬 Message us on WhatsApp</a>
+                <div style="font:500 12px Inter;color:var(--v2-ink-3);margin-top:8px;text-align:center;">7:30 AM – 9 PM &nbsp;·&nbsp; ✉️ ${SUPPORT_EMAIL}</div>
               </div>`;
           }
         },

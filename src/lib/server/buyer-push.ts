@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { buyerOrderPushNotification, defaultFishImage, type BuyerCancelInfo } from "./buyer-order-push-copy";
+import { buyerOrderPushNotification, type BuyerCancelInfo } from "./buyer-order-push-copy";
 import { loadWebPush, PUSH_SEND_OPTIONS } from "./load-web-push";
 import { absoluteUrl } from "./site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "./vapid-env";
@@ -108,6 +108,16 @@ function normalizeSubscription(raw: unknown): PushSubscriptionJSON | null {
  * Send a Web Push to the buyer for an order status change.
  * Shared by /api/push-notify (manual/test) and /api/seller/orders (no HTTP self-call).
  */
+/** Listing photo of the checkout's costliest live item (orderPhoto), or null; a failed lookup sends no picture. */
+async function confirmedPhoto(supabase: any, order_id: string): Promise<string | null> {
+  try {
+    // Dynamic: notify-order-whatsapp → messaging → buyer-push would be a cycle.
+    const { loadCheckout, orderPhoto } = await import("./notify-order-whatsapp");
+    const { ord, checkout } = await loadCheckout(supabase, order_id);
+    return ord ? orderPhoto(ord, checkout) : null;
+  } catch { return null; }
+}
+
 export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<BuyerPushResult> {
   const { buyer_id, buyer_phone, status, species, final_price, order_id, cancel, slot } = payload;
 
@@ -154,8 +164,9 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
   }
 
   const notification = buyerOrderPushNotification(status, species, final_price, cancel, slot);
-  // "Order Confirmed!" carries the fish photo as the big picture (Android / desktop; iPhone shows text).
-  const photo = status === "confirmed" ? defaultFishImage(species) : null;
+  // "Order Confirmed!" carries the big picture (Android / desktop; iPhone shows text): the listing photo
+  // of the checkout's costliest live item, or none; never a stock photo (founder 30 Oct).
+  const photo = status === "confirmed" && order_id ? await confirmedPhoto(supabase, order_id) : null;
   const trackPath = order_id ? `/track/${order_id}` : "/track";
   const openUrl = absoluteUrl(trackPath);
 
@@ -167,7 +178,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
       subscription,
       JSON.stringify({
         ...notification,
-        ...(photo ? { image: absoluteUrl(photo) } : {}),
+        ...(photo ? { image: /^https?:\/\//.test(photo) ? photo : absoluteUrl(photo) } : {}),
         url: openUrl,
         tag: uniqueTag,
       }),

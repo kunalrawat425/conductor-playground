@@ -16,7 +16,7 @@ import { getSpeciesDisplay } from "../../lib/species";
 import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../../lib/listing-pricing";
 import { cleanSellerName, resizedImageUrl, sellerHref, sellerLookupOutcome, stripContactInfo } from "../../lib/seller-display";
 import { SITE_URL } from "../../lib/brand";
-import { nextPlacementStartMs } from "../../lib/cart";
+import { closedStatusLabel, nextPlacementStartMs } from "../../lib/cart";
 import {
   isPreorderShoppingWindow,
   isSellerEffectivelyOpen,
@@ -140,6 +140,9 @@ const deliveryFor = slotLine && preDays.length
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
+// Pre-order only (open_days = []): never "opens" for same-day, so closed means pre-orders are paused.
+const preorderOnly = Array.isArray(seller?.open_days) && seller.open_days.length === 0;
+const closedLabel = seller ? closedStatusLabel(seller, nowMs) : "";
 
 // SEO listings: all listings with pricing (for schema + SSR cards — crawlable regardless of open state)
 const seoListings = listings.filter((l: any) => l?.is_available === true || l?.is_preorder_enabled === true);
@@ -333,6 +336,7 @@ const tags = [
         preorderOpen={isPreorderMode}
         preorderFor={deliveryFor}
         opensAt={seller?.opens_at}
+        closedLabel={closedLabel}
         closesAt={seller?.closes_at}
         itemCount={itemCount}
         tags={tags}
@@ -383,16 +387,16 @@ const tags = [
       ) : (
         <>
           <div style="padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">{isClosed ? "Menu (Closed)" : (isPreorderMode ? "Pre-order Menu" : "Today's Menu")}</h2>
+            <h2 style="font:800 17px Inter;color:var(--v2-ink);margin:0;">{isClosed ? (preorderOnly ? "Menu (pre-orders paused)" : "Menu (Closed)") : (isPreorderMode ? "Pre-order Menu" : "Today's Menu")}</h2>
             <span style="font:600 12px Inter;color:var(--v2-ink-3);">{itemCount} items</span>
           </div>
           {isClosed && (
             <div id="v2-closed-block" style="margin: 0 16px 16px; padding: 12px 14px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--v2-radius); display: flex; align-items: center; gap: 10px;">
               <span style="font-size:20px;">🌅</span>
               <div>
-                <div style="font:700 13px Inter; color: #166534;">Store Closed</div>
+                <div style="font:700 13px Inter; color: #166534;">{preorderOnly ? "Pre-orders paused" : "Store Closed"}</div>
                 <div style="font:400 11px Inter; color: #15803D; margin-top: 2px;">
-                  {seller?.opens_at ? `Shop will open ${nextOpenLabel}.` : "Check back during opening hours."} Prices are estimates and may change.
+                  {preorderOnly ? "This seller takes pre-orders only." : seller?.opens_at ? `Shop will open ${nextOpenLabel}.` : "Check back during opening hours."} Prices are estimates and may change.
                 </div>
                 {nextPreorderLabel && (
                   <div style="font:600 11px Inter; color:#7C3AED; margin-top:4px;">🌙 Pre-orders for the next catch open {nextPreorderLabel}. Come back then to reserve yours.</div>
@@ -407,11 +411,10 @@ const tags = [
               const sp = speciesDisplayById[l.species] || l.species || "Fish";
               const opts = l.pricing_options || [];
               const firstOpt = opts[0];
-              const priceText = firstOpt
-                ? (opts.length > 1
-                    ? `₹${firstOpt.price}–₹${opts[opts.length-1].price}`
-                    : `₹${firstOpt.price}`)
-                : "";
+              // Low–high across the options (they're stored in the seller's order, not by price); one price when equal.
+              const prices = opts.map((o: any) => Number(o.price)).filter((n: number) => Number.isFinite(n));
+              const lo = prices.length ? Math.min(...prices) : null, hi = prices.length ? Math.max(...prices) : null;
+              const priceText = lo == null ? "" : lo === hi ? `₹${lo}` : `₹${lo}–₹${hi}`;
               const suffixText = firstOpt?.buyer_menu_suffix || "";
               const preorderRange = (() => {
                 if (!isPreorderMode) return null;
@@ -434,7 +437,7 @@ const tags = [
                     <p style="font:700 14px Inter;color:var(--v2-blue);margin:0;">
                       {isPreorderMode && preorderRange ? `🌙 ${preorderRange}` : `${priceText}${suffixText}`}
                     </p>
-                    {l.description && <p style="font:400 11px Inter;color:var(--v2-ink-3);margin:4px 0 0;line-height:1.4;">{l.description}</p>}
+                    {l.description && <p style="font:700 14px/1.4 Inter;color:var(--v2-ink);margin:4px 0 0;">{l.description}</p>}
                   </div>
                 </article>
               );
@@ -868,7 +871,7 @@ const tags = [
       // drew taps), and left out when the line below already says it ("Bombil · Fry cut · 500 g").
       const sizeShown = sizeText && !String(l.description || "").toLowerCase().includes(sizeText.toLowerCase());
       const sizeLine = sizeShown ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(sizeText)}</div>` : '';
-      const descHtml = l.description ? `<div style="font:400 11px/1.4 Inter;color:var(--v2-ink-3);margin-top:2px;">${escape(l.description)}</div>` : '';
+      const descHtml = l.description ? `<div style="font:700 14px/1.4 Inter;color:var(--v2-ink);margin-top:2px;">${escape(l.description)}</div>` : '';
 
       // Stock left is not shown on cards (founder's call, 2026-10-13); stock still caps quantity and hides sold-out fish.
 
@@ -969,6 +972,7 @@ const tags = [
     // Analytics helper — fire-and-forget, never throws
     function track(event, params) {
       const { event_id, ...p } = params || {};
+      if (event === "add_to_cart" || event === "begin_checkout" || event === "checkout_started") window.rfTrack?.(event === "add_to_cart" ? "add_to_cart" : "checkout_started", { seller_id: sellerId, item: p.item_name || null });
       try {
         if (typeof gtag === "function") gtag("event", event, { seller_id: sellerId, seller_name: sellerName, ...p });
       } catch {}

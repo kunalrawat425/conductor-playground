@@ -2,135 +2,223 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
-import { decide, istDate, offerAt, pickSeller, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
-import { fishName, headerImage, SIGNUP_IMAGE } from "../../../lib/messaging/templates";
-import { dispatch } from "../../../lib/server/messaging";
+import { cartMessage, decide, decideActivity, istDate, offerAt, pickSeller, signupMessage, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
+import { firstName, fishName } from "../../../lib/messaging/templates";
+import { dispatch, smsFallbackFor, type Dispatch } from "../../../lib/server/messaging";
+import { loadCheckout, ORDER_SELECT, orderMessage, orderPhoto, orderSms, type OrderWaEvent } from "../../../lib/server/notify-order-whatsapp";
+import { hasPaymentEvidence } from "../../../lib/server/reminders";
+import { syncWatiStatuses } from "../../../lib/server/wati-status";
 import { waNumber } from "../../../lib/server/whatsapp";
 
 export const prerender = false;
 
-const PROMO_KINDS = ["A1", "A2", "B1", "B2", "weekend"];
 const OPEN = ["paid", "confirmed", "out_for_delivery", "ready_for_pickup", "payment_required"];
+const FOUNDER = "919870619974";
 const env = (k: string) => (import.meta.env as any)[k] || process.env[k] || "";
+const list = (k: string, dflt = "") => String(env(k) || dflt).split(",").map((x) => waNumber(x.trim())).filter(Boolean) as string[];
+/** A listing's first pricing option: its price (pre-order: top of the range when no price) and label. */
+const firstOpt = (l: any) => (Array.isArray(l?.pricing_options) ? l.pricing_options[0] : null);
+const optPrice = (l: any) => Number(firstOpt(l)?.price) || Number(firstOpt(l)?.preorder_price_max) || 0;
+/** Every row of a query (PostgREST returns at most 1000 per request). Throws on a query error. */
+async function all(q: () => any): Promise<any[]> {
+  const out: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await q().range(from, from + 999);
+    if (error) throw new Error(error.message);
+    out.push(...(data || []));
+    if (!data || data.length < 1000) return out;
+  }
+}
 
 /**
- * POST /api/cron/messaging — the WhatsApp/push promo engine (runs every 30 min from GitHub
- * Actions, .github/workflows/messaging.yml). Auth: Bearer $CRON_SECRET.
+ * GET|POST /api/cron/messaging — the buyer messaging engine (founder, 30 Oct). Runs every 10 min
+ * (Supabase pg_cron, see migration 088) plus the Vercel slot crons as a backup; every send is
+ * idempotent, so extra runs are harmless. Auth: Bearer $CRON_SECRET.
+ * Each run:
+ *  1. reads delivered/read/failed back from Wati; a failed reminder or order update goes once by SMS;
+ *  2. per buyer, at most one message: an activity reminder (unpaid 30 min, cart 1 h, sign-up 1 h),
+ *     else a promo at its slot (Tue 6 PM, Fri/Sat/Sun 8:30 AM). Rules in lib/messaging/schedule.ts.
+ * Channel: WhatsApp when opted in, else SMS (reminders only; promos are WhatsApp only).
  *   ?dry_run=1           report who would get what and why; nothing written or sent
- *   ?now=<ISO>           (dry run only) pretend it's this time, to test a whole week
- * Promos are sent only when MESSAGING_LIVE=true; otherwise every run is a report.
- * Also sends the seller "still waiting" reminder for paid orders not accepted after 30 min.
+ *   ?now=<ISO>           (dry run only) pretend it's this time
+ *   ?promo_now=1         send the promo now instead of waiting for a slot (all other rules apply)
+ *   ?promo_now=1&all=1   one-off "send to all opted-in": also skips the 72 h / 48 h gaps, Meta hold, inactive rules
+ *   ?test_phone=<n>&test_kind=signup|cart|unpaid|promo|paid|confirmed|out_for_delivery|completed|cancelled[&channel=sms]
+ *                        send one sample now to a test phone (MESSAGING_TEST_PHONES, default the founder)
+ * Sends happen only when MESSAGING_LIVE=true; otherwise every run is a report. Sellers never get these.
  */
-export const POST: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
   if (!env("CRON_SECRET")) return json({ error: "CRON_SECRET not configured" }, 503);
   if (request.headers.get("authorization") !== `Bearer ${env("CRON_SECRET")}`) return json({ error: "Unauthorized" }, 401);
   const dry = url.searchParams.get("dry_run") === "1" || env("MESSAGING_LIVE") !== "true";
   const nowParam = url.searchParams.get("now");
+  const promoNow = url.searchParams.get("promo_now") === "1"; // founder's extra promo run, rules unchanged
+  const promoAll = promoNow && url.searchParams.get("all") === "1"; // one-off "send to all": skips the gaps and holds
   const now = dry && nowParam && !Number.isNaN(Date.parse(nowParam)) ? Date.parse(nowParam) : Date.now();
   const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
 
-  const [{ data: sellerRows }, { data: buyerRows }, { data: cartRows }, { data: orderRows }, { data: logRows }] = await Promise.all([
-    sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, ${SLOT_SELLER_COLUMNS}`).eq("is_active", true),
-    sb.from("buyers").select("id, phone, created_at, lat, lng, is_test, push_subscription, whatsapp_opt_in_at, whatsapp_opt_out_at").gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
-    sb.from("buyer_cart").select("buyer_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, is_available, is_preorder_enabled, deleted_at)"),
-    sb.from("orders").select("id, buyer_id, status, created_at, updated_at, is_test, species, listing:fish_listings(seller_id)").gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
-    sb.from("message_log").select("buyer_id, seller_id, order_id, kind, slot_date, created_at").gte("created_at", new Date(now - 35 * 86_400_000).toISOString()),
-  ]);
-  const sellers: MsgSeller[] = (sellerRows || []).filter((s: any) => !s.is_test).map((s: any) => ({ ...s, slug: sellerNameToSlug(s.name) }));
-  const sellerPhones = new Set((sellerRows || []).map((s: any) => waNumber(s.phone)).filter(Boolean));
-  const testOnly = String(env("WA_TEST_ONLY")).split(",").map((s) => waNumber(s.trim())).filter(Boolean);
-  const orders = (orderRows || []).filter((o: any) => !o.is_test);
-  const report: any[] = [];
-
-  // ?test_phone=<n>: send one message to that number right now (any time of day), only if it
-  // is on MESSAGING_TEST_ONLY. For checking what a buyer receives on WhatsApp + push.
-  const testPhone = waNumber(url.searchParams.get("test_phone"));
-  if (testPhone) {
-    const allow = String(env("MESSAGING_TEST_ONLY")).split(",").map((x) => waNumber(x.trim())).filter(Boolean);
-    if (!allow.includes(testPhone)) return json({ error: "test_phone must be on MESSAGING_TEST_ONLY" }, 400);
-    const { data: tb } = await sb.from("buyers").select("id, phone, created_at, lat, lng, push_subscription, whatsapp_opt_in_at").or(`phone.eq.${testPhone.slice(2)},phone.eq.+${testPhone}`).limit(1).maybeSingle();
-    if (!tb) return json({ error: "no buyer with that phone" }, 404);
-    const cart = (cartRows || []).filter((c: any) => c.buyer_id === tb.id && c.listing && !c.listing.deleted_at && (c.listing.is_available || c.listing.is_preorder_enabled));
-    const st: BuyerState = { id: tb.id, created_at: tb.created_at, lat: tb.lat, lng: tb.lng, last_order_at: null, open_order: false, last_delivered_at: null, opted_out: false,
-      cart: cart.map((c: any) => ({ seller_id: c.listing.seller_id, species: c.listing.species, photo: c.listing.photo_url, name: fishName(c.listing.description, c.listing.species), on_menu: true, updated_at: c.updated_at })) };
-    const seller = pickSeller(st, sellers);
-    const offer = seller ? offerAt(seller, Date.now()) ?? { mode: "preorder" as const, when: "your chosen day" } : null;
-    if (!seller || !offer) return json({ error: "no seller for this buyer" }, 404);
-    const items = [...new Set(st.cart.map((l) => l.name))].slice(0, 3);
-    const personal = items.length > 0;
-    const template = personal ? (offer.mode === "today" ? "rf_cart_today" : "rf_cart_preorder") : (offer.mode === "today" ? "rf_today_check" : "rf_preorder_generic");
-    const when = offer.mode === "preorder" ? offer.when : null;
-    const body = template === "rf_cart_today" ? [items.join(" and ")] : template === "rf_cart_preorder" ? [items.join(" and "), when!] : template === "rf_preorder_generic" ? [when!] : [];
-    const first = st.cart.find((c: any) => c.seller_id === seller.id) as any;
-    const image = personal ? headerImage(first?.photo, first?.species) : SIGNUP_IMAGE;
-    const r = await dispatch(sb, {
-      dedupe_key: `test:${tb.id}:${Date.now()}`, kind: "test", slot_date: istDate(Date.now()), buyer_id: tb.id, seller_id: seller.id,
-      phone: tb.phone, whatsappOk: !!tb.whatsapp_opt_in_at, template, body, headerImage: image, link_path: personal ? `/s/${seller.slug}` : "/shop",
-      push: { title: personal ? `Your ${items[0]} is waiting 🐟` : offer.mode === "today" ? "Craving fish today? 🐟" : "Plan your next fish meal 🐟",
-              body: offer.mode === "today" ? "Order now and pick a 2-hour delivery slot." : `Pre-order now and get it on ${when}.`, image },
-    });
-    return json({ test: true, template, body, image, seller: seller.name, result: r });
+  // 1. Delivery status from Wati, then the SMS fallback for failed reminders / order updates.
+  const sync: any = { checked: 0, updated: 0, stuck: 0, sms_fallback: [] as any[] };
+  if (!dry) {
+    // A row still "queued" after 10 min: the run died between logging and sending. Mark it failed
+    // (with the reason) so it isn't silently lost: reminders / order updates then go by SMS.
+    const { data: stuck } = await sb.from("message_log").update({ status: "failed", error: "stuck in queue: no send result", updated_at: new Date(now).toISOString() })
+      .eq("status", "queued").lt("created_at", new Date(now - 10 * 60_000).toISOString()).gte("created_at", new Date(now - 6 * 3_600_000).toISOString()).select("id");
+    sync.stuck = stuck?.length ?? 0;
+    const s = await syncWatiStatuses(sb, now).catch((e: any) => ({ checked: 0, updated: 0, failed: [], error: e?.message }));
+    Object.assign(sync, { checked: s.checked, updated: s.updated, error: (s as any).error });
+    const { data: failed } = await sb.from("message_log").select("id, dedupe_key, kind, template, to_phone, slot_date, buyer_id, seller_id, order_id, link_path, payload")
+      .eq("channel", "whatsapp").eq("status", "failed").gte("created_at", new Date(now - 6 * 3_600_000).toISOString()).not("payload", "is", null);
+    for (const row of failed || []) {
+      const r = await smsFallbackFor(sb, row);
+      if (r.status !== "duplicate" && r.status !== "no_channel") sync.sms_fallback.push({ buyer: `…${String(row.to_phone).slice(-4)}`, kind: row.kind, sent: r.status, error: r.error });
+    }
   }
 
-  for (const b of buyerRows || []) {
-    const phone = waNumber(b.phone);
-    // Never sellers or test accounts; the founder only when he is on the WhatsApp test list.
-    if (b.is_test || (phone && sellerPhones.has(phone)) || (phone === "919870619974" && !testOnly.includes(phone))) continue;
-    const mine = orders.filter((o: any) => o.buyer_id === b.id);
-    const delivered = mine.filter((o: any) => o.status === "completed").map((o: any) => o.updated_at).sort().pop() ?? null;
-    const state: BuyerState = {
-      id: b.id, created_at: b.created_at, lat: b.lat, lng: b.lng,
+  const since = (days: number) => new Date(now - days * 86_400_000).toISOString();
+  let sellerRows: any[], buyerRows: any[], cartRows: any[], orderRows: any[], logRows: any[], menuRows: any[];
+  try {
+    [sellerRows, buyerRows, cartRows, orderRows, logRows, menuRows] = await Promise.all([
+      all(() => sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, ${SLOT_SELLER_COLUMNS}`).eq("is_active", true).order("id")),
+      all(() => sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").gte("created_at", since(60)).order("id")),
+      all(() => sb.from("buyer_cart").select("id, buyer_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, deleted_at)").order("id")),
+      all(() => sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", since(60)).order("id")),
+      // Last 8 days, any status: gaps (≤ 72 h) and caps count real sends only; "already reminded" counts failed ones too.
+      all(() => sb.from("message_log").select("id, buyer_id, kind, slot_date, created_at, status, channel, error, dedupe_key").not("buyer_id", "is", null).gte("created_at", since(8)).order("id")),
+      // Live listings only (available or pre-order): the pre-order menu and rf2_cart_swap substitutes.
+      all(() => sb.from("fish_listings").select("id, seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled").or("is_available.eq.true,is_preorder_enabled.eq.true").is("deleted_at", null).order("id")),
+    ]);
+  } catch (e: any) {
+    console.error("[cron/messaging] query failed", e?.message);
+    return json({ error: `query failed: ${e?.message}` }, 500);
+  }
+  // Each seller's pre-order fish for rf2_catch_preorder: "Surmai · Pomfret · Bombil" (names only, no prices).
+  const menu = (id: string) => [...new Set((menuRows || []).filter((l: any) => l.seller_id === id && l.is_preorder_enabled).map((l: any) => fishName(l.description, l.species)))].slice(0, 3).join(" · ");
+  const live = (id: string) => (menuRows || []).filter((l: any) => l.seller_id === id && optPrice(l) > 0).map((l: any) => ({
+    name: fishName(l.description, l.species), species: l.species, price: optPrice(l), label: firstOpt(l)?.label ?? null, photo: l.photo_url ?? null,
+    preorder: !!l.is_preorder_enabled,
+  }));
+  const sellers: MsgSeller[] = (sellerRows || []).filter((s: any) => !s.is_test).map((s: any) => ({ ...s, slug: sellerNameToSlug(s.name), menu: menu(s.id), live: live(s.id) }));
+  const sellerPhones = new Set((sellerRows || []).map((s: any) => waNumber(s.phone)).filter(Boolean));
+  const waTestOnly = list("WA_TEST_ONLY");
+  // Founder's DND list: buyers.dnd_at (migration 088) plus numbers that haven't signed up yet.
+  const dndPhones = new Set(list("MESSAGING_DND_PHONES", "9967743841"));
+  // Never sellers; the founder only when he is on the WhatsApp test list.
+  const skipPhone = (phone: string | null) => !phone || sellerPhones.has(phone) || (phone === FOUNDER && !waTestOnly.includes(phone));
+  const orders = (orderRows || []).filter((o: any) => !o.is_test);
+  // The order's photo: the costliest live item of its checkout (same cart_id, same seller), founder 30 Oct.
+  const orderLine = (o: any) => o ? {
+    id: o.id, seller_id: o.listing?.seller_id, name: fishName(o.listing?.description, o.listing?.species || o.species), species: o.listing?.species || o.species,
+    photo: orderPhoto(o, orders), created_at: o.created_at, slot_start: o.delivery_slot_start ?? null, checkout: o.cart_id || o.id,
+  } : null;
+  const stateOf = (b: any): BuyerState => {
+    const mine = orders.filter((o: any) => o.buyer_id === b.id).sort((x: any, y: any) => x.created_at.localeCompare(y.created_at));
+    const done = mine.filter((o: any) => o.status === "completed");
+    const pending = mine.filter((o: any) => o.status === "pending_payment" && !hasPaymentEvidence(o));
+    return {
+      id: b.id, created_at: b.created_at, name: firstName(b.first_name), lat: b.lat, lng: b.lng,
       cart: (cartRows || []).filter((c: any) => c.buyer_id === b.id && c.listing).map((c: any) => ({
-        seller_id: c.listing.seller_id, species: c.listing.species, photo: c.listing.photo_url,
+        seller_id: c.listing.seller_id, species: c.listing.species, photo: c.listing.photo_url, price: optPrice(c.listing),
         name: fishName(c.listing.description, c.listing.species),
         on_menu: !c.listing.deleted_at && (c.listing.is_available || c.listing.is_preorder_enabled),
         updated_at: c.updated_at,
       })),
-      last_order_at: mine.map((o: any) => o.created_at).sort().pop() ?? null,
+      last_order_at: mine.at(-1)?.created_at ?? null,
       open_order: mine.some((o: any) => OPEN.includes(o.status)),
-      last_delivered_at: delivered,
+      unpaid: orderLine(pending.at(-1)),
+      // One per checkout (its first order), oldest first: each unpaid checkout gets its own reminder.
+      unpaids: pending.filter((o: any, i: number) => pending.findIndex((x: any) => (x.cart_id || x.id) === (o.cart_id || o.id)) === i).map(orderLine) as any,
+      delivered: orderLine(done.at(-1)),
+      last_delivered_at: done.map((o: any) => o.updated_at).sort().pop() ?? null,
       opted_out: !!b.whatsapp_opt_out_at,
+      dnd: !!b.dnd_at || dndPhones.has(waNumber(b.phone) || ""),
     };
-    const history: SentLog[] = (logRows || []).filter((l: any) => l.buyer_id === b.id && PROMO_KINDS.includes(l.kind));
-    const d = decide(now, state, sellers, history);
-    const who = phone ? `…${phone.slice(-4)}` : b.id.slice(0, 6);
-    if ("skip" in d) { report.push({ buyer: who, skip: d.skip }); continue; }
+  };
+  /** The unpaid reminder for an order: rf2_unpaid (utility, photo) + its SMS. */
+  const unpaidMessage = (o: any, b: any) => {
+    const m = orderMessage("unpaid", o, b.first_name, now, undefined, orders);
+    return { template: m.template, body: m.body, headerImage: m.image ?? null, link_path: `/track/${o.id}`, sms: orderSms("unpaid", o, b.first_name) };
+  };
 
+  // ?test_phone: one sample of a message type, sent now to a test phone (skips every rule).
+  const testPhone = waNumber(url.searchParams.get("test_phone"));
+  if (testPhone) {
+    if (!list("MESSAGING_TEST_PHONES", FOUNDER).includes(testPhone)) return json({ error: "test_phone must be on MESSAGING_TEST_PHONES" }, 400);
+    const kind = url.searchParams.get("test_kind") || "cart";
+    const viaSms = url.searchParams.get("channel") === "sms";
+    const { data: tb } = await sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").or(`phone.eq.${testPhone.slice(2)},phone.eq.+${testPhone}`).limit(1).maybeSingle();
+    if (!tb) return json({ error: "no buyer with that phone" }, 404);
+    const st = stateOf(tb);
+    let msg: Omit<Dispatch, "dedupe_key" | "kind" | "slot_date" | "phone" | "whatsappOk"> | null = null;
+    if (kind === "cart" || kind === "signup" || kind === "promo") {
+      // No real cart → the costliest live item with a photo of the nearest seller, as a sample cart line.
+      const seller = pickSeller(st, sellers);
+      const offer = seller && offerAt(seller, Date.now());
+      if (!seller || !offer) return json({ error: "no seller / no bookable slot right now" }, 404);
+      const sample = [...(seller.live || [])].filter((m) => m.photo).sort((a, b) => b.price - a.price)[0];
+      const withCart = st.cart.some((l) => l.on_menu) || !sample ? st : { ...st, cart: [{ seller_id: seller.id, name: sample.name, species: sample.species, photo: sample.photo, price: sample.price, on_menu: true, updated_at: new Date().toISOString() }] };
+      const d = kind === "cart" ? cartMessage(Date.now(), withCart, seller, offer) : kind === "signup" ? signupMessage(Date.now(), st, seller, offer) : null;
+      const p = kind === "promo" ? decide(Date.now(), st, sellers, []) : null;
+      if (d) msg = { template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, seller_id: seller.id, sms: d.sms };
+      else if (p && !("skip" in p)) msg = { template: p.template, body: p.body, headerImage: p.photo, link_path: p.path, seller_id: seller.id };
+      else if (kind === "promo") return json({ error: `no promo fits right now: ${(p as any)?.skip}` }, 404);
+    } else {
+      // Order kinds: the test buyer's latest order (its real values).
+      const o = orders.filter((x: any) => x.buyer_id === tb.id).at(-1) || (await sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, cart_id`).eq("buyer_id", tb.id).order("created_at", { ascending: false }).limit(1).maybeSingle()).data;
+      if (!o) return json({ error: "the test buyer has no order to use" }, 404);
+      const ev = (kind === "out" ? "out_for_delivery" : kind === "delivered" ? "completed" : kind) as OrderWaEvent;
+      const { checkout } = await loadCheckout(sb, o.id);
+      const cancel = ev === "cancelled" ? { reason: "the seller ran out of this fish", refund: `₹${Math.round(Number(o.total_price) || 0)}, started today, reaches your account in 5–7 working days` } : undefined;
+      const m = orderMessage(ev, o, tb.first_name, Date.now(), cancel, checkout);
+      msg = { template: m.template, body: m.body, headerImage: m.image ?? null, link_path: `/track/${o.id}`, order_id: o.id, sms: orderSms(ev, o, tb.first_name, cancel) };
+    }
+    if (!msg) return json({ error: `unknown test_kind ${kind}` }, 400);
+    if (dry) return json({ test: true, dry: true, kind, template: msg.template, body: msg.body, sms: msg.sms ?? null, image: msg.headerImage ?? null });
+    const r = await dispatch(sb, {
+      ...msg, dedupe_key: `test:${kind}:${tb.id}:${Date.now()}`, kind: `test_${kind}`, slot_date: istDate(Date.now()), buyer_id: tb.id,
+      phone: tb.phone, whatsappOk: !viaSms && !!tb.whatsapp_opt_in_at, smsOk: true, smsFallback: !viaSms && !!msg.sms,
+    });
+    return json({ test: true, kind, channel: viaSms ? "sms" : "whatsapp", template: msg.template, body: msg.body, sms: msg.sms ?? null, image: msg.headerImage ?? null, result: r });
+  }
+
+  // 2. Per buyer: one activity reminder, else one promo.
+  const report: any[] = [];
+  for (const b of buyerRows || []) {
+    const phone = waNumber(b.phone);
+    if (b.is_test || skipPhone(phone)) continue;
+    const state = stateOf(b);
+    const history: SentLog[] = (logRows || []).filter((l: any) => l.buyer_id === b.id);
+    const who = `…${phone!.slice(-4)}`;
     const whatsappOk = !!b.whatsapp_opt_in_at && !b.whatsapp_opt_out_at;
-    const body = d.template === "rf_cart_today" ? [d.items.join(" and ")]
-      : d.template === "rf_cart_preorder" ? [d.items.join(" and "), d.when!]
-      : d.template === "rf_preorder_generic" ? [d.when!] : [];
-    const first = d.personal ? (state.cart.find((c: any) => c.on_menu && c.seller_id === d.seller.id) as any) : null;
-    const image = d.personal ? headerImage(first?.photo, first?.species) : SIGNUP_IMAGE;
-    const line = { buyer: who, kind: d.kind, template: d.template, vars: body, link: d.path, image, channel: [whatsappOk && phone ? "whatsapp" : "", b.push_subscription ? "push" : ""].filter(Boolean).join("+") || "none" };
+    const act = decideActivity(now, state, sellers, history);
+    let msg: Dispatch | null = null;
+    if (!("skip" in act)) {
+      if (act.kind === "act_unpaid") {
+        const o = orders.find((x: any) => x.id === act.order_id);
+        if (o) msg = { ...unpaidMessage(o, b), dedupe_key: act.dedupe_key, kind: act.kind, slot_date: act.slot_date, order_id: o.id, buyer_id: b.id, seller_id: o.listing?.seller_id ?? null, phone: b.phone, whatsappOk, smsOk: true, smsFallback: true };
+      } else {
+        msg = { dedupe_key: act.dedupe_key, kind: act.kind, slot_date: act.slot_date, buyer_id: b.id, seller_id: act.seller.id, phone: b.phone, whatsappOk,
+          template: act.template, body: act.body, headerImage: act.photo, link_path: act.path, sms: act.sms, smsOk: true, smsFallback: true };
+      }
+    } else {
+      const d = decide(now, state, sellers, history, promoNow, promoAll);
+      if ("skip" in d) { report.push({ buyer: who, skip: act.skip === "nothing due" ? d.skip : `${act.skip}; ${d.skip}` }); continue; }
+      // Promos: WhatsApp only (founder: no promo SMS), so a buyer who isn't opted in gets none.
+      msg = { dedupe_key: `${d.kind}:${b.id}:${d.slot_date}`, kind: d.kind, slot_date: d.slot_date, buyer_id: b.id, seller_id: d.seller.id, phone: b.phone, whatsappOk,
+        template: d.template, body: d.body, headerImage: d.photo, link_path: d.path };
+    }
+    if (!msg) continue;
+    if (!whatsappOk && !msg.sms) { report.push({ buyer: who, skip: "promo: not opted in to WhatsApp" }); continue; }
+    const line = { buyer: who, kind: msg.kind, template: msg.template, vars: msg.body, sms: msg.sms ?? null, link: msg.link_path, image: msg.headerImage ?? null, channel: whatsappOk ? "whatsapp" : msg.sms ? "sms" : "none" };
     if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
-    const r = await dispatch(sb, {
-      dedupe_key: `${d.kind}:${b.id}:${d.slot_date}`, kind: d.kind, slot_date: d.slot_date,
-      buyer_id: b.id, seller_id: d.seller.id, phone: b.phone, whatsappOk,
-      template: d.template, body, headerImage: image, link_path: d.path,
-      push: { title: d.personal ? `Your ${d.items[0]} is waiting 🐟` : d.mode === "today" ? "Craving fish today? 🐟" : "Plan your next fish meal 🐟",
-              body: d.mode === "today" ? "Order now and pick a 2-hour delivery slot." : `Pre-order now and get it on ${d.when}.`, image },
-    });
-    report.push({ ...line, sent: r.status, error: r.error });
+    const r = await dispatch(sb, msg);
+    report.push({ ...line, channel: r.channel ?? line.channel, sent: r.status, error: r.error });
   }
 
-  // Seller: paid order not accepted 30 min after payment → one reminder.
-  for (const o of orders.filter((x: any) => x.status === "paid" && now - Date.parse(x.updated_at) >= 30 * 60_000 && now - Date.parse(x.updated_at) < 6 * 3_600_000)) {
-    const s: any = (sellerRows || []).find((x: any) => x.id === o.listing?.seller_id);
-    if (!s) continue;
-    const short = `#${String(o.id).slice(0, 8).toUpperCase()}`;
-    const line = { seller: s.name, kind: "seller_waiting", order: short };
-    if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
-    const r = await dispatch(sb, {
-      dedupe_key: `seller_waiting:${o.id}`, kind: "seller_waiting", slot_date: istDate(now), seller_id: s.id, order_id: o.id,
-      phone: s.phone, whatsappOk: !!s.whatsapp_opt_in_at && !s.whatsapp_opt_out_at,
-      template: "rf_seller_waiting", body: [short], link_path: `/dashboard/orders?order=${o.id}`,
-    });
-    report.push({ ...line, sent: r.status, error: r.error });
-  }
-
-  return json({ dry, now: new Date(now).toISOString(), messages: report.filter((r) => !r.skip), skipped: report.filter((r) => r.skip).length, skips: count(report.filter((r) => r.skip).map((r) => r.skip)) });
+  return json({ dry, now: new Date(now).toISOString(), sync, messages: report.filter((r) => !r.skip), skipped: report.filter((r) => r.skip).length, skips: count(report.filter((r) => r.skip).map((r) => r.skip)) });
 };
 
 const count = (xs: string[]) => xs.reduce((m: Record<string, number>, x) => ((m[x] = (m[x] || 0) + 1), m), {});
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o, null, 2), { status, headers: { "Content-Type": "application/json" } });
+
+export const POST = GET;

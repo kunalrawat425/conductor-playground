@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { copyFor, pushStatusFor, type OrderEvent } from "../../src/lib/server/notify-order-parties";
+import { copyFor, pushStatusFor, sellerHearsAbout, type OrderEvent } from "../../src/lib/server/notify-order-parties";
 import { buyerOrderPushNotification } from "../../src/lib/server/buyer-order-push-copy";
 
 const EVENTS: OrderEvent[] = ["payment_confirmed", "cancelled_by_buyer", "refunded"];
@@ -102,5 +102,17 @@ describe("notify-order-parties push status mapping", () => {
   it("produces distinct push copy per event (no collisions)", () => {
     const bodies = EVENTS.map((e) => buyerOrderPushNotification(pushStatusFor(e), "pomfret").body);
     expect(new Set(bodies).size).toBe(EVENTS.length);
+  });
+});
+
+describe("sellerHearsAbout (sellers only hear about paid orders, founder 27 Oct)", () => {
+  it("emails/pushes the seller only for paid money", () => {
+    expect(sellerHearsAbout("payment_confirmed", true)).toBe(true);
+    expect(sellerHearsAbout("cancelled_by_buyer", true)).toBe(true);
+    expect(sellerHearsAbout("refunded", true)).toBe(true);
+    expect(sellerHearsAbout("cancelled_by_buyer", false)).toBe(false);
+    expect(sellerHearsAbout("refunded", false)).toBe(false);
+    expect(sellerHearsAbout("expired_unpaid", false)).toBe(false);
+    expect(sellerHearsAbout("cancelled_by_seller", true)).toBe(false);
   });
 });

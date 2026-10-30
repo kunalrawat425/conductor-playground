@@ -13,6 +13,7 @@ import { SPECIES, getSpeciesDisplay } from "../../lib/species";
 import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderHoursLabel, preorderPauseLabel, preorderStatusLabel, timeLabel } from "../../lib/order-timing";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
+import { whatsappLink } from "../../lib/brand";
 
 const { city } = Astro.params;
 const area = getAreaBySlug(city || "");
@@ -291,6 +292,7 @@ const jsonLd = {
       <a href="/#waitlist" style="display: inline-block; padding: 10px 20px; background: var(--v2-brand, #2563eb); color: white; border-radius: 8px; text-decoration: none; font: 500 14px Inter; transition: opacity 0.2s;">
         Join Waitlist
       </a>
+      <a href={whatsappLink(`Hi Relifish, please tell me when you deliver to ${area.name}`)} target="_blank" rel="noopener" class="v2-empty-ghost">💬 Ask us on WhatsApp →</a>
     </div>
   )}
 

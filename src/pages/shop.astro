@@ -35,8 +35,8 @@ const categories = [
         "name": "Relifish",
         "url": "https://www.relifish.com",
         "logo": "https://www.relifish.com/icon-192.svg",
-        "description": "Mumbai's fresh fish marketplace — order directly from local sellers, pre-order for tomorrow or later, pickup or delivery.",
-        "areaServed": { "@type": "City", "name": "Mumbai" },
+        "description": "Thane's fresh fish marketplace — order directly from local sellers, pre-order for tomorrow or later, pickup or delivery.",
+        "areaServed": [{ "@type": "City", "name": "Thane" }, { "@type": "City", "name": "Mumbai" }],
         "contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "availableLanguage": ["English", "Marathi"] }
       },
       {
@@ -44,11 +44,11 @@ const categories = [
         "@id": "https://www.relifish.com/#localbusiness",
         "name": "Relifish",
         "url": "https://www.relifish.com",
-        "description": "Fresh fish marketplace connecting Mumbai buyers directly with local fish sellers. Pre-order pomfret, surmai, bangda, prawns and more.",
+        "description": "Fresh fish marketplace connecting Thane buyers directly with local fish sellers. Pre-order pomfret, surmai, bangda, prawns and more.",
         "image": "https://www.relifish.com/og-image.jpg",
         "priceRange": "₹₹",
         "servesCuisine": "Seafood",
-        "areaServed": { "@type": "City", "name": "Mumbai" },
+        "areaServed": [{ "@type": "City", "name": "Thane" }, { "@type": "City", "name": "Mumbai" }],
         "hasMap": "https://www.relifish.com"
       },
       {
@@ -63,7 +63,7 @@ const categories = [
 >
   <!-- SEO H1 — visually hidden on app, present for crawlers -->
   <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
-    Fresh Fish Delivery Mumbai — Order from Local Sellers
+    Fresh Fish Delivery in Thane — Order from Local Sellers
   </h1>
   <Toast />
   <LocationPickerSheet />
@@ -105,7 +105,7 @@ const categories = [
 
   <!-- Empty -->
   <div id="v2-empty" style="display:none;padding:16px 16px 0;">
-    <EmptyState variant="no-area" ctaHref="/buyer-banner.html#wl-form" ghostCtaHref="#" />
+    <EmptyState variant="no-area" ctaHref="/buyer-banner.html#wl-form" ghostCtaHref="#" whatsappText="Hi Relifish, please tell me when you deliver to my area" />
   </div>
 
   <!-- Markets closed -->
@@ -200,8 +200,9 @@ const categories = [
   import { getSpeciesDisplay } from "../lib/species";
   import { formatBuyerMenuUnitSuffix, getListingPriceOptions } from "../lib/listing-pricing";
   import { cleanSellerName, sellerHref } from "../lib/seller-display";
-  import { LOGO_URL } from "../lib/brand";
-  import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderStatusLabel, timeLabel, todayDayName } from "../lib/order-timing";
+  import { LOGO_URL, whatsappLink } from "../lib/brand";
+  import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderStatusLabel, todayDayName } from "../lib/order-timing";
+  import { closedStatusLabel } from "../lib/cart";
   import { menuBySeller } from "../lib/menu-order";
   import { readSavedLocation, saveGpsDefault } from "../lib/saved-location";
   import type { Seller, FishListing } from "../lib/supabase";
@@ -224,6 +225,13 @@ const categories = [
 
   function getBuyerArea(): string {
     return getBuyerLocation()?.area || "Set location";
+  }
+
+  /** "Not delivering here yet" WhatsApp link, prefilled with the buyer's saved area. */
+  function waitlistWaHtml(): string {
+    const a = getBuyerArea();
+    const href = whatsappLink(`Hi Relifish, please tell me when you deliver to ${a && a !== "Set location" ? a : "my area"}`);
+    return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener" class="v2-empty-ghost">💬 Ask us on WhatsApp →</a>`;
   }
 
   function pickHue(seed: string): SellerHue {
@@ -276,7 +284,13 @@ const categories = [
     return `<div class="v2-sc-chip">${chipImg}<div class="v2-sc-m-text"><div class="v2-sc-m-name">${escapeHtml(name)}</div><div class="v2-sc-m-price">₹${price}/${unitPart}</div></div></div>`;
   }
 
-  /** 1 → 1 chip full-width. 2 → 2 chips. 3+ → first + "+N more". */
+  /** The card's one item: the 3rd most expensive (founder 24 Oct). The seller page keeps the seller's own order. */
+  function cardPick(lst: any[]): any {
+    const price = (l: any) => getListingPriceOptions(l)[0]?.price ?? (l.pricing_options as any[])?.[0]?.price ?? Infinity;
+    return [...lst].sort((a, b) => price(b) - price(a))[2] ?? lst[0];
+  }
+
+  /** 1 → 1 chip full-width. 2 → 2 chips. 3+ → 3rd most expensive + "+N more". */
   function sellerMenuChipsHtml(listings: any[] | undefined): string {
     const lst = listings || [];
     if (lst.length === 0) return "";
@@ -285,7 +299,7 @@ const categories = [
       ? listingChipHtml(lst[0])
       : lst.length === 2
         ? lst.map(listingChipHtml).join("")
-        : listingChipHtml(lst[0]) + `<div class="v2-sc-chip v2-sc-chip-more"><span class="v2-sc-m-more">+${lst.length - 1} more</span></div>`;
+        : listingChipHtml(cardPick(lst)) + `<div class="v2-sc-chip v2-sc-chip-more"><span class="v2-sc-m-more">+${lst.length - 1} more</span></div>`;
     return `<div class="v2-sc-menu" data-chips="${count}">${inner}</div>`;
   }
 
@@ -333,7 +347,11 @@ const categories = [
       let promptedKey = "v2_loc_prompted";
       let promptedThisSession = false;
       try { promptedThisSession = sessionStorage.getItem(promptedKey) === "1"; } catch {}
-      if (!promptedThisSession && navigator.geolocation) {
+      // Only when location is already allowed. An automatic popup on page load mostly gets dismissed,
+      // and after a few dismissals Chrome blocks the site, so "Use current location" can't ask any more.
+      const geoAllowed = await (navigator.permissions?.query({ name: "geolocation" as PermissionName })
+        .then((p) => p.state === "granted").catch(() => false) ?? Promise.resolve(false));
+      if (!promptedThisSession && geoAllowed && navigator.geolocation) {
         try { sessionStorage.setItem(promptedKey, "1"); } catch {}
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
@@ -642,7 +660,7 @@ const categories = [
 
     if (allGroups.length === 0) {
       count.textContent = "0";
-      empty.innerHTML = `<div style="padding:32px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="margin-bottom:12px;"><img src="${LOGO_URL}" alt="Relifish" style="height:40px;width:auto;display:block;margin:8px auto;" /></div><div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers in your area yet</div><div style="font:400 13px Inter;color:var(--v2-ink-3);margin-bottom:18px;line-height:1.5;">We're expanding fast. Join the waitlist and we'll notify you when a seller goes live near you.</div><a href="/buyer-banner.html" style="display:inline-block;background:var(--v2-brand);color:#fff;font:700 14px Inter;padding:12px 28px;border-radius:100px;text-decoration:none;">Join waitlist →</a></div>`;
+      empty.innerHTML = `<div style="padding:32px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="margin-bottom:12px;"><img src="${LOGO_URL}" alt="Relifish" style="height:40px;width:auto;display:block;margin:8px auto;" /></div><div style="font:700 16px Inter;color:var(--v2-ink);margin-bottom:6px;">No sellers in your area yet</div><div style="font:400 13px Inter;color:var(--v2-ink-3);margin-bottom:18px;line-height:1.5;">We're expanding fast. Join the waitlist and we'll notify you when a seller goes live near you.</div><a href="/buyer-banner.html" style="display:inline-block;background:var(--v2-brand);color:#fff;font:700 14px Inter;padding:12px 28px;border-radius:100px;text-decoration:none;">Join waitlist →</a>${waitlistWaHtml()}</div>`;
       empty.style.display = "block";
       grid.style.display = "none";
       return;
@@ -652,7 +670,7 @@ const categories = [
       count.textContent = "0";
       grid.style.display = "none";
       grid.innerHTML = "";
-      const noMatch = `<div style="padding:32px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:44px;margin-bottom:12px;">🎣</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">Not serviceable in your area yet</div><div style="font:400 12px Inter;color:var(--v2-ink-3);line-height:1.5;margin-bottom:16px;">We're adding new sellers. Join the waitlist and we'll notify you when a seller goes live near you.</div><a href="/buyer-banner.html" style="display:inline-block;background:var(--v2-brand);color:#fff;font:700 13px Inter;padding:10px 22px;border-radius:100px;text-decoration:none;">Join waitlist →</a></div>`;
+      const noMatch = `<div style="padding:32px 24px;text-align:center;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:12px;margin:0 16px;"><div style="font-size:44px;margin-bottom:12px;">🎣</div><div style="font:700 15px Inter;color:var(--v2-ink);margin-bottom:6px;">Not serviceable in your area yet</div><div style="font:400 12px Inter;color:var(--v2-ink-3);line-height:1.5;margin-bottom:16px;">We're adding new sellers. Join the waitlist and we'll notify you when a seller goes live near you.</div><a href="/buyer-banner.html" style="display:inline-block;background:var(--v2-brand);color:#fff;font:700 13px Inter;padding:10px 22px;border-radius:100px;text-decoration:none;">Join waitlist →</a>${waitlistWaHtml()}</div>`;
       empty.innerHTML = noMatch;
       empty.style.display = "block";
       return;
@@ -685,7 +703,7 @@ const categories = [
           : status === "closed-preorder"
             ? [g.preorderLine || "Pre-order", "v2-badge-indigo"]
             : status === "closed"
-              ? [s.opens_at ? `Opens ${timeLabel(s.opens_at)}` : "", "v2-badge-green"]
+              ? [closedStatusLabel(s), "v2-badge-green"]
               : ["Pre-order only", "v2-badge-indigo"];
         const statusBadge = statusText
           ? `<span class="v2-badge v2-badge-tag ${statusColor} v2-badge-size-md v2-badge-bold">${escapeHtml(statusText)}</span>` : "";

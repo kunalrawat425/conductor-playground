@@ -87,7 +87,7 @@ Refunds go back to your original payment method, usually within 5 to 7 working d
 3. **Flesh**: firm, and springs back when pressed.
 4. **Smell**: clean and of the sea, not sour or of ammonia.
 
-If something is wrong with your order, message us on WhatsApp at [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM) or email [relifishstore@gmail.com](mailto:relifishstore@gmail.com).
+If something is wrong with your order, message us on WhatsApp at [9152207607](https://api.whatsapp.com/send?phone=919152207607) (7:30 AM to 9 PM) or email [relifishstore@gmail.com](mailto:relifishstore@gmail.com).
 
 ---
 

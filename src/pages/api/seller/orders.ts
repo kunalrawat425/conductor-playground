@@ -3,13 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import { sendBuyerOrderPush } from "../../../lib/server/buyer-push";
 import { sendTransactionalEmail } from "../../../lib/server/send-email";
 import { isRazorpayPaid, refundRazorpayPayment } from "../../../lib/server/razorpay-refund";
-import { preorderNeedsFinalPrice } from "../../../lib/order-payment-state";
+import { preorderNeedsFinalPrice, refundDueRupees, refundLine } from "../../../lib/order-payment-state";
 import { refundOrderRazorpay } from "../../../lib/server/razorpay-ledger";
 import { orderEmailBuyer, orderEmailSeller } from "../../../lib/email-templates";
 import { toSellerView, STATUS_BY_TAB } from "../../../lib/seller-order-view";
-import { cartLabel, isLiveRow, rowPaise, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
+import { cartLabel, isLiveRow, moveFeeOffClosedRow } from "../../../lib/server/order-cart";
 import { cancelReasonText, checkCancelReason } from "../../../lib/order-cancel";
 import { orderSlotText, sellerSlotError } from "../../../lib/delivery-slots";
+import { buyerEmailCopy, deliveredOnTime, withPreview } from "../../../lib/email-subjects";
 
 function capitalizeFishName(s: string): string {
   return s.replace(/\b\w/g, c => c.toUpperCase());
@@ -84,6 +85,8 @@ export const GET: APIRoute = async ({ url, request }) => {
   const today_gmv = (today.data || []).reduce((s: number, o: any) => s + (Number(o.total_price) || 0), 0);
 
   const SELECT = "*, listing:fish_listings(species, pricing_options), order_feedback(rating, feedback, updated_at)";
+  const { data: me } = await supabase.from("sellers").select("lat, lng").eq("id", seller_id!).maybeSingle();
+  const view = (o: any) => toSellerView(o, me);
   const page = Math.max(1, Number(p.get("page")) || 1);
   const offset = (page - 1) * PAGE_SIZE;
   const type = p.get("type") || "all";
@@ -96,7 +99,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     // Search by order id or the last digits of the buyer phone (all a seller ever sees).
     const { data } = await supabase.from("orders").select(SELECT).in("listing_id", ids)
       .order("created_at", { ascending: false }).limit(500);
-    const matched = (data || []).map(toSellerView).filter((o: any) =>
+    const matched = (data || []).map(view).filter((o: any) =>
       o.id.toLowerCase().includes(q) || (q.length <= 4 && (o.buyer_phone || "").includes(q)))
       .filter((o: any) => type === "order" ? !isPre(o) : type === "preorder" ? isPre(o) : true);
     total = matched.length;
@@ -112,7 +115,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (type === "preorder") query = query.eq("is_preorder", true);
     const { data } = await query;
     const seenCart = new Set<string>();
-    const cards = (data || []).map(toSellerView).filter((o: any) => {
+    const cards = (data || []).map(view).filter((o: any) => {
       if (!o.cart_id) return true;
       if (seenCart.has(o.cart_id)) return false;
       seenCart.add(o.cart_id);
@@ -134,7 +137,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     const { data: cartRows } = await supabase.from("orders").select(SELECT).in("cart_id", cartIds).in("listing_id", ids)
       .order("created_at", { ascending: true });
     const byCart = new Map<string, any[]>();
-    for (const r of (cartRows || []).map(toSellerView) as any[]) byCart.set(r.cart_id, [...(byCart.get(r.cart_id) || []), r]);
+    for (const r of (cartRows || []).map(view) as any[]) byCart.set(r.cart_id, [...(byCart.get(r.cart_id) || []), r]);
     const tab = q ? null : p.get("tab") || "pending";
     const seen = new Set<string>();
     orders = orders.flatMap((o) => {
@@ -265,6 +268,14 @@ async function transitionRow(
   return { data, currentOrder };
 }
 
+/** Why a seller can't retry this row's refund, or null when they can. */
+function retryRefundError(o: any): string | null {
+  if (!["cancelled", "declined"].includes(o.status)) return "Only a cancelled or declined item can be refunded";
+  if (!isRazorpayPaid(o)) return "Nothing was paid online for this item";
+  if (o.refund_sent_at) return "This item is already refunded";
+  return null;
+}
+
 /** One row as an email line: quantity in packs when the tier is a bundle. */
 function emailItem({ data, currentOrder }: { data: any; currentOrder: any }) {
   const qty = Number(data.quantity) || 0;
@@ -299,9 +310,14 @@ async function notifyItemRemoved(sb: any, order: any, removed: any, cartRows: an
   const fish = capitalizeFishName(String(removed.species || "Fish"));
   const short = String(cartRows[0].id).slice(0, 8).toUpperCase();
   // Other items are still delivered, so only the item's price comes back (fee stays).
-  const amount = isRazorpayPaid(removed) ? Number(removed.refund_amt) || Number(removed.total_price) || null : null;
-  const refunded = amount ? ` — ₹${amount.toLocaleString("en-IN")} refunded` : "";
+  const amount = isRazorpayPaid(removed) ? refundDueRupees([removed], cartRows) || null : null;
+  // "refunded" only when Razorpay accepted it (30 Oct: a failed refund was announced as done).
+  const sent = !!removed.refund_sent_at;
+  const refunded = amount ? ` — ${refundLine(amount, sent)}` : "";
   const reason = cancelReasonText(removed.cancel_reason);
+  // WhatsApp (opted-in buyers): rf2_cancelled about this item, under the cart's order number.
+  const { notifyOrderWhatsApp } = await import("../../../lib/server/notify-order-whatsapp");
+  await notifyOrderWhatsApp(removed.id, "cancelled", { reason, refund: amount ? refundLine(amount, sent) : null, removedFrom: cartRows[0].id });
   if (order.buyer_id || order.buyer_phone) {
     try {
       await sendBuyerOrderPush({
@@ -310,7 +326,7 @@ async function notifyItemRemoved(sb: any, order: any, removed: any, cartRows: an
         status: removed.status,
         species: fish,
         order_id: cartRows[0].id,
-        cancel: { by: "seller", reason, refunded: !!amount, item: { order_short: short, amount } },
+        cancel: { by: "seller", reason, refunded: !!amount, item: { order_short: short, amount, sent } },
       });
     } catch (err) { console.warn("[seller/orders] item-removed push failed", { order_id: removed.id, err: (err as any)?.message }); }
   }
@@ -319,13 +335,15 @@ async function notifyItemRemoved(sb: any, order: any, removed: any, cartRows: an
     const { data: buyer } = await sb.from("buyers").select("email").eq("id", order.buyer_id).single();
     if (!buyer?.email) return;
     const live = cartRows.filter((r) => isLiveRow(r.status));
+    // The delivery fee stays with the cart while any item is live, even if the removed item carried it.
+    const fee = cartRows.reduce((s, r) => s + (Number(r.delivery_fee) || 0), 0);
     await sendTransactionalEmail(buyer.email, `${fish} was removed from your order #${short}${refunded}`, orderEmailBuyer({
       statusLabel: "Item Removed",
       species: fish,
       quantity: Number(removed.quantity) || 0,
       quantity_unit: removed.quantity_unit || "kg",
-      totalAmount: live.reduce((s, r) => s + rowPaise(r), 0) / 100,
-      deliveryFee: live.reduce((s, r) => s + (Number(r.delivery_fee) || 0), 0),
+      totalAmount: live.reduce((s, r) => s + (Number(r.total_price) || 0), 0) + fee,
+      deliveryFee: fee,
       orderId: cartRows[0].id,
       items: cartRows.map((r) => ({
         species: String(r.species || "Fish"),
@@ -362,7 +380,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Verify order belongs to this seller's listings
     const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
-      .select("listing_id, cart_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, refund_amt, payment_screenshot_urls, payment_method, payment_verified_at, razorpay_payment_id")
+      .select("listing_id, cart_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, refund_amt, refund_sent_at, refund_note, total_price, delivery_fee, payment_screenshot_urls, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id")
       .eq("id", order_id)
       .single();
 
@@ -449,6 +467,35 @@ export const POST: APIRoute = async ({ request, url }) => {
       return new Response(JSON.stringify({ order: toSellerView(data), reconciled_status: newStatus }), { status: 200 });
     }
 
+    // action=retry_refund: a cancelled/declined Razorpay item whose refund failed. Same
+    // refund as the cancel (refundOrderRazorpay asks Razorpay first, so it never pays
+    // twice); the amount is never the seller's to choose.
+    if (action === "retry_refund") {
+      const guard = retryRefundError(order);
+      if (guard) return new Response(JSON.stringify({ error: guard }), { status: 400 });
+      const outcome = await refundOrderRazorpay(
+        supabase,
+        { id: order_id, razorpay_payment_id: order.razorpay_payment_id, razorpay_order_id: order.razorpay_order_id },
+        { caller: "seller/orders:retry_refund" }
+      );
+      const patch: Record<string, unknown> = { refund_note: `${order.refund_note ? order.refund_note + " | " : ""}Seller retry: ${outcome.note}`.slice(0, 1000) };
+      if (outcome.ok) {
+        patch.refund_amt = outcome.refundedRupees ?? (Number(order.paid_amount) || (Number(order.total_price) + Number(order.delivery_fee || 0)));
+        patch.refund_sent_at = new Date().toISOString();
+      }
+      const { data: rows, error: updErr } = await supabase.from("orders").update(patch).eq("id", order_id).is("refund_sent_at", null).select();
+      if (updErr) console.error("[seller/orders] retry refund recorded on Razorpay but not on the order", { order_id, err: updErr.message });
+      if (outcome.ok && Number(patch.refund_amt) > 0) {
+        const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
+        await notifyOrderParties({ order_id, event: "refunded", origin: url.origin, amount: Number(patch.refund_amt) })
+          .catch((err: any) => console.warn("[seller/orders] retry refund notify failed", { order_id, err: err?.message }));
+      }
+      const body = { ok: outcome.ok, refunded: outcome.ok ? patch.refund_amt : null, order: rows?.[0] ? toSellerView(rows[0]) : null };
+      return outcome.ok
+        ? new Response(JSON.stringify(body), { status: 200 })
+        : new Response(JSON.stringify({ ...body, error: "Razorpay didn't take the refund yet. Relifish retries it every day; try again later." }), { status: 502 });
+    }
+
     // Razorpay is the only payment method: no manual UPI verification and no
     // "mark refund sent" — refunds go back through Razorpay automatically.
     if (action) {
@@ -459,13 +506,16 @@ export const POST: APIRoute = async ({ request, url }) => {
     // order's cart (one checkout) that the seller owns, each through the same
     // per-row checks; a row that can't move is skipped. Without it, just this row.
     let rowIds: string[] = [order_id];
+    // The checkout's one delivery fee, wherever it sits: a removed item that carried it keeps it while the rest goes ahead.
+    let cartFee: number | null = null;
     if (cart && order.cart_id) {
       const { data: mine } = await supabase.from("fish_listings").select("id").eq("seller_id", seller_id);
-      const { data: cartRows } = await supabase.from("orders").select("id, status")
+      const { data: cartRows } = await supabase.from("orders").select("id, status, delivery_fee")
         .eq("cart_id", order.cart_id).in("listing_id", (mine || []).map((l: any) => l.id))
         .order("created_at", { ascending: true });
       const live = (cartRows || []).filter((r: any) => isLiveRow(r.status)).map((r: any) => r.id);
       if (live.length) rowIds = live;
+      if (live.length) cartFee = (cartRows || []).reduce((s: number, r: any) => s + (Number(r.delivery_fee) || 0), 0);
     }
     const newSlot = delivery_slot && (status === "confirmed" || status === "out_for_delivery") ? delivery_slot : null;
     const slotErr = newSlot ? sellerSlotError(newSlot) : null;
@@ -560,7 +610,8 @@ export const POST: APIRoute = async ({ request, url }) => {
       const statusLabel = STATUS_LABELS[status] || status;
       const speciesLabel = many ? species : capitalizeFishName(species);
       const items = moved.map(emailItem);
-      const fees = moved.reduce((s, m) => s + (Number(m.data.delivery_fee) || 0), 0);
+      // Items listed are the rows that moved (live only); cancelled/declined ones never reach here.
+      const fees = cartFee ?? moved.reduce((s, m) => s + (Number(m.data.delivery_fee) || 0), 0);
       const totalAmount = many
         ? items.reduce((s, i) => s + i.total_price, 0)
         : final_price ? Number(final_price) : Number(data.total_price) || 0;
@@ -589,7 +640,14 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (order.buyer_id) {
         const { data: buyer } = await supabase.from("buyers").select("email").eq("id", order.buyer_id).single();
         if (buyer?.email) {
-          await sendTransactionalEmail(buyer.email, `${statusLabel} — ${speciesLabel}`, orderEmailBuyer(emailArgs));
+          // Founder, 26 Oct: "Your Relifish order is confirmed / on the way / delivered, on time!" + a preview line.
+          const kind = status === "confirmed" ? "confirmed" : status === "out_for_delivery" ? "out_for_delivery" : status === "completed" ? "delivered" : null;
+          const copy = kind ? buyerEmailCopy(kind, {
+            fish: speciesLabel, slot: slotText?.value || null, by: status === "out_for_delivery" ? slotText?.value || null : null,
+            onTime: deliveredOnTime((data as any).delivery_slot_end),
+          }) : null;
+          const html = orderEmailBuyer(emailArgs);
+          await sendTransactionalEmail(buyer.email, copy ? copy.subject : `${statusLabel} — ${speciesLabel}`, copy ? withPreview(html, copy.preview) : html);
         }
       }
 

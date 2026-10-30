@@ -1,7 +1,7 @@
 ---
 export const prerender = true;
 import AppShell from "../components/ui/AppShell.astro";
-import { OPERATED_BY } from "../lib/brand";
+import { OPERATED_BY, whatsappLink } from "../lib/brand";
 const SITE = "https://www.relifish.com";
 ---
 <AppShell
@@ -27,7 +27,7 @@ const SITE = "https://www.relifish.com";
           { "@type": "City", "name": "Navi Mumbai" }
         ],
         "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "email": "relifishstore@gmail.com", "telephone": "+91-9152207607" },
-        "sameAs": ["https://www.instagram.com/relifish_/", "https://www.facebook.com/p/ReliFish-61589987936346/", "https://wa.me/919152207607"]
+        "sameAs": ["https://www.instagram.com/relifish_/", "https://www.facebook.com/p/ReliFish-61589987936346/", "https://api.whatsapp.com/send?phone=919152207607"]
       },
       {
         "@type": "BreadcrumbList",
@@ -70,7 +70,7 @@ const SITE = "https://www.relifish.com";
     <section style="margin-bottom:32px;">
       <h2 style="font:700 18px/1.3 var(--v2-font,Inter);margin-bottom:12px;">Contact</h2>
       <p style="font:400 15px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">
-        WhatsApp: <a href="https://wa.me/919152207607" style="color:var(--v2-brand,#2563eb);">9152207607</a><br />
+        WhatsApp: <a href={whatsappLink("Hi Relifish, I have a question")} target="_blank" rel="noopener" style="color:var(--v2-brand,#2563eb);">9152207607</a><br />
         Email: <a href="mailto:relifishstore@gmail.com" style="color:var(--v2-brand,#2563eb);">relifishstore@gmail.com</a><br />
         Hours: 7:30 AM to 9 PM
       </p>

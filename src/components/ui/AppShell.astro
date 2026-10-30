@@ -1,4 +1,6 @@
 ---
+import FunnelTrack from "../FunnelTrack.astro";
+import GeoHelpDialog from "./molecules/GeoHelpDialog.astro";
 import "../../styles/tokens.css";
 import { SITE_URL, canonicalFor } from "../../lib/brand";
 import UtmCapture from "../UtmCapture.astro";
@@ -6,7 +8,9 @@ import "../../styles/components.css";
 import { jsonLdString } from "../../lib/html";
 import AppHeader from "./organisms/AppHeader.astro";
 import BottomNav from "./organisms/BottomNav.astro";
+import WatiChatButton from "../WatiChatButton.astro";
 import VercelAnalytics from "../VercelAnalytics.astro";
+import SellerActiveGate from "../SellerActiveGate.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/components";
 
 interface Props {
@@ -40,6 +44,9 @@ const {
   canonical,
 } = Astro.props;
 const canonicalUrl = canonical || canonicalFor(Astro.url.pathname);
+// Seller dashboard (not the login page): unapproved sellers get the application sheet instead of the page.
+const path = Astro.url.pathname.replace(/\/$/, "");
+const sellerGated = path.startsWith("/dashboard/") && path !== "/dashboard/login";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 ---
 
@@ -143,7 +150,16 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
           var relifishSeller = /^\/(dashboard|for-sellers)(\/|$)/.test(location.pathname);
           var relifishGroup = relifishSeller ? 'seller' : 'buyer';
           if (location.pathname.indexOf('/dashboard') === 0) gtag('set', 'user_properties', { user_type: 'seller' });
+          // Buyer's area for GA reports by area: the saved locality name only, never coordinates or an address.
+          // ponytail: location_set fires on the first page load after the area changes, not at the moment it's picked.
+          try {
+            var rfArea = localStorage.getItem('rlf_buyer_location') || '';
+            if (!relifishSeller && rfArea && rfArea.length <= 40 && !/\d/.test(rfArea) && rfArea !== 'Your area') {
+              gtag('set', 'user_properties', { buyer_area: rfArea });
+            } else rfArea = '';
+          } catch (e) { rfArea = ''; }
           gtag('config', 'G-7MXZDZ1S4N', { content_group: relifishGroup }); // GA4 property 539604989 (relifish), stream 14975067322
+          try { if (rfArea && localStorage.getItem('rlf_ga_area') !== rfArea) { gtag('event', 'location_set', { buyer_area: rfArea }); localStorage.setItem('rlf_ga_area', rfArea); } } catch (e) {}
           (function() {
             var p = new URLSearchParams(location.search);
             var src = p.get('utm_source'), med = p.get('utm_medium'), cam = p.get('utm_campaign');
@@ -224,6 +240,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
         navigator.serviceWorker.register("/sw.js").catch(function () {});
       }
     </script>
+    {sellerGated && <SellerActiveGate />}
     <div class="v2-app">
       {!hideHeader && header && <AppHeader {...header} />}
       <main class="v2-main">
@@ -313,6 +330,9 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
         } catch {}
       })();
     </script>
+    <GeoHelpDialog />
+    <FunnelTrack />
     {enableTracking && <VercelAnalytics />}
+    {enableTracking && !path.startsWith("/dashboard") && <WatiChatButton />}
   </body>
 </html>

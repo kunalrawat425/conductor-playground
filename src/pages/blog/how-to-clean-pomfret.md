@@ -66,4 +66,4 @@ No. It has a central spine and few small bones, which is why it's a favourite fo
 **How long does cleaned pomfret keep?**
 Cook it the same day for the best taste. Keep it in the coldest part of the fridge until then.
 
-Questions? WhatsApp [9152207607](https://wa.me/919152207607) (7:30 AM to 9 PM).
+Questions? WhatsApp [9152207607](https://api.whatsapp.com/send?phone=919152207607) (7:30 AM to 9 PM).

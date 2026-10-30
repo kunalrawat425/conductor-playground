@@ -1,0 +1,109 @@
+---
+/**
+ * /admin/whatsapp-connect — the founder connects the WhatsApp Business app number (+91 91522 07607)
+ * to our Cloud API with coexistence, via Meta Embedded Signup. The page shell holds only public ids;
+ * every action goes through /api/admin/whatsapp-connect, which requires the ADMIN_SECRET
+ * (same Bearer check as the other /api/admin/* routes). Runbook: docs/WHATSAPP-COEXISTENCE.md.
+ */
+export const prerender = false;
+const configId = import.meta.env.PUBLIC_WA_ES_CONFIG_ID || "";
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Connect WhatsApp · Relifish admin</title>
+  <style>
+    body { font: 15px/1.6 Inter, system-ui, sans-serif; color: #0f172a; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    label { display: block; font-weight: 600; margin: 20px 0 6px; }
+    input { width: 100%; box-sizing: border-box; padding: 10px; font: inherit; border: 1px solid #cbd5e1; border-radius: 8px; }
+    button { margin-top: 16px; padding: 12px 18px; font: 600 15px Inter, system-ui, sans-serif; color: #fff; background: #128c7e; border: 0; border-radius: 8px; cursor: pointer; }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
+    .warn { background: #fef3c7; border: 1px solid #f59e0b; padding: 10px 12px; border-radius: 8px; }
+    pre { background: #f1f5f9; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; min-height: 2em; }
+  </style>
+</head>
+<body>
+  <h1>Connect WhatsApp Business app number</h1>
+  <p>Keep WhatsApp Business open on the phone with +91 91522 07607. Follow the Facebook steps; the phone will ask you to confirm. Chat history is shared only if you allow it on the phone.</p>
+  {!configId && <p class="warn"><strong>Config id not set.</strong> Set <code>PUBLIC_WA_ES_CONFIG_ID</code> (Facebook Login for Business configuration id) on Vercel and redeploy.</p>}
+  <label for="secret">Admin secret</label>
+  <input id="secret" type="password" autocomplete="off" />
+  <button id="connect" type="button" disabled>Connect WhatsApp Business app number</button>
+  <label>Status</label>
+  <pre id="out" aria-live="polite">Loading Facebook…</pre>
+
+  <script>
+    import { parseSignupMessage, type SignupEvent } from "../../lib/whatsapp-connect";
+    declare const FB: any;
+
+    const APP_ID = import.meta.env.PUBLIC_WA_APP_ID || "1365998548724131";
+    const CONFIG_ID = import.meta.env.PUBLIC_WA_ES_CONFIG_ID || "";
+    const btn = document.getElementById("connect") as HTMLButtonElement;
+    const secretEl = document.getElementById("secret") as HTMLInputElement;
+    const out = document.getElementById("out")!;
+    const show = (o: unknown) => { out.textContent = typeof o === "string" ? o : JSON.stringify(o, null, 2); };
+
+    let secret = "", code = "", session: SignupEvent | null = null, posted = false;
+
+    (window as any).fbAsyncInit = () => {
+      FB.init({ appId: APP_ID, autoLogAppEvents: true, xfbml: true, version: "v26.0" });
+      btn.disabled = !CONFIG_ID;
+      show(CONFIG_ID ? "Ready. Enter the admin secret and click Connect." : "Config id not set (PUBLIC_WA_ES_CONFIG_ID).");
+    };
+    // Load the SDK after fbAsyncInit exists (an async tag in the HTML could run first and skip init).
+    const sdk = Object.assign(document.createElement("script"), { src: "https://connect.facebook.net/en_US/sdk.js", async: true, defer: true, crossOrigin: "anonymous" });
+    sdk.onerror = () => show("Could not load the Facebook SDK (ad blocker?).");
+    document.body.appendChild(sdk);
+
+    const api = (body: unknown) => fetch("/api/admin/whatsapp-connect", {
+      method: "POST", headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).then(async (r) => ({ status: r.status, body: await r.json().catch(() => ({})) }));
+
+    // Session info: Facebook posts WA_EMBEDDED_SIGNUP events (waba_id, status) to this window.
+    window.addEventListener("message", (e) => {
+      const s = parseSignupMessage(e.origin, e.data);
+      if (!s) return;
+      session = s;
+      show({ status: s.event, waba_id: s.waba_id, phone_number_id: s.phone_number_id, business_id: s.business_id, error: s.error });
+      submit();
+    });
+
+    // Needs the code (FB.login callback); waba_id comes from the session event when Facebook sends it,
+    // else the server reads it from the token. The code lives 30 s, so don't wait long for the event.
+    async function submit(force = false) {
+      if (posted || !code || (!session?.waba_id && !force)) return;
+      posted = true;
+      show({ status: session?.event, waba_id: session?.waba_id, step: "Connecting: exchanging code, subscribing, starting contact + history sync…" });
+      const r = await api({ code, page_url: location.href, waba_id: session?.waba_id, phone_number_id: session?.phone_number_id, business_id: session?.business_id });
+      show({ http: r.status, ...r.body, next: r.status === 200 ? "Send waba_id and phone_number_id to Kunal (WA_WABA_ID / WA_PHONE_NUMBER_ID)." : undefined });
+    }
+
+    btn.addEventListener("click", async () => {
+      secret = secretEl.value.trim();
+      if (!secret) return show("Enter the admin secret first.");
+      const ping = await api({ ping: true });
+      if (ping.status !== 200) return show(`Admin check failed (${ping.status}): ${ping.body?.error || ""}`);
+      if (!ping.body.app_secret_set) return show("WA_APP_SECRET is not set on the server; the code exchange would fail.");
+      code = ""; session = null; posted = false;
+      show("Facebook window open. Finish the steps there…");
+      // Coexistence: featureType whatsapp_business_app_onboarding (Embedded Signup v4; v2/v3 retired 15 Oct 2026).
+      FB.login((res: any) => {
+        code = res?.authResponse?.code || "";
+        if (!code) return show(session ? { status: session.event, error: session.error || "No code returned (flow not finished)." } : "Cancelled: no code returned.");
+        if (!session?.waba_id) show("Got the code; finding the WhatsApp account…");
+        submit();
+        setTimeout(() => submit(true), 3000);
+      }, {
+        config_id: CONFIG_ID,
+        response_type: "code",
+        override_default_response_type: true,
+        extras: { setup: {}, featureType: "whatsapp_business_app_onboarding" },
+      });
+    });
+  </script>
+</body>
+</html>

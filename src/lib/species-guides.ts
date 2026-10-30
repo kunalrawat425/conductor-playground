@@ -16,6 +16,8 @@ export interface SpeciesGuide {
   availability: string;
   /** Anything a buyer should know before ordering. */
   buyingTip: string;
+  /** Extra fish-specific questions buyers search for (facts only, no prices). Added to the page FAQ. */
+  faqs?: { q: string; a: string }[];
 }
 
 const BAN = "Like other sea fish, it is scarce during Maharashtra's monsoon fishing ban (from June 1; to August 15 in 2026).";
@@ -26,7 +28,7 @@ export const SPECIES_GUIDES: Record<string, SpeciesGuide> = {
     summary: "Surmai is a firm, meaty sea fish, one of Mumbai's favourite fish for fry and curry.",
     taste: "Rich, meaty and mildly flavoured; holds its shape when fried or cooked in gravy.",
     bones: "One central bone in steaks; very few small bones.",
-    cuts: ["Steaks (slices)", "Curry cut", "Whole (cleaned)"],
+    cuts: ["Steaks / slices (for fry and tawa)", "Curry cut", "Baby surmai, cut into pieces with head & tail", "Whole (cleaned)"],
     dishes: ["Surmai rava fry", "Malvani surmai curry", "Tawa fry", "Grilled steaks"],
     availability: `Sold through the year when boats go out. ${BAN}`,
     buyingTip: "Steaks should be firm, moist and pinkish-white, not dull or dry at the edges.",
@@ -70,6 +72,12 @@ export const SPECIES_GUIDES: Record<string, SpeciesGuide> = {
     dishes: ["Bangda fry", "Bangda tikhla", "Bangda curry", "Stuffed bangda"],
     availability: `Usually one of the more affordable sea fish when in season. ${BAN}`,
     buyingTip: "Fresh bangda has bright, tight skin and red gills; it spoils faster than lean fish, so cook it the same day.",
+    faqs: [
+      { q: "Is bangda the same as mackerel?", a: "Yes. Bangda is the Marathi name for Indian mackerel, the small striped sea fish sold across Mumbai and Thane. It is also called bangude and ayala." },
+      { q: "Which bangda size is good for fry?", a: "Medium bangda, slit along both sides so the masala gets in, fries evenly and crisp. Ask the seller to clean it and slit it for masala when you order." },
+      { q: "How should I store bangda after delivery?", a: "Bangda is an oily fish and spoils faster than lean fish. Keep it in the fridge and cook it the same day; freeze it if you will cook it later." },
+      { q: "Can I get bangda cleaned and cut?", a: "Yes. Pick the cut when you order: whole cleaned, slit for masala, or curry pieces. The seller cleans and cuts it before delivery." },
+    ],
   },
   bombil: {
     alsoCalled: ["Bombay duck", "Bombili"],

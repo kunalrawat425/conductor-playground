@@ -1,5 +1,5 @@
 ---
-import { LOGO_URL } from "../../lib/brand";
+import { LOGO_URL, whatsappLink } from "../../lib/brand";
 export const prerender = false;
 import AppShell from "../../components/ui/AppShell.astro";
 import LoginSheet from "../../components/ui/organisms/LoginSheet.astro";
@@ -44,6 +44,8 @@ import Toast from "../../components/ui/atoms/Toast.astro";
         By continuing, you agree to Relifish's <a href="/terms#sellers" target="_blank" style="color:inherit;text-decoration:underline;">Terms (incl. seller responsibilities)</a> and <a href="/privacy" target="_blank" style="color:inherit;text-decoration:underline;">Privacy Policy</a>.
       </p>
       <div style="margin-top:12px;text-align:center;">
+        <a href={whatsappLink("Hi Relifish, I want to sell fish on Relifish")} target="_blank" rel="noopener" style="font:600 13px Inter;color:var(--v2-brand);text-decoration:none;">💬 New seller or need help? WhatsApp us</a>
+        <span style="color:var(--v2-ink-4);margin:0 6px;">·</span>
         <a href="/" style="font:600 13px Inter;color:var(--v2-ink-3);text-decoration:none;">← Back to buyer app</a>
       </div>
     </div>

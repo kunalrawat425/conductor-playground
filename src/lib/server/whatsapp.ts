@@ -5,8 +5,13 @@
  * Env: WA_PHONE_NUMBER_ID, WA_TOKEN (system-user token), WA_APP_SECRET (webhook signatures),
  * WA_VERIFY_TOKEN (webhook handshake), WA_DRY_RUN=true (log, never send),
  * WA_TEST_ONLY=919870619974[,…] (only these numbers get real sends; everyone else is dry-run).
+ *
+ * WA_PROVIDER=wati sends through Wati (a Meta partner) instead: WATI_API_URL
+ * (https://live-mt-server.wati.io/<tenantId>) and WATI_API_KEY. Same dry-run / test-only gates.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { istDate } from "../messaging/schedule";
+import { TEMPLATES } from "../messaging/templates";
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 export const GRAPH = "https://graph.facebook.com/v26.0";
@@ -46,9 +51,44 @@ export function templatePayload(t: TemplateSend) {
 
 export type SendResult = { status: "sent" | "dry_run" | "failed"; id?: string; error?: string };
 
+const useWati = () => env("WA_PROVIDER") === "wati";
+
+/** Wati template for an rf2 template (created in Wati, 30 Oct 2026): rfw2_* takes the buyer's fish photo
+ * as {{image_url}}, rfwt_* is the same text with no photo (listing has none), rfw_* is a template without a header.
+ * rf2_cancelled → rfw_cancelled_u: Meta filed rfw_cancelled as marketing; the _u copy is utility (30 Oct). */
+export function watiTemplate(t: TemplateSend): string {
+  if (t.name === "rf2_cancelled") return "rfw_cancelled_u";
+  const base = t.name.replace(/^rf2?_/, "");
+  if (!IMAGE_TEMPLATES.has(t.name)) return `rfw_${base}`;
+  return t.headerImage ? `rfw2_${base}` : `rfwt_${base}`;
+}
+const IMAGE_TEMPLATES = new Set(TEMPLATES.filter((x) => x.header === "IMAGE").map((x) => x.name));
+
+/** Wati v1 send params (pure; tested): image_url (photo templates), body 1…n, then the URL button suffix as n+1. */
+export function watiParams(t: TemplateSend): { name: string; value: string }[] {
+  const vals = [...(t.body ?? []), ...(t.urlSuffix ? [t.urlSuffix] : [])];
+  const img = IMAGE_TEMPLATES.has(t.name) && t.headerImage ? [{ name: "image_url", value: t.headerImage }] : [];
+  return [...img, ...vals.map((value, i) => ({ name: String(i + 1), value: String(value) }))];
+}
+
+async function sendWati(t: TemplateSend): Promise<SendResult> {
+  try {
+    const res = await fetch(`${env("WATI_API_URL").replace(/\/$/, "")}/api/v1/sendTemplateMessage?whatsappNumber=${t.to}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env("WATI_API_KEY")}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ template_name: watiTemplate(t), broadcast_name: `rf_${t.name}`, parameters: watiParams(t) }),
+    });
+    const j: any = await res.json().catch(() => ({}));
+    if (!res.ok || j?.result !== true) return { status: "failed", error: `wati ${res.status} ${j?.info || j?.items?.[0]?.description || ""}`.trim().slice(0, 300) };
+    return { status: "sent", id: j?.contact?.id };
+  } catch (err: any) {
+    return { status: "failed", error: String(err?.message || err).slice(0, 300) };
+  }
+}
+
 /** Live only when configured, not WA_DRY_RUN, and (if WA_TEST_ONLY is set) the number is on it. */
 export function isLiveFor(to: string): boolean {
-  if (!env("WA_PHONE_NUMBER_ID") || !env("WA_TOKEN")) return false;
+  if (useWati() ? !env("WATI_API_URL") || !env("WATI_API_KEY") : !env("WA_PHONE_NUMBER_ID") || !env("WA_TOKEN")) return false;
   if (env("WA_DRY_RUN") === "true") return false;
   const allow = env("WA_TEST_ONLY").split(",").map((s) => waNumber(s.trim())).filter(Boolean);
   return allow.length === 0 || allow.includes(to);
@@ -56,6 +96,7 @@ export function isLiveFor(to: string): boolean {
 
 export async function sendTemplate(t: TemplateSend): Promise<SendResult> {
   if (!isLiveFor(t.to)) return { status: "dry_run" };
+  if (useWati()) return sendWati(t);
   try {
     const res = await fetch(`${GRAPH}/${env("WA_PHONE_NUMBER_ID")}/messages`, {
       method: "POST",
@@ -73,12 +114,49 @@ export async function sendTemplate(t: TemplateSend): Promise<SendResult> {
 /** Plain text reply. Allowed only inside the 24 h window after the user messaged us. */
 export async function sendText(to: string, text: string): Promise<SendResult> {
   if (!isLiveFor(to)) return { status: "dry_run" };
+  // ponytail: Wati v3 free-text endpoint not confirmed yet; the STOP reply is skipped on Wati until it is.
+  if (useWati()) return { status: "failed", error: "wati text: not wired yet" };
   const res = await fetch(`${GRAPH}/${env("WA_PHONE_NUMBER_ID")}/messages`, {
     method: "POST",
     headers: { Authorization: `Bearer ${env("WA_TOKEN")}`, "Content-Type": "application/json" },
     body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body: text } }),
   }).catch(() => null);
   return res?.ok ? { status: "sent" } : { status: "failed", error: `text ${res?.status ?? "network"}` };
+}
+
+/**
+ * Coexistence webhook fields (history, smb_app_state_sync, smb_message_echoes, account_update)
+ * → one log line. Counts and event names only, never message text or contact numbers.
+ */
+export function webhookSummary(field: string, v: any): string {
+  const err = v?.errors?.[0] || v?.history?.[0]?.errors?.[0];
+  const h = v?.history?.[0]?.metadata;
+  const bits = [
+    v?.event && `event=${v.event}`,
+    v?.message_echoes && `echoes=${v.message_echoes.length}`,
+    v?.state_sync && `contacts=${v.state_sync.length}`,
+    h && `phase=${h.phase} chunk=${h.chunk_order} progress=${h.progress}`,
+    v?.history?.[0]?.threads && `threads=${v.history[0].threads.length}`,
+    err && `error=${err.code} ${err.title || err.message || ""}`.trim(),
+  ].filter(Boolean);
+  return `[wa-webhook] ${field} ${bits.join(" ")}`.trim();
+}
+
+/**
+ * A message the founder sent from the WhatsApp Business app (smb_message_echoes) → a message_log
+ * row (kind "manual"), so phone-app sends sit next to ours. dedupe_key makes duplicates no-ops.
+ * buyer_id stays null: promo caps only count PROMO_KINDS rows per buyer, so these never block a promo.
+ */
+export function echoLogRow(e: any) {
+  if (!e?.id) return null;
+  const ms = Number(e.timestamp) * 1000 || Date.now();
+  return {
+    dedupe_key: `echo:${e.id}`, kind: "manual", channel: "whatsapp",
+    template: e.type === "template" ? e.template?.name ?? null : null,
+    to_phone: waNumber(e.to) ?? (String(e.to || "") || null),
+    slot_date: istDate(ms),
+    status: "sent", provider_id: e.id,
+  };
 }
 
 /** Meta webhook signature: X-Hub-Signature-256 = "sha256=" + HMAC-SHA256(raw body, app secret). */

@@ -1,5 +1,5 @@
 ---
-import { LOGO_URL } from "../lib/brand";
+import { LOGO_URL, whatsappLink } from "../lib/brand";
 export const prerender = true;
 import AppShell from "../components/ui/AppShell.astro";
 
@@ -331,7 +331,7 @@ const jsonLd = {
         </div>
       </form>
       <p class="fs-cta-note" style="margin-top:20px;">Free to list · ₹0 commission · Improve customer experience with every order</p>
-      <p class="fs-cta-sub">New seller? <a href="/dashboard/login">Start free →</a></p>
+      <p class="fs-cta-sub">New seller? <a href="/dashboard/login">Start free →</a> · Questions? <a href={whatsappLink("Hi Relifish, I want to sell fish on Relifish")} target="_blank" rel="noopener">WhatsApp us</a></p>
     </div>
 
     <!-- Phone dashboard teaser -->
@@ -1021,7 +1021,7 @@ const jsonLd = {
     <a href="/dashboard/login" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#0066FF;color:#fff;font:800 16px Inter;padding:18px 48px;border-radius:14px;text-decoration:none;box-shadow:0 4px 32px rgba(0,102,255,0.4);">
       Create Your Free Store →
     </a>
-    <p style="font:400 12px Inter;color:rgba(255,255,255,0.2);margin-top:20px;">Already selling? <a href="/dashboard/login" style="color:rgba(255,255,255,0.4);text-decoration:underline;">Log in</a></p>
+    <p style="font:400 12px Inter;color:rgba(255,255,255,0.2);margin-top:20px;">Already selling? <a href="/dashboard/login" style="color:rgba(255,255,255,0.4);text-decoration:underline;">Log in</a> · Want help setting up? <a href={whatsappLink("Hi Relifish, I want to sell fish on Relifish")} target="_blank" rel="noopener" style="color:rgba(255,255,255,0.4);text-decoration:underline;">WhatsApp us</a></p>
   </div>
 </section>
 

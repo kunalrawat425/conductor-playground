@@ -1,5 +1,5 @@
 ---
-import { LOGO_URL, OPERATED_BY } from "../lib/brand";
+import { LOGO_URL, OPERATED_BY, whatsappLink } from "../lib/brand";
 /** Relifish Reusable Footer Component */
 ---
 <footer>
@@ -17,7 +17,7 @@ import { LOGO_URL, OPERATED_BY } from "../lib/brand";
           <a href="https://www.facebook.com/p/ReliFish-61589987936346/" target="_blank" rel="noopener" class="ft-social-link" aria-label="Facebook">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 8h3V4h-3c-2.8 0-4.5 1.8-4.5 4.6V11H7v4h2.5v9h4v-9H16l.6-4h-3.1V8.9c0-.6.3-.9.9-.9z"/></svg>
           </a>
-          <a href="https://wa.me/919152207607" target="_blank" class="ft-social-link" aria-label="WhatsApp">
+          <a href={whatsappLink("Hi Relifish, I have a question")} target="_blank" rel="noopener" class="ft-social-link" aria-label="WhatsApp">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
           </a>
           <span class="ft-phone">📞 +91 9152207607</span>
@@ -49,6 +49,7 @@ import { LOGO_URL, OPERATED_BY } from "../lib/brand";
       <div class="ft-col">
         <h4>Company</h4>
         <a href="/privacy">Privacy policy</a>
+        <a href="/data-deletion">Data deletion</a>
         <a href="/terms">Terms of service</a>
         <a href="/refund-policy">Refund policy</a>
         <a href="/shipping-policy">Delivery policy</a>
