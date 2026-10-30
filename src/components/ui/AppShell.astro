@@ -8,6 +8,7 @@ import "../../styles/components.css";
 import { jsonLdString } from "../../lib/html";
 import AppHeader from "./organisms/AppHeader.astro";
 import BottomNav from "./organisms/BottomNav.astro";
+import WatiChatButton from "../WatiChatButton.astro";
 import VercelAnalytics from "../VercelAnalytics.astro";
 import SellerActiveGate from "../SellerActiveGate.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/components";
@@ -332,5 +333,6 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
     <GeoHelpDialog />
     <FunnelTrack />
     {enableTracking && <VercelAnalytics />}
+    {enableTracking && !path.startsWith("/dashboard") && <WatiChatButton />}
   </body>
 </html>
