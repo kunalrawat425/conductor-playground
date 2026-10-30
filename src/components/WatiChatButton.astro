@@ -6,11 +6,13 @@
  * skips it on the seller dashboard). Sits above the bottom nav and the cart bar.
  */
 import { SUPPORT_WHATSAPP } from "../lib/brand";
+/** marginBottom: 150 clears the app's bottom nav + cart bar; pages without them pass a smaller one. */
+const { marginBottom = "150" } = Astro.props as { marginBottom?: string };
 const options = {
   enabled: true,
   // Founder's Wati generator settings (30 Oct), except: marginBottom stays 150 so the button clears
   // the bottom nav and cart bar; our white-R app icon (the blue logo vanishes on blue); the number keeps its 91 country code.
-  chatButtonSetting: { backgroundColor: "#0066FF", ctaText: "Get to know more!", borderRadius: "25", marginLeft: "0", marginRight: "20", marginBottom: "150", ctaIconWATI: false, position: "right" },
+  chatButtonSetting: { backgroundColor: "#0066FF", ctaText: "Get to know more!", borderRadius: "25", marginLeft: "0", marginRight: "20", marginBottom, ctaIconWATI: false, position: "right" },
   brandSetting: {
     brandName: "Relifish", brandSubTitle: "", brandImg: "https://www.relifish.com/icon-192.png", altText: "Relifish",
     welcomeText: "Hi there!\nHow can I help you?", messageText: "Hello,\n I have a question about {{page_link}}",
