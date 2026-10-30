@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compose, costliestPhoto, decide, offerAt, pickSubstitute, type BuyerState, type MenuItem, type MsgSeller, type SentLog } from "../../src/lib/messaging/schedule";
+import { compose, costliestPhoto, decide, decideActivity, offerAt, reminderWindow, pickSubstitute, type BuyerState, type MenuItem, type MsgSeller, type SentLog } from "../../src/lib/messaging/schedule";
 import { PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
 import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
@@ -43,17 +43,17 @@ describe("seller offer comes from DB timings", () => {
   });
 });
 
-describe("Journey A: welcome is on hold", () => {
-  it("a new sign-up with nothing else gets no message", () => {
+describe("promos: a sign-up alone gets no promo (the 1 h welcome is decideActivity)", () => {
+  it("a new sign-up with nothing else gets no promo", () => {
     const b = buyer({ created_at: iso(T("23", "10:00")) });
     expect(run(T("23", "11:00"), b)).toEqual({ skip: "nothing due" });
     expect(run(T("26", "10:00"), b)).toEqual({ skip: "nothing due" }); // Monday: no promo slot
   });
 });
 
-describe("Journey B: cart reminders B1/B2 are removed (founder, 30 Oct)", () => {
+describe("promos: a cart is only covered by promo slots here (the 1 h cart reminder is decideActivity)", () => {
   const cart = (seller: string, at: number, on = true) => [{ seller_id: seller, name: "Baby Rawas", on_menu: on, updated_at: iso(at) }];
-  it("a cart never gets B1/B2: nothing outside the promo slots, all week", () => {
+  it("decide() never sends B1/B2 or cart_today/preorder outside the promo slots", () => {
     const b = buyer({ cart: cart("ft", T("23", "10:15")) });
     for (const d of ["23", "24", "25", "26", "27"]) for (const hm of ["08:00", "09:30", "11:15", "13:00", "16:30", "19:00", "20:30"]) {
       const r = run(T(d, hm), b);
@@ -322,5 +322,87 @@ describe("guards", () => {
   });
   it("no seller delivers to the buyer → skip", () => {
     expect(run(T("23", "11:00"), { ...b, lat: 18.5, lng: 73.8 }).skip).toBe("no seller delivers to them");
+  });
+});
+
+describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up 1 h", () => {
+  const cart = (at: number, on = true) => [{ seller_id: "ft", name: "Baby Rawas", photo: "https://x/rawas.jpg", price: 770, on_menu: on, updated_at: iso(at) }];
+  const unpaid = (at: number, slot: number | null = T("24", "08:00")) => ({ id: "o1", seller_id: "ft", name: "Surmai", created_at: iso(at), slot_start: slot == null ? null : iso(slot), checkout: "c1" });
+  const act = (now: number, b: BuyerState, h: SentLog[] = []) => {
+    const d = decideActivity(now, b, SELLERS, h) as any;
+    if (!d.skip && d.template) expect(d.body, d.template).toHaveLength(varCount(d.template));
+    return d;
+  };
+  const sent = (kind: string, ms: number, key: string, status = "sent"): SentLog => ({ ...log(kind, ms), status, dedupe_key: `${key}:whatsapp` });
+
+  it("unpaid: due 30 min after checkout, not at 29 min, once per checkout", () => {
+    const b = buyer({ created_at: iso(T("23", "09:00")), unpaid: unpaid(T("23", "10:00")), last_order_at: iso(T("23", "10:00")) });
+    expect(act(T("23", "10:29"), b).skip).toBeTruthy();
+    expect(act(T("23", "10:30"), b)).toMatchObject({ kind: "act_unpaid", dedupe_key: "act_unpaid:c1", order_id: "o1" });
+    expect(act(T("23", "10:40"), b, [sent("act_unpaid", T("23", "10:30"), "act_unpaid:c1")]).kind).not.toBe("act_unpaid");
+    // a failed WhatsApp still counts as reminded (the SMS fallback handles it, never a second WhatsApp)
+    expect(act(T("23", "10:40"), b, [sent("act_unpaid", T("23", "10:30"), "act_unpaid:c1", "failed")]).kind).not.toBe("act_unpaid");
+  });
+  it("unpaid: not when the slot has started", () => {
+    const b = buyer({ unpaid: unpaid(T("24", "07:00"), T("24", "08:00")), last_order_at: iso(T("24", "07:00")) });
+    expect(act(T("24", "08:10"), b).kind).not.toBe("act_unpaid");
+  });
+  it("cart: due 1 h after the last change, rf2_cart_today with the cart's fish, photo and SMS vars", () => {
+    const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("23", "10:15")) });
+    expect(act(T("23", "11:14"), b).skip).toBe("nothing due");
+    expect(act(T("23", "11:15"), b)).toMatchObject({
+      kind: "act_cart", template: "rf2_cart_today", dedupe_key: "act_cart:b:2026-10-23", photo: "https://x/rawas.jpg", path: "/s/fishtokri",
+      body: ["Priya", "Baby Rawas", "Fishtokri", "today, 12–2 PM"], sms: { key: "CART", vars: ["Priya", "Baby Rawas", "Fishtokri", "today, 12–2 PM"] },
+    });
+  });
+  it("cart: no reminder when an order came after it, or nothing is on the menu", () => {
+    expect(act(T("23", "11:15"), buyer({ cart: cart(T("23", "10:15")), last_order_at: iso(T("23", "10:30")) })).kind).toBeUndefined();
+    expect(act(T("23", "11:15"), buyer({ cart: cart(T("23", "10:15"), false) })).kind).toBeUndefined();
+  });
+  it("sign-up: 1 h after, only with no cart and no order; rf2_welcome to the nearest seller", () => {
+    const b = buyer({ created_at: iso(T("23", "10:00")) });
+    expect(act(T("23", "10:59"), b).skip).toBe("nothing due");
+    expect(act(T("23", "11:00"), b)).toMatchObject({ kind: "act_signup", template: "rf2_welcome", dedupe_key: "act_signup:b", body: ["Priya", "you", "today, 12–2 PM"], sms: { key: "SIGNUP", vars: ["Priya", "Fishtokri"] } });
+    expect(act(T("23", "11:00"), buyer({ created_at: iso(T("23", "10:00")), last_order_at: iso(T("23", "10:20")) })).kind).toBeUndefined();
+  });
+  it("priority unpaid > cart > sign-up, and at most one cart/sign-up reminder a day", () => {
+    const both = buyer({ created_at: iso(T("23", "09:00")), cart: cart(T("23", "09:30")), unpaid: unpaid(T("23", "09:00")), last_order_at: iso(T("23", "09:00")) });
+    expect(act(T("23", "10:31"), both).kind).toBe("act_unpaid");
+    const signedThenCart = buyer({ created_at: iso(T("23", "09:00")), cart: cart(T("23", "11:00")) });
+    expect(act(T("23", "12:00"), signedThenCart, [sent("act_signup", T("23", "10:00"), "act_signup:b")]).skip).toBe("cart already reminded");
+  });
+  it("night: an action after 8 PM is reminded 8–9 AM next day if still true; never 9 PM–8 AM", () => {
+    const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("23", "20:30")) });
+    expect(act(T("23", "21:30"), b).skip).toBe("quiet hours");
+    expect(act(T("24", "07:50"), b).skip).toBe("quiet hours");
+    expect(act(T("24", "08:00"), b)).toMatchObject({ kind: "act_cart", dedupe_key: "act_cart:b:2026-10-23" });
+    expect(act(T("24", "09:10"), b).skip).toBe("nothing due");
+    expect(reminderWindow(T("23", "20:30"), T("23", "20:40"))).toBe(true);
+    expect(reminderWindow(T("23", "22:00"), T("24", "08:05"))).toBe(true);
+    expect(reminderWindow(T("23", "22:00"), T("24", "10:05"))).toBe(false);
+  });
+  it("DND and STOP get no reminders", () => {
+    expect(act(T("23", "11:15"), buyer({ cart: cart(T("23", "10:15")), dnd: true })).skip).toBe("do not message");
+    expect(act(T("23", "11:15"), buyer({ cart: cart(T("23", "10:15")), opted_out: true })).skip).toBe("opted out");
+  });
+});
+
+describe("promo spacing (founder, 30 Oct)", () => {
+  const b = () => buyer({ created_at: iso(T("10", "10:00")), cart: [{ seller_id: "ft", name: "Baby Rawas", on_menu: true, updated_at: iso(T("22", "10:00")) }] });
+  it("no promo within 48 h of an activity reminder; allowed after", () => {
+    expect(run(T("24", "08:30"), b(), [{ ...log("act_cart", T("22", "11:00")), status: "sent" }]).skip).toBe("activity reminder <48h");
+    expect(run(T("25", "08:30"), b(), [{ ...log("act_cart", T("22", "11:00")), status: "sent" }]).template).toBe("rf2_promo_cart");
+  });
+  it("a failed reminder doesn't block a promo", () => {
+    expect(run(T("24", "08:30"), b(), [{ ...log("act_cart", T("23", "11:00")), status: "failed", error: "Message undeliverable" }]).template).toBe("rf2_promo_cart");
+  });
+  it("Meta blocked a promo → no promo to that buyer for 3 days (wait, don't retry)", () => {
+    const blocked = { ...log("promo", T("23", "08:30")), status: "failed", error: "Message undeliverable as Meta has restricted it for higher quality messaging - retry again in a few days" };
+    expect(run(T("24", "08:30"), b(), [blocked]).skip).toBe("meta limit: waiting");
+    expect(run(T("25", "08:30"), b(), [blocked]).skip).toBe("meta limit: waiting");
+    expect(run(T("27", "18:00"), b(), [blocked]).template).toBe("rf2_promo_cart");
+  });
+  it("DND gets no promo", () => {
+    expect(run(T("24", "08:30"), { ...b(), dnd: true }).skip).toBe("do not message");
   });
 });

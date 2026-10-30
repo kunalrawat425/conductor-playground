@@ -54,8 +54,10 @@ export type SendResult = { status: "sent" | "dry_run" | "failed"; id?: string; e
 const useWati = () => env("WA_PROVIDER") === "wati";
 
 /** Wati template for an rf2 template (created in Wati, 30 Oct 2026): rfw2_* takes the buyer's fish photo
- * as {{image_url}}, rfwt_* is the same text with no photo (listing has none), rfw_* is a template without a header. */
+ * as {{image_url}}, rfwt_* is the same text with no photo (listing has none), rfw_* is a template without a header.
+ * rf2_cancelled → rfw_cancelled_u: Meta filed rfw_cancelled as marketing; the _u copy is utility (30 Oct). */
 export function watiTemplate(t: TemplateSend): string {
+  if (t.name === "rf2_cancelled") return "rfw_cancelled_u";
   const base = t.name.replace(/^rf2?_/, "");
   if (!IMAGE_TEMPLATES.has(t.name)) return `rfw_${base}`;
   return t.headerImage ? `rfw2_${base}` : `rfwt_${base}`;
