@@ -506,8 +506,8 @@ const tags = [
   .v2-item-bundles { flex: 1 0 100%; padding: 0 12px 4px; border-top: 1px dashed var(--v2-border); }
   .v2-combo-img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex: none; }
   .v2-combo-x { flex: 1; min-width: 0; }
-  .v2-combo-x b { display: block; font: 700 13px/1.3 Inter; color: var(--v2-ink); }
-  .v2-combo-x .v2-combo-parts { display: block; font: 400 11px/1.35 Inter; color: var(--v2-ink-3); margin: 2px 0 3px; }
+  .v2-combo-x b { display: block; font: 700 13px/1.45 Inter; color: var(--v2-ink); }
+  .v2-combo-x .v2-combo-parts { display: block; font: 400 11px/1.55 Inter; color: var(--v2-ink-3); margin: 4px 0 6px; }
   .v2-bundle-k { font: 700 12px Inter; color: var(--v2-ink-3); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 10px; }
   .v2-bundle-sv { display: inline-block; margin-top: 3px; font: 700 10px Inter; font-style: normal; color: var(--v2-green); background: var(--v2-green-bg); padding: 2px 6px; border-radius: 5px; }
   .v2-bundle-rib { position: absolute; top: -10px; right: 10px; font: 800 9px Inter; color: #fff; padding: 3px 8px; border-radius: 5px; letter-spacing: .04em; }
@@ -552,7 +552,10 @@ const tags = [
     background: var(--v2-bg);
   }
   .v2-item-tier:has(.v2-item-counter) { border-color: var(--v2-brand); background: var(--v2-brand-l); }
-  .v2-item-per100 { font: 500 11px Inter; color: var(--v2-ink-3); }
+  .v2-item-per100 { font: 500 11px/1.4 Inter; color: var(--v2-ink-3); }
+  /* A little air between the text lines on menu cards (founder 31 Oct) */
+  .v2-item-body > * + * { margin-top: 4px; }
+  .v2-item-name { line-height: 1.35; }
   .v2-item-tier:has(.v2-bundle-rib) { margin-top: 14px; }
   .v2-item-was { font: 500 11px Inter; color: var(--v2-ink-4); margin-left: 6px; }
   .v2-item-tier-price {
@@ -564,7 +567,7 @@ const tags = [
   /* A pack size to pick: looks like a button because it is one (adds that pack). */
   .v2-item-tier-chip {
     align-self: flex-start;
-    font: 700 13px/1.3 Inter;
+    font: 700 13px/1.45 Inter;
     color: var(--v2-ink);
     background: none;
     border: 0;
@@ -852,7 +855,7 @@ const tags = [
                     const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${o.price}`;
 
                     return `<div class="v2-item-tier">${i === best ? '<span class="v2-bundle-rib v2-bundle-rib-value">BEST VALUE</span>' : ''}
-                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-right:8px;">
                         <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
                         <span class="v2-item-tier-price">${rangeDisplay}${wasHtml(o, poPrice)}</span>${per100Html(o, poPrice)}
                       </div>
@@ -908,7 +911,7 @@ const tags = [
                     const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.unit === 'kg' && o.bundle_size > 0 && o.bundle_size < 1 ? Math.round(o.bundle_size * 1000) + 'g' : o.bundle_size + (o.unit === 'kg' ? 'kg' : 'pc')})` : '';
                     const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
                     return `<div class="v2-item-tier">${i === best ? '<span class="v2-bundle-rib v2-bundle-rib-value">BEST VALUE</span>' : ''}
-                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-right:8px;">
                         <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
                         <span class="v2-item-tier-price">₹${o.price}${tierWas ? `<s class="v2-item-was">₹${tierWas}</s>` : ''}</span>${per100Html(o, o.price)}
                       </div>
