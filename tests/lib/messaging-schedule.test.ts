@@ -419,3 +419,13 @@ describe("promo spacing (founder, 30 Oct)", () => {
     expect(run(T("24", "08:30"), { ...b(), dnd: true }).skip).toBe("do not message");
   });
 });
+
+describe("promo now (founder's extra run)", () => {
+  it("sends outside a slot but keeps every other rule", () => {
+    const b = buyer({ created_at: iso(T("22", "10:00")) });
+    expect(decide(T("23", "19:40"), b, SELLERS, []).skip).toBe("nothing due");
+    expect(decide(T("23", "19:40"), b, SELLERS, [], true)).toMatchObject({ kind: "promo", template: "rf2_catch_preorder" });
+    expect((decide(T("23", "19:40"), b, SELLERS, [{ ...log("promo", T("23", "08:30")), status: "read" }], true) as any).skip).toBe("already messaged today");
+    expect((decide(T("23", "21:10"), b, SELLERS, [], true) as any).skip).toBe("quiet hours");
+  });
+});

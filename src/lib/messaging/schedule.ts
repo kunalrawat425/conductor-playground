@@ -214,7 +214,9 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
 }
 
 /** Decide the one promo (if any) this buyer should get in the job run at `now`. */
-export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[]): Decision | Skip {
+/** `sendNow`: an extra promo run the founder asks for (cron ?promo_now=1): due now instead of at a
+ *  slot; every other rule (opt-in, 1 a day, 72 h, 48 h, Meta hold, DND, open order, inactive) still applies. */
+export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[], sendNow = false): Decision | Skip {
   if (b.dnd) return { skip: "do not message" };
   if (b.opted_out) return { skip: "opted out" };
   if (b.open_order) return { skip: "open order" };
@@ -245,8 +247,8 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   // No spam (founder 30 Oct): ≥ 72 h since the last marketing message (old B1/B2 rows count too).
   const spam = real.some((x) => PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < PROMO_GAP_MS);
   const slot = PROMO_SLOTS[istDow(now)];
-  if (slot == null || now - lastActive > 30 * DAY_MS || now - deliveredMs < 3 * DAY_MS || spam) return { skip: "nothing due" };
-  const due = atIST(today, slot);
+  if ((slot == null && !sendNow) || now - lastActive > 30 * DAY_MS || now - deliveredMs < 3 * DAY_MS || spam) return { skip: "nothing due" };
+  const due = sendNow ? now : atIST(today, slot);
   if (!isDue(now, due)) return { skip: "nothing due" };
   // At send time the offer is re-read: what the message promises is what checkout offers now.
   const offer = offerAt(seller, now);
