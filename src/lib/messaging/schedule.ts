@@ -61,6 +61,7 @@ export type BuyerState = {
   last_order_at: string | null;      // latest real order (any status)
   open_order: boolean;               // paid and not finished/cancelled
   unpaid: OrderLine | null;          // latest order still waiting for payment
+  unpaids?: OrderLine[];             // every checkout still waiting for payment (one per checkout), oldest first
   delivered: OrderLine | null;       // latest delivered order
   last_delivered_at: string | null;
   opted_out: boolean;                // whatsapp_opt_out_at set: no promos or reminders
@@ -179,7 +180,7 @@ export function pickSubstitute(gone: { species?: string | null; price?: number |
  */
 export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, seller: MsgSeller, offer: Offer): Decision | null {
   const lines: (CartLine | OrderLine)[] =
-    stage === "cart" ? onMenuLines(b) : stage === "cart_swap" ? offMenuLines(b, seller.id) : stage === "unpaid" ? [b.unpaid!] : stage === "again" ? [b.delivered!] : [];
+    stage === "cart" ? onMenuLines(b).filter((l) => l.seller_id === seller.id) : stage === "cart_swap" ? offMenuLines(b, seller.id) : stage === "unpaid" ? [b.unpaid!] : stage === "again" ? [b.delivered!] : [];
   const items = [...new Set(lines.map((l) => l.name))].slice(0, 3); // latest first
   const fish = items.join(" and ");
   const day = WEEKDAY[istDow(due)];
@@ -285,9 +286,9 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
   const done = (key: string) => history.some((x) => x.dedupe_key?.startsWith(`${key}:`) && x.status !== "dry_run");
   const today = istDate(now);
 
-  // 1. Unpaid checkout: 30 min after it was placed, while its slot is still ahead (≤ 24 h).
-  const u = b.unpaid;
-  if (u?.created_at) {
+  // 1. Unpaid checkout: 30 min after it was placed, while its slot is still ahead (≤ 24 h). Each checkout once.
+  for (const u of b.unpaids ?? (b.unpaid ? [b.unpaid] : [])) {
+    if (!u.created_at) continue;
     const due = Date.parse(u.created_at) + UNPAID_AFTER_MS;
     const key = `act_unpaid:${u.checkout || u.id}`;
     const slotAhead = !u.slot_start || Date.parse(u.slot_start) > now;

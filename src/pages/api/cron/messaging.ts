@@ -19,6 +19,16 @@ const list = (k: string, dflt = "") => String(env(k) || dflt).split(",").map((x)
 /** A listing's first pricing option: its price (pre-order: top of the range when no price) and label. */
 const firstOpt = (l: any) => (Array.isArray(l?.pricing_options) ? l.pricing_options[0] : null);
 const optPrice = (l: any) => Number(firstOpt(l)?.price) || Number(firstOpt(l)?.preorder_price_max) || 0;
+/** Every row of a query (PostgREST returns at most 1000 per request). Throws on a query error. */
+async function all(q: () => any): Promise<any[]> {
+  const out: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await q().range(from, from + 999);
+    if (error) throw new Error(error.message);
+    out.push(...(data || []));
+    if (!data || data.length < 1000) return out;
+  }
+}
 
 /**
  * GET|POST /api/cron/messaging — the buyer messaging engine (founder, 30 Oct). Runs every 10 min
@@ -44,8 +54,13 @@ export const GET: APIRoute = async ({ request, url }) => {
   const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
 
   // 1. Delivery status from Wati, then the SMS fallback for failed reminders / order updates.
-  const sync: any = { checked: 0, updated: 0, sms_fallback: [] as any[] };
+  const sync: any = { checked: 0, updated: 0, stuck: 0, sms_fallback: [] as any[] };
   if (!dry) {
+    // A row still "queued" after 10 min: the run died between logging and sending. Mark it failed
+    // (with the reason) so it isn't silently lost: reminders / order updates then go by SMS.
+    const { data: stuck } = await sb.from("message_log").update({ status: "failed", error: "stuck in queue: no send result", updated_at: new Date(now).toISOString() })
+      .eq("status", "queued").lt("created_at", new Date(now - 10 * 60_000).toISOString()).gte("created_at", new Date(now - 6 * 3_600_000).toISOString()).select("id");
+    sync.stuck = stuck?.length ?? 0;
     const s = await syncWatiStatuses(sb, now).catch((e: any) => ({ checked: 0, updated: 0, failed: [], error: e?.message }));
     Object.assign(sync, { checked: s.checked, updated: s.updated, error: (s as any).error });
     const { data: failed } = await sb.from("message_log").select("id, dedupe_key, kind, template, to_phone, slot_date, buyer_id, seller_id, order_id, link_path, payload")
@@ -56,16 +71,23 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
   }
 
-  const [{ data: sellerRows }, { data: buyerRows }, { data: cartRows }, { data: orderRows }, { data: logRows }, { data: menuRows }] = await Promise.all([
-    sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, ${SLOT_SELLER_COLUMNS}`).eq("is_active", true),
-    sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
-    sb.from("buyer_cart").select("buyer_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, deleted_at)"),
-    sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
-    // Every row (any status): gaps and caps count real sends only; "already reminded" counts failed ones too.
-    sb.from("message_log").select("buyer_id, kind, slot_date, created_at, status, channel, error, dedupe_key").not("buyer_id", "is", null).gte("created_at", new Date(now - 35 * 86_400_000).toISOString()),
-    // Live listings only (available or pre-order): the pre-order menu and rf2_cart_swap substitutes.
-    sb.from("fish_listings").select("seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled").or("is_available.eq.true,is_preorder_enabled.eq.true").is("deleted_at", null),
-  ]);
+  const since = (days: number) => new Date(now - days * 86_400_000).toISOString();
+  let sellerRows: any[], buyerRows: any[], cartRows: any[], orderRows: any[], logRows: any[], menuRows: any[];
+  try {
+    [sellerRows, buyerRows, cartRows, orderRows, logRows, menuRows] = await Promise.all([
+      all(() => sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, ${SLOT_SELLER_COLUMNS}`).eq("is_active", true).order("id")),
+      all(() => sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").gte("created_at", since(60)).order("id")),
+      all(() => sb.from("buyer_cart").select("id, buyer_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, deleted_at)").order("id")),
+      all(() => sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", since(60)).order("id")),
+      // Last 8 days, any status: gaps (≤ 72 h) and caps count real sends only; "already reminded" counts failed ones too.
+      all(() => sb.from("message_log").select("id, buyer_id, kind, slot_date, created_at, status, channel, error, dedupe_key").not("buyer_id", "is", null).gte("created_at", since(8)).order("id")),
+      // Live listings only (available or pre-order): the pre-order menu and rf2_cart_swap substitutes.
+      all(() => sb.from("fish_listings").select("id, seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled").or("is_available.eq.true,is_preorder_enabled.eq.true").is("deleted_at", null).order("id")),
+    ]);
+  } catch (e: any) {
+    console.error("[cron/messaging] query failed", e?.message);
+    return json({ error: `query failed: ${e?.message}` }, 500);
+  }
   // Each seller's pre-order fish for rf2_catch_preorder: "Surmai · Pomfret · Bombil" (names only, no prices).
   const menu = (id: string) => [...new Set((menuRows || []).filter((l: any) => l.seller_id === id && l.is_preorder_enabled).map((l: any) => fishName(l.description, l.species)))].slice(0, 3).join(" · ");
   const live = (id: string) => (menuRows || []).filter((l: any) => l.seller_id === id && optPrice(l) > 0).map((l: any) => ({
@@ -88,6 +110,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const stateOf = (b: any): BuyerState => {
     const mine = orders.filter((o: any) => o.buyer_id === b.id).sort((x: any, y: any) => x.created_at.localeCompare(y.created_at));
     const done = mine.filter((o: any) => o.status === "completed");
+    const pending = mine.filter((o: any) => o.status === "pending_payment" && !hasPaymentEvidence(o));
     return {
       id: b.id, created_at: b.created_at, name: firstName(b.first_name), lat: b.lat, lng: b.lng,
       cart: (cartRows || []).filter((c: any) => c.buyer_id === b.id && c.listing).map((c: any) => ({
@@ -98,7 +121,9 @@ export const GET: APIRoute = async ({ request, url }) => {
       })),
       last_order_at: mine.at(-1)?.created_at ?? null,
       open_order: mine.some((o: any) => OPEN.includes(o.status)),
-      unpaid: orderLine(mine.filter((o: any) => o.status === "pending_payment" && !hasPaymentEvidence(o)).at(-1)),
+      unpaid: orderLine(pending.at(-1)),
+      // One per checkout (its first order), oldest first: each unpaid checkout gets its own reminder.
+      unpaids: pending.filter((o: any, i: number) => pending.findIndex((x: any) => (x.cart_id || x.id) === (o.cart_id || o.id)) === i).map(orderLine) as any,
       delivered: orderLine(done.at(-1)),
       last_delivered_at: done.map((o: any) => o.updated_at).sort().pop() ?? null,
       opted_out: !!b.whatsapp_opt_out_at,
@@ -144,6 +169,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       msg = { template: m.template, body: m.body, headerImage: m.image ?? null, link_path: `/track/${o.id}`, order_id: o.id, sms: orderSms(ev, o, tb.first_name, cancel) };
     }
     if (!msg) return json({ error: `unknown test_kind ${kind}` }, 400);
+    if (dry) return json({ test: true, dry: true, kind, template: msg.template, body: msg.body, sms: msg.sms ?? null, image: msg.headerImage ?? null });
     const r = await dispatch(sb, {
       ...msg, dedupe_key: `test:${kind}:${tb.id}:${Date.now()}`, kind: `test_${kind}`, slot_date: istDate(Date.now()), buyer_id: tb.id,
       phone: tb.phone, whatsappOk: !viaSms && !!tb.whatsapp_opt_in_at, smsOk: true, smsFallback: !viaSms && !!msg.sms,

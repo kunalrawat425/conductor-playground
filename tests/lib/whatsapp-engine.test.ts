@@ -33,6 +33,7 @@ const srcFiles = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
 import { dispatch, smsFallbackFor } from "../../src/lib/server/messaging";
 import { cut30, SMS_TEXT, smsVarCount } from "../../src/lib/server/sms";
 import { orderSms } from "../../src/lib/server/notify-order-whatsapp";
+import { matchWatiItem, nextStatus } from "../../src/lib/server/wati-status";
 
 /** Tiny in-memory message_log with the unique dedupe_key the migration creates. */
 function fakeSb() {
@@ -313,5 +314,30 @@ describe("Wati provider", () => {
     expect(isLiveFor("919999999999")).toBe(false);
     vi.stubEnv("WA_DRY_RUN", "true");
     expect(isLiveFor("919870619974")).toBe(false);
+  });
+});
+
+describe("Wati status read-back", () => {
+  // Real getMessages items (30 Oct 2026), trimmed.
+  const item = (id: string, tpl: string, created: string, status: string, failedDetail = "") =>
+    ({ id, eventType: "broadcastMessage", eventDescription: `Broadcast message with using "${tpl}" template was received 30|10|2026`, created, statusString: status, failedDetail });
+  const items = [
+    item("a", "rfw2_unpaid", "2026-10-30T04:30:02Z", "FAILED", "Message undeliverable as Meta has restricted it for higher quality messaging - retry again in a few days"),
+    item("b", "rfw2_unpaid", "2026-10-30T04:31:33Z", "DELIVERED"),
+    item("c", "rfwt_order_again", "2026-10-30T07:59:47.88Z", "FAILED"),
+    { id: "m", eventType: "message", text: "hi", created: "2026-10-30T05:00:00Z" },
+  ];
+  it("matches the same template (photo or text-only) sent after our row, each item once", () => {
+    expect(matchWatiItem(items, "rf2_unpaid", "2026-10-30T04:30:00Z")?.id).toBe("a");
+    expect(matchWatiItem(items, "rf2_unpaid", "2026-10-30T04:31:30Z")?.id).toBe("b"); // not checkout A's earlier message
+    expect(matchWatiItem(items, "rf2_unpaid", "2026-10-30T04:30:00Z", new Set(["a"]))?.id).toBe("b");
+    expect(matchWatiItem(items, "rf2_order_again", "2026-10-30T07:59:40Z")?.id).toBe("c");
+    expect(matchWatiItem(items, "rf2_cart_today", "2026-10-30T04:00:00Z")).toBeNull();
+  });
+  it("status only moves forward; failed is final", () => {
+    expect(nextStatus("sent", { statusString: "READ" })).toBe("read");
+    expect(nextStatus("read", { statusString: "DELIVERED" })).toBeNull();
+    expect(nextStatus("delivered", { statusString: "FAILED" })).toBe("failed");
+    expect(nextStatus("failed", { statusString: "READ" })).toBeNull();
   });
 });

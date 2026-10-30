@@ -12,13 +12,14 @@ const RANK: Record<string, number> = { queued: 0, dry_run: 0, sent: 1, delivered
 const STATUS: Record<string, string> = { SENT: "sent", DELIVERED: "delivered", READ: "read", FAILED: "failed" };
 
 /** Wati's message for one of our rows (pure; tested): the first broadcast of the same template
- *  (any of rfw_/rfw2_/rfwt_, incl. the _u utility copy) created from 2 min before our row on. */
-export function matchWatiItem(items: any[], template: string, sinceIso: string): any | null {
+ *  (any of rfw_/rfw2_/rfwt_, incl. the _u utility copy) created after our row (we insert the row,
+ *  then call Wati; 10 s for clock skew), not already claimed by another row. */
+export function matchWatiItem(items: any[], template: string, sinceIso: string, used: Set<string> = new Set()): any | null {
   const base = String(template).replace(/^rf2?_/, "");
   const re = new RegExp(`"rfw[2t]?_${base}(_u)?"`);
-  const since = Date.parse(sinceIso) - 2 * 60_000;
+  const since = Date.parse(sinceIso) - 10_000;
   return items
-    .filter((x) => x?.eventType === "broadcastMessage" && re.test(String(x.eventDescription || "")) && Date.parse(x.created) >= since)
+    .filter((x) => x?.eventType === "broadcastMessage" && !used.has(x.id) && re.test(String(x.eventDescription || "")) && Date.parse(x.created) >= since)
     .sort((a, b) => Date.parse(a.created) - Date.parse(b.created))[0] ?? null;
 }
 
@@ -34,7 +35,7 @@ export async function syncWatiStatuses(sb: any, nowMs = Date.now(), limit = 30):
   const base = env("WATI_API_URL").replace(/\/$/, "");
   if (env("WA_PROVIDER") !== "wati" || !base || !env("WATI_API_KEY")) return out;
   const { data: rows } = await sb.from("message_log")
-    .select("id, dedupe_key, kind, channel, template, to_phone, slot_date, status, buyer_id, seller_id, order_id, link_path, payload, created_at, updated_at")
+    .select("id, dedupe_key, kind, channel, template, to_phone, slot_date, status, provider_id, buyer_id, seller_id, order_id, link_path, payload, created_at, updated_at")
     .eq("channel", "whatsapp").in("status", ["sent", "delivered"])
     .gte("created_at", new Date(nowMs - 48 * 3_600_000).toISOString())
     .order("updated_at", { ascending: true }).limit(limit);
@@ -46,13 +47,17 @@ export async function syncWatiStatuses(sb: any, nowMs = Date.now(), limit = 30):
       const res = await fetch(`${base}/api/v1/getMessages/${phone}?pageSize=40&pageNumber=1`, { headers: { Authorization: `Bearer ${env("WATI_API_KEY").replace(/^Bearer\s+/i, "")}` } });
       items = (await res.json().catch(() => ({})))?.messages?.items ?? [];
     } catch { continue; }
-    for (const r of mine) {
+    // Oldest row first; each Wati item belongs to one row (items already matched earlier are claimed).
+    const used = new Set<string>(mine.map((r: any) => r.provider_id).filter(Boolean));
+    for (const r of [...mine].sort((a, b) => a.created_at.localeCompare(b.created_at))) {
       out.checked++;
-      const item = matchWatiItem(items, r.template, r.created_at);
+      const own = r.provider_id ? items.find((x) => x.id === r.provider_id) : null;
+      const item = own || matchWatiItem(items, r.template, r.created_at, used);
+      if (item?.id) used.add(item.id);
       const s = item ? nextStatus(r.status, item) : null;
-      const patch: any = { updated_at: new Date(nowMs).toISOString() };
+      const patch: any = { updated_at: new Date(nowMs).toISOString(), ...(item?.id ? { provider_id: item.id } : {}) };
       if (s) {
-        Object.assign(patch, { status: s, provider_id: item.id ?? null, error: s === "failed" ? String(item.failedDetail || "failed").slice(0, 300) : null });
+        Object.assign(patch, { status: s, error: s === "failed" ? String(item.failedDetail || "failed").slice(0, 300) : null });
         out.updated++;
         if (s === "failed") out.failed.push({ ...r, status: "failed", error: patch.error });
       }

@@ -381,6 +381,19 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     expect(reminderWindow(T("23", "22:00"), T("24", "08:05"))).toBe(true);
     expect(reminderWindow(T("23", "22:00"), T("24", "10:05"))).toBe(false);
   });
+  it("every unpaid checkout gets its own reminder, oldest first", () => {
+    const u1 = { ...unpaid(T("23", "10:00")), id: "o1", checkout: "c1" };
+    const u2 = { ...unpaid(T("23", "10:10")), id: "o2", checkout: "c2" };
+    const b = buyer({ unpaids: [u1, u2], unpaid: u2, last_order_at: iso(T("23", "10:10")) });
+    expect(act(T("23", "10:41"), b)).toMatchObject({ dedupe_key: "act_unpaid:c1" });
+    expect(act(T("23", "10:51"), b, [sent("act_unpaid", T("23", "10:41"), "act_unpaid:c1")])).toMatchObject({ dedupe_key: "act_unpaid:c2" });
+  });
+  it("a cart with two sellers names only the latest seller's fish", () => {
+    const b = buyer({ cart: [
+      { seller_id: "ft", name: "Surmai", on_menu: true, updated_at: iso(T("23", "10:15")) },
+      { seller_id: "nm", name: "Halwa", on_menu: true, updated_at: iso(T("23", "09:00")) }] });
+    expect(act(T("23", "11:15"), b)).toMatchObject({ body: ["Priya", "Surmai", "Fishtokri", "today, 12–2 PM"], path: "/s/fishtokri" });
+  });
   it("DND and STOP get no reminders", () => {
     expect(act(T("23", "11:15"), buyer({ cart: cart(T("23", "10:15")), dnd: true })).skip).toBe("do not message");
     expect(act(T("23", "11:15"), buyer({ cart: cart(T("23", "10:15")), opted_out: true })).skip).toBe("opted out");
