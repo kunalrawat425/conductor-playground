@@ -13,6 +13,7 @@ import VercelAnalytics from "../VercelAnalytics.astro";
 import SellerActiveGate from "../SellerActiveGate.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/components";
 import { festiveTheme } from "../../lib/festive";
+import DiwaliDecor from "../DiwaliDecor.astro";
 
 interface Props {
   title?: string;
@@ -245,9 +246,12 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
       }
     </script>
     <!-- App splash (founder 31 Oct): only when opened as the installed app, once per session; never blocks longer than 3 s. -->
-    <div id="rf-splash" class="rf-splash" aria-hidden="true">
+    <div id="rf-splash" class:list={["rf-splash", festive && "rf-splash-diwali"]} aria-hidden="true">
+      {festive && <DiwaliDecor part="lights" />}
       <img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="" width="230" height="55" />
-      <span class="rf-splash-tag">Fresh fish from local sellers</span>
+      {festive
+        ? <span class="rf-splash-tag rf-splash-diya"><span class="fd-diya"><span class="fd-flame"></span></span>Happy Diwali<span class="fd-diya"><span class="fd-flame"></span></span></span>
+        : <span class="rf-splash-tag">Fresh fish from local sellers</span>}
       <span class="rf-splash-dots"><i></i><i></i><i></i></span>
     </div>
     <script is:inline>
@@ -271,6 +275,13 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
       .rf-splash { display: none; }
       .rf-splash.on { position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: linear-gradient(160deg, #0066FF, #0047B3); transition: opacity .35s ease; }
       .rf-splash.out { opacity: 0; pointer-events: none; }
+      /* Diwali splash: maroon + gold, string of lights, two diyas (festive window only) */
+      .rf-splash-diwali.on { background: radial-gradient(circle at 50% 45%, #B3123B, #6E0822 70%, #4A0618); }
+      .rf-splash-diwali .fd-lights { top: env(safe-area-inset-top, 0); height: 22px; }
+      .rf-splash-diwali .rf-splash-tag { color: #FDE7B0; }
+      .rf-splash-diwali .rf-splash-dots i { background: #F5D27A; }
+      .rf-splash-diya { display: flex; align-items: flex-end; gap: 14px; font: 800 20px Inter, sans-serif; }
+      .rf-splash-diya .fd-diya { margin-top: 0; }
       .rf-splash img { width: 230px; height: auto; }
       .rf-splash-tag { font: 600 14px Inter, sans-serif; color: rgba(255,255,255,.85); }
       .rf-splash-dots { display: flex; gap: 6px; margin-top: 18px; }
