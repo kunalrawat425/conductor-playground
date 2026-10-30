@@ -20,6 +20,7 @@ const APPROVED: Record<string, [string, boolean, number]> = {
   rf2_unpaid: ["UTILITY", true, 4], rf2_paid: ["UTILITY", false, 3], rf2_paid_evening: ["UTILITY", false, 4],
   rf2_paid_fast: ["UTILITY", false, 4], rf2_confirmed: ["UTILITY", true, 3], rf2_out: ["UTILITY", false, 2],
   rf2_delivered: ["UTILITY", true, 3], rf2_cancelled: ["UTILITY", false, 4],
+  rf2_cart_swap: ["MARKETING", true, 5], // submitted 30 Oct, Meta approval pending
 };
 /** rf_* strings in src that are not WhatsApp templates. */
 const NOT_TEMPLATES = new Set(["rf_internal", "rf_utm", "rf_resume_checkout"]);
@@ -83,7 +84,7 @@ describe("numbers, payloads, signatures", () => {
 });
 
 describe("templates", () => {
-  it("mirror the 19 approved rf2 templates (category, header, variable count) and pass Meta + brand checks", () => {
+  it("mirror the 19 approved rf2 templates + rf2_cart_swap (category, header, variable count) and pass Meta + brand checks", () => {
     expect(Object.fromEntries(TEMPLATES.map((t) => [t.name, [t.category, t.header === "IMAGE", t.body.match(/\{\{\d+\}\}/g)?.length ?? 0]]))).toEqual(APPROVED);
     for (const t of TEMPLATES) expect(templateProblems(t), t.name).toEqual([]);
   });

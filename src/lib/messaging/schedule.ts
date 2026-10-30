@@ -3,7 +3,8 @@
  *
  * Journeys, rf2 templates:
  *  P  Tue and Fri 6:00 PM, Sat and Sun 8:30 AM (founder, 30 Oct): one promo chosen by stage.
- *     Cart → rf2_promo_cart, unpaid order → rf2_promo_unpaid, delivered before → rf2_order_again,
+ *     Cart → rf2_promo_cart, cart with only off-menu fish → rf2_cart_swap (a substitute from that
+ *     seller's live menu), unpaid order → rf2_promo_unpaid, delivered before → rf2_order_again,
  *     else generic: evenings rf2_catch_preorder (pre-order for tomorrow); mornings
  *     rf2_catch_prices when a Today slot is bookable ("order by" = last Today slot's end − 2 h,
  *     the checkout's own cutoff), else rf2_catch_preorder. Paid and awaiting delivery → none.
@@ -38,9 +39,12 @@ export type MsgSeller = SlotSeller & {
   id: string; name: string; slug: string;
   lat?: number | string | null; lng?: number | string | null; delivery_rad?: number | string | null;
   menu?: string;                     // "Surmai · Pomfret · Bombil": its pre-order fish, for rf2_catch_preorder
+  live?: MenuItem[];                 // its live listings (available or pre-order), for rf2_cart_swap
 };
-export type CartLine = { seller_id: string; name: string; species?: string | null; photo?: string | null; on_menu: boolean; updated_at: string };
-/** One of the buyer's orders: the fish, its seller and photo. */
+/** A live listing: name, first pricing option (price, label) and listing photo. */
+export type MenuItem = { name: string; species?: string | null; price: number; label?: string | null; photo?: string | null };
+export type CartLine = { seller_id: string; name: string; species?: string | null; photo?: string | null; price?: number | null; on_menu: boolean; updated_at: string };
+/** One of the buyer's orders: the fish, its seller and photo (the checkout's costliest item's). */
 export type OrderLine = { id: string; seller_id: string; name: string; species?: string | null; photo?: string | null };
 export type BuyerState = {
   id: string;
@@ -58,7 +62,7 @@ export type BuyerState = {
 export type SentLog = { kind: string; slot_date: string; created_at: string };
 export type Kind = "B1" | "B2" | "promo";
 export const PROMO_KINDS: string[] = ["B1", "B2", "promo"];
-export type PromoTemplate = "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder" | "rf2_catch_prices";
+export type PromoTemplate = "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_cart_swap" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder" | "rf2_catch_prices";
 export type Decision = {
   kind: Kind;
   slot_date: string;
@@ -67,8 +71,8 @@ export type Decision = {
   seller: MsgSeller;
   personal: boolean;                 // names their fish (cart, unpaid or last order), else generic
   items: string[];
-  species: string | null;            // fish of the first item named (its photo is the header picture)
-  photo: string | null;              // that item's listing photo
+  species: string | null;            // fish of the first item named
+  photo: string | null;              // header picture: the costliest item's listing photo (cart_swap: the substitute's)
   when: string;                      // "today, 4–6 PM" / "Sun 25 Oct, 9–11 AM": the first slot checkout offers
   template: PromoTemplate;
   body: string[];                    // the template's {{1}}, {{2}}… in Meta's order
@@ -116,25 +120,50 @@ export function pickSeller(b: BuyerState, sellers: MsgSeller[]): MsgSeller | nul
 
 const lastCartMs = (b: BuyerState) => Math.max(0, ...b.cart.map((l) => Date.parse(l.updated_at)));
 const isDue = (now: number, due: number) => now >= due && now < due + DUE_WINDOW_MIN * 60_000;
-const onMenuLines = (b: BuyerState) => b.cart.filter((l) => l.on_menu).sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at));
+const latestFirst = (lines: CartLine[]) => [...lines].sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at));
+const onMenuLines = (b: BuyerState) => latestFirst(b.cart.filter((l) => l.on_menu));
+const offMenuLines = (b: BuyerState, sellerId: string) => latestFirst(b.cart.filter((l) => !l.on_menu && l.seller_id === sellerId));
 
-/** Where the buyer is: cart (newer than any order) → unpaid order → delivered before → generic. */
-export type Stage = "cart" | "unpaid" | "again" | "generic";
+/** Where the buyer is: cart (newer than any order) → cart with only off-menu fish → unpaid order → delivered before → generic. */
+export type Stage = "cart" | "cart_swap" | "unpaid" | "again" | "generic";
+
+/**
+ * Header picture for cart and order messages (founder 30 Oct): the seller's own listing photo of the
+ * costliest item; no photo on that listing → null (text-only). Ties → the first line (latest).
+ */
+export function costliestPhoto(lines: { price?: number | null; photo?: string | null }[]): string | null {
+  return [...lines].sort((x, y) => (Number(y.price) || 0) - (Number(x.price) || 0))[0]?.photo || null;
+}
+
+/** Substitute for a fish taken off the menu (founder 30 Oct): same species at the closest price, else the closest price; tie → cheaper. */
+export function pickSubstitute(gone: { species?: string | null; price?: number | null }, live: MenuItem[]): MenuItem | null {
+  const p = Number(gone.price) || 0;
+  const sp = String(gone.species || "").toLowerCase();
+  const same = sp ? live.filter((m) => String(m.species || "").toLowerCase() === sp) : [];
+  return [...(same.length ? same : live)].sort((a, c) => Math.abs(a.price - p) - Math.abs(c.price - p) || a.price - c.price)[0] ?? null;
+}
 
 /**
  * The message for a stage: template, its variables in Meta's order, picture and link.
  * Null when nothing fits (the generic pre-order text only works when tomorrow is bookable).
  */
 export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, seller: MsgSeller, offer: Offer): Decision | null {
-  const lines: { name: string; species?: string | null; photo?: string | null }[] =
-    stage === "cart" ? onMenuLines(b) : stage === "unpaid" ? [b.unpaid!] : stage === "again" ? [b.delivered!] : [];
+  const lines: (CartLine | OrderLine)[] =
+    stage === "cart" ? onMenuLines(b) : stage === "cart_swap" ? offMenuLines(b, seller.id) : stage === "unpaid" ? [b.unpaid!] : stage === "again" ? [b.delivered!] : [];
   const items = [...new Set(lines.map((l) => l.name))].slice(0, 3); // latest first
   const fish = items.join(" and ");
   const day = WEEKDAY[istDow(due)];
   const m = {
     kind, slot_date: istDate(due), due_ms: due, mode: offer.mode, seller, personal: items.length > 0, items,
-    species: lines[0]?.species ?? null, photo: lines[0]?.photo ?? null, when: offer.when, path: `/s/${seller.slug}`,
+    species: lines[0]?.species ?? null, when: offer.when, path: `/s/${seller.slug}`,
+    photo: costliestPhoto(lines.filter((l) => l.seller_id === seller.id)), // never another seller's photo
   };
+  if (stage === "cart_swap") {
+    const sub = pickSubstitute(lines[0] ?? {}, seller.live ?? []);
+    if (!sub) return null;
+    const what = `${[sub.name, sub.label].filter(Boolean).join(" ")}, ₹${Math.round(sub.price).toLocaleString("en-IN")}`;
+    return { ...m, template: "rf2_cart_swap", photo: sub.photo || null, body: [b.name, items.slice(0, 2).join(" and "), seller.name, what, offer.when] };
+  }
   if (stage === "cart") {
     if (!items.length) return null;
     // B1/B2 are never scheduled any more; only the cron's manual test send still composes them.
@@ -165,9 +194,12 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const cartMs = lastCartMs(b);
   const orderMs = b.last_order_at ? Date.parse(b.last_order_at) : 0;
   const hasCart = b.cart.length > 0 && cartMs > orderMs && now - cartMs <= 7 * DAY_MS;
-  const stage: Stage = hasCart && onMenuLines(b).length ? "cart" : b.unpaid ? "unpaid" : b.delivered ? "again" : "generic";
+  // Cart with nothing left on the menu: the latest off-menu line's seller, if known and it has live fish.
+  const gone = hasCart ? latestFirst(b.cart.filter((l) => !l.on_menu)).find((l) => sellers.some((s) => s.id === l.seller_id)) : undefined;
+  const swap = gone && sellers.find((s) => s.id === gone.seller_id)?.live?.length ? gone.seller_id : null;
+  const stage: Stage = hasCart && onMenuLines(b).length ? "cart" : swap ? "cart_swap" : b.unpaid ? "unpaid" : b.delivered ? "again" : "generic";
   // The seller the message is about: the cart's, else the order's, else the nearest one.
-  const orderSeller = stage === "unpaid" ? b.unpaid!.seller_id : stage === "again" ? b.delivered!.seller_id : null;
+  const orderSeller = stage === "cart_swap" ? swap : stage === "unpaid" ? b.unpaid!.seller_id : stage === "again" ? b.delivered!.seller_id : null;
   const seller = orderSeller ? sellers.find((s) => s.id === orderSeller) ?? null : pickSeller(b, sellers);
   if (!seller) return { skip: "no seller delivers to them" };
 
