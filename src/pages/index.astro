@@ -135,15 +135,13 @@ const REVIEW_SLOTS = [
     }
     /* Diwali (src/lib/festive.ts): same layout, maroon + gold palette */
     body.festive-diwali{
-      /* page stays white / light blue in Diwali too (founder 31 Oct); beige only inside Diwali pieces (ribbon, cards) */
-      --line:#5A0620;--accent:#B3123B;--cta:linear-gradient(135deg,#F5D27A,#D4A24C);--cta-fg:#4A0618;--cta-shadow:#5A0620;
-      --dk:#4A0618;--dk-accent:#F5D27A;--ann:linear-gradient(135deg,#B3123B,#8B0A2E);--ann-fg:#FDE7B0;--ann-b:#F5D27A;--pill:#FBE3A6;--chip:#5A0620;
+      /* Diwali only in the top announcement bar (founder 31 Oct): page, buttons, dark sections and footer stay blue/white */
+      --ann:linear-gradient(135deg,#B3123B,#8B0A2E);--ann-fg:#FDE7B0;--ann-b:#F5D27A;
     }
     body.home{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--cream);-webkit-font-smoothing:antialiased;overflow-x:hidden;margin:0}
     html{scroll-behavior:smooth}
     /* Footer component restyle (its own styles are scoped, these outrank them) */
     body.home footer{background:var(--navy);padding-bottom:110px}
-    body.festive-diwali footer{background:#3B0A17;border-top:3px solid #D4A24C}
     /* .ft .ft-top chains: the scoped rules are .x[cid] y[cid] (0,4,0) */
     body.home .ft .ft-top .ft-brand img{filter:none;height:auto;width:150px}
     body.home .ft-desc,body.home .ft .ft-top .ft-col a,body.home .ft-phone{color:#CBD5E1}
@@ -158,7 +156,6 @@ const REVIEW_SLOTS = [
     @media(min-width:940px){body.festive-diwali .hero .fd-banner{margin:0 0 20px}}
     .claim-sheet::backdrop{background:rgba(10,20,50,.5)}
       .dc-claim{background:radial-gradient(circle at 25% 25%,rgba(0,102,255,.28),transparent 55%),radial-gradient(circle at 80% 75%,rgba(255,209,102,.55),transparent 55%),radial-gradient(circle at 70% 20%,rgba(236,72,153,.18),transparent 50%),rgba(255,255,255,.55)!important}
-    :global(.festive-diwali) .dc-claim{background:radial-gradient(circle at 25% 25%,rgba(179,18,59,.22),transparent 55%),radial-gradient(circle at 80% 75%,rgba(245,210,122,.6),transparent 55%),rgba(255,255,255,.6)!important}
 </style>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -186,10 +183,8 @@ const REVIEW_SLOTS = [
     .nl{display:inline-flex;align-items:center;min-height:44px;font:700 14px Inter;color:var(--ink);padding:0 14px;border-radius:999px}
     .nl:hover{background:var(--pill)}
     .pill{display:flex;align-items:center;gap:2px;background:var(--pill);border-radius:999px;padding:4px}
-    .btn-shop{display:inline-flex;align-items:center;justify-content:center;min-height:44px;background:var(--yellow);color:var(--navy);font:800 14px Inter;padding:0 18px;border-radius:999px;white-space:nowrap}
-    :global(.festive-diwali) .btn-shop{background:linear-gradient(135deg,#F5D27A,#D4A24C);color:#4A0618}
+    .btn-shop{display:inline-flex;align-items:center;justify-content:center;min-height:44px;background:#0066FF;color:#fff;font:800 14px Inter;padding:0 18px;border-radius:999px;white-space:nowrap}
     .icon-btn{width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--navy);cursor:pointer;list-style:none}
-    :global(.festive-diwali) .icon-btn{color:#5A0620}
     .icon-btn::-webkit-details-marker{display:none}
     .icon-btn svg{width:22px;height:22px}
     .icon-btn:hover{background:rgba(255,255,255,.6)}
@@ -405,7 +400,6 @@ const REVIEW_SLOTS = [
     .fish3d-f{font:700 7px Inter;color:var(--blue-light);background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);border-radius:100px;padding:2px 6px;margin-top:3px;display:inline-block}
     /* phone demo: mobile shows the three fish chips only (the phone is desktop-only, as before) */
     .hero-right::before{content:"";position:absolute;inset:8% 0;border-radius:50%;background:radial-gradient(circle at 30% 40%,rgba(0,102,255,.22),transparent 60%),radial-gradient(circle at 70% 70%,rgba(255,209,102,.5),transparent 55%);pointer-events:none}
-    :global(.festive-diwali) .hero-right::before{background:radial-gradient(circle at 30% 40%,rgba(179,18,59,.2),transparent 60%),radial-gradient(circle at 70% 70%,rgba(245,210,122,.6),transparent 55%)}
     .demo-hint{color:var(--muted)}
     .demo-dot{background:rgba(10,36,114,.25)}
     .fish-mini{display:contents}
@@ -450,7 +444,6 @@ const REVIEW_SLOTS = [
     .soc svg{width:22px;height:22px}
     .dial{background:none!important;--cw:clamp(170px,26vw,330px);--ch:calc(var(--cw)*1.38);position:relative;height:calc(var(--ch)*.82 + 70px);width:100vw;max-width:none;margin:22px 0 0 calc(50% - 50vw);touch-action:pan-y;cursor:grab;overflow:hidden;user-select:none;-webkit-user-select:none;border-radius:0;
       background:radial-gradient(circle at 20% 60%,rgba(0,102,255,.35),transparent 38%),radial-gradient(circle at 80% 40%,rgba(255,209,102,.55),transparent 36%),radial-gradient(circle at 55% 85%,rgba(236,72,153,.28),transparent 34%)}
-    :global(.festive-diwali) .dial{background:radial-gradient(circle at 20% 60%,rgba(179,18,59,.3),transparent 38%),radial-gradient(circle at 80% 40%,rgba(245,210,122,.65),transparent 36%),radial-gradient(circle at 55% 85%,rgba(255,138,31,.3),transparent 34%)}
     .dial.grabbing{cursor:grabbing}
     .dc{position:absolute;left:50%;top:56px;width:var(--cw);height:var(--ch);margin-left:calc(var(--cw)/-2);border-radius:clamp(18px,2.4vw,30px);overflow:hidden;box-shadow:0 14px 34px rgba(10,36,114,.22);transform-origin:50% calc(var(--ch)*3.1);background:#fff;will-change:transform}
     .dc img{width:100%;height:100%;object-fit:cover;pointer-events:none}
@@ -662,8 +655,7 @@ const REVIEW_SLOTS = [
     .wvsep{display:none}
     .wvb{background:rgba(255,255,255,.12);color:#CBD5E1;border-radius:999px;padding:3px 9px;font:700 12px Inter;text-decoration:line-through}
     .stats-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
-    .sb{background:var(--yellow);color:var(--navy);border-radius:14px;padding:14px 10px;text-align:center}
-    :global(.festive-diwali) .sb{background:linear-gradient(135deg,#F5D27A,#D4A24C);color:#4A0618}
+    .sb{background:#0066FF;color:#fff;border-radius:14px;padding:14px 10px;text-align:center}
     .sb-n{font:400 28px var(--display)}
     .sb-l{font:700 12px/1.35 Inter;margin-top:2px}
     @media(min-width:760px){.why-grid{grid-template-columns:repeat(2,1fr);gap:14px}.stats-bar{grid-template-columns:repeat(4,1fr)}}

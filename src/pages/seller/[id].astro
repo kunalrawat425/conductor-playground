@@ -975,7 +975,7 @@ const tags = [
         (!isListingPreorder || poFixed(firstOpt)) &&
         !!(firstOpt.compare_at_price && firstOpt.compare_at_price > firstOpt.price);
       const discountBadge = hasDiscount
-        ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-red);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
+        ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-brand);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
 
       // Image: seller's own photo → species stock photo → emoji
       const stockPhoto = getSpeciesPhoto(l.species);
