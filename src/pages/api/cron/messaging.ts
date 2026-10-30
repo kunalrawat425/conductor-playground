@@ -41,6 +41,7 @@ async function all(q: () => any): Promise<any[]> {
  * Channel: WhatsApp when opted in, else SMS (reminders only; promos are WhatsApp only).
  *   ?dry_run=1           report who would get what and why; nothing written or sent
  *   ?now=<ISO>           (dry run only) pretend it's this time
+ *   ?promo_now=1         send the promo now instead of waiting for a slot (all other rules apply)
  *   ?test_phone=<n>&test_kind=signup|cart|unpaid|promo|paid|confirmed|out_for_delivery|completed|cancelled[&channel=sms]
  *                        send one sample now to a test phone (MESSAGING_TEST_PHONES, default the founder)
  * Sends happen only when MESSAGING_LIVE=true; otherwise every run is a report. Sellers never get these.
@@ -50,6 +51,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (request.headers.get("authorization") !== `Bearer ${env("CRON_SECRET")}`) return json({ error: "Unauthorized" }, 401);
   const dry = url.searchParams.get("dry_run") === "1" || env("MESSAGING_LIVE") !== "true";
   const nowParam = url.searchParams.get("now");
+  const promoNow = url.searchParams.get("promo_now") === "1"; // founder's extra promo run, rules unchanged
   const now = dry && nowParam && !Number.isNaN(Date.parse(nowParam)) ? Date.parse(nowParam) : Date.now();
   const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
 
@@ -197,7 +199,7 @@ export const GET: APIRoute = async ({ request, url }) => {
           template: act.template, body: act.body, headerImage: act.photo, link_path: act.path, sms: act.sms, smsOk: true, smsFallback: true };
       }
     } else {
-      const d = decide(now, state, sellers, history);
+      const d = decide(now, state, sellers, history, promoNow);
       if ("skip" in d) { report.push({ buyer: who, skip: act.skip === "nothing due" ? d.skip : `${act.skip}; ${d.skip}` }); continue; }
       // Promos: WhatsApp only (founder: no promo SMS), so a buyer who isn't opted in gets none.
       msg = { dedupe_key: `${d.kind}:${b.id}:${d.slot_date}`, kind: d.kind, slot_date: d.slot_date, buyer_id: b.id, seller_id: d.seller.id, phone: b.phone, whatsappOk,
