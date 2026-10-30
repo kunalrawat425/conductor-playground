@@ -341,3 +341,10 @@ describe("Wati status read-back", () => {
     expect(nextStatus("failed", { statusString: "READ" })).toBeNull();
   });
 });
+
+describe("buyer order updates (founder 31 Oct)", () => {
+  it("only seller-confirmed and out-for-delivery reach the buyer", async () => {
+    const { BUYER_ORDER_EVENTS } = await import("../../src/lib/server/notify-order-whatsapp");
+    expect([...BUYER_ORDER_EVENTS].sort()).toEqual(["confirmed", "out_for_delivery"]);
+  });
+});
