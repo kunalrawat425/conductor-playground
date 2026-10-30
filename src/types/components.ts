@@ -111,6 +111,7 @@ export interface CategoryStripItem {
   id: string;
   name: string;
   emoji: string;
+  photo?: string;
   active?: boolean;
 }
 

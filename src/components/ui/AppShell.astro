@@ -244,6 +244,41 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
         navigator.serviceWorker.register("/sw.js").catch(function () {});
       }
     </script>
+    <!-- App splash (founder 31 Oct): only when opened as the installed app, once per session; never blocks longer than 3 s. -->
+    <div id="rf-splash" class="rf-splash" aria-hidden="true">
+      <img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="" width="230" height="55" />
+      <span class="rf-splash-tag">Fresh fish from local sellers</span>
+      <span class="rf-splash-dots"><i></i><i></i><i></i></span>
+    </div>
+    <script is:inline>
+      (function () {
+        var s = document.getElementById("rf-splash"); if (!s) return;
+        var app = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+        var seen = null; try { seen = sessionStorage.getItem("rf_splash"); } catch (e) {}
+        if (!app || seen) { s.remove(); return; }
+        try { sessionStorage.setItem("rf_splash", "1"); } catch (e) {}
+        s.classList.add("on");
+        var t0 = Date.now(), done = false;
+        function hide() {
+          if (done) return; done = true;
+          setTimeout(function () { s.classList.add("out"); setTimeout(function () { s.remove(); }, 350); }, Math.max(0, 700 - (Date.now() - t0)));
+        }
+        if (document.readyState === "complete") hide(); else addEventListener("load", hide);
+        setTimeout(hide, 3000);
+      })();
+    </script>
+    <style is:global>
+      .rf-splash { display: none; }
+      .rf-splash.on { position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: linear-gradient(160deg, #0066FF, #0047B3); transition: opacity .35s ease; }
+      .rf-splash.out { opacity: 0; pointer-events: none; }
+      .rf-splash img { width: 230px; height: auto; }
+      .rf-splash-tag { font: 600 14px Inter, sans-serif; color: rgba(255,255,255,.85); }
+      .rf-splash-dots { display: flex; gap: 6px; margin-top: 18px; }
+      .rf-splash-dots i { width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: .4; animation: rf-dot 1s infinite ease-in-out; }
+      .rf-splash-dots i:nth-child(2) { animation-delay: .15s; } .rf-splash-dots i:nth-child(3) { animation-delay: .3s; }
+      @keyframes rf-dot { 50% { opacity: 1; transform: translateY(-4px); } }
+      @media (prefers-reduced-motion: reduce) { .rf-splash-dots i { animation: none; } }
+    </style>
     {sellerGated && <SellerActiveGate />}
     <div class="v2-app">
       {!hideHeader && header && <AppHeader {...header} festive={festive} />}
