@@ -8,11 +8,13 @@
 import { LOGO_URL, SUPPORT_WHATSAPP } from "../lib/brand";
 const options = {
   enabled: true,
-  chatButtonSetting: { backgroundColor: "#25D366", ctaText: "Chat with us", borderRadius: "25", marginLeft: "0", marginRight: "16", marginBottom: "150", ctaIconWATI: false, position: "right" },
+  // Founder's Wati generator settings (30 Oct), except: marginBottom stays 150 so the button clears
+  // the bottom nav and cart bar; our own logo (not Wati's); the number keeps its 91 country code.
+  chatButtonSetting: { backgroundColor: "#0066FF", ctaText: "Get to know more!", borderRadius: "25", marginLeft: "0", marginRight: "20", marginBottom: "150", ctaIconWATI: false, position: "right" },
   brandSetting: {
-    brandName: "Relifish", brandSubTitle: "Fresh fish from local sellers", brandImg: LOGO_URL, altText: "Relifish",
-    welcomeText: "Hi there 👋\nHow can we help you?", messageText: "Hi Relifish, I have a question: {{page_link}}",
-    backgroundColor: "#25D366", ctaText: "Chat on WhatsApp", borderRadius: "25", autoShow: false, phoneNumber: SUPPORT_WHATSAPP,
+    brandName: "Relifish", brandSubTitle: "", brandImg: LOGO_URL, altText: "Relifish",
+    welcomeText: "Hi there!\nHow can I help you?", messageText: "Hello,\n I have a question about {{page_link}}",
+    backgroundColor: "#0066FF", ctaText: "Get to know more!", borderRadius: "25", autoShow: false, phoneNumber: SUPPORT_WHATSAPP,
   },
 };
 ---
