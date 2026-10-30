@@ -39,7 +39,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, push_subscription, whatsapp_opt_in_at, whatsapp_opt_out_at").gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
     sb.from("buyer_cart").select("buyer_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, deleted_at)"),
     sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", new Date(now - 60 * 86_400_000).toISOString()),
-    sb.from("message_log").select("buyer_id, seller_id, order_id, kind, slot_date, created_at").gte("created_at", new Date(now - 35 * 86_400_000).toISOString()),
+    // Only real sends count toward the 3-day gap: a failed or dry-run row (no channel reached them) must not block the next slot.
+    sb.from("message_log").select("buyer_id, seller_id, order_id, kind, slot_date, created_at").in("status", ["sent", "delivered", "read"]).gte("created_at", new Date(now - 35 * 86_400_000).toISOString()),
     // Live listings only (available or pre-order): the pre-order menu and rf2_cart_swap substitutes.
     sb.from("fish_listings").select("seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled").or("is_available.eq.true,is_preorder_enabled.eq.true").is("deleted_at", null),
   ]);
