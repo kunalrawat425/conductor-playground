@@ -5,8 +5,8 @@ interface Props {
 }
 const { id = "v2-checkout" } = Astro.props;
 // Diwali greeting card in checkout until 15 Nov 2026 (IST).
-// ponytail: hard-coded date; switch to lib/festive.ts once that lands.
-const diwali = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10) <= "2026-11-15";
+import { FESTIVE } from "../../../lib/festive";
+const diwali = FESTIVE === "diwali";
 ---
 <BottomSheet id={id} title="Checkout" showClose={true}>
   <!-- Step indicator (2 steps: cart review → delivery + place order) -->
