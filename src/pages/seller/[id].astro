@@ -2106,6 +2106,17 @@ const tags = [
     setTimeout(promptLoginOnLoad, 600);
 
     // Back from the OTP login reload: reopen checkout instead of making the buyer find it again.
+    // ?checkout=1 sits in the URL while checkout is open (founder 31 Oct), so Back from the Diwali
+    // card, a reload or a shared link lands on checkout again.
+    function setCheckoutParam(on) {
+      const u = new URL(location.href);
+      if (on === u.searchParams.has("checkout")) return;
+      if (on) u.searchParams.set("checkout", "1"); else u.searchParams.delete("checkout");
+      history.replaceState(history.state, "", u);
+    }
+    document.addEventListener("v2-sheet-opened", (e) => { if (e.detail?.id === CO) setCheckoutParam(true); });
+    document.addEventListener("v2-sheet-closed", (e) => { if (e.detail?.id === CO) setCheckoutParam(false); });
+
     function resumeCheckout() {
       let m = null, signedIn = false;
       try {
@@ -2113,6 +2124,11 @@ const tags = [
         // Same check as the checkout login gate (both keys), or the gate would reopen login forever.
         signedIn = !!localStorage.getItem("rlf_buyer_id") && !!localStorage.getItem("rlf_phone");
       } catch {}
+      if (!m && new URLSearchParams(location.search).get("checkout") === "1") {
+        if (signedIn && getSellerItems() && Object.keys(getSellerItems()).length) { track("checkout_resumed", { checkout_seller_id: sellerId, via: "url" }); openCheckout(sellerId); }
+        else setCheckoutParam(false);
+        return;
+      }
       if (!m) return;
       try { sessionStorage.removeItem(RESUME_KEY); } catch {}
       if (!signedIn || m.sid !== sellerId || !(Date.now() - m.t < 10 * 60 * 1000)) return;

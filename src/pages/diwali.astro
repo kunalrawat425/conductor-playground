@@ -8,15 +8,12 @@ const THEMES: [string, string, string][] = [
   ["emerald", "Emerald", "Classy"], ["rangoli", "Rangoli", "Playful"], ["glow", "Diya Glow", "Warm"],
   ["rosegold", "Rose Gold", "Elegant"],
 ];
-// Opened from checkout (?back=/seller/<id>): back returns there and checkout reopens (rf_resume_checkout).
-const back = Astro.url.searchParams.get("back") || "";
-const backHref = /^\/seller\/[\w-]+$/.test(back) ? back : "/shop";
 const MESSAGE = "May this Diwali fill your home with light, joy and endless sweetness.";
 ---
 <AppShell
   title="Make a Diwali Greeting Card | Relifish"
   description="Pick a design, write your wish and share your own Happy Diwali greeting card on WhatsApp as an image. Free, takes a minute."
-  header={{ variant: "page", title: "Your Diwali greeting", backHref }}
+  header={{ variant: "page", title: "Your Diwali greeting", backHref: "/shop" }}
   hideNav={true}
 >
   <!-- Card fonts. crossorigin lets html-to-image read and embed them in the PNG. -->
@@ -140,6 +137,12 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
   </style>
 
   <script>
+  // Opened from checkout (?back=/seller/<id>): Back returns there with checkout open (?checkout=1).
+  // Client-side because this page is pre-built (no query string on the server).
+  const back = new URLSearchParams(location.search).get("back") || "";
+  if (/^\/seller\/[\w-]+$/.test(back)) document.querySelector<HTMLAnchorElement>("a.v2-back")?.setAttribute("href", `${back}?checkout=1`);
+</script>
+<script>
     import { celebrate } from "../lib/fireworks";
     import { setButtonLoading } from "../lib/button-loading";
 
