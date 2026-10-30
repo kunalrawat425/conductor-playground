@@ -12,10 +12,14 @@
  *     message (PROMO_KINDS, incl. old B1/B2 log rows), so a Tue 6 PM recipient (62.5 h) skips Fri and
  *     a Fri recipient skips Sat/Sun until the next Tue; none within 3 days of a delivery or
  *     after 30 days inactive.
- *  B  cart reminders B1/B2 (rf2_cart_today / rf2_cart_preorder) are REMOVED (founder, 30 Oct):
- *     carts are covered by the promo slots. Nothing schedules them.
- *  A  the welcome after sign-up (rf2_welcome / rf2_welcome_search) is ON HOLD (founder): not sent.
- * Order updates and the unpaid reminder live elsewhere and are not affected.
+ *     No promo within 48 h of an activity reminder (founder, 30 Oct), and none for 72 h after Meta
+ *     blocked a promo to that buyer (per-user marketing limit: wait, don't retry).
+ *  R  Activity reminders (founder, 30 Oct), once per action, 8 AM–9 PM, decideActivity():
+ *     unpaid checkout + 30 min → rf2_unpaid · cart left + 1 h → rf2_cart_today / rf2_cart_preorder ·
+ *     sign-up with no cart + 1 h → rf2_welcome. Highest only (unpaid > cart > sign-up); at most one
+ *     cart/sign-up reminder a day; an action in quiet hours is reminded at 8 AM next day if still true.
+ *     Channel: WhatsApp if opted in, else SMS (dispatch in lib/server/messaging.ts).
+ * Order updates live elsewhere (notify-order-whatsapp.ts).
  *
  * "Order today" vs "pre-order" is never guessed from the buyer: it is what the checkout's own
  * picker (deliveryDaysAt) offers at the send time. classifyPlacementAtOrderTime alone is not
@@ -46,7 +50,8 @@ export type MsgSeller = SlotSeller & {
 export type MenuItem = { name: string; species?: string | null; price: number; label?: string | null; photo?: string | null; preorder?: boolean };
 export type CartLine = { seller_id: string; name: string; species?: string | null; photo?: string | null; price?: number | null; on_menu: boolean; updated_at: string };
 /** One of the buyer's orders: the fish, its seller and photo (the checkout's costliest item's). */
-export type OrderLine = { id: string; seller_id: string; name: string; species?: string | null; photo?: string | null };
+export type OrderLine = { id: string; seller_id: string; name: string; species?: string | null; photo?: string | null;
+  created_at?: string; slot_start?: string | null; checkout?: string }; // unpaid: placed at, slot start, cart_id || id
 export type BuyerState = {
   id: string;
   created_at: string;
@@ -56,14 +61,28 @@ export type BuyerState = {
   last_order_at: string | null;      // latest real order (any status)
   open_order: boolean;               // paid and not finished/cancelled
   unpaid: OrderLine | null;          // latest order still waiting for payment
+  unpaids?: OrderLine[];             // every checkout still waiting for payment (one per checkout), oldest first
   delivered: OrderLine | null;       // latest delivered order
   last_delivered_at: string | null;
-  opted_out: boolean;                // whatsapp_opt_out_at set: no promos at all
+  opted_out: boolean;                // whatsapp_opt_out_at set: no promos or reminders
+  dnd?: boolean;                     // founder's do-not-message list: no promos or reminders on any channel
 };
-export type SentLog = { kind: string; slot_date: string; created_at: string };
-export type Kind = "B1" | "B2" | "promo";
+/** A message_log row. Rows without a status are treated as delivered (older callers/tests). */
+export type SentLog = { kind: string; slot_date: string; created_at: string; status?: string; channel?: string; error?: string | null; dedupe_key?: string };
+export type ActKind = "act_unpaid" | "act_cart" | "act_signup";
+export type Kind = "B1" | "B2" | "promo" | ActKind;
 export const PROMO_KINDS: string[] = ["B1", "B2", "promo"];
-export type PromoTemplate = "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_cart_swap" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder" | "rf2_catch_prices";
+export const ACT_KINDS: string[] = ["act_unpaid", "act_cart", "act_signup"];
+export const UNPAID_AFTER_MS = 30 * 60_000;      // founder, 30 Oct
+export const CART_AFTER_MS = 60 * 60_000;
+export const SIGNUP_AFTER_MS = 60 * 60_000;
+export const ACT_PROMO_GAP_MS = 48 * 3_600_000;  // no promo within 2 days of an activity reminder
+export const META_HOLD_MS = 72 * 3_600_000;      // Meta blocked a promo → none for 3 days
+/** Reached the buyer (or may have): counts for gaps and caps. Failed / dry-run rows don't. */
+export const isReal = (x: SentLog) => !x.status || ["sent", "delivered", "read"].includes(x.status);
+/** Meta's per-user marketing limit ("restricted it for higher quality messaging", error 131049). */
+export const metaBlocked = (x: SentLog) => x.status === "failed" && /restricted|131049|higher quality/i.test(String(x.error || ""));
+export type PromoTemplate = "rf2_welcome" | "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_cart_swap" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder" | "rf2_catch_prices";
 export type Decision = {
   kind: Kind;
   slot_date: string;
@@ -161,7 +180,7 @@ export function pickSubstitute(gone: { species?: string | null; price?: number |
  */
 export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, seller: MsgSeller, offer: Offer): Decision | null {
   const lines: (CartLine | OrderLine)[] =
-    stage === "cart" ? onMenuLines(b) : stage === "cart_swap" ? offMenuLines(b, seller.id) : stage === "unpaid" ? [b.unpaid!] : stage === "again" ? [b.delivered!] : [];
+    stage === "cart" ? onMenuLines(b).filter((l) => l.seller_id === seller.id) : stage === "cart_swap" ? offMenuLines(b, seller.id) : stage === "unpaid" ? [b.unpaid!] : stage === "again" ? [b.delivered!] : [];
   const items = [...new Set(lines.map((l) => l.name))].slice(0, 3); // latest first
   const fish = items.join(" and ");
   const day = WEEKDAY[istDow(due)];
@@ -178,7 +197,7 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   }
   if (stage === "cart") {
     if (!items.length) return null;
-    // B1/B2 are never scheduled any more; only the cron's manual test send still composes them.
+    // Promo slot → rf2_promo_cart; the 1 h cart reminder (act_cart) → rf2_cart_today / rf2_cart_preorder.
     return kind === "promo"
       ? { ...m, template: "rf2_promo_cart", body: [day, b.name, fish, seller.name, offer.when] }
       : { ...m, template: offer.mode === "today" ? "rf2_cart_today" : "rf2_cart_preorder", body: [b.name, fish, seller.name, offer.when] };
@@ -196,13 +215,18 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
 
 /** Decide the one promo (if any) this buyer should get in the job run at `now`. */
 export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[]): Decision | Skip {
+  if (b.dnd) return { skip: "do not message" };
   if (b.opted_out) return { skip: "opted out" };
   if (b.open_order) return { skip: "open order" };
   if (!inSendHours(now)) return { skip: "quiet hours" };
   const today = istDate(now);
-  if (history.some((x) => x.slot_date === today && PROMO_KINDS.includes(x.kind))) {
+  const real = history.filter(isReal);
+  if (real.some((x) => x.slot_date === today && (PROMO_KINDS.includes(x.kind) || ACT_KINDS.includes(x.kind)))) {
     return { skip: "already messaged today" };
   }
+  // Founder 30 Oct: an activity reminder in the last 2 days → no promo; Meta blocked a promo → wait 3 days.
+  if (real.some((x) => ACT_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < ACT_PROMO_GAP_MS)) return { skip: "activity reminder <48h" };
+  if (history.some((x) => metaBlocked(x) && PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < META_HOLD_MS)) return { skip: "meta limit: waiting" };
   const cartMs = lastCartMs(b);
   const orderMs = b.last_order_at ? Date.parse(b.last_order_at) : 0;
   const hasCart = b.cart.length > 0 && cartMs > orderMs && now - cartMs <= 7 * DAY_MS;
@@ -219,7 +243,7 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const lastActive = Math.max(Date.parse(b.created_at), cartMs, orderMs);
   const deliveredMs = b.last_delivered_at ? Date.parse(b.last_delivered_at) : 0;
   // No spam (founder 30 Oct): ≥ 72 h since the last marketing message (old B1/B2 rows count too).
-  const spam = history.some((x) => PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < PROMO_GAP_MS);
+  const spam = real.some((x) => PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < PROMO_GAP_MS);
   const slot = PROMO_SLOTS[istDow(now)];
   if (slot == null || now - lastActive > 30 * DAY_MS || now - deliveredMs < 3 * DAY_MS || spam) return { skip: "nothing due" };
   const due = atIST(today, slot);
@@ -227,4 +251,93 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   // At send time the offer is re-read: what the message promises is what checkout offers now.
   const offer = offerAt(seller, now);
   return (offer && compose("promo", stage, due, b, seller, offer)) || { skip: "nothing due" };
+}
+
+// ── R: activity reminders ──
+/** 8:00 IST at or after `ms` (same day when before 8:00, else the next day). */
+const nextMorning = (ms: number) => istMin(ms) < DAY_START ? atIST(istDate(ms), DAY_START) : atIST(addDays(istDate(ms), 1), DAY_START);
+/**
+ * May a reminder due at `due` go at `now`? Within 2 h of being due, inside 8 AM–9 PM. Due in quiet
+ * hours, or its 2 h ran past 9 PM → 8:00–9:00 next morning instead (the caller re-checks it's still true, ≤ 24 h old).
+ */
+export function reminderWindow(due: number, now: number): boolean {
+  if (now < due || !inSendHours(now)) return false;
+  const deferred = !inSendHours(due);
+  const start = deferred ? nextMorning(due) : due;
+  const len = (deferred ? 60 : DUE_WINDOW_MIN) * 60_000;
+  if (now >= start && now < start + len) return true;
+  // Due late evening and the 2 h ran past 9 PM: one more chance 8–9 AM next day.
+  const nm = nextMorning(start);
+  return !deferred && start + len > atIST(istDate(start), DAY_END) && now >= nm && now < nm + 60 * 60_000;
+}
+
+export type UnpaidDue = { kind: "act_unpaid"; dedupe_key: string; slot_date: string; due_ms: number; order_id: string };
+export type ActDecision = Decision & { dedupe_key: string; sms: { key: "CART" | "SIGNUP"; vars: string[] } };
+
+/**
+ * The one activity reminder (if any) due for this buyer at `now`. Pure.
+ * Unpaid > cart > sign-up; each action once (dedupe_key); cart/sign-up at most one a day.
+ * `history`: this buyer's message_log rows (any status; failed ones count as "already reminded").
+ */
+export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[]): UnpaidDue | ActDecision | Skip {
+  if (b.dnd) return { skip: "do not message" };
+  if (b.opted_out) return { skip: "opted out" };
+  if (!inSendHours(now)) return { skip: "quiet hours" };
+  const done = (key: string) => history.some((x) => x.dedupe_key?.startsWith(`${key}:`) && x.status !== "dry_run");
+  const today = istDate(now);
+
+  // 1. Unpaid checkout: 30 min after it was placed, while its slot is still ahead (≤ 24 h). Each checkout once.
+  for (const u of b.unpaids ?? (b.unpaid ? [b.unpaid] : [])) {
+    if (!u.created_at) continue;
+    const due = Date.parse(u.created_at) + UNPAID_AFTER_MS;
+    const key = `act_unpaid:${u.checkout || u.id}`;
+    const slotAhead = !u.slot_start || Date.parse(u.slot_start) > now;
+    if (now - Date.parse(u.created_at) < DAY_MS && slotAhead && !done(key) && reminderWindow(due, now)) {
+      return { kind: "act_unpaid", dedupe_key: key, slot_date: today, due_ms: due, order_id: u.id };
+    }
+  }
+  if (b.open_order) return { skip: "open order" };
+  const capped = history.some((x) => isReal(x) && x.slot_date === today && (x.kind === "act_cart" || x.kind === "act_signup"));
+
+  // 2. Cart left: 1 h after the last change, no order since, something still on the menu (≤ 24 h).
+  const cartMs = lastCartMs(b);
+  const orderMs = b.last_order_at ? Date.parse(b.last_order_at) : 0;
+  if (b.cart.length && cartMs > orderMs && now - cartMs < DAY_MS && onMenuLines(b).length) {
+    const key = `act_cart:${b.id}:${istDate(cartMs)}`;
+    const seller = pickSeller({ ...b, cart: onMenuLines(b) }, sellers);
+    if (capped || done(key)) return { skip: "cart already reminded" };
+    if (!seller) return { skip: "no seller delivers to them" };
+    if (!reminderWindow(cartMs + CART_AFTER_MS, now)) return { skip: "nothing due" };
+    const offer = offerAt(seller, now);
+    const d = offer && cartMessage(now, b, seller, offer);
+    return d ? { ...d, dedupe_key: key } : { skip: "nothing due" };
+  }
+
+  // 3. Signed up, nothing in the cart, never ordered: 1 h after sign-up (≤ 24 h).
+  const signed = Date.parse(b.created_at);
+  if (!b.cart.length && !b.last_order_at && now - signed < DAY_MS) {
+    const key = `act_signup:${b.id}`;
+    if (capped || done(key)) return { skip: "sign-up already reminded" };
+    if (!reminderWindow(signed + SIGNUP_AFTER_MS, now)) return { skip: "nothing due" };
+    const seller = pickSeller(b, sellers);
+    const offer = seller && offerAt(seller, now);
+    if (!seller || !offer) return { skip: "no seller delivers to them" };
+    return { ...signupMessage(now, b, seller, offer), dedupe_key: key };
+  }
+  return { skip: "nothing due" };
+}
+
+/** The 1 h cart reminder for a buyer with something on the menu in their cart (null if nothing fits). */
+export function cartMessage(now: number, b: BuyerState, seller: MsgSeller, offer: Offer): Omit<ActDecision, "dedupe_key"> | null {
+  const d = compose("act_cart", "cart", now, b, seller, offer);
+  return d && { ...d, sms: { key: "CART", vars: [b.name, d.items.join(" and "), seller.name, offer.when] } };
+}
+
+/** The 1 h welcome: "a local seller near you…", next slot, today's catch photo. */
+export function signupMessage(now: number, b: BuyerState, seller: MsgSeller, offer: Offer): Omit<ActDecision, "dedupe_key"> {
+  return {
+    kind: "act_signup", slot_date: istDate(now), due_ms: now, mode: offer.mode, seller, personal: false, items: [], species: null,
+    photo: catchPhoto(b, seller, false), when: offer.when, template: "rf2_welcome", body: [b.name, "you", offer.when], path: "/shop",
+    sms: { key: "SIGNUP", vars: [b.name, seller.name] },
+  };
 }

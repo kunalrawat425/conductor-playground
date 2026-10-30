@@ -4,14 +4,15 @@
  * confirms next morning), confirmed, out for delivery, delivered, and seller declined/cancelled
  * with the refund (rf2_cancelled). The unpaid-order nudge (rf2_unpaid) comes from the messaging
  * cron. Sellers get no WhatsApp (founder: email only).
- * Buyers get them when they ticked the WhatsApp box. Idempotent per (event, order) via message_log.
- * Never throws: an order update must not fail because WhatsApp did.
+ * Channel (founder, 30 Oct): WhatsApp when the buyer ticked the WhatsApp box, else SMS (MSG91,
+ * orderSms); a WhatsApp that fails goes once by SMS. Idempotent per (event, order) via message_log.
+ * Never throws: an order update must not fail because a message did.
  */
 import { createClient } from "@supabase/supabase-js";
 import { arrivingByLabel, slotLabel } from "../delivery-slots";
 import { firstName, fishName } from "../messaging/templates";
 import { costliestPhoto, istDate } from "../messaging/schedule";
-import { dispatch } from "./messaging";
+import { dispatch, type SmsPart } from "./messaging";
 
 export type OrderWaEvent = "unpaid" | "paid" | "confirmed" | "out_for_delivery" | "completed" | "cancelled";
 const env = (k: string) => (import.meta as any).env?.[k] || process.env[k] || "";
@@ -76,6 +77,29 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
   }
 }
 
+/** The SMS version of an order update (DLT templates in sms.ts; values cut to 30 chars there). Pure. */
+export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, cancel?: WaCancel): SmsPart {
+  const short = `#${String(ord.id).slice(0, 8).toUpperCase()}`;
+  const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
+  const seller = ord.listing?.seller?.name || "The seller";
+  const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed";
+  switch (event) {
+    case "unpaid": return { key: "UNPAID", vars: [firstName(buyerName), fish, slot] };
+    case "paid": return { key: "PAID", vars: [short, seller, slot] };
+    case "confirmed": return { key: "CONFIRMED", vars: [seller, short, slot] };
+    case "out_for_delivery": return { key: "OUT", vars: [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
+    case "completed": return { key: "DELIVERED", vars: [short, fish] };
+    case "cancelled": {
+      const amt = String(cancel?.refund || "").match(/₹\s?\d+(?:,\d+)*(?:\.\d+)?/)?.[0];
+      const refund = amt ? `${amt.replace(/\s/g, "")} in 5-7 working days` : "not needed";
+      const why = cancel?.reason?.replace(/\.+$/, "") || "seller couldn't take it";
+      return cancel?.removedFrom
+        ? { key: "CANCELLED", vars: [`#${String(cancel.removedFrom).slice(0, 8).toUpperCase()} (${fish})`, `${fish} not available`, refund] }
+        : { key: "CANCELLED", vars: [short, why, refund] };
+    }
+  }
+}
+
 export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent, cancel?: WaCancel) {
   try {
     const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
@@ -90,6 +114,7 @@ export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent,
       dedupe_key: `${event}:${order_id}:buyer`, kind: `order_${event}`, slot_date: istDate(Date.now()), order_id, buyer_id: buyer?.id,
       phone: buyer?.phone || ord.buyer_phone, whatsappOk: !!buyer?.whatsapp_opt_in_at,
       template: m.template, body: m.body, headerImage: m.image, link_path: `/track/${order_id}`,
+      sms: orderSms(event, ord, buyer?.first_name, cancel), smsOk: true, smsFallback: true,
     });
   } catch (err: any) {
     console.warn("[whatsapp] order update failed", { order_id, event, err: err?.message });
