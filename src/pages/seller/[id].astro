@@ -1041,7 +1041,9 @@ const tags = [
         : listings;
       // Combos listed inside their base fish's card don't get a card of their own.
       const hosted = new Set(shown.flatMap((l) => (bundleMap[l.id] || []).map((r) => r.lid)));
-      const visibleListings = shown.filter((l) => !hosted.has(l.id));
+      // Combos first (founder 31 Oct): the fish card carrying "Bundles · save more", or a combo with no such card.
+      const hasCombo = (l) => !!bundleMap[l.id]?.length || /\bcombo\b/i.test(`${l.species} ${l.size_label || ""}`);
+      const visibleListings = shown.filter((l) => !hosted.has(l.id)).sort((a, b) => hasCombo(b) - hasCombo(a));
 
       if (isPreorderMode && visibleListings.length === 0 && !sellerFullyClosed) {
         grid.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--v2-ink-3);">
