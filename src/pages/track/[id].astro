@@ -499,7 +499,9 @@ const shortId = String(id || "").slice(0, 8).toUpperCase();
     // A cart bills its live items together; removed items show what came back.
     const billRows = cartItems ? liveCartItems : [o];
     const subtotal = billRows.reduce((s2, r) => s2 + (Number(r.total_price) || 0), 0);
-    const delivery = billRows.reduce((s2, r) => s2 + (Number(r.delivery_fee) || 0), 0);
+    const feeOf = (rows) => rows.reduce((s2, r) => s2 + (Number(r.delivery_fee) || 0), 0);
+    // The cart's one delivery fee stays while any item is live, even when the removed item carried it.
+    const delivery = feeOf(cartItems && liveCartItems.length ? cartItems : billRows);
     const grand = subtotal + delivery;
     const cartRefunded = cartItems
       ? cartItems.filter((r) => r.paid && r.refund_sent_at).reduce((s2, r) => s2 + (Number(r.refund_amt) || 0), 0)
@@ -512,7 +514,7 @@ const shortId = String(id || "").slice(0, 8).toUpperCase();
     const paymentConfirmed = o.status !== "pending_payment" && o.status !== "pending" && o.payment_verified_at;
     const showPaidAmount = paidAmount && paymentConfirmed;
     // final_price is the fish price; paidAmount includes the delivery fee.
-    const balance = finalPrice && showPaidAmount ? finalPrice - (paidOf(billRows) - delivery) : null;
+    const balance = finalPrice && showPaidAmount ? finalPrice - (paidOf(billRows) - feeOf(billRows)) : null;
     document.getElementById("v2-od-bill").innerHTML = `
       <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
       ${delivery > 0 ? `<div><span>Delivery</span><span>₹${delivery.toLocaleString("en-IN")}</span></div>` : ''}

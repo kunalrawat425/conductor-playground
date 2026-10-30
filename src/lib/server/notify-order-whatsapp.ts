@@ -20,9 +20,11 @@ export const ORDER_SELECT = "id, buyer_id, buyer_phone, species, is_test, is_pre
 
 /**
  * Template + variables (Meta's order) + header picture for one order update. Pure (tested).
- * `cancel` carries the reason and refund line notifyOrderParties already worked out.
+ * `cancel` carries the reason and refund line the caller already worked out; `removedFrom`
+ * (the cart's order id) makes rf2_cancelled about this one item while the rest goes ahead.
  */
-export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, nowMs = Date.now(), cancel?: { reason?: string | null; refund?: string | null }): { template: string; body: string[]; image?: string } {
+export type WaCancel = { reason?: string | null; refund?: string | null; removedFrom?: string | null };
+export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, nowMs = Date.now(), cancel?: WaCancel): { template: string; body: string[]; image?: string } {
   const short = `#${String(ord.id).slice(0, 8).toUpperCase()}`;
   const name = firstName(buyerName);
   const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
@@ -38,11 +40,19 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
     case "confirmed": return { template: "rf2_confirmed", body: [seller, short, slot], image };
     case "out_for_delivery": return { template: "rf2_out", body: [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
     case "completed": return { template: "rf2_delivered", body: [fish, name, seller], image };
-    case "cancelled": return { template: "rf2_cancelled", body: [name, short, cancel?.reason?.replace(/\.+$/, "") || "the seller couldn't take it", cancel?.refund || "none needed, nothing was charged"] };
+    case "cancelled": {
+      const why = cancel?.reason?.replace(/\.+$/, "") || "the seller couldn't take it";
+      const refund = cancel?.refund || "none needed, nothing was charged";
+      // "Your order #CART (Saundale) couldn't go ahead: the seller removed Saundale (not available), the rest of your order goes ahead."
+      if (cancel?.removedFrom) {
+        return { template: "rf2_cancelled", body: [name, `#${String(cancel.removedFrom).slice(0, 8).toUpperCase()} (${fish})`, `the seller removed ${fish} (${why}), the rest of your order goes ahead`, refund] };
+      }
+      return { template: "rf2_cancelled", body: [name, short, why, refund] };
+    }
   }
 }
 
-export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent, cancel?: { reason?: string | null; refund?: string | null }) {
+export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent, cancel?: WaCancel) {
   try {
     const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
     const { data: o } = await sb.from("orders").select(ORDER_SELECT).eq("id", order_id).maybeSingle();
