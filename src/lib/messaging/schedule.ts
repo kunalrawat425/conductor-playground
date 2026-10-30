@@ -216,7 +216,9 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
 /** Decide the one promo (if any) this buyer should get in the job run at `now`. */
 /** `sendNow`: an extra promo run the founder asks for (cron ?promo_now=1): due now instead of at a
  *  slot; every other rule (opt-in, 1 a day, 72 h, 48 h, Meta hold, DND, open order, inactive) still applies. */
-export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[], sendNow = false): Decision | Skip {
+/** `all` (founder's one-off "send to all", 30 Oct): also skips the 72 h / 48 h gaps, the Meta hold and the
+ *  inactive / just-delivered rules. Opt-in, STOP, DND, open order, quiet hours and 1 a day still apply. */
+export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[], sendNow = false, all = false): Decision | Skip {
   if (b.dnd) return { skip: "do not message" };
   if (b.opted_out) return { skip: "opted out" };
   if (b.open_order) return { skip: "open order" };
@@ -227,8 +229,8 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
     return { skip: "already messaged today" };
   }
   // Founder 30 Oct: an activity reminder in the last 2 days → no promo; Meta blocked a promo → wait 3 days.
-  if (real.some((x) => ACT_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < ACT_PROMO_GAP_MS)) return { skip: "activity reminder <48h" };
-  if (history.some((x) => metaBlocked(x) && PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < META_HOLD_MS)) return { skip: "meta limit: waiting" };
+  if (!all && real.some((x) => ACT_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < ACT_PROMO_GAP_MS)) return { skip: "activity reminder <48h" };
+  if (!all && history.some((x) => metaBlocked(x) && PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < META_HOLD_MS)) return { skip: "meta limit: waiting" };
   const cartMs = lastCartMs(b);
   const orderMs = b.last_order_at ? Date.parse(b.last_order_at) : 0;
   const hasCart = b.cart.length > 0 && cartMs > orderMs && now - cartMs <= 7 * DAY_MS;
@@ -247,7 +249,7 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   // No spam (founder 30 Oct): ≥ 72 h since the last marketing message (old B1/B2 rows count too).
   const spam = real.some((x) => PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < PROMO_GAP_MS);
   const slot = PROMO_SLOTS[istDow(now)];
-  if ((slot == null && !sendNow) || now - lastActive > 30 * DAY_MS || now - deliveredMs < 3 * DAY_MS || spam) return { skip: "nothing due" };
+  if ((slot == null && !sendNow) || (!all && (now - lastActive > 30 * DAY_MS || now - deliveredMs < 3 * DAY_MS || spam))) return { skip: "nothing due" };
   const due = sendNow ? now : atIST(today, slot);
   if (!isDue(now, due)) return { skip: "nothing due" };
   // At send time the offer is re-read: what the message promises is what checkout offers now.
