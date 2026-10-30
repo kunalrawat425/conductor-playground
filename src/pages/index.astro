@@ -178,7 +178,8 @@ const REVIEW_SLOTS = [
     :global(.festive-diwali) .ann{padding-top:20px;border-bottom:2px solid #D4A24C}
 
     /* ── Pill header ── */
-    .nav{position:sticky;top:0;z-index:200;background:var(--cream);transition:box-shadow .2s}
+    .topbar{position:sticky;top:0;z-index:200}
+    .nav{position:relative;background:var(--cream);transition:box-shadow .2s}
     .nav.scrolled{box-shadow:0 2px 0 var(--line)}
     .nav-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
     .logo{display:flex;align-items:center;background:var(--pill);border-radius:999px;padding:12px 18px;min-height:48px}
@@ -304,7 +305,7 @@ const REVIEW_SLOTS = [
     .d2-list{padding:7px 8px;display:flex;flex-direction:column;gap:6px}
     .d2-card{background:#fff;border-radius:9px;border:1px solid #EAECF0;overflow:hidden}
     .d2-card.tap{border-color:var(--blue);animation:d1tap .4s ease}
-    .d2-img{height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
+    .d2-img{height:84px;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
     .d2-badge{position:absolute;top:3px;right:4px;font:700 6px Inter;padding:1px 5px;border-radius:100px}
     .d2-badge.op{background:#2563EB;color:#fff}
     .d2-badge.pr{background:#7C3AED;color:#fff}
@@ -445,7 +446,12 @@ const REVIEW_SLOTS = [
     .wall{padding:34px 16px 10px;text-align:center}
     .wall h2{margin-bottom:12px}
     .soc{display:flex;justify-content:center;gap:10px}
-    .soc a{width:46px;height:46px;border-radius:12px;background:var(--cta);color:var(--cta-fg);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--cta-shadow)}
+    .soc a{width:46px;height:46px;border-radius:12px;color:#fff;display:flex;align-items:center;justify-content:center}
+    /* Same brand colours as the footer icons (founder 31 Oct) */
+    .soc a[aria-label^="Instagram"]{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fd5949 45%,#d6249f 60%,#285AEB 90%)}
+    .soc a[aria-label="Facebook"]{background:#1877F2}
+    .soc a[aria-label="WhatsApp"]{background:#25D366}
+    .soc a:hover{filter:brightness(1.1)}
     .soc svg{width:22px;height:22px}
     .dial{background:none!important;--cw:clamp(170px,26vw,330px);--ch:calc(var(--cw)*1.38);position:relative;height:calc(var(--ch)*.82 + 70px);width:100vw;max-width:none;margin:22px 0 0 calc(50% - 50vw);touch-action:pan-y;cursor:grab;overflow:hidden;user-select:none;-webkit-user-select:none;border-radius:0;
       background:radial-gradient(circle at 20% 60%,rgba(0,102,255,.35),transparent 38%),radial-gradient(circle at 80% 40%,rgba(255,209,102,.55),transparent 36%),radial-gradient(circle at 55% 85%,rgba(236,72,153,.28),transparent 34%)}
@@ -566,7 +572,7 @@ const REVIEW_SLOTS = [
     @keyframes scrollup{0%,35%,100%{transform:translateY(0)}55%,80%{transform:translateY(-52px)}}
     .s2-card{background:#fff;border-radius:10px;border:1px solid #EAECF0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);transition:all .2s}
     .s2-card:first-child{border-color:#2563EB;box-shadow:0 0 0 1.5px rgba(37,99,235,.2),0 4px 12px rgba(37,99,235,.1)}
-    .s2-cover{height:46px;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative}
+    .s2-cover{height:96px;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative}
     .s2-cover.g{background:linear-gradient(135deg,#0D3B2E,#0A5940)}
     .s2-cover.p{background:linear-gradient(135deg,#1A0D4A,#2A3080)}
     .s2-cover.t{background:linear-gradient(135deg,#002828,#004040)}
@@ -764,7 +770,8 @@ const REVIEW_SLOTS = [
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 )}
 
-<!-- ANNOUNCEMENT BAR -->
+<!-- ANNOUNCEMENT BAR + NAV stick together at the top (founder 31 Oct) -->
+<div class="topbar">
 <a class="ann" href="/shop">
   <DiwaliDecor part="lights" />
   <span>🛵 <b>2-hour delivery slots</b> · cleaned &amp; cut, at your door · <u>Shop now</u></span>
@@ -801,6 +808,7 @@ const REVIEW_SLOTS = [
     </div>
   </div>
 </nav>
+</div>
 <script>
   // Logged in: "Login" goes straight to the shop (logged out: /me?next=/shop logs in, then the shop).
   try { if (localStorage.getItem('rlf_buyer_id') && localStorage.getItem('rlf_phone')) document.getElementById('nav-login')?.setAttribute('href', '/shop'); } catch {}
