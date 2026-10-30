@@ -5,14 +5,14 @@
  * Loaded after the page is idle so it never slows the first paint. Buyer pages only (AppShell
  * skips it on the seller dashboard). Sits above the bottom nav and the cart bar.
  */
-import { LOGO_URL, SUPPORT_WHATSAPP } from "../lib/brand";
+import { SUPPORT_WHATSAPP } from "../lib/brand";
 const options = {
   enabled: true,
   // Founder's Wati generator settings (30 Oct), except: marginBottom stays 150 so the button clears
-  // the bottom nav and cart bar; our own logo (not Wati's); the number keeps its 91 country code.
+  // the bottom nav and cart bar; our white-R app icon (the blue logo vanishes on blue); the number keeps its 91 country code.
   chatButtonSetting: { backgroundColor: "#0066FF", ctaText: "Get to know more!", borderRadius: "25", marginLeft: "0", marginRight: "20", marginBottom: "150", ctaIconWATI: false, position: "right" },
   brandSetting: {
-    brandName: "Relifish", brandSubTitle: "", brandImg: LOGO_URL, altText: "Relifish",
+    brandName: "Relifish", brandSubTitle: "", brandImg: "https://www.relifish.com/icon-192.png", altText: "Relifish",
     welcomeText: "Hi there!\nHow can I help you?", messageText: "Hello,\n I have a question about {{page_link}}",
     backgroundColor: "#0066FF", ctaText: "Get to know more!", borderRadius: "25", autoShow: false, phoneNumber: SUPPORT_WHATSAPP,
   },
