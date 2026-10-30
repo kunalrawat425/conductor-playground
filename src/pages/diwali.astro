@@ -1,0 +1,217 @@
+---
+import AppShell from "../components/ui/AppShell.astro";
+
+// [class key, name, style] — same 10 designs as the approved mockup (.context/mock/s8.html).
+const THEMES: [string, string, string][] = [
+  ["goldblack", "Gold & Black", "Premium"], ["classic", "Red & Gold", "Classic"], ["minimal", "Ivory", "Minimal"],
+  ["royal", "Royal Purple", "Royal"], ["midnight", "Midnight Glow", "Event"], ["marigold", "Marigold", "Festive"],
+  ["emerald", "Emerald", "Classy"], ["rangoli", "Rangoli", "Playful"], ["glow", "Diya Glow", "Warm"],
+  ["rosegold", "Rose Gold", "Elegant"],
+];
+const MESSAGE = "May this Diwali fill your home with light, joy and endless sweetness.";
+---
+<AppShell
+  title="Make a Diwali Greeting Card | Relifish"
+  description="Pick a design, write your wish and share your own Happy Diwali greeting card on WhatsApp as an image. Free, takes a minute."
+  header={{ variant: "page", title: "Your Diwali greeting", backHref: "/shop" }}
+  hideNav={true}
+>
+  <!-- Card fonts. crossorigin lets html-to-image read and embed them in the PNG. -->
+  <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&family=Cinzel:wght@600;800&family=Great+Vibes&family=Poppins:wght@500;700&display=swap" />
+
+  <div class="dw">
+    <div id="dw-card" class="dw-card t-goldblack">
+      <div class="deco"></div>
+      <div class="orn">🪔</div>
+      <div class="h">Happy Diwali</div>
+      <div class="sub">Festival of lights</div>
+      <div class="m" id="dw-cm">{MESSAGE}</div>
+      <div class="rule"></div>
+      <div class="f" id="dw-cf">With love</div>
+    </div>
+
+    <div class="lab">Choose a design</div>
+    <div class="themes" id="dw-themes" role="radiogroup" aria-label="Card design">
+      {THEMES.map(([k, n, s], i) => (
+        <button type="button" class:list={["th", i === 0 && "on"]} data-theme={k} role="radio" aria-checked={i === 0 ? "true" : "false"}>
+          <span class={`sw t-${k}`}><span class="h">Happy<br />Diwali</span></span>
+          {n}<br /><span class="st">{s}</span>
+        </button>
+      ))}
+    </div>
+
+    <label class="lab" for="dw-im">Your message</label>
+    <textarea class="inp" id="dw-im" rows="3" maxlength="180">{MESSAGE}</textarea>
+    <label class="lab" for="dw-if">Sign as</label>
+    <input class="inp" id="dw-if" maxlength="40" value="With love" />
+
+    <div class="btns">
+      <button type="button" class="wa" id="dw-share">Share on WhatsApp</button>
+      <button type="button" class="dl" id="dw-save">Save image</button>
+    </div>
+  </div>
+
+  <style is:global>
+    .dw { padding: 14px; max-width: 430px; margin: 0 auto; font-family: Inter, sans-serif; color: #0F172A; }
+    /* the card: 4:5, exported as the image */
+    .dw .dw-card { position: relative; width: 100%; aspect-ratio: 4/5; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px 26px; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+    .dw .dw-card .orn { font-size: 34px; letter-spacing: 10px; }
+    .dw .dw-card .h { margin: 8px 0 2px; line-height: 1.05; }
+    .dw .dw-card .sub { font-size: 12px; letter-spacing: .35em; text-transform: uppercase; opacity: .85; margin-bottom: 16px; }
+    .dw .dw-card .m { font-size: 16px; line-height: 1.5; max-width: 92%; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .dw .dw-card .f { margin-top: 16px; font-size: 16px; overflow-wrap: anywhere; }
+    .dw .dw-card .rule { width: 56px; height: 2px; margin: 14px auto 0; opacity: .8; }
+    .dw .dw-card .deco { position: absolute; inset: 0; pointer-events: none; }
+    /* themes */
+    .dw .t-goldblack { background: radial-gradient(circle at 50% 30%, #1c1c1c, #000); color: #E8D5A3; border: 0; }
+    .dw .t-goldblack .h { font: 700 46px 'Playfair Display'; background: linear-gradient(180deg, #F9E7B0, #C9A24B 55%, #8C6A1F); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .dw .t-goldblack .deco { box-shadow: inset 0 0 0 10px #000, inset 0 0 0 11.5px #C9A24B; }
+    .dw .t-goldblack .rule { background: #C9A24B; }
+    .dw .t-goldblack .f { font: 400 30px 'Great Vibes'; color: #E8D5A3; }
+    .dw .t-classic { background: radial-gradient(circle at 50% 20%, #B91C1C, #7F1D1D 70%); color: #FDE68A; }
+    .dw .t-classic .h { font: 800 44px Cinzel; color: #FCD34D; text-shadow: 0 2px 0 #7C2D12; }
+    .dw .t-classic .deco { box-shadow: inset 0 0 0 8px #7F1D1D, inset 0 0 0 10px #FCD34D; }
+    .dw .t-classic .rule { background: #FCD34D; }
+    .dw .t-classic .f { font: italic 600 18px 'Playfair Display'; }
+    .dw .t-minimal { background: #FFFDF8; color: #1F2937; }
+    .dw .t-minimal .h { font: italic 600 42px 'Playfair Display'; color: #111827; }
+    .dw .t-minimal .orn { font-size: 26px; letter-spacing: 0; }
+    .dw .t-minimal .rule { background: #D4A373; }
+    .dw .t-minimal .sub { color: #B08968; }
+    .dw .t-minimal .f { font: 400 28px 'Great Vibes'; color: #7F5539; }
+    .dw .t-royal { background: linear-gradient(160deg, #3B0764, #581C87 55%, #7E22CE); color: #F5D0FE; }
+    .dw .t-royal .h { font: 800 42px Cinzel; background: linear-gradient(180deg, #FDE68A, #F59E0B); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .dw .t-royal .deco { background: radial-gradient(circle at 15% 15%, rgba(253,230,138,.25) 0 3px, transparent 4px) 0 0/40px 40px; }
+    .dw .t-royal .rule { background: #FCD34D; }
+    .dw .t-royal .f { font: 400 30px 'Great Vibes'; color: #FDE68A; }
+    .dw .t-midnight { background: radial-gradient(circle at 50% 110%, #1E3A8A, #0B1023 60%); color: #E0E7FF; }
+    .dw .t-midnight .h { font: 700 44px Poppins; color: #FFF; text-shadow: 0 0 18px #F59E0B, 0 0 32px #F97316; }
+    .dw .t-midnight .deco { background: radial-gradient(#fff 1px, transparent 1.5px) 0 0/22px 22px; opacity: .25; }
+    .dw .t-midnight .rule { background: #F59E0B; }
+    .dw .t-midnight .f { font: 600 16px Poppins; color: #FCD34D; }
+    .dw .t-marigold { background: linear-gradient(160deg, #FDE047, #F59E0B 50%, #EA580C); color: #7C2D12; }
+    .dw .t-marigold .h { font: 800 44px Poppins; color: #7C2D12; }
+    .dw .t-marigold .deco { box-shadow: inset 0 0 0 10px rgba(255,255,255,.35); }
+    .dw .t-marigold .rule { background: #7C2D12; }
+    .dw .t-marigold .f { font: 700 17px Poppins; }
+    .dw .t-emerald { background: radial-gradient(circle at 50% 25%, #065F46, #022C22 75%); color: #D1FAE5; }
+    .dw .t-emerald .h { font: 700 44px 'Playfair Display'; background: linear-gradient(180deg, #FEF3C7, #D4AF37); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .dw .t-emerald .deco { box-shadow: inset 0 0 0 12px #022C22, inset 0 0 0 13px #D4AF37; }
+    .dw .t-emerald .rule { background: #D4AF37; }
+    .dw .t-emerald .f { font: 400 30px 'Great Vibes'; color: #FDE68A; }
+    .dw .t-rangoli { background: #FFF1F2; color: #831843; }
+    .dw .t-rangoli .h { font: 800 42px Poppins; color: #BE185D; }
+    .dw .t-rangoli .deco { background: radial-gradient(circle at 0 0, #FBCFE8 0 60px, transparent 61px), radial-gradient(circle at 100% 100%, #FED7AA 0 70px, transparent 71px), radial-gradient(circle at 100% 0, #DDD6FE 0 40px, transparent 41px), radial-gradient(circle at 0 100%, #BBF7D0 0 45px, transparent 46px); }
+    .dw .t-rangoli .rule { background: #F472B6; }
+    .dw .t-rangoli .f { font: 600 17px Poppins; color: #9D174D; }
+    .dw .t-glow { background: radial-gradient(circle at 50% 0%, #FDE68A, #F59E0B 30%, #B45309 70%, #7C2D12); color: #FFFBEB; }
+    .dw .t-glow .h { font: 700 44px 'Playfair Display'; text-shadow: 0 2px 0 rgba(0,0,0,.25); }
+    .dw .t-glow .rule { background: #FFFBEB; }
+    .dw .t-glow .f { font: 700 17px Inter; }
+    .dw .t-rosegold { background: linear-gradient(160deg, #FFF1EB, #F5D0C5 60%, #E8B4A6); color: #7A3E3E; }
+    .dw .t-rosegold .h { font: italic 600 44px 'Playfair Display'; background: linear-gradient(180deg, #B76E79, #8E4B53); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .dw .t-rosegold .deco { box-shadow: inset 0 0 0 10px rgba(255,255,255,.55), inset 0 0 0 11px #B76E79; }
+    .dw .t-rosegold .rule { background: #B76E79; }
+    .dw .t-rosegold .f { font: 400 30px 'Great Vibes'; }
+    /* picker */
+    .dw .lab { display: block; font: 800 14px Inter, sans-serif; margin: 16px 2px 8px; }
+    .dw .themes { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+    .dw .th { flex: none; width: 78px; padding: 0; border: 0; background: none; text-align: center; font: 600 11px Inter, sans-serif; color: #475569; cursor: pointer; }
+    .dw .th .sw { position: relative; overflow: hidden; width: 78px; height: 98px; margin-bottom: 4px; border-radius: 12px; border: 2px solid transparent; display: flex; align-items: center; justify-content: center; }
+    .dw .th .sw .h { font-size: 13px; line-height: 1.1; }
+    .dw .th .st { color: #94A3B8; font-weight: 500; }
+    .dw .th.on .sw { border-color: #0066FF; box-shadow: 0 0 0 2px #fff inset; }
+    .dw .th.on { color: #0066FF; }
+    .dw .inp { width: 100%; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; font: 500 14px Inter, sans-serif; background: #fff; color: #0F172A; resize: vertical; }
+    .dw .btns { display: flex; gap: 10px; margin-top: 14px; }
+    .dw .wa { flex: 2; background: #25D366; color: #fff; border: 0; border-radius: 12px; padding: 14px; font: 800 15px Inter, sans-serif; cursor: pointer; }
+    .dw .dl { flex: 1; background: #fff; color: #0F172A; border: 1.5px solid #CBD5E1; border-radius: 12px; font: 700 14px Inter, sans-serif; cursor: pointer; }
+  </style>
+
+  <script>
+    import { celebrate } from "../lib/fireworks";
+    import { setButtonLoading } from "../lib/button-loading";
+
+    const SHARE_TEXT = "Happy Diwali! 🪔";
+    const card = document.getElementById("dw-card") as HTMLElement;
+    const picker = document.getElementById("dw-themes") as HTMLElement;
+    const msgIn = document.getElementById("dw-im") as HTMLTextAreaElement;
+    const signIn = document.getElementById("dw-if") as HTMLInputElement;
+    const shareBtn = document.getElementById("dw-share") as HTMLButtonElement;
+    const saveBtn = document.getElementById("dw-save") as HTMLButtonElement;
+    let theme = "goldblack";
+
+    picker.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".th");
+      if (!btn) return;
+      picker.querySelectorAll(".th").forEach((b) => { b.classList.remove("on"); b.setAttribute("aria-checked", "false"); });
+      btn.classList.add("on");
+      btn.setAttribute("aria-checked", "true");
+      theme = btn.dataset.theme!;
+      card.className = `dw-card t-${theme}`;
+    });
+    msgIn.addEventListener("input", () => { document.getElementById("dw-cm")!.textContent = msgIn.value; });
+    signIn.addEventListener("input", () => { document.getElementById("dw-cf")!.textContent = signIn.value; });
+
+    // Logged-in buyer: sign the card with their first name.
+    try {
+      const first = localStorage.getItem("rlf_buyer_id") && (localStorage.getItem("rlf_buyer_first_name") || "").trim();
+      if (first) {
+        signIn.value = `With love, ${first}`.slice(0, 40);
+        document.getElementById("dw-cf")!.textContent = signIn.value;
+      }
+    } catch {}
+
+    async function renderPng(): Promise<Blob> {
+      const { toBlob } = await import("html-to-image");
+      await document.fonts.ready;
+      const blob = await toBlob(card, { pixelRatio: 3, cacheBust: true });
+      if (!blob) throw new Error("Could not make the image");
+      return blob;
+    }
+
+    function download(blob: Blob) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "happy-diwali.png";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+    }
+    const track = (name: string) => { try { (window as any).gtag?.("event", name, { theme }); } catch {} };
+
+    shareBtn.addEventListener("click", async () => {
+      setButtonLoading(shareBtn, true, "Share on WhatsApp");
+      try {
+        const blob = await renderPng();
+        track("diwali_greeting_share");
+        const file = new File([blob], "happy-diwali.png", { type: "image/png" });
+        if (navigator.canShare?.({ files: [file] })) {
+          try { await navigator.share({ files: [file], text: SHARE_TEXT }); return; }
+          catch (err) { if ((err as Error).name === "AbortError") return; } // share blocked: fall through
+        }
+        // Desktop / old phones: save the image, then open WhatsApp to attach it.
+        download(blob);
+        location.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(SHARE_TEXT);
+      } catch {
+        alert("Could not make the image. Please try again.");
+      } finally {
+        setButtonLoading(shareBtn, false, "Share on WhatsApp");
+      }
+    });
+
+    saveBtn.addEventListener("click", async () => {
+      setButtonLoading(saveBtn, true, "Save image", "neutral");
+      try {
+        download(await renderPng());
+        track("diwali_greeting_save");
+      } catch {
+        alert("Could not make the image. Please try again.");
+      } finally {
+        setButtonLoading(saveBtn, false, "Save image");
+      }
+    });
+
+    // They just tapped "Happy Diwali": fireworks on open (sound only if the browser allows it).
+    celebrate(3000);
+  </script>
+</AppShell>

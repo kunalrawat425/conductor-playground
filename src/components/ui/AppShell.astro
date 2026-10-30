@@ -293,6 +293,8 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
       import { loadSavedLocation, readSavedLocation, saveConfirmedLocation } from "../../lib/saved-location";
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
+      // Fireworks with sound after a tap (checkout, order placed, /diwali). fireworks-js loads only when called.
+      (window as any).relifishFireworks = (ms?: number) => import("../../lib/fireworks").then((m) => m.celebrate(ms));
 
       // Saved location for inline map scripts (LocationPickerSheet, AddressPickerSheet).
       (window as any).RelifishLocation = {
