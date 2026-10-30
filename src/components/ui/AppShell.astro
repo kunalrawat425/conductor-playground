@@ -251,7 +251,8 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
       <img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="" width="230" height="55" />
       {festive
         ? <span class="rf-splash-tag rf-splash-diya"><span class="fd-diya"><span class="fd-flame"></span></span>Happy Diwali<span class="fd-diya"><span class="fd-flame"></span></span></span>
-        : <span class="rf-splash-tag">Fresh fish from local sellers</span>}
+        : null}
+      <span class="rf-splash-tag">Fresh fish from verified local sellers</span>
       <span class="rf-splash-dots"><i></i><i></i><i></i></span>
     </div>
     <script is:inline>

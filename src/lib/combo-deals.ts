@@ -107,6 +107,7 @@ export function bundleGroups(listings: Listing[], nameOf: (l: Listing) => string
     }));
   }
   for (const [key, g] of groups) {
+    if (!g.combos.length) continue;
     const popular = g.combos.reduce((a, b) => (b.saving > a.saving ? b : a));
     if (g.combos.length >= 2) {
       if (popular.saving > 0) popular.ribbon = "popular";

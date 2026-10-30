@@ -153,7 +153,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
   // Opened from checkout (?back=/seller/<id>): Back returns there with checkout open (?checkout=1).
   // Client-side because this page is pre-built (no query string on the server).
   const back = new URLSearchParams(location.search).get("back") || "";
-  if (/^\/seller\/[\w-]+$/.test(back)) document.querySelector<HTMLAnchorElement>("a.v2-back")?.setAttribute("href", `${back}?checkout=1`);
+  if (/^\/(seller|s)\/[\w-]+$/.test(back)) document.querySelector<HTMLAnchorElement>("a.v2-back")?.setAttribute("href", `${back}?checkout=1`);
 </script>
 <script>
     import { celebrate } from "../lib/fireworks";

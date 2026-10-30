@@ -60,12 +60,14 @@ const {
     btn.addEventListener("click", () => {
       const id = btn.dataset.sheetClose!;
       document.getElementById(`${id}-backdrop`)?.classList.remove("v2-sheet-open");
+      document.dispatchEvent(new CustomEvent("v2-sheet-closed", { detail: { id } }));
     });
   });
   document.querySelectorAll<HTMLElement>("[data-sheet-backdrop]").forEach((bd) => {
     bd.addEventListener("click", (e) => {
       if (e.target === bd && !("sheetLocked" in bd.dataset)) {
         bd.classList.remove("v2-sheet-open");
+        document.dispatchEvent(new CustomEvent("v2-sheet-closed", { detail: { id: bd.id.replace(/-backdrop$/, "") } }));
       }
     });
   });

@@ -1005,7 +1005,8 @@ const tags = [
     function bundlesTopHtml(sellerItems) {
       const rows = Object.values(bundleMap).flat().map((r) => {
         const cl = listings.find((x) => x.id === r.lid);
-        if (!cl || (isPreorderMode && cl.is_preorder_enabled !== true)) return "";
+        const inStock = cl && cl.is_available === true && !cl.is_order_paused && (cl.weight_avail == null || Number(cl.weight_avail) > 0);
+        if (!cl || sellerFullyClosed || (isPreorderMode ? cl.is_preorder_enabled !== true : !inStock)) return "";
         const n = (cl.pricing_options || []).findIndex((o, i) => (o.id || `opt_${i}`) === r.optId);
         const o = cl.pricing_options?.[n];
         if (!o) return "";
