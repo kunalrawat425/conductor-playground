@@ -429,3 +429,17 @@ describe("promo now (founder's extra run)", () => {
     expect((decide(T("23", "21:10"), b, SELLERS, [], true) as any).skip).toBe("quiet hours");
   });
 });
+
+describe("send to all (founder's one-off)", () => {
+  it("skips gaps and holds but keeps opt-out, DND and 1 a day", () => {
+    const b = buyer({ created_at: iso(T("10", "10:00")) }); // inactive > 30 days
+    const blocked = { ...log("promo", T("23", "09:04")), status: "failed", error: "Message undeliverable as Meta has restricted it for higher quality messaging" };
+    const yesterday = { ...log("promo", T("23", "09:04")), status: "read" };
+    expect(decide(T("24", "09:15"), b, SELLERS, [blocked], true).skip).toBeTruthy();
+    expect(decide(T("24", "09:15"), b, SELLERS, [blocked], true, true)).toMatchObject({ kind: "promo" });
+    expect(decide(T("24", "09:15"), b, SELLERS, [yesterday], true, true)).toMatchObject({ kind: "promo" });
+    expect((decide(T("24", "09:15"), b, SELLERS, [{ ...log("promo", T("24", "08:30")), status: "read" }], true, true) as any).skip).toBe("already messaged today");
+    expect((decide(T("24", "09:15"), { ...b, dnd: true }, SELLERS, [], true, true) as any).skip).toBe("do not message");
+    expect((decide(T("24", "09:15"), { ...b, opted_out: true }, SELLERS, [], true, true) as any).skip).toBe("opted out");
+  });
+});
