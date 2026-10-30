@@ -46,17 +46,22 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     <input class="inp" id="dw-if" maxlength="40" value="With love" />
 
     <div class="btns">
-      <button type="button" class="wa" id="dw-share">Share on WhatsApp</button>
-      <button type="button" class="dl" id="dw-save">Save image</button>
+      <button type="button" class="wa" id="dw-share">Share image</button>
     </div>
     <div class="invite">
       <b>🎆 Let your family make theirs too</b>
       <span>Send this free card maker to your WhatsApp groups — everyone can pick a design and write their own wish.</span>
       <button type="button" id="dw-invite">Share the card maker</button>
     </div>
+    <a class="dw-from" href="/?utm_source=diwali_card&utm_medium=referral&utm_campaign=diwali_card">
+      <b>Made with Relifish</b>
+      <span>Fresh fish from local sellers in Thane &amp; Mumbai, cleaned and cut, delivered to your door →</span>
+    </a>
   </div>
 
   <style is:global>
+    .dw-from{display:block;margin-top:14px;padding:14px;border-radius:14px;background:#EEF4FF;text-align:center;text-decoration:none}
+    .dw-from b{display:block;font:800 14px Inter;color:#0052CC}.dw-from span{display:block;font:500 13px/1.45 Inter;color:#334155;margin-top:3px}
     .invite{margin-top:18px;background:#FFF7ED;border:1.5px dashed #FDBA74;border-radius:14px;padding:14px;text-align:center}
     .invite b{display:block;font:800 15px Inter;color:#9A3412}.invite span{display:block;font:500 13px Inter;color:#7C2D12;margin:4px 0 10px}
     .invite button{background:#fff;border:1.5px solid #25D366;color:#128C7E;border-radius:999px;padding:11px 18px;font:800 14px Inter;cursor:pointer;min-height:44px}
@@ -132,8 +137,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     .dw .th.on { color: #0066FF; }
     .dw .inp { width: 100%; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; font: 500 14px Inter, sans-serif; background: #fff; color: #0F172A; resize: vertical; }
     .dw .btns { display: flex; gap: 10px; margin-top: 14px; }
-    .dw .wa { flex: 2; background: #25D366; color: #fff; border: 0; border-radius: 12px; padding: 14px; font: 800 15px Inter, sans-serif; cursor: pointer; }
-    .dw .dl { flex: 1; background: #fff; color: #0F172A; border: 1.5px solid #CBD5E1; border-radius: 12px; font: 700 14px Inter, sans-serif; cursor: pointer; }
+    .dw .wa { flex: 1; min-height: 48px; background: #0066FF; color: #fff; border: 0; border-radius: 12px; padding: 14px; font: 800 15px Inter, sans-serif; cursor: pointer; }
   </style>
 
   <script>
@@ -154,7 +158,6 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     const msgIn = document.getElementById("dw-im") as HTMLTextAreaElement;
     const signIn = document.getElementById("dw-if") as HTMLInputElement;
     const shareBtn = document.getElementById("dw-share") as HTMLButtonElement;
-    const saveBtn = document.getElementById("dw-save") as HTMLButtonElement;
     let theme = "goldblack";
 
     picker.addEventListener("click", (e) => {
@@ -196,7 +199,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     const track = (name: string) => { try { (window as any).gtag?.("event", name, { theme }); } catch {} };
 
     shareBtn.addEventListener("click", async () => {
-      setButtonLoading(shareBtn, true, "Share on WhatsApp");
+      setButtonLoading(shareBtn, true, "Share image");
       try {
         const blob = await renderPng();
         track("diwali_greeting_share");
@@ -205,25 +208,13 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
           try { await navigator.share({ files: [file], text: SHARE_TEXT }); return; }
           catch (err) { if ((err as Error).name === "AbortError") return; } // share blocked: fall through
         }
-        // Desktop / old phones: save the image, then open WhatsApp to attach it.
+        // Desktop / old phones (no image sharing): the image downloads, then WhatsApp opens with the link to attach it.
         download(blob);
         location.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(SHARE_TEXT);
       } catch {
         alert("Could not make the image. Please try again.");
       } finally {
-        setButtonLoading(shareBtn, false, "Share on WhatsApp");
-      }
-    });
-
-    saveBtn.addEventListener("click", async () => {
-      setButtonLoading(saveBtn, true, "Save image", "neutral");
-      try {
-        download(await renderPng());
-        track("diwali_greeting_save");
-      } catch {
-        alert("Could not make the image. Please try again.");
-      } finally {
-        setButtonLoading(saveBtn, false, "Save image");
+        setButtonLoading(shareBtn, false, "Share image");
       }
     });
 
