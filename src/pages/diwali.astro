@@ -132,7 +132,9 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     import { celebrate } from "../lib/fireworks";
     import { setButtonLoading } from "../lib/button-loading";
 
-    const SHARE_TEXT = "Happy Diwali! 🪔";
+    // The card image stays clean (founder: no brand on the card); the caption carries the
+    // "make your own" link so everyone who receives a card can make and send theirs.
+    const SHARE_TEXT = "Happy Diwali! 🪔\n\nMake your own free Diwali card in 30 seconds 👉 https://www.relifish.com/diwali?utm_source=whatsapp&utm_medium=share&utm_campaign=diwali_card";
     const card = document.getElementById("dw-card") as HTMLElement;
     const picker = document.getElementById("dw-themes") as HTMLElement;
     const msgIn = document.getElementById("dw-im") as HTMLTextAreaElement;
