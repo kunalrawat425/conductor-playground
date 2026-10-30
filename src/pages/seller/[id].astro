@@ -73,12 +73,12 @@ const fishBase = seller && sellerHref(seller.name, seller.id).startsWith("/s/") 
 // Server-side species photo map — same images as flyer (index.astro). Used in SSR cards.
 const _SB = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
 const ssrSpeciesPhotos: Record<string, string> = {
-  pomfret: "/fish/pomfret.jpg",
-  surmai:  "/fish/surmai.jpg",
-  prawns:  "/fish/prawns.jpg",
-  bangda:  "/fish/bangda.jpg",
-  rawas:   "/fish/rawas.jpg",
-  crab:    "/fish/crab.jpg",
+  pomfret: "/fish/pomfret.jpg?v=2",
+  surmai:  "/fish/surmai.jpg?v=2",
+  prawns:  "/fish/prawns.jpg?v=2",
+  bangda:  "/fish/bangda.jpg?v=2",
+  rawas:   "/fish/rawas.jpg?v=2",
+  crab:    "/fish/crab.jpg?v=2",
   bombil:  _SB + "/ocean/11_bombil.jpg",
   shark:   _SB + "/bombay/shark.webp",
   salmon:  _SB + "/bombay/salmon.webp",
@@ -629,14 +629,14 @@ const tags = [
 
     // Generic species stock photos — same images as landing page flyer. No seller-specific photos.
     const _BP = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
-    const _FP = "/fish/pomfret.jpg";
+    const _FP = "/fish/pomfret.jpg?v=2";
     const speciesPhotos = {
       pomfret: _FP,
-      surmai:  "/fish/surmai.jpg",
-      prawns:  "/fish/prawns.jpg",
-      bangda:  "/fish/bangda.jpg",
-      rawas:   "/fish/rawas.jpg",
-      crab:    "/fish/crab.jpg",
+      surmai:  "/fish/surmai.jpg?v=2",
+      prawns:  "/fish/prawns.jpg?v=2",
+      bangda:  "/fish/bangda.jpg?v=2",
+      rawas:   "/fish/rawas.jpg?v=2",
+      crab:    "/fish/crab.jpg?v=2",
       bombil:  _BP + "/ocean/11_bombil.jpg",
       shark:   _BP + "/bombay/shark.webp",
       salmon:  _BP + "/bombay/salmon.webp",

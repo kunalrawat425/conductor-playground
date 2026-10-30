@@ -106,7 +106,7 @@ const description = rows.length
         "name": english,
         "description": description,
         "url": url,
-        ...(["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"].includes(species) ? { "image": `${SITE_URL}/fish/${species}.jpg` } : {}),
+        ...(["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"].includes(species) ? { "image": `${SITE_URL}/fish/${species}.jpg?v=2` } : {}),
         "brand": { "@type": "Brand", "name": "Relifish" },
         // One Offer per seller with it in stock today, at the price the table shows (₹/kg when sold by weight).
         "offers": live.map((r) => {
