@@ -71,11 +71,27 @@ export function cartSavings(items: Line[], listings: Listing[]): { mrp: number; 
 }
 
 export type BundleRow = { listing: Listing; opt: Opt; optId: string; saving: number; pct: number; parts: string[]; ribbon?: "popular" | "value" };
-export type BundleGroup = { base: string; single: BundleRow | null; combos: BundleRow[] };
+export type BundleGroup = { base: string; sizes: BundleRow[]; combos: BundleRow[] };
+
+/** Pack weight in grams from its label: "200–300 g · Cut" → 250 (mid-point), "1 kg" → 1000, "½ kg" → 500; none → 0. */
+export function gramsOf(label: string | null | undefined): number {
+  const t = String(label || "").replace(/½/g, "0.5");
+  const m = t.match(/(\d+(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:\.\d+)?))?\s*(kg|g)\b/i);
+  if (!m) return 0;
+  const mid = m[2] ? (Number(m[1]) + Number(m[2])) / 2 : Number(m[1]);
+  return m[3].toLowerCase() === "kg" ? mid * 1000 : mid;
+}
+
+/** The size with the lowest ₹ per 100 g (BEST VALUE): needs 2+ sizes with a weight and one clear winner; else -1. */
+export function bestValueIndex(opts: Opt[]): number {
+  const per = opts.map((o) => { const g = gramsOf(o.label); return g && o.price > 0 ? o.price / g : Infinity; });
+  const min = Math.min(...per);
+  return per.filter((x) => x !== Infinity).length >= 2 && per.filter((x) => x === min).length === 1 ? per.indexOf(min) : -1;
+}
 
 /**
- * "Bundle & Save" groups: per base fish ("Silver Pomfret" from "Silver Pomfret Combo"), the combos
- * plus the plain fish if the menu has it. Ribbons only with 2+ combos: MOST POPULAR = biggest ₹ saving,
+ * One card per base fish ("Silver Pomfret" from "Silver Pomfret Combo"): every size of the plain
+ * fish (if the menu has it) plus the combos. Ribbons only with 2+ combos: MOST POPULAR = biggest ₹ saving,
  * BEST VALUE = most parts (a clear winner that isn't already MOST POPULAR).
  */
 export function bundleGroups(listings: Listing[], nameOf: (l: Listing) => string = (l) => l.species || ""): BundleGroup[] {
@@ -84,7 +100,7 @@ export function bundleGroups(listings: Listing[], nameOf: (l: Listing) => string
     if (!isComboListing(l)) continue;
     const base = nameOf(l).replace(/\bcombo\b/gi, "").replace(/\s+/g, " ").trim();
     if (!base) continue;
-    const g = groups.get(base.toLowerCase()) || { base, single: null, combos: [] };
+    const g = groups.get(base.toLowerCase()) || { base, sizes: [], combos: [] };
     groups.set(base.toLowerCase(), g);
     (l.pricing_options || []).forEach((o, n) => g.combos.push({
       listing: l, opt: o, optId: optionKey(o, n), saving: dealSaving(o), pct: savePct(o), parts: comboParts(o.label),
@@ -99,12 +115,11 @@ export function bundleGroups(listings: Listing[], nameOf: (l: Listing) => string
       if (value.length === 1 && !value[0].ribbon) value[0].ribbon = "value";
     }
     const plain = listings.find((l) => !isComboListing(l) && `${nameOf(l)} ${l.description || ""}`.toLowerCase().includes(key));
-    if (plain) {
-      const opts = plain.pricing_options || [];
-      // The size inside the top combo ("300–400 g"), else the first pack.
-      const n = Math.max(0, opts.findIndex((o) => !!o.label && (popular.opt.label || "").includes(o.label.split(" · ")[0])));
-      if (opts[n]) g.single = { listing: plain, opt: opts[n], optId: optionKey(opts[n], n), saving: dealSaving(opts[n]), pct: savePct(opts[n]), parts: [] };
-    }
+    g.sizes = (plain?.pricing_options || []).map((o, n) => ({
+      listing: plain!, opt: o, optId: optionKey(o, n), saving: dealSaving(o), pct: savePct(o), parts: [],
+    }));
+    const best = bestValueIndex(g.sizes.map((r) => r.opt));
+    if (best >= 0) g.sizes[best].ribbon = "value";
   }
   return [...groups.values()];
 }

@@ -30,7 +30,7 @@ import { sellerBlocked } from "../../lib/test-sellers";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 import { dateLabelIST, deliveryDaysAt, slotPreorderLabel, storePreorderLabel } from "../../lib/delivery-slots";
-import { bundleGroups } from "../../lib/combo-deals";
+import { bundleGroups, gramsOf } from "../../lib/combo-deals";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -411,26 +411,32 @@ const tags = [
             </div>
           )}
           {bundles.map((g) => {
-            const rows = [g.single, ...g.combos].filter(Boolean) as any[];
+            // One card per fish (founder 31 Oct): sizes with ₹/100 g, then the combos, as pick-one rows.
+            // The plain fish and combo cards are hidden from the menu below (client), so nothing shows twice.
             const sel = g.combos.find((c) => c.ribbon === "popular") || g.combos[0];
-            const nameOf = (r: any) => r === g.single ? `${g.base} only` : (speciesDisplayById[r.listing.species] || r.listing.species);
-            const sub = (r: any) => r.parts.length ? r.parts.join(" + ") : (r.opt.label || r.listing.size_label || "");
+            const nameOf = (r: any) => r.parts.length ? (speciesDisplayById[r.listing.species] || r.listing.species) : (r.opt.label || r.listing.size_label || g.base);
+            const per100 = (r: any) => { const gr = gramsOf(r.opt.label); return gr ? Math.round(bundlePrice(r.opt) / gr * 100) : 0; };
+            const sub = (r: any) => r.parts.length ? r.parts.join(" + ") : per100(r) ? `${inr(per100(r))} / 100 g` : "";
+            const row = (r: any) => {
+              const img = resizedImageUrl(r.listing.photo_url, 300) || getSsrSpeciesPhoto(r.listing.species);
+              return (
+                <label class="v2-bundle-opt">
+                  {r.ribbon && <span class={`v2-bundle-rib v2-bundle-rib-${r.ribbon}`}>{r.ribbon === "popular" ? "MOST POPULAR" : "BEST VALUE"}</span>}
+                  <input type="radio" name={`bundle-${g.base}`} checked={r === sel} aria-label={nameOf(r)}
+                    data-lid={r.listing.id} data-opt={r.optId} data-price={bundlePrice(r.opt)} data-save={r.saving} data-name={nameOf(r)} />
+                  {img && <img src={img} alt="" width="52" height="52" loading="lazy" />}
+                  <span class="v2-bundle-x"><b>{nameOf(r)}</b>{sub(r) && <span>{sub(r)}</span>}{r.pct > 0 && <em class="v2-bundle-sv">Save {r.pct}%</em>}<i class="v2-bundle-in" hidden></i></span>
+                  <span class="v2-bundle-p">{inr(bundlePrice(r.opt))}{r.saving > 0 && <s>{inr(r.opt.compare_at_price)}</s>}</span>
+                </label>
+              );
+            };
             return (
-              <section class="v2-bundle" aria-label={`Bundle and save: ${g.base}`}>
-                <h3 class="v2-bundle-h">Bundle &amp; Save</h3>
-                {rows.map((r) => {
-                  const img = resizedImageUrl(r.listing.photo_url, 300) || getSsrSpeciesPhoto(r.listing.species);
-                  return (
-                    <label class="v2-bundle-opt">
-                      {r.ribbon && <span class={`v2-bundle-rib v2-bundle-rib-${r.ribbon}`}>{r.ribbon === "popular" ? "MOST POPULAR" : "BEST VALUE"}</span>}
-                      <input type="radio" name={`bundle-${g.base}`} checked={r === sel} aria-label={nameOf(r)}
-                        data-lid={r.listing.id} data-opt={r.optId} data-price={bundlePrice(r.opt)} data-save={r.saving} data-name={nameOf(r)} />
-                      {img && <img src={img} alt="" width="52" height="52" loading="lazy" />}
-                      <span class="v2-bundle-x"><b>{nameOf(r)}</b><span>{sub(r)}</span>{r.pct > 0 && <em class="v2-bundle-sv">Save {r.pct}%</em>}</span>
-                      <span class="v2-bundle-p">{inr(bundlePrice(r.opt))}{r.saving > 0 && <s>{inr(r.opt.compare_at_price)}</s>}</span>
-                    </label>
-                  );
-                })}
+              <section class="v2-bundle" aria-label={`${g.base}: sizes and bundles`}>
+                <h3 class="v2-bundle-h">{g.base}</h3>
+                {g.sizes.length > 0 && <p class="v2-bundle-k">Choose size</p>}
+                {g.sizes.map(row)}
+                <p class="v2-bundle-k">Bundles · save more</p>
+                {g.combos.map(row)}
                 <div class="v2-bundle-yes" hidden={!(sel.saving > 0)}>You save {inr(sel.saving)} with {nameOf(sel)}</div>
                 <button type="button" class="v2-bundle-atc">Add to cart · {inr(bundlePrice(sel.opt))}</button>
               </section>
@@ -527,7 +533,13 @@ const tags = [
 
   /* Bundle & Save (mock s7) */
   .v2-bundle { margin: 0 16px 16px; padding: 14px; background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: var(--v2-radius-lg); }
-  .v2-bundle-h { font: 800 15px Inter; color: var(--v2-ink); margin: 0 0 12px; }
+  .v2-menu-grid .v2-bundle { margin: 0; border-radius: var(--v2-radius); }
+  .v2-bundle[hidden] { display: none; }
+  .v2-bundle-h { font: 800 17px Inter; color: var(--v2-ink); margin: 0 0 4px; }
+  .v2-bundle-k { font: 700 12px Inter; color: var(--v2-ink-3); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 10px; }
+  .v2-bundle-in { display: block; margin-top: 4px; font: 700 11px Inter; font-style: normal; color: var(--v2-brand); }
+  .v2-bundle-in[hidden] { display: none; }
+  .v2-item-card.v2-in-bundle { display: none !important; }
   .v2-bundle-opt { position: relative; display: flex; gap: 10px; align-items: center; min-height: 44px; border: 1.5px solid var(--v2-border); border-radius: 12px; padding: 12px; margin-bottom: 12px; background: var(--v2-bg); cursor: pointer; }
   .v2-bundle-opt:has(input:checked) { border-color: var(--v2-brand); background: var(--v2-brand-l); }
   .v2-bundle-opt input { appearance: none; width: 20px; height: 20px; margin: 0; border-radius: 50%; border: 2px solid var(--v2-ink-4); flex: none; }
@@ -572,12 +584,22 @@ const tags = [
   .v2-item-tiers {
     margin-top: 6px;
   }
+  /* Each size is a row like the Bundle & Save options (founder 31 Oct); a size in the cart is highlighted. */
   .v2-item-tier {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 0;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border: 1.5px solid var(--v2-border);
+    border-radius: 12px;
+    background: var(--v2-bg);
   }
+  .v2-item-tier:has(.v2-item-counter) { border-color: var(--v2-brand); background: var(--v2-brand-l); }
+  .v2-item-per100 { font: 500 11px Inter; color: var(--v2-ink-3); }
+  .v2-item-tier:has(.v2-bundle-rib) { margin-top: 14px; }
+  .v2-item-was { font: 500 11px Inter; color: var(--v2-ink-4); margin-left: 6px; }
   .v2-item-tier-price {
     font: 800 16px Inter;
     color: var(--v2-ink);
@@ -587,12 +609,11 @@ const tags = [
   /* A pack size to pick: looks like a button because it is one (adds that pack). */
   .v2-item-tier-chip {
     align-self: flex-start;
-    font: 600 12px Inter;
-    color: var(--v2-brand);
-    background: var(--v2-brand-l);
-    border: 1px solid var(--v2-brand);
-    border-radius: 999px;
-    padding: 3px 10px;
+    font: 700 13px/1.3 Inter;
+    color: var(--v2-ink);
+    background: none;
+    border: 0;
+    padding: 0;
     cursor: pointer;
     text-align: left;
     white-space: normal;
@@ -770,6 +791,12 @@ const tags = [
       return Cart()?.qtyLabel(qty, unit, bundleSize, perPack) || `${fmtQty(qty)} ${unit || "kg"}`;
     }
 
+    // Pack weight in grams from its label ("200–300 g" → 250, "1 kg" → 1000); same rule as lib/combo-deals gramsOf.
+    function gramsIn(label) {
+      const m = String(label || "").replace(/½/g, "0.5").match(/(\d+(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:\.\d+)?))?\s*(kg|g)\b/i);
+      return m ? (m[2] ? (Number(m[1]) + Number(m[2])) / 2 : Number(m[1])) * (m[3].toLowerCase() === "kg" ? 1000 : 1) : 0;
+    }
+
     // Build composite cart key matching cart.ts logic (pre-order lines carry a "|preorder" suffix)
     function ck(listingId, optId) {
       return (optId && optId !== "default" ? listingId + ":" + optId : listingId) + (cartMode === "preorder" ? "|preorder" : "");
@@ -811,6 +838,17 @@ const tags = [
         if (!poFixed(o) || !(was > Number(p))) return "";
         return ` <s style="font-size:11px;font-weight:500;color:var(--v2-ink-4);margin-left:4px;">₹${was.toLocaleString("en-IN")}</s><span style="display:inline-block;margin-left:6px;background:#DCFCE7;color:#15803D;font:700 10px Inter;padding:1px 6px;border-radius:5px;vertical-align:2px;">Save ${Math.round((1 - Number(p) / was) * 100)}%</span>`;
       };
+      // BEST VALUE: the size with the lowest ₹ per 100 g, only with 2+ weighed sizes and a clear winner (lib/combo-deals bestValueIndex).
+      const bestValueIdx = (opts) => {
+        const per = opts.map((o) => { const g = gramsIn(o.label); return g && Number(o.price) > 0 ? Number(o.price) / g : Infinity; });
+        const min = Math.min(...per);
+        return per.filter((x) => x !== Infinity).length >= 2 && per.filter((x) => x === min).length === 1 ? per.indexOf(min) : -1;
+      };
+      // ₹ per 100 g from the pack label ("200–300 g" → mid-point), so sizes compare at a glance (same rule as lib/combo-deals gramsOf).
+      const per100Html = (o, p) => {
+        const g = gramsIn(o.label);
+        return g && Number(p) > 0 ? `<span class="v2-item-per100">₹${Math.round(Number(p) / g * 100).toLocaleString("en-IN")} / 100 g</span>` : "";
+      };
       // Pre-order price range (shown on preorder listings, per pricing tier)
       const preorderRangeHtml = ""; // Deprecated: we now render ranges inside pricingHtml tiers directly
 
@@ -828,7 +866,7 @@ const tags = [
                 const key = ck(l.id, optId);
                 const inCart = sellerItems[key]?.qty || 0;
                 return `<div class="v2-item-bottom">
-                  <div class="v2-item-price" style="color:#7C3AED;">🌙 ${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span>${wasHtml(firstOpt, poPrice)}</div>
+                  <div class="v2-item-price">${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span>${wasHtml(firstOpt, poPrice)}</div>
                   ${inCart > 0
                     ? (() => {
                         const bs = firstOpt.bundle_size && firstOpt.bundle_size > 0 ? firstOpt.bundle_size : 1;
@@ -843,6 +881,7 @@ const tags = [
                 </div>`;
               })()
             : (() => {
+                const best = bestValueIdx(opts);
                 return `<div class="v2-item-tiers">
                   ${opts.map((o, i) => {
                     const label = o.label || o.unit_label || o.unit || "unit";
@@ -857,10 +896,10 @@ const tags = [
                     const pmxStr = o.preorder_price_max ? `₹${Number(o.preorder_price_max).toLocaleString("en-IN")}` : "";
                     const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${o.price}`;
 
-                    return `<div class="v2-item-tier">
+                    return `<div class="v2-item-tier">${i === best ? '<span class="v2-bundle-rib v2-bundle-rib-value">BEST VALUE</span>' : ''}
                       <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
                         <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
-                        <span class="v2-item-tier-price" style="color:#7C3AED;margin-right:0;">🌙 ${rangeDisplay}${wasHtml(o, poPrice)}</span>
+                        <span class="v2-item-tier-price">${rangeDisplay}${wasHtml(o, poPrice)}</span>${per100Html(o, poPrice)}
                       </div>
                       ${tierQty > 0
                         ? (() => {
@@ -903,6 +942,7 @@ const tags = [
                 </div>`;
               })()
             : (() => {
+                const best = bestValueIdx(opts);
                 return `<div class="v2-item-tiers">
                   ${opts.map((o, i) => {
                     const label = o.label || o.unit_label || o.unit || "unit";
@@ -912,10 +952,10 @@ const tags = [
                     const tierQty = sellerItems[key]?.qty || 0;
                     const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.unit === 'kg' && o.bundle_size > 0 && o.bundle_size < 1 ? Math.round(o.bundle_size * 1000) + 'g' : o.bundle_size + (o.unit === 'kg' ? 'kg' : 'pc')})` : '';
                     const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
-                    return `<div class="v2-item-tier">
+                    return `<div class="v2-item-tier">${i === best ? '<span class="v2-bundle-rib v2-bundle-rib-value">BEST VALUE</span>' : ''}
                       <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
                         <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
-                        <span class="v2-item-tier-price" style="margin-right:0;">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
+                        <span class="v2-item-tier-price">₹${o.price}${tierWas ? `<s class="v2-item-was">₹${tierWas}</s>` : ''}</span>${per100Html(o, o.price)}
                       </div>
                       ${sellerFullyClosed ? '' : (tierQty > 0
                         ? (() => {
@@ -1041,8 +1081,26 @@ const tags = [
           </div>`;
         }
       }).join("");
-
+      syncBundles();
       renderCart();
+    }
+
+    // Sizes + bundles card sits in the menu where its fish's listing is (founder 31 Oct): it replaces the
+    // plain fish and combo cards it covers, and says how many of each row are in the cart.
+    const bundleSecs = [...document.querySelectorAll(".v2-bundle")];
+    function syncBundles() {
+      bundleSecs.forEach((sec) => {
+        const lid = sec.querySelector("input[data-lid]")?.dataset.lid;
+        const anchor = lid && grid.querySelector(`.v2-item-card[data-listing-id="${CSS.escape(lid)}"]`);
+        if (anchor) anchor.before(sec);
+        sec.hidden = !anchor;
+      });
+      document.querySelectorAll(".v2-bundle input[data-lid]").forEach((r) => {
+        grid.querySelectorAll(`.v2-item-card[data-listing-id="${CSS.escape(r.dataset.lid)}"]`).forEach((c) => c.classList.add("v2-in-bundle"));
+        const tag = r.closest("label")?.querySelector(".v2-bundle-in");
+        const qty = grid.querySelector(`.v2-item-counter[data-id="${CSS.escape(ck(r.dataset.lid, r.dataset.opt))}"] .v2-item-count`)?.textContent?.trim();
+        if (tag) { tag.hidden = !qty; tag.textContent = qty ? `✓ ${qty} in cart` : ""; }
+      });
     }
 
     let selectedAddressId = null;

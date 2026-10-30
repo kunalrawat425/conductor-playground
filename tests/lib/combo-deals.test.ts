@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bundleGroups, cartSavings, comboParts, dealSaving, isComboListing, savePct } from "../../src/lib/combo-deals";
+import { bestValueIndex, bundleGroups, gramsOf, cartSavings, comboParts, dealSaving, isComboListing, savePct } from "../../src/lib/combo-deals";
 
 // Shapes as on stage (Fishtokri, The Nomadic Catch).
 const combo1 = { id: "c1", species: "Silver Pomfret Combo", size_label: "Combo", description: "Silver pomfret 300–400 g cut + White prawns + Bombil",
@@ -46,18 +46,36 @@ describe("deal math", () => {
 });
 
 describe("bundleGroups", () => {
-  it("groups combos under the base fish with the matching single pack and ribbons", () => {
+  it("groups combos under the base fish with every size of the plain fish and ribbons", () => {
     const [g, ...rest] = bundleGroups([pomfret, combo1, tarli, combo2]);
     expect(rest).toHaveLength(0);
     expect(g.base).toBe("Silver Pomfret");
-    expect(g.single?.optId).toBe("opt_pomfret_cut_300");
+    expect(g.sizes.map((r) => r.optId)).toEqual(["default", "opt_pomfret_cut_300"]);
     expect(g.combos.map((c) => c.ribbon)).toEqual(["popular", "value"]);
   });
 
   it("nothing without combos; no ribbons for a lone combo", () => {
     expect(bundleGroups([pomfret, tarli])).toEqual([]);
     const [g] = bundleGroups([combo1]);
-    expect(g.single).toBeNull();
+    expect(g.sizes).toEqual([]);
     expect(g.combos[0].ribbon).toBeUndefined();
+  });
+});
+
+describe("gramsOf", () => {
+  it("reads pack weight from the label", () => {
+    expect(gramsOf("200–300 g · Cut pcs + head & tail")).toBe(250);
+    expect(gramsOf("500 g")).toBe(500);
+    expect(gramsOf("1 kg")).toBe(1000);
+    expect(gramsOf("½ kg")).toBe(500);
+    expect(gramsOf("Combo · 3 items")).toBe(0);
+  });
+});
+
+describe("bestValueIndex", () => {
+  it("cheapest per 100 g wins only when clear", () => {
+    expect(bestValueIndex([{ label: "200–300 g", price: 375 }, { label: "300–400 g", price: 645 }, { label: "400–500 g", price: 960 }])).toBe(0);
+    expect(bestValueIndex([{ label: "500 g", price: 300 }, { label: "1 kg", price: 600 }])).toBe(-1);
+    expect(bestValueIndex([{ label: "Pack", price: 300 }, { label: "1 kg", price: 500 }])).toBe(-1);
   });
 });
