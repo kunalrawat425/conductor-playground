@@ -32,7 +32,7 @@ const diwali = FESTIVE === "diwali";
       <div class="v2-co-gift">
         <div class="v2-co-gift-ic" aria-hidden="true">🪔</div>
         <div class="v2-co-gift-t"><b>Happy Diwali!</b><span>Send a Diwali greeting to your family &amp; friends</span></div>
-        <a href="/diwali" class="v2-co-gift-btn" aria-label="Open Diwali greeting">Open</a>
+        <a href="/diwali" class="v2-co-gift-btn" data-co-gift aria-label="Open Diwali greeting">Open</a>
       </div>
     )}
     <div id={`${id}-yml`} class="v2-co-card" style="display:none;"></div>
@@ -47,7 +47,7 @@ const diwali = FESTIVE === "diwali";
     </fieldset>
     <div class="v2-co-card v2-co-bill">
       <h4 class="v2-co-card-title">Bill details</h4>
-      <div id={`${id}-free-delivery-banner`} style="display:none;"></div>
+      <div id={`${id}-free-delivery-banner`} class="v2-co-yay" style="display:none;"></div>
       <div id={`${id}-delivery-hint`} style="display:none;"></div>
       <div class="v2-co-row"><span class="v2-co-k">🧾 Items total <span class="v2-co-saved" id={`${id}-saved-chip`} style="display:none;"></span></span><span><s class="v2-co-mrp" id={`${id}-mrp`} style="display:none;"></s><span id={`${id}-subtotal`}>₹0</span></span></div>
       <div class="v2-co-row" id={`${id}-combo-row`} style="display:none;"><span class="v2-co-k">🎁 Combo savings</span><span class="v2-co-green" id={`${id}-combo-saved`}></span></div>
@@ -267,7 +267,9 @@ const diwali = FESTIVE === "diwali";
   .v2-co-green { color: var(--v2-green) !important; }
   .v2-co-hint { font: 500 12px Inter; color: var(--v2-orange); margin: -4px 0 4px 26px; }
   .v2-co-bill .v2-co-total-row { border-top: 1px dashed var(--v2-ink-4); font: 800 16px Inter !important; }
-  .v2-co-savebar { background: var(--v2-green-l); color: var(--v2-green); font: 700 13px Inter; text-align: center; padding: 9px; border-radius: 10px; margin-top: 8px; }
+  .v2-co-yay { background: var(--v2-brand-l); color: var(--v2-brand); font: 700 13px Inter; text-align: center; padding: 9px; border-radius: 10px; margin-bottom: 6px; }
+  .v2-co-savebar { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; background: var(--v2-brand-l); color: var(--v2-brand); font: 800 15px Inter; padding: 12px 14px; border-radius: 12px; margin-top: 10px; }
+  .v2-co-savebar span { grid-column: 1 / -1; font: 500 12px Inter; color: var(--v2-ink-3); }
   /* bottom: -16px = the sheet body's padding, so the bar sits on the sheet's bottom edge. */
   .v2-co-foot { position: sticky; bottom: -16px; z-index: 2; margin: 0 -12px; background: var(--v2-bg); border-radius: 16px 16px 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,.08); padding-bottom: env(safe-area-inset-bottom, 0px); }
   .v2-co-foot-addr { display: flex; gap: 10px; align-items: center; padding: 4px 12px 4px 16px; border-bottom: 1px solid var(--v2-bg-3); }

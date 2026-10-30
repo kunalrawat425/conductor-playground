@@ -32,9 +32,7 @@ const SOCIAL = [
 
 // Photo dial: real seller/listing photos with a glass "claim this spot" card after every second photo.
 const SB = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1";
-// Seller listing photos, resized by Supabase for the homepage fish cards
 const LP = `${SB}/render/image/public/fish-photos/listings/`;
-const LQ = "?width=600&quality=75&resize=cover";
 const LST = `${SB}/render/image/public/fish-photos/listings/2f39dfce-15c0-4f9a-a5b3-e95280479dbd`;
 const DIAL_PHOTOS = [
   { src: `${LST}/fishtokri-site-silver-pomfret-cut.png?width=500&quality=80`, cap: "Silver pomfret, cut your way" },
@@ -42,6 +40,10 @@ const DIAL_PHOTOS = [
   { src: `${LST}/fishtokri-site-white-prawns.png?width=500&quality=80`, cap: "Seawater white prawns" },
   { src: `${LST}/fishtokri-silver-pomfret-combo-collage.png?width=500&quality=80`, cap: "Pomfret combo for the weekend" },
   { src: `${LST}/fishtokri-site-bombil-frycut.png?width=500&quality=80`, cap: "Bombil fry cut, ready to fry" },
+  // The Nomadic Catch's own listing photos (founder 31 Oct)
+  { src: `${LP}bd8efaae-69e1-4dcb-bdcb-75d1874b96ed/1792432940278.png?width=500&quality=80`, cap: "Surmai steaks, Sassoon Dock" },
+  { src: `${LP}bd8efaae-69e1-4dcb-bdcb-75d1874b96ed/1792435387098.png?width=500&quality=80`, cap: "Bangda, same-morning catch" },
+  { src: `${LP}bd8efaae-69e1-4dcb-bdcb-75d1874b96ed/1792436014060.png?width=500&quality=80`, cap: "Halwa, cleaned and cut" },
 ];
 const DIAL: ({ src: string; cap: string } | null)[] = [];
 DIAL_PHOTOS.forEach((p, i) => { DIAL.push(p); if (i % 2 === 1) DIAL.push(null); });
@@ -1526,13 +1528,12 @@ const REVIEW_SLOTS = [
     <h2>Fresh fish, <span class="hl">every morning</span></h2>
     <p class="ssub">Availability changes daily. See today's prices from sellers near you and reserve your portion before it sells out.</p>
     <div class="fish-grid">
-      {/* Real seller photos (Fishtokri, Nomadic); crab has none yet (founder 31 Oct, option C) */}
       {[
-        {e:"🐟",n:"Pomfret",k:"pomfret",m:"पापलेट",bg:"fi1",p:`${LP}2f39dfce-15c0-4f9a-a5b3-e95280479dbd/1778565825853.png${LQ}`},
-        {e:"🐠",n:"Surmai (Kingfish)",k:"surmai",m:"सुरमई",bg:"fi2",p:`${LP}2f39dfce-15c0-4f9a-a5b3-e95280479dbd/fishtokri-site-surmai-slices.png${LQ}`},
-        {e:"🦐",n:"Jumbo Prawns",k:"prawns",m:"कोळंबी",bg:"fi3",p:`${LP}2f39dfce-15c0-4f9a-a5b3-e95280479dbd/fishtokri-site-prawns.png${LQ}`},
-        {e:"🐡",n:"Bangda (Mackerel)",k:"bangda",m:"बांगडा",bg:"fi4",p:`${LP}bd8efaae-69e1-4dcb-bdcb-75d1874b96ed/1792435387098.png${LQ}`},
-        {e:"🐟",n:"Rawas (Salmon)",k:"rawas",m:"रावस",bg:"fi3",p:`${LP}2f39dfce-15c0-4f9a-a5b3-e95280479dbd/fishtokri-site-rawas.png${LQ}`},
+        {e:"🐟",n:"Pomfret",k:"pomfret",m:"पापलेट",bg:"fi1",p:"/fish/pomfret.jpg"},
+        {e:"🐠",n:"Surmai (Kingfish)",k:"surmai",m:"सुरमई",bg:"fi2",p:"/fish/surmai.jpg"},
+        {e:"🦐",n:"Jumbo Prawns",k:"prawns",m:"कोळंबी",bg:"fi3",p:"/fish/prawns.jpg"},
+        {e:"🐡",n:"Bangda (Mackerel)",k:"bangda",m:"बांगडा",bg:"fi4",p:"/fish/bangda.jpg"},
+        {e:"🐟",n:"Rawas (Salmon)",k:"rawas",m:"रावस",bg:"fi3",p:"/fish/rawas.jpg"},
         {e:"🦀",n:"Crab",k:"crab",m:"खेकडा",bg:"fi5",p:"/fish/crab.jpg"},
         // {e:"🐠",n:"Halwa (Silver Pomfret)",m:"हलवा",bg:"fi7"},
         // {e:"🐡",n:"Bombay Duck",m:"बोंबील",bg:"fi8"},
