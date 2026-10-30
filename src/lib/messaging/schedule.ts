@@ -39,10 +39,10 @@ export type MsgSeller = SlotSeller & {
   id: string; name: string; slug: string;
   lat?: number | string | null; lng?: number | string | null; delivery_rad?: number | string | null;
   menu?: string;                     // "Surmai · Pomfret · Bombil": its pre-order fish, for rf2_catch_preorder
-  live?: MenuItem[];                 // its live listings (available or pre-order), for rf2_cart_swap
+  live?: MenuItem[];                 // its live listings (available or pre-order): rf2_cart_swap and the generic promo's photo
 };
-/** A live listing: name, first pricing option (price, label) and listing photo. */
-export type MenuItem = { name: string; species?: string | null; price: number; label?: string | null; photo?: string | null };
+/** A live listing: name, first pricing option (price, label), listing photo, open for pre-order. */
+export type MenuItem = { name: string; species?: string | null; price: number; label?: string | null; photo?: string | null; preorder?: boolean };
 export type CartLine = { seller_id: string; name: string; species?: string | null; photo?: string | null; price?: number | null; on_menu: boolean; updated_at: string };
 /** One of the buyer's orders: the fish, its seller and photo (the checkout's costliest item's). */
 export type OrderLine = { id: string; seller_id: string; name: string; species?: string | null; photo?: string | null };
@@ -72,7 +72,7 @@ export type Decision = {
   personal: boolean;                 // names their fish (cart, unpaid or last order), else generic
   items: string[];
   species: string | null;            // fish of the first item named
-  photo: string | null;              // header picture: the costliest item's listing photo (cart_swap: the substitute's)
+  photo: string | null;              // header picture: a seller's own listing photo or null, never stock (cart_swap: the substitute's; generic: catchPhoto)
   when: string;                      // "today, 4–6 PM" / "Sun 25 Oct, 9–11 AM": the first slot checkout offers
   template: PromoTemplate;
   body: string[];                    // the template's {{1}}, {{2}}… in Meta's order
@@ -128,11 +128,22 @@ const offMenuLines = (b: BuyerState, sellerId: string) => latestFirst(b.cart.fil
 export type Stage = "cart" | "cart_swap" | "unpaid" | "again" | "generic";
 
 /**
- * Header picture for cart and order messages (founder 30 Oct): the seller's own listing photo of the
- * costliest item; no photo on that listing → null (text-only). Ties → the first line (latest).
+ * Header picture for every message (founder 30 Oct): the seller's own listing photo of the costliest
+ * item; no photo on that listing → null (text-only), never a stock photo. Ties → the first line (latest).
  */
 export function costliestPhoto(lines: { price?: number | null; photo?: string | null }[]): string | null {
   return [...lines].sort((x, y) => (Number(y.price) || 0) - (Number(x.price) || 0))[0]?.photo || null;
+}
+
+/**
+ * Generic "today's / tomorrow's catch" picture (founder 30 Oct): the buyer's costliest cart item with
+ * this seller (any age, on or off the menu; that item has no photo → null); no cart with them → the
+ * costliest item WITH a photo on the menu the message is about (pre-order menu for rf2_catch_preorder).
+ */
+export function catchPhoto(b: BuyerState, seller: MsgSeller, preorderOnly: boolean): string | null {
+  const mine = b.cart.filter((l) => l.seller_id === seller.id);
+  if (mine.length) return costliestPhoto(mine);
+  return costliestPhoto((seller.live ?? []).filter((m) => m.photo && (!preorderOnly || m.preorder)));
 }
 
 /** Substitute for a fish taken off the menu (founder 30 Oct): same species at the closest price, else the closest price; tie → cheaper. */
@@ -175,11 +186,11 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, fish, seller.name, offer.when] };
   // Morning slot (Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM".
   if (offer.mode === "today" && offer.by && seller.menu && istMin(due) < 12 * 60) {
-    return { ...m, template: "rf2_catch_prices", body: [b.name, day, seller.menu, offer.by, offer.when], path: "/shop" };
+    return { ...m, template: "rf2_catch_prices", photo: catchPhoto(b, seller, false), body: [b.name, day, seller.menu, offer.by, offer.when], path: "/shop" };
   }
   // "Tomorrow morning's fresh catch is open for pre-order".
   if (offer.mode !== "preorder" || offer.date !== addDays(istDate(due), 1) || !seller.menu) return null;
-  return { ...m, template: "rf2_catch_preorder", body: [b.name, day, seller.menu, timeLabel(seller.preorder_cutoff_time) || "tonight", offer.when], path: "/shop" };
+  return { ...m, template: "rf2_catch_preorder", photo: catchPhoto(b, seller, true), body: [b.name, day, seller.menu, timeLabel(seller.preorder_cutoff_time) || "tonight", offer.when], path: "/shop" };
 }
 
 /** Decide the one promo (if any) this buyer should get in the job run at `now`. */

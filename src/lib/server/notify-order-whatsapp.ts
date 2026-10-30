@@ -9,28 +9,52 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { arrivingByLabel, slotLabel } from "../delivery-slots";
-import { firstName, fishName, headerImage } from "../messaging/templates";
-import { istDate } from "../messaging/schedule";
+import { firstName, fishName } from "../messaging/templates";
+import { costliestPhoto, istDate } from "../messaging/schedule";
 import { dispatch } from "./messaging";
 
 export type OrderWaEvent = "unpaid" | "paid" | "confirmed" | "out_for_delivery" | "completed" | "cancelled";
 const env = (k: string) => (import.meta as any).env?.[k] || process.env[k] || "";
 
 export const ORDER_SELECT = "id, buyer_id, buyer_phone, species, is_test, is_preorder, delivery_slot_start, delivery_slot_end, listing:fish_listings(species, description, photo_url, seller_id, seller:sellers(name))";
+const CHECKOUT_SELECT = `${ORDER_SELECT}, cart_id, total_price, status`;
+const REMOVED = ["declined", "cancelled", "refunded"];
+
+export type WaCancel = { reason?: string | null; refund?: string | null; removedFrom?: string | null };
+
+/**
+ * Order update picture (founder 30 Oct): the listing photo of the costliest live item of the
+ * checkout (same cart_id, same seller; removed items don't count); that listing has no photo → null.
+ * An item the seller removed (`cancel.removedFrom`) shows its own photo or null. Never stock.
+ */
+export function orderPhoto(ord: any, checkout: any[] = [ord], cancel?: WaCancel): string | null {
+  if (cancel?.removedFrom) return ord.listing?.photo_url || null;
+  const live = checkout.filter((x) => (ord.cart_id ? x.cart_id === ord.cart_id : x.id === ord.id)
+    && x.listing?.seller_id === ord.listing?.seller_id && !REMOVED.includes(x.status));
+  return costliestPhoto(live.map((x) => ({ price: x.total_price, photo: x.listing?.photo_url })));
+}
+
+/** The order (with cart_id, price, status) and every order of its checkout, for orderPhoto. */
+export async function loadCheckout(sb: any, order_id: string): Promise<{ ord: any; checkout: any[] }> {
+  const { data: ord } = await sb.from("orders").select(CHECKOUT_SELECT).eq("id", order_id).maybeSingle();
+  if (!ord?.cart_id) return { ord, checkout: ord ? [ord] : [] };
+  const { data: rows } = await sb.from("orders").select(CHECKOUT_SELECT).eq("cart_id", ord.cart_id);
+  return { ord, checkout: rows?.length ? rows : [ord] };
+}
 
 /**
  * Template + variables (Meta's order) + header picture for one order update. Pure (tested).
  * `cancel` carries the reason and refund line the caller already worked out; `removedFrom`
  * (the cart's order id) makes rf2_cancelled about this one item while the rest goes ahead.
+ * `checkout`: the checkout's orders, for the picture (orderPhoto).
  */
-export type WaCancel = { reason?: string | null; refund?: string | null; removedFrom?: string | null };
-export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, nowMs = Date.now(), cancel?: WaCancel): { template: string; body: string[]; image?: string } {
+export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, nowMs = Date.now(), cancel?: WaCancel, checkout?: any[]): { template: string; body: string[]; image?: string | null } {
   const short = `#${String(ord.id).slice(0, 8).toUpperCase()}`;
   const name = firstName(buyerName);
   const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
   const seller = ord.listing?.seller?.name || "The seller";
   const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed with the seller";
-  const image = headerImage(ord.listing?.photo_url, ord.listing?.species || ord.species);
+  const image = orderPhoto(ord, checkout, cancel);
   const istHour = new Date(nowMs + 5.5 * 3_600_000).getUTCHours();
   switch (event) {
     case "unpaid": return { template: "rf2_unpaid", body: [name, short, fish, slot], image };
@@ -55,13 +79,12 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
 export async function notifyOrderWhatsApp(order_id: string, event: OrderWaEvent, cancel?: WaCancel) {
   try {
     const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
-    const { data: o } = await sb.from("orders").select(ORDER_SELECT).eq("id", order_id).maybeSingle();
-    if (!o || (o as any).is_test) return;
-    const ord: any = o;
+    const { ord, checkout } = await loadCheckout(sb, order_id);
+    if (!ord || ord.is_test) return;
     const { data: buyer } = ord.buyer_id
       ? await sb.from("buyers").select("id, phone, first_name, whatsapp_opt_in_at").eq("id", ord.buyer_id).maybeSingle()
       : { data: null as any };
-    const m = orderMessage(event, ord, buyer?.first_name, Date.now(), cancel);
+    const m = orderMessage(event, ord, buyer?.first_name, Date.now(), cancel, checkout);
     // "Stop updates" stops promos only; updates about an order the buyer placed still come.
     await dispatch(sb, {
       dedupe_key: `${event}:${order_id}:buyer`, kind: `order_${event}`, slot_date: istDate(Date.now()), order_id, buyer_id: buyer?.id,

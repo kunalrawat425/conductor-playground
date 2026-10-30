@@ -140,24 +140,5 @@ export function buyerOrderPushNotification(
   );
 }
 
-/** Fish we have a default photo for (public/fish/<key>.jpg). */
-const FISH_PHOTOS = ["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"] as const;
-const FISH_ALIASES: Record<string, (typeof FISH_PHOTOS)[number]> = {
-  prawn: "prawns", kolambi: "prawns", shrimp: "prawns", kingfish: "surmai", mackerel: "bangda", salmon: "rawas", khekda: "crab",
-};
-
-/**
- * Big picture for a push about this fish ("rawas", "Halwa + Prawns", "Baby Rawas"): the first fish
- * in the text that has a default photo, else null. Path only; the caller makes it absolute.
- */
-export function defaultFishImage(species: string | null | undefined): string | null {
-  const words = String(species || "").toLowerCase().match(/[a-z]+/g) || [];
-  for (const w of words) {
-    const key = (FISH_PHOTOS as readonly string[]).includes(w) ? w : FISH_ALIASES[w];
-    if (key) return `/fish/${key}.jpg`;
-  }
-  return null;
-}
-
-/** Promo pushes with no picture of their own get this one. */
+/** Admin area promo pushes (/api/admin/push-area) with no picture of their own get this one. */
 export const DEFAULT_PROMO_IMAGE = "/fish/pomfret.jpg";

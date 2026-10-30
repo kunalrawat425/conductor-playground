@@ -3,8 +3,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { templatePayload, validWebhookSignature, waNumber } from "../../src/lib/server/whatsapp";
-import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, firstName, SIGNUP_IMAGE, rotationImage, varCount } from "../../src/lib/messaging/templates";
-import { orderMessage, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
+import { TEMPLATES, templateProblems, fishName, firstName, PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
+import { orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
+import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
 /**
  * The 19 templates APPROVED on WABA 1491951102724224 (Graph API message_templates, 29 Oct 2026):
@@ -138,15 +139,45 @@ describe("templates", () => {
     expect(fishName(null, "bombil")).toBe("Bombil");
     expect(fishName(null, null)).toBe("fish");
   });
-  it("no-cart offers rotate the fish: surmai, pomfret, crab…", () => {
-    expect([0, 1, 2].map(rotationImage).map((u) => u.split("/").pop())).toEqual(["surmai.jpg", "pomfret.jpg", "crab.jpg"]);
-    expect(rotationImage(6)).toMatch(/surmai\.jpg$/);
+});
+
+describe("order update photo: the checkout's costliest live item, never stock (founder, 30 Oct)", () => {
+  const STOCK = [PROMO_IMAGE, SIGNUP_IMAGE, DEFAULT_PROMO_IMAGE];
+  const isStock = (u: unknown) => typeof u === "string" && (STOCK.some((s) => u.endsWith(s)) || /\/fish\/[a-z]+\.jpg$/.test(u));
+  const o = (id: string, price: number, photo: string | null, x: any = {}) => ({
+    id: `${id}0000000-1111-4000-8000-000000000000`, cart_id: "cart1", status: "confirmed", total_price: price, species: "pomfret",
+    delivery_slot_start: "2026-10-25T03:30:00Z", delivery_slot_end: "2026-10-25T05:30:00Z",
+    listing: { species: "pomfret", description: "Silver Pomfret", photo_url: photo, seller_id: "ft", seller: { name: "Fishtokri" } }, ...x,
   });
-  it("header photo: their listing photo, else our fish photo, else the poster", () => {
-    expect(headerImage("https://x/cut-pomfret.jpg", "pomfret")).toBe("https://x/cut-pomfret.jpg");
-    expect(headerImage(null, "rawas")).toMatch(/\/fish\/rawas\.jpg$/);
-    expect(headerImage(null, "bombil")).toBe(SIGNUP_IMAGE);
-    expect(fishPhoto("Seawater red prawns")).toMatch(/prawns\.jpg$/);
+  const cheap = o("a", 300, "https://x/bombil.jpg");
+  const dear = o("b", 1380, "https://x/pomfret.jpg");
+  const other = o("c", 5000, "https://x/other-seller.jpg", { listing: { ...dear.listing, seller_id: "nm" } });
+  const otherCart = o("d", 4000, "https://x/other-cart.jpg", { cart_id: "cart2" });
+  const removed = o("e", 3000, "https://x/removed.jpg", { status: "cancelled" });
+  const noon = Date.parse("2026-10-24T12:00:00+05:30");
+
+  it("confirmed / delivered / unpaid use the costliest live item of the same checkout and seller", () => {
+    const checkout = [cheap, dear, other, otherCart, removed];
+    for (const e of ["unpaid", "confirmed", "completed"] as OrderWaEvent[]) {
+      expect(orderMessage(e, cheap, "manoj", noon, undefined, checkout).image, e).toBe("https://x/pomfret.jpg");
+    }
+  });
+  it("the costliest item has no photo → null, no cheaper or stock fallback", () => {
+    const checkout = [cheap, { ...dear, listing: { ...dear.listing, photo_url: null } }];
+    expect(orderMessage("confirmed", cheap, "manoj", noon, undefined, checkout).image).toBeNull();
+    expect(orderMessage("confirmed", { ...cheap, listing: { ...cheap.listing, photo_url: null } }, "manoj", noon).image).toBeNull();
+  });
+  it("an item the seller removed shows its own photo, or none", () => {
+    const cancel = { reason: "Not available", removedFrom: dear.id };
+    expect(orderPhoto(removed, [cheap, dear, removed], cancel)).toBe("https://x/removed.jpg");
+    expect(orderPhoto({ ...removed, listing: { ...removed.listing, photo_url: null } }, [cheap, dear], cancel)).toBeNull();
+    expect(orderMessage("cancelled", removed, "manoj", noon, cancel, [cheap, dear, removed]).image ?? null).toBeNull(); // rf2_cancelled has no image header
+  });
+  it("no stock URL in any order update", () => {
+    const bare = o("f", 500, null, { cart_id: null, listing: { species: "rawas", description: null, photo_url: null, seller_id: "ft", seller: { name: "Fishtokri" } } });
+    for (const e of ["unpaid", "paid", "confirmed", "out_for_delivery", "completed", "cancelled"] as OrderWaEvent[]) {
+      for (const ord of [bare, cheap]) expect(isStock(orderMessage(e, ord, "manoj", noon).image), e).toBe(false);
+    }
   });
 });
 

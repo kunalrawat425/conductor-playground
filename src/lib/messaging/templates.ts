@@ -10,8 +10,9 @@
  */
 export const SITE = "https://www.relifish.com";
 export const GO_URL = `${SITE}/go/{{1}}`; // /go/<message_id> records the click, then redirects with UTMs
+// Stock pictures: never in a promo or order update (founder 30 Oct: real listing photos only).
 export const PROMO_IMAGE = `${SITE}/wa/relifish-slots.jpg`;
-/** New sign-ups (journey A): the "Craving fresh fish?" poster (founder 24 Oct). */
+/** New sign-ups (journey A, on hold): the "Craving fresh fish?" poster (founder 24 Oct). */
 export const SIGNUP_IMAGE = `${SITE}/wa/craving-fresh-fish.jpg`;
 
 type Button = { type: "URL"; text: string } | { type: "QUICK_REPLY"; text: string };
@@ -124,28 +125,4 @@ export function fishName(description: string | null | undefined, species: string
   const stem = sp.replace(/s$/, "");
   if (head && (!stem || head.toLowerCase().includes(stem))) return head.charAt(0).toUpperCase() + head.slice(1);
   return sp ? sp.charAt(0).toUpperCase() + sp.slice(1) : "fish";
-}
-
-/** No-cart offers rotate the fish photo per message (founder 24 Oct: surmai, then pomfret, then crab…). */
-const NO_CART_ROTATION = ["surmai", "pomfret", "crab", "prawns", "rawas", "bangda"];
-export function rotationImage(sentBefore: number): string {
-  return `${SITE}/fish/${NO_CART_ROTATION[Math.max(0, sentBefore) % NO_CART_ROTATION.length]}.jpg`;
-}
-
-/** Fish photo for the "order confirmed" header (public/fish). */
-export function fishPhoto(species: string | null | undefined): string {
-  const w = String(species || "").toLowerCase();
-  const k = ["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"].find((f) => w.includes(f) || (f === "prawns" && w.includes("prawn")));
-  return k ? `${SITE}/fish/${k}.jpg` : PROMO_IMAGE;
-}
-
-/**
- * Header picture (founder 24 Oct): offers with no cart get the "Craving fresh fish?" poster; cart and
- * order messages show the item they chose (its listing photo, e.g. the cut pomfret), else our photo
- * of that fish, else the poster.
- */
-export function headerImage(photo: string | null | undefined, species: string | null | undefined): string {
-  if (photo) return photo;
-  const own = species ? fishPhoto(species) : PROMO_IMAGE;
-  return own !== PROMO_IMAGE ? own : SIGNUP_IMAGE;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compose, costliestPhoto, decide, offerAt, pickSubstitute, type BuyerState, type MenuItem, type MsgSeller, type SentLog } from "../../src/lib/messaging/schedule";
-import { varCount } from "../../src/lib/messaging/templates";
+import { PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
+import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
 // Live prod settings (24 Oct 2026).
 const FISHTOKRI: MsgSeller = {
@@ -238,12 +239,71 @@ describe("header photo for cart and order messages (founder, 30 Oct)", () => {
     expect(run(T("23", "18:00"), buyer({ created_at: iso(T("10", "10:00")), cart }))).toMatchObject({ template: "rf2_promo_cart", photo: "https://x/pomfret.jpg" });
     expect(run(T("23", "18:00"), buyer({ created_at: iso(T("10", "10:00")), cart: [{ ...cart[0], photo: null }] })).photo).toBeNull();
   });
-  it("order messages use the order line's photo (null when its listing has none); generic has none", () => {
+  it("order messages use the order line's photo (null when its listing has none); generic with no menu photos has none", () => {
     const offer = { mode: "preorder" as const, date: "2026-10-24", when: "Sat 24 Oct, 8–10 AM" };
     const b = buyer({ unpaid: { id: "o1", seller_id: "ft", name: "Surmai", photo: "https://x/s.jpg" }, delivered: { id: "o2", seller_id: "ft", name: "Pomfret" } });
     expect(compose("promo", "unpaid", T("23", "18:00"), b, FISHTOKRI, offer)?.photo).toBe("https://x/s.jpg");
     expect(compose("promo", "again", T("23", "18:00"), b, FISHTOKRI, offer)?.photo).toBeNull();
     expect(compose("promo", "generic", T("23", "18:00"), b, FISHTOKRI, offer)?.photo).toBeNull();
+  });
+});
+
+describe("generic catch promos: the seller's own photo, never stock (founder, 30 Oct)", () => {
+  const LIVE: MenuItem[] = [
+    { name: "Bombil", species: "bombil", price: 240, photo: "https://x/bombil.jpg", preorder: true },
+    { name: "Silver Pomfret", species: "pomfret", price: 1380, photo: "https://x/pomfret.jpg", preorder: true },
+    { name: "Jumbo Prawns", species: "prawns", price: 1600, photo: null, preorder: true },        // costliest pre-order item, no photo: skipped
+    { name: "Surmai steaks", species: "surmai", price: 1500, photo: "https://x/surmai.jpg" },     // today only, not on the pre-order menu
+  ];
+  const FT = { ...FISHTOKRI, live: LIVE } as MsgSeller;
+  const old = buyer({ created_at: iso(T("10", "10:00")) });
+  const cartLine = (name: string, price: number, photo: string | null, on_menu: boolean, seller_id = "ft") =>
+    ({ seller_id, name, price, photo, on_menu, updated_at: iso(T("08", "10:00")) }); // 15 days old: past the cart window
+  const STOCK = [PROMO_IMAGE, SIGNUP_IMAGE, DEFAULT_PROMO_IMAGE];
+  const isStock = (u: unknown) => typeof u === "string" && (STOCK.some((s) => u.endsWith(s)) || /\/fish\/[a-z]+\.jpg$/.test(u));
+
+  it("rf2_catch_preorder: the costliest pre-order item with a photo", () => {
+    expect(run(T("23", "18:00"), old, [], [FT])).toMatchObject({ template: "rf2_catch_preorder", photo: "https://x/pomfret.jpg" });
+  });
+  it("rf2_catch_prices: the costliest live item with a photo", () => {
+    expect(run(T("24", "08:30"), old, [], [FT])).toMatchObject({ template: "rf2_catch_prices", photo: "https://x/surmai.jpg" });
+  });
+  it("skips items without a photo; none has one → null", () => {
+    const noPhotos = { ...FT, live: LIVE.map((m) => ({ ...m, photo: null })) } as MsgSeller;
+    expect(run(T("23", "18:00"), old, [], [noPhotos])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
+    expect(run(T("23", "18:00"), old, [], [{ ...FT, live: [] } as MsgSeller])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
+  });
+  it("buyer has cart lines with that seller (any age, off-menu too): the costliest cart item's photo", () => {
+    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, "https://x/cart-halwa.jpg", false)] });
+    expect(run(T("23", "18:00"), b, [], [FT])).toMatchObject({ template: "rf2_catch_preorder", photo: "https://x/cart-halwa.jpg" });
+  });
+  it("the costliest cart item has no photo → null, even when the menu has photos", () => {
+    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, null, false)] });
+    expect(run(T("23", "18:00"), b, [], [FT])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
+  });
+  it("another seller's cart line never lends its photo", () => {
+    const offer = { mode: "preorder" as const, date: "2026-10-24", when: "Sat 24 Oct, 8–10 AM" };
+    const b = buyer({ ...old, cart: [cartLine("Halwa", 2200, "https://x/nomadic-halwa.jpg", true, "nm")] });
+    expect(compose("promo", "generic", T("23", "18:00"), b, FT, offer)?.photo).toBe("https://x/pomfret.jpg");
+  });
+  it("no stock URL in any decision, all week, any stage", () => {
+    const buyers = [
+      old,
+      buyer({ ...old, cart: [cartLine("Bombil", 240, null, true)] }),
+      buyer({ ...old, cart: [{ ...cartLine("Rawas", 990, null, true), updated_at: iso(T("22", "10:00")) }] }),
+      buyer({ ...old, last_order_at: iso(T("20", "11:00")), unpaid: { id: "o1", seller_id: "ft", name: "Rawas", species: "rawas", photo: null } }),
+      buyer({ ...old, last_order_at: iso(T("10", "11:00")), delivered: { id: "o2", seller_id: "ft", name: "Rawas", species: "rawas", photo: null }, last_delivered_at: iso(T("10", "12:00")) }),
+    ];
+    let seen = 0;
+    for (const b of buyers) for (const d of ["20", "23", "24", "25", "27"]) for (const hm of ["08:30", "18:00"]) {
+      for (const sellers of [[FT, NOMADIC], [{ ...FT, live: [] } as MsgSeller, NOMADIC]]) {
+        const r = run(T(d, hm), b, [], sellers);
+        if (r.skip) continue;
+        seen++;
+        expect(isStock(r.photo), `${r.template} ${d} ${hm}`).toBe(false);
+      }
+    }
+    expect(seen).toBeGreaterThan(10);
   });
 });
 

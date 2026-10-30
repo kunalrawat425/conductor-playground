@@ -2,10 +2,10 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
-import { compose, costliestPhoto, decide, inSendHours, istDate, offerAt, pickSeller, PROMO_KINDS, type BuyerState, type Decision, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
-import { firstName, fishName, rotationImage } from "../../../lib/messaging/templates";
+import { compose, decide, inSendHours, istDate, offerAt, pickSeller, PROMO_KINDS, type BuyerState, type Decision, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
+import { firstName, fishName } from "../../../lib/messaging/templates";
 import { dispatch } from "../../../lib/server/messaging";
-import { ORDER_SELECT, orderMessage } from "../../../lib/server/notify-order-whatsapp";
+import { ORDER_SELECT, orderMessage, orderPhoto } from "../../../lib/server/notify-order-whatsapp";
 import { hasPaymentEvidence } from "../../../lib/server/reminders";
 import { waNumber } from "../../../lib/server/whatsapp";
 
@@ -47,6 +47,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   const menu = (id: string) => [...new Set((menuRows || []).filter((l: any) => l.seller_id === id && l.is_preorder_enabled).map((l: any) => fishName(l.description, l.species)))].slice(0, 3).join(" · ");
   const live = (id: string) => (menuRows || []).filter((l: any) => l.seller_id === id && optPrice(l) > 0).map((l: any) => ({
     name: fishName(l.description, l.species), species: l.species, price: optPrice(l), label: firstOpt(l)?.label ?? null, photo: l.photo_url ?? null,
+    preorder: !!l.is_preorder_enabled,
   }));
   const sellers: MsgSeller[] = (sellerRows || []).filter((s: any) => !s.is_test).map((s: any) => ({ ...s, slug: sellerNameToSlug(s.name), menu: menu(s.id), live: live(s.id) }));
   const sellerPhones = new Set((sellerRows || []).map((s: any) => waNumber(s.phone)).filter(Boolean));
@@ -54,9 +55,9 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Never sellers; the founder only when he is on the WhatsApp test list.
   const skipPhone = (phone: string | null) => (!!phone && sellerPhones.has(phone)) || (phone === "919870619974" && !testOnly.includes(phone));
   const orders = (orderRows || []).filter((o: any) => !o.is_test);
-  // The order's photo: the costliest item of its checkout (same cart_id, same seller), founder 30 Oct.
+  // The order's photo: the costliest live item of its checkout (same cart_id, same seller), founder 30 Oct.
   const orderLine = (o: any) => o ? { id: o.id, seller_id: o.listing?.seller_id, name: fishName(o.listing?.description, o.listing?.species || o.species), species: o.listing?.species || o.species,
-    photo: costliestPhoto((o.cart_id ? orders.filter((x: any) => x.cart_id === o.cart_id && x.listing?.seller_id === o.listing?.seller_id) : [o]).map((x: any) => ({ price: x.total_price, photo: x.listing?.photo_url }))) } : null;
+    photo: orderPhoto(o, orders) } : null;
   const pushFor = (d: Decision, image: string | null) => ({
     title: d.template === "rf2_order_again" ? `Ready for more ${d.items[0]}? 🐟` : d.template === "rf2_cart_swap" ? `Your ${d.items[0]} isn't on today's menu 🐟` : d.personal ? `Your ${d.items[0]} is waiting 🐟` : "Plan your next fish meal 🐟",
     body: d.mode === "today" ? "Order now and pick a 2-hour delivery slot." : `Pre-order now and get it on ${d.when}.`, image: image ?? undefined,
@@ -79,8 +80,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const offer = seller ? offerAt(seller, Date.now()) : null;
     const d = seller && offer ? compose("B1", st.cart.length ? "cart" : "generic", Date.now(), st, seller, offer) : null;
     if (!d) return json({ error: "nothing to send this buyer right now (no seller, no bookable slot, or no pre-order for tomorrow)" }, 404);
-    const sentBefore = (logRows || []).filter((l: any) => l.buyer_id === tb.id && PROMO_KINDS.includes(l.kind)).length;
-    const image = d.personal ? d.photo : rotationImage(sentBefore);
+    const image = d.photo; // a seller's own listing photo or null, never stock (founder 30 Oct)
     const r = await dispatch(sb, {
       dedupe_key: `test:${tb.id}:${Date.now()}`, kind: "test", slot_date: istDate(Date.now()), buyer_id: tb.id, seller_id: d.seller.id,
       phone: tb.phone, whatsappOk: !!tb.whatsapp_opt_in_at, template: d.template, body: d.body, headerImage: image, link_path: d.path,
@@ -115,8 +115,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     if ("skip" in d) { report.push({ buyer: who, skip: d.skip }); continue; }
 
     const whatsappOk = !!b.whatsapp_opt_in_at && !b.whatsapp_opt_out_at;
-    // Cart/order messages: the costliest item's own listing photo, or none (founder 30 Oct); generic: our rotation.
-    const image = d.personal ? d.photo : rotationImage(history.length);
+    // Every promo: a seller's own listing photo (costliest item), or none; never stock (founder 30 Oct).
+    const image = d.photo;
     const line = { buyer: who, kind: d.kind, template: d.template, vars: d.body, link: d.path, image, channel: [whatsappOk && phone ? "whatsapp" : "", b.push_subscription ? "push" : ""].filter(Boolean).join("+") || "none" };
     if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
     const r = await dispatch(sb, {
@@ -139,7 +139,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const key = `unpaid:${o.cart_id || o.id}`;
       if (!b || b.is_test || skipPhone(waNumber(b.phone)) || seen.has(key)) continue;
       seen.add(key);
-      const m = orderMessage("unpaid", o, b.first_name, now);
+      const m = orderMessage("unpaid", o, b.first_name, now, undefined, orders);
       const line = { buyer: `…${String(b.phone || "").slice(-4)}`, kind: "order_unpaid", template: m.template, vars: m.body, link: `/track/${o.id}` };
       if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
       const r = await dispatch(sb, {
