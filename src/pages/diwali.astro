@@ -49,9 +49,17 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
       <button type="button" class="wa" id="dw-share">Share on WhatsApp</button>
       <button type="button" class="dl" id="dw-save">Save image</button>
     </div>
+    <div class="invite">
+      <b>🎆 Let your family make theirs too</b>
+      <span>Send this free card maker to your WhatsApp groups — everyone can pick a design and write their own wish.</span>
+      <button type="button" id="dw-invite">Share the card maker</button>
+    </div>
   </div>
 
   <style is:global>
+    .invite{margin-top:18px;background:#FFF7ED;border:1.5px dashed #FDBA74;border-radius:14px;padding:14px;text-align:center}
+    .invite b{display:block;font:800 15px Inter;color:#9A3412}.invite span{display:block;font:500 13px Inter;color:#7C2D12;margin:4px 0 10px}
+    .invite button{background:#fff;border:1.5px solid #25D366;color:#128C7E;border-radius:999px;padding:11px 18px;font:800 14px Inter;cursor:pointer;min-height:44px}
     .dw { padding: 14px; max-width: 430px; margin: 0 auto; font-family: Inter, sans-serif; color: #0F172A; }
     /* the card: 4:5, exported as the image */
     .dw .dw-card { position: relative; width: 100%; aspect-ratio: 4/5; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px 26px; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
@@ -215,5 +223,14 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
 
     // They just tapped "Happy Diwali": fireworks on open (sound only if the browser allows it).
     celebrate(3000);
-  </script>
+  
+    // Share the tool itself (not a card): "make your own free Diwali card" + link.
+    document.getElementById("dw-invite")?.addEventListener("click", async () => {
+      const url = "https://www.relifish.com/diwali?utm_source=whatsapp&utm_medium=invite&utm_campaign=diwali_card";
+      const text = "🪔 Make a free Diwali greeting card for your family in 30 seconds — 10 designs, your own message, send it on WhatsApp:";
+      (window as any).gtag?.("event", "diwali_tool_invite");
+      try { if (navigator.share) { await navigator.share({ title: "Free Diwali card maker", text, url }); return; } } catch (e: any) { if (e?.name === "AbortError") return; }
+      location.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(text + " " + url);
+    });
+</script>
 </AppShell>
