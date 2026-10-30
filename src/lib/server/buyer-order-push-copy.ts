@@ -1,9 +1,11 @@
+import { refundLine } from "../order-payment-state";
+
 export type BuyerCancelInfo = {
   by?: string | null;
   reason?: string | null;
   refunded?: boolean;
   /** One item of a cart was cancelled and the rest goes ahead. */
-  item?: { order_short: string; amount?: number | null } | null;
+  item?: { order_short: string; amount?: number | null; sent?: boolean } | null;
 };
 
 /**
@@ -22,7 +24,7 @@ export function buyerOrderPushNotification(
     const fish = species ? `${species} ` : "";
     const reason = cancel.reason ? ` Reason: ${cancel.reason.replace(/[.!?]*$/, ".")}` : "";
     if (cancel.item) {
-      const amt = cancel.item.amount ? ` — ₹${cancel.item.amount.toLocaleString("en-IN")} refunded` : "";
+      const amt = cancel.item.amount ? ` — ${refundLine(cancel.item.amount, !!cancel.item.sent)}` : "";
       return { title: "Item removed from your order", body: `${species || "An item"} was removed from your order #${cancel.item.order_short}${amt}.${reason}` };
     }
     const refund = cancel.refunded ? " Your payment is being refunded in full." : "";
@@ -138,24 +140,5 @@ export function buyerOrderPushNotification(
   );
 }
 
-/** Fish we have a default photo for (public/fish/<key>.jpg). */
-const FISH_PHOTOS = ["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"] as const;
-const FISH_ALIASES: Record<string, (typeof FISH_PHOTOS)[number]> = {
-  prawn: "prawns", kolambi: "prawns", shrimp: "prawns", kingfish: "surmai", mackerel: "bangda", salmon: "rawas", khekda: "crab",
-};
-
-/**
- * Big picture for a push about this fish ("rawas", "Halwa + Prawns", "Baby Rawas"): the first fish
- * in the text that has a default photo, else null. Path only; the caller makes it absolute.
- */
-export function defaultFishImage(species: string | null | undefined): string | null {
-  const words = String(species || "").toLowerCase().match(/[a-z]+/g) || [];
-  for (const w of words) {
-    const key = (FISH_PHOTOS as readonly string[]).includes(w) ? w : FISH_ALIASES[w];
-    if (key) return `/fish/${key}.jpg`;
-  }
-  return null;
-}
-
-/** Promo pushes with no picture of their own get this one. */
+/** Admin area promo pushes (/api/admin/push-area) with no picture of their own get this one. */
 export const DEFAULT_PROMO_IMAGE = "/fish/pomfret.jpg";

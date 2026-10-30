@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buyerOrderPushNotification, defaultFishImage, DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
+import { buyerOrderPushNotification, DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 import { existsSync } from "node:fs";
 
 const ALL_STATUSES = [
@@ -70,22 +70,8 @@ describe("buyer push copy — Razorpay only", () => {
   }
 });
 
-describe("defaultFishImage (big picture on push)", () => {
-  it("finds the fish photo in single, cart and alias labels", () => {
-    expect(defaultFishImage("rawas")).toBe("/fish/rawas.jpg");
-    expect(defaultFishImage("Baby Rawas")).toBe("/fish/rawas.jpg");
-    expect(defaultFishImage("Halwa + Prawns")).toBe("/fish/prawns.jpg");
-    expect(defaultFishImage("Seawater red prawn")).toBe("/fish/prawns.jpg");
-    expect(defaultFishImage("Kingfish")).toBe("/fish/surmai.jpg");
-  });
-  it("is null for fish without a photo or no label", () => {
-    expect(defaultFishImage("bombil")).toBeNull();
-    expect(defaultFishImage(null)).toBeNull();
-  });
-  it("every photo it can return exists in public/fish", () => {
-    for (const f of ["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"]) {
-      expect(existsSync(`public${defaultFishImage(f)}`)).toBe(true);
-    }
+describe("admin promo push picture", () => {
+  it("the default exists in public/fish", () => {
     expect(existsSync(`public${DEFAULT_PROMO_IMAGE}`)).toBe(true);
   });
 });

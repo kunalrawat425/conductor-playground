@@ -10,8 +10,9 @@
  */
 export const SITE = "https://www.relifish.com";
 export const GO_URL = `${SITE}/go/{{1}}`; // /go/<message_id> records the click, then redirects with UTMs
+// Stock pictures: never in a promo or order update (founder 30 Oct: real listing photos only).
 export const PROMO_IMAGE = `${SITE}/wa/relifish-slots.jpg`;
-/** New sign-ups (journey A): the "Craving fresh fish?" poster (founder 24 Oct). */
+/** New sign-ups (journey A, on hold): the "Craving fresh fish?" poster (founder 24 Oct). */
 export const SIGNUP_IMAGE = `${SITE}/wa/craving-fresh-fish.jpg`;
 
 type Button = { type: "URL"; text: string } | { type: "QUICK_REPLY"; text: string };
@@ -47,6 +48,10 @@ export const TEMPLATES: TemplateDef[] = [
   { name: "rf2_order_again", category: "MARKETING", header: "IMAGE",
     body: "Hi {{1}}, hope the {{2}} was just the way you like it 😊\nReady for another round? {{3}} has fresh stock, same cut as last time. Just pick a slot: {{4}}.\nWant something different this time? Send us a Hi, we'll help 👋",
     examples: ["Sanjay", "Surmai", "The Nomadic Catch", "Sunday 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "Order the same again" }, { type: "QUICK_REPLY", text: "Try something new" }] },
+  // Pending Meta approval (founder 30 Oct): the cart's fish was taken off the seller's menu.
+  { name: "rf2_cart_swap", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, the {{2}} in your cart isn't on {{3}}'s menu today, sorry about that 🙏\nA fresh pick you'll like instead: {{4}} 😋 cleaned and cut, delivered {{5}}.\nWant something else? Just reply here and we'll help you choose.",
+    examples: ["Priya", "Silver Pomfret", "Fishtokri", "Baby Surmai 900–1000 g, ₹1,040", "today, 12–2 PM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See today's menu" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
   { name: "rf2_weekend", category: "MARKETING", header: "IMAGE",
     body: "Happy Saturday, {{1}}! 🐟 Sunday fish sorted tonight, without the market rush.\nSellers near {{2}} have the catch up now: {{3}}. Pre-order tonight for {{4}}.\nPick your fish in the store 🏪 and it reaches your door 🛵\nNeed help choosing? Send us a Hi. We've got Thane covered.",
     examples: ["Priya", "Kolshet Road", "Surmai, Pomfret, Rawas", "Sunday 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "Pick my weekend fish" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
@@ -120,28 +125,4 @@ export function fishName(description: string | null | undefined, species: string
   const stem = sp.replace(/s$/, "");
   if (head && (!stem || head.toLowerCase().includes(stem))) return head.charAt(0).toUpperCase() + head.slice(1);
   return sp ? sp.charAt(0).toUpperCase() + sp.slice(1) : "fish";
-}
-
-/** No-cart offers rotate the fish photo per message (founder 24 Oct: surmai, then pomfret, then crab…). */
-const NO_CART_ROTATION = ["surmai", "pomfret", "crab", "prawns", "rawas", "bangda"];
-export function rotationImage(sentBefore: number): string {
-  return `${SITE}/fish/${NO_CART_ROTATION[Math.max(0, sentBefore) % NO_CART_ROTATION.length]}.jpg`;
-}
-
-/** Fish photo for the "order confirmed" header (public/fish). */
-export function fishPhoto(species: string | null | undefined): string {
-  const w = String(species || "").toLowerCase();
-  const k = ["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"].find((f) => w.includes(f) || (f === "prawns" && w.includes("prawn")));
-  return k ? `${SITE}/fish/${k}.jpg` : PROMO_IMAGE;
-}
-
-/**
- * Header picture (founder 24 Oct): offers with no cart get the "Craving fresh fish?" poster; cart and
- * order messages show the item they chose (its listing photo, e.g. the cut pomfret), else our photo
- * of that fish, else the poster.
- */
-export function headerImage(photo: string | null | undefined, species: string | null | undefined): string {
-  if (photo) return photo;
-  const own = species ? fishPhoto(species) : PROMO_IMAGE;
-  return own !== PROMO_IMAGE ? own : SIGNUP_IMAGE;
 }

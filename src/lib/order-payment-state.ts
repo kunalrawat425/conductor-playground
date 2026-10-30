@@ -110,3 +110,26 @@ export function refundStatus(o: { refund_sent_at?: string | null; refund_note?: 
   }
   return { state: "processing", text: "Refund processing via Razorpay — reaches the original payment method in 5–7 working days." };
 }
+
+/**
+ * The refund line the buyer reads (push, email, WhatsApp). "₹X refunded" only once
+ * Razorpay accepted it (refund_sent_at set); a failed or pending one is "being processed".
+ */
+export function refundLine(amount: number, sent: boolean): string {
+  const rs = `₹${amount.toLocaleString("en-IN")}`;
+  return sent ? `${rs} refunded` : `${rs} refund is being processed, it reaches you in 5–7 working days`;
+}
+
+type RefundRow = { id?: string; status?: string | null; total_price?: number | string | null; delivery_fee?: number | string | null };
+
+/**
+ * ₹ due back for items closed together: their prices, plus the cart's delivery fee
+ * only when no item of the cart is left live (same rule as refundOrderRazorpay).
+ * `cart` holds every row of the checkout, closing ones included; a lone order is its own cart.
+ */
+export function refundDueRupees(closing: RefundRow[], cart: RefundRow[] = closing): number {
+  const ids = new Set(closing.map((r) => r.id));
+  const last = !cart.some((r) => !ids.has(r.id) && !["cancelled", "declined", "refunded"].includes(String(r.status)));
+  const sum = (rows: RefundRow[], k: "total_price" | "delivery_fee") => rows.reduce((s, r) => s + (Number(r[k]) || 0), 0);
+  return sum(closing, "total_price") + (last ? sum(cart, "delivery_fee") : 0);
+}

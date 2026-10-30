@@ -3,6 +3,8 @@
  * bigbasket, so the brand and the status show before opening; the preview line says what happens next.
  * Seller emails keep their working subjects.
  */
+import { refundLine } from "./order-payment-state";
+
 export type BuyerEmailKind =
   | "placed" | "confirmed" | "out_for_delivery" | "delivered"
   | "seller_cancelled" | "buyer_cancelled" | "expired_unpaid" | "refunded";
@@ -13,6 +15,7 @@ export type BuyerEmailCtx = {
   slot?: string | null;        // "today, 12–2 PM"
   by?: string | null;          // "2 PM" (out for delivery)
   amount?: number | null;      // refund amount, ₹
+  refundSent?: boolean;        // Razorpay accepted the refund (refund_sent_at set)
   eveningPreorder?: boolean;   // paid after 6 PM for a pre-order: seller confirms next morning
   onTime?: boolean;            // delivered before the slot ended
 };
@@ -33,7 +36,7 @@ export function buyerEmailCopy(kind: BuyerEmailKind, c: BuyerEmailCtx): { subjec
     case "delivered":
       return { subject: c.onTime ? "Your Relifish order is delivered, on time!" : "Your Relifish order is delivered", preview: `Hope the ${c.fish} turns out just right. How was it?` };
     case "seller_cancelled":
-      return { subject: "Your Relifish order couldn't go ahead", preview: c.amount ? `Sorry! Your ${rs(c.amount)} refund has started (5–7 working days).` : "Sorry! Nothing was charged." };
+      return { subject: "Your Relifish order couldn't go ahead", preview: c.amount ? `Sorry! ${refundLine(c.amount, !!c.refundSent)}.` : "Sorry! Nothing was charged." };
     case "buyer_cancelled":
       return { subject: "Your Relifish order is cancelled", preview: c.amount ? "Refund details inside." : "Nothing was charged." };
     case "expired_unpaid":
