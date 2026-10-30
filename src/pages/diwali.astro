@@ -20,6 +20,11 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
   <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&family=Cinzel:wght@600;800&family=Great+Vibes&family=Poppins:wght@500;700&display=swap" />
 
   <div class="dw">
+    <div class="dw-got" id="dw-got" hidden>
+      <b id="dw-got-t">🎁 You got a Diwali card!</b>
+      <span>Make your own in 30 seconds and send it to your family — free.</span>
+      <button type="button" id="dw-got-make">Make yours too ✨</button>
+    </div>
     <div id="dw-card" class="dw-card t-goldblack">
       <div class="deco"></div>
       <div class="orn">🪔</div>
@@ -60,6 +65,10 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
   </div>
 
   <style is:global>
+    .dw-got{margin:0 0 14px;padding:14px;border-radius:14px;background:#EEF4FF;text-align:center}
+    .dw-got[hidden]{display:none}
+    .dw-got b{display:block;font:800 16px Inter;color:#0B1B3F}.dw-got span{display:block;font:500 13px/1.45 Inter;color:#334155;margin:4px 0 10px}
+    .dw-got button{background:#0066FF;color:#fff;border:0;border-radius:999px;padding:12px 20px;font:800 15px Inter;min-height:44px;cursor:pointer}
     .dw-from{display:block;margin-top:14px;padding:14px;border-radius:14px;background:#EEF4FF;text-align:center;text-decoration:none}
     .dw-from b{display:block;font:800 14px Inter;color:#0052CC}.dw-from span{display:block;font:500 13px/1.45 Inter;color:#334155;margin-top:3px}
     .invite{margin-top:18px;background:#FFF7ED;border:1.5px dashed #FDBA74;border-radius:14px;padding:14px;text-align:center}
@@ -152,13 +161,19 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
 
     // The card image stays clean (founder: no brand on the card); the caption carries the
     // "make your own" link so everyone who receives a card can make and send theirs.
-    const SHARE_TEXT = "Happy Diwali! 🪔\n\nMake your own free Diwali card in 30 seconds 👉 https://www.relifish.com/diwali?utm_source=whatsapp&utm_medium=share&utm_campaign=diwali_card";
+    // The link carries the card (design, message, signature): whoever opens it sees this exact card,
+    // then "Make yours too" (founder 31 Oct). Text is only ever set with textContent.
+    function shareText() {
+      const q = new URLSearchParams({ t: theme, m: msgIn.value.slice(0, 180), f: signIn.value.slice(0, 40), utm_source: "whatsapp", utm_medium: "share", utm_campaign: "diwali_card" });
+      return `Happy Diwali! 🪔\n\nSee my card and make your own free one in 30 seconds 👉 https://www.relifish.com/diwali?${q}`;
+    }
     const card = document.getElementById("dw-card") as HTMLElement;
     const picker = document.getElementById("dw-themes") as HTMLElement;
     const msgIn = document.getElementById("dw-im") as HTMLTextAreaElement;
     const signIn = document.getElementById("dw-if") as HTMLInputElement;
     const shareBtn = document.getElementById("dw-share") as HTMLButtonElement;
     let theme = "goldblack";
+    const track = (name: string) => { try { (window as any).gtag?.("event", name, { theme }); } catch {} };
 
     picker.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".th");
@@ -181,6 +196,30 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
       }
     } catch {}
 
+    const setTheme = (k: string) => {
+      const btn = picker.querySelector<HTMLButtonElement>(`.th[data-theme="${CSS.escape(k)}"]`);
+      if (btn) btn.click();
+    };
+    // Opened from a shared card (?t=&m=&f=): show that card, then offer to make their own.
+    const got = new URLSearchParams(location.search);
+    const gotTheme = got.get("t") || "";
+    if (gotTheme && picker.querySelector(`.th[data-theme="${CSS.escape(gotTheme)}"]`)) {
+      setTheme(gotTheme);
+      const m = (got.get("m") || "").slice(0, 180), f = (got.get("f") || "").slice(0, 40);
+      if (m) { msgIn.value = m; document.getElementById("dw-cm")!.textContent = m; }
+      if (f) { signIn.value = f; document.getElementById("dw-cf")!.textContent = f; }
+      const name = f.replace(/^with love,?\s*/i, "").trim();
+      document.getElementById("dw-got-t")!.textContent = name ? `🎁 ${name} sent you a Diwali card!` : "🎁 You got a Diwali card!";
+      document.getElementById("dw-got")!.hidden = false;
+      track("diwali_card_opened");
+      document.getElementById("dw-got-make")!.addEventListener("click", () => {
+        track("diwali_card_make_own");
+        document.getElementById("dw-got")!.hidden = true;
+        signIn.value = "With love"; document.getElementById("dw-cf")!.textContent = signIn.value;
+        picker.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
     async function renderPng(): Promise<Blob> {
       const { toBlob } = await import("html-to-image");
       await document.fonts.ready;
@@ -196,7 +235,6 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
     }
-    const track = (name: string) => { try { (window as any).gtag?.("event", name, { theme }); } catch {} };
 
     shareBtn.addEventListener("click", async () => {
       setButtonLoading(shareBtn, true, "Share image");
@@ -205,12 +243,12 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
         track("diwali_greeting_share");
         const file = new File([blob], "happy-diwali.png", { type: "image/png" });
         if (navigator.canShare?.({ files: [file] })) {
-          try { await navigator.share({ files: [file], text: SHARE_TEXT }); return; }
+          try { await navigator.share({ files: [file], text: shareText() }); return; }
           catch (err) { if ((err as Error).name === "AbortError") return; } // share blocked: fall through
         }
         // Desktop / old phones (no image sharing): the image downloads, then WhatsApp opens with the link to attach it.
         download(blob);
-        location.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(SHARE_TEXT);
+        location.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText());
       } catch {
         alert("Could not make the image. Please try again.");
       } finally {
