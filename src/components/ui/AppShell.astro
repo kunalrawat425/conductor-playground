@@ -49,7 +49,9 @@ const canonicalUrl = canonical || canonicalFor(Astro.url.pathname);
 const path = Astro.url.pathname.replace(/\/$/, "");
 const sellerGated = path.startsWith("/dashboard/") && path !== "/dashboard/login";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
-const festive = !!header?.festive && festiveTheme() === "diwali";
+// Diwali look on every buyer page (founder 31 Oct): header lights + maroon/gold, themed bottom bar.
+// Seller dashboard stays plain; a page can still opt out with header.festive === false.
+const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") && header?.festive !== false;
 ---
 
 <html lang="en">
@@ -244,7 +246,7 @@ const festive = !!header?.festive && festiveTheme() === "diwali";
     </script>
     {sellerGated && <SellerActiveGate />}
     <div class="v2-app">
-      {!hideHeader && header && <AppHeader {...header} />}
+      {!hideHeader && header && <AppHeader {...header} festive={festive} />}
       <main class="v2-main">
         <slot />
       </main>
