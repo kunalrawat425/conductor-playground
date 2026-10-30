@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams } from "../../src/lib/server/whatsapp";
+import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
 import { TEMPLATES, templateProblems, headerImage, fishPhoto, fishName, firstName, SIGNUP_IMAGE, rotationImage, varCount } from "../../src/lib/messaging/templates";
 import { orderMessage, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
 
@@ -190,10 +190,14 @@ describe("dispatch: both channels, once", () => {
 
 describe("Wati provider", () => {
   afterEach(() => vi.unstubAllEnvs());
-  it("numbers params across the template: image, body, then button (Wati support)", () => {
-    expect(watiParams({ to: "919870619974", name: "rf2_confirmed", headerImage: "https://x/p.jpg", body: ["Fishtokri", "#AB12", "Fri 8–10 AM"], urlSuffix: "abc123" }))
-      .toEqual([{ name: "1", value: "https://x/p.jpg" }, { name: "2", value: "Fishtokri" }, { name: "3", value: "#AB12" }, { name: "4", value: "Fri 8–10 AM" }, { name: "5", value: "abc123" }]);
-    expect(watiParams({ to: "919870619974", name: "rf2_out", body: ["#AB12", "2 PM"], urlSuffix: "x" }).map((p) => p.name)).toEqual(["1", "2", "3"]);
+  it("maps rf2 templates to Wati names and params: photo, text-only and no-header", () => {
+    const conf = { to: "919870619974", name: "rf2_confirmed", body: ["Fishtokri", "#AB12", "Fri 8–10 AM"], urlSuffix: "abc" };
+    expect(watiTemplate({ ...conf, headerImage: "https://x/p.jpg" })).toBe("rfw2_confirmed");
+    expect(watiParams({ ...conf, headerImage: "https://x/p.jpg" })).toEqual([{ name: "image_url", value: "https://x/p.jpg" }, { name: "1", value: "Fishtokri" }, { name: "2", value: "#AB12" }, { name: "3", value: "Fri 8–10 AM" }, { name: "4", value: "abc" }]);
+    expect(watiTemplate({ ...conf, headerImage: null })).toBe("rfwt_confirmed");
+    expect(watiParams({ ...conf, headerImage: null }).map((p) => p.name)).toEqual(["1", "2", "3", "4"]);
+    expect(watiTemplate({ to: "1", name: "rf2_out", body: ["#AB12", "2 PM"] })).toBe("rfw_out");
+    expect(watiTemplate({ to: "1", name: "rf_hello", body: ["Kiran"] })).toBe("rfw_hello");
   });
   it("is live only with Wati keys, and still honours dry-run and the test-only list", () => {
     vi.stubEnv("WA_PROVIDER", "wati");

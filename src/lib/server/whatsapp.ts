@@ -11,6 +11,7 @@
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { istDate } from "../messaging/schedule";
+import { TEMPLATES } from "../messaging/templates";
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 export const GRAPH = "https://graph.facebook.com/v26.0";
@@ -52,11 +53,20 @@ export type SendResult = { status: "sent" | "dry_run" | "failed"; id?: string; e
 
 const useWati = () => env("WA_PROVIDER") === "wati";
 
-/** Wati v1 send params (pure; tested). Wati numbers variables across the whole template
- * (Wati support, 30 Oct 2026): image header first, then body {{1}}…, then the URL button suffix. */
+/** Wati template for an rf2 template (created in Wati, 30 Oct 2026): rfw2_* takes the buyer's fish photo
+ * as {{image_url}}, rfwt_* is the same text with no photo (listing has none), rfw_* is a template without a header. */
+export function watiTemplate(t: TemplateSend): string {
+  const base = t.name.replace(/^rf2?_/, "");
+  if (!IMAGE_TEMPLATES.has(t.name)) return `rfw_${base}`;
+  return t.headerImage ? `rfw2_${base}` : `rfwt_${base}`;
+}
+const IMAGE_TEMPLATES = new Set(TEMPLATES.filter((x) => x.header === "IMAGE").map((x) => x.name));
+
+/** Wati v1 send params (pure; tested): image_url (photo templates), body 1…n, then the URL button suffix as n+1. */
 export function watiParams(t: TemplateSend): { name: string; value: string }[] {
-  const vals = [...(t.headerImage ? [t.headerImage] : []), ...(t.body ?? []), ...(t.urlSuffix ? [t.urlSuffix] : [])];
-  return vals.map((value, i) => ({ name: String(i + 1), value: String(value) }));
+  const vals = [...(t.body ?? []), ...(t.urlSuffix ? [t.urlSuffix] : [])];
+  const img = IMAGE_TEMPLATES.has(t.name) && t.headerImage ? [{ name: "image_url", value: t.headerImage }] : [];
+  return [...img, ...vals.map((value, i) => ({ name: String(i + 1), value: String(value) }))];
 }
 
 async function sendWati(t: TemplateSend): Promise<SendResult> {
@@ -64,7 +74,7 @@ async function sendWati(t: TemplateSend): Promise<SendResult> {
     const res = await fetch(`${env("WATI_API_URL").replace(/\/$/, "")}/api/v1/sendTemplateMessage?whatsappNumber=${t.to}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${env("WATI_API_KEY")}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ template_name: t.name, broadcast_name: `rf_${t.name}`, parameters: watiParams(t) }),
+      body: JSON.stringify({ template_name: watiTemplate(t), broadcast_name: `rf_${t.name}`, parameters: watiParams(t) }),
     });
     const j: any = await res.json().catch(() => ({}));
     if (!res.ok || j?.result !== true) return { status: "failed", error: `wati ${res.status} ${j?.info || j?.items?.[0]?.description || ""}`.trim().slice(0, 300) };
