@@ -1,9 +1,11 @@
+import { refundLine } from "../order-payment-state";
+
 export type BuyerCancelInfo = {
   by?: string | null;
   reason?: string | null;
   refunded?: boolean;
   /** One item of a cart was cancelled and the rest goes ahead. */
-  item?: { order_short: string; amount?: number | null } | null;
+  item?: { order_short: string; amount?: number | null; sent?: boolean } | null;
 };
 
 /**
@@ -22,7 +24,7 @@ export function buyerOrderPushNotification(
     const fish = species ? `${species} ` : "";
     const reason = cancel.reason ? ` Reason: ${cancel.reason.replace(/[.!?]*$/, ".")}` : "";
     if (cancel.item) {
-      const amt = cancel.item.amount ? ` — ₹${cancel.item.amount.toLocaleString("en-IN")} refunded` : "";
+      const amt = cancel.item.amount ? ` — ${refundLine(cancel.item.amount, !!cancel.item.sent)}` : "";
       return { title: "Item removed from your order", body: `${species || "An item"} was removed from your order #${cancel.item.order_short}${amt}.${reason}` };
     }
     const refund = cancel.refunded ? " Your payment is being refunded in full." : "";
