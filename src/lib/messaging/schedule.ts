@@ -2,14 +2,15 @@
  * WhatsApp / push promo scheduler (founder rules, 24 Oct 2026). Pure: no I/O, all times IST.
  *
  * Journeys, rf2 templates:
- *  P  Tue and Fri 6:00 PM, Sat and Sun 8:30 AM (founder, 30 Oct): one promo chosen by stage.
+ *  P  Tue 6:00 PM; Fri, Sat and Sun 8:30 AM (founder, 30 Oct): one promo chosen by stage.
  *     Cart → rf2_promo_cart, cart with only off-menu fish → rf2_cart_swap (a substitute from that
  *     seller's live menu), unpaid order → rf2_promo_unpaid, delivered before → rf2_order_again,
- *     else generic: evenings rf2_catch_preorder (pre-order for tomorrow); mornings
+ *     else generic: Tue evening rf2_catch_preorder (pre-order for tomorrow); Fri/Sat/Sun mornings
  *     rf2_catch_prices when a Today slot is bookable ("order by" = last Today slot's end − 2 h,
  *     the checkout's own cutoff), else rf2_catch_preorder. Paid and awaiting delivery → none.
  *     Anti-spam (founder, 30 Oct): one per IST day and ≥ 72 h since the buyer's last marketing
- *     message (PROMO_KINDS, incl. old B1/B2 log rows); none within 3 days of a delivery or
+ *     message (PROMO_KINDS, incl. old B1/B2 log rows), so a Tue 6 PM recipient (62.5 h) skips Fri and
+ *     a Fri recipient skips Sat/Sun until the next Tue; none within 3 days of a delivery or
  *     after 30 days inactive.
  *  B  cart reminders B1/B2 (rf2_cart_today / rf2_cart_preorder) are REMOVED (founder, 30 Oct):
  *     carts are covered by the promo slots. Nothing schedules them.
@@ -28,7 +29,7 @@ export const DAY_START = 8 * 60;        // no promos before 8:00
 export const DAY_END = 21 * 60;         // quiet from 21:00
 export const DUE_WINDOW_MIN = 120;      // a due message is still sent if the job runs up to 2 h late
 /** IST weekday (0 Sun … 6 Sat) → promo send minute (founder, 30 Oct). */
-export const PROMO_SLOTS: Record<number, number> = { 0: 8 * 60 + 30, 2: 18 * 60, 5: 18 * 60, 6: 8 * 60 + 30 };
+export const PROMO_SLOTS: Record<number, number> = { 0: 8 * 60 + 30, 2: 18 * 60, 5: 8 * 60 + 30, 6: 8 * 60 + 30 }; // Tue 6 PM; Fri, Sat, Sun 8:30 AM (founder, 30 Oct)
 export const PROMO_GAP_MS = 72 * 3_600_000; // ≥ 3 days since the buyer's last B1/B2/promo
 const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAY_MS = 86_400_000;
@@ -184,7 +185,7 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   }
   if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, fish, offer.when], path: `/track/${b.unpaid!.id}` };
   if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, fish, seller.name, offer.when] };
-  // Morning slot (Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM".
+  // Morning slot (Fri/Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM".
   if (offer.mode === "today" && offer.by && seller.menu && istMin(due) < 12 * 60) {
     return { ...m, template: "rf2_catch_prices", photo: catchPhoto(b, seller, false), body: [b.name, day, seller.menu, offer.by, offer.when], path: "/shop" };
   }
@@ -214,7 +215,7 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const seller = orderSeller ? sellers.find((s) => s.id === orderSeller) ?? null : pickSeller(b, sellers);
   if (!seller) return { skip: "no seller delivers to them" };
 
-  // ── P: Tue/Fri 6 PM, Sat/Sun 8:30 AM, one promo by stage ──
+  // ── P: Tue 6 PM, Fri/Sat/Sun 8:30 AM, one promo by stage ──
   const lastActive = Math.max(Date.parse(b.created_at), cartMs, orderMs);
   const deliveredMs = b.last_delivered_at ? Date.parse(b.last_delivered_at) : 0;
   // No spam (founder 30 Oct): ≥ 72 h since the last marketing message (old B1/B2 rows count too).
