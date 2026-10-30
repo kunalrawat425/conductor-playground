@@ -1,4 +1,5 @@
 ---
+import { getHomeReviews } from "../lib/server/seller-reviews";
 import UtmCapture from "../components/UtmCapture.astro";
 import WatiChatButton from "../components/WatiChatButton.astro";
 import { LOGO_URL, whatsappLink } from "../lib/brand";
@@ -45,9 +46,15 @@ const DIAL_PHOTOS = [
   { src: `${LP}bd8efaae-69e1-4dcb-bdcb-75d1874b96ed/1792435387098.png?width=500&quality=80`, cap: "Bangda, same-morning catch" },
   { src: `${LP}bd8efaae-69e1-4dcb-bdcb-75d1874b96ed/1792436014060.png?width=500&quality=80`, cap: "Halwa, cleaned and cut" },
 ];
-const DIAL: ({ src: string; cap: string } | null)[] = [];
-DIAL_PHOTOS.forEach((p, i) => { DIAL.push(p); if (i % 2 === 1) DIAL.push(null); });
-DIAL.push(null);
+// Real buyer reviews (4★+, with a comment) fill the wheel's glass cards first; the rest say "Claim this spot".
+const HOME_REVIEWS = await getHomeReviews(6);
+const stars = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
+type DialCard = { src: string; cap: string } | { review: (typeof HOME_REVIEWS)[number] } | null;
+const DIAL: DialCard[] = [];
+let nextReview = 0;
+const glass = (): DialCard => (nextReview < HOME_REVIEWS.length ? { review: HOME_REVIEWS[nextReview++] } : null);
+DIAL_PHOTOS.forEach((p, i) => { DIAL.push(p); if (i % 2 === 1) DIAL.push(glass()); });
+DIAL.push(null); // always one "Claim this spot"
 // Same maths as the client script (STEP must match), so the first paint already shows the fan: no layout shift.
 const STEP = 13;
 const SPAN = DIAL.length * STEP;
@@ -56,7 +63,6 @@ const pose = (i: number) => {
   if (a > SPAN / 2) a -= SPAN;
   return `transform:rotate(${a}deg);z-index:${100 - Math.round(Math.abs(a))};${Math.abs(a) < 48 ? "" : "visibility:hidden"}`;
 };
-// ponytail: no public reviews feed yet, so the card only rotates placeholders; feed real orders.rating rows in here when one exists.
 const REVIEW_SLOTS = [
   { t: "Your review goes here. Order, enjoy your fish, then tap ＋ on the wheel to claim your spot.", n: "You?" },
   { t: "Loved the cut? Fresh enough? Tell Thane. Your review can be the first one on this wall.", n: "Claim this spot" },
@@ -463,6 +469,8 @@ const REVIEW_SLOTS = [
     .dc-claim .pl{width:56px;height:56px;border-radius:50%;background:var(--cta);color:var(--cta-fg);font:800 30px/1 Inter;display:flex;align-items:center;justify-content:center;animation:pulse 1.6s infinite}
     .dc-claim b{font:400 17px/1.05 var(--display);text-transform:uppercase;margin-top:10px}
     .dc-claim .st{color:#D97706;font-size:15px;letter-spacing:2px;margin-top:6px}
+    .dc-rev{cursor:default;padding:18px 16px}
+    .dc-rev q{font:600 14px/1.45 Inter;color:var(--ink);margin-top:10px;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
     .dc-claim .dc-s{font:600 11px/1.35 Inter;color:#334155;margin-top:6px}
     @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,102,255,.5)}70%{box-shadow:0 0 0 14px rgba(0,102,255,0)}100%{box-shadow:0 0 0 0 rgba(0,102,255,0)}}
     .hint{font:700 12px Inter;color:#64748B;margin-top:6px}
@@ -1194,7 +1202,13 @@ const REVIEW_SLOTS = [
         ))}
       </div>
       <div class="dial" id="dial" tabindex="0" role="group" aria-roledescription="carousel" aria-label="Photos from our sellers and buyers. Drag, swipe or use the arrow keys to turn the wheel.">
-        {DIAL.map((d, i) => d ? (
+        {DIAL.map((d, i) => d && "review" in d ? (
+          <figure class="dc dc-claim dc-rev" style={pose(i)}>
+            <span class="st" aria-label={`${d.review.rating} out of 5`}>{stars(d.review.rating)}</span>
+            <q>{d.review.text}</q>
+            <figcaption class="dc-s">Verified buyer · {d.review.sellerName}</figcaption>
+          </figure>
+        ) : d ? (
           <figure class="dc" style={pose(i)}><img src={d.src} alt={d.cap} width="200" height="272" loading="lazy" draggable="false" /><figcaption>{d.cap}</figcaption></figure>
         ) : (
           <button type="button" class="dc dc-claim" data-claim style={pose(i)}>
@@ -1216,8 +1230,15 @@ const REVIEW_SLOTS = [
       <div class="rv">
         <h3>What buyers say</h3>
         <div class="rvc" id="rv">
-          {REVIEW_SLOTS.map((r, i) => (
+          {HOME_REVIEWS.map((r, i) => (
             <div class="rv-slide" hidden={i > 0}>
+              <div class="st" aria-label={`${r.rating} out of 5`}>{stars(r.rating)}</div>
+              <p>“{r.text}”</p>
+              <small>— Verified buyer · {r.sellerName}</small>
+            </div>
+          ))}
+          {REVIEW_SLOTS.map((r, i) => (
+            <div class="rv-slide" hidden={HOME_REVIEWS.length + i > 0}>
               <div class="st" aria-label="No rating yet">☆☆☆☆☆</div>
               <p>“{r.t}”</p>
               <small>— {r.n}</small>
@@ -1225,7 +1246,7 @@ const REVIEW_SLOTS = [
             </div>
           ))}
         </div>
-        <div class="dots" id="rv-dots" aria-hidden="true">{REVIEW_SLOTS.map((_, i) => <i class={i === 0 ? "on" : undefined}></i>)}</div>
+        <div class="dots" id="rv-dots" aria-hidden="true">{[...HOME_REVIEWS, ...REVIEW_SLOTS].map((_, i) => <i class={i === 0 ? "on" : undefined}></i>)}</div>
       </div>
     </div>
   </div>

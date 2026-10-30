@@ -118,3 +118,24 @@ export async function getSellerReviews(sellerIds: string[], limit = 5): Promise<
 export function getAllSellerReviews(sellerId: string): Promise<ReviewSummary> {
   return getSellerReviews([sellerId], Infinity);
 }
+
+export type HomeReview = PublicReview & { sellerName: string };
+
+/**
+ * Real 4★/5★ reviews with a written comment across live sellers, newest first, for the homepage
+ * ("What buyers say" and the photo wheel). Buyer identity is never returned. Never throws.
+ */
+export async function getHomeReviews(limit = 6): Promise<HomeReview[]> {
+  if (!supabaseUrl || !supabaseServiceKey) return [];
+  try {
+    const sb = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: sellers } = await sb.from("sellers").select("id, name").eq("is_active", true).or("is_test.is.null,is_test.eq.false");
+    if (!sellers?.length) return [];
+    const names = new Map(sellers.map((x: any) => [x.id, x.name as string]));
+    const { reviews } = await getSellerReviews([...names.keys()], 50);
+    return reviews.filter((r) => r.rating >= 4 && r.text.length >= 10).slice(0, limit).map((r) => ({ ...r, sellerName: names.get(r.sellerId) || "" }));
+  } catch (err: any) {
+    console.warn("[seller-reviews] home reviews failed", err?.message);
+    return [];
+  }
+}
