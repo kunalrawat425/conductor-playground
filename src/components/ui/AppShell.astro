@@ -248,12 +248,13 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
     <!-- App splash (founder 31 Oct): only when opened as the installed app, once per session; never blocks longer than 3 s. -->
     <div id="rf-splash" class:list={["rf-splash", festive && "rf-splash-diwali"]} aria-hidden="true">
       {festive && <DiwaliDecor part="lights" />}
-      <img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="" width="230" height="55" />
+      <img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="Relifish" width="230" height="55" />
+      <span class="rf-splash-tag">{festive ? "Wishing you light, joy and good health" : "Fresh fish. Cleaned. Cut. At your door."}</span>
+      <span class="rf-splash-rule"></span>
+      <span class="rf-splash-caps">{festive ? "Happy Diwali 🪔" : "From local Thane & Mumbai sellers"}</span>
       {festive
-        ? <span class="rf-splash-tag rf-splash-diya"><span class="fd-diya"><span class="fd-flame"></span></span>Happy Diwali<span class="fd-diya"><span class="fd-flame"></span></span></span>
-        : null}
-      <span class="rf-splash-tag">Fresh fish from verified local sellers</span>
-      <span class="rf-splash-dots"><i></i><i></i><i></i></span>
+        ? <span class="rf-splash-icon"><span class="fd-diya"><span class="fd-flame"></span></span></span>
+        : <svg class="rf-splash-icon rf-splash-fish" viewBox="0 0 64 32" aria-hidden="true"><path d="M4 16c8-11 26-13 40-4l12-8v24l-12-8C30 29 12 27 4 16z" fill="#fff" opacity=".9"/><circle cx="16" cy="14" r="2.4" fill="#0066FF"/></svg>}
     </div>
     <script is:inline>
       (function () {
@@ -280,16 +281,15 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
       .rf-splash-diwali.on { background: radial-gradient(circle at 50% 45%, #B3123B, #6E0822 70%, #4A0618); }
       .rf-splash-diwali .fd-lights { top: env(safe-area-inset-top, 0); height: 22px; }
       .rf-splash-diwali .rf-splash-tag { color: #FDE7B0; }
-      .rf-splash-diwali .rf-splash-dots i { background: #F5D27A; }
-      .rf-splash-diya { display: flex; align-items: flex-end; gap: 14px; font: 800 20px Inter, sans-serif; }
-      .rf-splash-diya .fd-diya { margin-top: 0; }
       .rf-splash img { width: 230px; height: auto; }
-      .rf-splash-tag { font: 600 14px Inter, sans-serif; color: rgba(255,255,255,.85); }
-      .rf-splash-dots { display: flex; gap: 6px; margin-top: 18px; }
-      .rf-splash-dots i { width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: .4; animation: rf-dot 1s infinite ease-in-out; }
-      .rf-splash-dots i:nth-child(2) { animation-delay: .15s; } .rf-splash-dots i:nth-child(3) { animation-delay: .3s; }
-      @keyframes rf-dot { 50% { opacity: 1; transform: translateY(-4px); } }
-      @media (prefers-reduced-motion: reduce) { .rf-splash-dots i { animation: none; } }
+      .rf-splash-tag { font: 700 16px Inter, sans-serif; color: #fff; margin-top: 2px; }
+      .rf-splash-rule { width: 140px; height: 1px; background: rgba(255,255,255,.35); margin: 8px 0 2px; }
+      .rf-splash-caps { font: 700 11px Inter, sans-serif; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.85); }
+      .rf-splash-diwali .rf-splash-caps { color: #FDE7B0; }
+      .rf-splash-icon { position: absolute; bottom: calc(14% + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); }
+      .rf-splash-fish { width: 34px; height: 17px; animation: rf-swim 1.4s ease-in-out infinite; }
+      @keyframes rf-swim { 50% { transform: translate(-50%, -5px); } }
+      @media (prefers-reduced-motion: reduce) { .rf-splash-fish { animation: none; } }
     </style>
     {sellerGated && <SellerActiveGate />}
     <div class="v2-app">
