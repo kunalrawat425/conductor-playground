@@ -13,8 +13,8 @@ import DiwaliDecor from "../components/DiwaliDecor.astro";
 // SSR renders only "All Fish" as a placeholder; JS fills the rest after data loads.
 // First paint before the seller data arrives (founder 31 Oct): our plate photos, replaced by the real strip on load.
 const categories = [
-  { id: "all", name: "All Fish", emoji: "🐟", photo: "/fish/platter.jpg", active: true },
-  ...(["surmai", "prawns", "pomfret", "crab", "rawas", "bangda"] as const).map((id) => ({ id, name: id[0].toUpperCase() + id.slice(1), emoji: "🐟", photo: `/fish/${id}.jpg` })),
+  { id: "all", name: "All Fish", emoji: "🐟", photo: "/fish/platter.jpg?v=2", active: true },
+  ...(["surmai", "prawns", "pomfret", "crab", "rawas", "bangda"] as const).map((id) => ({ id, name: id[0].toUpperCase() + id.slice(1), emoji: "🐟", photo: `/fish/${id}.jpg?v=2` })),
 ];
 ---
 <AppShell
@@ -101,7 +101,7 @@ const categories = [
 
   <!-- Loading skeletons -->
   <div id="v2-loading" class="v2-cards-grid">
-    {["/fish/platter.jpg", "/fish/pomfret.jpg"].map((src) => (
+    {["/fish/platter.jpg?v=2", "/fish/pomfret.jpg?v=2"].map((src) => (
       <div class="v2-skel-card v2-skel-photo" aria-hidden="true">
         <div class="v2-skel-img" style={`background-image:url(${src})`}></div>
         <div class="v2-skel-lines"><Skeleton width="60%" height="14px" /><Skeleton width="40%" height="12px" /></div>
@@ -489,15 +489,15 @@ const categories = [
 
   // Species photos — same images as the landing page flyer (index.astro). No seller-specific photos.
   const BASE_P = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos";
-  const FLYER_POMFRET = "/fish/pomfret.jpg";
+  const FLYER_POMFRET = "/fish/pomfret.jpg?v=2";
   const speciesPhotos: Record<string, string> = {
-    all:     "/fish/platter.jpg", // mixed seafood platter (founder 31 Oct)
+    all:     "/fish/platter.jpg?v=2", // mixed seafood platter (founder 31 Oct)
     pomfret: FLYER_POMFRET,
-    surmai:  "/fish/surmai.jpg",
-    prawns:  "/fish/prawns.jpg",
-    bangda:  "/fish/bangda.jpg",
-    rawas:   "/fish/rawas.jpg",
-    crab:    "/fish/crab.jpg",
+    surmai:  "/fish/surmai.jpg?v=2",
+    prawns:  "/fish/prawns.jpg?v=2",
+    bangda:  "/fish/bangda.jpg?v=2",
+    rawas:   "/fish/rawas.jpg?v=2",
+    crab:    "/fish/crab.jpg?v=2",
     bombil:  BASE_P + "/ocean/11_bombil.jpg",
     shark:   BASE_P + "/bombay/shark.webp",
     salmon:  BASE_P + "/bombay/salmon.webp",

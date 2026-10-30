@@ -936,7 +936,7 @@ const REVIEW_SLOTS = [
       <p class="hero-cite">Relifish is a marketplace for fresh fish from local sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order for tomorrow or later, and the seller delivers to your home or keeps it ready for pickup.</p>
       <div class="fish-tags">
         {[["Pomfret","pomfret"],["Surmai","surmai"],["Prawns","prawns"],["Bangda","bangda"],["Rawas","rawas"],["Crab","crab"]].map(([f,k])=>(
-          <a class="ftag" href={`/shop?species=${k}`}><img class="ftag-img" src={`/fish/${k}.jpg`} alt="" width="32" height="32" />{f}</a>
+          <a class="ftag" href={`/shop?species=${k}`}><img class="ftag-img" src={`/fish/${k}.jpg?v=2`} alt="" width="32" height="32" />{f}</a>
         ))}
       </div>
       <div class="hero-ctas">
@@ -952,9 +952,9 @@ const REVIEW_SLOTS = [
     <!-- RIGHT — interactive phone demo (desktop); fish chips (mobile) -->
     <div class="hero-right">
       <div class="fish-mini">
-      <a class="fish3d" href="/shop?species=pomfret" aria-label="Shop pomfret"><img class="fish3d-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></a>
-      <a class="fish3d" href="/shop?species=prawns" aria-label="Shop prawns"><img class="fish3d-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></a>
-      <a class="fish3d" href="/shop?species=surmai" aria-label="Shop surmai"><img class="fish3d-img" src="/fish/surmai.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></a>
+      <a class="fish3d" href="/shop?species=pomfret" aria-label="Shop pomfret"><img class="fish3d-img" src="/fish/pomfret.jpg?v=2" alt="" loading="lazy" /><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></a>
+      <a class="fish3d" href="/shop?species=prawns" aria-label="Shop prawns"><img class="fish3d-img" src="/fish/prawns.jpg?v=2" alt="" loading="lazy" /><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></a>
+      <a class="fish3d" href="/shop?species=surmai" aria-label="Shop surmai"><img class="fish3d-img" src="/fish/surmai.jpg?v=2" alt="" loading="lazy" /><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></a>
       </div>
 
       <!-- phone -->
@@ -1016,15 +1016,15 @@ const REVIEW_SLOTS = [
               <div class="d2-tabs"><div class="d2t on">🌙 Pre-order</div><div class="d2t">⚡ Same Day</div></div>
               <div class="d2-list">
                 <div class="d2-card tap">
-                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/pomfret.jpg) center/cover"><div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/pomfret.jpg?v=2) center/cover"><div class="d2-badge op">🟢 Open</div></div>
                   <div class="d2-info"><div class="d2-name">Local fish seller</div><div class="d2-sub">Thane West · Delivery in 2 hours</div></div>
                 </div>
                 <div class="d2-card">
-                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/prawns.jpg) center/cover"><div class="d2-badge pr">🌙 Pre-order</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/prawns.jpg?v=2) center/cover"><div class="d2-badge pr">🌙 Pre-order</div></div>
                   <div class="d2-info"><div class="d2-name">Pre-order seller</div><div class="d2-sub">Thane West · Pick a delivery day</div></div>
                 </div>
                 <div class="d2-card">
-                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/crab.jpg) center/cover"><div class="d2-badge op">🟢 Open</div></div>
+                  <div class="d2-img" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/crab.jpg?v=2) center/cover"><div class="d2-badge op">🟢 Open</div></div>
                   <div class="d2-info"><div class="d2-name">Seller near you</div><div class="d2-sub">Crab · Bombil · Prawns</div></div>
                 </div>
               </div>
@@ -1039,11 +1039,11 @@ const REVIEW_SLOTS = [
                 <div class="dh-title">🌙 Pre-order menu</div>
               </div>
               <div class="d3-item tap">
-                <div style="display:flex;align-items:center"><img class="d3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">200–250 g · Whole &amp; cleaned</div></div></div>
+                <div style="display:flex;align-items:center"><img class="d3-img" src="/fish/pomfret.jpg?v=2" alt="" loading="lazy" /><div><div class="d3-name">Pomfret (Whole)</div><div class="d3-cut">200–250 g · Whole &amp; cleaned</div></div></div>
                 <div style="text-align:right"><div class="d3-lock">₹375</div><div class="d3-add added" style="margin-top:3px">✓ Added</div></div>
               </div>
               <div class="d3-item">
-                <div style="display:flex;align-items:center"><img class="d3-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="d3-name">Prawns</div><div class="d3-cut">Pack of 10–20 pcs</div></div></div>
+                <div style="display:flex;align-items:center"><img class="d3-img" src="/fish/prawns.jpg?v=2" alt="" loading="lazy" /><div><div class="d3-name">Prawns</div><div class="d3-cut">Pack of 10–20 pcs</div></div></div>
                 <div style="text-align:right"><div class="d3-lock">₹410</div><div class="d3-add" style="margin-top:3px">+ Add</div></div>
               </div>
               <div class="d3-item">
@@ -1059,7 +1059,7 @@ const REVIEW_SLOTS = [
             <div class="ds-light">
               <div class="dh"><div class="dh-back">← Menu</div><div class="dh-title">Your cart</div></div>
               <div class="d4-item">
-                <div><div class="d4-name"><img class="d3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" style="vertical-align:middle" />Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
+                <div><div class="d4-name"><img class="d3-img" src="/fish/pomfret.jpg?v=2" alt="" loading="lazy" style="vertical-align:middle" />Pomfret (Whole)</div><div style="font:400 7px Inter;color:#9CA3AF;margin-top:1px">Local seller</div></div>
                 <div style="text-align:right"><div class="d4-lock">₹375</div><div class="d4-qty" style="margin-top:4px"><div class="d4-q">−</div><span style="font:700 9px Inter;color:#0A0F1E">1 pc</span><div class="d4-q">+</div></div></div>
               </div>
               <div class="d4-item">
@@ -1182,9 +1182,9 @@ const REVIEW_SLOTS = [
 <!-- FISH PHOTO MARQUEE -->
 <div class="ticker">
   <div class="ticker-track">
-    {[...[["/fish/pomfret.jpg","Pomfret","Morning fresh"],["/fish/surmai.jpg","Surmai","Direct from seller"],["/fish/prawns.jpg","Prawns","Pre-order ahead"],["/fish/bangda.jpg","Bangda","Zero middleman"],
-      ["/fish/rawas.jpg","Rawas","Limited daily"],["/fish/crab.jpg","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]], ...[["/fish/pomfret.jpg","Pomfret","Morning fresh"],["/fish/surmai.jpg","Surmai","Direct from seller"],["/fish/prawns.jpg","Prawns","Pre-order ahead"],["/fish/bangda.jpg","Bangda","Zero middleman"],
-      ["/fish/rawas.jpg","Rawas","Limited daily"],["/fish/crab.jpg","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]]].map(([e,n,t])=>(
+    {[...[["/fish/pomfret.jpg?v=2","Pomfret","Morning fresh"],["/fish/surmai.jpg?v=2","Surmai","Direct from seller"],["/fish/prawns.jpg?v=2","Prawns","Pre-order ahead"],["/fish/bangda.jpg?v=2","Bangda","Zero middleman"],
+      ["/fish/rawas.jpg?v=2","Rawas","Limited daily"],["/fish/crab.jpg?v=2","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]], ...[["/fish/pomfret.jpg?v=2","Pomfret","Morning fresh"],["/fish/surmai.jpg?v=2","Surmai","Direct from seller"],["/fish/prawns.jpg?v=2","Prawns","Pre-order ahead"],["/fish/bangda.jpg?v=2","Bangda","Zero middleman"],
+      ["/fish/rawas.jpg?v=2","Rawas","Limited daily"],["/fish/crab.jpg?v=2","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]]].map(([e,n,t])=>(
       <div class="ti"><img class="ti-img" src={e} alt="" loading="lazy" width="136" height="110" /><span class="fish">{n}</span> <span class="ti-t">{t}</span></div>
     ))}
   </div>
@@ -1437,7 +1437,7 @@ const REVIEW_SLOTS = [
             </div>
             <div class="s2-list">
               <div class="s2-card">
-                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/pomfret.jpg) center/cover"><div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/pomfret.jpg?v=2) center/cover"><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Local fish seller</div>
                   <div class="s2-sub">Thane West · Delivery in 2 hours</div>
@@ -1445,7 +1445,7 @@ const REVIEW_SLOTS = [
                 </div>
               </div>
               <div class="s2-card tap-zone">
-                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/prawns.jpg) center/cover"><div class="s2-st pr">🌙 Pre-order</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/prawns.jpg?v=2) center/cover"><div class="s2-st pr">🌙 Pre-order</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Pre-order seller</div>
                   <div class="s2-sub">Thane West · Pick a delivery day</div>
@@ -1453,7 +1453,7 @@ const REVIEW_SLOTS = [
                 </div>
               </div>
               <div class="s2-card">
-                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/crab.jpg) center/cover"><div class="s2-st op">🟢 Open</div></div>
+                <div class="s2-cover" style="background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45)),url(/fish/crab.jpg?v=2) center/cover"><div class="s2-st op">🟢 Open</div></div>
                 <div class="s2-bd">
                   <div class="s2-nm">Seller near you</div>
                   <div class="s2-sub">Crab · Bombil · Prawns</div>
@@ -1480,7 +1480,7 @@ const REVIEW_SLOTS = [
             </div>
             <div class="s3-items">
               <div class="s3-item">
-                <div class="s3-il"><div class="s3-ie"><img class="s3-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /></div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">200–250 g · Cleaned</div></div></div>
+                <div class="s3-il"><div class="s3-ie"><img class="s3-img" src="/fish/pomfret.jpg?v=2" alt="" loading="lazy" /></div><div><div class="s3-in">Pomfret (Whole)</div><div class="s3-id">200–250 g · Cleaned</div></div></div>
                 <div class="s3-lock">₹375</div>
               </div>
               <div class="s3-item">
@@ -1559,12 +1559,12 @@ const REVIEW_SLOTS = [
     <p class="ssub">Availability changes daily. See today's prices from sellers near you and reserve your portion before it sells out.</p>
     <div class="fish-grid">
       {[
-        {e:"🐟",n:"Pomfret",k:"pomfret",m:"पापलेट",bg:"fi1",p:"/fish/pomfret.jpg"},
-        {e:"🐠",n:"Surmai (Kingfish)",k:"surmai",m:"सुरमई",bg:"fi2",p:"/fish/surmai.jpg"},
-        {e:"🦐",n:"Jumbo Prawns",k:"prawns",m:"कोळंबी",bg:"fi3",p:"/fish/prawns.jpg"},
-        {e:"🐡",n:"Bangda (Mackerel)",k:"bangda",m:"बांगडा",bg:"fi4",p:"/fish/bangda.jpg"},
-        {e:"🐟",n:"Rawas (Salmon)",k:"rawas",m:"रावस",bg:"fi3",p:"/fish/rawas.jpg"},
-        {e:"🦀",n:"Crab",k:"crab",m:"खेकडा",bg:"fi5",p:"/fish/crab.jpg"},
+        {e:"🐟",n:"Pomfret",k:"pomfret",m:"पापलेट",bg:"fi1",p:"/fish/pomfret.jpg?v=2"},
+        {e:"🐠",n:"Surmai (Kingfish)",k:"surmai",m:"सुरमई",bg:"fi2",p:"/fish/surmai.jpg?v=2"},
+        {e:"🦐",n:"Jumbo Prawns",k:"prawns",m:"कोळंबी",bg:"fi3",p:"/fish/prawns.jpg?v=2"},
+        {e:"🐡",n:"Bangda (Mackerel)",k:"bangda",m:"बांगडा",bg:"fi4",p:"/fish/bangda.jpg?v=2"},
+        {e:"🐟",n:"Rawas (Salmon)",k:"rawas",m:"रावस",bg:"fi3",p:"/fish/rawas.jpg?v=2"},
+        {e:"🦀",n:"Crab",k:"crab",m:"खेकडा",bg:"fi5",p:"/fish/crab.jpg?v=2"},
         // {e:"🐠",n:"Halwa (Silver Pomfret)",m:"हलवा",bg:"fi7"},
         // {e:"🐡",n:"Bombay Duck",m:"बोंबील",bg:"fi8"},
       ].map(f=>(

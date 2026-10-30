@@ -59,7 +59,7 @@ const sellerName = cleanSellerName(seller?.name) || "Seller";
 const area = areaNameForPoint(seller?.lat, seller?.lng) || stripContactInfo(seller?.location_name) || "";
 const sellerPath = `/s/${slug}`;
 const url = canonicalFor(`${sellerPath}/${species}`);
-const photo = forSpecies.find((l: any) => l.photo_url)?.photo_url || (SELF_HOSTED.has(species) ? `/fish/${species}.jpg` : null);
+const photo = forSpecies.find((l: any) => l.photo_url)?.photo_url || (SELF_HOSTED.has(species) ? `/fish/${species}.jpg?v=2` : null);
 const photoAbs = photo ? (photo.startsWith("http") ? photo : SITE_URL + photo) : undefined;
 const where = area ? ` in ${area}` : "";
 const statusText =
