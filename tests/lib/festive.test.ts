@@ -12,4 +12,8 @@ describe("festiveTheme", () => {
   it("env flag forces it on", () => {
     expect(festiveTheme(new Date("2027-01-01T00:00:00Z"), "diwali")).toBe("diwali");
   });
+
+  it("env flag off forces it off inside the window", () => {
+    expect(festiveTheme(new Date("2026-11-01T00:00:00Z"), "off")).toBeNull();
+  });
 });
