@@ -1,5 +1,6 @@
 ---
 import type { AppHeaderProps } from "../../../types/components";
+import DiwaliDecor from "../../DiwaliDecor.astro";
 interface Props extends AppHeaderProps {}
 const {
   variant = "default",
@@ -11,6 +12,7 @@ const {
   backHref,
   title,
   hideLocation = false,
+  festive = false,
 } = Astro.props;
 const isPreorder = variant === "preorder";
 const isPage = variant === "page";
@@ -25,6 +27,7 @@ const SVG_PIN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentCo
 const SVG_CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
 ---
 <header class:list={["v2-header", isPreorder && "v2-header-preorder", showSearch && "v2-header-tall"]}>
+  {festive && <DiwaliDecor part="lights" />}
   <div class="v2-header-row">
     {isPage && backHref ? (
       <a href={backHref} class="v2-back" aria-label="Back" set:html={SVG_BACK} />

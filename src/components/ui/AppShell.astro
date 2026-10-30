@@ -12,6 +12,7 @@ import WatiChatButton from "../WatiChatButton.astro";
 import VercelAnalytics from "../VercelAnalytics.astro";
 import SellerActiveGate from "../SellerActiveGate.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/components";
+import { festiveTheme } from "../../lib/festive";
 
 interface Props {
   title?: string;
@@ -48,13 +49,14 @@ const canonicalUrl = canonical || canonicalFor(Astro.url.pathname);
 const path = Astro.url.pathname.replace(/\/$/, "");
 const sellerGated = path.startsWith("/dashboard/") && path !== "/dashboard/login";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
+const festive = !!header?.festive && festiveTheme() === "diwali";
 ---
 
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0066FF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={festive ? "#8B0A2E" : "#0066FF"} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -206,7 +208,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
       </>
     )}
   </head>
-  <body class:list={[!hideNav && "v2-has-bottom-nav"]}>
+  <body class:list={[!hideNav && "v2-has-bottom-nav", festive && "festive-diwali"]}>
     {enableTracking && (
       <>
         <!-- Google Tag Manager (noscript) -->

@@ -1,6 +1,8 @@
 ---
 import Badge from "../atoms/Badge.astro";
 import { cleanSellerName, resizedImageUrl, sellerHref, stripContactInfo } from "../../../lib/seller-display";
+import { festiveTheme } from "../../../lib/festive";
+import "../../../styles/festive.css";
 interface Props {
   id: string;
   name: string;
@@ -50,9 +52,10 @@ const hueColors: Record<string, string> = {
   indigo: "linear-gradient(135deg,#EEF2FF,#E0E7FF)",
 };
 const cardImgBg = hueColors[imageHue] || hueColors.sky;
+const festive = festiveTheme() === "diwali";
 const offerColor = imageHue === "green" ? "green" : imageHue === "indigo" ? "indigo" : "brand";
 ---
-<a href={sellerHref(rawName, id)} class:list={["v2-seller-card", status === "closed" && "v2-seller-closed"]}>
+<a href={sellerHref(rawName, id)} class:list={["v2-seller-card", status === "closed" && "v2-seller-closed", festive && "festive-diwali"]}>
   <div class="v2-sc-img" style={`background:${cardImgBg};`}>
     {offerLabel && <Badge variant="offer" color={offerColor}>{offerLabel}</Badge>}
     {storeImageUrl ? (
