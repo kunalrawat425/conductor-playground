@@ -245,7 +245,7 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
         navigator.serviceWorker.register("/sw.js").catch(function () {});
       }
     </script>
-    <!-- App splash = global loader (founder 31 Oct): first open of each visit (app or browser), never for crawlers; stays until content is in (0.7–6 s). -->
+    <!-- App splash = global loader (founder 31 Oct): first open of each visit (app or browser), never for crawlers; stays until content is in (2–6 s). -->
     <div id="rf-splash" class:list={["rf-splash", festive && "rf-splash-diwali"]} aria-hidden="true">
       {festive && <DiwaliDecor part="lights" />}
       <img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="Relifish" width="230" height="55" />
@@ -268,10 +268,10 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
         var t0 = Date.now(), done = false;
         function hide() {
           if (done) return; done = true;
-          setTimeout(function () { s.classList.add("out"); setTimeout(function () { s.remove(); }, 350); }, Math.max(0, 700 - (Date.now() - t0)));
+          setTimeout(function () { s.classList.add("out"); setTimeout(function () { s.remove(); }, 350); }, Math.max(0, 2000 - (Date.now() - t0)));
         }
         // Global loader (founder 31 Oct): stays until the page's own content is in, so no skeleton cards
-        // are ever seen; at least 0.7 s, at most 6 s.
+        // are ever seen; at least 2 s (founder), at most 6 s.
         function busy() {
           var els = document.querySelectorAll("#v2-loading, .v2-skeleton, [data-loading]");
           for (var i = 0; i < els.length; i++) if (els[i].offsetParent !== null || getComputedStyle(els[i]).position === "fixed") return true;
