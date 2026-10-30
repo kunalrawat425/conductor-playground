@@ -4,6 +4,9 @@ interface Props {
   id?: string;
 }
 const { id = "v2-checkout" } = Astro.props;
+// Diwali greeting card in checkout until 15 Nov 2026 (IST).
+import { FESTIVE } from "../../../lib/festive";
+const diwali = FESTIVE === "diwali";
 ---
 <BottomSheet id={id} title="Checkout" showClose={true}>
   <!-- Step indicator (2 steps: cart review → delivery + place order) -->
@@ -12,20 +15,28 @@ const { id = "v2-checkout" } = Astro.props;
     <div class="v2-co-step" data-step="2"></div>
   </div>
 
-  <!-- Step 1: Cart review -->
-  <div id={`${id}-step1`} class="v2-co-step-content">
-    <h4 class="v2-co-step-title">Your cart</h4>
-    <div id={`${id}-cart-items`}></div>
-    <div id={`${id}-free-delivery-banner`} style="display:none;background:var(--v2-green-l);border:1px solid var(--v2-green);border-radius:var(--v2-radius-sm);padding:10px 14px;margin-bottom:8px;text-align:center;">
-      <span style="font:700 12px Inter;color:var(--v2-green);">🎉 Free delivery unlocked!</span>
+  <!-- Step 1: Cart review (Blinkit-style cards; the page fills the ids). -->
+  <div id={`${id}-step1`} class="v2-co-step-content v2-co-s1">
+    <div id={`${id}-deal`} class="v2-co-card" style="display:none;"></div>
+    <div class="v2-co-card">
+      <div class="v2-co-dl">
+        <div class="v2-co-dl-ic" aria-hidden="true">🕗</div>
+        <div class="v2-co-dl-t"><b id={`${id}-dl-title`}>Delivery</b><span id={`${id}-dl-sub`}></span></div>
+        <button type="button" class="v2-co-link" id={`${id}-dl-change`} aria-label="Change delivery time">Change</button>
+      </div>
+      <div class="v2-co-items-head"><span>Items</span><button type="button" class="v2-co-link v2-co-link-muted" id={`${id}-clear`} aria-label="Clear cart">Clear</button></div>
+      <div id={`${id}-cart-items`}></div>
+      <div id={`${id}-min-gap`} class="v2-co-gap" style="display:none;"></div>
     </div>
-    <div id={`${id}-delivery-hint`} style="display:none;font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:8px;text-align:center;"></div>
-    <div class="v2-co-rows">
-      <div class="v2-co-row"><span>Subtotal</span><span id={`${id}-subtotal`}>₹0</span></div>
-      <div class="v2-co-row" id={`${id}-delivery-row`} style="display:none;"><span id={`${id}-delivery-label`}>Delivery fee</span><span id={`${id}-delivery`}>FREE</span></div>
-      <div class="v2-co-row v2-co-total-row"><span>Total</span><span id={`${id}-total`}>₹0</span></div>
-    </div>
-    <fieldset class="v2-co-prefs" id={`${id}-prefs`}>
+    {diwali && (
+      <div class="v2-co-gift">
+        <div class="v2-co-gift-ic" aria-hidden="true">🪔</div>
+        <div class="v2-co-gift-t"><b>Happy Diwali!</b><span>Send a Diwali greeting to your family &amp; friends</span></div>
+        <a href="/diwali" class="v2-co-gift-btn" data-co-gift aria-label="Open Diwali greeting">Open</a>
+      </div>
+    )}
+    <div id={`${id}-yml`} class="v2-co-card" style="display:none;"></div>
+    <fieldset class="v2-co-prefs v2-co-card" id={`${id}-prefs`}>
       <legend class="v2-co-prefs-title">How should it be prepared? <span>(optional)</span></legend>
       <div class="v2-co-prefs-opts">
         <label><input type="checkbox" name={`${id}-cut`} value="whole" /> 🐟 Whole</label>
@@ -34,7 +45,28 @@ const { id = "v2-checkout" } = Astro.props;
       </div>
       <textarea id={`${id}-notes`} rows="2" maxlength="500" placeholder="Special request, e.g. medium pieces, no head"></textarea>
     </fieldset>
-    <button class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" data-co-next="2">Next: Delivery →</button>
+    <div class="v2-co-card v2-co-bill">
+      <h4 class="v2-co-card-title">Bill details</h4>
+      <div id={`${id}-free-delivery-banner`} class="v2-co-yay" style="display:none;"></div>
+      <div id={`${id}-delivery-hint`} style="display:none;"></div>
+      <div class="v2-co-row"><span class="v2-co-k">🧾 Items total <span class="v2-co-saved" id={`${id}-saved-chip`} style="display:none;"></span></span><span><s class="v2-co-mrp" id={`${id}-mrp`} style="display:none;"></s><span id={`${id}-subtotal`}>₹0</span></span></div>
+      <div class="v2-co-row" id={`${id}-combo-row`} style="display:none;"><span class="v2-co-k">🎁 Combo savings</span><span class="v2-co-green" id={`${id}-combo-saved`}></span></div>
+      <div class="v2-co-row" id={`${id}-delivery-row`} style="display:none;"><span class="v2-co-k" id={`${id}-delivery-label`}>🛵 Delivery charge</span><span id={`${id}-delivery`}>FREE</span></div>
+      <div id={`${id}-free-hint`} class="v2-co-hint" style="display:none;"></div>
+      <div class="v2-co-row v2-co-total-row"><span>To pay</span><span id={`${id}-total`}>₹0</span></div>
+      <div id={`${id}-savebar`} class="v2-co-savebar" style="display:none;"></div>
+    </div>
+    <div class="v2-co-foot">
+      <div class="v2-co-foot-addr" id={`${id}-foot-addr`} style="display:none;">
+        <span aria-hidden="true" style="font-size:22px;">🏠</span>
+        <div class="v2-co-foot-addr-t"><b id={`${id}-foot-addr-label`}>Delivering to Home</b><span id={`${id}-foot-addr-text`}></span></div>
+        <button type="button" class="v2-co-link" id={`${id}-foot-addr-change`} aria-label="Change delivery address">Change</button>
+      </div>
+      <div class="v2-co-pay">
+        <div class="v2-co-pm">PAY USING<b>UPI / Card</b><span>🔒 Razorpay secured</span></div>
+        <button type="button" class="v2-co-paybtn" id={`${id}-pay`}><span><span id={`${id}-pay-total`}>₹0</span><small>TOTAL</small></span><span id={`${id}-pay-label`}>Next: Delivery ›</span></button>
+      </div>
+    </div>
   </div>
 
   <!-- Step 2: Address + delivery -->
@@ -145,16 +177,20 @@ const { id = "v2-checkout" } = Astro.props;
     });
   }
 
+  function goStep(n) {
+    if (n === 2) {
+      document.dispatchEvent(
+        new CustomEvent("v2-checkout-step2", { detail: { checkoutId: id } })
+      );
+    }
+    showStep(n);
+  }
   document.querySelectorAll("[data-co-next]").forEach(b => {
-    b.addEventListener("click", () => {
-      const n = parseInt(b.dataset.coNext, 10);
-      if (n === 2) {
-        document.dispatchEvent(
-          new CustomEvent("v2-checkout-step2", { detail: { checkoutId: id } })
-        );
-      }
-      showStep(n);
-    });
+    b.addEventListener("click", () => goStep(parseInt(b.dataset.coNext, 10)));
+  });
+  // The page moves steps after its own checks (min order, Change on the delivery card).
+  document.addEventListener("v2-checkout-goto", (e) => {
+    if (e.detail?.checkoutId === id) goStep(e.detail.step);
   });
   document.querySelectorAll("[data-co-back]").forEach(b => {
     b.addEventListener("click", () => showStep(parseInt(b.dataset.coBack)));
@@ -175,11 +211,86 @@ const { id = "v2-checkout" } = Astro.props;
 </script>
 
 <style is:global>
+  /* Step 1: grey page, white cards, sticky pay bar (mock s4). */
+  .v2-co-s1 { margin: 0 -16px -16px; padding: 4px 12px 0; background: var(--v2-bg-3); }
+  .v2-co-card { background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: var(--v2-radius-lg); padding: 14px; margin: 0 0 12px; }
+  .v2-co-card-title { font: 800 17px Inter; color: var(--v2-ink); margin: 0 0 10px; }
+  .v2-co-link { background: none; border: 0; padding: 0 4px; min-height: 44px; font: 700 13px Inter; color: var(--v2-link); cursor: pointer; flex-shrink: 0; }
+  .v2-co-link-muted { color: var(--v2-ink-3); font-weight: 600; }
+  .v2-co-dl { display: flex; gap: 12px; align-items: center; }
+  .v2-co-dl-ic { width: 40px; height: 40px; border-radius: 10px; background: var(--v2-brand-l); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .v2-co-dl-t { flex: 1; min-width: 0; }
+  .v2-co-dl-t b { display: block; font: 800 17px/1.25 Inter; color: var(--v2-ink); }
+  .v2-co-dl-t span { font: 400 13px Inter; color: var(--v2-ink-3); }
+  .v2-co-items-head { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px solid var(--v2-border); font: 700 11px Inter; color: var(--v2-ink-3); text-transform: uppercase; letter-spacing: .06em; }
+  .v2-co-it { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--v2-bg-3); }
+  .v2-co-it img, .v2-co-it .v2-co-noimg { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--v2-brand-l); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .v2-co-it-x { flex: 1; min-width: 0; }
+  .v2-co-it-x b { display: block; font: 600 14px/1.3 Inter; color: var(--v2-ink); }
+  .v2-co-it-x span { font: 400 12px Inter; color: var(--v2-ink-3); }
+  .v2-co-combo { display: inline-block; margin-top: 4px; font: 700 10px Inter; color: var(--v2-green); background: var(--v2-green-l); border-radius: 5px; padding: 2px 6px; }
+  .v2-co-it-q { text-align: right; flex-shrink: 0; }
+  .v2-co-qs { display: inline-flex; align-items: center; background: var(--v2-brand); color: #fff; border-radius: 8px; }
+  .v2-co-qs button { background: none; border: 0; color: #fff; font: 800 16px Inter; width: 32px; height: 32px; cursor: pointer; }
+  .v2-co-qs span { font: 800 13px Inter; min-width: 18px; text-align: center; white-space: nowrap; }
+  .v2-co-p { margin-top: 6px; font: 700 14px Inter; color: var(--v2-ink); white-space: nowrap; }
+  .v2-co-p s, .v2-co-mrp { color: var(--v2-ink-4); font-weight: 500; font-size: 12px; margin-right: 4px; }
+  .v2-co-gap { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--v2-orange-l); display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 600 12px Inter; color: var(--v2-orange); }
+  .v2-co-gap button { background: var(--v2-bg); border: 1.5px solid var(--v2-brand); color: var(--v2-brand); padding: 6px 10px; min-height: 36px; border-radius: 999px; font: 700 11px Inter; cursor: pointer; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v2-co-deal { background: #F5F3FF; border: 1px solid #DDD6FE; border-radius: 14px; padding: 10px; }
+  .v2-co-deal-in { display: flex; gap: 10px; align-items: center; background: #fff; border-radius: 10px; padding: 8px; color: #0F172A; }
+  .v2-co-deal-in img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+  .v2-co-deal-x { flex: 1; min-width: 0; font: 600 13px/1.3 Inter; }
+  .v2-co-deal-x b { font: 800 15px Inter; }
+  .v2-co-deal-x s { color: #94A3B8; font-weight: 500; margin-left: 4px; }
+  .v2-co-deal-u { font: 600 13px Inter; color: #5B21B6; margin: 8px 4px 0; }
+  .v2-co-addbtn { background: var(--v2-bg); border: 1.5px solid var(--v2-brand); color: var(--v2-brand); border-radius: 9px; padding: 0 14px; min-height: 36px; min-width: 64px; font: 800 13px Inter; cursor: pointer; flex-shrink: 0; }
+  .v2-co-yml { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 2px; }
+  .v2-co-pc { width: 118px; flex: none; scroll-snap-align: start; border: 1px solid var(--v2-border); border-radius: 14px; overflow: hidden; background: var(--v2-bg); }
+  .v2-co-pc-im { position: relative; }
+  .v2-co-pc-im img, .v2-co-pc-im .v2-co-noimg { width: 100%; aspect-ratio: 1; object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 32px; background: var(--v2-brand-l); }
+  .v2-co-pc .v2-co-addbtn { position: absolute; right: 6px; bottom: 6px; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+  .v2-co-pc-b { padding: 8px 10px 10px; }
+  .v2-co-pc-b b { display: block; font: 800 15px Inter; color: var(--v2-ink); }
+  .v2-co-pc-b b s { font: 500 11px Inter; color: var(--v2-ink-4); margin-left: 3px; }
+  .v2-co-pc-b span { display: block; font: 600 12px/1.25 Inter; color: var(--v2-ink); margin-top: 4px; }
+  .v2-co-pc-b small { display: block; font: 400 11px Inter; color: var(--v2-ink-3); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v2-co-gift { display: flex; gap: 12px; align-items: center; margin: 0 0 12px; padding: 14px; border-radius: var(--v2-radius-lg); background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 55%, #FED7AA 100%); border: 1px solid #FDBA74; }
+  .v2-co-gift-ic { font-size: 36px; line-height: 1; }
+  .v2-co-gift-t { flex: 1; min-width: 0; }
+  .v2-co-gift-t b { display: block; font: 800 17px Inter; color: #9A3412; }
+  .v2-co-gift-t span { font: 500 13px Inter; color: #7C2D12; }
+  .v2-co-gift-btn { display: inline-flex; align-items: center; min-height: 44px; border: 1.5px solid #EA580C; color: #EA580C; background: #fff; border-radius: 10px; padding: 0 14px; font: 800 14px Inter; text-decoration: none; }
+  .v2-co-bill .v2-co-row { align-items: center; font: 500 14px Inter; color: var(--v2-ink-2); padding: 7px 0; }
+  .v2-co-k { display: flex; align-items: center; gap: 8px; font-weight: 500 !important; color: var(--v2-ink-2) !important; }
+  .v2-co-saved { background: var(--v2-brand-l); color: var(--v2-link) !important; font: 700 11px Inter !important; padding: 2px 7px; border-radius: 5px; }
+  .v2-co-green { color: var(--v2-green) !important; }
+  .v2-co-hint { font: 500 12px Inter; color: var(--v2-orange); margin: -4px 0 4px 26px; }
+  .v2-co-bill .v2-co-total-row { border-top: 1px dashed var(--v2-ink-4); font: 800 16px Inter !important; }
+  .v2-co-yay { background: var(--v2-brand-l); color: var(--v2-brand); font: 700 13px Inter; text-align: center; padding: 9px; border-radius: 10px; margin-bottom: 6px; }
+  .v2-co-savebar { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; background: var(--v2-brand-l); color: var(--v2-brand); font: 800 15px Inter; padding: 12px 14px; border-radius: 12px; margin-top: 10px; }
+  .v2-co-savebar span { grid-column: 1 / -1; font: 500 12px Inter; color: var(--v2-ink-3); }
+  /* bottom: -16px = the sheet body's padding, so the bar sits on the sheet's bottom edge. */
+  .v2-co-foot { position: sticky; bottom: -16px; z-index: 2; margin: 0 -12px; background: var(--v2-bg); border-radius: 16px 16px 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,.08); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .v2-co-foot-addr { display: flex; gap: 10px; align-items: center; padding: 4px 12px 4px 16px; border-bottom: 1px solid var(--v2-bg-3); }
+  .v2-co-foot-addr-t { flex: 1; min-width: 0; font: 400 13px Inter; color: var(--v2-ink-3); }
+  .v2-co-foot-addr-t b { display: block; font: 700 15px Inter; color: var(--v2-ink); }
+  .v2-co-foot-addr-t span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v2-co-pay { display: flex; gap: 10px; align-items: center; padding: 10px 12px 14px; }
+  .v2-co-pm { flex: 1; font: 500 11px Inter; color: var(--v2-ink-3); }
+  .v2-co-pm b { display: block; font: 700 14px Inter; color: var(--v2-ink); }
+  .v2-co-pm span { color: var(--v2-green); font-weight: 700; }
+  .v2-co-paybtn { flex: 1.5; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 52px; background: var(--v2-brand); color: #fff; border: 0; border-radius: 12px; padding: 8px 14px; font: 800 15px Inter; cursor: pointer; text-align: left; }
+  .v2-co-paybtn small { display: block; font: 600 10px Inter; opacity: .9; }
+  .v2-co-paybtn[aria-disabled="true"] { opacity: .6; }
   .v2-co-prefs { border:1px solid var(--v2-border); border-radius:var(--v2-radius-sm); padding:12px; margin:12px 0; }
+  .v2-co-prefs.v2-co-card { padding: 12px 14px; margin: 0 0 12px; border-radius: var(--v2-radius-lg); }
+  .v2-co-prefs.v2-co-card .v2-co-prefs-title { float: left; width: 100%; padding: 0; }
+  .v2-co-prefs.v2-co-card .v2-co-prefs-opts { clear: both; padding-top: 8px; }
   .v2-co-prefs-title { font:700 13px Inter; color:var(--v2-ink); padding:0 4px; }
   .v2-co-prefs-title span { font:400 11px Inter; color:var(--v2-ink-3); }
   .v2-co-prefs-opts { display:flex; gap:8px; margin:8px 0 10px; }
-  .v2-co-prefs-opts label { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 6px; border:1.5px solid var(--v2-border); border-radius:var(--v2-radius-sm); font:600 13px Inter; color:var(--v2-ink); cursor:pointer; }
+  .v2-co-prefs-opts label { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:6px; border:1.5px solid var(--v2-border); border-radius:999px; font:600 12px Inter; color:var(--v2-ink); cursor:pointer; }
   .v2-co-prefs-opts label:has(input:checked) { border-color:var(--v2-brand); background:var(--v2-brand-l); color:var(--v2-brand); }
   .v2-co-prefs-opts input { position:absolute; opacity:0; pointer-events:none; }
   .v2-co-prefs textarea { width:100%; box-sizing:border-box; padding:10px; border:1.5px solid var(--v2-border); border-radius:var(--v2-radius-sm); font:400 16px Inter; color:var(--v2-ink); background:var(--v2-bg); resize:vertical; }

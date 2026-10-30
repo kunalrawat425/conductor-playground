@@ -12,6 +12,8 @@ import WatiChatButton from "../WatiChatButton.astro";
 import VercelAnalytics from "../VercelAnalytics.astro";
 import SellerActiveGate from "../SellerActiveGate.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/components";
+import { festiveTheme } from "../../lib/festive";
+import DiwaliDecor from "../DiwaliDecor.astro";
 
 interface Props {
   title?: string;
@@ -48,13 +50,16 @@ const canonicalUrl = canonical || canonicalFor(Astro.url.pathname);
 const path = Astro.url.pathname.replace(/\/$/, "");
 const sellerGated = path.startsWith("/dashboard/") && path !== "/dashboard/login";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
+// Diwali look on every buyer page (founder 31 Oct): header lights + maroon/gold, themed bottom bar.
+// Seller dashboard stays plain; a page can still opt out with header.festive === false.
+const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") && header?.festive !== false;
 ---
 
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0066FF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={festive ? "#8B0A2E" : "#0066FF"} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -206,7 +211,7 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
       </>
     )}
   </head>
-  <body class:list={[!hideNav && "v2-has-bottom-nav"]}>
+  <body class:list={[!hideNav && "v2-has-bottom-nav", festive && "festive-diwali"]}>
     {enableTracking && (
       <>
         <!-- Google Tag Manager (noscript) -->
@@ -240,9 +245,55 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
         navigator.serviceWorker.register("/sw.js").catch(function () {});
       }
     </script>
+    <!-- App splash (founder 31 Oct): only when opened as the installed app, once per session; never blocks longer than 3 s. -->
+    <div id="rf-splash" class:list={["rf-splash", festive && "rf-splash-diwali"]} aria-hidden="true">
+      {festive && <DiwaliDecor part="lights" />}
+      <img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="" width="230" height="55" />
+      {festive
+        ? <span class="rf-splash-tag rf-splash-diya"><span class="fd-diya"><span class="fd-flame"></span></span>Happy Diwali<span class="fd-diya"><span class="fd-flame"></span></span></span>
+        : null}
+      <span class="rf-splash-tag">Fresh fish from verified local sellers</span>
+      <span class="rf-splash-dots"><i></i><i></i><i></i></span>
+    </div>
+    <script is:inline>
+      (function () {
+        var s = document.getElementById("rf-splash"); if (!s) return;
+        var app = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+        var seen = null; try { seen = sessionStorage.getItem("relifish-splash"); } catch (e) {}
+        if (!app || seen) { s.remove(); return; }
+        try { sessionStorage.setItem("relifish-splash", "1"); } catch (e) {}
+        s.classList.add("on");
+        var t0 = Date.now(), done = false;
+        function hide() {
+          if (done) return; done = true;
+          setTimeout(function () { s.classList.add("out"); setTimeout(function () { s.remove(); }, 350); }, Math.max(0, 700 - (Date.now() - t0)));
+        }
+        if (document.readyState === "complete") hide(); else addEventListener("load", hide);
+        setTimeout(hide, 3000);
+      })();
+    </script>
+    <style is:global>
+      .rf-splash { display: none; }
+      .rf-splash.on { position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: linear-gradient(160deg, #0066FF, #0047B3); transition: opacity .35s ease; }
+      .rf-splash.out { opacity: 0; pointer-events: none; }
+      /* Diwali splash: maroon + gold, string of lights, two diyas (festive window only) */
+      .rf-splash-diwali.on { background: radial-gradient(circle at 50% 45%, #B3123B, #6E0822 70%, #4A0618); }
+      .rf-splash-diwali .fd-lights { top: env(safe-area-inset-top, 0); height: 22px; }
+      .rf-splash-diwali .rf-splash-tag { color: #FDE7B0; }
+      .rf-splash-diwali .rf-splash-dots i { background: #F5D27A; }
+      .rf-splash-diya { display: flex; align-items: flex-end; gap: 14px; font: 800 20px Inter, sans-serif; }
+      .rf-splash-diya .fd-diya { margin-top: 0; }
+      .rf-splash img { width: 230px; height: auto; }
+      .rf-splash-tag { font: 600 14px Inter, sans-serif; color: rgba(255,255,255,.85); }
+      .rf-splash-dots { display: flex; gap: 6px; margin-top: 18px; }
+      .rf-splash-dots i { width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: .4; animation: rf-dot 1s infinite ease-in-out; }
+      .rf-splash-dots i:nth-child(2) { animation-delay: .15s; } .rf-splash-dots i:nth-child(3) { animation-delay: .3s; }
+      @keyframes rf-dot { 50% { opacity: 1; transform: translateY(-4px); } }
+      @media (prefers-reduced-motion: reduce) { .rf-splash-dots i { animation: none; } }
+    </style>
     {sellerGated && <SellerActiveGate />}
     <div class="v2-app">
-      {!hideHeader && header && <AppHeader {...header} />}
+      {!hideHeader && header && <AppHeader {...header} festive={festive} />}
       <main class="v2-main">
         <slot />
       </main>
@@ -293,6 +344,8 @@ const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
       import { loadSavedLocation, readSavedLocation, saveConfirmedLocation } from "../../lib/saved-location";
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
+      // Fireworks with sound after a tap (checkout, order placed, /diwali). fireworks-js loads only when called.
+      (window as any).relifishFireworks = (ms?: number) => import("../../lib/fireworks").then((m) => m.celebrate(ms));
 
       // Saved location for inline map scripts (LocationPickerSheet, AddressPickerSheet).
       (window as any).RelifishLocation = {

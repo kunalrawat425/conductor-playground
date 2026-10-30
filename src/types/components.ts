@@ -111,6 +111,7 @@ export interface CategoryStripItem {
   id: string;
   name: string;
   emoji: string;
+  photo?: string;
   active?: boolean;
 }
 
@@ -154,6 +155,8 @@ export interface AppHeaderProps {
   backHref?: string;
   title?: string;
   hideLocation?: boolean;
+  /** Diwali header (lights, maroon/gold) while src/lib/festive.ts says the theme is on. */
+  festive?: boolean;
 }
 
 export interface BottomNavProps {

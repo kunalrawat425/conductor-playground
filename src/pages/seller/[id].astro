@@ -30,6 +30,7 @@ import { sellerBlocked } from "../../lib/test-sellers";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 import { dateLabelIST, deliveryDaysAt, slotPreorderLabel, storePreorderLabel } from "../../lib/delivery-slots";
+import { bundleGroups } from "../../lib/combo-deals";
 
 const { id } = Astro.params;
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
@@ -179,6 +180,12 @@ for (const l of listings) {
     }
   }
 }
+
+// "Bundle & Save": combos on this menu grouped under their base fish (none = no section).
+const bundles = isClosed ? [] : bundleGroups(listings, (l: any) => speciesDisplayById[l.species] || l.species || "");
+// Combo rows shown inside their base fish's listing card ("Bundles · save more"), keyed by that listing's id.
+const bundleMap = Object.fromEntries(bundles.filter((g) => g.sizes.length).map((g) => [g.sizes[0].listing.id,
+  g.combos.map((r) => ({ lid: r.listing.id, optId: r.optId, ribbon: r.ribbon || null, parts: r.parts }))]));
 
 // Same lines as the dashboard's "What buyers will see" preview.
 const sameDayLine = seller ? sameDayScheduleLabel(seller) : null;
@@ -493,16 +500,63 @@ const tags = [
   }
   body.v2-has-cart .v2-main { padding-bottom: 200px; }
 
+  /* Bundle & Save (mock s7) */
+  /* "Bundles · save more": combo rows inside the base fish's card, full card width (founder 31 Oct) */
+  .v2-item-bundles { background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: var(--v2-radius); padding: 2px 12px 4px; }
+  .v2-combo-img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex: none; }
+  .v2-combo-x { flex: 1; min-width: 0; }
+  .v2-combo-x b { display: block; font: 700 13px/1.45 Inter; color: var(--v2-ink); }
+  .v2-combo-x .v2-combo-parts { display: block; font: 400 11px/1.55 Inter; color: var(--v2-ink-3); margin: 4px 0 6px; }
+  .v2-bundle-k { font: 700 12px Inter; color: var(--v2-ink-3); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 10px; }
+  .v2-bundle-sv { display: inline-block; margin-top: 3px; font: 700 10px Inter; font-style: normal; color: var(--v2-green); background: var(--v2-green-bg); padding: 2px 6px; border-radius: 5px; }
+  .v2-bundle-rib { position: absolute; top: -10px; right: 10px; font: 800 9px Inter; color: #fff; padding: 3px 8px; border-radius: 5px; letter-spacing: .04em; }
+  .v2-bundle-rib-popular { background: #EA580C; }
+  .v2-bundle-rib-value { background: #16A34A; }
+
+  /* View-cart bubble (mock s1): centred pill above the bottom nav, status chip above it. */
+  .v2-cart-float { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px); z-index: var(--v2-z-cart-bar); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+  .v2-cart-float > * { pointer-events: auto; }
+  .v2-cart-chip { background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: 999px; padding: 5px 12px; font: 600 11px Inter; box-shadow: 0 2px 8px rgba(0,0,0,.08); white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
+  .v2-cart-bubble { position: relative; display: flex; align-items: center; gap: 10px; width: 250px; min-height: 56px; padding: 8px 14px 8px 8px; background: #0066FF; color: #fff; border: 0; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,102,255,.35); cursor: pointer; text-align: left; font-family: Inter, sans-serif; }
+  .v2-cart-th { display: flex; flex: none; }
+  .v2-cart-th img, .v2-cart-th-e { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #fff; object-fit: cover; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .v2-cart-th > * + * { margin-left: -14px; }
+  .v2-cart-t { flex: 1; min-width: 0; }
+  .v2-cart-t b { display: block; font: 800 16px Inter; }
+  .v2-cart-t span { font: 500 12px Inter; opacity: .9; }
+  .v2-cart-ch { font-size: 24px; line-height: 1; }
+  /* Small sparkle when something is added (no sound). */
+  .v2-cart-pop { animation: v2-cart-pop .45s ease-out; }
+  .v2-cart-pop::before, .v2-cart-pop::after { content: "✦"; position: absolute; top: -8px; color: #FACC15; font-size: 15px; pointer-events: none; animation: v2-cart-spark .75s ease-out forwards; }
+  .v2-cart-pop::before { left: 22px; }
+  .v2-cart-pop::after { right: 28px; font-size: 11px; animation-delay: .1s; opacity: 0; }
+  @keyframes v2-cart-pop { 40% { transform: scale(1.07); } }
+  @keyframes v2-cart-spark { 0% { opacity: 0; transform: translateY(6px) scale(.4); } 35% { opacity: 1; } 100% { opacity: 0; transform: translateY(-16px) scale(1.2) rotate(60deg); } }
+  @media (prefers-reduced-motion: reduce) { .v2-cart-pop, .v2-cart-pop::before, .v2-cart-pop::after { animation: none; content: none; } }
+
   /* Multi-tier pricing rows inside item cards */
   .v2-item-tiers {
     margin-top: 6px;
   }
+  /* Each size is a row like the Bundle & Save options (founder 31 Oct); a size in the cart is highlighted. */
   .v2-item-tier {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 0;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border: 1.5px solid var(--v2-border);
+    border-radius: 12px;
+    background: var(--v2-bg);
   }
+  .v2-item-tier:has(.v2-item-counter) { border-color: var(--v2-brand); background: var(--v2-brand-l); }
+  .v2-item-per100 { font: 500 11px/1.4 Inter; color: var(--v2-ink-3); }
+  /* A little air between the text lines on menu cards (founder 31 Oct) */
+  .v2-item-body > * + * { margin-top: 4px; }
+  .v2-item-name { line-height: 1.35; }
+  .v2-item-tier:has(.v2-bundle-rib) { margin-top: 14px; }
+  .v2-item-was { font: 500 11px Inter; color: var(--v2-ink-4); margin-left: 6px; }
   .v2-item-tier-price {
     font: 800 16px Inter;
     color: var(--v2-ink);
@@ -512,12 +566,11 @@ const tags = [
   /* A pack size to pick: looks like a button because it is one (adds that pack). */
   .v2-item-tier-chip {
     align-self: flex-start;
-    font: 600 12px Inter;
-    color: var(--v2-brand);
-    background: var(--v2-brand-l);
-    border: 1px solid var(--v2-brand);
-    border-radius: 999px;
-    padding: 3px 10px;
+    font: 700 13px/1.45 Inter;
+    color: var(--v2-ink);
+    background: none;
+    border: 0;
+    padding: 0;
     cursor: pointer;
     text-align: left;
     white-space: normal;
@@ -533,7 +586,7 @@ const tags = [
   }
 </style>
 
-<script define:vars={{ listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.logo_url || seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
+<script define:vars={{ bundleMap, listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.logo_url || seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
   // Same-day and pre-order carts are separate; this page uses the one its menu is in.
   cartMode: isPreorderMode ? "preorder" : "same_day",
   deliveryFor,
@@ -695,10 +748,24 @@ const tags = [
       return Cart()?.qtyLabel(qty, unit, bundleSize, perPack) || `${fmtQty(qty)} ${unit || "kg"}`;
     }
 
+    // Pack weight in grams from its label ("200–300 g" → 250, "1 kg" → 1000); same rule as lib/combo-deals gramsOf.
+    function gramsIn(label) {
+      const m = String(label || "").replace(/½/g, "0.5").match(/(\d+(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:\.\d+)?))?\s*(kg|g)\b/i);
+      return m ? (m[2] ? (Number(m[1]) + Number(m[2])) / 2 : Number(m[1])) * (m[3].toLowerCase() === "kg" ? 1000 : 1) : 0;
+    }
+
     // Build composite cart key matching cart.ts logic (pre-order lines carry a "|preorder" suffix)
     function ck(listingId, optId) {
       return (optId && optId !== "default" ? listingId + ":" + optId : listingId) + (cartMode === "preorder" ? "|preorder" : "");
     }
+
+    // Fixed pre-order price (no min–max range): its was-price is real, so show it (combos/bundles, founder 31 Oct).
+    const poFixed = (o) => !(o.preorder_price_min && o.preorder_price_max && Number(o.preorder_price_min) !== Number(o.preorder_price_max));
+    const wasHtml = (o, p) => {
+      const was = Number(o.compare_at_price) || 0;
+      if (!poFixed(o) || !(was > Number(p))) return "";
+      return ` <s style="font-size:11px;font-weight:500;color:var(--v2-ink-4);margin-left:4px;">₹${was.toLocaleString("en-IN")}</s><span style="display:inline-block;margin-left:6px;background:#DCFCE7;color:#15803D;font:700 10px Inter;padding:1px 6px;border-radius:5px;vertical-align:2px;">Save ${Math.round((1 - Number(p) / was) * 100)}%</span>`;
+    };
 
     function renderItem(l) {
       const opts = l.pricing_options || [];
@@ -729,6 +796,17 @@ const tags = [
       // Total qty across all tiers for this listing (for incart highlight)
       const totalInCart = Object.keys(sellerItems).filter(k => k === l.id || k.startsWith(l.id + ":")).reduce((s, k) => s + (sellerItems[k]?.qty || 0), 0);
 
+      // BEST VALUE: the size with the lowest ₹ per 100 g, only with 2+ weighed sizes and a clear winner (lib/combo-deals bestValueIndex).
+      const bestValueIdx = (opts) => {
+        const per = opts.map((o) => { const g = gramsIn(o.label); return g && Number(o.price) > 0 ? Number(o.price) / g : Infinity; });
+        const min = Math.min(...per);
+        return per.filter((x) => x !== Infinity).length >= 2 && per.filter((x) => x === min).length === 1 ? per.indexOf(min) : -1;
+      };
+      // ₹ per 100 g from the pack label ("200–300 g" → mid-point), so sizes compare at a glance (same rule as lib/combo-deals gramsOf).
+      const per100Html = (o, p) => {
+        const g = gramsIn(o.label);
+        return g && Number(p) > 0 ? `<span class="v2-item-per100">₹${Math.round(Number(p) / g * 100).toLocaleString("en-IN")} / 100 g</span>` : "";
+      };
       // Pre-order price range (shown on preorder listings, per pricing tier)
       const preorderRangeHtml = ""; // Deprecated: we now render ranges inside pricingHtml tiers directly
 
@@ -746,7 +824,7 @@ const tags = [
                 const key = ck(l.id, optId);
                 const inCart = sellerItems[key]?.qty || 0;
                 return `<div class="v2-item-bottom">
-                  <div class="v2-item-price" style="color:#7C3AED;">🌙 ${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
+                  <div class="v2-item-price">${rangeDisplay}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span>${wasHtml(firstOpt, poPrice)}</div>
                   ${inCart > 0
                     ? (() => {
                         const bs = firstOpt.bundle_size && firstOpt.bundle_size > 0 ? firstOpt.bundle_size : 1;
@@ -761,6 +839,7 @@ const tags = [
                 </div>`;
               })()
             : (() => {
+                const best = bestValueIdx(opts);
                 return `<div class="v2-item-tiers">
                   ${opts.map((o, i) => {
                     const label = o.label || o.unit_label || o.unit || "unit";
@@ -775,10 +854,10 @@ const tags = [
                     const pmxStr = o.preorder_price_max ? `₹${Number(o.preorder_price_max).toLocaleString("en-IN")}` : "";
                     const rangeDisplay = pmnStr && pmxStr && pmnStr !== pmxStr ? `${pmnStr}–${pmxStr}` : pmxStr || pmnStr || `₹${o.price}`;
 
-                    return `<div class="v2-item-tier">
-                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                    return `<div class="v2-item-tier">${i === best ? '<span class="v2-bundle-rib v2-bundle-rib-value">BEST VALUE</span>' : ''}
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-right:8px;">
                         <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
-                        <span class="v2-item-tier-price" style="color:#7C3AED;margin-right:0;">🌙 ${rangeDisplay}</span>
+                        <span class="v2-item-tier-price">${rangeDisplay}${wasHtml(o, poPrice)}</span>${per100Html(o, poPrice)}
                       </div>
                       ${tierQty > 0
                         ? (() => {
@@ -821,6 +900,7 @@ const tags = [
                 </div>`;
               })()
             : (() => {
+                const best = bestValueIdx(opts);
                 return `<div class="v2-item-tiers">
                   ${opts.map((o, i) => {
                     const label = o.label || o.unit_label || o.unit || "unit";
@@ -830,10 +910,10 @@ const tags = [
                     const tierQty = sellerItems[key]?.qty || 0;
                     const bSize = o.bundle_size && o.bundle_size !== 1 ? ` (${o.unit === 'kg' && o.bundle_size > 0 && o.bundle_size < 1 ? Math.round(o.bundle_size * 1000) + 'g' : o.bundle_size + (o.unit === 'kg' ? 'kg' : 'pc')})` : '';
                     const tierWas = o.compare_at_price && o.compare_at_price > o.price ? o.compare_at_price : 0;
-                    return `<div class="v2-item-tier">
-                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                    return `<div class="v2-item-tier">${i === best ? '<span class="v2-bundle-rib v2-bundle-rib-value">BEST VALUE</span>' : ''}
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-right:8px;">
                         <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
-                        <span class="v2-item-tier-price" style="margin-right:0;">${tierWas ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-size:10px;margin-right:2px;">₹${tierWas}</span>` : ''}₹${o.price}</span>
+                        <span class="v2-item-tier-price">₹${o.price}${tierWas ? `<s class="v2-item-was">₹${tierWas}</s>` : ''}</span>${per100Html(o, o.price)}
                       </div>
                       ${sellerFullyClosed ? '' : (tierQty > 0
                         ? (() => {
@@ -890,10 +970,10 @@ const tags = [
 
       // Compare-at-price (discount) — hide on pre-order cards; final price is set after catch, list/was pricing is misleading.
       const hasDiscount =
-        !isListingPreorder &&
+        (!isListingPreorder || poFixed(firstOpt)) &&
         !!(firstOpt.compare_at_price && firstOpt.compare_at_price > firstOpt.price);
       const discountBadge = hasDiscount
-        ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-red);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
+        ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-brand);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
 
       // Image: seller's own photo → species stock photo → emoji
       const stockPhoto = getSpeciesPhoto(l.species);
@@ -921,11 +1001,48 @@ const tags = [
         </div>`;
     }
 
+    // "Bundles · save more": its own block at the top of the menu (founder 31 Oct); same + / − as any pack (one cart path).
+    function bundlesTopHtml(sellerItems) {
+      const rows = Object.values(bundleMap).flat().map((r) => {
+        const cl = listings.find((x) => x.id === r.lid);
+        const inStock = cl && cl.is_available === true && !cl.is_order_paused && (cl.weight_avail == null || Number(cl.weight_avail) > 0);
+        if (!cl || sellerFullyClosed || (isPreorderMode ? cl.is_preorder_enabled !== true : !inStock)) return "";
+        const n = (cl.pricing_options || []).findIndex((o, i) => (o.id || `opt_${i}`) === r.optId);
+        const o = cl.pricing_options?.[n];
+        if (!o) return "";
+        const price = isPreorderMode ? (o.preorder_price_max || o.preorder_price_min || o.price || 0) : o.price;
+        const name = getName(cl.species);
+        const tag = [cl.size_label, cl.description].filter(Boolean).join(", ");
+        const unit = resolveUnit(o);
+        const key = ck(cl.id, r.optId);
+        const qty = sellerItems[key]?.qty || 0;
+        const img = cl.photo_url || getSpeciesPhoto(cl.species);
+        const action = qty > 0
+          ? `<div class="v2-item-counter" data-id="${key}">
+               <button class="v2-item-dec" aria-label="Decrease">−</button>
+               <span class="v2-item-count">${counterQtyLabel(qty, unit, Number(o.bundle_size) > 0 ? Number(o.bundle_size) : 1, o.buyer_menu_suffix)}</span>
+               <button class="v2-item-inc" aria-label="Increase">+</button>
+             </div>`
+          : `<button class="v2-item-add" data-id="${cl.id}" data-price="${price}" data-name="${escape(tag ? `${name} (${tag})` : name)}" data-unit="${escape(unit)}" data-opt-id="${escape(r.optId)}" data-opt-label="pack" data-bundle-size="${o.bundle_size || 1}" aria-label="Add ${escape(name)}">+</button>`;
+        return `<div class="v2-item-tier v2-item-combo">
+          ${r.ribbon ? `<span class="v2-bundle-rib v2-bundle-rib-${r.ribbon}">${r.ribbon === "popular" ? "MOST POPULAR" : "BEST VALUE"}</span>` : ""}
+          ${img ? `<img class="v2-combo-img" src="${escape(img)}" alt="" loading="lazy" />` : ""}
+          <div class="v2-combo-x"><b>${escape(name)}</b><span class="v2-combo-parts">${escape(r.parts.join(" + "))}</span><span class="v2-item-tier-price">₹${Number(price).toLocaleString("en-IN")}${wasHtml(o, price)}</span></div>
+          ${action}
+        </div>`;
+      }).join("");
+      return rows ? `<div class="v2-item-bundles"><div class="v2-bundle-k">Bundles · save more</div>${rows}</div>` : "";
+    }
+
     function render() {
       // In pre-order mode, only show items with is_preorder_enabled=true
-      const visibleListings = isPreorderMode
+      const shown = isPreorderMode
         ? listings.filter((l) => l.is_preorder_enabled === true)
         : listings;
+      // Combos in the "Bundles · save more" block don't get a card of their own; any other combo comes first.
+      const hosted = new Set(Object.values(bundleMap).flat().map((r) => r.lid));
+      const hasCombo = (l) => /\bcombo\b/i.test(`${l.species} ${l.size_label || ""}`);
+      const visibleListings = shown.filter((l) => !hosted.has(l.id)).sort((a, b) => hasCombo(b) - hasCombo(a));
 
       if (isPreorderMode && visibleListings.length === 0 && !sellerFullyClosed) {
         grid.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--v2-ink-3);">
@@ -936,7 +1053,7 @@ const tags = [
         return;
       }
 
-      grid.innerHTML = visibleListings.map((l) => {
+      grid.innerHTML = bundlesTopHtml(getSellerItems()) + visibleListings.map((l) => {
         try {
           return renderItem(l);
         } catch (err) {
@@ -959,9 +1076,9 @@ const tags = [
           </div>`;
         }
       }).join("");
-
       renderCart();
     }
+
 
     let selectedAddressId = null;
     let selectedAddressLat = null;
@@ -1131,6 +1248,7 @@ const tags = [
       if (btn.dataset.slotDay) { if (btn.dataset.slotDay !== pickedDay) { pickedDay = btn.dataset.slotDay; pickedSlot = null; } }
       else pickedSlot = btn.dataset.slotStart;
       renderCheckoutSlots(checkoutDays);
+      refreshBill();
     });
     // Pickup keeps the cart's own kind and prices; delivery follows the picked day.
     document.querySelectorAll('input[name="seller-checkout-method"]').forEach((r) => r.addEventListener("change", () => {
@@ -1144,6 +1262,7 @@ const tags = [
 
     document.addEventListener("v2-checkout-step2", (e) => {
       if (e.detail?.checkoutId !== "seller-checkout") return;
+      seenStep2 = true;
       const sid = activeCheckoutSellerId;
       if (!sid) return;
       fetchSellerFulfillment(sid).then((f) => {
@@ -1159,22 +1278,11 @@ const tags = [
       window.__relifishMinOrders[sellerId] = minOrder || 0;
     })();
 
-    // Cart-bar estimate. Mirrors computeDeliveryFee (src/lib/order-pricing.ts); the real fee is computed
-    // server-side at place-order. per_km uses the buyer's saved location (rlf_buyer_lat/lng) when known.
-    function estimateDeliveryFee(subtotal) {
-      if (!deliveryFeeEnabled) return { fee: 0, label: "free" };
-      if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) return { fee: 0, label: "free" };
-      if (deliveryFeeType === "per_km") {
-        let lat = null, lng = null;
-        try { lat = parseFloat(localStorage.getItem("rlf_buyer_lat") || ""); lng = parseFloat(localStorage.getItem("rlf_buyer_lng") || ""); } catch {}
-        if (sellerLat == null || sellerLng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return { fee: null, label: `₹${deliveryFeePerKm}/km` };
-        const R = 6371, dLat = (lat - sellerLat) * Math.PI / 180, dLng = (lng - sellerLng) * Math.PI / 180;
-        const a = Math.sin(dLat / 2) ** 2 + Math.cos(sellerLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-        const fee = Math.max(0, Math.ceil(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * deliveryFeePerKm));
-        return { fee, label: `~₹${fee}` };
-      }
-      return deliveryFeeAmount > 0 ? { fee: deliveryFeeAmount, label: `₹${deliveryFeeAmount}` } : { fee: 0, label: "free" };
-    }
+    // Sparkle on the bubble only right after an add (add() sets it, the next render uses it).
+    let justAdded = false;
+    const fmtInr = (n) => `₹${(Math.round(Number(n) * 100) / 100).toLocaleString("en-IN")}`;
+    function listingOf(id) { return listings.find((l) => l.id === id); }
+    function photoOf(l) { return l?.photo_url || getSpeciesPhoto(l?.species) || ""; }
 
     function renderCart() {
       const c = Cart(); if (!c) return;
@@ -1188,81 +1296,243 @@ const tags = [
       // Item count = cart lines (4 packs of one Pomfret size = 1 item; two pack sizes
       // = 2 items), matching the checkout and the order page, which list each line.
       const sellerPackCount = sellerItems.length;
+      const pop = justAdded; justAdded = false;
 
       // Removed items are told once in a toast (announceValidation), never kept in the bar.
       if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
       document.body.classList.add("v2-has-cart");
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
-      const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
-      // Pre-orders are charged delivery too (create-seller-cart.ts), so show the fee in both modes.
-      const feeEstimate = hasDelivery ? estimateDeliveryFee(sellerSubtotal) : null;
-
-      // Status line
-      let statusLine = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""}`;
-      let statusColor = "var(--v2-ink-3)";
-      if (belowMin) { statusLine = `Min order ₹${minOrder}`; statusColor = "var(--v2-orange)"; }
-      else if (freeHit && !isPreorderMode) { statusLine = "🎉 Free delivery unlocked"; statusColor = "var(--v2-green)"; }
-      else if (isPreorderMode) { statusLine = `🌙 Pre-order for ${deliveryFor}`; statusColor = "#7C3AED"; }
-
-      // Delivery fee before login/OTP, from the seller's own settings (the server recomputes it at place-order).
-      // per_km without a known buyer location: show the seller's rate, not radius × rate (reads as a scary maximum).
-      let feeLine = "";
-      if (feeEstimate && !(freeHit && !isPreorderMode)) {
-        const amt = feeEstimate.fee === 0 ? "" : feeEstimate.fee == null ? `₹${deliveryFeePerKm}/km` : feeEstimate.label;
-        feeLine = amt ? `🚲 Delivery ${amt}, shown before you pay` : "🚲 Free delivery";
-        if (amt && deliveryFreeAbove > 0 && deliveryFreeAbove > sellerSubtotal) feeLine += ` · free above ₹${deliveryFreeAbove}`;
-      }
-
-      // Below the minimum: say the gap and offer the cheapest one-tap item (not yet in the cart) that closes it.
       const gap = belowMin ? Math.ceil(minOrder - sellerSubtotal) : 0;
+      const freeHit = deliveryFeeEnabled && deliveryFreeAbove > 0 && sellerSubtotal >= deliveryFreeAbove;
+
+      // Status chip above the bubble. The one-tap filler for the minimum lives in the checkout now.
+      let chip = "", chipColor = "var(--v2-ink-2)";
+      if (belowMin) { chip = `Add ₹${gap} more to checkout`; chipColor = "var(--v2-orange)"; }
+      else if (freeHit && !isPreorderMode) { chip = "🎉 Free delivery unlocked"; chipColor = "var(--v2-green)"; }
+      else if (isPreorderMode) { chip = `🌙 Pre-order for ${deliveryFor}`; chipColor = "#7C3AED"; }
+      else if (hasDelivery && deliveryFeeEnabled && deliveryFreeAbove > sellerSubtotal) chip = `🚲 Add ₹${Math.ceil(deliveryFreeAbove - sellerSubtotal)} more for FREE delivery`;
+
+      const thumbs = [...new Set(sellerItems.map((i) => photoOf(listingOf(i.listing_id))).filter(Boolean))].slice(0, 2);
+      const countText = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""} · ${fmtInr(sellerSubtotal)}`;
+      cartMount.innerHTML = `<div class="v2-cart-float">
+        ${chip ? `<div class="v2-cart-chip" style="color:${chipColor};">${escape(chip)}</div>` : ""}
+        <button id="v2-checkout-btn" type="button" class="v2-cart-bubble${pop ? " v2-cart-pop" : ""}" aria-label="View cart: ${escape(countText)}">
+          <span class="v2-cart-th" aria-hidden="true">${thumbs.length ? thumbs.map((src) => `<img src="${escape(src)}" alt="" width="38" height="38" />`).join("") : `<span class="v2-cart-th-e">🛒</span>`}</span>
+          <span class="v2-cart-t"><b>View cart</b><span>${escape(countText)}</span></span>
+          <span class="v2-cart-ch" aria-hidden="true">›</span>
+        </button>
+      </div>`;
+      document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
+    }
+
+    // ---- Checkout step 1 (Blinkit-style): items, deal, you might also like, bill, pay bar.
+    // Display only: the server prices the order. ----
+    const CO = "seller-checkout";
+    const co$ = (s) => document.getElementById(`${CO}-${s}`);
+    let seenStep2 = false;
+    const coGroup = () => Cart()?.groupBySeller().find((g) => g.seller_id === activeCheckoutSellerId) || null;
+    const coOpen = () => document.getElementById(`${CO}-backdrop`)?.classList.contains("v2-sheet-open");
+    const coMethod = () => {
+      const m = document.querySelector(`input[name="${CO}-method"]:checked`);
+      return m && m.closest("label")?.style.display !== "none" ? m.value : null;
+    };
+    // The menu's own button for a pack (add, or + once in the cart): one path for stock checks and tracking.
+    function menuButton(lid, optId) {
+      const q = (sel) => grid.querySelector(sel);
+      return q(`.v2-item-add[data-id="${CSS.escape(lid)}"][data-opt-id="${CSS.escape(optId)}"]:not([disabled])`)
+        || q(`.v2-item-counter[data-id="${CSS.escape(ck(lid, optId))}"] .v2-item-inc:not([disabled])`);
+    }
+    function optionOf(l, optId) { return (l?.pricing_options || []).find((o, n) => (o.id || `opt_${n}`) === optId) || null; }
+    function belowMinBy(group) {
+      return group && activeCheckoutSellerId === sellerId && minOrder && group.subtotal < minOrder ? Math.ceil(minOrder - group.subtotal) : 0;
+    }
+
+    function renderCheckoutBody(group) {
+      const c = Cart();
+      const items = group.items;
+      co$("dl-sub").textContent = `Shipment of ${items.length} item${items.length !== 1 ? "s" : ""} from ${cleanSellerName(group.seller_name) || sellerName}`;
+      co$("cart-items").innerHTML = items.map((i) => {
+        const l = listingOf(i.listing_id);
+        const photo = photoOf(l);
+        const save = c.cartSavings([i], listings).saved;
+        const paid = i.qty * i.price;
+        const title = checkoutFishTitle(i);
+        return `<div class="v2-co-it">
+          ${photo ? `<img src="${escape(photo)}" alt="" width="56" height="56" loading="lazy" />` : `<span class="v2-co-noimg" aria-hidden="true">${speciesEmoji(l?.species)}</span>`}
+          <div class="v2-co-it-x"><b>${title}</b><span>${checkoutLineMeta(i)}</span>${save > 0 && c.isComboListing(l) ? `<br><span class="v2-co-combo">COMBO · you save ${fmtInr(save)}</span>` : ""}</div>
+          <div class="v2-co-it-q">
+            <span class="v2-co-qs" data-key="${escape(c.lineKey(i))}"><button type="button" data-co-dec aria-label="Remove one ${title}">−</button><span>${fmtQty(i.qty / getBundleStep(i))}</span><button type="button" data-co-inc aria-label="Add one more ${title}">+</button></span>
+            <div class="v2-co-p">${save > 0 ? `<s>${fmtInr(paid + save)}</s>` : ""}${fmtInr(paid)}</div>
+          </div>
+        </div>`;
+      }).join("");
+
+      // Below the minimum: the gap and the cheapest one-tap item (not yet in the cart) that closes it.
+      const gap = belowMinBy(group);
       const filler = gap > 0
         ? [...grid.querySelectorAll(".v2-item-add:not([disabled])")]
             .filter((b) => parseFloat(b.dataset.price) >= gap)
             .sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price))[0]
         : null;
-
-      cartMount.innerHTML = `<div style="position:fixed;bottom:calc(64px + env(safe-area-inset-bottom, 0));left:0;right:0;z-index:var(--v2-z-cart-bar);background:var(--v2-bg);border-top:1px solid var(--v2-border);box-shadow:0 -4px 12px rgba(0,0,0,0.08);padding:12px 16px;max-width:var(--app-max-width);margin:0 auto;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div>
-            <div style="font:800 16px Inter;color:var(--v2-ink);">₹${sellerSubtotal.toLocaleString("en-IN")}</div>
-            <div style="font:500 11px Inter;color:${statusColor};margin-top:2px;">${statusLine}</div>
-          </div>
-          <button id="v2-cart-clear" type="button" style="background:var(--v2-bg-3);border:none;color:var(--v2-ink-3);font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;" aria-label="Clear cart">✕</button>
-        </div>
-        ${gap > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
-          <span style="font:600 12px Inter;color:var(--v2-orange);">Add ₹${gap} more to checkout</span>
-          ${filler ? `<button id="v2-cart-filler" type="button" style="background:var(--v2-brand-l);border:none;color:var(--v2-brand);padding:6px 10px;border-radius:999px;font:700 11px Inter;cursor:pointer;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">+ ${escape(filler.dataset.name)} ₹${escape(filler.dataset.price)}</button>` : ""}
-        </div>` : ""}
-        ${feeLine ? `<div style="font:500 11px Inter;color:var(--v2-ink-3);margin-bottom:8px;">${escape(feeLine)}</div>` : ""}
-        <div style="display:flex;gap:8px;">
-          <button id="v2-cart-manage" type="button" style="flex:1;background:var(--v2-bg);border:1.5px solid var(--v2-brand);color:var(--v2-brand);padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;">🛒 View Cart</button>
-          <button id="v2-checkout-btn" type="button" style="flex:1;background:var(--v2-brand);border:none;color:#fff;padding:10px;border-radius:var(--v2-radius-sm);font:700 13px Inter;cursor:pointer;${belowMin ? 'opacity:.55;' : ''}">${belowMin ? `Add ₹${gap} more` : "Checkout →"}</button>
-        </div>
-      </div>`;
-
-      document.getElementById("v2-cart-filler")?.addEventListener("click", () => {
+      const gapEl = co$("min-gap");
+      gapEl.style.display = gap > 0 ? "flex" : "none";
+      gapEl.innerHTML = gap > 0 ? `<span>Add ₹${gap} more to checkout (min ₹${minOrder})</span>${filler ? `<button type="button" data-co-filler>+ ${escape(filler.dataset.name)} ₹${escape(filler.dataset.price)}</button>` : ""}` : "";
+      gapEl.querySelector("[data-co-filler]")?.addEventListener("click", () => {
         const d = filler.dataset;
         track("min_order_filler_add", { item_name: d.name, price: parseFloat(d.price), gap });
         add(d.id, parseFloat(d.price), d.name, d.unit, d.optId, d.optLabel, d.bundleSize);
       });
 
-      document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
-      document.getElementById("v2-cart-manage")?.addEventListener("click", () => {
-        window.v2OpenSheet?.("seller-cart-stack");
-      });
-      document.getElementById("v2-cart-clear")?.addEventListener("click", () => {
-        const c = Cart(); if (!c) return;
-        c.clearCart({ sellerId, mode: cartMode });
-        render();
-        window.v2Toast?.("success", "Cart cleared");
-      });
+      // "Special deal for you!": only a real combo on this menu, with the seller's own was-price, not in the cart.
+      const inCart = new Set(items.map((i) => i.listing_id));
+      const deal = listings.filter((l) => c.isComboListing(l) && !inCart.has(l.id))
+        .flatMap((l) => (l.pricing_options || []).map((o, n) => ({ l, o, optId: o.id || `opt_${n}`, save: c.dealSaving(o) })))
+        .filter((d) => d.save > 0 && menuButton(d.l.id, d.optId))
+        .sort((a, b) => b.save - a.save)[0];
+      const dealEl = co$("deal");
+      dealEl.style.display = deal ? "block" : "none";
+      dealEl.innerHTML = !deal ? "" : (() => {
+        const parts = c.comboParts(deal.o.label);
+        const photo = photoOf(deal.l);
+        const name = escape(getName(deal.l.species));
+        return `<h4 class="v2-co-card-title">Special deal for you!</h4>
+          <div class="v2-co-deal"><div class="v2-co-deal-in">
+            ${photo ? `<img src="${escape(photo)}" alt="" width="56" height="56" loading="lazy" />` : ""}
+            <div class="v2-co-deal-x">Upgrade to ${name}<br><b>${fmtInr(deal.o.price)}</b><s>${fmtInr(deal.o.compare_at_price)}</s></div>
+            <button type="button" class="v2-co-addbtn" data-co-add="deal" data-lid="${escape(deal.l.id)}" data-opt="${escape(deal.optId)}" aria-label="Add ${name}">ADD</button>
+          </div>
+          <div class="v2-co-deal-u">🔓 ${parts.length > 1 ? `${escape(parts.join(" + "))}: save` : "Save"} ${fmtInr(deal.save)} on this combo</div></div>`;
+      })();
+
+      // You might also like: other packs on this menu that can be added now (not in the cart, not the deal).
+      const seen = new Set([...inCart, deal?.l.id]);
+      const picks = [];
+      for (const b of grid.querySelectorAll(".v2-item-add:not([disabled])")) {
+        if (picks.length >= 6) break;
+        if (seen.has(b.dataset.id)) continue;
+        seen.add(b.dataset.id);
+        picks.push(b);
+      }
+      const yml = co$("yml");
+      yml.style.display = picks.length ? "block" : "none";
+      yml.innerHTML = !picks.length ? "" : `<h4 class="v2-co-card-title">You might also like</h4><div class="v2-co-yml">${picks.map((b) => {
+        const l = listingOf(b.dataset.id);
+        const o = optionOf(l, b.dataset.optId);
+        const was = c.dealSaving(o) ? o.compare_at_price : 0;
+        const photo = photoOf(l);
+        const name = escape(getName(l?.species));
+        return `<div class="v2-co-pc"><div class="v2-co-pc-im">
+            ${photo ? `<img src="${escape(photo)}" alt="" loading="lazy" />` : `<span class="v2-co-noimg" aria-hidden="true">${speciesEmoji(l?.species)}</span>`}
+            <button type="button" class="v2-co-addbtn" data-co-add="yml" data-lid="${escape(b.dataset.id)}" data-opt="${escape(b.dataset.optId)}" aria-label="Add ${name}">ADD</button>
+          </div><div class="v2-co-pc-b"><b>${fmtInr(b.dataset.price)}${was ? `<s>${fmtInr(was)}</s>` : ""}</b><span>${name}</span><small>${escape(o?.label || l?.size_label || "")}</small></div></div>`;
+      }).join("")}</div>`;
     }
 
+    /** Bill details, delivery card and pay bar, from what steps 1 and 2 already hold. */
+    function refreshBill() {
+      const c = Cart(); const group = coGroup();
+      if (!c || !group) return;
+      const subtotal = Number(co$("subtotal").dataset.amount) || 0;
+      // Savings only while the subtotal is the cart's own prices (a day of the other kind re-prices it).
+      const sv = Math.abs(subtotal - group.subtotal) < 0.01 ? c.cartSavings(group.items, listings) : { saved: 0, comboSaved: 0 };
+      const show = (el, on, text) => { el.style.display = on ? "" : "none"; if (on && text != null) el.textContent = text; };
+      show(co$("saved-chip"), sv.saved > 0, `Saved ${fmtInr(sv.saved)}`);
+      show(co$("mrp"), sv.saved > 0, fmtInr(subtotal + sv.saved));
+      show(co$("combo-row"), sv.comboSaved > 0);
+      co$("combo-saved").textContent = `−${fmtInr(sv.comboSaved)}`;
+      const method = coMethod();
+      const left = deliveryFreeAbove - subtotal;
+      // Like Blinkit's bill (founder 31 Oct): "Yay! FREE delivery", the fee struck out, total savings incl. delivery.
+      // ponytail: per-km fees have no fixed amount to strike out, so they show plain FREE.
+      const freeNow = method === "delivery" && deliveryFeeEnabled && deliveryFreeAbove > 0 && left <= 0;
+      const feeSaved = freeNow && deliveryFeeType !== "per_km" ? deliveryFeeAmount : 0;
+      show(co$("free-delivery-banner"), freeNow, "🎉 Yay! You got FREE delivery");
+      if (freeNow) { const d = co$("delivery"); d.innerHTML = feeSaved ? `<s class="v2-co-mrp">${fmtInr(feeSaved)}</s> FREE` : "FREE"; d.classList.add("v2-co-green"); }
+      const totalSaved = sv.saved + feeSaved;
+      co$("savebar").style.display = totalSaved > 0 ? "" : "none";
+      co$("savebar").innerHTML = `<b>Your total savings</b><b>${fmtInr(totalSaved)}</b>${feeSaved ? `<span>Includes ${fmtInr(feeSaved)} savings through free delivery</span>` : ""}`;
+      show(co$("free-hint"), method === "delivery" && deliveryFeeEnabled && deliveryFreeAbove > 0 && left > 0, `Shop for ${fmtInr(Math.ceil(left))} more to get FREE delivery`);
+
+      // Delivery card: the picked day and time, else what this menu is for.
+      const day = method === "delivery" && checkoutDays ? chosenDay() : null;
+      const slot = day?.slots.find((s) => s.start === pickedSlot);
+      const dayWord = day && /^(today|tomorrow)$/i.test(day.label) ? day.label.toLowerCase() : day?.label;
+      co$("dl-title").textContent = method === "pickup" ? `Pickup${isPreorderMode ? ` · for ${deliveryFor}` : " today"}`
+        : day ? `${day.kind === "preorder" ? `Pre-order · ${day.label}` : `Delivery ${dayWord}`}${slot ? `, ${slot.time}` : ""}`
+        : isPreorderMode ? `Pre-order · for ${deliveryFor}` : "Delivery today";
+      co$("dl-change").textContent = day && !slot ? "Pick time" : "Change";
+
+      // Address row + pay button. "Place Order" straight from here only once step 2 was seen and is complete.
+      const addrOn = method === "delivery" && !!selectedAddressId;
+      co$("foot-addr").style.display = addrOn ? "flex" : "none";
+      if (addrOn) {
+        co$("foot-addr-label").textContent = `Delivering to ${(co$("addr-label").textContent || "Address").replace(/ · Default$/, "")}`;
+        co$("foot-addr-text").textContent = co$("addr-text").textContent || "";
+      }
+      co$("pay-total").textContent = co$("total").textContent;
+      co$("pay-label").textContent = coReady() ? "Place Order ›" : "Next: Delivery ›";
+      co$("pay").setAttribute("aria-disabled", String(belowMinBy(group) > 0));
+    }
+    function coReady() {
+      const m = coMethod();
+      if (!seenStep2 || !m) return false;
+      if (m === "pickup") return true;
+      return !!selectedAddressId && (!checkoutDays || !!pickedSlot);
+    }
+    function refreshCheckout() {
+      const group = coGroup();
+      if (!group || !group.items.length) { window.v2CloseSheet?.(CO); return; }
+      renderCheckoutBody(group);
+      if (checkoutDays?.length) updateDayItems(); else setCheckoutSubtotal(group.subtotal);
+      refreshBill();
+    }
+
+    co$("cart-items")?.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-co-inc],[data-co-dec]");
+      const key = b?.closest(".v2-co-qs")?.dataset.key;
+      if (!key) return;
+      if (b.hasAttribute("data-co-inc")) inc(key); else dec(key);
+    });
+    co$("step1")?.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-co-add]");
+      if (!b) return;
+      track("checkout_upsell_add", { source: b.dataset.coAdd, item_id: b.dataset.lid });
+      const mb = menuButton(b.dataset.lid, b.dataset.opt);
+      if (mb) mb.click(); else window.v2Toast?.("info", "Not available right now");
+    });
+    co$("clear")?.addEventListener("click", () => {
+      const c = Cart(); if (!c) return;
+      c.clearCart({ sellerId, mode: cartMode });
+      window.v2CloseSheet?.(CO);
+      render();
+      window.v2Toast?.("success", "Cart cleared");
+    });
+    co$("dl-change")?.addEventListener("click", () => {
+      document.dispatchEvent(new CustomEvent("v2-checkout-goto", { detail: { checkoutId: CO, step: 2 } }));
+      setTimeout(() => co$("slot-section")?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+    });
+    co$("foot-addr-change")?.addEventListener("click", () => co$("current-address")?.click());
+    co$("pay")?.addEventListener("click", () => {
+      const gap = belowMinBy(coGroup());
+      if (gap > 0) {
+        track("checkout_blocked", { reason: "min_order", checkout_seller_id: activeCheckoutSellerId });
+        window.v2Toast?.("error", "Below min order", `Add ₹${gap} more to checkout`);
+        return;
+      }
+      // Same button and checks as step 2 (a disabled button ignores .click(), so no double orders).
+      if (coReady()) co$("place-order")?.click();
+      else document.dispatchEvent(new CustomEvent("v2-checkout-goto", { detail: { checkoutId: CO, step: 2 } }));
+    });
     // Resume marker survives the OTP login reload (and cross-seller hops). Only honoured for this
     // seller and for 10 minutes, so a stale marker can never pop checkout open later.
     const RESUME_KEY = "rf_resume_checkout";
     function markResume(sid) { try { sessionStorage.setItem(RESUME_KEY, JSON.stringify({ sid, t: Date.now() })); } catch {} }
+    // Diwali greeting from checkout: its back arrow returns here with checkout open again.
+    document.querySelector("[data-co-gift]")?.addEventListener("click", (e) => {
+      e.currentTarget.href = `/diwali?back=${encodeURIComponent(location.pathname)}`;
+      markResume(sellerId);
+    });
 
     // One login sheet serves the page-load wall and checkout. It can't be dismissed; only login closes it.
     // "+" never asks for login: the page-load wall already does (founder, 23 Oct).
@@ -1328,13 +1598,8 @@ const tags = [
         }
       }
 
-      // Min-order gate for this page's seller (we only have minOrder for them). Checked before login so
-      // buyers aren't asked for an OTP only to be told the cart is too small.
-      if (sid === sellerId && minOrder && group.subtotal < minOrder) {
-        blocked("min_order");
-        window.v2Toast?.("error", "Below min order", `Add ₹${minOrder - group.subtotal} more to checkout`);
-        return;
-      }
+      // Min order: checkout opens below it so the gap and the one-tap filler show there; the pay
+      // button and place-order still refuse (see belowMinBy).
 
       // Pre-flight: must be signed in. The login sheet reloads the page on success, so remember
       // that the buyer was checking out and reopen checkout after the reload (see resumeCheckout).
@@ -1357,22 +1622,9 @@ const tags = [
         return;
       }
 
-      // Populate cart items in CheckoutSheet step 1 — single seller only
-      const cartItemsEl = document.getElementById("seller-checkout-cart-items");
-      if (cartItemsEl) {
-        cartItemsEl.innerHTML = `
-          <div style="font:700 11px Inter;color:var(--v2-ink-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">From ${escape(cleanSellerName(group.seller_name) || "Seller")}</div>
-          ${group.items.map(i => `
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--v2-border);">
-              <div style="flex:1;min-width:0;">
-                <div style="font:700 15px Inter;color:var(--v2-ink);letter-spacing:-0.02em;line-height:1.25;">${checkoutFishTitle(i)}</div>
-                <div style="margin-top:8px;">
-                  <span style="display:inline-block;font:600 11px Inter;line-height:1.35;color:var(--v2-brand);background:var(--v2-brand-l);padding:5px 11px;border-radius:999px;max-width:100%;">${checkoutLineMeta(i)}</span>
-                </div>
-              </div>
-              <div style="font:800 15px Inter;color:var(--v2-ink);flex-shrink:0;white-space:nowrap;padding-top:1px;">₹${(i.qty * i.price).toLocaleString("en-IN")}</div>
-            </div>`).join("")}`;
-      }
+      // Step 1 cards (items, deal, you might also like, minimum gap).
+      seenStep2 = false;
+      renderCheckoutBody(group);
       const subtotal = group.subtotal;
       const subOut = document.getElementById("seller-checkout-subtotal");
       subOut.textContent = `₹${subtotal.toLocaleString("en-IN")}`;
@@ -1465,7 +1717,7 @@ const tags = [
         if (delivRow) delivRow.style.display = isDelivery ? "flex" : "none";
         track("delivery_method_selected", { method: isDelivery ? "delivery" : "pickup" });
         const delivLabelEl = document.getElementById("seller-checkout-delivery-label");
-        if (delivLabelEl) delivLabelEl.textContent = "Delivery fee";
+        if (delivLabelEl) delivLabelEl.textContent = "🛵 Delivery charge";
         if (deliveryFeeType === "per_km" && isDelivery) {
           if (deliveryFreeAbove > 0 && subtotal >= deliveryFreeAbove) {
             if (delivEl) delivEl.textContent = "FREE";
@@ -1475,7 +1727,7 @@ const tags = [
             if (delivEl) delivEl.textContent = `${distKm.toFixed(1)} km · ₹${estFee} est.`;
             fee = estFee;
           } else {
-            if (delivEl) delivEl.textContent = "Select address to see fee";
+            if (delivEl) delivEl.textContent = `₹${deliveryFeePerKm}/km · exact after address`;
             fee = 0;
           }
         } else {
@@ -1514,6 +1766,8 @@ const tags = [
         const total = subtotal + fee;
         if (totalEl) totalEl.textContent = `₹${total.toLocaleString("en-IN")}`;
         if (totalFinal) totalFinal.textContent = `₹${total.toLocaleString("en-IN")}`;
+        if (delivEl) delivEl.classList.toggle("v2-co-green", delivEl.textContent === "FREE");
+        refreshBill();
       });
     });
 
@@ -1597,6 +1851,13 @@ const tags = [
         markResume(activeCheckoutSellerId || sellerId);
         window.v2CloseSheet?.("seller-checkout"); // else checkout (later in the DOM) paints over the login wall
         openLogin();
+        return;
+      }
+
+      const gap = belowMinBy(group);
+      if (gap > 0) {
+        track("checkout_blocked", { reason: "min_order", checkout_seller_id: activeCheckoutSellerId });
+        window.v2Toast?.("error", "Below min order", `Add ₹${gap} more to checkout`);
         return;
       }
 
@@ -1757,6 +2018,7 @@ const tags = [
         bundle_size: bs,
       });
       track("add_to_cart", { item_name: name, item_id: id, price, quantity: bs, price_unit: unit });
+      justAdded = true;
       render();
       triggerBackgroundValidation(c);
     }
@@ -1826,7 +2088,7 @@ const tags = [
     }
 
     // Re-render if cart changes from another tab/window or hydration completes
-    window.addEventListener("v2-cart-changed", () => render());
+    window.addEventListener("v2-cart-changed", () => { render(); if (coOpen()) refreshCheckout(); });
     window.addEventListener("storage", (e) => {
       if (e.key === "v2_cart_global") render();
     });
@@ -1845,6 +2107,17 @@ const tags = [
     setTimeout(promptLoginOnLoad, 600);
 
     // Back from the OTP login reload: reopen checkout instead of making the buyer find it again.
+    // ?checkout=1 sits in the URL while checkout is open (founder 31 Oct), so Back from the Diwali
+    // card, a reload or a shared link lands on checkout again.
+    function setCheckoutParam(on) {
+      const u = new URL(location.href);
+      if (on === u.searchParams.has("checkout")) return;
+      if (on) u.searchParams.set("checkout", "1"); else u.searchParams.delete("checkout");
+      history.replaceState(history.state, "", u);
+    }
+    document.addEventListener("v2-sheet-opened", (e) => { if (e.detail?.id === CO) setCheckoutParam(true); });
+    document.addEventListener("v2-sheet-closed", (e) => { if (e.detail?.id === CO) setCheckoutParam(false); });
+
     function resumeCheckout() {
       let m = null, signedIn = false;
       try {
@@ -1852,6 +2125,11 @@ const tags = [
         // Same check as the checkout login gate (both keys), or the gate would reopen login forever.
         signedIn = !!localStorage.getItem("rlf_buyer_id") && !!localStorage.getItem("rlf_phone");
       } catch {}
+      if (!m && new URLSearchParams(location.search).get("checkout") === "1") {
+        if (signedIn && getSellerItems() && Object.keys(getSellerItems()).length) { track("checkout_resumed", { checkout_seller_id: sellerId, via: "url" }); openCheckout(sellerId); }
+        else setCheckoutParam(false);
+        return;
+      }
       if (!m) return;
       try { sessionStorage.removeItem(RESUME_KEY); } catch {}
       if (!signedIn || m.sid !== sellerId || !(Date.now() - m.t < 10 * 60 * 1000)) return;

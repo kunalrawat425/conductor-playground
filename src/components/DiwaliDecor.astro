@@ -1,0 +1,27 @@
+---
+// Diwali decorations (CSS only). Renders nothing outside the festive window — see src/lib/festive.ts.
+import "../styles/festive.css";
+import { festiveTheme } from "../lib/festive";
+interface Props {
+  part: "lights" | "banner";
+  dark?: boolean;
+}
+const { part, dark = false } = Astro.props;
+const on = festiveTheme() === "diwali";
+const diya = `<span class="fd-diya" aria-hidden="true"><span class="fd-flame"></span></span>`;
+---
+{on && part === "lights" && (
+  <span class="fd-lights" aria-hidden="true">
+    {Array.from({ length: 24 }, (_, i) => <i style={`--i:${i}`} />)}
+  </span>
+)}
+{on && part === "banner" && (
+  <div class:list={["fd-banner", dark && "fd-banner-dark"]}>
+    <Fragment set:html={diya} />
+    <div>
+      <span class="fd-banner-t">Happy Diwali <span aria-hidden="true">🪔</span></span>
+      <span class="fd-banner-s">Wishing you light, joy and good health</span>
+    </div>
+    <Fragment set:html={diya} />
+  </div>
+)}

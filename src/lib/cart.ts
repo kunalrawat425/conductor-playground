@@ -12,6 +12,8 @@
  */
 
 import { classifyPlacementAtOrderTime, istDayStartISO, timeLabel, type SellerTimingInput } from "./order-timing";
+// Checkout savings / combos, reachable from inline page scripts via window.RelifishCart.
+export { cartSavings, comboParts, dealSaving, isComboListing } from "./combo-deals";
 
 export type CartMode = "same_day" | "preorder";
 

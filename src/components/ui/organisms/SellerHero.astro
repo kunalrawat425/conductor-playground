@@ -1,6 +1,8 @@
 ---
 import { resizedImageUrl } from "../../../lib/seller-display";
 import { LOGO_URL } from "../../../lib/brand";
+import { festiveTheme } from "../../../lib/festive";
+import DiwaliDecor from "../../DiwaliDecor.astro";
 import type { SellerHeroProps } from "../../../types/components";
 interface Props extends SellerHeroProps {}
 const {
@@ -26,6 +28,7 @@ const {
   reviewsHref,
 } = Astro.props;
 const avatarUrl = logoUrl || storeImageUrl;
+const festive = festiveTheme() === "diwali";
 
 function fmtTime(t: string | undefined | null): string {
   if (!t) return "";
@@ -44,9 +47,10 @@ const subParts = [
   deliveryEtaMin != null ? `${deliveryEtaMin} min delivery` : null,
 ].filter(Boolean).join(" · ");
 ---
-<section class="v2-sh-hero">
+<section class:list={["v2-sh-hero", festive && "festive-diwali"]}>
   <!-- Hero banner: seller's store photo OR branded Relifish gradient fallback -->
-  <div style="position:relative;margin:-16px -16px 0 -16px;height:260px;overflow:hidden;">
+  <div style={`position:relative;margin:-16px -16px 0 -16px;height:260px;overflow:hidden;`}>
+    <DiwaliDecor part="lights" />
     {storeImageUrl
       ? <>
           <img src={resizedImageUrl(storeImageUrl, 800)} alt={name} style="width:100%;height:100%;object-fit:cover;object-position:center;" loading="eager" fetchpriority="high" />
@@ -54,7 +58,7 @@ const subParts = [
         </>
       : <>
           {/* Ocean-themed gradient with subtle depth waves */}
-          <div style="width:100%;height:100%;background:linear-gradient(160deg,#003580 0%,#0055CC 45%,#0077E6 75%,#0EA5E9 100%);"></div>
+          <div style={`width:100%;height:100%;background:linear-gradient(160deg,#003580 0%,#0055CC 45%,#0077E6 75%,#0EA5E9 100%);`}></div>
           {/* Decorative wave rings */}
           <div style="position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;border-radius:50%;border:2px solid rgba(255,255,255,0.08);pointer-events:none;"></div>
           <div style="position:absolute;bottom:-20px;left:-20px;width:140px;height:140px;border-radius:50%;border:2px solid rgba(255,255,255,0.06);pointer-events:none;"></div>
