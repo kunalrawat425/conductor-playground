@@ -8,6 +8,7 @@ import EmptyState from "../components/ui/molecules/EmptyState.astro";
 import Skeleton from "../components/ui/atoms/Skeleton.astro";
 import Toast from "../components/ui/atoms/Toast.astro";
 import LocationPickerSheet from "../components/ui/organisms/LocationPickerSheet.astro";
+import DiwaliDecor from "../components/DiwaliDecor.astro";
 // Category strip is built dynamically from live listings data (see script below).
 // SSR renders only "All Fish" as a placeholder; JS fills the rest after data loads.
 const categories = [
@@ -24,6 +25,7 @@ const categories = [
     showSearch: false,
     showCart: false,
     cartCount: 0,
+    festive: true,
   }}
   nav={{ active: "home" }}
   jsonLd={{
@@ -67,6 +69,7 @@ const categories = [
   </h1>
   <Toast />
   <LocationPickerSheet />
+  <DiwaliDecor part="banner" />
 
   <!-- Sticky filter cluster — stays in view when scrolling cards -->
   <div id="v2-sticky-cluster" class="v2-sticky-cluster">

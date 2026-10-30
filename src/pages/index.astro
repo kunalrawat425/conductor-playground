@@ -5,8 +5,11 @@ import { LOGO_URL, whatsappLink } from "../lib/brand";
 import { jsonLdString } from "../lib/html";
 export const prerender = false;
 import Footer from "../components/Footer.astro";
+import DiwaliDecor from "../components/DiwaliDecor.astro";
+import { festiveTheme } from "../lib/festive";
 const SITE = "https://www.relifish.com";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
+const festive = festiveTheme() === "diwali";
 
 const homeFaqs = [
   { q: "How does Relifish work?", a: "Local fish sellers list the fish they have each day. You order same-day during a seller's opening hours, or pre-order before the seller's cutoff (shown on their page) for tomorrow. You pay online when you order, the seller confirms, then delivers or keeps it ready for pickup. No subscription." },
@@ -628,6 +631,18 @@ const homeFaqs = [
     .detail-link:hover .dl-arrow{color:var(--blue-light)}
     @media(max-width:600px){.detail-links{grid-template-columns:1fr}}
 
+
+    /* ── Diwali (body.festive-diwali, src/lib/festive.ts). Lives here so it outranks the scoped rules above. ── */
+    .festive-diwali .nav,.festive-diwali .nav.scrolled{background:linear-gradient(135deg,#B3123B 0%,#8B0A2E 100%);border-bottom:2px solid #D4A24C}
+    .festive-diwali .nav-inner{padding-top:20px}
+    .festive-diwali .nav .nl{color:#FDE7B0}
+    .festive-diwali .btn-nav,.festive-diwali .hero .btn-primary{background:linear-gradient(135deg,#F5D27A,#D4A24C);color:#4A0618;box-shadow:0 6px 24px rgba(212,162,76,.35)}
+    .festive-diwali .hero{background:radial-gradient(120% 80% at 50% 0%,#8B0A2E 0%,#4A0618 55%,#24030C 100%)}
+    .festive-diwali .hero-orb1,.festive-diwali .hero-orb2{background:radial-gradient(ellipse,rgba(245,210,122,.14) 0%,transparent 70%)}
+    .festive-diwali h1 .blu{color:#F5D27A}
+    .festive-diwali .hero-sub,.festive-diwali .hero-cite{color:rgba(255,248,235,.82)}
+    .festive-diwali .hs-l{color:rgba(255,248,235,.72)}
+    .festive-diwali .hero-stats{border-color:rgba(212,162,76,.35)}
   </style>
   {enableTracking && (
     <>
@@ -677,7 +692,7 @@ const homeFaqs = [
     </>
   )}
 </head>
-<body>
+<body class={festive ? "festive-diwali" : undefined}>
 {enableTracking && (
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-JG2ZTX3F"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -685,6 +700,7 @@ const homeFaqs = [
 
 <!-- NAV — no seller links -->
 <nav class="nav" id="nav">
+  <DiwaliDecor part="lights" />
   <div class="nav-inner">
     <a href="/" class="logo"><img src={LOGO_URL} alt="Relifish" class="logo-img" /></a>
     <div class="nav-links">
@@ -807,6 +823,7 @@ const homeFaqs = [
 
     <!-- LEFT -->
     <div>
+      <DiwaliDecor part="banner" dark />
       <h1>
         Buy fresh fish<br/>
         <span class="blu">in Thane &amp; Mumbai —<br/>direct from local sellers.</span>
