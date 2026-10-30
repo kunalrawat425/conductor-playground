@@ -3,6 +3,7 @@ import UtmCapture from "../components/UtmCapture.astro";
 import WatiChatButton from "../components/WatiChatButton.astro";
 import { LOGO_URL, whatsappLink } from "../lib/brand";
 import { jsonLdString } from "../lib/html";
+import { SOCIAL_ICONS } from "../lib/social-icons";
 export const prerender = false;
 import Footer from "../components/Footer.astro";
 import DiwaliDecor from "../components/DiwaliDecor.astro";
@@ -10,7 +11,6 @@ import { festiveTheme } from "../lib/festive";
 const SITE = "https://www.relifish.com";
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 const festive = festiveTheme() === "diwali";
-
 const homeFaqs = [
   { q: "How does Relifish work?", a: "Local fish sellers list the fish they have each day. You order same-day during a seller's opening hours, or pre-order before the seller's cutoff (shown on their page) for tomorrow. You pay online when you order, the seller confirms, then delivers or keeps it ready for pickup. No subscription." },
   { q: "How do I know the fish is fresh?", a: "Each seller lists only what they have that day, and you choose how it is prepared (whole, cleaned or cut). Before cooking, check for clear eyes, red gills, firm flesh and a clean sea smell." },
@@ -21,6 +21,41 @@ const homeFaqs = [
   { q: "Which areas does Relifish serve?", a: "Sellers on Relifish currently serve parts of Thane, South Mumbai and Kamothe in Navi Mumbai. Each seller sets their own delivery radius; set your location to see who serves you." },
 ];
 
+// Home v2 (Grüns-style, founder-approved mock s11). Gold wordmark during Diwali.
+const logoSrc = festive ? "/logo-gold.png" : "/logo-wordmark.png";
+const footerLogo = festive ? "/logo-gold.png" : "/logo-white.png";
+const SOCIAL = [
+  { label: "Instagram @relifish_", href: "https://www.instagram.com/relifish_/", path: SOCIAL_ICONS.instagram },
+  { label: "Facebook", href: "https://www.facebook.com/p/ReliFish-61589987936346/", path: SOCIAL_ICONS.facebook },
+  { label: "WhatsApp", href: whatsappLink("Hi Relifish, I have a question"), path: SOCIAL_ICONS.whatsapp },
+];
+
+// Photo dial: real seller/listing photos with a glass "claim this spot" card after every second photo.
+const SB = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1";
+const LST = `${SB}/render/image/public/fish-photos/listings/2f39dfce-15c0-4f9a-a5b3-e95280479dbd`;
+const DIAL_PHOTOS = [
+  { src: `${LST}/fishtokri-site-silver-pomfret-cut.png?width=500&quality=80`, cap: "Silver pomfret, cut your way" },
+  { src: `${SB}/object/public/fish-photos/sellers/bd8efaae-69e1-4dcb-bdcb-75d1874b96ed/store.jpg`, cap: "The Nomadic Catch · Sassoon Dock" },
+  { src: `${LST}/fishtokri-site-white-prawns.png?width=500&quality=80`, cap: "Seawater white prawns" },
+  { src: `${LST}/fishtokri-silver-pomfret-combo-collage.png?width=500&quality=80`, cap: "Pomfret combo for the weekend" },
+  { src: `${LST}/fishtokri-site-bombil-frycut.png?width=500&quality=80`, cap: "Bombil fry cut, ready to fry" },
+];
+const DIAL: ({ src: string; cap: string } | null)[] = [];
+DIAL_PHOTOS.forEach((p, i) => { DIAL.push(p); if (i % 2 === 1) DIAL.push(null); });
+DIAL.push(null);
+// Same maths as the client script (STEP must match), so the first paint already shows the fan: no layout shift.
+const STEP = 24;
+const SPAN = DIAL.length * STEP;
+const pose = (i: number) => {
+  let a = ((i * STEP) % SPAN + SPAN) % SPAN;
+  if (a > SPAN / 2) a -= SPAN;
+  return `transform:rotate(${a}deg) scale(${1 - Math.min(Math.abs(a), 60) / 300});z-index:${100 - Math.round(Math.abs(a))};${Math.abs(a) < 70 ? "" : "visibility:hidden"}`;
+};
+// ponytail: no public reviews feed yet, so the card only rotates placeholders; feed real orders.rating rows in here when one exists.
+const REVIEW_SLOTS = [
+  { t: "Your review goes here. Order, enjoy your fish, then tap ＋ on the wheel to claim your spot.", n: "You?" },
+  { t: "Loved the cut? Fresh enough? Tell Thane. Your review can be the first one on this wall.", n: "Claim this spot" },
+];
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -46,8 +81,8 @@ const homeFaqs = [
   <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" /></noscript>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&display=swap" /></noscript>
   <script type="application/ld+json" set:html={jsonLdString({
     "@context": "https://schema.org",
     "@graph": [
@@ -86,87 +121,99 @@ const homeFaqs = [
       }
     ]
   })} />
+  <style is:global>
+    :root{
+      /* legacy tokens, still used by the phone mock-ups */
+      --blue:#0066FF;--blue-dark:#0052CC;--blue-light:#60A5FA;--blue-dim:rgba(0,102,255,.12);--blue-glow:rgba(0,102,255,.3);
+      --teal:#0066FF;--ink:#0B1B3F;--ink-2:#475569;--ink-3:#94A3B8;--border:rgba(10,15,30,.08);--dark-border:rgba(255,255,255,.08);
+      /* home v2 */
+      --cream:#FFF8E7;--cream-2:#FFF1D6;--navy:#0A2472;--yellow:#FFD166;--muted:#475569;--max:1160px;
+      --display:'Archivo Black','Arial Black',Impact,sans-serif;
+      --line:var(--navy);--accent:#0066FF;--cta:#0066FF;--cta-fg:#fff;--cta-shadow:var(--navy);
+      --dk:var(--navy);--dk-accent:var(--yellow);--ann:var(--navy);--ann-fg:#fff;--ann-b:var(--yellow);--pill:#E6EEFF;--chip:var(--navy);
+    }
+    /* Diwali (src/lib/festive.ts): same layout, maroon + gold palette */
+    body.festive-diwali{
+      --line:#5A0620;--accent:#B3123B;--cta:linear-gradient(135deg,#F5D27A,#D4A24C);--cta-fg:#4A0618;--cta-shadow:#5A0620;
+      --dk:#4A0618;--dk-accent:#F5D27A;--ann:linear-gradient(135deg,#B3123B,#8B0A2E);--ann-fg:#FDE7B0;--ann-b:#F5D27A;--pill:#FBE3A6;--chip:#5A0620;
+    }
+    body.home{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--cream);-webkit-font-smoothing:antialiased;overflow-x:hidden;margin:0}
+    html{scroll-behavior:smooth}
+    /* Footer component restyle (its own styles are scoped, these outrank them) */
+    body.home footer{background:var(--navy);padding-bottom:110px}
+    body.festive-diwali footer{background:#3B0A17;border-top:3px solid #D4A24C}
+    /* .ft .ft-top chains: the scoped rules are .x[cid] y[cid] (0,4,0) */
+    body.home .ft .ft-top .ft-brand img{filter:none;height:auto;width:150px}
+    body.home .ft-desc,body.home .ft .ft-top .ft-col a,body.home .ft-phone{color:#CBD5E1}
+    body.home .ft .ft-top .ft-col a{padding:4px 0;margin-bottom:4px}
+    body.home .ft .ft-top .ft-col a:hover{color:#fff}
+    body.home .ft .ft-top .ft-col h4{color:#fff}
+    body.home .ft-bottom{color:rgba(255,255,255,.65);border-top-color:rgba(255,255,255,.15)}
+    body.home .ft-social-link{width:44px;height:44px;border-radius:12px}
+    /* Diwali decor sits inside the announcement bar and the hero */
+    body.home .ann .fd-lights{top:0}
+    body.festive-diwali .hero .fd-banner{margin:0 auto 18px;max-width:440px}
+    @media(min-width:940px){body.festive-diwali .hero .fd-banner{margin:0 0 20px}}
+    .claim-sheet::backdrop{background:rgba(10,20,50,.5)}
+  </style>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --blue:#2563EB;--blue-dark:#1D4ED8;--blue-light:#60A5FA;--blue-dim:rgba(37,99,235,.12);--blue-glow:rgba(37,99,235,.3);
-      --teal:#2563EB; /* aliased to blue — no cyan anywhere */
-      --ink:#0A0F1E;--ink-2:#4A5568;--ink-3:#94A3B8;
-      --white:#fff;--bg:#F8FAFC;--border:rgba(10,15,30,.08);
-      --dark:#05091A;--dark-2:#0D1629;--dark-3:#1A2540;
-      --dark-border:rgba(255,255,255,.08);
-      --max:1160px;
-    }
-    html{scroll-behavior:smooth}
-    body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--white);-webkit-font-smoothing:antialiased;overflow-x:hidden;max-width:none !important;margin:0 !important;padding:0 !important;}
     a{color:inherit;text-decoration:none}
     img{max-width:100%;display:block}
+    .wrap{max-width:var(--max);margin:0 auto}
+    section[id]{scroll-margin-top:84px}
+    .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+    a:focus-visible,button:focus-visible,summary:focus-visible,.dial:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
-    /* grain */
-    body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-      opacity:.025;mix-blend-mode:overlay}
+    /* ── Announcement bar ── */
+    .ann{position:relative;display:flex;align-items:center;justify-content:center;min-height:44px;background:var(--ann);color:var(--ann-fg);text-align:center;padding:10px 14px;font:600 13px/1.4 Inter}
+    .ann b{color:var(--ann-b)}
+    .ann u{text-underline-offset:3px}
+    :global(.festive-diwali) .ann{padding-top:20px;border-bottom:2px solid #D4A24C}
 
-    /* ── Nav ── */
-    .nav{position:fixed;top:0;left:0;right:0;z-index:200;transition:background .3s}
-    .nav.scrolled{background:rgba(5,9,26,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--dark-border)}
-    .nav-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 28px}
-    .logo{font:800 22px/1 Inter;color:#fff;letter-spacing:-.5px}
-    .logo span{color:var(--teal)}
-    .logo-img {
-      height: 44px;
-      width: auto;
-      display: block;
-      filter: brightness(0) invert(1);
-      transition: height 0.15s ease;
-    }
-    @media (min-width: 768px) {
-      .logo-img {
-        height: 50px;
-      }
-    }
-    .nav-links{display:flex;align-items:center;gap:2px}
-    .nl{font:500 14px Inter;color:rgba(255,255,255,.6);padding:8px 13px;border-radius:8px;transition:all .15s}
-    .nl:hover{color:#fff;background:rgba(255,255,255,.07)}
-    .btn-nav{display:inline-flex;align-items:center;gap:6px;font:700 14px Inter;padding:10px 20px;border-radius:10px;background:var(--blue);color:#fff;transition:all .15s;white-space:nowrap;border:none;cursor:pointer}
-    .btn-nav:hover{background:var(--blue-dark);transform:translateY(-1px)}
-    @media(max-width:760px){.nav-links .nl{display:none}}
+    /* ── Pill header ── */
+    .nav{position:sticky;top:0;z-index:200;background:var(--cream);transition:box-shadow .2s}
+    .nav.scrolled{box-shadow:0 2px 0 var(--line)}
+    .nav-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
+    .logo{display:flex;align-items:center;background:var(--pill);border-radius:999px;padding:12px 18px;min-height:48px}
+    .logo img{width:96px;height:auto}
+    :global(.festive-diwali) .logo{background:linear-gradient(135deg,#B3123B,#8B0A2E);border:2px solid #D4A24C}
+    .nav-links{display:none;gap:2px}
+    .nl{display:inline-flex;align-items:center;min-height:44px;font:700 14px Inter;color:var(--ink);padding:0 14px;border-radius:999px}
+    .nl:hover{background:var(--pill)}
+    .pill{display:flex;align-items:center;gap:2px;background:var(--pill);border-radius:999px;padding:4px}
+    .btn-shop{display:inline-flex;align-items:center;justify-content:center;min-height:44px;background:var(--yellow);color:var(--navy);font:800 14px Inter;padding:0 18px;border-radius:999px;white-space:nowrap}
+    :global(.festive-diwali) .btn-shop{background:linear-gradient(135deg,#F5D27A,#D4A24C);color:#4A0618}
+    .icon-btn{width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--navy);cursor:pointer;list-style:none}
+    :global(.festive-diwali) .icon-btn{color:#5A0620}
+    .icon-btn::-webkit-details-marker{display:none}
+    .icon-btn svg{width:22px;height:22px}
+    .icon-btn:hover{background:rgba(255,255,255,.6)}
+    .menu{position:relative}
+    .menu-pop{position:absolute;right:0;top:54px;background:#fff;border:2px solid var(--line);border-radius:18px;box-shadow:5px 5px 0 var(--line);padding:8px;display:grid;min-width:210px}
+    .menu-pop a{display:flex;align-items:center;min-height:44px;font:700 15px Inter;padding:0 14px;border-radius:12px}
+    .menu-pop a:hover{background:var(--pill)}
+    @media(min-width:900px){.nav-links{display:flex}.menu{display:none}.logo img{width:124px}.nav-inner{padding:12px 28px}}
 
     /* ── Hero ── */
-    .hero{min-height:100svh;background:var(--dark);position:relative;display:flex;align-items:center;overflow:hidden;padding-top:72px}
-    .hero-orb1{position:absolute;width:600px;height:400px;top:-80px;left:-150px;background:radial-gradient(ellipse,rgba(37,99,235,.16) 0%,transparent 70%);pointer-events:none}
-    .hero-orb2{position:absolute;width:500px;height:350px;bottom:-40px;right:-80px;background:radial-gradient(ellipse,rgba(37,99,235,.1) 0%,transparent 70%);pointer-events:none}
-    .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:56px 56px;pointer-events:none}
-    .hero-inner{max-width:var(--max);margin:0 auto;padding:60px 28px 80px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;position:relative;z-index:2;width:100%}
-
-    h1{font:900 58px/1.04 Inter;color:#fff;letter-spacing:-2px;margin-bottom:20px}
-    h1 .blu{color:var(--blue-light)}
-    h1 .dim{color:rgba(255,255,255,.7)}
-    .hero-sub{font:400 18px/1.65 Inter;color:rgba(255,255,255,.52);max-width:440px;margin-bottom:28px}
-    .hero-sub strong{color:rgba(255,255,255,.82);font-weight:600}
-    .hero-cite{font:400 13px/1.6 Inter;color:rgba(255,255,255,.5);max-width:440px;margin-bottom:20px}
-
-    /* fish chips */
-    .fish-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
-    .ftag{text-decoration:none;display:inline-flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:5px 14px 5px 6px;font:500 13px Inter;color:#fff}
-
-    .hero-ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
-    .btn-primary{display:inline-flex;align-items:center;gap:8px;font:700 16px Inter;padding:14px 28px;border-radius:12px;background:var(--blue);color:#fff;box-shadow:0 8px 32px var(--blue-glow);transition:all .2s;border:none;cursor:pointer}
-    .btn-primary:hover{background:var(--blue-dark);transform:translateY(-2px);box-shadow:0 16px 48px var(--blue-glow)}
-    .btn-ghost{display:inline-flex;align-items:center;gap:8px;font:600 16px Inter;padding:13px 24px;border-radius:12px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.14);transition:all .2s}
-    .btn-ghost:hover{background:rgba(255,255,255,.09);color:#fff;border-color:rgba(255,255,255,.24)}
-
-    .hero-urgency{display:flex;align-items:center;gap:8px;font:500 13px Inter;color:rgba(255,255,255,.38)}
-    .udot{width:6px;height:6px;border-radius:50%;background:#F87171;animation:blink 1.5s infinite;flex-shrink:0}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-
-    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--dark-border);border-radius:14px;overflow:hidden;border:1px solid var(--dark-border);margin-top:36px}
-    .hs{background:rgba(255,255,255,.03);padding:16px 12px;text-align:center}
-    .hs-n{font:800 24px Inter;color:#fff;letter-spacing:-1px}
-    .hs-l{font:400 11px Inter;color:rgba(255,255,255,.3);margin-top:2px}
-
-    @media(max-width:940px){.hero-inner{grid-template-columns:1fr}.hero-right{display:none}h1{font-size:42px}}
-    @media(max-width:480px){h1{font-size:34px;letter-spacing:-1.4px}.hero-sub{font-size:16px}}
+    .hero{padding:22px 16px 10px;text-align:center}
+    .hero-inner{max-width:var(--max);margin:0 auto;display:grid;gap:22px;align-items:center}
+    h1{font:400 44px/.98 var(--display);letter-spacing:-1.5px;text-transform:uppercase;color:var(--ink)}
+    h1 .blu{color:var(--accent)}
+    .hero-sub{font:600 16px/1.5 Inter;color:#334155;margin:16px auto 0;max-width:430px}
+    .hero-sub strong{color:var(--ink);font-weight:800}
+    .hero-cite{font:500 13px/1.6 Inter;color:var(--muted);margin:12px auto 0;max-width:440px}
+    .fish-tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+    .ftag{display:inline-flex;align-items:center;gap:6px;min-height:44px;background:#fff;border:2px solid var(--line);border-radius:999px;padding:4px 14px 4px 4px;font:700 13px Inter;color:var(--ink);box-shadow:2px 2px 0 var(--line)}
+    .ftag-img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+    .hero-ctas{margin-top:20px}
+    .btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;background:var(--cta);color:var(--cta-fg);font:800 17px Inter;padding:14px 30px;border-radius:999px;border:0;box-shadow:0 6px 0 var(--cta-shadow);transition:transform .15s,box-shadow .15s;cursor:pointer}
+    .btn-primary:hover{transform:translateY(2px);box-shadow:0 4px 0 var(--cta-shadow)}
+    .btn-ghost{display:inline-flex;align-items:center;justify-content:center;min-height:50px;background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:999px;padding:12px 22px;font:800 15px Inter}
+    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:24px}
+    .hs{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 6px;box-shadow:3px 3px 0 var(--line);text-align:center}
+    .hs-n{font:400 28px var(--display);color:var(--accent)}
+    .hs-l{font:700 11px/1.35 Inter;color:#334155;margin-top:4px}
 
     /* ── Hero right — interactive phone demo ── */
     .hero-right{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
@@ -352,46 +399,122 @@ const homeFaqs = [
     .fish3d-n{font:700 10px Inter;color:#fff}
     .fish3d-t{font:400 8px Inter;color:rgba(255,255,255,.4);margin-top:1px}
     .fish3d-f{font:700 7px Inter;color:var(--blue-light);background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);border-radius:100px;padding:2px 6px;margin-top:3px;display:inline-block}
+    /* phone demo: mobile shows the three fish chips only (the phone is desktop-only, as before) */
+    .hero-right::before{content:"";position:absolute;inset:8% 0;border-radius:50%;background:radial-gradient(circle at 30% 40%,rgba(0,102,255,.22),transparent 60%),radial-gradient(circle at 70% 70%,rgba(255,209,102,.5),transparent 55%);pointer-events:none}
+    :global(.festive-diwali) .hero-right::before{background:radial-gradient(circle at 30% 40%,rgba(179,18,59,.2),transparent 60%),radial-gradient(circle at 70% 70%,rgba(245,210,122,.6),transparent 55%)}
+    .demo-hint{color:var(--muted)}
+    .demo-dot{background:rgba(10,36,114,.25)}
+    .fish-mini{display:contents}
+    @media(max-width:939px){
+      .hero-right{display:block}
+      .hero-right::before,.demo-phone,.demo-dots,.demo-hint{display:none}
+      .fish-mini{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory;text-align:left}
+      .fish3d{position:static;animation:none;flex:none;scroll-snap-align:start;background:var(--chip);border:0;box-shadow:none;backdrop-filter:none;min-height:44px}
+      .fish3d-t{color:rgba(255,255,255,.75);font-size:10px}
+      .fish3d-f{color:var(--yellow);background:transparent;border:0;padding:0;font-size:10px}
+    }
+    @media(min-width:940px){
+      .hero{padding:44px 28px 36px;text-align:left}
+      .hero-inner{grid-template-columns:1.1fr .9fr;gap:56px}
+      h1{font-size:50px;letter-spacing:-1.5px}
+      .hero-sub,.hero-cite{margin-left:0}
+      .fish-tags{justify-content:flex-start}
+      .hero-stats{max-width:520px}
+      .fish3d{background:#fff;border:2px solid var(--line);box-shadow:4px 4px 0 var(--line);backdrop-filter:none}
+      .fish3d-n{color:var(--ink);font-size:12px}
+      .fish3d-t{color:var(--muted);font-size:10px}
+      .fish3d-img{border-color:var(--line)}
+      .demo-phone{border:3px solid var(--line);box-shadow:8px 8px 0 var(--line)}
+    }
+    @media(min-width:1200px){h1{font-size:56px}}
 
-    /* ── Ticker ── */
-    .ticker{background:var(--dark-3);border-top:1px solid var(--dark-border);border-bottom:1px solid var(--dark-border);overflow:hidden;padding:10px 0}
-    .ticker-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
+    /* ── Fish photo marquee ── */
+    .ticker{overflow:hidden;padding:16px 0 8px}
+    .ticker-track{display:flex;width:max-content;animation:marquee 34s linear infinite}
     .ticker-track:hover{animation-play-state:paused}
     @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-    .ti{display:inline-flex;align-items:center;gap:8px;padding:0 20px;font:500 12px Inter;color:rgba(255,255,255,.45);white-space:nowrap}
-    .ti .fish{color:var(--blue-light);font-weight:700}
-    .ti-img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0}
-    .ti .dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.15)}
+    .ti{flex:none;width:136px;margin-right:10px;background:#fff;border:2px solid var(--line);border-radius:16px;overflow:hidden}
+    .ti-img{width:100%;height:110px;object-fit:cover}
+    .ti .fish{display:block;font:800 13px Inter;color:var(--ink);padding:6px 9px 0}
+    .ti-t{display:block;font:600 11px Inter;color:#64748B;padding:0 9px 8px}
+
+    /* ── Social proof wall ── */
+    .wall{padding:34px 16px 10px;text-align:center}
+    .wall h2{margin-bottom:12px}
+    .soc{display:flex;justify-content:center;gap:10px}
+    .soc a{width:46px;height:46px;border-radius:12px;background:var(--cta);color:var(--cta-fg);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--cta-shadow)}
+    .soc svg{width:22px;height:22px}
+    .dial{position:relative;height:340px;margin:16px auto 0;max-width:560px;touch-action:pan-y;cursor:grab;overflow:hidden;user-select:none;-webkit-user-select:none;border-radius:28px;
+      background:radial-gradient(circle at 20% 60%,rgba(0,102,255,.35),transparent 38%),radial-gradient(circle at 80% 40%,rgba(255,209,102,.55),transparent 36%),radial-gradient(circle at 55% 85%,rgba(236,72,153,.28),transparent 34%)}
+    :global(.festive-diwali) .dial{background:radial-gradient(circle at 20% 60%,rgba(179,18,59,.3),transparent 38%),radial-gradient(circle at 80% 40%,rgba(245,210,122,.65),transparent 36%),radial-gradient(circle at 55% 85%,rgba(255,138,31,.3),transparent 34%)}
+    .dial.grabbing{cursor:grabbing}
+    .dc{position:absolute;left:50%;top:44px;width:170px;height:230px;margin-left:-85px;border-radius:22px;overflow:hidden;box-shadow:0 12px 28px rgba(10,36,114,.25);transform-origin:50% 520px;background:#fff;will-change:transform}
+    .dc img{width:100%;height:100%;object-fit:cover;pointer-events:none}
+    .dc figcaption{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 10px;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;font:700 12px/1.3 Inter;text-align:left}
+    .dc-claim{border:1.5px solid rgba(255,255,255,.75);background:rgba(255,255,255,.24);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);box-shadow:0 8px 32px rgba(10,36,114,.18),inset 0 1px 0 rgba(255,255,255,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--ink);padding:12px;cursor:pointer;font:inherit}
+    .dc-claim .pl{width:56px;height:56px;border-radius:50%;background:var(--cta);color:var(--cta-fg);font:800 30px/1 Inter;display:flex;align-items:center;justify-content:center;animation:pulse 1.6s infinite}
+    .dc-claim b{font:400 17px/1.05 var(--display);text-transform:uppercase;margin-top:10px}
+    .dc-claim .st{color:#D97706;font-size:15px;letter-spacing:2px;margin-top:6px}
+    .dc-claim .dc-s{font:600 11px/1.35 Inter;color:#334155;margin-top:6px}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,102,255,.5)}70%{box-shadow:0 0 0 14px rgba(0,102,255,0)}100%{box-shadow:0 0 0 0 rgba(0,102,255,0)}}
+    .hint{font:700 12px Inter;color:#64748B;margin-top:6px}
+    .post{margin:22px auto 0;max-width:560px;background:var(--dk);color:#fff;border-radius:20px;padding:18px 16px;text-align:center}
+    .post-t{display:block;font:400 20px var(--display);text-transform:uppercase}
+    .post p{font:500 14px/1.5 Inter;color:#E2E8F0;margin:6px 0 12px}
+    .post p b{color:var(--dk-accent)}
+    .rv{position:relative;margin:26px auto 0;max-width:560px}
+    .rv::before{content:"";position:absolute;inset:40px 10px 0;background:radial-gradient(circle at 25% 40%,rgba(0,102,255,.35),transparent 45%),radial-gradient(circle at 80% 70%,rgba(255,209,102,.6),transparent 45%);filter:blur(6px);z-index:0}
+    .rv h3{position:relative;font:400 22px var(--display);text-transform:uppercase;margin:0 0 10px;color:var(--ink)}
+    .rvc{position:relative;z-index:1;min-height:176px;text-align:left;border-radius:18px;padding:16px;background:rgba(255,255,255,.3);-webkit-backdrop-filter:blur(16px) saturate(170%);backdrop-filter:blur(16px) saturate(170%);border:1.5px solid rgba(255,255,255,.75);box-shadow:0 8px 32px rgba(10,36,114,.15),inset 0 1px 0 rgba(255,255,255,.8)}
+    .rvc .st{color:#D97706;font-size:18px}
+    .rvc p{font:600 15px/1.45 Inter;color:#334155;margin:8px 0}
+    .rvc small{display:block;color:#475569;font:600 12px Inter}
+    .claimbtn{display:inline-flex;align-items:center;min-height:44px;margin-top:8px;background:var(--cta);color:var(--cta-fg);border:0;border-radius:999px;padding:0 16px;font:800 13px Inter;cursor:pointer}
+    .dots{position:relative;display:flex;justify-content:center;gap:6px;margin-top:12px}
+    .dots i{width:8px;height:8px;border-radius:5px;background:#C7D2FE;transition:width .2s}
+    .dots i.on{background:var(--accent);width:20px}
+    @media(min-width:900px){
+      .wall{padding:64px 28px 24px}
+      .wall-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:48px;align-items:center}
+      .dial{height:410px}
+      .dc{width:200px;height:272px;margin-left:-100px;transform-origin:50% 620px}
+      .post{margin-top:0}
+    }
+    @media(prefers-reduced-motion:reduce){.dc-claim .pl,.ticker-track,.fish3d{animation:none}}
+
+    /* ── Claim sheet (native <dialog>) ── */
+    .claim-sheet{border:0;padding:0;background:transparent;width:100%;max-width:100%;max-height:100%;margin:auto 0 0}
+    .sh{background:var(--cream);max-width:480px;margin:0 auto;border:2px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;padding:22px 18px calc(24px + env(safe-area-inset-bottom));text-align:center;color:var(--ink)}
+    .sh-ic{font-size:44px;line-height:1.1}
+    .sh-ic.stars{font-size:34px;color:#D97706;letter-spacing:6px}
+    .sh-t{font:400 24px/1.05 var(--display);text-transform:uppercase;margin:8px 0 6px}
+    .sh-p{font:600 14px/1.5 Inter;color:#334155;margin:0 0 16px}
+    .sh .btn-primary{display:flex;width:100%}
+    .sh-x{display:block;width:100%;min-height:44px;margin-top:10px;background:none;border:0;font:700 14px Inter;color:#475569;cursor:pointer}
+    @media(min-width:900px){.claim-sheet{margin:auto}.sh{border-bottom:2px solid var(--line);border-radius:22px;box-shadow:6px 6px 0 var(--line)}}
 
     /* ── Sections ── */
-    .sec{padding:96px 28px}
-    .sec-alt{background:var(--bg)}
-    .sec-dark{background:var(--dark)}
-    .sec-grad{background:linear-gradient(160deg,#050915,#0A1628,#050915)}
-    .wrap{max-width:var(--max);margin:0 auto}
-    .slabel{font:700 11px Inter;color:var(--blue-light);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px}
-    h2{font:800 42px/1.1 Inter;color:var(--ink);letter-spacing:-1.2px;margin-bottom:18px}
-    h2 .hl{color:var(--blue)}
-    .ssub{font:400 18px/1.65 Inter;color:var(--ink-2);max-width:520px}
+    .sec{padding:44px 16px}
+    .sec-alt{background:var(--cream-2)}
+    .dk{background:var(--dk);color:#fff}
+    .slabel{font:800 11px Inter;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);text-align:center}
+    .dk .slabel{color:var(--dk-accent)}
+    h2{font:400 32px/1.02 var(--display);text-transform:uppercase;text-align:center;margin:8px 0 10px;letter-spacing:-.5px;color:var(--ink)}
+    h2 .hl{color:var(--accent)}
     .dk h2{color:#fff}
-    .dk .ssub{color:rgba(255,255,255,.5)}
-    .dk .slabel{color:var(--blue-light)}
-    .dk h2 .hl{color:var(--blue-light)}
-    @media(max-width:640px){h2{font-size:30px}.ssub{font-size:16px}.sec{padding:72px 20px}}
+    .dk h2 .hl{color:var(--dk-accent)}
+    .ssub{text-align:center;font:500 15px/1.55 Inter;color:var(--muted);max-width:540px;margin:0 auto 20px}
+    .dk .ssub{color:#CBD5E1}
+    .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+    @media(min-width:900px){.sec{padding:80px 28px}h2{font-size:48px}.ssub{font-size:17px}}
 
-    /* ── How it works — phone mockups ── */
-    /* ── How it works — phone mockups ── */
-    .flow-phones{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:56px;align-items:flex-start}
-    .flow-step{display:flex;flex-direction:column;align-items:center}
-    .flow-step-num{
-      width:36px;height:36px;border-radius:50%;
-      background:var(--blue);color:#fff;font:800 15px Inter;
-      display:flex;align-items:center;justify-content:center;
-      margin-bottom:14px;box-shadow:0 4px 14px var(--blue-glow);
-    }
-    .flow-step h3{font:700 15px Inter;color:var(--ink);margin:14px 0 5px;text-align:center}
-    .flow-step p{font:400 13px/1.55 Inter;color:var(--ink-2);text-align:center;max-width:175px}
-
+    /* ── How it works ── */
+    .flow-phones{display:grid;gap:12px}
+    .flow-step{background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px;box-shadow:4px 4px 0 var(--line);display:flex;gap:12px;align-items:flex-start;text-align:left}
+    .flow-step-num{flex:none;width:44px;height:44px;border-radius:12px;background:var(--cta);color:var(--cta-fg);font:400 22px var(--display);display:flex;align-items:center;justify-content:center}
+    .flow-step h3{font:800 16px Inter;margin:0 0 4px;color:var(--ink)}
+    .flow-step p{font:500 14px/1.5 Inter;color:var(--muted)}
+    .flow-step .fp{display:none}
     /* ── phone shell — bigger & premium ── */
     .fp{
       width:100%;max-width:200px;
@@ -508,141 +631,82 @@ const homeFaqs = [
     .tap-zone::after{content:'';position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,.2);transform:scale(0);animation:rpl 2.5s 1.5s ease-in-out infinite;pointer-events:none;top:50%;left:50%;margin:-16px 0 0 -16px}
     @keyframes rpl{0%{transform:scale(0);opacity:1}100%{transform:scale(4);opacity:0}}
 
-    @media(max-width:960px){.flow-phones{grid-template-columns:1fr 1fr;gap:20px}}
-    @media(max-width:520px){.flow-phones{display:flex;overflow-x:auto;gap:14px;padding-bottom:10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}.flow-step{scroll-snap-align:start;flex-shrink:0;width:185px}.fp .fp-screen{height:320px}}
+    @media(min-width:760px){.flow-phones{grid-template-columns:1fr 1fr;gap:20px}.flow-step{flex-direction:column;align-items:center;text-align:center;padding:20px 16px}.flow-step .fp{display:block}}
+    @media(min-width:1100px){.flow-phones{grid-template-columns:repeat(4,1fr)}}
 
     /* ── Fish grid ── */
-    .fish-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:48px}
-    .fish-card{background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .22s;cursor:pointer;position:relative}
-    .fish-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.1);border-color:rgba(37,99,235,.3)}
-    .fish-img{height:220px;display:flex;align-items:center;justify-content:center;font-size:56px;position:relative}
-    .fish-img img{width:100%;height:100%;object-fit:cover;display:block}
-    .fi1{background:linear-gradient(135deg,#0D3B2E,#0A5940)}
-    .fi2{background:linear-gradient(135deg,#1A0D4A,#2A3080)}
-    .fi3{background:linear-gradient(135deg,#0D2040,#1A3A5F)}
-    .fi4{background:linear-gradient(135deg,#2D1B00,#5C3800)}
-    .fi5{background:linear-gradient(135deg,#1A0020,#3A0050)}
-    .fi6{background:linear-gradient(135deg,#002020,#00403A)}
-    .fi7{background:linear-gradient(135deg,#200D00,#402000)}
-    .fi8{background:linear-gradient(135deg,#0A0A20,#1A1A40)}
-    .fish-body{padding:8px 14px 10px}
-    .fish-name{font:700 14px Inter;color:var(--ink);margin-bottom:1px}
-    .fish-marathi{font:400 11px Inter;color:var(--ink-3);margin-bottom:6px}
-    .fish-login{display:flex;align-items:center;gap:6px;background:var(--blue-dim);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:6px 10px;font:600 12px Inter;color:var(--blue)}
-    .fish-cta{display:block;margin-top:6px;background:#F8FAFC;border:1px solid var(--border);border-radius:9px;padding:5px;text-align:center;font:600 12px Inter;color:var(--ink-2);transition:all .15s}
-    .fish-card:hover .fish-cta{background:var(--blue);color:#fff;border-color:var(--blue)}
+    .fish-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .fish-card{display:block;background:#fff;border:2px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:3px 3px 0 var(--line);transition:transform .15s}
+    .fish-card:hover{transform:translateY(-3px)}
+    .fish-img{height:120px;background:#E6EEFF}
+    .fish-img img{width:100%;height:100%;object-fit:cover}
+    .fish-body{padding:8px 10px 12px}
+    .fish-name{font:800 14px Inter;color:var(--ink)}
+    .fish-marathi{font:600 12px Inter;color:#64748B;margin-bottom:6px}
+    .fish-login,.fish-cta{display:inline-block;font:800 12px Inter;color:var(--accent);margin-right:8px}
+    @media(min-width:760px){.fish-grid{grid-template-columns:repeat(3,1fr);gap:18px}.fish-img{height:200px}.fish-body{padding:12px 14px 14px}.fish-name{font-size:16px}}
 
     /* ── Why ── */
-    .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:48px}
-    .why-card{background:rgba(255,255,255,.04);border:1px solid var(--dark-border);border-radius:20px;padding:24px;transition:all .25s}
-    .why-card:hover{background:rgba(255,255,255,.07);border-color:rgba(37,99,235,.3);transform:translateY(-3px)}
-    .why-icon{width:48px;height:48px;border-radius:13px;background:var(--blue-dim);border:1px solid rgba(37,99,235,.2);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
-    .why-card h3{font:700 15px Inter;color:#fff;margin-bottom:8px}
-    .why-card p{font:400 13px/1.6 Inter;color:rgba(255,255,255,.44)}
-    .why-vs{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--dark-border)}
-    .wvg{font:600 11px Inter;color:var(--teal)}
-    .wvsep{width:1px;height:10px;background:var(--dark-border)}
-    .wvb{font:500 11px Inter;color:rgba(255,255,255,.2)}
-    @media(max-width:800px){.why-grid{grid-template-columns:1fr 1fr}}
-    @media(max-width:500px){.why-grid{grid-template-columns:1fr}}
+    .why-grid{display:grid;gap:10px}
+    .why-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:16px}
+    .why-icon{font-size:24px}
+    .why-card h3{font:800 16px Inter;margin:6px 0 4px;color:#fff}
+    .why-card p{font:500 14px/1.5 Inter;color:#CBD5E1;margin:0 0 10px}
+    .why-vs{display:flex;gap:6px;flex-wrap:wrap}
+    .wvg{background:#DCFCE7;color:#166534;border-radius:999px;padding:3px 9px;font:700 12px Inter}
+    .wvsep{display:none}
+    .wvb{background:rgba(255,255,255,.12);color:#CBD5E1;border-radius:999px;padding:3px 9px;font:700 12px Inter;text-decoration:line-through}
+    .stats-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+    .sb{background:var(--yellow);color:var(--navy);border-radius:14px;padding:14px 10px;text-align:center}
+    :global(.festive-diwali) .sb{background:linear-gradient(135deg,#F5D27A,#D4A24C);color:#4A0618}
+    .sb-n{font:400 28px var(--display)}
+    .sb-l{font:700 12px/1.35 Inter;margin-top:2px}
+    @media(min-width:760px){.why-grid{grid-template-columns:repeat(2,1fr);gap:14px}.stats-bar{grid-template-columns:repeat(4,1fr)}}
+    @media(min-width:1000px){.why-grid{grid-template-columns:repeat(3,1fr)}}
 
-    /* ── Stats ── */
-    .stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--dark-border);border-radius:14px;overflow:hidden;border:1px solid var(--dark-border);margin-top:48px}
-    .sb{background:rgba(255,255,255,.03);padding:20px 14px;text-align:center}
-    .sb-n{font:800 32px Inter;color:#fff;letter-spacing:-1px}
-    .sb-n .a{color:var(--blue-light)}
-    .sb-l{font:400 12px Inter;color:rgba(255,255,255,.3);margin-top:3px}
-    @media(max-width:640px){.stats-bar{grid-template-columns:1fr 1fr}}
-
-    /* ── Testimonials ── */
-    .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
-    .testi-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:22px;transition:all .2s}
-    .testi-card:hover{box-shadow:0 12px 40px rgba(0,0,0,.08);transform:translateY(-2px)}
-    .testi-stars{color:#FFD60A;font-size:13px;margin-bottom:10px;letter-spacing:2px}
-    .testi-text{font:400 14px/1.65 Inter;color:var(--ink-2);margin-bottom:14px}
-    .testi-text .hl{font-weight:700;color:var(--ink)}
-    .testi-author{display:flex;align-items:center;gap:10px}
-    .testi-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 15px Inter;flex-shrink:0;border:2px solid var(--border)}
-    .av1{background:linear-gradient(135deg,#0D3B2E,#0A5940);color:#fff}
-    .av2{background:linear-gradient(135deg,#1A0D4A,#2A3080);color:#fff}
-    .av3{background:linear-gradient(135deg,#2D1B00,#5C3800);color:#fff}
-    .av4{background:linear-gradient(135deg,#0D2040,#1A3A5F);color:#fff}
-    .av5{background:linear-gradient(135deg,#1A0020,#3A0050);color:#fff}
-    .av6{background:linear-gradient(135deg,#002020,#00403A);color:#fff}
-    .testi-name{font:700 13px Inter;color:var(--ink)}
-    .testi-loc{font:400 11px Inter;color:var(--ink-3)}
-    .testi-save{display:inline-flex;align-items:center;gap:4px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:100px;padding:3px 9px;font:600 11px Inter;color:var(--blue);margin-top:6px}
-    @media(max-width:800px){.testi-grid{grid-template-columns:1fr 1fr}}
-    @media(max-width:500px){.testi-grid{grid-template-columns:1fr}}
-
-    /* ── Waitlist (all blue) ── */
-    .wl-wrap{background:linear-gradient(135deg,#030820,#071235,#030820);border-radius:28px;border:1px solid rgba(37,99,235,.2);display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center;padding:56px 52px;position:relative;overflow:hidden}
-    .wl-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 400px 300px at 85% 50%,rgba(37,99,235,.07) 0%,transparent 70%);pointer-events:none}
-    .wl-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(37,99,235,.12);border:1px solid rgba(96,165,250,.2);border-radius:100px;padding:6px 16px;margin-bottom:18px}
-    .wl-badge-n{font:800 15px Inter;color:var(--blue-light)}
-    .wl-badge-t{font:500 12px Inter;color:rgba(255,255,255,.5)}
-    .wl-title{font:800 34px/1.1 Inter;color:#fff;letter-spacing:-1px;margin-bottom:12px}
-    .wl-sub{font:400 15px/1.6 Inter;color:rgba(255,255,255,.45);margin-bottom:22px}
-    .wl-perks{display:flex;flex-direction:column;gap:9px}
-    .wl-perk{display:flex;align-items:center;gap:10px;font:500 14px Inter;color:rgba(255,255,255,.62)}
-    .wl-pi{width:26px;height:26px;border-radius:7px;background:var(--blue-dim);border:1px solid rgba(37,99,235,.2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
-    .wl-form{display:flex;flex-direction:column;gap:11px}
-    .wl-lbl{font:600 12px Inter;color:rgba(255,255,255,.5);margin-bottom:4px;display:block}
-    .wl-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(96,165,250,.18);border-radius:10px;padding:12px 15px;font:400 15px Inter;color:#fff;outline:none;transition:border-color .15s}
-    .wl-input::placeholder{color:rgba(255,255,255,.2)}
-    .wl-input:focus{border-color:var(--blue-light);background:rgba(37,99,235,.05)}
-    .wl-sel{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(96,165,250,.18);border-radius:10px;padding:12px 15px;font:400 15px Inter;color:rgba(255,255,255,.65);outline:none;appearance:none;cursor:pointer}
-    .wl-sel:focus{border-color:var(--blue-light)}
-    .wl-sel option{background:#0D1A3A;color:#fff}
-    .wl-2col{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-    .wl-btn{background:var(--blue);color:#fff;font:700 16px Inter;padding:14px;border:none;border-radius:12px;cursor:pointer;transition:all .2s;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
-    .wl-btn:hover{background:var(--blue-dark);transform:translateY(-1px)}
+    /* ── Waitlist ── */
+    .wl-wrap{max-width:1000px;margin:0 auto;background:#fff;border:2px solid var(--line);border-radius:20px;padding:20px 16px;box-shadow:5px 5px 0 var(--line);display:grid;gap:18px}
+    .wl-title{font:400 24px/1.05 var(--display);text-transform:uppercase;color:var(--ink)}
+    .wl-sub{font:500 14px/1.55 Inter;color:var(--muted);margin:8px 0 12px}
+    .wl-perks{display:grid;gap:6px}
+    .wl-perk{display:flex;gap:8px;align-items:center;font:700 14px Inter;color:var(--ink)}
+    .wl-form{display:flex;flex-direction:column;gap:12px}
+    .wl-lbl{display:block;font:700 13px Inter;color:var(--ink);margin-bottom:5px}
+    .wl-input,.wl-sel{width:100%;min-height:48px;border:1.5px solid #94A3B8;border-radius:12px;padding:10px 12px;font:500 16px Inter;background:#fff;color:var(--ink)}
+    .wl-input:focus,.wl-sel:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--blue-dim)}
+    .wl-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .wl-btn{min-height:50px;background:var(--cta);color:var(--cta-fg);border:0;border-radius:999px;padding:14px;font:800 16px Inter;box-shadow:0 4px 0 var(--cta-shadow);cursor:pointer}
     .wl-btn:disabled{opacity:.6;cursor:wait}
-    .wl-note{font:400 11px Inter;color:rgba(255,255,255,.25);text-align:center}
-    .wl-success{display:none;text-align:center;padding:28px;flex-direction:column;align-items:center;gap:10px}
+    .wl-note{font:600 12px/1.5 Inter;color:#64748B;text-align:center}
+    .wl-note a{color:var(--accent) !important;font-weight:800}
+    .wl-success{display:none;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:20px}
     .wl-success.show{display:flex}
     .wl-success-icon{font-size:44px}
-    .wl-success-title{font:800 20px Inter;color:#fff}
-    .wl-success-sub{font:400 14px/1.5 Inter;color:rgba(255,255,255,.45)}
-    @media(max-width:800px){.wl-wrap{grid-template-columns:1fr;gap:32px;padding:36px 24px}}
+    .wl-success-title{font:400 22px var(--display);text-transform:uppercase;color:var(--ink)}
+    .wl-success-sub{font:500 14px/1.5 Inter;color:var(--muted)}
+    @media(min-width:900px){.wl-wrap{grid-template-columns:1fr 1fr;gap:44px;padding:40px}.wl-title{font-size:32px}}
+
+    /* ── Learn more ── */
+    .detail-links{display:grid;gap:10px;max-width:900px;margin:8px auto 0}
+    .detail-link{display:block;border-radius:16px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);transition:background .15s}
+    .detail-link:hover{background:rgba(255,255,255,.14)}
+    .dl-inner{display:flex;align-items:center;gap:14px;padding:16px}
+    .dl-icon{min-width:52px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;background:rgba(255,255,255,.1);padding:0 10px;flex:none}
+    .dl-title{font:800 16px Inter;color:#fff;margin-bottom:2px}
+    .dl-sub{font:500 13px/1.45 Inter;color:#CBD5E1}
+    .dl-arrow{margin-left:auto;font:800 18px Inter;color:var(--dk-accent);flex:none}
+    @media(min-width:760px){.detail-links{grid-template-columns:1fr 1fr;gap:14px}}
 
     /* ── FAQ ── */
-    .faqs{display:flex;flex-direction:column;gap:8px;margin-top:48px}
-    .faq{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .15s}
-    .faq:hover{border-color:rgba(37,99,235,.3)}
-    .faq summary{font:600 15px Inter;color:var(--ink);padding:18px 22px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px}
+    .faqs{display:flex;flex-direction:column;gap:10px;margin:8px auto 0;max-width:720px}
+    .faq{background:#fff;border:2px solid var(--line);border-radius:14px;box-shadow:3px 3px 0 var(--line)}
+    .faq summary{min-height:52px;font:800 15px Inter;color:var(--ink);padding:12px 16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
     .faq summary::-webkit-details-marker{display:none}
-    .faq-toggle{width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font:700 17px Inter;color:var(--ink-3);flex-shrink:0;transition:all .15s}
-    .faq[open] .faq-toggle{background:var(--blue-dim);color:var(--blue);transform:rotate(45deg)}
-    .faq p{font:400 14px/1.7 Inter;color:var(--ink-2);padding:0 22px 18px}
-    .faq-blue-bar{display:flex;align-items:center;gap:8px;background:rgba(37,99,235,.05);border:1px solid rgba(37,99,235,.15);border-radius:10px;padding:10px 14px;margin:0 22px 18px;font:500 13px Inter;color:var(--blue)}
-    .faq-blue-cta{font:700 13px Inter;color:var(--blue);text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
-
-    /* ── Detail links ── */
-    .detail-links{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:36px}
-    .detail-link{border-radius:18px;border:1px solid var(--dark-border);display:flex;transition:all .2s}
-    .detail-link:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.2);border-color:rgba(37,99,235,.3)}
-    .dl-inner{background:linear-gradient(135deg,#0A1628,#1A2540);padding:22px 26px;display:flex;align-items:center;gap:16px;width:100%;border-radius:18px}
-    .dl-icon{min-width:56px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:0 12px;flex-shrink:0}
-    .dl-icon.buy{background:var(--blue-dim);border:1px solid rgba(37,99,235,.2)}
-    .dl-title{font:700 16px Inter;color:#fff;margin-bottom:3px}
-    .dl-sub{font:400 12px/1.5 Inter;color:rgba(255,255,255,.4)}
-    .dl-arrow{margin-left:auto;font:700 18px Inter;color:rgba(255,255,255,.25);flex-shrink:0}
-    .detail-link:hover .dl-arrow{color:var(--blue-light)}
-    @media(max-width:600px){.detail-links{grid-template-columns:1fr}}
-
-
-    /* ── Diwali (body.festive-diwali, src/lib/festive.ts). Lives here so it outranks the scoped rules above. ── */
-    .festive-diwali .nav,.festive-diwali .nav.scrolled{background:linear-gradient(135deg,#B3123B 0%,#8B0A2E 100%);border-bottom:2px solid #D4A24C}
-    .festive-diwali .nav-inner{padding-top:20px}
-    .festive-diwali .nav .nl{color:#FDE7B0}
-    .festive-diwali .btn-nav,.festive-diwali .hero .btn-primary{background:linear-gradient(135deg,#F5D27A,#D4A24C);color:#4A0618;box-shadow:0 6px 24px rgba(212,162,76,.35)}
-    .festive-diwali .hero{background:radial-gradient(120% 80% at 50% 0%,#8B0A2E 0%,#4A0618 55%,#24030C 100%)}
-    .festive-diwali .hero-orb1,.festive-diwali .hero-orb2{background:radial-gradient(ellipse,rgba(245,210,122,.14) 0%,transparent 70%)}
-    .festive-diwali h1 .blu{color:#F5D27A}
-    .festive-diwali .hero-sub,.festive-diwali .hero-cite{color:rgba(255,248,235,.82)}
-    .festive-diwali .hs-l{color:rgba(255,248,235,.72)}
-    .festive-diwali .hero-stats{border-color:rgba(212,162,76,.35)}
+    .faq-toggle{flex:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font:800 22px Inter;color:var(--accent);transition:transform .15s}
+    .faq[open] .faq-toggle{transform:rotate(45deg)}
+    .faq p{font:500 14px/1.6 Inter;color:var(--muted);padding:0 16px 14px}
+    .faq-blue-bar{margin:0 16px 14px;background:var(--pill);border-radius:10px;padding:10px 12px;font:700 13px Inter;color:var(--ink)}
+    .faq-blue-cta{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
   </style>
   {enableTracking && (
     <>
@@ -692,26 +756,46 @@ const homeFaqs = [
     </>
   )}
 </head>
-<body class={festive ? "festive-diwali" : undefined}>
+<body class:list={["home", festive && "festive-diwali"]}>
 {enableTracking && (
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-JG2ZTX3F"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 )}
 
-<!-- NAV — no seller links -->
-<nav class="nav" id="nav">
+<!-- ANNOUNCEMENT BAR -->
+<a class="ann" href="/shop">
   <DiwaliDecor part="lights" />
+  <span>🛵 <b>2-hour delivery slots</b> · cleaned &amp; cut, at your door · <u>Shop now</u></span>
+</a>
+
+<!-- NAV — no seller links -->
+<nav class="nav" id="nav" aria-label="Main">
   <div class="nav-inner">
-    <a href="/" class="logo"><img src={LOGO_URL} alt="Relifish" class="logo-img" /></a>
+    <a href="/" class="logo"><img src={logoSrc} alt="Relifish" width="1200" height="285" /></a>
     <div class="nav-links">
       <a href="#how" class="nl">How it works</a>
       <a href="#fish" class="nl">Browse fish</a>
       <a href="/blog" class="nl">Blog</a>
       <a href="#waitlist" class="nl">Join waitlist</a>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <a href="/me?next=/shop" id="nav-login" class="nl" style="color:rgba(255,255,255,.7)">Login</a>
-      <a href="/shop" class="btn-nav">Order now →</a>
+    <div class="pill">
+      <a href="/shop" class="btn-shop">Shop Now</a>
+      <a href="/me?next=/shop" id="nav-login" class="icon-btn" aria-label="Login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        <span class="sr">Login</span>
+      </a>
+      <details class="menu" id="nav-menu">
+        <summary class="icon-btn" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </summary>
+        <div class="menu-pop">
+          <a href="#how">How it works</a>
+          <a href="#fish">Browse fish</a>
+          <a href="/blog">Blog</a>
+          <a href="#waitlist">Join waitlist</a>
+          <a href="/track">Track order</a>
+        </div>
+      </details>
     </div>
   </div>
 </nav>
@@ -816,17 +900,14 @@ const homeFaqs = [
 
 <!-- ═══ HERO ═══ -->
 <section class="hero">
-  <div class="hero-orb1"></div>
-  <div class="hero-orb2"></div>
-  <div class="hero-grid"></div>
   <div class="hero-inner">
 
     <!-- LEFT -->
     <div>
-      <DiwaliDecor part="banner" dark />
+      <DiwaliDecor part="banner" />
       <h1>
         Buy fresh fish<br/>
-        <span class="blu">in Thane &amp; Mumbai —<br/>direct from local sellers.</span>
+        <span class="blu">in Thane &amp; Mumbai —</span><br/>direct from local sellers.
       </h1>
       <p class="hero-sub">
         Order fresh fish online directly from local sellers.
@@ -836,7 +917,7 @@ const homeFaqs = [
       <p class="hero-cite">Relifish is a marketplace for fresh fish from local sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order for tomorrow or later, and the seller delivers to your home or keeps it ready for pickup.</p>
       <div class="fish-tags">
         {[["Pomfret","pomfret"],["Surmai","surmai"],["Prawns","prawns"],["Bangda","bangda"],["Rawas","rawas"],["Crab","crab"]].map(([f,k])=>(
-          <a class="ftag" href={`/shop?species=${k}`}><img class="ftag-img" src={`/fish/${k}.jpg`} alt="" loading="lazy" />{f}</a>
+          <a class="ftag" href={`/shop?species=${k}`}><img class="ftag-img" src={`/fish/${k}.jpg`} alt="" width="32" height="32" />{f}</a>
         ))}
       </div>
       <div class="hero-ctas">
@@ -849,12 +930,13 @@ const homeFaqs = [
       </div>
     </div>
 
-    <!-- RIGHT — interactive phone demo -->
+    <!-- RIGHT — interactive phone demo (desktop); fish chips (mobile) -->
     <div class="hero-right">
-      <!-- floating fish badges -->
+      <div class="fish-mini">
       <a class="fish3d" href="/shop?species=pomfret" aria-label="Shop pomfret"><img class="fish3d-img" src="/fish/pomfret.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Pomfret</div><div class="fish3d-t">पापलेट · Whole</div><div class="fish3d-f">🌊 Order today</div></div></a>
       <a class="fish3d" href="/shop?species=prawns" aria-label="Shop prawns"><img class="fish3d-img" src="/fish/prawns.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Jumbo Prawns</div><div class="fish3d-t">कोळंबी · Fresh</div><div class="fish3d-f">🌊 Pre-order open</div></div></a>
       <a class="fish3d" href="/shop?species=surmai" aria-label="Shop surmai"><img class="fish3d-img" src="/fish/surmai.jpg" alt="" loading="lazy" /><div><div class="fish3d-n">Surmai</div><div class="fish3d-t">सुरमई · Fillet</div><div class="fish3d-f">🌊 Whole or cut</div></div></a>
+      </div>
 
       <!-- phone -->
       <div class="demo-phone" id="demo-phone">
@@ -1078,28 +1160,195 @@ const homeFaqs = [
   </div>
 </section>
 
-<!-- TICKER -->
+<!-- FISH PHOTO MARQUEE -->
 <div class="ticker">
   <div class="ticker-track">
     {[...[["/fish/pomfret.jpg","Pomfret","Morning fresh"],["/fish/surmai.jpg","Surmai","Direct from seller"],["/fish/prawns.jpg","Prawns","Pre-order ahead"],["/fish/bangda.jpg","Bangda","Zero middleman"],
       ["/fish/rawas.jpg","Rawas","Limited daily"],["/fish/crab.jpg","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]], ...[["/fish/pomfret.jpg","Pomfret","Morning fresh"],["/fish/surmai.jpg","Surmai","Direct from seller"],["/fish/prawns.jpg","Prawns","Pre-order ahead"],["/fish/bangda.jpg","Bangda","Zero middleman"],
       ["/fish/rawas.jpg","Rawas","Limited daily"],["/fish/crab.jpg","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]]].map(([e,n,t])=>(
-      <div class="ti"><img class="ti-img" src={e} alt="" loading="lazy" /><span class="fish">{n}</span><span>{t}</span><span class="dot"></span></div>
+      <div class="ti"><img class="ti-img" src={e} alt="" loading="lazy" width="136" height="110" /><span class="fish">{n}</span> <span class="ti-t">{t}</span></div>
     ))}
   </div>
 </div>
 
+<!-- ═══ SOCIAL PROOF ═══ -->
+<section class="wall" id="posting" aria-labelledby="wall-h">
+  <div class="wrap wall-grid">
+    <div>
+      <h2 id="wall-h">Thane's fish lovers<br/><span class="hl">are posting</span></h2>
+      <div class="soc">
+        {SOCIAL.map((s) => (
+          <a href={s.href} target="_blank" rel="noopener" aria-label={s.label}>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={s.path} /></svg>
+          </a>
+        ))}
+      </div>
+      <div class="dial" id="dial" tabindex="0" role="group" aria-roledescription="carousel" aria-label="Photos from our sellers and buyers. Drag, swipe or use the arrow keys to turn the wheel.">
+        {DIAL.map((d, i) => d ? (
+          <figure class="dc" style={pose(i)}><img src={d.src} alt={d.cap} width="200" height="272" loading="lazy" draggable="false" /><figcaption>{d.cap}</figcaption></figure>
+        ) : (
+          <button type="button" class="dc dc-claim" data-claim style={pose(i)}>
+            <span class="pl" aria-hidden="true">＋</span>
+            <b>Claim this spot</b>
+            <span class="st" aria-hidden="true">★★★★★</span>
+            <span class="dc-s">Your plate + your review, here for everyone to see</span>
+          </button>
+        ))}
+      </div>
+      <p class="hint">👆 Swipe the wheel · tap a ＋ to claim your spot</p>
+    </div>
+    <div>
+      <div class="post">
+        <b class="post-t">Post your plate 🍽️</b>
+        <p>Share your Relifish fish fry or curry, tag <b>@relifish_</b> and get featured here.</p>
+        <a class="btn-shop" href="https://www.instagram.com/relifish_/" target="_blank" rel="noopener">Tag us on Instagram</a>
+      </div>
+      <div class="rv">
+        <h3>What buyers say</h3>
+        <div class="rvc" id="rv">
+          {REVIEW_SLOTS.map((r, i) => (
+            <div class="rv-slide" hidden={i > 0}>
+              <div class="st" aria-label="No rating yet">☆☆☆☆☆</div>
+              <p>“{r.t}”</p>
+              <small>— {r.n}</small>
+              <button type="button" class="claimbtn" data-claim>＋ Claim this spot</button>
+            </div>
+          ))}
+        </div>
+        <div class="dots" id="rv-dots" aria-hidden="true">{REVIEW_SLOTS.map((_, i) => <i class={i === 0 ? "on" : undefined}></i>)}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<dialog class="claim-sheet" id="claim-sheet" aria-labelledby="claim-t">
+  <div class="sh">
+    <div class="sh-ic" id="claim-ic" aria-hidden="true">🐟</div>
+    <p class="sh-t" id="claim-t">This spot is waiting for you</p>
+    <p class="sh-p" id="claim-p">Order your first fresh fish. After it's delivered, post your plate and your review here.</p>
+    <a class="btn-primary" id="claim-go" href="/shop">Shop now →</a>
+    <button type="button" class="sh-x" id="claim-x">Keep browsing</button>
+  </div>
+</dialog>
+
+<script>
+  // Header menu: close after a jump link or an outside tap.
+  const menu = document.getElementById("nav-menu") as HTMLDetailsElement | null;
+  menu?.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) menu.open = false; });
+  document.addEventListener("click", (e) => { if (menu?.open && !menu.contains(e.target as Node)) menu.open = false; });
+
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ── Photo dial: drag/swipe with inertia, snaps like a phone dial, slow auto-turn when idle ──
+  const dial = document.getElementById("dial") as HTMLElement;
+  const cards = Array.from(dial.querySelectorAll<HTMLElement>(".dc"));
+  const STEP = 24, SPAN = cards.length * STEP, IDLE_MS = 2500;
+  let ang = 0, vel = 0, drag = false, moved = false, hover = false, startX = 0, lastX = 0, idleAt = -IDLE_MS, raf = 0, onScreen = false;
+  function lay() {
+    cards.forEach((c, i) => {
+      let a = (((i * STEP + ang) % SPAN) + SPAN) % SPAN;
+      if (a > SPAN / 2) a -= SPAN;
+      c.style.visibility = Math.abs(a) < 70 ? "" : "hidden";
+      c.style.transform = `rotate(${a}deg) scale(${1 - Math.min(Math.abs(a), 60) / 300})`;
+      c.style.zIndex = String(100 - Math.round(Math.abs(a)));
+    });
+  }
+  function tick(t: number) {
+    raf = 0;
+    if (!drag) {
+      const settling = t - idleAt < IDLE_MS;
+      if (Math.abs(vel) > 0.05) { ang += vel; vel *= 0.94; }
+      else if (!settling && !reduce && !hover) ang -= 0.12;
+      if (Math.abs(vel) < 0.3 && settling) { const tgt = Math.round(ang / STEP) * STEP; ang += (tgt - ang) * 0.12; }
+      lay();
+      // Reduced motion: stop once the snap has settled instead of turning on its own.
+      if (reduce && !settling && Math.abs(vel) <= 0.05) return;
+    }
+    if (onScreen) raf = requestAnimationFrame(tick);
+  }
+  const kick = () => { if (!raf && onScreen) raf = requestAnimationFrame(tick); };
+  new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; if (onScreen) kick(); }).observe(dial);
+  dial.addEventListener("pointerdown", (e) => { drag = true; moved = false; startX = lastX = e.clientX; vel = 0; kick(); });
+  dial.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    // Capture only once it is a real drag, so a plain tap still clicks the card under the finger.
+    if (!moved && Math.abs(e.clientX - startX) > 6) { moved = true; dial.setPointerCapture(e.pointerId); dial.classList.add("grabbing"); }
+    if (moved) { const dx = e.clientX - lastX; ang += dx * 0.35; vel = dx * 0.35; lay(); }
+    lastX = e.clientX;
+  });
+  const release = () => { if (!drag) return; drag = false; idleAt = performance.now(); dial.classList.remove("grabbing"); kick(); };
+  dial.addEventListener("pointerup", release);
+  dial.addEventListener("pointercancel", release);
+  dial.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") hover = true; });
+  dial.addEventListener("pointerleave", () => { hover = false; });
+  dial.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    ang = Math.round(ang / STEP) * STEP + (e.key === "ArrowLeft" ? STEP : -STEP);
+    vel = 0; idleAt = performance.now(); lay(); kick();
+  });
+
+  // ── Claim this spot ──
+  const sheet = document.getElementById("claim-sheet") as HTMLDialogElement;
+  const el = (id: string) => document.getElementById(id) as HTMLElement;
+  let completed: Promise<any> | null = null;
+  const buyerId = () => { try { return localStorage.getItem("rlf_buyer_id") && localStorage.getItem("rlf_phone") ? localStorage.getItem("rlf_buyer_id") : null; } catch { return null; } };
+  // The buyer's latest delivered / picked-up order, via the same API /track uses (newest first).
+  const latestCompleted = (id: string) => (completed ??= fetch(`/api/buyer/orders?buyer_id=${encodeURIComponent(id)}&scope=past&page_size=20`)
+    .then((r) => (r.ok ? r.json() : { orders: [] }))
+    .then((b) => (b.orders || []).find((o: any) => o.status === "completed" || o.status === "picked_up") || null)
+    .catch(() => null));
+  async function openClaim() {
+    const id = buyerId();
+    const order = id ? await latestCompleted(id) : null;
+    const state = order ? "can_claim" : id ? "no_completed_order" : "guest";
+    const ic = el("claim-ic"), go = el("claim-go") as HTMLAnchorElement;
+    if (order) {
+      ic.textContent = "★★★★★"; ic.classList.add("stars");
+      el("claim-t").textContent = "Claim your spot";
+      const seller = order.listing?.seller?.name;
+      el("claim-p").textContent = `${seller ? `Your order from ${seller}` : "Your order"} was delivered. Rate it and add a photo of your plate.`;
+      go.href = `/track/${encodeURIComponent(order.id)}`; go.textContent = "Rate it & add a photo →";
+      el("claim-x").textContent = "Maybe later";
+    } else {
+      ic.textContent = "🐟"; ic.classList.remove("stars");
+      el("claim-t").textContent = "This spot is waiting for you";
+      el("claim-p").textContent = "Order your first fresh fish. After it's delivered, post your plate and your review here.";
+      go.href = "/shop"; go.textContent = "Shop now →";
+      el("claim-x").textContent = "Keep browsing";
+    }
+    (window as any).gtag?.("event", "claim_spot_tap", { state });
+    if (!sheet.open) sheet.showModal();
+  }
+  document.addEventListener("click", (e) => {
+    const b = (e.target as Element).closest("[data-claim]");
+    if (!b || (moved && b.closest("#dial"))) return;
+    openClaim();
+  });
+  el("claim-x").addEventListener("click", () => sheet.close());
+  sheet.addEventListener("click", (e) => { if (e.target === sheet) sheet.close(); });
+
+  // ── What buyers say: rotate slides (paused on hover/focus, off for reduced motion) ──
+  const rv = el("rv");
+  const slides = Array.from(rv.querySelectorAll<HTMLElement>(".rv-slide"));
+  const dots = Array.from(document.querySelectorAll<HTMLElement>("#rv-dots i"));
+  let r = 0;
+  if (!reduce && slides.length > 1) setInterval(() => {
+    if (document.hidden || rv.matches(":hover, :focus-within")) return;
+    slides[r].hidden = true; dots[r].classList.remove("on");
+    r = (r + 1) % slides.length;
+    slides[r].hidden = false; dots[r].classList.add("on");
+  }, 4000);
+</script>
+
 <!-- ═══ HOW IT WORKS ═══ -->
 <section class="sec sec-alt" id="how">
   <div class="wrap">
-    <div style="text-align:center">
-      <div class="slabel">How it works</div>
-      <h2>Order in <span class="hl">4 simple steps</span></h2>
-      <p class="ssub" style="margin:0 auto;text-align:center">No app download. Works on any phone. Takes 2 minutes.</p>
-    </div>
+    <div class="slabel">How it works</div>
+    <h2>Order in <span class="hl">4 simple steps</span></h2>
+    <p class="ssub">No app download. Works on any phone. Takes 2 minutes.</p>
 
     <div class="flow-phones">
-
       <!-- STEP 1: Set location -->
       <div class="flow-step">
         <div class="flow-step-num">1</div>
@@ -1134,10 +1383,11 @@ const homeFaqs = [
             <div class="s1-btn">Confirm — Hiranandani →</div>
           </div>
         </div>
-        <h3>Set your location</h3>
-        <p>Pick your area once. We show the fish sellers who deliver to you.</p>
+        <div>
+          <h3>Set your location</h3>
+          <p>Pick your area once. We show the fish sellers who deliver to you.</p>
+        </div>
       </div>
-
       <!-- STEP 2: Browse sellers -->
       <div class="flow-step">
         <div class="flow-step-num">2</div>
@@ -1180,10 +1430,11 @@ const homeFaqs = [
             </div>
           </div>
         </div>
-        <h3>Browse & pick fish</h3>
-        <p>See sellers near you and today's prices. Log in once with your phone number.</p>
+        <div>
+          <h3>Browse & pick fish</h3>
+          <p>See sellers near you and today's prices. Log in once with your phone number.</p>
+        </div>
       </div>
-
       <!-- STEP 3: Checkout -->
       <div class="flow-step">
         <div class="flow-step-num">3</div>
@@ -1219,10 +1470,11 @@ const homeFaqs = [
             </div>
           </div>
         </div>
-        <h3>Pick a time &amp; pay</h3>
-        <p>Choose when it arrives: today, or a pre-order for a later day. Pay via Razorpay (UPI, cards, net banking).</p>
+        <div>
+          <h3>Pick a time &amp; pay</h3>
+          <p>Choose when it arrives: today, or a pre-order for a later day. Pay via Razorpay (UPI, cards, net banking).</p>
+        </div>
       </div>
-
       <!-- STEP 4: Confirmed -->
       <div class="flow-step">
         <div class="flow-step-num">4</div>
@@ -1253,15 +1505,16 @@ const homeFaqs = [
             </div>
           </div>
         </div>
-        <h3>Delivered or ready for pickup</h3>
-        <p>The seller cuts your fish the way you chose and delivers it in the time you picked, or keeps it ready for pickup.</p>
+        <div>
+          <h3>Delivered or ready for pickup</h3>
+          <p>The seller cuts your fish the way you chose and delivers it in the time you picked, or keeps it ready for pickup.</p>
+        </div>
       </div>
-
     </div>
 
-    <div style="text-align:center;margin-top:40px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a href="/shop" class="btn-primary" style="font-size:15px">Start ordering →</a>
-      <a href="/buyer-detailed.html" style="display:inline-flex;align-items:center;gap:6px;font:600 15px Inter;color:var(--blue);padding:13px 20px;border-radius:12px;border:1px solid rgba(37,99,235,.25);background:var(--blue-dim)">Full buyer guide →</a>
+    <div class="btns">
+      <a href="/shop" class="btn-primary">Start ordering →</a>
+      <a href="/buyer-detailed.html" class="btn-ghost">Full buyer guide →</a>
     </div>
   </div>
 </section>
@@ -1284,8 +1537,8 @@ const homeFaqs = [
         // {e:"🐡",n:"Bombay Duck",m:"बोंबील",bg:"fi8"},
       ].map(f=>(
         <a href={`/shop?species=${f.k}`} class="fish-card">
-          <div class={`fish-img ${f.bg}`}>
-            {f.p ? <img src={f.p} alt={f.n} /> : f.e}
+          <div class="fish-img">
+            <img src={f.p} alt={f.n} loading="lazy" width="400" height="300" />
           </div>
           <div class="fish-body">
             <div class="fish-name">{f.n}</div>
@@ -1296,15 +1549,15 @@ const homeFaqs = [
         </a>
       ))}
     </div>
-    <div style="text-align:center;margin-top:36px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a href="/shop" class="btn-primary" style="font-size:15px">See today's prices →</a>
-      <a href="/shop" class="btn-ghost" style="font-size:15px;color:var(--ink-2);border-color:var(--border);background:transparent">Browse sellers →</a>
+    <div class="btns">
+      <a href="/shop" class="btn-primary">See today's prices →</a>
+      <a href="/shop" class="btn-ghost">Browse sellers →</a>
     </div>
   </div>
 </section>
 
 <!-- ═══ WHY RELIFISH ═══ -->
-<section class="sec sec-grad dk">
+<section class="sec dk">
   <div class="wrap">
     <div class="slabel">Why Relifish</div>
     <h2>Your family deserves<br/><span class="hl">genuinely fresh fish.</span></h2>
@@ -1340,7 +1593,7 @@ const homeFaqs = [
 </section>
 
 <!-- ═══ WAITLIST ═══ -->
-<section class="sec" id="waitlist">
+<section class="sec sec-alt" id="waitlist">
   <div class="wrap">
     <div class="wl-wrap">
       <div>
@@ -1367,7 +1620,7 @@ const homeFaqs = [
           </div>
           <div class="wl-2col">
             <div>
-              <label class="wl-lbl">Fish you love most</label>
+              <label class="wl-lbl" for="wl-fish">Fish you love most</label>
               <select class="wl-sel" id="wl-fish">
                 <option value="">Select fish</option>
                 <option>Pomfret</option><option>Surmai</option><option>Prawns</option>
@@ -1376,7 +1629,7 @@ const homeFaqs = [
               </select>
             </div>
             <div>
-              <label class="wl-lbl">How often?</label>
+              <label class="wl-lbl" for="wl-freq">How often?</label>
               <select class="wl-sel" id="wl-freq">
                 <option value="">Frequency</option>
                 <option>Daily</option><option>2–3× a week</option>
@@ -1424,12 +1677,10 @@ import { whatsappLink } from "../lib/brand";
 </script>
 
 <!-- ═══ BUYER GUIDE LINKS ═══ -->
-<section class="sec sec-grad dk">
+<section class="sec dk">
   <div class="wrap">
-    <div style="text-align:center">
-      <div class="slabel">Learn more</div>
-      <h2>Everything you need<br/>to <span class="hl">get started</span></h2>
-    </div>
+    <div class="slabel">Learn more</div>
+    <h2>Everything you need<br/>to <span class="hl">get started</span></h2>
     <div class="detail-links">
       <a href="/buyer-detailed.html" class="detail-link">
         <div class="dl-inner">
@@ -1458,11 +1709,9 @@ import { whatsappLink } from "../lib/brand";
 <!-- ═══ FAQ ═══ -->
 <section class="sec sec-alt">
   <div class="wrap">
-    <div style="text-align:center">
-      <div class="slabel">FAQ</div>
-      <h2>Common <span class="hl">questions</span></h2>
-    </div>
-    <div class="faqs" style="max-width:680px;margin-left:auto;margin-right:auto">
+    <div class="slabel">FAQ</div>
+    <h2>Common <span class="hl">questions</span></h2>
+    <div class="faqs">
       {homeFaqs.map(item=>(
         <details class="faq">
           <summary>{item.q}<div class="faq-toggle">+</div></summary>
@@ -1478,7 +1727,7 @@ import { whatsappLink } from "../lib/brand";
   </div>
 </section>
 
-<Footer />
+<Footer logoSrc={footerLogo} />
 
 <!-- ═══ CHAT WIDGET ═══ (commented out — re-enable when ready)
 <style>
