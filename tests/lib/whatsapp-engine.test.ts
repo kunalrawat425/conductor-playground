@@ -21,7 +21,7 @@ const APPROVED: Record<string, [string, boolean, number]> = {
   rf2_unpaid: ["UTILITY", true, 4], rf2_paid: ["UTILITY", false, 3], rf2_paid_evening: ["UTILITY", false, 4],
   rf2_paid_fast: ["UTILITY", false, 4], rf2_confirmed: ["UTILITY", true, 3], rf2_out: ["UTILITY", false, 2],
   rf2_delivered: ["UTILITY", true, 3], rf2_cancelled: ["UTILITY", false, 4],
-  rf2_cart_swap: ["MARKETING", true, 5], // submitted 30 Oct, Meta approval pending
+  rf2_cart_swap: ["MARKETING", true, 5], // submitted 30 Oct, approved and delivering 31 Oct
 };
 /** rf_* strings in src that are not WhatsApp templates. */
 const NOT_TEMPLATES = new Set(["rf_internal", "rf_utm", "rf_resume_checkout"]);

@@ -48,7 +48,7 @@ export const TEMPLATES: TemplateDef[] = [
   { name: "rf2_order_again", category: "MARKETING", header: "IMAGE",
     body: "Hi {{1}}, hope the {{2}} was just the way you like it 😊\nReady for another round? {{3}} has fresh stock, same cut as last time. Just pick a slot: {{4}}.\nWant something different this time? Send us a Hi, we'll help 👋",
     examples: ["Sanjay", "Surmai", "The Nomadic Catch", "Sunday 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "Order the same again" }, { type: "QUICK_REPLY", text: "Try something new" }] },
-  // Pending Meta approval (founder 30 Oct): the cart's fish was taken off the seller's menu.
+  // Approved by Meta and delivering (31 Oct; added 30 Oct): the cart's fish was taken off the seller's menu.
   { name: "rf2_cart_swap", category: "MARKETING", header: "IMAGE",
     body: "Hi {{1}}, the {{2}} in your cart isn't on {{3}}'s menu today, sorry about that 🙏\nA fresh pick you'll like instead: {{4}} 😋 cleaned and cut, delivered {{5}}.\nWant something else? Just reply here and we'll help you choose.",
     examples: ["Priya", "Silver Pomfret", "Fishtokri", "Baby Surmai 900–1000 g, ₹1,040", "today, 12–2 PM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See today's menu" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
