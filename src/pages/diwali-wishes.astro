@@ -15,7 +15,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
   description="Pick a design, write your wish and share your own Happy Diwali greeting card on WhatsApp as an image. Free, takes a minute."
   header={{ variant: "page", title: "Relifish", backHref: "/shop" }}
   hideNav={true}
-  ogImage="/wa/diwali-card-og.jpg"
+  ogImage="/wa/diwali-card-og-v2.jpg"
 >
   <!-- Card fonts. crossorigin lets html-to-image read and embed them in the PNG. -->
   <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&family=Cinzel:wght@600;800&family=Great+Vibes&family=Poppins:wght@500;700&display=swap" />
@@ -169,8 +169,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
       } catch { cardLink = SHORT; }
     }
     function shareText() {
-      const wish = msgIn.value.trim().slice(0, 400), sign = signIn.value.trim().slice(0, 40);
-      return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nOpen my card and make yours 👉 ${cardLink}`;
+      return `Happy Diwali! 🪔\nWe made this Diwali card for you 👉 ${cardLink}\n\nMake one for your family too. It's really quick!`;
     }
     const card = document.getElementById("dw-card") as HTMLElement;
     const picker = document.getElementById("dw-themes") as HTMLElement;
