@@ -48,7 +48,7 @@ export type MsgSeller = SlotSeller & {
 };
 /** A live listing: name, first pricing option (price, label), listing photo, open for pre-order. */
 export type MenuItem = { name: string; species?: string | null; price: number; label?: string | null; photo?: string | null; preorder?: boolean };
-export type CartLine = { seller_id: string; name: string; species?: string | null; photo?: string | null; price?: number | null; on_menu: boolean; updated_at: string };
+export type CartLine = { seller_id: string; name: string; species?: string | null; photo?: string | null; price?: number | null; label?: string | null; on_menu: boolean; updated_at: string };
 /** One of the buyer's orders: the fish, its seller and photo (the checkout's costliest item's). */
 export type OrderLine = { id: string; seller_id: string; name: string; species?: string | null; photo?: string | null;
   created_at?: string; slot_start?: string | null; checkout?: string }; // unpaid: placed at, slot start, cart_id || id
@@ -195,7 +195,10 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
     const sub = pickSubstitute(lines[0] ?? {}, seller.live ?? []);
     if (!sub) return null;
     const what = `${[sub.name, sub.label].filter(Boolean).join(" ")}, ₹${Math.round(sub.price).toLocaleString("en-IN")}`;
-    return { ...m, template: "rf2_cart_swap", photo: sub.photo || null, body: [b.name, items.slice(0, 2).join(" and "), seller.name, what, offer.when] };
+    // Same name back on the menu (a new listing, other size): "the Khapri Pomfret 400–500 g … instead: Khapri Pomfret 500–600 g".
+    const old = lines[0] as CartLine | undefined;
+    const gone = old?.label && sub.name.toLowerCase() === old.name.toLowerCase() ? `${old.name} ${old.label}` : items.slice(0, 2).join(" and ");
+    return { ...m, template: "rf2_cart_swap", photo: sub.photo || null, body: [b.name, gone, seller.name, what, offer.when] };
   }
   if (stage === "cart") {
     if (!items.length) return null;

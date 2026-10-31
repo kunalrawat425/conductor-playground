@@ -19,6 +19,8 @@ const list = (k: string, dflt = "") => String(env(k) || dflt).split(",").map((x)
 /** A listing's first pricing option: its price (pre-order: top of the range when no price) and label. */
 const firstOpt = (l: any) => (Array.isArray(l?.pricing_options) ? l.pricing_options[0] : null);
 const optPrice = (l: any) => Number(firstOpt(l)?.price) || Number(firstOpt(l)?.preorder_price_max) || 0;
+/** The cart line's own option ("" / "default" = the first; ids default to opt_<index>, as checkLine). */
+const lineOpt = (l: any, id: string) => (!id || id === "default" ? firstOpt(l) : (l?.pricing_options || []).find((o: any, i: number) => String(o?.id ?? `opt_${i}`) === id));
 /** Every row of a query (PostgREST returns at most 1000 per request). Throws on a query error. */
 async function all(q: () => any): Promise<any[]> {
   const out: any[] = [];
@@ -96,7 +98,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
     [sellerRows, buyerRows, cartRows, orderRows, logRows, menuRows] = await Promise.all([
       all(() => sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, is_active, ${SLOT_SELLER_COLUMNS}`).order("id")),
       all(() => sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").gte("created_at", since(60)).order("id")),
-      all(() => sb.from("buyer_cart").select("id, buyer_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, deleted_at)").order("id")),
+      all(() => sb.from("buyer_cart").select("id, buyer_id, pricing_option_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, deleted_at)").order("id")),
       all(() => sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", since(60)).order("id")),
       // Last 8 days, any status: gaps (≤ 72 h) and caps count real sends only; "already reminded" counts failed ones too.
       all(() => sb.from("message_log").select("id, buyer_id, kind, slot_date, created_at, status, channel, error, dedupe_key").not("buyer_id", "is", null).gte("created_at", since(8)).order("id")),
@@ -136,7 +138,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
       id: b.id, created_at: b.created_at, name: firstName(b.first_name), lat: b.lat, lng: b.lng,
       cart: (cartRows || []).filter((c: any) => c.buyer_id === b.id && c.listing).map((c: any) => ({
         seller_id: c.listing.seller_id, species: c.listing.species, photo: c.listing.photo_url, price: optPrice(c.listing),
-        name: fishName(c.listing.description, c.listing.species),
+        name: fishName(c.listing.description, c.listing.species), label: lineOpt(c.listing, c.pricing_option_id)?.label ?? null,
         on_menu: !c.listing.deleted_at && (c.listing.is_available || c.listing.is_preorder_enabled),
         updated_at: c.updated_at,
       })),

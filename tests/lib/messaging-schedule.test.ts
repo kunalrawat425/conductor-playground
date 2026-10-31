@@ -223,6 +223,11 @@ describe("rf2_cart_swap: the cart's fish is off the seller's menu (founder, 30 O
     expect(pickSubstitute({ species: "pomfret", price: 850 }, menu)?.name).toBe("Bangda");       // Bangda ₹800 and Baby Surmai ₹900 both ₹50 away → cheaper
     expect(pickSubstitute({ species: "pomfret", price: 900 }, [])).toBeNull();
   });
+  it("substitute with the same name (a new listing, other size): both sizes are named", () => {
+    const ft = { ...FISHTOKRI, live: [{ name: "Khapri Pomfret", species: "pomfret", price: 1220, label: "500–600 g", photo: "https://x/k.jpg" }] } as MsgSeller;
+    const b = buyer({ ...old, cart: [{ ...line("Khapri Pomfret", "pomfret", 1100, false, T("23", "10:00")), label: "400–500 g" }] });
+    expect(run(T("27", "18:00"), b, [], [ft]).body.slice(1, 4)).toEqual(["Khapri Pomfret 400–500 g", "Fishtokri", "Khapri Pomfret 500–600 g, ₹1,220"]);
+  });
   it("no photo on the substitute's listing → image null", () => {
     const b = buyer({ ...old, cart: [line("Bangda", "bangda", 250, false, T("23", "10:00"))] });
     expect(run(T("27", "18:00"), b, [], [FT])).toMatchObject({ template: "rf2_cart_swap", photo: null, body: ["Priya", "Bangda", "Fishtokri", "Bombil, ₹240", "Wed 28 Oct, 8–10 AM"] });
