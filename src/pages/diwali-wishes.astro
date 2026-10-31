@@ -15,6 +15,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
   description="Pick a design, write your wish and share your own Happy Diwali greeting card on WhatsApp as an image. Free, takes a minute."
   header={{ variant: "page", title: "Your Diwali greeting", backHref: "/shop" }}
   hideNav={true}
+  ogImage="/wa/diwali-card-og.jpg"
 >
   <!-- Card fonts. crossorigin lets html-to-image read and embed them in the PNG. -->
   <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&family=Cinzel:wght@600;800&family=Great+Vibes&family=Poppins:wght@500;700&display=swap" />
@@ -54,6 +55,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     <div class="btns">
       <button type="button" class="wa" id="dw-share">Start wishing 🪔</button>
     </div>
+    <p class="dw-paste" id="dw-paste" hidden>✅ Card copied. In WhatsApp, pick a chat and press <b id="dw-paste-key">Ctrl+V</b> to add it, then send.</p>
   </div>
 
   <style is:global>
@@ -134,6 +136,8 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     .dw #dw-im { height: 185px; resize: none; }
     .dw .cnt { text-align: right; font: 500 12px Inter, sans-serif; color: var(--v2-ink-3, #64748B); margin-top: 4px; }
     .dw .inp { width: 100%; min-height: 48px; line-height: 1.5; border: 1px solid var(--v2-border, #E2E8F0); border-radius: 10px; padding: 10px; font: 500 14px Inter, sans-serif; background: var(--v2-bg, #fff); color: var(--v2-ink, #0F172A); resize: vertical; }
+    .dw .dw-paste { margin: -12px 0 20px; padding: 12px 14px; border-radius: 12px; background: #FEF3C7; color: #78350F; font: 600 13px/1.5 Inter, sans-serif; text-align: center; }
+    .dw .dw-paste[hidden] { display: none; }
     .dw .btns { display: flex; gap: 10px; margin: 28px 0 24px; }
     .dw .wa { flex: 1; min-height: 52px; background: linear-gradient(135deg, #B91C1C, #7F1D1D 55%, #B45309); color: #FDE68A; border: 1.5px solid #F59E0B; border-radius: 14px; padding: 14px; font: 800 16px Inter, sans-serif; letter-spacing: .2px; cursor: pointer; box-shadow: 0 6px 18px rgba(245,158,11,.35), inset 0 1px 0 rgba(255,255,255,.15); }
   </style>
@@ -231,18 +235,28 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
 
     shareBtn.addEventListener("click", async () => {
       setButtonLoading(shareBtn, true, "Start wishing 🪔");
+      // Phones: the share sheet (WhatsApp first for most people) sends the card image + text.
+      // Laptops: WhatsApp can't take a picture from a link, so the card goes to the clipboard
+      // (paste it into the chat) and WhatsApp opens with the text. Started inside the click so
+      // the browser allows the clipboard write.
+      const phone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const png = renderPng();
+      let copied: Promise<boolean> = Promise.resolve(false);
+      if (!phone && typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+        copied = navigator.clipboard.write([new ClipboardItem({ "image/png": png })]).then(() => true, () => false);
+      }
       try {
-        const blob = await renderPng();
+        const blob = await png;
         track("diwali_greeting_share");
         const file = new File([blob], "happy-diwali.png", { type: "image/png" });
-        // Phones: the share sheet (WhatsApp first for most people) sends the card image + text.
-        // Laptops (Mac/Windows share menus have no WhatsApp): skip it, download the card and open WhatsApp.
-        const phone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         if (phone && navigator.canShare?.({ files: [file] })) {
           try { await navigator.share({ files: [file], text: shareText() }); return; }
           catch (err) { if ((err as Error).name === "AbortError") return; } // share blocked: fall through
         }
-        download(blob);
+        if (await copied) {
+          document.getElementById("dw-paste-key")!.textContent = /Mac/i.test(navigator.platform || navigator.userAgent) ? "⌘V" : "Ctrl+V";
+          document.getElementById("dw-paste")!.hidden = false;
+        } else download(blob);
         const wa = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText());
         if (!window.open(wa, "_blank")) location.href = wa;
       } catch {
