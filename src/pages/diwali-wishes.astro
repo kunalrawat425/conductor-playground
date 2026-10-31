@@ -156,11 +156,21 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     // "make your own" link so everyone who receives a card can make and send theirs.
     // The link carries the card (design, message, signature): whoever opens it sees this exact card,
     // then "Make yours too" (founder 31 Oct). Text is only ever set with textContent.
-    // Founder 31 Oct: the share carries their wish + the short "create your own" link (bit.ly → /diwali-wishes).
-    const SHORT = "https://bit.ly/diwali-card-wishes";
+    const SHORT = "https://www.relifish.com/diwali-wishes"; // relifish.com links only (founder 31 Oct)
+    // Each shared card gets its own short link (relifish.com/w/<id>) so whoever opens it sees this card,
+    // "<name> sent you a Diwali card! Make yours too", and can pass theirs on (founder 31 Oct).
+    // If saving fails, the general card-maker link still works.
+    let cardLink = SHORT;
+    async function saveCard() {
+      try {
+        const r = await fetch("/api/greeting-card", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ t: theme, m: msgIn.value.trim().slice(0, 400), f: signIn.value.trim().slice(0, 40) }) });
+        const j = await r.json();
+        cardLink = r.ok && j.id ? `https://www.relifish.com/w/${j.id}` : SHORT;
+      } catch { cardLink = SHORT; }
+    }
     function shareText() {
       const wish = msgIn.value.trim().slice(0, 400), sign = signIn.value.trim().slice(0, 40);
-      return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nMake your own Diwali card in seconds 👉 ${SHORT}`;
+      return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nOpen my card and make yours 👉 ${cardLink}`;
     }
     const card = document.getElementById("dw-card") as HTMLElement;
     const picker = document.getElementById("dw-themes") as HTMLElement;
@@ -246,7 +256,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
         copied = navigator.clipboard.write([new ClipboardItem({ "image/png": png })]).then(() => true, () => false);
       }
       try {
-        const blob = await png;
+        const [blob] = await Promise.all([png, saveCard()]);
         track("diwali_greeting_share");
         const file = new File([blob], "happy-diwali.png", { type: "image/png" });
         if (canShareImage && navigator.canShare?.({ files: [file] })) {
