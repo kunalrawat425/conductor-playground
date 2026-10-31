@@ -29,7 +29,7 @@ import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
-import { dateLabelIST, deliveryDaysAt, slotPreorderLabel, storePreorderLabel } from "../../lib/delivery-slots";
+import { dateLabelIST, deliveryDaysAt, slotPreorderLabel, slotTimeLabel, storePreorderLabel } from "../../lib/delivery-slots";
 import { bundleGroups } from "../../lib/combo-deals";
 
 const { id } = Astro.params;
@@ -138,6 +138,13 @@ const deliveryFor = slotLine && preDays.length
       const d = isPreorderMode ? preorderDeliveryDateIST(seller, nowMs) || slotDays[0]?.date : null;
       return !d ? "tomorrow" : d === new Date(nowMs + 5.5 * 3600_000).toISOString().slice(0, 10) ? "today" : dayWord(d);
     })();
+
+// Cart chip (founder 31 Oct): the earliest slot the buyer can still pick, e.g. "today, 4–6 PM".
+// Worked out when the page loads; checkout re-checks the live slots.
+const firstSlotDay = slotDays.find((d) => d.slots.length);
+const nextSlotText = firstSlotDay
+  ? `${firstSlotDay.date === new Date(nowMs + 5.5 * 3600_000).toISOString().slice(0, 10) ? "today" : dayWord(firstSlotDay.date)}, ${slotTimeLabel(firstSlotDay.slots[0].start, firstSlotDay.slots[0].end)}`
+  : "";
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
@@ -593,7 +600,7 @@ const tags = [
 <script define:vars={{ bundleMap, listings: listings.map((l: any) => ({ ...l, photo_url: resizedImageUrl(l.photo_url, 300) })), speciesDisplayById, sellerId: id, sellerName, sellerImageUrl: seller?.logo_url || seller?.store_image_url || null, hasDelivery: seller?.has_delivery, deliveryFeeEnabled: !!seller?.delivery_fee_enabled, deliveryFeeAmount: Number(seller?.delivery_fee_amount) || 0, deliveryFeeType: seller?.delivery_fee_type || "fixed", deliveryFeePerKm: Number(seller?.delivery_fee_per_km) || 0, deliveryFreeAbove: Number(seller?.free_delivery_above) || 0, nextOpenLabel, nextPreorderLabel, sellerLat: seller?.lat != null ? Number(seller.lat) : null, sellerLng: seller?.lng != null ? Number(seller.lng) : null, minOrder: seller?.min_order_amount, acceptsPreorder: seller?.accepts_preorder, sellerFullyClosed: isClosed, isPreorderMode,
   // Same-day and pre-order carts are separate; this page uses the one its menu is in.
   cartMode: isPreorderMode ? "preorder" : "same_day",
-  deliveryFor,
+  deliveryFor, nextSlotText,
   pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
   serverNowMs: nowIST.getTime() - 5.5 * 3600 * 1000,
   sellerHours: { opens_at: seller?.opens_at ?? null, closes_at: seller?.closes_at ?? null, open_days: seller?.open_days ?? null, preorder_days: seller?.preorder_days ?? null, preorder_cutoff_time: seller?.preorder_cutoff_time ?? null, preorder_opens_at: seller?.preorder_opens_at ?? null, delivery_days: seller?.delivery_days ?? null, accepts_preorder: !!seller?.accepts_preorder } }}>
@@ -1310,6 +1317,7 @@ const tags = [
       // Status chip above the bubble. The one-tap filler for the minimum lives in the checkout now.
       let chip = "", chipColor = "var(--v2-ink-2)";
       if (belowMin) { chip = `Add ₹${gap} more to checkout`; chipColor = "var(--v2-orange)"; }
+      else if (nextSlotText) { chip = `${isPreorderMode ? "🌙" : "🛵"} Next delivery slot: ${nextSlotText}${freeHit ? " · free delivery" : ""}`; chipColor = isPreorderMode ? "#7C3AED" : "var(--v2-green)"; }
       else if (freeHit && !isPreorderMode) { chip = "🎉 Free delivery unlocked"; chipColor = "var(--v2-green)"; }
       else if (isPreorderMode) { chip = `🌙 Pre-order for ${deliveryFor}`; chipColor = "#7C3AED"; }
       else if (hasDelivery && deliveryFeeEnabled && deliveryFreeAbove > sellerSubtotal) chip = `🚲 Add ₹${Math.ceil(deliveryFreeAbove - sellerSubtotal)} more for FREE delivery`;
