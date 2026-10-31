@@ -218,6 +218,7 @@ describe("rf2_cart_swap: the cart's fish is off the seller's menu (founder, 30 O
     ];
     expect(pickSubstitute({ species: "surmai", price: 1000 }, menu)?.name).toBe("Baby Surmai"); // same species beats the exact-price Rawas
     expect(pickSubstitute({ species: "pomfret", price: 1150 }, menu)?.name).toBe("Rawas");       // no pomfret: closest price
+    expect(pickSubstitute({ species: "Surmai Combo", price: 1500 }, menu)?.name).toBe("Surmai steaks"); // a gone combo → its base fish, not the closest-priced other fish
     expect(pickSubstitute({ species: "pomfret", price: 1250 }, menu)?.name).toBe("Rawas");       // Rawas and Surmai steaks both ₹250 away → cheaper
     expect(pickSubstitute({ species: "pomfret", price: 850 }, menu)?.name).toBe("Bangda");       // Bangda ₹800 and Baby Surmai ₹900 both ₹50 away → cheaper
     expect(pickSubstitute({ species: "pomfret", price: 900 }, [])).toBeNull();
