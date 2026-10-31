@@ -10,8 +10,8 @@ const jsonLd = {
       "@type": "WebPage",
       "@id": "https://www.relifish.com/for-sellers",
       "url": "https://www.relifish.com/for-sellers",
-      "name": "Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish",
-      "description": "Start selling fish online in Mumbai. Free to list, zero commission. Accept orders, pre-orders, and online payments. Relifish is the online fish selling platform built for Mumbai fish sellers.",
+      "name": "Sell Fish Online Mumbai — Free Store | Relifish",
+      "description": "Start selling fish online in Mumbai. Free to list. Accept orders, pre-orders, and online payments. Relifish is the online fish selling platform built for Mumbai fish sellers.",
       "inLanguage": "en-IN",
       "about": { "@id": "https://www.relifish.com#service" },
       "isPartOf": { "@id": "https://www.relifish.com" },
@@ -27,7 +27,7 @@ const jsonLd = {
       "@type": "Service",
       "@id": "https://www.relifish.com#service",
       "name": "Sell Fish Online — Relifish Seller Platform",
-      "description": "Relifish is a free online fish selling platform for local fish sellers in Mumbai, Thane and Navi Mumbai. List your daily catch, accept pre-orders, manage home delivery, and accept online payments. Zero commission on every sale.",
+      "description": "Relifish is a free online fish selling platform for local fish sellers in Mumbai, Thane and Navi Mumbai. List your daily catch, accept pre-orders, manage home delivery, and accept online payments.",
       "provider": { "@id": "https://www.relifish.com#org" },
       "serviceType": "Online Fish Selling Platform",
       "areaServed": [
@@ -39,7 +39,7 @@ const jsonLd = {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "INR",
-        "description": "Free to list. Zero commission on every sale.",
+        "description": "Free to list.",
         "availability": "https://schema.org/InStock"
       },
       "hasOfferCatalog": {
@@ -72,7 +72,7 @@ const jsonLd = {
       "@type": "HowTo",
       "@id": "https://www.relifish.com/for-sellers#howto",
       "name": "How to start selling fish online on Relifish",
-      "description": "Set up your online fish store in Mumbai on Relifish. Accept orders, pre-orders, and online payments. Free to list, zero commission.",
+      "description": "Set up your online fish store in Mumbai on Relifish. Accept orders, pre-orders, and online payments. Free to list.",
       "totalTime": "PT5M",
       "estimatedCost": { "@type": "MonetaryAmount", "currency": "INR", "value": "0" },
       "step": [
@@ -85,7 +85,7 @@ const jsonLd = {
     {
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "Is Relifish free for fish sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is 100% free to list your fish products. We charge zero commission. You set your price. No hidden fees, no monthly charges, no percentage cuts." } },
+        { "@type": "Question", "name": "Is Relifish free for fish sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is free to list your fish products. You set your price. No hidden fees, no monthly charges." } },
         { "@type": "Question", "name": "How do I sell fish online in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Sign up on Relifish, add your fish inventory with photos and prices, and share your store link on WhatsApp and Instagram. Buyers in your area find you, browse your live catalogue, and order directly." } },
         { "@type": "Question", "name": "Can I accept fish pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set when you take pre-orders and which days you deliver. Buyers pick a delivery day and time. Demand is locked in advance — you buy exactly what's needed at the docks, so you can buy closer to what's needed and reduce wastage." } },
         { "@type": "Question", "name": "Does Relifish support fish home delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set a delivery radius in km, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address to your location. Buyers outside your serviceable radius see pickup only." } },
@@ -101,8 +101,8 @@ const jsonLd = {
 };
 ---
 <AppShell
-  title="Sell Fish Online Mumbai — Free Store, Zero Commission | Relifish"
-  description="Start selling fish online in Mumbai. Free to list, zero commission. Accept orders, pre-orders, and online payments in your serviceable area. Mumbai fish sellers keep 100% of every sale."
+  title="Sell Fish Online Mumbai — Free Store | Relifish"
+  description="Start selling fish online in Mumbai. Free to list. Accept orders, pre-orders, and online payments in your serviceable area."
   hideNav={true}
   hideHeader={true}
   jsonLd={jsonLd}
@@ -320,17 +320,17 @@ const jsonLd = {
     <div class="fs-hero-copy">
       <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.3);color:#fca5a5;font:600 12px Inter;padding:6px 12px;border-radius:100px;margin-bottom:20px;">
         <span style="display:block;width:6px;height:6px;background:#ef4444;border-radius:50%;box-shadow:0 0 8px #ef4444;"></span>
-        Stop paying 30% to delivery apps
+        Your own online fish shop
       </div>
-      <h1>Zomato takes 30%.<br/><span>We take 0%.</span></h1>
-      <p>Get your own online fish shop. Accept live orders, pre-orders, and secure online payments directly from buyers. You keep exactly 100% of your profits.</p>
+      <h1>Your fish shop.<br/><span>Now online.</span></h1>
+      <p>Get your own online fish shop. Accept live orders, pre-orders, and secure online payments directly from buyers.</p>
       <form onsubmit="return false;">
         <div class="fs-cta-form">
           <input type="tel" placeholder="Your phone number" />
           <a href="/dashboard/login">Get Started</a>
         </div>
       </form>
-      <p class="fs-cta-note" style="margin-top:20px;">Free to list · ₹0 commission · Improve customer experience with every order</p>
+      <p class="fs-cta-note" style="margin-top:20px;">Free to list · Improve customer experience with every order</p>
       <p class="fs-cta-sub">New seller? <a href="/dashboard/login">Start free →</a> · Questions? <a href={whatsappLink("Hi Relifish, I want to sell fish on Relifish")} target="_blank" rel="noopener">WhatsApp us</a></p>
     </div>
 
@@ -421,9 +421,9 @@ const jsonLd = {
         <div class="fs-trust-desc">Every order pings your phone + email</div>
       </div>
       <div class="fs-trust-item">
-        <div class="fs-trust-icon" style="background:#E6F0FF;font:700 17px Inter;color:#0066FF;">₹0</div>
-        <div class="fs-trust-title">Zero Commission</div>
-        <div class="fs-trust-desc">Keep 100% of every sale</div>
+        <div class="fs-trust-icon" style="background:#E6F0FF;font:700 17px Inter;color:#0066FF;">₹</div>
+        <div class="fs-trust-title">Your own prices</div>
+        <div class="fs-trust-desc">Set and change them any time</div>
       </div>
       <div class="fs-trust-item">
         <div class="fs-trust-icon" style="background:#EEF2FF;font-size:22px;">💳</div>
@@ -766,9 +766,9 @@ const jsonLd = {
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
               <span style="font:700 12px Inter;color:#EA580C;text-transform:uppercase;letter-spacing:0.5px;">Revenue</span>
               <span style="font:700 10px Inter;color:#fff;background:#EA580C;border-radius:999px;padding:2px 9px;letter-spacing:0.3px;">Week 2</span>
-              <span style="font:400 11px Inter;color:#94A3B8;">₹0 commission. Paid before you buy.</span>
+              <span style="font:400 11px Inter;color:#94A3B8;">Paid before you buy.</span>
             </div>
-            <p style="font:600 14px/1.5 Inter;color:#7C2D12;margin:0 0 8px;"><strong>Outcome:</strong> You set your price. No commission. Pre-orders placed ahead = you know exactly what to buy at the docks. Stock is funded by orders already placed. You invest in fish that's already sold.</p>
+            <p style="font:600 14px/1.5 Inter;color:#7C2D12;margin:0 0 8px;"><strong>Outcome:</strong> You set your price. Pre-orders placed ahead = you know exactly what to buy at the docks. Stock is funded by orders already placed. You invest in fish that's already sold.</p>
             <p style="font:400 12px/1.5 Inter;color:#64748B;margin:0 0 12px;">Pre-orders transform your entire supply chain. You know the quantity, the species, the demand window before you touch a rupee. Calculated logistics — exactly how much to transport, exactly what vehicle size, no excess weight. No cold storage costs. No panic-pricing leftover stock at a loss. No calls to relatives to "buy some pomfret before it goes bad."</p>
             <!-- Supply chain comparison -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
@@ -794,7 +794,7 @@ const jsonLd = {
               </div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">₹0 commission always</span>
+              <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">You set the price</span>
               <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Less wastage</span>
               <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Calculated logistics</span>
               <span style="font:600 11px Inter;color:#EA580C;background:#fff;border:1px solid #FED7AA;padding:4px 10px;border-radius:999px;">Predictable orders</span>
@@ -996,7 +996,7 @@ const jsonLd = {
     <h2 class="fs-h2" style="color:#0F172A;">Common questions</h2>
     <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid #E2E8F0;">
       {[
-        {q:"Is Relifish free to use?", a:"Yes. Free to list your products. We charge zero commission on every sale — you keep 100%."},
+        {q:"Is Relifish free to use?", a:"Yes. Free to list your products. You set your own prices."},
         {q:"Do I need a smartphone or computer?", a:"Just a smartphone. Your dashboard is mobile-first. Manage orders, inventory, and notifications all from your phone."},
         {q:"How do buyers find my store?", a:"Share your link (relifish.com/s/your-store) on WhatsApp and Instagram. Buyers can also find you on the Relifish shop page."},
         {q:"Can I set my own shop hours?", a:"Yes. Set your open/close times, which days you operate, and your pre-order window. Orders are blocked when your shop is closed."},
@@ -1017,7 +1017,7 @@ const jsonLd = {
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,102,255,0.12) 0%,transparent 65%);pointer-events:none;"></div>
   <div style="position:relative;z-index:1;" class="fs-wrap">
     <h2 style="font:900 44px/1.1 Inter;color:#fff;margin:0 0 14px;letter-spacing:-1.5px;">Start selling today</h2>
-    <p style="font:400 16px/1.6 Inter;color:rgba(255,255,255,0.45);margin:0 0 36px;max-width:440px;margin-left:auto;margin-right:auto;">Free to list. Zero commission. Your fish, your prices, your buyers.</p>
+    <p style="font:400 16px/1.6 Inter;color:rgba(255,255,255,0.45);margin:0 0 36px;max-width:440px;margin-left:auto;margin-right:auto;">Free to list. Your fish, your prices, your buyers.</p>
     <a href="/dashboard/login" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#0066FF;color:#fff;font:800 16px Inter;padding:18px 48px;border-radius:14px;text-decoration:none;box-shadow:0 4px 32px rgba(0,102,255,0.4);">
       Create Your Free Store →
     </a>
