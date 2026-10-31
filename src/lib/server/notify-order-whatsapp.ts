@@ -17,7 +17,7 @@ import { dispatch, type SmsPart } from "./messaging";
 export type OrderWaEvent = "unpaid" | "paid" | "confirmed" | "out_for_delivery" | "completed" | "cancelled";
 const env = (k: string) => (import.meta as any).env?.[k] || process.env[k] || "";
 
-export const ORDER_SELECT = "id, buyer_id, buyer_phone, species, is_test, is_preorder, delivery_slot_start, delivery_slot_end, listing:fish_listings(species, description, photo_url, seller_id, seller:sellers(name))";
+export const ORDER_SELECT = "id, buyer_id, buyer_phone, species, is_test, is_preorder, delivery_slot_start, delivery_slot_end, listing:fish_listings(species, description, photo_url, seller_id, is_available, is_preorder_enabled, deleted_at, seller:sellers(name))";
 const CHECKOUT_SELECT = `${ORDER_SELECT}, cart_id, total_price, status`;
 const REMOVED = ["declined", "cancelled", "refunded"];
 /** Order updates the buyer gets (founder 31 Oct): only "seller confirmed" and "out for delivery", on WhatsApp or SMS. */
@@ -35,6 +35,20 @@ export function orderPhoto(ord: any, checkout: any[] = [ord], cancel?: WaCancel)
   const live = checkout.filter((x) => (ord.cart_id ? x.cart_id === ord.cart_id : x.id === ord.id)
     && x.listing?.seller_id === ord.listing?.seller_id && !REMOVED.includes(x.status));
   return costliestPhoto(live.map((x) => ({ price: x.total_price, photo: x.listing?.photo_url })));
+}
+
+/** Still on the seller's menu: not deleted, available today or open for pre-order. */
+export const listingLive = (l: any) => !!l && !l.deleted_at && !!(l.is_available || l.is_preorder_enabled);
+
+/**
+ * The item rf2_order_again names (review B3): of the buyer's last completed checkout (`done`, oldest
+ * first), the costliest item whose listing is still live; its own name and photo. None live → null.
+ */
+export function againOrder(done: any[]): any | null {
+  const last = done.at(-1);
+  if (!last) return null;
+  return done.filter((o) => (o.cart_id || o.id) === (last.cart_id || last.id) && listingLive(o.listing))
+    .sort((a, b) => (Number(b.total_price) || 0) - (Number(a.total_price) || 0))[0] ?? null;
 }
 
 /** The order (with cart_id, price, status) and every order of its checkout, for orderPhoto. */

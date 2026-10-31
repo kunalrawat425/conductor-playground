@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
 import { TEMPLATES, templateProblems, fishName, firstName, PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
-import { orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
+import { againOrder, orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
 import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
 /**
@@ -172,6 +172,15 @@ describe("order update photo: the checkout's costliest live item, never stock (f
     expect(orderPhoto(removed, [cheap, dear, removed], cancel)).toBe("https://x/removed.jpg");
     expect(orderPhoto({ ...removed, listing: { ...removed.listing, photo_url: null } }, [cheap, dear], cancel)).toBeNull();
     expect(orderMessage("cancelled", removed, "manoj", noon, cancel, [cheap, dear, removed]).image ?? null).toBeNull(); // rf2_cancelled has no image header
+  });
+  it("order again names the costliest item of the last checkout that is still on the menu; none live → null", () => {
+    const live = { is_available: true, deleted_at: null };
+    const bangda = o("g", 900, "https://x/bangda.jpg", { status: "completed", cart_id: "c9", listing: { ...cheap.listing, ...live, is_available: false, description: "Bangda" } });
+    const bombil = o("h", 240, "https://x/bombil.jpg", { status: "completed", cart_id: "c9", listing: { ...cheap.listing, ...live, description: "Bombil" } });
+    const older = o("i", 2000, "https://x/old.jpg", { status: "completed", cart_id: "c1", listing: { ...cheap.listing, ...live } });
+    expect(againOrder([older, bangda, bombil])?.listing.photo_url).toBe("https://x/bombil.jpg");
+    expect(againOrder([older, bangda])).toBeNull();
+    expect(againOrder([])).toBeNull();
   });
   it("no stock URL in any order update", () => {
     const bare = o("f", 500, null, { cart_id: null, listing: { species: "rawas", description: null, photo_url: null, seller_id: "ft", seller: { name: "Fishtokri" } } });

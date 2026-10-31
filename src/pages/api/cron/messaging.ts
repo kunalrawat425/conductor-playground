@@ -5,7 +5,7 @@ import { sellerNameToSlug } from "../../../lib/seller-display";
 import { cartMessage, decide, decideActivity, istDate, offerAt, pickSeller, signupMessage, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
 import { firstName, fishName } from "../../../lib/messaging/templates";
 import { dispatch, smsFallbackFor, type Dispatch } from "../../../lib/server/messaging";
-import { loadCheckout, ORDER_SELECT, orderMessage, orderPhoto, orderSms, type OrderWaEvent } from "../../../lib/server/notify-order-whatsapp";
+import { againOrder, loadCheckout, ORDER_SELECT, orderMessage, orderPhoto, orderSms, type OrderWaEvent } from "../../../lib/server/notify-order-whatsapp";
 import { hasPaymentEvidence } from "../../../lib/server/reminders";
 import { syncWatiStatuses } from "../../../lib/server/wati-status";
 import { waNumber } from "../../../lib/server/whatsapp";
@@ -131,6 +131,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
     const mine = orders.filter((o: any) => o.buyer_id === b.id).sort((x: any, y: any) => x.created_at.localeCompare(y.created_at));
     const done = mine.filter((o: any) => o.status === "completed");
     const pending = mine.filter((o: any) => o.status === "pending_payment" && !hasPaymentEvidence(o));
+    const again = againOrder(done); // a fish still on the menu, named and pictured from the same row
     return {
       id: b.id, created_at: b.created_at, name: firstName(b.first_name), lat: b.lat, lng: b.lng,
       cart: (cartRows || []).filter((c: any) => c.buyer_id === b.id && c.listing).map((c: any) => ({
@@ -144,7 +145,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
       unpaid: orderLine(pending.at(-1)),
       // One per checkout (its first order), oldest first: each unpaid checkout gets its own reminder.
       unpaids: pending.filter((o: any, i: number) => pending.findIndex((x: any) => (x.cart_id || x.id) === (o.cart_id || o.id)) === i).map(orderLine) as any,
-      delivered: orderLine(done.at(-1)),
+      delivered: again && { ...orderLine(again)!, photo: again.listing?.photo_url || null },
       last_delivered_at: done.map((o: any) => o.updated_at).sort().pop() ?? null,
       opted_out: !!b.whatsapp_opt_out_at,
       dnd: !!b.dnd_at || dndPhones.has(waNumber(b.phone) || ""),
