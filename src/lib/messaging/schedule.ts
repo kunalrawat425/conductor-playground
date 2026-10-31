@@ -83,8 +83,9 @@ export const ACT_PROMO_GAP_MS = 48 * 3_600_000;  // no promo within 2 days of an
 export const META_HOLD_MS = 72 * 3_600_000;      // Meta blocked a promo → none for 3 days
 /** Reached the buyer (or may have): counts for gaps and caps. Failed / dry-run rows don't. */
 export const isReal = (x: SentLog) => !x.status || ["sent", "delivered", "read"].includes(x.status);
-/** Meta's per-user marketing limit ("restricted it for higher quality messaging", error 131049). */
-export const metaBlocked = (x: SentLog) => x.status === "failed" && /restricted|131049|higher quality/i.test(String(x.error || ""));
+/** Meta's per-user marketing limit ("restricted it for higher quality messaging", error 131049) or its
+ *  marketing experiment hold-out ("part of an experiment", error 130472): retrying won't help. */
+export const metaBlocked = (x: SentLog) => x.status === "failed" && /restricted|131049|higher quality|experiment|130472/i.test(String(x.error || ""));
 const metaHold = (now: number, history: SentLog[]) => history.some((x) => metaBlocked(x) && MARKETING_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < META_HOLD_MS);
 export type PromoTemplate = "rf2_welcome" | "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_cart_swap" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder" | "rf2_catch_prices";
 export type Decision = {

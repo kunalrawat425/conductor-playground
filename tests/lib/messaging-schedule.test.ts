@@ -444,6 +444,10 @@ describe("promo spacing (founder, 30 Oct)", () => {
     expect(run(T("25", "08:30"), b(), [blocked]).skip).toBe("meta limit: waiting");
     expect(run(T("27", "18:00"), b(), [blocked]).template).toBe("rf2_promo_cart");
   });
+  it("Meta's experiment hold-out (130472) is a block too", () => {
+    const exp = { ...log("promo", T("23", "08:30")), status: "failed", error: "Message failed to send because it is part of an experiment (130472)" };
+    expect(run(T("24", "08:30"), b(), [exp]).skip).toBe("meta limit: waiting");
+  });
   it("DND gets no promo", () => {
     expect(run(T("24", "08:30"), { ...b(), dnd: true }).skip).toBe("do not message");
   });
