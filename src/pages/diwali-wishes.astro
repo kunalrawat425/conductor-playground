@@ -46,7 +46,8 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     </div>
 
     <label class="lab" for="dw-im">Your message</label>
-    <textarea class="inp" id="dw-im" rows="7" maxlength="300">{MESSAGE}</textarea>
+    <textarea class="inp" id="dw-im" maxlength="400">{MESSAGE}</textarea>
+    <div class="cnt" id="dw-cnt" aria-live="polite">{MESSAGE.length}/400</div>
     <label class="lab" for="dw-if">Own the card</label>
     <input class="inp" id="dw-if" maxlength="40" value="With love" />
 
@@ -130,6 +131,8 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     .dw .th .st { color: var(--v2-ink-4, #94A3B8); font-weight: 500; }
     .dw .th.on .sw { border-color: #0066FF; box-shadow: 0 0 0 2px #fff inset; }
     .dw .th.on { color: #0066FF; }
+    .dw #dw-im { height: 185px; resize: none; }
+    .dw .cnt { text-align: right; font: 500 12px Inter, sans-serif; color: var(--v2-ink-3, #64748B); margin-top: 4px; }
     .dw .inp { width: 100%; min-height: 48px; line-height: 1.5; border: 1px solid var(--v2-border, #E2E8F0); border-radius: 10px; padding: 10px; font: 500 14px Inter, sans-serif; background: var(--v2-bg, #fff); color: var(--v2-ink, #0F172A); resize: vertical; }
     .dw .btns { display: flex; gap: 10px; margin: 28px 0 24px; }
     .dw .wa { flex: 1; min-height: 48px; background: #0066FF; color: #fff; border: 0; border-radius: 12px; padding: 14px; font: 800 15px Inter, sans-serif; cursor: pointer; }
@@ -152,7 +155,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     // Founder 31 Oct: the share carries their wish + the short "create your own" link (bit.ly → /diwali-wishes).
     const SHORT = "https://bit.ly/diwali-card-wishes";
     function shareText() {
-      const wish = msgIn.value.trim().slice(0, 300), sign = signIn.value.trim().slice(0, 40);
+      const wish = msgIn.value.trim().slice(0, 400), sign = signIn.value.trim().slice(0, 40);
       return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nMake your own Diwali card in seconds 👉 ${SHORT}`;
     }
     const card = document.getElementById("dw-card") as HTMLElement;
@@ -172,8 +175,8 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
       theme = btn.dataset.theme!;
       card.className = `dw-card t-${theme}`;
     });
-    // Long wishes (up to 300 characters) shrink to stay inside the card.
-    const fitMsg = () => { const n = msgIn.value.length; document.getElementById("dw-cm")!.style.fontSize = n > 240 ? "13px" : n > 160 ? "14.5px" : ""; };
+    // Long wishes (up to 400 characters) shrink to stay inside the card.
+    const fitMsg = () => { const n = msgIn.value.length; document.getElementById("dw-cnt")!.textContent = `${n}/400`; document.getElementById("dw-cm")!.style.fontSize = n > 320 ? "11px" : n > 240 ? "13px" : n > 160 ? "14.5px" : ""; };
     msgIn.addEventListener("input", () => { document.getElementById("dw-cm")!.textContent = msgIn.value; fitMsg(); });
     signIn.addEventListener("input", () => { document.getElementById("dw-cf")!.textContent = signIn.value; });
 
@@ -195,7 +198,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     const gotTheme = got.get("t") || "";
     if (gotTheme && picker.querySelector(`.th[data-theme="${CSS.escape(gotTheme)}"]`)) {
       setTheme(gotTheme);
-      const m = (got.get("m") || "").slice(0, 300), f = (got.get("f") || "").slice(0, 40);
+      const m = (got.get("m") || "").slice(0, 400), f = (got.get("f") || "").slice(0, 40);
       if (m) { msgIn.value = m; document.getElementById("dw-cm")!.textContent = m; fitMsg(); }
       if (f) { signIn.value = f; document.getElementById("dw-cf")!.textContent = f; }
       const name = f.replace(/^with love,?\s*/i, "").trim();
