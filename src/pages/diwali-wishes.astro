@@ -13,7 +13,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
 <AppShell
   title="Make a Diwali Greeting Card | Relifish"
   description="Pick a design, write your wish and share your own Happy Diwali greeting card on WhatsApp as an image. Free, takes a minute."
-  header={{ variant: "page", title: "Your Diwali greeting", backHref: "/shop" }}
+  header={{ variant: "page", title: "Relifish", backHref: "/shop" }}
   hideNav={true}
   ogImage="/wa/diwali-card-og.jpg"
 >
@@ -235,21 +235,21 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
 
     shareBtn.addEventListener("click", async () => {
       setButtonLoading(shareBtn, true, "Start wishing 🪔");
-      // Phones: the share sheet (WhatsApp first for most people) sends the card image + text.
-      // Laptops: WhatsApp can't take a picture from a link, so the card goes to the clipboard
-      // (paste it into the chat) and WhatsApp opens with the text. Started inside the click so
-      // the browser allows the clipboard write.
-      const phone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      // The share menu (phones, and Mac/Windows with the WhatsApp app) sends the card image + text
+      // together (founder 31 Oct). Only where it can't share images: copy the card to the clipboard
+      // (paste it into the chat) and open WhatsApp with the text. Started inside the click so the
+      // browser allows the clipboard write.
+      const canShareImage = !!navigator.canShare?.({ files: [new File([""], "x.png", { type: "image/png" })] });
       const png = renderPng();
       let copied: Promise<boolean> = Promise.resolve(false);
-      if (!phone && typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+      if (!canShareImage && typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
         copied = navigator.clipboard.write([new ClipboardItem({ "image/png": png })]).then(() => true, () => false);
       }
       try {
         const blob = await png;
         track("diwali_greeting_share");
         const file = new File([blob], "happy-diwali.png", { type: "image/png" });
-        if (phone && navigator.canShare?.({ files: [file] })) {
+        if (canShareImage && navigator.canShare?.({ files: [file] })) {
           try { await navigator.share({ files: [file], text: shareText() }); return; }
           catch (err) { if ((err as Error).name === "AbortError") return; } // share blocked: fall through
         }
