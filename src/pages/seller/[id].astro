@@ -551,12 +551,12 @@ const tags = [
     background: var(--v2-bg);
   }
   .v2-item-tier:has(.v2-item-counter) { border-color: var(--v2-brand); background: var(--v2-brand-l); }
-  .v2-item-per100 { font: 500 11px/1.4 Inter; color: var(--v2-ink-3); }
   /* A little air between the text lines on menu cards (founder 31 Oct) */
   .v2-item-body > * + * { margin-top: 4px; }
   .v2-item-name { line-height: 1.35; }
   .v2-item-tier:has(.v2-bundle-rib) { margin-top: 14px; }
-  .v2-item-was { font: 500 11px Inter; color: var(--v2-ink-4); margin-left: 6px; }
+  .v2-item-was { font: 500 12px Inter; color: var(--v2-ink-4); margin-left: 6px; }
+  .v2-off { display: inline-block; margin-left: 6px; padding: 2px 6px; border-radius: 5px; background: var(--v2-brand); color: #fff; font: 800 10px/1.3 Inter; letter-spacing: .02em; vertical-align: 2px; }
   .v2-item-tier-price {
     font: 800 16px Inter;
     color: var(--v2-ink);
@@ -761,11 +761,13 @@ const tags = [
 
     // Fixed pre-order price (no min–max range): its was-price is real, so show it (combos/bundles, founder 31 Oct).
     const poFixed = (o) => !(o.preorder_price_min && o.preorder_price_max && Number(o.preorder_price_min) !== Number(o.preorder_price_max));
-    const wasHtml = (o, p) => {
-      const was = Number(o.compare_at_price) || 0;
-      if (!poFixed(o) || !(was > Number(p))) return "";
-      return ` <s style="font-size:11px;font-weight:500;color:var(--v2-ink-4);margin-left:4px;">₹${was.toLocaleString("en-IN")}</s><span style="display:inline-block;margin-left:6px;background:#DCFCE7;color:#15803D;font:700 10px Inter;padding:1px 6px;border-radius:5px;vertical-align:2px;">Save ${Math.round((1 - Number(p) / was) * 100)}%</span>`;
+    // Discount next to the price (founder 31 Oct, Blinkit style): crossed-out was-price + a blue "N% OFF" pill.
+    const offHtml = (p, was) => {
+      was = Number(was) || 0; p = Number(p) || 0;
+      if (!(was > p && p > 0)) return "";
+      return `<s class="v2-item-was">₹${was.toLocaleString("en-IN")}</s><span class="v2-off">${Math.round((1 - p / was) * 100)}% OFF</span>`;
     };
+    const wasHtml = (o, p) => (poFixed(o) ? offHtml(p, o.compare_at_price) : "");
 
     function renderItem(l) {
       const opts = l.pricing_options || [];
@@ -801,11 +803,6 @@ const tags = [
         const per = opts.map((o) => { const g = gramsIn(o.label); return g && Number(o.price) > 0 ? Number(o.price) / g : Infinity; });
         const min = Math.min(...per);
         return per.filter((x) => x !== Infinity).length >= 2 && per.filter((x) => x === min).length === 1 ? per.indexOf(min) : -1;
-      };
-      // ₹ per 100 g from the pack label ("200–300 g" → mid-point), so sizes compare at a glance (same rule as lib/combo-deals gramsOf).
-      const per100Html = (o, p) => {
-        const g = gramsIn(o.label);
-        return g && Number(p) > 0 ? `<span class="v2-item-per100">₹${Math.round(Number(p) / g * 100).toLocaleString("en-IN")} / 100 g</span>` : "";
       };
       // Pre-order price range (shown on preorder listings, per pricing tier)
       const preorderRangeHtml = ""; // Deprecated: we now render ranges inside pricingHtml tiers directly
@@ -857,7 +854,7 @@ const tags = [
                     return `<div class="v2-item-tier">${i === best ? '<span class="v2-bundle-rib v2-bundle-rib-value">BEST VALUE</span>' : ''}
                       <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-right:8px;">
                         <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
-                        <span class="v2-item-tier-price">${rangeDisplay}${wasHtml(o, poPrice)}</span>${per100Html(o, poPrice)}
+                        <span class="v2-item-tier-price">${rangeDisplay}${wasHtml(o, poPrice)}</span>
                       </div>
                       ${tierQty > 0
                         ? (() => {
@@ -885,7 +882,7 @@ const tags = [
                 const inCart = sellerItems[key]?.qty || 0;
                 const wasPrice = firstOpt.compare_at_price && firstOpt.compare_at_price > price ? firstOpt.compare_at_price : 0;
                 return `<div class="v2-item-bottom">
-                  <div class="v2-item-price">${wasPrice ? `<span style="text-decoration:line-through;color:var(--v2-ink-4);font-weight:500;font-size:11px;margin-right:4px;">₹${wasPrice}</span>` : ''}₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span></div>
+                  <div class="v2-item-price">₹${price}<span style="font-size:10px;font-weight:500;color:var(--v2-ink-3);"> ${escape(firstOpt.buyer_menu_suffix || (unit === "kg" ? "/kg" : "/pc"))}</span>${offHtml(price, wasPrice)}</div>
                   ${sellerFullyClosed ? '' : (inCart > 0
                     ? (() => {
                         const bs = firstOpt.bundle_size && firstOpt.bundle_size > 0 ? firstOpt.bundle_size : 1;
@@ -913,7 +910,7 @@ const tags = [
                     return `<div class="v2-item-tier">${i === best ? '<span class="v2-bundle-rib v2-bundle-rib-value">BEST VALUE</span>' : ''}
                       <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-right:8px;">
                         <button type="button" class="v2-item-tier-chip">${escape(label)}${bSize}</button>
-                        <span class="v2-item-tier-price">₹${o.price}${tierWas ? `<s class="v2-item-was">₹${tierWas}</s>` : ''}</span>${per100Html(o, o.price)}
+                        <span class="v2-item-tier-price">₹${o.price}${offHtml(o.price, tierWas)}</span>
                       </div>
                       ${sellerFullyClosed ? '' : (tierQty > 0
                         ? (() => {
@@ -972,8 +969,7 @@ const tags = [
       const hasDiscount =
         (!isListingPreorder || poFixed(firstOpt)) &&
         !!(firstOpt.compare_at_price && firstOpt.compare_at_price > firstOpt.price);
-      const discountBadge = hasDiscount
-        ? `<span style="position:absolute;top:6px;right:6px;background:var(--v2-brand);color:#fff;font:700 10px Inter;padding:2px 6px;border-radius:4px;">-${Math.round((1 - firstOpt.price / firstOpt.compare_at_price) * 100)}%</span>` : '';
+      const discountBadge = '';   // discount shows next to the price (offHtml), not on the photo
 
       // Image: seller's own photo → species stock photo → emoji
       const stockPhoto = getSpeciesPhoto(l.species);
