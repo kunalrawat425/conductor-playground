@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
 import { TEMPLATES, templateProblems, fishName, firstName, PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
-import { orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
+import { againOrder, orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
 import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
 /**
@@ -21,7 +21,7 @@ const APPROVED: Record<string, [string, boolean, number]> = {
   rf2_unpaid: ["UTILITY", true, 4], rf2_paid: ["UTILITY", false, 3], rf2_paid_evening: ["UTILITY", false, 4],
   rf2_paid_fast: ["UTILITY", false, 4], rf2_confirmed: ["UTILITY", true, 3], rf2_out: ["UTILITY", false, 2],
   rf2_delivered: ["UTILITY", true, 3], rf2_cancelled: ["UTILITY", false, 4],
-  rf2_cart_swap: ["MARKETING", true, 5], // submitted 30 Oct, Meta approval pending
+  rf2_cart_swap: ["MARKETING", true, 5], // submitted 30 Oct, approved and delivering 31 Oct
 };
 /** rf_* strings in src that are not WhatsApp templates. */
 const NOT_TEMPLATES = new Set(["rf_internal", "rf_utm", "rf_resume_checkout"]);
@@ -113,6 +113,11 @@ describe("templates", () => {
     expect(orderMessage("paid", { ...ord, is_preorder: false }, "manoj", night).template).toBe("rf2_paid");
     expect(orderMessage("confirmed", ord, "manoj", noon).body).toEqual(["Fishtokri", "#EEB0F7AC", "Sun 25 Oct, 9–11 AM"]);
     expect(orderMessage("out_for_delivery", ord, "manoj", noon).body).toEqual(["#EEB0F7AC", "11 AM"]);
+    // Slot already over (late confirm / late dispatch): "soon", never a time that has passed.
+    const late = Date.parse("2026-10-25T12:00:00+05:30");
+    expect(orderMessage("out_for_delivery", ord, "manoj", late).body[1]).toBe("soon");
+    expect(orderMessage("confirmed", ord, "manoj", late).body[2]).toBe("soon");
+    expect(orderSms("out_for_delivery", ord, "manoj", undefined, undefined, late).vars[1]).toBe("soon");
     expect(orderMessage("completed", ord, "manoj", noon).body).toEqual(["Silver Pomfret", "Manoj", "Fishtokri"]);
     expect(orderMessage("cancelled", ord, "manoj", noon, { reason: "the seller ran out of pomfret today", refund: "₹1,380, started today, reaches your account in 5–7 working days" }).body)
       .toEqual(["Manoj", "#EEB0F7AC", "the seller ran out of pomfret today", "₹1,380, started today, reaches your account in 5–7 working days"]);
@@ -162,6 +167,13 @@ describe("order update photo: the checkout's costliest live item, never stock (f
       expect(orderMessage(e, cheap, "manoj", noon, undefined, checkout).image, e).toBe("https://x/pomfret.jpg");
     }
   });
+  it("unpaid reminders name the whole checkout, costliest first; the SMS value fits 30 chars", () => {
+    const fish = (id: string, price: number, description: string, species: string) => o(id, price, null, { status: "pending_payment", listing: { ...cheap.listing, description, species } });
+    const checkout = [fish("a", 300, "Bombil", "bombil"), fish("b", 1380, "Silver Pomfret", "pomfret"), fish("c", 900, "Surmai", "surmai"), otherCart, removed];
+    expect(orderMessage("unpaid", checkout[0], "manoj", noon, undefined, checkout).body[2]).toBe("Silver Pomfret, Surmai and 1 more");
+    expect(orderSms("unpaid", checkout[0], "manoj", undefined, checkout).vars[1]).toBe("Silver Pomfret and 2 more");
+    expect(orderMessage("unpaid", checkout[0], "manoj", noon, undefined, checkout.slice(0, 1)).body[2]).toBe("Bombil");
+  });
   it("the costliest item has no photo → null, no cheaper or stock fallback", () => {
     const checkout = [cheap, { ...dear, listing: { ...dear.listing, photo_url: null } }];
     expect(orderMessage("confirmed", cheap, "manoj", noon, undefined, checkout).image).toBeNull();
@@ -172,6 +184,15 @@ describe("order update photo: the checkout's costliest live item, never stock (f
     expect(orderPhoto(removed, [cheap, dear, removed], cancel)).toBe("https://x/removed.jpg");
     expect(orderPhoto({ ...removed, listing: { ...removed.listing, photo_url: null } }, [cheap, dear], cancel)).toBeNull();
     expect(orderMessage("cancelled", removed, "manoj", noon, cancel, [cheap, dear, removed]).image ?? null).toBeNull(); // rf2_cancelled has no image header
+  });
+  it("order again names the costliest item of the last checkout that is still on the menu; none live → null", () => {
+    const live = { is_available: true, deleted_at: null };
+    const bangda = o("g", 900, "https://x/bangda.jpg", { status: "completed", cart_id: "c9", listing: { ...cheap.listing, ...live, is_available: false, description: "Bangda" } });
+    const bombil = o("h", 240, "https://x/bombil.jpg", { status: "completed", cart_id: "c9", listing: { ...cheap.listing, ...live, description: "Bombil" } });
+    const older = o("i", 2000, "https://x/old.jpg", { status: "completed", cart_id: "c1", listing: { ...cheap.listing, ...live } });
+    expect(againOrder([older, bangda, bombil])?.listing.photo_url).toBe("https://x/bombil.jpg");
+    expect(againOrder([older, bangda])).toBeNull();
+    expect(againOrder([])).toBeNull();
   });
   it("no stock URL in any order update", () => {
     const bare = o("f", 500, null, { cart_id: null, listing: { species: "rawas", description: null, photo_url: null, seller_id: "ft", seller: { name: "Fishtokri" } } });
@@ -257,6 +278,13 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
     expect(sb.rows).toHaveLength(0);
     vi.stubEnv("MSG91_FLOW_CART", "f");
     expect((await dispatch(fakeSb(), { ...msg, whatsappOk: false })).status).toBe("dry_run");
+  });
+  it("a second marketing WhatsApp the same day (unique index 089) is a duplicate: nothing sent, no SMS", async () => {
+    wa(); sms();
+    const sb: any = fakeSb();
+    sb.from = () => ({ select: () => ({ in: async () => ({ data: [], error: null }) }), upsert: () => ({ select: async () => ({ data: null, error: { code: "23505", message: "duplicate key value violates unique constraint \"message_log_one_marketing_a_day\"" } }) }) });
+    expect(await dispatch(sb, msg)).toEqual({ status: "duplicate", channel: "whatsapp" });
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(0);
   });
   it("MESSAGING_TEST_ONLY: only the founder gets real sends", async () => {
     vi.stubEnv("MESSAGING_TEST_ONLY", "9870619974"); wa();
@@ -346,5 +374,109 @@ describe("buyer order updates (founder 31 Oct)", () => {
   it("only seller-confirmed and out-for-delivery reach the buyer", async () => {
     const { BUYER_ORDER_EVENTS } = await import("../../src/lib/server/notify-order-whatsapp");
     expect([...BUYER_ORDER_EVENTS].sort()).toEqual(["confirmed", "out_for_delivery"]);
+  });
+});
+
+// ── The messaging cron route against an in-memory database ──
+vi.mock("@supabase/supabase-js", () => ({ createClient: () => (globalThis as any).__cronDb }));
+/** Minimal PostgREST stand-in: eq/lt/gte/in/is/not filters, update/upsert, the awaited result. Embedded joins are pre-joined in the rows. */
+function fakeDb(t: Record<string, any[]>) {
+  let n = 0;
+  const from = (table: string) => {
+    const rows = (t[table] ||= []);
+    const f: ((r: any) => boolean)[] = [];
+    let write: any = null, one = false;
+    const b: any = {
+      select: () => b, order: () => b, or: () => b, limit: () => b, range: () => b,
+      eq: (c: string, v: any) => (f.push((r) => r[c] === v), b),
+      lt: (c: string, v: any) => (f.push((r) => r[c] < v), b),
+      gte: (c: string, v: any) => (f.push((r) => r[c] >= v), b),
+      gt: (c: string, v: any) => (f.push((r) => r[c] > v), b),
+      in: (c: string, v: any[]) => (f.push((r) => v.includes(r[c])), b),
+      is: (c: string, v: any) => (f.push((r) => (r[c] ?? null) === v), b),
+      not: (c: string, _op: string, v: any) => (f.push((r) => (r[c] ?? null) !== v), b),
+      update: (patch: any) => ((write = patch), b),
+      maybeSingle: () => ((one = true), b),
+      upsert: (row: any) => ({ select: async () => {
+        if (rows.some((r) => r.dedupe_key === row.dedupe_key)) return { data: [], error: null };
+        const r = { created_at: new Date().toISOString(), ...row, id: `row${++n}`, short_id: `s${n}` }; rows.push(r); return { data: [r], error: null };
+      } }),
+      then: (res: any, rej: any) => {
+        const hit = rows.filter((r) => f.every((p) => p(r)));
+        if (write) hit.forEach((r) => Object.assign(r, write));
+        return Promise.resolve({ data: one ? hit[0] ?? null : hit, error: null }).then(res, rej);
+      },
+    };
+    return b;
+  };
+  return { from, t };
+}
+const SELLER_ROW = {
+  id: "ft", name: "Fishtokri", phone: "9800000001", lat: 19.1906444, lng: 72.9791824, delivery_rad: 7, is_test: false, is_active: true,
+  opens_at: "08:00:00", closes_at: "18:00:00", open_days: ["tue", "wed", "thu", "fri", "sat", "sun"], accepts_preorder: true,
+  preorder_days: ["mon", "tue", "wed", "thu", "fri", "sat"], preorder_opens_at: null, preorder_cutoff_time: "03:00:00", delivery_days: null,
+  delivery_slots_enabled: true, delivery_slot_minutes: 120, preorder_delivery_start: "08:00:00", preorder_delivery_end: "18:00:00", preorder_days_ahead: 3,
+};
+const FRI_11 = Date.parse("2026-10-23T11:00:00+05:30");
+const buyerRow = (phone: string, x: any = {}) => ({ id: `b${phone.slice(-4)}`, phone, first_name: "Priya", created_at: new Date(FRI_11 - 61 * 60_000).toISOString(),
+  lat: 19.2, lng: 72.97, is_test: false, whatsapp_opt_in_at: "2026-10-01T00:00:00Z", whatsapp_opt_out_at: null, dnd_at: null, ...x });
+async function cron(t: Record<string, any[]>, query = `dry_run=1&now=${new Date(FRI_11).toISOString()}`) {
+  vi.stubEnv("CRON_SECRET", "s"); vi.stubEnv("WA_PROVIDER", "");
+  const db = fakeDb({ sellers: [SELLER_ROW], buyers: [], buyer_cart: [], orders: [], message_log: [], fish_listings: [], cron_lock: [{ name: "messaging", until: "2000-01-01T00:00:00Z" }], ...t });
+  (globalThis as any).__cronDb = db;
+  const { GET } = await import("../../src/pages/api/cron/messaging");
+  const res = await GET({ request: new Request("http://x", { headers: { authorization: "Bearer s" } }), url: new URL(`http://x/api/cron/messaging?${query}`) } as any);
+  return { body: await (res as Response).json(), db };
+}
+
+describe("messaging cron", () => {
+  it("a switched-off seller's phone gets no buyer messages", async () => {
+    const { body } = await cron({
+      sellers: [SELLER_ROW, { ...SELLER_ROW, id: "off", phone: "9800003218", is_active: false }],
+      buyers: [buyerRow("9800003218"), buyerRow("9800007777")],
+    });
+    expect(body.messages.map((m: any) => m.buyer)).toEqual(["…7777"]);
+  });
+  it("a cart line the cart itself would drop (pack size gone) isn't named as waiting in the cart", async () => {
+    const listing = { seller_id: "ft", species: "pomfret", description: "Khapri Pomfret · Cut pcs", photo_url: "https://x/k.jpg", pricing_options: [{ id: "o2", label: "500–600 g", price: 1220 }],
+      is_available: true, is_preorder_enabled: true, is_order_paused: false, weight_avail: null, deleted_at: null };
+    const line = (opt: string) => ({ id: "c1", buyer_id: "b7777", pricing_option_id: opt, placement_kind: "same_day", qty: 1, updated_at: new Date(FRI_11 - 60 * 60_000).toISOString(), listing });
+    expect((await cron({ buyers: [buyerRow("9800007777")], buyer_cart: [line("o2")] })).body.messages.map((m: any) => m.template)).toEqual(["rf2_cart_today"]);
+    expect((await cron({ buyers: [buyerRow("9800007777")], buyer_cart: [line("o1")] })).body.messages).toEqual([]);
+  });
+  it("SMS fallback: only a reminder that is still true, in send hours and < 60 min old; never a stuck row", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(FRI_11);
+    vi.stubEnv("MESSAGING_LIVE", "true"); for (const k of ["UNPAID", "CART", "CONFIRMED"]) vi.stubEnv(`MSG91_FLOW_${k}`, "f");
+    const ago = (min: number) => new Date(FRI_11 - min * 60_000).toISOString();
+    const row = (phone: string, kind: string, min: number, x: any = {}) => ({ id: `w${phone}`, dedupe_key: `${kind}:${phone}:whatsapp`, channel: "whatsapp", status: "failed", error: "Message undeliverable",
+      kind, slot_date: "2026-10-23", to_phone: `91980000${phone}`, buyer_id: `b${phone}`, template: "rf2_x", link_path: "/x", created_at: ago(min),
+      payload: { body: [], sms: { key: kind === "act_unpaid" ? "UNPAID" : kind === "act_cart" ? "CART" : "CONFIRMED", vars: ["a"] }, smsFallback: true, smsOk: true }, ...x });
+    const { body } = await cron({
+      message_log: [
+        row("0001", "act_unpaid", 20, { order_id: "o1" }), row("0002", "act_unpaid", 20, { order_id: "o2" }),
+        row("0003", "act_cart", 20), row("0004", "act_cart", 90),
+        row("0005", "order_confirmed", 30, { error: "stuck in queue: no send result" }), row("0006", "order_confirmed", 180),
+      ],
+      orders: [{ id: "o1", status: "pending_payment", created_at: ago(50) }, { id: "o2", status: "pending_payment", razorpay_payment_id: "pay_1", created_at: ago(50) },
+        { id: "o3", buyer_id: "b0003", status: "paid", created_at: ago(10) }],
+    }, "");
+    vi.useRealTimers();
+    expect(body.sync.sms_fallback.map((x: any) => [x.buyer, x.kind])).toEqual([["…0001", "act_unpaid"], ["…0006", "order_confirmed"]]);
+  });
+  it("a buyer who signed up over 60 days ago still gets the cart reminder for a new cart", async () => {
+    const listing = { seller_id: "ft", species: "bombil", description: "Bombil", photo_url: null, pricing_options: [{ price: 240 }], is_available: true, is_preorder_enabled: true, deleted_at: null };
+    const { body } = await cron({
+      buyers: [buyerRow("9800007777", { created_at: "2026-07-01T10:00:00Z" })],
+      buyer_cart: [{ id: "c1", buyer_id: "b7777", pricing_option_id: "", placement_kind: "same_day", qty: 1, updated_at: new Date(FRI_11 - 60 * 60_000).toISOString(), listing }],
+    });
+    expect(body.messages.map((m: any) => m.template)).toEqual(["rf2_cart_today"]);
+  });
+  it("a live run skips while another holds the lock, and releases its own when done", async () => {
+    vi.stubEnv("MESSAGING_LIVE", "true");
+    const held = await cron({ cron_lock: [{ name: "messaging", until: new Date(Date.now() + 5 * 60_000).toISOString() }] }, "");
+    expect(held.body).toEqual({ skipped: "another run in progress" });
+    const free = await cron({}, "");
+    expect(free.body.dry).toBe(false);
+    expect(Date.parse(free.db.t.cron_lock[0].until)).toBeLessThanOrEqual(Date.now());
   });
 });

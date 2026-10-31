@@ -10,6 +10,7 @@
 import { sendTemplate, waNumber, type SendResult } from "./whatsapp";
 import { sendSms, smsReady, type SmsKey } from "./sms";
 import { TEMPLATE } from "../messaging/templates";
+import { inSendHours } from "../messaging/schedule";
 
 export type SmsPart = { key: SmsKey; vars: string[] };
 export type Dispatch = {
@@ -57,6 +58,17 @@ export async function dispatch(sb: any, d: Dispatch): Promise<DispatchResult> {
 }
 
 /**
+ * May a failed WhatsApp row go by SMS at `now`? Never a "stuck in queue" row (its WhatsApp may have
+ * gone out). Reminders (act_*) only 8 AM–9 PM and within 60 min of the WhatsApp; the caller also
+ * re-checks they're still true. Order updates: any time (within the cron's 6 h look-back).
+ */
+export function smsFallbackDue(row: { kind?: string; error?: string | null; created_at?: string }, now: number): boolean {
+  if (String(row.error || "").startsWith("stuck in queue")) return false;
+  if (!String(row.kind).startsWith("act_")) return true;
+  return inSendHours(now) && now - Date.parse(String(row.created_at)) < 60 * 60_000;
+}
+
+/**
  * A WhatsApp row Wati later reported as failed → the same message once by SMS, from its stored
  * payload. Only rows whose payload has an SMS version and smsFallback (reminders, order updates).
  */
@@ -79,7 +91,8 @@ async function sendOne(sb: any, d: Dispatch, channel: Channel, to: string): Prom
     to_phone: to, link_path: d.link_path, status: "queued",
     payload: { template: d.template, body: d.body, headerImage: d.headerImage ?? null, sms: d.sms ?? null, smsOk: d.smsOk ?? true, smsFallback: !!d.smsFallback },
   }, { onConflict: "dedupe_key", ignoreDuplicates: true }).select("id, short_id");
-  if (error) return { status: "failed", channel, error: error.message };
+  // 23505 here is the other unique index (migration 089): this buyer already has a marketing WhatsApp today.
+  if (error) return error.code === "23505" ? { status: "duplicate", channel } : { status: "failed", channel, error: error.message };
   const id = rows?.[0]?.id as string | undefined;
   if (!id) return { status: "duplicate", channel };
 

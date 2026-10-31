@@ -48,7 +48,7 @@ export const TEMPLATES: TemplateDef[] = [
   { name: "rf2_order_again", category: "MARKETING", header: "IMAGE",
     body: "Hi {{1}}, hope the {{2}} was just the way you like it 😊\nReady for another round? {{3}} has fresh stock, same cut as last time. Just pick a slot: {{4}}.\nWant something different this time? Send us a Hi, we'll help 👋",
     examples: ["Sanjay", "Surmai", "The Nomadic Catch", "Sunday 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "Order the same again" }, { type: "QUICK_REPLY", text: "Try something new" }] },
-  // Pending Meta approval (founder 30 Oct): the cart's fish was taken off the seller's menu.
+  // Approved by Meta and delivering (31 Oct; added 30 Oct): the cart's fish was taken off the seller's menu.
   { name: "rf2_cart_swap", category: "MARKETING", header: "IMAGE",
     body: "Hi {{1}}, the {{2}} in your cart isn't on {{3}}'s menu today, sorry about that 🙏\nA fresh pick you'll like instead: {{4}} 😋 cleaned and cut, delivered {{5}}.\nWant something else? Just reply here and we'll help you choose.",
     examples: ["Priya", "Silver Pomfret", "Fishtokri", "Baby Surmai 900–1000 g, ₹1,040", "today, 12–2 PM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See today's menu" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
@@ -97,6 +97,15 @@ export const varCount = (name: string) => TEMPLATE[name]?.examples.length ?? 0;
 export function firstName(name: string | null | undefined): string {
   const w = String(name || "").trim().split(/\s+/)[0];
   return w ? w.charAt(0).toUpperCase() + w.slice(1) : "fish lover";
+}
+
+/** A checkout's fish in one line, costliest first: "Surmai", "Surmai and Bombil", "Surmai, Bombil and 1 more";
+ *  over `max` chars → "Surmai and 2 more". */
+export function fishList(names: string[], max = Infinity): string {
+  const u = [...new Set(names.filter(Boolean))];
+  if (u.length <= 1) return u[0] || "fish";
+  const two = u.length === 2 ? `${u[0]} and ${u[1]}` : `${u[0]}, ${u[1]} and ${u.length - 2} more`;
+  return two.length <= max ? two : `${u[0]} and ${u.length - 1} more`;
 }
 
 /** Problems Meta (or our brand rules) would reject a template for. Empty = OK. */

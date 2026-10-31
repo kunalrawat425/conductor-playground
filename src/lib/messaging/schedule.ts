@@ -13,11 +13,12 @@
  *     a Fri recipient skips Sat/Sun until the next Tue; none within 3 days of a delivery or
  *     after 30 days inactive.
  *     No promo within 48 h of an activity reminder (founder, 30 Oct), and none for 72 h after Meta
- *     blocked a promo to that buyer (per-user marketing limit: wait, don't retry).
+ *     blocked a marketing message to that buyer (per-user marketing limit: wait, don't retry).
  *  R  Activity reminders (founder, 30 Oct), once per action, 8 AM–9 PM, decideActivity():
  *     unpaid checkout + 30 min → rf2_unpaid · cart left + 1 h → rf2_cart_today / rf2_cart_preorder ·
- *     sign-up with no cart + 1 h → rf2_welcome. Highest only (unpaid > cart > sign-up); at most one
- *     cart/sign-up reminder a day; an action in quiet hours is reminded at 8 AM next day if still true.
+ *     sign-up with no cart + 1 h → rf2_welcome. Highest only (unpaid > cart > sign-up); cart/sign-up
+ *     only when no promo or reminder went that day and Meta's 72 h hold is over (both are MARKETING);
+ *     an action in quiet hours is reminded at 8 AM next day if still true.
  *     Channel: WhatsApp if opted in, else SMS (dispatch in lib/server/messaging.ts).
  * Order updates live elsewhere (notify-order-whatsapp.ts).
  *
@@ -44,11 +45,12 @@ export type MsgSeller = SlotSeller & {
   id: string; name: string; slug: string;
   lat?: number | string | null; lng?: number | string | null; delivery_rad?: number | string | null;
   menu?: string;                     // "Surmai · Pomfret · Bombil": its pre-order fish, for rf2_catch_preorder
+  todayMenu?: string;                // the same from its available-today fish, for rf2_catch_prices
   live?: MenuItem[];                 // its live listings (available or pre-order): rf2_cart_swap and the generic promo's photo
 };
 /** A live listing: name, first pricing option (price, label), listing photo, open for pre-order. */
 export type MenuItem = { name: string; species?: string | null; price: number; label?: string | null; photo?: string | null; preorder?: boolean };
-export type CartLine = { seller_id: string; name: string; species?: string | null; photo?: string | null; price?: number | null; on_menu: boolean; updated_at: string };
+export type CartLine = { seller_id: string; name: string; species?: string | null; photo?: string | null; price?: number | null; label?: string | null; on_menu: boolean; updated_at: string };
 /** One of the buyer's orders: the fish, its seller and photo (the checkout's costliest item's). */
 export type OrderLine = { id: string; seller_id: string; name: string; species?: string | null; photo?: string | null;
   created_at?: string; slot_start?: string | null; checkout?: string }; // unpaid: placed at, slot start, cart_id || id
@@ -62,6 +64,7 @@ export type BuyerState = {
   open_order: boolean;               // paid and not finished/cancelled
   unpaid: OrderLine | null;          // latest order still waiting for payment
   unpaids?: OrderLine[];             // every checkout still waiting for payment (one per checkout), oldest first
+  last_paid_at?: string | null;      // latest paid / open / completed order: an older unpaid checkout was left for it
   delivered: OrderLine | null;       // latest delivered order
   last_delivered_at: string | null;
   opted_out: boolean;                // whatsapp_opt_out_at set: no promos or reminders
@@ -73,6 +76,8 @@ export type ActKind = "act_unpaid" | "act_cart" | "act_signup";
 export type Kind = "B1" | "B2" | "promo" | ActKind;
 export const PROMO_KINDS: string[] = ["B1", "B2", "promo"];
 export const ACT_KINDS: string[] = ["act_unpaid", "act_cart", "act_signup"];
+/** MARKETING-template kinds: at most one of them a day, and a Meta block on any holds them all 72 h (act_unpaid is utility). */
+export const MARKETING_KINDS: string[] = [...PROMO_KINDS, "act_cart", "act_signup"];
 export const UNPAID_AFTER_MS = 30 * 60_000;      // founder, 30 Oct
 export const CART_AFTER_MS = 60 * 60_000;
 export const SIGNUP_AFTER_MS = 60 * 60_000;
@@ -80,8 +85,10 @@ export const ACT_PROMO_GAP_MS = 48 * 3_600_000;  // no promo within 2 days of an
 export const META_HOLD_MS = 72 * 3_600_000;      // Meta blocked a promo → none for 3 days
 /** Reached the buyer (or may have): counts for gaps and caps. Failed / dry-run rows don't. */
 export const isReal = (x: SentLog) => !x.status || ["sent", "delivered", "read"].includes(x.status);
-/** Meta's per-user marketing limit ("restricted it for higher quality messaging", error 131049). */
-export const metaBlocked = (x: SentLog) => x.status === "failed" && /restricted|131049|higher quality/i.test(String(x.error || ""));
+/** Meta's per-user marketing limit ("restricted it for higher quality messaging", error 131049) or its
+ *  marketing experiment hold-out ("part of an experiment", error 130472): retrying won't help. */
+export const metaBlocked = (x: SentLog) => x.status === "failed" && /restricted|131049|higher quality|experiment|130472/i.test(String(x.error || ""));
+const metaHold = (now: number, history: SentLog[]) => history.some((x) => metaBlocked(x) && MARKETING_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < META_HOLD_MS);
 export type PromoTemplate = "rf2_welcome" | "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_cart_swap" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder" | "rf2_catch_prices";
 export type Decision = {
   kind: Kind;
@@ -143,6 +150,8 @@ const isDue = (now: number, due: number) => now >= due && now < due + DUE_WINDOW
 const latestFirst = (lines: CartLine[]) => [...lines].sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at));
 const onMenuLines = (b: BuyerState) => latestFirst(b.cart.filter((l) => l.on_menu));
 const offMenuLines = (b: BuyerState, sellerId: string) => latestFirst(b.cart.filter((l) => !l.on_menu && l.seller_id === sellerId));
+/** An unpaid checkout the buyer left for a newer one they paid: no reminder about it. */
+const superseded = (b: BuyerState, u: OrderLine) => !!b.last_paid_at && !!u.created_at && Date.parse(b.last_paid_at) > Date.parse(u.created_at);
 
 /** Where the buyer is: cart (newer than any order) → cart with only off-menu fish → unpaid order → delivered before → generic. */
 export type Stage = "cart" | "cart_swap" | "unpaid" | "again" | "generic";
@@ -157,11 +166,11 @@ export function costliestPhoto(lines: { price?: number | null; photo?: string | 
 
 /**
  * Generic "today's / tomorrow's catch" picture (founder 30 Oct): the buyer's costliest cart item with
- * this seller (any age, on or off the menu; that item has no photo → null); no cart with them → the
- * costliest item WITH a photo on the menu the message is about (pre-order menu for rf2_catch_preorder).
+ * this seller (any age, still on the menu; that item has no photo → null); none → the costliest
+ * item WITH a photo on the menu the message is about (pre-order menu for rf2_catch_preorder).
  */
 export function catchPhoto(b: BuyerState, seller: MsgSeller, preorderOnly: boolean): string | null {
-  const mine = b.cart.filter((l) => l.seller_id === seller.id);
+  const mine = b.cart.filter((l) => l.seller_id === seller.id && l.on_menu); // never a hidden fish's photo
   if (mine.length) return costliestPhoto(mine);
   return costliestPhoto((seller.live ?? []).filter((m) => m.photo && (!preorderOnly || m.preorder)));
 }
@@ -173,7 +182,10 @@ export function pickSubstitute(gone: { species?: string | null; price?: number |
   const base = (x: unknown) => String(x || "").toLowerCase().replace(/\bcombo\b/g, "").replace(/\bsilver\b/g, "").trim();
   const sp = base(gone.species);
   const same = sp ? live.filter((m) => { const ms = base(m.species); return ms === sp || (!!ms && (sp.includes(ms) || ms.includes(sp))); }) : [];
-  return [...(same.length ? same : live)].sort((a, c) => Math.abs(a.price - p) - Math.abs(c.price - p) || a.price - c.price)[0] ?? null;
+  // A combo prefers its own fish by name: "Silver Pomfret Combo" → Silver Pomfret, not the closer-priced Khapri Pomfret.
+  const want = /\bcombo\b/i.test(String(gone.species)) ? String(gone.species).toLowerCase().replace(/\bcombo\b/g, "").replace(/\s+/g, " ").trim() : "";
+  const byName = want ? live.filter((m) => m.name.toLowerCase().includes(want)) : [];
+  return [...(byName.length ? byName : same.length ? same : live)].sort((a, c) => Math.abs(a.price - p) - Math.abs(c.price - p) || a.price - c.price)[0] ?? null;
 }
 
 /**
@@ -195,7 +207,10 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
     const sub = pickSubstitute(lines[0] ?? {}, seller.live ?? []);
     if (!sub) return null;
     const what = `${[sub.name, sub.label].filter(Boolean).join(" ")}, ₹${Math.round(sub.price).toLocaleString("en-IN")}`;
-    return { ...m, template: "rf2_cart_swap", photo: sub.photo || null, body: [b.name, items.slice(0, 2).join(" and "), seller.name, what, offer.when] };
+    // Same name back on the menu (a new listing, other size): "the Khapri Pomfret 400–500 g … instead: Khapri Pomfret 500–600 g".
+    const old = lines[0] as CartLine | undefined;
+    const gone = old?.label && sub.name.toLowerCase() === old.name.toLowerCase() ? `${old.name} ${old.label}` : items.slice(0, 2).join(" and ");
+    return { ...m, template: "rf2_cart_swap", photo: sub.photo || null, body: [b.name, gone, seller.name, what, offer.when] };
   }
   if (stage === "cart") {
     if (!items.length) return null;
@@ -206,9 +221,10 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   }
   if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, fish, offer.when], path: `/track/${b.unpaid!.id}` };
   if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, fish, seller.name, offer.when] };
-  // Morning slot (Fri/Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM".
-  if (offer.mode === "today" && offer.by && seller.menu && istMin(due) < 12 * 60) {
-    return { ...m, template: "rf2_catch_prices", photo: catchPhoto(b, seller, false), body: [b.name, day, seller.menu, offer.by, offer.when], path: "/shop" };
+  // Morning slot (Fri/Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM for delivery today"
+  // (not the first slot: someone ordering at 3 PM gets 4–6 PM).
+  if (offer.mode === "today" && offer.by && seller.todayMenu && istMin(due) < 12 * 60) {
+    return { ...m, template: "rf2_catch_prices", photo: catchPhoto(b, seller, false), body: [b.name, day, seller.todayMenu, offer.by, "today"], path: "/shop" };
   }
   // "Tomorrow morning's fresh catch is open for pre-order".
   if (offer.mode !== "preorder" || offer.date !== addDays(istDate(due), 1) || !seller.menu) return null;
@@ -232,17 +248,18 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   }
   // Founder 30 Oct: an activity reminder in the last 2 days → no promo; Meta blocked a promo → wait 3 days.
   if (!all && real.some((x) => ACT_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < ACT_PROMO_GAP_MS)) return { skip: "activity reminder <48h" };
-  if (!all && history.some((x) => metaBlocked(x) && PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < META_HOLD_MS)) return { skip: "meta limit: waiting" };
+  if (!all && metaHold(now, history)) return { skip: "meta limit: waiting" };
   const cartMs = lastCartMs(b);
   const orderMs = b.last_order_at ? Date.parse(b.last_order_at) : 0;
   const hasCart = b.cart.length > 0 && cartMs > orderMs && now - cartMs <= 7 * DAY_MS;
   // Cart with nothing left on the menu: the latest off-menu line's seller, if known and it has live fish.
   const gone = hasCart ? latestFirst(b.cart.filter((l) => !l.on_menu)).find((l) => sellers.some((s) => s.id === l.seller_id)) : undefined;
   const swap = gone && sellers.find((s) => s.id === gone.seller_id)?.live?.length ? gone.seller_id : null;
-  const stage: Stage = hasCart && onMenuLines(b).length ? "cart" : swap ? "cart_swap" : b.unpaid ? "unpaid" : b.delivered ? "again" : "generic";
+  const stage: Stage = hasCart && onMenuLines(b).length ? "cart" : swap ? "cart_swap" : b.unpaid && !superseded(b, b.unpaid) ? "unpaid" : b.delivered ? "again" : "generic";
   // The seller the message is about: the cart's, else the order's, else the nearest one.
   const orderSeller = stage === "cart_swap" ? swap : stage === "unpaid" ? b.unpaid!.seller_id : stage === "again" ? b.delivered!.seller_id : null;
-  const seller = orderSeller ? sellers.find((s) => s.id === orderSeller) ?? null : pickSeller(b, sellers);
+  // A cart promo is about its newest on-menu line's seller (a newer hidden line names nothing).
+  const seller = orderSeller ? sellers.find((s) => s.id === orderSeller) ?? null : pickSeller(stage === "cart" ? { ...b, cart: onMenuLines(b) } : b, sellers);
   if (!seller) return { skip: "no seller delivers to them" };
 
   // ── P: Tue 6 PM, Fri/Sat/Sun 8:30 AM, one promo by stage ──
@@ -294,7 +311,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
 
   // 1. Unpaid checkout: 30 min after it was placed, while its slot is still ahead (≤ 24 h). Each checkout once.
   for (const u of b.unpaids ?? (b.unpaid ? [b.unpaid] : [])) {
-    if (!u.created_at) continue;
+    if (!u.created_at || superseded(b, u)) continue;
     const due = Date.parse(u.created_at) + UNPAID_AFTER_MS;
     const key = `act_unpaid:${u.checkout || u.id}`;
     const slotAhead = !u.slot_start || Date.parse(u.slot_start) > now;
@@ -303,7 +320,9 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
     }
   }
   if (b.open_order) return { skip: "open order" };
-  const capped = history.some((x) => isReal(x) && x.slot_date === today && (x.kind === "act_cart" || x.kind === "act_signup"));
+  // One marketing message a day: a promo today caps the cart / sign-up reminder too. Meta hold: wait 72 h.
+  const capped = history.some((x) => isReal(x) && x.slot_date === today && MARKETING_KINDS.includes(x.kind));
+  const held = metaHold(now, history);
 
   // 2. Cart left: 1 h after the last change, no order since, something still on the menu (≤ 24 h).
   const cartMs = lastCartMs(b);
@@ -312,6 +331,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
     const key = `act_cart:${b.id}:${istDate(cartMs)}`;
     const seller = pickSeller({ ...b, cart: onMenuLines(b) }, sellers);
     if (capped || done(key)) return { skip: "cart already reminded" };
+    if (held) return { skip: "meta limit: waiting" };
     if (!seller) return { skip: "no seller delivers to them" };
     if (!reminderWindow(cartMs + CART_AFTER_MS, now)) return { skip: "nothing due" };
     const offer = offerAt(seller, now);
@@ -324,6 +344,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
   if (!b.cart.length && !b.last_order_at && now - signed < DAY_MS) {
     const key = `act_signup:${b.id}`;
     if (capped || done(key)) return { skip: "sign-up already reminded" };
+    if (held) return { skip: "meta limit: waiting" };
     if (!reminderWindow(signed + SIGNUP_AFTER_MS, now)) return { skip: "nothing due" };
     const seller = pickSeller(b, sellers);
     const offer = seller && offerAt(seller, now);

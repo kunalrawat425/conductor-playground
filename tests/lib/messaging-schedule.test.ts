@@ -9,7 +9,7 @@ const FISHTOKRI: MsgSeller = {
   opens_at: "08:00:00", closes_at: "18:00:00", open_days: ["tue", "wed", "thu", "fri", "sat", "sun"], accepts_preorder: true,
   preorder_days: ["mon", "tue", "wed", "thu", "fri", "sat"], preorder_opens_at: null, preorder_cutoff_time: "03:00:00", delivery_days: null,
   delivery_slots_enabled: true, delivery_slot_minutes: 120, preorder_delivery_start: "08:00:00", preorder_delivery_end: "18:00:00", preorder_days_ahead: 3,
-  menu: "Surmai · Pomfret · Bombil",
+  menu: "Surmai · Pomfret · Bombil", todayMenu: "Surmai · Pomfret · Bombil",
 } as MsgSeller;
 const NOMADIC: MsgSeller = {
   id: "nm", name: "The Nomadic Catch", slug: "the-nomadic-catch", lat: 19.2186389, lng: 72.9557714, delivery_rad: 6,
@@ -104,17 +104,21 @@ describe("Tue 6 PM + Fri/Sat/Sun 8:30 AM promo, one per buyer by stage", () => {
     for (const d of ["26", "21", "22"]) for (const hm of ["08:30", "18:00", "19:30"]) expect(run(T(d, hm), old).skip, `${d} ${hm}`).toBe("nothing due");
     expect(run(T("27", "19:45"), old)).toMatchObject({ kind: "promo" }); // job late, still inside the 2 h window
   });
-  it("Fri/Sat/Sun morning generic with a Today slot → rf2_catch_prices: menu, order-by (last Today slot end − 2 h), first slot", () => {
+  it("Fri/Sat/Sun morning generic with a Today slot → rf2_catch_prices: today's menu, order-by (last Today slot end − 2 h), delivery today", () => {
     const d = run(T("24", "08:30"), old);
     expect(d).toMatchObject({
       kind: "promo", template: "rf2_catch_prices", mode: "today", path: "/shop", personal: false,
-      body: ["Priya", "Saturday", "Surmai · Pomfret · Bombil", "4 PM", "today, 10 AM–12 PM"],
+      body: ["Priya", "Saturday", "Surmai · Pomfret · Bombil", "4 PM", "today"],
     });
     expect(d.body).toHaveLength(5);
-    expect(run(T("23", "08:30"), old).body).toEqual(["Priya", "Friday", "Surmai · Pomfret · Bombil", "4 PM", "today, 10 AM–12 PM"]);
-    expect(run(T("25", "08:30"), old).body).toEqual(["Priya", "Sunday", "Surmai · Pomfret · Bombil", "4 PM", "today, 10 AM–12 PM"]);
+    expect(run(T("23", "08:30"), old).body).toEqual(["Priya", "Friday", "Surmai · Pomfret · Bombil", "4 PM", "today"]);
+    expect(run(T("25", "08:30"), old).body).toEqual(["Priya", "Sunday", "Surmai · Pomfret · Bombil", "4 PM", "today"]);
     // A shop closing at 8 PM: last Today slot 6–8 PM, bookable until 6 PM.
     expect(run(T("24", "08:30"), old, [], [{ ...FISHTOKRI, closes_at: "20:00:00" } as MsgSeller]).body[3]).toBe("6 PM");
+  });
+  it("rf2_catch_prices lists only fish available today, never pre-order-only ones", () => {
+    expect(run(T("24", "08:30"), old, [], [{ ...FISHTOKRI, menu: "Surmai · Pomfret · Bombil", todayMenu: "Bombil" } as MsgSeller]).body[2]).toBe("Bombil");
+    expect(run(T("24", "08:30"), old, [], [{ ...FISHTOKRI, todayMenu: "" } as MsgSeller]).skip).toBe("nothing due");
   });
   it("Fri/Sat/Sun morning with pre-order only → rf2_catch_preorder; neither fits → none", () => {
     // Nomadic (no same-day) delivers Sunday: Saturday gets the pre-order for tomorrow.
@@ -200,6 +204,10 @@ describe("rf2_cart_swap: the cart's fish is off the seller's menu (founder, 30 O
       body: ["Priya", "Halwa and Rawas", "Fishtokri", "Baby Surmai 900–1000 g, ₹1,040", "Wed 28 Oct, 8–10 AM"],
     });
   });
+  it("a newer off-menu line of another seller doesn't hide the on-menu line's promo", () => {
+    const b = buyer({ ...old, cart: [line("Halwa", "halwa", 700, true, T("22", "10:00"), "nm"), line("Silver Pomfret Combo", "silver pomfret combo", 1230, false, T("23", "10:00"))] });
+    expect(run(T("24", "08:30"), b, [], [FT, NOMADIC])).toMatchObject({ template: "rf2_promo_cart", path: "/s/the-nomadic-catch", body: ["Saturday", "Priya", "Halwa", "The Nomadic Catch", "Sun 25 Oct, 9–11 AM"] });
+  });
   it("any line still on the menu → rf2_promo_cart, not the swap", () => {
     const b = buyer({ ...old, cart: [line("Rawas", "rawas", 990, false, T("23", "10:00")), line("Bombil", "bombil", 240, true, T("22", "10:00"))] });
     expect(run(T("27", "18:00"), b, [], [FT]).template).toBe("rf2_promo_cart");
@@ -222,6 +230,16 @@ describe("rf2_cart_swap: the cart's fish is off the seller's menu (founder, 30 O
     expect(pickSubstitute({ species: "pomfret", price: 1250 }, menu)?.name).toBe("Rawas");       // Rawas and Surmai steaks both ₹250 away → cheaper
     expect(pickSubstitute({ species: "pomfret", price: 850 }, menu)?.name).toBe("Bangda");       // Bangda ₹800 and Baby Surmai ₹900 both ₹50 away → cheaper
     expect(pickSubstitute({ species: "pomfret", price: 900 }, [])).toBeNull();
+  });
+  it("a gone combo prefers the live item named after its fish over a closer-priced cousin", () => {
+    const menu: MenuItem[] = [{ name: "Khapri Pomfret", species: "pomfret", price: 1220 }, { name: "Silver Pomfret", species: "pomfret", price: 600 }];
+    expect(pickSubstitute({ species: "Silver Pomfret Combo", price: 1230 }, menu)?.name).toBe("Silver Pomfret");
+    expect(pickSubstitute({ species: "Rawas Combo", price: 1230 }, menu)?.name).toBe("Khapri Pomfret"); // no match by name or species: closest price
+  });
+  it("substitute with the same name (a new listing, other size): both sizes are named", () => {
+    const ft = { ...FISHTOKRI, live: [{ name: "Khapri Pomfret", species: "pomfret", price: 1220, label: "500–600 g", photo: "https://x/k.jpg" }] } as MsgSeller;
+    const b = buyer({ ...old, cart: [{ ...line("Khapri Pomfret", "pomfret", 1100, false, T("23", "10:00")), label: "400–500 g" }] });
+    expect(run(T("27", "18:00"), b, [], [ft]).body.slice(1, 4)).toEqual(["Khapri Pomfret 400–500 g", "Fishtokri", "Khapri Pomfret 500–600 g, ₹1,220"]);
   });
   it("no photo on the substitute's listing → image null", () => {
     const b = buyer({ ...old, cart: [line("Bangda", "bangda", 250, false, T("23", "10:00"))] });
@@ -279,12 +297,17 @@ describe("generic catch promos: the seller's own photo, never stock (founder, 30
     expect(run(T("27", "18:00"), old, [], [noPhotos])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
     expect(run(T("27", "18:00"), old, [], [{ ...FT, live: [] } as MsgSeller])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
   });
-  it("buyer has cart lines with that seller (any age, off-menu too): the costliest cart item's photo", () => {
-    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, "https://x/cart-halwa.jpg", false)] });
+  it("buyer has cart lines with that seller (any age, on the menu): the costliest cart item's photo", () => {
+    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, "https://x/cart-halwa.jpg", true)] });
     expect(run(T("27", "18:00"), b, [], [FT])).toMatchObject({ template: "rf2_catch_preorder", photo: "https://x/cart-halwa.jpg" });
   });
+  it("a cart line taken off the menu never lends its photo", () => {
+    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Marinated Pomfret", 2200, "https://x/hidden.jpg", false)] });
+    expect(run(T("27", "18:00"), b, [], [FT]).photo).toBe("https://x/cart-bombil.jpg");
+    expect(run(T("27", "18:00"), buyer({ ...old, cart: [cartLine("Marinated Pomfret", 2200, "https://x/hidden.jpg", false)] }), [], [FT]).photo).not.toBe("https://x/hidden.jpg");
+  });
   it("the costliest cart item has no photo → null, even when the menu has photos", () => {
-    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, null, false)] });
+    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, null, true)] });
     expect(run(T("27", "18:00"), b, [], [FT])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
   });
   it("another seller's cart line never lends its photo", () => {
@@ -344,6 +367,11 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     // a failed WhatsApp still counts as reminded (the SMS fallback handles it, never a second WhatsApp)
     expect(act(T("23", "10:40"), b, [sent("act_unpaid", T("23", "10:30"), "act_unpaid:c1", "failed")]).kind).not.toBe("act_unpaid");
   });
+  it("unpaid: not when the buyer paid a newer checkout since", () => {
+    const b = buyer({ unpaid: unpaid(T("23", "10:00")), last_order_at: iso(T("23", "10:10")), last_paid_at: iso(T("23", "10:10")) });
+    expect(act(T("23", "10:30"), b).kind).not.toBe("act_unpaid");
+    expect(act(T("23", "10:30"), { ...b, last_paid_at: iso(T("22", "10:00")) }).kind).toBe("act_unpaid");
+  });
   it("unpaid: not when the slot has started", () => {
     const b = buyer({ unpaid: unpaid(T("24", "07:00"), T("24", "08:00")), last_order_at: iso(T("24", "07:00")) });
     expect(act(T("24", "08:10"), b).kind).not.toBe("act_unpaid");
@@ -371,6 +399,15 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     expect(act(T("23", "10:31"), both).kind).toBe("act_unpaid");
     const signedThenCart = buyer({ created_at: iso(T("23", "09:00")), cart: cart(T("23", "11:00")) });
     expect(act(T("23", "12:00"), signedThenCart, [sent("act_signup", T("23", "10:00"), "act_signup:b")]).skip).toBe("cart already reminded");
+  });
+  it("a promo today caps the cart reminder; a Meta block holds cart / sign-up reminders 72 h, never the unpaid one", () => {
+    const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("24", "10:00")) });
+    expect(act(T("24", "11:00"), b, [{ ...log("promo", T("24", "08:30")), status: "delivered" }]).skip).toBe("cart already reminded");
+    const blocked = { ...log("promo", T("23", "08:30")), status: "failed", error: "Meta has restricted it for higher quality messaging" };
+    expect(act(T("24", "11:00"), b, [blocked]).skip).toBe("meta limit: waiting");
+    expect(act(T("23", "11:00"), buyer({ created_at: iso(T("23", "10:00")) }), [{ ...blocked, kind: "act_signup", created_at: iso(T("23", "09:00")) }]).skip).toBe("meta limit: waiting");
+    expect(act(T("24", "10:31"), buyer({ unpaid: unpaid(T("24", "10:00"), T("25", "08:00")), last_order_at: iso(T("24", "10:00")) }), [blocked]).kind).toBe("act_unpaid");
+    expect(run(T("24", "08:30"), buyer({ created_at: iso(T("10", "10:00")) }), [{ ...blocked, kind: "act_cart" }]).skip).toBe("meta limit: waiting");
   });
   it("night: an action after 8 PM is reminded 8–9 AM next day if still true; never 9 PM–8 AM", () => {
     const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("23", "20:30")) });
@@ -415,6 +452,10 @@ describe("promo spacing (founder, 30 Oct)", () => {
     expect(run(T("24", "08:30"), b(), [blocked]).skip).toBe("meta limit: waiting");
     expect(run(T("25", "08:30"), b(), [blocked]).skip).toBe("meta limit: waiting");
     expect(run(T("27", "18:00"), b(), [blocked]).template).toBe("rf2_promo_cart");
+  });
+  it("Meta's experiment hold-out (130472) is a block too", () => {
+    const exp = { ...log("promo", T("23", "08:30")), status: "failed", error: "Message failed to send because it is part of an experiment (130472)" };
+    expect(run(T("24", "08:30"), b(), [exp]).skip).toBe("meta limit: waiting");
   });
   it("DND gets no promo", () => {
     expect(run(T("24", "08:30"), { ...b(), dnd: true }).skip).toBe("do not message");
