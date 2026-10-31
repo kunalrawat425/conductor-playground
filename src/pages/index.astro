@@ -800,7 +800,7 @@ const REVIEW_SLOTS = [
       <a href="#waitlist" class="nl">Join waitlist</a>
     </div>
     <div class="pill">
-      <a href="/shop" class="btn-shop">Shop Now</a>
+      <a href="/shop" class="btn-shop">Order Now</a>
       <a href="/me?next=/shop" id="nav-login" class="icon-btn" aria-label="Login">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
         <span class="sr">Login</span>
@@ -1261,7 +1261,7 @@ const REVIEW_SLOTS = [
     <div class="sh-ic" id="claim-ic" aria-hidden="true">🐟</div>
     <p class="sh-t" id="claim-t">This spot is waiting for you</p>
     <p class="sh-p" id="claim-p">Order your first fresh fish. After it's delivered, post your plate and your review here.</p>
-    <a class="btn-primary" id="claim-go" href="/shop">Shop now →</a>
+    <a class="btn-primary" id="claim-go" href="/shop">Order now →</a>
     <button type="button" class="sh-x" id="claim-x">Keep browsing</button>
   </div>
 </dialog>
@@ -1349,7 +1349,7 @@ const REVIEW_SLOTS = [
       ic.textContent = "🐟"; ic.classList.remove("stars");
       el("claim-t").textContent = "This spot is waiting for you";
       el("claim-p").textContent = "Order your first fresh fish. After it's delivered, post your plate and your review here.";
-      go.href = "/shop"; go.textContent = "Shop now →";
+      go.href = "/shop"; go.textContent = "Order now →";
       el("claim-x").textContent = "Keep browsing";
     }
     (window as any).gtag?.("event", "claim_spot_tap", { state });
