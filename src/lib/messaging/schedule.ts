@@ -173,7 +173,10 @@ export function pickSubstitute(gone: { species?: string | null; price?: number |
   const base = (x: unknown) => String(x || "").toLowerCase().replace(/\bcombo\b/g, "").replace(/\bsilver\b/g, "").trim();
   const sp = base(gone.species);
   const same = sp ? live.filter((m) => { const ms = base(m.species); return ms === sp || (!!ms && (sp.includes(ms) || ms.includes(sp))); }) : [];
-  return [...(same.length ? same : live)].sort((a, c) => Math.abs(a.price - p) - Math.abs(c.price - p) || a.price - c.price)[0] ?? null;
+  // A combo prefers its own fish by name: "Silver Pomfret Combo" → Silver Pomfret, not the closer-priced Khapri Pomfret.
+  const want = /\bcombo\b/i.test(String(gone.species)) ? String(gone.species).toLowerCase().replace(/\bcombo\b/g, "").replace(/\s+/g, " ").trim() : "";
+  const byName = want ? live.filter((m) => m.name.toLowerCase().includes(want)) : [];
+  return [...(byName.length ? byName : same.length ? same : live)].sort((a, c) => Math.abs(a.price - p) - Math.abs(c.price - p) || a.price - c.price)[0] ?? null;
 }
 
 /**

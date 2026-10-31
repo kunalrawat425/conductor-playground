@@ -223,6 +223,11 @@ describe("rf2_cart_swap: the cart's fish is off the seller's menu (founder, 30 O
     expect(pickSubstitute({ species: "pomfret", price: 850 }, menu)?.name).toBe("Bangda");       // Bangda ₹800 and Baby Surmai ₹900 both ₹50 away → cheaper
     expect(pickSubstitute({ species: "pomfret", price: 900 }, [])).toBeNull();
   });
+  it("a gone combo prefers the live item named after its fish over a closer-priced cousin", () => {
+    const menu: MenuItem[] = [{ name: "Khapri Pomfret", species: "pomfret", price: 1220 }, { name: "Silver Pomfret", species: "pomfret", price: 600 }];
+    expect(pickSubstitute({ species: "Silver Pomfret Combo", price: 1230 }, menu)?.name).toBe("Silver Pomfret");
+    expect(pickSubstitute({ species: "Rawas Combo", price: 1230 }, menu)?.name).toBe("Khapri Pomfret"); // no match by name or species: closest price
+  });
   it("substitute with the same name (a new listing, other size): both sizes are named", () => {
     const ft = { ...FISHTOKRI, live: [{ name: "Khapri Pomfret", species: "pomfret", price: 1220, label: "500–600 g", photo: "https://x/k.jpg" }] } as MsgSeller;
     const b = buyer({ ...old, cart: [{ ...line("Khapri Pomfret", "pomfret", 1100, false, T("23", "10:00")), label: "400–500 g" }] });
