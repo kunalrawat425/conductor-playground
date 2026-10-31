@@ -10,7 +10,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { arrivingByLabel, slotLabel } from "../delivery-slots";
-import { firstName, fishName } from "../messaging/templates";
+import { firstName, fishList, fishName } from "../messaging/templates";
 import { costliestPhoto, istDate } from "../messaging/schedule";
 import { dispatch, type SmsPart } from "./messaging";
 
@@ -32,9 +32,15 @@ export type WaCancel = { reason?: string | null; refund?: string | null; removed
  */
 export function orderPhoto(ord: any, checkout: any[] = [ord], cancel?: WaCancel): string | null {
   if (cancel?.removedFrom) return ord.listing?.photo_url || null;
-  const live = checkout.filter((x) => (ord.cart_id ? x.cart_id === ord.cart_id : x.id === ord.id)
-    && x.listing?.seller_id === ord.listing?.seller_id && !REMOVED.includes(x.status));
-  return costliestPhoto(live.map((x) => ({ price: x.total_price, photo: x.listing?.photo_url })));
+  return costliestPhoto(checkoutRows(ord, checkout).map((x) => ({ price: x.total_price, photo: x.listing?.photo_url })));
+}
+/** The live items of the order's checkout (same cart_id, same seller, not removed). */
+const checkoutRows = (ord: any, checkout: any[]) => checkout.filter((x) => (ord.cart_id ? x.cart_id === ord.cart_id : x.id === ord.id)
+  && x.listing?.seller_id === ord.listing?.seller_id && !REMOVED.includes(x.status));
+/** Every fish of the order's checkout, costliest first: "Surmai, Bombil and 1 more" (unpaid reminders name the whole checkout). */
+export function checkoutFish(ord: any, checkout: any[] = [ord], max?: number): string {
+  const rows = [...checkoutRows(ord, checkout)].sort((a, b) => (Number(b.total_price) || 0) - (Number(a.total_price) || 0));
+  return fishList((rows.length ? rows : [ord]).map((x) => fishName(x.listing?.description, x.listing?.species || x.species)), max);
 }
 
 /** Still on the seller's menu: not deleted, available today or open for pre-order. */
@@ -74,7 +80,7 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
   const image = orderPhoto(ord, checkout, cancel);
   const istHour = new Date(nowMs + 5.5 * 3_600_000).getUTCHours();
   switch (event) {
-    case "unpaid": return { template: "rf2_unpaid", body: [name, short, fish, slot], image };
+    case "unpaid": return { template: "rf2_unpaid", body: [name, short, checkoutFish(ord, checkout), slot], image };
     case "paid": return ord.is_preorder && istHour >= 18
       ? { template: "rf2_paid_evening", body: [short, name, slot, seller] }
       : { template: "rf2_paid", body: [short, name, seller] };
@@ -94,13 +100,13 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
 }
 
 /** The SMS version of an order update (DLT templates in sms.ts; values cut to 30 chars there). Pure. */
-export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, cancel?: WaCancel): SmsPart {
+export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, cancel?: WaCancel, checkout?: any[]): SmsPart {
   const short = `#${String(ord.id).slice(0, 8).toUpperCase()}`;
   const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
   const seller = ord.listing?.seller?.name || "The seller";
   const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed";
   switch (event) {
-    case "unpaid": return { key: "UNPAID", vars: [firstName(buyerName), fish, slot] };
+    case "unpaid": return { key: "UNPAID", vars: [firstName(buyerName), checkoutFish(ord, checkout, 30), slot] };
     case "paid": return { key: "PAID", vars: [short, seller, slot] };
     case "confirmed": return { key: "CONFIRMED", vars: [seller, short, slot] };
     case "out_for_delivery": return { key: "OUT", vars: [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };

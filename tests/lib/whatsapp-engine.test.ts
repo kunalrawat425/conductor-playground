@@ -162,6 +162,13 @@ describe("order update photo: the checkout's costliest live item, never stock (f
       expect(orderMessage(e, cheap, "manoj", noon, undefined, checkout).image, e).toBe("https://x/pomfret.jpg");
     }
   });
+  it("unpaid reminders name the whole checkout, costliest first; the SMS value fits 30 chars", () => {
+    const fish = (id: string, price: number, description: string, species: string) => o(id, price, null, { status: "pending_payment", listing: { ...cheap.listing, description, species } });
+    const checkout = [fish("a", 300, "Bombil", "bombil"), fish("b", 1380, "Silver Pomfret", "pomfret"), fish("c", 900, "Surmai", "surmai"), otherCart, removed];
+    expect(orderMessage("unpaid", checkout[0], "manoj", noon, undefined, checkout).body[2]).toBe("Silver Pomfret, Surmai and 1 more");
+    expect(orderSms("unpaid", checkout[0], "manoj", undefined, checkout).vars[1]).toBe("Silver Pomfret and 2 more");
+    expect(orderMessage("unpaid", checkout[0], "manoj", noon, undefined, checkout.slice(0, 1)).body[2]).toBe("Bombil");
+  });
   it("the costliest item has no photo → null, no cheaper or stock fallback", () => {
     const checkout = [cheap, { ...dear, listing: { ...dear.listing, photo_url: null } }];
     expect(orderMessage("confirmed", cheap, "manoj", noon, undefined, checkout).image).toBeNull();

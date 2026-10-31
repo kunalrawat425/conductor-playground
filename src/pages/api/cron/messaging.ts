@@ -6,7 +6,7 @@ import { sellerNameToSlug } from "../../../lib/seller-display";
 import { cartMessage, decide, decideActivity, istDate, offerAt, pickSeller, signupMessage, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
 import { firstName, fishName } from "../../../lib/messaging/templates";
 import { dispatch, smsFallbackDue, smsFallbackFor, type Dispatch } from "../../../lib/server/messaging";
-import { againOrder, loadCheckout, ORDER_SELECT, orderMessage, orderPhoto, orderSms, type OrderWaEvent } from "../../../lib/server/notify-order-whatsapp";
+import { againOrder, checkoutFish, loadCheckout, ORDER_SELECT, orderMessage, orderPhoto, orderSms, type OrderWaEvent } from "../../../lib/server/notify-order-whatsapp";
 import { hasPaymentEvidence } from "../../../lib/server/reminders";
 import { syncWatiStatuses } from "../../../lib/server/wati-status";
 import { waNumber } from "../../../lib/server/whatsapp";
@@ -143,6 +143,8 @@ async function run({ url }: { url: URL }): Promise<Response> {
     id: o.id, seller_id: o.listing?.seller_id, name: fishName(o.listing?.description, o.listing?.species || o.species), species: o.listing?.species || o.species,
     photo: orderPhoto(o, orders), created_at: o.created_at, slot_start: o.delivery_slot_start ?? null, checkout: o.cart_id || o.id,
   } : null;
+  // An unpaid checkout is named in full: "Surmai, Bombil and 1 more" (rf2_promo_unpaid).
+  const unpaidLine = (o: any) => o ? { ...orderLine(o)!, name: checkoutFish(o, orders) } : null;
   const stateOf = (b: any): BuyerState => {
     const mine = orders.filter((o: any) => o.buyer_id === b.id).sort((x: any, y: any) => x.created_at.localeCompare(y.created_at));
     const done = mine.filter((o: any) => o.status === "completed");
@@ -160,9 +162,9 @@ async function run({ url }: { url: URL }): Promise<Response> {
       last_order_at: mine.at(-1)?.created_at ?? null,
       open_order: mine.some((o: any) => OPEN.includes(o.status)),
       last_paid_at: mine.filter((o: any) => OPEN.includes(o.status) || o.status === "completed").at(-1)?.created_at ?? null,
-      unpaid: orderLine(pending.at(-1)),
+      unpaid: unpaidLine(pending.at(-1)),
       // One per checkout (its first order), oldest first: each unpaid checkout gets its own reminder.
-      unpaids: pending.filter((o: any, i: number) => pending.findIndex((x: any) => (x.cart_id || x.id) === (o.cart_id || o.id)) === i).map(orderLine) as any,
+      unpaids: pending.filter((o: any, i: number) => pending.findIndex((x: any) => (x.cart_id || x.id) === (o.cart_id || o.id)) === i).map(unpaidLine) as any,
       delivered: again && { ...orderLine(again)!, photo: again.listing?.photo_url || null },
       last_delivered_at: done.map((o: any) => o.updated_at).sort().pop() ?? null,
       opted_out: !!b.whatsapp_opt_out_at,
@@ -172,7 +174,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
   /** The unpaid reminder for an order: rf2_unpaid (utility, photo) + its SMS. */
   const unpaidMessage = (o: any, b: any) => {
     const m = orderMessage("unpaid", o, b.first_name, now, undefined, orders);
-    return { template: m.template, body: m.body, headerImage: m.image ?? null, link_path: `/track/${o.id}`, sms: orderSms("unpaid", o, b.first_name) };
+    return { template: m.template, body: m.body, headerImage: m.image ?? null, link_path: `/track/${o.id}`, sms: orderSms("unpaid", o, b.first_name, undefined, orders) };
   };
 
   // ?test_phone: one sample of a message type, sent now to a test phone (skips every rule).

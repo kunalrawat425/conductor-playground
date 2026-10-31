@@ -99,6 +99,15 @@ export function firstName(name: string | null | undefined): string {
   return w ? w.charAt(0).toUpperCase() + w.slice(1) : "fish lover";
 }
 
+/** A checkout's fish in one line, costliest first: "Surmai", "Surmai and Bombil", "Surmai, Bombil and 1 more";
+ *  over `max` chars → "Surmai and 2 more". */
+export function fishList(names: string[], max = Infinity): string {
+  const u = [...new Set(names.filter(Boolean))];
+  if (u.length <= 1) return u[0] || "fish";
+  const two = u.length === 2 ? `${u[0]} and ${u[1]}` : `${u[0]}, ${u[1]} and ${u.length - 2} more`;
+  return two.length <= max ? two : `${u[0]} and ${u.length - 1} more`;
+}
+
 /** Problems Meta (or our brand rules) would reject a template for. Empty = OK. */
 export function templateProblems(t: TemplateDef): string[] {
   const p: string[] = [];
