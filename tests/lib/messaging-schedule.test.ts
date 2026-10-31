@@ -367,6 +367,11 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     // a failed WhatsApp still counts as reminded (the SMS fallback handles it, never a second WhatsApp)
     expect(act(T("23", "10:40"), b, [sent("act_unpaid", T("23", "10:30"), "act_unpaid:c1", "failed")]).kind).not.toBe("act_unpaid");
   });
+  it("unpaid: not when the buyer paid a newer checkout since", () => {
+    const b = buyer({ unpaid: unpaid(T("23", "10:00")), last_order_at: iso(T("23", "10:10")), last_paid_at: iso(T("23", "10:10")) });
+    expect(act(T("23", "10:30"), b).kind).not.toBe("act_unpaid");
+    expect(act(T("23", "10:30"), { ...b, last_paid_at: iso(T("22", "10:00")) }).kind).toBe("act_unpaid");
+  });
   it("unpaid: not when the slot has started", () => {
     const b = buyer({ unpaid: unpaid(T("24", "07:00"), T("24", "08:00")), last_order_at: iso(T("24", "07:00")) });
     expect(act(T("24", "08:10"), b).kind).not.toBe("act_unpaid");

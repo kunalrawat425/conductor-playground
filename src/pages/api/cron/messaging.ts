@@ -159,6 +159,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
       })),
       last_order_at: mine.at(-1)?.created_at ?? null,
       open_order: mine.some((o: any) => OPEN.includes(o.status)),
+      last_paid_at: mine.filter((o: any) => OPEN.includes(o.status) || o.status === "completed").at(-1)?.created_at ?? null,
       unpaid: orderLine(pending.at(-1)),
       // One per checkout (its first order), oldest first: each unpaid checkout gets its own reminder.
       unpaids: pending.filter((o: any, i: number) => pending.findIndex((x: any) => (x.cart_id || x.id) === (o.cart_id || o.id)) === i).map(orderLine) as any,

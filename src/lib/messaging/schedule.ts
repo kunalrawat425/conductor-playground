@@ -64,6 +64,7 @@ export type BuyerState = {
   open_order: boolean;               // paid and not finished/cancelled
   unpaid: OrderLine | null;          // latest order still waiting for payment
   unpaids?: OrderLine[];             // every checkout still waiting for payment (one per checkout), oldest first
+  last_paid_at?: string | null;      // latest paid / open / completed order: an older unpaid checkout was left for it
   delivered: OrderLine | null;       // latest delivered order
   last_delivered_at: string | null;
   opted_out: boolean;                // whatsapp_opt_out_at set: no promos or reminders
@@ -149,6 +150,8 @@ const isDue = (now: number, due: number) => now >= due && now < due + DUE_WINDOW
 const latestFirst = (lines: CartLine[]) => [...lines].sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at));
 const onMenuLines = (b: BuyerState) => latestFirst(b.cart.filter((l) => l.on_menu));
 const offMenuLines = (b: BuyerState, sellerId: string) => latestFirst(b.cart.filter((l) => !l.on_menu && l.seller_id === sellerId));
+/** An unpaid checkout the buyer left for a newer one they paid: no reminder about it. */
+const superseded = (b: BuyerState, u: OrderLine) => !!b.last_paid_at && !!u.created_at && Date.parse(b.last_paid_at) > Date.parse(u.created_at);
 
 /** Where the buyer is: cart (newer than any order) → cart with only off-menu fish → unpaid order → delivered before → generic. */
 export type Stage = "cart" | "cart_swap" | "unpaid" | "again" | "generic";
@@ -252,7 +255,7 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   // Cart with nothing left on the menu: the latest off-menu line's seller, if known and it has live fish.
   const gone = hasCart ? latestFirst(b.cart.filter((l) => !l.on_menu)).find((l) => sellers.some((s) => s.id === l.seller_id)) : undefined;
   const swap = gone && sellers.find((s) => s.id === gone.seller_id)?.live?.length ? gone.seller_id : null;
-  const stage: Stage = hasCart && onMenuLines(b).length ? "cart" : swap ? "cart_swap" : b.unpaid ? "unpaid" : b.delivered ? "again" : "generic";
+  const stage: Stage = hasCart && onMenuLines(b).length ? "cart" : swap ? "cart_swap" : b.unpaid && !superseded(b, b.unpaid) ? "unpaid" : b.delivered ? "again" : "generic";
   // The seller the message is about: the cart's, else the order's, else the nearest one.
   const orderSeller = stage === "cart_swap" ? swap : stage === "unpaid" ? b.unpaid!.seller_id : stage === "again" ? b.delivered!.seller_id : null;
   // A cart promo is about its newest on-menu line's seller (a newer hidden line names nothing).
@@ -308,7 +311,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
 
   // 1. Unpaid checkout: 30 min after it was placed, while its slot is still ahead (≤ 24 h). Each checkout once.
   for (const u of b.unpaids ?? (b.unpaid ? [b.unpaid] : [])) {
-    if (!u.created_at) continue;
+    if (!u.created_at || superseded(b, u)) continue;
     const due = Date.parse(u.created_at) + UNPAID_AFTER_MS;
     const key = `act_unpaid:${u.checkout || u.id}`;
     const slotAhead = !u.slot_start || Date.parse(u.slot_start) > now;
