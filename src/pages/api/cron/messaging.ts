@@ -79,7 +79,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   let sellerRows: any[], buyerRows: any[], cartRows: any[], orderRows: any[], logRows: any[], menuRows: any[];
   try {
     [sellerRows, buyerRows, cartRows, orderRows, logRows, menuRows] = await Promise.all([
-      all(() => sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, ${SLOT_SELLER_COLUMNS}`).eq("is_active", true).order("id")),
+      all(() => sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, is_active, ${SLOT_SELLER_COLUMNS}`).order("id")),
       all(() => sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").gte("created_at", since(60)).order("id")),
       all(() => sb.from("buyer_cart").select("id, buyer_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, deleted_at)").order("id")),
       all(() => sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", since(60)).order("id")),
@@ -98,7 +98,8 @@ export const GET: APIRoute = async ({ request, url }) => {
     name: fishName(l.description, l.species), species: l.species, price: optPrice(l), label: firstOpt(l)?.label ?? null, photo: l.photo_url ?? null,
     preorder: !!l.is_preorder_enabled,
   }));
-  const sellers: MsgSeller[] = (sellerRows || []).filter((s: any) => !s.is_test).map((s: any) => ({ ...s, slug: sellerNameToSlug(s.name), menu: menu(s.id), live: live(s.id) }));
+  const sellers: MsgSeller[] = (sellerRows || []).filter((s: any) => s.is_active && !s.is_test).map((s: any) => ({ ...s, slug: sellerNameToSlug(s.name), menu: menu(s.id), live: live(s.id) }));
+  // Every seller's phone, switched off or not: a seller never gets buyer promos or reminders.
   const sellerPhones = new Set((sellerRows || []).map((s: any) => waNumber(s.phone)).filter(Boolean));
   const waTestOnly = list("WA_TEST_ONLY");
   // Founder's DND list: buyers.dnd_at (migration 088) plus numbers that haven't signed up yet.

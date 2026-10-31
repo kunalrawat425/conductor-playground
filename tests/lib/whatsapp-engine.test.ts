@@ -348,3 +348,64 @@ describe("buyer order updates (founder 31 Oct)", () => {
     expect([...BUYER_ORDER_EVENTS].sort()).toEqual(["confirmed", "out_for_delivery"]);
   });
 });
+
+// ── The messaging cron route against an in-memory database ──
+vi.mock("@supabase/supabase-js", () => ({ createClient: () => (globalThis as any).__cronDb }));
+/** Minimal PostgREST stand-in: eq/lt/gte/in/is/not filters, update/upsert, the awaited result. Embedded joins are pre-joined in the rows. */
+function fakeDb(t: Record<string, any[]>) {
+  let n = 0;
+  const from = (table: string) => {
+    const rows = (t[table] ||= []);
+    const f: ((r: any) => boolean)[] = [];
+    let write: any = null, one = false;
+    const b: any = {
+      select: () => b, order: () => b, or: () => b, limit: () => b, range: () => b,
+      eq: (c: string, v: any) => (f.push((r) => r[c] === v), b),
+      lt: (c: string, v: any) => (f.push((r) => r[c] < v), b),
+      gte: (c: string, v: any) => (f.push((r) => r[c] >= v), b),
+      in: (c: string, v: any[]) => (f.push((r) => v.includes(r[c])), b),
+      is: (c: string, v: any) => (f.push((r) => (r[c] ?? null) === v), b),
+      not: (c: string, _op: string, v: any) => (f.push((r) => (r[c] ?? null) !== v), b),
+      update: (patch: any) => ((write = patch), b),
+      maybeSingle: () => ((one = true), b),
+      upsert: (row: any) => ({ select: async () => {
+        if (rows.some((r) => r.dedupe_key === row.dedupe_key)) return { data: [], error: null };
+        const r = { created_at: new Date().toISOString(), ...row, id: `row${++n}`, short_id: `s${n}` }; rows.push(r); return { data: [r], error: null };
+      } }),
+      then: (res: any, rej: any) => {
+        const hit = rows.filter((r) => f.every((p) => p(r)));
+        if (write) hit.forEach((r) => Object.assign(r, write));
+        return Promise.resolve({ data: one ? hit[0] ?? null : hit, error: null }).then(res, rej);
+      },
+    };
+    return b;
+  };
+  return { from, t };
+}
+const SELLER_ROW = {
+  id: "ft", name: "Fishtokri", phone: "9800000001", lat: 19.1906444, lng: 72.9791824, delivery_rad: 7, is_test: false, is_active: true,
+  opens_at: "08:00:00", closes_at: "18:00:00", open_days: ["tue", "wed", "thu", "fri", "sat", "sun"], accepts_preorder: true,
+  preorder_days: ["mon", "tue", "wed", "thu", "fri", "sat"], preorder_opens_at: null, preorder_cutoff_time: "03:00:00", delivery_days: null,
+  delivery_slots_enabled: true, delivery_slot_minutes: 120, preorder_delivery_start: "08:00:00", preorder_delivery_end: "18:00:00", preorder_days_ahead: 3,
+};
+const FRI_11 = Date.parse("2026-10-23T11:00:00+05:30");
+const buyerRow = (phone: string, x: any = {}) => ({ id: `b${phone.slice(-4)}`, phone, first_name: "Priya", created_at: new Date(FRI_11 - 61 * 60_000).toISOString(),
+  lat: 19.2, lng: 72.97, is_test: false, whatsapp_opt_in_at: "2026-10-01T00:00:00Z", whatsapp_opt_out_at: null, dnd_at: null, ...x });
+async function cron(t: Record<string, any[]>, query = `dry_run=1&now=${new Date(FRI_11).toISOString()}`) {
+  vi.stubEnv("CRON_SECRET", "s"); vi.stubEnv("WA_PROVIDER", "");
+  const db = fakeDb({ sellers: [SELLER_ROW], buyers: [], buyer_cart: [], orders: [], message_log: [], fish_listings: [], cron_lock: [{ name: "messaging", until: "2000-01-01T00:00:00Z" }], ...t });
+  (globalThis as any).__cronDb = db;
+  const { GET } = await import("../../src/pages/api/cron/messaging");
+  const res = await GET({ request: new Request("http://x", { headers: { authorization: "Bearer s" } }), url: new URL(`http://x/api/cron/messaging?${query}`) } as any);
+  return { body: await (res as Response).json(), db };
+}
+
+describe("messaging cron", () => {
+  it("a switched-off seller's phone gets no buyer messages", async () => {
+    const { body } = await cron({
+      sellers: [SELLER_ROW, { ...SELLER_ROW, id: "off", phone: "9800003218", is_active: false }],
+      buyers: [buyerRow("9800003218"), buyerRow("9800007777")],
+    });
+    expect(body.messages.map((m: any) => m.buyer)).toEqual(["…7777"]);
+  });
+});
