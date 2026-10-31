@@ -157,11 +157,11 @@ export function costliestPhoto(lines: { price?: number | null; photo?: string | 
 
 /**
  * Generic "today's / tomorrow's catch" picture (founder 30 Oct): the buyer's costliest cart item with
- * this seller (any age, on or off the menu; that item has no photo → null); no cart with them → the
- * costliest item WITH a photo on the menu the message is about (pre-order menu for rf2_catch_preorder).
+ * this seller (any age, still on the menu; that item has no photo → null); none → the costliest
+ * item WITH a photo on the menu the message is about (pre-order menu for rf2_catch_preorder).
  */
 export function catchPhoto(b: BuyerState, seller: MsgSeller, preorderOnly: boolean): string | null {
-  const mine = b.cart.filter((l) => l.seller_id === seller.id);
+  const mine = b.cart.filter((l) => l.seller_id === seller.id && l.on_menu); // never a hidden fish's photo
   if (mine.length) return costliestPhoto(mine);
   return costliestPhoto((seller.live ?? []).filter((m) => m.photo && (!preorderOnly || m.preorder)));
 }

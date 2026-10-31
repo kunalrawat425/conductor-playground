@@ -279,12 +279,17 @@ describe("generic catch promos: the seller's own photo, never stock (founder, 30
     expect(run(T("27", "18:00"), old, [], [noPhotos])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
     expect(run(T("27", "18:00"), old, [], [{ ...FT, live: [] } as MsgSeller])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
   });
-  it("buyer has cart lines with that seller (any age, off-menu too): the costliest cart item's photo", () => {
-    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, "https://x/cart-halwa.jpg", false)] });
+  it("buyer has cart lines with that seller (any age, on the menu): the costliest cart item's photo", () => {
+    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, "https://x/cart-halwa.jpg", true)] });
     expect(run(T("27", "18:00"), b, [], [FT])).toMatchObject({ template: "rf2_catch_preorder", photo: "https://x/cart-halwa.jpg" });
   });
+  it("a cart line taken off the menu never lends its photo", () => {
+    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Marinated Pomfret", 2200, "https://x/hidden.jpg", false)] });
+    expect(run(T("27", "18:00"), b, [], [FT]).photo).toBe("https://x/cart-bombil.jpg");
+    expect(run(T("27", "18:00"), buyer({ ...old, cart: [cartLine("Marinated Pomfret", 2200, "https://x/hidden.jpg", false)] }), [], [FT]).photo).not.toBe("https://x/hidden.jpg");
+  });
   it("the costliest cart item has no photo → null, even when the menu has photos", () => {
-    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, null, false)] });
+    const b = buyer({ ...old, cart: [cartLine("Bombil", 240, "https://x/cart-bombil.jpg", true), cartLine("Halwa", 2200, null, true)] });
     expect(run(T("27", "18:00"), b, [], [FT])).toMatchObject({ template: "rf2_catch_preorder", photo: null });
   });
   it("another seller's cart line never lends its photo", () => {
