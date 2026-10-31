@@ -258,6 +258,13 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
     vi.stubEnv("MSG91_FLOW_CART", "f");
     expect((await dispatch(fakeSb(), { ...msg, whatsappOk: false })).status).toBe("dry_run");
   });
+  it("a second marketing WhatsApp the same day (unique index 089) is a duplicate: nothing sent, no SMS", async () => {
+    wa(); sms();
+    const sb: any = fakeSb();
+    sb.from = () => ({ select: () => ({ in: async () => ({ data: [], error: null }) }), upsert: () => ({ select: async () => ({ data: null, error: { code: "23505", message: "duplicate key value violates unique constraint \"message_log_one_marketing_a_day\"" } }) }) });
+    expect(await dispatch(sb, msg)).toEqual({ status: "duplicate", channel: "whatsapp" });
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(0);
+  });
   it("MESSAGING_TEST_ONLY: only the founder gets real sends", async () => {
     vi.stubEnv("MESSAGING_TEST_ONLY", "9870619974"); wa();
     (globalThis.fetch as any).mockResolvedValue(ok({ messages: [{ id: "w" }] }));
@@ -407,5 +414,13 @@ describe("messaging cron", () => {
       buyers: [buyerRow("9800003218"), buyerRow("9800007777")],
     });
     expect(body.messages.map((m: any) => m.buyer)).toEqual(["…7777"]);
+  });
+  it("a live run skips while another holds the lock, and releases its own when done", async () => {
+    vi.stubEnv("MESSAGING_LIVE", "true");
+    const held = await cron({ cron_lock: [{ name: "messaging", until: new Date(Date.now() + 5 * 60_000).toISOString() }] }, "");
+    expect(held.body).toEqual({ skipped: "another run in progress" });
+    const free = await cron({}, "");
+    expect(free.body.dry).toBe(false);
+    expect(Date.parse(free.db.t.cron_lock[0].until)).toBeLessThanOrEqual(Date.now());
   });
 });

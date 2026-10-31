@@ -79,7 +79,8 @@ async function sendOne(sb: any, d: Dispatch, channel: Channel, to: string): Prom
     to_phone: to, link_path: d.link_path, status: "queued",
     payload: { template: d.template, body: d.body, headerImage: d.headerImage ?? null, sms: d.sms ?? null, smsOk: d.smsOk ?? true, smsFallback: !!d.smsFallback },
   }, { onConflict: "dedupe_key", ignoreDuplicates: true }).select("id, short_id");
-  if (error) return { status: "failed", channel, error: error.message };
+  // 23505 here is the other unique index (migration 089): this buyer already has a marketing WhatsApp today.
+  if (error) return error.code === "23505" ? { status: "duplicate", channel } : { status: "failed", channel, error: error.message };
   const id = rows?.[0]?.id as string | undefined;
   if (!id) return { status: "duplicate", channel };
 

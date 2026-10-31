@@ -33,7 +33,7 @@ async function all(q: () => any): Promise<any[]> {
 /**
  * GET|POST /api/cron/messaging — the buyer messaging engine (founder, 30 Oct). Runs every 10 min
  * (Supabase pg_cron, see migration 088) plus the Vercel slot crons as a backup; every send is
- * idempotent, so extra runs are harmless. Auth: Bearer $CRON_SECRET.
+ * idempotent, and a live run skips while another holds cron_lock (migration 089). Auth: Bearer $CRON_SECRET.
  * Each run:
  *  1. reads delivered/read/failed back from Wati; a failed reminder or order update goes once by SMS;
  *  2. per buyer, at most one message: an activity reminder (unpaid 30 min, cart 1 h, sign-up 1 h),
@@ -47,9 +47,24 @@ async function all(q: () => any): Promise<any[]> {
  *                        send one sample now to a test phone (MESSAGING_TEST_PHONES, default the founder)
  * Sends happen only when MESSAGING_LIVE=true; otherwise every run is a report. Sellers never get these.
  */
-export const GET: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = async (ctx) => {
   if (!env("CRON_SECRET")) return json({ error: "CRON_SECRET not configured" }, 503);
-  if (request.headers.get("authorization") !== `Bearer ${env("CRON_SECRET")}`) return json({ error: "Unauthorized" }, 401);
+  if (ctx.request.headers.get("authorization") !== `Bearer ${env("CRON_SECRET")}`) return json({ error: "Unauthorized" }, 401);
+  if (ctx.url.searchParams.get("dry_run") === "1" || env("MESSAGING_LIVE") !== "true") return run(ctx);
+  // One live run at a time (migration 089): two overlapping runs each read the log before the other wrote.
+  // A run that dies holds the lock 9 min at most.
+  const sb = createClient(env("PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_KEY"));
+  const { data: lock, error } = await sb.from("cron_lock").update({ until: new Date(Date.now() + 9 * 60_000).toISOString() })
+    .eq("name", "messaging").lt("until", new Date().toISOString()).select("name");
+  if (!lock?.length) return json({ skipped: "another run in progress", ...(error ? { error: error.message } : {}) });
+  try {
+    return await run(ctx);
+  } finally {
+    await sb.from("cron_lock").update({ until: new Date().toISOString() }).eq("name", "messaging");
+  }
+};
+
+async function run({ url }: { url: URL }): Promise<Response> {
   const dry = url.searchParams.get("dry_run") === "1" || env("MESSAGING_LIVE") !== "true";
   const nowParam = url.searchParams.get("now");
   const promoNow = url.searchParams.get("promo_now") === "1"; // founder's extra promo run, rules unchanged
@@ -217,7 +232,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
 
   return json({ dry, now: new Date(now).toISOString(), sync, messages: report.filter((r) => !r.skip), skipped: report.filter((r) => r.skip).length, skips: count(report.filter((r) => r.skip).map((r) => r.skip)) });
-};
+}
 
 const count = (xs: string[]) => xs.reduce((m: Record<string, number>, x) => ((m[x] = (m[x] || 0) + 1), m), {});
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o, null, 2), { status, headers: { "Content-Type": "application/json" } });
