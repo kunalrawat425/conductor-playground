@@ -113,6 +113,11 @@ describe("templates", () => {
     expect(orderMessage("paid", { ...ord, is_preorder: false }, "manoj", night).template).toBe("rf2_paid");
     expect(orderMessage("confirmed", ord, "manoj", noon).body).toEqual(["Fishtokri", "#EEB0F7AC", "Sun 25 Oct, 9–11 AM"]);
     expect(orderMessage("out_for_delivery", ord, "manoj", noon).body).toEqual(["#EEB0F7AC", "11 AM"]);
+    // Slot already over (late confirm / late dispatch): "soon", never a time that has passed.
+    const late = Date.parse("2026-10-25T12:00:00+05:30");
+    expect(orderMessage("out_for_delivery", ord, "manoj", late).body[1]).toBe("soon");
+    expect(orderMessage("confirmed", ord, "manoj", late).body[2]).toBe("soon");
+    expect(orderSms("out_for_delivery", ord, "manoj", undefined, undefined, late).vars[1]).toBe("soon");
     expect(orderMessage("completed", ord, "manoj", noon).body).toEqual(["Silver Pomfret", "Manoj", "Fishtokri"]);
     expect(orderMessage("cancelled", ord, "manoj", noon, { reason: "the seller ran out of pomfret today", refund: "₹1,380, started today, reaches your account in 5–7 working days" }).body)
       .toEqual(["Manoj", "#EEB0F7AC", "the seller ran out of pomfret today", "₹1,380, started today, reaches your account in 5–7 working days"]);

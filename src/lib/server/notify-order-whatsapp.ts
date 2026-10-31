@@ -78,14 +78,15 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
   const seller = ord.listing?.seller?.name || "The seller";
   const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed with the seller";
   const image = orderPhoto(ord, checkout, cancel);
+  const arriving = slotAhead(ord, nowMs) ? arrivingByLabel(ord.delivery_slot_end) : "soon";
   const istHour = new Date(nowMs + 5.5 * 3_600_000).getUTCHours();
   switch (event) {
     case "unpaid": return { template: "rf2_unpaid", body: [name, short, checkoutFish(ord, checkout), slot], image };
     case "paid": return ord.is_preorder && istHour >= 18
       ? { template: "rf2_paid_evening", body: [short, name, slot, seller] }
       : { template: "rf2_paid", body: [short, name, seller] };
-    case "confirmed": return { template: "rf2_confirmed", body: [seller, short, slot], image };
-    case "out_for_delivery": return { template: "rf2_out", body: [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
+    case "confirmed": return { template: "rf2_confirmed", body: [seller, short, slotAhead(ord, nowMs) || !ord.delivery_slot_end ? slot : "soon"], image };
+    case "out_for_delivery": return { template: "rf2_out", body: [short, arriving] };
     case "completed": return { template: "rf2_delivered", body: [fish, name, seller], image };
     case "cancelled": {
       const why = cancel?.reason?.replace(/\.+$/, "") || "the seller couldn't take it";
@@ -99,8 +100,11 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
   }
 }
 
+/** The slot hasn't ended yet: a late confirm / out-for-delivery says "soon", never a time already past. */
+const slotAhead = (ord: any, nowMs: number) => !!ord.delivery_slot_end && Date.parse(ord.delivery_slot_end) > nowMs;
+
 /** The SMS version of an order update (DLT templates in sms.ts; values cut to 30 chars there). Pure. */
-export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, cancel?: WaCancel, checkout?: any[]): SmsPart {
+export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, cancel?: WaCancel, checkout?: any[], nowMs = Date.now()): SmsPart {
   const short = `#${String(ord.id).slice(0, 8).toUpperCase()}`;
   const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
   const seller = ord.listing?.seller?.name || "The seller";
@@ -108,8 +112,8 @@ export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null
   switch (event) {
     case "unpaid": return { key: "UNPAID", vars: [firstName(buyerName), checkoutFish(ord, checkout, 30), slot] };
     case "paid": return { key: "PAID", vars: [short, seller, slot] };
-    case "confirmed": return { key: "CONFIRMED", vars: [seller, short, slot] };
-    case "out_for_delivery": return { key: "OUT", vars: [short, ord.delivery_slot_end ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
+    case "confirmed": return { key: "CONFIRMED", vars: [seller, short, slotAhead(ord, nowMs) || !ord.delivery_slot_end ? slot : "soon"] };
+    case "out_for_delivery": return { key: "OUT", vars: [short, slotAhead(ord, nowMs) ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
     case "completed": return { key: "DELIVERED", vars: [short, fish] };
     case "cancelled": {
       const amt = String(cancel?.refund || "").match(/₹\s?\d+(?:,\d+)*(?:\.\d+)?/)?.[0];
