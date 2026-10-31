@@ -200,6 +200,10 @@ describe("rf2_cart_swap: the cart's fish is off the seller's menu (founder, 30 O
       body: ["Priya", "Halwa and Rawas", "Fishtokri", "Baby Surmai 900–1000 g, ₹1,040", "Wed 28 Oct, 8–10 AM"],
     });
   });
+  it("a newer off-menu line of another seller doesn't hide the on-menu line's promo", () => {
+    const b = buyer({ ...old, cart: [line("Halwa", "halwa", 700, true, T("22", "10:00"), "nm"), line("Silver Pomfret Combo", "silver pomfret combo", 1230, false, T("23", "10:00"))] });
+    expect(run(T("24", "08:30"), b, [], [FT, NOMADIC])).toMatchObject({ template: "rf2_promo_cart", path: "/s/the-nomadic-catch", body: ["Saturday", "Priya", "Halwa", "The Nomadic Catch", "Sun 25 Oct, 9–11 AM"] });
+  });
   it("any line still on the menu → rf2_promo_cart, not the swap", () => {
     const b = buyer({ ...old, cart: [line("Rawas", "rawas", 990, false, T("23", "10:00")), line("Bombil", "bombil", 240, true, T("22", "10:00"))] });
     expect(run(T("27", "18:00"), b, [], [FT]).template).toBe("rf2_promo_cart");

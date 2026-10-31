@@ -248,7 +248,8 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const stage: Stage = hasCart && onMenuLines(b).length ? "cart" : swap ? "cart_swap" : b.unpaid ? "unpaid" : b.delivered ? "again" : "generic";
   // The seller the message is about: the cart's, else the order's, else the nearest one.
   const orderSeller = stage === "cart_swap" ? swap : stage === "unpaid" ? b.unpaid!.seller_id : stage === "again" ? b.delivered!.seller_id : null;
-  const seller = orderSeller ? sellers.find((s) => s.id === orderSeller) ?? null : pickSeller(b, sellers);
+  // A cart promo is about its newest on-menu line's seller (a newer hidden line names nothing).
+  const seller = orderSeller ? sellers.find((s) => s.id === orderSeller) ?? null : pickSeller(stage === "cart" ? { ...b, cart: onMenuLines(b) } : b, sellers);
   if (!seller) return { skip: "no seller delivers to them" };
 
   // ── P: Tue 6 PM, Fri/Sat/Sun 8:30 AM, one promo by stage ──
