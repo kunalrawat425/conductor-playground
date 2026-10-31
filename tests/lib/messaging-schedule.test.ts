@@ -9,7 +9,7 @@ const FISHTOKRI: MsgSeller = {
   opens_at: "08:00:00", closes_at: "18:00:00", open_days: ["tue", "wed", "thu", "fri", "sat", "sun"], accepts_preorder: true,
   preorder_days: ["mon", "tue", "wed", "thu", "fri", "sat"], preorder_opens_at: null, preorder_cutoff_time: "03:00:00", delivery_days: null,
   delivery_slots_enabled: true, delivery_slot_minutes: 120, preorder_delivery_start: "08:00:00", preorder_delivery_end: "18:00:00", preorder_days_ahead: 3,
-  menu: "Surmai · Pomfret · Bombil",
+  menu: "Surmai · Pomfret · Bombil", todayMenu: "Surmai · Pomfret · Bombil",
 } as MsgSeller;
 const NOMADIC: MsgSeller = {
   id: "nm", name: "The Nomadic Catch", slug: "the-nomadic-catch", lat: 19.2186389, lng: 72.9557714, delivery_rad: 6,
@@ -104,17 +104,21 @@ describe("Tue 6 PM + Fri/Sat/Sun 8:30 AM promo, one per buyer by stage", () => {
     for (const d of ["26", "21", "22"]) for (const hm of ["08:30", "18:00", "19:30"]) expect(run(T(d, hm), old).skip, `${d} ${hm}`).toBe("nothing due");
     expect(run(T("27", "19:45"), old)).toMatchObject({ kind: "promo" }); // job late, still inside the 2 h window
   });
-  it("Fri/Sat/Sun morning generic with a Today slot → rf2_catch_prices: menu, order-by (last Today slot end − 2 h), first slot", () => {
+  it("Fri/Sat/Sun morning generic with a Today slot → rf2_catch_prices: today's menu, order-by (last Today slot end − 2 h), delivery today", () => {
     const d = run(T("24", "08:30"), old);
     expect(d).toMatchObject({
       kind: "promo", template: "rf2_catch_prices", mode: "today", path: "/shop", personal: false,
-      body: ["Priya", "Saturday", "Surmai · Pomfret · Bombil", "4 PM", "today, 10 AM–12 PM"],
+      body: ["Priya", "Saturday", "Surmai · Pomfret · Bombil", "4 PM", "today"],
     });
     expect(d.body).toHaveLength(5);
-    expect(run(T("23", "08:30"), old).body).toEqual(["Priya", "Friday", "Surmai · Pomfret · Bombil", "4 PM", "today, 10 AM–12 PM"]);
-    expect(run(T("25", "08:30"), old).body).toEqual(["Priya", "Sunday", "Surmai · Pomfret · Bombil", "4 PM", "today, 10 AM–12 PM"]);
+    expect(run(T("23", "08:30"), old).body).toEqual(["Priya", "Friday", "Surmai · Pomfret · Bombil", "4 PM", "today"]);
+    expect(run(T("25", "08:30"), old).body).toEqual(["Priya", "Sunday", "Surmai · Pomfret · Bombil", "4 PM", "today"]);
     // A shop closing at 8 PM: last Today slot 6–8 PM, bookable until 6 PM.
     expect(run(T("24", "08:30"), old, [], [{ ...FISHTOKRI, closes_at: "20:00:00" } as MsgSeller]).body[3]).toBe("6 PM");
+  });
+  it("rf2_catch_prices lists only fish available today, never pre-order-only ones", () => {
+    expect(run(T("24", "08:30"), old, [], [{ ...FISHTOKRI, menu: "Surmai · Pomfret · Bombil", todayMenu: "Bombil" } as MsgSeller]).body[2]).toBe("Bombil");
+    expect(run(T("24", "08:30"), old, [], [{ ...FISHTOKRI, todayMenu: "" } as MsgSeller]).skip).toBe("nothing due");
   });
   it("Fri/Sat/Sun morning with pre-order only → rf2_catch_preorder; neither fits → none", () => {
     // Nomadic (no same-day) delivers Sunday: Saturday gets the pre-order for tomorrow.

@@ -45,6 +45,7 @@ export type MsgSeller = SlotSeller & {
   id: string; name: string; slug: string;
   lat?: number | string | null; lng?: number | string | null; delivery_rad?: number | string | null;
   menu?: string;                     // "Surmai · Pomfret · Bombil": its pre-order fish, for rf2_catch_preorder
+  todayMenu?: string;                // the same from its available-today fish, for rf2_catch_prices
   live?: MenuItem[];                 // its live listings (available or pre-order): rf2_cart_swap and the generic promo's photo
 };
 /** A live listing: name, first pricing option (price, label), listing photo, open for pre-order. */
@@ -217,9 +218,10 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   }
   if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, fish, offer.when], path: `/track/${b.unpaid!.id}` };
   if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, fish, seller.name, offer.when] };
-  // Morning slot (Fri/Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM".
-  if (offer.mode === "today" && offer.by && seller.menu && istMin(due) < 12 * 60) {
-    return { ...m, template: "rf2_catch_prices", photo: catchPhoto(b, seller, false), body: [b.name, day, seller.menu, offer.by, offer.when], path: "/shop" };
+  // Morning slot (Fri/Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM for delivery today"
+  // (not the first slot: someone ordering at 3 PM gets 4–6 PM).
+  if (offer.mode === "today" && offer.by && seller.todayMenu && istMin(due) < 12 * 60) {
+    return { ...m, template: "rf2_catch_prices", photo: catchPhoto(b, seller, false), body: [b.name, day, seller.todayMenu, offer.by, "today"], path: "/shop" };
   }
   // "Tomorrow morning's fresh catch is open for pre-order".
   if (offer.mode !== "preorder" || offer.date !== addDays(istDate(due), 1) || !seller.menu) return null;

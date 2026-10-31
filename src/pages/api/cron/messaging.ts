@@ -123,13 +123,13 @@ async function run({ url }: { url: URL }): Promise<Response> {
     console.error("[cron/messaging] query failed", e?.message);
     return json({ error: `query failed: ${e?.message}` }, 500);
   }
-  // Each seller's pre-order fish for rf2_catch_preorder: "Surmai · Pomfret · Bombil" (names only, no prices).
-  const menu = (id: string) => [...new Set((menuRows || []).filter((l: any) => l.seller_id === id && l.is_preorder_enabled).map((l: any) => fishName(l.description, l.species)))].slice(0, 3).join(" · ");
+  // Each seller's pre-order fish (rf2_catch_preorder) or available-today fish (rf2_catch_prices): "Surmai · Pomfret · Bombil" (names only, no prices).
+  const menu = (id: string, flag: "is_preorder_enabled" | "is_available") => [...new Set((menuRows || []).filter((l: any) => l.seller_id === id && l[flag]).map((l: any) => fishName(l.description, l.species)))].slice(0, 3).join(" · ");
   const live = (id: string) => (menuRows || []).filter((l: any) => l.seller_id === id && optPrice(l) > 0).map((l: any) => ({
     name: fishName(l.description, l.species), species: l.species, price: optPrice(l), label: firstOpt(l)?.label ?? null, photo: l.photo_url ?? null,
     preorder: !!l.is_preorder_enabled,
   }));
-  const sellers: MsgSeller[] = (sellerRows || []).filter((s: any) => s.is_active && !s.is_test).map((s: any) => ({ ...s, slug: sellerNameToSlug(s.name), menu: menu(s.id), live: live(s.id) }));
+  const sellers: MsgSeller[] = (sellerRows || []).filter((s: any) => s.is_active && !s.is_test).map((s: any) => ({ ...s, slug: sellerNameToSlug(s.name), menu: menu(s.id, "is_preorder_enabled"), todayMenu: menu(s.id, "is_available"), live: live(s.id) }));
   // Every seller's phone, switched off or not: a seller never gets buyer promos or reminders.
   const sellerPhones = new Set((sellerRows || []).map((s: any) => waNumber(s.phone)).filter(Boolean));
   const waTestOnly = list("WA_TEST_ONLY");
