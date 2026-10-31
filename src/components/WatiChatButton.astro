@@ -6,8 +6,8 @@
  * skips it on the seller dashboard). Sits above the bottom nav and the cart bar.
  */
 import { SUPPORT_WHATSAPP } from "../lib/brand";
-/** marginBottom: 150 clears the app's bottom nav + cart bar; pages without them pass a smaller one. */
-const { marginBottom = "150" } = Astro.props as { marginBottom?: string };
+/** marginBottom: 20 px (founder 31 Oct); app pages with the bottom nav pass 84 (64 px nav + 20). */
+const { marginBottom = "20" } = Astro.props as { marginBottom?: string };
 const options = {
   enabled: true,
   // Founder's Wati generator settings (30 Oct; button on the left since 31 Oct), except: marginBottom stays 150 so the button clears
