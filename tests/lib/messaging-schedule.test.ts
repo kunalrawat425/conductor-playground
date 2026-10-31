@@ -391,6 +391,15 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     const signedThenCart = buyer({ created_at: iso(T("23", "09:00")), cart: cart(T("23", "11:00")) });
     expect(act(T("23", "12:00"), signedThenCart, [sent("act_signup", T("23", "10:00"), "act_signup:b")]).skip).toBe("cart already reminded");
   });
+  it("a promo today caps the cart reminder; a Meta block holds cart / sign-up reminders 72 h, never the unpaid one", () => {
+    const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("24", "10:00")) });
+    expect(act(T("24", "11:00"), b, [{ ...log("promo", T("24", "08:30")), status: "delivered" }]).skip).toBe("cart already reminded");
+    const blocked = { ...log("promo", T("23", "08:30")), status: "failed", error: "Meta has restricted it for higher quality messaging" };
+    expect(act(T("24", "11:00"), b, [blocked]).skip).toBe("meta limit: waiting");
+    expect(act(T("23", "11:00"), buyer({ created_at: iso(T("23", "10:00")) }), [{ ...blocked, kind: "act_signup", created_at: iso(T("23", "09:00")) }]).skip).toBe("meta limit: waiting");
+    expect(act(T("24", "10:31"), buyer({ unpaid: unpaid(T("24", "10:00"), T("25", "08:00")), last_order_at: iso(T("24", "10:00")) }), [blocked]).kind).toBe("act_unpaid");
+    expect(run(T("24", "08:30"), buyer({ created_at: iso(T("10", "10:00")) }), [{ ...blocked, kind: "act_cart" }]).skip).toBe("meta limit: waiting");
+  });
   it("night: an action after 8 PM is reminded 8–9 AM next day if still true; never 9 PM–8 AM", () => {
     const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("23", "20:30")) });
     expect(act(T("23", "21:30"), b).skip).toBe("quiet hours");

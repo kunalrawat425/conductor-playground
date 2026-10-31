@@ -13,11 +13,12 @@
  *     a Fri recipient skips Sat/Sun until the next Tue; none within 3 days of a delivery or
  *     after 30 days inactive.
  *     No promo within 48 h of an activity reminder (founder, 30 Oct), and none for 72 h after Meta
- *     blocked a promo to that buyer (per-user marketing limit: wait, don't retry).
+ *     blocked a marketing message to that buyer (per-user marketing limit: wait, don't retry).
  *  R  Activity reminders (founder, 30 Oct), once per action, 8 AM–9 PM, decideActivity():
  *     unpaid checkout + 30 min → rf2_unpaid · cart left + 1 h → rf2_cart_today / rf2_cart_preorder ·
- *     sign-up with no cart + 1 h → rf2_welcome. Highest only (unpaid > cart > sign-up); at most one
- *     cart/sign-up reminder a day; an action in quiet hours is reminded at 8 AM next day if still true.
+ *     sign-up with no cart + 1 h → rf2_welcome. Highest only (unpaid > cart > sign-up); cart/sign-up
+ *     only when no promo or reminder went that day and Meta's 72 h hold is over (both are MARKETING);
+ *     an action in quiet hours is reminded at 8 AM next day if still true.
  *     Channel: WhatsApp if opted in, else SMS (dispatch in lib/server/messaging.ts).
  * Order updates live elsewhere (notify-order-whatsapp.ts).
  *
@@ -73,6 +74,8 @@ export type ActKind = "act_unpaid" | "act_cart" | "act_signup";
 export type Kind = "B1" | "B2" | "promo" | ActKind;
 export const PROMO_KINDS: string[] = ["B1", "B2", "promo"];
 export const ACT_KINDS: string[] = ["act_unpaid", "act_cart", "act_signup"];
+/** MARKETING-template kinds: at most one of them a day, and a Meta block on any holds them all 72 h (act_unpaid is utility). */
+export const MARKETING_KINDS: string[] = [...PROMO_KINDS, "act_cart", "act_signup"];
 export const UNPAID_AFTER_MS = 30 * 60_000;      // founder, 30 Oct
 export const CART_AFTER_MS = 60 * 60_000;
 export const SIGNUP_AFTER_MS = 60 * 60_000;
@@ -82,6 +85,7 @@ export const META_HOLD_MS = 72 * 3_600_000;      // Meta blocked a promo → non
 export const isReal = (x: SentLog) => !x.status || ["sent", "delivered", "read"].includes(x.status);
 /** Meta's per-user marketing limit ("restricted it for higher quality messaging", error 131049). */
 export const metaBlocked = (x: SentLog) => x.status === "failed" && /restricted|131049|higher quality/i.test(String(x.error || ""));
+const metaHold = (now: number, history: SentLog[]) => history.some((x) => metaBlocked(x) && MARKETING_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < META_HOLD_MS);
 export type PromoTemplate = "rf2_welcome" | "rf2_cart_today" | "rf2_cart_preorder" | "rf2_promo_cart" | "rf2_cart_swap" | "rf2_promo_unpaid" | "rf2_order_again" | "rf2_catch_preorder" | "rf2_catch_prices";
 export type Decision = {
   kind: Kind;
@@ -238,7 +242,7 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   }
   // Founder 30 Oct: an activity reminder in the last 2 days → no promo; Meta blocked a promo → wait 3 days.
   if (!all && real.some((x) => ACT_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < ACT_PROMO_GAP_MS)) return { skip: "activity reminder <48h" };
-  if (!all && history.some((x) => metaBlocked(x) && PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < META_HOLD_MS)) return { skip: "meta limit: waiting" };
+  if (!all && metaHold(now, history)) return { skip: "meta limit: waiting" };
   const cartMs = lastCartMs(b);
   const orderMs = b.last_order_at ? Date.parse(b.last_order_at) : 0;
   const hasCart = b.cart.length > 0 && cartMs > orderMs && now - cartMs <= 7 * DAY_MS;
@@ -310,7 +314,9 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
     }
   }
   if (b.open_order) return { skip: "open order" };
-  const capped = history.some((x) => isReal(x) && x.slot_date === today && (x.kind === "act_cart" || x.kind === "act_signup"));
+  // One marketing message a day: a promo today caps the cart / sign-up reminder too. Meta hold: wait 72 h.
+  const capped = history.some((x) => isReal(x) && x.slot_date === today && MARKETING_KINDS.includes(x.kind));
+  const held = metaHold(now, history);
 
   // 2. Cart left: 1 h after the last change, no order since, something still on the menu (≤ 24 h).
   const cartMs = lastCartMs(b);
@@ -319,6 +325,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
     const key = `act_cart:${b.id}:${istDate(cartMs)}`;
     const seller = pickSeller({ ...b, cart: onMenuLines(b) }, sellers);
     if (capped || done(key)) return { skip: "cart already reminded" };
+    if (held) return { skip: "meta limit: waiting" };
     if (!seller) return { skip: "no seller delivers to them" };
     if (!reminderWindow(cartMs + CART_AFTER_MS, now)) return { skip: "nothing due" };
     const offer = offerAt(seller, now);
@@ -331,6 +338,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
   if (!b.cart.length && !b.last_order_at && now - signed < DAY_MS) {
     const key = `act_signup:${b.id}`;
     if (capped || done(key)) return { skip: "sign-up already reminded" };
+    if (held) return { skip: "meta limit: waiting" };
     if (!reminderWindow(signed + SIGNUP_AFTER_MS, now)) return { skip: "nothing due" };
     const seller = pickSeller(b, sellers);
     const offer = seller && offerAt(seller, now);
