@@ -493,9 +493,10 @@ const REVIEW_SLOTS = [
     @media(min-width:900px){
       .wall{padding:64px 28px 24px}
       .wall-grid{display:block}
-      .wall-grid>div:last-child{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;max-width:1000px;margin:8px auto 0}
+      /* Post your plate above What buyers say, one centred column (founder 31 Oct) */
+      .wall-grid>div:last-child{display:flex;flex-direction:column;align-items:stretch;gap:28px;max-width:560px;margin:8px auto 0}
       .wall-grid>div:last-child .rv{margin-top:0}
-
+      .wall-grid>div:last-child>*{margin-left:0;margin-right:0;width:100%;box-sizing:border-box}
       .post{margin-top:0}
     }
     @media(prefers-reduced-motion:reduce){.dc-claim .pl,.ticker-track,.fish3d{animation:none}}
