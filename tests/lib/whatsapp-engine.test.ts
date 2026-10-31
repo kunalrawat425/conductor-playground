@@ -424,6 +424,13 @@ describe("messaging cron", () => {
     });
     expect(body.messages.map((m: any) => m.buyer)).toEqual(["…7777"]);
   });
+  it("a cart line the cart itself would drop (pack size gone) isn't named as waiting in the cart", async () => {
+    const listing = { seller_id: "ft", species: "pomfret", description: "Khapri Pomfret · Cut pcs", photo_url: "https://x/k.jpg", pricing_options: [{ id: "o2", label: "500–600 g", price: 1220 }],
+      is_available: true, is_preorder_enabled: true, is_order_paused: false, weight_avail: null, deleted_at: null };
+    const line = (opt: string) => ({ id: "c1", buyer_id: "b7777", pricing_option_id: opt, placement_kind: "same_day", qty: 1, updated_at: new Date(FRI_11 - 60 * 60_000).toISOString(), listing });
+    expect((await cron({ buyers: [buyerRow("9800007777")], buyer_cart: [line("o2")] })).body.messages.map((m: any) => m.template)).toEqual(["rf2_cart_today"]);
+    expect((await cron({ buyers: [buyerRow("9800007777")], buyer_cart: [line("o1")] })).body.messages).toEqual([]);
+  });
   it("a live run skips while another holds the lock, and releases its own when done", async () => {
     vi.stubEnv("MESSAGING_LIVE", "true");
     const held = await cron({ cron_lock: [{ name: "messaging", until: new Date(Date.now() + 5 * 60_000).toISOString() }] }, "");

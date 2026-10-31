@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { checkLine } from "../../../lib/cart";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
 import { cartMessage, decide, decideActivity, istDate, offerAt, pickSeller, signupMessage, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
@@ -98,7 +99,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
     [sellerRows, buyerRows, cartRows, orderRows, logRows, menuRows] = await Promise.all([
       all(() => sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, is_active, ${SLOT_SELLER_COLUMNS}`).order("id")),
       all(() => sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").gte("created_at", since(60)).order("id")),
-      all(() => sb.from("buyer_cart").select("id, buyer_id, pricing_option_id, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, deleted_at)").order("id")),
+      all(() => sb.from("buyer_cart").select("id, buyer_id, pricing_option_id, placement_kind, qty, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, is_order_paused, weight_avail, deleted_at)").order("id")),
       all(() => sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", since(60)).order("id")),
       // Last 8 days, any status: gaps (≤ 72 h) and caps count real sends only; "already reminded" counts failed ones too.
       all(() => sb.from("message_log").select("id, buyer_id, kind, slot_date, created_at, status, channel, error, dedupe_key").not("buyer_id", "is", null).gte("created_at", since(8)).order("id")),
@@ -139,7 +140,8 @@ async function run({ url }: { url: URL }): Promise<Response> {
       cart: (cartRows || []).filter((c: any) => c.buyer_id === b.id && c.listing).map((c: any) => ({
         seller_id: c.listing.seller_id, species: c.listing.species, photo: c.listing.photo_url, price: optPrice(c.listing),
         name: fishName(c.listing.description, c.listing.species), label: lineOpt(c.listing, c.pricing_option_id)?.label ?? null,
-        on_menu: !c.listing.deleted_at && (c.listing.is_available || c.listing.is_preorder_enabled),
+        // What the cart itself would still accept (option, mode, pause, stock), not just "listing is live".
+        on_menu: !("reason" in checkLine({ pricing_option_id: c.pricing_option_id || "", qty: Number(c.qty) } as any, c.listing, c.placement_kind === "preorder" ? "preorder" : "same_day")),
         updated_at: c.updated_at,
       })),
       last_order_at: mine.at(-1)?.created_at ?? null,
