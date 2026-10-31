@@ -64,11 +64,11 @@ describe("promos: a cart is only covered by promo slots here (the 1 h cart remin
   it("a cart is covered by the next slot: rf2_promo_cart (Sat 8:30 for a Fri cart)", () => {
     expect(run(T("23", "11:15"), buyer({ cart: cart("ft", T("23", "10:15")) })).skip).toBe("nothing due");
     expect(run(T("24", "08:30"), buyer({ cart: cart("ft", T("23", "10:15")) }))).toMatchObject({
-      kind: "promo", template: "rf2_promo_cart", personal: true, path: "/s/fishtokri", body: ["Saturday", "Priya", "Baby Rawas", "Fishtokri", "today, 10 AM–12 PM"],
+      kind: "promo", template: "rf2_promo_cart", personal: true, path: "/s/fishtokri?checkout=1", body: ["Saturday", "Priya", "Baby Rawas", "Fishtokri", "today, 10 AM–12 PM"],
     });
     // Nomadic cart on Saturday morning: pre-order slot for Sunday (no B2 to wait for any more).
     expect(run(T("24", "08:30"), buyer({ cart: cart("nm", T("23", "10:00")) }))).toMatchObject({
-      template: "rf2_promo_cart", when: "Sun 25 Oct, 9–11 AM", path: "/s/the-nomadic-catch",
+      template: "rf2_promo_cart", when: "Sun 25 Oct, 9–11 AM", path: "/s/the-nomadic-catch?checkout=1",
     });
   });
   it("no item still on the menu → not a cart message", () => {
@@ -137,7 +137,7 @@ describe("Tue 6 PM + Fri/Sat/Sun 8:30 AM promo, one per buyer by stage", () => {
   it("cart → rf2_promo_cart with their fish and seller", () => {
     const b = buyer({ created_at: iso(T("10", "10:00")), cart: [{ seller_id: "ft", name: "Baby Rawas", on_menu: true, updated_at: iso(T("17", "10:00")) }] });
     expect(run(T("23", "08:30"), b)).toMatchObject({
-      kind: "promo", template: "rf2_promo_cart", path: "/s/fishtokri",
+      kind: "promo", template: "rf2_promo_cart", path: "/s/fishtokri?checkout=1",
       body: ["Friday", "Priya", "Baby Rawas", "Fishtokri", "today, 10 AM–12 PM"],
     });
   });
@@ -206,7 +206,7 @@ describe("rf2_cart_swap: the cart's fish is off the seller's menu (founder, 30 O
   });
   it("a newer off-menu line of another seller doesn't hide the on-menu line's promo", () => {
     const b = buyer({ ...old, cart: [line("Halwa", "halwa", 700, true, T("22", "10:00"), "nm"), line("Silver Pomfret Combo", "silver pomfret combo", 1230, false, T("23", "10:00"))] });
-    expect(run(T("24", "08:30"), b, [], [FT, NOMADIC])).toMatchObject({ template: "rf2_promo_cart", path: "/s/the-nomadic-catch", body: ["Saturday", "Priya", "Halwa", "The Nomadic Catch", "Sun 25 Oct, 9–11 AM"] });
+    expect(run(T("24", "08:30"), b, [], [FT, NOMADIC])).toMatchObject({ template: "rf2_promo_cart", path: "/s/the-nomadic-catch?checkout=1", body: ["Saturday", "Priya", "Halwa", "The Nomadic Catch", "Sun 25 Oct, 9–11 AM"] });
   });
   it("any line still on the menu → rf2_promo_cart, not the swap", () => {
     const b = buyer({ ...old, cart: [line("Rawas", "rawas", 990, false, T("23", "10:00")), line("Bombil", "bombil", 240, true, T("22", "10:00"))] });
@@ -380,7 +380,7 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("23", "10:15")) });
     expect(act(T("23", "11:14"), b).skip).toBe("nothing due");
     expect(act(T("23", "11:15"), b)).toMatchObject({
-      kind: "act_cart", template: "rf2_cart_today", dedupe_key: "act_cart:b:2026-10-23", photo: "https://x/rawas.jpg", path: "/s/fishtokri",
+      kind: "act_cart", template: "rf2_cart_today", dedupe_key: "act_cart:b:2026-10-23", photo: "https://x/rawas.jpg", path: "/s/fishtokri?checkout=1",
       body: ["Priya", "Baby Rawas", "Fishtokri", "today, 12–2 PM"], sms: { key: "CART", vars: ["Priya", "Baby Rawas", "Fishtokri", "today, 12–2 PM"] },
     });
   });
@@ -430,7 +430,7 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     const b = buyer({ cart: [
       { seller_id: "ft", name: "Surmai", on_menu: true, updated_at: iso(T("23", "10:15")) },
       { seller_id: "nm", name: "Halwa", on_menu: true, updated_at: iso(T("23", "09:00")) }] });
-    expect(act(T("23", "11:15"), b)).toMatchObject({ body: ["Priya", "Surmai", "Fishtokri", "today, 12–2 PM"], path: "/s/fishtokri" });
+    expect(act(T("23", "11:15"), b)).toMatchObject({ body: ["Priya", "Surmai", "Fishtokri", "today, 12–2 PM"], path: "/s/fishtokri?checkout=1" });
   });
   it("DND and STOP get no reminders", () => {
     expect(act(T("23", "11:15"), buyer({ cart: cart(T("23", "10:15")), dnd: true })).skip).toBe("do not message");
