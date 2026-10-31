@@ -1,4 +1,5 @@
 ---
+import InAppBrowserBar from "../InAppBrowserBar.astro";
 import FunnelTrack from "../FunnelTrack.astro";
 import GeoHelpDialog from "./molecules/GeoHelpDialog.astro";
 import "../../styles/tokens.css";
@@ -212,6 +213,7 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
     )}
   </head>
   <body class:list={[!hideNav && "v2-has-bottom-nav", festive && "festive-diwali"]}>
+  <InAppBrowserBar />
     {enableTracking && (
       <>
         <!-- Google Tag Manager (noscript) -->

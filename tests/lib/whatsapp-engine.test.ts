@@ -371,9 +371,9 @@ describe("Wati status read-back", () => {
 });
 
 describe("buyer order updates (founder 31 Oct)", () => {
-  it("only seller-confirmed and out-for-delivery reach the buyer", async () => {
+  it("only seller-confirmed, out-for-delivery and cancelled/refund reach the buyer", async () => {
     const { BUYER_ORDER_EVENTS } = await import("../../src/lib/server/notify-order-whatsapp");
-    expect([...BUYER_ORDER_EVENTS].sort()).toEqual(["confirmed", "out_for_delivery"]);
+    expect([...BUYER_ORDER_EVENTS].sort()).toEqual(["cancelled", "confirmed", "out_for_delivery"]);
   });
 });
 

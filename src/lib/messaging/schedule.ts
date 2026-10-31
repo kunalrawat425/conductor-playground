@@ -215,9 +215,11 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   if (stage === "cart") {
     if (!items.length) return null;
     // Promo slot → rf2_promo_cart; the 1 h cart reminder (act_cart) → rf2_cart_today / rf2_cart_preorder.
+    // Cart reminders open the seller page with checkout already open (founder 31 Oct); not logged in → just the menu.
+    const path = `${m.path}?checkout=1`;
     return kind === "promo"
-      ? { ...m, template: "rf2_promo_cart", body: [day, b.name, fish, seller.name, offer.when] }
-      : { ...m, template: offer.mode === "today" ? "rf2_cart_today" : "rf2_cart_preorder", body: [b.name, fish, seller.name, offer.when] };
+      ? { ...m, path, template: "rf2_promo_cart", body: [day, b.name, fish, seller.name, offer.when] }
+      : { ...m, path, template: offer.mode === "today" ? "rf2_cart_today" : "rf2_cart_preorder", body: [b.name, fish, seller.name, offer.when] };
   }
   if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, fish, offer.when], path: `/track/${b.unpaid!.id}` };
   if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, fish, seller.name, offer.when] };

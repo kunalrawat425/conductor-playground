@@ -1,0 +1,52 @@
+---
+/**
+ * Instagram / Facebook in-app browser → "Open in your browser" bar (founder 31 Oct).
+ * Shown only inside those in-app browsers; never in Chrome, Safari, Samsung Internet or WhatsApp's
+ * Chrome tab. The link keeps the page and its UTMs, and adds utm_source/medium when the visit has none,
+ * so GA still credits Instagram after the hop.
+ *  - Android: an intent:// link opens the phone's default browser (chooser if none is set).
+ *  - iPhone: x-safari-https:// opens Safari (iOS 17+); if nothing happens, a hint points to ··· → Open in browser.
+ */
+---
+<div id="iab" class="iab" hidden>
+  <span class="iab-t">For faster login and checkout, open Relifish in your browser</span>
+  <a id="iab-go" class="iab-go" href="#" rel="noopener">Open</a>
+  <button type="button" id="iab-x" class="iab-x" aria-label="Close">✕</button>
+  <span id="iab-hint" class="iab-hint" hidden>Tap <b>···</b> at the top, then <b>Open in external browser</b></span>
+</div>
+<script is:inline>
+  (function () {
+    var ua = navigator.userAgent || "";
+    var app = /Instagram/i.test(ua) ? "instagram" : /FBAN|FBAV|FB_IAB/i.test(ua) ? "facebook" : "";
+    if (!app) return;
+    try { if (sessionStorage.getItem("iab-closed")) return; } catch (e) {}
+    var bar = document.getElementById("iab"); if (!bar) return;
+    var u = new URL(location.href);
+    if (!u.searchParams.get("utm_source")) { u.searchParams.set("utm_source", app); u.searchParams.set("utm_medium", "inapp_browser"); }
+    u.searchParams.set("from_iab", "1");
+    var android = /Android/i.test(ua), ios = /iPhone|iPad|iPod/i.test(ua);
+    var go = document.getElementById("iab-go");
+    var href = android
+      ? "intent://" + u.host + u.pathname + u.search + "#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=" + encodeURIComponent(u.href) + ";end"
+      : ios ? "x-safari-https://" + u.host + u.pathname + u.search : u.href;
+    go.setAttribute("href", href);
+    function track(e) { try { window.gtag && gtag("event", e, { app: app, platform: android ? "android" : ios ? "ios" : "other" }); } catch (x) {} }
+    go.addEventListener("click", function () {
+      track("iab_open_browser");
+      // If the hop didn't happen (old iOS, Instagram blocked it), show the manual way after a moment.
+      setTimeout(function () { if (document.visibilityState === "visible") document.getElementById("iab-hint").hidden = false; }, 1200);
+    });
+    document.getElementById("iab-x").addEventListener("click", function () { bar.hidden = true; try { sessionStorage.setItem("iab-closed", "1"); } catch (e) {} track("iab_dismiss"); });
+    bar.hidden = false; document.documentElement.classList.add("has-iab");
+    track("iab_shown");
+  })();
+</script>
+<style is:global>
+  .iab { position: relative; z-index: 9000; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px; background: #0B1B3F; color: #fff; font: 600 13px/1.35 Inter, system-ui, sans-serif; }
+  .iab[hidden] { display: none; }
+  .iab-t { flex: 1; min-width: 0; }
+  .iab-go { flex: none; background: #0066FF; color: #fff; text-decoration: none; padding: 9px 16px; border-radius: 999px; font-weight: 800; min-height: 36px; display: inline-flex; align-items: center; }
+  .iab-x { flex: none; background: none; border: 0; color: rgba(255,255,255,.7); font-size: 16px; width: 32px; height: 32px; cursor: pointer; }
+  .iab-hint { flex-basis: 100%; font-weight: 500; color: #CFE0FF; }
+  .iab-hint[hidden] { display: none; }
+</style>
