@@ -47,16 +47,11 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
 
     <label class="lab" for="dw-im">Your message</label>
     <textarea class="inp" id="dw-im" rows="3" maxlength="180">{MESSAGE}</textarea>
-    <label class="lab" for="dw-if">Sign as</label>
+    <label class="lab" for="dw-if">Own the card</label>
     <input class="inp" id="dw-if" maxlength="40" value="With love" />
 
     <div class="btns">
-      <button type="button" class="wa" id="dw-share">Share image</button>
-    </div>
-    <div class="invite">
-      <b>🎆 Let your family make theirs too</b>
-      <span>Skip the forwards. Let everyone send wishes in their own words.</span>
-      <button type="button" id="dw-invite">Share the card maker</button>
+      <button type="button" class="wa" id="dw-share">Start wishing 🪔</button>
     </div>
   </div>
 
@@ -65,9 +60,6 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     .dw-got[hidden]{display:none}
     .dw-got b{display:block;font:800 16px Inter;color:var(--v2-ink,#0B1B3F)}.dw-got span{display:block;font:500 13px/1.45 Inter;color:var(--v2-ink-2,#334155);margin:4px 0 10px}
     .dw-got button{background:#0066FF;color:#fff;border:0;border-radius:999px;padding:12px 20px;font:800 15px Inter;min-height:44px;cursor:pointer}
-    .invite{margin-top:18px;background:#FFF7ED;border:1.5px dashed #FDBA74;border-radius:14px;padding:14px;text-align:center}
-    .invite b{display:block;font:800 15px Inter;color:#9A3412}.invite span{display:block;font:500 13px Inter;color:#7C2D12;margin:4px 0 10px}
-    .invite button{background:#fff;border:1.5px solid #25D366;color:#128C7E;border-radius:999px;padding:11px 18px;font:800 14px Inter;cursor:pointer;min-height:44px}
     .dw { padding: 14px; max-width: 430px; margin: 0 auto; font-family: Inter, sans-serif; color: var(--v2-ink, #0F172A); }
     /* the card: 4:5, exported as the image */
     .dw .dw-card { position: relative; width: 100%; aspect-ratio: 4/5; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px 26px; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
@@ -130,7 +122,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     .dw .t-rosegold .rule { background: #B76E79; }
     .dw .t-rosegold .f { font: 400 30px 'Great Vibes'; }
     /* picker */
-    .dw .lab { display: block; font: 800 14px Inter, sans-serif; margin: 16px 2px 8px; }
+    .dw .lab { display: block; font: 800 14px Inter, sans-serif; margin: 24px 2px 10px; }
     .dw .themes { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
     .dw .th { flex: none; width: 78px; padding: 0; border: 0; background: none; text-align: center; font: 600 11px Inter, sans-serif; color: var(--v2-ink-3, #475569); cursor: pointer; }
     .dw .th .sw { position: relative; overflow: hidden; width: 78px; height: 98px; margin-bottom: 4px; border-radius: 12px; border: 2px solid transparent; display: flex; align-items: center; justify-content: center; }
@@ -139,7 +131,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     .dw .th.on .sw { border-color: #0066FF; box-shadow: 0 0 0 2px #fff inset; }
     .dw .th.on { color: #0066FF; }
     .dw .inp { width: 100%; border: 1px solid var(--v2-border, #E2E8F0); border-radius: 10px; padding: 10px; font: 500 14px Inter, sans-serif; background: var(--v2-bg, #fff); color: var(--v2-ink, #0F172A); resize: vertical; }
-    .dw .btns { display: flex; gap: 10px; margin-top: 14px; }
+    .dw .btns { display: flex; gap: 10px; margin: 28px 0 24px; }
     .dw .wa { flex: 1; min-height: 48px; background: #0066FF; color: #fff; border: 0; border-radius: 12px; padding: 14px; font: 800 15px Inter, sans-serif; cursor: pointer; }
   </style>
 
@@ -161,7 +153,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     const SHORT = "https://bit.ly/diwali-card-wishes";
     function shareText() {
       const wish = msgIn.value.trim().slice(0, 180), sign = signIn.value.trim().slice(0, 40);
-      return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nCreate your own card too 👉 ${SHORT}`;
+      return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nMake your own Diwali card in seconds 👉 ${SHORT}`;
     }
     const card = document.getElementById("dw-card") as HTMLElement;
     const picker = document.getElementById("dw-themes") as HTMLElement;
@@ -233,7 +225,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     }
 
     shareBtn.addEventListener("click", async () => {
-      setButtonLoading(shareBtn, true, "Share image");
+      setButtonLoading(shareBtn, true, "Start wishing 🪔");
       try {
         const blob = await renderPng();
         track("diwali_greeting_share");
@@ -248,20 +240,12 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
       } catch {
         alert("Could not make the image. Please try again.");
       } finally {
-        setButtonLoading(shareBtn, false, "Share image");
+        setButtonLoading(shareBtn, false, "Start wishing 🪔");
       }
     });
 
     // They just tapped "Happy Diwali": fireworks on open (sound only if the browser allows it).
     celebrate(3000);
   
-    // Share the tool itself (not a card): "make your own free Diwali card" + link.
-    document.getElementById("dw-invite")?.addEventListener("click", async () => {
-      const url = SHORT;
-      const text = "🪔 Skip the forwards this Diwali. Create your own card with your own wishes, free:";
-      (window as any).gtag?.("event", "diwali_tool_invite");
-      try { if (navigator.share) { await navigator.share({ title: "Free Diwali card maker", text, url }); return; } } catch (e: any) { if (e?.name === "AbortError") return; }
-      location.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(text + " " + url);
-    });
 </script>
 </AppShell>
