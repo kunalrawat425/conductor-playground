@@ -290,8 +290,9 @@ const categories = [
     const opts = getListingPriceOptions(l);
     const opt = opts[0];
     const price = opt?.price ?? (l.pricing_options as any[])?.[0]?.price ?? 0;
+    // A seller-written size ("900–1000 g") is sold as a pack: show "/pack" like the menu, not "/pc" (founder 31 Oct).
     const unitPart = opt
-      ? formatBuyerMenuUnitSuffix(opt).replace(/^\//, "")
+      ? (l.size_label ? "pack" : formatBuyerMenuUnitSuffix(opt).replace(/^\//, ""))
       : escapeHtml(String((l.pricing_options as any[])?.[0]?.unit_label || "kg"));
     const sp = (l.species || "").toLowerCase();
     // Seller's own listing photo first; fall back to species stock photo (never another seller's photo)
