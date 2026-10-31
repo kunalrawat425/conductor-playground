@@ -5,7 +5,7 @@ import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
 import { cartMessage, decide, decideActivity, istDate, offerAt, pickSeller, signupMessage, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
 import { firstName, fishName } from "../../../lib/messaging/templates";
-import { dispatch, smsFallbackFor, type Dispatch } from "../../../lib/server/messaging";
+import { dispatch, smsFallbackDue, smsFallbackFor, type Dispatch } from "../../../lib/server/messaging";
 import { againOrder, loadCheckout, ORDER_SELECT, orderMessage, orderPhoto, orderSms, type OrderWaEvent } from "../../../lib/server/notify-order-whatsapp";
 import { hasPaymentEvidence } from "../../../lib/server/reminders";
 import { syncWatiStatuses } from "../../../lib/server/wati-status";
@@ -79,15 +79,28 @@ async function run({ url }: { url: URL }): Promise<Response> {
   const sync: any = { checked: 0, updated: 0, stuck: 0, sms_fallback: [] as any[] };
   if (!dry) {
     // A row still "queued" after 10 min: the run died between logging and sending. Mark it failed
-    // (with the reason) so it isn't silently lost: reminders / order updates then go by SMS.
+    // (with the reason) so it isn't silently lost. No SMS for it: the WhatsApp may have gone out.
     const { data: stuck } = await sb.from("message_log").update({ status: "failed", error: "stuck in queue: no send result", updated_at: new Date(now).toISOString() })
       .eq("status", "queued").lt("created_at", new Date(now - 10 * 60_000).toISOString()).gte("created_at", new Date(now - 6 * 3_600_000).toISOString()).select("id");
     sync.stuck = stuck?.length ?? 0;
     const s = await syncWatiStatuses(sb, now).catch((e: any) => ({ checked: 0, updated: 0, failed: [], error: e?.message }));
     Object.assign(sync, { checked: s.checked, updated: s.updated, error: (s as any).error });
-    const { data: failed } = await sb.from("message_log").select("id, dedupe_key, kind, template, to_phone, slot_date, buyer_id, seller_id, order_id, link_path, payload")
+    const { data: failed } = await sb.from("message_log").select("id, dedupe_key, kind, template, to_phone, slot_date, buyer_id, seller_id, order_id, link_path, payload, error, created_at")
       .eq("channel", "whatsapp").eq("status", "failed").gte("created_at", new Date(now - 6 * 3_600_000).toISOString()).not("payload", "is", null);
+    // A reminder must still be true: the order still unpaid, no order since the cart reminder.
+    const stillTrue = async (row: any) => {
+      if (row.kind === "act_unpaid") {
+        const { data: o } = await sb.from("orders").select("status, razorpay_payment_id, payment_verified_at, payment_screenshot_urls").eq("id", row.order_id).maybeSingle();
+        return !!o && o.status === "pending_payment" && !hasPaymentEvidence(o);
+      }
+      if (row.kind === "act_cart") {
+        const { data: later } = await sb.from("orders").select("id").eq("buyer_id", row.buyer_id).gt("created_at", row.created_at).limit(1);
+        return !later?.length;
+      }
+      return true;
+    };
     for (const row of failed || []) {
+      if (!smsFallbackDue(row, now) || !(await stillTrue(row))) continue;
       const r = await smsFallbackFor(sb, row);
       if (r.status !== "duplicate" && r.status !== "no_channel") sync.sms_fallback.push({ buyer: `…${String(row.to_phone).slice(-4)}`, kind: row.kind, sent: r.status, error: r.error });
     }

@@ -379,6 +379,7 @@ function fakeDb(t: Record<string, any[]>) {
       eq: (c: string, v: any) => (f.push((r) => r[c] === v), b),
       lt: (c: string, v: any) => (f.push((r) => r[c] < v), b),
       gte: (c: string, v: any) => (f.push((r) => r[c] >= v), b),
+      gt: (c: string, v: any) => (f.push((r) => r[c] > v), b),
       in: (c: string, v: any[]) => (f.push((r) => v.includes(r[c])), b),
       is: (c: string, v: any) => (f.push((r) => (r[c] ?? null) === v), b),
       not: (c: string, _op: string, v: any) => (f.push((r) => (r[c] ?? null) !== v), b),
@@ -430,6 +431,25 @@ describe("messaging cron", () => {
     const line = (opt: string) => ({ id: "c1", buyer_id: "b7777", pricing_option_id: opt, placement_kind: "same_day", qty: 1, updated_at: new Date(FRI_11 - 60 * 60_000).toISOString(), listing });
     expect((await cron({ buyers: [buyerRow("9800007777")], buyer_cart: [line("o2")] })).body.messages.map((m: any) => m.template)).toEqual(["rf2_cart_today"]);
     expect((await cron({ buyers: [buyerRow("9800007777")], buyer_cart: [line("o1")] })).body.messages).toEqual([]);
+  });
+  it("SMS fallback: only a reminder that is still true, in send hours and < 60 min old; never a stuck row", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(FRI_11);
+    vi.stubEnv("MESSAGING_LIVE", "true"); for (const k of ["UNPAID", "CART", "CONFIRMED"]) vi.stubEnv(`MSG91_FLOW_${k}`, "f");
+    const ago = (min: number) => new Date(FRI_11 - min * 60_000).toISOString();
+    const row = (phone: string, kind: string, min: number, x: any = {}) => ({ id: `w${phone}`, dedupe_key: `${kind}:${phone}:whatsapp`, channel: "whatsapp", status: "failed", error: "Message undeliverable",
+      kind, slot_date: "2026-10-23", to_phone: `91980000${phone}`, buyer_id: `b${phone}`, template: "rf2_x", link_path: "/x", created_at: ago(min),
+      payload: { body: [], sms: { key: kind === "act_unpaid" ? "UNPAID" : kind === "act_cart" ? "CART" : "CONFIRMED", vars: ["a"] }, smsFallback: true, smsOk: true }, ...x });
+    const { body } = await cron({
+      message_log: [
+        row("0001", "act_unpaid", 20, { order_id: "o1" }), row("0002", "act_unpaid", 20, { order_id: "o2" }),
+        row("0003", "act_cart", 20), row("0004", "act_cart", 90),
+        row("0005", "order_confirmed", 30, { error: "stuck in queue: no send result" }), row("0006", "order_confirmed", 180),
+      ],
+      orders: [{ id: "o1", status: "pending_payment", created_at: ago(50) }, { id: "o2", status: "pending_payment", razorpay_payment_id: "pay_1", created_at: ago(50) },
+        { id: "o3", buyer_id: "b0003", status: "paid", created_at: ago(10) }],
+    }, "");
+    vi.useRealTimers();
+    expect(body.sync.sms_fallback.map((x: any) => [x.buyer, x.kind])).toEqual([["…0001", "act_unpaid"], ["…0006", "order_confirmed"]]);
   });
   it("a live run skips while another holds the lock, and releases its own when done", async () => {
     vi.stubEnv("MESSAGING_LIVE", "true");
