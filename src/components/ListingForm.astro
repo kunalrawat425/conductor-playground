@@ -177,6 +177,21 @@ const initialPricingJson = JSON.stringify(
         </div>
       </label>
     </div>
+
+    <div class="listing-field" style="margin-top:8px;">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input
+          type="checkbox"
+          id="is_popular"
+          checked={listing ? getListingPriceOptions(listing).some((o: any) => o?.ribbon === "popular") : false}
+          style="margin-top:3px;flex-shrink:0;"
+        />
+        <div>
+          <div style="font-weight:700;">⭐ Show "MOST POPULAR" tag</div>
+          <div class="form-hint" style="margin:2px 0 0;">Adds a MOST POPULAR label to this item on your menu. Use it for the 1–2 items buyers order most.</div>
+        </div>
+      </label>
+    </div>
   </section>
 
   <section class="listing-card listing-card--compact" id="listing-section-preorder" aria-labelledby="listing-h-preorder">
@@ -387,6 +402,15 @@ const initialPricingJson = JSON.stringify(
       "submit",
       (ev) => {
         pricingEditor.sync();
+        // MOST POPULAR toggle: stored as ribbon "popular" on the item's price options.
+        try {
+          const popular = (document.getElementById("is_popular") as HTMLInputElement | null)?.checked === true;
+          const opts = JSON.parse(pricingJsonInput.value || "[]");
+          if (Array.isArray(opts)) pricingJsonInput.value = JSON.stringify(opts.map((o: any) => {
+            const { ribbon, ...rest } = o || {};
+            return popular ? { ...rest, ribbon: "popular" } : rest;
+          }));
+        } catch {}
         const checked = validateListingPricingJson(pricingJsonInput.value);
         if (!checked.ok) {
           ev.preventDefault();

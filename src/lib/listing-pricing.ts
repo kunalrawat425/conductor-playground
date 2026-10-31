@@ -2,6 +2,8 @@ import type { PriceUnit } from "./species";
 
 export interface ListingPriceOption {
   id: string;
+  /** "popular" shows a MOST POPULAR tag on the buyer menu (seller toggle in the listing form). */
+  ribbon?: "popular";
   /** Seller-defined label, e.g. "Large piece", "Per kg" */
   label: string;
   /** Amount charged at checkout (single source of truth for same-day orders). */
@@ -270,6 +272,7 @@ export function canonicalPricingOptionsFromPayload(raw: unknown): ListingPriceOp
     const pmax = o.preorder_price_max != null && o.preorder_price_max !== "" ? Number(o.preorder_price_max) : null;
     if (pmin != null && Number.isFinite(pmin) && pmin > 0) row.preorder_price_min = pmin;
     if (pmax != null && Number.isFinite(pmax) && pmax > 0) row.preorder_price_max = pmax;
+    if (o.ribbon === "popular") row.ribbon = "popular";
     out.push(row);
   }
   return out.length > 0 ? out : null;
