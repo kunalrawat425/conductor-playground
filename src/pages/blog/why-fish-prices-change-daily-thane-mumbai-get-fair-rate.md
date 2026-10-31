@@ -54,7 +54,7 @@ A large pomfret costs much more per kg than a small one. Two "pomfret" prices ca
 
 ## Comparing prices on Relifish
 
-On Relifish, each local seller sets their own prices and updates them as their stock changes. Relifish adds no markup and charges sellers 0% commission, so the price you see is the seller's own price. Delivery fees, if any, are set by the seller and shown before you pay.
+On Relifish, each local seller sets their own prices and updates them as their stock changes. Delivery fees, if any, are set by the seller and shown before you pay.
 
 - **Same-day orders** show the seller's price for today.
 - **Pre-orders** show a price range, because tomorrow's price isn't known yet. You pay the top of the range, and once the seller sets the final price, the difference is refunded.

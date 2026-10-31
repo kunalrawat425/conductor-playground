@@ -71,7 +71,7 @@ export const GET: APIRoute = async () => {
     let markdown = `# Live Fresh Fish Price Guide — Relifish (Thane & Mumbai)\n\n`;
     markdown += `*Last updated: Today (Live Database Catalogue)*\n\n`;
     markdown += `This guide lists live price ranges from the current listings of active sellers on Relifish. Prices change daily and are set by each seller.\n\n`;
-    markdown += `Relifish connects buyers directly to local fish sellers in Thane, South Mumbai (Tardeo) and Kamothe (Navi Mumbai). Sellers pay 0% commission and buyers pay the seller's own price.\n\n`;
+    markdown += `Relifish connects buyers directly to local fish sellers in Thane, South Mumbai (Tardeo) and Kamothe (Navi Mumbai).\n\n`;
     markdown += `## Live Fresh Fish Prices\n\n`;
     markdown += `| Fish Species (English) | Live Price Range | Unit | Sellers | Availability |\n`;
     markdown += `|-----------------------|------------------|------|---------|--------------|\n`;
@@ -97,7 +97,6 @@ export const GET: APIRoute = async () => {
     }
 
     markdown += `\n## Why Order from Relifish?\n\n`;
-    markdown += `- **Seller's own price**: Relifish adds no platform markup and charges sellers 0% commission.\n`;
     markdown += `- **Listed daily**: Sellers list what they have each day. Order same-day during opening hours, or pre-order for tomorrow.\n`;
     markdown += `- **Pre-order pricing**: Pre-order prices are a range. You pay the top of the range and the difference is refunded once the seller sets the final price.\n`;
     markdown += `- **Refunds**: If a seller declines or you cancel before they confirm, the full amount is refunded via Razorpay, usually within 5 to 7 working days.\n`;

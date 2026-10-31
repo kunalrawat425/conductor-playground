@@ -99,9 +99,6 @@ No. Relifish works in your phone's browser at relifish.com.
 **Does Relifish deliver the fish?**
 No. The seller delivers, or keeps your order ready for pickup. Relifish is the marketplace that connects you.
 
-**Does Relifish add a markup?**
-No. You pay the seller's own price. Relifish charges sellers 0% commission.
-
 **Which fish can I order?**
 It depends on what each seller lists that day. Sellers commonly list pomfret, surmai, bangda, prawns, rawas and bombil. See [surmai](/fish/surmai), [pomfret](/fish/pomfret) and [prawns](/fish/prawns) to compare sellers.
 

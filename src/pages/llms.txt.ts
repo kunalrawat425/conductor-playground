@@ -67,7 +67,6 @@ ${sellers.map((s) => `- [${cleanSellerName(s.name)}](${SITE}${sellerHref(s.name,
 - Delivery and pickup: handled by each seller, who sets their own delivery radius, fee and minimum order
 - Preparation: buyers choose whole, cleaned or cut, plus a note, at checkout
 - Fish sellers list (varies daily): ${species.join(", ") || "varies by seller"}
-- Commission: Relifish charges sellers 0% commission today
 - Contact: relifishstore@gmail.com · WhatsApp 9152207607 (7:30 AM – 9 PM)
 `;
   return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, s-maxage=3600" } });
