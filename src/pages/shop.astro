@@ -5,7 +5,6 @@ import SellerCard from "../components/ui/molecules/SellerCard.astro";
 import PreorderBanner from "../components/ui/molecules/PreorderBanner.astro";
 import CategoryStrip from "../components/ui/molecules/CategoryStrip.astro";
 import EmptyState from "../components/ui/molecules/EmptyState.astro";
-import Skeleton from "../components/ui/atoms/Skeleton.astro";
 import Toast from "../components/ui/atoms/Toast.astro";
 import LocationPickerSheet from "../components/ui/organisms/LocationPickerSheet.astro";
 import DiwaliDecor from "../components/DiwaliDecor.astro";
@@ -100,13 +99,10 @@ const categories = [
   </div>
 
   <!-- Loading skeletons -->
-  <div id="v2-loading" class="v2-cards-grid">
-    {["/fish/platter.jpg?v=2", "/fish/pomfret.jpg?v=2"].map((src) => (
-      <div class="v2-skel-card v2-skel-photo" aria-hidden="true">
-        <div class="v2-skel-img" style={`background-image:url(${src})`}></div>
-        <div class="v2-skel-lines"><Skeleton width="60%" height="14px" /><Skeleton width="40%" height="12px" /></div>
-      </div>
-    ))}
+  <!-- Loading: a simple spinner while sellers load (founder 31 Oct; no skeleton cards) -->
+  <div id="v2-loading" class="v2-shop-loading" role="status" aria-live="polite">
+    <span class="v2-spinner" aria-hidden="true"></span>
+    <span class="v2-shop-loading-t">Finding sellers near you…</span>
   </div>
 
   <!-- Cards grid (filled by JS) -->
@@ -163,11 +159,10 @@ const categories = [
     .v2-cards-grid { grid-template-columns: 1fr 1fr; }
   }
   .v2-skel-card { border-radius: 12px; overflow: hidden; }
-  .v2-skel-photo { background: var(--v2-bg); border: 1px solid var(--v2-border); }
-  .v2-skel-img { height: 160px; background: center/cover no-repeat; position: relative; }
-  .v2-skel-img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%) -150% 0/200% 100% no-repeat; animation: v2-skel-shine 1.4s infinite; }
-  @keyframes v2-skel-shine { to { background-position: 150% 0; } }
-  .v2-skel-lines { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .v2-shop-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 16px; color: var(--v2-ink-3); font: 600 14px Inter, sans-serif; }
+  .v2-spinner { width: 36px; height: 36px; border-radius: 50%; border: 4px solid var(--v2-brand-l); border-top-color: var(--v2-brand); animation: v2-spin .8s linear infinite; }
+  @keyframes v2-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .v2-spinner { animation-duration: 2s; } }
   .v2-badge-bold { font-weight: 800 !important; }
 
   /* Sticky filter cluster — pin nav controls below header */
