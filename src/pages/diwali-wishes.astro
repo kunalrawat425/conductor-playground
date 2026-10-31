@@ -33,7 +33,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
       <div class="sub">Festival of lights</div>
       <div class="m" id="dw-cm">{MESSAGE}</div>
       <div class="rule"></div>
-      <div class="f" id="dw-cf">With love</div>
+      <div class="f" id="dw-cf"></div>
     </div>
 
     <div class="lab">Choose a design</div>
@@ -50,7 +50,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     <textarea class="inp" id="dw-im" maxlength="400">{MESSAGE}</textarea>
     <div class="cnt" id="dw-cnt" aria-live="polite">{MESSAGE.length}/400</div>
     <label class="lab" for="dw-if">Own the card</label>
-    <input class="inp" id="dw-if" maxlength="40" value="With love" />
+    <input class="inp" id="dw-if" maxlength="40" placeholder="Your name" />
 
     <div class="btns">
       <button type="button" class="wa" id="dw-share">Start wishing 🪔</button>
@@ -71,6 +71,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     .dw .dw-card .sub { font-size: 12px; letter-spacing: .35em; text-transform: uppercase; opacity: .85; margin-bottom: 16px; }
     .dw .dw-card .m { font-size: 16px; line-height: 1.5; max-width: 92%; white-space: pre-wrap; overflow-wrap: anywhere; }
     .dw .dw-card .f { margin-top: 16px; font-size: 16px; overflow-wrap: anywhere; }
+    .dw .dw-card .f:empty { display: none; }
     .dw .dw-card .rule { width: 56px; height: 2px; margin: 14px auto 0; opacity: .8; }
     .dw .dw-card .deco { position: absolute; inset: 0; pointer-events: none; }
     /* themes */
@@ -197,7 +198,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     try {
       const first = localStorage.getItem("rlf_buyer_id") && (localStorage.getItem("rlf_buyer_first_name") || "").trim();
       if (first) {
-        signIn.value = `With love, ${first}`.slice(0, 40);
+        signIn.value = first.slice(0, 40);
         document.getElementById("dw-cf")!.textContent = signIn.value;
       }
     } catch {}
@@ -221,7 +222,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
       document.getElementById("dw-got-make")!.addEventListener("click", () => {
         track("diwali_card_make_own");
         document.getElementById("dw-got")!.hidden = true;
-        signIn.value = "With love"; document.getElementById("dw-cf")!.textContent = signIn.value;
+        signIn.value = ""; document.getElementById("dw-cf")!.textContent = signIn.value;
         picker.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     }
