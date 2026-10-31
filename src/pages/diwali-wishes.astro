@@ -13,8 +13,9 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
 <AppShell
   title="Make a Diwali Greeting Card | Relifish"
   description="Pick a design, write your wish and share your own Happy Diwali greeting card on WhatsApp as an image. Free, takes a minute."
-  header={{ variant: "page", title: "Your Diwali greeting", backHref: "/shop" }}
+  header={{ variant: "page", title: "Relifish", backHref: "/shop" }}
   hideNav={true}
+  ogImage="/wa/diwali-card-og.jpg"
 >
   <!-- Card fonts. crossorigin lets html-to-image read and embed them in the PNG. -->
   <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&family=Cinzel:wght@600;800&family=Great+Vibes&family=Poppins:wght@500;700&display=swap" />
@@ -22,7 +23,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
   <div class="dw">
     <div class="dw-got" id="dw-got" hidden>
       <b id="dw-got-t">🎁 You got a Diwali card!</b>
-      <span>Make your own in seconds and send it to your family. Free.</span>
+      <span>Make your own quickly and send it to your family. Free.</span>
       <button type="button" id="dw-got-make">Make yours too ✨</button>
     </div>
     <div id="dw-card" class="dw-card t-goldblack">
@@ -54,6 +55,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     <div class="btns">
       <button type="button" class="wa" id="dw-share">Start wishing 🪔</button>
     </div>
+    <p class="dw-paste" id="dw-paste" hidden>✅ Card copied. In WhatsApp, pick a chat and press <b id="dw-paste-key">Ctrl+V</b> to add it, then send.</p>
   </div>
 
   <style is:global>
@@ -134,6 +136,8 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     .dw #dw-im { height: 185px; resize: none; }
     .dw .cnt { text-align: right; font: 500 12px Inter, sans-serif; color: var(--v2-ink-3, #64748B); margin-top: 4px; }
     .dw .inp { width: 100%; min-height: 48px; line-height: 1.5; border: 1px solid var(--v2-border, #E2E8F0); border-radius: 10px; padding: 10px; font: 500 14px Inter, sans-serif; background: var(--v2-bg, #fff); color: var(--v2-ink, #0F172A); resize: vertical; }
+    .dw .dw-paste { margin: -12px 0 20px; padding: 12px 14px; border-radius: 12px; background: #FEF3C7; color: #78350F; font: 600 13px/1.5 Inter, sans-serif; text-align: center; }
+    .dw .dw-paste[hidden] { display: none; }
     .dw .btns { display: flex; gap: 10px; margin: 28px 0 24px; }
     .dw .wa { flex: 1; min-height: 52px; background: linear-gradient(135deg, #B91C1C, #7F1D1D 55%, #B45309); color: #FDE68A; border: 1.5px solid #F59E0B; border-radius: 14px; padding: 14px; font: 800 16px Inter, sans-serif; letter-spacing: .2px; cursor: pointer; box-shadow: 0 6px 18px rgba(245,158,11,.35), inset 0 1px 0 rgba(255,255,255,.15); }
   </style>
@@ -152,11 +156,21 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     // "make your own" link so everyone who receives a card can make and send theirs.
     // The link carries the card (design, message, signature): whoever opens it sees this exact card,
     // then "Make yours too" (founder 31 Oct). Text is only ever set with textContent.
-    // Founder 31 Oct: the share carries their wish + the short "create your own" link (bit.ly → /diwali-wishes).
-    const SHORT = "https://bit.ly/diwali-card-wishes";
+    const SHORT = "https://www.relifish.com/diwali-wishes"; // relifish.com links only (founder 31 Oct)
+    // Each shared card gets its own short link (relifish.com/w/<id>) so whoever opens it sees this card,
+    // "<name> sent you a Diwali card! Make yours too", and can pass theirs on (founder 31 Oct).
+    // If saving fails, the general card-maker link still works.
+    let cardLink = SHORT;
+    async function saveCard() {
+      try {
+        const r = await fetch("/api/greeting-card", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ t: theme, m: msgIn.value.trim().slice(0, 400), f: signIn.value.trim().slice(0, 40) }) });
+        const j = await r.json();
+        cardLink = r.ok && j.id ? `https://www.relifish.com/w/${j.id}` : SHORT;
+      } catch { cardLink = SHORT; }
+    }
     function shareText() {
       const wish = msgIn.value.trim().slice(0, 400), sign = signIn.value.trim().slice(0, 40);
-      return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nMake your own Diwali card in seconds 👉 ${SHORT}`;
+      return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nOpen my card and make yours 👉 ${cardLink}`;
     }
     const card = document.getElementById("dw-card") as HTMLElement;
     const picker = document.getElementById("dw-themes") as HTMLElement;
@@ -231,18 +245,28 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
 
     shareBtn.addEventListener("click", async () => {
       setButtonLoading(shareBtn, true, "Start wishing 🪔");
+      // The share menu (phones, and Mac/Windows with the WhatsApp app) sends the card image + text
+      // together (founder 31 Oct). Only where it can't share images: copy the card to the clipboard
+      // (paste it into the chat) and open WhatsApp with the text. Started inside the click so the
+      // browser allows the clipboard write.
+      const canShareImage = !!navigator.canShare?.({ files: [new File([""], "x.png", { type: "image/png" })] });
+      const png = renderPng();
+      let copied: Promise<boolean> = Promise.resolve(false);
+      if (!canShareImage && typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+        copied = navigator.clipboard.write([new ClipboardItem({ "image/png": png })]).then(() => true, () => false);
+      }
       try {
-        const blob = await renderPng();
+        const [blob] = await Promise.all([png, saveCard()]);
         track("diwali_greeting_share");
         const file = new File([blob], "happy-diwali.png", { type: "image/png" });
-        // Phones: the share sheet (WhatsApp first for most people) sends the card image + text.
-        // Laptops (Mac/Windows share menus have no WhatsApp): skip it, download the card and open WhatsApp.
-        const phone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (phone && navigator.canShare?.({ files: [file] })) {
+        if (canShareImage && navigator.canShare?.({ files: [file] })) {
           try { await navigator.share({ files: [file], text: shareText() }); return; }
           catch (err) { if ((err as Error).name === "AbortError") return; } // share blocked: fall through
         }
-        download(blob);
+        if (await copied) {
+          document.getElementById("dw-paste-key")!.textContent = /Mac/i.test(navigator.platform || navigator.userAgent) ? "⌘V" : "Ctrl+V";
+          document.getElementById("dw-paste")!.hidden = false;
+        } else download(blob);
         const wa = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText());
         if (!window.open(wa, "_blank")) location.href = wa;
       } catch {
