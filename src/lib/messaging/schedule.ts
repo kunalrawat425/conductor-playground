@@ -169,8 +169,10 @@ export function catchPhoto(b: BuyerState, seller: MsgSeller, preorderOnly: boole
 /** Substitute for a fish taken off the menu (founder 30 Oct): same species at the closest price, else the closest price; tie → cheaper. */
 export function pickSubstitute(gone: { species?: string | null; price?: number | null }, live: MenuItem[]): MenuItem | null {
   const p = Number(gone.price) || 0;
-  const sp = String(gone.species || "").toLowerCase();
-  const same = sp ? live.filter((m) => String(m.species || "").toLowerCase() === sp) : [];
+  // "Surmai Combo" / "Silver Pomfret Combo" → its base fish (surmai / pomfret), so a gone combo gets the same fish.
+  const base = (x: unknown) => String(x || "").toLowerCase().replace(/\bcombo\b/g, "").replace(/\bsilver\b/g, "").trim();
+  const sp = base(gone.species);
+  const same = sp ? live.filter((m) => { const ms = base(m.species); return ms === sp || (!!ms && (sp.includes(ms) || ms.includes(sp))); }) : [];
   return [...(same.length ? same : live)].sort((a, c) => Math.abs(a.price - p) - Math.abs(c.price - p) || a.price - c.price)[0] ?? null;
 }
 
