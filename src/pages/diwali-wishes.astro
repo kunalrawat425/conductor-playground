@@ -157,12 +157,11 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     // "make your own" link so everyone who receives a card can make and send theirs.
     // The link carries the card (design, message, signature): whoever opens it sees this exact card,
     // then "Make yours too" (founder 31 Oct). Text is only ever set with textContent.
-    // Share links say who shared (logged-in buyer id, else "guest") and what: card vs card maker.
-    const sharer = () => { try { return localStorage.getItem("rlf_buyer_id") || "guest"; } catch { return "guest"; } };
-    const shareUtm = (medium: string) => ({ utm_source: "share", utm_medium: medium, utm_campaign: "diwali_card", utm_content: sharer() });
+    // Founder 31 Oct: the share carries their wish + the short "create your own" link (bit.ly → /diwali-wishes).
+    const SHORT = "https://bit.ly/diwali-card-wishes";
     function shareText() {
-      const q = new URLSearchParams({ t: theme, m: msgIn.value.slice(0, 180), f: signIn.value.slice(0, 40), ...shareUtm("card") });
-      return `Happy Diwali! 🪔 I made this card for you. Send your own wishes, not a forward 👉 https://www.relifish.com/diwali-wishes?${q}`;
+      const wish = msgIn.value.trim().slice(0, 180), sign = signIn.value.trim().slice(0, 40);
+      return `Happy Diwali! 🪔\n${wish}${sign ? `\n${sign}` : ""}\n\nCreate your own card too 👉 ${SHORT}`;
     }
     const card = document.getElementById("dw-card") as HTMLElement;
     const picker = document.getElementById("dw-themes") as HTMLElement;
@@ -258,8 +257,8 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
   
     // Share the tool itself (not a card): "make your own free Diwali card" + link.
     document.getElementById("dw-invite")?.addEventListener("click", async () => {
-      const url = "https://www.relifish.com/diwali-wishes?" + new URLSearchParams(shareUtm("maker"));
-      const text = "🪔 Skip the forwards this Diwali. Send a card in your own words, free:";
+      const url = SHORT;
+      const text = "🪔 Skip the forwards this Diwali. Create your own card with your own wishes, free:";
       (window as any).gtag?.("event", "diwali_tool_invite");
       try { if (navigator.share) { await navigator.share({ title: "Free Diwali card maker", text, url }); return; } } catch (e: any) { if (e?.name === "AbortError") return; }
       location.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(text + " " + url);
