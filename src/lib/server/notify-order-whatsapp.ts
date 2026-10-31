@@ -20,8 +20,8 @@ const env = (k: string) => (import.meta as any).env?.[k] || process.env[k] || ""
 export const ORDER_SELECT = "id, buyer_id, buyer_phone, species, is_test, is_preorder, delivery_slot_start, delivery_slot_end, listing:fish_listings(species, description, photo_url, seller_id, is_available, is_preorder_enabled, deleted_at, seller:sellers(name))";
 const CHECKOUT_SELECT = `${ORDER_SELECT}, cart_id, total_price, status`;
 const REMOVED = ["declined", "cancelled", "refunded"];
-/** Order updates the buyer gets (founder 31 Oct): only "seller confirmed" and "out for delivery", on WhatsApp or SMS. */
-export const BUYER_ORDER_EVENTS: OrderWaEvent[] = ["confirmed", "out_for_delivery"];
+/** Order updates the buyer gets (founder 31 Oct): seller confirmed, out for delivery, and cancelled / refund; WhatsApp or SMS. */
+export const BUYER_ORDER_EVENTS: OrderWaEvent[] = ["confirmed", "out_for_delivery", "cancelled"];
 
 export type WaCancel = { reason?: string | null; refund?: string | null; removedFrom?: string | null };
 
