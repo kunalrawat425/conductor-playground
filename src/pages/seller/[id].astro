@@ -1531,7 +1531,7 @@ const tags = [
     function markResume(sid) { try { sessionStorage.setItem(RESUME_KEY, JSON.stringify({ sid, t: Date.now() })); } catch {} }
     // Diwali greeting from checkout: its back arrow returns here with checkout open again.
     document.querySelector("[data-co-gift]")?.addEventListener("click", (e) => {
-      e.currentTarget.href = `/diwali?back=${encodeURIComponent(location.pathname)}`;
+      e.currentTarget.href = `/diwali-wishes?back=${encodeURIComponent(location.pathname)}`;
       markResume(sellerId);
     });
 

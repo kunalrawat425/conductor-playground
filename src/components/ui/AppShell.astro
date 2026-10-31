@@ -397,6 +397,6 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
     <GeoHelpDialog />
     <FunnelTrack />
     {enableTracking && <VercelAnalytics />}
-    {enableTracking && !path.startsWith("/dashboard") && <WatiChatButton marginBottom={hideNav ? "20" : "84"} />}
+    {enableTracking && !path.startsWith("/dashboard") && !path.startsWith("/diwali") && <WatiChatButton marginBottom={hideNav ? "20" : "84"} />}
   </body>
 </html>
