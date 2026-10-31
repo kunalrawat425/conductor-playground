@@ -451,6 +451,14 @@ describe("messaging cron", () => {
     vi.useRealTimers();
     expect(body.sync.sms_fallback.map((x: any) => [x.buyer, x.kind])).toEqual([["…0001", "act_unpaid"], ["…0006", "order_confirmed"]]);
   });
+  it("a buyer who signed up over 60 days ago still gets the cart reminder for a new cart", async () => {
+    const listing = { seller_id: "ft", species: "bombil", description: "Bombil", photo_url: null, pricing_options: [{ price: 240 }], is_available: true, is_preorder_enabled: true, deleted_at: null };
+    const { body } = await cron({
+      buyers: [buyerRow("9800007777", { created_at: "2026-07-01T10:00:00Z" })],
+      buyer_cart: [{ id: "c1", buyer_id: "b7777", pricing_option_id: "", placement_kind: "same_day", qty: 1, updated_at: new Date(FRI_11 - 60 * 60_000).toISOString(), listing }],
+    });
+    expect(body.messages.map((m: any) => m.template)).toEqual(["rf2_cart_today"]);
+  });
   it("a live run skips while another holds the lock, and releases its own when done", async () => {
     vi.stubEnv("MESSAGING_LIVE", "true");
     const held = await cron({ cron_lock: [{ name: "messaging", until: new Date(Date.now() + 5 * 60_000).toISOString() }] }, "");

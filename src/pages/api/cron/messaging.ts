@@ -111,7 +111,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
   try {
     [sellerRows, buyerRows, cartRows, orderRows, logRows, menuRows] = await Promise.all([
       all(() => sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, is_active, ${SLOT_SELLER_COLUMNS}`).order("id")),
-      all(() => sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").gte("created_at", since(60)).order("id")),
+      all(() => sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").order("id")),
       all(() => sb.from("buyer_cart").select("id, buyer_id, pricing_option_id, placement_kind, qty, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, is_order_paused, weight_avail, deleted_at)").order("id")),
       all(() => sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", since(60)).order("id")),
       // Last 8 days, any status: gaps (≤ 72 h) and caps count real sends only; "already reminded" counts failed ones too.
@@ -217,7 +217,10 @@ async function run({ url }: { url: URL }): Promise<Response> {
 
   // 2. Per buyer: one activity reminder, else one promo.
   const report: any[] = [];
-  for (const b of buyerRows || []) {
+  // Signed up in the last 60 days, or older with a cart or an order since then (a returning buyer still gets reminders).
+  const recent = (x: string) => Date.parse(x) >= now - 60 * 86_400_000;
+  const active = new Set([...(cartRows || []).filter((c: any) => recent(c.updated_at)), ...(orderRows || [])].map((x: any) => x.buyer_id));
+  for (const b of (buyerRows || []).filter((b: any) => recent(b.created_at) || active.has(b.id))) {
     const phone = waNumber(b.phone);
     if (b.is_test || skipPhone(phone)) continue;
     const state = stateOf(b);
