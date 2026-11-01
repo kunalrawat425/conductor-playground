@@ -381,7 +381,7 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     expect(act(T("23", "11:14"), b).skip).toBe("nothing due");
     expect(act(T("23", "11:15"), b)).toMatchObject({
       kind: "act_cart", template: "rf2_cart_today", dedupe_key: "act_cart:b:2026-10-23", photo: "https://x/rawas.jpg", path: "/s/fishtokri?checkout=1",
-      body: ["Priya", "Baby Rawas", "Fishtokri", "today, 12–2 PM"], sms: { key: "SIGNUP", vars: ["Priya", "Fishtokri"] },
+      body: ["Priya", "Baby Rawas", "Fishtokri", "today, 12–2 PM"], sms: { key: "CART", vars: ["Priya", "Baby Rawas"] },
     });
   });
   it("cart: no reminder when an order came after it, or nothing is on the menu", () => {

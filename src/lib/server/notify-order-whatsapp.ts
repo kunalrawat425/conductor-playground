@@ -109,19 +109,21 @@ export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null
   const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
   const seller = ord.listing?.seller?.name || "The seller";
   const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed";
+  const name = firstName(buyerName);
   switch (event) {
-    case "unpaid": return { key: "UNPAID", vars: [firstName(buyerName), checkoutFish(ord, checkout, 30), slot] };
+    case "unpaid": return { key: "UNPAID", vars: [name, checkoutFish(ord, checkout, 30), slot] };
     case "paid": return { key: "PAID", vars: [short, seller, slot] };
-    case "confirmed": return { key: "CONFIRMED", vars: [seller, short, slotAhead(ord, nowMs) || !ord.delivery_slot_end ? slot : "soon"] };
+    case "confirmed": return { key: "CONFIRMED", vars: [name, short, slotAhead(ord, nowMs) || !ord.delivery_slot_end ? slot : "soon"] };
     case "out_for_delivery": return { key: "OUT", vars: [short, slotAhead(ord, nowMs) ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
     case "completed": return { key: "DELIVERED", vars: [short, fish] };
     case "cancelled": {
-      const amt = String(cancel?.refund || "").match(/₹\s?\d+(?:,\d+)*(?:\.\d+)?/)?.[0];
-      const refund = amt ? `${amt.replace(/\s/g, "")} in 5-7 working days` : "not needed";
-      const why = cancel?.reason?.replace(/\.+$/, "") || "seller couldn't take it";
-      return cancel?.removedFrom
-        ? { key: "CANCELLED", vars: [`#${String(cancel.removedFrom).slice(0, 8).toUpperCase()} (${fish})`, `${fish} not available`, refund] }
-        : { key: "CANCELLED", vars: [short, why, refund] };
+      // Refund only when money was taken; otherwise "No payment was taken" (founder, 1 Nov).
+      const amt = String(cancel?.refund || "").match(/₹\s?\d+(?:,\d+)*(?:\.\d+)?/)?.[0]?.replace(/\s/g, "");
+      const why = cancel?.reason?.replace(/\.+$/, "") || "the seller couldn't take it";
+      const [id, reason] = cancel?.removedFrom
+        ? [`#${String(cancel.removedFrom).slice(0, 8).toUpperCase()} (${fish})`, `${fish} not available`]
+        : [short, why];
+      return amt ? { key: "CANCELLED", vars: [name, id, reason, amt] } : { key: "CANCELLED_NOPAY", vars: [name, id, reason] };
     }
   }
 }

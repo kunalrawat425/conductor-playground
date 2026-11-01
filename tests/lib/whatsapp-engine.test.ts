@@ -307,9 +307,11 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
 });
 
 describe("SMS (MSG91)", () => {
-  it("every DLT text ends with a whitelisted static link (/shop or /track) and has 1–4 variables", () => {
+  it("every DLT text ends in \" - Relifish\", links only to a whitelisted static URL, has 1–4 variables and no seller name", () => {
     for (const [k, t] of Object.entries(SMS_TEXT)) {
-      expect(t, k).toMatch(/https:\/\/www\.relifish\.com\/(shop|track) - Relifish$/);
+      expect(t, k).toMatch(/ - Relifish$/);
+      for (const u of t.match(/https?:\/\/\S+/g) || []) expect(u, k).toMatch(/^https:\/\/www\.relifish\.com\/(shop|track|orders)$/);
+      expect(t, k).not.toMatch(/Fishtokri|Nomadic/);
       expect(smsVarCount(k as any), k).toBeGreaterThanOrEqual(1);
       expect(smsVarCount(k as any), k).toBeLessThanOrEqual(4);
     }
@@ -328,8 +330,10 @@ describe("SMS (MSG91)", () => {
       expect(s.vars.length, ev).toBe(smsVarCount(s.key));
       for (const v of s.vars) expect(cut30(v).length).toBeLessThanOrEqual(30);
     }
-    expect(orderSms("cancelled", ord, "", { reason: "x", refund: "₹285, started today" }).vars[2]).toBe("₹285 in 5-7 working days");
-    expect(orderSms("cancelled", ord, "", { reason: "x", refund: "none needed, nothing was charged" }).vars[2]).toBe("not needed");
+    expect(orderSms("cancelled", ord, "kunal", { reason: "x.", refund: "₹285, started today" })).toEqual({ key: "CANCELLED", vars: ["Kunal", "#1B26326F", "x", "₹285"] });
+    expect(orderSms("cancelled", ord, "kunal", { reason: "x", refund: "none needed, nothing was charged" })).toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#1B26326F", "x"] });
+    // No seller name in any order SMS (founder, 1 Nov).
+    expect(orderSms("confirmed", ord, "kunal").vars[0]).toBe("Kunal");
     expect(cut30("a".repeat(40))).toHaveLength(30);
   });
   it("rf2_cancelled goes out on Wati as the utility copy rfw_cancelled_u", () => {

@@ -15,18 +15,26 @@ import type { SendResult } from "./whatsapp";
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 
-export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED";
+export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED" | "CANCELLED_NOPAY";
 
-/** The DLT template text for each key (Smartping 1 Nov 2026: SIGNUP = relifish_account_ready, UNPAID, CONFIRMED, OUT, CANCELLED approved; CART was rejected four times as promotional, so the cart reminder SMS uses the SIGNUP text with the cart's seller; PAID and DELIVERED aren't sent). */
+/**
+ * The DLT template text for each key (Smartping, 1 Nov 2026), in the WhatsApp voice: a status line, then help
+ * ("WhatsApp or call us on 9152207607"). Never a dues notice, no seller names, no tracking wording (order links go
+ * to /orders). SIGNUP = relifish_signup_care, CART = relifish_cart_added (DLT rejects cart texts as promotional;
+ * without its flow id cart reminders aren't sent by SMS), UNPAID = relifish_unpaid_help, CONFIRMED =
+ * relifish_confirmed_care, OUT = relifish_out_care, CANCELLED = relifish_cancel_refund_care, CANCELLED_NOPAY =
+ * relifish_cancel_nopay_care. PAID and DELIVERED aren't sent.
+ */
 export const SMS_TEXT: Record<SmsKey, string> = {
-  SIGNUP: "Hi {#var#}, your Relifish account is ready. You can order fish from {#var#}, cleaned and cut, with home delivery. Menu: https://www.relifish.com/shop - Relifish",
-  CART: "Hi {#var#}, your {#var#} from {#var#} is still in your Relifish cart. Next slot: {#var#}. Order here: https://www.relifish.com/shop - Relifish",
-  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is not paid yet. Pay to keep your slot {#var#}: https://www.relifish.com/track - Relifish",
+  SIGNUP: "Hi {#var#}, your Relifish account is ready. Fresh fish from {#var#}, cleaned and cut, delivered home. Not sure what to pick? WhatsApp or call us on 9152207607, a real person replies. Menu: https://www.relifish.com/shop - Relifish",
+  CART: "Hi {#var#}, you added {#var#} to your Relifish cart. Questions about the fish, the cut or delivery? WhatsApp or call us on 9152207607, a real person replies. - Relifish",
+  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is almost done. The payment is pending for your delivery slot {#var#}. Stuck anywhere? WhatsApp or call us on 9152207607, we will sort it out. Your orders: https://www.relifish.com/orders - Relifish",
   PAID: "Payment received for your Relifish order {#var#} from {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/track - Relifish",
-  CONFIRMED: "{#var#} has confirmed your Relifish order {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/track - Relifish",
-  OUT: "Your Relifish order {#var#} is out for delivery, arriving {#var#}. Track: https://www.relifish.com/track - Relifish",
+  CONFIRMED: "Hi {#var#}, your Relifish order {#var#} is confirmed and will reach you {#var#}, cleaned and cut. We will text you when it is on the way. Questions? WhatsApp or call us on 9152207607. - Relifish",
+  OUT: "Your Relifish order {#var#} is on the way and should reach you {#var#}. Please keep your phone close for the delivery person. Anything urgent? Call us on 9152207607. - Relifish",
   DELIVERED: "Your Relifish order {#var#} ({#var#}) is delivered. Hope you enjoy it! Rate it: https://www.relifish.com/track - Relifish",
-  CANCELLED: "Your Relifish order {#var#} was cancelled: {#var#}. Refund: {#var#}. Details: https://www.relifish.com/track - Relifish",
+  CANCELLED: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
+  CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. No payment was taken. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
 };
 /** Variables each key takes. */
 export const smsVarCount = (key: SmsKey) => SMS_TEXT[key].split("{#var#}").length - 1;

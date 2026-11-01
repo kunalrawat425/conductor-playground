@@ -359,8 +359,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
 /** The 1 h cart reminder for a buyer with something on the menu in their cart (null if nothing fits). */
 export function cartMessage(now: number, b: BuyerState, seller: MsgSeller, offer: Offer): Omit<ActDecision, "dedupe_key"> | null {
   const d = compose("act_cart", "cart", now, b, seller, offer);
-  // DLT rejects every cart-reminder text as promotional (1 Nov), so the SMS is the approved menu text with the cart's seller.
-  return d && { ...d, sms: { key: "SIGNUP", vars: [b.name, seller.name] } };
+  return d && { ...d, sms: { key: "CART", vars: [b.name, d.items.join(" and ")] } };
 }
 
 /** The 1 h welcome: "a local seller near you…", next slot, today's catch photo. */
