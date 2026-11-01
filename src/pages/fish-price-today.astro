@@ -5,17 +5,18 @@ export const prerender = false;
 
 import AppShell from "../components/ui/AppShell.astro";
 import SeoLinks from "../components/ui/molecules/SeoLinks.astro";
-import { supabase } from "../lib/supabase";
+import { SELLER_PUBLIC_COLUMNS, supabase } from "../lib/supabase";
 import { SPECIES } from "../lib/species";
 import { SITE_URL, canonicalFor } from "../lib/brand";
-import { hubPriceRange, hubPriceText, hubRows, type HubRow } from "../lib/fish-hub";
+import { hubPlace, hubPriceRange, hubPriceText, hubRangeRows, hubRowPriceText, hubRows, type HubRow } from "../lib/fish-hub";
 
 let unavailable = false;
 let bySpecies: { species: string; local: string; english: string; rows: HubRow[] }[] = [];
 try {
   const [sRes, lRes] = await Promise.all([
-    supabase.from("sellers").select("id, name, location_name, lat, lng, is_test").eq("is_active", true),
-    supabase.from("fish_listings").select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options").is("deleted_at", null),
+    // Seller hours too: availability is the same rule as the feed and the seller's pages.
+    supabase.from("sellers").select(SELLER_PUBLIC_COLUMNS).eq("is_active", true),
+    supabase.from("fish_listings").select("seller_id, species, size_label, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options").is("deleted_at", null),
   ]);
   if (sRes.error || lRes.error) throw sRes.error || lRes.error;
   const sellers = (sRes.data ?? []).filter((s: any) => !s.is_test);
@@ -25,7 +26,7 @@ try {
       species: sp,
       local: sp.charAt(0).toUpperCase() + sp.slice(1),
       english: SPECIES[sp].english.match(/\(([^)]+)\)/)?.[1] || SPECIES[sp].english,
-      rows: hubRows(sellers, (lRes.data ?? []) as any, sp),
+      rows: hubRows(sellers as any, (lRes.data ?? []) as any, sp),
     }))
     .filter((x) => x.rows.length > 0)
     .sort((a, b) => b.rows.length - a.rows.length || a.local.localeCompare(b.local));
@@ -38,13 +39,17 @@ try {
 const today = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "long", year: "numeric" });
 const shortDate = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" });
 const updatedAt = new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" });
-const kg = (r: HubRow) => (r.perKg ? (r.perKg.low === r.perKg.high ? `₹${r.perKg.low}/kg` : `₹${r.perKg.low}–${r.perKg.high}/kg`) : `₹${r.offer.lowPrice}${r.offer.highPrice !== r.offer.lowPrice ? `–${r.offer.highPrice}` : ""} / pack`);
-// Today's range: only sellers with the fish in stock today (live listing).
+// Today's range: only sellers with the fish in stock today (live listing). Pack sellers next to a ₹/kg range keep their pack price.
 const range = (rows: HubRow[]) => {
-  const r = hubPriceRange(rows.filter((x) => x.offer.availability === "InStock"));
-  return r ? hubPriceText(r) : null;
+  const inStock = rows.filter((x) => x.offer.availability === "InStock");
+  const r = hubPriceRange(inStock);
+  if (!r) return null;
+  const packs = inStock.filter((x) => !hubRangeRows(inStock).includes(x));
+  return hubPriceText(r) + (packs.length ? ` · packs from ₹${Math.min(...packs.map((x) => x.offer.lowPrice))}` : "");
 };
-const statusText = { InStock: "Today", PreOrder: "Pre-order", OutOfStock: "Not today" } as const;
+const statusText = { InStock: "Today", PreOrder: "Pre-order", OutOfStock: "Not in stock today" } as const;
+// Where the listed sellers actually are (shop location), e.g. "Thane".
+const areas = hubPlace(bySpecies.flatMap((s) => s.rows));
 const url = canonicalFor("/fish-price-today");
 // Say "Mumbai" only when a listed seller is outside Thane (today every row may be Thane).
 const place = bySpecies.every((s) => s.rows.every((r) => r.area === "Thane")) ? "Thane" : "Thane & Mumbai";
@@ -93,7 +98,7 @@ const description = metaHead + (names.length ? `: ${names.join(", ")}${names.len
       <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
         {unavailable
           ? "We couldn't load today's rates. Please try again in a minute."
-          : `Rates for ${today}, updated ${updatedAt} IST, taken live from the listings of verified fish sellers on Relifish in Thane, South Mumbai (Tardeo) and Kamothe. Prices are per kg where the fish is sold by weight; fish sold by the piece shows the pack price. Each seller sets their own price, and prices change daily with the catch.`}
+          : `Rates for ${today}, updated ${updatedAt} IST, taken live from the listings of verified fish sellers on Relifish${areas ? ` in ${areas}` : ""}. Prices are per kg where the fish is sold by weight; fish sold by the piece or pack shows the pack price and weight. When a seller is out of stock, the last listed price is shown for reference. Each seller sets their own price, and prices change daily with the catch.`}
       </p>
     </header>
 
@@ -106,7 +111,7 @@ const description = metaHead + (names.length ? `: ${names.join(", ")}${names.len
             {bySpecies.map((s) => (
               <tr style="border-top:1px solid var(--v2-border);">
                 <td style="padding:8px 4px;"><a href={`/fish/${s.species}`} style="font-weight:700;color:var(--v2-brand);">{s.local}</a>{s.english.toLowerCase() !== s.local.toLowerCase() && <div style="color:var(--v2-ink-3);font-size:12px;">{s.english}</div>}</td>
-                <td style="padding:8px 4px;white-space:nowrap;">{range(s.rows) ?? (s.rows.some((r) => r.offer.availability === "PreOrder") ? "Pre-order only" : "Not in stock today")}</td>
+                <td style="padding:8px 4px;">{range(s.rows) ?? (s.rows.some((r) => r.offer.availability === "PreOrder") ? "Pre-order only" : "Not in stock today")}</td>
                 <td style="padding:8px 4px;">{s.rows.length}</td>
               </tr>
             ))}
@@ -124,7 +129,7 @@ const description = metaHead + (names.length ? `: ${names.join(", ")}${names.len
               <tr style="border-top:1px solid var(--v2-border);">
                 <td style="padding:6px 4px;"><a href={r.href} style="color:var(--v2-brand);font-weight:600;">{r.seller}</a>{r.area && <span style="color:var(--v2-ink-3);"> · {r.area}</span>}</td>
                 <td style="padding:6px 4px;">{statusText[r.offer.availability]}</td>
-                <td style="padding:6px 4px;white-space:nowrap;">{kg(r)}</td>
+                <td style="padding:6px 4px;">{r.offer.availability === "OutOfStock" ? `Last listed ${hubRowPriceText(r)}` : hubRowPriceText(r)}</td>
               </tr>
             ))}
           </tbody>

@@ -29,7 +29,8 @@ import { areaNameForPoint } from "../../lib/areas";
 import { sellerBlocked } from "../../lib/test-sellers";
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
-import { dateLabelIST, deliveryDaysAt, slotPreorderLabel, slotTimeLabel, storePreorderLabel } from "../../lib/delivery-slots";
+import { dateLabelIST, deliveryDaysAt, nextSlotText as nextSlotLabel, slotPreorderLabel, storePreorderLabel } from "../../lib/delivery-slots";
+import { listingAvailability } from "../../lib/product-offer";
 import { bundleGroups } from "../../lib/combo-deals";
 
 const { id } = Astro.params;
@@ -143,10 +144,7 @@ const deliveryFor = slotLine && preDays.length
 
 // Cart chip (founder 31 Oct): the earliest slot the buyer can still pick, e.g. "today, 4–6 PM".
 // Worked out when the page loads; checkout re-checks the live slots.
-const firstSlotDay = slotDays.find((d) => d.slots.length);
-const nextSlotText = firstSlotDay
-  ? `${firstSlotDay.date === new Date(nowMs + 5.5 * 3600_000).toISOString().slice(0, 10) ? "today" : dayWord(firstSlotDay.date)}, ${slotTimeLabel(firstSlotDay.slots[0].start, firstSlotDay.slots[0].end)}`
-  : "";
+const nextSlotText = seller ? nextSlotLabel(seller, nowMs) : "";
 
 // Priority 3: closed — no menu shown
 const isClosed = !isEffectivelyOpen && !isPreorderMode;
@@ -314,7 +312,8 @@ const tags = [
                     "priceCurrency": "INR",
                     "referenceQuantity": { "@type": "QuantitativeValue", "value": packKg * 1000, "unitCode": "GRM" }
                   } : undefined,
-                  "availability": isPreorderMode ? "https://schema.org/PreOrder" : "https://schema.org/InStock"
+                  // Same rule as the feed, /s/<slug>/<species> and /fish/<species> (lib/product-offer).
+                  "availability": `https://schema.org/${listingAvailability(l, seller, nowMs)}`
                 } : undefined
               };
             })

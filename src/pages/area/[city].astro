@@ -14,6 +14,7 @@ import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderHoursLabel, 
 import { getSellerReviews } from "../../lib/server/seller-reviews";
 import ReviewsBlock from "../../components/ui/molecules/ReviewsBlock.astro";
 import { whatsappLink } from "../../lib/brand";
+import { nextSlotText } from "../../lib/delivery-slots";
 
 const { city } = Astro.params;
 const area = getAreaBySlug(city || "");
@@ -106,14 +107,22 @@ const sellerTerms = sellers.map((sl: any) => {
     : sl.delivery_fee_enabled === false ? "Free delivery"
     : sl.delivery_fee_type === "per_km" && Number(sl.delivery_fee_per_km) > 0 ? `₹${Number(sl.delivery_fee_per_km)}/km`
     : Number(sl.delivery_fee_amount) > 0 ? `₹${Number(sl.delivery_fee_amount)}` : "Shown at checkout";
+  const freeAbove = Number(sl.free_delivery_above) > 0 ? ` (free above ₹${Number(sl.free_delivery_above)})` : "";
+  // FAQ wording of the same fee.
+  const feeText = !sl.has_delivery ? "pickup only"
+    : sl.delivery_fee_enabled === false ? "free delivery"
+    : fee === "Shown at checkout" ? "delivery fee shown at checkout" : `delivery fee ${fee}${freeAbove}`;
   return {
     name: cleanSellerName(sl.name),
+    noSameDay, feeText,
+    // Delivery slots on: the earliest slot a buyer can still pick (same text as the seller's cart chip).
+    next: nextSlotText(sl),
     href: sellerHref(sl.name, sl.id),
     place: areaNameForPoint(sl.lat, sl.lng) || stripContactInfo(sl.location_name) || area.name,
     days, hours,
     cutoff: sl.accepts_preorder && preorderPauseLabel(sl) ? `Pre-orders open, ${preorderPauseLabel(sl)}` : sl.accepts_preorder && sl.preorder_cutoff_time ? `Pre-order ${preorderHoursLabel(sl)}` : sl.accepts_preorder ? "Pre-orders open" : "Same-day only",
     radius: Number(sl.delivery_rad) > 0 ? `${Number(sl.delivery_rad)} km` : "—",
-    fee: fee + (Number(sl.free_delivery_above) > 0 ? ` (free above ₹${Number(sl.free_delivery_above)})` : ""),
+    fee: fee + freeAbove,
     min: Number(sl.min_order_amount) > 0 ? `₹${Number(sl.min_order_amount)}` : "None",
   };
 });
@@ -131,6 +140,16 @@ const faqs = [
       ? `Yes. ${sellers.length === 1 ? "One seller" : `${sellers.length} sellers`} on Relifish ${sellers.length === 1 ? "serves" : "serve"} ${area.name}: ${listJoin(sellerNames)}. Each seller sets their own delivery radius, delivery fee and minimum order, and some also offer pickup.`
       : `Not yet. No seller on Relifish delivers to ${area.name} right now. Join the waitlist and we will let you know when one does.`,
   },
+  ...(hasSellers ? [
+    {
+      q: `What is the delivery fee and minimum order in ${area.name}?`,
+      a: `${sellerTerms.map((t) => `${t.name}: ${t.feeText}${t.radius !== "—" ? `, delivers up to ${t.radius}` : ""}, minimum order ${t.min === "None" ? "none" : t.min}.`).join(" ")} The fee for your address is shown at checkout before you pay.`,
+    },
+    {
+      q: `What time can I order fish in ${area.name}?`,
+      a: sellerTerms.map((t) => `${t.name}: ${t.noSameDay ? "pre-order only" : `same-day orders ${t.days === "Every day" ? "every day" : t.days}, ${t.hours}`}; ${t.cutoff.charAt(0).toLowerCase()}${t.cutoff.slice(1)}.`).join(" "),
+    },
+  ] : []),
   {
     q: `How long does fish delivery take in ${area.name}?`,
     a: "Sellers deliver their own orders. Same-day orders are placed during the seller's opening hours and the seller confirms the timing after you pay. Pre-orders are prepared from the stock on your delivery day. Where the seller offers it, you pick a delivery time at checkout.",
@@ -234,6 +253,7 @@ const jsonLd = {
           ? "We couldn't load sellers right now. Please try again in a minute."
           : `No seller on Relifish delivers to ${area.name} yet. Join the waitlist and we will tell you when one does.`}
     </p>
+    {hasSellers && <a href="/shop" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" style="margin-top:12px;">Check if we deliver to you</a>}
   </div>
 
   <!-- Live Products section -->
@@ -310,7 +330,7 @@ const jsonLd = {
           {sellerTerms.map((t) => (
             <tr style="border-top:1px solid var(--v2-border);vertical-align:top;">
               <td style="padding:8px 4px;"><a href={t.href} style="font-weight:700;color:var(--v2-brand);">{t.name}</a><div style="color:var(--v2-ink-3);">{t.place}</div></td>
-              <td style="padding:8px 4px;">{t.days}<br/>{t.hours}<br/><span style="color:var(--v2-ink-3);">{t.cutoff}</span></td>
+              <td style="padding:8px 4px;">{t.days}<br/>{t.hours}<br/><span style="color:var(--v2-ink-3);">{t.cutoff}</span>{t.next && <><br/><span style="color:var(--v2-ink-3);">Next delivery: {t.next}</span></>}</td>
               <td style="padding:8px 4px;">{t.fee}<br/><span style="color:var(--v2-ink-3);">Up to {t.radius}</span></td>
               <td style="padding:8px 4px;">{t.min}</td>
             </tr>

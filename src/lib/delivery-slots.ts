@@ -116,6 +116,14 @@ export function deliveryDaysAt(seller: SlotSeller, nowMs = Date.now(), leadMin =
   return out;
 }
 
+/** The earliest slot a buyer can still pick: "today, 4–6 PM", "tomorrow, 9–11 AM", "Sat 25 Oct, 9–11 AM" ("" = slots off / none left). */
+export function nextSlotText(seller: SlotSeller, nowMs = Date.now()): string {
+  const day = deliveryDaysAt(seller, nowMs).find((d) => d.slots.length);
+  if (!day) return "";
+  const word = day.date === istDate(nowMs) ? "today" : day.date === istDate(nowMs + DAY_MS) ? "tomorrow" : dateLabelIST(day.date);
+  return `${word}, ${slotTimeLabel(day.slots[0].start, day.slots[0].end)}`;
+}
+
 /** Every slot of deliveryDaysAt, flat. */
 export function deliverySlotsAt(seller: SlotSeller, nowMs = Date.now(), leadMin = SLOT_LEAD_MINUTES): DeliverySlot[] {
   return deliveryDaysAt(seller, nowMs, leadMin).flatMap((d) => d.slots);
