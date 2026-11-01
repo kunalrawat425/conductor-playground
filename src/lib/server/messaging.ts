@@ -1,6 +1,7 @@
 /**
  * One place that sends a Relifish message to a buyer and records it in message_log.
  * - One channel per message (founder, 30 Oct): WhatsApp when the buyer opted in, else SMS (MSG91).
+ *   WHATSAPP_OFF=true (founder, 1 Nov: Wati paused) sends everything by SMS; promos have no SMS, so they stop.
  *   A reminder or order update whose WhatsApp fails is re-sent once by SMS (smsFallback), now or
  *   later when Wati reports the failure (smsFallbackFor, from the messaging cron).
  * - Idempotent: each channel's row is inserted first with a unique dedupe_key (key + ":whatsapp" /
@@ -48,7 +49,7 @@ export async function dispatch(sb: any, d: Dispatch): Promise<DispatchResult> {
     // Handled on WhatsApp before; only a failed one may still go once by SMS.
     return wa.status === "failed" && d.smsFallback && canSms ? sendOne(sb, d, "sms", to) : { status: "duplicate", channel: "whatsapp" };
   }
-  if (d.whatsappOk) {
+  if (d.whatsappOk && env("WHATSAPP_OFF") !== "true") {
     const r = await sendOne(sb, d, "whatsapp", to);
     if (r.status !== "failed" || !d.smsFallback || !canSms) return r;
     const s = await sendOne(sb, d, "sms", to);
