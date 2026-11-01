@@ -520,10 +520,10 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
     expect(sms(T("24", "10:00"), a).s).toMatchObject({ key: "PROMO_AGAIN", vars: ["Priya", "Halwa", expect.any(String)] });
   });
   it("names 3 different fish, one per species", () => {
-    const FT2 = { ...FISHTOKRI, live: [{ name: "Silver pomfret combo", species: "pomfret", price: 1 }, { name: "Silver Pomfret", species: "pomfret", price: 1 },
-      { name: "Khapri Pomfret", species: "pomfret", price: 1 }, { name: "Bangda", species: "mackerel", price: 1 }, { name: "Surmai", species: "kingfish", price: 1 }] } as MsgSeller;
+    const FT2 = { ...FISHTOKRI, live: [{ name: "Silver pomfret combo", species: null, price: 1 }, { name: "Silver Pomfret", species: "pomfret", price: 1 },
+      { name: "Khapri Pomfret", species: "pomfret", price: 1 }, { name: "Marinated Bangda", species: null, price: 1 }, { name: "Bangda", species: "mackerel", price: 1 }, { name: "Surmai", species: "kingfish", price: 1 }] } as MsgSeller;
     const d = decide(T("24", "10:00"), old, [FT2, NOMADIC], [], false, false, PROMO_SMS_START) as any;
-    expect(promoSms(d, old, T("24", "10:00"))!.vars[1]).toBe("Silver pomfret combo, Bangda, Surmai");
+    expect(promoSms(d, old, T("24", "10:00"))!.vars[1]).toBe("Silver pomfret combo, Marinated Bangda, Surmai");
   });
   it("no prices and no seller names in any promo SMS variable", () => {
     const r = sms(T("24", "10:00"), old).s!;

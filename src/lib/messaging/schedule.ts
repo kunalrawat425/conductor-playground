@@ -304,10 +304,14 @@ export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoS
     case "rf2_catch_prices": case "rf2_catch_preorder": {
       // Names only (the WhatsApp menu line carries prices; promos never do): 3 different fish, one name per species
       // ("Silver pomfret combo, Silver Pomfret, Khapri Pomfret" would read as one fish three times).
+      // A listing's fish = its species, and also the last word of its name without "combo / marinated / cut…"
+      // (some combos have no species: "Silver pomfret combo" and "Silver Pomfret" are both pomfret).
+      const core = (n: string) => n.toLowerCase().replace(/\b(combo|marinated|fresh|cut|pcs|pieces|whole|cleaned|small|medium|large|big|baby)\b/g, " ").trim().split(/\s+/).pop() || n.toLowerCase();
       const seen = new Set<string>(), names: string[] = [];
       for (const x of d.seller.live ?? []) {
-        const k = String(x.species || x.name).toLowerCase();
-        if (!seen.has(k)) { seen.add(k); names.push(x.name); }
+        const keys = [x.species ? String(x.species).toLowerCase() : "", core(x.name)].filter(Boolean);
+        if (keys.some((k) => seen.has(k))) continue;
+        keys.forEach((k) => seen.add(k)); names.push(x.name);
       }
       const live = names.slice(0, 3).join(", ");
       const by = String(d.body[3] ?? "");
