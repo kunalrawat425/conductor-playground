@@ -498,7 +498,7 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
   it("SMS promos wait for 10:00 on Fri/Sat/Sun (not 8:30); Tue 6 PM is unchanged", () => {
     expect(sms(T("24", "08:30"), old).skip).toBe("nothing due");
     expect(sms(T("24", "09:50"), old).skip).toBe("nothing due");
-    expect(sms(T("24", "10:00"), old).s).toMatchObject({ key: "PROMO_NEW", vars: ["Priya", "Surmai, Pomfret, Bombil", expect.any(String), expect.any(String)] });
+    expect(sms(T("24", "10:00"), old).s).toMatchObject({ key: "PROMO_NEW", vars: ["Priya", "Surmai, Pomfret, Bombil", expect.any(String), "today"] });
     expect(sms(T("27", "18:00"), old).s).toMatchObject({ key: "PROMO_NEW" });
     // WhatsApp path (notBefore 0) keeps 8:30.
     expect(decide(T("24", "08:30"), old, S, [])).toMatchObject({ kind: "promo" });
@@ -518,6 +518,12 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
     const a = buyer({ created_at: iso(T("01", "10:00")), last_order_at: iso(T("15", "10:00")), last_delivered_at: iso(T("15", "12:00")),
       delivered: { id: "o2", seller_id: "ft", name: "Halwa", created_at: iso(T("15", "10:00")) } as any });
     expect(sms(T("24", "10:00"), a).s).toMatchObject({ key: "PROMO_AGAIN", vars: ["Priya", "Halwa", expect.any(String)] });
+  });
+  it("names 3 different fish, one per species", () => {
+    const FT2 = { ...FISHTOKRI, live: [{ name: "Silver pomfret combo", species: "pomfret", price: 1 }, { name: "Silver Pomfret", species: "pomfret", price: 1 },
+      { name: "Khapri Pomfret", species: "pomfret", price: 1 }, { name: "Bangda", species: "mackerel", price: 1 }, { name: "Surmai", species: "kingfish", price: 1 }] } as MsgSeller;
+    const d = decide(T("24", "10:00"), old, [FT2, NOMADIC], [], false, false, PROMO_SMS_START) as any;
+    expect(promoSms(d, old, T("24", "10:00"))!.vars[1]).toBe("Silver pomfret combo, Bangda, Surmai");
   });
   it("no prices and no seller names in any promo SMS variable", () => {
     const r = sms(T("24", "10:00"), old).s!;

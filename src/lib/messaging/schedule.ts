@@ -300,10 +300,18 @@ export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoS
     case "rf2_promo_unpaid": return fish ? { key: "PROMO_UNPAID", vars: [b.name, fish, d.when] } : null;
     case "rf2_order_again": return fish ? { key: "PROMO_AGAIN", vars: [b.name, fish, d.when] } : null;
     case "rf2_catch_prices": case "rf2_catch_preorder": {
-      // Names only (the WhatsApp menu line carries prices; promos never do): up to 3 live fish of that seller.
-      const live = [...new Set((d.seller.live ?? []).map((x) => x.name))].slice(0, 3).join(", ");
+      // Names only (the WhatsApp menu line carries prices; promos never do): 3 different fish, one name per species
+      // ("Silver pomfret combo, Silver Pomfret, Khapri Pomfret" would read as one fish three times).
+      const seen = new Set<string>(), names: string[] = [];
+      for (const x of d.seller.live ?? []) {
+        const k = String(x.species || x.name).toLowerCase();
+        if (!seen.has(k)) { seen.add(k); names.push(x.name); }
+      }
+      const live = names.slice(0, 3).join(", ");
       const by = String(d.body[3] ?? "");
-      return live && by ? { key: "PROMO_NEW", vars: [b.name, live, by, d.when] } : null;
+      // Today: "Order by 4 PM for delivery today" (as the WhatsApp copy), not the next slot; pre-order: the slot.
+      const when = d.template === "rf2_catch_prices" ? String(d.body[4] ?? "today") : d.when;
+      return live && by ? { key: "PROMO_NEW", vars: [b.name, live, by, when] } : null;
     }
     default: return null;
   }

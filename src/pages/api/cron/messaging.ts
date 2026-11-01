@@ -280,7 +280,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
     }
     if (!msg) continue;
     if (!whatsappOk && !msg.sms) { report.push({ buyer: who, skip: msg.kind === "promo" ? "promo: no WhatsApp and no promo SMS for this stage/time" : "not opted in to WhatsApp" }); continue; }
-    const line = { buyer: who, kind: msg.kind, template: msg.template, vars: msg.body, sms: msg.sms ?? null, link: msg.link_path, image: msg.headerImage ?? null, channel: whatsappOk ? "whatsapp" : msg.sms ? "sms" : "none" };
+    const line = { buyer: who, kind: msg.kind, template: msg.template, vars: msg.body, sms: msg.sms ?? null, link: msg.link_path, image: msg.headerImage ?? null, channel: whatsappOk && env("WHATSAPP_OFF") !== "true" ? "whatsapp" : msg.sms ? "sms" : "none" };
     if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
     const r = await dispatch(sb, msg);
     report.push({ ...line, channel: r.channel ?? line.channel, sent: r.status, error: r.error });
