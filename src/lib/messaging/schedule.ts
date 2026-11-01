@@ -238,7 +238,8 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
  *  slot; every other rule (opt-in, 1 a day, 72 h, 48 h, Meta hold, DND, open order, inactive) still applies. */
 /** `all` (founder's one-off "send to all", 30 Oct): also skips the 72 h / 48 h gaps, the Meta hold and the
  *  inactive / just-delivered rules. Opt-in, STOP, DND, open order, quiet hours and 1 a day still apply. */
-export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[], sendNow = false, all = false): Decision | Skip {
+/** `notBefore` (IST minute): promos sent by SMS pass PROMO_SMS_START, so a Fri/Sat/Sun 8:30 promo goes at 10:00 instead. */
+export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[], sendNow = false, all = false, notBefore = 0): Decision | Skip {
   if (b.dnd) return { skip: "do not message" };
   if (b.opted_out) return { skip: "opted out" };
   if (b.open_order) return { skip: "open order" };
@@ -271,11 +272,41 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const spam = real.some((x) => PROMO_KINDS.includes(x.kind) && now - Date.parse(x.created_at) < PROMO_GAP_MS);
   const slot = PROMO_SLOTS[istDow(now)];
   if ((slot == null && !sendNow) || (!all && (now - lastActive > 30 * DAY_MS || now - deliveredMs < 3 * DAY_MS || spam))) return { skip: "nothing due" };
-  const due = sendNow ? now : atIST(today, slot);
+  const due = sendNow ? now : atIST(today, Math.max(slot, notBefore));
   if (!isDue(now, due)) return { skip: "nothing due" };
   // At send time the offer is re-read: what the message promises is what checkout offers now.
   const offer = offerAt(seller, now);
   return (offer && compose("promo", stage, due, b, seller, offer)) || { skip: "nothing due" };
+}
+
+// ── Promotional SMS (founder, 1 Nov) ──
+/** Promotional SMS may go 10:00–21:00 IST only (TRAI; the stricter reading of 9/10 AM), never in quiet hours. */
+export const PROMO_SMS_START = 10 * 60;
+export const PROMO_SMS_END = 21 * 60;
+export type PromoSmsKey = "PROMO_NEW" | "PROMO_CART" | "PROMO_UNPAID" | "PROMO_AGAIN";
+
+/**
+ * The SMS version of a promo decision: one DLT promotional template per stage, no prices, no seller
+ * names. Same rules as the WhatsApp promo (decide(): stage, 1 a day, 72 h gap, 48 h after a reminder,
+ * DND / STOP / open order / just delivered / inactive) plus the 10:00–21:00 window. null = no SMS
+ * (outside the window, or a stage without an SMS template: the cart-swap substitute needs a price).
+ */
+export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoSmsKey; vars: string[] } | null {
+  const m = istMin(now);
+  if (m < PROMO_SMS_START || m >= PROMO_SMS_END) return null;
+  const fish = d.items.join(" and ");
+  switch (d.template) {
+    case "rf2_promo_cart": return fish ? { key: "PROMO_CART", vars: [b.name, fish, d.when] } : null;
+    case "rf2_promo_unpaid": return fish ? { key: "PROMO_UNPAID", vars: [b.name, fish, d.when] } : null;
+    case "rf2_order_again": return fish ? { key: "PROMO_AGAIN", vars: [b.name, fish, d.when] } : null;
+    case "rf2_catch_prices": case "rf2_catch_preorder": {
+      // Names only (the WhatsApp menu line carries prices; promos never do): up to 3 live fish of that seller.
+      const live = [...new Set((d.seller.live ?? []).map((x) => x.name))].slice(0, 3).join(", ");
+      const by = String(d.body[3] ?? "");
+      return live && by ? { key: "PROMO_NEW", vars: [b.name, live, by, d.when] } : null;
+    }
+    default: return null;
+  }
 }
 
 // ── R: activity reminders ──

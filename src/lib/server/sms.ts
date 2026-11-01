@@ -15,7 +15,8 @@ import type { SendResult } from "./whatsapp";
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 
-export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED" | "CANCELLED_NOPAY";
+export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED" | "CANCELLED_NOPAY"
+  | "PROMO_NEW" | "PROMO_CART" | "PROMO_UNPAID" | "PROMO_AGAIN";
 
 /**
  * The DLT template text for each key (Smartping, 1 Nov 2026), in the WhatsApp voice: a status line, then help
@@ -34,7 +35,14 @@ export const SMS_TEXT: Record<SmsKey, string> = {
   DELIVERED: "Your Relifish order {#var#} ({#var#}) is delivered. Hope you enjoy it! Rate it: https://www.relifish.com/track - Relifish",
   CANCELLED: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
   CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. No payment was taken. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
+  // Promotional (DLT category Promotional, sent from the numeric promo header MSG91_PROMO_SENDER, 10:00–21:00 only).
+  PROMO_NEW: "Hi {#var#}, fresh fish is in on Relifish: {#var#}. Order by {#var#} for delivery {#var#}, cleaned and cut. See the menu: https://www.relifish.com/shop - Relifish",
+  PROMO_CART: "Hi {#var#}, your {#var#} is still in your Relifish cart. The next delivery slot is {#var#}, cleaned and cut. Questions? Call 9152207607. Cart: https://www.relifish.com/shop - Relifish",
+  PROMO_UNPAID: "Hi {#var#}, your Relifish order for {#var#} is saved. You can pick a slot and finish it whenever you are ready, next slot {#var#}. Help: 9152207607. https://www.relifish.com/orders - Relifish",
+  PROMO_AGAIN: "Hi {#var#}, hope you enjoyed the {#var#}. Fresh stock is in, next slot {#var#}, cleaned and cut. Order again: https://www.relifish.com/shop - Relifish",
 };
+/** Promotional keys: own sender (numeric header) and their own switch PROMO_SMS_LIVE, separate from reminders. */
+export const isPromoSms = (key: SmsKey) => key.startsWith("PROMO_");
 /** Variables each key takes. */
 export const smsVarCount = (key: SmsKey) => SMS_TEXT[key].split("{#var#}").length - 1;
 
@@ -45,24 +53,26 @@ export const cut30 = (s: string) => {
 };
 
 /** MSG91 flow body (pure; tested): var1…varN. Same shape as the OTP sender. DLT text type is GSM, so ₹ becomes "Rs." */
-export function smsPayload(flowId: string, to: string, vars: string[]) {
+export function smsPayload(flowId: string, to: string, vars: string[], promo = false) {
   const all = vars.map((v) => cut30(String(v ?? "").replace(/₹\s?/g, "Rs.")));
   const named = Object.fromEntries(all.flatMap((v, i) => [[`var${i + 1}`, v], [`VAR${i + 1}`, v]]));
-  return { flow_id: flowId, sender: env("MSG91_SENDER_ID") || "RLFISH", mobiles: to, ...named };
+  return { flow_id: flowId, sender: promo ? env("MSG91_PROMO_SENDER") : env("MSG91_SENDER_ID") || "RLFISH", mobiles: to, ...named };
 }
 
 /** The DLT template for this key is set up in MSG91 (env MSG91_FLOW_<KEY>). Until then SMS is skipped, not failed. */
-export const smsReady = (key: SmsKey) => !!env(`MSG91_FLOW_${key}`);
+export const smsReady = (key: SmsKey) =>
+  !!env(`MSG91_FLOW_${key}`) && (!isPromoSms(key) || (env("PROMO_SMS_LIVE") === "true" && !!env("MSG91_PROMO_SENDER")));
 
 export async function sendSms(to: string, key: SmsKey, vars: string[]): Promise<SendResult> {
   const flowId = env(`MSG91_FLOW_${key}`);
   if (!flowId) return { status: "failed", error: `sms template ${key} not configured (MSG91_FLOW_${key})` };
   if (env("SMS_LIVE") !== "true" || !env("MSG91_AUTH_KEY")) return { status: "dry_run" };
+  if (isPromoSms(key) && !smsReady(key)) return { status: "dry_run" }; // promo switch off or no promo header
   try {
     const res = await fetch("https://api.msg91.com/api/v5/flow/", {
       method: "POST",
       headers: { authkey: env("MSG91_AUTH_KEY"), "Content-Type": "application/json", accept: "application/json" },
-      body: JSON.stringify(smsPayload(flowId, to, vars)),
+      body: JSON.stringify(smsPayload(flowId, to, vars, isPromoSms(key))),
     });
     const j: any = await res.json().catch(() => ({}));
     if (!res.ok || j?.type !== "success") return { status: "failed", error: `msg91 ${res.status} ${j?.message || ""}`.trim().slice(0, 300) };
