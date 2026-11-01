@@ -15,18 +15,25 @@ import type { SendResult } from "./whatsapp";
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 
-export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED";
+export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED" | "CANCELLED_NOPAY";
 
-/** The DLT template text for each key (Smartping 1 Nov 2026: SIGNUP = relifish_account_ready, UNPAID, CONFIRMED, OUT, CANCELLED approved; CART was rejected four times as promotional, so the cart reminder SMS uses the SIGNUP text with the cart's seller; PAID and DELIVERED aren't sent). */
+/**
+ * The DLT template text for each key (Smartping, 1 Nov 2026). Friendly reminders, never a dues notice; no seller
+ * names (founder); no tracking wording (there's no live tracking): order links go to /orders ("Your Orders").
+ * SIGNUP = relifish_account_ready, CART = relifish_checkout_saved, UNPAID = relifish_unpaid_saved,
+ * CONFIRMED = relifish_confirmed_hi, OUT = relifish_order_on_way, CANCELLED = relifish_cancel_refund,
+ * CANCELLED_NOPAY = relifish_cancel_nopay. PAID and DELIVERED aren't sent.
+ */
 export const SMS_TEXT: Record<SmsKey, string> = {
   SIGNUP: "Hi {#var#}, your Relifish account is ready. You can order fish from {#var#}, cleaned and cut, with home delivery. Menu: https://www.relifish.com/shop - Relifish",
-  CART: "Hi {#var#}, your {#var#} from {#var#} is still in your Relifish cart. Next slot: {#var#}. Order here: https://www.relifish.com/shop - Relifish",
-  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is not paid yet. Pay to keep your slot {#var#}: https://www.relifish.com/track - Relifish",
+  CART: "Hi {#var#}, your Relifish order for {#var#} is saved. Complete the checkout for home delivery {#var#}: https://www.relifish.com/shop - Relifish",
+  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is saved. Complete the checkout for home delivery {#var#}. Your orders: https://www.relifish.com/orders - Relifish",
   PAID: "Payment received for your Relifish order {#var#} from {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/track - Relifish",
-  CONFIRMED: "{#var#} has confirmed your Relifish order {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/track - Relifish",
-  OUT: "Your Relifish order {#var#} is out for delivery, arriving {#var#}. Track: https://www.relifish.com/track - Relifish",
+  CONFIRMED: "Hi {#var#}, your Relifish order {#var#} is confirmed and will reach you {#var#}, cleaned and cut. - Relifish",
+  OUT: "Your Relifish order {#var#} is on the way and should reach you {#var#}. Please keep your phone close for the delivery person. - Relifish",
   DELIVERED: "Your Relifish order {#var#} ({#var#}) is delivered. Hope you enjoy it! Rate it: https://www.relifish.com/track - Relifish",
-  CANCELLED: "Your Relifish order {#var#} was cancelled: {#var#}. Refund: {#var#}. Details: https://www.relifish.com/track - Relifish",
+  CANCELLED: "Sorry {#var#}, your Relifish order {#var#} was cancelled: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. - Relifish",
+  CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} was cancelled: {#var#}. No payment was taken. - Relifish",
 };
 /** Variables each key takes. */
 export const smsVarCount = (key: SmsKey) => SMS_TEXT[key].split("{#var#}").length - 1;
