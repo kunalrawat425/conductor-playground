@@ -367,6 +367,6 @@ export function signupMessage(now: number, b: BuyerState, seller: MsgSeller, off
   return {
     kind: "act_signup", slot_date: istDate(now), due_ms: now, mode: offer.mode, seller, personal: false, items: [], species: null,
     photo: catchPhoto(b, seller, false), when: offer.when, template: "rf2_welcome", body: [b.name, "you", offer.when], path: "/shop",
-    sms: { key: "SIGNUP", vars: [b.name, seller.name] },
+    sms: { key: "SIGNUP", vars: [b.name, "a verified seller near you"] },
   };
 }

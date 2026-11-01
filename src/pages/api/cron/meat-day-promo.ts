@@ -209,7 +209,7 @@ export const GET: APIRoute = async ({ request }) => {
         if (activeListingsNearby) {
           // Case A: Location Set & Active Seller Nearby
           title = "Fresh Fish Sellers are Live! 🐟";
-          body = "Local fish sellers are now open in your area. Open Relifish to check today's fresh rates and order!";
+          body = "Verified fish sellers near you are open now. Open Relifish to see today's rates and order.";
         } else {
           // Case B: Location Set but No Nearby Active Sellers
           title = "Fresh Fish Coming Soon 🎣";

@@ -43,7 +43,7 @@ if (unavailable) Astro.response.headers.set("Retry-After", "120");
     <EmptyState
       variant="server-error"
       title={unavailable ? "Couldn't load this seller" : "Seller not found"}
-      description={unavailable ? "Please try again in a minute." : "This seller isn't taking orders on Relifish right now. Browse other local sellers."}
+      description={unavailable ? "Please try again in a minute." : "This seller isn't taking orders on Relifish right now. Browse other verified sellers."}
       ctaText="Browse sellers"
       ctaHref="/shop"
     />

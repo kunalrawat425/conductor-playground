@@ -44,7 +44,7 @@ export const GET: APIRoute = async () => {
   const body = `# Relifish
 # ${SITE}
 
-> Relifish is a hyperlocal fish marketplace. Independent fish sellers in Mumbai, Thane and Navi Mumbai list the fish they have each day; buyers order same-day during the seller's opening hours or pre-order tonight for tomorrow. Sellers deliver the order or keep it ready for pickup. Relifish does not catch, store or deliver fish itself.
+> Relifish is a hyperlocal fish marketplace. Independent fish sellers in Mumbai, Thane and Navi Mumbai, each approved by Relifish after a call before going live, list the fish they have each day; buyers order same-day during the seller's opening hours or pre-order tonight for tomorrow. Sellers deliver the order or keep it ready for pickup. Relifish does not catch, store or deliver fish itself.
 
 ## Key pages
 

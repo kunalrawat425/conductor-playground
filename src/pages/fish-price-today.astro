@@ -50,7 +50,7 @@ const summary = bySpecies.filter((s) => range(s.rows)).slice(0, 4).map((s) => `$
 ---
 <AppShell
   title={`Fish Price Today in Thane, ${shortDate}: Live Rates per kg | Relifish`}
-  description={`Today's fish rates (${today}) from local sellers in Thane, South Mumbai and Navi Mumbai${summary ? `: ${summary}` : ""}. Updated live from each seller's listing.`}
+  description={`Today's fish rates (${today}) from verified local sellers in Thane, South Mumbai and Navi Mumbai${summary ? `: ${summary}` : ""}. Updated live from each seller's listing.`}
   canonical={url}
   noindex={unavailable || bySpecies.length === 0}
   header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
@@ -79,7 +79,7 @@ const summary = bySpecies.filter((s) => range(s.rows)).slice(0, 4).map((s) => `$
       <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
         {unavailable
           ? "We couldn't load today's rates. Please try again in a minute."
-          : `Rates for ${today}, updated ${updatedAt} IST, taken live from the listings of local fish sellers on Relifish in Thane, South Mumbai (Tardeo) and Kamothe. Prices are per kg where the fish is sold by weight; fish sold by the piece shows the pack price. Each seller sets their own price, and prices change daily with the catch.`}
+          : `Rates for ${today}, updated ${updatedAt} IST, taken live from the listings of verified local fish sellers on Relifish in Thane, South Mumbai (Tardeo) and Kamothe. Prices are per kg where the fish is sold by weight; fish sold by the piece shows the pack price. Each seller sets their own price, and prices change daily with the catch.`}
       </p>
     </header>
 

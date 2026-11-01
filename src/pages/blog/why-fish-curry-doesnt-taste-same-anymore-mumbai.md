@@ -73,7 +73,7 @@ See [today's fish prices](/fish-price-today) before you choose.
 
 ## How Relifish fits in
 
-Relifish is a marketplace where you order directly from local fish sellers. Each seller lists what they have that day. You can order same-day while they are open, or pre-order tonight for tomorrow, and choose whether you want the fish whole, cleaned or cut. The seller delivers or keeps it ready for pickup.
+Relifish is a marketplace where you order directly from verified local fish sellers. Each seller lists what they have that day. You can order same-day while they are open, or pre-order tonight for tomorrow, and choose whether you want the fish whole, cleaned or cut. The seller delivers or keeps it ready for pickup.
 
 Sellers on Relifish currently serve parts of [Thane](/area/thane), [Tardeo](/area/tardeo) and [Kamothe](/area/kamothe). Compare sellers for [pomfret](/fish/pomfret), [surmai](/fish/surmai) or [bangda](/fish/bangda), or read [how ordering works](/blog/first-relifish-order-guide-thane).
 

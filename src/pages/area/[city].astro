@@ -183,14 +183,14 @@ const jsonLd = {
       "name": "Relifish",
       "url": "https://www.relifish.com",
       "logo": "https://www.relifish.com/icon-512.png",
-      "description": "Hyperlocal fish marketplace: order fish online from local sellers in Thane, South Mumbai and Navi Mumbai.",
+      "description": "Hyperlocal fish marketplace: order fish online from verified local sellers in Thane, South Mumbai and Navi Mumbai.",
       "sameAs": ["https://www.instagram.com/relifish_/", "https://www.facebook.com/p/ReliFish-61589987936346/"],
       "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "telephone": "+91-9152207607", "email": "relifishstore@gmail.com", "areaServed": "IN", "availableLanguage": ["en", "hi", "mr"] }
     },
     hasSellers ? {
       "@type": "Service",
       "@id": `${canonicalUrl}#service`,
-      "serviceType": "Fresh fish online ordering and delivery from local sellers",
+      "serviceType": "Fresh fish online ordering and delivery from verified local sellers",
       "name": areaTitle,
       "provider": { "@id": "https://www.relifish.com/#org" },
       "areaServed": { "@type": "City", "name": area.name, "containedInPlace": { "@type": "State", "name": "Maharashtra" } },

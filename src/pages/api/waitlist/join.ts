@@ -111,12 +111,12 @@ export const POST: APIRoute = async ({ request }) => {
                   <div style="margin:0 0 16px;"><img src="${LOGO_URL}" alt="Relifish" style="height:40px;width:auto;display:block;" /></div>
                   <h1 style="font-size:24px;margin:0 0 16px;">Welcome to Relifish!</h1>
                   <p style="font-size:16px;color:#333;line-height:1.6;margin:0 0 16px;">
-                    You're officially on the waitlist. We're bringing fish from local sellers to <strong>${escapeHtml(area)}</strong>.
+                    You're officially on the waitlist. We're bringing fish from verified sellers to <strong>${escapeHtml(area)}</strong>.
                   </p>
                   <div style="background:#f0f6ff;border-radius:12px;padding:20px;margin:0 0 16px;">
                     <p style="font-size:14px;font-weight:700;color:#0066cc;margin:0 0 10px;">What happens next:</p>
                     <p style="font-size:14px;color:#333;line-height:1.6;margin:0;">
-                      1. We onboard trusted fish sellers near ${escapeHtml(area)}<br/>
+                      1. We check and onboard fish sellers near ${escapeHtml(area)}<br/>
                       2. You get notified the moment they go live<br/>
                       3. You order first — with exclusive launch discounts
                     </p>
