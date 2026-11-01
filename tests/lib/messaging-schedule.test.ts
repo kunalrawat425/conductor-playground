@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROMO_SMS_START, compose, costliestPhoto, decide, decideActivity, offerAt, promoSms, reminderWindow, pickSubstitute, type BuyerState, type MenuItem, type MsgSeller, type SentLog } from "../../src/lib/messaging/schedule";
+import { PROMO_SMS_START, smsCapReached, compose, costliestPhoto, decide, decideActivity, offerAt, promoSms, reminderWindow, pickSubstitute, type BuyerState, type MenuItem, type MsgSeller, type SentLog } from "../../src/lib/messaging/schedule";
 import { PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
 import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
@@ -535,5 +535,18 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
     expect(sms(T("24", "10:00"), old, [log("promo", T("23", "10:00"))]).skip).toBe("nothing due");      // promo yesterday (<72 h)
     expect(sms(T("24", "10:00"), old, [log("act_cart", T("23", "12:00"))]).skip).toBe("activity reminder <48h");
     expect(sms(T("24", "10:00"), old, [log("act_unpaid", T("24", "09:00"))]).skip).toBe("already messaged today");
+  });
+});
+
+describe("2 reminder/promo SMS per person per week (founder, 1 Nov)", () => {
+  const now = T("24", "10:00");
+  const row = (kind: string, ms: number, channel = "sms", status = "sent"): SentLog => ({ kind, slot_date: "x", created_at: iso(ms), channel, status });
+  it("caps at 2 sent reminder/promo SMS in 7 days; order updates, WhatsApp, failed and older rows don't count", () => {
+    expect(smsCapReached([row("act_cart", T("22", "10:00"))], now)).toBe(false);
+    expect(smsCapReached([row("act_cart", T("22", "10:00")), row("promo", T("20", "18:00"))], now)).toBe(true);
+    expect(smsCapReached([row("act_cart", T("22", "10:00")), row("order_confirmed", T("23", "10:00"))], now)).toBe(false);
+    expect(smsCapReached([row("act_cart", T("22", "10:00")), row("promo", T("20", "18:00"), "whatsapp")], now)).toBe(false);
+    expect(smsCapReached([row("act_cart", T("22", "10:00")), row("promo", T("20", "18:00"), "sms", "failed")], now)).toBe(false);
+    expect(smsCapReached([row("act_cart", T("22", "10:00")), row("promo", T("16", "18:00"))], now)).toBe(false); // 8 days ago
   });
 });

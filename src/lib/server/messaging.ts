@@ -32,7 +32,7 @@ export type Dispatch = {
   smsFallback?: boolean;            // WhatsApp failed → SMS once (reminders, order updates)
 };
 type Channel = "whatsapp" | "sms";
-export type DispatchResult = { status: "duplicate" | "sent" | "dry_run" | "failed" | "no_channel"; channel?: string; id?: string; error?: string };
+export type DispatchResult = { status: "duplicate" | "sent" | "dry_run" | "failed" | "no_channel" | "capped"; channel?: string; id?: string; error?: string };
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 
@@ -93,7 +93,12 @@ async function sendOne(sb: any, d: Dispatch, channel: Channel, to: string): Prom
     payload: { template: d.template, body: d.body, headerImage: d.headerImage ?? null, sms: d.sms ?? null, smsOk: d.smsOk ?? true, smsFallback: !!d.smsFallback },
   }, { onConflict: "dedupe_key", ignoreDuplicates: true }).select("id, short_id");
   // 23505 here is the other unique index (migration 089): this buyer already has a marketing WhatsApp today.
-  if (error) return error.code === "23505" ? { status: "duplicate", channel } : { status: "failed", channel, error: error.message };
+  if (error) {
+    if (error.code === "23505") return { status: "duplicate", channel };
+    // Migration 091: the database refuses a 3rd reminder/promo SMS to a number within 7 days. Nothing was written or sent.
+    if (/sms_weekly_cap/.test(String(error.message))) return { status: "capped", channel, error: "2 reminder/promo SMS in the last 7 days" };
+    return { status: "failed", channel, error: error.message };
+  }
   const id = rows?.[0]?.id as string | undefined;
   if (!id) return { status: "duplicate", channel };
 
