@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { perKgRange, hubRows, hubPriceRange, hubPriceText, hubRangeRows, hubRowPriceText, hubPlace } from "../../src/lib/fish-hub";
+import { perKgRange, hubRows, hubPriceRange, hubPriceText, hubRangeRows, hubRowPriceText, hubPlace, hubTitle } from "../../src/lib/fish-hub";
 import { listingAvailability } from "../../src/lib/product-offer";
 
 describe("hubPriceRange", () => {
@@ -84,6 +84,28 @@ describe("hub availability = listingAvailability (one rule with feed and seller 
     const row = hubRows([{ ...seller, accepts_preorder: false }], [{ ...listing, is_preorder_enabled: false }] as any, "surmai", tue3pm)[0];
     expect(row.offer.availability).toBe("OutOfStock");
     expect(hubRowPriceText(row)).toBe("₹1200/kg");
+  });
+});
+
+describe("hubTitle", () => {
+  const row = (availability: string, area: string, perKg: { low: number; high: number } | null) =>
+    ({ seller: area, area, offer: { availability, lowPrice: 500, highPrice: 500, offerCount: 1 }, perKg, packWeight: null }) as any;
+
+  it("in stock: live ₹/kg, alias dropped when over 60", () => {
+    expect(hubTitle("Surmai", "Kingfish", [row("InStock", "Thane", { low: 1098, high: 1098 })])).toBe("Surmai (Kingfish) ₹1098/kg Today in Thane | Relifish");
+    expect(hubTitle("Rawas", "Indian Salmon", [row("InStock", "Thane", { low: 900, high: 1290 })])).toBe("Rawas ₹900–₹1290/kg Today in Thane | Relifish");
+  });
+  it("pre-order keeps the ₹/kg title (no morning/evening flip)", () => {
+    expect(hubTitle("Pomfret", null, [row("PreOrder", "Thane", { low: 2198, high: 2199 }), row("PreOrder", "Thane", null)])).toBe("Pomfret ₹2198–₹2199/kg Today in Thane | Relifish");
+  });
+  it("out of stock or pack-only: the price-per-kg title, still with the place", () => {
+    expect(hubTitle("Rawas", "Indian Salmon", [row("OutOfStock", "Thane", { low: 900, high: 900 })])).toBe("Rawas (Indian Salmon) Price per kg Today in Thane | Relifish");
+    expect(hubTitle("Pomfret", null, [row("PreOrder", "Thane", null)])).toBe("Pomfret Price per kg Today in Thane | Relifish");
+  });
+  it("several areas: Thane if any Thane seller has it, else the area with the most sellers", () => {
+    const multi = [row("PreOrder", "Tardeo", null), row("PreOrder", "Kamothe", null), row("InStock", "Thane", null)];
+    expect(hubTitle("Pomfret", null, multi)).toBe("Pomfret Price per kg Today in Thane | Relifish");
+    expect(hubTitle("Bangda", null, [row("InStock", "Tardeo", { low: 300, high: 300 }), row("InStock", "Tardeo", { low: 320, high: 320 }), row("InStock", "Kamothe", { low: 280, high: 280 })])).toBe("Bangda ₹280–₹320/kg Today in Tardeo | Relifish");
   });
 });
 

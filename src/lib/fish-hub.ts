@@ -81,6 +81,33 @@ export function hubPlace(rows: { area: string }[]): string {
   return areas.length <= 1 ? areas.join("") : `${areas.slice(0, -1).join(", ")} & ${areas[areas.length - 1]}`;
 }
 
+/** One area for a title: "Thane" when any row is there, else the area with the most rows ("" for none). */
+export function hubMainArea(rows: { area: string }[]): string {
+  const n = new Map<string, number>();
+  for (const r of rows) if (r.area) n.set(r.area, (n.get(r.area) ?? 0) + 1);
+  if (n.has("Thane")) return "Thane";
+  return [...n].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+}
+
+/**
+ * /fish/<species> title, ≤60 (founder, 25 Oct): "Rawas (Indian Salmon) ₹450/kg Today in Thane | Relifish".
+ * The ₹/kg counts in stock AND pre-order, so the title doesn't flip between morning and evening; Thane
+ * sellers first. Alias dropped when too long. No seller selling it by weight right now (out of stock,
+ * or by the pack only): "<Fish> Price per kg Today in Thane | Relifish".
+ */
+export function hubTitle(local: string, alias: string | null | undefined, rows: HubRow[]): string {
+  const orderable = rows.filter((r) => r.offer.availability !== "OutOfStock");
+  const byWeight = orderable.filter((r) => r.perKg);
+  const thaneKg = byWeight.filter((r) => r.area === "Thane");
+  const priceRows = thaneKg.length ? thaneKg : byWeight;
+  const range = hubPriceRange(priceRows);
+  const place = hubMainArea(priceRows.length ? priceRows : orderable.length ? orderable : rows);
+  const at = place ? ` Today in ${place}` : " Today";
+  const names = [...(alias ? [`${local} (${alias})`] : []), local];
+  const heads = [...(range ? [`${hubPriceText(range)}${at}`] : []), `Price per kg${at}`];
+  return heads.flatMap((h) => names.map((n) => `${n} ${h} | Relifish`)).find((t) => t.length <= 60) ?? `${local} Price per kg | Relifish`;
+}
+
 /** A /fish/<species> hub with no buyer guide needs this many priced sellers to be indexable. */
 export const HUB_MIN_SELLERS = 2;
 

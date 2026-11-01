@@ -10,7 +10,7 @@ import EmptyState from "../../components/ui/molecules/EmptyState.astro";
 import { SELLER_PUBLIC_COLUMNS, supabase } from "../../lib/supabase";
 import { SPECIES, getSpeciesDisplay } from "../../lib/species";
 import { SITE_URL, canonicalFor } from "../../lib/brand";
-import { hubIndexable, hubPlace, hubPriceRange, hubPriceText, hubRangeRows, hubRowPriceText, hubRows, type HubRow } from "../../lib/fish-hub";
+import { hubIndexable, hubPlace, hubPriceRange, hubPriceText, hubRangeRows, hubRowPriceText, hubRows, hubTitle, type HubRow } from "../../lib/fish-hub";
 import { SPECIES_GUIDES } from "../../lib/species-guides";
 
 const species = (Astro.params.species || "").toLowerCase();
@@ -82,21 +82,9 @@ const mainPrice = (r: HubRow) => hubPriceText(r.perKg ? { ...r.perKg, unit: "kg"
 // Primary CTA: the first seller with it today, else the first taking pre-orders, else the shop.
 const ctaRow = live[0] ?? preorder[0];
 const areasList = [...new Set(rows.map((r) => r.area).filter(Boolean))];
-// Title ≤60: "Surmai (Kingfish) Price per kg Today in Thane | Relifish"; shorter forms when it doesn't fit.
+// Title (hubTitle): "Surmai (Kingfish) ₹1098/kg Today in Thane | Relifish", ≤60.
 const alias = englishOnly.toLowerCase() !== local.toLowerCase() ? englishOnly : guide?.alsoCalled?.[0];
-const fishWord = SHELLFISH.has(species) ? "" : " Fish";
-// Founder (25 Oct): live ₹/kg in the title, "Rawas ₹450/kg Today in Thane". Thane first, else any in-stock seller by weight.
-const titleRange = thaneRange?.unit === "kg" ? thaneRange : liveRange?.unit === "kg" ? liveRange : null;
-const titlePlace = thaneRange?.unit === "kg" ? "Thane" : hubPlace(live.filter((r) => r.perKg));
-const titlePrice = titleRange ? `${hubPriceText(titleRange)} Today${titlePlace ? ` in ${titlePlace}` : ""}` : null;
-const title = !known ? "Fish not found · Relifish" : [
-  ...(titlePrice && alias ? [`${local} (${alias}) ${titlePrice} | Relifish`] : []),
-  ...(titlePrice ? [`${local} ${titlePrice} | Relifish`] : []),
-  // No ₹/kg live (out of stock or sold by the pack only): the "price per kg" title.
-  ...(alias ? [`${local} (${alias}) Price per kg Today${inPlace} | Relifish`] : []),
-  `${local}${fishWord} Price per kg Today${inPlace} | Relifish`,
-  `${local}${fishWord} Price per kg Today | Relifish`,
-].find((t) => t.length <= 60) ?? `${local} Price per kg | Relifish`;
+const title = known ? hubTitle(local, alias, rows) : "Fish not found · Relifish";
 const faqs = known && rows.length ? [
   { q: `What is the ${local} price today in Thane?`, a: thanePriceAnswer },
   ...(englishOnly.toLowerCase() !== local.toLowerCase() ? [{ q: `What is ${local} called in English?`, a: `${local} is ${englishOnly} in English.${localNames.length > 1 ? ` It is also called ${localNames.filter((n) => n !== englishOnly).join(", ")}.` : ""}` }] : []),
