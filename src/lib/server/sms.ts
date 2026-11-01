@@ -17,7 +17,7 @@ const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "
 
 export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED";
 
-/** The DLT template text for each key (Smartping 1 Nov 2026: SIGNUP = relifish_account_ready, UNPAID, CONFIRMED, OUT, CANCELLED approved; CART was rejected three times as promotional, so cart reminders stay WhatsApp-only until a promotional route exists; PAID and DELIVERED aren't sent). */
+/** The DLT template text for each key (Smartping 1 Nov 2026: SIGNUP = relifish_account_ready, UNPAID, CONFIRMED, OUT, CANCELLED approved; CART was rejected four times as promotional, so the cart reminder SMS uses the SIGNUP text with the cart's seller; PAID and DELIVERED aren't sent). */
 export const SMS_TEXT: Record<SmsKey, string> = {
   SIGNUP: "Hi {#var#}, your Relifish account is ready. You can order fish from {#var#}, cleaned and cut, with home delivery. Menu: https://www.relifish.com/shop - Relifish",
   CART: "Hi {#var#}, your {#var#} from {#var#} is still in your Relifish cart. Next slot: {#var#}. Order here: https://www.relifish.com/shop - Relifish",
@@ -31,10 +31,10 @@ export const SMS_TEXT: Record<SmsKey, string> = {
 /** Variables each key takes. */
 export const smsVarCount = (key: SmsKey) => SMS_TEXT[key].split("{#var#}").length - 1;
 
-/** DLT limit: a variable value is at most 30 characters. */
+/** DLT limit: a variable value is at most 30 characters. GSM only (Text templates): dashes, quotes and … become ASCII. */
 export const cut30 = (s: string) => {
-  const t = String(s ?? "").replace(/\s+/g, " ").trim();
-  return t.length <= 30 ? t : `${t.slice(0, 29).trimEnd()}…`;
+  const t = String(s ?? "").replace(/[–—]/g, "-").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, "...").replace(/\s+/g, " ").trim();
+  return t.length <= 30 ? t : `${t.slice(0, 27).trimEnd()}...`;
 };
 
 /** MSG91 flow body (pure; tested): var1…varN. Same shape as the OTP sender. DLT text type is GSM, so ₹ becomes "Rs." */
