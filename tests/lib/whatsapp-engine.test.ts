@@ -31,7 +31,7 @@ const srcFiles = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
 });
 
 import { dispatch, smsFallbackFor } from "../../src/lib/server/messaging";
-import { cut30, SMS_TEXT, smsVarCount } from "../../src/lib/server/sms";
+import { cut30, SMS_TEXT, smsPayload, smsVarCount } from "../../src/lib/server/sms";
 import { orderSms } from "../../src/lib/server/notify-order-whatsapp";
 import { matchWatiItem, nextStatus } from "../../src/lib/server/wati-status";
 
@@ -223,7 +223,7 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
     expect(sent.template.components.some((c: any) => c.sub_type === "quick_reply")).toBe(false);
     expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
   });
-  it("not opted in → SMS only (MSG91 flow, vars cut to 30, link code = short_id)", async () => {
+  it("not opted in → SMS only (MSG91 flow, vars cut to 30, fixed link so no link variable)", async () => {
     sms();
     (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "req123" }));
     const sb = fakeSb();
@@ -232,7 +232,8 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
     const [url, init] = (globalThis.fetch as any).mock.calls[0];
     expect(url).toBe("https://api.msg91.com/api/v5/flow/");
     const body = JSON.parse(init.body);
-    expect(body).toMatchObject({ flow_id: "flowcart", sender: "RLFISH", mobiles: "919870619974", var1: "Priya", var3: "Fishtokri", var5: sb.rows[0].short_id });
+    expect(body).toMatchObject({ flow_id: "flowcart", sender: "RLFISH", mobiles: "919870619974", var1: "Priya", var3: "Fishtokri", var4: "today, 4–6 PM" });
+    expect(body.var5).toBeUndefined();
     expect(body.var2.length).toBeLessThanOrEqual(30);
     expect(sb.rows.map((x) => [x.channel, x.template, x.status, x.provider_id])).toEqual([["sms", "sms:CART", "sent", "req123"]]);
   });
@@ -297,11 +298,18 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
 });
 
 describe("SMS (MSG91)", () => {
-  it("every DLT text ends with the /go/ link variable and has ≤ 5 variables", () => {
+  it("every DLT text ends with a whitelisted static link (/shop or /track) and has 1–4 variables", () => {
     for (const [k, t] of Object.entries(SMS_TEXT)) {
-      expect(t, k).toMatch(/https:\/\/www\.relifish\.com\/go\/\{#var#\} - Relifish$/);
+      expect(t, k).toMatch(/https:\/\/www\.relifish\.com\/(shop|track) - Relifish$/);
       expect(smsVarCount(k as any), k).toBeGreaterThanOrEqual(1);
+      expect(smsVarCount(k as any), k).toBeLessThanOrEqual(4);
     }
+  });
+  it("the MSG91 body names var1…varN, cuts to 30 and writes ₹ as Rs.", () => {
+    const b: any = smsPayload("f1", "919870619974", ["#3F9A21C0", "seller couldn't take it", "₹1,230 in 5-7 working days"]);
+    expect(b.var3).toBe("Rs.1,230 in 5-7 working days");
+    expect(b.var4).toBeUndefined();
+    expect(b.flow_id).toBe("f1");
   });
   it("order updates fill exactly the SMS variables their template has, each ≤ 30 chars after cutting", () => {
     const ord = { id: "1b26326f-948a-4c56", species: "pomfret", delivery_slot_start: "2026-10-31T02:30:00Z", delivery_slot_end: "2026-10-31T04:30:00Z",

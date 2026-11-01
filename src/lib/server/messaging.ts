@@ -106,7 +106,7 @@ async function sendOne(sb: any, d: Dispatch, channel: Channel, to: string): Prom
     // (a STOP payload there would opt the buyer out). STOP is typed, per the footer.
     r = await sendTemplate({ to, name: d.template, body: d.body, headerImage: TEMPLATE[d.template]?.header ? d.headerImage : null, urlSuffix: id });
   } else {
-    r = await sendSms(to, d.sms!.key, d.sms!.vars, rows[0].short_id || id);
+    r = await sendSms(to, d.sms!.key, d.sms!.vars);
   }
   await sb.from("message_log").update({ status: r.status, provider_id: r.id ?? null, error: r.error ?? null, updated_at: new Date().toISOString() }).eq("id", id);
   return { status: r.status, channel, id, error: r.error };
