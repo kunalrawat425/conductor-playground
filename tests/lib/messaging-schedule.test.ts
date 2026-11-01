@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compose, costliestPhoto, decide, decideActivity, offerAt, reminderWindow, pickSubstitute, type BuyerState, type MenuItem, type MsgSeller, type SentLog } from "../../src/lib/messaging/schedule";
+import { PROMO_SMS_START, compose, costliestPhoto, decide, decideActivity, offerAt, promoSms, reminderWindow, pickSubstitute, type BuyerState, type MenuItem, type MsgSeller, type SentLog } from "../../src/lib/messaging/schedule";
 import { PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
 import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
@@ -483,5 +483,51 @@ describe("send to all (founder's one-off)", () => {
     expect((decide(T("24", "09:15"), b, SELLERS, [{ ...log("promo", T("24", "08:30")), status: "read" }], true, true) as any).skip).toBe("already messaged today");
     expect((decide(T("24", "09:15"), { ...b, dnd: true }, SELLERS, [], true, true) as any).skip).toBe("do not message");
     expect((decide(T("24", "09:15"), { ...b, opted_out: true }, SELLERS, [], true, true) as any).skip).toBe("opted out");
+  });
+});
+
+describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one template per stage, no prices", () => {
+  const live = (names: string[]) => names.map((name, i) => ({ name, price: 500 + i, preorder: true }));
+  const FT = { ...FISHTOKRI, live: live(["Surmai", "Pomfret", "Bombil", "Halwa"]) } as MsgSeller;
+  const S = [FT, NOMADIC];
+  const old = buyer({ created_at: iso(T("10", "10:00")) });
+  const sms = (now: number, b: BuyerState, h: SentLog[] = []) => {
+    const d = decide(now, b, S, h, false, false, PROMO_SMS_START) as any;
+    return d.skip ? d : { d, s: promoSms(d, b, now) };
+  };
+  it("SMS promos wait for 10:00 on Fri/Sat/Sun (not 8:30); Tue 6 PM is unchanged", () => {
+    expect(sms(T("24", "08:30"), old).skip).toBe("nothing due");
+    expect(sms(T("24", "09:50"), old).skip).toBe("nothing due");
+    expect(sms(T("24", "10:00"), old).s).toMatchObject({ key: "PROMO_NEW", vars: ["Priya", "Surmai, Pomfret, Bombil", expect.any(String), expect.any(String)] });
+    expect(sms(T("27", "18:00"), old).s).toMatchObject({ key: "PROMO_NEW" });
+    // WhatsApp path (notBefore 0) keeps 8:30.
+    expect(decide(T("24", "08:30"), old, S, [])).toMatchObject({ kind: "promo" });
+  });
+  it("never outside 10:00–21:00, even for an ad-hoc promo run", () => {
+    const d = decide(T("24", "09:00"), old, S, [], true) as any;
+    expect(d.kind).toBe("promo");
+    expect(promoSms(d, old, T("24", "09:00"))).toBeNull();
+    expect(promoSms(d, old, T("24", "21:00"))).toBeNull();
+    expect(promoSms(d, old, T("24", "20:59"))).not.toBeNull();
+  });
+  it("picks the stage's template: cart, unpaid, bought before, else new", () => {
+    const c = buyer({ created_at: iso(T("10", "10:00")), cart: [{ seller_id: "ft", name: "Baby Rawas", on_menu: true, updated_at: iso(T("23", "10:15")) }] });
+    expect(sms(T("24", "10:00"), c).s).toMatchObject({ key: "PROMO_CART", vars: ["Priya", "Baby Rawas", expect.any(String)] });
+    const u = buyer({ created_at: iso(T("10", "10:00")), unpaid: { id: "o1", seller_id: "ft", name: "Surmai", created_at: iso(T("22", "10:00")) } as any });
+    expect(sms(T("24", "10:00"), u).s).toMatchObject({ key: "PROMO_UNPAID", vars: ["Priya", "Surmai", expect.any(String)] });
+    const a = buyer({ created_at: iso(T("01", "10:00")), last_order_at: iso(T("15", "10:00")), last_delivered_at: iso(T("15", "12:00")),
+      delivered: { id: "o2", seller_id: "ft", name: "Halwa", created_at: iso(T("15", "10:00")) } as any });
+    expect(sms(T("24", "10:00"), a).s).toMatchObject({ key: "PROMO_AGAIN", vars: ["Priya", "Halwa", expect.any(String)] });
+  });
+  it("no prices and no seller names in any promo SMS variable", () => {
+    const r = sms(T("24", "10:00"), old).s!;
+    for (const v of r.vars) { expect(v).not.toMatch(/₹|Rs\.?\s?\d/); expect(v).not.toMatch(/Fishtokri|Nomadic/); }
+  });
+  it("anti-spam is the promo engine's: DND, opted out, 1 a day, 72 h since a promo, 48 h since a reminder", () => {
+    expect(sms(T("24", "10:00"), { ...old, dnd: true }).skip).toBe("do not message");
+    expect(sms(T("24", "10:00"), { ...old, opted_out: true }).skip).toBe("opted out");
+    expect(sms(T("24", "10:00"), old, [log("promo", T("23", "10:00"))]).skip).toBe("nothing due");      // promo yesterday (<72 h)
+    expect(sms(T("24", "10:00"), old, [log("act_cart", T("23", "12:00"))]).skip).toBe("activity reminder <48h");
+    expect(sms(T("24", "10:00"), old, [log("act_unpaid", T("24", "09:00"))]).skip).toBe("already messaged today");
   });
 });

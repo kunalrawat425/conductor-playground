@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { checkLine } from "../../../lib/cart";
 import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
-import { cartMessage, decide, decideActivity, istDate, offerAt, pickSeller, signupMessage, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
+import { PROMO_SMS_START, cartMessage, decide, decideActivity, istDate, offerAt, pickSeller, promoSms, signupMessage, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
 import { firstName, fishName } from "../../../lib/messaging/templates";
 import { dispatch, smsFallbackDue, smsFallbackFor, type Dispatch } from "../../../lib/server/messaging";
 import { againOrder, checkoutFish, loadCheckout, ORDER_SELECT, orderMessage, orderPhoto, orderSms, type OrderWaEvent } from "../../../lib/server/notify-order-whatsapp";
@@ -269,14 +269,17 @@ async function run({ url }: { url: URL }): Promise<Response> {
           template: act.template, body: act.body, headerImage: act.photo, link_path: act.path, sms: act.sms, smsOk: true, smsFallback: true };
       }
     } else {
-      const d = decide(now, state, sellers, history, promoNow, promoAll);
+      // Promos go by SMS when WhatsApp can't carry them (off, or not opted in): those wait for 10:00 (promotional SMS window).
+      const bySms = !whatsappOk || env("WHATSAPP_OFF") === "true";
+      const d = decide(now, state, sellers, history, promoNow, promoAll, bySms ? PROMO_SMS_START : 0);
       if ("skip" in d) { report.push({ buyer: who, skip: act.skip === "nothing due" ? d.skip : `${act.skip}; ${d.skip}` }); continue; }
-      // Promos: WhatsApp only (founder: no promo SMS), so a buyer who isn't opted in gets none.
+      // One promo, one channel: WhatsApp if opted in, else the promotional SMS for their stage (founder, 1 Nov).
+      // Never a WhatsApp→SMS fallback for promos; DND / STOP are already skipped by decide().
       msg = { dedupe_key: `${d.kind}:${b.id}:${d.slot_date}`, kind: d.kind, slot_date: d.slot_date, buyer_id: b.id, seller_id: d.seller.id, phone: b.phone, whatsappOk,
-        template: d.template, body: d.body, headerImage: d.photo, link_path: d.path };
+        template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, sms: promoSms(d, state, now), smsOk: !state.dnd, smsFallback: false };
     }
     if (!msg) continue;
-    if (!whatsappOk && !msg.sms) { report.push({ buyer: who, skip: "promo: not opted in to WhatsApp" }); continue; }
+    if (!whatsappOk && !msg.sms) { report.push({ buyer: who, skip: msg.kind === "promo" ? "promo: no WhatsApp and no promo SMS for this stage/time" : "not opted in to WhatsApp" }); continue; }
     const line = { buyer: who, kind: msg.kind, template: msg.template, vars: msg.body, sms: msg.sms ?? null, link: msg.link_path, image: msg.headerImage ?? null, channel: whatsappOk ? "whatsapp" : msg.sms ? "sms" : "none" };
     if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
     const r = await dispatch(sb, msg);

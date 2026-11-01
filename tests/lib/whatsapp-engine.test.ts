@@ -31,7 +31,7 @@ const srcFiles = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
 });
 
 import { dispatch, smsFallbackFor } from "../../src/lib/server/messaging";
-import { cut30, SMS_TEXT, smsPayload, smsVarCount } from "../../src/lib/server/sms";
+import { cut30, SMS_TEXT, smsPayload, smsReady, smsVarCount } from "../../src/lib/server/sms";
 import { orderSms } from "../../src/lib/server/notify-order-whatsapp";
 import { matchWatiItem, nextStatus } from "../../src/lib/server/wati-status";
 
@@ -509,5 +509,48 @@ describe("messaging cron", () => {
     const free = await cron({}, "");
     expect(free.body.dry).toBe(false);
     expect(Date.parse(free.db.t.cron_lock[0].until)).toBeLessThanOrEqual(Date.now());
+  });
+});
+
+describe("promotional SMS sending (founder, 1 Nov)", () => {
+  const ok = (body: any) => new Response(JSON.stringify(body), { status: 200 });
+  const base = () => { vi.stubEnv("SMS_LIVE", "true"); vi.stubEnv("MSG91_AUTH_KEY", "k"); vi.stubEnv("MSG91_FLOW_PROMO_NEW", "flowpromo"); vi.stubEnv("MSG91_SENDER_ID", "RLFISH"); };
+  const msg = { dedupe_key: "promo:b1:2026-11-07", kind: "promo", slot_date: "2026-11-07", buyer_id: "b1", phone: "9870619974", whatsappOk: false,
+    template: "rf2_catch_prices", body: [], link_path: "/shop", sms: { key: "PROMO_NEW" as const, vars: ["Priya", "Surmai, Pomfret", "4 PM", "today, 4–6 PM"] }, smsOk: true, smsFallback: false };
+  it("is off unless PROMO_SMS_LIVE=true and a promo header is set: nothing logged, nothing sent", async () => {
+    base();
+    const sb = fakeSb();
+    expect(smsReady("PROMO_NEW")).toBe(false);
+    expect((await dispatch(sb, msg)).status).toBe("no_channel");
+    vi.stubEnv("PROMO_SMS_LIVE", "true");
+    expect(smsReady("PROMO_NEW")).toBe(false); // still no MSG91_PROMO_SENDER
+    expect(sb.rows).toHaveLength(0);
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(0);
+  });
+  it("sends from the numeric promo header, not RLFISH; reminders keep RLFISH", async () => {
+    base(); vi.stubEnv("PROMO_SMS_LIVE", "true"); vi.stubEnv("MSG91_PROMO_SENDER", "873543");
+    (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "p1" }));
+    const sb = fakeSb();
+    const r = await dispatch(sb, msg);
+    expect([r.status, r.channel]).toEqual(["sent", "sms"]);
+    const body = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body);
+    expect(body).toMatchObject({ flow_id: "flowpromo", sender: "873543", var1: "Priya", var3: "4 PM", var4: "today, 4-6 PM" });
+    expect(smsPayload("f", "91x", ["a"]).sender).toBe("RLFISH");
+  });
+  it("a promo goes once: a second run is a duplicate", async () => {
+    base(); vi.stubEnv("PROMO_SMS_LIVE", "true"); vi.stubEnv("MSG91_PROMO_SENDER", "873543");
+    (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "p1" }));
+    const sb = fakeSb();
+    await dispatch(sb, msg);
+    expect((await dispatch(sb, msg)).status).toBe("duplicate");
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
+  });
+  it("every promo template: gentle, whitelisted link, ≤4 variables, no prices or seller names", () => {
+    for (const k of ["PROMO_NEW", "PROMO_CART", "PROMO_UNPAID", "PROMO_AGAIN"] as const) {
+      const t = SMS_TEXT[k];
+      expect(t, k).toMatch(/ - Relifish$/);
+      expect(t, k).not.toMatch(/₹|discount|offer|hurry|last chance|pay now|not paid/i);
+      expect(smsVarCount(k)).toBeLessThanOrEqual(4);
+    }
   });
 });
