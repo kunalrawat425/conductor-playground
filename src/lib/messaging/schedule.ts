@@ -359,7 +359,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
 /** The 1 h cart reminder for a buyer with something on the menu in their cart (null if nothing fits). */
 export function cartMessage(now: number, b: BuyerState, seller: MsgSeller, offer: Offer): Omit<ActDecision, "dedupe_key"> | null {
   const d = compose("act_cart", "cart", now, b, seller, offer);
-  return d && { ...d, sms: { key: "CART", vars: [b.name, d.items.join(" and "), offer.when] } };
+  return d && { ...d, sms: { key: "CART", vars: [b.name, d.items.join(" and ")] } };
 }
 
 /** The 1 h welcome: "a local seller near you…", next slot, today's catch photo. */

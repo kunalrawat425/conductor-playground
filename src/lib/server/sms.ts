@@ -18,22 +18,23 @@ const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "
 export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED" | "CANCELLED_NOPAY";
 
 /**
- * The DLT template text for each key (Smartping, 1 Nov 2026). Friendly reminders, never a dues notice; no seller
- * names (founder); no tracking wording (there's no live tracking): order links go to /orders ("Your Orders").
- * SIGNUP = relifish_account_ready, CART = relifish_checkout_saved, UNPAID = relifish_unpaid_saved,
- * CONFIRMED = relifish_confirmed_hi, OUT = relifish_order_on_way, CANCELLED = relifish_cancel_refund,
- * CANCELLED_NOPAY = relifish_cancel_nopay. PAID and DELIVERED aren't sent.
+ * The DLT template text for each key (Smartping, 1 Nov 2026), in the WhatsApp voice: a status line, then help
+ * ("WhatsApp or call us on 9152207607"). Never a dues notice, no seller names, no tracking wording (order links go
+ * to /orders). SIGNUP = relifish_signup_care, CART = relifish_cart_added (DLT rejects cart texts as promotional;
+ * without its flow id cart reminders aren't sent by SMS), UNPAID = relifish_unpaid_help, CONFIRMED =
+ * relifish_confirmed_care, OUT = relifish_out_care, CANCELLED = relifish_cancel_refund_care, CANCELLED_NOPAY =
+ * relifish_cancel_nopay_care. PAID and DELIVERED aren't sent.
  */
 export const SMS_TEXT: Record<SmsKey, string> = {
-  SIGNUP: "Hi {#var#}, your Relifish account is ready. You can order fish from {#var#}, cleaned and cut, with home delivery. Menu: https://www.relifish.com/shop - Relifish",
-  CART: "Hi {#var#}, your Relifish order for {#var#} is saved. Complete the checkout for home delivery {#var#}: https://www.relifish.com/shop - Relifish",
-  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is saved. Complete the checkout for home delivery {#var#}. Your orders: https://www.relifish.com/orders - Relifish",
+  SIGNUP: "Hi {#var#}, your Relifish account is ready. Fresh fish from {#var#}, cleaned and cut, delivered home. Not sure what to pick? WhatsApp or call us on 9152207607, a real person replies. Menu: https://www.relifish.com/shop - Relifish",
+  CART: "Hi {#var#}, you added {#var#} to your Relifish cart. Questions about the fish, the cut or delivery? WhatsApp or call us on 9152207607, a real person replies. - Relifish",
+  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is almost done. The payment is pending for your delivery slot {#var#}. Stuck anywhere? WhatsApp or call us on 9152207607, we will sort it out. Your orders: https://www.relifish.com/orders - Relifish",
   PAID: "Payment received for your Relifish order {#var#} from {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/track - Relifish",
-  CONFIRMED: "Hi {#var#}, your Relifish order {#var#} is confirmed and will reach you {#var#}, cleaned and cut. - Relifish",
-  OUT: "Your Relifish order {#var#} is on the way and should reach you {#var#}. Please keep your phone close for the delivery person. - Relifish",
+  CONFIRMED: "Hi {#var#}, your Relifish order {#var#} is confirmed and will reach you {#var#}, cleaned and cut. We will text you when it is on the way. Questions? WhatsApp or call us on 9152207607. - Relifish",
+  OUT: "Your Relifish order {#var#} is on the way and should reach you {#var#}. Please keep your phone close for the delivery person. Anything urgent? Call us on 9152207607. - Relifish",
   DELIVERED: "Your Relifish order {#var#} ({#var#}) is delivered. Hope you enjoy it! Rate it: https://www.relifish.com/track - Relifish",
-  CANCELLED: "Sorry {#var#}, your Relifish order {#var#} was cancelled: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. - Relifish",
-  CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} was cancelled: {#var#}. No payment was taken. - Relifish",
+  CANCELLED: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
+  CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. No payment was taken. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
 };
 /** Variables each key takes. */
 export const smsVarCount = (key: SmsKey) => SMS_TEXT[key].split("{#var#}").length - 1;
