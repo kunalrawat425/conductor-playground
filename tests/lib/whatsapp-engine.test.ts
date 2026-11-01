@@ -554,3 +554,14 @@ describe("promotional SMS sending (founder, 1 Nov)", () => {
     }
   });
 });
+
+describe("DB weekly SMS cap (migration 091)", () => {
+  it("a refused insert is 'capped': nothing sent, not an error", async () => {
+    vi.stubEnv("SMS_LIVE", "true"); vi.stubEnv("MSG91_AUTH_KEY", "k"); vi.stubEnv("MSG91_FLOW_CART", "f");
+    const sb: any = { from: () => ({ select: () => ({ in: async () => ({ data: [] }) }),
+      upsert: () => ({ select: async () => ({ data: null, error: { code: "P0001", message: "sms_weekly_cap: 9974 already has 2 reminder/promo SMS in the last 7 days" } }) }) }) };
+    const r = await dispatch(sb, { dedupe_key: "act_cart:b:1", kind: "act_cart", slot_date: "x", phone: "9870619974", whatsappOk: false, template: "t", body: [], link_path: "/", sms: { key: "CART", vars: ["a", "b"] } });
+    expect(r.status).toBe("capped");
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(0);
+  });
+});

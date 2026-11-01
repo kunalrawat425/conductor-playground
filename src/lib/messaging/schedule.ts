@@ -317,6 +317,13 @@ export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoS
   }
 }
 
+/** Founder (1 Nov): at most 2 reminder/promo SMS per person in any 7 days (also enforced in the DB, migration 091). */
+export const SMS_WEEKLY_CAP = 2;
+const CAPPED_KINDS = ["promo", "act_signup", "act_cart", "act_unpaid"];
+export const smsCapReached = (history: SentLog[], now: number) =>
+  history.filter((x) => x.channel === "sms" && CAPPED_KINDS.includes(x.kind) && ["queued", "sent", "delivered", "read"].includes(String(x.status))
+    && now - Date.parse(x.created_at) < 7 * DAY_MS).length >= SMS_WEEKLY_CAP;
+
 // ── R: activity reminders ──
 /** 8:00 IST at or after `ms` (same day when before 8:00, else the next day). */
 const nextMorning = (ms: number) => istMin(ms) < DAY_START ? atIST(istDate(ms), DAY_START) : atIST(addDays(istDate(ms), 1), DAY_START);
