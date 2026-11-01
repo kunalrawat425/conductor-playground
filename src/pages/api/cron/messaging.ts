@@ -48,6 +48,7 @@ async function all(q: () => any): Promise<any[]> {
  *   ?promo_now=1&all=1   one-off "send to all opted-in": also skips the 72 h / 48 h gaps, Meta hold, inactive rules
  *   ?test_phone=<n>&test_kind=signup|cart|unpaid|promo|paid|confirmed|out_for_delivery|completed|cancelled[&channel=sms]
  *                        send one sample now to a test phone (MESSAGING_TEST_PHONES, default the founder)
+ *   ?catchup_cart=<buyer id,…>  the cart reminder now for those buyers only (timing rules skipped; DND, sellers, empty carts never)
  * Sends happen only when MESSAGING_LIVE=true; otherwise every run is a report. Sellers never get these.
  */
 export const GET: APIRoute = async (ctx) => {
@@ -216,6 +217,33 @@ async function run({ url }: { url: URL }): Promise<Response> {
       phone: tb.phone, whatsappOk: !viaSms && !!tb.whatsapp_opt_in_at, smsOk: true, smsFallback: !viaSms && !!msg.sms,
     });
     return json({ test: true, kind, channel: viaSms ? "sms" : "whatsapp", template: msg.template, body: msg.body, sms: msg.sms ?? null, image: msg.headerImage ?? null, result: r });
+  }
+
+  // ?catchup_cart=<buyer id,…>: the cart reminder now for buyers the founder names (carts left while SMS was off,
+  // founder 1 Nov). Skips the timing rules only: never sellers, DND, a buyer who ordered since, or an empty cart.
+  const catchup = (url.searchParams.get("catchup_cart") || "").split(",").map((x) => x.trim()).filter(Boolean);
+  if (catchup.length) {
+    const out: any[] = [];
+    for (const id of catchup) {
+      const b = (buyerRows || []).find((x: any) => x.id === id);
+      const phone = b && waNumber(b.phone);
+      if (!b || b.is_test || skipPhone(phone)) { out.push({ buyer: id, skip: "not a buyer we message" }); continue; }
+      const st = stateOf(b);
+      const who = `…${phone!.slice(-4)}`;
+      if (st.dnd) { out.push({ buyer: who, skip: "dnd" }); continue; }
+      const lastCart = st.cart.map((l) => l.updated_at).sort().pop();
+      if (!lastCart || (st.last_order_at && st.last_order_at > lastCart)) { out.push({ buyer: who, skip: "no cart or ordered since" }); continue; }
+      const seller = pickSeller(st, sellers);
+      const offer = seller && offerAt(seller, now);
+      const d = seller && offer ? cartMessage(now, st, seller, offer) : null;
+      if (!d) { out.push({ buyer: who, skip: "no seller / slot / cart line on the menu" }); continue; }
+      const whatsappOk = !!b.whatsapp_opt_in_at && !b.whatsapp_opt_out_at;
+      const msg: Dispatch = { dedupe_key: `act_cart_catchup:${b.id}:${istDate(now)}`, kind: "act_cart", slot_date: istDate(now), buyer_id: b.id, seller_id: seller!.id,
+        phone: b.phone, whatsappOk, template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, sms: d.sms, smsOk: true, smsFallback: true };
+      const line = { buyer: who, sms: d.sms ?? null, channel: whatsappOk ? "whatsapp" : "sms" };
+      out.push(dry ? { ...line, sent: "dry_run" } : { ...line, ...(await dispatch(sb, msg)) });
+    }
+    return json({ dry, catchup_cart: out });
   }
 
   // 2. Per buyer: one activity reminder, else one promo.
