@@ -391,7 +391,7 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
   it("sign-up: 1 h after, only with no cart and no order; rf2_welcome to the nearest seller", () => {
     const b = buyer({ created_at: iso(T("23", "10:00")) });
     expect(act(T("23", "10:59"), b).skip).toBe("nothing due");
-    expect(act(T("23", "11:00"), b)).toMatchObject({ kind: "act_signup", template: "rf2_welcome", dedupe_key: "act_signup:b", body: ["Priya", "you", "today, 12–2 PM"], sms: { key: "SIGNUP", vars: ["Priya", "Fishtokri"] } });
+    expect(act(T("23", "11:00"), b)).toMatchObject({ kind: "act_signup", template: "rf2_welcome", dedupe_key: "act_signup:b", body: ["Priya", "you", "today, 12–2 PM"], sms: { key: "SIGNUP", vars: ["Priya", "a verified seller near you"] } });
     expect(act(T("23", "11:00"), buyer({ created_at: iso(T("23", "10:00")), last_order_at: iso(T("23", "10:20")) })).kind).toBeUndefined();
   });
   it("priority unpaid > cart > sign-up, and at most one cart/sign-up reminder a day", () => {

@@ -66,7 +66,7 @@ const titlePrice = titleRange ? hubPriceText(titleRange) : null;
 const thanePriceAnswer = thaneRange
   ? `On ${today}, ${local} in Thane is listed at ${hubPriceText(thaneRange)} on Relifish by ${names(thane)} (live listing, updated ${updatedAt} IST). Each seller sets the price, and it changes daily with the catch.`
   : liveRange
-    ? `No seller in Thane has ${local} in stock on Relifish right now (${today}). Other local sellers list it at ${hubPriceText(liveRange)} today: ${names(live)}.`
+    ? `No seller in Thane has ${local} in stock on Relifish right now (${today}). Other verified local sellers list it at ${hubPriceText(liveRange)} today: ${names(live)}.`
     : `No seller on Relifish has ${local} in stock right now (${today}), so there is no live price to show. The shop page lists what is available today.`;
 // Other names buyers search for (English and local names), without repeating the page name.
 const localNames = [englishOnly, ...(guide?.alsoCalled ?? [])].filter((n, i, a) => n.toLowerCase() !== local.toLowerCase() && a.findIndex((m) => m.toLowerCase() === n.toLowerCase()) === i);
@@ -79,7 +79,7 @@ const faqs = known && rows.length ? [
   ...(englishOnly.toLowerCase() !== local.toLowerCase() ? [{ q: `What is ${local} called in English?`, a: `${local} is ${englishOnly} in English.${localNames.length > 1 ? ` It is also called ${localNames.filter((n) => n !== englishOnly).join(", ")}.` : ""}` }] : []),
   { q: `How do I know if ${local} is fresh?`, a: freshTips.join(" ") },
   ...(guide?.faqs ?? []),
-  { q: `Where can I order ${local} online?`, a: `${rows.length === 1 ? "One local seller lists" : `${rows.length} local sellers list`} ${local} on Relifish${areasList.length ? `, in ${areasList.join(", ")}` : ""}. Order same-day while the seller is open, or pre-order for tomorrow; the seller delivers or keeps it ready for pickup.` },
+  { q: `Where can I order ${local} online?`, a: `${rows.length === 1 ? "One verified local seller lists" : `${rows.length} verified local sellers list`} ${local} on Relifish${areasList.length ? `, in ${areasList.join(", ")}` : ""}. Order same-day while the seller is open, or pre-order for tomorrow; the seller delivers or keeps it ready for pickup.` },
 ] : [];
 const description = rows.length
   ? `${local} price today from ${rows.length} local ${rows.length === 1 ? "seller" : "sellers"} in Thane & Mumbai, per kg. ${guide ? guide.summary + " " : ""}Order same-day or pre-order; the seller delivers.`
@@ -97,7 +97,7 @@ const description = rows.length
     "@graph": [
       {
         "@type": "ItemList",
-        "name": `${english} from local sellers on Relifish`,
+        "name": `${english} from verified local sellers on Relifish`,
         "itemListElement": rows.map((r, i) => ({ "@type": "ListItem", "position": i + 1, "name": `${english} — ${r.seller}`, "url": SITE_URL + r.href })),
       },
       ...(live.length ? [{
@@ -146,7 +146,7 @@ const description = rows.length
         {localNames.length > 0 && <p style="font:400 13px/1.5 Inter;margin:0 0 6px;color:var(--v2-ink-3);">Also called {localNames.join(", ")}.</p>}
         <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
           {rows.length
-            ? `${english} from ${rows.length === 1 ? "one local seller" : `${rows.length} local sellers`} on Relifish. Prices and availability come from each seller's live listing. Updated ${updatedAt} IST.`
+            ? `${english} from ${rows.length === 1 ? "one verified local seller" : `${rows.length} verified local sellers`} on Relifish. Prices and availability come from each seller's live listing. Updated ${updatedAt} IST.`
             : unavailable
               ? "We couldn't load sellers right now. Please try again in a minute."
               : `No seller on Relifish lists ${english.toLowerCase()} right now.`}
@@ -165,7 +165,7 @@ const description = rows.length
             </>
           ) : (
             <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
-              No seller in Thane has {local} in stock on Relifish right now.{liveRange && ` Other local sellers list it at ${hubPriceText(liveRange)} today (see below).`} <a href="/shop" style="font-weight:700;color:var(--v2-brand);">See what's available today →</a>
+              No seller in Thane has {local} in stock on Relifish right now.{liveRange && ` Other verified sellers list it at ${hubPriceText(liveRange)} today (see below).`} <a href="/shop" style="font-weight:700;color:var(--v2-brand);">See what's available today →</a>
             </p>
           )}
         </section>

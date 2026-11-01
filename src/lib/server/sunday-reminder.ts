@@ -79,7 +79,7 @@ export function planSundayReminders(buyers: ReminderBuyer[], sellers: ReminderSe
     const anyPreorder = near.some((o) => o.line.includes("pre-orders"));
     out.push({
       buyerId: b.id,
-      title: anyPreorder ? "Pre-order your Sunday fish 🐟" : "Sunday fish from your local seller 🐟",
+      title: anyPreorder ? "Pre-order your Sunday fish 🐟" : "Sunday fish from your verified seller 🐟",
       body: near.slice(0, 2).map((o) => o.line).join(" "),
       path: near.length === 1 ? sellerHref(near[0].s.name, near[0].s.id) : "/shop",
       sellerIds: near.map((o) => o.s.id),

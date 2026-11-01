@@ -77,7 +77,7 @@ export const GET: APIRoute = async () => {
       items.push(`<item>
 <g:id>${esc(`${l.id}-${o.id ?? "0"}`)}</g:id>
 <g:title>${esc(title)}</g:title>
-<g:description>${esc(`Fresh ${fish}${l.description ? ` (${String(l.description).trim()})` : ""} from ${seller}, a local fish seller in ${area}. Order same-day or pre-order for tomorrow on Relifish; the seller delivers or keeps it ready for pickup.`)}</g:description>
+<g:description>${esc(`Fresh ${fish}${l.description ? ` (${String(l.description).trim()})` : ""} from ${seller}, a verified local fish seller in ${area}. Order same-day or pre-order for tomorrow on Relifish; the seller delivers or keeps it ready for pickup.`)}</g:description>
 <g:link>${esc(`${SITE_URL}${base}/${species}?opt=${encodeURIComponent(`${l.id}-${o.id ?? "0"}`)}`)}</g:link>
 <g:image_link>${esc(image)}</g:image_link>
 <g:price>${price.toFixed(2)} INR</g:price>
@@ -93,9 +93,9 @@ export const GET: APIRoute = async () => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
 <channel>
-<title>Relifish: fish from local sellers</title>
+<title>Relifish: fish from verified local sellers</title>
 <link>${SITE_URL}</link>
-<description>Live fish prices from local sellers in Thane.</description>
+<description>Live fish prices from verified local sellers in Thane.</description>
 ${items.join("\n")}
 </channel>
 </rss>`;
