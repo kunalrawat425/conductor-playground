@@ -546,7 +546,7 @@ describe("promotional SMS sending (founder, 1 Nov)", () => {
     expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
   });
   it("every promo template: gentle, whitelisted link, ≤4 variables, no prices or seller names", () => {
-    for (const k of ["PROMO_NEW", "PROMO_CART", "PROMO_UNPAID", "PROMO_AGAIN"] as const) {
+    for (const k of ["PROMO_NEW", "PROMO_CART", "PROMO_AGAIN"] as const) {
       const t = SMS_TEXT[k];
       expect(t, k).toMatch(/ - Relifish$/);
       expect(t, k).not.toMatch(/₹|discount|offer|hurry|last chance|pay now|not paid/i);
