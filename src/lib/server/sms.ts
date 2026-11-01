@@ -16,7 +16,7 @@ import type { SendResult } from "./whatsapp";
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 
 export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED" | "CANCELLED_NOPAY"
-  | "PROMO_NEW" | "PROMO_CART" | "PROMO_UNPAID" | "PROMO_AGAIN";
+  | "PROMO_NEW" | "PROMO_CART" | "PROMO_AGAIN";
 
 /**
  * The DLT template text for each key (Smartping, 1 Nov 2026), in the WhatsApp voice: a status line, then help
@@ -38,7 +38,6 @@ export const SMS_TEXT: Record<SmsKey, string> = {
   // Promotional (DLT category Promotional, sent from the numeric promo header MSG91_PROMO_SENDER, 10:00–21:00 only).
   PROMO_NEW: "Hi {#var#}, fresh fish is in on Relifish: {#var#}. Order by {#var#} for delivery {#var#}, cleaned and cut. See the menu: https://www.relifish.com/shop - Relifish",
   PROMO_CART: "Hi {#var#}, your {#var#} is still in your Relifish cart. The next delivery slot is {#var#}, cleaned and cut. Questions? Call 9152207607. Cart: https://www.relifish.com/shop - Relifish",
-  PROMO_UNPAID: "Hi {#var#}, your Relifish order for {#var#} is saved. You can pick a slot and finish it whenever you are ready, next slot {#var#}. Help: 9152207607. https://www.relifish.com/orders - Relifish",
   PROMO_AGAIN: "Hi {#var#}, hope you enjoyed the {#var#}. Fresh stock is in, next slot {#var#}, cleaned and cut. Order again: https://www.relifish.com/shop - Relifish",
 };
 /** Promotional keys: own sender (numeric header) and their own switch PROMO_SMS_LIVE, separate from reminders. */

@@ -283,13 +283,13 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
 /** Promotional SMS may go 10:00–21:00 IST only (TRAI; the stricter reading of 9/10 AM), never in quiet hours. */
 export const PROMO_SMS_START = 10 * 60;
 export const PROMO_SMS_END = 21 * 60;
-export type PromoSmsKey = "PROMO_NEW" | "PROMO_CART" | "PROMO_UNPAID" | "PROMO_AGAIN";
+export type PromoSmsKey = "PROMO_NEW" | "PROMO_CART" | "PROMO_AGAIN";
 
 /**
  * The SMS version of a promo decision: one DLT promotional template per stage, no prices, no seller
  * names. Same rules as the WhatsApp promo (decide(): stage, 1 a day, 72 h gap, 48 h after a reminder,
  * DND / STOP / open order / just delivered / inactive) plus the 10:00–21:00 window. null = no SMS
- * (outside the window, or a stage without an SMS template: the cart-swap substitute needs a price).
+ * (outside the window, the unpaid stage, or the cart-swap substitute, which needs a price).
  */
 export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoSmsKey; vars: string[] } | null {
   const m = istMin(now);
@@ -297,7 +297,9 @@ export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoS
   const fish = d.items.join(" and ");
   switch (d.template) {
     case "rf2_promo_cart": return fish ? { key: "PROMO_CART", vars: [b.name, fish, d.when] } : null;
-    case "rf2_promo_unpaid": return fish ? { key: "PROMO_UNPAID", vars: [b.name, fish, d.when] } : null;
+    // Unpaid order: no promo SMS. They already got the gentle unpaid reminder 30 min after checkout, a weekend
+    // nudge about the same order would be spam, and MSG91 auto-rejects order wording in promotional SMS (1 Nov).
+    case "rf2_promo_unpaid": return null;
     case "rf2_order_again": return fish ? { key: "PROMO_AGAIN", vars: [b.name, fish, d.when] } : null;
     case "rf2_catch_prices": case "rf2_catch_preorder": {
       // Names only (the WhatsApp menu line carries prices; promos never do): 3 different fish, one name per species

@@ -510,11 +510,11 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
     expect(promoSms(d, old, T("24", "21:00"))).toBeNull();
     expect(promoSms(d, old, T("24", "20:59"))).not.toBeNull();
   });
-  it("picks the stage's template: cart, unpaid, bought before, else new", () => {
+  it("picks the stage's template: cart, bought before, else new; unpaid gets none", () => {
     const c = buyer({ created_at: iso(T("10", "10:00")), cart: [{ seller_id: "ft", name: "Baby Rawas", on_menu: true, updated_at: iso(T("23", "10:15")) }] });
     expect(sms(T("24", "10:00"), c).s).toMatchObject({ key: "PROMO_CART", vars: ["Priya", "Baby Rawas", expect.any(String)] });
     const u = buyer({ created_at: iso(T("10", "10:00")), unpaid: { id: "o1", seller_id: "ft", name: "Surmai", created_at: iso(T("22", "10:00")) } as any });
-    expect(sms(T("24", "10:00"), u).s).toMatchObject({ key: "PROMO_UNPAID", vars: ["Priya", "Surmai", expect.any(String)] });
+    expect(sms(T("24", "10:00"), u).s).toBeNull(); // unpaid: the 30-min reminder already went; no promo SMS
     const a = buyer({ created_at: iso(T("01", "10:00")), last_order_at: iso(T("15", "10:00")), last_delivered_at: iso(T("15", "12:00")),
       delivered: { id: "o2", seller_id: "ft", name: "Halwa", created_at: iso(T("15", "10:00")) } as any });
     expect(sms(T("24", "10:00"), a).s).toMatchObject({ key: "PROMO_AGAIN", vars: ["Priya", "Halwa", expect.any(String)] });
