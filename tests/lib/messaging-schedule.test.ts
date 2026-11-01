@@ -493,12 +493,12 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
   const old = buyer({ created_at: iso(T("10", "10:00")) });
   const sms = (now: number, b: BuyerState, h: SentLog[] = []) => {
     const d = decide(now, b, S, h, false, false, PROMO_SMS_START) as any;
-    return d.skip ? d : { d, s: promoSms(d, b, now) };
+    return d.skip ? d : { d, s: promoSms(d, b, now, S) };
   };
   it("SMS promos wait for 10:00 on Fri/Sat/Sun (not 8:30); Tue 6 PM is unchanged", () => {
     expect(sms(T("24", "08:30"), old).skip).toBe("nothing due");
     expect(sms(T("24", "09:50"), old).skip).toBe("nothing due");
-    expect(sms(T("24", "10:00"), old).s).toMatchObject({ key: "PROMO_NEW", vars: ["Priya", "Surmai, Pomfret, Bombil", expect.any(String), "today"] });
+    expect(sms(T("24", "10:00"), old).s).toMatchObject({ key: "PROMO_NEW", vars: ["Priya", "Fishtokri, The Nomadic Catch", expect.any(String)] });
     expect(sms(T("27", "18:00"), old).s).toMatchObject({ key: "PROMO_NEW" });
     // WhatsApp path (notBefore 0) keeps 8:30.
     expect(decide(T("24", "08:30"), old, S, [])).toMatchObject({ kind: "promo" });
@@ -506,9 +506,9 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
   it("never outside 10:00–21:00, even for an ad-hoc promo run", () => {
     const d = decide(T("24", "09:00"), old, S, [], true) as any;
     expect(d.kind).toBe("promo");
-    expect(promoSms(d, old, T("24", "09:00"))).toBeNull();
-    expect(promoSms(d, old, T("24", "21:00"))).toBeNull();
-    expect(promoSms(d, old, T("24", "20:59"))).not.toBeNull();
+    expect(promoSms(d, old, T("24", "09:00"), S)).toBeNull();
+    expect(promoSms(d, old, T("24", "21:00"), S)).toBeNull();
+    expect(promoSms(d, old, T("24", "20:59"), S)).not.toBeNull();
   });
   it("picks the stage's template: cart, bought before, else new; unpaid gets none", () => {
     const c = buyer({ created_at: iso(T("10", "10:00")), cart: [{ seller_id: "ft", name: "Baby Rawas", on_menu: true, updated_at: iso(T("23", "10:15")) }] });
@@ -519,15 +519,15 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
       delivered: { id: "o2", seller_id: "ft", name: "Halwa", created_at: iso(T("15", "10:00")) } as any });
     expect(sms(T("24", "10:00"), a).s).toMatchObject({ key: "PROMO_AGAIN", vars: ["Priya", "Halwa", expect.any(String)] });
   });
-  it("names 3 different fish, one per species", () => {
-    const FT2 = { ...FISHTOKRI, live: [{ name: "Silver pomfret combo", species: null, price: 1 }, { name: "Silver Pomfret", species: "pomfret", price: 1 },
-      { name: "Khapri Pomfret", species: "pomfret", price: 1 }, { name: "Marinated Bangda", species: null, price: 1 }, { name: "Bangda", species: "mackerel", price: 1 }, { name: "Surmai", species: "kingfish", price: 1 }] } as MsgSeller;
-    const d = decide(T("24", "10:00"), old, [FT2, NOMADIC], [], false, false, PROMO_SMS_START) as any;
-    expect(promoSms(d, old, T("24", "10:00"))!.vars[1]).toBe("Silver pomfret combo, Marinated Bangda, Surmai");
+  it("the generic promo names the sellers delivering to them, nearest first (founder, 1 Nov)", () => {
+    const nearNomadic = buyer({ created_at: iso(T("10", "10:00")), lat: 19.217, lng: 72.956 });
+    expect(sms(T("24", "10:00"), nearNomadic).s!.vars[1]).toBe("The Nomadic Catch, Fishtokri");
+    const nearFt = buyer({ created_at: iso(T("10", "10:00")), lat: 19.19, lng: 72.98 });
+    expect(sms(T("24", "10:00"), nearFt).s!.vars[1]).toBe("Fishtokri, The Nomadic Catch");
   });
-  it("no prices and no seller names in any promo SMS variable", () => {
+  it("no prices in any promo SMS variable", () => {
     const r = sms(T("24", "10:00"), old).s!;
-    for (const v of r.vars) { expect(v).not.toMatch(/₹|Rs\.?\s?\d/); expect(v).not.toMatch(/Fishtokri|Nomadic/); }
+    for (const v of r.vars) expect(v).not.toMatch(/₹|Rs\.?\s?\d/);
   });
   it("anti-spam is the promo engine's: DND, opted out, 1 a day, 72 h since a promo, 48 h since a reminder", () => {
     expect(sms(T("24", "10:00"), { ...old, dnd: true }).skip).toBe("do not message");

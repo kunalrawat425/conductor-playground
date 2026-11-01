@@ -198,7 +198,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
       const d = kind === "cart" ? cartMessage(Date.now(), withCart, seller, offer) : kind === "signup" ? signupMessage(Date.now(), st, seller, offer) : null;
       const p = kind === "promo" ? decide(Date.now(), withCart, sellers, [], true, true) : null; // test phone only: due now, and the per-buyer gaps (recent delivery, inactive) are skipped
       if (d) msg = { template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, seller_id: seller.id, sms: d.sms };
-      else if (p && !("skip" in p)) msg = { template: p.template, body: p.body, headerImage: p.photo, link_path: p.path, seller_id: seller.id, sms: promoSms(p, st, Date.now()) };
+      else if (p && !("skip" in p)) msg = { template: p.template, body: p.body, headerImage: p.photo, link_path: p.path, seller_id: seller.id, sms: promoSms(p, st, Date.now(), sellers) };
       else if (kind === "promo") return json({ error: `no promo fits right now: ${(p as any)?.skip}` }, 404);
     } else {
       // Order kinds: the test buyer's latest order (its real values).
@@ -276,7 +276,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
       // One promo, one channel: WhatsApp if opted in, else the promotional SMS for their stage (founder, 1 Nov).
       // Never a WhatsApp→SMS fallback for promos; DND / STOP are already skipped by decide().
       msg = { dedupe_key: `${d.kind}:${b.id}:${d.slot_date}`, kind: d.kind, slot_date: d.slot_date, buyer_id: b.id, seller_id: d.seller.id, phone: b.phone, whatsappOk,
-        template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, sms: promoSms(d, state, now), smsOk: !state.dnd, smsFallback: false };
+        template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, sms: promoSms(d, state, now, sellers), smsOk: !state.dnd, smsFallback: false };
     }
     if (!msg) continue;
     // 2 reminder/promo SMS a week (founder, 1 Nov): an SMS-bound reminder or promo past the cap is skipped here (the DB refuses it anyway).
