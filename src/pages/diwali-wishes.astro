@@ -164,7 +164,7 @@ const MESSAGE = "May this Diwali fill your home with light, joy and endless swee
     let cardLink = SHORT;
     async function saveCard() {
       try {
-        const r = await fetch("/api/greeting-card", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ t: theme, m: msgIn.value.trim().slice(0, 400), f: signIn.value.trim().slice(0, 40) }) });
+        const r = await fetch("/api/greeting-card", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ t: theme, m: msgIn.value.trim().slice(0, 400), f: signIn.value.trim().slice(0, 40), from: new URLSearchParams(location.search).get("utm_content") || undefined }) });
         const j = await r.json();
         cardLink = r.ok && j.id ? `https://www.relifish.com/w/${j.id}` : SHORT;
       } catch { cardLink = SHORT; }
